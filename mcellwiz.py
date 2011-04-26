@@ -64,7 +64,7 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
 
 # See notes below for errors in documentation
 
-class MCellSpeciesProperty(bpy.types.IDPropertyGroup):
+class MCellSpeciesProperty(bpy.types.PropertyGroup):
   name = bpy.props.StringProperty(name="Molecule Name")
   type_enum = [
                     ('2D','2D','2D'),
@@ -76,7 +76,7 @@ class MCellSpeciesProperty(bpy.types.IDPropertyGroup):
   custom_space_step = bpy.props.FloatProperty(name="Custom Space Step")
 
   
-class MCellPropertyGroup(bpy.types.IDPropertyGroup):
+class MCellPropertyGroup(bpy.types.PropertyGroup):
   mol_file_path = bpy.props.StringProperty(name="Molecule File Path",subtype="NONE")
   mol_file_dir = bpy.props.StringProperty(name="Molecule File Dir",subtype="NONE")
   mol_file_name = bpy.props.StringProperty(name="Molecule File Name",subtype="NONE")
@@ -84,7 +84,7 @@ class MCellPropertyGroup(bpy.types.IDPropertyGroup):
   active_mol_index = bpy.props.IntProperty(name="Active Molecule Index",default=0)
 
 
-class MCellMoleculeAdd(bpy.types.Operator):
+class MCELL_OT_molecule_add(bpy.types.Operator):
   bl_idname = "mcell.molecule_add"
   bl_label = "Add Molecule"
   bl_description = "Add a molecule type to an MCell model"
@@ -96,7 +96,7 @@ class MCellMoleculeAdd(bpy.types.Operator):
     return {'FINISHED'}
   
  
-class MCellMoleculeRemove(bpy.types.Operator):
+class MCELL_OT_molecule_remove(bpy.types.Operator):
   bl_idname = "mcell.molecule_remove"
   bl_label = "Remove Molecule"
   bl_description = "Remove a molecule type from an MCell model"
@@ -110,7 +110,7 @@ class MCellMoleculeRemove(bpy.types.Operator):
     return {'FINISHED'}
 
 
-class MCellSetMolVizDir(bpy.types.Operator):
+class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
   bl_idname = "mcell.set_mol_viz_dir"
   bl_label = "Read Molecule File"
   bl_description = "Read an MCell Molecule File for Visualization"
@@ -261,7 +261,14 @@ def MolVizFileRead(context,filepath):
         
 
 def register():
+  bpy.utils.register_class(MCellSpeciesProperty)
+  bpy.utils.register_class(MCellPropertyGroup)
   bpy.types.Scene.mcell = bpy.props.PointerProperty(type=MCellPropertyGroup)
+  bpy.utils.register_class(MCELL_OT_set_mol_viz_dir)
+  bpy.utils.register_class(MCELL_OT_molecule_add)
+  bpy.utils.register_class(MCELL_OT_molecule_remove)
+  bpy.utils.register_class(MCELL_PT_viz_results)
+  bpy.utils.register_class(MCELL_PT_define_molecules)
 
 
 def unregister():
@@ -282,7 +289,3 @@ if __name__ == '__main__':
 #     bpy.context.user_preferences.edit.use_global_undo = False
 #     ...
 #     bpy.context.user_preferences.edit.use_global_undo = True
-
-# Errors in documentation:
-#   ProperyGroup is really IDProptertyGroup
-#   bpy.utils.register_class(myclass) does not exist.  Apparently classes automatically register
