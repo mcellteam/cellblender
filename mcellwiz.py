@@ -129,7 +129,7 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     context.scene.mcell.mol_file_dir = bpy.path.relpath(os.path.split(self.filepath)[0])
     context.scene.mcell.mol_file_name = os.path.split(self.filepath)[-1]
     bpy.context.user_preferences.edit.use_global_undo = False
-#    MolVizUnlink(context)
+    MolVizDelete(context)
     MolVizFileRead(context,self.filepath)
     bpy.context.user_preferences.edit.use_global_undo = True
     return {'FINISHED'}
@@ -138,15 +138,12 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     context.window_manager.fileselect_add(self)
     return {'RUNNING_MODAL'}
 
+ 
+def MolVizDelete(context):
 
-def MolVizUnlink(context):
-
-  mol_re = re.compile('mol_.*')
-  scn_objs = context.scene.objects
-  for obj in scn_objs:
-    if obj.type == 'MESH':
-      if mol_re.match(obj.name) != None:
-        scn_objs.unlink(obj)
+  obj_name_pattern = '%s[*' % ('mol_*')
+  bpy.ops.object.select_pattern(pattern=obj_name_pattern,extend=False)
+  bpy.ops.object.delete()
   
 
 def MolVizFileRead(context,filepath):
@@ -157,7 +154,13 @@ def MolVizFileRead(context,filepath):
     print ('Processing molecules from file:  %s' % (filepath))
 
     mol_data = [[s.split()[0], [float(x) for x in s.split()[1:]]] for s in open(filepath,'r').read().split('\n') if s != '']
-  
+    
+    mols_obj = bpy.data.objects.get('molecules')
+    if not mols_obj:
+      bpy.ops.object.add()
+      mols_obj = context.selected_objects[0]
+      mols_obj.name = 'molecules'
+      
     if len(mol_data) > 0:
       meshes = bpy.data.meshes
       mats = bpy.data.materials
@@ -221,10 +224,6 @@ def MolVizFileRead(context,filepath):
         if not obj:
           obj = objs.new(obj_name,mol_mesh)
 
-#        pobj = objs[pobj_name]
-#        if not obj == pobj:             
-#          obj.parent = pobj
-        
         if not scn_objs.get(obj_name):
           scn_objs.link(obj)
                            
@@ -247,9 +246,12 @@ def MolVizFileRead(context,filepath):
       pobj_name = '%s[%05d]' % (key,0)
       obj_name_pattern = '%s[*' % (key)
       bpy.ops.object.select_name(name=pobj_name)
-      bpy.ops.object.select_pattern(pattern=obj_name_pattern)
+      bpy.ops.object.select_pattern(pattern=obj_name_pattern,extend=True)
       bpy.ops.object.parent_set()
       bpy.ops.object.select_all(action='DESELECT')
+      pobj = objs[pobj_name]
+      pobj.parent = mols_obj
+      
           
     utime = resource.getrusage(resource.RUSAGE_SELF)[0]-begin
     print ('   Processed %d molecules in %g seconds\n' % (len(mol_data),utime))
@@ -258,7 +260,7 @@ def MolVizFileRead(context,filepath):
     print(('\n***** File not found: %s\n') % (filepath))
   except ValueError:
     print(('\n***** Invalid data in file: %s\n') % (filepath))
-        
+
 
 def register():
   bpy.utils.register_class(MCellSpeciesProperty)
