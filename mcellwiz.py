@@ -1,6 +1,7 @@
 import bpy
 import mathutils
 import os
+import glob
 import resource
 import re
 from math import *
@@ -21,9 +22,9 @@ class MCELL_PT_viz_results(bpy.types.Panel):
     row.operator("mcell.set_mol_viz_dir",text="Set Molecule Viz Directory",icon="FILESEL")
 #    layout.prop(mc,"mol_file_path",text="Molecule Viz Directory")
     row = layout.row()
-    row.label(text="Molecule Viz Directory:  "+mc.mol_file_dir)
+    row.label(text="Molecule Viz Directory:  "+mc.mol_viz.mol_file_dir)
     row = layout.row()
-    row.label(text="Current Molecule File:  "+mc.mol_file_name)
+    row.label(text="Current Molecule File:  "+mc.mol_viz.mol_file_name)
 #    col = row.column()
 #    col.label(text="Molecule File Path:  "+mc.mol_file_path)
 #    col = row.column(align=True)
@@ -74,12 +75,25 @@ class MCellSpeciesProperty(bpy.types.PropertyGroup):
   target_only = bpy.props.BoolProperty(name="Target Only")
   custom_time_step = bpy.props.FloatProperty(name="Custom Time Step")
   custom_space_step = bpy.props.FloatProperty(name="Custom Space Step")
-
   
-class MCellPropertyGroup(bpy.types.PropertyGroup):
-  mol_file_path = bpy.props.StringProperty(name="Molecule File Path",subtype="NONE")
+  
+class MCellStringProperty(bpy.types.PropertyGroup):
+  name = bpy.props.StringProperty(name="Text")
+  
+
+class MCellMolVizProperty(bpy.types.PropertyGroup):
   mol_file_dir = bpy.props.StringProperty(name="Molecule File Dir",subtype="NONE")
-  mol_file_name = bpy.props.StringProperty(name="Molecule File Name",subtype="NONE")
+  mol_file_list = bpy.props.CollectionProperty(type=MCellStringProperty,name="Molecule File Name List")
+  mol_file_num = bpy.props.IntProperty(name="Number of Molecule Files",default=0)
+  mol_file_name = bpy.props.StringProperty(name="Current Molecule File Name",subtype="NONE")
+  mol_file_index = bpy.props.IntProperty(name="Current Molecule File Index",default=0)
+  mol_file_start_index = bpy.props.IntProperty(name="Molecule File Start Index",default=0)
+  mol_file_stop_index = bpy.props.IntProperty(name="Molecule File Stop Index",default=0)
+  mol_file_step_index = bpy.props.IntProperty(name="Molecule File Step Index",default=0)
+
+
+class MCellPropertyGroup(bpy.types.PropertyGroup):
+  mol_viz = bpy.props.PointerProperty(type=MCellMolVizProperty,name="Mol Viz Settings")
   species_list = bpy.props.CollectionProperty(type=MCellSpeciesProperty,name="Molecule List")
   active_mol_index = bpy.props.IntProperty(name="Active Molecule Index",default=0)
 
@@ -103,10 +117,10 @@ class MCELL_OT_molecule_remove(bpy.types.Operator):
   bl_options = {'REGISTER', 'UNDO'}
   
   def execute(self,context):
-    bpy.context.scene.mcell.species_list.remove(bpy.context.scene.mcell.active_mol_index)
-    bpy.context.scene.mcell.active_mol_index = bpy.context.scene.mcell.active_mol_index-1
-    if (bpy.context.scene.mcell.active_mol_index<0):
-      bpy.context.scene.mcell.active_mol_index = 0
+    context.scene.mcell.species_list.remove(bpy.context.scene.mcell.active_mol_index)
+    context.scene.mcell.active_mol_index = bpy.context.scene.mcell.active_mol_index-1
+    if (context.scene.mcell.active_mol_index<0):
+      context.scene.mcell.active_mol_index = 0
     return {'FINISHED'}
 
 
@@ -125,20 +139,48 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
 
   def execute(self, context):
 #    self.filepath = bpy.path.relpath(self.filepath)
-    context.scene.mcell.mol_file_path = self.filepath
-    context.scene.mcell.mol_file_dir = bpy.path.relpath(os.path.split(self.filepath)[0])
-    context.scene.mcell.mol_file_name = os.path.split(self.filepath)[-1]
-    bpy.context.user_preferences.edit.use_global_undo = False
-    MolVizDelete(context)
-    MolVizFileRead(context,self.filepath)
-    bpy.context.user_preferences.edit.use_global_undo = True
+    if (os.path.isdir(self.filepath)):
+      mol_file_dir = self.filepath
+    else:
+      mol_file_dir = os.path.dirname(self.filepath)
+    mol_file_list = glob.glob(mol_file_dir + '/*')
+    
+    # Reset mol_file_list to empty
+    for i in range(context.scene.mcell.mol_viz.mol_file_num-1,-1,-1):
+      context.scene.mcell.mol_viz.mol_file_list.remove(i)
+      
+    context.scene.mcell.mol_viz.mol_file_dir=mol_file_dir
+    i = 0
+    for mol_file_name in mol_file_list:
+      new_item = context.scene.mcell.mol_viz.mol_file_list.add()
+      new_item.name = os.path.basename(mol_file_name)
+      i+=1
+      
+    context.scene.mcell.mol_viz.mol_file_num = len(context.scene.mcell.mol_viz.mol_file_list)
+      
+    MolVizUpdate(context,0)
     return {'FINISHED'}
 
   def invoke(self, context, event):
     context.window_manager.fileselect_add(self)
     return {'RUNNING_MODAL'}
 
- 
+
+def MolVizUpdate(context,i):
+
+  filename = context.scene.mcell.mol_viz.mol_file_list[i].name
+  context.scene.mcell.mol_viz.mol_file_name = filename
+  filepath = os.path.join(context.scene.mcell.mol_viz.mol_file_dir,filename) 
+  
+  global_undo = bpy.context.user_preferences.edit.use_global_undo
+  bpy.context.user_preferences.edit.use_global_undo = False   
+   
+  MolVizDelete(context)
+  MolVizFileRead(context,filepath)
+  
+  bpy.context.user_preferences.edit.use_global_undo = global_undo
+  
+
 def MolVizDelete(context):
 
   obj_name_pattern = '%s[*' % ('mol_*')
@@ -264,8 +306,11 @@ def MolVizFileRead(context,filepath):
 
 def register():
   bpy.utils.register_class(MCellSpeciesProperty)
+  bpy.utils.register_class(MCellStringProperty)
+  bpy.utils.register_class(MCellMolVizProperty)
   bpy.utils.register_class(MCellPropertyGroup)
   bpy.types.Scene.mcell = bpy.props.PointerProperty(type=MCellPropertyGroup)
+#  bpy.types.Scene.mcell.mol_viz = bpy.props.PointerProperty(type=MCellMolVizProperty)
   bpy.utils.register_class(MCELL_OT_set_mol_viz_dir)
   bpy.utils.register_class(MCELL_OT_molecule_add)
   bpy.utils.register_class(MCELL_OT_molecule_remove)
