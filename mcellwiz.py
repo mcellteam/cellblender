@@ -25,6 +25,13 @@ class MCELL_PT_viz_results(bpy.types.Panel):
     row.label(text="Molecule Viz Directory:  "+mc.mol_viz.mol_file_dir)
     row = layout.row()
     row.label(text="Current Molecule File:  "+mc.mol_viz.mol_file_name)
+    row = layout.row()
+    col = row.column(align=True)
+    col.operator("mcell.mol_viz_prev",icon="PLAY_REVERSE",text="")
+    col = row.column(align=True)
+    col.operator("mcell.mol_viz_set_index",text=str(mc.mol_viz.mol_file_index))
+    col = row.column(align=True)
+    col.operator("mcell.mol_viz_next",icon="PLAY",text="")
 #    col = row.column()
 #    col.label(text="Molecule File Path:  "+mc.mol_file_path)
 #    col = row.column(align=True)
@@ -89,7 +96,7 @@ class MCellMolVizProperty(bpy.types.PropertyGroup):
   mol_file_index = bpy.props.IntProperty(name="Current Molecule File Index",default=0)
   mol_file_start_index = bpy.props.IntProperty(name="Molecule File Start Index",default=0)
   mol_file_stop_index = bpy.props.IntProperty(name="Molecule File Stop Index",default=0)
-  mol_file_step_index = bpy.props.IntProperty(name="Molecule File Step Index",default=0)
+  mol_file_step_index = bpy.props.IntProperty(name="Molecule File Step Index",default=1)
 
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
@@ -138,7 +145,8 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
 #    return context.object is not None
 
   def execute(self, context):
-#    self.filepath = bpy.path.relpath(self.filepath)
+    
+    mc = context.scene.mcell
     if (os.path.isdir(self.filepath)):
       mol_file_dir = self.filepath
     else:
@@ -146,17 +154,19 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     mol_file_list = glob.glob(mol_file_dir + '/*')
     
     # Reset mol_file_list to empty
-    for i in range(context.scene.mcell.mol_viz.mol_file_num-1,-1,-1):
-      context.scene.mcell.mol_viz.mol_file_list.remove(i)
+    for i in range(mc.mol_viz.mol_file_num-1,-1,-1):
+      mc.mol_viz.mol_file_list.remove(i)
       
-    context.scene.mcell.mol_viz.mol_file_dir=mol_file_dir
+    mc.mol_viz.mol_file_dir=mol_file_dir
     i = 0
     for mol_file_name in mol_file_list:
-      new_item = context.scene.mcell.mol_viz.mol_file_list.add()
+      new_item = mc.mol_viz.mol_file_list.add()
       new_item.name = os.path.basename(mol_file_name)
       i+=1
       
-    context.scene.mcell.mol_viz.mol_file_num = len(context.scene.mcell.mol_viz.mol_file_list)
+    mc.mol_viz.mol_file_num = len(mc.mol_viz.mol_file_list)
+    mc.mol_viz.mol_file_stop_index = mc.mol_viz.mol_file_num-1
+    mc.mol_viz.mol_file_index = 0
       
     MolVizUpdate(context,0)
     return {'FINISHED'}
@@ -164,6 +174,63 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
   def invoke(self, context, event):
     context.window_manager.fileselect_add(self)
     return {'RUNNING_MODAL'}
+
+
+class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
+  bl_idname = "mcell.mol_viz_set_index"
+  bl_label = "Set Molecule File Index"
+  bl_description = "Set MCell Molecule File Index for Visualization"
+  bl_options = {'REGISTER'}
+  
+  def execute(self,context):
+    mc = context.scene.mcell
+    i = mc.mol_viz.mol_file_index
+    if (i > mc.mol_viz.mol_file_stop_index):
+      i = mc.mol_viz.mol_file_stop_index
+    if (i < mc.mol_viz.mol_file_start_index):
+      i = mc.mol_viz.mol_file_start_index    
+    mc.mol_viz.mol_file_index = i
+    MolVizUpdate(context,i)
+    return('FINISHED')
+  
+  def draw(self,context):
+    layout = self.layout
+    
+    mc = context.scene.mcell
+    col = layout.col()
+    col.prop(mc.mol_viz,"mol_file_index",text="")
+  
+
+class MCELL_OT_mol_viz_next(bpy.types.Operator):
+  bl_idname = "mcell.mol_viz_next"
+  bl_label = "Step to Next Molecule File"
+  bl_description = "Step to Next MCell Molecule File for Visualization"
+  bl_options = {'REGISTER'}
+  
+  def execute(self,context):
+    mc = context.scene.mcell
+    i = mc.mol_viz.mol_file_index + mc.mol_viz.mol_file_step_index
+    if (i > mc.mol_viz.mol_file_stop_index):
+      i = mc.mol_viz.mol_file_stop_index
+    mc.mol_viz.mol_file_index = i
+    MolVizUpdate(context,i)
+    return('FINISHED')
+
+
+class MCELL_OT_mol_viz_prev(bpy.types.Operator):
+  bl_idname = "mcell.mol_viz_prev"
+  bl_label = "Step to Previous Molecule File"
+  bl_description = "Step to Previous MCell Molecule File for Visualization"
+  bl_options = {'REGISTER'}
+  
+  def execute(self,context):
+    mc = context.scene.mcell
+    i = mc.mol_viz.mol_file_index - mc.mol_viz.mol_file_step_index
+    if (i < mc.mol_viz.mol_file_start_index):
+      i = mc.mol_viz.mol_file_start_index
+    mc.mol_viz.mol_file_index = i
+    MolVizUpdate(context,i)
+    return('FINISHED')
 
 
 def MolVizUpdate(context,i):
@@ -314,6 +381,9 @@ def register():
   bpy.utils.register_class(MCELL_OT_set_mol_viz_dir)
   bpy.utils.register_class(MCELL_OT_molecule_add)
   bpy.utils.register_class(MCELL_OT_molecule_remove)
+  bpy.utils.register_class(MCELL_OT_mol_viz_set_index)
+  bpy.utils.register_class(MCELL_OT_mol_viz_next)
+  bpy.utils.register_class(MCELL_OT_mol_viz_prev)
   bpy.utils.register_class(MCELL_PT_viz_results)
   bpy.utils.register_class(MCELL_PT_define_molecules)
 
