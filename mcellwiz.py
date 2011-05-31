@@ -26,6 +26,8 @@ class MCELL_PT_viz_results(bpy.types.Panel):
     row = layout.row()
     row.label(text="Current Molecule File:  "+mc.mol_viz.mol_file_name)
     row = layout.row()
+    row.template_list(mc.mol_viz,"mol_file_list",mc.mol_viz,"mol_file_index",rows=2)   
+    row = layout.row()
     col = row.column(align=True)
     col.operator("mcell.mol_viz_prev",icon="PLAY_REVERSE",text="")
     col = row.column(align=True)
@@ -97,6 +99,7 @@ class MCellMolVizProperty(bpy.types.PropertyGroup):
   mol_file_start_index = bpy.props.IntProperty(name="Molecule File Start Index",default=0)
   mol_file_stop_index = bpy.props.IntProperty(name="Molecule File Stop Index",default=0)
   mol_file_step_index = bpy.props.IntProperty(name="Molecule File Step Index",default=1)
+  mol_viz_list = bpy.props.CollectionProperty(type=MCellStringProperty,name="Molecule Viz Name List")
 
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
@@ -193,12 +196,12 @@ class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
     MolVizUpdate(context,i)
     return('FINISHED')
   
-  def draw(self,context):
-    layout = self.layout
+#  def draw(self,context):
+#    layout = self.layout
     
-    mc = context.scene.mcell
-    col = layout.col()
-    col.prop(mc.mol_viz,"mol_file_index",text="")
+#    mc = context.scene.mcell
+#    col = layout.col()
+#    col.prop(mc.mol_viz,"mol_file_index",text="")
   
 
 class MCELL_OT_mol_viz_next(bpy.types.Operator):
@@ -222,7 +225,7 @@ class MCELL_OT_mol_viz_prev(bpy.types.Operator):
   bl_label = "Step to Previous Molecule File"
   bl_description = "Step to Previous MCell Molecule File for Visualization"
   bl_options = {'REGISTER'}
-  
+    
   def execute(self,context):
     mc = context.scene.mcell
     i = mc.mol_viz.mol_file_index - mc.mol_viz.mol_file_step_index
@@ -250,11 +253,17 @@ def MolVizUpdate(context,i):
 
 def MolVizDelete(context):
 
-  obj_name_pattern = '%s[*' % ('mol_*')
-  bpy.ops.object.select_pattern(pattern=obj_name_pattern,extend=False)
+  mc = context.scene.mcell
+  for mol_name in mc.mol_viz.mol_viz_list:
+    bpy.ops.object.select_name(name=mol_name.name,extend=True)
+
   bpy.ops.object.delete()
   
+  # Reset mol_viz_list to empty
+  for i in range(len(mc.mol_viz.mol_viz_list)-1,-1,-1):
+    mc.mol_viz.mol_viz_list.remove(i)
 
+    
 def MolVizFileRead(context,filepath):
       
   try:
@@ -271,6 +280,7 @@ def MolVizFileRead(context,filepath):
       mols_obj.name = 'molecules'
       
     if len(mol_data) > 0:
+      mc = context.scene.mcell
       meshes = bpy.data.meshes
       mats = bpy.data.materials
       objs = bpy.data.objects
@@ -278,88 +288,73 @@ def MolVizFileRead(context,filepath):
       scn_objs = scn.objects
       z_axis = mathutils.Vector((0.0, 0.0, 1.0))
       ident_mat = mathutils.Matrix.Translation(mathutils.Vector((0.0,0.0,0.0)))
+      
       mol_dict = {}
+      mol_pos = []
+      mol_orient = []
     
       for n in range(len(mol_data)):
         mol_name = 'mol_%s' % (mol_data[n][0])
-        mol_pos = mol_data[n][1][0:3]
-        mol_orient= mol_data[n][1][3:]
-        
-        pobj_name = '%s[%05d]' % (mol_name,0)
+        if not mol_dict.get(mol_name):
+          mol_dict[mol_name] = [[],[]]
+          new_item = mc.mol_viz.mol_viz_list.add()
+          new_item.name = mol_name
+        mol_dict[mol_name][0].extend(mol_data[n][1][0:3])
+        mol_dict[mol_name][1].extend(mol_data[n][1][3:])
+      
+      for mol_name in mol_dict.keys():
         mol_mat_name='%s_mat'%(mol_name)
+        mol_pos = mol_dict[mol_name][0]
+        mol_orient = mol_dict[mol_name][1]
       
-#         name mesh shape template according to molecule type (2D or 3D)
-#            Can now use shape from molecule properties if it exists
+#       Name mesh shape template according to molecule type (2D or 3D)
+#         TODO: we can now use shape from molecule properties if it exists
         if (mol_orient[0] != 0.0) | (mol_orient[1] != 0.0) | (mol_orient[2] != 0.0):
-          mol_mesh_name = '%s_shape' % (mol_name)
-          mol_obj_name = mol_mesh_name
+          mol_shape_mesh_name = '%s_shape' % (mol_name)
+          mol_shape_obj_name = mol_shape_mesh_name
         else:
-          mol_mesh_name = '%s_shape' % (mol_name)
-          mol_obj_name = mol_mesh_name
+          mol_shape_mesh_name = '%s_shape' % (mol_name)
+          mol_shape_obj_name = mol_shape_mesh_name
       
-#        Look-up mesh shape template and create if needed
+#       Look-up mesh shape template and create if needed
         
-        mol_mesh = meshes.get(mol_mesh_name)
-        if not mol_mesh:
+        mol_shape_obj = objs.get(mol_shape_obj_name)
+        if not mol_shape_obj:
           bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=0, size=0.01)
-          mol_obj = context.active_object
-          mol_obj.name = mol_obj_name
-          mol_mesh = mol_obj.data
-          mol_mesh.name = mol_mesh_name
-        
-
-#        Look-up material and create if needed and associate with mesh shape
+          mol_shape_obj = context.active_object
+          mol_shape_obj.name = mol_shape_obj_name        
+        mol_shape_mesh = mol_shape_obj.data
+        mol_shape_mesh.name = mol_shape_mesh_name
+      
+#       Look-up material and create if needed and associate with mesh shape
         mol_mat = mats.get(mol_mat_name)
         if not mol_mat:
           mol_mat = mats.new(mol_mat_name)
           mol_mat.diffuse_color = [1.0, 0.0, 0.0]
-          if not mol_mesh.materials.get(mol_mat_name):
-            mol_mesh.materials.append(mol_mat)
-            
-# Create new mol_dict entry and zero counter for mol_name if necessary
-        try:
-          mol_n = mol_dict[mol_name]
-        except KeyError:
-          mol_dict[mol_name] = 0
-          mol_n = 0
-          obj_name_pattern = '%s[*' % (mol_name)
-          bpy.ops.object.select_pattern(pattern=obj_name_pattern,extend=False)
-          if context.selected_objects:
-            bpy.ops.object.parent_clear()
+          if not mol_shape_mesh.materials.get(mol_mat_name):
+            mol_shape_mesh.materials.append(mol_mat)
 
-        obj_name = '%s[%05d]' % (mol_name,mol_n)
-          
-        obj = objs.get(obj_name)
-        if not obj:
-          obj = objs.new(obj_name,mol_mesh)
-
-        if not scn_objs.get(obj_name):
-          scn_objs.link(obj)
-                           
-        mol_dict[mol_name]=mol_n+1
+#       Create mol mesh to hold molecule positions
+        mol_pos_mesh_name = '%s_pos' % (mol_name)
+        mol_pos_mesh = meshes.get(mol_pos_mesh_name)
+        if mol_pos_mesh:
+          meshes.remove(mol_pos_mesh)
         
-        if (mol_orient[0] != 0.0) | (mol_orient[1] != 0.0) | (mol_orient[2] != 0.0):
-          obj_axis = mathutils.Vector(mol_orient)
-          rot_angle = obj_axis.angle(z_axis)
-          rot_axis = z_axis.cross(obj_axis).normalize()
-          rot_mat = mathutils.Matrix.Rotation(rot_angle,4,rot_axis)
-        else:
-          rot_mat = ident_mat
+        mol_pos_mesh = meshes.new(mol_pos_mesh_name)    
+        mol_pos_mesh.vertices.add(len(mol_pos)//3)
+        mol_pos_mesh.vertices.foreach_set("co",mol_pos)
+        mol_pos_mesh.vertices.foreach_set("normal",mol_orient)
+                      
+        mol_obj = objs.get(mol_name)
+        if not mol_obj:
+          mol_obj = objs.new(mol_name,mol_pos_mesh)
 
-        trans_vec = mathutils.Vector(mol_pos)
-        trans_mat = mathutils.Matrix.Translation(trans_vec)
-        obj_mat = rot_mat*trans_mat
-        obj.matrix_world = obj_mat
-    
-    for key in mol_dict.keys():
-      pobj_name = '%s[%05d]' % (key,0)
-      obj_name_pattern = '%s[*' % (key)
-      bpy.ops.object.select_name(name=pobj_name)
-      bpy.ops.object.select_pattern(pattern=obj_name_pattern,extend=True)
-      bpy.ops.object.parent_set()
-      bpy.ops.object.select_all(action='DESELECT')
-      pobj = objs[pobj_name]
-      pobj.parent = mols_obj
+        if not scn_objs.get(mol_name):
+          scn_objs.link(mol_obj)
+                               
+        mol_shape_obj.parent = mol_obj
+        mol_obj.dupli_type = 'VERTS'
+        mol_obj.parent = mols_obj
       
           
     utime = resource.getrusage(resource.RUSAGE_SELF)[0]-begin
