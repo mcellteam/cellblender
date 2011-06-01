@@ -74,6 +74,7 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
 
 # See notes below for errors in documentation
 
+# Property group for molecule species (Define Molecules Panel)
 class MCellSpeciesProperty(bpy.types.PropertyGroup):
   name = bpy.props.StringProperty(name="Molecule Name")
   type_enum = [
@@ -90,6 +91,7 @@ class MCellStringProperty(bpy.types.PropertyGroup):
   name = bpy.props.StringProperty(name="Text")
   
 
+# Property group for for molecule visualization (Visualize Simulation Results Panel)
 class MCellMolVizProperty(bpy.types.PropertyGroup):
   mol_file_dir = bpy.props.StringProperty(name="Molecule File Dir",subtype="NONE")
   mol_file_list = bpy.props.CollectionProperty(type=MCellStringProperty,name="Molecule File Name List")
@@ -102,7 +104,10 @@ class MCellMolVizProperty(bpy.types.PropertyGroup):
   mol_viz_list = bpy.props.CollectionProperty(type=MCellStringProperty,name="Molecule Viz Name List")
 
 
+# Main MCell MDL Class:
 class MCellPropertyGroup(bpy.types.PropertyGroup):
+  # Note: should add one pointer property slot per GUI panel (like mol_viz).  Right now species list
+  #   and active_mol_index are exposed here but should be grouped in a PropertyGroup.
   mol_viz = bpy.props.PointerProperty(type=MCellMolVizProperty,name="Mol Viz Settings")
   species_list = bpy.props.CollectionProperty(type=MCellSpeciesProperty,name="Molecule List")
   active_mol_index = bpy.props.IntProperty(name="Active Molecule Index",default=0)
@@ -318,7 +323,6 @@ def MolVizFileRead(context,filepath):
           mol_shape_obj_name = mol_shape_mesh_name
       
 #       Look-up mesh shape template and create if needed
-        
         mol_shape_mesh = meshes.get(mol_shape_mesh_name)
         if not mol_shape_mesh:
           bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=0, size=0.01)
@@ -330,7 +334,7 @@ def MolVizFileRead(context,filepath):
           mol_shape_obj = objs.get(mol_shape_obj_name)
           
       
-#       Look-up material and create if needed and associate with mesh shape
+#       Look-up material and create if needed. Associate material with mesh shape
         mol_mat = mats.get(mol_mat_name)
         if not mol_mat:
           mol_mat = mats.new(mol_mat_name)
