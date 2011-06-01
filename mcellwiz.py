@@ -254,6 +254,7 @@ def MolVizUpdate(context,i):
 def MolVizDelete(context):
 
   mc = context.scene.mcell
+  bpy.ops.object.select_all(action='DESELECT')
   for mol_name in mc.mol_viz.mol_viz_list:
     bpy.ops.object.select_name(name=mol_name.name,extend=True)
 
@@ -318,21 +319,24 @@ def MolVizFileRead(context,filepath):
       
 #       Look-up mesh shape template and create if needed
         
-        mol_shape_obj = objs.get(mol_shape_obj_name)
-        if not mol_shape_obj:
+        mol_shape_mesh = meshes.get(mol_shape_mesh_name)
+        if not mol_shape_mesh:
           bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=0, size=0.01)
           mol_shape_obj = context.active_object
           mol_shape_obj.name = mol_shape_obj_name        
-        mol_shape_mesh = mol_shape_obj.data
-        mol_shape_mesh.name = mol_shape_mesh_name
+          mol_shape_mesh = mol_shape_obj.data
+          mol_shape_mesh.name = mol_shape_mesh_name
+        else:
+          mol_shape_obj = objs.get(mol_shape_obj_name)
+          
       
 #       Look-up material and create if needed and associate with mesh shape
         mol_mat = mats.get(mol_mat_name)
         if not mol_mat:
           mol_mat = mats.new(mol_mat_name)
           mol_mat.diffuse_color = [1.0, 0.0, 0.0]
-          if not mol_shape_mesh.materials.get(mol_mat_name):
-            mol_shape_mesh.materials.append(mol_mat)
+        if not mol_shape_mesh.materials.get(mol_mat_name):
+          mol_shape_mesh.materials.append(mol_mat)
 
 #       Create mol mesh to hold molecule positions
         mol_pos_mesh_name = '%s_pos' % (mol_name)
