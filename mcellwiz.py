@@ -6,27 +6,52 @@ import resource
 import re
 from math import *
 
+class MCELL_PT_project_setup(bpy.types.Panel): #$
+  bl_label = "MCell Project Setup"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  
+  def draw(self, context):
+    layout = self.layout
+    mc = context.scene.mcell
+    
+    row=layout.row()
+
+
+class MCELL_PT_wiz_actions(bpy.types.Panel): #$
+  bl_label = "MCellWiz Actions"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  
+  def draw(self, context):
+    layout = self.layout
+    mc = context.scene.mcell
+    
+    row=layout.row()
+
 
 class MCELL_PT_viz_results(bpy.types.Panel):
   bl_label = "Visualize Simulation Results"
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
-
+  
   def draw(self, context):
     layout = self.layout
-
-    mc = context.scene.mcell 
-
+    
+    mc = context.scene.mcell
+    
     row=layout.row()
     row.operator("mcell.set_mol_viz_dir",text="Set Molecule Viz Directory",icon="FILESEL")
-#    layout.prop(mc,"mol_file_path",text="Molecule Viz Directory")
+    #    layout.prop(mc,"mol_file_path",text="Molecule Viz Directory")
     row = layout.row()
     row.label(text="Molecule Viz Directory:  "+mc.mol_viz.mol_file_dir)
     row = layout.row()
     row.label(text="Current Molecule File:  "+mc.mol_viz.mol_file_name)
     row = layout.row()
-    row.template_list(mc.mol_viz,"mol_file_list",mc.mol_viz,"mol_file_index",rows=2)   
+    row.template_list(mc.mol_viz,"mol_file_list",mc.mol_viz,"mol_file_index",rows=2)
     row = layout.row()
     col = row.column(align=True)
     col.operator("mcell.mol_viz_prev",icon="PLAY_REVERSE",text="")
@@ -34,26 +59,63 @@ class MCELL_PT_viz_results(bpy.types.Panel):
     col.operator("mcell.mol_viz_set_index",text=str(mc.mol_viz.mol_file_index))
     col = row.column(align=True)
     col.operator("mcell.mol_viz_next",icon="PLAY",text="")
-#    col = row.column()
-#    col.label(text="Molecule File Path:  "+mc.mol_file_path)
-#    col = row.column(align=True)
-#    col.operator("mcell.molecule_file_read",text="",icon="FILESEL")
-#    layout.prop(mcell.molecule_file_read,"filepath",text="Molecule File Path")
-      
-#  def MolFileRead(self, context)
+    #    col = row.column()
+    #    col.label(text="Molecule File Path:  "+mc.mol_file_path)
+    #    col = row.column(align=True)
+    #    col.operator("mcell.molecule_file_read",text="",icon="FILESEL")
+    #    layout.prop(mcell.molecule_file_read,"filepath",text="Molecule File Path")
   
+    
+
+class MCELL_PT_utilities(bpy.types.Panel): #$
+  bl_label = "Utilities"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  
+  def draw(self, context):
+    layout = self.layout
+    mc = context.scene.mcell
+    
+    row=layout.row()
+
+class MCELL_PT_user_model_parameters(bpy.types.Panel): #$
+  bl_label = "User-Defined Model Parameters"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  
+  def draw(self, context):
+    layout = self.layout
+    mc = context.scene.mcell
+    
+    row=layout.row()
+
+
+class MCELL_PT_initialization(bpy.types.Panel): #$
+  bl_label = "MCell Model Initialization"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  
+  def draw(self, context):
+    layout = self.layout
+    mc = context.scene.mcell
+    
+    row=layout.row()
+
 
 class MCELL_PT_define_molecules(bpy.types.Panel):
   bl_label = "Define Molecules"
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
-
+  
   def draw(self, context):
     layout = self.layout
-
-    mc = context.scene.mcell 
-
+    
+    mc = context.scene.mcell
+    
     row = layout.row()
     row.label(text="Defined Molecule Types:", icon='FORCE_LENNARDJONES')
     row = layout.row()
@@ -75,21 +137,85 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
 # See notes below for errors in documentation
 
 # Property group for molecule species (Define Molecules Panel)
+
+class MCELL_PT_define_reactions(bpy.types.Panel): #$
+  bl_label = "Define Reactions"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  
+  def draw(self, context):
+    layout = self.layout
+    mc = context.scene.mcell
+    
+    row=layout.row()
+
+
+
+class MCELL_PT_define_surface_classes(bpy.types.Panel): #$
+  bl_label = "Define Surface Classes"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  
+  def draw(self, context):
+    layout = self.layout
+    mc = context.scene.mcell
+    
+    row=layout.row()
+
+class MCELL_PT_molecule_placement(bpy.types.Panel): #$
+  bl_label = "Molecule Placement"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  
+  def draw(self, context):
+    layout = self.layout
+    mc = context.scene.mcell
+    
+    row=layout.row()
+
+class MCELL_PT_reaction_output_settings(bpy.types.Panel): #$
+  bl_label = "Reaction Output Settings"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  
+  def draw(self, context):
+    layout = self.layout
+    mc = context.scene.mcell
+    
+    row=layout.row()
+
+class MCELL_PT_visualization_output_settings(bpy.types.Panel): #$
+  bl_label = "Visualization Output Settings"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  
+  def draw(self, context):
+    layout = self.layout
+    mc = context.scene.mcell
+    
+    row=layout.row()
+
+
 class MCellSpeciesProperty(bpy.types.PropertyGroup):
   name = bpy.props.StringProperty(name="Molecule Name")
   type_enum = [
                     ('2D','2D','2D'),
                     ('3D','3D','3D')]
-  type = bpy.props.EnumProperty(items=type_enum,name="Molecule Type")
+  type = bpy.props.EnumProperty(items=type_enum,name="Molecule Type") #jj variable name is reserved word []
   diffusion_constant = bpy.props.FloatProperty(name="Diffusion Constant",precision=4)
   target_only = bpy.props.BoolProperty(name="Target Only")
   custom_time_step = bpy.props.FloatProperty(name="Custom Time Step")
   custom_space_step = bpy.props.FloatProperty(name="Custom Space Step")
   
-  
+
 class MCellStringProperty(bpy.types.PropertyGroup):
   name = bpy.props.StringProperty(name="Text")
-  
+
 
 # Property group for for molecule visualization (Visualize Simulation Results Panel)
 class MCellMolVizProperty(bpy.types.PropertyGroup):
@@ -112,7 +238,6 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
   species_list = bpy.props.CollectionProperty(type=MCellSpeciesProperty,name="Molecule List")
   active_mol_index = bpy.props.IntProperty(name="Active Molecule Index",default=0)
 
-
 class MCELL_OT_molecule_add(bpy.types.Operator):
   bl_idname = "mcell.molecule_add"
   bl_label = "Add Molecule"
@@ -123,8 +248,8 @@ class MCELL_OT_molecule_add(bpy.types.Operator):
     context.scene.mcell.species_list.add()
     context.scene.mcell.active_mol_index = len(bpy.context.scene.mcell.species_list)-1
     return {'FINISHED'}
-  
  
+
 class MCELL_OT_molecule_remove(bpy.types.Operator):
   bl_idname = "mcell.molecule_remove"
   bl_label = "Remove Molecule"
@@ -144,14 +269,14 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
   bl_label = "Read Molecule File"
   bl_description = "Read an MCell Molecule File for Visualization"
   bl_options = {'REGISTER'}
-
+  
   filepath = bpy.props.StringProperty(subtype="FILE_PATH")
-
-# Note: use classmethod "poll" to determine when runability of operator is valid
-#  @classmethod
-#  def poll(cls, context):
-#    return context.object is not None
-
+  
+  # Note: use classmethod "poll" to determine when runability of operator is valid
+  #  @classmethod
+  #  def poll(cls, context):
+  #    return context.object is not None
+  
   def execute(self, context):
     
     mc = context.scene.mcell
@@ -164,24 +289,25 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     # Reset mol_file_list to empty
     for i in range(mc.mol_viz.mol_file_num-1,-1,-1):
       mc.mol_viz.mol_file_list.remove(i)
-      
+    
     mc.mol_viz.mol_file_dir=mol_file_dir
     i = 0
     for mol_file_name in mol_file_list:
       new_item = mc.mol_viz.mol_file_list.add()
       new_item.name = os.path.basename(mol_file_name)
       i+=1
-      
+    
     mc.mol_viz.mol_file_num = len(mc.mol_viz.mol_file_list)
     mc.mol_viz.mol_file_stop_index = mc.mol_viz.mol_file_num-1
     mc.mol_viz.mol_file_index = 0
-      
+    
     MolVizUpdate(context,0)
     return {'FINISHED'}
-
+  
   def invoke(self, context, event):
     context.window_manager.fileselect_add(self)
     return {'RUNNING_MODAL'}
+
 
 
 class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
@@ -196,18 +322,18 @@ class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
     if (i > mc.mol_viz.mol_file_stop_index):
       i = mc.mol_viz.mol_file_stop_index
     if (i < mc.mol_viz.mol_file_start_index):
-      i = mc.mol_viz.mol_file_start_index    
+      i = mc.mol_viz.mol_file_start_index
     mc.mol_viz.mol_file_index = i
     MolVizUpdate(context,i)
     return('FINISHED')
-  
+
 #  def draw(self,context):
 #    layout = self.layout
-    
+
 #    mc = context.scene.mcell
 #    col = layout.col()
 #    col.prop(mc.mol_viz,"mol_file_index",text="")
-  
+
 
 class MCELL_OT_mol_viz_next(bpy.types.Operator):
   bl_idname = "mcell.mol_viz_next"
@@ -230,7 +356,7 @@ class MCELL_OT_mol_viz_prev(bpy.types.Operator):
   bl_label = "Step to Previous Molecule File"
   bl_description = "Step to Previous MCell Molecule File for Visualization"
   bl_options = {'REGISTER'}
-    
+  
   def execute(self,context):
     mc = context.scene.mcell
     i = mc.mol_viz.mol_file_index - mc.mol_viz.mol_file_step_index
@@ -242,41 +368,40 @@ class MCELL_OT_mol_viz_prev(bpy.types.Operator):
 
 
 def MolVizUpdate(context,i):
-
   filename = context.scene.mcell.mol_viz.mol_file_list[i].name
   context.scene.mcell.mol_viz.mol_file_name = filename
-  filepath = os.path.join(context.scene.mcell.mol_viz.mol_file_dir,filename) 
+  filepath = os.path.join(context.scene.mcell.mol_viz.mol_file_dir,filename)
   
   global_undo = bpy.context.user_preferences.edit.use_global_undo
-  bpy.context.user_preferences.edit.use_global_undo = False   
-   
+  bpy.context.user_preferences.edit.use_global_undo = False
+  
   MolVizDelete(context)
   MolVizFileRead(context,filepath)
   
   bpy.context.user_preferences.edit.use_global_undo = global_undo
-  
+
 
 def MolVizDelete(context):
-
+  
   mc = context.scene.mcell
   bpy.ops.object.select_all(action='DESELECT')
   for mol_name in mc.mol_viz.mol_viz_list:
     bpy.ops.object.select_name(name=mol_name.name,extend=True)
-
-  bpy.ops.object.delete()
+  
+  bpy.ops.object.delete()  # jj double check this intendation
   
   # Reset mol_viz_list to empty
   for i in range(len(mc.mol_viz.mol_viz_list)-1,-1,-1):
     mc.mol_viz.mol_viz_list.remove(i)
 
     
+
 def MolVizFileRead(context,filepath):
-      
+  
   try:
     
     begin = resource.getrusage(resource.RUSAGE_SELF)[0]
     print ('Processing molecules from file:  %s' % (filepath))
-
     mol_data = [[s.split()[0], [float(x) for x in s.split()[1:]]] for s in open(filepath,'r').read().split('\n') if s != '']
     
     mols_obj = bpy.data.objects.get('molecules')
@@ -284,7 +409,7 @@ def MolVizFileRead(context,filepath):
       bpy.ops.object.add()
       mols_obj = context.selected_objects[0]
       mols_obj.name = 'molecules'
-      
+    
     if len(mol_data) > 0:
       mc = context.scene.mcell
       meshes = bpy.data.meshes
@@ -298,7 +423,7 @@ def MolVizFileRead(context,filepath):
       mol_dict = {}
       mol_pos = []
       mol_orient = []
-    
+      
       for n in range(len(mol_data)):
         mol_name = 'mol_%s' % (mol_data[n][0])
         if not mol_dict.get(mol_name):
@@ -312,7 +437,7 @@ def MolVizFileRead(context,filepath):
         mol_mat_name='%s_mat'%(mol_name)
         mol_pos = mol_dict[mol_name][0]
         mol_orient = mol_dict[mol_name][1]
-      
+
 #       Name mesh shape template according to molecule type (2D or 3D)
 #         TODO: we can now use shape from molecule properties if it exists
         if (mol_orient[0] != 0.0) | (mol_orient[1] != 0.0) | (mol_orient[2] != 0.0):
@@ -321,19 +446,19 @@ def MolVizFileRead(context,filepath):
         else:
           mol_shape_mesh_name = '%s_shape' % (mol_name)
           mol_shape_obj_name = mol_shape_mesh_name
-      
+
 #       Look-up mesh shape template and create if needed
         mol_shape_mesh = meshes.get(mol_shape_mesh_name)
         if not mol_shape_mesh:
           bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=0, size=0.01)
           mol_shape_obj = context.active_object
-          mol_shape_obj.name = mol_shape_obj_name        
+          mol_shape_obj.name = mol_shape_obj_name
           mol_shape_mesh = mol_shape_obj.data
           mol_shape_mesh.name = mol_shape_mesh_name
         else:
           mol_shape_obj = objs.get(mol_shape_obj_name)
-          
       
+
 #       Look-up material and create if needed. Associate material with mesh shape
         mol_mat = mats.get(mol_mat_name)
         if not mol_mat:
@@ -341,33 +466,31 @@ def MolVizFileRead(context,filepath):
           mol_mat.diffuse_color = [1.0, 0.0, 0.0]
         if not mol_shape_mesh.materials.get(mol_mat_name):
           mol_shape_mesh.materials.append(mol_mat)
-
-#       Create mol mesh to hold molecule positions
+#       Create mol mesh to hold molecule positions, jj above del line
         mol_pos_mesh_name = '%s_pos' % (mol_name)
         mol_pos_mesh = meshes.get(mol_pos_mesh_name)
         if mol_pos_mesh:
           meshes.remove(mol_pos_mesh)
         
-        mol_pos_mesh = meshes.new(mol_pos_mesh_name)    
+        mol_pos_mesh = meshes.new(mol_pos_mesh_name)
         mol_pos_mesh.vertices.add(len(mol_pos)//3)
         mol_pos_mesh.vertices.foreach_set("co",mol_pos)
         mol_pos_mesh.vertices.foreach_set("normal",mol_orient)
-                      
+        
         mol_obj = objs.get(mol_name)
         if not mol_obj:
           mol_obj = objs.new(mol_name,mol_pos_mesh)
-
         if not scn_objs.get(mol_name):
           scn_objs.link(mol_obj)
-                               
+        
         mol_shape_obj.parent = mol_obj
         mol_obj.dupli_type = 'VERTS'
         mol_obj.parent = mols_obj
-      
           
+    
     utime = resource.getrusage(resource.RUSAGE_SELF)[0]-begin
     print ('   Processed %d molecules in %g seconds\n' % (len(mol_data),utime))
-        
+  
   except IOError:
     print(('\n***** File not found: %s\n') % (filepath))
   except ValueError:
@@ -379,7 +502,7 @@ def register():
   bpy.utils.register_class(MCellStringProperty)
   bpy.utils.register_class(MCellMolVizProperty)
   bpy.utils.register_class(MCellPropertyGroup)
-  bpy.types.Scene.mcell = bpy.props.PointerProperty(type=MCellPropertyGroup)
+  bpy.types.Scene.mcell = bpy.props.PointerProperty(type=MCellPropertyGroup) # mcell object takes on properties of MCellProperty group.  In sample code this does not have to happen in registration. But makes logical sense here
 #  bpy.types.Scene.mcell.mol_viz = bpy.props.PointerProperty(type=MCellMolVizProperty)
   bpy.utils.register_class(MCELL_OT_set_mol_viz_dir)
   bpy.utils.register_class(MCELL_OT_molecule_add)
@@ -388,14 +511,24 @@ def register():
   bpy.utils.register_class(MCELL_OT_mol_viz_next)
   bpy.utils.register_class(MCELL_OT_mol_viz_prev)
   bpy.utils.register_class(MCELL_PT_viz_results)
-  bpy.utils.register_class(MCELL_PT_define_molecules)
+  bpy.utils.register_class(MCELL_PT_define_molecules) # subsequent PTs are listed in order of UI presentation and assume no dependincies among them. This may change. JJ
+  bpy.utils.register_class(MCELL_PT_project_setup)
+  bpy.utils.register_class(MCELL_PT_wiz_actions)
+  bpy.utils.register_class(MCELL_PT_utilities)
+  bpy.utils.register_class(MCELL_PT_user_model_parameters)
+  bpy.utils.register_class(MCELL_PT_initialization)
+  bpy.utils.register_class(MCELL_PT_define_reactions)
+  bpy.utils.register_class(MCELL_PT_define_surface_classes)
+  bpy.utils.register_class(MCELL_PT_molecule_placement)
+  bpy.utils.register_class(MCELL_PT_reaction_output_settings)
+  bpy.utils.register_class(MCELL_PT_visualization_output_settings)
 
 
 def unregister():
 #  del bpy.types.Scene.mcell
   pass
-  
       
+
 if __name__ == '__main__':
   register()
 
