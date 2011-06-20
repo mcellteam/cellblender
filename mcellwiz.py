@@ -213,6 +213,7 @@ class MCellSpeciesProperty(bpy.types.PropertyGroup):
   custom_space_step = bpy.props.FloatProperty(name="Custom Space Step")
   
 
+# Generic PropertyGroup to hold strings for a ColletionProperty  
 class MCellStringProperty(bpy.types.PropertyGroup):
   name = bpy.props.StringProperty(name="Text")
 
@@ -269,7 +270,7 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
   bl_label = "Read Molecule File"
   bl_description = "Read an MCell Molecule File for Visualization"
   bl_options = {'REGISTER'}
-  
+
   filepath = bpy.props.StringProperty(subtype="FILE_PATH")
   
   # Note: use classmethod "poll" to determine when runability of operator is valid
@@ -400,8 +401,9 @@ def MolVizFileRead(context,filepath):
   
   try:
     
-    begin = resource.getrusage(resource.RUSAGE_SELF)[0]
-    print ('Processing molecules from file:  %s' % (filepath))
+#    begin = resource.getrusage(resource.RUSAGE_SELF)[0]
+#    print ('Processing molecules from file:  %s' % (filepath))
+
     mol_data = [[s.split()[0], [float(x) for x in s.split()[1:]]] for s in open(filepath,'r').read().split('\n') if s != '']
     
     mols_obj = bpy.data.objects.get('molecules')
@@ -487,10 +489,9 @@ def MolVizFileRead(context,filepath):
         mol_obj.dupli_type = 'VERTS'
         mol_obj.parent = mols_obj
           
-    
-    utime = resource.getrusage(resource.RUSAGE_SELF)[0]-begin
-    print ('   Processed %d molecules in %g seconds\n' % (len(mol_data),utime))
-  
+#    utime = resource.getrusage(resource.RUSAGE_SELF)[0]-begin
+#    print ('   Processed %d molecules in %g seconds\n' % (len(mol_data),utime))
+
   except IOError:
     print(('\n***** File not found: %s\n') % (filepath))
   except ValueError:
