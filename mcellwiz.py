@@ -4,6 +4,7 @@ import os
 import glob
 import resource
 import re
+import random
 from math import *
 
 class MCELL_PT_project_setup(bpy.types.Panel): #$
@@ -206,7 +207,7 @@ class MCellSpeciesProperty(bpy.types.PropertyGroup):
   type_enum = [
                     ('2D','2D','2D'),
                     ('3D','3D','3D')]
-  type = bpy.props.EnumProperty(items=type_enum,name="Molecule Type") #jj variable name is reserved word []
+  type = bpy.props.EnumProperty(items=type_enum,name="Molecule Type")
   diffusion_constant = bpy.props.FloatProperty(name="Diffusion Constant",precision=4)
   target_only = bpy.props.BoolProperty(name="Target Only")
   custom_time_step = bpy.props.FloatProperty(name="Custom Time Step")
@@ -389,7 +390,7 @@ def MolVizDelete(context):
   for mol_name in mc.mol_viz.mol_viz_list:
     bpy.ops.object.select_name(name=mol_name.name,extend=True)
   
-  bpy.ops.object.delete()  # jj double check this intendation
+  bpy.ops.object.delete()
   
   # Reset mol_viz_list to empty
   for i in range(len(mc.mol_viz.mol_viz_list)-1,-1,-1):
@@ -443,11 +444,15 @@ def MolVizFileRead(context,filepath):
 #       Name mesh shape template according to molecule type (2D or 3D)
 #         TODO: we can now use shape from molecule properties if it exists
         if (mol_orient[0] != 0.0) | (mol_orient[1] != 0.0) | (mol_orient[2] != 0.0):
+          is_vmol = False
           mol_shape_mesh_name = '%s_shape' % (mol_name)
           mol_shape_obj_name = mol_shape_mesh_name
         else:
+          is_vmol = True
           mol_shape_mesh_name = '%s_shape' % (mol_name)
           mol_shape_obj_name = mol_shape_mesh_name
+          for n in range(len(mol_orient)):
+            mol_orient[n] = random.uniform(-1.0,1.0)
 
 #       Look-up mesh shape template and create if needed
         mol_shape_mesh = meshes.get(mol_shape_mesh_name)
@@ -455,6 +460,7 @@ def MolVizFileRead(context,filepath):
           bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=0, size=0.01)
           mol_shape_obj = context.active_object
           mol_shape_obj.name = mol_shape_obj_name
+          mol_shape_obj.track_axis = "POS_Z" 
           mol_shape_mesh = mol_shape_obj.data
           mol_shape_mesh.name = mol_shape_mesh_name
         else:
@@ -468,7 +474,7 @@ def MolVizFileRead(context,filepath):
           mol_mat.diffuse_color = [1.0, 0.0, 0.0]
         if not mol_shape_mesh.materials.get(mol_mat_name):
           mol_shape_mesh.materials.append(mol_mat)
-#       Create mol mesh to hold molecule positions, jj above del line
+#       Create mol mesh to hold molecule positions
         mol_pos_mesh_name = '%s_pos' % (mol_name)
         mol_pos_mesh = meshes.get(mol_pos_mesh_name)
         if mol_pos_mesh:
@@ -487,6 +493,7 @@ def MolVizFileRead(context,filepath):
         
         mol_shape_obj.parent = mol_obj
         mol_obj.dupli_type = 'VERTS'
+        mol_obj.use_dupli_vertices_rotation=True
         mol_obj.parent = mols_obj
           
 #    utime = resource.getrusage(resource.RUSAGE_SELF)[0]-begin
