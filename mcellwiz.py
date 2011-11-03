@@ -327,7 +327,7 @@ class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
       i = mc.mol_viz.mol_file_start_index
     mc.mol_viz.mol_file_index = i
     MolVizUpdate(context,i)
-    return('FINISHED')
+    return{'FINISHED'}
 
 #  def draw(self,context):
 #    layout = self.layout
@@ -350,7 +350,7 @@ class MCELL_OT_mol_viz_next(bpy.types.Operator):
       i = mc.mol_viz.mol_file_stop_index
     mc.mol_viz.mol_file_index = i
     MolVizUpdate(context,i)
-    return('FINISHED')
+    return{'FINISHED'}
 
 
 class MCELL_OT_mol_viz_prev(bpy.types.Operator):
@@ -366,7 +366,8 @@ class MCELL_OT_mol_viz_prev(bpy.types.Operator):
       i = mc.mol_viz.mol_file_start_index
     mc.mol_viz.mol_file_index = i
     MolVizUpdate(context,i)
-    return('FINISHED')
+    return{'FINISHED'}
+
 
 
 def MolVizUpdate(context,i):
@@ -381,6 +382,14 @@ def MolVizUpdate(context,i):
   MolVizFileRead(context,filepath)
   
   bpy.context.user_preferences.edit.use_global_undo = global_undo
+
+
+
+def frame_change_handler(context):
+  mc = bpy.context.scene.mcell
+  mc.mol_viz.mol_file_index = bpy.context.scene.frame_current
+  bpy.ops.mcell.mol_viz_set_index()
+
 
 
 def MolVizDelete(context):
@@ -539,6 +548,8 @@ def unregister():
 
 if __name__ == '__main__':
   register()
+  bpy.app.handlers.frame_change_pre.append(frame_change_handler)
+#  bpy.app.handlers.render_pre.append(frame_change_handler)
 
 
 # Notes:
