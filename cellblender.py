@@ -1,3 +1,38 @@
+# ##### BEGIN GPL LICENSE BLOCK #####
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+# ##### END GPL LICENSE BLOCK #####
+
+# <pep8 compliant>
+
+
+bl_info = {
+    "name": "CellBlender",
+    "author": "Tom Bartol",
+    "version": (0,1),
+    "blender": (2, 6, 1),
+    "api": 42614,
+    "location": "Properties > Scene > CellBlender Panel",
+    "description": "CellBlender Modeling System for MCell",
+    "warning": "",
+    "wiki_url": "http://www.mcell.cnl.salk.edu",
+    "tracker_url": "",
+    "category": "Cell Modeling"
+}
+
+
 import bpy
 import mathutils
 import os
@@ -7,30 +42,54 @@ import re
 import random
 from math import *
 
-class MCELL_PT_project_setup(bpy.types.Panel): #$
-  bl_label = "CellBlender Project Setup"
+
+
+# See notes below for errors in documentation
+
+
+
+class MCELL_PT_project_settings(bpy.types.Panel):
+  bl_label = "CellBlender Project Settings"
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
   
   def draw(self, context):
     layout = self.layout
     mc = context.scene.mcell
     
     row=layout.row()
+    row.operator("mcell.set_project_dir",text="Set CellBlender Project Directory",icon="FILESEL")
+    row = layout.row()
+    row.label(text="Project Directory:  "+mc.project_settings.project_dir)
+    row = layout.row()
+    layout.prop(mc.project_settings,"base_name")
+    layout.separator()
+    row = layout.row()
+    row.label(text="Export Project")
+    row = layout.row()
+    layout.prop(mc.project_settings,"export_format")
+    row = layout.row()
+    layout.prop(mc.project_settings,"export_selection_only")
+    row = layout.row()
+    row.operator("mcell.export_project",text="Export CellBlender Project",icon="FILESEL")
 
 
-class MCELL_PT_wiz_actions(bpy.types.Panel): #$
+
+class MCELL_PT_sim_control(bpy.types.Panel):
   bl_label = "Simulation Control"
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
   
   def draw(self, context):
     layout = self.layout
     mc = context.scene.mcell
     
     row=layout.row()
+
 
 
 class MCELL_PT_viz_results(bpy.types.Panel):
@@ -38,6 +97,7 @@ class MCELL_PT_viz_results(bpy.types.Panel):
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
   
   def draw(self, context):
     layout = self.layout
@@ -65,11 +125,13 @@ class MCELL_PT_viz_results(bpy.types.Panel):
     
 
 
-class MCELL_PT_utilities(bpy.types.Panel): #$
+
+class MCELL_PT_utilities(bpy.types.Panel):
   bl_label = "Utilities"
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
   
   def draw(self, context):
     layout = self.layout
@@ -77,11 +139,14 @@ class MCELL_PT_utilities(bpy.types.Panel): #$
     
     row=layout.row()
 
-class MCELL_PT_user_model_parameters(bpy.types.Panel): #$
+
+
+class MCELL_PT_user_model_parameters(bpy.types.Panel):
   bl_label = "User-Defined Model Parameters"
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
   
   def draw(self, context):
     layout = self.layout
@@ -90,17 +155,20 @@ class MCELL_PT_user_model_parameters(bpy.types.Panel): #$
     row=layout.row()
 
 
-class MCELL_PT_initialization(bpy.types.Panel): #$
+
+class MCELL_PT_initialization(bpy.types.Panel):
   bl_label = "MCell Model Initialization"
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
   
   def draw(self, context):
     layout = self.layout
     mc = context.scene.mcell
     
     row=layout.row()
+
 
 
 class MCELL_PT_define_molecules(bpy.types.Panel):
@@ -108,6 +176,7 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
   
   def draw(self, context):
     layout = self.layout
@@ -132,15 +201,13 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
       layout.prop(mol,"custom_space_step")
 
 
-# See notes below for errors in documentation
 
-# Property group for molecule species (Define Molecules Panel)
-
-class MCELL_PT_define_reactions(bpy.types.Panel): #$
+class MCELL_PT_define_reactions(bpy.types.Panel):
   bl_label = "Define Reactions"
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
   
   def draw(self, context):
     layout = self.layout
@@ -166,11 +233,12 @@ class MCELL_PT_define_reactions(bpy.types.Panel): #$
 
 
 
-class MCELL_PT_define_surface_classes(bpy.types.Panel): #$
+class MCELL_PT_define_surface_classes(bpy.types.Panel):
   bl_label = "Define Surface Classes"
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
   
   def draw(self, context):
     layout = self.layout
@@ -178,11 +246,14 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel): #$
     
     row=layout.row()
 
-class MCELL_PT_molecule_placement(bpy.types.Panel): #$
+
+
+class MCELL_PT_molecule_placement(bpy.types.Panel):
   bl_label = "Molecule Placement"
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
   
   def draw(self, context):
     layout = self.layout
@@ -190,11 +261,14 @@ class MCELL_PT_molecule_placement(bpy.types.Panel): #$
     
     row=layout.row()
 
-class MCELL_PT_reaction_output_settings(bpy.types.Panel): #$
+
+
+class MCELL_PT_reaction_output_settings(bpy.types.Panel):
   bl_label = "Reaction Output Settings"
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
   
   def draw(self, context):
     layout = self.layout
@@ -202,17 +276,71 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel): #$
     
     row=layout.row()
 
-class MCELL_PT_visualization_output_settings(bpy.types.Panel): #$
+
+
+class MCELL_PT_visualization_output_settings(bpy.types.Panel):
   bl_label = "Visualization Output Settings"
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
   
   def draw(self, context):
     layout = self.layout
     mc = context.scene.mcell
     
     row=layout.row()
+
+
+
+class MCELL_PT_define_surface_regions(bpy.types.Panel):
+  bl_label = "Define Surface Regions"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "object"
+  bl_options = {'DEFAULT_CLOSED'}
+  
+  def draw(self, context):
+    layout = self.layout
+    
+    obj_regs = context.object.mcell.regions
+    aobj = context.active_object
+    
+    row = layout.row()
+    row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
+    row = layout.row()
+    col = row.column()
+    col.template_list(obj_regs,"region_list",obj_regs,"active_reg_index",rows=2)
+    col = row.column(align=True)
+    col.operator("mcell.region_add",icon='ZOOMIN',text="")
+    col.operator("mcell.region_remove",icon='ZOOMOUT',text="")
+    row = layout.row()
+    if len(obj_regs.region_list)>0:
+      reg = obj_regs.region_list[obj_regs.active_reg_index]
+      layout.prop(reg,"name")
+    if aobj.mode == 'EDIT':
+      row = layout.row(align=True)
+      row.operator("mcell.region_faces_assign",text="assign")
+      row.operator("mcell.region_faces_remove",text="remove")
+      row.operator("mcell.region_faces_select",text="select")
+      row.operator("mcell.region_faces_deselect",text="deselect")
+
+
+#Custom Properties
+
+class MCellSurfaceRegionFaceProperty(bpy.types.PropertyGroup):
+  index = bpy.props.IntProperty(name="Face Index")
+
+
+class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
+  name = bpy.props.StringProperty(name="Region Name")
+  faces = bpy.props.CollectionProperty(type=MCellSurfaceRegionFaceProperty,name="Surface Region List")
+  active_face_index = bpy.props.IntProperty(name="Active Face Index",default=0)
+
+
+class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
+  region_list = bpy.props.CollectionProperty(type=MCellSurfaceRegionProperty,name="Surface Region List")
+  active_reg_index = bpy.props.IntProperty(name="Active Region Index",default=0)
 
 
 class MCellSpeciesProperty(bpy.types.PropertyGroup):
@@ -231,21 +359,30 @@ class MCellSpeciesProperty(bpy.types.PropertyGroup):
 class MCellStringProperty(bpy.types.PropertyGroup):
   name = bpy.props.StringProperty(name="Text")
 
+
 class MCellReactionProperty(bpy.types.PropertyGroup):
   name = bpy.props.StringProperty(name="The Reaction")
   rxn_name = bpy.props.StringProperty(name="Reaction Name")
   reactants = bpy.props.StringProperty(name="Reactants")
   products = bpy.props.StringProperty(name="Products")
   type_enum = [
-                    ('irreversible','->',''),
-                    ('reversible','<->','')]
+                ('irreversible','->',''),
+                ('reversible','<->','')]
   type = bpy.props.EnumProperty(items=type_enum,name="Reaction Type")
   fwd_rate = bpy.props.FloatProperty(name="Forward Rate",precision=4)
   bkwd_rate = bpy.props.FloatProperty(name="Backward Rate",precision=4)
 
-class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
-  reaction_list = bpy.props.CollectionProperty(type=MCellReactionProperty,name="Reaction List")
-  active_rxn_index = bpy.props.IntProperty(name="Active Reaction Index",default=0)
+
+#Panel Properties:
+
+class MCellProjectPanelProperty(bpy.types.PropertyGroup):
+  base_name = bpy.props.StringProperty(name="Project Base Name")
+  project_dir = bpy.props.StringProperty(name="Project Directory")
+  export_format_enum = [
+                         ('mcell_mdl','MCell MDL Format','')]
+  export_format = bpy.props.EnumProperty(items=export_format_enum,name="Export Format",default="mcell_mdl")
+  export_selection_only = bpy.props.BoolProperty(name="Export Selected Objects Only",default=True)
+
 
 # Property group for for molecule visualization (Visualize Simulation Results Panel)
 class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
@@ -261,14 +398,192 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
   render_and_save = bpy.props.BoolProperty(name="Render & Save Images")
 
 
-# Main MCell MDL Class:
+class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
+  reaction_list = bpy.props.CollectionProperty(type=MCellReactionProperty,name="Reaction List")
+  active_rxn_index = bpy.props.IntProperty(name="Active Reaction Index",default=0)
+
+
+
+# Main MCell (CellBlender) Properties Class:
+
 class MCellPropertyGroup(bpy.types.PropertyGroup):
   # Note: should add one pointer property slot per GUI panel (like mol_viz).  Right now species list
   #   and active_mol_index are exposed here but should be grouped in a PropertyGroup.
+  project_settings = bpy.props.PointerProperty(type=MCellProjectPanelProperty,name="CellBlender Project Settings")
   mol_viz = bpy.props.PointerProperty(type=MCellMolVizPanelProperty,name="Mol Viz Settings")
   species_list = bpy.props.CollectionProperty(type=MCellSpeciesProperty,name="Molecule List")
   active_mol_index = bpy.props.IntProperty(name="Active Molecule Index",default=0)
   reactions = bpy.props.PointerProperty(type=MCellReactionsPanelProperty,name="Defined Reactions")
+
+
+
+# CellBlender Properties Class for Objects:
+
+class MCellObjectPropertyGroup(bpy.types.PropertyGroup):
+  regions = bpy.props.PointerProperty(type=MCellSurfaceRegionListProperty,name="Defined Surface Regions")
+
+
+
+#CellBlender Operators:
+
+class MCELL_OT_region_add(bpy.types.Operator):
+  bl_idname = "mcell.region_add"
+  bl_label = "Add New Surface Region"
+  bl_description = "Add a new surface region to an object"
+  bl_options = {'REGISTER', 'UNDO'}
+  
+  def execute(self,context):
+    context.object.mcell.regions.region_list.add()
+    context.object.mcell.regions.active_reg_index = len(bpy.context.object.mcell.regions.region_list)-1
+    return {'FINISHED'}
+ 
+
+
+class MCELL_OT_region_remove(bpy.types.Operator):
+  bl_idname = "mcell.region_remove"
+  bl_label = "Remove Surface Region"
+  bl_description = "Remove selected surface region from object"
+  bl_options = {'REGISTER', 'UNDO'}
+  
+  def execute(self,context):
+    context.object.mcell.regions.region_list.remove(bpy.context.object.mcell.regions.active_reg_index)
+    context.object.mcell.regions.active_reg_index = bpy.context.object.mcell.regions.active_reg_index-1
+    if (context.object.mcell.regions.active_reg_index<0):
+      context.object.mcell.regions.active_reg_index = 0
+    return {'FINISHED'}
+
+
+
+class MCELL_OT_region_faces_assign(bpy.types.Operator):
+  bl_idname = "mcell.region_faces_assign"
+  bl_label = "Assign Selected Faces To Surface Region"
+  bl_description = "Assign selected faces to surface region"
+  bl_options = {'REGISTER', 'UNDO'}
+  
+  def execute(self,context):
+    aobj = context.active_object
+    obj_regs = aobj.mcell.regions
+    if (aobj.data.total_face_sel > 0):
+      if not aobj.data.get('mcell'):
+        aobj.data['mcell'] = {}
+      if not aobj.data['mcell'].get('regions'):
+        aobj.data['mcell']['regions'] = {}
+      reg = obj_regs.region_list[obj_regs.active_reg_index]
+      if not aobj.data['mcell']['regions'].get(reg.name):
+        aobj.data['mcell']['regions'][reg.name] = []
+      mesh = aobj.data
+      face_set = set([])
+      for f in aobj.data['mcell']['regions'][reg.name]:
+        face_set.add(f)
+      bpy.ops.object.mode_set(mode='OBJECT')
+      for f in mesh.faces:
+        if f.select:
+          face_set.add(f.index)
+      bpy.ops.object.mode_set(mode='EDIT')
+
+      reg_faces = list(face_set)
+      reg_faces.sort()
+      aobj.data['mcell']['regions'][reg.name] = reg_faces
+          
+#    obj_regs = aobj.mcell.regions
+#    reg = obj_regs.region_list[obj_regs.active_reg_index]
+#    mesh = aobj.data
+#    for f in mesh.faces:
+#      if f.select:
+#        reg.faces.add()
+#        reg.active_face_index = len(reg.faces)-1
+#        reg.faces[reg.active_face_index].index = f.index
+        
+    return {'FINISHED'}
+ 
+
+
+class MCELL_OT_region_faces_remove(bpy.types.Operator):
+  bl_idname = "mcell.region_faces_remove"
+  bl_label = "Remove Selected Faces From Surface Region"
+  bl_description = "Remove selected faces from surface region"
+  bl_options = {'REGISTER', 'UNDO'}
+  
+  def execute(self,context):
+    aobj = context.active_object
+    obj_regs = aobj.mcell.regions
+    if (aobj.data.total_face_sel > 0):
+      if not aobj.data.get('mcell'):
+        aobj.data['mcell'] = {}
+      if not aobj.data['mcell'].get('regions'):
+        aobj.data['mcell']['regions'] = {}
+      reg = obj_regs.region_list[obj_regs.active_reg_index]
+      if not aobj.data['mcell']['regions'].get(reg.name):
+        aobj.data['mcell']['regions'][reg.name] = []
+      mesh = aobj.data
+      face_set = set(aobj.data['mcell']['regions'][reg.name].to_list())
+      bpy.ops.object.mode_set(mode='OBJECT')
+      for f in mesh.faces:
+        if f.select:
+          if f.index in face_set:
+            face_set.remove(f.index)
+      bpy.ops.object.mode_set(mode='EDIT')
+
+      reg_faces = list(face_set)
+      reg_faces.sort()
+      aobj.data['mcell']['regions'][reg.name] = reg_faces
+
+    return {'FINISHED'}
+ 
+
+
+class MCELL_OT_region_faces_select(bpy.types.Operator):
+  bl_idname = "mcell.region_faces_select"
+  bl_label = "Select Faces of Selected Surface Region"
+  bl_description = "Select faces of selected surface region"
+  bl_options = {'REGISTER', 'UNDO'}
+  
+  def execute(self,context):
+    aobj = context.active_object
+    obj_regs = aobj.mcell.regions
+    if not aobj.data.get('mcell'):
+      aobj.data['mcell'] = {}
+    if not aobj.data['mcell'].get('regions'):
+      aobj.data['mcell']['regions'] = {}
+    reg = obj_regs.region_list[obj_regs.active_reg_index]
+    if not aobj.data['mcell']['regions'].get(reg.name):
+      aobj.data['mcell']['regions'][reg.name] = []
+    mesh = aobj.data
+    face_set = set(aobj.data['mcell']['regions'][reg.name].to_list())
+    bpy.ops.object.mode_set(mode='OBJECT')
+    for f in face_set:
+      mesh.faces[f].select = True
+    bpy.ops.object.mode_set(mode='EDIT')
+
+    return {'FINISHED'}
+ 
+
+
+class MCELL_OT_region_faces_deselect(bpy.types.Operator):
+  bl_idname = "mcell.region_faces_deselect"
+  bl_label = "Deselect Faces of Selected Surface Region"
+  bl_description = "Deselect faces of selected surface region"
+  bl_options = {'REGISTER', 'UNDO'}
+  
+  def execute(self,context):
+    aobj = context.active_object
+    obj_regs = aobj.mcell.regions
+    if not aobj.data.get('mcell'):
+      aobj.data['mcell'] = {}
+    if not aobj.data['mcell'].get('regions'):
+      aobj.data['mcell']['regions'] = {}
+    reg = obj_regs.region_list[obj_regs.active_reg_index]
+    if not aobj.data['mcell']['regions'].get(reg.name):
+      aobj.data['mcell']['regions'][reg.name] = []
+    mesh = aobj.data
+    face_set = set(aobj.data['mcell']['regions'][reg.name].to_list())
+    bpy.ops.object.mode_set(mode='OBJECT')
+    for f in face_set:
+      mesh.faces[f].select = False
+    bpy.ops.object.mode_set(mode='EDIT')
+    return {'FINISHED'}
+ 
+
 
 class MCELL_OT_molecule_add(bpy.types.Operator):
   bl_idname = "mcell.molecule_add"
@@ -281,6 +596,7 @@ class MCELL_OT_molecule_add(bpy.types.Operator):
     context.scene.mcell.active_mol_index = len(bpy.context.scene.mcell.species_list)-1
     return {'FINISHED'}
  
+
 
 class MCELL_OT_molecule_remove(bpy.types.Operator):
   bl_idname = "mcell.molecule_remove"
@@ -296,6 +612,7 @@ class MCELL_OT_molecule_remove(bpy.types.Operator):
     return {'FINISHED'}
 
 
+
 class MCELL_OT_reaction_add(bpy.types.Operator):
   bl_idname = "mcell.reaction_add"
   bl_label = "Add Reaction"
@@ -307,6 +624,7 @@ class MCELL_OT_reaction_add(bpy.types.Operator):
     context.scene.mcell.reactions.active_rxn_index = len(bpy.context.scene.mcell.reactions.reaction_list)-1
     return {'FINISHED'}
  
+
 
 class MCELL_OT_reaction_remove(bpy.types.Operator):
   bl_idname = "mcell.reaction_remove"
@@ -320,6 +638,59 @@ class MCELL_OT_reaction_remove(bpy.types.Operator):
     if (context.scene.mcell.reactions.active_rxn_index<0):
       context.scene.mcell.reactions.active_rxn_index = 0
     return {'FINISHED'}
+
+
+
+class MCELL_OT_export_project(bpy.types.Operator):
+  bl_idname = "mcell.export_project"
+  bl_label = "Export CellBlender Project"
+  bl_description = "Export CellBlender Project"
+  bl_options = {'REGISTER'}
+  
+  def execute(self,context):
+    mc = context.scene.mcell
+    if mc.project_settings.export_format == 'mcell_mdl':
+      if not mc.project_settings.export_selection_only:
+        bpy.ops.object.select_by_type(type='MESH')
+      filepath = mc.project_settings.project_dir+'/'+mc.project_settings.base_name+'.geometry.mdl'
+      bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT',filepath=filepath)
+
+    return {'FINISHED'}
+
+
+
+class MCELL_OT_set_project_dir(bpy.types.Operator):
+  bl_idname = "mcell.set_project_dir"
+  bl_label = "Set CellBlender Project Directory"
+  bl_description = "Set CellBlender Project Directory"
+  bl_options = {'REGISTER','UNDO'}
+
+  filepath = bpy.props.StringProperty(subtype="FILE_PATH")
+  
+  # Note: use classmethod "poll" to determine when runability of operator is valid
+  #  @classmethod
+  #  def poll(cls, context):
+  #    return context.object is not None
+  
+  def execute(self, context):
+    
+    mc = context.scene.mcell
+    if (os.path.isdir(self.filepath)):
+      dir = self.filepath
+    else:
+      dir = os.path.dirname(self.filepath)
+    
+    # Reset mol_file_list to empty
+    for i in range(mc.mol_viz.mol_file_num-1,-1,-1):
+      mc.mol_viz.mol_file_list.remove(i)
+    
+    mc.project_settings.project_dir=dir
+    return {'FINISHED'}
+  
+  def invoke(self, context, event):
+    context.window_manager.fileselect_add(self)
+    return {'RUNNING_MODAL'}
+
 
 
 class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
@@ -393,6 +764,7 @@ class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
 #    col.prop(mc.mol_viz,"mol_file_index",text="")
 
 
+
 class MCELL_OT_mol_viz_next(bpy.types.Operator):
   bl_idname = "mcell.mol_viz_next"
   bl_label = "Step to Next Molecule File"
@@ -407,6 +779,7 @@ class MCELL_OT_mol_viz_next(bpy.types.Operator):
     mc.mol_viz.mol_file_index = i
     MolVizUpdate(mc,i)
     return{'FINISHED'}
+
 
 
 class MCELL_OT_mol_viz_prev(bpy.types.Operator):
@@ -425,6 +798,8 @@ class MCELL_OT_mol_viz_prev(bpy.types.Operator):
     return{'FINISHED'}
 
 
+
+#CellBlender helper functions:
 
 def MolVizUpdate(mcell_prop,i):
   mc = mcell_prop
@@ -446,15 +821,12 @@ def frame_change_handler(scn):
   mc = bpy.data.scenes[0].mcell
   curr_frame = mc.mol_viz.mol_file_index
   if (not curr_frame == scn.frame_current):
-    print("\nFrame change %d\n" % (scn.frame_current))
     mc.mol_viz.mol_file_index = scn.frame_current
     bpy.ops.mcell.mol_viz_set_index(None)
     scn.update()
     if mc.mol_viz.render_and_save:
       scn.render.filepath = '//stores_on/frames/frame_%05d.png' % (scn.frame_current)
       bpy.ops.render.render(write_still=True)
-  else:
-    print("\nNo frame change %d" % (scn.frame_current))
 
 
 
@@ -462,11 +834,8 @@ def render_handler(scn):
   mc = scn.mcell
   curr_frame = mc.mol_viz.mol_file_index
   if (not curr_frame == scn.frame_current):
-    print("\nRender: Frame change %d\n" % (scn.frame_current))
     mc.mol_viz.mol_file_index = scn.frame_current
     bpy.ops.mcell.mol_viz_set_index(None)
-  else:
-    print("\nRender: No frame change %d" % (scn.frame_current))
   scn.update()
 
 
@@ -617,17 +986,32 @@ def MolVizFileRead(mcell_prop,filepath):
     print(('\n***** Invalid data in file: %s\n') % (filepath))
 
 
+
 def register():
   bpy.utils.register_class(MCellSpeciesProperty)
   bpy.utils.register_class(MCellReactionProperty)
   bpy.utils.register_class(MCellStringProperty)
+  bpy.utils.register_class(MCellProjectPanelProperty)
   bpy.utils.register_class(MCellMolVizPanelProperty)
   bpy.utils.register_class(MCellReactionsPanelProperty)
   bpy.utils.register_class(MCellPropertyGroup)
-# mcell object takes on properties of MCellProperty group.  In sample code this does not have to happen in registration. But makes logical sense here
   bpy.types.Scene.mcell = bpy.props.PointerProperty(type=MCellPropertyGroup)
-#  bpy.types.Scene.mcell.mol_viz = bpy.props.PointerProperty(type=MCellMolVizPanelProperty)
+
+  bpy.utils.register_class(MCellSurfaceRegionFaceProperty)
+  bpy.utils.register_class(MCellSurfaceRegionProperty)
+  bpy.utils.register_class(MCellSurfaceRegionListProperty)
+  bpy.utils.register_class(MCellObjectPropertyGroup)
+  bpy.types.Object.mcell = bpy.props.PointerProperty(type=MCellObjectPropertyGroup)
+
+  bpy.utils.register_class(MCELL_OT_set_project_dir)
+  bpy.utils.register_class(MCELL_OT_export_project)
   bpy.utils.register_class(MCELL_OT_set_mol_viz_dir)
+  bpy.utils.register_class(MCELL_OT_region_add)
+  bpy.utils.register_class(MCELL_OT_region_remove)
+  bpy.utils.register_class(MCELL_OT_region_faces_assign)
+  bpy.utils.register_class(MCELL_OT_region_faces_remove)
+  bpy.utils.register_class(MCELL_OT_region_faces_select)
+  bpy.utils.register_class(MCELL_OT_region_faces_deselect)
   bpy.utils.register_class(MCELL_OT_molecule_add)
   bpy.utils.register_class(MCELL_OT_molecule_remove)
   bpy.utils.register_class(MCELL_OT_reaction_add)
@@ -635,9 +1019,8 @@ def register():
   bpy.utils.register_class(MCELL_OT_mol_viz_set_index)
   bpy.utils.register_class(MCELL_OT_mol_viz_next)
   bpy.utils.register_class(MCELL_OT_mol_viz_prev)
-# subsequent PTs are listed in order of UI presentation and assume no dependincies among them. This may change. JJ
-  bpy.utils.register_class(MCELL_PT_project_setup)
-  bpy.utils.register_class(MCELL_PT_wiz_actions)
+  bpy.utils.register_class(MCELL_PT_project_settings)
+  bpy.utils.register_class(MCELL_PT_sim_control)
   bpy.utils.register_class(MCELL_PT_viz_results)
   bpy.utils.register_class(MCELL_PT_utilities)
   bpy.utils.register_class(MCELL_PT_user_model_parameters)
@@ -645,6 +1028,7 @@ def register():
   bpy.utils.register_class(MCELL_PT_define_molecules)
   bpy.utils.register_class(MCELL_PT_define_reactions)
   bpy.utils.register_class(MCELL_PT_define_surface_classes)
+  bpy.utils.register_class(MCELL_PT_define_surface_regions)
   bpy.utils.register_class(MCELL_PT_molecule_placement)
   bpy.utils.register_class(MCELL_PT_reaction_output_settings)
   bpy.utils.register_class(MCELL_PT_visualization_output_settings)
