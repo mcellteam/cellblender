@@ -34,6 +34,7 @@ bl_info = {
 
 
 import bpy
+from bpy.app.handlers import persistent
 import mathutils
 import os
 import glob
@@ -47,6 +48,7 @@ from math import *
 # See notes below for errors in documentation
 
 
+# CellBlender GUI Panels:
 
 class MCELL_PT_project_settings(bpy.types.Panel):
   bl_label = "CellBlender Project Settings"
@@ -801,22 +803,7 @@ class MCELL_OT_mol_viz_prev(bpy.types.Operator):
 
 #CellBlender helper functions:
 
-def MolVizUpdate(mcell_prop,i):
-  mc = mcell_prop
-  filename = mc.mol_viz.mol_file_list[i].name
-  mc.mol_viz.mol_file_name = filename
-  filepath = os.path.join(mc.mol_viz.mol_file_dir,filename)
-  
-  global_undo = bpy.context.user_preferences.edit.use_global_undo
-  bpy.context.user_preferences.edit.use_global_undo = False
-  
-  MolVizUnlink(mc)
-  MolVizFileRead(mc,filepath)
-  
-  bpy.context.user_preferences.edit.use_global_undo = global_undo
-
-
-
+@persistent
 def frame_change_handler(scn):
   mc = bpy.data.scenes[0].mcell
   curr_frame = mc.mol_viz.mol_file_index
@@ -837,6 +824,22 @@ def render_handler(scn):
     mc.mol_viz.mol_file_index = scn.frame_current
     bpy.ops.mcell.mol_viz_set_index(None)
   scn.update()
+
+
+
+def MolVizUpdate(mcell_prop,i):
+  mc = mcell_prop
+  filename = mc.mol_viz.mol_file_list[i].name
+  mc.mol_viz.mol_file_name = filename
+  filepath = os.path.join(mc.mol_viz.mol_file_dir,filename)
+  
+  global_undo = bpy.context.user_preferences.edit.use_global_undo
+  bpy.context.user_preferences.edit.use_global_undo = False
+  
+  MolVizUnlink(mc)
+  MolVizFileRead(mc,filepath)
+  
+  bpy.context.user_preferences.edit.use_global_undo = global_undo
 
 
 
@@ -1039,9 +1042,12 @@ def unregister():
   pass
       
 
+if len(bpy.app.handlers.frame_change_pre) == 0:
+  bpy.app.handlers.frame_change_pre.append(frame_change_handler)
+
 if __name__ == '__main__':
   register()
-  bpy.app.handlers.frame_change_pre.append(frame_change_handler)
+#  bpy.app.handlers.frame_change_pre.append(frame_change_handler)
 #  bpy.app.handlers.render_pre.append(render_handler)
 #  bpy.app.handlers.render_pre.append(frame_change_handler)
 
