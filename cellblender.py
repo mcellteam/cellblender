@@ -716,6 +716,7 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     else:
       mol_file_dir = os.path.dirname(self.filepath)
     mol_file_list = glob.glob(mol_file_dir + '/*')
+    mol_file_list.sort()
     
     # Reset mol_file_list to empty
     for i in range(mc.mol_viz.mol_file_num-1,-1,-1):
