@@ -148,7 +148,7 @@ dynamics of objects created and visualized in Blender.
 
       i) In the "Visualize Simulation Results" panel, click "Set Molecule Viz
          Directory".  A file navigator widget will pop up.  Navigate to the
-         "viz" directory and click "Read Molecule File".
+         "viz" directory and click "Read Molecule Files".
      ii) CellBlender will now visualize the molecule species and positions in
          the 3D View window.  By default the molecules will be red icospheres
          10 nm in diameter.  Each icosphere molecule is composed of 20 faces.
