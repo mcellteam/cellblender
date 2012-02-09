@@ -81,7 +81,6 @@ class MCELL_PT_viz_results(bpy.types.Panel):
     
     row=layout.row()
     row.operator("mcell.set_mol_viz_dir",text="Set Molecule Viz Directory",icon="FILESEL")
-    #    layout.prop(mc,"mol_file_path",text="Molecule Viz Directory")
     row = layout.row()
     row.label(text="Molecule Viz Directory:  "+mc.mol_viz.mol_file_dir)
     row = layout.row()

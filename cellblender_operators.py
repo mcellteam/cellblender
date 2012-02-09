@@ -298,8 +298,8 @@ class MCELL_OT_set_project_dir(bpy.types.Operator):
 
 class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
   bl_idname = "mcell.set_mol_viz_dir"
-  bl_label = "Read Molecule File"
-  bl_description = "Read an MCell Molecule File for Visualization"
+  bl_label = "Read Molecule Files"
+  bl_description = "Read MCell Molecule Files for Visualization"
   bl_options = {'REGISTER'}
 
   filepath = bpy.props.StringProperty(subtype="FILE_PATH")
