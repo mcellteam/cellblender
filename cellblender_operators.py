@@ -264,11 +264,15 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
 class MCELL_OT_set_project_dir(bpy.types.Operator):
   bl_idname = "mcell.set_project_dir"
-  bl_label = "Set CellBlender Project Directory"
+  bl_label = "Set Project Directory"
   bl_description = "Set CellBlender Project Directory"
   bl_options = {'REGISTER','UNDO'}
 
-  filepath = bpy.props.StringProperty(subtype="FILE_PATH")
+  filepath = bpy.props.StringProperty(subtype="FILE_PATH",default="")
+  directory = bpy.props.StringProperty(subtype="DIR_PATH")
+
+  def __init__(self):
+    self.directory = bpy.context.scene.mcell.project_settings.project_dir
   
   # Note: use classmethod "poll" to determine when runability of operator is valid
   #  @classmethod
@@ -287,6 +291,7 @@ class MCELL_OT_set_project_dir(bpy.types.Operator):
     for i in range(mc.mol_viz.mol_file_num-1,-1,-1):
       mc.mol_viz.mol_file_list.remove(i)
     
+    mc.mol_viz.mol_file_name = ''
     mc.project_settings.project_dir=dir
     return {'FINISHED'}
   
@@ -302,7 +307,11 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
   bl_description = "Read MCell Molecule Files for Visualization"
   bl_options = {'REGISTER'}
 
-  filepath = bpy.props.StringProperty(subtype="FILE_PATH")
+  filepath = bpy.props.StringProperty(subtype="FILE_PATH",default="")
+  directory = bpy.props.StringProperty(subtype="DIR_PATH")
+
+  def __init__(self):
+    self.directory = bpy.context.scene.mcell.mol_viz.mol_file_dir
   
   # Note: use classmethod "poll" to determine when runability of operator is valid
   #  @classmethod
