@@ -37,7 +37,7 @@ class MCELL_PT_project_settings(bpy.types.Panel):
     row=layout.row()
     row.operator("mcell.set_project_dir",text="Set CellBlender Project Directory",icon="FILESEL")
     row = layout.row()
-    row.label(text="Project Directory:  "+mc.project_settings.project_dir)
+    row.label(text="Project Directory: "+mc.project_settings.project_dir)
     row = layout.row()
     layout.prop(mc.project_settings,"base_name")
     layout.separator()
@@ -82,9 +82,9 @@ class MCELL_PT_viz_results(bpy.types.Panel):
     row=layout.row()
     row.operator("mcell.set_mol_viz_dir",text="Set Molecule Viz Directory",icon="FILESEL")
     row = layout.row()
-    row.label(text="Molecule Viz Directory:  "+mc.mol_viz.mol_file_dir)
+    row.label(text="Molecule Viz Directory: "+mc.mol_viz.mol_file_dir)
     row = layout.row()
-    row.label(text="Current Molecule File:  "+mc.mol_viz.mol_file_name)
+    row.label(text="Current Molecule File: "+mc.mol_viz.mol_file_name)
     row = layout.row()
     row.template_list(mc.mol_viz,"mol_file_list",mc.mol_viz,"mol_file_index",rows=2)
     row = layout.row()
@@ -96,7 +96,6 @@ class MCELL_PT_viz_results(bpy.types.Panel):
 #    col.operator("mcell.mol_viz_set_index",text=str(mc.mol_viz.mol_file_index))
 #    col = row.column(align=True)
 #    col.operator("mcell.mol_viz_next",icon="PLAY",text="")
-    
 
 
 
@@ -106,12 +105,54 @@ class MCELL_PT_utilities(bpy.types.Panel):
   bl_region_type = "WINDOW"
   bl_context = "scene"
   bl_options = {'DEFAULT_CLOSED'}
-  
+
   def draw(self, context):
     layout = self.layout
     mc = context.scene.mcell
     
     row=layout.row()
+#    row.operator("mcell.vertex_groups_to_regions",text="Convert Vertex Group to Region")
+
+
+
+class MCELL_PT_meshalyzer(bpy.types.Panel):
+  bl_label = "Mesh Analysis"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
+
+  def draw(self, context):
+    layout = self.layout
+    scn = context.scene
+    mc = context.scene.mcell
+    
+    row = layout.row()
+    row.operator("mcell.meshalyzer",text="Analyze Mesh")
+
+    row = layout.row()
+    row.label(text="%s" % (mc.meshalyzer.status))
+    row = layout.row()
+    row.label(text="Object Name: %s" % (mc.meshalyzer.object_name))
+    row = layout.row()
+    row.label(text="Vertices: %d" % (mc.meshalyzer.vertices))
+    row = layout.row()
+    row.label(text="Edges: %d" % (mc.meshalyzer.edges))
+    row = layout.row()
+    row.label(text="Faces: %d" % (mc.meshalyzer.faces))
+    row = layout.row()
+    row.label(text="Surface Area: %.5g" % (mc.meshalyzer.area))
+    row = layout.row()
+    row.label(text="Volume: %.5g" % (mc.meshalyzer.volume))
+
+    row = layout.row()
+    row.label(text="Mesh Topology:")
+    row = layout.row()
+    row.label(text="      %s" % (mc.meshalyzer.watertight))
+    row = layout.row()
+    row.label(text="      %s" % (mc.meshalyzer.manifold))
+    row = layout.row()
+    row.label(text="      %s" % (mc.meshalyzer.normal_status))
 
 
 

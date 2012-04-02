@@ -22,8 +22,8 @@ bl_info = {
     "name": "CellBlender",
     "author": "Tom Bartol",
     "version": (0,1),
-    "blender": (2, 6, 1),
-    "api": 42614,
+    "blender": (2, 6, 2),
+    "api": 44136,
     "location": "Properties > Scene > CellBlender Panel",
     "description": "CellBlender Modeling System for MCell",
     "warning": "",
@@ -61,6 +61,7 @@ def register():
   bpy.utils.register_class(cellblender_properties.MCellProjectPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellMolVizPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellReactionsPanelProperty)
+  bpy.utils.register_class(cellblender_properties.MCellMeshalyzerPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellPropertyGroup)
   bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender_properties.MCellPropertyGroup)
 
@@ -86,10 +87,13 @@ def register():
   bpy.utils.register_class(cellblender_operators.MCELL_OT_mol_viz_set_index)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_mol_viz_next)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_mol_viz_prev)
+  bpy.utils.register_class(cellblender_operators.MCELL_OT_meshalyzer)
+  bpy.utils.register_class(cellblender_operators.MCELL_OT_vertex_groups_to_regions)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_sim_control)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_utilities)
+  bpy.utils.register_class(cellblender_panels.MCELL_PT_meshalyzer)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_user_model_parameters)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_initialization)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_define_molecules)

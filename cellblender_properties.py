@@ -98,6 +98,18 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
   active_rxn_index = bpy.props.IntProperty(name="Active Reaction Index",default=0)
 
 
+class MCellMeshalyzerPanelProperty(bpy.types.PropertyGroup):
+  status = bpy.props.StringProperty(name="Status")
+  object_name = bpy.props.StringProperty(name="Object Name")
+  vertices = bpy.props.IntProperty(name="Vertices",default=0)
+  edges = bpy.props.IntProperty(name="Edges",default=0)
+  faces = bpy.props.IntProperty(name="Faces",default=0)
+  watertight = bpy.props.StringProperty(name="Watertight")
+  manifold = bpy.props.StringProperty(name="Manifold")
+  normal_status = bpy.props.StringProperty(name="Surface Normals")
+  area = bpy.props.FloatProperty(name="Area",default=0)
+  volume = bpy.props.FloatProperty(name="Volume",default=0)
+
 
 # Main MCell (CellBlender) Properties Class:
 
@@ -105,6 +117,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
   # Note: should add one pointer property slot per GUI panel (like mol_viz).  Right now species list
   #   and active_mol_index are exposed here but should be grouped in a PropertyGroup.
   project_settings = bpy.props.PointerProperty(type=MCellProjectPanelProperty,name="CellBlender Project Settings")
+  meshalyzer = bpy.props.PointerProperty(type=MCellMeshalyzerPanelProperty,name="CellBlender Project Settings")
   mol_viz = bpy.props.PointerProperty(type=MCellMolVizPanelProperty,name="Mol Viz Settings")
   species_list = bpy.props.CollectionProperty(type=MCellSpeciesProperty,name="Molecule List")
   active_mol_index = bpy.props.IntProperty(name="Active Molecule Index",default=0)
