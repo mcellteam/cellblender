@@ -117,9 +117,8 @@ class MCELL_PT_utilities(bpy.types.Panel):
 
 class MCELL_PT_meshalyzer(bpy.types.Panel):
   bl_label = "Mesh Analysis"
-  bl_space_type = "PROPERTIES"
-  bl_region_type = "WINDOW"
-  bl_context = "scene"
+  bl_space_type = "VIEW_3D"
+  bl_region_type = "TOOLS"
   bl_options = {'DEFAULT_CLOSED'}
 
   def draw(self, context):
@@ -128,7 +127,7 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
     mc = context.scene.mcell
     
     row = layout.row()
-    row.operator("mcell.meshalyzer",text="Analyze Mesh")
+    row.operator("mcell.meshalyzer",text="Analyze Mesh",icon="MESH_ICOSPHERE")
 
     row = layout.row()
     row.label(text="%s" % (mc.meshalyzer.status))
