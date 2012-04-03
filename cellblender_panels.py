@@ -129,8 +129,9 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
     row = layout.row()
     row.operator("mcell.meshalyzer",text="Analyze Mesh",icon="MESH_ICOSPHERE")
 
-    row = layout.row()
-    row.label(text="%s" % (mc.meshalyzer.status))
+    if (mc.meshalyzer.status != ''):
+      row = layout.row()
+      row.label(text="%s" % (mc.meshalyzer.status))
     row = layout.row()
     row.label(text="Object Name: %s" % (mc.meshalyzer.object_name))
     row = layout.row()

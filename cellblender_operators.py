@@ -155,10 +155,13 @@ class MCELL_OT_region_faces_select(bpy.types.Operator):
     mesh = aobj.data
     face_set = set(aobj.data['mcell']['regions'][reg.name].to_list())
     bpy.ops.object.mode_set(mode='OBJECT')
+    msm = context.tool_settings.mesh_select_mode[0:]
+    context.tool_settings.mesh_select_mode=[False,False,True]
     for f in face_set:
       mesh.faces[f].select = True
     bpy.ops.object.mode_set(mode='EDIT')
 
+    context.tool_settings.mesh_select_mode=msm
     return {'FINISHED'}
  
 
@@ -182,9 +185,13 @@ class MCELL_OT_region_faces_deselect(bpy.types.Operator):
     mesh = aobj.data
     face_set = set(aobj.data['mcell']['regions'][reg.name].to_list())
     bpy.ops.object.mode_set(mode='OBJECT')
+    msm = context.tool_settings.mesh_select_mode[0:]
+    context.tool_settings.mesh_select_mode=[False,False,True]
     for f in face_set:
       mesh.faces[f].select = False
     bpy.ops.object.mode_set(mode='EDIT')
+
+    context.tool_settings.mesh_select_mode=msm
     return {'FINISHED'}
  
 
