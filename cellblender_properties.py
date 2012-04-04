@@ -98,6 +98,11 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
   active_rxn_index = bpy.props.IntProperty(name="Active Reaction Index",default=0)
 
 
+class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
+  object_list = bpy.props.CollectionProperty(type=MCellStringProperty,name="Object List")
+  active_obj_index = bpy.props.IntProperty(name="Active Object Index",default=0)
+
+
 class MCellMeshalyzerPanelProperty(bpy.types.PropertyGroup):
   status = bpy.props.StringProperty(name="Status")
   object_name = bpy.props.StringProperty(name="Object Name")
@@ -111,6 +116,10 @@ class MCellMeshalyzerPanelProperty(bpy.types.PropertyGroup):
   volume = bpy.props.FloatProperty(name="Volume",default=0)
 
 
+class MCellObjectSelectorPanelProperty(bpy.types.PropertyGroup):
+  filter = bpy.props.StringProperty(name="Object Name Filter")
+
+
 # Main MCell (CellBlender) Properties Class:
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
@@ -118,10 +127,12 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
   #   and active_mol_index are exposed here but should be grouped in a PropertyGroup.
   project_settings = bpy.props.PointerProperty(type=MCellProjectPanelProperty,name="CellBlender Project Settings")
   meshalyzer = bpy.props.PointerProperty(type=MCellMeshalyzerPanelProperty,name="CellBlender Project Settings")
+  object_selector = bpy.props.PointerProperty(type=MCellObjectSelectorPanelProperty,name="CellBlender Project Settings")
   mol_viz = bpy.props.PointerProperty(type=MCellMolVizPanelProperty,name="Mol Viz Settings")
   species_list = bpy.props.CollectionProperty(type=MCellSpeciesProperty,name="Molecule List")
   active_mol_index = bpy.props.IntProperty(name="Active Molecule Index",default=0)
   reactions = bpy.props.PointerProperty(type=MCellReactionsPanelProperty,name="Defined Reactions")
+  model_objects = bpy.props.PointerProperty(type=MCellModelObjectsPanelProperty,name="Defined Reactions")
 
 
 

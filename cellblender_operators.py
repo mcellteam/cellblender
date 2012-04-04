@@ -24,6 +24,7 @@ import mathutils
 import glob
 import os
 import random
+import re
 import resource
 
 
@@ -852,4 +853,56 @@ def check_orientable(mesh,edge_faces,edge_face_count):
               break
 
   return (1)
+
+
+
+class MCELL_OT_select_filtered(bpy.types.Operator):
+  bl_idname = "mcell.select_filtered"
+  bl_label = "Select Filtered"
+  bl_description = "Select objects matching the filter"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self,context):
+
+    scn = context.scene
+    mc = scn.mcell
+    objs = scn.objects
+
+    filter = mc.object_selector.filter
+
+    for obj in objs:
+      if obj.type == 'MESH':
+        m = re.match(filter,obj.name)
+        if m != None:
+          if m.end() == len(obj.name):
+            obj.select = True
+
+    return {'FINISHED'}
+
+
+
+class MCELL_OT_deselect_filtered(bpy.types.Operator):
+  bl_idname = "mcell.deselect_filtered"
+  bl_label = "Deselect Filtered"
+  bl_description = "Deselect objects matching the filter"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self,context):
+
+    scn = context.scene
+    mc = scn.mcell
+    objs = scn.objects
+
+    filter = mc.object_selector.filter
+
+    for obj in objs:
+      if obj.type == 'MESH':
+        m = re.match(filter,obj.name)
+        if m != None:
+          if m.end() == len(obj.name):
+            obj.select = False
+
+    return {'FINISHED'}
+
+
 

@@ -115,6 +115,25 @@ class MCELL_PT_utilities(bpy.types.Panel):
 
 
 
+class MCELL_PT_object_selector(bpy.types.Panel):
+  bl_label = "Object Selector"
+  bl_space_type = "VIEW_3D"
+  bl_region_type = "TOOLS"
+  bl_options = {'DEFAULT_CLOSED'}
+
+  def draw(self, context):
+    layout = self.layout
+    scn = context.scene
+    mc = context.scene.mcell
+    
+
+    layout.prop(mc.object_selector,"filter",text="Object Filter:")
+    row=layout.row(align=True)
+    row.operator("mcell.select_filtered",text="Select Filtered")
+    row.operator("mcell.deselect_filtered",text="Deselect Filtered")
+
+
+
 class MCELL_PT_meshalyzer(bpy.types.Panel):
   bl_label = "Mesh Analysis"
   bl_space_type = "VIEW_3D"
@@ -308,6 +327,32 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
 
 
 
+class MCELL_PT_model_objects(bpy.types.Panel):
+  bl_label = "Model Objects"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
+  
+  def draw(self, context):
+    layout = self.layout
+    
+    mc = context.scene.mcell
+    
+    row = layout.row()
+    row.label(text="Model Objects:", icon='MESH_ICOSPHERE')
+    row = layout.row()
+    row.template_list(mc.model_objects,"object_list",mc.model_objects,"active_obj_index",rows=2)
+    row = layout.row()
+    sub = row.row(align=True)
+    sub.operator("mcell.model_object_include",text="include")
+    sub.operator("mcell.model_object_exclude",text="exclude")
+    sub = row.row(align=True)
+    sub.operator("mcell.model_object_select",text="select")
+    sub.operator("mcell.model_object_deselect",text="deselect")
+
+
+
 class MCELL_PT_define_surface_regions(bpy.types.Panel):
   bl_label = "Define Surface Regions"
   bl_space_type = "PROPERTIES"
@@ -334,9 +379,11 @@ class MCELL_PT_define_surface_regions(bpy.types.Panel):
       reg = obj_regs.region_list[obj_regs.active_reg_index]
       layout.prop(reg,"name")
     if aobj.mode == 'EDIT':
-      row = layout.row(align=True)
-      row.operator("mcell.region_faces_assign",text="assign")
-      row.operator("mcell.region_faces_remove",text="remove")
-      row.operator("mcell.region_faces_select",text="select")
-      row.operator("mcell.region_faces_deselect",text="deselect")
+      row = layout.row()
+      sub = row.row(align=True)
+      sub.operator("mcell.region_faces_assign",text="assign")
+      sub.operator("mcell.region_faces_remove",text="remove")
+      sub = row.row(align=True)
+      sub.operator("mcell.region_faces_select",text="select")
+      sub.operator("mcell.region_faces_deselect",text="deselect")
 
