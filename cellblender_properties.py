@@ -103,6 +103,15 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
   active_obj_index = bpy.props.IntProperty(name="Active Object Index",default=0)
 
 
+class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
+  status = bpy.props.StringProperty(name="Status")
+  glyph_lib = bpy.utils.script_paths()[0]+'/addons/cellblender/glyph_library.blend/Mesh/'
+  glyph_enum = [
+                    ('Icosphere','Icosphere',''),
+                    ('Receptor','Receptor','')]
+  glyph = bpy.props.EnumProperty(items=glyph_enum,name="Molecule Shapes")
+
+
 class MCellMeshalyzerPanelProperty(bpy.types.PropertyGroup):
   status = bpy.props.StringProperty(name="Status")
   object_name = bpy.props.StringProperty(name="Object Name")
@@ -126,13 +135,14 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
   # Note: should add one pointer property slot per GUI panel (like mol_viz).  Right now species list
   #   and active_mol_index are exposed here but should be grouped in a PropertyGroup.
   project_settings = bpy.props.PointerProperty(type=MCellProjectPanelProperty,name="CellBlender Project Settings")
-  meshalyzer = bpy.props.PointerProperty(type=MCellMeshalyzerPanelProperty,name="CellBlender Project Settings")
-  object_selector = bpy.props.PointerProperty(type=MCellObjectSelectorPanelProperty,name="CellBlender Project Settings")
   mol_viz = bpy.props.PointerProperty(type=MCellMolVizPanelProperty,name="Mol Viz Settings")
   species_list = bpy.props.CollectionProperty(type=MCellSpeciesProperty,name="Molecule List")
   active_mol_index = bpy.props.IntProperty(name="Active Molecule Index",default=0)
   reactions = bpy.props.PointerProperty(type=MCellReactionsPanelProperty,name="Defined Reactions")
   model_objects = bpy.props.PointerProperty(type=MCellModelObjectsPanelProperty,name="Defined Reactions")
+  meshalyzer = bpy.props.PointerProperty(type=MCellMeshalyzerPanelProperty,name="CellBlender Project Settings")
+  object_selector = bpy.props.PointerProperty(type=MCellObjectSelectorPanelProperty,name="CellBlender Project Settings")
+  molecule_glyphs = bpy.props.PointerProperty(type=MCellMoleculeGlyphsPanelProperty,name="Molecule Shapes")
 
 
 

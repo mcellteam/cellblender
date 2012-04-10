@@ -50,6 +50,10 @@ import bpy
 
 
 def register():
+
+#  glyph_lib = bpy.utils.script_paths()[0]+'/addons/cellblender/glyph_library.blend/Mesh/'
+#  bpy.ops.wm.link_append(directory=glyph_lib,link=False,files=[{'name': new_glyph_name}]) 
+ 
   bpy.utils.register_class(io_mesh_mcell_mdl.ImportMCellMDL)
   bpy.utils.register_class(io_mesh_mcell_mdl.ExportMCellMDL)
   bpy.types.INFO_MT_file_import.append(io_mesh_mcell_mdl.menu_func_import)
@@ -64,13 +68,16 @@ def register():
   bpy.utils.register_class(cellblender_properties.MCellMeshalyzerPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellModelObjectsPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellObjectSelectorPanelProperty)
+  bpy.utils.register_class(cellblender_properties.MCellMoleculeGlyphsPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellPropertyGroup)
+
   bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender_properties.MCellPropertyGroup)
 
   bpy.utils.register_class(cellblender_properties.MCellSurfaceRegionFaceProperty)
   bpy.utils.register_class(cellblender_properties.MCellSurfaceRegionProperty)
   bpy.utils.register_class(cellblender_properties.MCellSurfaceRegionListProperty)
   bpy.utils.register_class(cellblender_properties.MCellObjectPropertyGroup)
+
   bpy.types.Object.mcell = bpy.props.PointerProperty(type=cellblender_properties.MCellObjectPropertyGroup)
 
   bpy.utils.register_class(cellblender_operators.MCELL_OT_set_project_dir)
@@ -89,25 +96,33 @@ def register():
   bpy.utils.register_class(cellblender_operators.MCELL_OT_mol_viz_set_index)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_mol_viz_next)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_mol_viz_prev)
+  bpy.utils.register_class(cellblender_operators.MCELL_OT_model_objects_include)
+  bpy.utils.register_class(cellblender_operators.MCELL_OT_model_objects_remove)
+  bpy.utils.register_class(cellblender_operators.MCELL_OT_vertex_groups_to_regions)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_meshalyzer)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_select_filtered)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_deselect_filtered)
-  bpy.utils.register_class(cellblender_operators.MCELL_OT_vertex_groups_to_regions)
+  bpy.utils.register_class(cellblender_operators.MCELL_OT_set_molecule_glyph)
+
   bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
+  bpy.utils.register_class(cellblender_panels.MCELL_PT_model_objects)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_sim_control)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_utilities)
-  bpy.utils.register_class(cellblender_panels.MCELL_PT_meshalyzer)
-  bpy.utils.register_class(cellblender_panels.MCELL_PT_object_selector)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_user_model_parameters)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_initialization)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_define_molecules)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_define_reactions)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_define_surface_classes)
-  bpy.utils.register_class(cellblender_panels.MCELL_PT_define_surface_regions)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_molecule_placement)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_reaction_output_settings)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_visualization_output_settings)
+
+  bpy.utils.register_class(cellblender_panels.MCELL_PT_define_surface_regions)
+  bpy.utils.register_class(cellblender_panels.MCELL_PT_molecule_glyphs)
+
+  bpy.utils.register_class(cellblender_panels.MCELL_PT_meshalyzer)
+  bpy.utils.register_class(cellblender_panels.MCELL_PT_object_selector)
 
 
 def unregister():

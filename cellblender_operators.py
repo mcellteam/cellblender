@@ -906,3 +906,82 @@ class MCELL_OT_deselect_filtered(bpy.types.Operator):
 
 
 
+class MCELL_OT_model_objects_include(bpy.types.Operator):
+  bl_idname = "mcell.model_objects_include"
+  bl_label = "Model Objects Include"
+  bl_description = "Include selected objects in model object export list"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self,context):
+
+    scn = context.scene
+    mc = scn.mcell
+    objs = context.selected_objects
+
+    for obj in objs:
+      mc.model_objects.object_list.add()
+      mc.model_objects.active_obj_index = len(mc.model_objects.object_list)-1
+      mc.model_objects.object_list[mc.model_objects.active_obj_index].name = obj.name
+
+    return {'FINISHED'}
+
+
+
+class MCELL_OT_model_objects_remove(bpy.types.Operator):
+  bl_idname = "mcell.model_objects_remove"
+  bl_label = "Model Objects Remove"
+  bl_description = "Remove current item from model object export list"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self,context):
+
+    scn = context.scene
+    mc = scn.mcell
+
+    mc.model_objects.object_list.remove(mc.model_objects.active_obj_index)
+    mc.model_objects.active_obj_index = mc.model_objects.active_obj_index-1
+    if (mc.model_objects.active_obj_index<0):
+      mc.model_objects.active_obj_index = 0
+
+    return {'FINISHED'}
+
+
+
+class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
+  bl_idname = "mcell.set_molecule_glyph"
+  bl_label = "Set Molecule Glyph"
+  bl_description = "Set molecule glyph to desired shape in glyph library"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self,context):
+
+    scn = context.scene
+    mc = scn.mcell
+    mc.molecule_glyphs.status = ''
+#    new_glyph_name = 'receptor_glyph'
+#    mol_shape_name = 'mol_Ca_shape'
+    sobjs = context.selected_objects
+    if (len(sobjs) != 1):
+      mc.molecule_glyphs.status = 'Select One Molecule'
+      return {'FINISHED'}
+    if (sobjs[0].type != 'MESH'):
+      mc.molecule_glyphs.status = 'Selected Object Not a Molecule'
+      return {'FINISHED'}
+
+    mol_obj = sobjs[0]
+    mol_shape_name = mol_obj.name
+
+    new_glyph_name = mc.molecule_glyphs.glyph
+
+    bpy.ops.wm.link_append(directory="/Users/bartol/src/blender_modules/cellblender/glyph_library.blend/Mesh/",link=False,files=[{'name': new_glyph_name}])
+
+    mol_mat = mol_obj.material_slots[0].material
+    new_mol_mesh = bpy.data.meshes[new_glyph_name]
+    mol_obj.data = new_mol_mesh
+    bpy.data.meshes.remove(bpy.data.meshes[mol_shape_name])
+
+    new_mol_mesh.name = mol_shape_name
+    new_mol_mesh.materials.append(mol_mat)
+
+    return {'FINISHED'}
+

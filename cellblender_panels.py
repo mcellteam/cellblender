@@ -342,14 +342,16 @@ class MCELL_PT_model_objects(bpy.types.Panel):
     row = layout.row()
     row.label(text="Model Objects:", icon='MESH_ICOSPHERE')
     row = layout.row()
-    row.template_list(mc.model_objects,"object_list",mc.model_objects,"active_obj_index",rows=2)
+    col = row.column()
+    col.template_list(mc.model_objects,"object_list",mc.model_objects,"active_obj_index",rows=2)
+    col = row.column(align=True)
+    col.operator("mcell.model_objects_remove",icon='ZOOMOUT',text="")
     row = layout.row()
     sub = row.row(align=True)
-    sub.operator("mcell.model_object_include",text="include")
-    sub.operator("mcell.model_object_exclude",text="exclude")
-    sub = row.row(align=True)
-    sub.operator("mcell.model_object_select",text="select")
-    sub.operator("mcell.model_object_deselect",text="deselect")
+    sub.operator("mcell.model_objects_include",text="Include")
+#    sub = row.row(align=True)
+#    sub.operator("mcell.model_objects_select",text="Select")
+#    sub.operator("mcell.model_objects_deselect",text="Deselect")
 
 
 
@@ -386,4 +388,29 @@ class MCELL_PT_define_surface_regions(bpy.types.Panel):
       sub = row.row(align=True)
       sub.operator("mcell.region_faces_select",text="select")
       sub.operator("mcell.region_faces_deselect",text="deselect")
+
+
+
+class MCELL_PT_molecule_glyphs(bpy.types.Panel):
+  bl_label = "Molecule Shape"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "material"
+  bl_options = {'DEFAULT_CLOSED'}
+
+  def draw(self, context):
+    layout = self.layout
+    scn = context.scene
+    mc = context.scene.mcell
+
+
+    row = layout.row()
+    layout.prop(mc.molecule_glyphs,"glyph")
+
+    if (mc.molecule_glyphs.status != ''):
+      row = layout.row()
+      row.label(text="%s" % (mc.molecule_glyphs.status))
+
+    row = layout.row()
+    row.operator("mcell.set_molecule_glyph",text="Set Molecule Shape",icon="MESH_ICOSPHERE")
 
