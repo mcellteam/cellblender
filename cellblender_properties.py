@@ -105,7 +105,8 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
   status = bpy.props.StringProperty(name="Status")
-  glyph_lib = bpy.utils.script_paths()[0]+'/addons/cellblender/glyph_library.blend/Mesh/'
+#  glyph_lib = bpy.utils.script_paths()[0]+'/addons/cellblender/glyph_library.blend/Mesh/'
+  glyph_lib = __file__+'/glyph_library.blend/Mesh/'
   glyph_enum = [
                     ('Icosphere','Icosphere',''),
                     ('Receptor','Receptor','')]
