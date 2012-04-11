@@ -973,7 +973,7 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
 
     new_glyph_name = mc.molecule_glyphs.glyph
 
-    bpy.ops.wm.link_append(directory="/Users/bartol/src/blender_modules/cellblender/glyph_library.blend/Mesh/",link=False,files=[{'name': new_glyph_name}])
+    bpy.ops.wm.link_append(directory="/Users/bartol/src/blender_modules/cellblender/glyph_library.blend/Mesh/",files=[{'name': new_glyph_name}],link=False,autoselect=False)
 
     mol_mat = mol_obj.material_slots[0].material
     new_mol_mesh = bpy.data.meshes[new_glyph_name]

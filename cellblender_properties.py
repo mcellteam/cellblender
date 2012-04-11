@@ -108,8 +108,15 @@ class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
 #  glyph_lib = bpy.utils.script_paths()[0]+'/addons/cellblender/glyph_library.blend/Mesh/'
   glyph_lib = __file__+'/glyph_library.blend/Mesh/'
   glyph_enum = [
-                    ('Icosphere','Icosphere',''),
-                    ('Receptor','Receptor','')]
+                    ('Cone','Cone',''),
+                    ('Cube','Cube',''),
+                    ('Cylinder','Cylinder',''),
+                    ('Icosahedron','Icosahedron',''),
+                    ('Octahedron','Octahedron',''),
+                    ('Receptor','Receptor',''),
+                    ('Sphere_1','Sphere_1',''),
+                    ('Sphere_2','Sphere_2',''),
+                    ('Torus','Torus','')]
   glyph = bpy.props.EnumProperty(items=glyph_enum,name="Molecule Shapes")
 
 
