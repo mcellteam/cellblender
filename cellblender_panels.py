@@ -19,6 +19,7 @@
 
 
 import bpy
+import re
 
 
 # CellBlender GUI Panels:
@@ -398,11 +399,26 @@ class MCELL_PT_molecule_glyphs(bpy.types.Panel):
   bl_context = "material"
   bl_options = {'DEFAULT_CLOSED'}
 
+#  @classmethod
+#  def poll(cls, context):
+
+#    return ((len(context.selected_objects) == 1) and (context.selected_objects[0].type == 'MESH'))
+
   def draw(self, context):
     layout = self.layout
     scn = context.scene
     mc = context.scene.mcell
 
+    active = False
+    if ((len(context.selected_objects) == 1) and (context.selected_objects[0].type == 'MESH')):
+      filter = 'mol_.*_shape'
+      obj = context.selected_objects[0]
+      m = re.match(filter,obj.name)
+      if m != None:
+        if m.end() == len(obj.name):
+          active = True
+
+    layout.active = active
 
     row = layout.row()
     layout.prop(mc.molecule_glyphs,"glyph")
@@ -410,6 +426,12 @@ class MCELL_PT_molecule_glyphs(bpy.types.Panel):
     if (mc.molecule_glyphs.status != ''):
       row = layout.row()
       row.label(text="%s" % (mc.molecule_glyphs.status))
+
+    row = layout.row()
+    if (len(context.selected_objects) == 0):
+      row.label(text="Selected Molecule:  ")
+    else:
+      row.label(text="Selected Molecule:  %s" % (context.selected_objects[0].name))
 
     row = layout.row()
     row.operator("mcell.set_molecule_glyph",text="Set Molecule Shape",icon="MESH_ICOSPHERE")
