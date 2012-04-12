@@ -91,6 +91,7 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
   mol_file_step_index = bpy.props.IntProperty(name="Molecule File Step Index",default=1)
   mol_viz_list = bpy.props.CollectionProperty(type=MCellStringProperty,name="Molecule Viz Name List")
   render_and_save = bpy.props.BoolProperty(name="Render & Save Images")
+  mol_viz_enable = bpy.props.BoolProperty(name="Enable Molecule Vizualization",description="Disable for faster animation preview",default=True)
 
 
 class MCellReactionsPanelProperty(bpy.types.PropertyGroup):

@@ -499,7 +499,7 @@ def frame_change_handler(scn):
   if (not curr_frame == scn.frame_current):
     mc.mol_viz.mol_file_index = scn.frame_current
     bpy.ops.mcell.mol_viz_set_index(None)
-    scn.update()
+#    scn.update()
     if mc.mol_viz.render_and_save:
       scn.render.filepath = '//stores_on/frames/frame_%05d.png' % (scn.frame_current)
       bpy.ops.render.render(write_still=True)

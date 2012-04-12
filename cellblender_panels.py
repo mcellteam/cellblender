@@ -88,8 +88,10 @@ class MCELL_PT_viz_results(bpy.types.Panel):
     row.label(text="Current Molecule File: "+mc.mol_viz.mol_file_name)
     row = layout.row()
     row.template_list(mc.mol_viz,"mol_file_list",mc.mol_viz,"mol_file_index",rows=2)
-    row = layout.row()
-    layout.prop(mc.mol_viz,"render_and_save")
+#    row = layout.row()
+#    layout.prop(mc.mol_viz,"mol_viz_enable")
+#    row = layout.row()
+#    layout.prop(mc.mol_viz,"render_and_save")
 
 #    col = row.column(align=True)
 #    col.operator("mcell.mol_viz_prev",icon="PLAY_REVERSE",text="")
