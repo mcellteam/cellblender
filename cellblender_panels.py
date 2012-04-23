@@ -268,6 +268,13 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
         layout.prop(rxn,"bkwd_rate")
       layout.prop(rxn,"rxn_name")
 
+    if mc.reactions.status != '':
+      row = layout.row()
+      row.label(text=mc.reactions.status)
+    
+    row = layout.row()
+    row.operator("mcell.reaction_update_check",text="Update & Check")
+
 
 
 class MCELL_PT_define_surface_classes(bpy.types.Panel):

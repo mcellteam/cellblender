@@ -93,6 +93,7 @@ def register():
   bpy.utils.register_class(cellblender_operators.MCELL_OT_molecule_remove)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_reaction_add)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_reaction_remove)
+  bpy.utils.register_class(cellblender_operators.MCELL_OT_reaction_update_check)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_mol_viz_set_index)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_mol_viz_next)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_mol_viz_prev)

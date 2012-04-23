@@ -328,6 +328,35 @@ class MCELL_OT_reaction_remove(bpy.types.Operator):
 
 
 
+class MCELL_OT_reaction_update_check(bpy.types.Operator):
+  bl_idname = "mcell.reaction_update_check"
+  bl_label = "Update & Check Reaction"
+  bl_description = "Update & check consistency of selected reaction"
+  bl_options = {'REGISTER', 'UNDO'}
+  
+  def execute(self,context):
+    mc = context.scene.mcell
+    rxn = mc.reactions.reaction_list[mc.reactions.active_rxn_index]
+    for item in rxn.type_enum:
+      if rxn.type == item[0]:
+        rxtype = item[1]
+
+    rxn.reactants = rxn.reactants.replace(' ','')
+    rxn.reactants = rxn.reactants.replace('+',' + ')
+
+    rxn.products = rxn.products.replace(' ','')
+    rxn.products = rxn.products.replace('+',' + ')
+
+    rxn.name = ('%s %s %s') % (rxn.reactants,rxtype,rxn.products)
+    rxn_keys = mc.reactions.reaction_list.keys()
+    if rxn_keys.count(rxn.name) > 1:
+      mc.reactions.status = 'Duplicate reaction: %s' % (rxn.name) 
+    else:
+      mc.reactions.status = ''
+    return {'FINISHED'}
+
+
+
 class MCELL_OT_export_project(bpy.types.Operator):
   bl_idname = "mcell.export_project"
   bl_label = "Export CellBlender Project"

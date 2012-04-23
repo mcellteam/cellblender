@@ -97,6 +97,7 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
 class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
   reaction_list = bpy.props.CollectionProperty(type=MCellReactionProperty,name="Reaction List")
   active_rxn_index = bpy.props.IntProperty(name="Active Reaction Index",default=0)
+  status = bpy.props.StringProperty(name="Status")
 
 
 class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
