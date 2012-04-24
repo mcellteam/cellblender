@@ -59,11 +59,12 @@ def register():
   bpy.types.INFO_MT_file_import.append(io_mesh_mcell_mdl.menu_func_import)
   bpy.types.INFO_MT_file_export.append(io_mesh_mcell_mdl.menu_func_export)
 
-  bpy.utils.register_class(cellblender_properties.MCellSpeciesProperty)
+  bpy.utils.register_class(cellblender_properties.MCellMoleculeProperty)
   bpy.utils.register_class(cellblender_properties.MCellReactionProperty)
   bpy.utils.register_class(cellblender_properties.MCellStringProperty)
   bpy.utils.register_class(cellblender_properties.MCellProjectPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellMolVizPanelProperty)
+  bpy.utils.register_class(cellblender_properties.MCellMoleculesPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellReactionsPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellMeshalyzerPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellModelObjectsPanelProperty)

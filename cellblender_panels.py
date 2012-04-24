@@ -224,12 +224,12 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
     row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
     row = layout.row()
     col = row.column()
-    col.template_list(mc,"species_list",mc,"active_mol_index",rows=2)
+    col.template_list(mc.molecules,"molecule_list",mc.molecules,"active_mol_index",rows=2)
     col = row.column(align=True)
     col.operator("mcell.molecule_add",icon='ZOOMIN',text="")
     col.operator("mcell.molecule_remove",icon='ZOOMOUT',text="")
-    if len(mc.species_list)>0:
-      mol = mc.species_list[mc.active_mol_index]
+    if len(mc.molecules.molecule_list)>0:
+      mol = mc.molecules.molecule_list[mc.molecules.active_mol_index]
       layout.prop(mol,"name")
       layout.prop(mol,"type")
       layout.prop(mol,"diffusion_constant")

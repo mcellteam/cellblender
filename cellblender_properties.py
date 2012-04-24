@@ -38,7 +38,7 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
   active_reg_index = bpy.props.IntProperty(name="Active Region Index",default=0)
 
 
-class MCellSpeciesProperty(bpy.types.PropertyGroup):
+class MCellMoleculeProperty(bpy.types.PropertyGroup):
   name = bpy.props.StringProperty(name="Molecule Name")
   type_enum = [
                     ('2D','Surface Molecule',''),
@@ -94,6 +94,12 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
   mol_viz_enable = bpy.props.BoolProperty(name="Enable Molecule Vizualization",description="Disable for faster animation preview",default=True)
 
 
+class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
+  molecule_list = bpy.props.CollectionProperty(type=MCellMoleculeProperty,name="Molecule List")
+  active_mol_index = bpy.props.IntProperty(name="Active Molecule Index",default=0)
+  status = bpy.props.StringProperty(name="Status")
+
+
 class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
   reaction_list = bpy.props.CollectionProperty(type=MCellReactionProperty,name="Reaction List")
   active_rxn_index = bpy.props.IntProperty(name="Active Reaction Index",default=0)
@@ -142,12 +148,9 @@ class MCellObjectSelectorPanelProperty(bpy.types.PropertyGroup):
 # Main MCell (CellBlender) Properties Class:
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
-  # Note: should add one pointer property slot per GUI panel (like mol_viz).  Right now species list
-  #   and active_mol_index are exposed here but should be grouped in a PropertyGroup.
   project_settings = bpy.props.PointerProperty(type=MCellProjectPanelProperty,name="CellBlender Project Settings")
   mol_viz = bpy.props.PointerProperty(type=MCellMolVizPanelProperty,name="Mol Viz Settings")
-  species_list = bpy.props.CollectionProperty(type=MCellSpeciesProperty,name="Molecule List")
-  active_mol_index = bpy.props.IntProperty(name="Active Molecule Index",default=0)
+  molecules = bpy.props.PointerProperty(type=MCellMoleculesPanelProperty,name="Defined Molecules")
   reactions = bpy.props.PointerProperty(type=MCellReactionsPanelProperty,name="Defined Reactions")
   model_objects = bpy.props.PointerProperty(type=MCellModelObjectsPanelProperty,name="Defined Reactions")
   meshalyzer = bpy.props.PointerProperty(type=MCellMeshalyzerPanelProperty,name="CellBlender Project Settings")

@@ -279,8 +279,9 @@ class MCELL_OT_molecule_add(bpy.types.Operator):
   bl_options = {'REGISTER', 'UNDO'}
   
   def execute(self,context):
-    context.scene.mcell.species_list.add()
-    context.scene.mcell.active_mol_index = len(bpy.context.scene.mcell.species_list)-1
+    mc = context.scene.mcell
+    mc.molecules.molecule_list.add()
+    mc.molecules.active_mol_index = len(mc.molecules.molecule_list)-1
     return {'FINISHED'}
  
 
@@ -292,10 +293,11 @@ class MCELL_OT_molecule_remove(bpy.types.Operator):
   bl_options = {'REGISTER', 'UNDO'}
   
   def execute(self,context):
-    context.scene.mcell.species_list.remove(bpy.context.scene.mcell.active_mol_index)
-    context.scene.mcell.active_mol_index = bpy.context.scene.mcell.active_mol_index-1
-    if (context.scene.mcell.active_mol_index<0):
-      context.scene.mcell.active_mol_index = 0
+    mc = context.scene.mcell
+    mc.molecules.molecule_list.remove(mc.molecules.active_mol_index)
+    mc.molecules.active_mol_index = mc.molecules.active_mol_index-1
+    if (mc.molecules.active_mol_index<0):
+      mc.molecules.active_mol_index = 0
     return {'FINISHED'}
 
 
@@ -353,7 +355,42 @@ class MCELL_OT_reaction_update_check(bpy.types.Operator):
       mc.reactions.status = 'Duplicate reaction: %s' % (rxn.name) 
     else:
       mc.reactions.status = ''
+
+    check_reaction(mc,rxn)
+
     return {'FINISHED'}
+
+
+
+def check_reaction(mc,rxn):
+
+  mol_list = mc.molecules.molecule_list
+  mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)((',)|(,')|(;)|(,*)|('*))$"
+  status = ''
+  reactants = rxn.reactants.split(' + ')
+  for reactant in reactants:
+    m = re.match(mol_filter,reactant)
+    if m == None:
+      status = 'Reactant error: %s' % (reactant)
+      break
+    else: 
+      mol_name = m.group(1)
+      if mol_name not in mol_list:
+        status = 'Undefine molecule: %s' % (mol_name)
+      
+  products = rxn.products.split(' + ')
+  for product in products:
+    m = re.match(mol_filter,product)
+    if m == None:
+      status = 'Product error: %s' % (product)
+      break
+    else: 
+      mol_name = m.group(1)
+      if mol_name not in mol_list:
+        status = 'Undefine molecule: %s' % (mol_name)
+
+  mc.reactions.status = status
+  return
 
 
 
