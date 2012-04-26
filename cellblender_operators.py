@@ -330,43 +330,39 @@ class MCELL_OT_reaction_remove(bpy.types.Operator):
 
 
 
-class MCELL_OT_reaction_update_check(bpy.types.Operator):
-  bl_idname = "mcell.reaction_update_check"
-  bl_label = "Update & Check Reaction"
-  bl_description = "Update & check consistency of selected reaction"
-  bl_options = {'REGISTER', 'UNDO'}
-  
-  def execute(self,context):
-    mc = context.scene.mcell
-    rxn = mc.reactions.reaction_list[mc.reactions.active_rxn_index]
-    for item in rxn.type_enum:
-      if rxn.type == item[0]:
-        rxtype = item[1]
+def check_reaction(self,context):
 
-    rxn.reactants = rxn.reactants.replace(' ','')
-    rxn.reactants = rxn.reactants.replace('+',' + ')
+  mc = context.scene.mcell
 
-    rxn.products = rxn.products.replace(' ','')
-    rxn.products = rxn.products.replace('+',' + ')
+  #Retrieve reaction
+  rxn = mc.reactions.reaction_list[mc.reactions.active_rxn_index]
+  for item in rxn.type_enum:
+    if rxn.type == item[0]:
+      rxtype = item[1]
 
-    rxn.name = ('%s %s %s') % (rxn.reactants,rxtype,rxn.products)
-    rxn_keys = mc.reactions.reaction_list.keys()
-    if rxn_keys.count(rxn.name) > 1:
-      mc.reactions.status = 'Duplicate reaction: %s' % (rxn.name) 
-    else:
-      mc.reactions.status = ''
+  status = ''
 
-    check_reaction(mc,rxn)
+  # clean up rxn.reactants only if necessary to avoid infinite recursion.
+  reactants = rxn.reactants.replace(' ','')
+  reactants = reactants.replace('+',' + ')
+  if reactants != rxn.reactants:
+    rxn.reactants = reactants
 
-    return {'FINISHED'}
+  # clean up rxn.products only if necessary to avoid infinite recursion.
+  products = rxn.products.replace(' ','')
+  products = products.replace('+',' + ')
+  if products != rxn.products:
+    rxn.products = products
 
+  #Check for duplicate reaction  
+  rxn.name = ('%s %s %s') % (rxn.reactants,rxtype,rxn.products)
+  rxn_keys = mc.reactions.reaction_list.keys()
+  if rxn_keys.count(rxn.name) > 1:
+    status = 'Duplicate reaction: %s' % (rxn.name) 
 
-
-def check_reaction(mc,rxn):
-
+  #Check syntax of reactant specification
   mol_list = mc.molecules.molecule_list
   mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)((',)|(,')|(;)|(,*)|('*))$"
-  status = ''
   reactants = rxn.reactants.split(' + ')
   for reactant in reactants:
     m = re.match(mol_filter,reactant)
@@ -378,6 +374,7 @@ def check_reaction(mc,rxn):
       if mol_name not in mol_list:
         status = 'Undefine molecule: %s' % (mol_name)
       
+  #Check syntax of product specification
   products = rxn.products.split(' + ')
   for product in products:
     m = re.match(mol_filter,product)
@@ -391,6 +388,38 @@ def check_reaction(mc,rxn):
 
   mc.reactions.status = status
   return
+
+
+
+class MCELL_OT_release_site_add(bpy.types.Operator):
+  bl_idname = "mcell.release_site_add"
+  bl_label = "Add Release Site"
+  bl_description = "Add a new Molecule Release Site to an MCell model"
+  bl_options = {'REGISTER', 'UNDO'}
+  
+  def execute(self,context):
+    mc = context.scene.mcell
+    mc.release_sites.mol_release_list.add()
+    mc.release_sites.active_release_index = len(mc.release_sites.mol_release_list)-1
+
+    return {'FINISHED'}
+ 
+
+
+class MCELL_OT_release_site_remove(bpy.types.Operator):
+  bl_idname = "mcell.release_site_remove"
+  bl_label = "Remove Release Site"
+  bl_description = "Remove selected Molecule Release Site from MCell model"
+  bl_options = {'REGISTER', 'UNDO'}
+  
+  def execute(self,context):
+    mc = context.scene.mcell
+    mc.release_sites.mol_release_list.remove(mc.release_sites.active_release_index)
+    mc.release_sites.active_release_index = mc.release_sits.active_release_index-1
+    if (mc.release_sites.active_release_index<0):
+      mc.release_sites.active_release_index = 0
+
+    return {'FINISHED'}
 
 
 

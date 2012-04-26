@@ -19,6 +19,7 @@
 
 
 import bpy
+from . import cellblender_operators
 
 
 #Custom Properties
@@ -58,14 +59,38 @@ class MCellStringProperty(bpy.types.PropertyGroup):
 class MCellReactionProperty(bpy.types.PropertyGroup):
   name = bpy.props.StringProperty(name="The Reaction")
   rxn_name = bpy.props.StringProperty(name="Reaction Name")
-  reactants = bpy.props.StringProperty(name="Reactants")
-  products = bpy.props.StringProperty(name="Products")
+  reactants = bpy.props.StringProperty(name="Reactants",update=cellblender_operators.check_reaction)
+  products = bpy.props.StringProperty(name="Products",update=cellblender_operators.check_reaction)
   type_enum = [
                 ('irreversible','->',''),
                 ('reversible','<->','')]
-  type = bpy.props.EnumProperty(items=type_enum,name="Reaction Type")
+  type = bpy.props.EnumProperty(items=type_enum,name="Reaction Type",update=cellblender_operators.check_reaction)
   fwd_rate = bpy.props.FloatProperty(name="Forward Rate",precision=4)
   bkwd_rate = bpy.props.FloatProperty(name="Backward Rate",precision=4)
+
+
+class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
+  name = bpy.props.StringProperty(name="Site Name")
+  molecule = bpy.props.StringProperty(name="Molecule")
+  shape_enum = [
+                ('CUBIC','Cubic',''),
+                ('SPHERICAL','Spherical',''),
+                ('SPHERICAL SHELL','Spherical Shell',''),
+  #              ('LIST','List',''),
+                ('OBJECT','Object/Region','')]
+  shape = bpy.props.EnumProperty(items=shape_enum,name="Release Shape")
+  object_name = bpy.props.StringProperty(name="Object/Region")
+  location = bpy.props.FloatVectorProperty(name="Location",precision=4)
+  diameter = bpy.props.FloatProperty(name="Site Diameter",precision=4)
+  probability = bpy.props.FloatProperty(name="Release Probability",precision=4,default=1.0)
+  quantity_type_enum = [
+                ('NUMBER_TO_RELEASE','Constant Number',''),
+                ('GAUSSIAN_RELEASE_NUMBER','Gaussian Number',''),
+                ('DENSITY','Concentration/Density','')]
+  quantity_type = bpy.props.EnumProperty(items=quantity_type_enum,name="Quantity Type for Release")
+  quantity = bpy.props.FloatProperty(name="Quantity to Release",precision=4)
+  stddev = bpy.props.FloatProperty(name="Standard Deviation",precision=4)
+  pattern = bpy.props.StringProperty(name="Name of Release Pattern to Use")
 
 
 #Panel Properties:
@@ -104,6 +129,11 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
   reaction_list = bpy.props.CollectionProperty(type=MCellReactionProperty,name="Reaction List")
   active_rxn_index = bpy.props.IntProperty(name="Active Reaction Index",default=0)
   status = bpy.props.StringProperty(name="Status")
+
+
+class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
+  mol_release_list = bpy.props.CollectionProperty(type=MCellMoleculeReleaseProperty,name="Molecule Release List")
+  active_release_index = bpy.props.IntProperty(name="Active Release Index",default=0)
 
 
 class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
@@ -152,6 +182,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
   mol_viz = bpy.props.PointerProperty(type=MCellMolVizPanelProperty,name="Mol Viz Settings")
   molecules = bpy.props.PointerProperty(type=MCellMoleculesPanelProperty,name="Defined Molecules")
   reactions = bpy.props.PointerProperty(type=MCellReactionsPanelProperty,name="Defined Reactions")
+  release_sites = bpy.props.PointerProperty(type=MCellMoleculeReleasePanelProperty,name="Defined Reactions")
   model_objects = bpy.props.PointerProperty(type=MCellModelObjectsPanelProperty,name="Defined Reactions")
   meshalyzer = bpy.props.PointerProperty(type=MCellMeshalyzerPanelProperty,name="CellBlender Project Settings")
   object_selector = bpy.props.PointerProperty(type=MCellObjectSelectorPanelProperty,name="CellBlender Project Settings")

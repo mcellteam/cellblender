@@ -271,9 +271,6 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
     if mc.reactions.status != '':
       row = layout.row()
       row.label(text=mc.reactions.status)
-    
-    row = layout.row()
-    row.operator("mcell.reaction_update_check",text="Update & Check")
 
 
 
@@ -292,8 +289,8 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
 
 
 
-class MCELL_PT_molecule_placement(bpy.types.Panel):
-  bl_label = "Molecule Placement"
+class MCELL_PT_molecule_release(bpy.types.Panel):
+  bl_label = "Molecule Release/Placement"
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
@@ -303,7 +300,32 @@ class MCELL_PT_molecule_placement(bpy.types.Panel):
     layout = self.layout
     mc = context.scene.mcell
     
-    row=layout.row()
+    row = layout.row()
+    row.label(text="Release/Placement Sites:", icon='FORCE_LENNARDJONES')
+    row = layout.row()
+    col = row.column()
+    col.template_list(mc.release_sites,"mol_release_list",mc.release_sites,"active_release_index",rows=2)
+    col = row.column(align=True)
+    col.operator("mcell.release_site_add",icon='ZOOMIN',text="")
+    col.operator("mcell.release_site_remove",icon='ZOOMOUT',text="")
+    if len(mc.release_sites.mol_release_list)>0:
+      rel = mc.release_sites.mol_release_list[mc.release_sites.active_release_index]
+      layout.prop(rel,"name")
+      layout.prop(rel,"molecule")
+      layout.prop(rel,"shape")
+      if (rel.shape == 'CUBIC') | (rel.shape == 'SPHERICAL') | (rel.shape == 'SPHERICAL SHELL'):
+        layout.prop(rel,"location")
+        layout.prop(rel,"diameter")
+      if rel.shape == 'OBJECT':
+        layout.prop(rel,"object_name")
+
+      layout.prop(rel,"probability")
+      layout.prop(rel,"quantity_type")
+      layout.prop(rel,"quantity")
+      if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
+        layout.prop(rel,"stddev")
+
+      layout.prop(rel,"pattern")
 
 
 
