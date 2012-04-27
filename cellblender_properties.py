@@ -144,7 +144,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
   status = bpy.props.StringProperty(name="Status")
 #  glyph_lib = bpy.utils.script_paths()[0]+'/addons/cellblender/glyph_library.blend/Mesh/'
-  glyph_lib = __file__+'/glyph_library.blend/Mesh/'
+  glyph_lib = __file__.replace(__file__.split('/')[len(__file__.split('/'))-1],'')+'/glyph_library.blend/Mesh/'
   glyph_enum = [
                     ('Cone','Cone',''),
                     ('Cube','Cube',''),

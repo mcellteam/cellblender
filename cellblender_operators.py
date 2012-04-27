@@ -538,7 +538,7 @@ class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
   bl_options = {'REGISTER'}
   
   def execute(self,context):
-    mc = bpy.data.scenes[0].mcell
+    mc = context.scene.mcell
     i = mc.mol_viz.mol_file_index
     if (i > mc.mol_viz.mol_file_stop_index):
       i = mc.mol_viz.mol_file_stop_index
@@ -589,7 +589,7 @@ class MCELL_OT_mol_viz_prev(bpy.types.Operator):
 
 @persistent
 def frame_change_handler(scn):
-  mc = bpy.data.scenes[0].mcell
+  mc = scn.mcell
   curr_frame = mc.mol_viz.mol_file_index
   if (not curr_frame == scn.frame_current):
     mc.mol_viz.mol_file_index = scn.frame_current
@@ -645,7 +645,7 @@ def MolVizDelete(mcell_prop):
 def MolVizUnlink(mcell_prop):
   
   mc = mcell_prop
-  scn = bpy.data.scenes[0]
+  scn = bpy.context.scene
   scn_objs = scn.objects
   meshes = bpy.data.meshes
   objs = bpy.data.objects
@@ -683,7 +683,7 @@ def MolVizFileRead(mcell_prop,filepath):
       meshes = bpy.data.meshes
       mats = bpy.data.materials
       objs = bpy.data.objects
-      scn = bpy.data.scenes[0]
+      scn = bpy.context.scene
       scn_objs = scn.objects
       mc = mcell_prop
       z_axis = mathutils.Vector((0.0, 0.0, 1.0))
@@ -1067,8 +1067,8 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
     mol_shape_name = mol_obj.name
 
     new_glyph_name = mc.molecule_glyphs.glyph
-
-    bpy.ops.wm.link_append(directory="/Users/bartol/src/blender_modules/cellblender/glyph_library.blend/Mesh/",files=[{'name': new_glyph_name}],link=False,autoselect=False)
+  
+    bpy.ops.wm.link_append(directory=mc.molecule_glyphs.glyph_lib,files=[{'name': new_glyph_name}],link=False,autoselect=False)
 
     mol_mat = mol_obj.material_slots[0].material
     new_mol_mesh = bpy.data.meshes[new_glyph_name]
