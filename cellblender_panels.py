@@ -194,7 +194,7 @@ class MCELL_PT_user_model_parameters(bpy.types.Panel):
 
 
 class MCELL_PT_initialization(bpy.types.Panel):
-  bl_label = "MCell Model Initialization"
+  bl_label = "Model Initialization"
   bl_space_type = "PROPERTIES"
   bl_region_type = "WINDOW"
   bl_context = "scene"
@@ -204,7 +204,8 @@ class MCELL_PT_initialization(bpy.types.Panel):
     layout = self.layout
     mc = context.scene.mcell
     
-    row=layout.row()
+    layout.prop(mc.initialization,"iterations")
+    layout.prop(mc.initialization,"time_step")
 
 
 

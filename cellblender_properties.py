@@ -29,7 +29,7 @@ class MCellSurfaceRegionFaceProperty(bpy.types.PropertyGroup):
 
 
 class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
-  name = bpy.props.StringProperty(name="Region Name")
+  name = bpy.props.StringProperty(name="Region Name",default="new_region")
   faces = bpy.props.CollectionProperty(type=MCellSurfaceRegionFaceProperty,name="Surface Region List")
   active_face_index = bpy.props.IntProperty(name="Active Face Index",default=0)
 
@@ -40,7 +40,7 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
 
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
-  name = bpy.props.StringProperty(name="Molecule Name")
+  name = bpy.props.StringProperty(name="Molecule Name",default="new_molecule")
   type_enum = [
                     ('2D','Surface Molecule',''),
                     ('3D','Volume Molecule','')]
@@ -70,7 +70,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
 
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
-  name = bpy.props.StringProperty(name="Site Name")
+  name = bpy.props.StringProperty(name="Site Name",default="new_release_site")
   molecule = bpy.props.StringProperty(name="Molecule")
   shape_enum = [
                 ('CUBIC','Cubic',''),
@@ -119,6 +119,11 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
   mol_viz_enable = bpy.props.BoolProperty(name="Enable Molecule Vizualization",description="Disable for faster animation preview",default=True)
 
 
+class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
+  iterations = bpy.props.IntProperty(name="Simulation Iterations",default=0)
+  time_step = bpy.props.FloatProperty(name="Simulation Time Step",default=1e-6)
+
+
 class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
   molecule_list = bpy.props.CollectionProperty(type=MCellMoleculeProperty,name="Molecule List")
   active_mol_index = bpy.props.IntProperty(name="Active Molecule Index",default=0)
@@ -143,7 +148,6 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
   status = bpy.props.StringProperty(name="Status")
-#  glyph_lib = bpy.utils.script_paths()[0]+'/addons/cellblender/glyph_library.blend/Mesh/'
   glyph_lib = __file__.replace(__file__.split('/')[len(__file__.split('/'))-1],'')+'/glyph_library.blend/Mesh/'
   glyph_enum = [
                     ('Cone','Cone',''),
@@ -180,6 +184,7 @@ class MCellObjectSelectorPanelProperty(bpy.types.PropertyGroup):
 class MCellPropertyGroup(bpy.types.PropertyGroup):
   project_settings = bpy.props.PointerProperty(type=MCellProjectPanelProperty,name="CellBlender Project Settings")
   mol_viz = bpy.props.PointerProperty(type=MCellMolVizPanelProperty,name="Mol Viz Settings")
+  initialization = bpy.props.PointerProperty(type=MCellInitializationPanelProperty,name="Model Initialization")
   molecules = bpy.props.PointerProperty(type=MCellMoleculesPanelProperty,name="Defined Molecules")
   reactions = bpy.props.PointerProperty(type=MCellReactionsPanelProperty,name="Defined Reactions")
   release_sites = bpy.props.PointerProperty(type=MCellMoleculeReleasePanelProperty,name="Defined Reactions")

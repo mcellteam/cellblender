@@ -65,6 +65,7 @@ def register():
   bpy.utils.register_class(cellblender_properties.MCellStringProperty)
   bpy.utils.register_class(cellblender_properties.MCellProjectPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellMolVizPanelProperty)
+  bpy.utils.register_class(cellblender_properties.MCellInitializationPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellMoleculesPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellReactionsPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellMoleculeReleasePanelProperty)

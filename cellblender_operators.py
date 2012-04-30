@@ -415,7 +415,7 @@ class MCELL_OT_release_site_remove(bpy.types.Operator):
   def execute(self,context):
     mc = context.scene.mcell
     mc.release_sites.mol_release_list.remove(mc.release_sites.active_release_index)
-    mc.release_sites.active_release_index = mc.release_sits.active_release_index-1
+    mc.release_sites.active_release_index = mc.release_sites.active_release_index-1
     if (mc.release_sites.active_release_index<0):
       mc.release_sites.active_release_index = 0
 
@@ -692,6 +692,17 @@ def MolVizFileRead(mcell_prop,filepath):
       mol_dict = {}
       mol_pos = []
       mol_orient = []
+
+      color = []
+      color.append([0.8,0.0,0.0])
+      color.append([0.0,0.8,0.0])
+      color.append([0.0,0.0,0.8])
+      color.append([0.0,0.8,0.8])
+      color.append([0.8,0.0,0.8])
+      color.append([0.8,0.8,0.0])
+      color.append([1.0,1.0,1.0])
+      color.append([0.0,0.0,0.0])
+      color_index = 0
       
       for n in range(len(mol_data)):
         mol_name = 'mol_%s' % (mol_data[n][0])
@@ -737,7 +748,10 @@ def MolVizFileRead(mcell_prop,filepath):
         mol_mat = mats.get(mol_mat_name)
         if not mol_mat:
           mol_mat = mats.new(mol_mat_name)
-          mol_mat.diffuse_color = [1.0, 0.0, 0.0]
+          mol_mat.diffuse_color = color[color_index]
+          color_index = color_index + 1
+          if color_index > len(color)-1:
+            color_index = 0
         if not mol_shape_mesh.materials.get(mol_mat_name):
           mol_shape_mesh.materials.append(mol_mat)
 
