@@ -1081,6 +1081,7 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
     mol_shape_name = mol_obj.name
 
     new_glyph_name = mc.molecule_glyphs.glyph
+    print(mc.molecule_glyphs.glyph_lib)
   
     bpy.ops.wm.link_append(directory=mc.molecule_glyphs.glyph_lib,files=[{'name': new_glyph_name}],link=False,autoselect=False)
 
