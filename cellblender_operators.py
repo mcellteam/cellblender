@@ -843,7 +843,8 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
     area = 0
     for f in mesh.faces:
       if not (len(f.vertices) == 3):
-        mc.meshalyzer.status = 'Mesh Not Triangulated'
+        mc.meshalyzer.status = '***** Mesh Not Triangulated *****'
+        mc.meshalyzer.watertight = 'Mesh Not Triangulated'
         return {'FINISHED'}
 
       tv0 = mesh.vertices[f.vertices[0]].co * t_mat
