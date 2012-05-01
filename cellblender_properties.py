@@ -56,6 +56,11 @@ class MCellStringProperty(bpy.types.PropertyGroup):
   name = bpy.props.StringProperty(name="Text")
 
 
+# Generic PropertyGroup to hold float vectors for a ColletionProperty  
+class MCellFloatVectorProperty(bpy.types.PropertyGroup):
+  vec = bpy.props.FloatVectorProperty(name="Float Vector")
+
+
 class MCellReactionProperty(bpy.types.PropertyGroup):
   name = bpy.props.StringProperty(name="The Reaction")
   rxn_name = bpy.props.StringProperty(name="Reaction Name")
@@ -117,6 +122,8 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
   mol_viz_list = bpy.props.CollectionProperty(type=MCellStringProperty,name="Molecule Viz Name List")
   render_and_save = bpy.props.BoolProperty(name="Render & Save Images")
   mol_viz_enable = bpy.props.BoolProperty(name="Enable Molecule Vizualization",description="Disable for faster animation preview",default=True)
+  color_list = bpy.props.CollectionProperty(type=MCellFloatVectorProperty,name="Molecule Color List")
+  color_index = bpy.props.IntProperty(name="Color Index",default=0)
 
 
 class MCellInitializationPanelProperty(bpy.types.PropertyGroup):

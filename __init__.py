@@ -46,7 +46,7 @@ else:
 import bpy
 
 
-# See notes below for errors in documentation
+# See notes below
 
 
 def register():
@@ -63,6 +63,7 @@ def register():
   bpy.utils.register_class(cellblender_properties.MCellReactionProperty)
   bpy.utils.register_class(cellblender_properties.MCellMoleculeReleaseProperty)
   bpy.utils.register_class(cellblender_properties.MCellStringProperty)
+  bpy.utils.register_class(cellblender_properties.MCellFloatVectorProperty)
   bpy.utils.register_class(cellblender_properties.MCellProjectPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellMolVizPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellInitializationPanelProperty)

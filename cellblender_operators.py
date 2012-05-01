@@ -521,6 +521,19 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     mc.mol_viz.mol_file_num = len(mc.mol_viz.mol_file_list)
     mc.mol_viz.mol_file_stop_index = mc.mol_viz.mol_file_num-1
     mc.mol_viz.mol_file_index = 0
+
+    mc.mol_viz.color_index = 0
+    if len(mc.mol_viz.color_list) == 0:
+      for i in range(8):
+        mc.mol_viz.color_list.add()
+      mc.mol_viz.color_list[0].vec = [0.8,0.0,0.0]
+      mc.mol_viz.color_list[1].vec = [0.0,0.8,0.0]
+      mc.mol_viz.color_list[2].vec = [0.0,0.0,0.8]
+      mc.mol_viz.color_list[3].vec = [0.0,0.8,0.8]
+      mc.mol_viz.color_list[4].vec = [0.8,0.0,0.8]
+      mc.mol_viz.color_list[5].vec = [0.8,0.8,0.0]
+      mc.mol_viz.color_list[6].vec = [1.0,1.0,1.0]
+      mc.mol_viz.color_list[7].vec = [0.0,0.0,0.0]
     
     MolVizUpdate(mc,0)
     return {'FINISHED'}
@@ -693,17 +706,6 @@ def MolVizFileRead(mcell_prop,filepath):
       mol_pos = []
       mol_orient = []
 
-      color = []
-      color.append([0.8,0.0,0.0])
-      color.append([0.0,0.8,0.0])
-      color.append([0.0,0.0,0.8])
-      color.append([0.0,0.8,0.8])
-      color.append([0.8,0.0,0.8])
-      color.append([0.8,0.8,0.0])
-      color.append([1.0,1.0,1.0])
-      color.append([0.0,0.0,0.0])
-      color_index = 0
-      
       for n in range(len(mol_data)):
         mol_name = 'mol_%s' % (mol_data[n][0])
         if not mol_name in mol_dict:
@@ -748,10 +750,10 @@ def MolVizFileRead(mcell_prop,filepath):
         mol_mat = mats.get(mol_mat_name)
         if not mol_mat:
           mol_mat = mats.new(mol_mat_name)
-          mol_mat.diffuse_color = color[color_index]
-          color_index = color_index + 1
-          if color_index > len(color)-1:
-            color_index = 0
+          mol_mat.diffuse_color = mc.mol_viz.color_list[mc.mol_viz.color_index].vec
+          mc.mol_viz.color_index = mc.mol_viz.color_index + 1
+          if mc.mol_viz.color_index > len(mc.mol_viz.color_list)-1:
+            mc.mol_viz.color_index = 0
         if not mol_shape_mesh.materials.get(mol_mat_name):
           mol_shape_mesh.materials.append(mol_mat)
 
@@ -1081,7 +1083,6 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
     mol_shape_name = mol_obj.name
 
     new_glyph_name = mc.molecule_glyphs.glyph
-    print(mc.molecule_glyphs.glyph_lib)
   
     bpy.ops.wm.link_append(directory=mc.molecule_glyphs.glyph_lib,files=[{'name': new_glyph_name}],link=False,autoselect=False)
 
