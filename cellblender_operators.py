@@ -38,8 +38,10 @@ class MCELL_OT_region_add(bpy.types.Operator):
   bl_options = {'REGISTER', 'UNDO'}
   
   def execute(self,context):
-    context.object.mcell.regions.region_list.add()
-    context.object.mcell.regions.active_reg_index = len(bpy.context.object.mcell.regions.region_list)-1
+    mc_obj = context.object.mcell
+    mc_obj.regions.region_list.add()
+    mc_obj.regions.active_reg_index = len(mc_obj.regions.region_list)-1
+    mc_obj.regions.region_list[mc_obj.regions.active_reg_index].name = 'New Region'
     return {'FINISHED'}
  
 
@@ -51,10 +53,11 @@ class MCELL_OT_region_remove(bpy.types.Operator):
   bl_options = {'REGISTER', 'UNDO'}
   
   def execute(self,context):
-    context.object.mcell.regions.region_list.remove(bpy.context.object.mcell.regions.active_reg_index)
-    context.object.mcell.regions.active_reg_index = bpy.context.object.mcell.regions.active_reg_index-1
-    if (context.object.mcell.regions.active_reg_index<0):
-      context.object.mcell.regions.active_reg_index = 0
+    mc_obj = context.object.mcell
+    mc_obj.regions.region_list.remove(mc_obj.regions.active_reg_index)
+    mc_obj.regions.active_reg_index = mc_obj.regions.active_reg_index-1
+    if (mc_obj.regions.active_reg_index<0):
+      mc_obj.regions.active_reg_index = 0
     return {'FINISHED'}
 
 
@@ -282,6 +285,7 @@ class MCELL_OT_molecule_add(bpy.types.Operator):
     mc = context.scene.mcell
     mc.molecules.molecule_list.add()
     mc.molecules.active_mol_index = len(mc.molecules.molecule_list)-1
+    mc.molecules.molecule_list[mc.molecules.active_mol_index].name = 'New Molecule'
     return {'FINISHED'}
  
 
@@ -309,8 +313,10 @@ class MCELL_OT_reaction_add(bpy.types.Operator):
   bl_options = {'REGISTER', 'UNDO'}
   
   def execute(self,context):
-    context.scene.mcell.reactions.reaction_list.add()
-    context.scene.mcell.reactions.active_rxn_index = len(bpy.context.scene.mcell.reactions.reaction_list)-1
+    mc = context.scene.mcell
+    mc.reactions.reaction_list.add()
+    mc.reactions.active_rxn_index = len(mc.reactions.reaction_list)-1
+    mc.reactions.reaction_list[mc.reactions.active_rxn_index].name = 'New Reaction'
     return {'FINISHED'}
  
 
@@ -322,10 +328,11 @@ class MCELL_OT_reaction_remove(bpy.types.Operator):
   bl_options = {'REGISTER', 'UNDO'}
   
   def execute(self,context):
-    context.scene.mcell.reactions.reaction_list.remove(bpy.context.scene.mcell.reactions.active_rxn_index)
-    context.scene.mcell.reactions.active_rxn_index = bpy.context.scene.mcell.reactions.active_rxn_index-1
-    if (context.scene.mcell.reactions.active_rxn_index<0):
-      context.scene.mcell.reactions.active_rxn_index = 0
+    mc = context.scene.mcell
+    mc.reactions.reaction_list.remove(mc.reactions.active_rxn_index)
+    mc.reactions.active_rxn_index = mc.reactions.active_rxn_index-1
+    if (mc.reactions.active_rxn_index<0):
+      mc.reactions.active_rxn_index = 0
     return {'FINISHED'}
 
 
@@ -401,6 +408,7 @@ class MCELL_OT_release_site_add(bpy.types.Operator):
     mc = context.scene.mcell
     mc.release_sites.mol_release_list.add()
     mc.release_sites.active_release_index = len(mc.release_sites.mol_release_list)-1
+    mc.release_sites.mol_release_list[mc.release_sites.active_release_index].name = 'New Release Site'
 
     return {'FINISHED'}
  
@@ -670,7 +678,7 @@ def MolVizUnlink(mcell_prop):
     scn_objs.unlink(mol_obj)
     objs.remove(mol_obj)
   
-  scn.update()
+#  scn.update()
   # Reset mol_viz_list to empty
   for i in range(len(mc.mol_viz.mol_viz_list)-1,-1,-1):
     mc.mol_viz.mol_viz_list.remove(i)
@@ -779,7 +787,7 @@ def MolVizFileRead(mcell_prop,filepath):
         mol_obj.use_dupli_vertices_rotation=True
         mol_obj.parent = mols_obj
           
-    scn.update()
+#    scn.update()
 
 #    utime = resource.getrusage(resource.RUSAGE_SELF)[0]-begin
 #    print ('   Processed %d molecules in %g seconds\n' % (len(mol_data),utime))
@@ -800,8 +808,7 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
 
   def execute(self,context):
 
-    scn = context.scene
-    mc = scn.mcell
+    mc = context.scene.mcell
     objs = context.selected_objects
 
     mc.meshalyzer.object_name = ''
@@ -1025,8 +1032,7 @@ class MCELL_OT_model_objects_include(bpy.types.Operator):
 
   def execute(self,context):
 
-    scn = context.scene
-    mc = scn.mcell
+    mc = context.scene.mcell
     objs = context.selected_objects
 
     for obj in objs:
@@ -1046,8 +1052,7 @@ class MCELL_OT_model_objects_remove(bpy.types.Operator):
 
   def execute(self,context):
 
-    scn = context.scene
-    mc = scn.mcell
+    mc = context.scene.mcell
 
     mc.model_objects.object_list.remove(mc.model_objects.active_obj_index)
     mc.model_objects.active_obj_index = mc.model_objects.active_obj_index-1
@@ -1066,8 +1071,7 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
 
   def execute(self,context):
 
-    scn = context.scene
-    mc = scn.mcell
+    mc = context.scene.mcell
     mc.molecule_glyphs.status = ''
 #    new_glyph_name = 'receptor_glyph'
 #    mol_shape_name = 'mol_Ca_shape'

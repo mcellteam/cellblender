@@ -92,10 +92,10 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
                 ('NUMBER_TO_RELEASE','Constant Number',''),
                 ('GAUSSIAN_RELEASE_NUMBER','Gaussian Number',''),
                 ('DENSITY','Concentration/Density','')]
-  quantity_type = bpy.props.EnumProperty(items=quantity_type_enum,name="Quantity Type for Release")
+  quantity_type = bpy.props.EnumProperty(items=quantity_type_enum,name="Quantity Type")
   quantity = bpy.props.FloatProperty(name="Quantity to Release",precision=4)
   stddev = bpy.props.FloatProperty(name="Standard Deviation",precision=4)
-  pattern = bpy.props.StringProperty(name="Name of Release Pattern to Use")
+  pattern = bpy.props.StringProperty(name="Release Pattern")
 
 
 #Panel Properties:
