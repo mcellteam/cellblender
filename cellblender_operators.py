@@ -615,7 +615,7 @@ def frame_change_handler(scn):
   if (not curr_frame == scn.frame_current):
     mc.mol_viz.mol_file_index = scn.frame_current
     bpy.ops.mcell.mol_viz_set_index(None)
-    scn.update()
+#    scn.update()
     if mc.mol_viz.render_and_save:
       scn.render.filepath = '//stores_on/frames/frame_%05d.png' % (scn.frame_current)
       bpy.ops.render.render(write_still=True)
@@ -628,7 +628,7 @@ def render_handler(scn):
   if (not curr_frame == scn.frame_current):
     mc.mol_viz.mol_file_index = scn.frame_current
     bpy.ops.mcell.mol_viz_set_index(None)
-  scn.update()
+#  scn.update()
 
 
 
@@ -641,29 +641,14 @@ def MolVizUpdate(mcell_prop,i):
   global_undo = bpy.context.user_preferences.edit.use_global_undo
   bpy.context.user_preferences.edit.use_global_undo = False
   
-  MolVizUnlink(mc)
+  MolVizClear(mc)
   MolVizFileRead(mc,filepath)
   
   bpy.context.user_preferences.edit.use_global_undo = global_undo
 
 
 
-def MolVizDelete(mcell_prop):
-  
-  mc = mcell_prop
-  bpy.ops.object.select_all(action='DESELECT')
-  for mol_name in mc.mol_viz.mol_viz_list:
-    bpy.ops.object.select_name(name=mol_name.name,extend=True)
-  
-  bpy.ops.object.delete('EXEC_DEFAULT')
-  
-  # Reset mol_viz_list to empty
-  for i in range(len(mc.mol_viz.mol_viz_list)-1,-1,-1):
-    mc.mol_viz.mol_viz_list.remove(i)
-
-
-
-def MolVizUnlink(mcell_prop):
+def MolVizClear(mcell_prop):
   
   mc = mcell_prop
   scn = bpy.context.scene
@@ -673,12 +658,33 @@ def MolVizUnlink(mcell_prop):
   for mol_item in mc.mol_viz.mol_viz_list:
     mol_name = mol_item.name
     mol_obj = scn_objs[mol_name]
-    scn_objs['%s_shape' % (mol_name)].parent = None
+    hide = mol_obj.hide
+
     mol_pos_mesh = mol_obj.data
+    mol_pos_mesh_name = mol_pos_mesh.name
+    mol_shape_obj_name = '%s_shape' % (mol_name)
+    mol_shape_obj = objs.get(mol_shape_obj_name)
+    mol_shape_obj.parent = None
+
     scn_objs.unlink(mol_obj)
     objs.remove(mol_obj)
+    meshes.remove(mol_pos_mesh)
+
+    mol_pos_mesh = meshes.new(mol_pos_mesh_name)
+    mol_obj = objs.new(mol_name,mol_pos_mesh)
+    scn_objs.link(mol_obj)
+
+    mol_shape_obj.parent = mol_obj
+
+    mol_obj.dupli_type = 'VERTS'
+    mol_obj.use_dupli_vertices_rotation=True
+    mols_obj = objs.get('molecules')
+    mol_obj.parent = mols_obj
+
+    mol_obj.hide = hide
+
+#  scn.update()
   
-  scn.update()
   # Reset mol_viz_list to empty
   for i in range(len(mc.mol_viz.mol_viz_list)-1,-1,-1):
     mc.mol_viz.mol_viz_list.remove(i)
@@ -768,29 +774,25 @@ def MolVizFileRead(mcell_prop,filepath):
 #       Create a "mesh" to hold instances of molecule positions 
         mol_pos_mesh_name = '%s_pos' % (mol_name)
         mol_pos_mesh = meshes.get(mol_pos_mesh_name)
-        if mol_pos_mesh:
-          meshes.remove(mol_pos_mesh)
-        
-        mol_pos_mesh = meshes.new(mol_pos_mesh_name)
+        if not mol_pos_mesh:
+          mol_pos_mesh = meshes.new(mol_pos_mesh_name)
+
+#       Add and place vertices at positions of molecules
         mol_pos_mesh.vertices.add(len(mol_pos)//3)
         mol_pos_mesh.vertices.foreach_set("co",mol_pos)
         mol_pos_mesh.vertices.foreach_set("normal",mol_orient)
         
+#       Create object to contain the mol_pos_mesh data
         mol_obj = objs.get(mol_name)
         if not mol_obj:
           mol_obj = objs.new(mol_name,mol_pos_mesh)
-
-#        mol_obj = objs.new(mol_name,mol_pos_mesh)
-
-        if not scn_objs.get(mol_name):
           scn_objs.link(mol_obj)
-        
-        mol_shape_obj.parent = mol_obj
-        mol_obj.dupli_type = 'VERTS'
-        mol_obj.use_dupli_vertices_rotation=True
-        mol_obj.parent = mols_obj
+          mol_shape_obj.parent = mol_obj
+          mol_obj.dupli_type = 'VERTS'
+          mol_obj.use_dupli_vertices_rotation=True
+          mol_obj.parent = mols_obj
           
-    scn.update()
+#    scn.update()
 
 #    utime = resource.getrusage(resource.RUSAGE_SELF)[0]-begin
 #    print ('   Processed %d molecules in %g seconds\n' % (len(mol_data),utime))
