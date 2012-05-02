@@ -615,7 +615,7 @@ def frame_change_handler(scn):
   if (not curr_frame == scn.frame_current):
     mc.mol_viz.mol_file_index = scn.frame_current
     bpy.ops.mcell.mol_viz_set_index(None)
-#    scn.update()
+    scn.update()
     if mc.mol_viz.render_and_save:
       scn.render.filepath = '//stores_on/frames/frame_%05d.png' % (scn.frame_current)
       bpy.ops.render.render(write_still=True)
@@ -678,7 +678,7 @@ def MolVizUnlink(mcell_prop):
     scn_objs.unlink(mol_obj)
     objs.remove(mol_obj)
   
-#  scn.update()
+  scn.update()
   # Reset mol_viz_list to empty
   for i in range(len(mc.mol_viz.mol_viz_list)-1,-1,-1):
     mc.mol_viz.mol_viz_list.remove(i)
@@ -779,6 +779,9 @@ def MolVizFileRead(mcell_prop,filepath):
         mol_obj = objs.get(mol_name)
         if not mol_obj:
           mol_obj = objs.new(mol_name,mol_pos_mesh)
+
+#        mol_obj = objs.new(mol_name,mol_pos_mesh)
+
         if not scn_objs.get(mol_name):
           scn_objs.link(mol_obj)
         
@@ -787,7 +790,7 @@ def MolVizFileRead(mcell_prop,filepath):
         mol_obj.use_dupli_vertices_rotation=True
         mol_obj.parent = mols_obj
           
-#    scn.update()
+    scn.update()
 
 #    utime = resource.getrusage(resource.RUSAGE_SELF)[0]-begin
 #    print ('   Processed %d molecules in %g seconds\n' % (len(mol_data),utime))
