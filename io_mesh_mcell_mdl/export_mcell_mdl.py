@@ -55,19 +55,29 @@ def save(operator, context, filepath=""):
   file.write('ITERATIONS = %d\n' %(mc.initialization.iterations))
   file.write('TIME_STEP = %g\n\n' %(mc.initialization.time_step))
 
+  # Export Molecules:
+  if mc.project_settings.export_format == 'mcell_mdl_modular':
+    file.write('INCLUDE_FILE = \"%s.molecules.mdl\"\n\n' % (mc.project_settings.base_name))
+    filepath = ('%s/%s.molecules.mdl' % (filedir,mc.project_settings.base_name))
+    tmp_file = open(filepath, "w", encoding="utf8", newline="\n")
+    save_molecules(context,tmp_file)
+    tmp_file.close()
+  else:
+    save_molecules(context,file)
+
   # Include MDL file to define surface classes
   if mc.surface_classes.include:
     file.write('INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n' % (mc.project_settings.base_name))
 
-  # Export Molecules and Reactions:
+  # Export Reactions:
   if mc.project_settings.export_format == 'mcell_mdl_modular':
-    file.write('INCLUDE_FILE = \"%s.mechanisms.mdl\"\n\n' % (mc.project_settings.base_name))
-    filepath = ('%s/%s.mechanisms.mdl' % (filedir,mc.project_settings.base_name))
+    file.write('INCLUDE_FILE = \"%s.reactions.mdl\"\n\n' % (mc.project_settings.base_name))
+    filepath = ('%s/%s.reactions.mdl' % (filedir,mc.project_settings.base_name))
     tmp_file = open(filepath, "w", encoding="utf8", newline="\n")
-    save_mechanisms(context,tmp_file)
+    save_reactions(context,tmp_file)
     tmp_file.close()
   else:
-    save_mechanisms(context,file)
+    save_reactions(context,file)
 
   # Export Model Geometry:
   if mc.project_settings.export_format == 'mcell_mdl_modular':
@@ -140,7 +150,7 @@ def save(operator, context, filepath=""):
 
 
 
-def save_mechanisms(context,file):
+def save_molecules(context,file):
 
   mc = context.scene.mcell
 
@@ -164,6 +174,14 @@ def save_mechanisms(context,file):
         file.write('    TARGET_ONLY\n')
       file.write('  }\n')
     file.write('}\n\n')
+
+  return
+
+
+
+def save_reactions(context,file):
+
+  mc = context.scene.mcell
 
   # Export Reactions:
   rxn_list = mc.reactions.reaction_list
