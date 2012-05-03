@@ -84,11 +84,6 @@ class ExportMCellMDL(bpy.types.Operator, ExportHelper):
     filename_ext = ".mdl"
     filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
 
-    use_modifiers = BoolProperty(name="Apply Modifiers", description="Apply Modifiers to the exported mesh", default=True)
-    use_normals = BoolProperty(name="Normals", description="Export Normals for smooth and hard shaded faces", default=True)
-    use_uv_coords = BoolProperty(name="UVs", description="Export the active UV layer", default=True)
-    use_colors = BoolProperty(name="Vertex Colors", description="Export the active vertex color layer", default=True)
-
     @classmethod
     def poll(cls, context):
         return context.active_object != None
@@ -101,13 +96,6 @@ class ExportMCellMDL(bpy.types.Operator, ExportHelper):
 
     def draw(self, context):
         layout = self.layout
-
-        row = layout.row()
-        row.prop(self, "use_modifiers")
-        row.prop(self, "use_normals")
-        row = layout.row()
-        row.prop(self, "use_uv_coords")
-        row.prop(self, "use_colors")
 
 
 def menu_func_import(self, context):

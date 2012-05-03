@@ -104,9 +104,10 @@ class MCellProjectPanelProperty(bpy.types.PropertyGroup):
   base_name = bpy.props.StringProperty(name="Project Base Name")
   project_dir = bpy.props.StringProperty(name="Project Directory")
   export_format_enum = [
-                         ('mcell_mdl','MCell MDL Format','')]
-  export_format = bpy.props.EnumProperty(items=export_format_enum,name="Export Format",default="mcell_mdl")
-  export_selection_only = bpy.props.BoolProperty(name="Export Selected Objects Only",default=True)
+                         ('mcell_mdl_unified','Single Unified MCell MDL File',''),
+                         ('mcell_mdl_modular','Modular MCell MDL Files','')]
+  export_format = bpy.props.EnumProperty(items=export_format_enum,name="Export Format",default="mcell_mdl_modular")
+#  export_selection_only = bpy.props.BoolProperty(name="Export Selected Objects Only",default=True)
 
 
 # Property group for for molecule visualization (Visualize Simulation Results Panel)
@@ -143,6 +144,14 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
   status = bpy.props.StringProperty(name="Status")
 
 
+class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
+  include = bpy.props.BoolProperty(name="Include Surface Classes",description="Add INCLUDE_FILE for Surface Classes to main MDL file",default=False)
+
+
+class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
+  include = bpy.props.BoolProperty(name="Include Modify Surface Regions",description="Add INCLUDE_FILE for Modify Surface Regions to main MDL file",default=False)
+
+
 class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
   mol_release_list = bpy.props.CollectionProperty(type=MCellMoleculeReleaseProperty,name="Molecule Release List")
   active_release_index = bpy.props.IntProperty(name="Active Release Index",default=0)
@@ -151,6 +160,14 @@ class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
 class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
   object_list = bpy.props.CollectionProperty(type=MCellStringProperty,name="Object List")
   active_obj_index = bpy.props.IntProperty(name="Active Object Index",default=0)
+
+
+class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
+  include = bpy.props.BoolProperty(name="Include Viz Output",description="Add INCLUDE_FILE for Viz Output to main MDL file",default=False)
+
+
+class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
+  include = bpy.props.BoolProperty(name="Include Reaction Output",description="Add INCLUDE_FILE for Reaction Output to main MDL file",default=False)
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
@@ -194,8 +211,12 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
   initialization = bpy.props.PointerProperty(type=MCellInitializationPanelProperty,name="Model Initialization")
   molecules = bpy.props.PointerProperty(type=MCellMoleculesPanelProperty,name="Defined Molecules")
   reactions = bpy.props.PointerProperty(type=MCellReactionsPanelProperty,name="Defined Reactions")
+  surface_classes = bpy.props.PointerProperty(type=MCellSurfaceClassesPanelProperty,name="Defined Reactions")
+  mod_surf_regions = bpy.props.PointerProperty(type=MCellModSurfRegionsProperty,name="Defined Reactions")
   release_sites = bpy.props.PointerProperty(type=MCellMoleculeReleasePanelProperty,name="Defined Reactions")
   model_objects = bpy.props.PointerProperty(type=MCellModelObjectsPanelProperty,name="Defined Reactions")
+  viz_output = bpy.props.PointerProperty(type=MCellVizOutputPanelProperty,name="Defined Reactions")
+  rxn_output = bpy.props.PointerProperty(type=MCellReactionOutputPanelProperty,name="Defined Reactions")
   meshalyzer = bpy.props.PointerProperty(type=MCellMeshalyzerPanelProperty,name="CellBlender Project Settings")
   object_selector = bpy.props.PointerProperty(type=MCellObjectSelectorPanelProperty,name="CellBlender Project Settings")
   molecule_glyphs = bpy.props.PointerProperty(type=MCellMoleculeGlyphsPanelProperty,name="Molecule Shapes")

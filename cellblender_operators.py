@@ -439,10 +439,13 @@ class MCELL_OT_export_project(bpy.types.Operator):
   
   def execute(self,context):
     mc = context.scene.mcell
-    if mc.project_settings.export_format == 'mcell_mdl':
-      if not mc.project_settings.export_selection_only:
-        bpy.ops.object.select_by_type(type='MESH')
-      filepath = mc.project_settings.project_dir+'/'+mc.project_settings.base_name+'.geometry.mdl'
+    if mc.project_settings.export_format == 'mcell_mdl_unified':
+#      if not mc.project_settings.export_selection_only:
+#        bpy.ops.object.select_by_type(type='MESH')
+      filepath = mc.project_settings.project_dir+'/'+mc.project_settings.base_name+'.main.mdl'
+      bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT',filepath=filepath)
+    elif mc.project_settings.export_format == 'mcell_mdl_modular':
+      filepath = mc.project_settings.project_dir+'/'+mc.project_settings.base_name+'.main.mdl'
       bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT',filepath=filepath)
 
     return {'FINISHED'}
@@ -1030,8 +1033,8 @@ class MCELL_OT_deselect_filtered(bpy.types.Operator):
 
 
 
-class MCELL_OT_model_objects_include(bpy.types.Operator):
-  bl_idname = "mcell.model_objects_include"
+class MCELL_OT_model_objects_add(bpy.types.Operator):
+  bl_idname = "mcell.model_objects_add"
   bl_label = "Model Objects Include"
   bl_description = "Include selected objects in model object export list"
   bl_options = {'REGISTER', 'UNDO'}

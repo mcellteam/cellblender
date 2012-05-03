@@ -43,11 +43,9 @@ class MCELL_PT_project_settings(bpy.types.Panel):
     layout.prop(mc.project_settings,"base_name")
     layout.separator()
     row = layout.row()
-    row.label(text="Export Project")
+    row.label(text="Export Project: "+mc.project_settings.base_name)
     row = layout.row()
     layout.prop(mc.project_settings,"export_format")
-    row = layout.row()
-    layout.prop(mc.project_settings,"export_selection_only")
     row = layout.row()
     row.operator("mcell.export_project",text="Export CellBlender Project",icon="FILESEL")
 
@@ -286,7 +284,8 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
     layout = self.layout
     mc = context.scene.mcell
     
-    row=layout.row()
+    layout.prop(mc.surface_classes,"include")
+    layout.prop(mc.mod_surf_regions,"include")
 
 
 
@@ -341,7 +340,7 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
     layout = self.layout
     mc = context.scene.mcell
     
-    row=layout.row()
+    layout.prop(mc.rxn_output,"include")
 
 
 
@@ -356,7 +355,7 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
     layout = self.layout
     mc = context.scene.mcell
     
-    row=layout.row()
+    layout.prop(mc.viz_output,"include")
 
 
 
@@ -378,10 +377,12 @@ class MCELL_PT_model_objects(bpy.types.Panel):
     col = row.column()
     col.template_list(mc.model_objects,"object_list",mc.model_objects,"active_obj_index",rows=2)
     col = row.column(align=True)
+#    col.active = (len(context.selected_objects) == 1) 
+    col.operator("mcell.model_objects_add",icon='ZOOMIN',text="")
     col.operator("mcell.model_objects_remove",icon='ZOOMOUT',text="")
-    row = layout.row()
-    sub = row.row(align=True)
-    sub.operator("mcell.model_objects_include",text="Include")
+#    row = layout.row()
+#    sub = row.row(align=True)
+#    sub.operator("mcell.model_objects_include",text="Include")
 #    sub = row.row(align=True)
 #    sub.operator("mcell.model_objects_select",text="Select")
 #    sub.operator("mcell.model_objects_deselect",text="Deselect")
@@ -416,11 +417,11 @@ class MCELL_PT_define_surface_regions(bpy.types.Panel):
     if aobj.mode == 'EDIT':
       row = layout.row()
       sub = row.row(align=True)
-      sub.operator("mcell.region_faces_assign",text="assign")
-      sub.operator("mcell.region_faces_remove",text="remove")
+      sub.operator("mcell.region_faces_assign",text="Assign")
+      sub.operator("mcell.region_faces_remove",text="Remove")
       sub = row.row(align=True)
-      sub.operator("mcell.region_faces_select",text="select")
-      sub.operator("mcell.region_faces_deselect",text="deselect")
+      sub.operator("mcell.region_faces_select",text="Select")
+      sub.operator("mcell.region_faces_deselect",text="Deselect")
 
 
 
