@@ -115,7 +115,7 @@ def save(operator, context, filepath=""):
           file.write('        STDDEV = %g\n' % (rel_item.stddev))
           file.write('      }\n')
         elif rel_item.quantity_type == 'DENSITY':
-          if mc.molecules[rel_item.molecule].type == '2D':
+          if mc.molecules.molecule_list[rel_item.molecule].type == '2D':
             file.write('   DENSITY = %g\n' %(rel_item.quantity))
           else:
             file.write('   CONCENTRATION = %g\n' %(rel_item.quantity))
