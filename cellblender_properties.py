@@ -29,7 +29,7 @@ class MCellSurfaceRegionFaceProperty(bpy.types.PropertyGroup):
 
 
 class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
-  name = bpy.props.StringProperty(name="Region Name",default="new_region")
+  name = bpy.props.StringProperty(name="Region Name",default="Region",update=cellblender_operators.check_region)
   faces = bpy.props.CollectionProperty(type=MCellSurfaceRegionFaceProperty,name="Surface Region List")
   active_face_index = bpy.props.IntProperty(name="Active Face Index",default=0)
 
@@ -37,10 +37,11 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
 class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
   region_list = bpy.props.CollectionProperty(type=MCellSurfaceRegionProperty,name="Surface Region List")
   active_reg_index = bpy.props.IntProperty(name="Active Region Index",default=0)
+  status = bpy.props.StringProperty(name="Status")
 
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
-  name = bpy.props.StringProperty(name="Molecule Name",default="new_molecule")
+  name = bpy.props.StringProperty(name="Molecule Name",default="Molecule",update=cellblender_operators.check_molecule)
   type_enum = [
                     ('2D','Surface Molecule',''),
                     ('3D','Volume Molecule','')]
@@ -75,7 +76,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
 
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
-  name = bpy.props.StringProperty(name="Site Name",default="new_release_site")
+  name = bpy.props.StringProperty(name="Site Name",default="Release_Site",update=cellblender_operators.check_release_site)
   molecule = bpy.props.StringProperty(name="Molecule")
   shape_enum = [
                 ('CUBIC','Cubic',''),
@@ -122,7 +123,7 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
   mol_file_step_index = bpy.props.IntProperty(name="Molecule File Step Index",default=1)
   mol_viz_list = bpy.props.CollectionProperty(type=MCellStringProperty,name="Molecule Viz Name List")
   render_and_save = bpy.props.BoolProperty(name="Render & Save Images")
-  mol_viz_enable = bpy.props.BoolProperty(name="Enable Molecule Vizualization",description="Disable for faster animation preview",default=True)
+  mol_viz_enable = bpy.props.BoolProperty(name="Enable Molecule Vizualization",description="Disable for faster animation preview",default=True,update=cellblender_operators.MolVizUpdate)
   color_list = bpy.props.CollectionProperty(type=MCellFloatVectorProperty,name="Molecule Color List")
   color_index = bpy.props.IntProperty(name="Color Index",default=0)
 
@@ -155,6 +156,7 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
   mol_release_list = bpy.props.CollectionProperty(type=MCellMoleculeReleaseProperty,name="Molecule Release List")
   active_release_index = bpy.props.IntProperty(name="Active Release Index",default=0)
+  status = bpy.props.StringProperty(name="Status")
 
 
 class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
@@ -171,7 +173,6 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
-  status = bpy.props.StringProperty(name="Status")
   glyph_lib = __file__.replace(__file__.split('/')[len(__file__.split('/'))-1],'')+'glyph_library.blend/Mesh/'
   glyph_enum = [
                     ('Cone','Cone',''),
@@ -184,10 +185,10 @@ class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
                     ('Sphere_2','Sphere_2',''),
                     ('Torus','Torus','')]
   glyph = bpy.props.EnumProperty(items=glyph_enum,name="Molecule Shapes")
+  status = bpy.props.StringProperty(name="Status")
 
 
 class MCellMeshalyzerPanelProperty(bpy.types.PropertyGroup):
-  status = bpy.props.StringProperty(name="Status")
   object_name = bpy.props.StringProperty(name="Object Name")
   vertices = bpy.props.IntProperty(name="Vertices",default=0)
   edges = bpy.props.IntProperty(name="Edges",default=0)
@@ -197,6 +198,7 @@ class MCellMeshalyzerPanelProperty(bpy.types.PropertyGroup):
   normal_status = bpy.props.StringProperty(name="Surface Normals")
   area = bpy.props.FloatProperty(name="Area",default=0)
   volume = bpy.props.FloatProperty(name="Volume",default=0)
+  status = bpy.props.StringProperty(name="Status")
 
 
 class MCellObjectSelectorPanelProperty(bpy.types.PropertyGroup):
@@ -211,12 +213,12 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
   initialization = bpy.props.PointerProperty(type=MCellInitializationPanelProperty,name="Model Initialization")
   molecules = bpy.props.PointerProperty(type=MCellMoleculesPanelProperty,name="Defined Molecules")
   reactions = bpy.props.PointerProperty(type=MCellReactionsPanelProperty,name="Defined Reactions")
-  surface_classes = bpy.props.PointerProperty(type=MCellSurfaceClassesPanelProperty,name="Defined Reactions")
-  mod_surf_regions = bpy.props.PointerProperty(type=MCellModSurfRegionsProperty,name="Defined Reactions")
-  release_sites = bpy.props.PointerProperty(type=MCellMoleculeReleasePanelProperty,name="Defined Reactions")
-  model_objects = bpy.props.PointerProperty(type=MCellModelObjectsPanelProperty,name="Defined Reactions")
-  viz_output = bpy.props.PointerProperty(type=MCellVizOutputPanelProperty,name="Defined Reactions")
-  rxn_output = bpy.props.PointerProperty(type=MCellReactionOutputPanelProperty,name="Defined Reactions")
+  surface_classes = bpy.props.PointerProperty(type=MCellSurfaceClassesPanelProperty,name="Defined Surface Classes")
+  mod_surf_regions = bpy.props.PointerProperty(type=MCellModSurfRegionsProperty,name="Modify Surface Regions")
+  release_sites = bpy.props.PointerProperty(type=MCellMoleculeReleasePanelProperty,name="Defined Release Sites")
+  model_objects = bpy.props.PointerProperty(type=MCellModelObjectsPanelProperty,name="Instantiated Objects")
+  viz_output = bpy.props.PointerProperty(type=MCellVizOutputPanelProperty,name="Viz Output")
+  rxn_output = bpy.props.PointerProperty(type=MCellReactionOutputPanelProperty,name="Reaction Output")
   meshalyzer = bpy.props.PointerProperty(type=MCellMeshalyzerPanelProperty,name="CellBlender Project Settings")
   object_selector = bpy.props.PointerProperty(type=MCellObjectSelectorPanelProperty,name="CellBlender Project Settings")
   molecule_glyphs = bpy.props.PointerProperty(type=MCellMoleculeGlyphsPanelProperty,name="Molecule Shapes")
@@ -227,5 +229,6 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
 class MCellObjectPropertyGroup(bpy.types.PropertyGroup):
   regions = bpy.props.PointerProperty(type=MCellSurfaceRegionListProperty,name="Defined Surface Regions")
+  status = bpy.props.StringProperty(name="Status")
 
 

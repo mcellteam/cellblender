@@ -41,7 +41,7 @@ class MCELL_OT_region_add(bpy.types.Operator):
     mc_obj = context.object.mcell
     mc_obj.regions.region_list.add()
     mc_obj.regions.active_reg_index = len(mc_obj.regions.region_list)-1
-    mc_obj.regions.region_list[mc_obj.regions.active_reg_index].name = 'New Region'
+    mc_obj.regions.region_list[mc_obj.regions.active_reg_index].name = 'Region'
     return {'FINISHED'}
  
 
@@ -58,7 +58,37 @@ class MCELL_OT_region_remove(bpy.types.Operator):
     mc_obj.regions.active_reg_index = mc_obj.regions.active_reg_index-1
     if (mc_obj.regions.active_reg_index<0):
       mc_obj.regions.active_reg_index = 0
+
+    if len(mc_obj.regions.region_list) > 0:
+      check_region(self,context)
+    else:
+      mc_obj.regions.status = ''
+
     return {'FINISHED'}
+
+
+
+def check_region(self,context):
+
+  mc_obj = context.object.mcell
+  reg_list = mc_obj.regions.region_list
+  reg = reg_list[mc_obj.regions.active_reg_index]
+
+  status = ''
+
+  # Check for duplicate region name
+  reg_keys = reg_list.keys()
+  if reg_keys.count(reg.name) > 1:
+    status = 'Duplicate region: %s' % (reg.name) 
+
+  reg_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)(\[[A-Za-z]+[0-9A-Za-z_.]\]*)?$"
+  m = re.match(reg_filter,reg.name)
+  if m == None:
+    status = 'Region name error: %s' % (reg.name)
+
+  mc_obj.regions.status = status
+
+  return
 
 
 
@@ -285,7 +315,7 @@ class MCELL_OT_molecule_add(bpy.types.Operator):
     mc = context.scene.mcell
     mc.molecules.molecule_list.add()
     mc.molecules.active_mol_index = len(mc.molecules.molecule_list)-1
-    mc.molecules.molecule_list[mc.molecules.active_mol_index].name = 'New Molecule'
+    mc.molecules.molecule_list[mc.molecules.active_mol_index].name = 'Molecule'
     return {'FINISHED'}
  
 
@@ -302,7 +332,37 @@ class MCELL_OT_molecule_remove(bpy.types.Operator):
     mc.molecules.active_mol_index = mc.molecules.active_mol_index-1
     if (mc.molecules.active_mol_index<0):
       mc.molecules.active_mol_index = 0
+
+    if len(mc.molecules.molecule_list) > 0:
+      check_molecule(self,context)
+    else:
+      mc.molecules.status = ''
+
     return {'FINISHED'}
+
+
+
+def check_molecule(self,context):
+
+  mc = context.scene.mcell
+  mol_list = mc.molecules.molecule_list
+  mol = mol_list[mc.molecules.active_mol_index]
+
+  status = ''
+
+  # Check for duplicate molecule name
+  mol_keys = mol_list.keys()
+  if mol_keys.count(mol.name) > 1:
+    status = 'Duplicate molecule: %s' % (mol.name) 
+  
+  mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)$"
+  m = re.match(mol_filter,mol.name)
+  if m == None:
+    status = 'Molecule name error: %s' % (mol.name)
+
+  mc.molecules.status = status
+
+  return
 
 
 
@@ -316,7 +376,7 @@ class MCELL_OT_reaction_add(bpy.types.Operator):
     mc = context.scene.mcell
     mc.reactions.reaction_list.add()
     mc.reactions.active_rxn_index = len(mc.reactions.reaction_list)-1
-    mc.reactions.reaction_list[mc.reactions.active_rxn_index].name = 'New Reaction'
+    mc.reactions.reaction_list[mc.reactions.active_rxn_index].name = 'Reaction'
     return {'FINISHED'}
  
 
@@ -333,6 +393,12 @@ class MCELL_OT_reaction_remove(bpy.types.Operator):
     mc.reactions.active_rxn_index = mc.reactions.active_rxn_index-1
     if (mc.reactions.active_rxn_index<0):
       mc.reactions.active_rxn_index = 0
+
+    if len(mc.reactions.reaction_list) > 0:
+      check_reaction(self,context)
+    else:
+      mc.reactions.status = ''
+
     return {'FINISHED'}
 
 
@@ -408,7 +474,7 @@ class MCELL_OT_release_site_add(bpy.types.Operator):
     mc = context.scene.mcell
     mc.release_sites.mol_release_list.add()
     mc.release_sites.active_release_index = len(mc.release_sites.mol_release_list)-1
-    mc.release_sites.mol_release_list[mc.release_sites.active_release_index].name = 'New Release Site'
+    mc.release_sites.mol_release_list[mc.release_sites.active_release_index].name = 'Release_Site'
 
     return {'FINISHED'}
  
@@ -427,7 +493,36 @@ class MCELL_OT_release_site_remove(bpy.types.Operator):
     if (mc.release_sites.active_release_index<0):
       mc.release_sites.active_release_index = 0
 
+    if len(mc.release_sites.mol_release_list) > 0:
+      check_release_site(self,context)
+    else:
+      mc.release_sites.status = ''
+
     return {'FINISHED'}
+
+
+
+def check_release_site(self,context):
+
+  mc = context.scene.mcell
+  rel_list = mc.release_sites.mol_release_list
+  rel = rel_list[mc.release_sites.active_release_index]
+
+  status = ''
+
+  # Check for duplicate release site name
+  rel_keys = rel_list.keys()
+  if rel_keys.count(rel.name) > 1:
+    status = 'Duplicate release site: %s' % (rel.name) 
+  
+  rel_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)$"
+  m = re.match(rel_filter,rel.name)
+  if m == None:
+    status = 'Release Site name error: %s' % (rel.name)
+
+  mc.release_sites.status = status
+
+  return
 
 
 
@@ -546,7 +641,7 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
       mc.mol_viz.color_list[6].vec = [1.0,1.0,1.0]
       mc.mol_viz.color_list[7].vec = [0.0,0.0,0.0]
     
-    MolVizUpdate(mc,0)
+    MolVizUpdate(self,context)
     return {'FINISHED'}
   
   def invoke(self, context, event):
@@ -569,7 +664,7 @@ class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
     if (i < mc.mol_viz.mol_file_start_index):
       i = mc.mol_viz.mol_file_start_index
     mc.mol_viz.mol_file_index = i
-    MolVizUpdate(mc,i)
+    MolVizUpdate(self,context)
     return{'FINISHED'}
 
 
@@ -586,7 +681,7 @@ class MCELL_OT_mol_viz_next(bpy.types.Operator):
     if (i > mc.mol_viz.mol_file_stop_index):
       i = mc.mol_viz.mol_file_stop_index
     mc.mol_viz.mol_file_index = i
-    MolVizUpdate(mc,i)
+    MolVizUpdate(self,context)
     return{'FINISHED'}
 
 
@@ -603,7 +698,7 @@ class MCELL_OT_mol_viz_prev(bpy.types.Operator):
     if (i < mc.mol_viz.mol_file_start_index):
       i = mc.mol_viz.mol_file_start_index
     mc.mol_viz.mol_file_index = i
-    MolVizUpdate(mc,i)
+    MolVizUpdate(self,context)
     return{'FINISHED'}
 
 
@@ -635,9 +730,9 @@ def render_handler(scn):
 
 
 
-def MolVizUpdate(mcell_prop,i):
-  mc = mcell_prop
-  filename = mc.mol_viz.mol_file_list[i].name
+def MolVizUpdate(self,context):
+  mc = context.scene.mcell
+  filename = mc.mol_viz.mol_file_list[mc.mol_viz.mol_file_index].name
   mc.mol_viz.mol_file_name = filename
   filepath = os.path.join(mc.mol_viz.mol_file_dir,filename)
   
@@ -645,9 +740,11 @@ def MolVizUpdate(mcell_prop,i):
   bpy.context.user_preferences.edit.use_global_undo = False
   
   MolVizClear(mc)
-  MolVizFileRead(mc,filepath)
+  if mc.mol_viz.mol_viz_enable:
+    MolVizFileRead(mc,filepath)
   
   bpy.context.user_preferences.edit.use_global_undo = global_undo
+  return
 
 
 

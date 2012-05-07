@@ -86,8 +86,8 @@ class MCELL_PT_viz_results(bpy.types.Panel):
     row.label(text="Current Molecule File: "+mc.mol_viz.mol_file_name)
     row = layout.row()
     row.template_list(mc.mol_viz,"mol_file_list",mc.mol_viz,"mol_file_index",rows=2)
-#    row = layout.row()
-#    layout.prop(mc.mol_viz,"mol_viz_enable")
+    row = layout.row()
+    layout.prop(mc.mol_viz,"mol_viz_enable")
 #    row = layout.row()
 #    layout.prop(mc.mol_viz,"render_and_save")
 
@@ -151,7 +151,7 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
 
     if (mc.meshalyzer.status != ''):
       row = layout.row()
-      row.label(text="%s" % (mc.meshalyzer.status))
+      row.label(text=mc.meshalyzer.status,icon="ERROR")
     row = layout.row()
     row.label(text="Object Name: %s" % (mc.meshalyzer.object_name))
     row = layout.row()
@@ -229,6 +229,9 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
     col.operator("mcell.molecule_remove",icon='ZOOMOUT',text="")
     if len(mc.molecules.molecule_list)>0:
       mol = mc.molecules.molecule_list[mc.molecules.active_mol_index]
+      if mc.molecules.status != '':
+        row = layout.row()
+        row.label(text=mc.molecules.status,icon='ERROR')
       layout.prop(mol,"name")
       layout.prop(mol,"type")
       layout.prop(mol,"diffusion_constant")
@@ -269,7 +272,7 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
 
     if mc.reactions.status != '':
       row = layout.row()
-      row.label(text=mc.reactions.status)
+      row.label(text=mc.reactions.status,icon="ERROR")
 
 
 
@@ -310,6 +313,9 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
     col.operator("mcell.release_site_remove",icon='ZOOMOUT',text="")
     if len(mc.release_sites.mol_release_list)>0:
       rel = mc.release_sites.mol_release_list[mc.release_sites.active_release_index]
+      if mc.release_sites.status != '':
+        row = layout.row()
+        row.label(text=mc.release_sites.status,icon='ERROR')
       layout.prop(rel,"name")
       layout.prop(rel,"molecule")
       layout.prop(rel,"shape")
@@ -411,6 +417,9 @@ class MCELL_PT_define_surface_regions(bpy.types.Panel):
     col.operator("mcell.region_add",icon='ZOOMIN',text="")
     col.operator("mcell.region_remove",icon='ZOOMOUT',text="")
     row = layout.row()
+    if (obj_regs.status != ''):
+      row = layout.row()
+      row.label(text=obj_regs.status,icon="ERROR")
     if len(obj_regs.region_list)>0:
       reg = obj_regs.region_list[obj_regs.active_reg_index]
       layout.prop(reg,"name")
@@ -458,7 +467,7 @@ class MCELL_PT_molecule_glyphs(bpy.types.Panel):
 
     if (mc.molecule_glyphs.status != ''):
       row = layout.row()
-      row.label(text="%s" % (mc.molecule_glyphs.status))
+      row.label(text=mc.molecule_glyphs.status,icon="ERROR")
 
     row = layout.row()
     if (len(context.selected_objects) == 0):
