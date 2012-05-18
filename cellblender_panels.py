@@ -323,7 +323,7 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
         layout.prop(rel,"location")
         layout.prop(rel,"diameter")
       if rel.shape == 'OBJECT':
-        layout.prop(rel,"object_name")
+        layout.prop(rel,"object_expr")
 
       layout.prop(rel,"probability")
       layout.prop(rel,"quantity_type")

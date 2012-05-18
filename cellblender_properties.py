@@ -46,10 +46,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                     ('2D','Surface Molecule',''),
                     ('3D','Volume Molecule','')]
   type = bpy.props.EnumProperty(items=type_enum,name="Molecule Type")
-  diffusion_constant = bpy.props.FloatProperty(name="Diffusion Constant",precision=4)
+  diffusion_constant = bpy.props.FloatProperty(name="Diffusion Constant",precision=4,min=0.0)
   target_only = bpy.props.BoolProperty(name="Target Only")
-  custom_time_step = bpy.props.FloatProperty(name="Custom Time Step")
-  custom_space_step = bpy.props.FloatProperty(name="Custom Space Step")
+  custom_time_step = bpy.props.FloatProperty(name="Custom Time Step",precision=4,min=0.0)
+  custom_space_step = bpy.props.FloatProperty(name="Custom Space Step",precision=4,min=0.0)
   
 
 # Generic PropertyGroup to hold strings for a ColletionProperty  
@@ -71,13 +71,13 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
                 ('irreversible','->',''),
                 ('reversible','<->','')]
   type = bpy.props.EnumProperty(items=type_enum,name="Reaction Type",update=cellblender_operators.check_reaction)
-  fwd_rate = bpy.props.FloatProperty(name="Forward Rate",precision=4)
-  bkwd_rate = bpy.props.FloatProperty(name="Backward Rate",precision=4)
+  fwd_rate = bpy.props.FloatProperty(name="Forward Rate",precision=4,min=0.0)
+  bkwd_rate = bpy.props.FloatProperty(name="Backward Rate",precision=4,min=0.0)
 
 
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
   name = bpy.props.StringProperty(name="Site Name",default="Release_Site",update=cellblender_operators.check_release_site)
-  molecule = bpy.props.StringProperty(name="Molecule")
+  molecule = bpy.props.StringProperty(name="Molecule",update=cellblender_operators.check_release_molecule)
   shape_enum = [
                 ('CUBIC','Cubic',''),
                 ('SPHERICAL','Spherical',''),
@@ -85,17 +85,17 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
   #              ('LIST','List',''),
                 ('OBJECT','Object/Region','')]
   shape = bpy.props.EnumProperty(items=shape_enum,name="Release Shape")
-  object_name = bpy.props.StringProperty(name="Object/Region")
+  object_expr = bpy.props.StringProperty(name="Object/Region",update=cellblender_operators.check_release_object_expr)
   location = bpy.props.FloatVectorProperty(name="Location",precision=4)
-  diameter = bpy.props.FloatProperty(name="Site Diameter",precision=4)
-  probability = bpy.props.FloatProperty(name="Release Probability",precision=4,default=1.0)
+  diameter = bpy.props.FloatProperty(name="Site Diameter",precision=4,min=0.0)
+  probability = bpy.props.FloatProperty(name="Release Probability",precision=4,default=1.0,min=0.0,max=1.0)
   quantity_type_enum = [
                 ('NUMBER_TO_RELEASE','Constant Number',''),
                 ('GAUSSIAN_RELEASE_NUMBER','Gaussian Number',''),
                 ('DENSITY','Concentration/Density','')]
   quantity_type = bpy.props.EnumProperty(items=quantity_type_enum,name="Quantity Type")
-  quantity = bpy.props.FloatProperty(name="Quantity to Release",precision=4)
-  stddev = bpy.props.FloatProperty(name="Standard Deviation",precision=4)
+  quantity = bpy.props.FloatProperty(name="Quantity to Release",precision=4,min=0.0)
+  stddev = bpy.props.FloatProperty(name="Standard Deviation",precision=4,min=0.0)
   pattern = bpy.props.StringProperty(name="Release Pattern")
 
 
@@ -129,8 +129,8 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
 
 
 class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
-  iterations = bpy.props.IntProperty(name="Simulation Iterations",default=0)
-  time_step = bpy.props.FloatProperty(name="Simulation Time Step",default=1e-6)
+  iterations = bpy.props.IntProperty(name="Simulation Iterations",default=0,min=0)
+  time_step = bpy.props.FloatProperty(name="Simulation Time Step",default=1e-6,min=0.0)
 
 
 class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):

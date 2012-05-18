@@ -21,11 +21,11 @@
 import bpy
 from bpy.app.handlers import persistent
 import mathutils
+import array
 import glob
 import os
 import random
 import re
-import resource
 
 
 
@@ -81,7 +81,7 @@ def check_region(self,context):
   if reg_keys.count(reg.name) > 1:
     status = 'Duplicate region: %s' % (reg.name) 
 
-  reg_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)(\[[A-Za-z]+[0-9A-Za-z_.]\]*)?$"
+  reg_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
   m = re.match(reg_filter,reg.name)
   if m == None:
     status = 'Region name error: %s' % (reg.name)
@@ -355,7 +355,7 @@ def check_molecule(self,context):
   if mol_keys.count(mol.name) > 1:
     status = 'Duplicate molecule: %s' % (mol.name) 
   
-  mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)$"
+  mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
   m = re.match(mol_filter,mol.name)
   if m == None:
     status = 'Molecule name error: %s' % (mol.name)
@@ -444,20 +444,24 @@ def check_reaction(self,context):
       break
     else: 
       mol_name = m.group(1)
-      if mol_name not in mol_list:
+      if not mol_name in mol_list:
         status = 'Undefine molecule: %s' % (mol_name)
       
   #Check syntax of product specification
-  products = rxn.products.split(' + ')
-  for product in products:
-    m = re.match(mol_filter,product)
-    if m == None:
-      status = 'Product error: %s' % (product)
-      break
-    else: 
-      mol_name = m.group(1)
-      if mol_name not in mol_list:
-        status = 'Undefine molecule: %s' % (mol_name)
+  if rxn.products == 'NULL':
+    if rxn.type == 'reversible':
+      rxn.type  = 'irreversible'
+  else:
+    products = rxn.products.split(' + ')
+    for product in products:
+      m = re.match(mol_filter,product)
+      if m == None:
+        status = 'Product error: %s' % (product)
+        break
+      else: 
+        mol_name = m.group(1)
+        if not mol_name in mol_list:
+          status = 'Undefine molecule: %s' % (mol_name)
 
   mc.reactions.status = status
   return
@@ -515,10 +519,89 @@ def check_release_site(self,context):
   if rel_keys.count(rel.name) > 1:
     status = 'Duplicate release site: %s' % (rel.name) 
   
-  rel_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)$"
+  rel_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
   m = re.match(rel_filter,rel.name)
   if m == None:
     status = 'Release Site name error: %s' % (rel.name)
+
+  mc.release_sites.status = status
+
+  return
+
+
+
+def check_release_molecule(self,context):
+
+  mc = context.scene.mcell
+  rel_list = mc.release_sites.mol_release_list
+  rel = rel_list[mc.release_sites.active_release_index]
+  mol = rel.molecule 
+
+  mol_list = mc.molecules.molecule_list
+
+  status = ''
+
+  mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)((',)|(,')|(;)|(,*)|('*))$" 
+  m = re.match(mol_filter,mol)
+  if m == None:
+    status = 'Molecule name error: %s' % (mol)
+  else:
+    mol_name = m.group(1)
+    if not mol_name in mol_list:
+      status = 'Undefined molecule: %s' % (mol_name)
+
+  mc.release_sites.status = status
+
+  return
+
+
+
+def check_release_object_expr(self,context):
+
+  scn = context.scene
+  mc = context.scene.mcell
+  rel_list = mc.release_sites.mol_release_list
+  rel = rel_list[mc.release_sites.active_release_index]
+  obj_expr = rel.object_expr
+
+  status = ''
+
+  #obj_reg_filter  = r"(^([A-Za-z]+[0-9A-Za-z_.]*)$)|((^[A-Za-z]+[0-9A-Za-z_.]*)(\[)([A-Za-z]+[0-9A-Za-z_.]*)(\])$)"
+
+  obj_reg_filter  = r"(?P<obj_reg>(?P<obj_name>^[A-Za-z]+[0-9A-Za-z_.]*)(\[)(?P<reg_name>[A-Za-z]+[0-9A-Za-z_.]*)(\])$)|(?P<obj_name_only>^([A-Za-z]+[0-9A-Za-z_.]*)$)"
+
+  expr_filter = r"[\+\-\*\(\)]"
+
+  expr_vars = re.sub(expr_filter,' ',obj_expr).split()
+
+  for var in expr_vars:
+    m = re.match(obj_reg_filter,var)
+    if m == None:
+      status = 'Object name error: %s' % (var)
+      break
+    else:
+      if m.group('obj_reg') != None: 
+        obj_name = m.group('obj_name')
+        reg_name = m.group('reg_name')
+        if not obj_name in scn.objects:
+          status = 'Undefined object: %s' % (obj_name)
+          break
+        obj = scn.objects[obj_name]
+        if reg_name != "ALL":
+          if not obj.data.get('mcell'):
+            status = 'Undefined region: %s' % (reg_name)
+            break
+          if not obj.data['mcell'].get('regions'):
+            status = 'Undefined region: %s' % (reg_name)
+            break
+          if not obj.data['mcell']['regions'].get(reg_name):
+            status = 'Undefined region: %s' % (reg_name)
+            break
+      else:
+        obj_name = m.group('obj_name_only')
+        if not obj_name in scn.objects:
+          status = 'Undefined object: %s' % (obj_name)
+          break
 
   mc.release_sites.status = status
 
@@ -793,64 +876,100 @@ def MolVizClear(mcell_prop):
 
 def MolVizFileRead(mcell_prop,filepath):
   
+  mc = mcell_prop
   try:
     
 #    begin = resource.getrusage(resource.RUSAGE_SELF)[0]
 #    print ('Processing molecules from file:  %s' % (filepath))
 
-    mol_data = [[s.split()[0], [float(x) for x in s.split()[1:]]] for s in open(filepath,'r').read().split('\n') if s != '']
-    
+    # Quick check for Binary or ASCII format of molecule file:
+    mol_file = open(filepath,'rb')
+    b = array.array('I') 
+    b.fromfile(mol_file,1)
+
+    mol_dict = {}
+
+    if b[0] == 1:
+      # Read Binary format molecule file:
+      bin_data = 1
+      while True:
+        try:
+          ni = array.array('B')
+          ni.fromfile(mol_file,1)
+          ns = array.array('B')
+          ns.fromfile(mol_file,ni[0])
+          s = ns.tostring().decode()
+          mol_name = 'mol_%s' % (s)
+          mt = array.array('B')
+          mt.fromfile(mol_file,1)
+          ni = array.array('I')
+          ni.fromfile(mol_file,1)
+          mol_pos = array.array('f')
+          mol_orient = array.array('f')
+          mol_pos.fromfile(mol_file,ni[0])
+#          tot += ni[0]/3
+          if mt[0] == 1:
+            mol_orient.fromfile(mol_file,ni[0])
+          mol_dict[mol_name] = [mt,mol_pos,mol_orient]
+          new_item = mc.mol_viz.mol_viz_list.add()
+          new_item.name = mol_name
+        except:
+#          print('Molecules read: %d' % (int(tot)))
+          mol_file.close()
+          break
+
+    else:
+      # Read ASCII format molecule file:
+      bin_data = 0
+      mol_file.close()
+      mol_data = [[s.split()[0], [float(x) for x in s.split()[1:]]] for s in open(filepath,'r').read().split('\n') if s != '']
+
+      for mol in mol_data:
+        mol_name = 'mol_%s' % (mol[0])
+        if not mol_name in mol_dict:
+          mol_orient = mol[1][3:]
+          mt = 0
+          if (mol_orient[0] != 0.0) | (mol_orient[1] != 0.0) | (mol_orient[2] != 0.0):
+            mt = 1
+          mol_dict[mol_name] = [mt,array.array('f'),array.array('f')]
+          new_item = mc.mol_viz.mol_viz_list.add()
+          new_item.name = mol_name
+        mt = mol_dict[mol_name][0]
+        mol_dict[mol_name][1].extend(mol[1][:3])
+        if mt == 1:
+          mol_dict[mol_name][2].extend(mol[1][3:])
+      
     mols_obj = bpy.data.objects.get('molecules')
     if not mols_obj:
       bpy.ops.object.add()
       mols_obj = bpy.context.selected_objects[0]
       mols_obj.name = 'molecules'
     
-    if len(mol_data) > 0:
+    if len(mol_dict) > 0:
       meshes = bpy.data.meshes
       mats = bpy.data.materials
       objs = bpy.data.objects
       scn = bpy.context.scene
       scn_objs = scn.objects
-      mc = mcell_prop
       z_axis = mathutils.Vector((0.0, 0.0, 1.0))
       ident_mat = mathutils.Matrix.Translation(mathutils.Vector((0.0,0.0,0.0)))
-      
-      mol_dict = {}
-      mol_pos = []
-      mol_orient = []
 
-      for n in range(len(mol_data)):
-        mol_name = 'mol_%s' % (mol_data[n][0])
-        if not mol_name in mol_dict:
-          mol_dict[mol_name] = [[],[]]
-          new_item = mc.mol_viz.mol_viz_list.add()
-          new_item.name = mol_name
-        mol_dict[mol_name][0].extend(mol_data[n][1][0:3])
-        mol_dict[mol_name][1].extend(mol_data[n][1][3:])
-      
       for mol_name in mol_dict.keys():
         mol_mat_name='%s_mat'%(mol_name)
-        mol_pos = mol_dict[mol_name][0]
-        mol_orient = mol_dict[mol_name][1]
+        mol_type = mol_dict[mol_name][0]
+        mol_pos = mol_dict[mol_name][1]
+        mol_orient = mol_dict[mol_name][2]
 
-#       Name mesh shape template according to molecule type (2D or 3D)
-#         TODO: we can now use shape from molecule properties if it exists
-        if (mol_orient[0] != 0.0) | (mol_orient[1] != 0.0) | (mol_orient[2] != 0.0):
-          is_vmol = False
-          mol_shape_mesh_name = '%s_shape' % (mol_name)
-          mol_shape_obj_name = mol_shape_mesh_name
-        else:
-          is_vmol = True
-          mol_shape_mesh_name = '%s_shape' % (mol_name)
-          mol_shape_obj_name = mol_shape_mesh_name
-          for n in range(len(mol_orient)):
-            mol_orient[n] = random.uniform(-1.0,1.0)
+        # Randomly orient volume molecules
+        if mol_type == 0:
+          mol_orient.extend([random.uniform(-1.0,1.0) for i in range(len(mol_pos))])
 
 #       Look-up mesh shape template and create if needed
+        mol_shape_mesh_name = '%s_shape' % (mol_name)
+        mol_shape_obj_name = mol_shape_mesh_name
         mol_shape_mesh = meshes.get(mol_shape_mesh_name)
         if not mol_shape_mesh:
-          bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=0, size=0.01)
+          bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=0, size=0.005)
           mol_shape_obj = bpy.context.active_object
           mol_shape_obj.name = mol_shape_obj_name
           mol_shape_obj.track_axis = "POS_Z" 
@@ -858,9 +977,8 @@ def MolVizFileRead(mcell_prop,filepath):
           mol_shape_mesh.name = mol_shape_mesh_name
         else:
           mol_shape_obj = objs.get(mol_shape_obj_name)
-      
 
-#       Look-up material and create if needed. Associate material with mesh shape
+#       Look-up material, create if needed. Associate material with mesh shape
         mol_mat = mats.get(mol_mat_name)
         if not mol_mat:
           mol_mat = mats.new(mol_mat_name)

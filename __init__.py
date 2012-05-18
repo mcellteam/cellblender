@@ -21,13 +21,13 @@
 bl_info = {
     "name": "CellBlender",
     "author": "Tom Bartol",
-    "version": (0,1),
+    "version": (0,1,'rev_47'),
     "blender": (2, 6, 2),
     "api": 44136,
     "location": "Properties > Scene > CellBlender Panel",
     "description": "CellBlender Modeling System for MCell",
     "warning": "",
-    "wiki_url": "http://www.mcell.cnl.salk.edu",
+    "wiki_url": "http://www.mcell.org",
     "tracker_url": "",
     "category": "Cell Modeling"
 }

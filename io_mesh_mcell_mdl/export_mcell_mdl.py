@@ -28,6 +28,7 @@ and is a component of CellBlender.
 
 import bpy
 import os
+import re
 
 
 
@@ -113,7 +114,8 @@ def save(operator, context, filepath=""):
           file.write('   SHAPE = %s\n' % (rel_item.shape))
           file.write('   LOCATION = [%g, %g, %g]\n' % (rel_item.location[0],rel_item.location[1],rel_item.location[2]))
         if (rel_item.shape == 'OBJECT'):
-          file.write('   SHAPE = %s.%s\n' % (scn.name,rel_item.object_name))
+          inst_obj_expr = instance_object_expr(context,rel_item.object_expr)
+          file.write('   SHAPE = %s\n' % (inst_obj_expr))
 
         file.write('   MOLECULE = %s\n' % (rel_item.molecule))
         if rel_item.quantity_type == 'NUMBER_TO_RELEASE':
@@ -125,7 +127,10 @@ def save(operator, context, filepath=""):
           file.write('        STDDEV = %g\n' % (rel_item.stddev))
           file.write('      }\n')
         elif rel_item.quantity_type == 'DENSITY':
-          if mc.molecules.molecule_list[rel_item.molecule].type == '2D':
+          mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)((',)|(,')|(;)|(,*)|('*))$"
+          m = re.match(mol_filter,rel_item.molecule)
+          mol_name = m.group(1)
+          if mc.molecules.molecule_list[mol_name].type == '2D':
             file.write('   DENSITY = %g\n' %(rel_item.quantity))
           else:
             file.write('   CONCENTRATION = %g\n' %(rel_item.quantity))
@@ -256,4 +261,40 @@ def save_geometry(context,file):
         file.write('}\n\n')
 
   return
+
+
+
+def instance_object_expr(context,expr):
+
+  scn = context.scene
+
+  token_spec = [
+    ("ID",      r"[A-Za-z]+[0-9A-Za-z_.]*(\[[A-Za-z]+[0-9A-Za-z_.]*\])?"),  # Identifiers
+    ("PAR",     r"[\(\)]"),    # Parentheses
+    ("OP",      r"[\+\*\-]"),  # Boolean operators
+    ("SKIP",    r"[ \t]"),     # Skip over spaces and tabs
+  ]
+  tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_spec)
+  get_token = re.compile(tok_regex).match
+  inst_expr = ''
+  pos = line_start = 0
+  m = get_token(expr)
+  while m is not None:
+    typ = m.lastgroup
+    if typ != 'SKIP':
+      val = m.group(typ)
+      if typ == 'ID':
+        val = scn.name + '.' + val
+      elif typ == 'OP':
+        val = ' ' + val + ' '
+      inst_expr = inst_expr + val
+
+    pos = m.end()
+    m = get_token(expr, pos)
+  if pos != len(expr):
+#    raise RuntimeError('Unexpected character %r' %(s[pos]))
+    pass
+
+  return inst_expr
+
 
