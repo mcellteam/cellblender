@@ -910,7 +910,7 @@ def MolVizFileRead(mcell_prop,filepath):
 #          tot += ni[0]/3
           if mt[0] == 1:
             mol_orient.fromfile(mol_file,ni[0])
-          mol_dict[mol_name] = [mt,mol_pos,mol_orient]
+          mol_dict[mol_name] = [mt[0],mol_pos,mol_orient]
           new_item = mc.mol_viz.mol_viz_list.add()
           new_item.name = mol_name
         except:
@@ -963,6 +963,7 @@ def MolVizFileRead(mcell_prop,filepath):
         # Randomly orient volume molecules
         if mol_type == 0:
           mol_orient.extend([random.uniform(-1.0,1.0) for i in range(len(mol_pos))])
+
 
 #       Look-up mesh shape template and create if needed
         mol_shape_mesh_name = '%s_shape' % (mol_name)

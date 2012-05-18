@@ -21,7 +21,7 @@
 bl_info = {
     "name": "CellBlender",
     "author": "Tom Bartol",
-    "version": (0,1,'rev_47'),
+    "version": (0,1,'rev_48'),
     "blender": (2, 6, 2),
     "api": 44136,
     "location": "Properties > Scene > CellBlender Panel",
