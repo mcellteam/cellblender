@@ -840,31 +840,35 @@ def MolVizClear(mcell_prop):
   objs = bpy.data.objects
   for mol_item in mc.mol_viz.mol_viz_list:
     mol_name = mol_item.name
-    mol_obj = scn_objs[mol_name]
-    hide = mol_obj.hide
+#    mol_obj = scn_objs[mol_name]
+    mol_obj = scn_objs.get(mol_name)
+    if mol_obj:
+      hide = mol_obj.hide
 
-    mol_pos_mesh = mol_obj.data
-    mol_pos_mesh_name = mol_pos_mesh.name
-    mol_shape_obj_name = '%s_shape' % (mol_name)
-    mol_shape_obj = objs.get(mol_shape_obj_name)
-    mol_shape_obj.parent = None
+      mol_pos_mesh = mol_obj.data
+      mol_pos_mesh_name = mol_pos_mesh.name
+      mol_shape_obj_name = '%s_shape' % (mol_name)
+      mol_shape_obj = objs.get(mol_shape_obj_name)
+      if mol_shape_obj:
+        mol_shape_obj.parent = None
 
-    scn_objs.unlink(mol_obj)
-    objs.remove(mol_obj)
-    meshes.remove(mol_pos_mesh)
+      scn_objs.unlink(mol_obj)
+      objs.remove(mol_obj)
+      meshes.remove(mol_pos_mesh)
 
-    mol_pos_mesh = meshes.new(mol_pos_mesh_name)
-    mol_obj = objs.new(mol_name,mol_pos_mesh)
-    scn_objs.link(mol_obj)
+      mol_pos_mesh = meshes.new(mol_pos_mesh_name)
+      mol_obj = objs.new(mol_name,mol_pos_mesh)
+      scn_objs.link(mol_obj)
 
-    mol_shape_obj.parent = mol_obj
+      if mol_shape_obj:
+        mol_shape_obj.parent = mol_obj
 
-    mol_obj.dupli_type = 'VERTS'
-    mol_obj.use_dupli_vertices_rotation=True
-    mols_obj = objs.get('molecules')
-    mol_obj.parent = mols_obj
+      mol_obj.dupli_type = 'VERTS'
+      mol_obj.use_dupli_vertices_rotation=True
+      mols_obj = objs.get('molecules')
+      mol_obj.parent = mols_obj
 
-    mol_obj.hide = hide
+      mol_obj.hide = hide
 
 #  scn.update()
   
