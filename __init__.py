@@ -21,9 +21,9 @@
 bl_info = {
     "name": "CellBlender",
     "author": "Tom Bartol",
-    "version": (0,1,'rev_49'),
-    "blender": (2, 6, 2),
-    "api": 44136,
+    "version": (0,1,'rev_50'),
+    "blender": (2, 6, 3),
+    "api": 46461,
     "location": "Properties > Scene > CellBlender Panel",
     "description": "CellBlender Modeling System for MCell",
     "warning": "",

@@ -239,7 +239,7 @@ def save_geometry(context,file):
 
         file.write('  ELEMENT_CONNECTIONS\n')
         file.write('  {\n')
-        faces = mesh.faces
+        faces = mesh.polygons
         for f in faces:
           file.write('    [ %d, %d, %d ]\n' % (f.vertices[0], f.vertices[1], f.vertices[2]))
         file.write('  }\n')

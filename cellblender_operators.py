@@ -114,7 +114,7 @@ class MCELL_OT_region_faces_assign(bpy.types.Operator):
       for f in aobj.data['mcell']['regions'][reg.name]:
         face_set.add(f)
       bpy.ops.object.mode_set(mode='OBJECT')
-      for f in mesh.faces:
+      for f in mesh.polygons:
         if f.select:
           face_set.add(f.index)
       bpy.ops.object.mode_set(mode='EDIT')
@@ -126,7 +126,7 @@ class MCELL_OT_region_faces_assign(bpy.types.Operator):
 #    obj_regs = aobj.mcell.regions
 #    reg = obj_regs.region_list[obj_regs.active_reg_index]
 #    mesh = aobj.data
-#    for f in mesh.faces:
+#    for f in mesh.polygons:
 #      if f.select:
 #        reg.faces.add()
 #        reg.active_face_index = len(reg.faces)-1
@@ -156,7 +156,7 @@ class MCELL_OT_region_faces_remove(bpy.types.Operator):
       mesh = aobj.data
       face_set = set(aobj.data['mcell']['regions'][reg.name].to_list())
       bpy.ops.object.mode_set(mode='OBJECT')
-      for f in mesh.faces:
+      for f in mesh.polygons:
         if f.select:
           if f.index in face_set:
             face_set.remove(f.index)
@@ -192,7 +192,7 @@ class MCELL_OT_region_faces_select(bpy.types.Operator):
     msm = context.tool_settings.mesh_select_mode[0:]
     context.tool_settings.mesh_select_mode=[False,False,True]
     for f in face_set:
-      mesh.faces[f].select = True
+      mesh.polygons[f].select = True
     bpy.ops.object.mode_set(mode='EDIT')
 
     context.tool_settings.mesh_select_mode=msm
@@ -222,7 +222,7 @@ class MCELL_OT_region_faces_deselect(bpy.types.Operator):
     msm = context.tool_settings.mesh_select_mode[0:]
     context.tool_settings.mesh_select_mode=[False,False,True]
     for f in face_set:
-      mesh.faces[f].select = False
+      mesh.polygons[f].select = False
     bpy.ops.object.mode_set(mode='EDIT')
 
     context.tool_settings.mesh_select_mode=msm
@@ -291,7 +291,7 @@ class MCELL_OT_vertex_groups_to_regions(bpy.types.Operator):
               face_set.add(f)
             print('  reg faces 0: %d'%(len(face_set)))
             bpy.ops.object.mode_set(mode='OBJECT')
-            for f in mesh.faces:
+            for f in mesh.polygons:
               if f.select:
                 face_set.add(f.index)
             bpy.ops.object.mode_set(mode='EDIT')
@@ -1066,10 +1066,10 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
 
     mc.meshalyzer.vertices = len(mesh.vertices)
     mc.meshalyzer.edges = len(mesh.edges)
-    mc.meshalyzer.faces = len(mesh.faces)
+    mc.meshalyzer.faces = len(mesh.polygons)
 
     area = 0
-    for f in mesh.faces:
+    for f in mesh.polygons:
       if not (len(f.vertices) == 3):
         mc.meshalyzer.status = '***** Mesh Not Triangulated *****'
         mc.meshalyzer.watertight = 'Mesh Not Triangulated'
@@ -1121,7 +1121,7 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
 def mesh_vol(mesh,t_mat):
 
   volume = 0.0
-  for f in mesh.faces:
+  for f in mesh.polygons:
     tv0 = mesh.vertices[f.vertices[0]].co * t_mat
     tv1 = mesh.vertices[f.vertices[1]].co * t_mat
     tv2 = mesh.vertices[f.vertices[2]].co * t_mat
@@ -1147,7 +1147,7 @@ def make_efdict(mesh):
 
   edge_faces = {}
   edge_face_count = {}
-  for f in mesh.faces:
+  for f in mesh.polygons:
     for ek in f.edge_keys:
       if ek in edge_faces:
         edge_faces[ek] ^= f.index
@@ -1185,14 +1185,14 @@ def check_orientable(mesh,edge_faces,edge_face_count):
   ev_order = [[0,1],[1,2],[2,0]]
   edge_checked = {}
 
-  for f in mesh.faces:
+  for f in mesh.polygons:
     for i in range(0,len(f.vertices)):
       ek = f.edge_keys[i]
       if not ek in edge_checked:
         edge_checked[ek] = 1
         if edge_face_count[ek] == 2:
           nfi = f.index^edge_faces[ek]
-          nf = mesh.faces[nfi]
+          nf = mesh.polygons[nfi]
           for j in range(0,len(nf.vertices)):
             if ek == nf.edge_keys[j]:
               if f.vertices[ev_order[i][0]] != nf.vertices[ev_order[j][1]]:
