@@ -221,6 +221,8 @@ def save_geometry(context,file):
     for obj_item in obj_list:
       obj = bpy.data.objects[obj_item.name]
       if obj.type == 'MESH':
+        hide = obj.hide
+        obj.hide = False
         scn.objects.active = obj
 #        obj.select = True
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -258,7 +260,10 @@ def save_geometry(context,file):
 
           file.write('  }\n')
 
+
         file.write('}\n\n')
+
+        obj.hide = hide
 
   return
 
