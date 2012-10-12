@@ -203,7 +203,10 @@ class MCELL_PT_initialization(bpy.types.Panel):
     mc = context.scene.mcell
     
     layout.prop(mc.initialization,"iterations")
-    layout.prop(mc.initialization,"time_step")
+    layout.prop(mc.initialization,"time_step_str")
+    if (mc.initialization.status != ''):
+      row = layout.row()
+      row.label(text=mc.initialization.status,icon="ERROR")
 
 
 
@@ -234,10 +237,10 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
         row.label(text=mc.molecules.status,icon='ERROR')
       layout.prop(mol,"name")
       layout.prop(mol,"type")
-      layout.prop(mol,"diffusion_constant")
+      layout.prop(mol,"diffusion_constant_str")
       layout.prop(mol,"target_only")
-      layout.prop(mol,"custom_time_step")
-      layout.prop(mol,"custom_space_step")
+      layout.prop(mol,"custom_time_step_str")
+      layout.prop(mol,"custom_space_step_str")
 
 
 
@@ -265,9 +268,9 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
       layout.prop(rxn,"reactants")
       layout.prop(rxn,"type")
       layout.prop(rxn,"products")
-      layout.prop(rxn,"fwd_rate")
+      layout.prop(rxn,"fwd_rate_str")
       if rxn.type == "reversible":
-        layout.prop(rxn,"bkwd_rate")
+        layout.prop(rxn,"bkwd_rate_str")
       layout.prop(rxn,"rxn_name")
 
     if mc.reactions.status != '':

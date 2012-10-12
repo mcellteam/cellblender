@@ -300,6 +300,7 @@ class MCELL_OT_vertex_groups_to_regions(bpy.types.Operator):
             reg_faces.sort()
             print('  reg faces 1: %d'%(len(reg_faces)))
             mesh['mcell']['regions'][reg.name] = reg_faces
+            bpy.ops.object.mode_set(mode='OBJECT')
         
     return {'FINISHED'}
 
@@ -741,13 +742,14 @@ class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
   
   def execute(self,context):
     mc = context.scene.mcell
-    i = mc.mol_viz.mol_file_index
-    if (i > mc.mol_viz.mol_file_stop_index):
-      i = mc.mol_viz.mol_file_stop_index
-    if (i < mc.mol_viz.mol_file_start_index):
-      i = mc.mol_viz.mol_file_start_index
-    mc.mol_viz.mol_file_index = i
-    MolVizUpdate(self,context)
+    if (len(mc.mol_viz.mol_file_list) > 0):
+      i = mc.mol_viz.mol_file_index
+      if (i > mc.mol_viz.mol_file_stop_index):
+        i = mc.mol_viz.mol_file_stop_index
+      if (i < mc.mol_viz.mol_file_start_index):
+        i = mc.mol_viz.mol_file_start_index
+      mc.mol_viz.mol_file_index = i
+      MolVizUpdate(self,context)
     return{'FINISHED'}
 
 
@@ -795,7 +797,7 @@ def frame_change_handler(scn):
   curr_frame = mc.mol_viz.mol_file_index
   if (not curr_frame == scn.frame_current):
     mc.mol_viz.mol_file_index = scn.frame_current
-    bpy.ops.mcell.mol_viz_set_index(None)
+    bpy.ops.mcell.mol_viz_set_index()
 #    scn.update()
     if mc.mol_viz.render_and_save:
       scn.render.filepath = '//stores_on/frames/frame_%05d.png' % (scn.frame_current)
@@ -808,13 +810,14 @@ def render_handler(scn):
   curr_frame = mc.mol_viz.mol_file_index
   if (not curr_frame == scn.frame_current):
     mc.mol_viz.mol_file_index = scn.frame_current
-    bpy.ops.mcell.mol_viz_set_index(None)
+    bpy.ops.mcell.mol_viz_set_index()
 #  scn.update()
 
 
 
 def MolVizUpdate(self,context):
   mc = context.scene.mcell
+
   filename = mc.mol_viz.mol_file_list[mc.mol_viz.mol_file_index].name
   mc.mol_viz.mol_file_name = filename
   filepath = os.path.join(mc.mol_viz.mol_file_dir,filename)
@@ -1328,4 +1331,143 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
     new_mol_mesh.materials.append(mol_mat)
 
     return {'FINISHED'}
+
+
+
+def check_val_str(val_str,min_val,max_val):
+
+  status = ''
+  val = None
+
+  try:
+    val = float(val_str)
+    if min_val != None:
+      if val < min_val:
+        status = "Invalid value for %s: %s"
+    if max_val != None:
+      if val > max_val:
+        status = "Invalid value for %s: %s"
+  except ValueError:
+    status = "Invalid value for %s: %s"
+
+  return (val,status)
+
+
+
+def update_time_step(self,context):
+
+  mc = context.scene.mcell
+  time_step_str = mc.initialization.time_step_str
+
+  (time_step,status) = check_val_str(time_step_str,0,None)
+
+  if status == '':
+    mc.initialization.time_step = time_step
+  else:
+    status = status % ('time_step',time_step_str)
+    mc.initialization.time_step_str = '%g' % (mc.initialization.time_step)
+
+  mc.initialization.status = status
+
+  return
+
+
+
+def update_diffusion_constant(self,context):
+
+  mc = context.scene.mcell
+  mol = mc.molecules.molecule_list[mc.molecules.active_mol_index]
+  diffusion_constant_str = mol.diffusion_constant_str
+
+  (diffusion_constant,status) = check_val_str(diffusion_constant_str,0,None)
+
+  if status == '':
+    mol.diffusion_constant = diffusion_constant
+  else:
+    status = status % ('diffusion_constant',diffusion_constant_str)
+    mol.diffusion_constant_str = '%g' % (mol.diffusion_constant)
+
+  mc.molecules.status = status
+
+  return
+
+
+
+def update_custom_time_step(self,context):
+
+  mc = context.scene.mcell
+  mol = mc.molecules.molecule_list[mc.molecules.active_mol_index]
+  custom_time_step_str = mol.custom_time_step_str
+
+  (custom_time_step,status) = check_val_str(custom_time_step_str,0,None)
+
+  if status == '':
+    mol.custom_time_step = custom_time_step
+  else:
+    status = status % ('custom_time_step',custom_time_step_str)
+    mol.custom_time_step_str = '%g' % (mol.custom_time_step)
+
+  mc.molecules.status = status
+
+  return
+
+
+
+def update_custom_space_step(self,context):
+
+  mc = context.scene.mcell
+  mol = mc.molecules.molecule_list[mc.molecules.active_mol_index]
+  custom_space_step_str = mol.custom_space_step_str
+
+  (custom_space_step,status) = check_val_str(custom_space_step_str,0,None)
+
+  if status == '':
+    mol.custom_space_step = custom_space_step
+  else:
+    status = status % ('custom_space_step',custom_space_step_str)
+    mol.custom_space_step_str = '%g' % (mol.custom_space_step)
+
+  mc.molecules.status = status
+
+  return
+
+
+
+def update_fwd_rate(self,context):
+
+  mc = context.scene.mcell
+  rxn = mc.reactions.reaction_list[mc.reactions.active_rxn_index]
+  fwd_rate_str = rxn.fwd_rate_str
+
+  (fwd_rate,status) = check_val_str(fwd_rate_str,0,None)
+
+  if status == '':
+    rxn.fwd_rate = fwd_rate
+  else:
+    status = status % ('fwd_rate',fwd_rate_str)
+    rxn.fwd_rate_str = '%g' % (rxn.fwd_rate)
+
+  mc.reactions.status = status
+
+  return
+
+
+
+def update_bkwd_rate(self,context):
+
+  mc = context.scene.mcell
+  rxn = mc.reactions.reaction_list[mc.reactions.active_rxn_index]
+  bkwd_rate_str = rxn.bkwd_rate_str
+
+  (bkwd_rate,status) = check_val_str(bkwd_rate_str,0,None)
+
+  if status == '':
+    rxn.bkwd_rate = bkwd_rate
+  else:
+    status = status % ('bkwd_rate',bkwd_rate_str)
+    rxn.bkwd_rate_str = '%g' % (rxn.bkwd_rate)
+
+  mc.reactions.status = status
+
+  return
 
