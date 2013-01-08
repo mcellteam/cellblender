@@ -104,6 +104,40 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
   pattern = bpy.props.StringProperty(name="Release Pattern")
 
 
+class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
+  """This is where properties for a given surface class are stored (except the name)
+
+  All of the properties here ultimately get converted into something like the
+  following: ABSORPTIVE = Molecule' or REFLECTIVE = Molecule;
+  Each instance is only one set of properties for a surface class that may have
+  many sets of properties
+
+  """
+  name = bpy.props.StringProperty(name="Molecule",default="Molecule")
+  molecule = bpy.props.StringProperty(name="Molecule",update=cellblender_operators.check_sc_properties)
+  sc_orient_enum = [
+                    ("'",'Top/Front',''),
+                    (",",'Bottom/Back',''),
+                    (";",'Ignore','')]
+  sc_orient = bpy.props.EnumProperty(items=sc_orient_enum,name="Orientation",update=cellblender_operators.check_sc_properties)
+  sc_type_enum = [
+                    ('ABSORPTIVE','Absorptive',''),
+                    ('TRANSPARENT','Transparent',''),
+                    ('REFLECTIVE','Reflective',''),
+                    ('CLAMP_CONCENTRATION','Clamp Concentration','')]
+  sc_type = bpy.props.EnumProperty(items=sc_type_enum,name="Type",update=cellblender_operators.check_sc_properties)
+  clamp_value = bpy.props.FloatProperty(name="Value",precision=4,min=0.0)
+  clamp_value_str = bpy.props.StringProperty(name="Value",description="Concentration Units: Molar",update=cellblender_operators.update_clamp_value)
+
+
+class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
+  """Stores the surface class name and a list of its properties (sc_properties_list)"""
+
+  name = bpy.props.StringProperty(name="Surface Class Name",default="Surface_Class",update=cellblender_operators.check_surface_class)
+  sc_properties_list = bpy.props.CollectionProperty(type=MCellSurfaceClassPropertiesProperty,name="Surface Classes List")
+  active_sc_properties_index = bpy.props.IntProperty(name="Active Surface Class Index",default=0)
+
+
 #Panel Properties:
 
 class MCellProjectPanelProperty(bpy.types.PropertyGroup):
@@ -153,7 +187,10 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
 
 
 class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
-  include = bpy.props.BoolProperty(name="Include Surface Classes",description="Add INCLUDE_FILE for Surface Classes to main MDL file",default=False)
+  sc_list = bpy.props.CollectionProperty(type=MCellSurfaceClassesProperty,name="Surface Classes List")
+  active_sc_index = bpy.props.IntProperty(name="Active Surface Class Index",default=0)
+  sc_status = bpy.props.StringProperty(name="Status")
+  sc_properties_status = bpy.props.StringProperty(name="Status")
 
 
 class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):

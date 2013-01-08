@@ -469,6 +469,143 @@ def check_reaction(self,context):
 
 
 
+class MCELL_OT_sc_properties_add(bpy.types.Operator):
+  bl_idname = "mcell.sc_properties_add"
+  bl_label = "Add Surface Class Properties"
+  bl_description = "Add new surface class properties to an MCell model"
+  bl_options = {'REGISTER', 'UNDO'}
+  
+  def execute(self,context):
+    sc = context.scene.mcell.surface_classes
+    curr_sc = sc.sc_list[sc.active_sc_index]
+    curr_sc.sc_properties_list.add()
+    curr_sc.active_sc_properties_index = len(curr_sc.sc_properties_list) - 1
+    curr_sc.sc_properties_list[curr_sc.active_sc_properties_index].name = 'Surface_Class_Property'
+
+    return {'FINISHED'}
+ 
+
+
+class MCELL_OT_sc_properties_remove(bpy.types.Operator):
+  bl_idname = "mcell.sc_properties_remove"
+  bl_label = "Remove Surface Class Properties"
+  bl_description = "Remove selected surface class properties from an MCell model"
+  bl_options = {'REGISTER', 'UNDO'}
+  
+  def execute(self,context):
+    sc = context.scene.mcell.surface_classes
+    curr_sc = sc.sc_list[sc.active_sc_index]
+    curr_sc.sc_properties_list.remove(sc.active_sc_index)
+    curr_sc.active_sc_properties_index = len(curr_sc.sc_properties_list) - 1
+    if (curr_sc.active_sc_properties_index < 0):
+      curr_sc.active_sc_properties_index = 0
+
+    if len(curr_sc.sc_properties_list) > 0:
+      check_sc_properties(self,context)
+    else:
+      sc.sc_properties_status = ''
+
+    return {'FINISHED'}
+
+
+
+class MCELL_OT_surface_class_add(bpy.types.Operator):
+  bl_idname = "mcell.surface_class_add"
+  bl_label = "Add Surface Class"
+  bl_description = "Add a new surface class to an MCell model"
+  bl_options = {'REGISTER', 'UNDO'}
+  
+  def execute(self,context):
+    sc = context.scene.mcell.surface_classes
+    sc.sc_list.add()
+    sc.active_sc_index = len(sc.sc_list) - 1
+    sc.sc_list[sc.active_sc_index].name = 'Surface_Class'
+
+    return {'FINISHED'}
+ 
+
+
+class MCELL_OT_surface_class_remove(bpy.types.Operator):
+  bl_idname = "mcell.surface_class_remove"
+  bl_label = "Remove Surface Class"
+  bl_description = "Remove selected surface class from an MCell model"
+  bl_options = {'REGISTER', 'UNDO'}
+  
+  def execute(self,context):
+    sc = context.scene.mcell.surface_classes
+    sc.sc_list.remove(sc.active_sc_index)
+    sc.active_sc_index = sc.active_sc_index - 1
+    if (sc.active_sc_index < 0):
+      sc.active_sc_index = 0
+
+    if len(sc.sc_list) > 0:
+      check_surface_class(self, context)
+    else:
+      sc.sc_status = ''
+
+    return {'FINISHED'}
+
+
+
+def check_surface_class(self,context):
+  """Checks for duplicate or illegal surface class name"""
+  
+  sc = context.scene.mcell.surface_classes
+  curr_sc = sc.sc_list[sc.active_sc_index]
+
+  status = ''
+
+  # Check for duplicate names
+  sc_keys = sc.sc_list.keys()
+  if sc_keys.count(curr_sc.name) > 1:
+    status = 'Duplicate Surface Class: %s' % (curr_sc.name) 
+  
+  # Check for illegal names (Should start with a letter. No special characters)
+  sc_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
+  m = re.match(sc_filter,curr_sc.name)
+  if m == None:
+    status = 'Surface Class name error: %s' % (curr_sc.name)
+
+  sc.sc_status = status
+
+  return
+
+
+
+def check_sc_properties(self,context):
+  """Checks for illegal/undefined molecule names in surface class properties""" 
+
+  mc = context.scene.mcell
+  sc = mc.surface_classes
+  curr_sc = sc.sc_list[sc.active_sc_index]
+  sc_properties = curr_sc.sc_properties_list[curr_sc.active_sc_properties_index] 
+  mol_list = mc.molecules.molecule_list
+  mol = sc_properties.molecule
+
+  if sc_properties.sc_type == 'CLAMP_CONCENTRATION':
+    sc_properties.name = '%s %s%s = %s' % (sc_properties.sc_type, mol, sc_properties.sc_orient, sc_properties.clamp_value_str)
+  else:
+    sc_properties.name = '%s = %s%s' % (sc_properties.sc_type, mol, sc_properties.sc_orient)
+
+  status = ''
+
+  # Check for illegal names (Should start with a letter. No special characters)
+  mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)" 
+  m = re.match(mol_filter,mol)
+  if m == None:
+    status = 'Molecule name error: %s' % (mol)
+  else:
+    # Check for undefined names
+    mol_name = m.group(1)
+    if not mol_name in mol_list:
+      status = 'Undefined molecule: %s' % (mol_name)
+
+  sc.sc_properties_status = status
+
+  return
+
+
+
 class MCELL_OT_release_site_add(bpy.types.Operator):
   bl_idname = "mcell.release_site_add"
   bl_label = "Add Release Site"
@@ -1351,6 +1488,29 @@ def check_val_str(val_str,min_val,max_val):
     status = "Invalid value for %s: %s"
 
   return (val,status)
+
+
+
+def update_clamp_value(self,context):
+  """Store the clamp value as a float if it's legal or generate an error"""
+
+  sc = context.scene.mcell.surface_classes
+  curr_sc = sc.sc_list[sc.active_sc_index]
+  sc_properties = curr_sc.sc_properties_list[curr_sc.active_sc_properties_index] 
+  clamp_value_str = sc_properties.clamp_value_str
+
+  (clamp_value,status) = check_val_str(clamp_value_str,0,None)
+
+  if status == '':
+    sc_properties.clamp_value = clamp_value
+  else:
+    status = status % ('clamp_value',clamp_value_str)
+    sc_properties.clamp_value_str = '%g' % (sc_properties.clamp_value)
+
+  sc_properties.name = '%s %s%s = %s' % (sc_properties.sc_type, sc_properties.molecule, sc_properties.sc_orient, sc_properties.clamp_value_str)
+  sc.sc_properties_status = status
+
+  return
 
 
 

@@ -66,9 +66,16 @@ def save(operator, context, filepath=""):
   else:
     save_molecules(context,file)
 
-  # Include MDL file to define surface classes
-  if mc.surface_classes.include:
-    file.write('INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n' % (mc.project_settings.base_name))
+  # Export Surface Classes:
+  if mc.surface_classes.sc_list:
+    if mc.project_settings.export_format == 'mcell_mdl_modular':
+      file.write('INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n' % (mc.project_settings.base_name))
+      filepath = ('%s/%s.surface_classes.mdl' % (filedir,mc.project_settings.base_name))
+      tmp_file = open(filepath, "w", encoding="utf8", newline="\n")
+      save_surface_classes(context,tmp_file)
+      tmp_file.close()
+    else:
+      save_surface_classes(context,file)
 
   # Export Reactions:
   if mc.project_settings.export_format == 'mcell_mdl_modular':
@@ -180,6 +187,28 @@ def save_molecules(context,file):
       file.write('  }\n')
     file.write('}\n\n')
 
+  return
+
+
+
+def save_surface_classes(context,file):
+
+  mc = context.scene.mcell
+  sc_list = mc.surface_classes.sc_list
+  if len(sc_list) > 0:
+    file.write('DEFINE_SURFACE_CLASSES\n')
+    file.write('{\n')
+    for curr_sc in sc_list:
+      file.write('  %s\n' %(curr_sc.name))
+      file.write('  {\n')
+      for sc_properties in curr_sc.sc_properties_list:
+        if sc_properties.sc_type == 'CLAMP_CONCENTRATION':
+          file.write('    CLAMP_CONCENTRATION\n')
+          file.write('    %s%s = %s\n' % (sc_properties.molecule, sc_properties.sc_orient, sc_properties.clamp_value))
+        else:
+          file.write('    %s = %s%s\n' % (sc_properties.sc_type, sc_properties.molecule, sc_properties.sc_orient))
+      file.write('  }\n')
+    file.write('}\n\n')
   return
 
 

@@ -288,10 +288,59 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
   
   def draw(self, context):
     layout = self.layout
+    sc = context.scene.mcell.surface_classes
+    row = layout.row()
+    row.label(text="Surface Classes:", icon='FORCE_LENNARDJONES')
+    row = layout.row()
+    col = row.column()
+    col.template_list(sc,"sc_list",sc,"active_sc_index",rows=2)
+    col = row.column(align=True)
+    col.operator("mcell.surface_class_add",icon='ZOOMIN',text="")
+    col.operator("mcell.surface_class_remove",icon='ZOOMOUT',text="")
+    if len(sc.sc_list)>0:
+      curr_sc = sc.sc_list[sc.active_sc_index]
+      if sc.sc_status != '':
+        row = layout.row()
+        row.label(text=sc.sc_status,icon='ERROR')
+      row = layout.row()
+      row.prop(curr_sc,"name")
+
+
+
+class MCELL_PT_define_surface_class_properties(bpy.types.Panel):
+  bl_label = "Define Surface Class Properties"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
+  
+  def draw(self, context):
+    layout = self.layout
     mc = context.scene.mcell
-    
-    layout.prop(mc.surface_classes,"include")
-    layout.prop(mc.mod_surf_regions,"include")
+    sc = mc.surface_classes
+
+    row = layout.row()
+    if len(sc.sc_list)>0:
+      curr_sc = sc.sc_list[sc.active_sc_index]
+      row.label(text="%s Properties:" % curr_sc.name, icon='FORCE_LENNARDJONES')
+      row = layout.row()
+      col = row.column()
+      col.template_list(curr_sc,"sc_properties_list",curr_sc,"active_sc_properties_index",rows=2)
+      col = row.column(align=True)
+      col.operator("mcell.sc_properties_add",icon='ZOOMIN',text="")
+      col.operator("mcell.sc_properties_remove",icon='ZOOMOUT',text="")
+      if len(curr_sc.sc_properties_list)>0:
+        sc_properties = curr_sc.sc_properties_list[curr_sc.active_sc_properties_index]
+        if sc.sc_properties_status != '':
+          row = layout.row()
+          row.label(text=sc.sc_properties_status,icon='ERROR')
+        layout.prop_search(sc_properties, 'molecule', mc.molecules, "molecule_list")
+        layout.prop(sc_properties,"sc_orient")
+        layout.prop(sc_properties,"sc_type")
+        if (sc_properties.sc_type == 'CLAMP_CONCENTRATION'):
+          layout.prop(sc_properties,"clamp_value_str")
+    else:
+      row.label(text="Add a surface class")  
 
 
 
