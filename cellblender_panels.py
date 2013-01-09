@@ -290,7 +290,7 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
     layout = self.layout
     sc = context.scene.mcell.surface_classes
     row = layout.row()
-    row.label(text="Surface Classes:", icon='FORCE_LENNARDJONES')
+    row.label(text="Defined Surface Classes:", icon='FACESEL_HLT')
     row = layout.row()
     col = row.column()
     col.template_list(sc,"sc_list",sc,"active_sc_index",rows=2)
@@ -322,7 +322,7 @@ class MCELL_PT_define_surface_class_properties(bpy.types.Panel):
     row = layout.row()
     if len(sc.sc_list)>0:
       curr_sc = sc.sc_list[sc.active_sc_index]
-      row.label(text="%s Properties:" % curr_sc.name, icon='FORCE_LENNARDJONES')
+      row.label(text="%s Properties:" % curr_sc.name, icon='FACESEL_HLT')
       row = layout.row()
       col = row.column()
       col.template_list(curr_sc,"sc_properties_list",curr_sc,"active_sc_properties_index",rows=2)
@@ -341,6 +341,43 @@ class MCELL_PT_define_surface_class_properties(bpy.types.Panel):
           layout.prop(sc_properties,"clamp_value_str")
     else:
       row.label(text="Add a surface class")  
+
+
+
+class MCELL_PT_mod_surface_regions(bpy.types.Panel):
+  bl_label = "Modify Surface Regions"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
+  
+  def draw(self, context):
+    layout = self.layout
+    mc = context.scene.mcell
+
+    mod_sr = context.scene.mcell.mod_surf_regions
+    row = layout.row()
+    row.label(text="Modified Surface Regions:", icon='FACESEL_HLT')
+    row = layout.row()
+    col = row.column()
+    col.template_list(mod_sr,"mod_sr_list",mod_sr,"active_mod_sr_index",rows=2)
+    col = row.column(align=True)
+    col.operator("mcell.mod_sr_add",icon='ZOOMIN',text="")
+    col.operator("mcell.mod_sr_remove",icon='ZOOMOUT',text="")
+    if mod_sr.status != '':
+      row = layout.row()
+      row.label(text=mod_sr.status,icon='ERROR')
+    if len(mod_sr.mod_sr_list) > 0:
+      curr_mod_sr = mod_sr.mod_sr_list[mod_sr.active_mod_sr_index]
+      row = layout.row()
+      row.prop_search(curr_mod_sr,"surf_class_name", mc.surface_classes, "sc_list")
+      row = layout.row()
+      row.prop_search(curr_mod_sr,"object_name", mc.model_objects, "object_list")
+      if curr_mod_sr.object_name:
+        try:
+          layout.prop_search(curr_mod_sr, "region_name", bpy.data.objects[curr_mod_sr.object_name].mcell.regions, "region_list")
+        except KeyError:
+          pass 
 
 
 

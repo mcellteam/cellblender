@@ -606,6 +606,114 @@ def check_sc_properties(self,context):
 
 
 
+class MCELL_OT_mod_sr_add(bpy.types.Operator):
+  bl_idname = "mcell.mod_sr_add"
+  bl_label = "Add Surface Region Modification"
+  bl_description = "Add a surface region modification to an MCell model"
+  bl_options = {'REGISTER', 'UNDO'}
+  
+  def execute(self,context):
+    mod_sr = context.scene.mcell.mod_surf_regions
+    mod_sr.mod_sr_list.add()
+    mod_sr.active_mod_sr_index = len(mod_sr.mod_sr_list) - 1
+    mod_sr.mod_sr_list[mod_sr.active_mod_sr_index].name = 'Modify_Surface_Region'
+
+    return {'FINISHED'}
+
+
+
+class MCELL_OT_mod_sr_remove(bpy.types.Operator):
+  bl_idname = "mcell.mod_sr_remove"
+  bl_label = "Remove Surface Region Modification"
+  bl_description = "Remove selected surface region modification from an MCell model"
+  bl_options = {'REGISTER', 'UNDO'}
+  
+  def execute(self,context):
+    mod_sr = context.scene.mcell.mod_surf_regions
+    mod_sr.mod_sr_list.remove(mod_sr.active_mod_sr_index)
+    mod_sr.active_mod_sr_index = mod_sr.active_mod_sr_index - 1
+    if (mod_sr.active_mod_sr_index < 0):
+      mod_sr.active_mod_sr_index = 0
+
+    return {'FINISHED'}
+
+
+
+def check_mod_sr_surf_class(self,context):
+  """Make sure the surface class name is valid and format the list entry"""
+
+  mc = context.scene.mcell
+  sc_list = mc.surface_classes.sc_list
+  mod_sr = mc.mod_surf_regions
+  curr_mod_sr = mod_sr.mod_sr_list[mod_sr.active_mod_sr_index]
+  surf_class_name = curr_mod_sr.surf_class_name
+  curr_mod_sr.name = '%s[%s] {SURFACE_CLASS=%s}' % (curr_mod_sr.object_name, curr_mod_sr.region_name, surf_class_name)
+
+  status = ''
+
+  #Make sure there is something in the Defined Surface Classes list
+  if not sc_list:
+    status = 'No surface classes defined'
+  #Make sure the user entered surface class is in the Defined Surface Classes list
+  elif not surf_class_name in sc_list:
+    status = 'Undefined surface class: %s' % surf_class_name
+
+  mod_sr.status = status
+
+  return
+
+
+
+def check_mod_sr_object(self,context):
+  """Make sure the object name is valid and format the list entry"""
+
+  mc = context.scene.mcell
+  obj_list = mc.model_objects.object_list
+  mod_sr = mc.mod_surf_regions
+  curr_mod_sr = mod_sr.mod_sr_list[mod_sr.active_mod_sr_index]
+  curr_mod_sr.name = '%s[%s] {SURFACE_CLASS=%s}' % (curr_mod_sr.object_name, curr_mod_sr.region_name, curr_mod_sr.surf_class_name)
+
+  status = ''
+
+  #Make sure there is something in the Model Objects list
+  if not obj_list:
+    status = 'No objects available'
+  #Make sure the user entered object name is in the Model Objects list
+  elif not curr_mod_sr.object_name in obj_list:
+    status = 'Undefined object: %s' % curr_mod_sr.object_name
+
+  mod_sr.status = status
+
+  return
+
+
+
+def check_mod_sr_region(self,context):
+  """Make sure the region name is valid and format the list entry"""
+
+  mc = context.scene.mcell
+  mod_sr = mc.mod_surf_regions
+  curr_mod_sr = mod_sr.mod_sr_list[mod_sr.active_mod_sr_index]
+  curr_mod_sr.name = '%s[%s] {SURFACE_CLASS=%s}' % (curr_mod_sr.object_name, curr_mod_sr.region_name, curr_mod_sr.surf_class_name)
+  region_list = bpy.data.objects[curr_mod_sr.object_name].mcell.regions.region_list
+
+  status = ''
+
+  try:
+    if not region_list:
+      status = 'The selected object has no surface regions'
+    elif not curr_mod_sr.region_name in region_list:
+      status = 'Undefined region: %s' % curr_mod_sr.region_name
+  except KeyError:
+    #the object name (in modify surface regions) doesn't correspond to an object in blender 
+    pass
+
+  mod_sr.status = status
+
+  return
+
+
+
 class MCELL_OT_release_site_add(bpy.types.Operator):
   bl_idname = "mcell.release_site_add"
   bl_label = "Add Release Site"

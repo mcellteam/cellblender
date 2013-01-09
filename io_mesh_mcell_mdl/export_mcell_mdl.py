@@ -98,8 +98,15 @@ def save(operator, context, filepath=""):
     save_geometry(context,file)
 
   # Include MDL file to modify surface regions
-  if mc.mod_surf_regions.include:
-    file.write('INCLUDE_FILE = \"%s.mod_surf_regions.mdl\"\n\n' % (mc.project_settings.base_name))
+  if mc.mod_surf_regions.mod_sr_list:
+    if mc.project_settings.export_format == 'mcell_mdl_modular':
+      file.write('INCLUDE_FILE = \"%s.mod_surf_regions.mdl\"\n\n' % (mc.project_settings.base_name))
+      filepath = ('%s/%s.mod_surf_regions.mdl' % (filedir,mc.project_settings.base_name))
+      tmp_file = open(filepath, "w", encoding="utf8", newline="\n")
+      save_mod_surf_regions(context,tmp_file)
+      tmp_file.close()
+    else:
+      save_mod_surf_regions(context,file)
         
   # Instantiate Model Geometry and Release sites:
   obj_list = mc.model_objects.object_list
@@ -187,6 +194,21 @@ def save_molecules(context,file):
       file.write('  }\n')
     file.write('}\n\n')
 
+  return
+
+
+
+def save_mod_surf_regions(context,file):
+
+  mc = context.scene.mcell
+  mod_sr_list = mc.mod_surf_regions.mod_sr_list
+  if len(mod_sr_list) > 0:
+    file.write('MODIFY_SURFACE_REGIONS\n')
+    file.write('{\n')
+    for curr_mod_sr in mod_sr_list:
+      file.write('  %s[%s]\n' % (curr_mod_sr.object_name, curr_mod_sr.region_name))
+      file.write('  {\n    SURFACE_CLASS = %s\n  }\n' % (curr_mod_sr.surf_class_name))
+    file.write('}\n\n')
   return
 
 
