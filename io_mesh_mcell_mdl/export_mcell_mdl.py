@@ -67,7 +67,7 @@ def save(operator, context, filepath=""):
     save_molecules(context,file)
 
   # Export Surface Classes:
-  if mc.surface_classes.sc_list:
+  if mc.surface_classes.surf_class_list:
     if mc.project_settings.export_format == 'mcell_mdl_modular':
       file.write('INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n' % (mc.project_settings.base_name))
       filepath = ('%s/%s.surface_classes.mdl' % (filedir,mc.project_settings.base_name))
@@ -98,7 +98,7 @@ def save(operator, context, filepath=""):
     save_geometry(context,file)
 
   # Include MDL file to modify surface regions
-  if mc.mod_surf_regions.mod_sr_list:
+  if mc.mod_surf_regions.mod_surf_regions_list:
     if mc.project_settings.export_format == 'mcell_mdl_modular':
       file.write('INCLUDE_FILE = \"%s.mod_surf_regions.mdl\"\n\n' % (mc.project_settings.base_name))
       filepath = ('%s/%s.mod_surf_regions.mdl' % (filedir,mc.project_settings.base_name))
@@ -201,13 +201,13 @@ def save_molecules(context,file):
 def save_mod_surf_regions(context,file):
 
   mc = context.scene.mcell
-  mod_sr_list = mc.mod_surf_regions.mod_sr_list
-  if len(mod_sr_list) > 0:
+  mod_surf_regions_list = mc.mod_surf_regions.mod_surf_regions_list
+  if len(mod_surf_regions_list) > 0:
     file.write('MODIFY_SURFACE_REGIONS\n')
     file.write('{\n')
-    for curr_mod_sr in mod_sr_list:
-      file.write('  %s[%s]\n' % (curr_mod_sr.object_name, curr_mod_sr.region_name))
-      file.write('  {\n    SURFACE_CLASS = %s\n  }\n' % (curr_mod_sr.surf_class_name))
+    for curr_modify_sr in mod_surf_regions_list:
+      file.write('  %s[%s]\n' % (curr_modify_sr.object_name, curr_modify_sr.region_name))
+      file.write('  {\n    SURFACE_CLASS = %s\n  }\n' % (curr_modify_sr.surf_class_name))
     file.write('}\n\n')
   return
 
@@ -216,19 +216,19 @@ def save_mod_surf_regions(context,file):
 def save_surface_classes(context,file):
 
   mc = context.scene.mcell
-  sc_list = mc.surface_classes.sc_list
-  if len(sc_list) > 0:
+  surf_class_list = mc.surface_classes.surf_class_list
+  if len(surf_class_list) > 0:
     file.write('DEFINE_SURFACE_CLASSES\n')
     file.write('{\n')
-    for curr_sc in sc_list:
-      file.write('  %s\n' %(curr_sc.name))
+    for active_surf_class in surf_class_list:
+      file.write('  %s\n' %(active_surf_class.name))
       file.write('  {\n')
-      for sc_properties in curr_sc.sc_properties_list:
-        if sc_properties.sc_type == 'CLAMP_CONCENTRATION':
+      for surf_class_props in active_surf_class.surf_class_props_list:
+        if surf_class_props.surf_class_type == 'CLAMP_CONCENTRATION':
           file.write('    CLAMP_CONCENTRATION\n')
-          file.write('    %s%s = %s\n' % (sc_properties.molecule, sc_properties.sc_orient, sc_properties.clamp_value))
+          file.write('    %s%s = %g\n' % (surf_class_props.molecule, surf_class_props.surf_class_orient, surf_class_props.clamp_value))
         else:
-          file.write('    %s = %s%s\n' % (sc_properties.sc_type, sc_properties.molecule, sc_properties.sc_orient))
+          file.write('    %s = %s%s\n' % (surf_class_props.surf_class_type, surf_class_props.molecule, surf_class_props.surf_class_orient))
       file.write('  }\n')
     file.write('}\n\n')
   return

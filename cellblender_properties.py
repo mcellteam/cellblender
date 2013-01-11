@@ -114,37 +114,37 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
 
   """
   name = bpy.props.StringProperty(name="Molecule",default="Molecule")
-  molecule = bpy.props.StringProperty(name="Molecule Name:",update=cellblender_operators.check_sc_properties)
-  sc_orient_enum = [
+  molecule = bpy.props.StringProperty(name="Molecule Name:",update=cellblender_operators.check_surf_class_props)
+  surf_class_orient_enum = [
                     ("'",'Top/Front',''),
                     (",",'Bottom/Back',''),
                     (";",'Ignore','')]
-  sc_orient = bpy.props.EnumProperty(items=sc_orient_enum,name="Orientation",update=cellblender_operators.check_sc_properties)
-  sc_type_enum = [
+  surf_class_orient = bpy.props.EnumProperty(items=surf_class_orient_enum,name="Orientation",update=cellblender_operators.check_surf_class_props)
+  surf_class_type_enum = [
                     ('ABSORPTIVE','Absorptive',''),
                     ('TRANSPARENT','Transparent',''),
                     ('REFLECTIVE','Reflective',''),
                     ('CLAMP_CONCENTRATION','Clamp Concentration','')]
-  sc_type = bpy.props.EnumProperty(items=sc_type_enum,name="Type",update=cellblender_operators.check_sc_properties)
+  surf_class_type = bpy.props.EnumProperty(items=surf_class_type_enum,name="Type",update=cellblender_operators.check_surf_class_props)
   clamp_value = bpy.props.FloatProperty(name="Value",precision=4,min=0.0)
   clamp_value_str = bpy.props.StringProperty(name="Value",description="Concentration Units: Molar",update=cellblender_operators.update_clamp_value)
 
 
 class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
-  """Stores the surface class name and a list of its properties (sc_properties_list)"""
+  """Stores the surface class name and a list of its properties (surf_class_props_list)"""
 
   name = bpy.props.StringProperty(name="Surface Class Name",default="Surface_Class",update=cellblender_operators.check_surface_class)
-  sc_properties_list = bpy.props.CollectionProperty(type=MCellSurfaceClassPropertiesProperty,name="Surface Classes List")
-  active_sc_properties_index = bpy.props.IntProperty(name="Active Surface Class Index",default=0)
+  surf_class_props_list = bpy.props.CollectionProperty(type=MCellSurfaceClassPropertiesProperty,name="Surface Classes List")
+  active_surf_class_props_index = bpy.props.IntProperty(name="Active Surface Class Index",default=0)
 
 
 class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
   """Assign a surface class to a surface region"""
 
   name = bpy.props.StringProperty(name="Surface Class Name",default="Surface_Class")
-  surf_class_name = bpy.props.StringProperty(name="Surface Class Name:",update=cellblender_operators.check_mod_sr_surf_class)
-  object_name = bpy.props.StringProperty(name="Object Name:",update=cellblender_operators.check_mod_sr_object)
-  region_name = bpy.props.StringProperty(name="Region Name:",update=cellblender_operators.check_mod_sr_region)
+  surf_class_name = bpy.props.StringProperty(name="Surface Class Name:",update=cellblender_operators.check_assigned_surface_class)
+  object_name = bpy.props.StringProperty(name="Object Name:",update=cellblender_operators.check_assigned_object)
+  region_name = bpy.props.StringProperty(name="Region Name:",update=cellblender_operators.check_modified_region)
 
 
 #Panel Properties:
@@ -196,15 +196,15 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
 
 
 class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
-  sc_list = bpy.props.CollectionProperty(type=MCellSurfaceClassesProperty,name="Surface Classes List")
-  active_sc_index = bpy.props.IntProperty(name="Active Surface Class Index",default=0)
-  sc_status = bpy.props.StringProperty(name="Status")
-  sc_properties_status = bpy.props.StringProperty(name="Status")
+  surf_class_list = bpy.props.CollectionProperty(type=MCellSurfaceClassesProperty,name="Surface Classes List")
+  active_surf_class_index = bpy.props.IntProperty(name="Active Surface Class Index",default=0)
+  surf_class_status = bpy.props.StringProperty(name="Status")
+  surf_class_props_status = bpy.props.StringProperty(name="Status")
 
 
 class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
-  mod_sr_list = bpy.props.CollectionProperty(type=MCellModSurfRegionsProperty,name="Modify Surface Region List")
-  active_mod_sr_index = bpy.props.IntProperty(name="Active Modify Surface Region Index",default=0)
+  mod_surf_regions_list = bpy.props.CollectionProperty(type=MCellModSurfRegionsProperty,name="Modify Surface Region List")
+  active_mod_surf_regions_index = bpy.props.IntProperty(name="Active Modify Surface Region Index",default=0)
   status = bpy.props.StringProperty(name="Status")
 
 
