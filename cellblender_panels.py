@@ -350,7 +350,7 @@ class MCELL_PT_define_surface_class_properties(bpy.types.Panel):
                 if (surf_class_props.surf_class_type == 'CLAMP_CONCENTRATION'):
                     layout.prop(surf_class_props, "clamp_value_str")
         else:
-            row.label(text="Add a surface class")
+            row.label(text="no surface class defined")
 
 
 class MCELL_PT_mod_surface_regions(bpy.types.Panel):
