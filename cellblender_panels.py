@@ -321,11 +321,8 @@ class MCELL_PT_define_surface_class_properties(bpy.types.Panel):
         row = layout.row()
         if len(surf_class.surf_class_list) > 0:
             active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
-            box = row.box()
-            box.label(text="Active Surface Class: %s" % active_surf_class.name)
             row = layout.row()
-            row.label(text="Surface Class Properties:", icon='FACESEL_HLT')
-            row = layout.row()
+            row.label(text="%s Properties:" % active_surf_class.name, icon='FACESEL_HLT')
             row = layout.row()
             col = row.column()
             col.template_list(active_surf_class, "surf_class_props_list",
