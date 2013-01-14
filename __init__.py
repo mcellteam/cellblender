@@ -21,9 +21,9 @@
 bl_info = {
     "name": "CellBlender",
     "author": "Tom Bartol",
-    "version": (0,1,'rev_52'),
-    "blender": (2, 6, 3),
-    "api": 46461,
+    "version": (0,1,'rev_53'),
+    "blender": (2, 6, 5),
+    "api": 53177,
     "location": "Properties > Scene > CellBlender Panel",
     "description": "CellBlender Modeling System for MCell",
     "warning": "",
@@ -61,6 +61,9 @@ def register():
 
   bpy.utils.register_class(cellblender_properties.MCellMoleculeProperty)
   bpy.utils.register_class(cellblender_properties.MCellReactionProperty)
+  bpy.utils.register_class(cellblender_properties.MCellSurfaceClassPropertiesProperty)
+  bpy.utils.register_class(cellblender_properties.MCellSurfaceClassesProperty)
+  bpy.utils.register_class(cellblender_properties.MCellModSurfRegionsProperty)
   bpy.utils.register_class(cellblender_properties.MCellMoleculeReleaseProperty)
   bpy.utils.register_class(cellblender_properties.MCellStringProperty)
   bpy.utils.register_class(cellblender_properties.MCellFloatVectorProperty)
@@ -70,7 +73,7 @@ def register():
   bpy.utils.register_class(cellblender_properties.MCellMoleculesPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellReactionsPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellSurfaceClassesPanelProperty)
-  bpy.utils.register_class(cellblender_properties.MCellModSurfRegionsProperty)
+  bpy.utils.register_class(cellblender_properties.MCellModSurfRegionsPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellMoleculeReleasePanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellMeshalyzerPanelProperty)
   bpy.utils.register_class(cellblender_properties.MCellModelObjectsPanelProperty)
@@ -102,6 +105,12 @@ def register():
   bpy.utils.register_class(cellblender_operators.MCELL_OT_molecule_remove)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_reaction_add)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_reaction_remove)
+  bpy.utils.register_class(cellblender_operators.MCELL_OT_surface_class_add)
+  bpy.utils.register_class(cellblender_operators.MCELL_OT_surface_class_remove)
+  bpy.utils.register_class(cellblender_operators.MCELL_OT_surf_class_props_add)
+  bpy.utils.register_class(cellblender_operators.MCELL_OT_surf_class_props_remove)
+  bpy.utils.register_class(cellblender_operators.MCELL_OT_mod_surf_regions_add)
+  bpy.utils.register_class(cellblender_operators.MCELL_OT_mod_surf_regions_remove)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_release_site_add)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_release_site_remove)
   bpy.utils.register_class(cellblender_operators.MCELL_OT_mol_viz_set_index)
@@ -125,6 +134,8 @@ def register():
   bpy.utils.register_class(cellblender_panels.MCELL_PT_define_molecules)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_define_reactions)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_define_surface_classes)
+  bpy.utils.register_class(cellblender_panels.MCELL_PT_define_surface_class_properties)
+  bpy.utils.register_class(cellblender_panels.MCELL_PT_mod_surface_regions)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_molecule_release)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_reaction_output_settings)
   bpy.utils.register_class(cellblender_panels.MCELL_PT_visualization_output_settings)

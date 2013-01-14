@@ -468,6 +468,322 @@ def check_reaction(self,context):
   return
 
 
+class MCELL_OT_surf_class_props_add(bpy.types.Operator):
+    bl_idname = "mcell.surf_class_props_add"
+    bl_label = "Add Surface Class Properties"
+    bl_description = "Add new surface class properties to an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        surf_class = context.scene.mcell.surface_classes
+        active_surf_class = surf_class.surf_class_list[
+            surf_class.active_surf_class_index]
+        active_surf_class.surf_class_props_list.add()
+        active_surf_class.active_surf_class_props_index = len(
+            active_surf_class.surf_class_props_list) - 1
+        new_name = 'Surface_Class_Property'
+        active_surf_class.surf_class_props_list[
+            active_surf_class.active_surf_class_props_index].name = new_name
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_surf_class_props_remove(bpy.types.Operator):
+    bl_idname = "mcell.surf_class_props_remove"
+    bl_label = "Remove Surface Class Properties"
+    bl_description = "Remove surface class properties from an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        surf_class = context.scene.mcell.surface_classes
+        active_surf_class = surf_class.surf_class_list[
+            surf_class.active_surf_class_index]
+        active_surf_class.surf_class_props_list.remove(
+            active_surf_class.active_surf_class_props_index)
+        active_surf_class.active_surf_class_props_index = len(
+            active_surf_class.surf_class_props_list) - 1
+        if (active_surf_class.active_surf_class_props_index < 0):
+            active_surf_class.active_surf_class_props_index = 0
+
+        if len(active_surf_class.surf_class_props_list) > 0:
+            check_surf_class_props(self, context)
+        else:
+            surf_class.surf_class_props_status = ''
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_surface_class_add(bpy.types.Operator):
+    bl_idname = "mcell.surface_class_add"
+    bl_label = "Add Surface Class"
+    bl_description = "Add a new surface class to an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        surf_class = context.scene.mcell.surface_classes
+        surf_class.surf_class_list.add()
+        surf_class.active_surf_class_index = len(
+            surf_class.surf_class_list) - 1
+        surf_class.surf_class_list[
+            surf_class.active_surf_class_index].name = 'Surface_Class'
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_surface_class_remove(bpy.types.Operator):
+    bl_idname = "mcell.surface_class_remove"
+    bl_label = "Remove Surface Class"
+    bl_description = "Remove selected surface class from an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        surf_class = context.scene.mcell.surface_classes
+        surf_class.surf_class_list.remove(surf_class.active_surf_class_index)
+        surf_class.active_surf_class_index -= 1
+        if (surf_class.active_surf_class_index < 0):
+            surf_class.active_surf_class_index = 0
+
+        if len(surf_class.surf_class_list) > 0:
+            check_surface_class(self, context)
+        else:
+            surf_class.surf_class_status = ''
+
+        return {'FINISHED'}
+
+
+def check_surface_class(self, context):
+    """Checks for duplicate or illegal surface class name"""
+
+    surf_class = context.scene.mcell.surface_classes
+    active_surf_class = surf_class.surf_class_list[
+        surf_class.active_surf_class_index]
+
+    status = ''
+
+    # Check for duplicate names
+    surf_class_keys = surf_class.surf_class_list.keys()
+    if surf_class_keys.count(active_surf_class.name) > 1:
+        status = 'Duplicate Surface Class: %s' % (active_surf_class.name)
+
+    # Check for illegal names (Starts with a letter. No special characters)
+    surf_class_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
+    m = re.match(surf_class_filter, active_surf_class.name)
+    if m is None:
+        status = 'Surface Class name error: %s' % (active_surf_class.name)
+
+    surf_class.surf_class_status = status
+
+    return
+
+
+def convert_surf_class_str(surf_class_type):
+    """Format MDL language (surf class type) for viewing in the UI"""
+
+    if surf_class_type == 'ABSORPTIVE':
+        surf_class_type = 'Absorptive'
+    elif surf_class_type == 'TRANSPARENT':
+        surf_class_type = 'Transparent'
+    elif surf_class_type == 'REFLECTIVE':
+        surf_class_type = 'Reflective'
+    elif surf_class_type == 'CLAMP_CONCENTRATION':
+        surf_class_type = 'Clamp Concentration'
+
+    return(surf_class_type)
+
+
+def convert_orient_str(orient):
+    """Format MDL language (orientation) for viewing in the UI"""
+
+    if orient == "'":
+        orient = 'Top/Front'
+    elif orient == ",":
+        orient = 'Bottom/Back'
+    elif orient == ";":
+        orient = 'Ignore'
+
+    return(orient)
+
+
+def check_surf_class_props(self, context):
+    """Checks for illegal/undefined molecule names in surf class properties"""
+
+    mc = context.scene.mcell
+    active_surf_class = mc.surface_classes.surf_class_list[
+        mc.surface_classes.active_surf_class_index]
+    surf_class_props = active_surf_class.surf_class_props_list[
+        active_surf_class.active_surf_class_props_index]
+    mol_list = mc.molecules.molecule_list
+    molecule = surf_class_props.molecule
+    surf_class_type = surf_class_props.surf_class_type
+    orient = surf_class_props.surf_class_orient
+
+    surf_class_type = convert_surf_class_str(surf_class_type)
+    orient = convert_orient_str(orient)
+
+    if molecule:
+        surf_class_props.name = 'Molec.: %s   Orient.: %s   Type: %s' % (
+            molecule, orient, surf_class_type)
+    else:
+        surf_class_props.name = 'Molec.: NA   Orient.: %s   Type: %s' % (
+            orient, surf_class_type)
+
+    status = ''
+
+    # Check for illegal names (Starts with a letter. No special characters)
+    mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)"
+    m = re.match(mol_filter, molecule)
+    if m is None:
+        status = 'Molecule name error: %s' % (molecule)
+    else:
+        # Check for undefined names
+        mol_name = m.group(1)
+        if not mol_name in mol_list:
+            status = 'Undefined molecule: %s' % (mol_name)
+
+    mc.surface_classes.surf_class_props_status = status
+
+    return
+
+
+class MCELL_OT_mod_surf_regions_add(bpy.types.Operator):
+    bl_idname = "mcell.mod_surf_regions_add"
+    bl_label = "Add Surface Region Modification"
+    bl_description = "Add a surface region modification to an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mod_surf_regions = context.scene.mcell.mod_surf_regions
+        mod_surf_regions.mod_surf_regions_list.add()
+        mod_surf_regions.active_mod_surf_regions_index = len(
+            mod_surf_regions.mod_surf_regions_list) - 1
+        new_name = 'Modify_Surface_Region'
+        mod_surf_regions.mod_surf_regions_list[
+            mod_surf_regions.active_mod_surf_regions_index].name = new_name
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_mod_surf_regions_remove(bpy.types.Operator):
+    bl_idname = "mcell.mod_surf_regions_remove"
+    bl_label = "Remove Surface Region Modification"
+    bl_description = "Remove selected surface region modification"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mod_surf_regions = context.scene.mcell.mod_surf_regions
+        mod_surf_regions.mod_surf_regions_list.remove(
+            mod_surf_regions.active_mod_surf_regions_index)
+        mod_surf_regions.active_mod_surf_regions_index -= 1
+        if (mod_surf_regions.active_mod_surf_regions_index < 0):
+            mod_surf_regions.active_mod_surf_regions_index = 0
+
+        return {'FINISHED'}
+
+
+def format_mod_surf_regions_entry(surf_class_name, object_name, region_name):
+    """Check if the entries in Modify Surface Regions exist and format them"""
+    if not surf_class_name:
+        surf_class_name = 'NA'
+    if not object_name:
+        object_name = 'NA'
+    if not region_name:
+        region_name = 'NA'
+
+    mod_surf_regions_entry = 'Surface Class: %s   Object: %s   Region: %s' % (
+        surf_class_name, object_name, region_name)
+
+    return(mod_surf_regions_entry)
+
+
+def check_assigned_surface_class(self, context):
+    """Make sure the surface class name is valid and format the list entry"""
+
+    mc = context.scene.mcell
+    surf_class_list = mc.surface_classes.surf_class_list
+    mod_surf_regions = mc.mod_surf_regions
+    active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
+        mod_surf_regions.active_mod_surf_regions_index]
+    surf_class_name = active_mod_surf_regions.surf_class_name
+    object_name = active_mod_surf_regions.object_name
+    region_name = active_mod_surf_regions.region_name
+
+    active_mod_surf_regions.name = format_mod_surf_regions_entry(
+        surf_class_name, object_name, region_name)
+
+    status = ''
+
+    #Make sure there is something in the Defined Surface Classes list
+    if not surf_class_list:
+        status = 'No surface classes defined'
+    #Make sure the user entered surf class is in Defined Surface Classes list
+    elif not active_mod_surf_regions.surf_class_name in surf_class_list:
+        status = 'Undefined surface class: %s' % active_mod_surf_regions.surf_class_name
+
+    mod_surf_regions.status = status
+
+    return
+
+
+def check_assigned_object(self, context):
+    """Make sure the object name is valid and format the list entry"""
+
+    mc = context.scene.mcell
+    obj_list = mc.model_objects.object_list
+    mod_surf_regions = mc.mod_surf_regions
+    active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
+        mod_surf_regions.active_mod_surf_regions_index]
+    surf_class_name = active_mod_surf_regions.surf_class_name
+    object_name = active_mod_surf_regions.object_name
+    region_name = active_mod_surf_regions.region_name
+
+    active_mod_surf_regions.name = format_mod_surf_regions_entry(
+        surf_class_name, object_name, region_name)
+
+    status = ''
+
+    #Make sure there is something in the Model Objects list
+    if not obj_list:
+        status = 'No objects available'
+    #Make sure the user entered object name is in the Model Objects list
+    elif not active_mod_surf_regions.object_name in obj_list:
+        status = 'Undefined object: %s' % active_mod_surf_regions.object_name
+
+    mod_surf_regions.status = status
+
+    return
+
+
+def check_modified_region(self, context):
+    """Make sure the region name is valid and format the list entry"""
+
+    mc = context.scene.mcell
+    mod_surf_regions = mc.mod_surf_regions
+    active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
+        mod_surf_regions.active_mod_surf_regions_index]
+    region_list = bpy.data.objects[
+        active_mod_surf_regions.object_name].mcell.regions.region_list
+    surf_class_name = active_mod_surf_regions.surf_class_name
+    object_name = active_mod_surf_regions.object_name
+    region_name = active_mod_surf_regions.region_name
+
+    active_mod_surf_regions.name = format_mod_surf_regions_entry(
+        surf_class_name, object_name, region_name)
+
+    status = ''
+
+    try:
+        if not region_list:
+            status = 'The selected object has no surface regions'
+        elif not active_mod_surf_regions.region_name in region_list:
+            status = 'Undefined region: %s' % active_mod_surf_regions.region_name
+    except KeyError:
+        #the object name in mod surf regions isn't a blender object
+        pass
+
+    mod_surf_regions.status = status
+
+    return
+
 
 class MCELL_OT_release_site_add(bpy.types.Operator):
   bl_idname = "mcell.release_site_add"
@@ -1351,6 +1667,44 @@ def check_val_str(val_str,min_val,max_val):
     status = "Invalid value for %s: %s"
 
   return (val,status)
+
+
+def update_clamp_value(self, context):
+    """Store the clamp value as a float if it's legal or generate an error"""
+
+    mc = context.scene.mcell
+    surf_class = context.scene.mcell.surface_classes
+    active_surf_class = mc.surface_classes.surf_class_list[
+        mc.surface_classes.active_surf_class_index]
+    surf_class_props = active_surf_class.surf_class_props_list[
+        active_surf_class.active_surf_class_props_index]
+    surf_class_type = surf_class_props.surf_class_type
+    orient = surf_class_props.surf_class_orient
+    molecule = surf_class_props.molecule
+    clamp_value_str = surf_class_props.clamp_value_str
+
+    (clamp_value, status) = check_val_str(clamp_value_str, 0, None)
+
+    if status == '':
+        surf_class_props.clamp_value = clamp_value
+    else:
+        status = status % ('clamp_value', clamp_value_str)
+        surf_class_props.clamp_value_str = '%g' % (
+            surf_class_props.clamp_value)
+
+    surf_class_type = convert_surf_class_str(surf_class_type)
+    orient = convert_orient_str(orient)
+
+    if molecule:
+        surf_class_props.name = 'Molec.: %s   Orient.: %s   Type: %s' % (
+            molecule, orient, surf_class_type)
+    else:
+        surf_class_props.name = 'Molec.: NA   Orient.: %s   Type: %s' % (
+            orient, surf_class_type)
+
+    surf_class.surf_class_props_status = status
+
+    return
 
 
 

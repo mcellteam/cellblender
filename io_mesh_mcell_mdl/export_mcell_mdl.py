@@ -90,10 +90,15 @@ def save_wrapper(context, out_file, filedir):
     else:
         save_molecules(context, out_file)
 
-    # include MDL file to define surface classes
-    if mcell.surface_classes.include:
+    # export surface classes
+    have_surf_class = len(mcell.surface_classes.surf_class_list) != 0
+    if have_surf_class and settings.export_format == 'mcell_mdl_modular':
         out_file.write('INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n' % 
                    (settings.base_name))
+        filepath = ('%s/%s.surface_classes.mdl' % 
+                    (filedir, settings.base_name))
+        with open(filepath, "w", encoding="utf8", newline="\n") as mol_file:
+            save_surface_classes(context, mol_file)
 
     # export reactions
     have_reactions = len(context.scene.mcell.reactions.reaction_list) != 0
@@ -118,10 +123,15 @@ def save_wrapper(context, out_file, filedir):
     else:
         save_geometry(context, out_file)
 
-    # include mDL file to modify surface regions
-    if mcell.mod_surf_regions.include:
+    # export modify surface regions
+    have_mod_surf_reg = len(mcell.mod_surf_regions.mod_surf_regions_list) != 0
+    if have_mod_surf_reg and settings.export_format == 'mcell_mdl_modular':
         out_file.write('INCLUDE_FILE = \"%s.mod_surf_regions.mdl\"\n\n' % 
                        (settings.base_name))
+        filepath = ('%s/%s.mod_surf_regions.mdl' % 
+                    (filedir, settings.base_name))
+        with open(filepath, "w", encoding="utf8", newline="\n") as mol_file:
+            save_mod_surf_regions(context, mol_file)
         
     # Instantiate Model Geometry and Release sites:
     object_list = mcell.model_objects.object_list
@@ -168,7 +178,7 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
         out_file.write('  %s RELEASE_SITE\n' % (release_site.name))
         out_file.write('  {\n')
 
-        # release sites with predifined shapes
+        # release sites with predefined shapes
         if ((release_site.shape == 'CUBIC') | 
             (release_site.shape == 'SPHERICAL') | 
             (release_site.shape == 'SPHERICAL_SHELL')):
@@ -259,6 +269,37 @@ def save_molecules(context, out_file):
 
             out_file.write('  }\n')
         out_file.write('}\n\n')
+
+
+
+
+def save_surface_classes(context, file):
+    """ Saves surface class info to mdl output file. """
+
+    mc = context.scene.mcell
+    surf_class_list = mc.surface_classes.surf_class_list
+    if len(surf_class_list) > 0:
+        file.write('DEFINE_SURFACE_CLASSES\n')
+        file.write('{\n')
+        for active_surf_class in surf_class_list:
+            file.write('  %s\n' % (active_surf_class.name))
+            file.write('  {\n')
+            for surf_class_props in active_surf_class.surf_class_props_list:
+                molecule = surf_class_props.molecule
+                orient = surf_class_props.surf_class_orient
+                surf_class_type = surf_class_props.surf_class_type
+                if surf_class_type == 'CLAMP_CONCENTRATION':
+                    clamp_value = surf_class_props.clamp_value
+                    file.write('    %s\n' % surf_class_type)
+                    file.write('    %s%s = %g\n' % (molecule,
+                                                    orient,
+                                                    clamp_value))
+                else:
+                    file.write('    %s = %s%s\n' % (surf_class_type, molecule,
+                                                    orient))
+            file.write('  }\n')
+        file.write('}\n\n')
+    return
 
 
 
@@ -356,7 +397,7 @@ def save_geometry(context, out_file):
                     region_names = [k for k in regions.keys()]
                     region_names.sort()
                     for region_name in region_names:
-                        out_file.write('    %s\n' % (reg))
+                        out_file.write('    %s\n' % (region_name))
                         out_file.write('    {\n')
                         out_file.write('      ELEMENT_LIST = '+ 
                                        str(regions[region_name])+'\n' )
@@ -369,6 +410,25 @@ def save_geometry(context, out_file):
 
                 # restore proper object visibility state
                 data_object.hide = saved_hide_status
+
+
+
+
+def save_mod_surf_regions(context, file):
+    """ Saves modify surface region info to mdl output file. """
+
+    mc = context.scene.mcell
+    mod_surf_regions_list = mc.mod_surf_regions.mod_surf_regions_list
+    if len(mod_surf_regions_list) > 0:
+        file.write('MODIFY_SURFACE_REGIONS\n')
+        file.write('{\n')
+        for active_mod_surf_regions in mod_surf_regions_list:
+            surf_class_name = active_mod_surf_regions.surf_class_name
+            file.write('  %s[%s]\n' % (active_mod_surf_regions.object_name,
+                                       active_mod_surf_regions.region_name))
+            file.write('  {\n    SURFACE_CLASS = %s\n  }\n' % (surf_class_name))
+        file.write('}\n\n')
+    return
 
 
 
@@ -423,5 +483,3 @@ def instance_object_expr(context, expression):
         pass
 
     return instantiated_expression
-
-
