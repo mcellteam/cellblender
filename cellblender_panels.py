@@ -278,112 +278,123 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
       row.label(text=mc.reactions.status,icon="ERROR")
 
 
-
 class MCELL_PT_define_surface_classes(bpy.types.Panel):
-  bl_label = "Define Surface Classes"
-  bl_space_type = "PROPERTIES"
-  bl_region_type = "WINDOW"
-  bl_context = "scene"
-  bl_options = {'DEFAULT_CLOSED'}
-  
-  def draw(self, context):
-    layout = self.layout
-    surf_class = context.scene.mcell.surface_classes
-    row = layout.row()
-    row.label(text="Defined Surface Classes:", icon='FACESEL_HLT')
-    row = layout.row()
-    col = row.column()
-    col.template_list(surf_class,"surf_class_list", surf_class, "active_surf_class_index",rows=2)
-    col = row.column(align=True)
-    col.operator("mcell.surface_class_add", icon='ZOOMIN',text="")
-    col.operator("mcell.surface_class_remove", icon='ZOOMOUT',text="")
-    if len(surf_class.surf_class_list) > 0:
-      active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
-      if surf_class.surf_class_status != '':
-        row = layout.row()
-        row.label(text=surf_class.surf_class_status,icon='ERROR')
-      row = layout.row()
-      row.prop(active_surf_class,"name")
+    bl_label = "Define Surface Classes"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
 
+    def draw(self, context):
+        layout = self.layout
+        surf_class = context.scene.mcell.surface_classes
+        row = layout.row()
+        row.label(text="Defined Surface Classes:", icon='FACESEL_HLT')
+        row = layout.row()
+        col = row.column()
+        col.template_list(surf_class, "surf_class_list", surf_class,
+                          "active_surf_class_index", rows=2)
+        col = row.column(align=True)
+        col.operator("mcell.surface_class_add", icon='ZOOMIN', text="")
+        col.operator("mcell.surface_class_remove", icon='ZOOMOUT', text="")
+        if len(surf_class.surf_class_list) > 0:
+            active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
+            if surf_class.surf_class_status != '':
+                row = layout.row()
+                row.label(text=surf_class.surf_class_status, icon='ERROR')
+            row = layout.row()
+            row.prop(active_surf_class, "name")
 
 
 class MCELL_PT_define_surface_class_properties(bpy.types.Panel):
-  bl_label = "Define Surface Class Properties"
-  bl_space_type = "PROPERTIES"
-  bl_region_type = "WINDOW"
-  bl_context = "scene"
-  bl_options = {'DEFAULT_CLOSED'}
-  
-  def draw(self, context):
-    layout = self.layout
-    mc = context.scene.mcell
-    surf_class = mc.surface_classes
+    bl_label = "Define Surface Class Properties"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
 
-    row = layout.row()
-    if len(surf_class.surf_class_list)>0:
-      active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
-      box = row.box()
-      box.label(text="Active Surface Class: %s" % active_surf_class.name)
-      row = layout.row()
-      row.label(text="Surface Class Properties:", icon='FACESEL_HLT')
-      row = layout.row()
-      row = layout.row()
-      col = row.column()
-      col.template_list(active_surf_class, "surf_class_props_list", active_surf_class, "active_surf_class_props_index",rows=2)
-      col = row.column(align=True)
-      col.operator("mcell.surf_class_props_add", icon='ZOOMIN',text="")
-      col.operator("mcell.surf_class_props_remove", icon='ZOOMOUT',text="")
-      if len(active_surf_class.surf_class_props_list)>0:
-        surf_class_props = active_surf_class.surf_class_props_list[active_surf_class.active_surf_class_props_index]
-        if surf_class.surf_class_props_status != '':
-          row = layout.row()
-          row.label(text=surf_class.surf_class_props_status, icon='ERROR')
-        layout.prop_search(surf_class_props, 'molecule', mc.molecules, "molecule_list")
-        layout.prop(surf_class_props, "surf_class_orient")
-        layout.prop(surf_class_props, "surf_class_type")
-        if (surf_class_props.surf_class_type == 'CLAMP_CONCENTRATION'):
-          layout.prop(surf_class_props, "clamp_value_str")
-    else:
-      row.label(text="Add a surface class")  
+    def draw(self, context):
+        layout = self.layout
+        mc = context.scene.mcell
+        surf_class = mc.surface_classes
 
+        row = layout.row()
+        if len(surf_class.surf_class_list) > 0:
+            active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
+            box = row.box()
+            box.label(text="Active Surface Class: %s" % active_surf_class.name)
+            row = layout.row()
+            row.label(text="Surface Class Properties:", icon='FACESEL_HLT')
+            row = layout.row()
+            row = layout.row()
+            col = row.column()
+            col.template_list(active_surf_class, "surf_class_props_list",
+                              active_surf_class,
+                              "active_surf_class_props_index",
+                              rows=2)
+            col = row.column(align=True)
+            col.operator("mcell.surf_class_props_add", icon='ZOOMIN', text="")
+            col.operator("mcell.surf_class_props_remove", icon='ZOOMOUT',
+                         text="")
+            if len(active_surf_class.surf_class_props_list) > 0:
+                surf_class_props = active_surf_class.surf_class_props_list[
+                    active_surf_class.active_surf_class_props_index]
+                if surf_class.surf_class_props_status != '':
+                    row = layout.row()
+                    row.label(text=surf_class.surf_class_props_status,
+                              icon='ERROR')
+                layout.prop_search(surf_class_props, 'molecule', mc.molecules,
+                                   "molecule_list")
+                layout.prop(surf_class_props, "surf_class_orient")
+                layout.prop(surf_class_props, "surf_class_type")
+                if (surf_class_props.surf_class_type == 'CLAMP_CONCENTRATION'):
+                    layout.prop(surf_class_props, "clamp_value_str")
+        else:
+            row.label(text="Add a surface class")
 
 
 class MCELL_PT_mod_surface_regions(bpy.types.Panel):
-  bl_label = "Modify Surface Regions"
-  bl_space_type = "PROPERTIES"
-  bl_region_type = "WINDOW"
-  bl_context = "scene"
-  bl_options = {'DEFAULT_CLOSED'}
-  
-  def draw(self, context):
-    layout = self.layout
-    mc = context.scene.mcell
+    bl_label = "Modify Surface Regions"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
 
-    mod_surf_regions = context.scene.mcell.mod_surf_regions
-    row = layout.row()
-    row.label(text="Modified Surface Regions:", icon='FACESEL_HLT')
-    row = layout.row()
-    row = layout.row()
-    col = row.column()
-    col.template_list(mod_surf_regions,"mod_surf_regions_list", mod_surf_regions, "active_mod_surf_regions_index", rows=2)
-    col = row.column(align=True)
-    col.operator("mcell.mod_surf_regions_add", icon='ZOOMIN', text="")
-    col.operator("mcell.mod_surf_regions_remove", icon='ZOOMOUT', text="")
-    if mod_surf_regions.status != '':
-      row = layout.row()
-      row.label(text=mod_surf_regions.status,icon='ERROR')
-    if len(mod_surf_regions.mod_surf_regions_list) > 0:
-      active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[mod_surf_regions.active_mod_surf_regions_index]
-      row = layout.row()
-      row.prop_search(active_mod_surf_regions,"surf_class_name", mc.surface_classes, "surf_class_list")
-      row = layout.row()
-      row.prop_search(active_mod_surf_regions,"object_name", mc.model_objects, "object_list")
-      if active_mod_surf_regions.object_name:
-        try:
-          layout.prop_search(active_mod_surf_regions, "region_name", bpy.data.objects[active_mod_surf_regions.object_name].mcell.regions, "region_list")
-        except KeyError:
-          pass 
-
+    def draw(self, context):
+        layout = self.layout
+        mc = context.scene.mcell
+        mod_surf_regions = context.scene.mcell.mod_surf_regions
+        row = layout.row()
+        row.label(text="Modified Surface Regions:", icon='FACESEL_HLT')
+        row = layout.row()
+        row = layout.row()
+        col = row.column()
+        col.template_list(mod_surf_regions, "mod_surf_regions_list",
+                          mod_surf_regions, "active_mod_surf_regions_index",
+                          rows=2)
+        col = row.column(align=True)
+        col.operator("mcell.mod_surf_regions_add", icon='ZOOMIN', text="")
+        col.operator("mcell.mod_surf_regions_remove", icon='ZOOMOUT', text="")
+        if mod_surf_regions.status != '':
+            row = layout.row()
+            row.label(text=mod_surf_regions.status, icon='ERROR')
+        if len(mod_surf_regions.mod_surf_regions_list) > 0:
+            active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
+                mod_surf_regions.active_mod_surf_regions_index]
+            row = layout.row()
+            row.prop_search(active_mod_surf_regions, "surf_class_name",
+                            mc.surface_classes, "surf_class_list")
+            row = layout.row()
+            row.prop_search(active_mod_surf_regions, "object_name",
+                            mc.model_objects, "object_list")
+            if active_mod_surf_regions.object_name:
+                try:
+                    regions = bpy.data.objects[
+                        active_mod_surf_regions.object_name].mcell.regions
+                    layout.prop_search(active_mod_surf_regions, "region_name",
+                                       regions, "region_list")
+                except KeyError:
+                    pass
 
 
 class MCELL_PT_molecule_release(bpy.types.Panel):

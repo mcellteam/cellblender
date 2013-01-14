@@ -197,45 +197,53 @@ def save_molecules(context,file):
   return
 
 
+def save_mod_surf_regions(context, file):
+    """Write out the Modify Surface Regions MDL"""
 
-def save_mod_surf_regions(context,file):
-
-  mc = context.scene.mcell
-  mod_surf_regions_list = mc.mod_surf_regions.mod_surf_regions_list
-  if len(mod_surf_regions_list) > 0:
-    file.write('MODIFY_SURFACE_REGIONS\n')
-    file.write('{\n')
-    for curr_modify_sr in mod_surf_regions_list:
-      file.write('  %s[%s]\n' % (curr_modify_sr.object_name, curr_modify_sr.region_name))
-      file.write('  {\n    SURFACE_CLASS = %s\n  }\n' % (curr_modify_sr.surf_class_name))
-    file.write('}\n\n')
-  return
-
-
-
-def save_surface_classes(context,file):
-
-  mc = context.scene.mcell
-  surf_class_list = mc.surface_classes.surf_class_list
-  if len(surf_class_list) > 0:
-    file.write('DEFINE_SURFACE_CLASSES\n')
-    file.write('{\n')
-    for active_surf_class in surf_class_list:
-      file.write('  %s\n' %(active_surf_class.name))
-      file.write('  {\n')
-      for surf_class_props in active_surf_class.surf_class_props_list:
-        if surf_class_props.surf_class_type == 'CLAMP_CONCENTRATION':
-          file.write('    CLAMP_CONCENTRATION\n')
-          file.write('    %s%s = %g\n' % (surf_class_props.molecule, surf_class_props.surf_class_orient, surf_class_props.clamp_value))
-        else:
-          file.write('    %s = %s%s\n' % (surf_class_props.surf_class_type, surf_class_props.molecule, surf_class_props.surf_class_orient))
-      file.write('  }\n')
-    file.write('}\n\n')
-  return
+    mc = context.scene.mcell
+    mod_surf_regions_list = mc.mod_surf_regions.mod_surf_regions_list
+    if len(mod_surf_regions_list) > 0:
+        file.write('MODIFY_SURFACE_REGIONS\n')
+        file.write('{\n')
+        for active_mod_surf_regions in mod_surf_regions_list:
+            surf_class_name = active_mod_surf_regions.surf_class_name
+            file.write('  %s[%s]\n' % (active_mod_surf_regions.object_name,
+                                       active_mod_surf_regions.region_name))
+            file.write('  {\n    SURFACE_CLASS = %s\n  }\n' % (surf_class_name))
+        file.write('}\n\n')
+    return
 
 
+def save_surface_classes(context, file):
+    """Write out the Define Surface Classes MDL"""
 
-def save_reactions(context,file):
+    mc = context.scene.mcell
+    surf_class_list = mc.surface_classes.surf_class_list
+    if len(surf_class_list) > 0:
+        file.write('DEFINE_SURFACE_CLASSES\n')
+        file.write('{\n')
+        for active_surf_class in surf_class_list:
+            file.write('  %s\n' % (active_surf_class.name))
+            file.write('  {\n')
+            for surf_class_props in active_surf_class.surf_class_props_list:
+                molecule = surf_class_props.molecule
+                orient = surf_class_props.surf_class_orient
+                surf_class_type = surf_class_props.surf_class_type
+                if surf_class_type == 'CLAMP_CONCENTRATION':
+                    clamp_value = surf_class_props.clamp_value
+                    file.write('    %s\n' % surf_class_type)
+                    file.write('    %s%s = %g\n' % (molecule,
+                                                    orient,
+                                                    clamp_value))
+                else:
+                    file.write('    %s = %s%s\n' % (surf_class_type, molecule,
+                                                    orient))
+            file.write('  }\n')
+        file.write('}\n\n')
+    return
+
+
+def save_reactions(context, file):
 
   mc = context.scene.mcell
 
