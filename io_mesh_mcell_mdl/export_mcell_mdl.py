@@ -23,7 +23,7 @@
 
 
 """
-This script exports MCell MDL files from Blender, and is a component 
+This script exports MCell MDL files from Blender, and is a component
 of CellBlender.
 
 """
@@ -36,7 +36,6 @@ import re
 import bpy
 
 
-
 def get_regions(obj):
     """ return a dictionary with region names """
 
@@ -46,8 +45,6 @@ def get_regions(obj):
         reg_dict[reg.name] = obj.data['mcell']['regions'][reg.name].to_list()
 
     return reg_dict
-
-
 
 
 def save(operator, context, filepath=""):
@@ -63,11 +60,9 @@ def save(operator, context, filepath=""):
     return {'FINISHED'}
 
 
-
-
 def save_wrapper(context, out_file, filedir):
-    """ This function saves the current model to MDL. 
-    
+    """ This function saves the current model to MDL.
+
     It provides a wrapper assembling the final mdl piece by piece.
 
     """
@@ -76,14 +71,14 @@ def save_wrapper(context, out_file, filedir):
     settings = mcell.project_settings
 
     # export model initialization:
-    out_file.write('ITERATIONS = %d\n' %(mcell.initialization.iterations))
-    out_file.write('TIME_STEP = %g\n\n' %(mcell.initialization.time_step))
+    out_file.write('ITERATIONS = %d\n' % (mcell.initialization.iterations))
+    out_file.write('TIME_STEP = %g\n\n' % (mcell.initialization.time_step))
 
     # export molecules:
     if settings.export_format == 'mcell_mdl_modular':
-        out_file.write('INCLUDE_FILE = \"%s.molecules.mdl\"\n\n' % 
-                   (settings.base_name))
-        filepath = ('%s/%s.molecules.mdl' % 
+        out_file.write('INCLUDE_FILE = \"%s.molecules.mdl\"\n\n' %
+                       (settings.base_name))
+        filepath = ('%s/%s.molecules.mdl' %
                     (filedir, settings.base_name))
         with open(filepath, "w", encoding="utf8", newline="\n") as mol_file:
             save_molecules(context, mol_file)
@@ -93,9 +88,9 @@ def save_wrapper(context, out_file, filedir):
     # export surface classes
     have_surf_class = len(mcell.surface_classes.surf_class_list) != 0
     if have_surf_class and settings.export_format == 'mcell_mdl_modular':
-        out_file.write('INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n' % 
-                   (settings.base_name))
-        filepath = ('%s/%s.surface_classes.mdl' % 
+        out_file.write('INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n' %
+                       (settings.base_name))
+        filepath = ('%s/%s.surface_classes.mdl' %
                     (filedir, settings.base_name))
         with open(filepath, "w", encoding="utf8", newline="\n") as mol_file:
             save_surface_classes(context, mol_file)
@@ -103,9 +98,9 @@ def save_wrapper(context, out_file, filedir):
     # export reactions
     have_reactions = len(context.scene.mcell.reactions.reaction_list) != 0
     if have_reactions and settings.export_format == 'mcell_mdl_modular':
-        out_file.write('INCLUDE_FILE = \"%s.reactions.mdl\"\n\n' % 
-                   (settings.base_name))
-        filepath = ('%s/%s.reactions.mdl' % 
+        out_file.write('INCLUDE_FILE = \"%s.reactions.mdl\"\n\n' %
+                       (settings.base_name))
+        filepath = ('%s/%s.reactions.mdl' %
                    (filedir, settings.base_name))
         with open(filepath, "w", encoding="utf8", newline="\n") as react_file:
             save_reactions(context, react_file)
@@ -114,10 +109,10 @@ def save_wrapper(context, out_file, filedir):
 
     # export model geometry:
     if settings.export_format == 'mcell_mdl_modular':
-        out_file.write('INCLUDE_FILE = \"%s.geometry.mdl\"\n\n' % 
+        out_file.write('INCLUDE_FILE = \"%s.geometry.mdl\"\n\n' %
                        (settings.base_name))
-        filepath = ('%s/%s.geometry.mdl' % 
-                       (filedir, settings.base_name))
+        filepath = ('%s/%s.geometry.mdl' %
+                    (filedir, settings.base_name))
         with open(filepath, "w", encoding="utf8", newline="\n") as geom_file:
             save_geometry(context, geom_file)
     else:
@@ -126,40 +121,37 @@ def save_wrapper(context, out_file, filedir):
     # export modify surface regions
     have_mod_surf_reg = len(mcell.mod_surf_regions.mod_surf_regions_list) != 0
     if have_mod_surf_reg and settings.export_format == 'mcell_mdl_modular':
-        out_file.write('INCLUDE_FILE = \"%s.mod_surf_regions.mdl\"\n\n' % 
+        out_file.write('INCLUDE_FILE = \"%s.mod_surf_regions.mdl\"\n\n' %
                        (settings.base_name))
-        filepath = ('%s/%s.mod_surf_regions.mdl' % 
+        filepath = ('%s/%s.mod_surf_regions.mdl' %
                     (filedir, settings.base_name))
         with open(filepath, "w", encoding="utf8", newline="\n") as mol_file:
             save_mod_surf_regions(context, mol_file)
-        
+
     # Instantiate Model Geometry and Release sites:
     object_list = mcell.model_objects.object_list
     release_site_list = mcell.release_sites.mol_release_list
     if (len(object_list) > 0) | (len(release_site_list) > 0):
-        out_file.write('INSTANTIATE %s OBJECT\n' %(context.scene.name)) 
+        out_file.write('INSTANTIATE %s OBJECT\n' % (context.scene.name))
         out_file.write('{\n')
 
         if len(object_list) > 0:
             save_object_list(context, out_file, object_list)
 
         if len(release_site_list) > 0:
-            save_release_site_list(context, out_file, release_site_list, 
+            save_release_site_list(context, out_file, release_site_list,
                                    mcell)
 
         out_file.write('}\n\n')
 
     # Include MDL files for viz and reaction output:
     if mcell.viz_output.include:
-        out_file.write('INCLUDE_FILE = \"%s.viz_output.mdl\"\n\n' % 
+        out_file.write('INCLUDE_FILE = \"%s.viz_output.mdl\"\n\n' %
                        (settings.base_name))
 
     if mcell.rxn_output.include:
-        out_file.write('INCLUDE_FILE = \"%s.rxn_output.mdl\"\n\n' % 
+        out_file.write('INCLUDE_FILE = \"%s.rxn_output.mdl\"\n\n' %
                        (settings.base_name))
-
-
-
 
 
 def save_object_list(context, out_file, object_list):
@@ -167,8 +159,6 @@ def save_object_list(context, out_file, object_list):
 
     for item in object_list:
         out_file.write('  %s OBJECT %s {}\n' % (item.name, item.name))
-
-
 
 
 def save_release_site_list(context, out_file, release_site_list, mcell):
@@ -179,37 +169,37 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
         out_file.write('  {\n')
 
         # release sites with predefined shapes
-        if ((release_site.shape == 'CUBIC') | 
-            (release_site.shape == 'SPHERICAL') | 
-            (release_site.shape == 'SPHERICAL_SHELL')):
+        if ((release_site.shape == 'CUBIC') |
+                (release_site.shape == 'SPHERICAL') |
+                (release_site.shape == 'SPHERICAL_SHELL')):
 
             out_file.write('   SHAPE = %s\n' % (release_site.shape))
-            out_file.write('   LOCATION = [%g, %g, %g]\n' % 
-                            (release_site.location[0],
+            out_file.write('   LOCATION = [%g, %g, %g]\n' %
+                           (release_site.location[0],
                             release_site.location[1],
-                            release_site.location[2]))
-            out_file.write('   SITE_DIAMETER = %g\n' % 
-                            (release_site.diameter))
+                           release_site.location[2]))
+            out_file.write('   SITE_DIAMETER = %g\n' %
+                           (release_site.diameter))
 
         # user defined shapes
         if (release_site.shape == 'OBJECT'):
             inst_obj_expr = instance_object_expr(context,
                                                  release_site.object_expr)
             out_file.write('   SHAPE = %s\n' % (inst_obj_expr))
-           
+
         out_file.write('   MOLECULE = %s\n' % (release_site.molecule))
 
         if release_site.quantity_type == 'NUMBER_TO_RELEASE':
-            out_file.write('   NUMBER_TO_RELEASE = %d\n' % 
-                                (int(release_site.quantity)))
+            out_file.write('   NUMBER_TO_RELEASE = %d\n' %
+                           (int(release_site.quantity)))
 
         elif release_site.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
             out_file.write('   GAUSSIAN_RELEASE_NUMBER\n')
             out_file.write('   {\n')
-            out_file.write('        MEAN_NUMBER = %g\n' % 
-                            (release_site.quantity))
-            out_file.write('        STANDARD_DEVIATION = %g\n' % 
-                            (release_site.stddev))
+            out_file.write('        MEAN_NUMBER = %g\n' %
+                           (release_site.quantity))
+            out_file.write('        STANDARD_DEVIATION = %g\n' %
+                           (release_site.stddev))
             out_file.write('      }\n')
 
         elif release_site.quantity_type == 'DENSITY':
@@ -218,21 +208,19 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
             mol_name = m.group(1)
             if mcell.molecules.molecule_list[mol_name].type == '2D':
                 out_file.write('   DENSITY = %g\n' %
-                                (release_item.quantity))
+                               (release_item.quantity))
             else:
                 out_file.write('   CONCENTRATION = %g\n' %
-                                (release_site.quantity))
+                               (release_site.quantity))
 
-        out_file.write('   RELEASE_PROBABILITY = %g\n' % 
+        out_file.write('   RELEASE_PROBABILITY = %g\n' %
                        (release_site.probability))
 
         if release_site.pattern:
-            out_file.write('   RELEASE_PATTERN = %s\n' % 
+            out_file.write('   RELEASE_PATTERN = %s\n' %
                            (release_site.pattern))
 
         out_file.write('  }\n')
-
-
 
 
 def save_molecules(context, out_file):
@@ -247,7 +235,7 @@ def save_molecules(context, out_file):
         out_file.write('{\n')
 
         for mol_item in mol_list:
-            out_file.write('  %s\n' %(mol_item.name))
+            out_file.write('  %s\n' % (mol_item.name))
             out_file.write('  {\n')
 
             if mol_item.type == '2D':
@@ -269,8 +257,6 @@ def save_molecules(context, out_file):
 
             out_file.write('  }\n')
         out_file.write('}\n\n')
-
-
 
 
 def save_surface_classes(context, file):
@@ -302,8 +288,6 @@ def save_surface_classes(context, file):
     return
 
 
-
-
 def save_reactions(context, out_file):
     """ Saves reaction info to mdl output file. """
 
@@ -316,13 +300,13 @@ def save_reactions(context, out_file):
         out_file.write('{\n')
 
         for rxn_item in rxn_list:
-            out_file.write('  %s ' %(rxn_item.name))
+            out_file.write('  %s ' % (rxn_item.name))
 
             if rxn_item.type == 'irreversible':
-                out_file.write('[%g]' %(rxn_item.fwd_rate))
+                out_file.write('[%g]' % (rxn_item.fwd_rate))
             else:
                 out_file.write('[>%g, <%g]' %
-                               (rxn_item.fwd_rate,rxn_item.bkwd_rate))
+                               (rxn_item.fwd_rate, rxn_item.bkwd_rate))
 
             if rxn_item.rxn_name:
                 out_file.write(' : %s\n' % (rxn_item.rxn_name))
@@ -330,8 +314,6 @@ def save_reactions(context, out_file):
                 out_file.write('\n')
 
         out_file.write('}\n\n')
-
-
 
 
 def save_geometry(context, out_file):
@@ -369,7 +351,7 @@ def save_geometry(context, out_file):
                 vertices = mesh.vertices
                 for v in vertices:
                     t_vec = v.co * matrix
-                    out_file.write('    [ %.15g, %.15g, %.15g ]\n' % 
+                    out_file.write('    [ %.15g, %.15g, %.15g ]\n' %
                                    (t_vec.x, t_vec.y, t_vec.z))
 
                 # close VERTEX_LIST block
@@ -381,8 +363,8 @@ def save_geometry(context, out_file):
 
                 faces = mesh.polygons
                 for f in faces:
-                    out_file.write('    [ %d, %d, %d ]\n' % 
-                                   (f.vertices[0], f.vertices[1], 
+                    out_file.write('    [ %d, %d, %d ]\n' %
+                                   (f.vertices[0], f.vertices[1],
                                     f.vertices[2]))
 
                 # close ELEMENT_CONNECTIONS block
@@ -399,8 +381,8 @@ def save_geometry(context, out_file):
                     for region_name in region_names:
                         out_file.write('    %s\n' % (region_name))
                         out_file.write('    {\n')
-                        out_file.write('      ELEMENT_LIST = '+ 
-                                       str(regions[region_name])+'\n' )
+                        out_file.write('      ELEMENT_LIST = ' +
+                                       str(regions[region_name])+'\n')
                         out_file.write('    }\n')
 
                     out_file.write('  }\n')
@@ -410,8 +392,6 @@ def save_geometry(context, out_file):
 
                 # restore proper object visibility state
                 data_object.hide = saved_hide_status
-
-
 
 
 def save_mod_surf_regions(context, file):
@@ -426,22 +406,21 @@ def save_mod_surf_regions(context, file):
             surf_class_name = active_mod_surf_regions.surf_class_name
             file.write('  %s[%s]\n' % (active_mod_surf_regions.object_name,
                                        active_mod_surf_regions.region_name))
-            file.write('  {\n    SURFACE_CLASS = %s\n  }\n' % (surf_class_name))
+            file.write('  {\n    SURFACE_CLASS = %s\n  }\n' %
+                       (surf_class_name))
         file.write('}\n\n')
     return
 
 
-
-
 def instance_object_expr(context, expression):
-    """ Converts an object expression into an instantiated MDL object 
+    """ Converts an object expression into an instantiated MDL object
 
-    This function converts an object specification coming from 
+    This function converts an object specification coming from
     the GUI into a fully qualified (instantiated) MDL expression.
-    E.g., if the instantiated object is named *Scene* 
+    E.g., if the instantiated object is named *Scene*
 
       - an object *Cube* will be converted to *Scene.Cube* and
-      - an expression *Cube + Sphere* will be converted to 
+      - an expression *Cube + Sphere* will be converted to
         "Scene.Cube + Scene.Sphere"
 
     NOTE (Markus): I am not sure if this function isn't a bit
@@ -451,11 +430,11 @@ def instance_object_expr(context, expression):
     """
 
     token_spec = [
-        ("ID", r"[A-Za-z]+[0-9A-Za-z_.]*(\[[A-Za-z]+[0-9A-Za-z_.]*\])?"),  
-                             # Identifiers
-        ("PAR", r"[\(\)]"),  # Parentheses
-        ("OP", r"[\+\*\-]"), # Boolean operators
-        ("SKIP", r"[ \t]"),  # Skip over spaces and tabs
+        ("ID", r"[A-Za-z]+[0-9A-Za-z_.]*(\[[A-Za-z]+[0-9A-Za-z_.]*\])?"),
+                              # Identifiers
+        ("PAR", r"[\(\)]"),   # Parentheses
+        ("OP", r"[\+\*\-]"),  # Boolean operators
+        ("SKIP", r"[ \t]"),   # Skip over spaces and tabs
     ]
     token_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_spec)
     get_token = re.compile(token_regex).match

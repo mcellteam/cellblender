@@ -21,7 +21,7 @@
 bl_info = {
     "name": "CellBlender",
     "author": "Tom Bartol, Jacob Czech, Markus Dittrich",
-    "version": (0,1,'rev_53'),
+    "version": (0, 1, 54),
     "blender": (2, 6, 5),
     "api": 53177,
     "location": "Properties > Scene > CellBlender Panel",
@@ -33,15 +33,17 @@ bl_info = {
 }
 
 
-# To support reload properly, try to access a package var, if it's there, reload everything
+# To support reload properly, try to access a package var.
+# If it's there, reload everything
 if "bpy" in locals():
-  import imp
-  imp.reload(cellblender_properties)
-  imp.reload(cellblender_panels)
-  imp.reload(cellblender_operators)
-  imp.reload(io_mesh_mcell_mdl)
+    import imp
+    imp.reload(cellblender_properties)
+    imp.reload(cellblender_panels)
+    imp.reload(cellblender_operators)
+    imp.reload(io_mesh_mcell_mdl)
 else:
-  from . import cellblender_properties, cellblender_panels, cellblender_operators, io_mesh_mcell_mdl
+    from . import cellblender_properties, cellblender_panels, \
+        cellblender_operators, io_mesh_mcell_mdl
 
 
 import bpy
@@ -53,20 +55,21 @@ def register():
 
     bpy.types.INFO_MT_file_import.append(io_mesh_mcell_mdl.menu_func_import)
     bpy.types.INFO_MT_file_export.append(io_mesh_mcell_mdl.menu_func_export)
-    bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender_properties.MCellPropertyGroup)
-    bpy.types.Object.mcell = bpy.props.PointerProperty(type=cellblender_properties.MCellObjectPropertyGroup)
+    bpy.types.Scene.mcell = bpy.props.PointerProperty(
+        type=cellblender_properties.MCellPropertyGroup)
+    bpy.types.Object.mcell = bpy.props.PointerProperty(
+        type=cellblender_properties.MCellObjectPropertyGroup)
 
 
 def unregister():
     bpy.utils.unregister_module(__name__)
-      
 
 
 if len(bpy.app.handlers.frame_change_pre) == 0:
-    bpy.app.handlers.frame_change_pre.append(cellblender_operators.frame_change_handler)
+    bpy.app.handlers.frame_change_pre.append(
+        cellblender_operators.frame_change_handler)
 
 
-# for testing 
+# for testing
 if __name__ == '__main__':
     register()
-
