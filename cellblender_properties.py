@@ -23,8 +23,17 @@ from . import cellblender_operators
 from bpy.props import CollectionProperty, EnumProperty, FloatProperty, IntProperty, StringProperty
 
 
-#Custom Properties
+# we use per module class registration/unregistration
+def register():
+    bpy.utils.register_module(__name__)
 
+
+def unregister():
+    bpy.utils.unregister_module(__name__)
+
+
+
+#Custom Properties
 class MCellSurfaceRegionFaceProperty(bpy.types.PropertyGroup):
   index = bpy.props.IntProperty(name="Face Index")
 

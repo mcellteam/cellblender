@@ -22,8 +22,17 @@ import bpy
 import re
 
 
-# CellBlender GUI Panels:
+# we use per module class registration/unregistration
+def register():
+    bpy.utils.register_module(__name__)
 
+
+def unregister():
+    bpy.utils.unregister_module(__name__)
+
+
+
+#CellBlendereGUI Panels:
 class MCELL_PT_project_settings(bpy.types.Panel):
   bl_label = "CellBlender Project Settings"
   bl_space_type = "PROPERTIES"

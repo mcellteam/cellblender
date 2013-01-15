@@ -28,9 +28,17 @@ import random
 import re
 
 
+# we use per module class registration/unregistration
+def register():
+    bpy.utils.register_module(__name__)
+
+
+def unregister():
+    bpy.utils.unregister_module(__name__)
+
+
 
 #CellBlender Operators:
-
 class MCELL_OT_region_add(bpy.types.Operator):
   bl_idname = "mcell.region_add"
   bl_label = "Add New Surface Region"
