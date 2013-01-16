@@ -288,9 +288,19 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
             layout.prop(mol, "name")
             layout.prop(mol, "type")
             layout.prop(mol, "diffusion_constant_str")
-            layout.prop(mol, "target_only")
-            layout.prop(mol, "custom_time_step_str")
-            layout.prop(mol, "custom_space_step_str")
+            if mc.molecules.hide:
+                row = layout.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(mc.molecules, "hide", icon='TRIA_RIGHT',
+                         text='Advanced Options', emboss=False)
+            else:
+                row = layout.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(mc.molecules, "hide", icon='TRIA_DOWN',
+                         text='Advanced Options', emboss=False)
+                layout.prop(mol, "target_only")
+                layout.prop(mol, "custom_time_step_str")
+                layout.prop(mol, "custom_space_step_str")
 
 
 class MCELL_PT_define_reactions(bpy.types.Panel):

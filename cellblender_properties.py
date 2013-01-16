@@ -281,6 +281,7 @@ class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
         type=MCellMoleculeProperty, name="Molecule List")
     active_mol_index = IntProperty(name="Active Molecule Index", default=0)
     status = StringProperty(name="Status")
+    hide = bpy.props.BoolProperty(default=True)
 
 
 class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
