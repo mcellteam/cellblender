@@ -1600,7 +1600,8 @@ class MCELL_OT_model_objects_add(bpy.types.Operator):
     def execute(self, context):
 
         mc = context.scene.mcell
-        objs = context.selected_objects
+        # From the list of selected objects, only add MESH objects.
+        objs = [obj for obj in context.selected_objects if obj.type == 'MESH']
 
         for obj in objs:
             mc.model_objects.object_list.add()
