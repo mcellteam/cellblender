@@ -871,9 +871,8 @@ def check_release_molecule(self, context):
 
     status = ''
 
-    # Check for illegal names (Starts with a letter. No special characters.
-    # Tick marks are allowed after name.)
-    mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)((',)|(,')|(;)|(,*)|('*))$"
+    # Check for illegal names (Starts with a letter. No special characters.)
+    mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
     m = re.match(mol_filter, mol)
     if m is None:
         status = 'Molecule name error: %s' % (mol)

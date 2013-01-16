@@ -484,7 +484,11 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                 row = layout.row()
                 row.label(text=mc.release_sites.status, icon='ERROR')
             layout.prop(rel, "name")
-            layout.prop(rel, "molecule")
+            layout.prop_search(rel, 'molecule', mc.molecules, "molecule_list",
+                               text='Molecule:')
+            if rel.molecule in mc.molecules.molecule_list:
+                if mc.molecules.molecule_list[rel.molecule].type == '2D':
+                    layout.prop(rel, "orient")
             layout.prop(rel, "shape")
             if ((rel.shape == 'CUBIC') | (rel.shape == 'SPHERICAL') |
                     (rel.shape == 'SPHERICAL SHELL')):

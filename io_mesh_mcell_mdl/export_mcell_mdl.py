@@ -187,7 +187,8 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
                                                  release_site.object_expr)
             out_file.write('   SHAPE = %s\n' % (inst_obj_expr))
 
-        out_file.write('   MOLECULE = %s\n' % (release_site.molecule))
+        out_file.write('   MOLECULE = %s%s\n' % (release_site.molecule,
+                                                 release_site.orient))
 
         if release_site.quantity_type == 'NUMBER_TO_RELEASE':
             out_file.write('   NUMBER_TO_RELEASE = %d\n' %

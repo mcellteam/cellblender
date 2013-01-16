@@ -133,6 +133,12 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         #('LIST', 'List', ''),
         ('OBJECT', 'Object/Region', '')]
     shape = EnumProperty(items=shape_enum, name="Release Shape")
+    orient_enum = [
+        ("'", 'Top Front', ''),
+        (",", 'Top Back', ''),
+        (';', 'Mixed', '')]
+    orient = bpy.props.EnumProperty(
+        items=orient_enum, name="Initial Orientation")
     object_expr = StringProperty(
         name="Object/Region",
         update=cellblender_operators.check_release_object_expr)
