@@ -131,14 +131,14 @@ def save_wrapper(context, out_file, filedir):
     # Instantiate Model Geometry and Release sites:
     object_list = mcell.model_objects.object_list
     release_site_list = mcell.release_sites.mol_release_list
-    if (len(object_list) > 0) | (len(release_site_list) > 0):
+    if object_list or release_site_list:
         out_file.write('INSTANTIATE %s OBJECT\n' % (context.scene.name))
         out_file.write('{\n')
 
-        if len(object_list) > 0:
+        if object_list:
             save_object_list(context, out_file, object_list)
 
-        if len(release_site_list) > 0:
+        if release_site_list:
             save_release_site_list(context, out_file, release_site_list,
                                    mcell)
 
@@ -164,6 +164,8 @@ def save_object_list(context, out_file, object_list):
 def save_release_site_list(context, out_file, release_site_list, mcell):
     """ Save the list of release site to mdl output file. """
 
+    mol_list = mcell.molecules.molecule_list
+
     for release_site in release_site_list:
         out_file.write('  %s RELEASE_SITE\n' % (release_site.name))
         out_file.write('  {\n')
@@ -187,8 +189,12 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
                                                  release_site.object_expr)
             out_file.write('   SHAPE = %s\n' % (inst_obj_expr))
 
-        out_file.write('   MOLECULE = %s%s\n' % (release_site.molecule,
-                                                 release_site.orient))
+        if release_site.molecule in mol_list:
+            if mol_list[release_site.molecule].type == '2D':
+                out_file.write('   MOLECULE = %s%s\n' % (release_site.molecule,
+                                                         release_site.orient))
+            else:
+                out_file.write('   MOLECULE = %s\n' % (release_site.molecule))
 
         if release_site.quantity_type == 'NUMBER_TO_RELEASE':
             out_file.write('   NUMBER_TO_RELEASE = %d\n' %
@@ -204,15 +210,13 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
             out_file.write('      }\n')
 
         elif release_site.quantity_type == 'DENSITY':
-            mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)((',)|(,')|(;)|(,*)|('*))$"
-            m = re.match(mol_filter, release_site.molecule)
-            mol_name = m.group(1)
-            if mcell.molecules.molecule_list[mol_name].type == '2D':
-                out_file.write('   DENSITY = %g\n' %
-                               (release_item.quantity))
-            else:
-                out_file.write('   CONCENTRATION = %g\n' %
-                               (release_site.quantity))
+            if release_site.molecule in mol_list:
+                if mol_list[release_site.molecule].type == '2D':
+                    out_file.write('   DENSITY = %g\n' %
+                                   (release_site.quantity))
+                else:
+                    out_file.write('   CONCENTRATION = %g\n' %
+                                   (release_site.quantity))
 
         out_file.write('   RELEASE_PROBABILITY = %g\n' %
                        (release_site.probability))
@@ -231,7 +235,7 @@ def save_molecules(context, out_file):
 
     # Export Molecules:
     mol_list = mcell.molecules.molecule_list
-    if len(mol_list) > 0:
+    if mol_list:
         out_file.write('DEFINE_MOLECULES\n')
         out_file.write('{\n')
 
@@ -265,7 +269,7 @@ def save_surface_classes(context, file):
 
     mc = context.scene.mcell
     surf_class_list = mc.surface_classes.surf_class_list
-    if len(surf_class_list) > 0:
+    if surf_class_list:
         file.write('DEFINE_SURFACE_CLASSES\n')
         file.write('{\n')
         for active_surf_class in surf_class_list:
@@ -296,7 +300,7 @@ def save_reactions(context, out_file):
 
     # Export Reactions:
     rxn_list = mcell.reactions.reaction_list
-    if len(rxn_list) > 0:
+    if rxn_list:
         out_file.write('DEFINE_REACTIONS\n')
         out_file.write('{\n')
 
@@ -324,7 +328,7 @@ def save_geometry(context, out_file):
 
     # Export Model Geometry:
     object_list = mcell.model_objects.object_list
-    if len(object_list) > 0:
+    if object_list:
 
         for object_item in object_list:
 
@@ -400,7 +404,7 @@ def save_mod_surf_regions(context, file):
 
     mc = context.scene.mcell
     mod_surf_regions_list = mc.mod_surf_regions.mod_surf_regions_list
-    if len(mod_surf_regions_list) > 0:
+    if mod_surf_regions_list:
         file.write('MODIFY_SURFACE_REGIONS\n')
         file.write('{\n')
         for active_mod_surf_regions in mod_surf_regions_list:
