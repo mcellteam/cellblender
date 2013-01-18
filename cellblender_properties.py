@@ -61,7 +61,7 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     name = StringProperty(
-        name="Molecule Name", default="Molecule",
+        name="Molecule Name",
         update=cellblender_operators.check_molecule)
     type_enum = [
         ('2D', 'Surface Molecule', ''),
@@ -284,6 +284,8 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
 class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
     molecule_list = CollectionProperty(
+        type=MCellMoleculeProperty, name="Molecule List")
+    temp_molecule = PointerProperty(
         type=MCellMoleculeProperty, name="Molecule List")
     active_mol_index = IntProperty(name="Active Molecule Index", default=0)
     status = StringProperty(name="Status")

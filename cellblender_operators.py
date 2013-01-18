@@ -324,10 +324,22 @@ class MCELL_OT_molecule_add(bpy.types.Operator):
 
     def execute(self, context):
         mc = context.scene.mcell
-        mc.molecules.molecule_list.add()
-        mc.molecules.active_mol_index = len(mc.molecules.molecule_list)-1
-        mc.molecules.molecule_list[
-            mc.molecules.active_mol_index].name = 'Molecule'
+        temp_name = mc.molecules.temp_molecule.name
+        check_molecule(self, context)
+        mol_status = mc.molecules.status
+        update_diffusion_constant(self, context)
+        diff_const_status = mc.molecules.status
+        print(mol_status)
+        print(diff_const_status)
+        if mol_status:
+            mc.molecules.status = mol_status
+        elif diff_const_status:
+            mc.molecules.status = diff_const_status
+        else:
+            mc.molecules.molecule_list.add()
+            mc.molecules.active_mol_index = len(mc.molecules.molecule_list)-1
+            mc.molecules.molecule_list[
+                mc.molecules.active_mol_index].name = temp_name
         return {'FINISHED'}
 
 
@@ -357,20 +369,21 @@ def check_molecule(self, context):
 
     mc = context.scene.mcell
     mol_list = mc.molecules.molecule_list
-    mol = mol_list[mc.molecules.active_mol_index]
+    temp_mol = mc.molecules.temp_molecule
+    #mol = mol_list[mc.molecules.active_mol_index]
 
     status = ''
 
     # Check for duplicate molecule name
     mol_keys = mol_list.keys()
-    if mol_keys.count(mol.name) > 1:
-        status = 'Duplicate molecule: %s' % (mol.name)
+    if mol_keys.count(temp_mol.name) > 0:
+        status = 'Duplicate molecule: %s' % (temp_mol.name)
 
     # Check for illegal names (Starts with a letter. No special characters.)
     mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
-    m = re.match(mol_filter, mol.name)
+    m = re.match(mol_filter, temp_mol.name)
     if m is None:
-        status = 'Molecule name error: %s' % (mol.name)
+        status = 'Molecule name error: %s' % (temp_mol.name)
 
     mc.molecules.status = status
 
@@ -1750,17 +1763,18 @@ def update_diffusion_constant(self, context):
     """ Store the diffusion constant as a float if it's legal """
 
     mc = context.scene.mcell
-    mol = mc.molecules.molecule_list[mc.molecules.active_mol_index]
-    diffusion_constant_str = mol.diffusion_constant_str
+    temp_mol = mc.molecules.temp_molecule
+    #mol = mc.molecules.molecule_list[mc.molecules.active_mol_index]
+    diffusion_constant_str = temp_mol.diffusion_constant_str
 
     (diffusion_constant, status) = check_val_str(
         diffusion_constant_str, 0, None)
 
     if status == '':
-        mol.diffusion_constant = diffusion_constant
+        temp_mol.diffusion_constant = diffusion_constant
     else:
         status = status % ('diffusion_constant', diffusion_constant_str)
-        mol.diffusion_constant_str = '%g' % (mol.diffusion_constant)
+        #temp_mol.diffusion_constant_str = '%g' % (temp_mol.diffusion_constant)
 
     mc.molecules.status = status
 

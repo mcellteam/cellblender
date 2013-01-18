@@ -280,27 +280,28 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
         col = row.column(align=True)
         col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
         col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
-        if len(mc.molecules.molecule_list) > 0:
-            mol = mc.molecules.molecule_list[mc.molecules.active_mol_index]
-            if mc.molecules.status != '':
-                row = layout.row()
-                row.label(text=mc.molecules.status, icon='ERROR')
-            layout.prop(mol, "name")
-            layout.prop(mol, "type")
-            layout.prop(mol, "diffusion_constant_str")
-            if mc.molecules.hide:
-                row = layout.row(align=True)
-                row.alignment = 'LEFT'
-                row.prop(mc.molecules, "hide", icon='TRIA_RIGHT',
-                         text='Advanced Options', emboss=False)
-            else:
-                row = layout.row(align=True)
-                row.alignment = 'LEFT'
-                row.prop(mc.molecules, "hide", icon='TRIA_DOWN',
-                         text='Advanced Options', emboss=False)
-                layout.prop(mol, "target_only")
-                layout.prop(mol, "custom_time_step_str")
-                layout.prop(mol, "custom_space_step_str")
+
+        #mol = mc.molecules.molecule_list[mc.molecules.active_mol_index]
+        mol = mc.molecules.temp_molecule
+        if mc.molecules.status != '':
+            row = layout.row()
+            row.label(text=mc.molecules.status, icon='ERROR')
+        layout.prop(mol, "name")
+        layout.prop(mol, "type")
+        layout.prop(mol, "diffusion_constant_str")
+        if mc.molecules.hide:
+            row = layout.row(align=True)
+            row.alignment = 'LEFT'
+            row.prop(mc.molecules, "hide", icon='TRIA_RIGHT',
+                     text='Advanced Options', emboss=False)
+        else:
+            row = layout.row(align=True)
+            row.alignment = 'LEFT'
+            row.prop(mc.molecules, "hide", icon='TRIA_DOWN',
+                     text='Advanced Options', emboss=False)
+            layout.prop(mol, "target_only")
+            layout.prop(mol, "custom_time_step_str")
+            layout.prop(mol, "custom_space_step_str")
 
 
 class MCELL_PT_define_reactions(bpy.types.Panel):
