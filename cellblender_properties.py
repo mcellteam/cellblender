@@ -60,9 +60,10 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
 
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
-    name = StringProperty(
-        name="Molecule Name",
-        update=cellblender_operators.check_molecule)
+    #name = StringProperty(
+    #    name="Molecule Name",
+    #    update=cellblender_operators.check_molecule)
+    name = StringProperty(name="Molecule Name")
     type_enum = [
         ('2D', 'Surface Molecule', ''),
         ('3D', 'Volume Molecule', '')]
@@ -70,8 +71,11 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     diffusion_constant = FloatProperty(name="Diffusion Constant")
     diffusion_constant_str = StringProperty(
         name="Diffusion Constant",
-        description="Diffusion Constant Units: cm^2/sec",
-        update=cellblender_operators.update_diffusion_constant)
+        description="Diffusion Constant Units: cm^2/sec")
+    #diffusion_constant_str = StringProperty(
+    #    name="Diffusion Constant",
+    #    description="Diffusion Constant Units: cm^2/sec",
+    #    update=cellblender_operators.update_diffusion_constant)
     target_only = BoolProperty(name="Target Only")
     custom_time_step = FloatProperty(name="Custom Time Step")
     custom_time_step_str = StringProperty(
@@ -285,9 +289,11 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
     molecule_list = CollectionProperty(
         type=MCellMoleculeProperty, name="Molecule List")
-    temp_molecule = PointerProperty(
+    template_molecule = PointerProperty(
         type=MCellMoleculeProperty, name="Molecule List")
-    active_mol_index = IntProperty(name="Active Molecule Index", default=0)
+    active_mol_index = IntProperty(
+        name="Active Molecule Index", default=0,
+        update=cellblender_operators.update_active_molecule)
     status = StringProperty(name="Status")
     hide = bpy.props.BoolProperty(default=True)
 

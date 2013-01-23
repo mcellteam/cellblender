@@ -272,18 +272,12 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
         mc = context.scene.mcell
 
         row = layout.row()
-        row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
-        row = layout.row()
-        col = row.column()
-        col.template_list(mc.molecules, "molecule_list", mc.molecules,
-                          "active_mol_index", rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
-        col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
-
-        #mol = mc.molecules.molecule_list[mc.molecules.active_mol_index]
-        mol = mc.molecules.temp_molecule
-        if mc.molecules.status != '':
+        row.label(text="New Molecule:", icon='FORCE_LENNARDJONES')
+        mol = mc.molecules.template_molecule
+        if mc.molecules.status.endswith('successful'):
+            row = layout.row()
+            row.label(text=mc.molecules.status, icon='FILE_TICK')
+        elif mc.molecules.status:
             row = layout.row()
             row.label(text=mc.molecules.status, icon='ERROR')
         layout.prop(mol, "name")
@@ -302,6 +296,18 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
             layout.prop(mol, "target_only")
             layout.prop(mol, "custom_time_step_str")
             layout.prop(mol, "custom_space_step_str")
+        row = layout.row()
+        row = layout.row(align=True)
+        row.operator("mcell.molecule_add", text="Add to List")
+        row.operator("mcell.molecule_update", text="Update List")
+        layout.separator()
+        row = layout.row()
+        row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
+        row = layout.row()
+        row.template_list(mc.molecules, "molecule_list", mc.molecules,
+                          "active_mol_index", rows=2)
+        row = layout.row(align=True)
+        row.operator("mcell.molecule_remove", text="Remove from List")
 
 
 class MCELL_PT_define_reactions(bpy.types.Panel):
