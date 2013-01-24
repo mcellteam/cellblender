@@ -463,10 +463,10 @@ def reset_template_molecule(self, context):
     template_molecule.custom_space_step_str = ''
 
 
-class MCELL_OT_molecule_remove(bpy.types.Operator):
-    bl_idname = "mcell.molecule_remove"
-    bl_label = "Remove Molecule"
-    bl_description = "Remove selected molecule type from an MCell model"
+class MCELL_OT_molecule_delete(bpy.types.Operator):
+    bl_idname = "mcell.molecule_delete"
+    bl_label = "Delete Molecule"
+    bl_description = "Delete selected molecule type from an MCell model"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -475,8 +475,7 @@ class MCELL_OT_molecule_remove(bpy.types.Operator):
         mcell.molecules.active_mol_index -= 1
         if (mcell.molecules.active_mol_index < 0):
             mcell.molecules.active_mol_index = 0
-        else:
-            reset_template_molecule(self, context)
+        reset_template_molecule(self, context)
         mcell.molecules.status = 'Remove successful'
         mcell.molecules.list_selected = False
 
