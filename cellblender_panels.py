@@ -269,45 +269,74 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
+        mol = mcell.molecules.template_molecule
 
         row = layout.row()
-        row.label(text="New Molecule:", icon='FORCE_LENNARDJONES')
-        mol = mc.molecules.template_molecule
-        if mc.molecules.status.endswith('successful'):
-            row = layout.row()
-            row.label(text=mc.molecules.status, icon='FILE_TICK')
-        elif mc.molecules.status:
-            row = layout.row()
-            row.label(text=mc.molecules.status, icon='ERROR')
-        layout.prop(mol, "name")
-        layout.prop(mol, "type")
-        layout.prop(mol, "diffusion_constant_str")
-        if mc.molecules.hide:
-            row = layout.row(align=True)
-            row.alignment = 'LEFT'
-            row.prop(mc.molecules, "hide", icon='TRIA_RIGHT',
-                     text='Advanced Options', emboss=False)
-        else:
-            row = layout.row(align=True)
-            row.alignment = 'LEFT'
-            row.prop(mc.molecules, "hide", icon='TRIA_DOWN',
-                     text='Advanced Options', emboss=False)
-            layout.prop(mol, "target_only")
-            layout.prop(mol, "custom_time_step_str")
-            layout.prop(mol, "custom_space_step_str")
+        # Provide success/failure status messages
+        if mcell.molecules.status.endswith('successful'):
+            row.label(text=mcell.molecules.status, icon='FILE_TICK')
+        elif mcell.molecules.status:
+            row.label(text=mcell.molecules.status, icon='ERROR')
+
         row = layout.row()
-        row = layout.row(align=True)
-        row.operator("mcell.molecule_add", text="Add to List")
-        row.operator("mcell.molecule_update", text="Update List")
+        # Create new molecule or update an existing one
+        if mcell.molecules.add_template_molecule:
+            row.label(text="New Template Molecule:",
+                      icon='FORCE_LENNARDJONES')
+        elif mcell.molecules.list_selected:
+            row.label(text="Update Existing Molecule:",
+                      icon='FORCE_LENNARDJONES')
+        if (mcell.molecules.add_template_molecule or
+                mcell.molecules.list_selected):
+            layout.prop(mol, "name")
+            layout.prop(mol, "type")
+            layout.prop(mol, "diffusion_constant_str")
+            row = layout.row(align=True)
+            row.alignment = 'LEFT'
+            if mcell.molecules.hide:
+                row.prop(mcell.molecules, "hide", icon='TRIA_RIGHT',
+                         text='Advanced Options', emboss=False)
+            else:
+                row.prop(mcell.molecules, "hide", icon='TRIA_DOWN',
+                         text='Advanced Options', emboss=False)
+                layout.prop(mol, "target_only")
+                layout.prop(mol, "custom_time_step_str")
+                layout.prop(mol, "custom_space_step_str")
+            row = layout.row(align=True)
+            if mcell.molecules.add_template_molecule:
+                row.operator("mcell.molecule_add", text="Add to List")
+                row.operator("mcell.molecule_cancel",
+                             text="Cancel Template Molecule")
+            elif mcell.molecules.list_selected:
+                row.operator("mcell.molecule_update", text="Update Molecule")
+                row.operator("mcell.molecule_cancel",
+                             text="Cancel Molecule Update")
+        else:
+            row = layout.row()
+            row.operator("mcell.molecule_add_template",
+                         text="Add New Template Molecule")
         layout.separator()
         row = layout.row()
-        row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
-        row = layout.row()
-        row.template_list(mc.molecules, "molecule_list", mc.molecules,
-                          "active_mol_index", rows=2)
-        row = layout.row(align=True)
-        row.operator("mcell.molecule_remove", text="Remove from List")
+        if mcell.molecules.add_template_molecule:
+            row.enabled = False
+            row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
+            row = layout.row()
+            row.enabled = False
+            row.template_list(mcell.molecules, "molecule_list",
+                              mcell.molecules, "active_mol_index", rows=2)
+            if mcell.molecules.molecule_list:
+                row = layout.row()
+                row.enabled = False
+                row.operator("mcell.molecule_remove", text="Remove from List")
+        else:
+            row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
+            row = layout.row()
+            row.template_list(mcell.molecules, "molecule_list",
+                              mcell.molecules, "active_mol_index", rows=2)
+            if mcell.molecules.molecule_list:
+                row = layout.row()
+                row.operator("mcell.molecule_remove", text="Remove from List")
 
 
 class MCELL_PT_define_reactions(bpy.types.Panel):

@@ -60,10 +60,9 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
 
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
-    #name = StringProperty(
-    #    name="Molecule Name",
+    name = StringProperty(
+        name="Molecule Name")
     #    update=cellblender_operators.check_molecule)
-    name = StringProperty(name="Molecule Name")
     type_enum = [
         ('2D', 'Surface Molecule', ''),
         ('3D', 'Volume Molecule', '')]
@@ -72,21 +71,18 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     diffusion_constant_str = StringProperty(
         name="Diffusion Constant",
         description="Diffusion Constant Units: cm^2/sec")
-    #diffusion_constant_str = StringProperty(
-    #    name="Diffusion Constant",
-    #    description="Diffusion Constant Units: cm^2/sec",
     #    update=cellblender_operators.update_diffusion_constant)
     target_only = BoolProperty(name="Target Only")
     custom_time_step = FloatProperty(name="Custom Time Step")
     custom_time_step_str = StringProperty(
         name="Custom Time Step",
-        description="Custom Time Step Units: seconds",
-        update=cellblender_operators.update_custom_time_step)
+        description="Custom Time Step Units: seconds")
+    #    update=cellblender_operators.update_custom_time_step)
     custom_space_step = FloatProperty(name="Custom Space Step")
     custom_space_step_str = StringProperty(
         name="Custom Space Step",
-        description="Custom Space Step Units: microns",
-        update=cellblender_operators.update_custom_space_step)
+        description="Custom Space Step Units: microns")
+    #    update=cellblender_operators.update_custom_space_step)
 
 
 class MCellStringProperty(bpy.types.PropertyGroup):
@@ -115,12 +111,14 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
     fwd_rate = FloatProperty(name="Forward Rate")
     fwd_rate_str = StringProperty(
         name="Forward Rate",
-        description="Forward Rate Units: sec^-1 (unimolecular), M^-1*sec^-1 (bimolecular)",
+        description="Forward Rate Units: sec^-1 (unimolecular), "
+                    "M^-1*sec^-1 (bimolecular)",
         update=cellblender_operators.update_fwd_rate)
     bkwd_rate = FloatProperty(name="Backward Rate")
     bkwd_rate_str = StringProperty(
         name="Backward Rate",
-        description="Backward Rate Units: sec^-1 (unimolecular), M^-1*sec^-1 (bimolecular)",
+        description="Backward Rate Units: sec^-1 (unimolecular), "
+                    "M^-1*sec^-1 (bimolecular)",
         update=cellblender_operators.update_bkwd_rate)
 
 
@@ -293,9 +291,11 @@ class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
         type=MCellMoleculeProperty, name="Molecule List")
     active_mol_index = IntProperty(
         name="Active Molecule Index", default=0,
-        update=cellblender_operators.update_active_molecule)
+        update=cellblender_operators.load_active_molecule)
     status = StringProperty(name="Status")
     hide = bpy.props.BoolProperty(default=True)
+    list_selected = bpy.props.BoolProperty(default=False)
+    add_template_molecule = bpy.props.BoolProperty(default=False)
 
 
 class MCellReactionsPanelProperty(bpy.types.PropertyGroup):

@@ -316,10 +316,43 @@ class MCELL_OT_vertex_groups_to_regions(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_molecule_add_template(bpy.types.Operator):
+    bl_idname = "mcell.molecule_add_template"
+    bl_label = "Add Template Molecule"
+    bl_description = "Add a new template molecule"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        # This flag makes the template fields visible in cellblender_panels
+        mcell.molecules.add_template_molecule = True
+        mcell.molecules.status = ''
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_molecule_cancel(bpy.types.Operator):
+    bl_idname = "mcell.molecule_cancel"
+    bl_label = "Cancel Template Molecule"
+    bl_description = "Cancel molecule update or new template molecule"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+
+        reset_template_molecule(self, context)
+        # These flags hides the template fields in cellblender_panels
+        mcell.molecules.add_template_molecule = False
+        mcell.molecules.list_selected = False
+        mcell.molecules.status = ''
+
+        return {'FINISHED'}
+
+
 class MCELL_OT_molecule_add(bpy.types.Operator):
     bl_idname = "mcell.molecule_add"
     bl_label = "Add Molecule"
-    bl_description = "Add a new molecule type to an MCell model"
+    bl_description = "Add a new molecule to an MCell model"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -327,33 +360,18 @@ class MCELL_OT_molecule_add(bpy.types.Operator):
         template_molecule = mcell.molecules.template_molecule
         molecule_list = mcell.molecules.molecule_list
 
-        # Make sure molecule parameters are valid
-        check_duplicate_molecule_add(self, context)
-        duplicate_molecule_status = mcell.molecules.status
-        check_illegal_molecule(self, context)
-        illegal_molecule_status = mcell.molecules.status
-        update_diffusion_constant(self, context)
-        diffusion_constant_status = mcell.molecules.status
+        check_all_molecule_status(self, context, check_duplicate_molecule_add)
 
-        if duplicate_molecule_status:
-            mcell.molecules.status = duplicate_molecule_status
-        elif illegal_molecule_status:
-            mcell.molecules.status = illegal_molecule_status
-        elif diffusion_constant_status:
-            mcell.molecules.status = diffusion_constant_status
-        else:
+        if not mcell.molecules.status:
             molecule_list.add()
             mcell.molecules.active_mol_index = len(
                 mcell.molecules.molecule_list)-1
             active_mol_index = mcell.molecules.active_mol_index
             active_molecule = molecule_list[active_mol_index]
-            active_molecule.name = template_molecule.name
-            active_molecule.type = template_molecule.type
-            active_molecule.diffusion_constant = \
-                template_molecule.diffusion_constant
-            active_molecule.diffusion_constant_str = \
-                template_molecule.diffusion_constant_str
+            copy_molecule_properties(self, template_molecule, active_molecule)
+            reset_template_molecule(self, context)
             mcell.molecules.status = 'Add successful'
+            mcell.molecules.add_template_molecule = False
 
         return {'FINISHED'}
 
@@ -361,7 +379,7 @@ class MCELL_OT_molecule_add(bpy.types.Operator):
 class MCELL_OT_molecule_update(bpy.types.Operator):
     bl_idname = "mcell.molecule_update"
     bl_label = "Update Molecule"
-    bl_description = "Add a new molecule type to an MCell model"
+    bl_description = "Update the molecule properties in an MCell model"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -369,36 +387,80 @@ class MCELL_OT_molecule_update(bpy.types.Operator):
         template_molecule = mcell.molecules.template_molecule
         molecule_list = mcell.molecules.molecule_list
 
-        if mcell.molecules.molecule_list:
+        check_all_molecule_status(self, context,
+                                  check_duplicate_molecule_update)
 
-            # Make sure molecule parameters are valid
-            check_duplicate_molecule_update(self, context)
-            duplicate_molecule_status = mcell.molecules.status
-            check_illegal_molecule(self, context)
-            illegal_molecule_status = mcell.molecules.status
-            update_diffusion_constant(self, context)
-            diffusion_constant_status = mcell.molecules.status
-
-            if duplicate_molecule_status:
-                mcell.molecules.status = duplicate_molecule_status
-            elif illegal_molecule_status:
-                mcell.molecules.status = illegal_molecule_status
-            elif diffusion_constant_status:
-                mcell.molecules.status = diffusion_constant_status
-            else:
-                active_mol_index = mcell.molecules.active_mol_index
-                active_molecule = molecule_list[active_mol_index]
-                active_molecule.name = template_molecule.name
-                active_molecule.type = template_molecule.type
-                active_molecule.diffusion_constant = \
-                    template_molecule.diffusion_constant
-                active_molecule.diffusion_constant_str = \
-                    template_molecule.diffusion_constant_str
-                mcell.molecules.status = 'Update successful'
-        else:
-            mcell.molecules.status = 'List is empty'
+        if not mcell.molecules.status:
+            active_mol_index = mcell.molecules.active_mol_index
+            active_molecule = molecule_list[active_mol_index]
+            copy_molecule_properties(self, template_molecule, active_molecule)
+            reset_template_molecule(self, context)
+            mcell.molecules.status = 'Update successful'
+            mcell.molecules.list_selected = False
 
         return {'FINISHED'}
+
+
+def check_all_molecule_status(self, context, check_duplicate_molecule):
+    """ Check for any invalid molecule properties. """
+
+    # This could be more concise if we had the functions return values,
+    # but then they can't also be used as callbacks in the future
+    mcell = context.scene.mcell
+    check_duplicate_molecule(self, context)
+    duplicate_molecule_status = mcell.molecules.status
+    check_illegal_molecule(self, context)
+    illegal_molecule_status = mcell.molecules.status
+    update_diffusion_constant(self, context)
+    diffusion_constant_status = mcell.molecules.status
+    update_custom_time_step(self, context)
+    custom_time_step_status = mcell.molecules.status
+    update_custom_space_step(self, context)
+    custom_space_step_status = mcell.molecules.status
+
+    if duplicate_molecule_status:
+        mcell.molecules.status = duplicate_molecule_status
+    elif illegal_molecule_status:
+        mcell.molecules.status = illegal_molecule_status
+    elif diffusion_constant_status:
+        mcell.molecules.status = diffusion_constant_status
+    elif custom_time_step_status:
+        mcell.molecules.status = custom_time_step_status
+    elif custom_space_step_status:
+        mcell.molecules.status = custom_space_step_status
+
+
+def copy_molecule_properties(self, molecule_old, molecule_new):
+    """ Copy properties from one molecule to another. """
+
+    molecule_new.name = molecule_old.name
+    molecule_new.type = molecule_old.type
+    molecule_new.diffusion_constant = molecule_old.diffusion_constant
+    molecule_new.diffusion_constant_str = \
+        molecule_old.diffusion_constant_str
+    molecule_new.target_only = molecule_old.target_only
+    molecule_new.custom_time_step = molecule_old.custom_time_step
+    molecule_new.custom_time_step_str = \
+        molecule_old.custom_time_step_str
+    molecule_new.custom_space_step = molecule_old.custom_space_step
+    molecule_new.custom_space_step_str = \
+        molecule_old.custom_space_step_str
+
+
+def reset_template_molecule(self, context):
+    """ Set template molecule member values back to defaults. """
+
+    mcell = context.scene.mcell
+    template_molecule = mcell.molecules.template_molecule
+    template_molecule.name = ''
+    template_molecule.type = '2D'
+    template_molecule.diffusion_constant = 0
+    template_molecule.diffusion_constant_str = ''
+    template_molecule.target_only = False
+    template_molecule.custom_time_step = 0
+    template_molecule.custom_time_step_str = ''
+    template_molecule.custom_space_step = 0
+    template_molecule.custom_space_step_str = ''
 
 
 class MCELL_OT_molecule_remove(bpy.types.Operator):
@@ -410,40 +472,42 @@ class MCELL_OT_molecule_remove(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         mcell.molecules.molecule_list.remove(mcell.molecules.active_mol_index)
-        mcell.molecules.active_mol_index = mcell.molecules.active_mol_index-1
+        mcell.molecules.active_mol_index -= 1
         if (mcell.molecules.active_mol_index < 0):
             mcell.molecules.active_mol_index = 0
+        else:
+            reset_template_molecule(self, context)
         mcell.molecules.status = 'Remove successful'
+        mcell.molecules.list_selected = False
 
         return {'FINISHED'}
 
 
 def check_illegal_molecule(self, context):
-    """Checks for illegal molecule name"""
+    """ Checks for illegal molecule name. """
 
-    mc = context.scene.mcell
-    mol_list = mc.molecules.molecule_list
-    temp_mol = mc.molecules.template_molecule
+    mcell = context.scene.mcell
+    template_molecule = mcell.molecules.template_molecule
 
     status = ''
 
     # Check for illegal names (Starts with a letter. No special characters.)
     mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
-    m = re.match(mol_filter, temp_mol.name)
+    m = re.match(mol_filter, template_molecule.name)
     if m is None:
-        status = 'Molecule name error: %s' % (temp_mol.name)
+        status = 'Molecule name error: %s' % (template_molecule.name)
 
-    mc.molecules.status = status
+    mcell.molecules.status = status
 
     return
 
 
 def check_duplicate_molecule_add(self, context):
-    """Checks for duplicate molecule name when adding molecule"""
+    """ Checks for duplicate molecule name when adding molecule. """
 
-    mc = context.scene.mcell
-    molecule_list = mc.molecules.molecule_list
-    template_molecule = mc.molecules.template_molecule
+    mcell = context.scene.mcell
+    molecule_list = mcell.molecules.molecule_list
+    template_molecule = mcell.molecules.template_molecule
 
     status = ''
 
@@ -452,30 +516,29 @@ def check_duplicate_molecule_add(self, context):
     if molecule_keys.count(template_molecule.name):
         status = 'Duplicate molecule: %s' % (template_molecule.name)
 
-    mc.molecules.status = status
+    mcell.molecules.status = status
 
     return
 
 
 def check_duplicate_molecule_update(self, context):
-    """Checks for duplicate molecule name when updateing molecule"""
+    """ Checks for duplicate molecule name when updating molecule. """
 
-    mc = context.scene.mcell
-    molecule_list = mc.molecules.molecule_list
-    active_molecule_index = mc.molecules.active_mol_index
-    template_molecule = mc.molecules.template_molecule
+    mcell = context.scene.mcell
+    molecule_list = mcell.molecules.molecule_list
+    active_molecule_index = mcell.molecules.active_mol_index
+    template_molecule = mcell.molecules.template_molecule
     active_molecule = molecule_list[active_molecule_index]
 
     status = ''
 
     # Check for duplicate molecule name
-
     molecule_keys = molecule_list.keys()
     if (molecule_keys.count(template_molecule.name) and
             active_molecule.name != template_molecule.name):
         status = 'Duplicate molecule: %s' % (template_molecule.name)
 
-    mc.molecules.status = status
+    mcell.molecules.status = status
 
     return
 
@@ -1773,7 +1836,7 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
         return {'FINISHED'}
 
 
-def update_active_molecule(self, context):
+def load_active_molecule(self, context):
     """ Load molecule properties when user clicks in molecule list. """
 
     mcell = context.scene.mcell
@@ -1783,15 +1846,30 @@ def update_active_molecule(self, context):
         active_molecule_index = mcell.molecules.active_mol_index
         active_molecule = molecule_list[active_molecule_index]
         # Adding and removing molecules will also trigger this callback.
-        # However, this seems to occur when the active name is still blank.
+        # In those two cases, the active name is still blank.
         # The following name check ensures we only pay attention to list clicks
         if active_molecule.name:
-            template_molecule.name = active_molecule.name
-            template_molecule.type = active_molecule.type
-            template_molecule.diffusion_constant = \
-                active_molecule.diffusion_constant
-            template_molecule.diffusion_constant_str = \
-                active_molecule.diffusion_constant_str
+            active_mol_index = mcell.molecules.active_mol_index
+            active_molecule = molecule_list[active_mol_index]
+            copy_molecule_properties(self, active_molecule, template_molecule)
+            #template_molecule.name = active_molecule.name
+            #template_molecule.type = active_molecule.type
+            #template_molecule.diffusion_constant = \
+            #    active_molecule.diffusion_constant
+            #template_molecule.diffusion_constant_str = \
+            #    active_molecule.diffusion_constant_str
+            #template_molecule.target_only = active_molecule.target_only
+            #template_molecule.custom_time_step = \
+            #    active_molecule.custom_time_step
+            #template_molecule.custom_time_step_str = \
+            #    active_molecule.custom_time_step_str
+            #template_molecule.custom_space_step = \
+            #    active_molecule.custom_time_step
+            #template_molecule.custom_space_step_str = \
+            #    active_molecule.custom_time_step_str
+
+            mcell.molecules.list_selected = True
+            mcell.molecules.status = ''
 
 
 def check_val_str(val_str, min_val, max_val):
@@ -1875,17 +1953,15 @@ def update_diffusion_constant(self, context):
 
     mc = context.scene.mcell
     template_molecule = mc.molecules.template_molecule
-    #mol = mc.molecules.molecule_list[mc.molecules.active_mol_index]
     diffusion_constant_str = template_molecule.diffusion_constant_str
 
     (diffusion_constant, status) = check_val_str(
         diffusion_constant_str, 0, None)
 
-    if status == '':
-        template_molecule.diffusion_constant = diffusion_constant
-    else:
+    if status:
         status = status % ('diffusion_constant', diffusion_constant_str)
-        #temp_mol.diffusion_constant_str = '%g' % (temp_mol.diffusion_constant)
+    else:
+        template_molecule.diffusion_constant = diffusion_constant
 
     mc.molecules.status = status
 
@@ -1895,19 +1971,19 @@ def update_diffusion_constant(self, context):
 def update_custom_time_step(self, context):
     """ Store the custom time step as a float if it's legal """
 
-    mc = context.scene.mcell
-    mol = mc.molecules.molecule_list[mc.molecules.active_mol_index]
-    custom_time_step_str = mol.custom_time_step_str
+    mcell = context.scene.mcell
+    template_molecule = mcell.molecules.template_molecule
+    custom_time_step_str = template_molecule.custom_time_step_str
 
-    (custom_time_step, status) = check_val_str(custom_time_step_str, 0, None)
+    if custom_time_step_str:
+        (custom_time_step, status) = check_val_str(custom_time_step_str,
+                                                   0, None)
+        if status:
+            status = status % ('custom_time_step', custom_time_step_str)
+        else:
+            template_molecule.custom_time_step = custom_time_step
 
-    if status == '':
-        mol.custom_time_step = custom_time_step
-    else:
-        status = status % ('custom_time_step', custom_time_step_str)
-        mol.custom_time_step_str = '%g' % (mol.custom_time_step)
-
-    mc.molecules.status = status
+        mcell.molecules.status = status
 
     return
 
@@ -1915,19 +1991,19 @@ def update_custom_time_step(self, context):
 def update_custom_space_step(self, context):
     """ Store the custom space step as a float if it's legal """
 
-    mc = context.scene.mcell
-    mol = mc.molecules.molecule_list[mc.molecules.active_mol_index]
-    custom_space_step_str = mol.custom_space_step_str
+    mcell = context.scene.mcell
+    template_molecule = mcell.molecules.template_molecule
+    custom_space_step_str = template_molecule.custom_space_step_str
 
-    (custom_space_step, status) = check_val_str(custom_space_step_str, 0, None)
+    if custom_space_step_str:
+        (custom_space_step, status) = check_val_str(custom_space_step_str,
+                                                    0, None)
+        if status:
+            status = status % ('custom_space_step', custom_space_step_str)
+        else:
+            template_molecule.custom_space_step = custom_space_step
 
-    if status == '':
-        mol.custom_space_step = custom_space_step
-    else:
-        status = status % ('custom_space_step', custom_space_step_str)
-        mol.custom_space_step_str = '%g' % (mol.custom_space_step)
-
-    mc.molecules.status = status
+        mcell.molecules.status = status
 
     return
 
