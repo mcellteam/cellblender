@@ -287,27 +287,37 @@ class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
         name="Include Partitions",
         description="Add PARTITIONS to main MDL file",
         default=False)
+    recursion_flag = BoolProperty(
+        name="Recursion Flag",
+        description="Flag to prevent infinite recursion",
+        default=False)
     x_start = bpy.props.FloatProperty(
-        name="X Start", default=-1,
-        update=cellblender_operators.update_partition)
+        name="X Start", default=-1, precision=3,
+        update=cellblender_operators.transform_x_partition_boundary)
     x_end = bpy.props.FloatProperty(
-        name="X End", default=1,
-        update=cellblender_operators.update_partition)
-    x_step = bpy.props.FloatProperty(name="X Step", default=0.02)
+        name="X End", default=1, precision=3,
+        update=cellblender_operators.transform_x_partition_boundary)
+    x_step = bpy.props.FloatProperty(
+        name="X Step", default=0.02, precision=3,
+        update=cellblender_operators.check_x_partition_step)
     y_start = bpy.props.FloatProperty(
-        name="Y Start", default=-1,
-        update=cellblender_operators.update_partition)
+        name="Y Start", default=-1, precision=3,
+        update=cellblender_operators.transform_y_partition_boundary)
     y_end = bpy.props.FloatProperty(
-        name="Y End", default=1,
-        update=cellblender_operators.update_partition)
-    y_step = bpy.props.FloatProperty(name="Y Step", default=0.02)
+        name="Y End", default=1, precision=3,
+        update=cellblender_operators.transform_y_partition_boundary)
+    y_step = bpy.props.FloatProperty(
+        name="Y Step", default=0.02, precision=3,
+        update=cellblender_operators.check_y_partition_step)
     z_start = bpy.props.FloatProperty(
-        name="Z Start", default=-1,
-        update=cellblender_operators.update_partition)
+        name="Z Start", default=-1, precision=3,
+        update=cellblender_operators.transform_z_partition_boundary)
     z_end = bpy.props.FloatProperty(
-        name="Z End", default=1,
-        update=cellblender_operators.update_partition)
-    z_step = bpy.props.FloatProperty(name="Z Step", default=0.02)
+        name="Z End", default=1, precision=3,
+        update=cellblender_operators.transform_z_partition_boundary)
+    z_step = bpy.props.FloatProperty(
+        name="Z Step", default=0.02, precision=3,
+        update=cellblender_operators.check_z_partition_step)
 
 
 class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):

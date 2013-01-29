@@ -260,7 +260,7 @@ class MCELL_PT_initialization(bpy.types.Panel):
 
 
 class MCELL_PT_partitions(bpy.types.Panel):
-    bl_label = "Partitions"
+    bl_label = "Define and Visualize Partitions"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"

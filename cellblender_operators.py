@@ -343,14 +343,9 @@ class MCELL_OT_create_partitions_object(bpy.types.Operator):
             partition_object.name = "partitions"
             partition_mesh = partition_object.data
             partition_mesh.name = "partitions"
-            update_partition(self, context)
-
-            # It would be nice to use a lattice,
-            # but they have a fairly small voxel limit
-            #lattices = bpy.data.lattices
-            #partition_lattice = lattices.new('partitions')
-            #partition_object = objs.new('partitions', partition_lattice)
-            #scene_objs.link(partition_object)
+            transform_x_partition_boundary(self, context)
+            transform_y_partition_boundary(self, context)
+            transform_z_partition_boundary(self, context)
 
         return {'FINISHED'}
 
@@ -374,6 +369,134 @@ class MCELL_OT_remove_partitions_object(bpy.types.Operator):
             meshes.remove(partition_mesh)
 
         return {'FINISHED'}
+
+
+def transform_x_partition_boundary(self, context):
+    """ Transform the partition object along the x-axis. """
+
+    partitions = context.scene.mcell.partitions
+    x_start = partitions.x_start
+    x_end = partitions.x_end
+    x_step = partitions.x_step
+    partitions.x_step = transform_partition_boundary(
+        self, context, x_start, x_end, x_step, 0)
+
+
+def transform_y_partition_boundary(self, context):
+    """ Transform the partition object along the y-axis. """
+
+    partitions = context.scene.mcell.partitions
+    y_start = partitions.y_start
+    y_end = partitions.y_end
+    y_step = partitions.y_step
+    partitions.y_step = transform_partition_boundary(
+        self, context, y_start, y_end, y_step, 1)
+
+
+def transform_z_partition_boundary(self, context):
+    """ Transform the partition object along the z-axis. """
+
+    partitions = context.scene.mcell.partitions
+    z_start = partitions.z_start
+    z_end = partitions.z_end
+    z_step = partitions.z_step
+    partitions.z_step = transform_partition_boundary(
+        self, context, z_start, z_end, z_step, 2)
+
+
+def transform_partition_boundary(self, context, start, end, step, xyz_index):
+    """ Transform the partition object along the provided axis.
+
+    Change the scaling and location of the cube that represents partition
+    boundaries. Also, make sure the step lengths are valid.
+
+    """
+
+    partitions = context.scene.mcell.partitions
+    difference = end-start
+    # Scale works this way, because default Cube is 2x2x2
+    half_difference = scale = difference/2
+    # The object center of the partition boundaries (i.e. the box)
+    location = start + half_difference
+    # Ensure step length isn't larger than partition range
+    if abs(step) > abs(difference):
+        step = difference
+    # Make sure partition range and step length are compatible
+    # Good:
+    # "PARTITION_X = [[-1.0 TO 1.0 STEP 0.2]]" or
+    # "PARTITION_X = [[1.0 TO -1.0 STEP -0.2]]"
+    # Bad:
+    # "PARTITION_X = [[-1.0 TO 1.0 STEP -0.2]]" or
+    # "PARTITION_X = [[1.0 TO -1.0 STEP 0.2]]"
+    # x_scale < 0 means that x_start > x_end (e.g "1.0 TO -1.0")
+    if ((scale < 0 and step > 0) or (scale > 0 and step < 0)):
+        step *= -1
+    # Move and scale object representing boundaries
+    if "partitions" in bpy.data.objects:
+        partition_object = bpy.data.objects["partitions"]
+        partition_object.location[xyz_index] = location
+        partition_object.scale[xyz_index] = scale
+    return step
+
+
+def check_x_partition_step(self, context):
+    """ Make sure the partition's step along the x-axis is valid. """
+
+    partitions = context.scene.mcell.partitions
+    if not partitions.recursion_flag:
+        partitions.recursion_flag = True
+        x_start = partitions.x_start
+        x_end = partitions.x_end
+        x_step = partitions.x_step
+        partitions.x_step = check_partition_step(
+            self, context, x_start, x_end, x_step)
+        partitions.recursion_flag = False
+
+
+def check_y_partition_step(self, context):
+    """ Make sure the partition's step along the y-axis is valid. """
+
+    partitions = context.scene.mcell.partitions
+    if not partitions.recursion_flag:
+        partitions.recursion_flag = True
+        y_start = partitions.y_start
+        y_end = partitions.y_end
+        y_step = partitions.y_step
+        partitions.y_step = check_partition_step(
+            self, context, y_start, y_end, y_step)
+        partitions.recursion_flag = False
+
+
+def check_z_partition_step(self, context):
+    """ Make sure the partition's step along the z-axis is valid. """
+
+    partitions = context.scene.mcell.partitions
+    if not partitions.recursion_flag:
+        partitions.recursion_flag = True
+        z_start = partitions.z_start
+        z_end = partitions.z_end
+        z_step = partitions.z_step
+        partitions.z_step = check_partition_step(
+            self, context, z_start, z_end, z_step)
+        partitions.recursion_flag = False
+
+
+def check_partition_step(self, context, start, end, step):
+    """ Make sure the partition's step along the provided axis is valid. """
+
+    partitions = context.scene.mcell.partitions
+    difference = end-start
+    # Scale works this way, because default Cube is 2x2x2
+    half_difference = scale = difference/2
+    # The object center of the partition boundaries (i.e. the box)
+    location = start + half_difference
+    # Ensure step length isn't larger than partition range
+    if abs(step) > abs(difference):
+        step = difference
+    # Make sure partition range and step length are compatible
+    if ((scale < 0 and step > 0) or (scale > 0 and step < 0)):
+        step *= -1
+    return step
 
 
 class MCELL_OT_molecule_add(bpy.types.Operator):
@@ -1747,57 +1870,6 @@ def check_val_str(val_str, min_val, max_val):
         status = "Invalid value for %s: %s"
 
     return (val, status)
-
-
-def update_partition(self, context):
-    """ Update visual representation of partitions
-
-    Change the scaling and location of the cube that represents partition
-    boundaries. Also, make sure the step lengths are valid.
-
-    """
-
-    mcell = context.scene.mcell
-    partitions = mcell.partitions
-    x_difference = partitions.x_end-partitions.x_start
-    y_difference = partitions.y_end-partitions.y_start
-    z_difference = partitions.z_end-partitions.z_start
-    # Scale works this way, because default Cube is 2x2x2
-    x_half_difference = x_scale = x_difference/2
-    y_half_difference = y_scale = y_difference/2
-    z_half_difference = z_scale = z_difference/2
-    #x_divisions = (x_difference//partitions.x_step)+1
-    #y_divisions = (y_difference//partitions.y_step)+1
-    #z_divisions = (z_difference//partitions.z_step)+1
-    # The object center of the partition boundaries (i.e. the box)
-    x_location = partitions.x_start+x_half_difference
-    y_location = partitions.y_start+y_half_difference
-    z_location = partitions.z_start+z_half_difference
-    # good:
-    # "PARTITION_X = [[-1.0 TO 1.0 STEP 0.2]]" or
-    # "PARTITION_X = [[1.0 TO -1.0 STEP -0.2]]"
-    # bad:
-    # "PARTITION_X = [[-1.0 TO 1.0 STEP -0.2]]" or
-    # "PARTITION_X = [[1.0 TO -1.0 STEP 0.2]]"
-    # x_scale < 0 means that x_start > x_end (e.g "1.0 TO -1.0")
-    if ((x_scale < 0 and partitions.x_step > 0) or
-            (x_scale > 0 and partitions.x_step < 0)):
-        partitions.x_step *= -1
-    if ((y_scale < 0 and partitions.y_step > 0) or
-            (y_scale > 0 and partitions.y_step < 0)):
-        partitions.y_step *= -1
-    if ((z_scale < 0 and partitions.z_step > 0) or
-            (z_scale > 0 and partitions.z_step < 0)):
-        partitions.z_step *= -1
-    if "partitions" in bpy.data.objects:
-        partition_object = bpy.data.objects["partitions"]
-        partition_object.location = mathutils.Vector(
-            (x_location, y_location, z_location))
-        partition_object.scale = mathutils.Vector((x_scale, y_scale, z_scale))
-        #part_lattice = bpy.data.lattices["partitions"]
-        #part_lattice.points_u = x_divisions
-        #part_lattice.points_v = y_divisions
-        #part_lattice.points_w = z_divisions
 
 
 def update_clamp_value(self, context):
