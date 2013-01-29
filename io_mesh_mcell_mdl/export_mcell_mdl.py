@@ -74,6 +74,18 @@ def save_wrapper(context, out_file, filedir):
     out_file.write('ITERATIONS = %d\n' % (mcell.initialization.iterations))
     out_file.write('TIME_STEP = %g\n\n' % (mcell.initialization.time_step))
 
+    # export partitions
+    if mcell.partitions.include:
+        out_file.write('PARTITION_X = [[%g TO %g STEP %g]]\n' % (
+            mcell.partitions.x_start, mcell.partitions.x_end,
+            mcell.partitions.x_step))
+        out_file.write('PARTITION_Y = [[%g TO %g STEP %g]]\n' % (
+            mcell.partitions.y_start, mcell.partitions.y_end,
+            mcell.partitions.y_step))
+        out_file.write('PARTITION_Z = [[%g TO %g STEP %g]]\n\n' % (
+            mcell.partitions.z_start, mcell.partitions.z_end,
+            mcell.partitions.z_step))
+
     # export molecules:
     if settings.export_format == 'mcell_mdl_modular':
         out_file.write('INCLUDE_FILE = \"%s.molecules.mdl\"\n\n' %

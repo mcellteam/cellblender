@@ -259,6 +259,42 @@ class MCELL_PT_initialization(bpy.types.Panel):
             row.label(text=mc.initialization.status, icon="ERROR")
 
 
+class MCELL_PT_partitions(bpy.types.Panel):
+    bl_label = "Partitions"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mcell = context.scene.mcell
+
+        layout.prop(mcell.partitions, "include")
+        if mcell.partitions.include:
+            row = layout.row(align=True)
+            row.prop(mcell.partitions, "x_start")
+            row.prop(mcell.partitions, "x_end")
+            row.prop(mcell.partitions, "x_step")
+
+            row = layout.row(align=True)
+            row.prop(mcell.partitions, "y_start")
+            row.prop(mcell.partitions, "y_end")
+            row.prop(mcell.partitions, "y_step")
+
+            row = layout.row(align=True)
+            row.prop(mcell.partitions, "z_start")
+            row.prop(mcell.partitions, "z_end")
+            row.prop(mcell.partitions, "z_step")
+
+            if not "partitions" in bpy.data.objects:
+                    layout.operator("mcell.create_partitions_object",
+                                    icon="OUTLINER_OB_LATTICE")
+            else:
+                    layout.operator("mcell.remove_partitions_object",
+                                    icon="OUTLINER_OB_LATTICE")
+
+
 class MCELL_PT_define_molecules(bpy.types.Panel):
     bl_label = "Define Molecules"
     bl_space_type = "PROPERTIES"

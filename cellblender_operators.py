@@ -316,6 +316,66 @@ class MCELL_OT_vertex_groups_to_regions(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_create_partitions_object(bpy.types.Operator):
+    bl_idname = "mcell.create_partitions_object"
+    bl_label = "Show Partitions"
+    bl_description = "Create a visual representation of the partitions"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        scene = context.scene
+        scene_objs = scene.objects
+        objs = bpy.data.objects
+        meshes = bpy.data.meshes
+        if not "partitions" in objs:
+            old_active_object = bpy.context.active_object
+            # Add a box that represents the partitions' boundaries
+            bpy.ops.mesh.primitive_cube_add()
+            partition_object = bpy.context.active_object
+            # Prevent user from manipulating the box, because I don't yet have
+            # a good way of updating the partitions when the box object is
+            # moved/scaled in the 3D view window
+            scene.objects.active = old_active_object
+            partition_object.select = False
+            partition_object.hide_select = True
+            # Set draw_type to wireframe so the user can see what's inside
+            partition_object.draw_type = 'WIRE'
+            partition_object.name = "partitions"
+            partition_mesh = partition_object.data
+            partition_mesh.name = "partitions"
+            update_partition(self, context)
+
+            # It would be nice to use a lattice,
+            # but they have a fairly small voxel limit
+            #lattices = bpy.data.lattices
+            #partition_lattice = lattices.new('partitions')
+            #partition_object = objs.new('partitions', partition_lattice)
+            #scene_objs.link(partition_object)
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_remove_partitions_object(bpy.types.Operator):
+    bl_idname = "mcell.remove_partitions_object"
+    bl_label = "Hide Partitions"
+    bl_description = "Remove a visual representation of the partitions"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        scene = context.scene
+        scene_objects = scene.objects
+        objects = bpy.data.objects
+        meshes = bpy.data.meshes
+        if 'partitions' in scene_objects:
+            partition_object = scene_objects['partitions']
+            partition_mesh = partition_object.data
+            scene_objects.unlink(partition_object)
+            objects.remove(partition_object)
+            meshes.remove(partition_mesh)
+
+        return {'FINISHED'}
+
+
 class MCELL_OT_molecule_add(bpy.types.Operator):
     bl_idname = "mcell.molecule_add"
     bl_label = "Add Molecule"
@@ -1687,6 +1747,57 @@ def check_val_str(val_str, min_val, max_val):
         status = "Invalid value for %s: %s"
 
     return (val, status)
+
+
+def update_partition(self, context):
+    """ Update visual representation of partitions
+
+    Change the scaling and location of the cube that represents partition
+    boundaries. Also, make sure the step lengths are valid.
+
+    """
+
+    mcell = context.scene.mcell
+    partitions = mcell.partitions
+    x_difference = partitions.x_end-partitions.x_start
+    y_difference = partitions.y_end-partitions.y_start
+    z_difference = partitions.z_end-partitions.z_start
+    # Scale works this way, because default Cube is 2x2x2
+    x_half_difference = x_scale = x_difference/2
+    y_half_difference = y_scale = y_difference/2
+    z_half_difference = z_scale = z_difference/2
+    #x_divisions = (x_difference//partitions.x_step)+1
+    #y_divisions = (y_difference//partitions.y_step)+1
+    #z_divisions = (z_difference//partitions.z_step)+1
+    # The object center of the partition boundaries (i.e. the box)
+    x_location = partitions.x_start+x_half_difference
+    y_location = partitions.y_start+y_half_difference
+    z_location = partitions.z_start+z_half_difference
+    # good:
+    # "PARTITION_X = [[-1.0 TO 1.0 STEP 0.2]]" or
+    # "PARTITION_X = [[1.0 TO -1.0 STEP -0.2]]"
+    # bad:
+    # "PARTITION_X = [[-1.0 TO 1.0 STEP -0.2]]" or
+    # "PARTITION_X = [[1.0 TO -1.0 STEP 0.2]]"
+    # x_scale < 0 means that x_start > x_end (e.g "1.0 TO -1.0")
+    if ((x_scale < 0 and partitions.x_step > 0) or
+            (x_scale > 0 and partitions.x_step < 0)):
+        partitions.x_step *= -1
+    if ((y_scale < 0 and partitions.y_step > 0) or
+            (y_scale > 0 and partitions.y_step < 0)):
+        partitions.y_step *= -1
+    if ((z_scale < 0 and partitions.z_step > 0) or
+            (z_scale > 0 and partitions.z_step < 0)):
+        partitions.z_step *= -1
+    if "partitions" in bpy.data.objects:
+        partition_object = bpy.data.objects["partitions"]
+        partition_object.location = mathutils.Vector(
+            (x_location, y_location, z_location))
+        partition_object.scale = mathutils.Vector((x_scale, y_scale, z_scale))
+        #part_lattice = bpy.data.lattices["partitions"]
+        #part_lattice.points_u = x_divisions
+        #part_lattice.points_v = y_divisions
+        #part_lattice.points_w = z_divisions
 
 
 def update_clamp_value(self, context):

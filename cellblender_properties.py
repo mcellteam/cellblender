@@ -282,6 +282,34 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     status = StringProperty(name="Status")
 
 
+class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
+    include = BoolProperty(
+        name="Include Partitions",
+        description="Add PARTITIONS to main MDL file",
+        default=False)
+    x_start = bpy.props.FloatProperty(
+        name="X Start", default=-1,
+        update=cellblender_operators.update_partition)
+    x_end = bpy.props.FloatProperty(
+        name="X End", default=1,
+        update=cellblender_operators.update_partition)
+    x_step = bpy.props.FloatProperty(name="X Step", default=0.02)
+    y_start = bpy.props.FloatProperty(
+        name="Y Start", default=-1,
+        update=cellblender_operators.update_partition)
+    y_end = bpy.props.FloatProperty(
+        name="Y End", default=1,
+        update=cellblender_operators.update_partition)
+    y_step = bpy.props.FloatProperty(name="Y Step", default=0.02)
+    z_start = bpy.props.FloatProperty(
+        name="Z Start", default=-1,
+        update=cellblender_operators.update_partition)
+    z_end = bpy.props.FloatProperty(
+        name="Z End", default=1,
+        update=cellblender_operators.update_partition)
+    z_step = bpy.props.FloatProperty(name="Z Step", default=0.02)
+
+
 class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
     molecule_list = CollectionProperty(
         type=MCellMoleculeProperty, name="Molecule List")
@@ -383,6 +411,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellMolVizPanelProperty, name="Mol Viz Settings")
     initialization = PointerProperty(
         type=MCellInitializationPanelProperty, name="Model Initialization")
+    partitions = bpy.props.PointerProperty(
+        type=MCellPartitionsPanelProperty, name="Partitions")
     molecules = PointerProperty(
         type=MCellMoleculesPanelProperty, name="Defined Molecules")
     reactions = PointerProperty(
