@@ -280,6 +280,199 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         description="Simulation Time Step Units: seconds",
         update=cellblender_operators.update_time_step)
     status = StringProperty(name="Status")
+    advanced = bpy.props.BoolProperty(default=False)
+    warnings = bpy.props.BoolProperty(default=False)
+    notifications = bpy.props.BoolProperty(default=False)
+
+    # Advanced/Optional Commands
+    time_step_max = FloatProperty(name="Time Step", min=0.0)
+    time_step_max_str = StringProperty(
+        name="Maximum Time Step",
+        description="The longest possible time step",
+        update=cellblender_operators.update_time_step_max)
+    space_step = FloatProperty(name="Space Step", min=0.0)
+    space_step_str = StringProperty(
+        name="Space Step",
+        description="Have molecules take the same mean diffusion distance",
+        update=cellblender_operators.update_space_step)
+    surface_grid_density = IntProperty(
+        name="Surface Grid Density", default=10000, min=0,
+        description="Number of molecules that can be stored per square micron")
+    interaction_radius = FloatProperty(name="Interaction Radius", min=0.0)
+    interaction_radius_str = StringProperty(
+        name="Interaction Radius",
+        description="Molecules will interact when they get within N microns",
+        update=cellblender_operators.update_interaction_radius)
+    radial_directions = FloatProperty(name="Radial Directions", min=0.0)
+    radial_directions_str = StringProperty(
+        name="Radial Directions",
+        description="Molecules will interact when they get within N microns",
+        update=cellblender_operators.update_radial_directions)
+    radial_subdivisions = FloatProperty(name="Radial Subdivisions", min=0.0)
+    radial_subdivisions_str = StringProperty(
+        name="Radial Subdivisions",
+        description="Molecules will interact when they get within N microns",
+        update=cellblender_operators.update_radial_subdivisions)
+    accurate_3d_reactions = BoolProperty(
+        name="Accurate 3D Reaction",
+        description="If true, molecules will look through partitions to react",
+        default=True)
+    center_molecules_grid = BoolProperty(
+        name="Center Molecules on Grid",
+        description="If true, surface molecules will be centered on the grid",
+        default=False)
+    vacancy_search_distance = FloatProperty(
+        name="Vacancy Search Distance", min=0.0)
+    vacancy_search_distance_str = StringProperty(
+        name="Vacancy Search Distance",
+        description="Surface molecule products can be created at N distance",
+        update=cellblender_operators.update_vacancy_search_distance)
+    microscopic_reversibility_enum = [
+        ('ON', 'On', ''),
+        ('OFF', 'Off', ''),
+        ('SURFACE_ONLY', 'Surface Only', ''),
+        ('VOLUME_ONLY', 'Volume Only', '')]
+    microscopic_reversibility = EnumProperty(
+        items=microscopic_reversibility_enum, name="Microscopic Reversibility",
+        description="If false, more efficient but less accurate reactions",
+        default='OFF')
+
+    # Notifications
+    all_notifications_enum = [
+        ('INDIVIDUAL', 'Set Individually', ''),
+        ('ON', 'On', ''),
+        ('OFF', 'Off', '')]
+    all_notifications = EnumProperty(
+        items=all_notifications_enum, name="All Notifications",
+        description="If on, all notifications will be set to on",
+        default='INDIVIDUAL')
+    diffusion_constant_report_enum = [
+        ('BRIEF', 'Brief', ''),
+        ('ON', 'On', ''),
+        ('OFF', 'Off', '')]
+    diffusion_constant_report = EnumProperty(
+        items=diffusion_constant_report_enum, name="Diffusion Constant Report")
+    file_output_report = BoolProperty(
+        name="File Output Report",
+        description="If on, MCell will report every time reaction data is"
+                    " written",
+        default=False)
+    final_summary = BoolProperty(
+        name="Final Summary",
+        description="If on, MCell will report about the CPU time used",
+        default=True)
+    iteration_report = BoolProperty(
+        name="Iteration Report",
+        description="If on, MCell will report how many iterations have"
+                    " completed based on total",
+        default=True)
+    partition_location_report = BoolProperty(
+        name="Partition Location Report",
+        description="If on, the partition locations will be printed",
+        default=False)
+    probability_report_enum = [
+        ('ON', 'On', ''),
+        ('OFF', 'Off', ''),
+        ('THRESHOLD', 'Threshold', '')]
+    probability_report = EnumProperty(
+        items=probability_report_enum, name="Probability Report", default='ON')
+    probability_report_threshold = bpy.props.FloatProperty(
+        name="Threshold", min=0.0, max=1.0, precision=2)
+    varying_probability_report = BoolProperty(
+        name="Varying Probability Report",
+        description="If on, MCell will print out the reaction probabilites for"
+                    "time-varying reaction",
+        default=True)
+    progress_report = BoolProperty(
+        name="Progress Report",
+        description="If on, MCell will print out messages indicating which"
+                    "part of the simulation is underway",
+        default=True)
+    release_event_report = BoolProperty(
+        name="Release Event Report",
+        description="If on, MCell will print a message every time molecules"
+                    "are released through a release site",
+        default=True)
+    molecule_collision_report = BoolProperty(
+        name="Molecule Collision Report",
+        description="If on, MCell will print the number of bi/trimolecular"
+                    "collisions that occured",
+        default=False)
+
+    # Warnings
+    all_warnings_enum = [
+        ('INDIVIDUAL', 'Set Individually', ''),
+        ('IGNORED', 'Ignored', ''),
+        ('WARNING', 'Warning', ''),
+        ('ERROR', 'Error', '')]
+    all_warnings = EnumProperty(
+        items=all_warnings_enum, name="All Warnings",
+        description="If on, all notifications will be set to on",
+        default='INDIVIDUAL')
+    degenerate_polygons_enum = [
+        ('IGNORED', 'Ignored', ''),
+        ('WARNING', 'Warning', ''),
+        ('ERROR', 'Error', '')]
+    degenerate_polygons = EnumProperty(
+        items=degenerate_polygons_enum, name="Degenerate Polygons",
+        default='WARNING')
+    high_reaction_probability_enum = [
+        ('IGNORED', 'Ignored', ''),
+        ('WARNING', 'Warning', ''),
+        ('ERROR', 'Error', '')]
+    high_reaction_probability = EnumProperty(
+        items=high_reaction_probability_enum, name="High Reaction Probability",
+        default='IGNORED')
+    high_probability_threshold = bpy.props.FloatProperty(
+        name="High Probability Threshold", min=0.0, max=1.0, default=1.0,
+        precision=2)
+    lifetime_too_short_enum = [
+        ('IGNORED', 'Ignored', ''),
+        ('WARNING', 'Warning', '')]
+    lifetime_too_short = EnumProperty(
+        items=lifetime_too_short_enum, name="Lifetime Too Short",
+        default='WARNING')
+    lifetime_threshold = bpy.props.IntProperty(
+        name="Lifetime Threshold", min=0, default=50)
+    lifetime_threshold = IntProperty(name="Threshold", default=50)
+    missed_reactions_enum = [
+        ('IGNORED', 'Ignored', ''),
+        ('WARNING', 'Warning', '')]
+    missed_reactions = EnumProperty(
+        items=missed_reactions_enum, name="Missed Reactions",
+        default='WARNING')
+    missed_reaction_threshold = bpy.props.FloatProperty(
+        name="Threshold", min=0.0, max=1.0, default=0.001,
+        precision=4)
+    negative_diffusion_constant_enum = [
+        ('IGNORED', 'Ignored', ''),
+        ('WARNING', 'Warning', ''),
+        ('ERROR', 'Error', '')]
+    negative_diffusion_constant = EnumProperty(
+        items=negative_diffusion_constant_enum,
+        name="Negative Diffusion Constant", default='WARNING')
+    missing_surface_orientation_enum = [
+        ('IGNORED', 'Ignored', ''),
+        ('WARNING', 'Warning', ''),
+        ('ERROR', 'Error', '')]
+    missing_surface_orientation = EnumProperty(
+        items=missing_surface_orientation_enum,
+        name="Missing Surface Orientation",
+        default='ERROR')
+    negative_reaction_rate_enum = [
+        ('IGNORED', 'Ignored', ''),
+        ('WARNING', 'Warning', ''),
+        ('ERROR', 'Error', '')]
+    negative_reaction_rate = EnumProperty(
+        items=negative_reaction_rate_enum, name="Negative Reaction Rate",
+        default='WARNING')
+    useless_volume_orientation_enum = [
+        ('IGNORED', 'Ignored', ''),
+        ('WARNING', 'Warning', ''),
+        ('ERROR', 'Error', '')]
+    useless_volume_orientation = EnumProperty(
+        items=useless_volume_orientation_enum,
+        name="Useless Volume Orientation", default='WARNING')
 
 
 class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):

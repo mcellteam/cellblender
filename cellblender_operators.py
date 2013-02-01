@@ -1929,6 +1929,121 @@ def update_time_step(self, context):
     return
 
 
+def update_time_step_max(self, context):
+    """ Store the max time step as a float if it's legal or create an error """
+
+    mcell = context.scene.mcell
+    time_step_max_str = mcell.initialization.time_step_max_str
+
+    if time_step_max_str:
+        (time_step_max, status) = check_val_str(time_step_max_str, 0, None)
+
+        if not status:
+            mcell.initialization.time_step_max = time_step_max
+        else:
+            status = status % ('time_step_max', time_step_max_str)
+            mcell.initialization.time_step_max_str = ''
+
+        mcell.initialization.status = status
+
+
+def update_space_step(self, context):
+    """ Store the space step as a float if it's legal or create an error """
+
+    mcell = context.scene.mcell
+    space_step_str = mcell.initialization.space_step_str
+
+    if space_step_str:
+        (space_step, status) = check_val_str(space_step_str, 0, None)
+
+        if not status:
+            mcell.initialization.space_step = space_step
+        else:
+            status = status % ('space_step', space_step_str)
+            mcell.initialization.space_step_str = ''
+
+        mcell.initialization.status = status
+
+
+def update_interaction_radius(self, context):
+    """ Store the space step as a float if it's legal or create an error """
+
+    mcell = context.scene.mcell
+    interaction_radius_str = mcell.initialization.interaction_radius_str
+
+    if interaction_radius_str:
+        (interaction_radius, status) = check_val_str(
+            interaction_radius_str, 0, None)
+
+        if not status:
+            mcell.initialization.interaction_radius = interaction_radius
+        else:
+            status = status % ('interaction_radius', interaction_radius_str)
+            mcell.initialization.interaction_radius_str = ''
+
+        mcell.initialization.status = status
+
+
+def update_radial_directions(self, context):
+    """ Store the space step as a float if it's legal or create an error """
+
+    mcell = context.scene.mcell
+    radial_directions_str = mcell.initialization.radial_directions_str
+
+    if radial_directions_str:
+        (radial_directions, status) = check_val_str(
+            radial_directions_str, 0, None)
+
+        if status == '':
+            mcell.initialization.radial_directions = radial_directions
+        else:
+            status = status % ('radial_directions', radial_directions_str)
+            mcell.initialization.radial_directions_str = ''
+
+        mcell.initialization.status = status
+
+
+def update_radial_subdivisions(self, context):
+    """ Store the space step as a float if it's legal or create an error """
+
+    mcell = context.scene.mcell
+    radial_subdivisions_str = mcell.initialization.radial_subdivisions_str
+
+    if radial_subdivisions_str:
+        (radial_subdivisions, status) = check_val_str(
+            radial_subdivisions_str, 0, None)
+
+        if status == '':
+            mcell.initialization.radial_subdivisions = radial_subdivisions
+        else:
+            status = status % ('radial_subdivisions', radial_subdivisions_str)
+            mcell.initialization.radial_subdivisions_str = ''
+
+        mcell.initialization.status = status
+
+
+def update_vacancy_search_distance(self, context):
+    """ Store the space step as a float if it's legal or create an error """
+
+    mcell = context.scene.mcell
+    vacancy_search_distance_str = \
+        mcell.initialization.vacancy_search_distance_str
+
+    if vacancy_search_distance_str:
+        (vacancy_search_distance, status) = check_val_str(
+            vacancy_search_distance_str, 0, None)
+
+        if not status:
+            mcell.initialization.vacancy_search_distance = \
+                vacancy_search_distance
+        else:
+            status = status % (
+                'vacancy_search_distance', vacancy_search_distance_str)
+            mcell.initialization.vacancy_search_distance_str = ''
+
+        mcell.initialization.status = status
+
+
 def update_diffusion_constant(self, context):
     """ Store the diffusion constant as a float if it's legal """
 

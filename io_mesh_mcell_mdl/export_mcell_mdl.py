@@ -74,6 +74,17 @@ def save_wrapper(context, out_file, filedir):
     out_file.write('ITERATIONS = %d\n' % (mcell.initialization.iterations))
     out_file.write('TIME_STEP = %g\n\n' % (mcell.initialization.time_step))
 
+    # export optional initialization commands
+    if settings.export_format == 'mcell_mdl_modular':
+        out_file.write('INCLUDE_FILE = \"%s.initialization.mdl\"\n\n' %
+                       (settings.base_name))
+        filepath = ('%s/%s.initialization.mdl' %
+                    (filedir, settings.base_name))
+        with open(filepath, "w", encoding="utf8", newline="\n") as init_file:
+            save_initialization_commands(context, init_file)
+    else:
+        save_initialization_commands(context, out_file)
+
     # export partitions
     if mcell.partitions.include:
         out_file.write('PARTITION_X = [[%g TO %g STEP %g]]\n' % (
@@ -164,6 +175,149 @@ def save_wrapper(context, out_file, filedir):
     if mcell.rxn_output.include:
         out_file.write('INCLUDE_FILE = \"%s.rxn_output.mdl\"\n\n' %
                        (settings.base_name))
+
+
+def save_initialization_commands(context, out_file):
+    """ Save the advanced/optional initialization commands.
+
+        This also includes notifications and warnings.
+
+    """
+
+    init = context.scene.mcell.initialization
+    # Maximum Time Step
+    if init.time_step_max_str:
+        out_file.write('TIME_STEP_MAX = %g\n' % (init.time_step_max))
+    # Space Step
+    if init.space_step_str:
+        out_file.write('SPACE_STEP = %g\n' % (init.space_step))
+    # Interaction Radius
+    if init.interaction_radius_str:
+        out_file.write('INTERACTION_RADIUS = %g\n' % (init.interaction_radius))
+    # Radial Directions
+    if init.radial_directions_str:
+        out_file.write('RADIAL_DIRECTIONS = %d\n' % (init.radial_directions))
+    # Radial Subdivisions
+    if init.radial_subdivisions_str:
+        out_file.write(
+            'RADIAL_SUBDIVISIONS = %d\n' % (init.radial_subdivisions))
+    # Vacancy Search Distance
+    if init.vacancy_search_distance_str:
+        out_file.write(
+            'VACANCY_SEARCH_DISTANCE = %g\n' % (init.vacancy_search_distance))
+    # Surface Grid Density
+    out_file.write('SURFACE_GRID_DENSITY = %g\n' % (init.surface_grid_density))
+    # Accurate 3D Reactions
+    if init.accurate_3d_reactions:
+        out_file.write("ACCURATE_3D_REACTIONS = TRUE\n")
+    else:
+        out_file.write("ACCURATE_3D_REACTIONS = FALSE\n")
+    # Center Molecules on Grid
+    if init.center_molecules_grid:
+        out_file.write("CENTER_MOLECULES_ON_GRID = TRUE\n")
+    else:
+        out_file.write("CENTER_MOLECULES_ON_GRID = FALSE\n")
+    # Microscopic Reversibility
+    out_file.write(
+        'MICROSCOPIC_REVERSIBILITY = %s\n\n' % (init.microscopic_reversibility))
+
+    # Notifications
+    out_file.write('NOTIFICATIONS\n{\n')
+    if init.all_notifications == 'INDIVIDUAL':
+
+        # Probability Report
+        if init.probability_report == 'THRESHOLD':
+            out_file.write('   PROBABILITY_REPORT_THRESHOLD = %g\n' % (
+                init.probability_report_threshold))
+        else:
+            out_file.write('   PROBABILITY_REPORT = %s\n' % (
+                init.probability_report))
+        # Diffusion Constant Report
+        out_file.write('   DIFFUSION_CONSTANT_REPORT = %s\n' % (
+            init.diffusion_constant_report))
+        # File Output Report
+        if init.file_output_report:
+            out_file.write('   FILE_OUTPUT_REPORT = ON\n')
+        else:
+            out_file.write('   FILE_OUTPUT_REPORT = OFF\n')
+        # Final Summary
+        if init.final_summary:
+            out_file.write('   FINAL_SUMMARY = ON\n')
+        else:
+            out_file.write('   FINAL_SUMMARY = OFF\n')
+        # Iteration Report
+        if init.iteration_report:
+            out_file.write('   ITERATION_REPORT = ON\n')
+        else:
+            out_file.write('   ITERATION_REPORT = OFF\n')
+        # Partition Location Report
+        if init.partition_location_report:
+            out_file.write('   PARTITION_LOCATION_REPORT = ON\n')
+        else:
+            out_file.write('   PARTITION_LOCATION_REPORT = OFF\n')
+        # Varying Probability Report
+        if init.varying_probability_report:
+            out_file.write('   VARYING_PROBABILITY_REPORT = ON\n')
+        else:
+            out_file.write('   VARYING_PROBABILITY_REPORT = OFF\n')
+        # Progress Report
+        if init.progress_report:
+            out_file.write('   PROGRESS_REPORT = ON\n')
+        else:
+            out_file.write('   PROGRESS_REPORT = OFF\n')
+        # Release Event Report
+        if init.release_event_report:
+            out_file.write('   RELEASE_EVENT_REPORT = ON\n')
+        else:
+            out_file.write('   RELEASE_EVENT_REPORT = OFF\n')
+        # Release Event Report
+        if init.molecule_collision_report:
+            out_file.write('   MOLECULE_COLLISION_REPORT = ON\n')
+        else:
+            out_file.write('   MOLECULE_COLLISION_REPORT = OFF\n')
+
+    else:
+        out_file.write(
+            '   ALL_NOTIFICATIONS = %s\n' % (init.all_notifications))
+    out_file.write('}\n\n')
+
+    # Warnings
+    out_file.write('WARNINGS\n{\n')
+    if init.all_notifications == 'INDIVIDUAL':
+
+        # Degenerate Polygons
+        out_file.write(
+            '   DEGENERATE_POLYGONS = %s\n' % init.degenerate_polygons)
+        # Negative Diffusion Constant
+        out_file.write('   NEGATIVE_DIFFUSION_CONSTANT = %s\n'
+                       % init.negative_diffusion_constant)
+        # Missing Surface Orientation
+        out_file.write('   MISSING_SURFACE_ORIENTATION = %s\n'
+                       % init.missing_surface_orientation)
+        # Negative Reaction Rate
+        out_file.write('   NEGATIVE_REACTION_RATE = %s\n'
+                       % init.negative_reaction_rate)
+        # Useless Volume Orientation
+        out_file.write('   USELESS_VOLUME_ORIENTATION = %s\n'
+                       % init.useless_volume_orientation)
+        # High Reaction Probability
+        out_file.write('   HIGH_REACTION_PROBABILITY = %s\n'
+                       % init.high_reaction_probability)
+        # Lifetime Too Short
+        out_file.write('   LIFETIME_TOO_SHORT = %s\n'
+                       % init.lifetime_too_short)
+        if init.lifetime_too_short == 'WARNING':
+            out_file.write('   LIFETIME_THRESHOLD = %s\n'
+                           % init.lifetime_threshold)
+        # Missed Reactions
+        out_file.write('   MISSED_REACTIONS = %s\n' % init.missed_reactions)
+        if init.missed_reactions == 'WARNING':
+            out_file.write('   MISSED_REACTION_THRESHOLD = %g\n'
+                           % init.missed_reaction_threshold)
+    else:
+        out_file.write(
+            '   ALL_WARNINGS = %s\n' % (init.all_warnings))
+    out_file.write('}\n\n')
 
 
 def save_object_list(context, out_file, object_list):

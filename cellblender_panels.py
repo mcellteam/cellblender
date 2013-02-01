@@ -254,6 +254,114 @@ class MCELL_PT_initialization(bpy.types.Panel):
 
         layout.prop(mc.initialization, "iterations")
         layout.prop(mc.initialization, "time_step_str")
+
+        # Advanced Options
+        box = layout.box()
+        row = box.row(align=True)
+        row.alignment = 'LEFT'
+        if mc.initialization.advanced:
+            row.prop(mc.initialization, "advanced", icon='TRIA_DOWN',
+                     text='Advanced Options', emboss=False)
+            row = box.row()
+            row.prop(mc.initialization, "time_step_max_str")
+            row = box.row()
+            row.prop(mc.initialization, "space_step_str")
+            row = box.row()
+            row.prop(mc.initialization, "interaction_radius_str")
+            row = box.row()
+            row.prop(mc.initialization, "radial_directions_str")
+            row = box.row()
+            row.prop(mc.initialization, "radial_subdivisions_str")
+            row = box.row()
+            row.prop(mc.initialization, "vacancy_search_distance_str")
+            row = box.row()
+            row.prop(mc.initialization, "surface_grid_density")
+            row = box.row()
+            row.prop(mc.initialization, "accurate_3d_reactions")
+            row = box.row()
+            row.prop(mc.initialization, "center_molecules_grid")
+            row = box.row()
+            row.prop(mc.initialization, "microscopic_reversibility")
+        else:
+            row.prop(mc.initialization, "advanced", icon='TRIA_RIGHT',
+                     text='Advanced Options', emboss=False)
+
+        # Notifications
+        #box = layout.box(align=True)
+        box = layout.box()
+        row = box.row(align=True)
+        row.alignment = 'LEFT'
+        if mc.initialization.notifications:
+            row.prop(mc.initialization, "notifications", icon='TRIA_DOWN',
+                     text='Notifications', emboss=False)
+            row = box.row()
+            row.prop(mc.initialization, "all_notifications")
+            if mc.initialization.all_notifications == 'INDIVIDUAL':
+                row = box.row(align=True)
+                row.prop(mc.initialization, "probability_report")
+                if mc.initialization.probability_report == 'THRESHOLD':
+                    row.prop(
+                        mc.initialization, "probability_report_threshold",
+                        slider=True)
+                row = box.row()
+                row.prop(mc.initialization, "diffusion_constant_report")
+                row = box.row()
+                row.prop(mc.initialization, "file_output_report")
+                row = box.row()
+                row.prop(mc.initialization, "final_summary")
+                row = box.row()
+                row.prop(mc.initialization, "iteration_report")
+                row = box.row()
+                row.prop(mc.initialization, "partition_location_report")
+                row = box.row()
+                row.prop(mc.initialization, "varying_probability_report")
+                row = box.row()
+                row.prop(mc.initialization, "progress_report")
+                row = box.row()
+                row.prop(mc.initialization, "release_event_report")
+                row = box.row()
+                row.prop(mc.initialization, "molecule_collision_report")
+        else:
+            row.prop(mc.initialization, "notifications", icon='TRIA_RIGHT',
+                     text='Notifications', emboss=False)
+
+        # Warnings
+        box = layout.box()
+        row = box.row(align=True)
+        row.alignment = 'LEFT'
+        if mc.initialization.warnings:
+            row.prop(mc.initialization, "warnings", icon='TRIA_DOWN',
+                     text='Warnings', emboss=False)
+            row = box.row()
+            row.prop(mc.initialization, "all_warnings")
+            if mc.initialization.all_warnings == 'INDIVIDUAL':
+                row = box.row()
+                row.prop(mc.initialization, "degenerate_polygons")
+                row = box.row()
+                row.prop(mc.initialization, "negative_diffusion_constant")
+                row = box.row()
+                row.prop(mc.initialization, "missing_surface_orientation")
+                row = box.row()
+                row.prop(mc.initialization, "negative_reaction_rate")
+                row = box.row()
+                row.prop(mc.initialization, "useless_volume_orientation")
+                row = box.row(align=True)
+                row.prop(mc.initialization, "high_reaction_probability")
+                if mc.initialization.high_reaction_probability != 'IGNORED':
+                    row.prop(mc.initialization,
+                                "high_probability_threshold", slider=True)
+                row = box.row(align=True)
+                row.prop(mc.initialization, "lifetime_too_short")
+                if mc.initialization.lifetime_too_short == 'WARNING':
+                    row.prop(mc.initialization, "lifetime_threshold")
+                row = box.row(align=True)
+                row.prop(mc.initialization, "missed_reactions")
+                if mc.initialization.missed_reactions == 'WARNING':
+                    row.prop(mc.initialization, "missed_reaction_threshold")
+        else:
+            row.prop(mc.initialization, "warnings", icon='TRIA_RIGHT',
+                     text='Warnings', emboss=False)
+
         if (mc.initialization.status != ''):
             row = layout.row()
             row.label(text=mc.initialization.status, icon="ERROR")
