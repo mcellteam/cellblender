@@ -318,8 +318,8 @@ class MCELL_OT_vertex_groups_to_regions(bpy.types.Operator):
 
 class MCELL_OT_create_partitions_object(bpy.types.Operator):
     bl_idname = "mcell.create_partitions_object"
-    bl_label = "Show Partitions"
-    bl_description = "Create a visual representation of the partitions"
+    bl_label = "Show Partition Boundaries"
+    bl_description = "Create a representation of the partition boundaries"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -352,8 +352,8 @@ class MCELL_OT_create_partitions_object(bpy.types.Operator):
 
 class MCELL_OT_remove_partitions_object(bpy.types.Operator):
     bl_idname = "mcell.remove_partitions_object"
-    bl_label = "Hide Partitions"
-    bl_description = "Remove a visual representation of the partitions"
+    bl_label = "Hide Partition Boundaries"
+    bl_description = "Remove a representation of the partition boundaries"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -371,6 +371,63 @@ class MCELL_OT_remove_partitions_object(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_auto_generate_boundaries(bpy.types.Operator):
+    bl_idname = "mcell.auto_generate_boundaries"
+    bl_label = "Automatically Generate Boundaries"
+    bl_description = "Automatically generate partition boundaries"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        partitions = mcell.partitions
+        object_list = mcell.model_objects.object_list
+        first_time = True
+        for obj in object_list:
+            try:
+                obj = bpy.data.objects[obj.name]
+                obj_matrix = obj.matrix_world
+                vertices = obj.data.vertices
+                for vert in vertices:
+                    # transform local coordinates to global coordinates
+                    (x, y, z) = obj_matrix * vert.co
+                    if first_time:
+                        x_min = x_max = x
+                        y_min = y_max = y
+                        z_min = z_max = z
+                        first_time = False
+                    else:
+                        # check for x max and min
+                        if x > x_max:
+                            x_max = x
+                        elif x < x_min:
+                            x_min = x
+                        # check for y max and min
+                        if y > y_max:
+                            y_max = y
+                        elif y < y_min:
+                            y_min = y
+                        # check for z max and min
+                        if z > z_max:
+                            z_max = z
+                        elif z < z_min:
+                            z_min = z
+            # in case object was deleted, but still in model objects list
+            except KeyError:
+                pass
+
+        # if we don't iterate through object_list, then we don't have values
+        # for x_min, x_max, etc, therefore we need to skip over setting bounds
+        if not first_time:
+            partitions.x_start = x_min
+            partitions.x_end = x_max
+            partitions.y_start = y_min
+            partitions.y_end = y_max
+            partitions.z_start = z_min
+            partitions.z_end = z_max
+
+        return {'FINISHED'}
+
+
 def transform_x_partition_boundary(self, context):
     """ Transform the partition object along the x-axis. """
 
@@ -378,8 +435,9 @@ def transform_x_partition_boundary(self, context):
     x_start = partitions.x_start
     x_end = partitions.x_end
     x_step = partitions.x_step
-    partitions.x_step = transform_partition_boundary(
-        self, context, x_start, x_end, x_step, 0)
+    partitions.x_step = check_partition_step(
+        self, context, x_start, x_end, x_step)
+    transform_partition_boundary(self, context, x_start, x_end, 0)
 
 
 def transform_y_partition_boundary(self, context):
@@ -389,8 +447,9 @@ def transform_y_partition_boundary(self, context):
     y_start = partitions.y_start
     y_end = partitions.y_end
     y_step = partitions.y_step
-    partitions.y_step = transform_partition_boundary(
-        self, context, y_start, y_end, y_step, 1)
+    partitions.y_step = check_partition_step(
+        self, context, y_start, y_end, y_step)
+    transform_partition_boundary(self, context, y_start, y_end, 1)
 
 
 def transform_z_partition_boundary(self, context):
@@ -400,11 +459,12 @@ def transform_z_partition_boundary(self, context):
     z_start = partitions.z_start
     z_end = partitions.z_end
     z_step = partitions.z_step
-    partitions.z_step = transform_partition_boundary(
-        self, context, z_start, z_end, z_step, 2)
+    partitions.z_step = check_partition_step(
+        self, context, z_start, z_end, z_step)
+    transform_partition_boundary(self, context, z_start, z_end, 2)
 
 
-def transform_partition_boundary(self, context, start, end, step, xyz_index):
+def transform_partition_boundary(self, context, start, end, xyz_index):
     """ Transform the partition object along the provided axis.
 
     Change the scaling and location of the cube that represents partition
@@ -412,31 +472,16 @@ def transform_partition_boundary(self, context, start, end, step, xyz_index):
 
     """
 
-    partitions = context.scene.mcell.partitions
     difference = end-start
     # Scale works this way, because default Cube is 2x2x2
     half_difference = scale = difference/2
     # The object center of the partition boundaries (i.e. the box)
     location = start + half_difference
-    # Ensure step length isn't larger than partition range
-    if abs(step) > abs(difference):
-        step = difference
-    # Make sure partition range and step length are compatible
-    # Good:
-    # "PARTITION_X = [[-1.0 TO 1.0 STEP 0.2]]" or
-    # "PARTITION_X = [[1.0 TO -1.0 STEP -0.2]]"
-    # Bad:
-    # "PARTITION_X = [[-1.0 TO 1.0 STEP -0.2]]" or
-    # "PARTITION_X = [[1.0 TO -1.0 STEP 0.2]]"
-    # x_scale < 0 means that x_start > x_end (e.g "1.0 TO -1.0")
-    if ((scale < 0 and step > 0) or (scale > 0 and step < 0)):
-        step *= -1
-    # Move and scale object representing boundaries
+    # Move the partition boundary object if it exists
     if "partitions" in bpy.data.objects:
         partition_object = bpy.data.objects["partitions"]
         partition_object.location[xyz_index] = location
         partition_object.scale[xyz_index] = scale
-    return step
 
 
 def check_x_partition_step(self, context):
@@ -484,7 +529,6 @@ def check_z_partition_step(self, context):
 def check_partition_step(self, context, start, end, step):
     """ Make sure the partition's step along the provided axis is valid. """
 
-    partitions = context.scene.mcell.partitions
     difference = end-start
     # Scale works this way, because default Cube is 2x2x2
     half_difference = scale = difference/2
@@ -494,6 +538,13 @@ def check_partition_step(self, context, start, end, step):
     if abs(step) > abs(difference):
         step = difference
     # Make sure partition range and step length are compatible
+    # Good:
+    # "PARTITION_X = [[-1.0 TO 1.0 STEP 0.2]]" or
+    # "PARTITION_X = [[1.0 TO -1.0 STEP -0.2]]"
+    # Bad:
+    # "PARTITION_X = [[-1.0 TO 1.0 STEP -0.2]]" or
+    # "PARTITION_X = [[1.0 TO -1.0 STEP 0.2]]"
+    # x_scale < 0 means that x_start > x_end (e.g "1.0 TO -1.0")
     if ((scale < 0 and step > 0) or (scale > 0 and step < 0)):
         step *= -1
     return step

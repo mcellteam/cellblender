@@ -338,9 +338,9 @@ class MCELL_PT_initialization(bpy.types.Panel):
                 row = box.row()
                 row.prop(mc.initialization, "degenerate_polygons")
                 row = box.row()
-                row.prop(mc.initialization, "negative_diffusion_constant")
-                row = box.row()
                 row.prop(mc.initialization, "missing_surface_orientation")
+                row = box.row()
+                row.prop(mc.initialization, "negative_diffusion_constant")
                 row = box.row()
                 row.prop(mc.initialization, "negative_reaction_rate")
                 row = box.row()
@@ -349,7 +349,7 @@ class MCELL_PT_initialization(bpy.types.Panel):
                 row.prop(mc.initialization, "high_reaction_probability")
                 if mc.initialization.high_reaction_probability != 'IGNORED':
                     row.prop(mc.initialization,
-                                "high_probability_threshold", slider=True)
+                             "high_probability_threshold", slider=True)
                 row = box.row(align=True)
                 row.prop(mc.initialization, "lifetime_too_short")
                 if mc.initialization.lifetime_too_short == 'WARNING':
@@ -395,12 +395,15 @@ class MCELL_PT_partitions(bpy.types.Panel):
             row.prop(mcell.partitions, "z_end")
             row.prop(mcell.partitions, "z_step")
 
+            if mcell.model_objects.object_list:
+                layout.operator("mcell.auto_generate_boundaries",
+                                icon="OUTLINER_OB_LATTICE")
             if not "partitions" in bpy.data.objects:
-                    layout.operator("mcell.create_partitions_object",
-                                    icon="OUTLINER_OB_LATTICE")
+                layout.operator("mcell.create_partitions_object",
+                                icon="OUTLINER_OB_LATTICE")
             else:
-                    layout.operator("mcell.remove_partitions_object",
-                                    icon="OUTLINER_OB_LATTICE")
+                layout.operator("mcell.remove_partitions_object",
+                                icon="OUTLINER_OB_LATTICE")
 
 
 class MCELL_PT_define_molecules(bpy.types.Panel):
