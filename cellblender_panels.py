@@ -427,7 +427,7 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
         col = row.column(align=True)
         col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
         col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
-        if len(mc.molecules.molecule_list) > 0:
+        if mc.molecules.molecule_list:
             mol = mc.molecules.molecule_list[mc.molecules.active_mol_index]
             if mc.molecules.status != '':
                 row = layout.row()
@@ -435,19 +435,22 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
             layout.prop(mol, "name")
             layout.prop(mol, "type")
             layout.prop(mol, "diffusion_constant_str")
-            if mc.molecules.hide:
-                row = layout.row(align=True)
-                row.alignment = 'LEFT'
-                row.prop(mc.molecules, "hide", icon='TRIA_RIGHT',
+            
+            box = layout.box()
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
+            if not mc.molecules.advanced:
+                row.prop(mc.molecules, "advanced", icon='TRIA_RIGHT',
                          text='Advanced Options', emboss=False)
             else:
-                row = layout.row(align=True)
-                row.alignment = 'LEFT'
-                row.prop(mc.molecules, "hide", icon='TRIA_DOWN',
+                row.prop(mc.molecules, "advanced", icon='TRIA_DOWN',
                          text='Advanced Options', emboss=False)
-                layout.prop(mol, "target_only")
-                layout.prop(mol, "custom_time_step_str")
-                layout.prop(mol, "custom_space_step_str")
+                row = box.row()
+                row.prop(mol, "target_only")
+                row = box.row()
+                row.prop(mol, "custom_time_step_str")
+                row = box.row()
+                row.prop(mol, "custom_space_step_str")
 
 
 class MCELL_PT_define_reactions(bpy.types.Panel):
@@ -551,7 +554,7 @@ class MCELL_PT_define_surface_class_properties(bpy.types.Panel):
                     row.label(text=surf_class.surf_class_props_status,
                               icon='ERROR')
                 layout.prop_search(surf_class_props, 'molecule', mc.molecules,
-                                   "molecule_list")
+                                   "molecule_list", icon='FORCE_LENNARDJONES')
                 layout.prop(surf_class_props, "surf_class_orient")
                 layout.prop(surf_class_props, "surf_class_type")
                 if (surf_class_props.surf_class_type == 'CLAMP_CONCENTRATION'):
@@ -590,16 +593,19 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
                 mod_surf_regions.active_mod_surf_regions_index]
             row = layout.row()
             row.prop_search(active_mod_surf_regions, "surf_class_name",
-                            mc.surface_classes, "surf_class_list")
+                            mc.surface_classes, "surf_class_list",
+                            icon='FACESEL_HLT')
             row = layout.row()
             row.prop_search(active_mod_surf_regions, "object_name",
-                            mc.model_objects, "object_list")
+                            mc.model_objects, "object_list",
+                            icon='MESH_ICOSPHERE')
             if active_mod_surf_regions.object_name:
                 try:
                     regions = bpy.data.objects[
                         active_mod_surf_regions.object_name].mcell.regions
                     layout.prop_search(active_mod_surf_regions, "region_name",
-                                       regions, "region_list")
+                                       regions, "region_list",
+                                       icon='FACESEL_HLT')
                 except KeyError:
                     pass
 
@@ -632,7 +638,7 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                 row.label(text=mc.release_sites.status, icon='ERROR')
             layout.prop(rel, "name")
             layout.prop_search(rel, 'molecule', mc.molecules, "molecule_list",
-                               text='Molecule:')
+                               text='Molecule:', icon='FORCE_LENNARDJONES')
             if rel.molecule in mc.molecules.molecule_list:
                 if mc.molecules.molecule_list[rel.molecule].type == '2D':
                     layout.prop(rel, "orient")

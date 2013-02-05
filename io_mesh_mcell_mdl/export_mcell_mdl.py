@@ -521,7 +521,7 @@ def save_geometry(context, out_file):
                 matrix = data_object.matrix_world
                 vertices = mesh.vertices
                 for v in vertices:
-                    t_vec = v.co * matrix
+                    t_vec = matrix * v.co
                     out_file.write('    [ %.15g, %.15g, %.15g ]\n' %
                                    (t_vec.x, t_vec.y, t_vec.z))
 

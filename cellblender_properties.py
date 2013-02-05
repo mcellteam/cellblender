@@ -263,7 +263,7 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
     mol_viz_enable = BoolProperty(
         name="Enable Molecule Vizualization",
         description="Disable for faster animation preview",
-        default=True, update=cellblender_operators.MolVizUpdate)
+        default=True, update=cellblender_operators.mol_viz_update)
     color_list = CollectionProperty(
         type=MCellFloatVectorProperty, name="Molecule Color List")
     color_index = IntProperty(name="Color Index", default=0)
@@ -518,7 +518,7 @@ class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
         type=MCellMoleculeProperty, name="Molecule List")
     active_mol_index = IntProperty(name="Active Molecule Index", default=0)
     status = StringProperty(name="Status")
-    hide = bpy.props.BoolProperty(default=True)
+    advanced = bpy.props.BoolProperty(default=False)
 
 
 class MCellReactionsPanelProperty(bpy.types.PropertyGroup):

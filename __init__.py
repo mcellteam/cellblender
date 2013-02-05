@@ -28,7 +28,7 @@ bl_info = {
     "description": "CellBlender Modeling System for MCell",
     "warning": "",
     "wiki_url": "http://www.mcell.org",
-    "tracker_url": "",
+    "tracker_url": "http://code.google.com/p/cellblender/issues/list",
     "category": "Cell Modeling"
 }
 
