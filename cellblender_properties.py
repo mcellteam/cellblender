@@ -64,8 +64,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         name="Molecule Name", default="Molecule",
         update=cellblender_operators.check_molecule)
     type_enum = [
-        ('2D', 'Surface Molecule', ''),
-        ('3D', 'Volume Molecule', '')]
+        ('2D', "Surface Molecule", ""),
+        ('3D', "Volume Molecule", "")]
     type = EnumProperty(items=type_enum, name="Molecule Type")
     diffusion_constant = FloatProperty(name="Diffusion Constant")
     diffusion_constant_str = StringProperty(
@@ -103,20 +103,22 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
     products = StringProperty(
         name="Products", update=cellblender_operators.check_reaction)
     type_enum = [
-        ('irreversible', '->', ''),
-        ('reversible', '<->', '')]
+        ('irreversible', "->", ""),
+        ('reversible', "<->", "")]
     type = EnumProperty(
         items=type_enum, name="Reaction Type",
         update=cellblender_operators.check_reaction)
     fwd_rate = FloatProperty(name="Forward Rate")
     fwd_rate_str = StringProperty(
         name="Forward Rate",
-        description="Forward Rate Units: sec^-1 (unimolecular), M^-1*sec^-1 (bimolecular)",
+        description="Forward Rate Units: sec^-1 (unimolecular),"
+                    " M^-1*sec^-1 (bimolecular)",
         update=cellblender_operators.update_fwd_rate)
     bkwd_rate = FloatProperty(name="Backward Rate")
     bkwd_rate_str = StringProperty(
         name="Backward Rate",
-        description="Backward Rate Units: sec^-1 (unimolecular), M^-1*sec^-1 (bimolecular)",
+        description="Backward Rate Units: sec^-1 (unimolecular),"
+                    " M^-1*sec^-1 (bimolecular)",
         update=cellblender_operators.update_bkwd_rate)
 
 
@@ -134,9 +136,9 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         ('OBJECT', 'Object/Region', '')]
     shape = EnumProperty(items=shape_enum, name="Release Shape")
     orient_enum = [
-        ("'", 'Top Front', ''),
-        (",", 'Top Back', ''),
-        (';', 'Mixed', '')]
+        ('\'', "Top Front", ""),
+        (',', "Top Back", ""),
+        (';', "Mixed", "")]
     orient = bpy.props.EnumProperty(
         items=orient_enum, name="Initial Orientation")
     object_expr = StringProperty(
@@ -147,9 +149,9 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     probability = FloatProperty(name="Release Probability", precision=4,
                                 default=1.0, min=0.0, max=1.0)
     quantity_type_enum = [
-        ('NUMBER_TO_RELEASE', 'Constant Number', ''),
-        ('GAUSSIAN_RELEASE_NUMBER', 'Gaussian Number', ''),
-        ('DENSITY', 'Concentration/Density', '')]
+        ('NUMBER_TO_RELEASE', "Constant Number", ""),
+        ('GAUSSIAN_RELEASE_NUMBER', "Gaussian Number", ""),
+        ('DENSITY', "Concentration/Density", "")]
     quantity_type = EnumProperty(items=quantity_type_enum,
                                  name="Quantity Type")
     quantity = FloatProperty(name="Quantity to Release", precision=4, min=0.0)
@@ -173,17 +175,17 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         name="Molecule Name:",
         update=cellblender_operators.check_surf_class_props)
     surf_class_orient_enum = [
-        ("'", 'Top/Front', ''),
-        (",", 'Bottom/Back', ''),
-        (";", 'Ignore', '')]
+        ('\'', "Top/Front", ""),
+        (',', "Bottom/Back", ""),
+        (';', "Ignore", "")]
     surf_class_orient = EnumProperty(
         items=surf_class_orient_enum, name="Orientation",
         update=cellblender_operators.check_surf_class_props)
     surf_class_type_enum = [
-        ('ABSORPTIVE', 'Absorptive', ''),
-        ('TRANSPARENT', 'Transparent', ''),
-        ('REFLECTIVE', 'Reflective', ''),
-        ('CLAMP_CONCENTRATION', 'Clamp Concentration', '')]
+        ('ABSORPTIVE', "Absorptive", ""),
+        ('TRANSPARENT', "Transparent", ""),
+        ('REFLECTIVE', "Reflective", ""),
+        ('CLAMP_CONCENTRATION', "Clamp Concentration", "")]
     surf_class_type = EnumProperty(
         items=surf_class_type_enum, name="Type",
         update=cellblender_operators.check_surf_class_props)
@@ -226,11 +228,11 @@ class MCellProjectPanelProperty(bpy.types.PropertyGroup):
     base_name = StringProperty(name="Project Base Name")
     project_dir = StringProperty(name="Project Directory")
     export_format_enum = [
-        ('mcell_mdl_unified', 'Single Unified MCell MDL File', ''),
-        ('mcell_mdl_modular', 'Modular MCell MDL Files', '')]
+        ('mcell_mdl_unified', "Single Unified MCell MDL File", ""),
+        ('mcell_mdl_modular', "Modular MCell MDL Files", "")]
     export_format = EnumProperty(items=export_format_enum,
                                  name="Export Format",
-                                 default="mcell_mdl_modular")
+                                 default='mcell_mdl_modular')
 #    export_selection_only = BoolProperty(name="Export Selected Objects Only",
 #                                         default=True)
 
@@ -243,13 +245,13 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
     """
 
     mol_file_dir = StringProperty(
-        name="Molecule File Dir", subtype="NONE")
+        name="Molecule File Dir", subtype='NONE')
     mol_file_list = CollectionProperty(
         type=MCellStringProperty, name="Molecule File Name List")
     mol_file_num = IntProperty(
         name="Number of Molecule Files", default=0)
     mol_file_name = StringProperty(
-        name="Current Molecule File Name", subtype="NONE")
+        name="Current Molecule File Name", subtype='NONE')
     mol_file_index = IntProperty(name="Current Molecule File Index", default=0)
     mol_file_start_index = IntProperty(
         name="Molecule File Start Index", default=0)
@@ -328,10 +330,10 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         description="Surface molecule products can be created at N distance",
         update=cellblender_operators.update_vacancy_search_distance)
     microscopic_reversibility_enum = [
-        ('ON', 'On', ''),
-        ('OFF', 'Off', ''),
-        ('SURFACE_ONLY', 'Surface Only', ''),
-        ('VOLUME_ONLY', 'Volume Only', '')]
+        ('ON', "On", ""),
+        ('OFF', "Off", ""),
+        ('SURFACE_ONLY', "Surface Only", ""),
+        ('VOLUME_ONLY', "Volume Only", "")]
     microscopic_reversibility = EnumProperty(
         items=microscopic_reversibility_enum, name="Microscopic Reversibility",
         description="If false, more efficient but less accurate reactions",
@@ -339,17 +341,17 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
     # Notifications
     all_notifications_enum = [
-        ('INDIVIDUAL', 'Set Individually', ''),
-        ('ON', 'On', ''),
-        ('OFF', 'Off', '')]
+        ('INDIVIDUAL', "Set Individually", ""),
+        ('ON', "On", ""),
+        ('OFF', "Off", "")]
     all_notifications = EnumProperty(
         items=all_notifications_enum, name="All Notifications",
         description="If on, all notifications will be set to on",
         default='INDIVIDUAL')
     diffusion_constant_report_enum = [
-        ('BRIEF', 'Brief', ''),
-        ('ON', 'On', ''),
-        ('OFF', 'Off', '')]
+        ('BRIEF', "Brief", ""),
+        ('ON', "On", ""),
+        ('OFF', "Off", "")]
     diffusion_constant_report = EnumProperty(
         items=diffusion_constant_report_enum, name="Diffusion Constant Report")
     file_output_report = BoolProperty(
@@ -371,9 +373,9 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         description="If on, the partition locations will be printed",
         default=False)
     probability_report_enum = [
-        ('ON', 'On', ''),
-        ('OFF', 'Off', ''),
-        ('THRESHOLD', 'Threshold', '')]
+        ('ON', "On", ""),
+        ('OFF', "Off", ""),
+        ('THRESHOLD', "Threshold", "")]
     probability_report = EnumProperty(
         items=probability_report_enum, name="Probability Report", default='ON')
     probability_report_threshold = bpy.props.FloatProperty(
@@ -401,25 +403,25 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
     # Warnings
     all_warnings_enum = [
-        ('INDIVIDUAL', 'Set Individually', ''),
-        ('IGNORED', 'Ignored', ''),
-        ('WARNING', 'Warning', ''),
-        ('ERROR', 'Error', '')]
+        ('INDIVIDUAL', "Set Individually", ""),
+        ('IGNORED', "Ignored", ""),
+        ('WARNING', "Warning", ""),
+        ('ERROR', "Error", "")]
     all_warnings = EnumProperty(
         items=all_warnings_enum, name="All Warnings",
         description="If on, all notifications will be set to on",
         default='INDIVIDUAL')
     degenerate_polygons_enum = [
-        ('IGNORED', 'Ignored', ''),
-        ('WARNING', 'Warning', ''),
-        ('ERROR', 'Error', '')]
+        ('IGNORED', "Ignored", ""),
+        ('WARNING', "Warning", ""),
+        ('ERROR', "Error", "")]
     degenerate_polygons = EnumProperty(
         items=degenerate_polygons_enum, name="Degenerate Polygons",
         default='WARNING')
     high_reaction_probability_enum = [
-        ('IGNORED', 'Ignored', ''),
-        ('WARNING', 'Warning', ''),
-        ('ERROR', 'Error', '')]
+        ('IGNORED', "Ignored", ""),
+        ('WARNING', "Warning", ""),
+        ('ERROR', "Error", "")]
     high_reaction_probability = EnumProperty(
         items=high_reaction_probability_enum, name="High Reaction Probability",
         default='IGNORED')
@@ -427,8 +429,8 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         name="High Probability Threshold", min=0.0, max=1.0, default=1.0,
         precision=2)
     lifetime_too_short_enum = [
-        ('IGNORED', 'Ignored', ''),
-        ('WARNING', 'Warning', '')]
+        ('IGNORED', "Ignored", ""),
+        ('WARNING', "Warning", "")]
     lifetime_too_short = EnumProperty(
         items=lifetime_too_short_enum, name="Lifetime Too Short",
         default='WARNING')
@@ -436,8 +438,8 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         name="Lifetime Threshold", min=0, default=50)
     lifetime_threshold = IntProperty(name="Threshold", default=50)
     missed_reactions_enum = [
-        ('IGNORED', 'Ignored', ''),
-        ('WARNING', 'Warning', '')]
+        ('IGNORED', "Ignored", ""),
+        ('WARNING', "Warning", "")]
     missed_reactions = EnumProperty(
         items=missed_reactions_enum, name="Missed Reactions",
         default='WARNING')
@@ -445,31 +447,31 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         name="Threshold", min=0.0, max=1.0, default=0.001,
         precision=4)
     negative_diffusion_constant_enum = [
-        ('IGNORED', 'Ignored', ''),
-        ('WARNING', 'Warning', ''),
-        ('ERROR', 'Error', '')]
+        ('IGNORED', "Ignored", ""),
+        ('WARNING', "Warning", ""),
+        ('ERROR', "Error", "")]
     negative_diffusion_constant = EnumProperty(
         items=negative_diffusion_constant_enum,
         name="Negative Diffusion Constant", default='WARNING')
     missing_surface_orientation_enum = [
-        ('IGNORED', 'Ignored', ''),
-        ('WARNING', 'Warning', ''),
-        ('ERROR', 'Error', '')]
+        ('IGNORED', "Ignored", ""),
+        ('WARNING', "Warning", ""),
+        ('ERROR', "Error", "")]
     missing_surface_orientation = EnumProperty(
         items=missing_surface_orientation_enum,
         name="Missing Surface Orientation",
         default='ERROR')
     negative_reaction_rate_enum = [
-        ('IGNORED', 'Ignored', ''),
-        ('WARNING', 'Warning', ''),
-        ('ERROR', 'Error', '')]
+        ('IGNORED', "Ignored", ""),
+        ('WARNING', "Warning", ""),
+        ('ERROR', "Error", "")]
     negative_reaction_rate = EnumProperty(
         items=negative_reaction_rate_enum, name="Negative Reaction Rate",
         default='WARNING')
     useless_volume_orientation_enum = [
-        ('IGNORED', 'Ignored', ''),
-        ('WARNING', 'Warning', ''),
-        ('ERROR', 'Error', '')]
+        ('IGNORED', "Ignored", ""),
+        ('WARNING', "Warning", ""),
+        ('ERROR', "Error", "")]
     useless_volume_orientation = EnumProperty(
         items=useless_volume_orientation_enum,
         name="Useless Volume Orientation", default='WARNING')
@@ -573,17 +575,18 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
-    glyph_lib = __file__.replace(__file__.split('/')[len(__file__.split('/'))-1], '')+'glyph_library.blend/Mesh/'
+    glyph_lib = __file__.replace(__file__.split('/')[len(
+        __file__.split("/"))-1], "")+"glyph_library.blend/Mesh/"
     glyph_enum = [
-        ('Cone', 'Cone', ''),
-        ('Cube', 'Cube', ''),
-        ('Cylinder', 'Cylinder', ''),
-        ('Icosahedron', 'Icosahedron', ''),
-        ('Octahedron', 'Octahedron', ''),
-        ('Receptor', 'Receptor', ''),
-        ('Sphere_1', 'Sphere_1', ''),
-        ('Sphere_2', 'Sphere_2', ''),
-        ('Torus', 'Torus', '')]
+        ('Cone', "Cone", ""),
+        ('Cube', "Cube", ""),
+        ('Cylinder', "Cylinder", ""),
+        ('Icosahedron', "Icosahedron", ""),
+        ('Octahedron', "Octahedron", ""),
+        ('Receptor', "Receptor", ""),
+        ('Sphere_1', "Sphere_1", ""),
+        ('Sphere_2', "Sphere_2", ""),
+        ('Torus', "Torus", "")]
     glyph = EnumProperty(items=glyph_enum, name="Molecule Shapes")
     status = StringProperty(name="Status")
 

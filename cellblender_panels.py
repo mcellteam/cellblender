@@ -48,23 +48,24 @@ class MCELL_PT_project_settings(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
 
         row = layout.row()
         row.operator("mcell.set_project_dir",
-                     text="Set CellBlender Project Directory", icon="FILESEL")
+                     text="Set CellBlender Project Directory", icon='FILESEL')
         row = layout.row()
-        row.label(text="Project Directory: "+mc.project_settings.project_dir)
+        row.label(
+            text="Project Directory: "+mcell.project_settings.project_dir)
         row = layout.row()
-        layout.prop(mc.project_settings, "base_name")
+        layout.prop(mcell.project_settings, "base_name")
         layout.separator()
         row = layout.row()
-        row.label(text="Export Project: "+mc.project_settings.base_name)
+        row.label(text="Export Project: "+mcell.project_settings.base_name)
         row = layout.row()
-        layout.prop(mc.project_settings, "export_format")
+        layout.prop(mcell.project_settings, "export_format")
         row = layout.row()
         row.operator("mcell.export_project", text="Export CellBlender Project",
-                     icon="FILESEL")
+                     icon='FILESEL')
 
 
 class MCELL_PT_model_objects(bpy.types.Panel):
@@ -77,14 +78,14 @@ class MCELL_PT_model_objects(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
 
         row = layout.row()
         row.label(text="Model Objects:", icon='MESH_ICOSPHERE')
         row = layout.row()
         col = row.column()
-        col.template_list(mc.model_objects, "object_list", mc.model_objects,
-                          "active_obj_index", rows=2)
+        col.template_list(mcell.model_objects, "object_list",
+                          mcell.model_objects, "active_obj_index", rows=2)
         col = row.column(align=True)
 #        col.active = (len(context.selected_objects) == 1)
         col.operator("mcell.model_objects_add", icon='ZOOMIN', text="")
@@ -107,7 +108,7 @@ class MCELL_PT_sim_control(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
 
         row = layout.row()
 '''
@@ -123,28 +124,28 @@ class MCELL_PT_viz_results(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
 
         row = layout.row()
         row.operator("mcell.set_mol_viz_dir",
                      text="Set Molecule Viz Directory", icon="FILESEL")
         row = layout.row()
-        row.label(text="Molecule Viz Directory: "+mc.mol_viz.mol_file_dir)
+        row.label(text="Molecule Viz Directory: "+mcell.mol_viz.mol_file_dir)
         row = layout.row()
-        row.label(text="Current Molecule File: "+mc.mol_viz.mol_file_name)
+        row.label(text="Current Molecule File: "+mcell.mol_viz.mol_file_name)
         row = layout.row()
-        row.template_list(mc.mol_viz, "mol_file_list", mc.mol_viz,
+        row.template_list(mcell.mol_viz, "mol_file_list", mcell.mol_viz,
                           "mol_file_index", rows=2)
         row = layout.row()
-        layout.prop(mc.mol_viz, "mol_viz_enable")
+        layout.prop(mcell.mol_viz, "mol_viz_enable")
 #        row = layout.row()
-#        layout.prop(mc.mol_viz, "render_and_save")
+#        layout.prop(mcell.mol_viz, "render_and_save")
 
 #        col = row.column(align=True)
 #        col.operator("mcell.mol_viz_prev", icon="PLAY_REVERSE", text="")
 #        col = row.column(align=True)
 #        col.operator("mcell.mol_viz_set_index",
-#                     text=str(mc.mol_viz.mol_file_index))
+#                     text=str(mcell.mol_viz.mol_file_index))
 #        col = row.column(align=True)
 #        col.operator("mcell.mol_viz_next", icon="PLAY", text="")
 
@@ -159,7 +160,7 @@ class MCELL_PT_utilities(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
 
         row = layout.row()
 #        row.operator("mcell.vertex_groups_to_regions",
@@ -176,9 +177,9 @@ class MCELL_PT_object_selector(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         scn = context.scene
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
 
-        layout.prop(mc.object_selector, "filter", text="Object Filter:")
+        layout.prop(mcell.object_selector, "filter", text="Object Filter:")
         row = layout.row(align=True)
         row.operator("mcell.select_filtered", text="Select Filtered")
         row.operator("mcell.deselect_filtered", text="Deselect Filtered")
@@ -193,36 +194,36 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         scn = context.scene
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
 
         row = layout.row()
         row.operator("mcell.meshalyzer", text="Analyze Mesh",
-                     icon="MESH_ICOSPHERE")
+                     icon='MESH_ICOSPHERE')
 
-        if (mc.meshalyzer.status != ''):
+        if (mcell.meshalyzer.status != ""):
             row = layout.row()
-            row.label(text=mc.meshalyzer.status, icon="ERROR")
+            row.label(text=mcell.meshalyzer.status, icon='ERROR')
         row = layout.row()
-        row.label(text="Object Name: %s" % (mc.meshalyzer.object_name))
+        row.label(text="Object Name: %s" % (mcell.meshalyzer.object_name))
         row = layout.row()
-        row.label(text="Vertices: %d" % (mc.meshalyzer.vertices))
+        row.label(text="Vertices: %d" % (mcell.meshalyzer.vertices))
         row = layout.row()
-        row.label(text="Edges: %d" % (mc.meshalyzer.edges))
+        row.label(text="Edges: %d" % (mcell.meshalyzer.edges))
         row = layout.row()
-        row.label(text="Faces: %d" % (mc.meshalyzer.faces))
+        row.label(text="Faces: %d" % (mcell.meshalyzer.faces))
         row = layout.row()
-        row.label(text="Surface Area: %.5g" % (mc.meshalyzer.area))
+        row.label(text="Surface Area: %.5g" % (mcell.meshalyzer.area))
         row = layout.row()
-        row.label(text="Volume: %.5g" % (mc.meshalyzer.volume))
+        row.label(text="Volume: %.5g" % (mcell.meshalyzer.volume))
 
         row = layout.row()
         row.label(text="Mesh Topology:")
         row = layout.row()
-        row.label(text="      %s" % (mc.meshalyzer.watertight))
+        row.label(text="      %s" % (mcell.meshalyzer.watertight))
         row = layout.row()
-        row.label(text="      %s" % (mc.meshalyzer.manifold))
+        row.label(text="      %s" % (mcell.meshalyzer.manifold))
         row = layout.row()
-        row.label(text="      %s" % (mc.meshalyzer.normal_status))
+        row.label(text="      %s" % (mcell.meshalyzer.normal_status))
 
 
 '''
@@ -235,7 +236,7 @@ class MCELL_PT_user_model_parameters(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
 
         row = layout.row()
 '''
@@ -250,121 +251,121 @@ class MCELL_PT_initialization(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
 
-        layout.prop(mc.initialization, "iterations")
-        layout.prop(mc.initialization, "time_step_str")
+        layout.prop(mcell.initialization, "iterations")
+        layout.prop(mcell.initialization, "time_step_str")
 
         # Advanced Options
         box = layout.box()
         row = box.row(align=True)
         row.alignment = 'LEFT'
-        if mc.initialization.advanced:
-            row.prop(mc.initialization, "advanced", icon='TRIA_DOWN',
-                     text='Advanced Options', emboss=False)
+        if mcell.initialization.advanced:
+            row.prop(mcell.initialization, "advanced", icon='TRIA_DOWN',
+                     text="Advanced Options", emboss=False)
             row = box.row()
-            row.prop(mc.initialization, "time_step_max_str")
+            row.prop(mcell.initialization, "time_step_max_str")
             row = box.row()
-            row.prop(mc.initialization, "space_step_str")
+            row.prop(mcell.initialization, "space_step_str")
             row = box.row()
-            row.prop(mc.initialization, "interaction_radius_str")
+            row.prop(mcell.initialization, "interaction_radius_str")
             row = box.row()
-            row.prop(mc.initialization, "radial_directions_str")
+            row.prop(mcell.initialization, "radial_directions_str")
             row = box.row()
-            row.prop(mc.initialization, "radial_subdivisions_str")
+            row.prop(mcell.initialization, "radial_subdivisions_str")
             row = box.row()
-            row.prop(mc.initialization, "vacancy_search_distance_str")
+            row.prop(mcell.initialization, "vacancy_search_distance_str")
             row = box.row()
-            row.prop(mc.initialization, "surface_grid_density")
+            row.prop(mcell.initialization, "surface_grid_density")
             row = box.row()
-            row.prop(mc.initialization, "accurate_3d_reactions")
+            row.prop(mcell.initialization, "accurate_3d_reactions")
             row = box.row()
-            row.prop(mc.initialization, "center_molecules_grid")
+            row.prop(mcell.initialization, "center_molecules_grid")
             row = box.row()
-            row.prop(mc.initialization, "microscopic_reversibility")
+            row.prop(mcell.initialization, "microscopic_reversibility")
         else:
-            row.prop(mc.initialization, "advanced", icon='TRIA_RIGHT',
-                     text='Advanced Options', emboss=False)
+            row.prop(mcell.initialization, "advanced", icon='TRIA_RIGHT',
+                     text="Advanced Options", emboss=False)
 
         # Notifications
         #box = layout.box(align=True)
         box = layout.box()
         row = box.row(align=True)
         row.alignment = 'LEFT'
-        if mc.initialization.notifications:
-            row.prop(mc.initialization, "notifications", icon='TRIA_DOWN',
-                     text='Notifications', emboss=False)
+        if mcell.initialization.notifications:
+            row.prop(mcell.initialization, "notifications", icon='TRIA_DOWN',
+                     text="Notifications", emboss=False)
             row = box.row()
-            row.prop(mc.initialization, "all_notifications")
-            if mc.initialization.all_notifications == 'INDIVIDUAL':
+            row.prop(mcell.initialization, "all_notifications")
+            if mcell.initialization.all_notifications == 'INDIVIDUAL':
                 row = box.row(align=True)
-                row.prop(mc.initialization, "probability_report")
-                if mc.initialization.probability_report == 'THRESHOLD':
+                row.prop(mcell.initialization, "probability_report")
+                if mcell.initialization.probability_report == 'THRESHOLD':
                     row.prop(
-                        mc.initialization, "probability_report_threshold",
+                        mcell.initialization, "probability_report_threshold",
                         slider=True)
                 row = box.row()
-                row.prop(mc.initialization, "diffusion_constant_report")
+                row.prop(mcell.initialization, "diffusion_constant_report")
                 row = box.row()
-                row.prop(mc.initialization, "file_output_report")
+                row.prop(mcell.initialization, "file_output_report")
                 row = box.row()
-                row.prop(mc.initialization, "final_summary")
+                row.prop(mcell.initialization, "final_summary")
                 row = box.row()
-                row.prop(mc.initialization, "iteration_report")
+                row.prop(mcell.initialization, "iteration_report")
                 row = box.row()
-                row.prop(mc.initialization, "partition_location_report")
+                row.prop(mcell.initialization, "partition_location_report")
                 row = box.row()
-                row.prop(mc.initialization, "varying_probability_report")
+                row.prop(mcell.initialization, "varying_probability_report")
                 row = box.row()
-                row.prop(mc.initialization, "progress_report")
+                row.prop(mcell.initialization, "progress_report")
                 row = box.row()
-                row.prop(mc.initialization, "release_event_report")
+                row.prop(mcell.initialization, "release_event_report")
                 row = box.row()
-                row.prop(mc.initialization, "molecule_collision_report")
+                row.prop(mcell.initialization, "molecule_collision_report")
         else:
-            row.prop(mc.initialization, "notifications", icon='TRIA_RIGHT',
-                     text='Notifications', emboss=False)
+            row.prop(mcell.initialization, "notifications", icon='TRIA_RIGHT',
+                     text="Notifications", emboss=False)
 
         # Warnings
         box = layout.box()
         row = box.row(align=True)
         row.alignment = 'LEFT'
-        if mc.initialization.warnings:
-            row.prop(mc.initialization, "warnings", icon='TRIA_DOWN',
-                     text='Warnings', emboss=False)
+        if mcell.initialization.warnings:
+            row.prop(mcell.initialization, "warnings", icon='TRIA_DOWN',
+                     text="Warnings", emboss=False)
             row = box.row()
-            row.prop(mc.initialization, "all_warnings")
-            if mc.initialization.all_warnings == 'INDIVIDUAL':
+            row.prop(mcell.initialization, "all_warnings")
+            if mcell.initialization.all_warnings == 'INDIVIDUAL':
                 row = box.row()
-                row.prop(mc.initialization, "degenerate_polygons")
+                row.prop(mcell.initialization, "degenerate_polygons")
                 row = box.row()
-                row.prop(mc.initialization, "missing_surface_orientation")
+                row.prop(mcell.initialization, "missing_surface_orientation")
                 row = box.row()
-                row.prop(mc.initialization, "negative_diffusion_constant")
+                row.prop(mcell.initialization, "negative_diffusion_constant")
                 row = box.row()
-                row.prop(mc.initialization, "negative_reaction_rate")
+                row.prop(mcell.initialization, "negative_reaction_rate")
                 row = box.row()
-                row.prop(mc.initialization, "useless_volume_orientation")
+                row.prop(mcell.initialization, "useless_volume_orientation")
                 row = box.row(align=True)
-                row.prop(mc.initialization, "high_reaction_probability")
-                if mc.initialization.high_reaction_probability != 'IGNORED':
-                    row.prop(mc.initialization,
+                row.prop(mcell.initialization, "high_reaction_probability")
+                if mcell.initialization.high_reaction_probability != 'IGNORED':
+                    row.prop(mcell.initialization,
                              "high_probability_threshold", slider=True)
                 row = box.row(align=True)
-                row.prop(mc.initialization, "lifetime_too_short")
-                if mc.initialization.lifetime_too_short == 'WARNING':
-                    row.prop(mc.initialization, "lifetime_threshold")
+                row.prop(mcell.initialization, "lifetime_too_short")
+                if mcell.initialization.lifetime_too_short == 'WARNING':
+                    row.prop(mcell.initialization, "lifetime_threshold")
                 row = box.row(align=True)
-                row.prop(mc.initialization, "missed_reactions")
-                if mc.initialization.missed_reactions == 'WARNING':
-                    row.prop(mc.initialization, "missed_reaction_threshold")
+                row.prop(mcell.initialization, "missed_reactions")
+                if mcell.initialization.missed_reactions == 'WARNING':
+                    row.prop(mcell.initialization, "missed_reaction_threshold")
         else:
-            row.prop(mc.initialization, "warnings", icon='TRIA_RIGHT',
-                     text='Warnings', emboss=False)
+            row.prop(mcell.initialization, "warnings", icon='TRIA_RIGHT',
+                     text="Warnings", emboss=False)
 
-        if (mc.initialization.status != ''):
+        if (mcell.initialization.status != ""):
             row = layout.row()
-            row.label(text=mc.initialization.status, icon="ERROR")
+            row.label(text=mcell.initialization.status, icon='ERROR')
 
 
 class MCELL_PT_partitions(bpy.types.Panel):
@@ -397,13 +398,13 @@ class MCELL_PT_partitions(bpy.types.Panel):
 
             if mcell.model_objects.object_list:
                 layout.operator("mcell.auto_generate_boundaries",
-                                icon="OUTLINER_OB_LATTICE")
+                                icon='OUTLINER_OB_LATTICE')
             if not "partitions" in bpy.data.objects:
                 layout.operator("mcell.create_partitions_object",
-                                icon="OUTLINER_OB_LATTICE")
+                                icon='OUTLINER_OB_LATTICE')
             else:
                 layout.operator("mcell.remove_partitions_object",
-                                icon="OUTLINER_OB_LATTICE")
+                                icon='OUTLINER_OB_LATTICE')
 
 
 class MCELL_PT_define_molecules(bpy.types.Panel):
@@ -416,35 +417,36 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
 
         row = layout.row()
         row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
         row = layout.row()
         col = row.column()
-        col.template_list(mc.molecules, "molecule_list", mc.molecules,
+        col.template_list(mcell.molecules, "molecule_list", mcell.molecules,
                           "active_mol_index", rows=2)
         col = row.column(align=True)
         col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
         col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
-        if mc.molecules.molecule_list:
-            mol = mc.molecules.molecule_list[mc.molecules.active_mol_index]
-            if mc.molecules.status != '':
+        if mcell.molecules.molecule_list:
+            mol = mcell.molecules.molecule_list[
+                mcell.molecules.active_mol_index]
+            if mcell.molecules.status != "":
                 row = layout.row()
-                row.label(text=mc.molecules.status, icon='ERROR')
+                row.label(text=mcell.molecules.status, icon='ERROR')
             layout.prop(mol, "name")
             layout.prop(mol, "type")
             layout.prop(mol, "diffusion_constant_str")
-            
+
             box = layout.box()
             row = box.row(align=True)
             row.alignment = 'LEFT'
-            if not mc.molecules.advanced:
-                row.prop(mc.molecules, "advanced", icon='TRIA_RIGHT',
-                         text='Advanced Options', emboss=False)
+            if not mcell.molecules.advanced:
+                row.prop(mcell.molecules, "advanced", icon='TRIA_RIGHT',
+                         text="Advanced Options", emboss=False)
             else:
-                row.prop(mc.molecules, "advanced", icon='TRIA_DOWN',
-                         text='Advanced Options', emboss=False)
+                row.prop(mcell.molecules, "advanced", icon='TRIA_DOWN',
+                         text="Advanced Options", emboss=False)
                 row = box.row()
                 row.prop(mol, "target_only")
                 row = box.row()
@@ -462,19 +464,20 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
 
         row = layout.row()
         row.label(text="Defined Reactions:", icon='FORCE_LENNARDJONES')
         row = layout.row()
         col = row.column()
-        col.template_list(mc.reactions, "reaction_list", mc.reactions,
+        col.template_list(mcell.reactions, "reaction_list", mcell.reactions,
                           "active_rxn_index", rows=2)
         col = row.column(align=True)
         col.operator("mcell.reaction_add", icon='ZOOMIN', text="")
         col.operator("mcell.reaction_remove", icon='ZOOMOUT', text="")
-        if len(mc.reactions.reaction_list) > 0:
-            rxn = mc.reactions.reaction_list[mc.reactions.active_rxn_index]
+        if len(mcell.reactions.reaction_list) > 0:
+            rxn = mcell.reactions.reaction_list[
+                mcell.reactions.active_rxn_index]
             layout.prop(rxn, "reactants")
             layout.prop(rxn, "type")
             layout.prop(rxn, "products")
@@ -483,9 +486,9 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
                 layout.prop(rxn, "bkwd_rate_str")
             layout.prop(rxn, "rxn_name")
 
-        if mc.reactions.status != '':
+        if mcell.reactions.status != "":
             row = layout.row()
-            row.label(text=mc.reactions.status, icon="ERROR")
+            row.label(text=mcell.reactions.status, icon='ERROR')
 
 
 class MCELL_PT_define_surface_classes(bpy.types.Panel):
@@ -510,7 +513,7 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
         if len(surf_class.surf_class_list) > 0:
             active_surf_class = surf_class.surf_class_list[
                 surf_class.active_surf_class_index]
-            if surf_class.surf_class_status != '':
+            if surf_class.surf_class_status != "":
                 row = layout.row()
                 row.label(text=surf_class.surf_class_status, icon='ERROR')
             row = layout.row()
@@ -526,8 +529,8 @@ class MCELL_PT_define_surface_class_properties(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mc = context.scene.mcell
-        surf_class = mc.surface_classes
+        mcell = context.scene.mcell
+        surf_class = mcell.surface_classes
 
         row = layout.row()
         if len(surf_class.surf_class_list) > 0:
@@ -549,12 +552,13 @@ class MCELL_PT_define_surface_class_properties(bpy.types.Panel):
             if len(active_surf_class.surf_class_props_list) > 0:
                 surf_class_props = active_surf_class.surf_class_props_list[
                     active_surf_class.active_surf_class_props_index]
-                if surf_class.surf_class_props_status != '':
+                if surf_class.surf_class_props_status != "":
                     row = layout.row()
                     row.label(text=surf_class.surf_class_props_status,
                               icon='ERROR')
-                layout.prop_search(surf_class_props, 'molecule', mc.molecules,
-                                   "molecule_list", icon='FORCE_LENNARDJONES')
+                layout.prop_search(surf_class_props, "molecule",
+                                   mcell.molecules, "molecule_list",
+                                   icon='FORCE_LENNARDJONES')
                 layout.prop(surf_class_props, "surf_class_orient")
                 layout.prop(surf_class_props, "surf_class_type")
                 if (surf_class_props.surf_class_type == 'CLAMP_CONCENTRATION'):
@@ -572,7 +576,7 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
         mod_surf_regions = context.scene.mcell.mod_surf_regions
         row = layout.row()
         row.label(text="Modified Surface Regions:", icon='FACESEL_HLT')
@@ -585,7 +589,7 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
         col = row.column(align=True)
         col.operator("mcell.mod_surf_regions_add", icon='ZOOMIN', text="")
         col.operator("mcell.mod_surf_regions_remove", icon='ZOOMOUT', text="")
-        if mod_surf_regions.status != '':
+        if mod_surf_regions.status != "":
             row = layout.row()
             row.label(text=mod_surf_regions.status, icon='ERROR')
         if len(mod_surf_regions.mod_surf_regions_list) > 0:
@@ -593,11 +597,11 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
                 mod_surf_regions.active_mod_surf_regions_index]
             row = layout.row()
             row.prop_search(active_mod_surf_regions, "surf_class_name",
-                            mc.surface_classes, "surf_class_list",
+                            mcell.surface_classes, "surf_class_list",
                             icon='FACESEL_HLT')
             row = layout.row()
             row.prop_search(active_mod_surf_regions, "object_name",
-                            mc.model_objects, "object_list",
+                            mcell.model_objects, "object_list",
                             icon='MESH_ICOSPHERE')
             if active_mod_surf_regions.object_name:
                 try:
@@ -619,28 +623,29 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
 
         row = layout.row()
         row.label(text="Release/Placement Sites:", icon='FORCE_LENNARDJONES')
         row = layout.row()
         col = row.column()
-        col.template_list(mc.release_sites, "mol_release_list",
-                          mc.release_sites, "active_release_index", rows=2)
+        col.template_list(mcell.release_sites, "mol_release_list",
+                          mcell.release_sites, "active_release_index", rows=2)
         col = row.column(align=True)
         col.operator("mcell.release_site_add", icon='ZOOMIN', text="")
         col.operator("mcell.release_site_remove", icon='ZOOMOUT', text="")
-        if len(mc.release_sites.mol_release_list) > 0:
-            rel = mc.release_sites.mol_release_list[
-                mc.release_sites.active_release_index]
-            if mc.release_sites.status != '':
+        if len(mcell.release_sites.mol_release_list) > 0:
+            rel = mcell.release_sites.mol_release_list[
+                mcell.release_sites.active_release_index]
+            if mcell.release_sites.status != "":
                 row = layout.row()
-                row.label(text=mc.release_sites.status, icon='ERROR')
+                row.label(text=mcell.release_sites.status, icon='ERROR')
             layout.prop(rel, "name")
-            layout.prop_search(rel, 'molecule', mc.molecules, "molecule_list",
-                               text='Molecule:', icon='FORCE_LENNARDJONES')
-            if rel.molecule in mc.molecules.molecule_list:
-                if mc.molecules.molecule_list[rel.molecule].type == '2D':
+            layout.prop_search(rel, "molecule", mcell.molecules,
+                               "molecule_list", text="Molecule:",
+                               icon='FORCE_LENNARDJONES')
+            if rel.molecule in mcell.molecules.molecule_list:
+                if mcell.molecules.molecule_list[rel.molecule].type == '2D':
                     layout.prop(rel, "orient")
             layout.prop(rel, "shape")
             if ((rel.shape == 'CUBIC') | (rel.shape == 'SPHERICAL') |
@@ -668,9 +673,9 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
 
-        layout.prop(mc.rxn_output, "include")
+        layout.prop(mcell.rxn_output, "include")
 
 
 class MCELL_PT_visualization_output_settings(bpy.types.Panel):
@@ -682,9 +687,9 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
 
-        layout.prop(mc.viz_output, "include")
+        layout.prop(mcell.viz_output, "include")
 
 
 class MCELL_PT_define_surface_regions(bpy.types.Panel):
@@ -698,7 +703,7 @@ class MCELL_PT_define_surface_regions(bpy.types.Panel):
         layout = self.layout
 
         obj_regs = context.object.mcell.regions
-        aobj = context.active_object
+        active_obj = context.active_object
 
         row = layout.row()
         row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
@@ -710,13 +715,13 @@ class MCELL_PT_define_surface_regions(bpy.types.Panel):
         col.operator("mcell.region_add", icon='ZOOMIN', text="")
         col.operator("mcell.region_remove", icon='ZOOMOUT', text="")
         row = layout.row()
-        if (obj_regs.status != ''):
+        if (obj_regs.status != ""):
             row = layout.row()
-            row.label(text=obj_regs.status, icon="ERROR")
+            row.label(text=obj_regs.status, icon='ERROR')
         if len(obj_regs.region_list) > 0:
             reg = obj_regs.region_list[obj_regs.active_reg_index]
             layout.prop(reg, "name")
-        if aobj.mode == 'EDIT':
+        if active_obj.mode == 'EDIT':
             row = layout.row()
             sub = row.row(align=True)
             sub.operator("mcell.region_faces_assign", text="Assign")
@@ -742,12 +747,12 @@ class MCELL_PT_molecule_glyphs(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         scn = context.scene
-        mc = context.scene.mcell
+        mcell = context.scene.mcell
 
         active = False
         if ((len(context.selected_objects) == 1) and
                 (context.selected_objects[0].type == 'MESH')):
-            filter = 'mol_.*_shape'
+            filter = "mol_.*_shape"
             obj = context.selected_objects[0]
             m = re.match(filter, obj.name)
             if m is not None:
@@ -757,11 +762,11 @@ class MCELL_PT_molecule_glyphs(bpy.types.Panel):
         layout.active = active
 
         row = layout.row()
-        layout.prop(mc.molecule_glyphs, "glyph")
+        layout.prop(mcell.molecule_glyphs, "glyph")
 
-        if (mc.molecule_glyphs.status != ''):
+        if (mcell.molecule_glyphs.status != ""):
             row = layout.row()
-            row.label(text=mc.molecule_glyphs.status, icon="ERROR")
+            row.label(text=mcell.molecule_glyphs.status, icon="ERROR")
 
         row = layout.row()
         if (len(context.selected_objects) == 0):
@@ -772,4 +777,4 @@ class MCELL_PT_molecule_glyphs(bpy.types.Panel):
 
         row = layout.row()
         row.operator("mcell.set_molecule_glyph", text="Set Molecule Shape",
-                     icon="MESH_ICOSPHERE")
+                     icon='MESH_ICOSPHERE')

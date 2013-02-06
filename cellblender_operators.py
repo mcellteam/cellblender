@@ -53,11 +53,12 @@ class MCELL_OT_region_add(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        mc_obj = context.object.mcell
-        mc_obj.regions.region_list.add()
-        mc_obj.regions.active_reg_index = len(mc_obj.regions.region_list)-1
-        mc_obj.regions.region_list[
-            mc_obj.regions.active_reg_index].name = 'Region'
+        mcell_obj = context.object.mcell
+        mcell_obj.regions.region_list.add()
+        mcell_obj.regions.active_reg_index = len(
+            mcell_obj.regions.region_list)-1
+        mcell_obj.regions.region_list[
+            mcell_obj.regions.active_reg_index].name = "Region"
         return {'FINISHED'}
 
 
@@ -68,16 +69,17 @@ class MCELL_OT_region_remove(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        mc_obj = context.object.mcell
-        mc_obj.regions.region_list.remove(mc_obj.regions.active_reg_index)
-        mc_obj.regions.active_reg_index -= 1
-        if (mc_obj.regions.active_reg_index < 0):
-            mc_obj.regions.active_reg_index = 0
+        mcell_obj = context.object.mcell
+        mcell_obj.regions.region_list.remove(
+            mcell_obj.regions.active_reg_index)
+        mcell_obj.regions.active_reg_index -= 1
+        if (mcell_obj.regions.active_reg_index < 0):
+            mcell_obj.regions.active_reg_index = 0
 
-        if mc_obj.regions.region_list:
+        if mcell_obj.regions.region_list:
             check_region(self, context)
         else:
-            mc_obj.regions.status = ''
+            mcell_obj.regions.status = ""
 
         return {'FINISHED'}
 
@@ -85,24 +87,24 @@ class MCELL_OT_region_remove(bpy.types.Operator):
 def check_region(self, context):
     """Checks for duplicate or illegal region name"""
 
-    mc_obj = context.object.mcell
-    reg_list = mc_obj.regions.region_list
-    reg = reg_list[mc_obj.regions.active_reg_index]
+    mcell_obj = context.object.mcell
+    reg_list = mcell_obj.regions.region_list
+    reg = reg_list[mcell_obj.regions.active_reg_index]
 
-    status = ''
+    status = ""
 
     # Check for duplicate region name
     reg_keys = reg_list.keys()
     if reg_keys.count(reg.name) > 1:
-        status = 'Duplicate region: %s' % (reg.name)
+        status = "Duplicate region: %s" % (reg.name)
 
     # Check for illegal names (Starts with a letter. No special characters)
     reg_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
     m = re.match(reg_filter, reg.name)
     if m is None:
-        status = 'Region name error: %s' % (reg.name)
+        status = "Region name error: %s" % (reg.name)
 
-    mc_obj.regions.status = status
+    mcell_obj.regions.status = status
 
     return
 
@@ -114,19 +116,19 @@ class MCELL_OT_region_faces_assign(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        aobj = context.active_object
-        obj_regs = aobj.mcell.regions
-        if (aobj.data.total_face_sel > 0):
-            if not aobj.data.get('mcell'):
-                aobj.data['mcell'] = {}
-            if not aobj.data['mcell'].get('regions'):
-                aobj.data['mcell']['regions'] = {}
+        active_obj = context.active_object
+        obj_regs = active_obj.mcell.regions
+        if (active_obj.data.total_face_sel > 0):
+            if not active_obj.data.get("mcell"):
+                active_obj.data["mcell"] = {}
+            if not active_obj.data["mcell"].get("regions"):
+                active_obj.data["mcell"]["regions"] = {}
             reg = obj_regs.region_list[obj_regs.active_reg_index]
-            if not aobj.data['mcell']['regions'].get(reg.name):
-                aobj.data['mcell']['regions'][reg.name] = []
-            mesh = aobj.data
+            if not active_obj.data["mcell"]["regions"].get(reg.name):
+                active_obj.data["mcell"]["regions"][reg.name] = []
+            mesh = active_obj.data
             face_set = set([])
-            for f in aobj.data['mcell']['regions'][reg.name]:
+            for f in active_obj.data["mcell"]["regions"][reg.name]:
                 face_set.add(f)
             bpy.ops.object.mode_set(mode='OBJECT')
             for f in mesh.polygons:
@@ -136,11 +138,11 @@ class MCELL_OT_region_faces_assign(bpy.types.Operator):
 
             reg_faces = list(face_set)
             reg_faces.sort()
-            aobj.data['mcell']['regions'][reg.name] = reg_faces
+            active_obj.data["mcell"]["regions"][reg.name] = reg_faces
 
-#        obj_regs = aobj.mcell.regions
+#        obj_regs = active_obj.mcell.regions
 #        reg = obj_regs.region_list[obj_regs.active_reg_index]
-#        mesh = aobj.data
+#        mesh = active_obj.data
 #        for f in mesh.polygons:
 #            if f.select:
 #                reg.faces.add()
@@ -157,18 +159,19 @@ class MCELL_OT_region_faces_remove(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        aobj = context.active_object
-        obj_regs = aobj.mcell.regions
-        if (aobj.data.total_face_sel > 0):
-            if not aobj.data.get('mcell'):
-                aobj.data['mcell'] = {}
-            if not aobj.data['mcell'].get('regions'):
-                aobj.data['mcell']['regions'] = {}
+        active_obj = context.active_object
+        obj_regs = active_obj.mcell.regions
+        if (active_obj.data.total_face_sel > 0):
+            if not active_obj.data.get("mcell"):
+                active_obj.data["mcell"] = {}
+            if not active_obj.data["mcell"].get("regions"):
+                active_obj.data["mcell"]["regions"] = {}
             reg = obj_regs.region_list[obj_regs.active_reg_index]
-            if not aobj.data['mcell']['regions'].get(reg.name):
-                aobj.data['mcell']['regions'][reg.name] = []
-            mesh = aobj.data
-            face_set = set(aobj.data['mcell']['regions'][reg.name].to_list())
+            if not active_obj.data["mcell"]["regions"].get(reg.name):
+                active_obj.data["mcell"]["regions"][reg.name] = []
+            mesh = active_obj.data
+            face_set = set(
+                active_obj.data["mcell"]["regions"][reg.name].to_list())
             bpy.ops.object.mode_set(mode='OBJECT')
             for f in mesh.polygons:
                 if f.select:
@@ -178,7 +181,7 @@ class MCELL_OT_region_faces_remove(bpy.types.Operator):
 
             reg_faces = list(face_set)
             reg_faces.sort()
-            aobj.data['mcell']['regions'][reg.name] = reg_faces
+            active_obj.data["mcell"]["regions"][reg.name] = reg_faces
 
         return {'FINISHED'}
 
@@ -190,17 +193,17 @@ class MCELL_OT_region_faces_select(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        aobj = context.active_object
-        obj_regs = aobj.mcell.regions
-        if not aobj.data.get('mcell'):
-            aobj.data['mcell'] = {}
-        if not aobj.data['mcell'].get('regions'):
-            aobj.data['mcell']['regions'] = {}
+        active_obj = context.active_object
+        obj_regs = active_obj.mcell.regions
+        if not active_obj.data.get("mcell"):
+            active_obj.data["mcell"] = {}
+        if not active_obj.data["mcell"].get("regions"):
+            active_obj.data["mcell"]["regions"] = {}
         reg = obj_regs.region_list[obj_regs.active_reg_index]
-        if not aobj.data['mcell']['regions'].get(reg.name):
-            aobj.data['mcell']['regions'][reg.name] = []
-        mesh = aobj.data
-        face_set = set(aobj.data['mcell']['regions'][reg.name].to_list())
+        if not active_obj.data["mcell"]["regions"].get(reg.name):
+            active_obj.data["mcell"]["regions"][reg.name] = []
+        mesh = active_obj.data
+        face_set = set(active_obj.data["mcell"]["regions"][reg.name].to_list())
         bpy.ops.object.mode_set(mode='OBJECT')
         msm = context.tool_settings.mesh_select_mode[0:]
         context.tool_settings.mesh_select_mode = [False, False, True]
@@ -219,17 +222,17 @@ class MCELL_OT_region_faces_deselect(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        aobj = context.active_object
-        obj_regs = aobj.mcell.regions
-        if not aobj.data.get('mcell'):
-            aobj.data['mcell'] = {}
-        if not aobj.data['mcell'].get('regions'):
-            aobj.data['mcell']['regions'] = {}
+        active_obj = context.active_object
+        obj_regs = active_obj.mcell.regions
+        if not active_obj.data.get("mcell"):
+            active_obj.data["mcell"] = {}
+        if not active_obj.data["mcell"].get("regions"):
+            active_obj.data["mcell"]["regions"] = {}
         reg = obj_regs.region_list[obj_regs.active_reg_index]
-        if not aobj.data['mcell']['regions'].get(reg.name):
-            aobj.data['mcell']['regions'][reg.name] = []
-        mesh = aobj.data
-        face_set = set(aobj.data['mcell']['regions'][reg.name].to_list())
+        if not active_obj.data["mcell"]["regions"].get(reg.name):
+            active_obj.data["mcell"]["regions"][reg.name] = []
+        mesh = active_obj.data
+        face_set = set(active_obj.data["mcell"]["regions"][reg.name].to_list())
         bpy.ops.object.mode_set(mode='OBJECT')
         msm = context.tool_settings.mesh_select_mode[0:]
         context.tool_settings.mesh_select_mode = [False, False, True]
@@ -249,22 +252,22 @@ class MCELL_OT_vertex_groups_to_regions(bpy.types.Operator):
 
     def execute(self, context):
         scn = context.scene
-        sobjs = context.selected_objects
+        select_objs = context.selected_objects
 
         # For each selected object:
-        for obj in sobjs:
+        for obj in select_objs:
             print(obj.name)
             scn.objects.active = obj
             obj.select = True
             obj_regs = obj.mcell.regions
-            vgs = obj.vertex_groups
+            vert_groups = obj.vertex_groups
 
             # If there are vertex groups to convert:
-            if (len(vgs) > 0):
+            if vert_groups:
                 mesh = obj.data
 
                 # For each vertex group:
-                for vg in vgs:
+                for vg in vert_groups:
 
                     # Deselect the whole mesh:
                     bpy.ops.object.mode_set(mode='EDIT')
@@ -277,13 +280,13 @@ class MCELL_OT_vertex_groups_to_regions(bpy.types.Operator):
 
                     # If there are selected faces:
                     if (mesh.total_face_sel > 0):
-                        print('  vg faces: %d' % (mesh.total_face_sel))
+                        print("  vg faces: %d" % (mesh.total_face_sel))
 
                         # Setup mesh regions IDProp if necessary:
-                        if not mesh.get('mcell'):
-                            mesh['mcell'] = {}
-                        if not mesh['mcell'].get('regions'):
-                            mesh['mcell']['regions'] = {}
+                        if not mesh.get("mcell"):
+                            mesh["mcell"] = {}
+                        if not mesh["mcell"].get("regions"):
+                            mesh["mcell"]["regions"] = {}
 
                         # look for vg.name in region_list and add if not found:
                         # method 1:
@@ -296,12 +299,12 @@ class MCELL_OT_vertex_groups_to_regions(bpy.types.Operator):
 
                         # append faces in vertex group to faces in region:
                         # retreive or create region on mesh:
-                        if not mesh['mcell']['regions'].get(vg.name):
-                            mesh['mcell']['regions'][reg.name] = []
+                        if not mesh["mcell"]["regions"].get(vg.name):
+                            mesh["mcell"]["regions"][reg.name] = []
                         face_set = set([])
-                        for f in mesh['mcell']['regions'][reg.name]:
+                        for f in mesh["mcell"]["regions"][reg.name]:
                             face_set.add(f)
-                        print('  reg faces 0: %d' % (len(face_set)))
+                        print("  reg faces 0: %d" % (len(face_set)))
                         bpy.ops.object.mode_set(mode='OBJECT')
                         for f in mesh.polygons:
                             if f.select:
@@ -309,8 +312,8 @@ class MCELL_OT_vertex_groups_to_regions(bpy.types.Operator):
                         bpy.ops.object.mode_set(mode='EDIT')
                         reg_faces = list(face_set)
                         reg_faces.sort()
-                        print('  reg faces 1: %d' % (len(reg_faces)))
-                        mesh['mcell']['regions'][reg.name] = reg_faces
+                        print("  reg faces 1: %d" % (len(reg_faces)))
+                        mesh["mcell"]["regions"][reg.name] = reg_faces
                         bpy.ops.object.mode_set(mode='OBJECT')
 
         return {'FINISHED'}
@@ -361,8 +364,8 @@ class MCELL_OT_remove_partitions_object(bpy.types.Operator):
         scene_objects = scene.objects
         objects = bpy.data.objects
         meshes = bpy.data.meshes
-        if 'partitions' in scene_objects:
-            partition_object = scene_objects['partitions']
+        if "partitions" in scene_objects:
+            partition_object = scene_objects["partitions"]
             partition_mesh = partition_object.data
             scene_objects.unlink(partition_object)
             objects.remove(partition_object)
@@ -561,7 +564,7 @@ class MCELL_OT_molecule_add(bpy.types.Operator):
         mcell.molecules.molecule_list.add()
         mcell.molecules.active_mol_index = len(mcell.molecules.molecule_list)-1
         mcell.molecules.molecule_list[
-            mcell.molecules.active_mol_index].name = 'Molecule'
+            mcell.molecules.active_mol_index].name = "Molecule"
         return {'FINISHED'}
 
 
@@ -581,7 +584,7 @@ class MCELL_OT_molecule_remove(bpy.types.Operator):
         if mcell.molecules.molecule_list:
             check_molecule(self, context)
         else:
-            mcell.molecules.status = ''
+            mcell.molecules.status = ""
 
         return {'FINISHED'}
 
@@ -593,18 +596,18 @@ def check_molecule(self, context):
     mol_list = mcell.molecules.molecule_list
     mol = mol_list[mcell.molecules.active_mol_index]
 
-    status = ''
+    status = ""
 
     # Check for duplicate molecule name
     mol_keys = mol_list.keys()
     if mol_keys.count(mol.name) > 1:
-        status = 'Duplicate molecule: %s' % (mol.name)
+        status = "Duplicate molecule: %s" % (mol.name)
 
     # Check for illegal names (Starts with a letter. No special characters.)
     mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
     m = re.match(mol_filter, mol.name)
     if m is None:
-        status = 'Molecule name error: %s' % (mol.name)
+        status = "Molecule name error: %s" % (mol.name)
 
     mcell.molecules.status = status
 
@@ -622,7 +625,7 @@ class MCELL_OT_reaction_add(bpy.types.Operator):
         mcell.reactions.reaction_list.add()
         mcell.reactions.active_rxn_index = len(mcell.reactions.reaction_list)-1
         mcell.reactions.reaction_list[
-            mcell.reactions.active_rxn_index].name = 'Reaction'
+            mcell.reactions.active_rxn_index].name = "Reaction"
         return {'FINISHED'}
 
 
@@ -642,7 +645,7 @@ class MCELL_OT_reaction_remove(bpy.types.Operator):
         if mcell.reactions.reaction_list:
             check_reaction(self, context)
         else:
-            mcell.reactions.status = ''
+            mcell.reactions.status = ""
 
         return {'FINISHED'}
 
@@ -658,55 +661,55 @@ def check_reaction(self, context):
         if rxn.type == item[0]:
             rxtype = item[1]
 
-    status = ''
+    status = ""
 
     # clean up rxn.reactants only if necessary to avoid infinite recursion.
-    reactants = rxn.reactants.replace(' ', '')
-    reactants = reactants.replace('+', ' + ')
+    reactants = rxn.reactants.replace(" ", "")
+    reactants = reactants.replace("+", " + ")
     if reactants != rxn.reactants:
         rxn.reactants = reactants
 
     # clean up rxn.products only if necessary to avoid infinite recursion.
-    products = rxn.products.replace(' ', '')
-    products = products.replace('+', ' + ')
+    products = rxn.products.replace(" ", "")
+    products = products.replace("+", " + ")
     if products != rxn.products:
         rxn.products = products
 
     #Check for duplicate reaction
-    rxn.name = ('%s %s %s') % (rxn.reactants, rxtype, rxn.products)
+    rxn.name = ("%s %s %s") % (rxn.reactants, rxtype, rxn.products)
     rxn_keys = mcell.reactions.reaction_list.keys()
     if rxn_keys.count(rxn.name) > 1:
-        status = 'Duplicate reaction: %s' % (rxn.name)
+        status = "Duplicate reaction: %s" % (rxn.name)
 
     #Check syntax of reactant specification
     mol_list = mcell.molecules.molecule_list
     mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)((',)|(,')|(;)|(,*)|('*))$"
-    reactants = rxn.reactants.split(' + ')
+    reactants = rxn.reactants.split(" + ")
     for reactant in reactants:
         m = re.match(mol_filter, reactant)
         if m is None:
-            status = 'Reactant error: %s' % (reactant)
+            status = "Reactant error: %s" % (reactant)
             break
         else:
             mol_name = m.group(1)
             if not mol_name in mol_list:
-                status = 'Undefine molecule: %s' % (mol_name)
+                status = "Undefine molecule: %s" % (mol_name)
 
     #Check syntax of product specification
-    if rxn.products == 'NULL':
+    if rxn.products == "NULL":
         if rxn.type == 'reversible':
             rxn.type = 'irreversible'
     else:
-        products = rxn.products.split(' + ')
+        products = rxn.products.split(" + ")
         for product in products:
             m = re.match(mol_filter, product)
             if m is None:
-                status = 'Product error: %s' % (product)
+                status = "Product error: %s" % (product)
                 break
             else:
                 mol_name = m.group(1)
                 if not mol_name in mol_list:
-                    status = 'Undefine molecule: %s' % (mol_name)
+                    status = "Undefine molecule: %s" % (mol_name)
 
     mcell.reactions.status = status
     return
@@ -725,7 +728,7 @@ class MCELL_OT_surf_class_props_add(bpy.types.Operator):
         active_surf_class.surf_class_props_list.add()
         active_surf_class.active_surf_class_props_index = len(
             active_surf_class.surf_class_props_list) - 1
-        new_name = 'Surface_Class_Property'
+        new_name = "Surface_Class_Property"
         active_surf_class.surf_class_props_list[
             active_surf_class.active_surf_class_props_index].name = new_name
 
@@ -752,7 +755,7 @@ class MCELL_OT_surf_class_props_remove(bpy.types.Operator):
         if active_surf_class.surf_class_props_list:
             check_surf_class_props(self, context)
         else:
-            surf_class.surf_class_props_status = ''
+            surf_class.surf_class_props_status = ""
 
         return {'FINISHED'}
 
@@ -769,7 +772,7 @@ class MCELL_OT_surface_class_add(bpy.types.Operator):
         surf_class.active_surf_class_index = len(
             surf_class.surf_class_list) - 1
         surf_class.surf_class_list[
-            surf_class.active_surf_class_index].name = 'Surface_Class'
+            surf_class.active_surf_class_index].name = "Surface_Class"
 
         return {'FINISHED'}
 
@@ -790,7 +793,7 @@ class MCELL_OT_surface_class_remove(bpy.types.Operator):
         if surf_class.surf_class_list:
             check_surface_class(self, context)
         else:
-            surf_class.surf_class_status = ''
+            surf_class.surf_class_status = ""
 
         return {'FINISHED'}
 
@@ -802,18 +805,18 @@ def check_surface_class(self, context):
     active_surf_class = surf_class.surf_class_list[
         surf_class.active_surf_class_index]
 
-    status = ''
+    status = ""
 
     # Check for duplicate names
     surf_class_keys = surf_class.surf_class_list.keys()
     if surf_class_keys.count(active_surf_class.name) > 1:
-        status = 'Duplicate Surface Class: %s' % (active_surf_class.name)
+        status = "Duplicate Surface Class: %s" % (active_surf_class.name)
 
     # Check for illegal names (Starts with a letter. No special characters.)
     surf_class_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
     m = re.match(surf_class_filter, active_surf_class.name)
     if m is None:
-        status = 'Surface Class name error: %s' % (active_surf_class.name)
+        status = "Surface Class name error: %s" % (active_surf_class.name)
 
     surf_class.surf_class_status = status
 
@@ -823,14 +826,14 @@ def check_surface_class(self, context):
 def convert_surf_class_str(surf_class_type):
     """Format MDL language (surf class type) for viewing in the UI"""
 
-    if surf_class_type == 'ABSORPTIVE':
-        surf_class_type = 'Absorptive'
-    elif surf_class_type == 'TRANSPARENT':
-        surf_class_type = 'Transparent'
-    elif surf_class_type == 'REFLECTIVE':
-        surf_class_type = 'Reflective'
-    elif surf_class_type == 'CLAMP_CONCENTRATION':
-        surf_class_type = 'Clamp Concentration'
+    if surf_class_type == "ABSORPTIVE":
+        surf_class_type = "Absorptive"
+    elif surf_class_type == "TRANSPARENT":
+        surf_class_type = "Transparent"
+    elif surf_class_type == "REFLECTIVE":
+        surf_class_type = "Reflective"
+    elif surf_class_type == "CLAMP_CONCENTRATION":
+        surf_class_type = "Clamp Concentration"
 
     return(surf_class_type)
 
@@ -839,11 +842,11 @@ def convert_orient_str(orient):
     """Format MDL language (orientation) for viewing in the UI"""
 
     if orient == "'":
-        orient = 'Top/Front'
+        orient = "Top/Front"
     elif orient == ",":
-        orient = 'Bottom/Back'
+        orient = "Bottom/Back"
     elif orient == ";":
-        orient = 'Ignore'
+        orient = "Ignore"
 
     return(orient)
 
@@ -865,24 +868,24 @@ def check_surf_class_props(self, context):
     orient = convert_orient_str(orient)
 
     if molecule:
-        surf_class_props.name = 'Molec.: %s   Orient.: %s   Type: %s' % (
+        surf_class_props.name = "Molec.: %s   Orient.: %s   Type: %s" % (
             molecule, orient, surf_class_type)
     else:
-        surf_class_props.name = 'Molec.: NA   Orient.: %s   Type: %s' % (
+        surf_class_props.name = "Molec.: NA   Orient.: %s   Type: %s" % (
             orient, surf_class_type)
 
-    status = ''
+    status = ""
 
     # Check for illegal names (Starts with a letter. No special characters.)
     mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)"
     m = re.match(mol_filter, molecule)
     if m is None:
-        status = 'Molecule name error: %s' % (molecule)
+        status = "Molecule name error: %s" % (molecule)
     else:
         # Check for undefined names
         mol_name = m.group(1)
         if not mol_name in mol_list:
-            status = 'Undefined molecule: %s' % (mol_name)
+            status = "Undefined molecule: %s" % (mol_name)
 
     mcell.surface_classes.surf_class_props_status = status
 
@@ -900,7 +903,7 @@ class MCELL_OT_mod_surf_regions_add(bpy.types.Operator):
         mod_surf_regions.mod_surf_regions_list.add()
         mod_surf_regions.active_mod_surf_regions_index = len(
             mod_surf_regions.mod_surf_regions_list) - 1
-        new_name = 'Modify_Surface_Region'
+        new_name = "Modify_Surface_Region"
         mod_surf_regions.mod_surf_regions_list[
             mod_surf_regions.active_mod_surf_regions_index].name = new_name
 
@@ -927,13 +930,13 @@ class MCELL_OT_mod_surf_regions_remove(bpy.types.Operator):
 def format_mod_surf_regions_entry(surf_class_name, object_name, region_name):
     """Check if the entries in Modify Surface Regions exist and format them"""
     if not surf_class_name:
-        surf_class_name = 'NA'
+        surf_class_name = "NA"
     if not object_name:
-        object_name = 'NA'
+        object_name = "NA"
     if not region_name:
-        region_name = 'NA'
+        region_name = "NA"
 
-    mod_surf_regions_entry = 'Surface Class: %s   Object: %s   Region: %s' % (
+    mod_surf_regions_entry = "Surface Class: %s   Object: %s   Region: %s" % (
         surf_class_name, object_name, region_name)
 
     return(mod_surf_regions_entry)
@@ -954,14 +957,14 @@ def check_assigned_surface_class(self, context):
     active_mod_surf_regions.name = format_mod_surf_regions_entry(
         surf_class_name, object_name, region_name)
 
-    status = ''
+    status = ""
 
     #Make sure there is something in the Defined Surface Classes list
     if not surf_class_list:
-        status = 'No surface classes defined'
+        status = "No surface classes defined"
     #Make sure the user entered surf class is in Defined Surface Classes list
     elif not surf_class_name in surf_class_list:
-        status = 'Undefined surface class: %s' % surf_class_name
+        status = "Undefined surface class: %s" % surf_class_name
 
     mod_surf_regions.status = status
 
@@ -983,14 +986,14 @@ def check_assigned_object(self, context):
     active_mod_surf_regions.name = format_mod_surf_regions_entry(
         surf_class_name, object_name, region_name)
 
-    status = ''
+    status = ""
 
     #Make sure there is something in the Model Objects list
     if not obj_list:
-        status = 'No objects available'
+        status = "No objects available"
     #Make sure the user entered object name is in the Model Objects list
     elif not active_mod_surf_regions.object_name in obj_list:
-        status = 'Undefined object: %s' % active_mod_surf_regions.object_name
+        status = "Undefined object: %s" % active_mod_surf_regions.object_name
 
     mod_surf_regions.status = status
 
@@ -1013,13 +1016,13 @@ def check_modified_region(self, context):
     active_mod_surf_regions.name = format_mod_surf_regions_entry(
         surf_class_name, object_name, region_name)
 
-    status = ''
+    status = ""
 
     try:
         if not region_list:
-            status = 'The selected object has no surface regions'
+            status = "The selected object has no surface regions"
         elif not region_name in region_list:
-            status = 'Undefined region: %s' % region_name
+            status = "Undefined region: %s" % region_name
     except KeyError:
         #the object name in mod surf regions isn't a blender object
         pass
@@ -1041,7 +1044,7 @@ class MCELL_OT_release_site_add(bpy.types.Operator):
         mcell.release_sites.active_release_index = len(
             mcell.release_sites.mol_release_list)-1
         mcell.release_sites.mol_release_list[
-            mcell.release_sites.active_release_index].name = 'Release_Site'
+            mcell.release_sites.active_release_index].name = "Release_Site"
 
         return {'FINISHED'}
 
@@ -1063,7 +1066,7 @@ class MCELL_OT_release_site_remove(bpy.types.Operator):
         if mcell.release_sites.mol_release_list:
             check_release_site(self, context)
         else:
-            mcell.release_sites.status = ''
+            mcell.release_sites.status = ""
 
         return {'FINISHED'}
 
@@ -1075,18 +1078,18 @@ def check_release_site(self, context):
     rel_list = mcell.release_sites.mol_release_list
     rel = rel_list[mcell.release_sites.active_release_index]
 
-    status = ''
+    status = ""
 
     # Check for duplicate release site name
     rel_keys = rel_list.keys()
     if rel_keys.count(rel.name) > 1:
-        status = 'Duplicate release site: %s' % (rel.name)
+        status = "Duplicate release site: %s" % (rel.name)
 
     # Check for illegal names (Starts with a letter. No special characters.)
     rel_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
     m = re.match(rel_filter, rel.name)
     if m is None:
-        status = 'Release Site name error: %s' % (rel.name)
+        status = "Release Site name error: %s" % (rel.name)
 
     mcell.release_sites.status = status
 
@@ -1103,17 +1106,17 @@ def check_release_molecule(self, context):
 
     mol_list = mcell.molecules.molecule_list
 
-    status = ''
+    status = ""
 
     # Check for illegal names (Starts with a letter. No special characters.)
     mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
     m = re.match(mol_filter, mol)
     if m is None:
-        status = 'Molecule name error: %s' % (mol)
+        status = "Molecule name error: %s" % (mol)
     else:
         mol_name = m.group(1)
         if not mol_name in mol_list:
-            status = 'Undefined molecule: %s' % (mol_name)
+            status = "Undefined molecule: %s" % (mol_name)
 
     mcell.release_sites.status = status
 
@@ -1129,7 +1132,7 @@ def check_release_object_expr(self, context):
     rel = rel_list[mcell.release_sites.active_release_index]
     obj_expr = rel.object_expr
 
-    status = ''
+    status = ""
 
     # Check for illegal names. (Starts with a letter. No special characters.)
     # May be only object name or object name and region (e.g. object[reg].)
@@ -1139,35 +1142,35 @@ def check_release_object_expr(self, context):
 
     expr_filter = r"[\+\-\*\(\)]"
 
-    expr_vars = re.sub(expr_filter, ' ', obj_expr).split()
+    expr_vars = re.sub(expr_filter, " ", obj_expr).split()
 
     for var in expr_vars:
         m = re.match(obj_reg_filter, var)
         if m is None:
-            status = 'Object name error: %s' % (var)
+            status = "Object name error: %s" % (var)
             break
         else:
-            if m.group('obj_reg') is not None:
-                obj_name = m.group('obj_name')
-                reg_name = m.group('reg_name')
+            if m.group("obj_reg") is not None:
+                obj_name = m.group("obj_name")
+                reg_name = m.group("reg_name")
                 if not obj_name in scn.objects:
-                    status = 'Undefined object: %s' % (obj_name)
+                    status = "Undefined object: %s" % (obj_name)
                     break
                 obj = scn.objects[obj_name]
                 if reg_name != "ALL":
-                    if not obj.data.get('mcell'):
-                        status = 'Undefined region: %s' % (reg_name)
+                    if not obj.data.get("mcell"):
+                        status = "Undefined region: %s" % (reg_name)
                         break
-                    if not obj.data['mcell'].get('regions'):
-                        status = 'Undefined region: %s' % (reg_name)
+                    if not obj.data["mcell"].get("regions"):
+                        status = "Undefined region: %s" % (reg_name)
                         break
-                    if not obj.data['mcell']['regions'].get(reg_name):
-                        status = 'Undefined region: %s' % (reg_name)
+                    if not obj.data["mcell"]["regions"].get(reg_name):
+                        status = "Undefined region: %s" % (reg_name)
                         break
             else:
-                obj_name = m.group('obj_name_only')
+                obj_name = m.group("obj_name_only")
                 if not obj_name in scn.objects:
-                    status = 'Undefined object: %s' % (obj_name)
+                    status = "Undefined object: %s" % (obj_name)
                     break
 
     mcell.release_sites.status = status
@@ -1186,12 +1189,12 @@ class MCELL_OT_export_project(bpy.types.Operator):
         if mcell.project_settings.export_format == 'mcell_mdl_unified':
 #            if not mcell.project_settings.export_selection_only:
 #                bpy.ops.object.select_by_type(type='MESH')
-            filepath = mcell.project_settings.project_dir + '/' + \
-                mcell.project_settings.base_name + '.main.mdl'
+            filepath = mcell.project_settings.project_dir + "/" + \
+                mcell.project_settings.base_name + ".main.mdl"
             bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
         elif mcell.project_settings.export_format == 'mcell_mdl_modular':
-            filepath = mcell.project_settings.project_dir + '/' + \
-                mcell.project_settings.base_name + '.main.mdl'
+            filepath = mcell.project_settings.project_dir + "/" + \
+                mcell.project_settings.base_name + ".main.mdl"
             bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
 
         return {'FINISHED'}
@@ -1203,8 +1206,8 @@ class MCELL_OT_set_project_dir(bpy.types.Operator):
     bl_description = "Set CellBlender Project Directory"
     bl_options = {'REGISTER', 'UNDO'}
 
-    filepath = bpy.props.StringProperty(subtype="FILE_PATH", default="")
-    directory = bpy.props.StringProperty(subtype="DIR_PATH")
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+    directory = bpy.props.StringProperty(subtype='DIR_PATH')
 
     def __init__(self):
         self.directory = bpy.context.scene.mcell.project_settings.project_dir
@@ -1228,7 +1231,7 @@ class MCELL_OT_set_project_dir(bpy.types.Operator):
         for i in range(mcell.mol_viz.mol_file_num-1, -1, -1):
             mcell.mol_viz.mol_file_list.remove(i)
 
-        mcell.mol_viz.mol_file_name = ''
+        mcell.mol_viz.mol_file_name = ""
         mcell.project_settings.project_dir = dir
         return {'FINISHED'}
 
@@ -1243,8 +1246,8 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     bl_description = "Read MCell Molecule Files for Visualization"
     bl_options = {'REGISTER'}
 
-    filepath = bpy.props.StringProperty(subtype="FILE_PATH", default="")
-    directory = bpy.props.StringProperty(subtype="DIR_PATH")
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+    directory = bpy.props.StringProperty(subtype='DIR_PATH')
 
     def __init__(self):
         self.directory = bpy.context.scene.mcell.mol_viz.mol_file_dir
@@ -1263,7 +1266,7 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
             mol_file_dir = self.filepath
         else:
             mol_file_dir = os.path.dirname(self.filepath)
-        mol_file_list = glob.glob(mol_file_dir + '/*')
+        mol_file_list = glob.glob(mol_file_dir + "/*")
         mol_file_list.sort()
 
         # Reset mol_file_list to empty
@@ -1310,14 +1313,14 @@ class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        mc = context.scene.mcell
-        if (len(mc.mol_viz.mol_file_list) > 0):
-            i = mc.mol_viz.mol_file_index
-            if (i > mc.mol_viz.mol_file_stop_index):
-                i = mc.mol_viz.mol_file_stop_index
-            if (i < mc.mol_viz.mol_file_start_index):
-                i = mc.mol_viz.mol_file_start_index
-            mc.mol_viz.mol_file_index = i
+        mcell = context.scene.mcell
+        if (len(mcell.mol_viz.mol_file_list) > 0):
+            i = mcell.mol_viz.mol_file_index
+            if (i > mcell.mol_viz.mol_file_stop_index):
+                i = mcell.mol_viz.mol_file_stop_index
+            if (i < mcell.mol_viz.mol_file_start_index):
+                i = mcell.mol_viz.mol_file_start_index
+            mcell.mol_viz.mol_file_index = i
             mol_viz_update(self, context)
         return{'FINISHED'}
 
@@ -1373,7 +1376,7 @@ def frame_change_handler(scn):
         #scn.update()
         # Is the following code necessary?
         if mcell.mol_viz.render_and_save:
-            scn.render.filepath = '//stores_on/frames/frame_%05d.png' % (
+            scn.render.filepath = "//stores_on/frames/frame_%05d.png" % (
                 scn.frame_current)
             bpy.ops.render.render(write_still=True)
 
@@ -1426,7 +1429,7 @@ def mol_viz_clear(mcell_prop):
 
             mol_pos_mesh = mol_obj.data
             mol_pos_mesh_name = mol_pos_mesh.name
-            mol_shape_obj_name = '%s_shape' % (mol_name)
+            mol_shape_obj_name = "%s_shape" % (mol_name)
             mol_shape_obj = objs.get(mol_shape_obj_name)
             if mol_shape_obj:
                 mol_shape_obj.parent = None
@@ -1444,7 +1447,7 @@ def mol_viz_clear(mcell_prop):
 
             mol_obj.dupli_type = 'VERTS'
             mol_obj.use_dupli_vertices_rotation = True
-            mols_obj = objs.get('molecules')
+            mols_obj = objs.get("molecules")
             mol_obj.parent = mols_obj
 
             mol_obj.hide = hide
@@ -1463,11 +1466,11 @@ def mol_viz_file_read(mcell_prop, filepath):
     try:
 
 #        begin = resource.getrusage(resource.RUSAGE_SELF)[0]
-#        print ('Processing molecules from file:    %s' % (filepath))
+#        print ("Processing molecules from file:    %s" % (filepath))
 
         # Quick check for Binary or ASCII format of molecule file:
-        mol_file = open(filepath, 'rb')
-        b = array.array('I')
+        mol_file = open(filepath, "rb")
+        b = array.array("I")
         b.fromfile(mol_file, 1)
 
         mol_dict = {}
@@ -1485,18 +1488,18 @@ def mol_viz_file_read(mcell_prop, filepath):
                     # ns = Array of ascii character codes for molecule name.
                     # s = String of molecule name.
                     # mt = Surface molecule flag.
-                    ni = array.array('B')
+                    ni = array.array("B")
                     ni.fromfile(mol_file, 1)
-                    ns = array.array('B')
+                    ns = array.array("B")
                     ns.fromfile(mol_file, ni[0])
                     s = ns.tostring().decode()
-                    mol_name = 'mol_%s' % (s)
-                    mt = array.array('B')
+                    mol_name = "mol_%s" % (s)
+                    mt = array.array("B")
                     mt.fromfile(mol_file, 1)
-                    ni = array.array('I')
+                    ni = array.array("I")
                     ni.fromfile(mol_file, 1)
-                    mol_pos = array.array('f')
-                    mol_orient = array.array('f')
+                    mol_pos = array.array("f")
+                    mol_orient = array.array("f")
                     mol_pos.fromfile(mol_file, ni[0])
 #                    tot += ni[0]/3
                     if mt[0] == 1:
@@ -1505,7 +1508,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                     new_item = mcell.mol_viz.mol_viz_list.add()
                     new_item.name = mol_name
                 except:
-#                    print('Molecules read: %d' % (int(tot)))
+#                    print("Molecules read: %d" % (int(tot)))
                     mol_file.close()
                     break
 
@@ -1519,10 +1522,10 @@ def mol_viz_file_read(mcell_prop, filepath):
             # Orientations are zero in the case of volume molecules.
             mol_data = [[s.split()[0], [
                 float(x) for x in s.split()[1:]]] for s in open(
-                    filepath, 'r').read().split('\n') if s != '']
+                    filepath, "r").read().split("\n") if s != ""]
 
             for mol in mol_data:
-                mol_name = 'mol_%s' % (mol[0])
+                mol_name = "mol_%s" % (mol[0])
                 if not mol_name in mol_dict:
                     mol_orient = mol[1][3:]
                     mt = 0
@@ -1531,7 +1534,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                             (mol_orient[2] != 0.0)):
                         mt = 1
                     mol_dict[mol_name] = [
-                        mt, array.array('f'), array.array('f')]
+                        mt, array.array("f"), array.array("f")]
                     new_item = mcell.mol_viz.mol_viz_list.add()
                     new_item.name = mol_name
                 mt = mol_dict[mol_name][0]
@@ -1541,11 +1544,11 @@ def mol_viz_file_read(mcell_prop, filepath):
 
         # Get the parent object to all the molecule positions if it exists.
         # Otherwise, create it.
-        mols_obj = bpy.data.objects.get('molecules')
+        mols_obj = bpy.data.objects.get("molecules")
         if not mols_obj:
             bpy.ops.object.add(location=[0, 0, 0])
             mols_obj = bpy.context.selected_objects[0]
-            mols_obj.name = 'molecules'
+            mols_obj.name = "molecules"
 
         if mol_dict:
             meshes = bpy.data.meshes
@@ -1558,7 +1561,7 @@ def mol_viz_file_read(mcell_prop, filepath):
             #    mathutils.Vector((0.0, 0.0, 0.0)))
 
             for mol_name in mol_dict.keys():
-                mol_mat_name = '%s_mat' % (mol_name)
+                mol_mat_name = "%s_mat" % (mol_name)
                 mol_type = mol_dict[mol_name][0]
                 mol_pos = mol_dict[mol_name][1]
                 mol_orient = mol_dict[mol_name][2]
@@ -1569,7 +1572,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                         -1.0, 1.0) for i in range(len(mol_pos))])
 
                 # Look-up mesh shape (glyph) template and create if needed
-                mol_shape_mesh_name = '%s_shape' % (mol_name)
+                mol_shape_mesh_name = "%s_shape" % (mol_name)
                 mol_shape_obj_name = mol_shape_mesh_name
                 mol_shape_mesh = meshes.get(mol_shape_mesh_name)
                 if not mol_shape_mesh:
@@ -1598,7 +1601,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                     mol_shape_mesh.materials.append(mol_mat)
 
                 # Create a "mesh" to hold instances of molecule positions
-                mol_pos_mesh_name = '%s_pos' % (mol_name)
+                mol_pos_mesh_name = "%s_pos" % (mol_name)
                 mol_pos_mesh = meshes.get(mol_pos_mesh_name)
                 if not mol_pos_mesh:
                     mol_pos_mesh = meshes.new(mol_pos_mesh_name)
@@ -1621,13 +1624,13 @@ def mol_viz_file_read(mcell_prop, filepath):
 #        scn.update()
 
 #        utime = resource.getrusage(resource.RUSAGE_SELF)[0]-begin
-#        print ('     Processed %d molecules in %g seconds\n' % (
+#        print ("     Processed %d molecules in %g seconds\n" % (
 #            len(mol_data), utime))
 
     except IOError:
-        print(('\n***** File not found: %s\n') % (filepath))
+        print(("\n***** File not found: %s\n") % (filepath))
     except ValueError:
-        print(('\n***** Invalid data in file: %s\n') % (filepath))
+        print(("\n***** Invalid data in file: %s\n") % (filepath))
 
 
 # Meshalyzer
@@ -1642,18 +1645,18 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
         mcell = context.scene.mcell
         objs = context.selected_objects
 
-        mcell.meshalyzer.object_name = ''
+        mcell.meshalyzer.object_name = ""
         mcell.meshalyzer.vertices = 0
         mcell.meshalyzer.edges = 0
         mcell.meshalyzer.faces = 0
-        mcell.meshalyzer.watertight = ''
-        mcell.meshalyzer.manifold = ''
-        mcell.meshalyzer.normal_status = ''
+        mcell.meshalyzer.watertight = ""
+        mcell.meshalyzer.manifold = ""
+        mcell.meshalyzer.normal_status = ""
         mcell.meshalyzer.area = 0
         mcell.meshalyzer.volume = 0
 
         if (len(objs) != 1):
-            mcell.meshalyzer.status = 'Please Select One Mesh Object'
+            mcell.meshalyzer.status = "Please Select One Mesh Object"
             return {'FINISHED'}
 
         obj = objs[0]
@@ -1661,7 +1664,7 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
         mcell.meshalyzer.object_name = obj.name
 
         if not (obj.type == 'MESH'):
-            mcell.meshalyzer.status = 'Selected Object Not a Mesh'
+            mcell.meshalyzer.status = "Selected Object Not a Mesh"
             return {'FINISHED'}
 
         t_mat = obj.matrix_world
@@ -1674,8 +1677,8 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
         area = 0
         for f in mesh.polygons:
             if not (len(f.vertices) == 3):
-                mcell.meshalyzer.status = '***** Mesh Not Triangulated *****'
-                mcell.meshalyzer.watertight = 'Mesh Not Triangulated'
+                mcell.meshalyzer.status = "***** Mesh Not Triangulated *****"
+                mcell.meshalyzer.watertight = "Mesh Not Triangulated"
                 return {'FINISHED'}
 
             tv0 = mesh.vertices[f.vertices[0]].co * t_mat
@@ -1692,29 +1695,29 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
         is_orientable = check_orientable(mesh, edge_faces, edge_face_count)
 
         if is_orientable:
-            mcell.meshalyzer.normal_status = 'Consistent Normals'
+            mcell.meshalyzer.normal_status = "Consistent Normals"
         else:
-            mcell.meshalyzer.normal_status = 'Inconsistent Normals'
+            mcell.meshalyzer.normal_status = "Inconsistent Normals"
 
         if is_closed:
-            mcell.meshalyzer.watertight = 'Watertight Mesh'
+            mcell.meshalyzer.watertight = "Watertight Mesh"
         else:
-            mcell.meshalyzer.watertight = 'Non-watertight Mesh'
+            mcell.meshalyzer.watertight = "Non-watertight Mesh"
 
         if is_manifold:
-            mcell.meshalyzer.manifold = 'Manifold Mesh'
+            mcell.meshalyzer.manifold = "Manifold Mesh"
         else:
-            mcell.meshalyzer.manifold = 'Non-manifold Mesh'
+            mcell.meshalyzer.manifold = "Non-manifold Mesh"
 
         if is_orientable and is_manifold and is_closed:
             volume = mesh_vol(mesh, t_mat)
             mcell.meshalyzer.volume = volume
             if volume >= 0:
-                mcell.meshalyzer.normal_status = 'Outward Facing Normals'
+                mcell.meshalyzer.normal_status = "Outward Facing Normals"
             else:
-                mcell.meshalyzer.normal_status = 'Inward Facing Normals'
+                mcell.meshalyzer.normal_status = "Inward Facing Normals"
 
-        mcell.meshalyzer.status = ''
+        mcell.meshalyzer.status = ""
         return {'FINISHED'}
 
 
@@ -1907,25 +1910,25 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
-        mcell.molecule_glyphs.status = ''
-#        new_glyph_name = 'receptor_glyph'
-#        mol_shape_name = 'mol_Ca_shape'
-        sobjs = context.selected_objects
-        if (len(sobjs) != 1):
-            mcell.molecule_glyphs.status = 'Select One Molecule'
+        mcell.molecule_glyphs.status = ""
+        #new_glyph_name = "receptor_glyph"
+        #mol_shape_name = "mol_Ca_shape"
+        select_objs = context.selected_objects
+        if (len(select_objs) != 1):
+            mcell.molecule_glyphs.status = "Select One Molecule"
             return {'FINISHED'}
-        if (sobjs[0].type != 'MESH'):
-            mcell.molecule_glyphs.status = 'Selected Object Not a Molecule'
+        if (select_objs[0].type != 'MESH'):
+            mcell.molecule_glyphs.status = "Selected Object Not a Molecule"
             return {'FINISHED'}
 
-        mol_obj = sobjs[0]
+        mol_obj = select_objs[0]
         mol_shape_name = mol_obj.name
 
         new_glyph_name = mcell.molecule_glyphs.glyph
 
         bpy.ops.wm.link_append(
             directory=mcell.molecule_glyphs.glyph_lib,
-            files=[{'name': new_glyph_name}], link=False, autoselect=False)
+            files=[{"name": new_glyph_name}], link=False, autoselect=False)
 
         mol_mat = mol_obj.material_slots[0].material
         new_mol_mesh = bpy.data.meshes[new_glyph_name]
@@ -1941,7 +1944,7 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
 def check_val_str(val_str, min_val, max_val):
     """ Convert val_str to float if possible. Otherwise, generate error. """
 
-    status = ''
+    status = ""
     val = None
 
     try:
@@ -1974,21 +1977,21 @@ def update_clamp_value(self, context):
 
     (clamp_value, status) = check_val_str(clamp_value_str, 0, None)
 
-    if status == '':
+    if status == "":
         surf_class_props.clamp_value = clamp_value
     else:
-        status = status % ('clamp_value', clamp_value_str)
-        surf_class_props.clamp_value_str = '%g' % (
+        status = status % ("clamp_value", clamp_value_str)
+        surf_class_props.clamp_value_str = "%g" % (
             surf_class_props.clamp_value)
 
     surf_class_type = convert_surf_class_str(surf_class_type)
     orient = convert_orient_str(orient)
 
     if molecule:
-        surf_class_props.name = 'Molec.: %s   Orient.: %s   Type: %s' % (
+        surf_class_props.name = "Molec.: %s   Orient.: %s   Type: %s" % (
             molecule, orient, surf_class_type)
     else:
-        surf_class_props.name = 'Molec.: NA   Orient.: %s   Type: %s' % (
+        surf_class_props.name = "Molec.: NA   Orient.: %s   Type: %s" % (
             orient, surf_class_type)
 
     surf_class.surf_class_props_status = status
@@ -2004,11 +2007,11 @@ def update_time_step(self, context):
 
     (time_step, status) = check_val_str(time_step_str, 0, None)
 
-    if status == '':
+    if status == "":
         mcell.initialization.time_step = time_step
     else:
-        status = status % ('time_step', time_step_str)
-        mcell.initialization.time_step_str = '%g' % (
+        status = status % ("time_step", time_step_str)
+        mcell.initialization.time_step_str = "%g" % (
             mcell.initialization.time_step)
 
     mcell.initialization.status = status
@@ -2028,8 +2031,8 @@ def update_time_step_max(self, context):
         if not status:
             mcell.initialization.time_step_max = time_step_max
         else:
-            status = status % ('time_step_max', time_step_max_str)
-            mcell.initialization.time_step_max_str = ''
+            status = status % ("time_step_max", time_step_max_str)
+            mcell.initialization.time_step_max_str = ""
 
         mcell.initialization.status = status
 
@@ -2046,8 +2049,8 @@ def update_space_step(self, context):
         if not status:
             mcell.initialization.space_step = space_step
         else:
-            status = status % ('space_step', space_step_str)
-            mcell.initialization.space_step_str = ''
+            status = status % ("space_step", space_step_str)
+            mcell.initialization.space_step_str = ""
 
         mcell.initialization.status = status
 
@@ -2065,8 +2068,8 @@ def update_interaction_radius(self, context):
         if not status:
             mcell.initialization.interaction_radius = interaction_radius
         else:
-            status = status % ('interaction_radius', interaction_radius_str)
-            mcell.initialization.interaction_radius_str = ''
+            status = status % ("interaction_radius", interaction_radius_str)
+            mcell.initialization.interaction_radius_str = ""
 
         mcell.initialization.status = status
 
@@ -2081,11 +2084,11 @@ def update_radial_directions(self, context):
         (radial_directions, status) = check_val_str(
             radial_directions_str, 0, None)
 
-        if status == '':
+        if status == "":
             mcell.initialization.radial_directions = radial_directions
         else:
-            status = status % ('radial_directions', radial_directions_str)
-            mcell.initialization.radial_directions_str = ''
+            status = status % ("radial_directions", radial_directions_str)
+            mcell.initialization.radial_directions_str = ""
 
         mcell.initialization.status = status
 
@@ -2100,11 +2103,11 @@ def update_radial_subdivisions(self, context):
         (radial_subdivisions, status) = check_val_str(
             radial_subdivisions_str, 0, None)
 
-        if status == '':
+        if status == "":
             mcell.initialization.radial_subdivisions = radial_subdivisions
         else:
-            status = status % ('radial_subdivisions', radial_subdivisions_str)
-            mcell.initialization.radial_subdivisions_str = ''
+            status = status % ("radial_subdivisions", radial_subdivisions_str)
+            mcell.initialization.radial_subdivisions_str = ""
 
         mcell.initialization.status = status
 
@@ -2125,8 +2128,8 @@ def update_vacancy_search_distance(self, context):
                 vacancy_search_distance
         else:
             status = status % (
-                'vacancy_search_distance', vacancy_search_distance_str)
-            mcell.initialization.vacancy_search_distance_str = ''
+                "vacancy_search_distance", vacancy_search_distance_str)
+            mcell.initialization.vacancy_search_distance_str = ""
 
         mcell.initialization.status = status
 
@@ -2141,11 +2144,11 @@ def update_diffusion_constant(self, context):
     (diffusion_constant, status) = check_val_str(
         diffusion_constant_str, 0, None)
 
-    if status == '':
+    if status == "":
         mol.diffusion_constant = diffusion_constant
     else:
-        status = status % ('diffusion_constant', diffusion_constant_str)
-        mol.diffusion_constant_str = '%g' % (mol.diffusion_constant)
+        status = status % ("diffusion_constant", diffusion_constant_str)
+        mol.diffusion_constant_str = "%g" % (mol.diffusion_constant)
 
     mcell.molecules.status = status
 
@@ -2161,11 +2164,11 @@ def update_custom_time_step(self, context):
 
     (custom_time_step, status) = check_val_str(custom_time_step_str, 0, None)
 
-    if status == '':
+    if status == "":
         mol.custom_time_step = custom_time_step
     else:
-        status = status % ('custom_time_step', custom_time_step_str)
-        mol.custom_time_step_str = '%g' % (mol.custom_time_step)
+        status = status % ("custom_time_step", custom_time_step_str)
+        mol.custom_time_step_str = "%g" % (mol.custom_time_step)
 
     mcell.molecules.status = status
 
@@ -2181,11 +2184,11 @@ def update_custom_space_step(self, context):
 
     (custom_space_step, status) = check_val_str(custom_space_step_str, 0, None)
 
-    if status == '':
+    if status == "":
         mol.custom_space_step = custom_space_step
     else:
-        status = status % ('custom_space_step', custom_space_step_str)
-        mol.custom_space_step_str = '%g' % (mol.custom_space_step)
+        status = status % ("custom_space_step", custom_space_step_str)
+        mol.custom_space_step_str = "%g" % (mol.custom_space_step)
 
     mcell.molecules.status = status
 
@@ -2201,11 +2204,11 @@ def update_fwd_rate(self, context):
 
     (fwd_rate, status) = check_val_str(fwd_rate_str, 0, None)
 
-    if status == '':
+    if status == "":
         rxn.fwd_rate = fwd_rate
     else:
-        status = status % ('fwd_rate', fwd_rate_str)
-        rxn.fwd_rate_str = '%g' % (rxn.fwd_rate)
+        status = status % ("fwd_rate", fwd_rate_str)
+        rxn.fwd_rate_str = "%g" % (rxn.fwd_rate)
 
     mcell.reactions.status = status
 
@@ -2221,11 +2224,11 @@ def update_bkwd_rate(self, context):
 
     (bkwd_rate, status) = check_val_str(bkwd_rate_str, 0, None)
 
-    if status == '':
+    if status == "":
         rxn.bkwd_rate = bkwd_rate
     else:
-        status = status % ('bkwd_rate', bkwd_rate_str)
-        rxn.bkwd_rate_str = '%g' % (rxn.bkwd_rate)
+        status = status % ("bkwd_rate", bkwd_rate_str)
+        rxn.bkwd_rate_str = "%g" % (rxn.bkwd_rate)
 
     mcell.reactions.status = status
 
