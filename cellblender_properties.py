@@ -293,7 +293,7 @@ class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
         name="Active Molecule Index", default=0,
         update=cellblender_operators.load_active_molecule)
     status = StringProperty(name="Status")
-    hide = bpy.props.BoolProperty(default=True)
+    advanced = bpy.props.BoolProperty(default=False)
     list_selected = bpy.props.BoolProperty(default=False)
     add_template_molecule = bpy.props.BoolProperty(default=False)
 

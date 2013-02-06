@@ -340,6 +340,7 @@ class MCELL_OT_molecule_cancel(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
 
+        mcell.molecules.active_mol_index = -1
         reset_template_molecule(self, context)
         # These flags hides the template fields in cellblender_panels
         mcell.molecules.add_template_molecule = False
@@ -368,6 +369,7 @@ class MCELL_OT_molecule_add(bpy.types.Operator):
                 mcell.molecules.molecule_list)-1
             active_mol_index = mcell.molecules.active_mol_index
             active_molecule = molecule_list[active_mol_index]
+            mcell.molecules.active_mol_index = -1
             copy_molecule_properties(self, template_molecule, active_molecule)
             reset_template_molecule(self, context)
             mcell.molecules.status = 'Add successful'
@@ -394,6 +396,7 @@ class MCELL_OT_molecule_update(bpy.types.Operator):
             active_mol_index = mcell.molecules.active_mol_index
             active_molecule = molecule_list[active_mol_index]
             copy_molecule_properties(self, template_molecule, active_molecule)
+            mcell.molecules.active_mol_index = -1
             reset_template_molecule(self, context)
             mcell.molecules.status = 'Update successful'
             mcell.molecules.list_selected = False
@@ -472,9 +475,10 @@ class MCELL_OT_molecule_delete(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         mcell.molecules.molecule_list.remove(mcell.molecules.active_mol_index)
-        mcell.molecules.active_mol_index -= 1
-        if (mcell.molecules.active_mol_index < 0):
-            mcell.molecules.active_mol_index = 0
+        mcell.molecules.active_mol_index = -1
+        #mcell.molecules.active_mol_index -= 1
+        #if (mcell.molecules.active_mol_index < 0):
+        #    mcell.molecules.active_mol_index = 0
         reset_template_molecule(self, context)
         mcell.molecules.status = 'Remove successful'
         mcell.molecules.list_selected = False

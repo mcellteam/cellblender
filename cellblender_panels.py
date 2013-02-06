@@ -312,16 +312,22 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
             row = layout.row(align=True)
             row.alignment = 'LEFT'
             # Hide advanced optional properties
-            if mcell.molecules.hide:
-                row.prop(mcell.molecules, "hide", icon='TRIA_RIGHT',
+            box = layout.box()
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
+            if not mcell.molecules.advanced:
+                row.prop(mcell.molecules, "advanced", icon='TRIA_RIGHT',
                          text='Advanced Options', emboss=False)
             # Show advanced optional properties
             else:
-                row.prop(mcell.molecules, "hide", icon='TRIA_DOWN',
+                row.prop(mcell.molecules, "advanced", icon='TRIA_DOWN',
                          text='Advanced Options', emboss=False)
-                layout.prop(mol, "target_only")
-                layout.prop(mol, "custom_time_step_str")
-                layout.prop(mol, "custom_space_step_str")
+                row = box.row()
+                row.prop(mol, "target_only")
+                row = box.row()
+                row.prop(mol, "custom_time_step_str")
+                row = box.row()
+                row.prop(mol, "custom_space_step_str")
             row = layout.row(align=True)
             if mcell.molecules.add_template_molecule:
                 row.operator("mcell.molecule_add", text="Add to List")
