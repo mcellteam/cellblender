@@ -1,0 +1,12 @@
+Changes since 0.1.52
+
+* New Features:
+  * Optional initialization commands
+  * Partition generation
+  * Surface classes
+  * Modification of surface regions by surface classes
+  * Hid advanced molecule options
+
+* Bug Fixes:
+  * Meshes could be exported with the wrong rotation
+  * Molecule positions and shapes (glyphs) could be offset on import
