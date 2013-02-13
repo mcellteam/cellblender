@@ -1,22 +1,23 @@
 
 
-README for CellBlender version 0.1,  2/9/2012
+README for CellBlender version 0.1.54,  2/13/2013
 
 
 Introduction:
 
   CellBlender is an Addon for Blender-2.6x to create computational cell biology
 models for use in MCell and potentially other cell simulation biophysics
-engines. In CellBlender-0.1 you can create geometric objects, define named
-surface regions on the objects, export your objects as MCell MDL geometry
-files, import a time-series of MCell VIZ_OUTPUT (for MODE=ASCII), and playback
-the VIZ_OUTPUT as an animation (in real-time or photorealistic rendering).  MDL
-import does not yet work, nor does export of biochemistry etc...  Support for
-these functions will be added gradually in future versions.  One goal for
-CellBlender is to provide a comprehensive model building and visualization
-environment which completely encapsulates all of MCell's MDL language in GUI
-form such that the user need not ever edit an MDL file by hand (or even know
-that such files exist).  But we're not at that point yet so bear with us...
+engines. In CellBlender-0.1.54 you can define molecules and reactions, create
+geometric objects, define named surface regions on the objects, export your
+project as a collection of MDL files, import a time-series of MCell VIZ_OUTPUT
+(for MODE=CELLBLENDER), and playback the VIZ_OUTPUT as an animation (in
+real-time or photorealistic rendering). MDL import and the export of
+biochemistry are not yet fully functional. Support for these functions will be
+added gradually in future versions. One goal for CellBlender is to provide a
+comprehensive model building and visualization environment which completely
+encapsulates all of MCell's MDL language in GUI form such that the user need
+not ever edit an MDL file by hand (or even know that such files exist). But
+we're not at that point yet so bear with us...
 
 Note that if you are upgrading from Blender versions 2.4x or 2.5x to Blender
 2.6x you should be able to open old Blender projects in the new version of
@@ -26,105 +27,73 @@ Blender.
 
 Installing CellBlender Addon:
 
-  Linux:
-    Unpack cellblender.tar.gz in the addons directory for your installed
-    copy of blender:
-
-    cd path_to_blender/2.61/scripts/addons
-    tar zxvf cellblender.tar.gz
-
-  MacOSX:
-    Unpack cellblender.tar.gz in the addons directory for your installed
-    copy of blender:
-
-    cd path_to_blender/blender.app/Contents/MacOS/2.61/scripts/addons
-    tar zxvf cellblender.tar.gz
-
-
-
+Startup Blender and go to the File->User Preferences menu. In the "User
+Preferences" control panel choose the "Addons" tab. Click the "Install from
+File" button at the bottom of the window. Navigate to the unextracted zip file
+that you downloaded (cellblender_v54.zip), select it, and click the "Install
+from File" button near the upper-right hand corner.
 
 Activating CellBlender Addon in Blender:
 
-Startup blender and go to the file->User Preferences menu.  In the User
-Preferences control panel choose the "Addons" tab.  In the Addons panel scroll
-down till you see "Cell Modeling: CellBlender" and check the check box to
-enable it.  Then click Save as Default, to enable the addon permanently in
-Blender for any future projects you make.
-
+In the Addons panel scroll down till you see "Cell Modeling: CellBlender" and
+check the check box to enable it. Then click "Save as Default" to enable the
+addon permanently in Blender for any future projects you make.
 
 
 
 Using CellBlender:
 
-Because CellBlender-0.1 currently only supports geometry export to MCell MDL
-the workflow and usage requires some hand coordination of MDL files to get
-runnable MCell models.  For a CellBlender project with a "Project Base Name" of
-"my_project" (see step 2a-c below for how to set this), the most convenient way
-to organize an MCell project right now is something like this:
+For detailed instructions with images and videos, please see
+http://mcell.org/tutorials/. Otherwise, you can follow the instructions below:
 
-1) For a project named "my_project" create my_project.main.mdl organized
-something like this simple example:
+1) Because CellBlender-0.1.54 doesn't yet fully support all of MCell's MDL
+   commands, the workflow and usage may require some hand editing of MDL
+   files. Notably, reaction and visualization data output must be created by
+   hand. For a CellBlender project with a "Project Base Name" of "my_project"
+   (see step 2a-c below for how to set this), one would need to create two
+   files, my_project.viz_output.mdl and my_project.rxn_output.mdl:
 
-   TIME_STEP = 1e-6
-   ITERATIONS = 10000
-   
-   DEFINE_MOLECULES {
-     ...
-   }
-   DEFINE_REACTIONS {
-     ...
-   }
+   a) my_project.viz_output.mdl:
 
-   INCLUDE_FILE = "my_project.geometry.mdl"
+      VIZ_OUTPUT {
+        MODE = CELLBLENDER
+        FILENAME = "./viz/my_project.mols"
+        MOLECULES {
+          ...
+        }
+      }
 
-   MODIFY_SURFACE_REGIONS {
-     ...
-   }
+   b) my_project.rxn_output.mdl:
 
-   INSTANTIATE my_project OBJECT {
-     ...
-   }
-
-   VIZ_OUTPUT {
-     MODE = ASCII
-     FILENAME = "./viz/my_project.mols"
-     MOLECULES {
-       ...
-     }
-   }
-
-   REACTION_DATA_OUTPUT {
-     ...
-   }
+      REACTION_DATA_OUTPUT {
+        ...
+      }
 
 
-The "INCLUDE_FILE" statement refers to the geometry file which will be created
-by CellBlender in Step 2 below.  Note that ASCII mode VIZ_OUTPUT will output
-molecules but will not output meshes.  We assume that your meshes are already
-present in your CellBlender/Blender project created in step 2 below.  The
-philosophy here is that the CellBlender/Blender project IS your MCell project
-and that the MCell compute kernel is a physics engine driving the dynamics of
-objects created and visualized in Blender.
+Note that CELLBLENDER mode VIZ_OUTPUT will output molecules but will not output
+meshes. We assume that your meshes are already present in your
+CellBlender/Blender project created in step 2 below. The philosophy here is
+that the CellBlender/Blender project IS your MCell project and that the MCell
+compute kernel is a physics engine driving the dynamics of objects created and
+visualized in Blender.
 
 Depending on your graphics hardware beware, of exporting more than 10000
 molecules or so, if you want good performance (>10 frames per second) in
-CellBlender playback.  But if your goal is to render a movie you should be able
-to export and render many 100's of thousands of molecules per frame with
-CellBlender.  
+CellBlender playback. But if your goal is to render a movie you should be able
+to export and render many 100s of thousands of molecules per frame with
+CellBlender. 
 
 
-2) Now create your geometry in Blender (with the CellBlender addon enabled).
+2) Now, create your geometry in Blender (with the CellBlender addon enabled).
    Here we assume you already know how to use Blender for simple geometric
-   modeling tasks at a beginner level.  We give instructions specifically for
+   modeling tasks at a beginner level. We give instructions specifically for
    how to use CellBlender within the Blender environment to create geometric
    models and prepare them for use in MCell.
 
    CellBlender creates GUI panels in the Blender GUI under the Properies->Scene
-   panel and under the Properties->Object panel.  CellBlender's main controls
-   are accessed under Properties->Scene.  In CellBlender-0.1 under
-   Properties->Scene only the "CellBlender Project Settings" and "Visualize
-   Simulation Results" panels are fully functional.  The "Define Surface
-   Regions" control panel is found under Properties->Object.
+   panel and under the Properties->Object panel. CellBlender's main controls
+   are accessed under Properties->Scene. The "Define Surface Regions" control
+   panel is found under Properties->Object.
 
    Note that when you save your CellBlender/Blender project as a Blender file,
    all of your objects and settings (including the CellBlender settings) are
@@ -135,17 +104,55 @@ CellBlender.
    a) Open Blender (we'll assume the CellBlender addon has been enabled).
    b) In "CellBlender Project Settings" click on the "Set CellBlender Project
       Directory" button and navigate to the home directory for the project in
-      the file navigation widget.  Click on "Set Project Directory" to set
+      the file navigation widget. Click on "Set Project Directory" to set
       the directory.
-   c) Type "my_project" in the "Project Base Name:"  text box.
-   d) Now create any objects you like in the "3D View" window.  Length units
+   c) Type "my_project" in the "Project Base Name:" text box.
+   d) Define molecules in the "Define Molecules" panel.
+
+      i) Click the "+" button to create a new molecule.
+     ii) Name the molecule in the "Molecule Name:" text box.
+    iii) Set the "Molecule Type".
+     iv) Specify the "Diffusion Constant".
+      v) Repeat steps i-iv to add additional molecules.
+
+   e) Define reactions in the "Define Reactions" panel.
+
+      i) Click the "+" button to create a new reaction.
+     ii) Add one or two molecules in the "Reactants" text box separated by a
+         "+" sign (e.g. "Molecule1 + Molecule2").
+    iii) Set the "Reaction Type".
+     iv) Add one or more molecules in the "Products" text box separated by a
+         "+" sign (e.g. "Molecule1 + Molecule2 + Molecule3").
+      v) Set a "Forward Rate" (and "Backward Rate" if applicable).
+     vi) Repeat steps i-v to add additional reactions.
+
+   e) Create molecule release sites in the "Molecule Release/Placement" panel.
+
+      i) Click the "+" button to create a new release site.
+     ii) Name the release site in the "Site Name" text box.
+    iii) Select a molecule from the "Molecule" search menu.
+     iv) Set a "Release Shape". If you select "Object/Region", you must also
+         set it in the next text box formatted as follows:
+         "ObjectName[RegionName]". Otherwise, set the "Location" and "Site
+         Diameter".
+      v) Set the "Quantity Type" and "Quantity to Release".
+     vi) Repeat steps i-v to add additional release sites.
+
+   f) Enable reaction and visualization output.
+
+      i) Under the "Reaction Output Settings" panel, select "Include Reaction
+         Output".
+     ii) Under the "Visualization Output Settings" panel, select "Include Viz
+         Output."
+    
+   g) Now create any objects you like in the "3D View" window. Length units
       in CellBlender (and MCell) are microns (i.e. 1 Blender unit is one
-      micron).  Remember to triangulate your objects: In "Edit Mode", select
+      micron). Remember to triangulate your objects: In "Edit Mode", select
       all and type Ctrl-T.
-   e) Name your objects as you wish in the "Outliner" panel.
-   f) In "Edit Mode" in "Face select mode" you may select faces to be part of
+   h) Name your objects as you wish in the "Outliner" panel.
+   i) In "Edit Mode" in "Face select mode" you may select faces to be part of
       an MCell surface region.
-   g) Use the "Define Surface Regions" panel under the Properties->Object.
+   j) Use the "Define Surface Regions" panel under the Properties->Object.
       While in "Edit Mode" and "Face select mode":
 
       i) Click the "+" button to create a new surface region.
@@ -155,43 +162,43 @@ CellBlender.
       v) Click "select" to select the faces assigned to the current region.
      vi) Click "deselect" to deselect the faces assigned to the current region.
 
-   h) Use the "Export CellBlender Project" button to export the geometry for
+   k) Use the "Export CellBlender Project" button to export the project for
       use in MCell:
 
       i) In "Object Mode" select the objects to be exported.
-     ii) Click "Export CellBlender Project".  A file navigator widget will
+     ii) Click "Export CellBlender Project". A file navigator widget will
          pop up with the project directory and the geometry file name for
-         the project already set to "my_project.geometry.mdl".  Click
+         the project already set to "my_project.geometry.mdl". Click
          "Export MCell MDL" to export the project.
 
-   i) You may now run MCell to generate your VIZ_OUTPUT files.
-   j) To visualize the output:
+   l) You may now run MCell to generate your VIZ_OUTPUT files.
+   m) To visualize the output:
 
       i) In the "Visualize Simulation Results" panel, click "Set Molecule Viz
-         Directory".  A file navigator widget will pop up.  Navigate to the
+         Directory". A file navigator widget will pop up. Navigate to the
          "viz" directory and click "Read Molecule Files".
      ii) CellBlender will now visualize the molecule species and positions in
-         the 3D View window.  By default the molecules will be red icospheres
-         10 nm in diameter.  Each icosphere molecule is composed of 20 faces.
+         the 3D View window. By default the molecules will be red icospheres
+         10 nm in diameter. Each icosphere molecule is composed of 20 faces.
          The first frame of the animation will be shown.
     iii) In the Timeline widget at the bottom of the screen, set the "Start"
          and "End" frame numbers for the animation (these are not set
          automagically because the user might have other plans).
      iv) Use the VCR controls to play, pause, rewind etc...
-         You can also click and drag the yellow Timeline cursor line to move
-         forward or backward in time.  The keyboard forward and backward arrow
+         You can also click and drag the green Timeline cursor line to move
+         forward or backward in time. The keyboard forward and backward arrow
          keys will single step through time.
 
-   k) Use the Outliner and Properties->Material panel to change colors of
+   n) Use the Outliner and Properties->Material panel to change colors of
       molecules:
 
       i) In the Outliner, displayed molecules will be created as child objects
-         of the "molecules" object.  Click on the small "+" node to expand
+         of the "molecules" object. Click on the small "+" node to expand
          the molecules object to see its children.
      ii) In CellBlender an MCell molecule species named "a" will appear as
-         "mol_a".  Each molecule species is a parent object containing
+         "mol_a". Each molecule species is a parent object containing
          "mol_a_pos" for the positions of each mol_a particle and "mol_a_shape"
-         for the shape and color of mol_a.  Click the small "+" node to see
+         for the shape and color of mol_a. Click the small "+" node to see
          the mol_a_pos and mol_a_shape components.
     iii) To change the color of mol_a_shape click on it to select it and then
          adjust its color in the Properties->Material panel.
