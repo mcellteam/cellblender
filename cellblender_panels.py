@@ -84,8 +84,9 @@ class MCELL_PT_model_objects(bpy.types.Panel):
         row.label(text="Model Objects:", icon='MESH_ICOSPHERE')
         row = layout.row()
         col = row.column()
-        col.template_list(mcell.model_objects, "object_list",
-                          mcell.model_objects, "active_obj_index", rows=2)
+        col.template_list("UI_UL_list", "model_objects", mcell.model_objects,
+                          "object_list", mcell.model_objects,
+                          "active_obj_index", rows=2)
         col = row.column(align=True)
 #        col.active = (len(context.selected_objects) == 1)
         col.operator("mcell.model_objects_add", icon='ZOOMIN', text="")
@@ -134,8 +135,9 @@ class MCELL_PT_viz_results(bpy.types.Panel):
         row = layout.row()
         row.label(text="Current Molecule File: "+mcell.mol_viz.mol_file_name)
         row = layout.row()
-        row.template_list(mcell.mol_viz, "mol_file_list", mcell.mol_viz,
-                          "mol_file_index", rows=2)
+        row.template_list("UI_UL_list", "viz_results", mcell.mol_viz,
+                          "mol_file_list", mcell.mol_viz, "mol_file_index",
+                          rows=2)
         row = layout.row()
         layout.prop(mcell.mol_viz, "mol_viz_enable")
 #        row = layout.row()
@@ -423,8 +425,9 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
         row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
         row = layout.row()
         col = row.column()
-        col.template_list(mcell.molecules, "molecule_list", mcell.molecules,
-                          "active_mol_index", rows=2)
+        col.template_list("UI_UL_list", "define_molecules", mcell.molecules,
+                          "molecule_list", mcell.molecules, "active_mol_index",
+                          rows=2)
         col = row.column(align=True)
         col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
         col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
@@ -470,8 +473,9 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
         row.label(text="Defined Reactions:", icon='FORCE_LENNARDJONES')
         row = layout.row()
         col = row.column()
-        col.template_list(mcell.reactions, "reaction_list", mcell.reactions,
-                          "active_rxn_index", rows=2)
+        col.template_list("UI_UL_list", "define_reactions", mcell.reactions,
+                          "reaction_list", mcell.reactions, "active_rxn_index",
+                          rows=2)
         col = row.column(align=True)
         col.operator("mcell.reaction_add", icon='ZOOMIN', text="")
         col.operator("mcell.reaction_remove", icon='ZOOMOUT', text="")
@@ -505,7 +509,8 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
         row.label(text="Defined Surface Classes:", icon='FACESEL_HLT')
         row = layout.row()
         col = row.column()
-        col.template_list(surf_class, "surf_class_list", surf_class,
+        col.template_list("UI_UL_list", "define_surf_class", surf_class,
+                          "surf_class_list", surf_class,
                           "active_surf_class_index", rows=2)
         col = row.column(align=True)
         col.operator("mcell.surface_class_add", icon='ZOOMIN', text="")
@@ -541,10 +546,10 @@ class MCELL_PT_define_surface_class_properties(bpy.types.Panel):
                       icon='FACESEL_HLT')
             row = layout.row()
             col = row.column()
-            col.template_list(active_surf_class, "surf_class_props_list",
+            col.template_list("UI_UL_list", "define_surf_class_props",
+                              active_surf_class, "surf_class_props_list",
                               active_surf_class,
-                              "active_surf_class_props_index",
-                              rows=2)
+                              "active_surf_class_props_index", rows=2)
             col = row.column(align=True)
             col.operator("mcell.surf_class_props_add", icon='ZOOMIN', text="")
             col.operator("mcell.surf_class_props_remove", icon='ZOOMOUT',
@@ -583,9 +588,9 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
         row = layout.row()
         row = layout.row()
         col = row.column()
-        col.template_list(mod_surf_regions, "mod_surf_regions_list",
-                          mod_surf_regions, "active_mod_surf_regions_index",
-                          rows=2)
+        col.template_list("UI_UL_list", "mod_surf_regions", mod_surf_regions,
+                          "mod_surf_regions_list", mod_surf_regions,
+                          "active_mod_surf_regions_index", rows=2)
         col = row.column(align=True)
         col.operator("mcell.mod_surf_regions_add", icon='ZOOMIN', text="")
         col.operator("mcell.mod_surf_regions_remove", icon='ZOOMOUT', text="")
@@ -629,7 +634,8 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
         row.label(text="Release/Placement Sites:", icon='FORCE_LENNARDJONES')
         row = layout.row()
         col = row.column()
-        col.template_list(mcell.release_sites, "mol_release_list",
+        col.template_list("UI_UL_list", "molecule_release",
+                          mcell.release_sites, "mol_release_list",
                           mcell.release_sites, "active_release_index", rows=2)
         col = row.column(align=True)
         col.operator("mcell.release_site_add", icon='ZOOMIN', text="")
@@ -709,8 +715,8 @@ class MCELL_PT_define_surface_regions(bpy.types.Panel):
         row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
         row = layout.row()
         col = row.column()
-        col.template_list(obj_regs, "region_list", obj_regs,
-                          "active_reg_index", rows=2)
+        col.template_list("UI_UL_list", "define_surf_regions", obj_regs,
+                          "region_list", obj_regs, "active_reg_index", rows=2)
         col = row.column(align=True)
         col.operator("mcell.region_add", icon='ZOOMIN', text="")
         col.operator("mcell.region_remove", icon='ZOOMOUT', text="")
