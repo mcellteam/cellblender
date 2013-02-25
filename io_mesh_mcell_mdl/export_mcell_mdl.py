@@ -70,11 +70,11 @@ def save_wrapper(context, out_file, filedir):
     mcell = context.scene.mcell
     settings = mcell.project_settings
 
-    # export model initialization:
+    # Export model initialization:
     out_file.write("ITERATIONS = %d\n" % (mcell.initialization.iterations))
     out_file.write("TIME_STEP = %g\n\n" % (mcell.initialization.time_step))
 
-    # export optional initialization commands
+    # Export optional initialization commands:
     if settings.export_format == 'mcell_mdl_modular':
         out_file.write("INCLUDE_FILE = \"%s.initialization.mdl\"\n\n" %
                        (settings.base_name))
@@ -85,7 +85,7 @@ def save_wrapper(context, out_file, filedir):
     else:
         save_initialization_commands(context, out_file)
 
-    # export partitions
+    # Export partitions:
     if mcell.partitions.include:
         out_file.write("PARTITION_X = [[%g TO %g STEP %g]]\n" % (
             mcell.partitions.x_start, mcell.partitions.x_end,
@@ -97,7 +97,7 @@ def save_wrapper(context, out_file, filedir):
             mcell.partitions.z_start, mcell.partitions.z_end,
             mcell.partitions.z_step))
 
-    # export molecules:
+    # Export molecules:
     if settings.export_format == 'mcell_mdl_modular':
         out_file.write("INCLUDE_FILE = \"%s.molecules.mdl\"\n\n" %
                        (settings.base_name))
@@ -108,17 +108,19 @@ def save_wrapper(context, out_file, filedir):
     else:
         save_molecules(context, out_file)
 
-    # export surface classes
+    # Export surface classes:
     have_surf_class = len(mcell.surface_classes.surf_class_list) != 0
     if have_surf_class and settings.export_format == 'mcell_mdl_modular':
         out_file.write("INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n" %
                        (settings.base_name))
         filepath = ("%s/%s.surface_classes.mdl" %
                     (filedir, settings.base_name))
-        with open(filepath, "w", encoding="utf8", newline="\n") as mol_file:
-            save_surface_classes(context, mol_file)
+        with open(filepath, "w", encoding="utf8", newline="\n") as sc_file:
+            save_surface_classes(context, sc_file)
+    else:
+        save_surface_classes(context, out_file)
 
-    # export reactions
+    # Export reactions:
     have_reactions = len(context.scene.mcell.reactions.reaction_list) != 0
     if have_reactions and settings.export_format == 'mcell_mdl_modular':
         out_file.write("INCLUDE_FILE = \"%s.reactions.mdl\"\n\n" %
@@ -130,8 +132,9 @@ def save_wrapper(context, out_file, filedir):
     else:
         save_reactions(context, out_file)
 
-    # export model geometry:
-    if settings.export_format == 'mcell_mdl_modular':
+    # Export model geometry:
+    have_geometry = len(context.scene.mcell.model_objects.object_list) != 0
+    if have_geometry and settings.export_format == 'mcell_mdl_modular':
         out_file.write("INCLUDE_FILE = \"%s.geometry.mdl\"\n\n" %
                        (settings.base_name))
         filepath = ("%s/%s.geometry.mdl" %
@@ -141,15 +144,17 @@ def save_wrapper(context, out_file, filedir):
     else:
         save_geometry(context, out_file)
 
-    # export modify surface regions
+    # Export modify surface regions:
     have_mod_surf_reg = len(mcell.mod_surf_regions.mod_surf_regions_list) != 0
     if have_mod_surf_reg and settings.export_format == 'mcell_mdl_modular':
         out_file.write("INCLUDE_FILE = \"%s.mod_surf_regions.mdl\"\n\n" %
                        (settings.base_name))
         filepath = ("%s/%s.mod_surf_regions.mdl" %
                     (filedir, settings.base_name))
-        with open(filepath, "w", encoding="utf8", newline="\n") as mol_file:
-            save_mod_surf_regions(context, mol_file)
+        with open(filepath, "w", encoding="utf8", newline="\n") as mod_sr_file:
+            save_mod_surf_regions(context, mod_sr_file)
+    else:
+        save_mod_surf_regions(context, out_file)
 
     # Instantiate Model Geometry and Release sites:
     object_list = mcell.model_objects.object_list
