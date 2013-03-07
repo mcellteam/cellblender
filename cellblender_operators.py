@@ -1609,13 +1609,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                 # Add and place vertices at positions of molecules
                 mol_pos_mesh.vertices.add(len(mol_pos)//3)
                 mol_pos_mesh.vertices.foreach_set("co", mol_pos)
-                #mol_pos_mesh.vertices.foreach_set("normal", mol_orient)
-                # NOTE: This is a temporary fix for a bug in Blender 2.66.
-                # We should revert back to the original when it's fixed.
-                for idx, vert in enumerate(mol_pos_mesh.vertices):
-                    vert.normal = mathutils.Vector((
-                        mol_orient[idx*3], mol_orient[idx*3+1],
-                        mol_orient[idx*3+2]))
+                mol_pos_mesh.vertices.foreach_set("normal", mol_orient)
 
                 # Create object to contain the mol_pos_mesh data
                 mol_obj = objs.get(mol_name)
