@@ -29,7 +29,8 @@ bl_info = {
     "warning": "",
     "wiki_url": "http://www.mcell.org",
     "tracker_url": "http://code.google.com/p/cellblender/issues/list",
-    "category": "Cell Modeling"
+    "category": "Cell Modeling",
+    "supported_version_list": [(2,64,0),(2,65,0),(2,66,1)]
 }
 
 
@@ -59,10 +60,14 @@ def register():
         type=cellblender_properties.MCellPropertyGroup)
     bpy.types.Object.mcell = bpy.props.PointerProperty(
         type=cellblender_properties.MCellObjectPropertyGroup)
+    print ("CellBlender registered")
+    if (bpy.app.version not in bl_info['supported_version_list']):
+	    print ("Warning, current Blender version", bpy.app.version, " is not in supported list:", bl_info['supported_version_list'])
 
 
 def unregister():
     bpy.utils.unregister_module(__name__)
+    print ("CellBlender unregistered")
 
 
 if len(bpy.app.handlers.frame_change_pre) == 0:
