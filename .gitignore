@@ -1,1 +1,5 @@
 __pycache__
+compare_to_addon.sh
+copy_to_addon.sh
+delete_from_addon.sh
+
