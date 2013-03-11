@@ -1186,6 +1186,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
+        print ( "Called MCELL_OT_export_project.execute" )
         mcell = context.scene.mcell
         if mcell.project_settings.export_format == 'mcell_mdl_unified':
 #            if not mcell.project_settings.export_selection_only:
@@ -1198,6 +1199,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
                 mcell.project_settings.base_name + ".main.mdl"
             bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
 
+        print ( "Returning from MCELL_OT_export_project.execute" )
         return {'FINISHED'}
 
 
