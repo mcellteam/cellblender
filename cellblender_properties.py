@@ -227,14 +227,21 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 class MCellProjectPanelProperty(bpy.types.PropertyGroup):
     base_name = StringProperty(name="Project Base Name")
     project_dir = StringProperty(name="Project Directory")
+
+
+
+class MCellExportAndRunProperty(bpy.types.PropertyGroup):
     export_format_enum = [
         ('mcell_mdl_unified', "Single Unified MCell MDL File", ""),
         ('mcell_mdl_modular', "Modular MCell MDL Files", "")]
     export_format = EnumProperty(items=export_format_enum,
                                  name="Export Format",
                                  default='mcell_mdl_modular')
-#    export_selection_only = BoolProperty(name="Export Selected Objects Only",
-#                                         default=True)
+    #export_selection_only = BoolProperty(name="Export Selected Objects Only",
+    #                                     default=True)
+    mcell_binary = StringProperty(name="MCell Binary")
+    start_seed = IntProperty(name="Start Seed", default=1, min=1)
+    end_seed = IntProperty(name="End Seed", default=1, min=1)
 
 
 class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
@@ -614,6 +621,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     cellblender_version = StringProperty(name="CellBlender Version", default="0.1.54")
     project_settings = PointerProperty(
         type=MCellProjectPanelProperty, name="CellBlender Project Settings")
+    export_and_run = PointerProperty(
+        type=MCellExportAndRunProperty, name="Export and Run")
     mol_viz = PointerProperty(
         type=MCellMolVizPanelProperty, name="Mol Viz Settings")
     initialization = PointerProperty(

@@ -60,12 +60,35 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         layout.prop(mcell.project_settings, "base_name")
         layout.separator()
         row = layout.row()
-        row.label(text="Export Project: "+mcell.project_settings.base_name)
+
+
+class MCELL_PT_export_and_run(bpy.types.Panel):
+    bl_label = "Export and Run Simulation"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mcell = context.scene.mcell
+
         row = layout.row()
-        layout.prop(mcell.project_settings, "export_format")
+        layout.prop(mcell.export_and_run, "export_format")
         row = layout.row()
         row.operator("mcell.export_project", text="Export CellBlender Project",
                      icon='FILESEL')
+
+        row = layout.row()
+        row.operator("mcell.select_mcell_binary",
+                     text="Select MCell Binary", icon='FILESEL')
+        row = layout.row()
+        row.operator("mcell.run_simulation", text="Run Simulation",
+                     icon='POSE_DATA')
+
+        row = layout.row(align=True)
+        row.prop(mcell.export_and_run, "start_seed")
+        row.prop(mcell.export_and_run, "end_seed")
 
 
 class MCELL_PT_model_objects(bpy.types.Panel):

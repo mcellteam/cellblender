@@ -34,6 +34,7 @@ import glob
 import os
 import random
 import re
+import subprocess
 
 
 # We use per module class registration/unregistration
@@ -1178,6 +1179,48 @@ def check_release_object_expr(self, context):
     return
 
 
+class MCELL_OT_select_mcell_binary(bpy.types.Operator):
+    bl_idname = "mcell.select_mcell_binary"
+    bl_label = "Select MCell Binary"
+    bl_description = "Select MCell Binary"
+    bl_options = {'REGISTER'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+    directory = bpy.props.StringProperty(subtype='DIR_PATH')
+
+    def __init__(self):
+        self.directory = bpy.context.scene.mcell.project_settings.project_dir
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.export_and_run.mcell_binary = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
+class MCELL_OT_run_simulation(bpy.types.Operator):
+    bl_idname = "mcell.run_simulation"
+    bl_label = "Run MCell Simulation"
+    bl_description = "Run MCell Simulation"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        #self.report({'WARNING'}, "Simulation Running")
+        mcell = context.scene.mcell
+        mcell_binary = mcell.export_and_run.mcell_binary
+        project_dir = mcell.project_settings.project_dir
+        base_name = mcell.project_settings.base_name
+        start = mcell.export_and_run.start_seed
+        end = mcell.export_and_run.end_seed + 1
+        filepath = '%s%s.main.mdl' % (project_dir, base_name)
+        for seed in range(start, end):
+            subprocess.call([mcell_binary, '-seed', '%d' % seed, filepath])
+        return {'FINISHED'}
+
+
 class MCELL_OT_export_project(bpy.types.Operator):
     bl_idname = "mcell.export_project"
     bl_label = "Export CellBlender Project"
@@ -1186,13 +1229,13 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
-        if mcell.project_settings.export_format == 'mcell_mdl_unified':
-#            if not mcell.project_settings.export_selection_only:
+        if mcell.export_and_run.export_format == 'mcell_mdl_unified':
+#            if not mcell.export_and_run.export_selection_only:
 #                bpy.ops.object.select_by_type(type='MESH')
-            filepath = mcell.project_settings.project_dir + "/" + \
+            filepath = mcell.export_and_run.project_dir + "/" + \
                 mcell.project_settings.base_name + ".main.mdl"
             bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
-        elif mcell.project_settings.export_format == 'mcell_mdl_modular':
+        elif mcell.export_and_run.export_format == 'mcell_mdl_modular':
             filepath = mcell.project_settings.project_dir + "/" + \
                 mcell.project_settings.base_name + ".main.mdl"
             bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
