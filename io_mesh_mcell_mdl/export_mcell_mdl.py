@@ -52,10 +52,18 @@ def save(operator, context, filepath=""):
         as MDL.
 
     """
+    print ("Inside export_mcell_mdl.save" )
 
     with open(filepath, "w", encoding="utf8", newline="\n") as out_file:
         filedir = os.path.dirname(filepath)
         save_wrapper(context, out_file, filedir)
+
+    print ( "Trying to run MCell..." )
+    os.system ( "pwd" )
+    os.system ( "~/proj/MCell/src/mcell_bzr/src/linux/mcell intro.main.mdl" )
+
+    print ( "Done running MCell ... returning to CellBlender" )
+
 
     return {'FINISHED'}
 
@@ -66,6 +74,7 @@ def save_wrapper(context, out_file, filedir):
     It provides a wrapper assembling the final mdl piece by piece.
 
     """
+    print ("Inside export_mcell_mdl.save_wrapper with out_file:", out_file, " and filedir:", filedir )
 
     mcell = context.scene.mcell
     settings = mcell.project_settings
@@ -147,10 +156,8 @@ def save_wrapper(context, out_file, filedir):
     # Export modify surface regions:
     have_mod_surf_reg = len(mcell.mod_surf_regions.mod_surf_regions_list) != 0
     if have_mod_surf_reg and settings.export_format == 'mcell_mdl_modular':
-        out_file.write("INCLUDE_FILE = \"%s.mod_surf_regions.mdl\"\n\n" %
-                       (settings.base_name))
-        filepath = ("%s/%s.mod_surf_regions.mdl" %
-                    (filedir, settings.base_name))
+        out_file.write("INCLUDE_FILE = \"%s.mod_surf_regions.mdl\"\n\n" % (settings.base_name))
+        filepath = ("%s/%s.mod_surf_regions.mdl" % (filedir, settings.base_name))
         with open(filepath, "w", encoding="utf8", newline="\n") as mod_sr_file:
             save_mod_surf_regions(context, mod_sr_file)
     else:
@@ -174,12 +181,19 @@ def save_wrapper(context, out_file, filedir):
 
     # Include MDL files for viz and reaction output:
     if mcell.viz_output.include:
-        out_file.write("INCLUDE_FILE = \"%s.viz_output.mdl\"\n\n" %
-                       (settings.base_name))
+        out_file.write("INCLUDE_FILE = \"%s.viz_output.mdl\"\n\n" % (settings.base_name))
+        print ("Ready to write the actual viz MDL file here")
+        filepath = ("%s/%s.viz_output.mdl" % (filedir, settings.base_name))
+        with open(filepath, "w", encoding="utf8", newline="\n") as mod_viz_file:
+            save_viz_output_mdl(context, mod_viz_file)
 
     if mcell.rxn_output.include:
-        out_file.write("INCLUDE_FILE = \"%s.rxn_output.mdl\"\n\n" %
-                       (settings.base_name))
+        out_file.write("INCLUDE_FILE = \"%s.rxn_output.mdl\"\n\n" % (settings.base_name))
+        print ("Ready to write the actual rxn MDL file here")
+        filepath = ("%s/%s.rxn_output.mdl" % (filedir, settings.base_name))
+        with open(filepath, "w", encoding="utf8", newline="\n") as mod_rxn_file:
+            save_rxn_output_mdl(context, mod_rxn_file)
+
 
 
 def save_initialization_commands(context, out_file):
@@ -568,6 +582,53 @@ def save_geometry(context, out_file):
 
                 # restore proper object visibility state
                 data_object.hide = saved_hide_status
+
+
+def save_viz_output_mdl(context, out_file):
+    """ Saves a visualization output MDL file """
+    print ("Saving a visualization output file: ", out_file )
+
+    mcell = context.scene.mcell
+    settings = mcell.project_settings
+
+    out_file.write("VIZ_OUTPUT {\n")
+    out_file.write("    MODE = CELLBLENDER\n")
+    out_file.write("    FILENAME = \"./viz_data/%s\"\n" % settings.base_name )
+    out_file.write("    MOLECULES\n")
+    out_file.write("    {\n")
+    out_file.write("        NAME_LIST {ALL_MOLECULES}\n")
+    out_file.write("        ITERATION_NUMBERS {ALL_DATA @ ALL_ITERATIONS}\n")
+    out_file.write("    }\n")
+    out_file.write("}\n\n")
+
+    return
+
+
+def save_rxn_output_mdl(context, out_file):
+    """ Saves a reaction output MDL file """
+    print ("Saving a reaction output file: ", out_file )
+
+    mcell = context.scene.mcell
+    settings = mcell.project_settings
+
+    for molecule in mcell.molecules.molecule_list:
+        molecule_name = molecule.name
+        print (" MolName =", molecule_name)
+
+    out_file.write("REACTION_DATA_OUTPUT {\n")
+    rxn_step = mcell.initialization.time_step
+    # rxn_step = (int(1000000 * rxn_step))/1000000.0
+    print ( "\n\nNote: Using mcell.initialization.time_step:", rxn_step, "for REACTION_DATA_OUTPUT/STEP in file:", out_file.name, "\n\n" )
+    out_file.write("    STEP=%f\n" % rxn_step)
+    # out_file.write("    STEP=1e-6\n")
+    
+    for molecule in mcell.molecules.molecule_list:
+        molecule_name = molecule.name
+        out_file.write("    {COUNT[%s,WORLD]}=> \"./react_data/%s.dat\"\n" % (molecule_name, molecule_name) )
+
+    out_file.write("}\n\n")
+
+    return
 
 
 def save_mod_surf_regions(context, out_file):

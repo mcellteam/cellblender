@@ -89,6 +89,7 @@ class ExportMCellMDL(bpy.types.Operator, ExportHelper):
         return context.active_object != None
 
     def execute(self, context):
+        print ("Inside ExportMCellMDL.execute()")
         filepath = self.filepath
         filepath = bpy.path.ensure_ext(filepath, self.filename_ext)
         from . import export_mcell_mdl
