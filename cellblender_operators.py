@@ -35,6 +35,7 @@ import os
 import random
 import re
 import subprocess
+import datetime
 
 
 # We use per module class registration/unregistration
@@ -1208,16 +1209,51 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        #self.report({'WARNING'}, "Simulation Running")
         mcell = context.scene.mcell
         mcell_binary = mcell.export_and_run.mcell_binary
         project_dir = mcell.project_settings.project_dir
         base_name = mcell.project_settings.base_name
+        mdl_filepath = '%s%s.main.mdl' % (project_dir, base_name)
         start = mcell.export_and_run.start_seed
         end = mcell.export_and_run.end_seed + 1
-        filepath = '%s%s.main.mdl' % (project_dir, base_name)
+
+        if mcell.export_and_run.error_file == 'none':
+            error_file = subprocess.DEVNULL
+        elif mcell.export_and_run.error_file == 'console':
+            error_file = None
+        if mcell.export_and_run.log_file == 'none':
+            log_file = subprocess.DEVNULL
+        elif mcell.export_and_run.log_file == 'console':
+            log_file = None
         for seed in range(start, end):
-            subprocess.call([mcell_binary, '-seed', '%d' % seed, filepath])
+            time_now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            log_filepath = "%s%s" % (project_dir, "log.%s.txt" % time_now)
+            error_filepath = "%s%s" % (project_dir, "error.%s.txt" % time_now)
+            # Both output and error log file
+            if (mcell.export_and_run.log_file == 'file' and
+                    mcell.export_and_run.error_file == 'file'):
+                with open(log_filepath, "w") as log_file, open(
+                        error_filepath, "w") as error_file:
+                    subprocess.call(
+                        [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+                        stdout=log_file, stderr=error_file)
+            # Only output log file
+            elif mcell.export_and_run.log_file == 'file':
+                with open(log_filepath, "w") as log_file:
+                    subprocess.call(
+                        [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+                        stdout=log_file, stderr=error_file)
+            # Only error log file
+            elif mcell.export_and_run.error_file == 'file':
+                with open(error_filepath, "w") as error_file:
+                    subprocess.call(
+                        [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+                        stdout=log_file, stderr=error_file)
+            # Neither error nor output log
+            else:
+                subprocess.call(
+                    [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+                    stdout=log_file, stderr=error_file)
         return {'FINISHED'}
 
 

@@ -74,21 +74,23 @@ class MCELL_PT_export_and_run(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
+        row.operator("mcell.select_mcell_binary",
+                     text="Select MCell Binary", icon='FILESEL')
+        row = layout.row()
         layout.prop(mcell.export_and_run, "export_format")
         row = layout.row()
         row.operator("mcell.export_project", text="Export CellBlender Project",
                      icon='FILESEL')
-
-        row = layout.row()
-        row.operator("mcell.select_mcell_binary",
-                     text="Select MCell Binary", icon='FILESEL')
         row = layout.row()
         row.operator("mcell.run_simulation", text="Run Simulation",
                      icon='POSE_DATA')
-
         row = layout.row(align=True)
         row.prop(mcell.export_and_run, "start_seed")
         row.prop(mcell.export_and_run, "end_seed")
+        row = layout.row()
+        row.prop(mcell.export_and_run, "log_file")
+        row = layout.row()
+        row.prop(mcell.export_and_run, "error_file")
 
 
 class MCELL_PT_model_objects(bpy.types.Panel):

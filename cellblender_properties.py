@@ -242,6 +242,20 @@ class MCellExportAndRunProperty(bpy.types.PropertyGroup):
     mcell_binary = StringProperty(name="MCell Binary")
     start_seed = IntProperty(name="Start Seed", default=1, min=1)
     end_seed = IntProperty(name="End Seed", default=1, min=1)
+    log_file_enum = [
+        ('none', "Do not Generate", ""),
+        ('file', "Send to File", ""),
+        ('console', "Send to Console", "")]
+    log_file = EnumProperty(items=log_file_enum,
+                           name="Output Log",
+                          default='console')
+    error_file_enum = [
+        ('none', "Do not Generate", ""),
+        ('file', "Send to File", ""),
+        ('console', "Send to Console", "")]
+    error_file = EnumProperty(items=error_file_enum,
+                           name="Error Log",
+                           default='console')
 
 
 class MCellMolVizPanelProperty(bpy.types.PropertyGroup):

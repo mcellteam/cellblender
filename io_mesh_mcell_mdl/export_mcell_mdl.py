@@ -178,6 +178,8 @@ def save_wrapper(context, out_file, filedir):
         out_file.write("INCLUDE_FILE = \"%s.viz_output.mdl\"\n\n" %
                        (settings.base_name))
 
+    out_file.write("sprintf(seed,\"%04g\",SEED)\n\n")
+
     if mcell.rxn_output.include:
         out_file.write("INCLUDE_FILE = \"%s.rxn_output.mdl\"\n\n" %
                        (settings.base_name))
