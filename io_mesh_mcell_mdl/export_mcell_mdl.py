@@ -59,8 +59,32 @@ def save(operator, context, filepath=""):
         save_wrapper(context, out_file, filedir)
 
     print ( "Trying to run MCell..." )
+
+    mcell = context.scene.mcell
+    settings = mcell.project_settings
+    # Include MDL files for viz and reaction output:
+    #if mcell.viz_output.include:
+    #    out_file.write("INCLUDE_FILE = \"%s.viz_output.mdl\"\n\n" % (settings.base_name))
+    #    print ("Ready to write the actual viz MDL file here")
+    #    filepath = ("%s/%s.viz_output.mdl" % (filedir, settings.base_name))
+    #    with open(filepath, "w", encoding="utf8", newline="\n") as mod_viz_file:
+    #        save_viz_output_mdl(context, mod_viz_file)
+
+    #if mcell.rxn_output.include:
+    #    out_file.write("INCLUDE_FILE = \"%s.rxn_output.mdl\"\n\n" % (settings.base_name))
+    #    print ("Ready to write the actual rxn MDL file here")
+    #    filepath = ("%s/%s.rxn_output.mdl" % (filedir, settings.base_name))
+    #    with open(filepath, "w", encoding="utf8", newline="\n") as mod_rxn_file:
+    #        save_rxn_output_mdl(context, mod_rxn_file)
+
+
+    print ( "filepath = ", filepath )
+    print ( "filedir = ", os.path.dirname(filepath) )
+    print ( "base_name = ", settings.base_name )
+
+
     os.system ( "pwd" )
-    os.system ( "~/proj/MCell/src/mcell_bzr/src/linux/mcell intro.main.mdl" )
+    os.system ( "~/proj/MCell/src/mcell_bzr/src/linux/mcell %s/%s.main.mdl" % (os.path.dirname(filepath),settings.base_name) )
 
     print ( "Done running MCell ... returning to CellBlender" )
 
@@ -85,10 +109,8 @@ def save_wrapper(context, out_file, filedir):
 
     # Export optional initialization commands:
     if settings.export_format == 'mcell_mdl_modular':
-        out_file.write("INCLUDE_FILE = \"%s.initialization.mdl\"\n\n" %
-                       (settings.base_name))
-        filepath = ("%s/%s.initialization.mdl" %
-                    (filedir, settings.base_name))
+        out_file.write("INCLUDE_FILE = \"%s.initialization.mdl\"\n\n" % (settings.base_name))
+        filepath = ("%s/%s.initialization.mdl" % (filedir, settings.base_name))
         with open(filepath, "w", encoding="utf8", newline="\n") as init_file:
             save_initialization_commands(context, init_file)
     else:
@@ -108,10 +130,8 @@ def save_wrapper(context, out_file, filedir):
 
     # Export molecules:
     if settings.export_format == 'mcell_mdl_modular':
-        out_file.write("INCLUDE_FILE = \"%s.molecules.mdl\"\n\n" %
-                       (settings.base_name))
-        filepath = ("%s/%s.molecules.mdl" %
-                    (filedir, settings.base_name))
+        out_file.write("INCLUDE_FILE = \"%s.molecules.mdl\"\n\n" % (settings.base_name))
+        filepath = ("%s/%s.molecules.mdl" % (filedir, settings.base_name))
         with open(filepath, "w", encoding="utf8", newline="\n") as mol_file:
             save_molecules(context, mol_file)
     else:
@@ -120,10 +140,8 @@ def save_wrapper(context, out_file, filedir):
     # Export surface classes:
     have_surf_class = len(mcell.surface_classes.surf_class_list) != 0
     if have_surf_class and settings.export_format == 'mcell_mdl_modular':
-        out_file.write("INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n" %
-                       (settings.base_name))
-        filepath = ("%s/%s.surface_classes.mdl" %
-                    (filedir, settings.base_name))
+        out_file.write("INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n" % (settings.base_name))
+        filepath = ("%s/%s.surface_classes.mdl" % (filedir, settings.base_name))
         with open(filepath, "w", encoding="utf8", newline="\n") as sc_file:
             save_surface_classes(context, sc_file)
     else:
@@ -132,10 +150,8 @@ def save_wrapper(context, out_file, filedir):
     # Export reactions:
     have_reactions = len(context.scene.mcell.reactions.reaction_list) != 0
     if have_reactions and settings.export_format == 'mcell_mdl_modular':
-        out_file.write("INCLUDE_FILE = \"%s.reactions.mdl\"\n\n" %
-                       (settings.base_name))
-        filepath = ("%s/%s.reactions.mdl" %
-                   (filedir, settings.base_name))
+        out_file.write("INCLUDE_FILE = \"%s.reactions.mdl\"\n\n" % (settings.base_name))
+        filepath = ("%s/%s.reactions.mdl" % (filedir, settings.base_name))
         with open(filepath, "w", encoding="utf8", newline="\n") as react_file:
             save_reactions(context, react_file)
     else:
@@ -144,10 +160,8 @@ def save_wrapper(context, out_file, filedir):
     # Export model geometry:
     have_geometry = len(context.scene.mcell.model_objects.object_list) != 0
     if have_geometry and settings.export_format == 'mcell_mdl_modular':
-        out_file.write("INCLUDE_FILE = \"%s.geometry.mdl\"\n\n" %
-                       (settings.base_name))
-        filepath = ("%s/%s.geometry.mdl" %
-                    (filedir, settings.base_name))
+        out_file.write("INCLUDE_FILE = \"%s.geometry.mdl\"\n\n" % (settings.base_name))
+        filepath = ("%s/%s.geometry.mdl" % (filedir, settings.base_name))
         with open(filepath, "w", encoding="utf8", newline="\n") as geom_file:
             save_geometry(context, geom_file)
     else:
