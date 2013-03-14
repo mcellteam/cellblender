@@ -610,12 +610,12 @@ def save_rxn_output_mdl(context, out_file):
 
     out_file.write("REACTION_DATA_OUTPUT {\n")
     rxn_step = mcell.initialization.time_step
-    out_file.write("    STEP=%f\n" % rxn_step)
+    out_file.write("    STEP=%g\n" % rxn_step)
 
     for molecule in mcell.molecules.molecule_list:
         molecule_name = molecule.name
-        out_file.write("    {COUNT[%s,WORLD]}=> \"./react_data/%s.dat\"\n" %
-                       (molecule_name, molecule_name))
+        out_file.write("    {COUNT[%s,WORLD]}=> \"./react_data/%s.\""
+                       " & seed & \".dat\"\n" % (molecule_name, molecule_name))
 
     out_file.write("}\n\n")
 
