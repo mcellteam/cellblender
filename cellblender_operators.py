@@ -43,7 +43,6 @@ import threading
 # We use per module class registration/unregistration
 def register():
     bpy.utils.register_module(__name__)
-    print ("Registering cellblender_operators.py")
 
 
 def unregister():
@@ -1400,7 +1399,7 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
             mcell.mol_viz.color_list[6].vec = [1.0, 1.0, 1.0]
             mcell.mol_viz.color_list[7].vec = [0.0, 0.0, 0.0]
 
-        print ( "Setting frame_end to ", len(mcell.mol_viz.mol_file_list) )
+        print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list))
         context.scene.frame_end = len(mcell.mol_viz.mol_file_list)
         mol_viz_update(self, context)
         return {'FINISHED'}

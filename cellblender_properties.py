@@ -642,7 +642,8 @@ class MCellObjectSelectorPanelProperty(bpy.types.PropertyGroup):
 # Main MCell (CellBlender) Properties Class:
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
-    cellblender_version = StringProperty(name="CellBlender Version", default="0.1.54")
+    cellblender_version = StringProperty(
+        name="CellBlender Version", default="0.1.54")
     project_settings = PointerProperty(
         type=MCellProjectPanelProperty, name="CellBlender Project Settings")
     export_project = PointerProperty(

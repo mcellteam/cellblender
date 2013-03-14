@@ -148,7 +148,8 @@ def save_wrapper(context, out_file, filedir):
 
     # Export modify surface regions:
     have_mod_surf_reg = len(mcell.mod_surf_regions.mod_surf_regions_list) != 0
-    if have_mod_surf_reg and export_project.export_format == 'mcell_mdl_modular':
+    if (have_mod_surf_reg and
+            export_project.export_format == 'mcell_mdl_modular'):
         out_file.write("INCLUDE_FILE = \"%s.mod_surf_regions.mdl\"\n\n" %
                        (settings.base_name))
         filepath = ("%s/%s.mod_surf_regions.mdl" %
@@ -180,10 +181,18 @@ def save_wrapper(context, out_file, filedir):
     if mcell.viz_output.include:
         out_file.write("INCLUDE_FILE = \"%s.viz_output.mdl\"\n\n" %
                        (settings.base_name))
+        filepath = ("%s/%s.viz_output.mdl" % (filedir, settings.base_name))
+        with open(
+                filepath, "w", encoding="utf8", newline="\n") as mod_viz_file:
+            save_viz_output_mdl(context, mod_viz_file)
 
     if mcell.rxn_output.include:
         out_file.write("INCLUDE_FILE = \"%s.rxn_output.mdl\"\n\n" %
                        (settings.base_name))
+        filepath = ("%s/%s.rxn_output.mdl" % (filedir, settings.base_name))
+        with open(
+                filepath, "w", encoding="utf8", newline="\n") as mod_rxn_file:
+            save_rxn_output_mdl(context, mod_rxn_file)
 
 
 def save_initialization_commands(context, out_file):
@@ -227,8 +236,8 @@ def save_initialization_commands(context, out_file):
     else:
         out_file.write("CENTER_MOLECULES_ON_GRID = FALSE\n")
     # Microscopic Reversibility
-    out_file.write(
-        "MICROSCOPIC_REVERSIBILITY = %s\n\n" % (init.microscopic_reversibility))
+    out_file.write("MICROSCOPIC_REVERSIBILITY = %s\n\n" %
+                   (init.microscopic_reversibility))
 
     # Notifications
     out_file.write("NOTIFICATIONS\n{\n")
@@ -458,11 +467,11 @@ def save_surface_classes(context, out_file):
                     clamp_value = surf_class_props.clamp_value
                     out_file.write("    %s\n" % surf_class_type)
                     out_file.write("    %s%s = %g\n" % (molecule,
-                                                    orient,
-                                                    clamp_value))
+                                                        orient,
+                                                        clamp_value))
                 else:
-                    out_file.write("    %s = %s%s\n" % (surf_class_type, molecule,
-                                                    orient))
+                    out_file.write("    %s = %s%s\n" % (surf_class_type,
+                                                        molecule, orient))
             out_file.write("  }\n")
         out_file.write("}\n\n")
     return
@@ -574,6 +583,45 @@ def save_geometry(context, out_file):
                 data_object.hide = saved_hide_status
 
 
+def save_viz_output_mdl(context, out_file):
+    """ Saves a visualization output MDL file """
+
+    mcell = context.scene.mcell
+    settings = mcell.project_settings
+
+    out_file.write("VIZ_OUTPUT {\n")
+    out_file.write("    MODE = CELLBLENDER\n")
+    out_file.write("    FILENAME = \"./viz_data/%s\"\n" % settings.base_name)
+    out_file.write("    MOLECULES\n")
+    out_file.write("    {\n")
+    out_file.write("        NAME_LIST {ALL_MOLECULES}\n")
+    out_file.write("        ITERATION_NUMBERS {ALL_DATA @ ALL_ITERATIONS}\n")
+    out_file.write("    }\n")
+    out_file.write("}\n\n")
+
+    return
+
+
+def save_rxn_output_mdl(context, out_file):
+    """ Saves a reaction output MDL file """
+
+    mcell = context.scene.mcell
+    settings = mcell.project_settings
+
+    out_file.write("REACTION_DATA_OUTPUT {\n")
+    rxn_step = mcell.initialization.time_step
+    out_file.write("    STEP=%f\n" % rxn_step)
+
+    for molecule in mcell.molecules.molecule_list:
+        molecule_name = molecule.name
+        out_file.write("    {COUNT[%s,WORLD]}=> \"./react_data/%s.dat\"\n" %
+                       (molecule_name, molecule_name))
+
+    out_file.write("}\n\n")
+
+    return
+
+
 def save_mod_surf_regions(context, out_file):
     """ Saves modify surface region info to mdl output file. """
 
@@ -584,11 +632,13 @@ def save_mod_surf_regions(context, out_file):
         out_file.write("{\n")
         for active_mod_surf_regions in mod_surf_regions_list:
             surf_class_name = active_mod_surf_regions.surf_class_name
-            out_file.write("  %s[%s]\n" % (active_mod_surf_regions.object_name,
-                                       active_mod_surf_regions.region_name))
+            out_file.write("  %s[%s]\n" %
+                           (active_mod_surf_regions.object_name,
+                            active_mod_surf_regions.region_name))
             out_file.write("  {\n    SURFACE_CLASS = %s\n  }\n" %
-                       (surf_class_name))
+                           (surf_class_name))
         out_file.write("}\n\n")
+
     return
 
 
