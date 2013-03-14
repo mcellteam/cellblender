@@ -21,7 +21,7 @@
 bl_info = {
     "name": "CellBlender",
     "author": "Tom Bartol, Jacob Czech, Markus Dittrich",
-    "version": (0, 1, 54),
+    "version": (0, 1, 55),
     "blender": (2, 66, 1),
     "api": 55057,
     "location": "Properties > Scene > CellBlender Panel",
@@ -74,6 +74,13 @@ if len(bpy.app.handlers.frame_change_pre) == 0:
     bpy.app.handlers.frame_change_pre.append(
         cellblender_operators.frame_change_handler)
 
+if len(bpy.app.handlers.load_post) == 0:
+    bpy.app.handlers.load_post.append(
+        cellblender_operators.model_objects_update)
+
+if len(bpy.app.handlers.save_pre) == 0:
+    bpy.app.handlers.save_pre.append(
+        cellblender_operators.model_objects_update)
 
 # for testing
 if __name__ == '__main__':

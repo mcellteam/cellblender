@@ -1187,6 +1187,8 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
+
+        model_objects_update(context)
         if mcell.project_settings.export_format == 'mcell_mdl_unified':
 #            if not mcell.project_settings.export_selection_only:
 #                bpy.ops.object.select_by_type(type='MESH')
@@ -1861,6 +1863,49 @@ class MCELL_OT_deselect_filtered(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# Rebuild Model Objects List from Scratch
+#   This is required to catch changes in names of objects.
+#   Note: This function is registered as a load_post and save_pre handler
+@persistent
+def model_objects_update(context):
+    if not context:
+        context = bpy.context
+
+    mcell = context.scene.mcell
+    mobjs = mcell.model_objects
+    sobjs = context.scene.objects
+
+    model_obj_names = [obj.name for obj in sobjs if obj.mcell.include == True]
+
+    # Note: This bit only needed to convert
+    #       old model object list (pre 0.1 rev_55) to new style.
+    #       Old style did not have obj.mcell.include Boolean Property.
+    if ((len(model_obj_names) == 0) & (len(mobjs.object_list) > 0)):
+        for i in range(len(mobjs.object_list)-1):
+            obj = sobjs.get(mobjs.object_list[i].name)
+            if obj:
+              obj.mcell.include = True
+        model_obj_names = [
+            obj.name for obj in sobjs if obj.mcell.include == True]
+
+    # Update the model object list from objects marked obj.mcell.include = True
+    if (len(model_obj_names) > 0):
+        model_obj_names.sort()
+
+        for i in range(len(mobjs.object_list)-1, -1, -1):
+            mobjs.object_list.remove(i)
+
+        active_index = mobjs.active_obj_index
+        for obj_name in model_obj_names:
+            mobjs.object_list.add()
+            mobjs.active_obj_index = len(mobjs.object_list)-1
+            mobjs.object_list[mobjs.active_obj_index].name = obj_name
+
+        mobjs.active_obj_index = active_index
+
+    return
+
+
 class MCELL_OT_model_objects_add(bpy.types.Operator):
     bl_idname = "mcell.model_objects_add"
     bl_label = "Model Objects Include"
@@ -1872,15 +1917,20 @@ class MCELL_OT_model_objects_add(bpy.types.Operator):
         mcell = context.scene.mcell
         # From the list of selected objects, only add MESH objects.
         objs = [obj for obj in context.selected_objects if obj.type == 'MESH']
-
         for obj in objs:
-            # Prevent duplicate entries
-            if not obj.name in mcell.model_objects.object_list:
-                mcell.model_objects.object_list.add()
-                mcell.model_objects.active_obj_index = len(
-                    mcell.model_objects.object_list)-1
-                mcell.model_objects.object_list[
-                    mcell.model_objects.active_obj_index].name = obj.name
+          obj.mcell.include = True
+
+        model_objects_update(context)
+
+
+#        for obj in objs:
+#            # Prevent duplicate entries
+#            if not obj.name in mcell.model_objects.object_list:
+#                mcell.model_objects.object_list.add()
+#                mcell.model_objects.active_obj_index = len(
+#                    mcell.model_objects.object_list)-1
+#                mcell.model_objects.object_list[
+#                    mcell.model_objects.active_obj_index].name = obj.name
 
         return {'FINISHED'}
 
@@ -1894,12 +1944,18 @@ class MCELL_OT_model_objects_remove(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
+        mobjs = mcell.model_objects
+        sobjs = context.scene.objects
 
-        mcell.model_objects.object_list.remove(
-            mcell.model_objects.active_obj_index)
-        mcell.model_objects.active_obj_index -= 1
-        if (mcell.model_objects.active_obj_index < 0):
-            mcell.model_objects.active_obj_index = 0
+        if (len(mobjs.object_list) > 0):
+            obj = sobjs.get(mobjs.object_list[mobjs.active_obj_index].name)
+            if obj:
+                obj.mcell.include = False
+
+                mobjs.object_list.remove(mobjs.active_obj_index)
+                mobjs.active_obj_index -= 1
+                if (mobjs.active_obj_index < 0):
+                    mobjs.active_obj_index = 0
 
         return {'FINISHED'}
 

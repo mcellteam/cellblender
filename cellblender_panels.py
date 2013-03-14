@@ -25,6 +25,7 @@ This script draws the panels and other UI elements for CellBlender.
 # blender imports
 import bpy
 
+
 # python imports
 import re
 

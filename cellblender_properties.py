@@ -558,6 +558,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
     object_list = CollectionProperty(
         type=MCellStringProperty, name="Object List")
     active_obj_index = IntProperty(name="Active Object Index", default=0)
+              
 
 
 class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
@@ -650,4 +651,6 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 class MCellObjectPropertyGroup(bpy.types.PropertyGroup):
     regions = PointerProperty(
         type=MCellSurfaceRegionListProperty, name="Defined Surface Regions")
+    include = BoolProperty(name="Include Object in Model",default=False)
     status = StringProperty(name="Status")
+
