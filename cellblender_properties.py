@@ -23,10 +23,14 @@ This script contains the custom properties used in CellBlender.
 """
 
 
+# blender imports
 import bpy
 from . import cellblender_operators
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
     FloatProperty, IntProperty, PointerProperty, StringProperty
+
+# python imports
+from multiprocessing import cpu_count
 
 
 # we use per module class registration/unregistration
@@ -227,14 +231,41 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 class MCellProjectPanelProperty(bpy.types.PropertyGroup):
     base_name = StringProperty(name="Project Base Name")
     project_dir = StringProperty(name="Project Directory")
+    mcell_binary = StringProperty(name="MCell Binary")
+
+
+class MCellExportProjectPanelProperty(bpy.types.PropertyGroup):
     export_format_enum = [
         ('mcell_mdl_unified', "Single Unified MCell MDL File", ""),
         ('mcell_mdl_modular', "Modular MCell MDL Files", "")]
     export_format = EnumProperty(items=export_format_enum,
                                  name="Export Format",
                                  default='mcell_mdl_modular')
-#    export_selection_only = BoolProperty(name="Export Selected Objects Only",
-#                                         default=True)
+
+
+class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
+    start_seed = IntProperty(name="Start Seed", default=1, min=1)
+    end_seed = IntProperty(name="End Seed", default=1, min=1)
+    mcell_processes = IntProperty(
+        name="Number of Processes",
+        default=cpu_count(),
+        min=1,
+        max=cpu_count(),
+        description="Number of simultaneous MCell processes.")
+    log_file_enum = [
+        ('none', "Do not Generate", ""),
+        ('file', "Send to File", ""),
+        ('console', "Send to Console", "")]
+    log_file = EnumProperty(items=log_file_enum,
+                            name="Output Log",
+                            default='file')
+    error_file_enum = [
+        ('none', "Do not Generate", ""),
+        ('file', "Send to File", ""),
+        ('console', "Send to Console", "")]
+    error_file = EnumProperty(items=error_file_enum,
+                              name="Error Log",
+                              default='console')
 
 
 class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
@@ -614,6 +645,10 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     cellblender_version = StringProperty(name="CellBlender Version", default="0.1.54")
     project_settings = PointerProperty(
         type=MCellProjectPanelProperty, name="CellBlender Project Settings")
+    export_project = PointerProperty(
+        type=MCellExportProjectPanelProperty, name="Export Simulation")
+    run_simulation = PointerProperty(
+        type=MCellRunSimulationPanelProperty, name="Run Simulation")
     mol_viz = PointerProperty(
         type=MCellMolVizPanelProperty, name="Mol Viz Settings")
     initialization = PointerProperty(

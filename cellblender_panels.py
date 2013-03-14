@@ -51,6 +51,12 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
+        row.operator("mcell.select_mcell_binary",
+                     text="Set Path to MCell Binary", icon='FILESEL')
+        row = layout.row()
+        row.label(
+            text="MCell Binary: "+mcell.project_settings.mcell_binary)
+        row = layout.row()
         row.operator("mcell.set_project_dir",
                      text="Set CellBlender Project Directory", icon='FILESEL')
         row = layout.row()
@@ -60,12 +66,50 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         layout.prop(mcell.project_settings, "base_name")
         layout.separator()
         row = layout.row()
-        row.label(text="Export Project: "+mcell.project_settings.base_name)
+
+
+class MCELL_PT_export_project(bpy.types.Panel):
+    bl_label = "Export Project"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mcell = context.scene.mcell
+
         row = layout.row()
-        layout.prop(mcell.project_settings, "export_format")
+        row.prop(mcell.export_project, "export_format")
         row = layout.row()
         row.operator("mcell.export_project", text="Export CellBlender Project",
                      icon='FILESEL')
+
+
+class MCELL_PT_run_simulatin(bpy.types.Panel):
+    bl_label = "Run Simulation"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mcell = context.scene.mcell
+
+        row = layout.row()
+        row = layout.row(align=True)
+        row.prop(mcell.run_simulation, "start_seed")
+        row.prop(mcell.run_simulation, "end_seed")
+        row = layout.row()
+        row.prop(mcell.run_simulation, "mcell_processes")
+        row = layout.row()
+        row.prop(mcell.run_simulation, "log_file")
+        row = layout.row()
+        row.prop(mcell.run_simulation, "error_file")
+        row = layout.row()
+        row.operator("mcell.run_simulation", text="Run Simulation",
+                     icon='COLOR_RED')
 
 
 class MCELL_PT_model_objects(bpy.types.Panel):

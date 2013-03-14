@@ -34,6 +34,10 @@ import glob
 import os
 import random
 import re
+import subprocess
+import datetime
+import multiprocessing
+import threading
 
 
 # We use per module class registration/unregistration
@@ -1179,6 +1183,105 @@ def check_release_object_expr(self, context):
     return
 
 
+class MCELL_OT_select_mcell_binary(bpy.types.Operator):
+    bl_idname = "mcell.select_mcell_binary"
+    bl_label = "Select MCell Binary"
+    bl_description = "Select MCell Binary"
+    bl_options = {'REGISTER'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+    directory = bpy.props.StringProperty(subtype='DIR_PATH')
+
+    def __init__(self):
+        self.directory = bpy.context.scene.mcell.project_settings.project_dir
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.project_settings.mcell_binary = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
+def run_sim(seed):
+    """ Run the MCell simulations. """
+
+    mcell = bpy.context.scene.mcell
+    mcell_binary = mcell.project_settings.mcell_binary
+    project_dir = mcell.project_settings.project_dir
+    base_name = mcell.project_settings.base_name
+    mdl_filepath = '%s%s.main.mdl' % (project_dir, base_name)
+    # Log filename will be log.year-month-day_hour:minute_seed.txt
+    # (e.g. log.2013-03-12_11:45_1.txt)
+    time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
+    log_filepath = "%s%s" % (project_dir, "log.%s_%d.txt" % (time_now, seed))
+    error_filepath = "%s%s" % (
+        project_dir, "error.%s_%d.txt" % (time_now, seed))
+
+    if mcell.run_simulation.error_file == 'none':
+        error_file = subprocess.DEVNULL
+    elif mcell.run_simulation.error_file == 'console':
+        error_file = None
+
+    if mcell.run_simulation.log_file == 'none':
+        log_file = subprocess.DEVNULL
+    elif mcell.run_simulation.log_file == 'console':
+        log_file = None
+
+    # Both output and error log file
+    if (mcell.run_simulation.log_file == 'file' and
+            mcell.run_simulation.error_file == 'file'):
+        with open(log_filepath, "w") as log_file, open(
+                error_filepath, "w") as error_file:
+            subprocess.call(
+                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+                stdout=log_file, stderr=error_file)
+    # Only output log file
+    elif mcell.run_simulation.log_file == 'file':
+        with open(log_filepath, "w") as log_file:
+            subprocess.call(
+                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+                stdout=log_file, stderr=error_file)
+    # Only error log file
+    elif mcell.run_simulation.error_file == 'file':
+        with open(error_filepath, "w") as error_file:
+            subprocess.call(
+                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+                stdout=log_file, stderr=error_file)
+    # Neither error nor output log
+    else:
+        subprocess.call(
+            [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+            stdout=log_file, stderr=error_file)
+
+
+class MCELL_OT_run_simulation(bpy.types.Operator):
+    bl_idname = "mcell.run_simulation"
+    bl_label = "Run MCell Simulation"
+    bl_description = "Run MCell Simulation"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        self.report({'INFO'}, "Simulation Running")
+        mcell = context.scene.mcell
+        start = mcell.run_simulation.start_seed
+        end = mcell.run_simulation.end_seed + 1
+        mcell_processes = mcell.run_simulation.mcell_processes
+
+        # Create a pool of mcell processes in a separate thread.
+        # There could very well be something wrong or inneficient about this
+        # implementation, and it should be reviewed.
+        pool = multiprocessing.Pool(processes=mcell_processes)
+        mcell_simulation_thread = threading.Thread(
+            target=pool.map, args=(run_sim, range(start, end)),
+            name='MCell Simulation Thread')
+        mcell_simulation_thread.start()
+
+        return {'FINISHED'}
+
+
 class MCELL_OT_export_project(bpy.types.Operator):
     bl_idname = "mcell.export_project"
     bl_label = "Export CellBlender Project"
@@ -1187,13 +1290,11 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
-        if mcell.project_settings.export_format == 'mcell_mdl_unified':
-#            if not mcell.project_settings.export_selection_only:
-#                bpy.ops.object.select_by_type(type='MESH')
-            filepath = mcell.project_settings.project_dir + "/" + \
+        if mcell.export_project.export_format == 'mcell_mdl_unified':
+            filepath = mcell.export_project.project_dir + "/" + \
                 mcell.project_settings.base_name + ".main.mdl"
             bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
-        elif mcell.project_settings.export_format == 'mcell_mdl_modular':
+        elif mcell.export_project.export_format == 'mcell_mdl_modular':
             filepath = mcell.project_settings.project_dir + "/" + \
                 mcell.project_settings.base_name + ".main.mdl"
             bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
