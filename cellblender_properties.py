@@ -227,6 +227,7 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 class MCellProjectPanelProperty(bpy.types.PropertyGroup):
     base_name = StringProperty(name="Project Base Name")
     project_dir = StringProperty(name="Project Directory")
+    mcell_executable_path = StringProperty(name="MCell Path")
     export_format_enum = [
         ('mcell_mdl_unified', "Single Unified MCell MDL File", ""),
         ('mcell_mdl_modular', "Modular MCell MDL Files", "")]

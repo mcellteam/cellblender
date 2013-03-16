@@ -1243,6 +1243,42 @@ class MCELL_OT_set_project_dir(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
 
+class MCELL_OT_set_mcell_path(bpy.types.Operator):
+    bl_idname = "mcell.set_mcell_path"
+    bl_label = "Set MCell Executable Path"
+    bl_description = "Set MCell Executable Path"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+    directory = bpy.props.StringProperty(subtype='DIR_PATH')
+
+    def __init__(self):
+        self.directory = bpy.context.scene.mcell.project_settings.mcell_executable_path
+
+    # Note: use classmethod "poll" to determine when
+    # runability of operator is valid
+    #
+    #    @classmethod
+    #    def poll(cls, context):
+    #        return context.object is not None
+
+    def execute(self, context):
+
+        mcell = context.scene.mcell
+        if (os.path.isdir(self.filepath)):
+            dir = self.filepath
+        else:
+            dir = os.path.dirname(self.filepath)
+
+        mcell.project_settings.mcell_executable_path = dir
+        print ( "MCell path is set to: ", mcell.project_settings.mcell_executable_path )
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
 class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     bl_idname = "mcell.set_mol_viz_dir"
     bl_label = "Read Molecule Files"
