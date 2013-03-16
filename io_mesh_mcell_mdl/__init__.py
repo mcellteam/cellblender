@@ -79,7 +79,7 @@ class ImportMCellMDL(bpy.types.Operator, ImportHelper):
 class ExportMCellMDL(bpy.types.Operator, ExportHelper):
     '''Export a single mesh object as an MCell MDL geometry file with regions'''
     bl_idname = "export_mdl_mesh.mdl"
-    bl_label = "Export MCell MDL"
+    bl_label = "Export MCell MDL / Run"
 
     filename_ext = ".mdl"
     filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})

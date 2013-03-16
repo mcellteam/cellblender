@@ -51,6 +51,13 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
+        row.operator("mcell.set_mcell_path",
+                     text="Set MCell Executable Path", icon='FILESEL')
+        row = layout.row()
+        row.label(
+            text="MCell Path: "+mcell.project_settings.mcell_executable_path)
+
+        row = layout.row()
         row.operator("mcell.set_project_dir",
                      text="Set CellBlender Project Directory", icon='FILESEL')
         row = layout.row()
@@ -64,13 +71,7 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         row = layout.row()
         layout.prop(mcell.project_settings, "export_format")
         row = layout.row()
-        row.operator("mcell.set_mcell_path",
-                     text="Set MCell Executable Path", icon='FILESEL')
-        row = layout.row()
-        row.label(
-            text="MCell Path: "+mcell.project_settings.mcell_executable_path)
-        row = layout.row()
-        row.operator("mcell.export_project", text="Export CellBlender Project",
+        row.operator("mcell.export_project", text="Export/Run CellBlender Project",
                      icon='FILESEL')
 
 
