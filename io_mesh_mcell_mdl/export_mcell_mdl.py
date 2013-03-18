@@ -82,11 +82,11 @@ def save(operator, context, filepath=""):
     print ( "filedir = ", os.path.dirname(filepath) )
     print ( "base_name = ", settings.base_name )
 
-
+    print ( "Current Working Directory:" )
     os.system ( "pwd" )
     # os.system ( "~/proj/MCell/src/mcell_bzr/src/linux/mcell %s/%s.main.mdl" % (os.path.dirname(filepath),settings.base_name) )
     print ( "Current project_settings path:", mcell.project_settings.mcell_executable_path )
-    cmd_line = "%s/mcell %s/%s.main.mdl" % (mcell.project_settings.mcell_executable_path,os.path.dirname(filepath),settings.base_name)
+    cmd_line = "%s%smcell %s%s%s.main.mdl" % (mcell.project_settings.mcell_executable_path,os.sep,os.path.dirname(filepath),os.sep,settings.base_name)
     print ( "Running MCell with command: %s" % cmd_line )
     os.system ( cmd_line )
     print ( "Done running MCell ... returning to CellBlender" )
