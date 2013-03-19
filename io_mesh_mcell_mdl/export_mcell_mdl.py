@@ -48,14 +48,12 @@ def get_regions(obj):
 
 
 def save(operator, context, filepath=""):
-    """ Top level function for saving the current MCell model
-        as MDL.
-
+    """ Top level function for saving the current MCell model as MDL.
     """
-    print ("Inside export_mcell_mdl.save" )
+    print ("Inside export_mcell_mdl.save with filepath=", filepath )  # This appears to be the path to base.main.mdl
 
     with open(filepath, "w", encoding="utf8", newline="\n") as out_file:
-        filedir = os.path.dirname(filepath)
+        filedir = os.path.dirname(filepath)                           # Remove the file name itself (base.main.mdl) leaving only the path
         save_wrapper(context, out_file, filedir)
 
     print ( "Trying to run MCell..." )
@@ -86,8 +84,10 @@ def save(operator, context, filepath=""):
     os.system ( "pwd" )
     # os.system ( "~/proj/MCell/src/mcell_bzr/src/linux/mcell %s/%s.main.mdl" % (os.path.dirname(filepath),settings.base_name) )
     print ( "Current project_settings path:", mcell.project_settings.mcell_executable_path )
-    cmd_line = "%s%smcell %s%s%s.main.mdl" % (mcell.project_settings.mcell_executable_path,os.sep,os.path.dirname(filepath),os.sep,settings.base_name)
-    print ( "Running MCell with command: %s" % cmd_line )
+    # cmd_line = "%s%smcell %s%s%s.main.mdl" % (mcell.project_settings.mcell_executable_path,os.sep,os.path.dirname(filepath),os.sep,settings.base_name)
+    cmd_line = "%s %s.main.mdl" % ( os.path.join(mcell.project_settings.mcell_executable_path,"mcell"), os.path.join(os.path.dirname(filepath),settings.base_name) )
+    print ( "Running MCell with command:  %s" % cmd_line )
+    # print ( "Running MCell with command2: %s" % cmd_line2 )
     os.system ( cmd_line )
     print ( "Done running MCell ... returning to CellBlender" )
 
@@ -99,6 +99,9 @@ def save_wrapper(context, out_file, filedir):
     """ This function saves the current model to MDL.
 
     It provides a wrapper assembling the final mdl piece by piece.
+    	context is a blender context
+    	out_file is an opened file ... presumably the .mdl file
+    	fildir is the project path
 
     """
     print ("Inside export_mcell_mdl.save_wrapper with out_file:", out_file, " and filedir:", filedir )
