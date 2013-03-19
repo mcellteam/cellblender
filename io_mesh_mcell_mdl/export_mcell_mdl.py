@@ -30,6 +30,7 @@ of CellBlender.
 
 # python imports
 import os
+import subprocess
 import re
 
 # blender imports
@@ -86,9 +87,13 @@ def save(operator, context, filepath=""):
     print ( "Current project_settings path:", mcell.project_settings.mcell_executable_path )
     # cmd_line = "%s%smcell %s%s%s.main.mdl" % (mcell.project_settings.mcell_executable_path,os.sep,os.path.dirname(filepath),os.sep,settings.base_name)
     cmd_line = "%s %s.main.mdl" % ( os.path.join(mcell.project_settings.mcell_executable_path,"mcell"), os.path.join(os.path.dirname(filepath),settings.base_name) )
+    call_args = [ os.path.join(mcell.project_settings.mcell_executable_path,"mcell"), "%s.main.mdl" % (settings.base_name) ]
+    cwd_arg = os.path.dirname(filepath)
+    print ( "subprocess.call", call_args, cwd_arg )
     print ( "Running MCell with command:  %s" % cmd_line )
+    subprocess.call (call_args, cwd=cwd_arg)
     # print ( "Running MCell with command2: %s" % cmd_line2 )
-    os.system ( cmd_line )
+    #os.system ( cmd_line )
     print ( "Done running MCell ... returning to CellBlender" )
 
 
