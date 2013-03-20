@@ -37,7 +37,6 @@ import re
 import subprocess
 import datetime
 import multiprocessing
-import threading
 
 
 # We use per module class registration/unregistration
@@ -1269,14 +1268,11 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
         end = mcell.run_simulation.end_seed + 1
         mcell_processes = mcell.run_simulation.mcell_processes
 
-        # Create a pool of mcell processes in a separate thread.
-        # There could very well be something wrong or inneficient about this
-        # implementation, and it should be reviewed.
+        # Create a pool of mcell processes.
+        # NOTE: There could very well be something wrong or inneficient about
+        # this implementation, and it should be reviewed.
         pool = multiprocessing.Pool(processes=mcell_processes)
-        mcell_simulation_thread = threading.Thread(
-            target=pool.map, args=(run_sim, range(start, end)),
-            name='MCell Simulation Thread')
-        mcell_simulation_thread.start()
+        pool.map_async(run_sim, range(start, end))
 
         return {'FINISHED'}
 
