@@ -55,47 +55,26 @@ def save(operator, context, filepath=""):
 
     with open(filepath, "w", encoding="utf8", newline="\n") as out_file:
         filedir = os.path.dirname(filepath)                           # Remove the file name itself (base.main.mdl) leaving only the path
-        save_wrapper(context, out_file, filedir)
+        save_wrapper(context, out_file, filedir)                      # Save the MDL files themselves
 
-    print ( "Trying to run MCell..." )
+    print ( "Preparing to run MCell..." )
 
     mcell = context.scene.mcell
     settings = mcell.project_settings
-    # Include MDL files for viz and reaction output:
-    #if mcell.viz_output.include:
-    #    out_file.write("INCLUDE_FILE = \"%s.viz_output.mdl\"\n\n" % (settings.base_name))
-    #    print ("Ready to write the actual viz MDL file here")
-    #    filepath = ("%s/%s.viz_output.mdl" % (filedir, settings.base_name))
-    #    with open(filepath, "w", encoding="utf8", newline="\n") as mod_viz_file:
-    #        save_viz_output_mdl(context, mod_viz_file)
 
-    #if mcell.rxn_output.include:
-    #    out_file.write("INCLUDE_FILE = \"%s.rxn_output.mdl\"\n\n" % (settings.base_name))
-    #    print ("Ready to write the actual rxn MDL file here")
-    #    filepath = ("%s/%s.rxn_output.mdl" % (filedir, settings.base_name))
-    #    with open(filepath, "w", encoding="utf8", newline="\n") as mod_rxn_file:
-    #        save_rxn_output_mdl(context, mod_rxn_file)
+    print ( "  filepath = ", filepath )
+    print ( "  filedir = ", os.path.dirname(filepath) )
+    print ( "  base_name = ", settings.base_name )
 
-
-    print ( "filepath = ", filepath )
-    print ( "filedir = ", os.path.dirname(filepath) )
-    print ( "base_name = ", settings.base_name )
-
-    print ( "Current Working Directory:" )
-    os.system ( "pwd" )
-    # os.system ( "~/proj/MCell/src/mcell_bzr/src/linux/mcell %s/%s.main.mdl" % (os.path.dirname(filepath),settings.base_name) )
-    print ( "Current project_settings path:", mcell.project_settings.mcell_executable_path )
-    # cmd_line = "%s%smcell %s%s%s.main.mdl" % (mcell.project_settings.mcell_executable_path,os.sep,os.path.dirname(filepath),os.sep,settings.base_name)
-    cmd_line = "%s %s.main.mdl" % ( os.path.join(mcell.project_settings.mcell_executable_path,"mcell"), os.path.join(os.path.dirname(filepath),settings.base_name) )
+    print ( "  Current Working Directory:", os.getcwd() )
+    print ( "  Current MCell Executable path:", mcell.project_settings.mcell_executable_path )
     call_args = [ os.path.join(mcell.project_settings.mcell_executable_path,"mcell"), "%s.main.mdl" % (settings.base_name) ]
     cwd_arg = os.path.dirname(filepath)
-    print ( "subprocess.call", call_args, cwd_arg )
-    print ( "Running MCell with command:  %s" % cmd_line )
-    subprocess.call (call_args, cwd=cwd_arg)
-    # print ( "Running MCell with command2: %s" % cmd_line2 )
-    #os.system ( cmd_line )
-    print ( "Done running MCell ... returning to CellBlender" )
 
+    print ( "\nRunning MCell with subprocess.call (", call_args, "cwd=", cwd_arg, " )\n" )
+    subprocess.call (call_args, cwd=cwd_arg)
+
+    print ( "\nDone running MCell ... returning to CellBlender\n" )
 
     return {'FINISHED'}
 
