@@ -505,18 +505,24 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        surf_class = context.scene.mcell.surface_classes
+        mcell = context.scene.mcell
+        surf_class = mcell.surface_classes
+
         row = layout.row()
         row.label(text="Defined Surface Classes:", icon='FACESEL_HLT')
         row = layout.row()
         col = row.column()
+        # The template_list for the surface classes themselves
         col.template_list("UI_UL_list", "define_surf_class", surf_class,
                           "surf_class_list", surf_class,
                           "active_surf_class_index", rows=2)
         col = row.column(align=True)
         col.operator("mcell.surface_class_add", icon='ZOOMIN', text="")
         col.operator("mcell.surface_class_remove", icon='ZOOMOUT', text="")
-        if len(surf_class.surf_class_list) > 0:
+        row = layout.row()
+        # Show the surface class properties template_list if there is at least 
+        # a single surface class.
+        if surf_class.surf_class_list:
             active_surf_class = surf_class.surf_class_list[
                 surf_class.active_surf_class_index]
             if surf_class.surf_class_status != "":
@@ -524,29 +530,14 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
                 row.label(text=surf_class.surf_class_status, icon='ERROR')
             row = layout.row()
             row.prop(active_surf_class, "name")
-
-
-class MCELL_PT_define_surface_class_properties(bpy.types.Panel):
-    bl_label = "Define Surface Class Properties"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-        surf_class = mcell.surface_classes
-
-        row = layout.row()
-        if len(surf_class.surf_class_list) > 0:
-            active_surf_class = surf_class.surf_class_list[
-                surf_class.active_surf_class_index]
             row = layout.row()
             row.label(text="%s Properties:" % active_surf_class.name,
                       icon='FACESEL_HLT')
             row = layout.row()
             col = row.column()
+            # The template_list for the properties of a surface class.
+            # Properties include molecule, orientation, and type of surf class.
+            # There can be multiple properties for a single surface class
             col.template_list("UI_UL_list", "define_surf_class_props",
                               active_surf_class, "surf_class_props_list",
                               active_surf_class,
@@ -555,7 +546,9 @@ class MCELL_PT_define_surface_class_properties(bpy.types.Panel):
             col.operator("mcell.surf_class_props_add", icon='ZOOMIN', text="")
             col.operator("mcell.surf_class_props_remove", icon='ZOOMOUT',
                          text="")
-            if len(active_surf_class.surf_class_props_list) > 0:
+            # Show the surface class property fields (molecule, orientation,
+            # type) if there is at least a single surface class property.
+            if active_surf_class.surf_class_props_list:
                 surf_class_props = active_surf_class.surf_class_props_list[
                     active_surf_class.active_surf_class_props_index]
                 if surf_class.surf_class_props_status != "":
@@ -569,8 +562,6 @@ class MCELL_PT_define_surface_class_properties(bpy.types.Panel):
                 layout.prop(surf_class_props, "surf_class_type")
                 if (surf_class_props.surf_class_type == 'CLAMP_CONCENTRATION'):
                     layout.prop(surf_class_props, "clamp_value_str")
-        else:
-            row.label(text="Add a surface class")
 
 
 class MCELL_PT_mod_surface_regions(bpy.types.Panel):
