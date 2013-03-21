@@ -27,6 +27,7 @@ import bpy
 
 # python imports
 import re
+import os
 
 
 # we use per module class registration/unregistration
@@ -96,20 +97,34 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         mcell = context.scene.mcell
+        main_mdl = ("%s.main.mdl" %
+                    os.path.join(mcell.project_settings.project_dir,
+                    mcell.project_settings.base_name))
 
         row = layout.row()
-        row = layout.row(align=True)
-        row.prop(mcell.run_simulation, "start_seed")
-        row.prop(mcell.run_simulation, "end_seed")
-        row = layout.row()
-        row.prop(mcell.run_simulation, "mcell_processes")
-        row = layout.row()
-        row.prop(mcell.run_simulation, "log_file")
-        row = layout.row()
-        row.prop(mcell.run_simulation, "error_file")
-        row = layout.row()
-        row.operator("mcell.run_simulation", text="Run Simulation",
-                     icon='COLOR_RED')
+
+        # Only allow the simulation to be run if both an MCell binary and a
+        # project dir have been selected. There also needs to be a main mdl
+        # file present.
+        if not mcell.project_settings.mcell_binary:
+            row.label(text="Set an MCell binary", icon='ERROR')
+        elif not mcell.project_settings.project_dir:
+            row.label(text="Set a project directory", icon='ERROR')
+        elif not os.path.isfile(main_mdl):
+            row.label(text="Export the project", icon='ERROR')
+        else:
+            row = layout.row(align=True)
+            row.prop(mcell.run_simulation, "start_seed")
+            row.prop(mcell.run_simulation, "end_seed")
+            row = layout.row()
+            row.prop(mcell.run_simulation, "mcell_processes")
+            row = layout.row()
+            row.prop(mcell.run_simulation, "log_file")
+            row = layout.row()
+            row.prop(mcell.run_simulation, "error_file")
+            row = layout.row()
+            row.operator("mcell.run_simulation", text="Run Simulation",
+                         icon='COLOR_RED')
 
 
 class MCELL_PT_model_objects(bpy.types.Panel):
