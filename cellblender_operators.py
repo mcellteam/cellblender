@@ -1286,7 +1286,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         if mcell.export_project.export_format == 'mcell_mdl_unified':
-            filepath = mcell.export_project.project_dir + "/" + \
+            filepath = mcell.project_settings.project_dir + "/" + \
                 mcell.project_settings.base_name + ".main.mdl"
             bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
         elif mcell.export_project.export_format == 'mcell_mdl_modular':
@@ -1403,6 +1403,28 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
+
+
+class MCELL_OT_toggle_viz_molecules(bpy.types.Operator):
+    bl_idname = "mcell.toggle_viz_molecules"
+    bl_label = "Toggle Molecules"
+    bl_description = "Toggle all molecules for export in visualization output"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        molecule_list = mcell.molecules.molecule_list
+
+        # If the viz export option for the entire molecule list is already set
+        # to true, then set them all to false
+        if all([molecule.export_viz for molecule in molecule_list]):
+            for molecule in molecule_list:
+                molecule.export_viz = False
+        else:
+            for molecule in molecule_list:
+                molecule.export_viz = True
+
+        return {'FINISHED'}
 
 
 class MCELL_OT_mol_viz_set_index(bpy.types.Operator):

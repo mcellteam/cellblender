@@ -743,6 +743,13 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
         layout.prop(mcell.rxn_output, "include")
 
 
+class MCELL_UL_visualization_export_list(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        layout.label(item.name)
+        layout.prop(item, "export_viz", text="Export")
+
+
 class MCELL_PT_visualization_output_settings(bpy.types.Panel):
     bl_label = "Visualization Output Settings"
     bl_space_type = "PROPERTIES"
@@ -754,7 +761,19 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
         layout = self.layout
         mcell = context.scene.mcell
 
-        layout.prop(mcell.viz_output, "include")
+        row = layout.row()
+        row.label(text="Molecules To Visualize:",
+                  icon='FORCE_LENNARDJONES')
+        row.operator("mcell.toggle_viz_molecules", text="Toggle All")
+        layout.template_list("MCELL_UL_visualization_export_list",
+                             "viz_export", mcell.molecules, "molecule_list",
+                             mcell.viz_output, "active_mol_viz_index", rows=2)
+        layout.prop(mcell.viz_output, "all_iterations")
+        if mcell.viz_output.all_iterations is False:
+            row = layout.row(align=True)
+            row.prop(mcell.viz_output, "start")
+            row.prop(mcell.viz_output, "end")
+            row.prop(mcell.viz_output, "step")
 
 
 class MCELL_PT_define_surface_regions(bpy.types.Panel):
