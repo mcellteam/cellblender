@@ -606,11 +606,30 @@ class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
         name="Step", description="Step Value", default=1, min=1)
 
 
+class MCellReactionOutputProperty(bpy.types.PropertyGroup):
+    name = StringProperty(
+        name="Reaction Output", update=cellblender_operators.check_rxn_output)
+    molecule_name = StringProperty(
+        name="Molecule", update=cellblender_operators.check_rxn_output)
+    object_name = StringProperty(
+        name="Object", update=cellblender_operators.check_rxn_output)
+    region_name = StringProperty(
+        name="Region", update=cellblender_operators.check_rxn_output)
+    count_location_enum = [
+        ('World', "World", ""),
+        ('Object', "Object", ""),
+        ('Region', "Region", "")]
+    count_location = bpy.props.EnumProperty(
+        items=count_location_enum, name="Count Location",
+        update=cellblender_operators.check_rxn_output)
+
+
 class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
-    include = BoolProperty(
-        name="Include Reaction Output",
-        description="Add INCLUDE_FILE for Reaction Output to main MDL file",
-        default=False)
+    active_rxn_output_index = IntProperty(
+        name="Active Reaction Output Index", default=0)
+    rxn_output_list = CollectionProperty(
+        type=MCellReactionOutputProperty, name="Reaction Output List")
+    status = StringProperty(name="Status")
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):

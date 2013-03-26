@@ -192,7 +192,7 @@ def save_wrapper(context, out_file, filedir):
     else:
         save_viz_output_mdl(context, out_file)
 
-    if (mcell.rxn_output.include and
+    if (mcell.rxn_output.rxn_output_list and
             export_project.export_format == 'mcell_mdl_modular'):
         out_file.write("INCLUDE_FILE = \"%s.rxn_output.mdl\"\n\n" %
                        (settings.base_name))
@@ -632,16 +632,30 @@ def save_rxn_output_mdl(context, out_file):
     mcell = context.scene.mcell
     settings = mcell.project_settings
 
-    if mcell.rxn_output.include:
+    if mcell.rxn_output.rxn_output_list:
         out_file.write("REACTION_DATA_OUTPUT\n{\n")
         rxn_step = mcell.initialization.time_step
         out_file.write("  STEP=%g\n" % rxn_step)
 
-        for molecule in mcell.molecules.molecule_list:
-            molecule_name = molecule.name
-            out_file.write("  {COUNT[%s,WORLD]}=> \"./react_data/%s.\""
-                           " & seed & \".dat\"\n" %
-                           (molecule_name, molecule_name))
+        for rxn_output in mcell.rxn_output.rxn_output_list:
+            molecule_name = rxn_output.molecule_name
+            object_name = rxn_output.object_name
+            region_name = rxn_output.region_name
+            if rxn_output.count_location == 'World':
+                out_file.write("  {COUNT[%s,WORLD]}=> \"./react_data/%s."
+                               "World.\" & seed & \".dat\"\n" %
+                               (molecule_name, molecule_name,))
+            elif rxn_output.count_location == 'Object':
+                out_file.write("  {COUNT[%s,%s.%s]}=> \"./react_data/%s."
+                               "%s.\" & seed & \".dat\"\n" %
+                               (molecule_name, context.scene.name, object_name,
+                                molecule_name, object_name))
+            elif rxn_output.count_location == 'Region':
+                out_file.write("  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/%s."
+                               "%s.%s.\" & seed & \".dat\"\n" %
+                               (molecule_name, context.scene.name, object_name,
+                                region_name, molecule_name, object_name,
+                                region_name))
 
         out_file.write("}\n\n")
 
