@@ -740,7 +740,49 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
         layout = self.layout
         mcell = context.scene.mcell
 
-        layout.prop(mcell.rxn_output, "include")
+        row = layout.row()
+        row.label(text="Reaction Data Output:", icon='FORCE_LENNARDJONES')
+        row = layout.row()
+        col = row.column()
+        col.template_list("UI_UL_list", "reaction_output", mcell.rxn_output,
+                          "rxn_output_list", mcell.rxn_output,
+                          "active_rxn_output_index", rows=2)
+        col = row.column(align=True)
+        col.operator("mcell.rxn_output_add", icon='ZOOMIN', text="")
+        col.operator("mcell.rxn_output_remove", icon='ZOOMOUT', text="")
+        # Show molecule, object, and region options only if there is at least
+        # one count statement.
+        if mcell.rxn_output.rxn_output_list:
+            rxn_output = mcell.rxn_output.rxn_output_list[
+                mcell.rxn_output.active_rxn_output_index]
+            layout.prop_search(
+                rxn_output, "molecule_name", mcell.molecules,
+                "molecule_list", icon='FORCE_LENNARDJONES')
+            layout.prop(rxn_output, "count_location", expand=True)
+            # Show the object selector if Object or Region is selected
+            if rxn_output.count_location != "World":
+                layout.prop_search(
+                    rxn_output, "object_name", mcell.model_objects,
+                    "object_list", icon='MESH_ICOSPHERE')
+                if (rxn_output.object_name and
+                        (rxn_output.count_location == "Region")):
+                    try:
+                        regions = bpy.data.objects[
+                            rxn_output.object_name].mcell.regions
+                        layout.prop_search(rxn_output, "region_name", regions,
+                                           "region_list", icon='FACESEL_HLT')
+                    except KeyError:
+                        pass
+        if (mcell.rxn_output.status != ""):
+            row = layout.row()
+            row.label(text=mcell.rxn_output.status, icon='ERROR')
+
+
+class MCELL_UL_visualization_export_list(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        layout.label(item.name)
+        layout.prop(item, "export_viz", text="Export")
 
 
 class MCELL_PT_visualization_output_settings(bpy.types.Panel):
@@ -754,7 +796,19 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
         layout = self.layout
         mcell = context.scene.mcell
 
-        layout.prop(mcell.viz_output, "include")
+        row = layout.row()
+        row.label(text="Molecules To Visualize:",
+                  icon='FORCE_LENNARDJONES')
+        row.operator("mcell.toggle_viz_molecules", text="Toggle All")
+        layout.template_list("MCELL_UL_visualization_export_list",
+                             "viz_export", mcell.molecules, "molecule_list",
+                             mcell.viz_output, "active_mol_viz_index", rows=2)
+        layout.prop(mcell.viz_output, "all_iterations")
+        if mcell.viz_output.all_iterations is False:
+            row = layout.row(align=True)
+            row.prop(mcell.viz_output, "start")
+            row.prop(mcell.viz_output, "end")
+            row.prop(mcell.viz_output, "step")
 
 
 class MCELL_PT_define_surface_regions(bpy.types.Panel):

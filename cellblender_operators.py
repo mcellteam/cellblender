@@ -1293,7 +1293,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         if mcell.export_project.export_format == 'mcell_mdl_unified':
-            filepath = mcell.export_project.project_dir + "/" + \
+            filepath = mcell.project_settings.project_dir + "/" + \
                 mcell.project_settings.base_name + ".main.mdl"
             bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
         elif mcell.export_project.export_format == 'mcell_mdl_modular':
@@ -1410,6 +1410,28 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
+
+
+class MCELL_OT_toggle_viz_molecules(bpy.types.Operator):
+    bl_idname = "mcell.toggle_viz_molecules"
+    bl_label = "Toggle Molecules"
+    bl_description = "Toggle all molecules for export in visualization output"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        molecule_list = mcell.molecules.molecule_list
+
+        # If the viz export option for the entire molecule list is already set
+        # to true, then set them all to false
+        if all([molecule.export_viz for molecule in molecule_list]):
+            for molecule in molecule_list:
+                molecule.export_viz = False
+        else:
+            for molecule in molecule_list:
+                molecule.export_viz = True
+
+        return {'FINISHED'}
 
 
 class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
@@ -2045,6 +2067,88 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
         new_mol_mesh.materials.append(mol_mat)
 
         return {'FINISHED'}
+
+
+class MCELL_OT_rxn_output_add(bpy.types.Operator):
+    bl_idname = "mcell.rxn_output_add"
+    bl_label = "Add Reaction Data Output"
+    bl_description = "Add new reaction data output to an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.rxn_output.rxn_output_list.add()
+        mcell.rxn_output.active_rxn_output_index = len(
+            mcell.rxn_output.rxn_output_list)-1
+        check_rxn_output(self, context)
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_rxn_output_remove(bpy.types.Operator):
+    bl_idname = "mcell.rxn_output_remove"
+    bl_label = "Remove Reaction Data Output"
+    l_description = "Remove selected reaction data output from an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.rxn_output.rxn_output_list.remove(
+            mcell.rxn_output.active_rxn_output_index)
+        mcell.rxn_output.active_rxn_output_index -= 1
+        if (mcell.rxn_output.active_rxn_output_index < 0):
+            mcell.rxn_output.active_rxn_output_index = 0
+
+        if mcell.rxn_output.rxn_output_list:
+            check_rxn_output(self, context)
+        else:
+            mcell.rxn_output.status = ""
+
+        return {'FINISHED'}
+
+
+def check_rxn_output(self, context):
+    """ Format reaction data output. """
+
+    mcell = context.scene.mcell
+    rxn_output_list = mcell.rxn_output.rxn_output_list
+    rxn_output = rxn_output_list[
+        mcell.rxn_output.active_rxn_output_index]
+    molecule_name = rxn_output.molecule_name
+    object_name = rxn_output.object_name
+    region_name = rxn_output.region_name
+
+    if not molecule_name:
+        molecule_name = "N/A"
+    if not object_name:
+        object_name = "N/A"
+    if not region_name:
+        region_name = "N/A"
+
+    # Use different formatting depending on where we are counting
+    if rxn_output.count_location == 'World':
+        rxn_output_name = "Count %s in World" % (molecule_name)
+    elif rxn_output.count_location == 'Object':
+        rxn_output_name = "Count %s in/on %s" % (
+            molecule_name, object_name)
+    elif rxn_output.count_location == 'Region':
+        rxn_output_name = "Count %s in/on %s[%s]" % (
+            molecule_name, object_name, region_name)
+
+    # Only update reaction output if necessary to avoid infinite recursion
+    if rxn_output.name != rxn_output_name:
+        rxn_output.name = rxn_output_name
+
+    status = ""
+
+    # Check for duplicate reaction data
+    rxn_output_keys = rxn_output_list.keys()
+    if rxn_output_keys.count(rxn_output.name) > 1:
+        status = "Duplicate reaction output: %s" % (rxn_output.name)
+
+    mcell.rxn_output.status = status
+
+    return
 
 
 def check_val_str(val_str, min_val, max_val):

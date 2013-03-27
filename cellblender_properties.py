@@ -87,6 +87,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         name="Custom Space Step",
         description="Custom Space Step Units: microns",
         update=cellblender_operators.update_custom_space_step)
+    export_viz = bpy.props.BoolProperty(default=False)
 
 
 class MCellStringProperty(bpy.types.PropertyGroup):
@@ -592,17 +593,43 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
 
 
 class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
-    include = BoolProperty(
-        name="Include Viz Output",
-        description="Add INCLUDE_FILE for Viz Output to main MDL file",
-        default=False)
+    active_mol_viz_index = IntProperty(
+        name="Active Molecule Viz Index", default=0)
+    all_iterations = bpy.props.BoolProperty(
+        name="All Iterations",
+        description="Include All Iterations for Visualization", default=True)
+    start = bpy.props.IntProperty(
+        name="Start", description="Starting Iteration", default=0, min=0)
+    end = bpy.props.IntProperty(
+        name="End", description="Ending Iteration", default=1, min=1)
+    step = bpy.props.IntProperty(
+        name="Step", description="Step Value", default=1, min=1)
+
+
+class MCellReactionOutputProperty(bpy.types.PropertyGroup):
+    name = StringProperty(
+        name="Reaction Output", update=cellblender_operators.check_rxn_output)
+    molecule_name = StringProperty(
+        name="Molecule", update=cellblender_operators.check_rxn_output)
+    object_name = StringProperty(
+        name="Object", update=cellblender_operators.check_rxn_output)
+    region_name = StringProperty(
+        name="Region", update=cellblender_operators.check_rxn_output)
+    count_location_enum = [
+        ('World', "World", ""),
+        ('Object', "Object", ""),
+        ('Region', "Region", "")]
+    count_location = bpy.props.EnumProperty(
+        items=count_location_enum, name="Count Location",
+        update=cellblender_operators.check_rxn_output)
 
 
 class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
-    include = BoolProperty(
-        name="Include Reaction Output",
-        description="Add INCLUDE_FILE for Reaction Output to main MDL file",
-        default=False)
+    active_rxn_output_index = IntProperty(
+        name="Active Reaction Output Index", default=0)
+    rxn_output_list = CollectionProperty(
+        type=MCellReactionOutputProperty, name="Reaction Output List")
+    status = StringProperty(name="Status")
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
