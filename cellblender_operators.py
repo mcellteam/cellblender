@@ -1229,29 +1229,36 @@ def run_sim(seed):
         log_file = None
 
     # Both output and error log file
+    print ( "Running", mcell_binary, "with", mdl_filepath )
+    subprocess_cwd = os.path.dirname(mdl_filepath)
+    print ( "  Should run from cwd =", subprocess_cwd )
     if (mcell.run_simulation.log_file == 'file' and
             mcell.run_simulation.error_file == 'file'):
         with open(log_filepath, "w") as log_file, open(
                 error_filepath, "w") as error_file:
             subprocess.call(
                 [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+                cwd=subprocess_cwd,
                 stdout=log_file, stderr=error_file)
     # Only output log file
     elif mcell.run_simulation.log_file == 'file':
         with open(log_filepath, "w") as log_file:
             subprocess.call(
                 [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+                cwd=subprocess_cwd,
                 stdout=log_file, stderr=error_file)
     # Only error log file
     elif mcell.run_simulation.error_file == 'file':
         with open(error_filepath, "w") as error_file:
             subprocess.call(
                 [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+                cwd=subprocess_cwd,
                 stdout=log_file, stderr=error_file)
     # Neither error nor output log
     else:
         subprocess.call(
             [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+            cwd=subprocess_cwd,
             stdout=log_file, stderr=error_file)
 
 
