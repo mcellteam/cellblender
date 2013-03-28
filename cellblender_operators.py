@@ -1181,17 +1181,16 @@ def check_release_object_expr(self, context):
     return
 
 
-class MCELL_OT_select_mcell_binary(bpy.types.Operator):
-    bl_idname = "mcell.select_mcell_binary"
-    bl_label = "Select MCell Binary"
-    bl_description = "Select MCell Binary"
+class MCELL_OT_set_mcell_binary(bpy.types.Operator):
+    bl_idname = "mcell.set_mcell_binary"
+    bl_label = "Set MCell Binary"
+    bl_description = "Set MCell Binary"
     bl_options = {'REGISTER'}
 
     filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
-    directory = bpy.props.StringProperty(subtype='DIR_PATH')
 
     def __init__(self):
-        self.directory = bpy.context.scene.mcell.project_settings.project_dir
+        self.filepath = bpy.context.scene.mcell.project_settings.mcell_binary
 
     def execute(self, context):
         mcell = context.scene.mcell

@@ -53,7 +53,7 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
-        row.operator("mcell.select_mcell_binary",
+        row.operator("mcell.set_mcell_binary",
                      text="Set Path to MCell Binary", icon='FILESEL')
         row = layout.row()
         row.label(
