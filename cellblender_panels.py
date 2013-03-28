@@ -28,6 +28,7 @@ import bpy
 
 # python imports
 import re
+import os
 
 
 # we use per module class registration/unregistration
@@ -52,6 +53,12 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
+        row.operator("mcell.select_mcell_binary",
+                     text="Set Path to MCell Binary", icon='FILESEL')
+        row = layout.row()
+        row.label(
+            text="MCell Binary: "+mcell.project_settings.mcell_binary)
+        row = layout.row()
         row.operator("mcell.set_project_dir",
                      text="Set CellBlender Project Directory", icon='FILESEL')
         row = layout.row()
@@ -61,12 +68,64 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         layout.prop(mcell.project_settings, "base_name")
         layout.separator()
         row = layout.row()
-        row.label(text="Export Project: "+mcell.project_settings.base_name)
+
+
+class MCELL_PT_export_project(bpy.types.Panel):
+    bl_label = "Export Project"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mcell = context.scene.mcell
+
         row = layout.row()
-        layout.prop(mcell.project_settings, "export_format")
+        row.prop(mcell.export_project, "export_format")
         row = layout.row()
         row.operator("mcell.export_project", text="Export CellBlender Project",
                      icon='FILESEL')
+
+
+class MCELL_PT_run_simulatin(bpy.types.Panel):
+    bl_label = "Run Simulation"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mcell = context.scene.mcell
+        main_mdl = ("%s.main.mdl" %
+                    os.path.join(mcell.project_settings.project_dir,
+                    mcell.project_settings.base_name))
+
+        row = layout.row()
+
+        # Only allow the simulation to be run if both an MCell binary and a
+        # project dir have been selected. There also needs to be a main mdl
+        # file present.
+        if not mcell.project_settings.mcell_binary:
+            row.label(text="Set an MCell binary", icon='ERROR')
+        elif not mcell.project_settings.project_dir:
+            row.label(text="Set a project directory", icon='ERROR')
+        elif not os.path.isfile(main_mdl):
+            row.label(text="Export the project", icon='ERROR')
+        else:
+            row = layout.row(align=True)
+            row.prop(mcell.run_simulation, "start_seed")
+            row.prop(mcell.run_simulation, "end_seed")
+            row = layout.row()
+            row.prop(mcell.run_simulation, "mcell_processes")
+            row = layout.row()
+            row.prop(mcell.run_simulation, "log_file")
+            row = layout.row()
+            row.prop(mcell.run_simulation, "error_file")
+            row = layout.row()
+            row.operator("mcell.run_simulation", text="Run Simulation",
+                         icon='COLOR_RED')
 
 
 class MCELL_PT_model_objects(bpy.types.Panel):
@@ -673,7 +732,49 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
         layout = self.layout
         mcell = context.scene.mcell
 
-        layout.prop(mcell.rxn_output, "include")
+        row = layout.row()
+        row.label(text="Reaction Data Output:", icon='FORCE_LENNARDJONES')
+        row = layout.row()
+        col = row.column()
+        col.template_list("UI_UL_list", "reaction_output", mcell.rxn_output,
+                          "rxn_output_list", mcell.rxn_output,
+                          "active_rxn_output_index", rows=2)
+        col = row.column(align=True)
+        col.operator("mcell.rxn_output_add", icon='ZOOMIN', text="")
+        col.operator("mcell.rxn_output_remove", icon='ZOOMOUT', text="")
+        # Show molecule, object, and region options only if there is at least
+        # one count statement.
+        if mcell.rxn_output.rxn_output_list:
+            rxn_output = mcell.rxn_output.rxn_output_list[
+                mcell.rxn_output.active_rxn_output_index]
+            layout.prop_search(
+                rxn_output, "molecule_name", mcell.molecules,
+                "molecule_list", icon='FORCE_LENNARDJONES')
+            layout.prop(rxn_output, "count_location", expand=True)
+            # Show the object selector if Object or Region is selected
+            if rxn_output.count_location != "World":
+                layout.prop_search(
+                    rxn_output, "object_name", mcell.model_objects,
+                    "object_list", icon='MESH_ICOSPHERE')
+                if (rxn_output.object_name and
+                        (rxn_output.count_location == "Region")):
+                    try:
+                        regions = bpy.data.objects[
+                            rxn_output.object_name].mcell.regions
+                        layout.prop_search(rxn_output, "region_name", regions,
+                                           "region_list", icon='FACESEL_HLT')
+                    except KeyError:
+                        pass
+        if (mcell.rxn_output.status != ""):
+            row = layout.row()
+            row.label(text=mcell.rxn_output.status, icon='ERROR')
+
+
+class MCELL_UL_visualization_export_list(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        layout.label(item.name)
+        layout.prop(item, "export_viz", text="Export")
 
 
 class MCELL_PT_visualization_output_settings(bpy.types.Panel):
@@ -687,7 +788,19 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
         layout = self.layout
         mcell = context.scene.mcell
 
-        layout.prop(mcell.viz_output, "include")
+        row = layout.row()
+        row.label(text="Molecules To Visualize:",
+                  icon='FORCE_LENNARDJONES')
+        row.operator("mcell.toggle_viz_molecules", text="Toggle All")
+        layout.template_list("MCELL_UL_visualization_export_list",
+                             "viz_export", mcell.molecules, "molecule_list",
+                             mcell.viz_output, "active_mol_viz_index", rows=2)
+        layout.prop(mcell.viz_output, "all_iterations")
+        if mcell.viz_output.all_iterations is False:
+            row = layout.row(align=True)
+            row.prop(mcell.viz_output, "start")
+            row.prop(mcell.viz_output, "end")
+            row.prop(mcell.viz_output, "step")
 
 
 class MCELL_PT_define_surface_regions(bpy.types.Panel):

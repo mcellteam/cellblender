@@ -34,12 +34,14 @@ import glob
 import os
 import random
 import re
+import subprocess
+import datetime
+import multiprocessing
 
 
 # We use per module class registration/unregistration
 def register():
     bpy.utils.register_module(__name__)
-    print ("Registering cellblender_operators.py")
 
 
 def unregister():
@@ -1179,6 +1181,109 @@ def check_release_object_expr(self, context):
     return
 
 
+class MCELL_OT_select_mcell_binary(bpy.types.Operator):
+    bl_idname = "mcell.select_mcell_binary"
+    bl_label = "Select MCell Binary"
+    bl_description = "Select MCell Binary"
+    bl_options = {'REGISTER'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+    directory = bpy.props.StringProperty(subtype='DIR_PATH')
+
+    def __init__(self):
+        self.directory = bpy.context.scene.mcell.project_settings.project_dir
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.project_settings.mcell_binary = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
+def run_sim(seed):
+    """ Run the MCell simulations. """
+
+    mcell = bpy.context.scene.mcell
+    mcell_binary = mcell.project_settings.mcell_binary
+    project_dir = mcell.project_settings.project_dir
+    base_name = mcell.project_settings.base_name
+    mdl_filepath = '%s%s.main.mdl' % (project_dir, base_name)
+    # Log filename will be log.year-month-day_hour:minute_seed.txt
+    # (e.g. log.2013-03-12_11:45_1.txt)
+    time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
+    log_filepath = "%s%s" % (project_dir, "log.%s_%d.txt" % (time_now, seed))
+    error_filepath = "%s%s" % (
+        project_dir, "error.%s_%d.txt" % (time_now, seed))
+
+    if mcell.run_simulation.error_file == 'none':
+        error_file = subprocess.DEVNULL
+    elif mcell.run_simulation.error_file == 'console':
+        error_file = None
+
+    if mcell.run_simulation.log_file == 'none':
+        log_file = subprocess.DEVNULL
+    elif mcell.run_simulation.log_file == 'console':
+        log_file = None
+
+    # Both output and error log file
+    print ( "Running", mcell_binary, "with", mdl_filepath )
+    subprocess_cwd = os.path.dirname(mdl_filepath)
+    print ( "  Should run from cwd =", subprocess_cwd )
+    if (mcell.run_simulation.log_file == 'file' and
+            mcell.run_simulation.error_file == 'file'):
+        with open(log_filepath, "w") as log_file, open(
+                error_filepath, "w") as error_file:
+            subprocess.call(
+                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+                cwd=subprocess_cwd,
+                stdout=log_file, stderr=error_file)
+    # Only output log file
+    elif mcell.run_simulation.log_file == 'file':
+        with open(log_filepath, "w") as log_file:
+            subprocess.call(
+                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+                cwd=subprocess_cwd,
+                stdout=log_file, stderr=error_file)
+    # Only error log file
+    elif mcell.run_simulation.error_file == 'file':
+        with open(error_filepath, "w") as error_file:
+            subprocess.call(
+                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+                cwd=subprocess_cwd,
+                stdout=log_file, stderr=error_file)
+    # Neither error nor output log
+    else:
+        subprocess.call(
+            [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+            cwd=subprocess_cwd,
+            stdout=log_file, stderr=error_file)
+
+
+class MCELL_OT_run_simulation(bpy.types.Operator):
+    bl_idname = "mcell.run_simulation"
+    bl_label = "Run MCell Simulation"
+    bl_description = "Run MCell Simulation"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        self.report({'INFO'}, "Simulation Running")
+        mcell = context.scene.mcell
+        start = mcell.run_simulation.start_seed
+        end = mcell.run_simulation.end_seed + 1
+        mcell_processes = mcell.run_simulation.mcell_processes
+
+        # Create a pool of mcell processes.
+        # NOTE: There could very well be something wrong or inneficient about
+        # this implementation, and it should be reviewed.
+        pool = multiprocessing.Pool(processes=mcell_processes)
+        pool.map_async(run_sim, range(start, end))
+
+        return {'FINISHED'}
+
+
 class MCELL_OT_export_project(bpy.types.Operator):
     bl_idname = "mcell.export_project"
     bl_label = "Export CellBlender Project"
@@ -1189,13 +1294,11 @@ class MCELL_OT_export_project(bpy.types.Operator):
         mcell = context.scene.mcell
 
         model_objects_update(context)
-        if mcell.project_settings.export_format == 'mcell_mdl_unified':
-#            if not mcell.project_settings.export_selection_only:
-#                bpy.ops.object.select_by_type(type='MESH')
+        if mcell.export_project.export_format == 'mcell_mdl_unified':
             filepath = mcell.project_settings.project_dir + "/" + \
                 mcell.project_settings.base_name + ".main.mdl"
             bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
-        elif mcell.project_settings.export_format == 'mcell_mdl_modular':
+        elif mcell.export_project.export_format == 'mcell_mdl_modular':
             filepath = mcell.project_settings.project_dir + "/" + \
                 mcell.project_settings.base_name + ".main.mdl"
             bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
@@ -1301,7 +1404,7 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
             mcell.mol_viz.color_list[6].vec = [1.0, 1.0, 1.0]
             mcell.mol_viz.color_list[7].vec = [0.0, 0.0, 0.0]
 
-        print ( "Setting frame_end to ", len(mcell.mol_viz.mol_file_list) )
+        print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list))
         context.scene.frame_end = len(mcell.mol_viz.mol_file_list)
         mol_viz_update(self, context)
         return {'FINISHED'}
@@ -1309,6 +1412,28 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
+
+
+class MCELL_OT_toggle_viz_molecules(bpy.types.Operator):
+    bl_idname = "mcell.toggle_viz_molecules"
+    bl_label = "Toggle Molecules"
+    bl_description = "Toggle all molecules for export in visualization output"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        molecule_list = mcell.molecules.molecule_list
+
+        # If the viz export option for the entire molecule list is already set
+        # to true, then set them all to false
+        if all([molecule.export_viz for molecule in molecule_list]):
+            for molecule in molecule_list:
+                molecule.export_viz = False
+        else:
+            for molecule in molecule_list:
+                molecule.export_viz = True
+
+        return {'FINISHED'}
 
 
 class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
@@ -1998,6 +2123,88 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
         new_mol_mesh.materials.append(mol_mat)
 
         return {'FINISHED'}
+
+
+class MCELL_OT_rxn_output_add(bpy.types.Operator):
+    bl_idname = "mcell.rxn_output_add"
+    bl_label = "Add Reaction Data Output"
+    bl_description = "Add new reaction data output to an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.rxn_output.rxn_output_list.add()
+        mcell.rxn_output.active_rxn_output_index = len(
+            mcell.rxn_output.rxn_output_list)-1
+        check_rxn_output(self, context)
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_rxn_output_remove(bpy.types.Operator):
+    bl_idname = "mcell.rxn_output_remove"
+    bl_label = "Remove Reaction Data Output"
+    l_description = "Remove selected reaction data output from an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.rxn_output.rxn_output_list.remove(
+            mcell.rxn_output.active_rxn_output_index)
+        mcell.rxn_output.active_rxn_output_index -= 1
+        if (mcell.rxn_output.active_rxn_output_index < 0):
+            mcell.rxn_output.active_rxn_output_index = 0
+
+        if mcell.rxn_output.rxn_output_list:
+            check_rxn_output(self, context)
+        else:
+            mcell.rxn_output.status = ""
+
+        return {'FINISHED'}
+
+
+def check_rxn_output(self, context):
+    """ Format reaction data output. """
+
+    mcell = context.scene.mcell
+    rxn_output_list = mcell.rxn_output.rxn_output_list
+    rxn_output = rxn_output_list[
+        mcell.rxn_output.active_rxn_output_index]
+    molecule_name = rxn_output.molecule_name
+    object_name = rxn_output.object_name
+    region_name = rxn_output.region_name
+
+    if not molecule_name:
+        molecule_name = "N/A"
+    if not object_name:
+        object_name = "N/A"
+    if not region_name:
+        region_name = "N/A"
+
+    # Use different formatting depending on where we are counting
+    if rxn_output.count_location == 'World':
+        rxn_output_name = "Count %s in World" % (molecule_name)
+    elif rxn_output.count_location == 'Object':
+        rxn_output_name = "Count %s in/on %s" % (
+            molecule_name, object_name)
+    elif rxn_output.count_location == 'Region':
+        rxn_output_name = "Count %s in/on %s[%s]" % (
+            molecule_name, object_name, region_name)
+
+    # Only update reaction output if necessary to avoid infinite recursion
+    if rxn_output.name != rxn_output_name:
+        rxn_output.name = rxn_output_name
+
+    status = ""
+
+    # Check for duplicate reaction data
+    rxn_output_keys = rxn_output_list.keys()
+    if rxn_output_keys.count(rxn_output.name) > 1:
+        status = "Duplicate reaction output: %s" % (rxn_output.name)
+
+    mcell.rxn_output.status = status
+
+    return
 
 
 def check_val_str(val_str, min_val, max_val):

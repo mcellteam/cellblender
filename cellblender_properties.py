@@ -23,10 +23,14 @@ This script contains the custom properties used in CellBlender.
 """
 
 
+# blender imports
 import bpy
 from . import cellblender_operators
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
     FloatProperty, IntProperty, PointerProperty, StringProperty
+
+# python imports
+from multiprocessing import cpu_count
 
 
 # we use per module class registration/unregistration
@@ -83,6 +87,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         name="Custom Space Step",
         description="Custom Space Step Units: microns",
         update=cellblender_operators.update_custom_space_step)
+    export_viz = bpy.props.BoolProperty(default=False)
 
 
 class MCellStringProperty(bpy.types.PropertyGroup):
@@ -227,14 +232,41 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 class MCellProjectPanelProperty(bpy.types.PropertyGroup):
     base_name = StringProperty(name="Project Base Name")
     project_dir = StringProperty(name="Project Directory")
+    mcell_binary = StringProperty(name="MCell Binary")
+
+
+class MCellExportProjectPanelProperty(bpy.types.PropertyGroup):
     export_format_enum = [
         ('mcell_mdl_unified', "Single Unified MCell MDL File", ""),
         ('mcell_mdl_modular', "Modular MCell MDL Files", "")]
     export_format = EnumProperty(items=export_format_enum,
                                  name="Export Format",
                                  default='mcell_mdl_modular')
-#    export_selection_only = BoolProperty(name="Export Selected Objects Only",
-#                                         default=True)
+
+
+class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
+    start_seed = IntProperty(name="Start Seed", default=1, min=1)
+    end_seed = IntProperty(name="End Seed", default=1, min=1)
+    mcell_processes = IntProperty(
+        name="Number of Processes",
+        default=cpu_count(),
+        min=1,
+        max=cpu_count(),
+        description="Number of simultaneous MCell processes.")
+    log_file_enum = [
+        ('none', "Do not Generate", ""),
+        ('file', "Send to File", ""),
+        ('console', "Send to Console", "")]
+    log_file = EnumProperty(items=log_file_enum,
+                            name="Output Log",
+                            default='file')
+    error_file_enum = [
+        ('none', "Do not Generate", ""),
+        ('file', "Send to File", ""),
+        ('console', "Send to Console", "")]
+    error_file = EnumProperty(items=error_file_enum,
+                              name="Error Log",
+                              default='console')
 
 
 class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
@@ -562,17 +594,43 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
 
 
 class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
-    include = BoolProperty(
-        name="Include Viz Output",
-        description="Add INCLUDE_FILE for Viz Output to main MDL file",
-        default=False)
+    active_mol_viz_index = IntProperty(
+        name="Active Molecule Viz Index", default=0)
+    all_iterations = bpy.props.BoolProperty(
+        name="All Iterations",
+        description="Include All Iterations for Visualization", default=True)
+    start = bpy.props.IntProperty(
+        name="Start", description="Starting Iteration", default=0, min=0)
+    end = bpy.props.IntProperty(
+        name="End", description="Ending Iteration", default=1, min=1)
+    step = bpy.props.IntProperty(
+        name="Step", description="Step Value", default=1, min=1)
+
+
+class MCellReactionOutputProperty(bpy.types.PropertyGroup):
+    name = StringProperty(
+        name="Reaction Output", update=cellblender_operators.check_rxn_output)
+    molecule_name = StringProperty(
+        name="Molecule", update=cellblender_operators.check_rxn_output)
+    object_name = StringProperty(
+        name="Object", update=cellblender_operators.check_rxn_output)
+    region_name = StringProperty(
+        name="Region", update=cellblender_operators.check_rxn_output)
+    count_location_enum = [
+        ('World', "World", ""),
+        ('Object', "Object", ""),
+        ('Region', "Region", "")]
+    count_location = bpy.props.EnumProperty(
+        items=count_location_enum, name="Count Location",
+        update=cellblender_operators.check_rxn_output)
 
 
 class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
-    include = BoolProperty(
-        name="Include Reaction Output",
-        description="Add INCLUDE_FILE for Reaction Output to main MDL file",
-        default=False)
+    active_rxn_output_index = IntProperty(
+        name="Active Reaction Output Index", default=0)
+    rxn_output_list = CollectionProperty(
+        type=MCellReactionOutputProperty, name="Reaction Output List")
+    status = StringProperty(name="Status")
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
@@ -612,9 +670,14 @@ class MCellObjectSelectorPanelProperty(bpy.types.PropertyGroup):
 # Main MCell (CellBlender) Properties Class:
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
-    cellblender_version = StringProperty(name="CellBlender Version", default="0.1.54")
+    cellblender_version = StringProperty(
+        name="CellBlender Version", default="0.1.54")
     project_settings = PointerProperty(
         type=MCellProjectPanelProperty, name="CellBlender Project Settings")
+    export_project = PointerProperty(
+        type=MCellExportProjectPanelProperty, name="Export Simulation")
+    run_simulation = PointerProperty(
+        type=MCellRunSimulationPanelProperty, name="Run Simulation")
     mol_viz = PointerProperty(
         type=MCellMolVizPanelProperty, name="Mol Viz Settings")
     initialization = PointerProperty(
