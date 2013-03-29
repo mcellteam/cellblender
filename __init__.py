@@ -17,11 +17,12 @@
 
 # <pep8 compliant>
 
+import os
 
 bl_info = {
     "name": "CellBlender",
-    "author": "Tom Bartol, Jacob Czech, Markus Dittrich",
-    "version": (0, 1, 55),
+    "author": "Tom Bartol, Jacob Czech, Markus Dittrich, Bob Kuczewski",
+    "version": (0, 1, 56),
     "blender": (2, 66, 1),
     "api": 55057,
     "location": "Properties > Scene > CellBlender Panel",
@@ -30,7 +31,17 @@ bl_info = {
     "wiki_url": "http://www.mcell.org",
     "tracker_url": "http://code.google.com/p/cellblender/issues/list",
     "category": "Cell Modeling",
-    "supported_version_list": [(2, 64, 0), (2, 65, 0), (2, 66, 1)]
+    "supported_version_list": [(2, 64, 0), (2, 65, 0), (2, 66, 1)],
+    "cellblender_source_list": [
+        "__init__.py", 
+        "cellblender_properties.py", 
+        "cellblender_panels.py", 
+        "cellblender_operators.py", 
+        "io_mesh_mcell_mdl/__init__.py", 
+        "io_mesh_mcell_mdl/export_mcell_mdl.py", 
+        "io_mesh_mcell_mdl/import_mcell_mdl.py", 
+        "io_mesh_mcell_mdl/mdlmesh_parser.py" ],
+    "cellblender_source_sha1": "x"
 }
 
 
@@ -48,7 +59,7 @@ else:
 
 
 import bpy
-
+import hashlib
 
 # we use per module class registration/unregistration
 def register():
@@ -64,6 +75,18 @@ def register():
     if (bpy.app.version not in bl_info['supported_version_list']):
         print("Warning, current Blender version", bpy.app.version,
               " is not in supported list:", bl_info['supported_version_list'])
+
+    cbsl = bl_info["cellblender_source_list"]
+    hashobject = hashlib.sha1()
+    for i in range(len(cbsl)):
+    	source_file_name = bpy.utils.script_paths()[1] + os.sep + "addons" + os.sep + "cellblender" + os.sep + cbsl[i]
+    	print ( "Including SHA1 of ", source_file_name )
+    	hashobject.update ( open(source_file_name,'r').read().encode("utf-8") )
+    	print ( "  gives ... ", hashobject.hexdigest() )
+    
+    bl_info['cellblender_source_sha1'] = hashobject.hexdigest()
+    print ( "CB Source Sha1 = ", bl_info['cellblender_source_sha1'] )
+    #bpy.data.scenes[0].mcell.cellblender_source_hash = bl_info['cellblender_source_sha1']
 
 
 def unregister():

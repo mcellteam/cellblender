@@ -48,9 +48,16 @@ class MCELL_PT_project_settings(bpy.types.Panel):
     bl_context = "scene"
     bl_options = {'DEFAULT_CLOSED'}
 
+    def compute_id(self):
+        print ("Need to get bl_info['cellblender_source_sha1']")
+        return "Need to get bl_info['cellblender_source_sha1']"
+
     def draw(self, context):
         layout = self.layout
         mcell = context.scene.mcell
+
+        row = layout.row()
+        row.label(text="CellBlender ID: "+self.compute_id())
 
         row = layout.row()
         row.operator("mcell.set_mcell_binary",
