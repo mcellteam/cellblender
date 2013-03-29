@@ -49,7 +49,7 @@ class MCELL_PT_project_settings(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     def compute_id(self):
-        print ("Need to get bl_info['cellblender_source_sha1']")
+        # print ("Need to get bl_info['cellblender_source_sha1']")
         return "Need to get bl_info['cellblender_source_sha1']"
 
     def draw(self, context):

@@ -85,7 +85,7 @@ def register():
     	print ( "  gives ... ", hashobject.hexdigest() )
     
     bl_info['cellblender_source_sha1'] = hashobject.hexdigest()
-    print ( "CB Source Sha1 = ", bl_info['cellblender_source_sha1'] )
+    print ( "CellBlender Source Sha1 = ", bl_info['cellblender_source_sha1'] )
     #bpy.data.scenes[0].mcell.cellblender_source_hash = bl_info['cellblender_source_sha1']
 
 
