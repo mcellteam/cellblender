@@ -95,15 +95,10 @@ def register():
         print("Warning, current Blender version", bpy.app.version,
               " is not in supported list:", bl_info['supported_version_list'])
 
-    # Order of path type is important here! This is the order Blender checks
-    # the addon directories. Note: we should also check user defined script
-    # paths set under user preferences.
-    for path_type in ['LOCAL', 'USER', 'SYSTEM']:
-        resource_path = bpy.utils.resource_path(type=path_type)
-        addon_path = os.path.join(resource_path, "scripts/addons/cellblender")
-        if os.path.isdir(addon_path):
-            identify_source_version(addon_path)
-            break
+    print ( "CellBlender Addon found: ", __file__ )
+    print ( "CellBlender Addon Path is ", os.path.dirname(__file__) )
+    addon_path = os.path.dirname(__file__)
+    identify_source_version ( addon_path )
 
 
 def unregister():
