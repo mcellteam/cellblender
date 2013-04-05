@@ -61,6 +61,21 @@ else:
 import bpy
 import hashlib
 
+
+def identify_source_version(addon_path):
+    cbsl = bl_info["cellblender_source_list"]
+    hashobject = hashlib.sha1()
+    for i in range(len(cbsl)):
+        source_file_name = addon_path + cbsl[i]
+        hashobject.update ( open(source_file_name,'r').read().encode("utf-8") )
+        print ( "  Cumulative SHA1: ", hashobject.hexdigest(), "=", source_file_name )
+
+    bl_info['cellblender_source_sha1'] = hashobject.hexdigest()
+    print ( "CellBlender Source SHA1 = ", bl_info['cellblender_source_sha1'] )
+    open(addon_path + "cellblender_source_sha1.txt", 'w').write ( hashobject.hexdigest() )
+    #bpy.data.scenes[0].mcell.cellblender_source_hash = bl_info['cellblender_source_sha1']
+
+
 # we use per module class registration/unregistration
 def register():
     bpy.utils.register_module(__name__)
@@ -76,6 +91,13 @@ def register():
         print("Warning, current Blender version", bpy.app.version,
               " is not in supported list:", bl_info['supported_version_list'])
 
+    addon_path = bpy.utils.user_resource('SCRIPTS')
+    if addon_path[-1] != os.sep:
+        addon_path = addon_path + os.sep
+    addon_path = addon_path + "addons" + os.sep + "cellblender" + os.sep;
+
+    identify_source_version ( addon_path )
+    '''
     cbsl = bl_info["cellblender_source_list"]
     hashobject = hashlib.sha1()
     addon_path = bpy.utils.user_resource('SCRIPTS')
@@ -91,7 +113,7 @@ def register():
     print ( "CellBlender Source SHA1 = ", bl_info['cellblender_source_sha1'] )
     open(addon_path + "cellblender_source_sha1.txt", 'w').write ( hashobject.hexdigest() )
     #bpy.data.scenes[0].mcell.cellblender_source_hash = bl_info['cellblender_source_sha1']
-
+    '''
 
 def unregister():
     bpy.utils.unregister_module(__name__)
@@ -112,4 +134,5 @@ if len(bpy.app.handlers.save_pre) == 0:
 
 # for testing
 if __name__ == '__main__':
+    #identify_source_version ( "" )
     register()
