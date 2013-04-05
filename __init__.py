@@ -79,7 +79,7 @@ def register():
     cbsl = bl_info["cellblender_source_list"]
     hashobject = hashlib.sha1()
     for i in range(len(cbsl)):
-        source_file_name = bpy.utils.script_paths()[1] + os.sep + "addons" + os.sep + "cellblender" + os.sep + cbsl[i]
+        source_file_name = bpy.utils.user_resource('SCRIPTS') + os.sep + "addons" + os.sep + "cellblender" + os.sep + cbsl[i]
         print ( "Including SHA1 of ", source_file_name )
         hashobject.update ( open(source_file_name,'r').read().encode("utf-8") )
         print ( "  gives ... ", hashobject.hexdigest() )
