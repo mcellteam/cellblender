@@ -22,7 +22,7 @@ import os
 bl_info = {
     "name": "CellBlender",
     "author": "Tom Bartol, Jacob Czech, Markus Dittrich, Bob Kuczewski",
-    "version": (0, 1, 56),
+    "version": (0, 1, 57),
     "blender": (2, 66, 1),
     "api": 55057,
     "location": "Properties > Scene > CellBlender Panel",
@@ -78,16 +78,18 @@ def register():
 
     cbsl = bl_info["cellblender_source_list"]
     hashobject = hashlib.sha1()
+    addon_path = bpy.utils.user_resource('SCRIPTS')
+    if addon_path[-1] != os.sep:
+        addon_path = addon_path + os.sep
+    addon_path = addon_path + "addons" + os.sep + "cellblender" + os.sep;
     for i in range(len(cbsl)):
-        source_file_name = bpy.utils.user_resource('SCRIPTS')
-        if source_file_name[-1] != os.sep:
-            source_file_name = source_file_name + os.sep
-        source_file_name = source_file_name + "addons" + os.sep + "cellblender" + os.sep + cbsl[i]
+        source_file_name = addon_path + cbsl[i]
         hashobject.update ( open(source_file_name,'r').read().encode("utf-8") )
         print ( "  Cumulative SHA1: ", hashobject.hexdigest(), "=", source_file_name )
-    
+
     bl_info['cellblender_source_sha1'] = hashobject.hexdigest()
     print ( "CellBlender Source SHA1 = ", bl_info['cellblender_source_sha1'] )
+    open(addon_path + "cellblender_source_sha1.txt", 'w').write ( hashobject.hexdigest() )
     #bpy.data.scenes[0].mcell.cellblender_source_hash = bl_info['cellblender_source_sha1']
 
 
