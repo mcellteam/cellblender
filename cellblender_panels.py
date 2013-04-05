@@ -49,8 +49,19 @@ class MCELL_PT_project_settings(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     def compute_id(self):
+
+        # This addon_path code is duplicated from __init__.py
+        # It should be shared somehow...
+
+        addon_path = bpy.utils.user_resource('SCRIPTS')
+        if addon_path[-1] != os.sep:
+            addon_path = addon_path + os.sep
+        addon_path = addon_path + "addons" + os.sep + "cellblender" + os.sep;
+
         # print ("Need to get bl_info['cellblender_source_sha1']")
-        return "Need to get bl_info['cellblender_source_sha1']"
+        # Note: We should find a better way to get this than by reading a file
+        id = open(addon_path + "cellblender_source_sha1.txt", 'r').read()
+        return id
 
     def draw(self, context):
         layout = self.layout

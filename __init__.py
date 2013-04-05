@@ -62,6 +62,7 @@ import bpy
 import hashlib
 
 
+# Compute, print, and save the SHA1 of all source files in bl_info["cellblender_source_list"]
 def identify_source_version(addon_path):
     cbsl = bl_info["cellblender_source_list"]
     hashobject = hashlib.sha1()
@@ -97,23 +98,7 @@ def register():
     addon_path = addon_path + "addons" + os.sep + "cellblender" + os.sep;
 
     identify_source_version ( addon_path )
-    '''
-    cbsl = bl_info["cellblender_source_list"]
-    hashobject = hashlib.sha1()
-    addon_path = bpy.utils.user_resource('SCRIPTS')
-    if addon_path[-1] != os.sep:
-        addon_path = addon_path + os.sep
-    addon_path = addon_path + "addons" + os.sep + "cellblender" + os.sep;
-    for i in range(len(cbsl)):
-        source_file_name = addon_path + cbsl[i]
-        hashobject.update ( open(source_file_name,'r').read().encode("utf-8") )
-        print ( "  Cumulative SHA1: ", hashobject.hexdigest(), "=", source_file_name )
 
-    bl_info['cellblender_source_sha1'] = hashobject.hexdigest()
-    print ( "CellBlender Source SHA1 = ", bl_info['cellblender_source_sha1'] )
-    open(addon_path + "cellblender_source_sha1.txt", 'w').write ( hashobject.hexdigest() )
-    #bpy.data.scenes[0].mcell.cellblender_source_hash = bl_info['cellblender_source_sha1']
-    '''
 
 def unregister():
     bpy.utils.unregister_module(__name__)
