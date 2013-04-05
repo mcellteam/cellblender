@@ -1415,73 +1415,11 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
 
 def plot_rxns ( plot_command ):
     """ Plot a file """
-
     mcell = bpy.context.scene.mcell
     project_dir = mcell.project_settings.project_dir
     base_name = mcell.project_settings.base_name
-    
     print ( "Plotting ", base_name, " with ", plot_command, " at ", project_dir )
-    print ( "  Split:", plot_command.split() )
-    
-    
     subprocess.call ( plot_command.split(), cwd=project_dir+"react_data" )
-    # Works: subprocess.call ( ["/usr/bin/java","-jar", "PlotData.jar"], cwd=project_dir+"react_data" )
-    # Works: subprocess.call ( ["/bin/ls","-al"], cwd="/home/bobkuczewski/mcell_tutorial/intro/2013_04_04/react_data" )
-    # Works: subprocess.call ( ["/usr/bin/xmgrace"], cwd="/home/bobkuczewski/mcell_tutorial/intro/2013_04_04/" )
-    # Works: subprocess.Popen ( ["/usr/bin/xmgrace"], cwd="/home/bobkuczewski/mcell_tutorial/intro/2013_04_04/" )
-    # Fails: subprocess.call ( ["/usr/bin/xmgrace"], cwd="~/mcell_tutorial/intro/2013_04_04/" )
-    # Fails: subprocess.call ( ["/usr/bin/xmgrace"], cwd=project_dir )
-
-    '''mdl_filepath = '%s%s.main.mdl' % (project_dir, base_name)
-    # Log filename will be log.year-month-day_hour:minute_seed.txt
-    # (e.g. log.2013-03-12_11:45_1.txt)
-    time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
-    log_filepath = "%s%s" % (project_dir, "log.%s_%d.txt" % (time_now, seed))
-    error_filepath = "%s%s" % (
-        project_dir, "error.%s_%d.txt" % (time_now, seed))
-
-    if mcell.run_simulation.error_file == 'none':
-        error_file = subprocess.DEVNULL
-    elif mcell.run_simulation.error_file == 'console':
-        error_file = None
-
-    if mcell.run_simulation.log_file == 'none':
-        log_file = subprocess.DEVNULL
-    elif mcell.run_simulation.log_file == 'console':
-        log_file = None
-
-    # Both output and error log file
-    print ( "Running", mcell_binary, "with", mdl_filepath )
-    subprocess_cwd = os.path.dirname(mdl_filepath)
-    print ( "  Should run from cwd =", subprocess_cwd )
-    if (mcell.run_simulation.log_file == 'file' and
-            mcell.run_simulation.error_file == 'file'):
-        with open(log_filepath, "w") as log_file, open(
-                error_filepath, "w") as error_file:
-            subprocess.call(
-                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-                cwd=subprocess_cwd,
-                stdout=log_file, stderr=error_file)
-    # Only output log file
-    elif mcell.run_simulation.log_file == 'file':
-        with open(log_filepath, "w") as log_file:
-            subprocess.call(
-                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-                cwd=subprocess_cwd,
-                stdout=log_file, stderr=error_file)
-    # Only error log file
-    elif mcell.run_simulation.error_file == 'file':
-        with open(error_filepath, "w") as error_file:
-            subprocess.call(
-                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-                cwd=subprocess_cwd,
-                stdout=log_file, stderr=error_file)
-    # Neither error nor output log
-    else:
-        subprocess.call(
-            [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-            cwd=subprocess_cwd,
-            stdout=log_file, stderr=error_file)'''
 
 
 class MCELL_OT_plot_rxn_output(bpy.types.Operator):
