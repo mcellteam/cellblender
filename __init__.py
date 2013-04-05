@@ -33,14 +33,14 @@ bl_info = {
     "category": "Cell Modeling",
     "supported_version_list": [(2, 64, 0), (2, 65, 0), (2, 66, 1)],
     "cellblender_source_list": [
-        "__init__.py", 
-        "cellblender_properties.py", 
-        "cellblender_panels.py", 
-        "cellblender_operators.py", 
-        "io_mesh_mcell_mdl/__init__.py", 
-        "io_mesh_mcell_mdl/export_mcell_mdl.py", 
-        "io_mesh_mcell_mdl/import_mcell_mdl.py", 
-        "io_mesh_mcell_mdl/mdlmesh_parser.py" ],
+        "__init__.py",
+        "cellblender_properties.py",
+        "cellblender_panels.py",
+        "cellblender_operators.py",
+        "io_mesh_mcell_mdl/__init__.py",
+        "io_mesh_mcell_mdl/export_mcell_mdl.py",
+        "io_mesh_mcell_mdl/import_mcell_mdl.py",
+        "io_mesh_mcell_mdl/mdlmesh_parser.py"],
     "cellblender_source_sha1": "x"
 }
 
@@ -62,19 +62,24 @@ import bpy
 import hashlib
 
 
-# Compute, print, and save the SHA1 of all source files in bl_info["cellblender_source_list"]
+# Compute, print, and save the SHA1 of all source files in
+# bl_info["cellblender_source_list"]
+
 def identify_source_version(addon_path):
     cbsl = bl_info["cellblender_source_list"]
     hashobject = hashlib.sha1()
-    for i in range(len(cbsl)):
-        source_file_name = addon_path + cbsl[i]
-        hashobject.update ( open(source_file_name,'r').read().encode("utf-8") )
-        print ( "  Cumulative SHA1: ", hashobject.hexdigest(), "=", source_file_name )
+    for source_file_basename in cbsl:
+        source_file_name = os.path.join(addon_path, source_file_basename)
+        hashobject.update(open(source_file_name, 'r').read().encode("utf-8"))
+        print("  Cumulative SHA1: ", hashobject.hexdigest(), "=",
+              source_file_name)
 
     bl_info['cellblender_source_sha1'] = hashobject.hexdigest()
-    print ( "CellBlender Source SHA1 = ", bl_info['cellblender_source_sha1'] )
-    open(addon_path + "cellblender_source_sha1.txt", 'w').write ( hashobject.hexdigest() )
-    #bpy.data.scenes[0].mcell.cellblender_source_hash = bl_info['cellblender_source_sha1']
+    print("CellBlender Source SHA1 = ", bl_info['cellblender_source_sha1'])
+    sha_file = os.path.join(addon_path, "cellblender_source_sha1.txt")
+    open(sha_file, 'w').write(hashobject.hexdigest())
+    #bpy.data.scenes[0].mcell.cellblender_source_hash = bl_info[
+    #    'cellblender_source_sha1']
 
 
 # we use per module class registration/unregistration
@@ -92,12 +97,15 @@ def register():
         print("Warning, current Blender version", bpy.app.version,
               " is not in supported list:", bl_info['supported_version_list'])
 
-    addon_path = bpy.utils.user_resource('SCRIPTS')
-    if addon_path[-1] != os.sep:
-        addon_path = addon_path + os.sep
-    addon_path = addon_path + "addons" + os.sep + "cellblender" + os.sep;
-
-    identify_source_version ( addon_path )
+    # Order of path type is important here! This is the order Blender checks
+    # the addon directories. Note: we should also check user defined script
+    # paths set under user preferences.
+    for path_type in ['LOCAL', 'USER', 'SYSTEM']:
+        resource_path = bpy.utils.resource_path(type=path_type)
+        addon_path = os.path.join(resource_path, "scripts/addons/cellblender")
+        if os.path.isdir(addon_path):
+            identify_source_version(addon_path)
+            break
 
 
 def unregister():

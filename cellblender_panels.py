@@ -47,7 +47,7 @@ class MCELL_PT_project_settings(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "scene"
     bl_options = {'DEFAULT_CLOSED'}
-    
+
     source_id = None
 
     def compute_id(self):
@@ -55,18 +55,21 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         # This addon_path code is duplicated from __init__.py
         # It should be shared somehow...
 
-        if self.source_id == None:
-            addon_path = bpy.utils.user_resource('SCRIPTS')
-            if addon_path[-1] != os.sep:
-                addon_path = addon_path + os.sep
-            addon_path = addon_path + "addons" + os.sep + "cellblender" + os.sep;
+        if self.source_id is None:
+            for path_type in ['LOCAL', 'USER', 'SYSTEM']:
+                resource_path = bpy.utils.resource_path(type=path_type)
+                addon_path = os.path.join(
+                    resource_path, "scripts/addons/cellblender")
+                if os.path.isdir(addon_path):
+                    break
 
             # print ("Need to get bl_info['cellblender_source_sha1']")
-            # Note: We should find a better way to get this than by reading a file
-            self.source_id = open(addon_path + "cellblender_source_sha1.txt", 'r').read()
+            # Note: We should find a better way to get this than by reading a
+            # file
+            sha_file = os.path.join(addon_path, "cellblender_source_sha1.txt")
+            self.source_id = open(sha_file, 'r').read()
 
         return self.source_id
-
 
     def draw(self, context):
         layout = self.layout
@@ -602,7 +605,7 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
         col.operator("mcell.surface_class_add", icon='ZOOMIN', text="")
         col.operator("mcell.surface_class_remove", icon='ZOOMOUT', text="")
         row = layout.row()
-        # Show the surface class properties template_list if there is at least 
+        # Show the surface class properties template_list if there is at least
         # a single surface class.
         if surf_class.surf_class_list:
             active_surf_class = surf_class.surf_class_list[
