@@ -75,11 +75,9 @@ def identify_source_version(addon_path):
               source_file_name)
 
     bl_info['cellblender_source_sha1'] = hashobject.hexdigest()
-    print("CellBlender Source SHA1 = ", bl_info['cellblender_source_sha1'])
+    print("CellBlender Source ID (SHA1) = ", bl_info['cellblender_source_sha1'])
     sha_file = os.path.join(addon_path, "cellblender_source_sha1.txt")
     open(sha_file, 'w').write(hashobject.hexdigest())
-    #bpy.data.scenes[0].mcell.cellblender_source_hash = bl_info[
-    #    'cellblender_source_sha1']
 
 
 # we use per module class registration/unregistration

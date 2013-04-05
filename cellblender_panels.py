@@ -30,6 +30,8 @@ import bpy
 import re
 import os
 
+# cellblender imports
+import cellblender
 
 # we use per module class registration/unregistration
 def register():
@@ -48,35 +50,12 @@ class MCELL_PT_project_settings(bpy.types.Panel):
     bl_context = "scene"
     bl_options = {'DEFAULT_CLOSED'}
 
-    source_id = None
-
-    def compute_id(self):
-
-        # This addon_path code is duplicated from __init__.py
-        # It should be shared somehow...
-
-        if self.source_id is None:
-            for path_type in ['LOCAL', 'USER', 'SYSTEM']:
-                resource_path = bpy.utils.resource_path(type=path_type)
-                addon_path = os.path.join(
-                    resource_path, "scripts/addons/cellblender")
-                if os.path.isdir(addon_path):
-                    break
-
-            # print ("Need to get bl_info['cellblender_source_sha1']")
-            # Note: We should find a better way to get this than by reading a
-            # file
-            sha_file = os.path.join(addon_path, "cellblender_source_sha1.txt")
-            self.source_id = open(sha_file, 'r').read()
-
-        return self.source_id
-
     def draw(self, context):
         layout = self.layout
         mcell = context.scene.mcell
 
         row = layout.row()
-        row.label(text="CellBlender ID: "+self.compute_id())
+        row.label(text="CellBlender ID: "+cellblender.bl_info['cellblender_source_sha1'])
 
         row = layout.row()
         row.operator("mcell.set_mcell_binary",
