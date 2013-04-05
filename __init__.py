@@ -79,13 +79,15 @@ def register():
     cbsl = bl_info["cellblender_source_list"]
     hashobject = hashlib.sha1()
     for i in range(len(cbsl)):
-        source_file_name = bpy.utils.user_resource('SCRIPTS') + os.sep + "addons" + os.sep + "cellblender" + os.sep + cbsl[i]
-        print ( "Including SHA1 of ", source_file_name )
+        source_file_name = bpy.utils.user_resource('SCRIPTS')
+        if source_file_name[-1] != os.sep:
+            source_file_name = source_file_name + os.sep
+        source_file_name = source_file_name + "addons" + os.sep + "cellblender" + os.sep + cbsl[i]
         hashobject.update ( open(source_file_name,'r').read().encode("utf-8") )
-        print ( "  gives ... ", hashobject.hexdigest() )
+        print ( "  Cumulative SHA1: ", hashobject.hexdigest(), "=", source_file_name )
     
     bl_info['cellblender_source_sha1'] = hashobject.hexdigest()
-    print ( "CellBlender Source Sha1 = ", bl_info['cellblender_source_sha1'] )
+    print ( "CellBlender Source SHA1 = ", bl_info['cellblender_source_sha1'] )
     #bpy.data.scenes[0].mcell.cellblender_source_hash = bl_info['cellblender_source_sha1']
 
 
