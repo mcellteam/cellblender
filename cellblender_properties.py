@@ -559,6 +559,7 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
     reaction_list = CollectionProperty(
         type=MCellReactionProperty, name="Reaction List")
     active_rxn_index = IntProperty(name="Active Reaction Index", default=0)
+    plot_command = StringProperty(name="", default="")
     status = StringProperty(name="Status")
 
 
@@ -623,6 +624,8 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     count_location = bpy.props.EnumProperty(
         items=count_location_enum, name="Count Location",
         update=cellblender_operators.check_rxn_output)
+    plot_command = StringProperty(
+        name="Command")  # , update=cellblender_operators.check_rxn_output)
 
 
 class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):

@@ -788,6 +788,13 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                                            "region_list", icon='FACESEL_HLT')
                     except KeyError:
                         pass
+            row = layout.row()
+            row.label(text="Plot Reaction Data:", icon='FORCE_LENNARDJONES')
+            row = layout.row()
+            row.operator("mcell.plot_rxn_output", text="Execute Plot Command:")
+            row = layout.row()
+            layout.prop(mcell.reactions, "plot_command")
+
         if (mcell.rxn_output.status != ""):
             row = layout.row()
             row.label(text=mcell.rxn_output.status, icon='ERROR')
