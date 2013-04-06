@@ -45,7 +45,7 @@ def unregister():
 
 #CellBlendereGUI Panels:
 class MCELL_PT_project_settings(bpy.types.Panel):
-    bl_label = "CellBlender Project Settings"
+    bl_label = "CellBlender - Project Settings"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -78,7 +78,7 @@ class MCELL_PT_project_settings(bpy.types.Panel):
 
 
 class MCELL_PT_export_project(bpy.types.Panel):
-    bl_label = "Export Project"
+    bl_label = "CellBlender - Export Project"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -96,7 +96,7 @@ class MCELL_PT_export_project(bpy.types.Panel):
 
 
 class MCELL_PT_run_simulatin(bpy.types.Panel):
-    bl_label = "Run Simulation"
+    bl_label = "CellBlender - Run Simulation"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -136,7 +136,7 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
 
 
 class MCELL_PT_model_objects(bpy.types.Panel):
-    bl_label = "Model Objects"
+    bl_label = "CellBlender - Model Objects"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -167,7 +167,7 @@ class MCELL_PT_model_objects(bpy.types.Panel):
 
 
 class MCELL_PT_viz_results(bpy.types.Panel):
-    bl_label = "Visualize Simulation Results"
+    bl_label = "CellBlender - Visualize Simulation Results"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -205,7 +205,7 @@ class MCELL_PT_viz_results(bpy.types.Panel):
 
 '''
 class MCELL_PT_utilities(bpy.types.Panel):
-    bl_label = "Utilities"
+    bl_label = "CellBlender - Utilities"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -222,7 +222,7 @@ class MCELL_PT_utilities(bpy.types.Panel):
 
 
 class MCELL_PT_object_selector(bpy.types.Panel):
-    bl_label = "Object Selector"
+    bl_label = "CellBlender - Object Selector"
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
     bl_options = {'DEFAULT_CLOSED'}
@@ -239,7 +239,7 @@ class MCELL_PT_object_selector(bpy.types.Panel):
 
 
 class MCELL_PT_meshalyzer(bpy.types.Panel):
-    bl_label = "Mesh Analysis"
+    bl_label = "CellBlender - Mesh Analysis"
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
     bl_options = {'DEFAULT_CLOSED'}
@@ -281,7 +281,7 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
 
 '''
 class MCELL_PT_user_model_parameters(bpy.types.Panel):
-    bl_label = "User-Defined Model Parameters"
+    bl_label = "CellBlender - User-Defined Model Parameters"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -296,7 +296,7 @@ class MCELL_PT_user_model_parameters(bpy.types.Panel):
 
 
 class MCELL_PT_initialization(bpy.types.Panel):
-    bl_label = "Model Initialization"
+    bl_label = "CellBlender - Model Initialization"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -422,7 +422,7 @@ class MCELL_PT_initialization(bpy.types.Panel):
 
 
 class MCELL_PT_partitions(bpy.types.Panel):
-    bl_label = "Define and Visualize Partitions"
+    bl_label = "CellBlender - Define and Visualize Partitions"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -461,7 +461,7 @@ class MCELL_PT_partitions(bpy.types.Panel):
 
 
 class MCELL_PT_define_molecules(bpy.types.Panel):
-    bl_label = "Define Molecules"
+    bl_label = "CellBlender - Define Molecules"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -510,7 +510,7 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
 
 
 class MCELL_PT_define_reactions(bpy.types.Panel):
-    bl_label = "Define Reactions"
+    bl_label = "CellBlender - Define Reactions"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -550,7 +550,7 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
 
 
 class MCELL_PT_define_surface_classes(bpy.types.Panel):
-    bl_label = "Define Surface Classes"
+    bl_label = "CellBlender - Define Surface Classes"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -618,7 +618,7 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
 
 
 class MCELL_PT_mod_surface_regions(bpy.types.Panel):
-    bl_label = "Modify Surface Regions"
+    bl_label = "CellBlender - Modify Surface Regions"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -673,7 +673,7 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
 
 
 class MCELL_PT_molecule_release(bpy.types.Panel):
-    bl_label = "Molecule Release/Placement"
+    bl_label = "CellBlender - Molecule Release/Placement"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -730,7 +730,7 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
 
 
 class MCELL_PT_reaction_output_settings(bpy.types.Panel):
-    bl_label = "Reaction Output Settings"
+    bl_label = "CellBlender - Reaction Output Settings"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -800,7 +800,7 @@ class MCELL_UL_visualization_export_list(bpy.types.UIList):
 
 
 class MCELL_PT_visualization_output_settings(bpy.types.Panel):
-    bl_label = "Visualization Output Settings"
+    bl_label = "CellBlender - Visualization Output Settings"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -830,7 +830,7 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
 
 
 class MCELL_PT_define_surface_regions(bpy.types.Panel):
-    bl_label = "Define Surface Regions"
+    bl_label = "CellBlender - Define Surface Regions"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "object"
@@ -871,7 +871,7 @@ class MCELL_PT_define_surface_regions(bpy.types.Panel):
 
 
 class MCELL_PT_molecule_glyphs(bpy.types.Panel):
-    bl_label = "Molecule Shape"
+    bl_label = "CellBlender - Molecule Shape"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "material"
