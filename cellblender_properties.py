@@ -74,6 +74,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     diffusion_constant = FloatProperty(name="Diffusion Constant")
     diffusion_constant_str = StringProperty(
         name="Diffusion Constant",
+        default="0",
         description="Diffusion Constant Units: cm^2/sec",
         update=cellblender_operators.update_diffusion_constant)
     target_only = BoolProperty(name="Target Only")
@@ -116,6 +117,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
     fwd_rate = FloatProperty(name="Forward Rate")
     fwd_rate_str = StringProperty(
         name="Forward Rate",
+        default="0",
         description="Forward Rate Units: sec^-1 (unimolecular),"
                     " M^-1*sec^-1 (bimolecular)",
         update=cellblender_operators.update_fwd_rate)
@@ -230,7 +232,8 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 #Panel Properties:
 
 class MCellProjectPanelProperty(bpy.types.PropertyGroup):
-    base_name = StringProperty(name="Project Base Name")
+    base_name = StringProperty(
+        name="Project Base Name", default="cellblender_project")
     project_dir = StringProperty(name="Project Directory")
     mcell_binary = StringProperty(name="MCell Binary")
 
@@ -591,7 +594,6 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
     object_list = CollectionProperty(
         type=MCellStringProperty, name="Object List")
     active_obj_index = IntProperty(name="Active Object Index", default=0)
-              
 
 
 class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
@@ -719,6 +721,5 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 class MCellObjectPropertyGroup(bpy.types.PropertyGroup):
     regions = PointerProperty(
         type=MCellSurfaceRegionListProperty, name="Defined Surface Regions")
-    include = BoolProperty(name="Include Object in Model",default=False)
+    include = BoolProperty(name="Include Object in Model", default=False)
     status = StringProperty(name="Status")
-

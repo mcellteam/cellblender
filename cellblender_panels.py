@@ -33,6 +33,7 @@ import os
 # cellblender imports
 import cellblender
 
+
 # we use per module class registration/unregistration
 def register():
     bpy.utils.register_module(__name__)
@@ -55,7 +56,8 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
-        row.label(text="CellBlender ID: "+cellblender.bl_info['cellblender_source_sha1'])
+        row.label(text="CellBlender ID: "+cellblender.bl_info[
+            'cellblender_source_sha1'])
 
         row = layout.row()
         row.operator("mcell.set_mcell_binary",
@@ -162,22 +164,6 @@ class MCELL_PT_model_objects(bpy.types.Panel):
 #        sub = row.row(align=True)
 #        sub.operator("mcell.model_objects_select", text="Select")
 #        sub.operator("mcell.model_objects_deselect", text="Deselect")
-
-
-'''
-class MCELL_PT_sim_control(bpy.types.Panel):
-    bl_label = "Simulation Control"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        row = layout.row()
-'''
 
 
 class MCELL_PT_viz_results(bpy.types.Panel):
@@ -535,29 +521,32 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
-        row.label(text="Defined Reactions:", icon='FORCE_LENNARDJONES')
-        row = layout.row()
-        col = row.column()
-        col.template_list("UI_UL_list", "define_reactions", mcell.reactions,
-                          "reaction_list", mcell.reactions, "active_rxn_index",
-                          rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.reaction_add", icon='ZOOMIN', text="")
-        col.operator("mcell.reaction_remove", icon='ZOOMOUT', text="")
-        if len(mcell.reactions.reaction_list) > 0:
-            rxn = mcell.reactions.reaction_list[
-                mcell.reactions.active_rxn_index]
-            layout.prop(rxn, "reactants")
-            layout.prop(rxn, "type")
-            layout.prop(rxn, "products")
-            layout.prop(rxn, "fwd_rate_str")
-            if rxn.type == "reversible":
-                layout.prop(rxn, "bkwd_rate_str")
-            layout.prop(rxn, "rxn_name")
-
-        if mcell.reactions.status != "":
+        if mcell.molecules.molecule_list:
+            row.label(text="Defined Reactions:", icon='FORCE_LENNARDJONES')
             row = layout.row()
-            row.label(text=mcell.reactions.status, icon='ERROR')
+            col = row.column()
+            col.template_list("UI_UL_list", "define_reactions",
+                              mcell.reactions, "reaction_list",
+                              mcell.reactions, "active_rxn_index", rows=2)
+            col = row.column(align=True)
+            col.operator("mcell.reaction_add", icon='ZOOMIN', text="")
+            col.operator("mcell.reaction_remove", icon='ZOOMOUT', text="")
+            if len(mcell.reactions.reaction_list) > 0:
+                rxn = mcell.reactions.reaction_list[
+                    mcell.reactions.active_rxn_index]
+                layout.prop(rxn, "reactants")
+                layout.prop(rxn, "type")
+                layout.prop(rxn, "products")
+                layout.prop(rxn, "fwd_rate_str")
+                if rxn.type == "reversible":
+                    layout.prop(rxn, "bkwd_rate_str")
+                layout.prop(rxn, "rxn_name")
+
+            if mcell.reactions.status != "":
+                row = layout.row()
+                row.label(text=mcell.reactions.status, icon='ERROR')
+        else:
+            row.label(text="Define at least one molecule", icon='ERROR')
 
 
 class MCELL_PT_define_surface_classes(bpy.types.Panel):
@@ -639,40 +628,48 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
         layout = self.layout
         mcell = context.scene.mcell
         mod_surf_regions = context.scene.mcell.mod_surf_regions
+
         row = layout.row()
-        row.label(text="Modified Surface Regions:", icon='FACESEL_HLT')
-        row = layout.row()
-        row = layout.row()
-        col = row.column()
-        col.template_list("UI_UL_list", "mod_surf_regions", mod_surf_regions,
-                          "mod_surf_regions_list", mod_surf_regions,
-                          "active_mod_surf_regions_index", rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.mod_surf_regions_add", icon='ZOOMIN', text="")
-        col.operator("mcell.mod_surf_regions_remove", icon='ZOOMOUT', text="")
-        if mod_surf_regions.status != "":
+        if not mcell.surface_classes.surf_class_list:
+            row.label(text="Define at least one surface class", icon='ERROR')
+        elif not mcell.model_objects.object_list:
+            row.label(text="Add a mesh to the Model Objects list",
+                      icon='ERROR')
+        else:
+            row.label(text="Modified Surface Regions:", icon='FACESEL_HLT')
             row = layout.row()
-            row.label(text=mod_surf_regions.status, icon='ERROR')
-        if len(mod_surf_regions.mod_surf_regions_list) > 0:
-            active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
-                mod_surf_regions.active_mod_surf_regions_index]
-            row = layout.row()
-            row.prop_search(active_mod_surf_regions, "surf_class_name",
-                            mcell.surface_classes, "surf_class_list",
-                            icon='FACESEL_HLT')
-            row = layout.row()
-            row.prop_search(active_mod_surf_regions, "object_name",
-                            mcell.model_objects, "object_list",
-                            icon='MESH_ICOSPHERE')
-            if active_mod_surf_regions.object_name:
-                try:
-                    regions = bpy.data.objects[
-                        active_mod_surf_regions.object_name].mcell.regions
-                    layout.prop_search(active_mod_surf_regions, "region_name",
-                                       regions, "region_list",
-                                       icon='FACESEL_HLT')
-                except KeyError:
-                    pass
+            col = row.column()
+            col.template_list("UI_UL_list", "mod_surf_regions",
+                              mod_surf_regions, "mod_surf_regions_list",
+                              mod_surf_regions,
+                              "active_mod_surf_regions_index", rows=2)
+            col = row.column(align=True)
+            col.operator("mcell.mod_surf_regions_add", icon='ZOOMIN', text="")
+            col.operator("mcell.mod_surf_regions_remove", icon='ZOOMOUT',
+                         text="")
+            if mod_surf_regions.status != "":
+                row = layout.row()
+                row.label(text=mod_surf_regions.status, icon='ERROR')
+            if mod_surf_regions.mod_surf_regions_list:
+                active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
+                    mod_surf_regions.active_mod_surf_regions_index]
+                row = layout.row()
+                row.prop_search(active_mod_surf_regions, "surf_class_name",
+                                mcell.surface_classes, "surf_class_list",
+                                icon='FACESEL_HLT')
+                row = layout.row()
+                row.prop_search(active_mod_surf_regions, "object_name",
+                                mcell.model_objects, "object_list",
+                                icon='MESH_ICOSPHERE')
+                if active_mod_surf_regions.object_name:
+                    try:
+                        regions = bpy.data.objects[
+                            active_mod_surf_regions.object_name].mcell.regions
+                        layout.prop_search(active_mod_surf_regions,
+                                           "region_name", regions,
+                                           "region_list", icon='FACESEL_HLT')
+                    except KeyError:
+                        pass
 
 
 class MCELL_PT_molecule_release(bpy.types.Panel):
@@ -687,43 +684,49 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
-        row.label(text="Release/Placement Sites:", icon='FORCE_LENNARDJONES')
-        row = layout.row()
-        col = row.column()
-        col.template_list("UI_UL_list", "molecule_release",
-                          mcell.release_sites, "mol_release_list",
-                          mcell.release_sites, "active_release_index", rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.release_site_add", icon='ZOOMIN', text="")
-        col.operator("mcell.release_site_remove", icon='ZOOMOUT', text="")
-        if len(mcell.release_sites.mol_release_list) > 0:
-            rel = mcell.release_sites.mol_release_list[
-                mcell.release_sites.active_release_index]
-            if mcell.release_sites.status != "":
-                row = layout.row()
-                row.label(text=mcell.release_sites.status, icon='ERROR')
-            layout.prop(rel, "name")
-            layout.prop_search(rel, "molecule", mcell.molecules,
-                               "molecule_list", text="Molecule:",
-                               icon='FORCE_LENNARDJONES')
-            if rel.molecule in mcell.molecules.molecule_list:
-                if mcell.molecules.molecule_list[rel.molecule].type == '2D':
-                    layout.prop(rel, "orient")
-            layout.prop(rel, "shape")
-            if ((rel.shape == 'CUBIC') | (rel.shape == 'SPHERICAL') |
-                    (rel.shape == 'SPHERICAL SHELL')):
-                layout.prop(rel, "location")
-                layout.prop(rel, "diameter")
-            if rel.shape == 'OBJECT':
-                layout.prop(rel, "object_expr")
+        if mcell.molecules.molecule_list:
+            row.label(text="Release/Placement Sites:",
+                      icon='FORCE_LENNARDJONES')
+            row = layout.row()
+            col = row.column()
+            col.template_list("UI_UL_list", "molecule_release",
+                              mcell.release_sites, "mol_release_list",
+                              mcell.release_sites, "active_release_index",
+                              rows=2)
+            col = row.column(align=True)
+            col.operator("mcell.release_site_add", icon='ZOOMIN', text="")
+            col.operator("mcell.release_site_remove", icon='ZOOMOUT', text="")
+            if len(mcell.release_sites.mol_release_list) > 0:
+                rel = mcell.release_sites.mol_release_list[
+                    mcell.release_sites.active_release_index]
+                if mcell.release_sites.status != "":
+                    row = layout.row()
+                    row.label(text=mcell.release_sites.status, icon='ERROR')
+                layout.prop(rel, "name")
+                layout.prop_search(rel, "molecule", mcell.molecules,
+                                   "molecule_list", text="Molecule:",
+                                   icon='FORCE_LENNARDJONES')
+                if rel.molecule in mcell.molecules.molecule_list:
+                    if mcell.molecules.molecule_list[
+                            rel.molecule].type == '2D':
+                        layout.prop(rel, "orient")
+                layout.prop(rel, "shape")
+                if ((rel.shape == 'CUBIC') | (rel.shape == 'SPHERICAL') |
+                        (rel.shape == 'SPHERICAL SHELL')):
+                    layout.prop(rel, "location")
+                    layout.prop(rel, "diameter")
+                if rel.shape == 'OBJECT':
+                    layout.prop(rel, "object_expr")
 
-            layout.prop(rel, "probability")
-            layout.prop(rel, "quantity_type")
-            layout.prop(rel, "quantity")
-            if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
-                layout.prop(rel, "stddev")
+                layout.prop(rel, "probability")
+                layout.prop(rel, "quantity_type")
+                layout.prop(rel, "quantity")
+                if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
+                    layout.prop(rel, "stddev")
 
-            layout.prop(rel, "pattern")
+                layout.prop(rel, "pattern")
+        else:
+            row.label(text="Define at least one molecule", icon='ERROR')
 
 
 class MCELL_PT_reaction_output_settings(bpy.types.Panel):
@@ -738,48 +741,55 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
-        row.label(text="Reaction Data Output:", icon='FORCE_LENNARDJONES')
-        row = layout.row()
-        col = row.column()
-        col.template_list("UI_UL_list", "reaction_output", mcell.rxn_output,
-                          "rxn_output_list", mcell.rxn_output,
-                          "active_rxn_output_index", rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.rxn_output_add", icon='ZOOMIN', text="")
-        col.operator("mcell.rxn_output_remove", icon='ZOOMOUT', text="")
-        # Show molecule, object, and region options only if there is at least
-        # one count statement.
-        if mcell.rxn_output.rxn_output_list:
-            rxn_output = mcell.rxn_output.rxn_output_list[
-                mcell.rxn_output.active_rxn_output_index]
-            layout.prop_search(
-                rxn_output, "molecule_name", mcell.molecules,
-                "molecule_list", icon='FORCE_LENNARDJONES')
-            layout.prop(rxn_output, "count_location", expand=True)
-            # Show the object selector if Object or Region is selected
-            if rxn_output.count_location != "World":
+        if mcell.molecules.molecule_list:
+            row.label(text="Reaction Data Output:", icon='FORCE_LENNARDJONES')
+            row = layout.row()
+            col = row.column()
+            col.template_list("UI_UL_list", "reaction_output",
+                              mcell.rxn_output, "rxn_output_list",
+                              mcell.rxn_output, "active_rxn_output_index",
+                              rows=2)
+            col = row.column(align=True)
+            col.operator("mcell.rxn_output_add", icon='ZOOMIN', text="")
+            col.operator("mcell.rxn_output_remove", icon='ZOOMOUT', text="")
+            # Show molecule, object, and region options only if there is at
+            # least one count statement.
+            if mcell.rxn_output.rxn_output_list:
+                rxn_output = mcell.rxn_output.rxn_output_list[
+                    mcell.rxn_output.active_rxn_output_index]
                 layout.prop_search(
-                    rxn_output, "object_name", mcell.model_objects,
-                    "object_list", icon='MESH_ICOSPHERE')
-                if (rxn_output.object_name and
-                        (rxn_output.count_location == "Region")):
-                    try:
-                        regions = bpy.data.objects[
-                            rxn_output.object_name].mcell.regions
-                        layout.prop_search(rxn_output, "region_name", regions,
-                                           "region_list", icon='FACESEL_HLT')
-                    except KeyError:
-                        pass
-            row = layout.row()
-            row.label(text="Plot Reaction Data:", icon='FORCE_LENNARDJONES')
-            row = layout.row()
-            row.operator("mcell.plot_rxn_output", text="Execute Plot Command:")
-            row = layout.row()
-            layout.prop(mcell.reactions, "plot_command")
+                    rxn_output, "molecule_name", mcell.molecules,
+                    "molecule_list", icon='FORCE_LENNARDJONES')
+                layout.prop(rxn_output, "count_location", expand=True)
+                # Show the object selector if Object or Region is selected
+                if rxn_output.count_location != "World":
+                    layout.prop_search(
+                        rxn_output, "object_name", mcell.model_objects,
+                        "object_list", icon='MESH_ICOSPHERE')
+                    if (rxn_output.object_name and
+                            (rxn_output.count_location == "Region")):
+                        try:
+                            regions = bpy.data.objects[
+                                rxn_output.object_name].mcell.regions
+                            layout.prop_search(rxn_output, "region_name",
+                                               regions, "region_list",
+                                               icon='FACESEL_HLT')
+                        except KeyError:
+                            pass
+                row = layout.row()
+                row.label(text="Plot Reaction Data:",
+                          icon='FORCE_LENNARDJONES')
+                row = layout.row()
+                row.operator("mcell.plot_rxn_output",
+                             text="Execute Plot Command:")
+                row = layout.row()
+                layout.prop(mcell.reactions, "plot_command")
 
-        if (mcell.rxn_output.status != ""):
-            row = layout.row()
-            row.label(text=mcell.rxn_output.status, icon='ERROR')
+            if (mcell.rxn_output.status != ""):
+                row = layout.row()
+                row.label(text=mcell.rxn_output.status, icon='ERROR')
+        else:
+            row.label(text="Define at least one molecule", icon='ERROR')
 
 
 class MCELL_UL_visualization_export_list(bpy.types.UIList):
@@ -801,18 +811,22 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
-        row.label(text="Molecules To Visualize:",
-                  icon='FORCE_LENNARDJONES')
-        row.operator("mcell.toggle_viz_molecules", text="Toggle All")
-        layout.template_list("MCELL_UL_visualization_export_list",
-                             "viz_export", mcell.molecules, "molecule_list",
-                             mcell.viz_output, "active_mol_viz_index", rows=2)
-        layout.prop(mcell.viz_output, "all_iterations")
-        if mcell.viz_output.all_iterations is False:
-            row = layout.row(align=True)
-            row.prop(mcell.viz_output, "start")
-            row.prop(mcell.viz_output, "end")
-            row.prop(mcell.viz_output, "step")
+        if mcell.molecules.molecule_list:
+            row.label(text="Molecules To Visualize:",
+                      icon='FORCE_LENNARDJONES')
+            row.operator("mcell.toggle_viz_molecules", text="Toggle All")
+            layout.template_list("MCELL_UL_visualization_export_list",
+                                 "viz_export", mcell.molecules,
+                                 "molecule_list", mcell.viz_output,
+                                 "active_mol_viz_index", rows=2)
+            layout.prop(mcell.viz_output, "all_iterations")
+            if mcell.viz_output.all_iterations is False:
+                row = layout.row(align=True)
+                row.prop(mcell.viz_output, "start")
+                row.prop(mcell.viz_output, "end")
+                row.prop(mcell.viz_output, "step")
+        else:
+            row.label(text="Define at least one molecule", icon='ERROR')
 
 
 class MCELL_PT_define_surface_regions(bpy.types.Panel):
@@ -828,30 +842,32 @@ class MCELL_PT_define_surface_regions(bpy.types.Panel):
         obj_regs = context.object.mcell.regions
         active_obj = context.active_object
 
-        row = layout.row()
-        row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
-        row = layout.row()
-        col = row.column()
-        col.template_list("UI_UL_list", "define_surf_regions", obj_regs,
-                          "region_list", obj_regs, "active_reg_index", rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.region_add", icon='ZOOMIN', text="")
-        col.operator("mcell.region_remove", icon='ZOOMOUT', text="")
-        row = layout.row()
-        if (obj_regs.status != ""):
+        if active_obj.type == 'MESH':
             row = layout.row()
-            row.label(text=obj_regs.status, icon='ERROR')
-        if len(obj_regs.region_list) > 0:
-            reg = obj_regs.region_list[obj_regs.active_reg_index]
-            layout.prop(reg, "name")
-        if active_obj.mode == 'EDIT':
+            row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
             row = layout.row()
-            sub = row.row(align=True)
-            sub.operator("mcell.region_faces_assign", text="Assign")
-            sub.operator("mcell.region_faces_remove", text="Remove")
-            sub = row.row(align=True)
-            sub.operator("mcell.region_faces_select", text="Select")
-            sub.operator("mcell.region_faces_deselect", text="Deselect")
+            col = row.column()
+            col.template_list("UI_UL_list", "define_surf_regions", obj_regs,
+                              "region_list", obj_regs, "active_reg_index",
+                              rows=2)
+            col = row.column(align=True)
+            col.operator("mcell.region_add", icon='ZOOMIN', text="")
+            col.operator("mcell.region_remove", icon='ZOOMOUT', text="")
+            row = layout.row()
+            if (obj_regs.status != ""):
+                row = layout.row()
+                row.label(text=obj_regs.status, icon='ERROR')
+            if len(obj_regs.region_list) > 0:
+                reg = obj_regs.region_list[obj_regs.active_reg_index]
+                layout.prop(reg, "name")
+            if active_obj.mode == 'EDIT':
+                row = layout.row()
+                sub = row.row(align=True)
+                sub.operator("mcell.region_faces_assign", text="Assign")
+                sub.operator("mcell.region_faces_remove", text="Remove")
+                sub = row.row(align=True)
+                sub.operator("mcell.region_faces_select", text="Select")
+                sub.operator("mcell.region_faces_deselect", text="Deselect")
 
 
 class MCELL_PT_molecule_glyphs(bpy.types.Panel):
