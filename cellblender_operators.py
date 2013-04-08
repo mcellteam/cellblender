@@ -612,7 +612,7 @@ def check_molecule(self, context):
     if m is None:
         status = "Molecule name error: %s" % (mol.name)
 
-    mcell.molecules.status = status
+    mol.status = status
 
     return
 

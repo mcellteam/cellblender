@@ -460,6 +460,15 @@ class MCELL_PT_partitions(bpy.types.Panel):
                                 icon='OUTLINER_OB_LATTICE')
 
 
+class MCELL_UL_check_molecule(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+
+
 class MCELL_PT_define_molecules(bpy.types.Panel):
     bl_label = "CellBlender - Define Molecules"
     bl_space_type = "PROPERTIES"
@@ -476,7 +485,7 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
         row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
         row = layout.row()
         col = row.column()
-        col.template_list("UI_UL_list", "define_molecules", mcell.molecules,
+        col.template_list("MCELL_UL_check_molecule", "define_molecules", mcell.molecules,
                           "molecule_list", mcell.molecules, "active_mol_index",
                           rows=2)
         col = row.column(align=True)
@@ -485,9 +494,6 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
         if mcell.molecules.molecule_list:
             mol = mcell.molecules.molecule_list[
                 mcell.molecules.active_mol_index]
-            if mcell.molecules.status != "":
-                row = layout.row()
-                row.label(text=mcell.molecules.status, icon='ERROR')
             layout.prop(mol, "name")
             layout.prop(mol, "type")
             layout.prop(mol, "diffusion_constant_str")

@@ -89,6 +89,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         description="Custom Space Step Units: microns",
         update=cellblender_operators.update_custom_space_step)
     export_viz = bpy.props.BoolProperty(default=False)
+    status = StringProperty(name="Status")
 
 
 class MCellStringProperty(bpy.types.PropertyGroup):
@@ -555,7 +556,6 @@ class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
     molecule_list = CollectionProperty(
         type=MCellMoleculeProperty, name="Molecule List")
     active_mol_index = IntProperty(name="Active Molecule Index", default=0)
-    status = StringProperty(name="Status")
     advanced = bpy.props.BoolProperty(default=False)
 
 
