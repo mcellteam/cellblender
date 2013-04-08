@@ -427,7 +427,8 @@ def save_molecules(context, out_file):
     mcell = context.scene.mcell
 
     # Export Molecules:
-    mol_list = mcell.molecules.molecule_list
+    unfiltered_mol_list = mcell.molecules.molecule_list
+    mol_list = [mol for mol in unfiltered_mol_list if not mol.status]
     if mol_list:
         out_file.write("DEFINE_MOLECULES\n")
         out_file.write("{\n")
@@ -492,7 +493,8 @@ def save_reactions(context, out_file):
     mcell = context.scene.mcell
 
     # Export Reactions:
-    rxn_list = mcell.reactions.reaction_list
+    unfiltered_rxn_list = mcell.reactions.reaction_list
+    rxn_list = [rxn for rxn in unfiltered_rxn_list if not rxn.status]
     if rxn_list:
         out_file.write("DEFINE_REACTIONS\n")
         out_file.write("{\n")
