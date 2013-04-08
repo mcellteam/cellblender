@@ -127,6 +127,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         description="Backward Rate Units: sec^-1 (unimolecular),"
                     " M^-1*sec^-1 (bimolecular)",
         update=cellblender_operators.update_bkwd_rate)
+    status = StringProperty(name="Status")
 
 
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
@@ -563,7 +564,6 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
         type=MCellReactionProperty, name="Reaction List")
     active_rxn_index = IntProperty(name="Active Reaction Index", default=0)
     plot_command = StringProperty(name="", default="")
-    status = StringProperty(name="Status")
 
 
 class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):

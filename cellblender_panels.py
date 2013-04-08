@@ -509,6 +509,15 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
                 row.prop(mol, "custom_space_step_str")
 
 
+class MCELL_UL_check_reaction(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+
+
 class MCELL_PT_define_reactions(bpy.types.Panel):
     bl_label = "CellBlender - Define Reactions"
     bl_space_type = "PROPERTIES"
@@ -525,7 +534,7 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
             row.label(text="Defined Reactions:", icon='FORCE_LENNARDJONES')
             row = layout.row()
             col = row.column()
-            col.template_list("UI_UL_list", "define_reactions",
+            col.template_list("MCELL_UL_check_reaction", "define_reactions",
                               mcell.reactions, "reaction_list",
                               mcell.reactions, "active_rxn_index", rows=2)
             col = row.column(align=True)
@@ -542,9 +551,6 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
                     layout.prop(rxn, "bkwd_rate_str")
                 layout.prop(rxn, "rxn_name")
 
-            if mcell.reactions.status != "":
-                row = layout.row()
-                row.label(text=mcell.reactions.status, icon='ERROR')
         else:
             row.label(text="Define at least one molecule", icon='ERROR')
 

@@ -627,8 +627,7 @@ class MCELL_OT_reaction_add(bpy.types.Operator):
         mcell = context.scene.mcell
         mcell.reactions.reaction_list.add()
         mcell.reactions.active_rxn_index = len(mcell.reactions.reaction_list)-1
-        mcell.reactions.reaction_list[
-            mcell.reactions.active_rxn_index].name = "Reaction"
+        check_reaction(self, context)
         return {'FINISHED'}
 
 
@@ -696,7 +695,7 @@ def check_reaction(self, context):
         else:
             mol_name = m.group(1)
             if not mol_name in mol_list:
-                status = "Undefine molecule: %s" % (mol_name)
+                status = "Undefined molecule: %s" % (mol_name)
 
     #Check syntax of product specification
     if rxn.products == "NULL":
@@ -712,9 +711,9 @@ def check_reaction(self, context):
             else:
                 mol_name = m.group(1)
                 if not mol_name in mol_list:
-                    status = "Undefine molecule: %s" % (mol_name)
+                    status = "Undefined molecule: %s" % (mol_name)
 
-    mcell.reactions.status = status
+    rxn.status = status
     return
 
 
