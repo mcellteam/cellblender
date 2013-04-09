@@ -214,6 +214,7 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
         type=MCellSurfaceClassPropertiesProperty, name="Surface Classes List")
     active_surf_class_props_index = IntProperty(
         name="Active Surface Class Index", default=0)
+    status = StringProperty(name="Status")
 
 
 class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
@@ -571,7 +572,6 @@ class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
         type=MCellSurfaceClassesProperty, name="Surface Classes List")
     active_surf_class_index = IntProperty(
         name="Active Surface Class Index", default=0)
-    surf_class_status = StringProperty(name="Status")
     surf_class_props_status = StringProperty(name="Status")
 
 

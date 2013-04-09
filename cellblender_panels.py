@@ -561,6 +561,15 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
             row.label(text="Define at least one molecule", icon='ERROR')
 
 
+class MCELL_UL_check_surface_class(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+
+
 class MCELL_PT_define_surface_classes(bpy.types.Panel):
     bl_label = "CellBlender - Define Surface Classes"
     bl_space_type = "PROPERTIES"
@@ -578,7 +587,7 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
         row = layout.row()
         col = row.column()
         # The template_list for the surface classes themselves
-        col.template_list("UI_UL_list", "define_surf_class", surf_class,
+        col.template_list("MCELL_UL_check_surface_class", "define_surf_class", surf_class,
                           "surf_class_list", surf_class,
                           "active_surf_class_index", rows=2)
         col = row.column(align=True)
@@ -590,9 +599,6 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
         if surf_class.surf_class_list:
             active_surf_class = surf_class.surf_class_list[
                 surf_class.active_surf_class_index]
-            if surf_class.surf_class_status != "":
-                row = layout.row()
-                row.label(text=surf_class.surf_class_status, icon='ERROR')
             row = layout.row()
             row.prop(active_surf_class, "name")
             row = layout.row()

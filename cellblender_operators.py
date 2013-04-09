@@ -820,7 +820,7 @@ def check_surface_class(self, context):
     if m is None:
         status = "Surface Class name error: %s" % (active_surf_class.name)
 
-    surf_class.surf_class_status = status
+    active_surf_class.status = status
 
     return
 
