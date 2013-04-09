@@ -635,6 +635,15 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
                     layout.prop(surf_class_props, "clamp_value_str")
 
 
+class MCELL_UL_check_mod_surface_regions(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+
+
 class MCELL_PT_mod_surface_regions(bpy.types.Panel):
     bl_label = "CellBlender - Modify Surface Regions"
     bl_space_type = "PROPERTIES"
@@ -657,7 +666,7 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
             row.label(text="Modified Surface Regions:", icon='FACESEL_HLT')
             row = layout.row()
             col = row.column()
-            col.template_list("UI_UL_list", "mod_surf_regions",
+            col.template_list("MCELL_UL_check_mod_surface_regions", "mod_surf_regions",
                               mod_surf_regions, "mod_surf_regions_list",
                               mod_surf_regions,
                               "active_mod_surf_regions_index", rows=2)
@@ -665,9 +674,6 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
             col.operator("mcell.mod_surf_regions_add", icon='ZOOMIN', text="")
             col.operator("mcell.mod_surf_regions_remove", icon='ZOOMOUT',
                          text="")
-            if mod_surf_regions.status != "":
-                row = layout.row()
-                row.label(text=mod_surf_regions.status, icon='ERROR')
             if mod_surf_regions.mod_surf_regions_list:
                 active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
                     mod_surf_regions.active_mod_surf_regions_index]

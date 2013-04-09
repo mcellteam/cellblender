@@ -220,16 +220,17 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
 class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
     """ Assign a surface class to a surface region. """
 
-    name = StringProperty(name="Surface Class Name", default="Surface_Class")
+    name = StringProperty(name="Modify Surface Region")
     surf_class_name = StringProperty(
         name="Surface Class Name:",
-        update=cellblender_operators.check_assigned_surface_class)
+        update=cellblender_operators.check_mod_surf_regions)
     object_name = StringProperty(
         name="Object Name:",
-        update=cellblender_operators.check_assigned_object)
+        update=cellblender_operators.check_mod_surf_regions)
     region_name = StringProperty(
         name="Region Name:",
-        update=cellblender_operators.check_modified_region)
+        update=cellblender_operators.check_mod_surf_regions)
+    status = StringProperty(name="Status")
 
 
 #Panel Properties:
@@ -580,7 +581,6 @@ class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
         type=MCellModSurfRegionsProperty, name="Modify Surface Region List")
     active_mod_surf_regions_index = IntProperty(
         name="Active Modify Surface Region Index", default=0)
-    status = StringProperty(name="Status")
 
 
 class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):

@@ -905,9 +905,7 @@ class MCELL_OT_mod_surf_regions_add(bpy.types.Operator):
         mod_surf_regions.mod_surf_regions_list.add()
         mod_surf_regions.active_mod_surf_regions_index = len(
             mod_surf_regions.mod_surf_regions_list) - 1
-        new_name = "Modify_Surface_Region"
-        mod_surf_regions.mod_surf_regions_list[
-            mod_surf_regions.active_mod_surf_regions_index].name = new_name
+        check_mod_surf_regions(self, context)
 
         return {'FINISHED'}
 
@@ -929,25 +927,11 @@ class MCELL_OT_mod_surf_regions_remove(bpy.types.Operator):
         return {'FINISHED'}
 
 
-def format_mod_surf_regions_entry(surf_class_name, object_name, region_name):
-    """Check if the entries in Modify Surface Regions exist and format them"""
-    if not surf_class_name:
-        surf_class_name = "NA"
-    if not object_name:
-        object_name = "NA"
-    if not region_name:
-        region_name = "NA"
-
-    mod_surf_regions_entry = "Surface Class: %s   Object: %s   Region: %s" % (
-        surf_class_name, object_name, region_name)
-
-    return(mod_surf_regions_entry)
-
-
-def check_assigned_surface_class(self, context):
+def check_mod_surf_regions(self, context):
     """Make sure the surface class name is valid and format the list entry"""
 
     mcell = context.scene.mcell
+    obj_list = mcell.model_objects.object_list
     surf_class_list = mcell.surface_classes.surf_class_list
     mod_surf_regions = mcell.mod_surf_regions
     active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
@@ -956,80 +940,31 @@ def check_assigned_surface_class(self, context):
     object_name = active_mod_surf_regions.object_name
     region_name = active_mod_surf_regions.region_name
 
-    active_mod_surf_regions.name = format_mod_surf_regions_entry(
-        surf_class_name, object_name, region_name)
-
-    status = ""
-
-    #Make sure there is something in the Defined Surface Classes list
-    if not surf_class_list:
-        status = "No surface classes defined"
-    #Make sure the user entered surf class is in Defined Surface Classes list
-    elif not surf_class_name in surf_class_list:
-        status = "Undefined surface class: %s" % surf_class_name
-
-    mod_surf_regions.status = status
-
-    return
-
-
-def check_assigned_object(self, context):
-    """Make sure the object name is valid and format the list entry"""
-
-    mcell = context.scene.mcell
-    obj_list = mcell.model_objects.object_list
-    mod_surf_regions = mcell.mod_surf_regions
-    active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
-        mod_surf_regions.active_mod_surf_regions_index]
-    surf_class_name = active_mod_surf_regions.surf_class_name
-    object_name = active_mod_surf_regions.object_name
-    region_name = active_mod_surf_regions.region_name
-
-    active_mod_surf_regions.name = format_mod_surf_regions_entry(
-        surf_class_name, object_name, region_name)
-
-    status = ""
-
-    #Make sure there is something in the Model Objects list
-    if not obj_list:
-        status = "No objects available"
-    #Make sure the user entered object name is in the Model Objects list
-    elif not active_mod_surf_regions.object_name in obj_list:
-        status = "Undefined object: %s" % active_mod_surf_regions.object_name
-
-    mod_surf_regions.status = status
-
-    return
-
-
-def check_modified_region(self, context):
-    """Make sure the region name is valid and format the list entry"""
-
-    mcell = context.scene.mcell
-    mod_surf_regions = mcell.mod_surf_regions
-    active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
-        mod_surf_regions.active_mod_surf_regions_index]
-    region_list = bpy.data.objects[
-        active_mod_surf_regions.object_name].mcell.regions.region_list
-    surf_class_name = active_mod_surf_regions.surf_class_name
-    object_name = active_mod_surf_regions.object_name
-    region_name = active_mod_surf_regions.region_name
-
-    active_mod_surf_regions.name = format_mod_surf_regions_entry(
-        surf_class_name, object_name, region_name)
-
-    status = ""
-
     try:
-        if not region_list:
-            status = "The selected object has no surface regions"
-        elif not region_name in region_list:
-            status = "Undefined region: %s" % region_name
+        region_list = bpy.data.objects[
+            active_mod_surf_regions.object_name].mcell.regions.region_list
     except KeyError:
-        #the object name in mod surf regions isn't a blender object
+        # The object name in mod_surf_regions isn't a blender object
         pass
 
-    mod_surf_regions.status = status
+    # Format the entry as it will appear in the Modify Surface Regions
+    active_mod_surf_regions.name = "Surface Class: %s   Object: %s   Region: %s" % (
+        surf_class_name, object_name, region_name)
+
+    status = ""
+
+    # Make sure the user entered surf class is in Defined Surface Classes list
+    if not surf_class_name in surf_class_list:
+        status = "Undefined surface class: %s" % surf_class_name
+    # Make sure the user entered object name is in the Model Objects list
+    elif not active_mod_surf_regions.object_name in obj_list:
+        status = "Undefined object: %s" % active_mod_surf_regions.object_name
+    # Make sure the user entered object name is in the object's
+    # Surface Region list
+    elif not region_name in region_list:
+        status = "Undefined region: %s" % region_name
+
+    active_mod_surf_regions.status = status
 
     return
 
