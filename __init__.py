@@ -80,6 +80,36 @@ def identify_source_version(addon_path):
     open(sha_file, 'w').write(hashobject.hexdigest())
 
 
+
+def find_in_path(program_name):
+    for path in os.environ.get('PATH','').split(os.pathsep):
+        full_name = os.path.join(path,program_name)
+        if os.path.exists(full_name) and not os.path.isdir(full_name):
+            return full_name
+    return None
+
+
+def print_plotting_options():
+    plot_executables = ['python', 'xmgrace', 'java', 'excel']
+    plot_modules = ['matplotlib', 'matplotlib.pyplot', 'pylab', 'numpy', 'scipy']
+
+    for plot_app in plot_executables:
+        path = find_in_path ( plot_app )
+        if path != None:
+            print ( "  ", plot_app, "is available at", path )
+        else:
+            print ( "  ", plot_app, "is not found in the current path" )
+
+    for plot_mod in plot_modules:
+      try:
+          __import__ ( plot_mod )
+          print ( "  ", plot_mod, "is importable" )
+      except:
+          print ( "  ", plot_mod, "is not importable in this configuration" )
+
+
+
+
 # we use per module class registration/unregistration
 def register():
     bpy.utils.register_module(__name__)
@@ -99,6 +129,11 @@ def register():
     print ( "CellBlender Addon Path is ", os.path.dirname(__file__) )
     addon_path = os.path.dirname(__file__)
     identify_source_version ( addon_path )
+    try:
+        # Trap exceptions in case this test code fails for some reason
+        print_plotting_options()
+    except:
+        pass
 
 
 def unregister():
