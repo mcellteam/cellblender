@@ -38,6 +38,7 @@ import subprocess
 import datetime
 import multiprocessing
 
+import cellblender
 
 # We use per module class registration/unregistration
 def register():
@@ -1432,6 +1433,69 @@ class MCELL_OT_plot_rxn_output(bpy.types.Operator):
         mcell = context.scene.mcell
         print ( "Plotting with cmd=", mcell.reactions.plot_command )
         plot_rxns ( mcell.reactions.plot_command )
+        return {'FINISHED'}
+
+
+class MCELL_OT_plot_rxn_output_simple(bpy.types.Operator):
+    bl_idname = "mcell.plot_rxn_output_simple"
+    bl_label = "Plot Reactions"
+    bl_description = "Plot the reactions using a simple Python script"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        print ( "CellBlender path = ", cellblender.cellblender_info['cellblender_addon_path'] )
+        plot_cmd = cellblender.cellblender_info['cellblender_addon_path']
+        plot_cmd = os.path.join(plot_cmd, 'data_plotters')
+        plot_cmd = os.path.join(plot_cmd, 'plot_simple.py')
+
+        settings = mcell.project_settings
+        if mcell.rxn_output.rxn_output_list:
+            for rxn_output in mcell.rxn_output.rxn_output_list:
+                molecule_name = rxn_output.molecule_name
+                object_name = rxn_output.object_name
+                region_name = rxn_output.region_name
+                if rxn_output.count_location == 'World':
+                    plot_cmd = plot_cmd + " " + "%s.World.0001.dat" % (molecule_name)
+                elif rxn_output.count_location == 'Object':
+                    plot_cmd = plot_cmd + " " + "%s.%s.0001.dat" % (molecule_name, object_name)
+                elif rxn_output.count_location == 'Region':
+                    plot_cmd = plot_cmd + " " + "%s.%s.%s.0001.dat" % (molecule_name, object_name, region_name)
+
+        print ( "plot_cmd = ", plot_cmd )
+        plot_rxns ( plot_cmd )
+        return {'FINISHED'}
+
+
+class MCELL_OT_plot_rxn_output_java(bpy.types.Operator):
+    bl_idname = "mcell.plot_rxn_output_java"
+    bl_label = "Plot Reactions"
+    bl_description = "Plot the reactions using a simple Java program"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        print ( "CellBlender path = ", cellblender.cellblender_info['cellblender_addon_path'] )
+        plot_cmd = cellblender.cellblender_info['cellblender_addon_path']
+        plot_cmd = os.path.join(plot_cmd, 'data_plotters')
+        plot_cmd = os.path.join(plot_cmd, 'PlotData.jar')
+        plot_cmd = '/usr/bin/java -jar ' + plot_cmd
+
+        settings = mcell.project_settings
+        if mcell.rxn_output.rxn_output_list:
+            for rxn_output in mcell.rxn_output.rxn_output_list:
+                molecule_name = rxn_output.molecule_name
+                object_name = rxn_output.object_name
+                region_name = rxn_output.region_name
+                if rxn_output.count_location == 'World':
+                    plot_cmd = plot_cmd + " fxy=" + "%s.World.0001.dat" % (molecule_name)
+                elif rxn_output.count_location == 'Object':
+                    plot_cmd = plot_cmd + " fxy=" + "%s.%s.0001.dat" % (molecule_name, object_name)
+                elif rxn_output.count_location == 'Region':
+                    plot_cmd = plot_cmd + " fxy=" + "%s.%s.%s.0001.dat" % (molecule_name, object_name, region_name)
+
+        print ( "plot_cmd = ", plot_cmd )
+        plot_rxns ( plot_cmd )
         return {'FINISHED'}
 
 

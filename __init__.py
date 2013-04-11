@@ -30,7 +30,10 @@ bl_info = {
     "warning": "",
     "wiki_url": "http://www.mcell.org",
     "tracker_url": "http://code.google.com/p/cellblender/issues/list",
-    "category": "Cell Modeling",
+    "category": "Cell Modeling"
+}
+
+cellblender_info = {
     "supported_version_list": [(2, 64, 0), (2, 65, 0), (2, 66, 1)],
     "cellblender_source_list": [
         "__init__.py",
@@ -41,8 +44,10 @@ bl_info = {
         "io_mesh_mcell_mdl/export_mcell_mdl.py",
         "io_mesh_mcell_mdl/import_mcell_mdl.py",
         "io_mesh_mcell_mdl/mdlmesh_parser.py"],
-    "cellblender_source_sha1": "x"
+    "cellblender_source_sha1": "",
+    "cellblender_addon_path": ""
 }
+
 
 
 # To support reload properly, try to access a package var.
@@ -63,10 +68,10 @@ import hashlib
 
 
 # Compute, print, and save the SHA1 of all source files in
-# bl_info["cellblender_source_list"]
+# cellblender_info["cellblender_source_list"]
 
 def identify_source_version(addon_path):
-    cbsl = bl_info["cellblender_source_list"]
+    cbsl = cellblender_info["cellblender_source_list"]
     hashobject = hashlib.sha1()
     for source_file_basename in cbsl:
         source_file_name = os.path.join(addon_path, source_file_basename)
@@ -74,12 +79,13 @@ def identify_source_version(addon_path):
         print("  Cumulative SHA1: ", hashobject.hexdigest(), "=",
               source_file_name)
 
-    bl_info['cellblender_source_sha1'] = hashobject.hexdigest()
-    print("CellBlender Source ID (SHA1) = ", bl_info['cellblender_source_sha1'])
+    cellblender_info['cellblender_source_sha1'] = hashobject.hexdigest()
+    print("CellBlender Source ID (SHA1) = ", cellblender_info['cellblender_source_sha1'])
     sha_file = os.path.join(addon_path, "cellblender_source_sha1.txt")
     open(sha_file, 'w').write(hashobject.hexdigest())
 
 
+import subprocess
 
 def find_in_path(program_name):
     for path in os.environ.get('PATH','').split(os.pathsep):
@@ -91,7 +97,7 @@ def find_in_path(program_name):
 
 def print_plotting_options():
     plot_executables = ['python', 'xmgrace', 'java', 'excel']
-    plot_modules = ['matplotlib', 'matplotlib.pyplot', 'pylab', 'numpy', 'scipy']
+    plot_modules = ['matplotlib', 'junktestlib', 'matplotlib.pyplot', 'pylab', 'numpy', 'scipy']
 
     for plot_app in plot_executables:
         path = find_in_path ( plot_app )
@@ -101,13 +107,30 @@ def print_plotting_options():
             print ( "  ", plot_app, "is not found in the current path" )
 
     for plot_mod in plot_modules:
-      try:
-          __import__ ( plot_mod )
-          print ( "  ", plot_mod, "is importable" )
-      except:
-          print ( "  ", plot_mod, "is not importable in this configuration" )
+        try:
+            __import__ ( plot_mod )
+            print ( "  ", plot_mod, "is importable" )
+        except:
+            print ( "  ", plot_mod, "is not importable in this configuration" )
 
+    python_command = find_in_path ( "python" )
 
+    for plot_mod in plot_modules:
+        import_test_program = 'import %s\nprint("Found=OK")'%(plot_mod)
+        #print ( "Test Program:" )
+        #print ( import_test_program )
+        process = subprocess.Popen([python_command, '-c', import_test_program], shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #print ( "Back from Popen" )
+        process.poll()
+        #print ( "Back from poll" )
+        output = process.stdout.readline()
+        #print ( "Back from readline" )
+        #print ( "  output =", output )
+        strout = str(output)
+        if (strout != None) & (strout.find("Found=OK")>=0):
+            print ( "  ", plot_mod, "is available through external python interpreter" )
+        else:
+            print ( "  ", plot_mod, "is not available through external python interpreter" )
 
 
 # we use per module class registration/unregistration
@@ -121,18 +144,21 @@ def register():
     bpy.types.Object.mcell = bpy.props.PointerProperty(
         type=cellblender_properties.MCellObjectPropertyGroup)
     print("CellBlender registered")
-    if (bpy.app.version not in bl_info['supported_version_list']):
+    if (bpy.app.version not in cellblender_info['supported_version_list']):
         print("Warning, current Blender version", bpy.app.version,
-              " is not in supported list:", bl_info['supported_version_list'])
+              " is not in supported list:", cellblender_info['supported_version_list'])
 
     print ( "CellBlender Addon found: ", __file__ )
-    print ( "CellBlender Addon Path is ", os.path.dirname(__file__) )
+    cellblender_info["cellblender_addon_path"] = os.path.dirname(__file__)
+    print ( "CellBlender Addon Path is ", cellblender_info["cellblender_addon_path"] )
     addon_path = os.path.dirname(__file__)
     identify_source_version ( addon_path )
+    print ( "CellBlender is searching for known plotting plugins" )
     try:
         # Trap exceptions in case this test code fails for some reason
         print_plotting_options()
     except:
+        print ( "Exception in print_plotting_options()" )
         pass
 
 
