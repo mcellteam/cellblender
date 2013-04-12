@@ -782,10 +782,16 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                 row = layout.row()
                 col = row.column()
                 col.operator("mcell.plot_rxn_output_simple",
-                              text="MatPlotLib ( All Reactions )")
+                              text="Simple ( All )")
+                col = row.column()
+                col.operator("mcell.plot_rxn_output_mpl",
+                              text="MatPlotLib ( All )")
                 col = row.column()
                 col.operator("mcell.plot_rxn_output_java",
-                              text="Java Plot ( All Reactions )")
+                              text="Java Plot ( All )")
+                col = row.column()
+                col.operator("mcell.plot_rxn_output_xmgrace",
+                              text="xmgrace ( All )")
 
                 row = layout.row()
                 col = row.column()
