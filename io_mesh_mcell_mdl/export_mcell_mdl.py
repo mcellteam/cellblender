@@ -111,28 +111,33 @@ def save_wrapper(context, out_file, filedir):
         save_molecules(context, out_file)
 
     # Export surface classes:
-    have_surf_class = len(mcell.surface_classes.surf_class_list) != 0
+    unfiltered_surf_class_list = mcell.surface_classes.surf_class_list
+    surf_class_list = [
+        sc for sc in unfiltered_surf_class_list if not sc.status]
+    have_surf_class = len(surf_class_list) != 0
     if have_surf_class and export_project.export_format == 'mcell_mdl_modular':
         out_file.write("INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n" %
                        (settings.base_name))
         filepath = ("%s/%s.surface_classes.mdl" %
                     (filedir, settings.base_name))
         with open(filepath, "w", encoding="utf8", newline="\n") as sc_file:
-            save_surface_classes(context, sc_file)
+            save_surface_classes(context, sc_file, surf_class_list)
     else:
-        save_surface_classes(context, out_file)
+        save_surface_classes(context, out_file, surf_class_list)
 
     # Export reactions:
-    have_reactions = len(context.scene.mcell.reactions.reaction_list) != 0
+    unfiltered_rxn_list = mcell.reactions.reaction_list
+    rxn_list = [rxn for rxn in unfiltered_rxn_list if not rxn.status]
+    have_reactions = len(rxn_list) != 0
     if have_reactions and export_project.export_format == 'mcell_mdl_modular':
         out_file.write("INCLUDE_FILE = \"%s.reactions.mdl\"\n\n" %
                        (settings.base_name))
         filepath = ("%s/%s.reactions.mdl" %
                    (filedir, settings.base_name))
         with open(filepath, "w", encoding="utf8", newline="\n") as react_file:
-            save_reactions(context, react_file)
+            save_reactions(context, react_file, rxn_list)
     else:
-        save_reactions(context, out_file)
+        save_reactions(context, out_file, rxn_list)
 
     # Export model geometry:
     have_geometry = len(context.scene.mcell.model_objects.object_list) != 0
@@ -147,8 +152,12 @@ def save_wrapper(context, out_file, filedir):
         save_geometry(context, out_file)
 
     # Export modify surface regions:
-    have_mod_surf_reg = len(mcell.mod_surf_regions.mod_surf_regions_list) != 0
-    if (have_mod_surf_reg and
+    unfiltered_mod_surf_regions_list = \
+        mcell.mod_surf_regions.mod_surf_regions_list
+    mod_surf_regions_list = [
+        msr for msr in unfiltered_mod_surf_regions_list if not msr.status]
+    have_mod_surf_regions = len(mod_surf_regions_list) != 0
+    if (have_mod_surf_regions and
             export_project.export_format == 'mcell_mdl_modular'):
         out_file.write("INCLUDE_FILE = \"%s.mod_surf_regions.mdl\"\n\n" %
                        (settings.base_name))
@@ -161,7 +170,9 @@ def save_wrapper(context, out_file, filedir):
 
     # Instantiate Model Geometry and Release sites:
     object_list = mcell.model_objects.object_list
-    release_site_list = mcell.release_sites.mol_release_list
+    unfiltered_release_site_list = mcell.release_sites.mol_release_list
+    release_site_list = [
+        rel for rel in unfiltered_release_site_list if not rel.status]
     if object_list or release_site_list:
         out_file.write("INSTANTIATE %s OBJECT\n" % (context.scene.name))
         out_file.write("{\n")
@@ -458,11 +469,9 @@ def save_molecules(context, out_file):
         out_file.write("}\n\n")
 
 
-def save_surface_classes(context, out_file):
+def save_surface_classes(context, out_file, surf_class_list):
     """ Saves surface class info to mdl output file. """
 
-    mcell = context.scene.mcell
-    surf_class_list = mcell.surface_classes.surf_class_list
     if surf_class_list:
         out_file.write("DEFINE_SURFACE_CLASSES\n")
         out_file.write("{\n")
@@ -487,14 +496,9 @@ def save_surface_classes(context, out_file):
     return
 
 
-def save_reactions(context, out_file):
+def save_reactions(context, out_file, rxn_list):
     """ Saves reaction info to mdl output file. """
 
-    mcell = context.scene.mcell
-
-    # Export Reactions:
-    unfiltered_rxn_list = mcell.reactions.reaction_list
-    rxn_list = [rxn for rxn in unfiltered_rxn_list if not rxn.status]
     if rxn_list:
         out_file.write("DEFINE_REACTIONS\n")
         out_file.write("{\n")
@@ -668,7 +672,10 @@ def save_mod_surf_regions(context, out_file):
     """ Saves modify surface region info to mdl output file. """
 
     mcell = context.scene.mcell
-    mod_surf_regions_list = mcell.mod_surf_regions.mod_surf_regions_list
+    unfiltered_mod_surf_regions_list = \
+        mcell.mod_surf_regions.mod_surf_regions_list
+    mod_surf_regions_list = [
+        msr for msr in unfiltered_mod_surf_regions_list if not msr.status]
     if mod_surf_regions_list:
         out_file.write("MODIFY_SURFACE_REGIONS\n")
         out_file.write("{\n")
