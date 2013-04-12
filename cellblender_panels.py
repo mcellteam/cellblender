@@ -56,7 +56,7 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
-        row.label(text="CellBlender ID: "+cellblender.bl_info[
+        row.label(text="CellBlender ID: "+cellblender.cellblender_info[
             'cellblender_source_sha1'])
 
         row = layout.row()
@@ -810,9 +810,24 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                 row.label(text="Plot Reaction Data:",
                           icon='FORCE_LENNARDJONES')
                 row = layout.row()
-                row.operator("mcell.plot_rxn_output",
-                             text="Execute Plot Command:")
+                col = row.column()
+                col.operator("mcell.plot_rxn_output_simple",
+                              text="Simple ( All )")
+                col = row.column()
+                col.operator("mcell.plot_rxn_output_mpl",
+                              text="MatPlotLib ( All )")
+                col = row.column()
+                col.operator("mcell.plot_rxn_output_java",
+                              text="Java Plot ( All )")
+                col = row.column()
+                col.operator("mcell.plot_rxn_output_xmgrace",
+                              text="xmgrace ( All )")
+
                 row = layout.row()
+                col = row.column()
+                col.operator("mcell.plot_rxn_output",
+                             text="Execute Custom Plot Command:")
+                # col = row.column()
                 layout.prop(mcell.reactions, "plot_command")
 
             if (mcell.rxn_output.status != ""):
