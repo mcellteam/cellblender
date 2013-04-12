@@ -696,6 +696,15 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
                         pass
 
 
+class MCELL_UL_check_molecule_release(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+
+
 class MCELL_PT_molecule_release(bpy.types.Panel):
     bl_label = "CellBlender - Molecule Release/Placement"
     bl_space_type = "PROPERTIES"
@@ -713,7 +722,7 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                       icon='FORCE_LENNARDJONES')
             row = layout.row()
             col = row.column()
-            col.template_list("UI_UL_list", "molecule_release",
+            col.template_list("MCELL_UL_check_molecule_release", "molecule_release",
                               mcell.release_sites, "mol_release_list",
                               mcell.release_sites, "active_release_index",
                               rows=2)
@@ -723,9 +732,6 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
             if len(mcell.release_sites.mol_release_list) > 0:
                 rel = mcell.release_sites.mol_release_list[
                     mcell.release_sites.active_release_index]
-                if mcell.release_sites.status != "":
-                    row = layout.row()
-                    row.label(text=mcell.release_sites.status, icon='ERROR')
                 layout.prop(rel, "name")
                 layout.prop_search(rel, "molecule", mcell.molecules,
                                    "molecule_list", text="Molecule:",

@@ -136,14 +136,15 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         name="Site Name", default="Release_Site",
         update=cellblender_operators.check_release_site)
     molecule = StringProperty(
-        name="Molecule", update=cellblender_operators.check_release_molecule)
+        name="Molecule", update=cellblender_operators.check_release_site)
     shape_enum = [
         ('CUBIC', 'Cubic', ''),
         ('SPHERICAL', 'Spherical', ''),
         ('SPHERICAL SHELL', 'Spherical Shell', ''),
         #('LIST', 'List', ''),
         ('OBJECT', 'Object/Region', '')]
-    shape = EnumProperty(items=shape_enum, name="Release Shape")
+    shape = EnumProperty(items=shape_enum, name="Release Shape",
+                         update=cellblender_operators.check_release_site)
     orient_enum = [
         ('\'', "Top Front", ""),
         (',', "Top Back", ""),
@@ -152,7 +153,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         items=orient_enum, name="Initial Orientation")
     object_expr = StringProperty(
         name="Object/Region",
-        update=cellblender_operators.check_release_object_expr)
+        update=cellblender_operators.check_release_site)
     location = bpy.props.FloatVectorProperty(name="Location", precision=4)
     diameter = FloatProperty(name="Site Diameter", precision=4, min=0.0)
     probability = FloatProperty(name="Release Probability", precision=4,
@@ -166,6 +167,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     quantity = FloatProperty(name="Quantity to Release", precision=4, min=0.0)
     stddev = FloatProperty(name="Standard Deviation", precision=4, min=0.0)
     pattern = StringProperty(name="Release Pattern")
+    status = StringProperty(name="Status")
 
 
 class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
@@ -587,7 +589,6 @@ class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
     mol_release_list = CollectionProperty(
         type=MCellMoleculeReleaseProperty, name="Molecule Release List")
     active_release_index = IntProperty(name="Active Release Index", default=0)
-    status = StringProperty(name="Status")
 
 
 class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):

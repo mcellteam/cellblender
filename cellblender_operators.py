@@ -982,6 +982,7 @@ class MCELL_OT_release_site_add(bpy.types.Operator):
             mcell.release_sites.mol_release_list)-1
         mcell.release_sites.mol_release_list[
             mcell.release_sites.active_release_index].name = "Release_Site"
+        check_release_molecule(self, context)
 
         return {'FINISHED'}
 
@@ -1002,13 +1003,33 @@ class MCELL_OT_release_site_remove(bpy.types.Operator):
 
         if mcell.release_sites.mol_release_list:
             check_release_site(self, context)
-        else:
-            mcell.release_sites.status = ""
 
         return {'FINISHED'}
 
 
 def check_release_site(self, context):
+
+    mcell = context.scene.mcell
+    rel_list = mcell.release_sites.mol_release_list
+    rel = rel_list[mcell.release_sites.active_release_index]
+
+    name_status = check_release_site_name(self, context)
+    molecule_status = check_release_molecule(self, context)
+    object_status = check_release_object_expr(self, context)
+
+    if name_status:
+        rel.status = name_status
+    elif molecule_status:
+        rel.status = molecule_status
+    elif object_status and rel.shape == 'OBJECT':
+        rel.status = object_status
+    else:
+        rel.status = ""
+
+    return
+
+
+def check_release_site_name(self, context):
     """Checks for duplicate or illegal release site name."""
 
     mcell = context.scene.mcell
@@ -1028,9 +1049,7 @@ def check_release_site(self, context):
     if m is None:
         status = "Release Site name error: %s" % (rel.name)
 
-    mcell.release_sites.status = status
-
-    return
+    return status
 
 
 def check_release_molecule(self, context):
@@ -1054,10 +1073,11 @@ def check_release_molecule(self, context):
         mol_name = m.group(1)
         if not mol_name in mol_list:
             status = "Undefined molecule: %s" % (mol_name)
+        # Only change if necessary to avoid infinite recursion
+        elif (mol_list[mol_name].type == '2D') and (not rel.shape == 'OBJECT'):
+            rel.shape = 'OBJECT'
 
-    mcell.release_sites.status = status
-
-    return
+    return status
 
 
 def check_release_object_expr(self, context):
@@ -1080,6 +1100,9 @@ def check_release_object_expr(self, context):
     expr_filter = r"[\+\-\*\(\)]"
 
     expr_vars = re.sub(expr_filter, " ", obj_expr).split()
+
+    if not obj_expr:
+        status = "Object name error"
 
     for var in expr_vars:
         m = re.match(obj_reg_filter, var)
@@ -1110,9 +1133,7 @@ def check_release_object_expr(self, context):
                     status = "Undefined object: %s" % (obj_name)
                     break
 
-    mcell.release_sites.status = status
-
-    return
+    return status
 
 
 class MCELL_OT_set_mcell_binary(bpy.types.Operator):
