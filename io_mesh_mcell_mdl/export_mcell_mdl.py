@@ -478,7 +478,11 @@ def save_surface_classes(context, out_file, surf_class_list):
         for active_surf_class in surf_class_list:
             out_file.write("  %s\n" % (active_surf_class.name))
             out_file.write("  {\n")
-            for surf_class_props in active_surf_class.surf_class_props_list:
+            unfiltered_surf_class_props_list = \
+                active_surf_class.surf_class_props_list
+            surf_class_props_list = [
+                scp for scp in unfiltered_surf_class_props_list if not scp.status]
+            for surf_class_props in surf_class_props_list:
                 molecule = surf_class_props.molecule
                 orient = surf_class_props.surf_class_orient
                 surf_class_type = surf_class_props.surf_class_type
