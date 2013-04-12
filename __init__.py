@@ -132,7 +132,10 @@ def print_plotting_options():
         else:
             print ( "  ", plot_mod, "is not available through external python interpreter" )
 
-import cellblender.data_plotters
+try:
+    import cellblender.data_plotters
+except ImportError:
+    print("data_plotters was not found")
 
 # we use per module class registration/unregistration
 def register():
