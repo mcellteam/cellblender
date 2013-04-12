@@ -570,6 +570,15 @@ class MCELL_UL_check_surface_class(bpy.types.UIList):
             layout.label(item.name, icon='FILE_TICK')
 
 
+class MCELL_UL_check_surface_class_props(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+
+
 class MCELL_PT_define_surface_classes(bpy.types.Panel):
     bl_label = "CellBlender - Define Surface Classes"
     bl_space_type = "PROPERTIES"
@@ -609,9 +618,9 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
             # The template_list for the properties of a surface class.
             # Properties include molecule, orientation, and type of surf class.
             # There can be multiple properties for a single surface class
-            col.template_list("UI_UL_list", "define_surf_class_props",
-                              active_surf_class, "surf_class_props_list",
-                              active_surf_class,
+            col.template_list("MCELL_UL_check_surface_class_props",
+                              "define_surf_class_props", active_surf_class,
+                              "surf_class_props_list", active_surf_class,
                               "active_surf_class_props_index", rows=2)
             col = row.column(align=True)
             col.operator("mcell.surf_class_props_add", icon='ZOOMIN', text="")
@@ -622,10 +631,6 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
             if active_surf_class.surf_class_props_list:
                 surf_class_props = active_surf_class.surf_class_props_list[
                     active_surf_class.active_surf_class_props_index]
-                if surf_class.surf_class_props_status != "":
-                    row = layout.row()
-                    row.label(text=surf_class.surf_class_props_status,
-                              icon='ERROR')
                 layout.prop_search(surf_class_props, "molecule",
                                    mcell.molecules, "molecule_list",
                                    icon='FORCE_LENNARDJONES')

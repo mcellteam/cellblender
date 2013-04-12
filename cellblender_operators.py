@@ -731,9 +731,7 @@ class MCELL_OT_surf_class_props_add(bpy.types.Operator):
         active_surf_class.surf_class_props_list.add()
         active_surf_class.active_surf_class_props_index = len(
             active_surf_class.surf_class_props_list) - 1
-        new_name = "Surface_Class_Property"
-        active_surf_class.surf_class_props_list[
-            active_surf_class.active_surf_class_props_index].name = new_name
+        check_surf_class_props(self, context)
 
         return {'FINISHED'}
 
@@ -754,11 +752,6 @@ class MCELL_OT_surf_class_props_remove(bpy.types.Operator):
             active_surf_class.surf_class_props_list) - 1
         if (active_surf_class.active_surf_class_props_index < 0):
             active_surf_class.active_surf_class_props_index = 0
-
-        if active_surf_class.surf_class_props_list:
-            check_surf_class_props(self, context)
-        else:
-            surf_class.surf_class_props_status = ""
 
         return {'FINISHED'}
 
@@ -870,12 +863,8 @@ def check_surf_class_props(self, context):
     surf_class_type = convert_surf_class_str(surf_class_type)
     orient = convert_orient_str(orient)
 
-    if molecule:
-        surf_class_props.name = "Molec.: %s   Orient.: %s   Type: %s" % (
-            molecule, orient, surf_class_type)
-    else:
-        surf_class_props.name = "Molec.: NA   Orient.: %s   Type: %s" % (
-            orient, surf_class_type)
+    surf_class_props.name = "Molec.: %s   Orient.: %s   Type: %s" % (
+        molecule, orient, surf_class_type)
 
     status = ""
 
@@ -890,7 +879,7 @@ def check_surf_class_props(self, context):
         if not mol_name in mol_list:
             status = "Undefined molecule: %s" % (mol_name)
 
-    mcell.surface_classes.surf_class_props_status = status
+    surf_class_props.status = status
 
     return
 

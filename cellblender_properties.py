@@ -204,6 +204,7 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
     clamp_value_str = StringProperty(
         name="Value", description="Concentration Units: Molar",
         update=cellblender_operators.update_clamp_value)
+    status = StringProperty(name="Status")
 
 
 class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
@@ -575,7 +576,7 @@ class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
         type=MCellSurfaceClassesProperty, name="Surface Classes List")
     active_surf_class_index = IntProperty(
         name="Active Surface Class Index", default=0)
-    surf_class_props_status = StringProperty(name="Status")
+    #surf_class_props_status = StringProperty(name="Status")
 
 
 class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
