@@ -564,6 +564,8 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
     active_rxn_index = IntProperty(name="Active Reaction Index", default=0)
     plot_command = StringProperty(name="", default="")
     status = StringProperty(name="Status")
+    #plot_layout = bpy.props.EnumProperty(
+    #    items=plot_layout_enum, name="Plot Layout")
 
 
 class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
@@ -636,6 +638,14 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
     rxn_output_list = CollectionProperty(
         type=MCellReactionOutputProperty, name="Reaction Output List")
     status = StringProperty(name="Status")
+    plot_layout_enum = [
+        (' page ', "Each plot on its own page", ""),
+        (' plot ', "Separate plots on one page", ""),
+        (' ',      "All data in one single plot", "")]
+    #plot_layout = EnumProperty(items=plot_layout_enum, name="Plot Layout")
+    plot_layout = bpy.props.EnumProperty(
+        items=plot_layout_enum, name="")
+        # , update=cellblender_operators.check_rxn_output)
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):

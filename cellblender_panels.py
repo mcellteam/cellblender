@@ -779,13 +779,25 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                 row = layout.row()
                 row.label(text="Plot Reaction Data:",
                           icon='FORCE_LENNARDJONES')
+
+
+                row = layout.row()
+                col = row.column()
+                #layout.prop(mcell.rxn_output, "plot_layout")
+                col.prop(mcell.rxn_output, "plot_layout")
+                col = row.column()
+                col.operator("mcell.plot_rxn_output_mpl",
+                              text="MatPlotLib ( All )")
+
+
+
                 row = layout.row()
                 col = row.column()
                 col.operator("mcell.plot_rxn_output_simple",
                               text="Simple ( All )")
-                col = row.column()
-                col.operator("mcell.plot_rxn_output_mpl",
-                              text="MatPlotLib ( All )")
+                #col = row.column()
+                #col.operator("mcell.plot_rxn_output_mpl",
+                #              text="MatPlotLib ( All )")
                 col = row.column()
                 col.operator("mcell.plot_rxn_output_java",
                               text="Java Plot ( All )")
@@ -793,12 +805,15 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                 col.operator("mcell.plot_rxn_output_xmgrace",
                               text="xmgrace ( All )")
 
+
                 row = layout.row()
                 col = row.column()
                 col.operator("mcell.plot_rxn_output",
                              text="Execute Custom Plot Command:")
                 # col = row.column()
                 layout.prop(mcell.reactions, "plot_command")
+
+
 
             if (mcell.rxn_output.status != ""):
                 row = layout.row()

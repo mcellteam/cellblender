@@ -1445,6 +1445,8 @@ class MCELL_OT_plot_rxn_output(bpy.types.Operator):
         return {'FINISHED'}
 
 
+
+
 class MCELL_OT_plot_rxn_output_mpl(bpy.types.Operator):
     bl_idname = "mcell.plot_rxn_output_mpl"
     bl_label = "Plot Reactions"
@@ -1452,6 +1454,22 @@ class MCELL_OT_plot_rxn_output_mpl(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        mcell = context.scene.mcell
+        plot_sep = mcell.rxn_output.plot_layout
+
+        ''' 
+        plot_layout_enum = [
+            (' page ', "One Page per File", ""),
+            (' plot ', "One Plot per File", ""),
+            (' ',      "All on one Plot", "")]
+        #plot_layout = EnumProperty(items=plot_layout_enum, name="Plot Layout")
+        plot_layout = bpy.props.EnumProperty(
+            items=plot_layout_enum, name="Plot Layout")
+            # , update=cellblender_operators.check_rxn_output)
+        ''' 
+
+
+        
         program_path = find_in_path("python")
         if program_path == None:
             print ( "Unable to plot: python not found in path" )
@@ -1471,15 +1489,17 @@ class MCELL_OT_plot_rxn_output_mpl(bpy.types.Operator):
                     object_name = rxn_output.object_name
                     region_name = rxn_output.region_name
                     if rxn_output.count_location == 'World':
-                        plot_cmd = plot_cmd + " " + "%s.World.0001.dat" % (molecule_name)
+                        plot_cmd = plot_cmd + plot_sep + " f=" + "%s.World.0001.dat" % (molecule_name)
                     elif rxn_output.count_location == 'Object':
-                        plot_cmd = plot_cmd + " " + "%s.%s.0001.dat" % (molecule_name, object_name)
+                        plot_cmd = plot_cmd + plot_sep + " f=" + "%s.%s.0001.dat" % (molecule_name, object_name)
                     elif rxn_output.count_location == 'Region':
-                        plot_cmd = plot_cmd + " " + "%s.%s.%s.0001.dat" % (molecule_name, object_name, region_name)
+                        plot_cmd = plot_cmd + plot_sep + " f=" + "%s.%s.%s.0001.dat" % (molecule_name, object_name, region_name)
 
             print ( "plot_cmd = ", plot_cmd )
             plot_rxns ( plot_cmd )
         return {'FINISHED'}
+
+
 
 
 class MCELL_OT_plot_rxn_output_simple(bpy.types.Operator):
