@@ -54,7 +54,8 @@ def print_plotting_options():
         import_test_program = 'import %s\nprint("Found=OK")'%(plot_mod)
         #print ( "Test Program:" )
         #print ( import_test_program )
-        process = subprocess.Popen([python_command, '-c', import_test_program], shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen([python_command, '-c', import_test_program],
+            shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         #print ( "Back from Popen" )
         process.poll()
         #print ( "Back from poll" )
@@ -67,7 +68,7 @@ def print_plotting_options():
         else:
             print ( "  ", plot_mod, "is not available through external python interpreter" )
 
-print ( "\nSearching for known plotting plugins\n" )
+print ( "=== Searching for known plotting plugins ===" )
 
 try:
     # Trap exceptions in case this test code fails for some reason
