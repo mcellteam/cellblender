@@ -86,9 +86,6 @@ mpl.rcParams['ytick.labelsize'] = 'medium'
 #################
 #################
 
-title = ''
-xlabel = None
-ylabel = None
 
 # Get a list of just the parameters (excluding the program name itself)
 params = sys.argv[1:]
@@ -138,7 +135,6 @@ for page in plot_cmds:
   fig = plt.figure()
   fig.subplots_adjust(top=0.85)
   fig.subplots_adjust(bottom=0.15)
-  fig.suptitle("TITLE GOES HERE",fontsize=18.5)
 
   row = 1
   col = 1
@@ -155,8 +151,22 @@ for page in plot_cmds:
     ax = fig.add_subplot(num_rows,num_cols,plot_num) # (r,c,n): r=num_rows, c=num_cols, n=this_plot_number
 
     for cmd in plot:
-      if cmd[0:2] == "c=":
+      if cmd[0:4] == "cmd=":
+        print "Command: " + cmd
+        command = cmd[4:]
+        print "Executing " + command
+        exec ( command )
+      elif cmd[0:6] == "title=":
+        print "Title command: " + cmd
+        fig.suptitle ( cmd[6:] )
+      elif cmd[0:6] == "color=":
         print "Color command: " + cmd
+      elif cmd[0:6] == "xaxis=":
+        print "x Axis command: " + cmd
+        ax.set_xlabel ( cmd[6:] )
+      elif cmd[0:6] == "yaxis=":
+        print "y Axis command: " + cmd
+        ax.set_ylabel ( cmd[6:] )
       elif cmd[0:2] == "f=":
         print "File command: " + cmd
         fn = cmd[2:]
@@ -172,10 +182,6 @@ for page in plot_cmds:
         ax.yaxis.set_ticks_position('left')
         #ax.set_xscale('log')
         #ax.axis([0.001,1.0,0.0,70.0])
-        if xlabel != None:
-          ax.set_xlabel(xlabel)
-        if ylabel != None:
-          ax.set_ylabel(ylabel)
         #ax.yaxis.set_minor_locator(minorLocatorY)
     plot_num = plot_num + 1
 
