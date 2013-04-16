@@ -26,73 +26,28 @@ from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 
 if (len(sys.argv)<2):
-  print('')
-  print('\nUsage: %s filename'%(sys.argv[0]))
-  print('          Plots this file using rc parameters.')
-  print('')
+  print( '' )
+  print( '\nUsage: %s commands...'%(sys.argv[0]) )
+  print( '  Defines plots via commands:' )
+  print( '    defs=filename        ... Loads default parameters from a python file' )
+  print( '    page                 ... Starts a new page (figure in MatPlotLib)' )
+  print( '    plot                 ... Starts a new plot (subplot in MatPlotLib)' )
+  print( '    color=#rrggbb        ... Selects a color via Red,Green,Blue values' )
+  print( '    color=color_name     ... Selects a color via standard color names' )
+  print( '    title=title_string   ... Sets the title for each plot' )
+  print( '    pagetitle=string     ... Sets the title for each page' )
+  print( '    xlabel=label_string  ... Sets the label for the x axis' )
+  print( '    ylabel=label_string  ... Sets the label for the y axis' )
+  print( '    legend=code          ... Adds a legend with code = 0..10 (-1=none)' )
+  print( '    n=name               ... Name used to over-ride file name in legend' )
+  print( '    f=filename           ... Plots the file with current settings' )
+  print( '' )
   exit(1)
 
 
 
-
-
-#################
-# set rc params #
-#################
-
-mpl.rcdefaults()
-
-# mpl.rcParams['backend'] = MacOSX
-
-mpl.rcParams['figure.figsize'] = (11.0, 8.5)
-mpl.rcParams['figure.dpi'] = 80
-mpl.rcParams['figure.facecolor'] = 'white'
-mpl.rcParams['figure.subplot.wspace'] = 0.4
-mpl.rcParams['figure.subplot.hspace'] = 0.45
-
-mpl.rcParams['font.family'] = 'sans-serif'
-mpl.rcParams['font.style'] = 'normal'
-mpl.rcParams['font.variant'] = 'normal'
-mpl.rcParams['font.weight'] = 'medium'
-mpl.rcParams['font.stretch'] = 'normal'
-mpl.rcParams['font.size'] = 18.0
-mpl.rcParams['font.serif'] = 'Palatino'
-mpl.rcParams['font.sans-serif'] = 'Arial'
-mpl.rcParams['font.cursive'] = ['Apple Chancery', 'Textile', 'Zapf Chancery']
-mpl.rcParams['font.fantasy'] = ['Comic Sans MS', 'Chicago', 'Charcoal', 'Impact', 'Western']
-mpl.rcParams['font.monospace'] = ['Andale Mono', 'Bitstream Vera Sans Mono', 'Nimbus Mono L', 'Courier New', 'Courier']
-
-mpl.rcParams['mathtext.cal'] = 'cursive'
-mpl.rcParams['mathtext.rm'] = 'sans'
-mpl.rcParams['mathtext.tt'] = 'monospace'
-mpl.rcParams['mathtext.it'] = 'sans:italic'
-mpl.rcParams['mathtext.bf'] = 'sans:bold'
-mpl.rcParams['mathtext.sf'] = 'sans'
-mpl.rcParams['mathtext.fontset'] = 'custom'
-mpl.rcParams['mathtext.default'] = 'rm'
-
-mpl.rcParams['axes.titlesize'] = 'large'
-mpl.rcParams['axes.labelsize'] = 'medium'
-mpl.rcParams['axes.unicode_minus'] = True
-#mpl.rcParams['axes.formatter.use_mathtext'] = False
-
-mpl.rcParams['xtick.major.size'] = 5
-mpl.rcParams['xtick.minor.size'] = 2.5
-mpl.rcParams['xtick.labelsize'] = 'medium'
-mpl.rcParams['ytick.major.size'] = 5
-mpl.rcParams['ytick.minor.size'] = 2.5
-mpl.rcParams['ytick.labelsize'] = 'medium'
-
-#################
-#################
-
-
-# Get a list of just the parameters (excluding the program name itself)
-params = sys.argv[1:]
-
-# Separate the commands into a list of lists (one list per page)
-
 def subdivide ( l, sep ):
+  ''' Splits a list into sublists by dividing at (and removing) instances of sep '''
   nl = []
   c = []
   for s in l:
@@ -106,6 +61,12 @@ def subdivide ( l, sep ):
     nl = nl + [c]
   return nl
 
+
+# Get a list of just the parameters (excluding the program name itself)
+params = sys.argv[1:]
+
+# Separate the commands into a list of lists (one list per page)
+
 pages = subdivide ( params, "page" )
 
 plot_cmds = []
@@ -117,8 +78,25 @@ for page in pages:
 
 print plot_cmds
 
+# Execute the global defaults if any
+
+for cmd in params:
+  if cmd[0:5] == "defs=":
+    print "Defaults: " + cmd
+    command = cmd[5:]
+    print "Executing " + command
+    execfile ( command )
+
 
 # Draw each plot
+
+pagetitle = ""
+title = ""
+xlabel = ""
+ylabel = ""
+color = None
+legend = -1
+name = None
 
 for page in plot_cmds:
   print "Plotting " + str(page)
@@ -143,11 +121,6 @@ for page in plot_cmds:
   for plot in page:
     print "  Plotting " + str(plot)
     
-    #majorLocator   = MultipleLocator(20)
-    #majorFormatter = FormatStrFormatter('%d')
-    minorLocatorY   = MultipleLocator(5)
-    minorLocatorX   = MultipleLocator(0.1)
-
     ax = fig.add_subplot(num_rows,num_cols,plot_num) # (r,c,n): r=num_rows, c=num_cols, n=this_plot_number
 
     for cmd in plot:
@@ -156,34 +129,60 @@ for page in plot_cmds:
         command = cmd[4:]
         print "Executing " + command
         exec ( command )
+      if cmd[0:5] == "defs=":
+        pass
       elif cmd[0:6] == "title=":
         print "Title command: " + cmd
-        fig.suptitle ( cmd[6:] )
+        title = cmd[6:]
+      elif cmd[0:10] == "pagetitle=":
+        print "Page Title command: " + cmd
+        pagetitle = cmd[10:]
       elif cmd[0:6] == "color=":
         print "Color command: " + cmd
-      elif cmd[0:6] == "xaxis=":
-        print "x Axis command: " + cmd
-        ax.set_xlabel ( cmd[6:] )
-      elif cmd[0:6] == "yaxis=":
-        print "y Axis command: " + cmd
-        ax.set_ylabel ( cmd[6:] )
+        color = cmd[6:]
+      elif cmd[0:7] == "xlabel=":
+        print "x label command: " + cmd
+        xlabel = cmd[7:]
+      elif cmd[0:7] == "ylabel=":
+        print "y label command: " + cmd
+        ylabel = cmd[7:]
+      elif cmd[0:7] == "legend=":
+        print "legend command: " + cmd
+        legend = int(cmd[7:])
+      elif cmd[0:6] == "legend":
+        print "legend command: " + cmd
+        legend = 0
+      elif cmd[0:2] == "n=":
+        print "Name command: " + cmd
+        name = cmd[2:]
       elif cmd[0:2] == "f=":
         print "File command: " + cmd
         fn = cmd[2:]
         print "  File name = " + fn
         data = loadtxt(fn)
-
         x = data[:,0]
         y = data[:,1]
-        ax.plot(x,y)
+        if name is None:
+          name = fn
+        if color is None:
+          ax.plot(x,y,label=name)
+        else:
+          ax.plot(x,y,label=name,c=color)
+        name = None
         ax.spines['top'].set_color('none')
         ax.spines['right'].set_color('none')
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
-        #ax.set_xscale('log')
-        #ax.axis([0.001,1.0,0.0,70.0])
-        #ax.yaxis.set_minor_locator(minorLocatorY)
+
+    if legend >= 0:
+      ax.legend(loc=legend)
+    ax.set_title ( title )
+    ax.set_xlabel ( xlabel )
+    ax.set_ylabel ( ylabel )
+
     plot_num = plot_num + 1
+
+  fig.suptitle ( pagetitle, size=25 )
 
 plt.show()
 
