@@ -1457,19 +1457,6 @@ class MCELL_OT_plot_rxn_output_mpl(bpy.types.Operator):
         mcell = context.scene.mcell
         plot_sep = mcell.rxn_output.plot_layout
 
-        ''' 
-        plot_layout_enum = [
-            (' page ', "One Page per File", ""),
-            (' plot ', "One Plot per File", ""),
-            (' ',      "All on one Plot", "")]
-        #plot_layout = EnumProperty(items=plot_layout_enum, name="Plot Layout")
-        plot_layout = bpy.props.EnumProperty(
-            items=plot_layout_enum, name="Plot Layout")
-            # , update=cellblender_operators.check_rxn_output)
-        ''' 
-
-
-        
         program_path = find_in_path("python")
         if program_path == None:
             print ( "Unable to plot: python not found in path" )
@@ -1481,6 +1468,13 @@ class MCELL_OT_plot_rxn_output_mpl(bpy.types.Operator):
             plot_cmd = os.path.join(plot_cmd, 'mpl_plot')
             plot_cmd = os.path.join(plot_cmd, 'mpl_plot.py')
             plot_cmd = program_path + ' ' + plot_cmd
+            
+            project_dir = mcell.project_settings.project_dir
+            defaults_name = os.path.join(project_dir,"react_data")
+            defaults_name = os.path.join(defaults_name,"mpl_defaults.py")
+            print ( "Checking for defaults file at: " + defaults_name )
+            if os.path.exists(defaults_name):
+              plot_cmd = plot_cmd + " defs=" + defaults_name
 
             settings = mcell.project_settings
             if mcell.rxn_output.rxn_output_list:
@@ -1489,11 +1483,14 @@ class MCELL_OT_plot_rxn_output_mpl(bpy.types.Operator):
                     object_name = rxn_output.object_name
                     region_name = rxn_output.region_name
                     if rxn_output.count_location == 'World':
-                        plot_cmd = plot_cmd + plot_sep + " f=" + "%s.World.0001.dat" % (molecule_name)
+                        fn = "%s.World.0001.dat" % (molecule_name)
+                        plot_cmd = plot_cmd + plot_sep + " title=" + fn + " f=" + fn
                     elif rxn_output.count_location == 'Object':
-                        plot_cmd = plot_cmd + plot_sep + " f=" + "%s.%s.0001.dat" % (molecule_name, object_name)
+                        fn = "%s.%s.0001.dat" % (molecule_name, object_name)
+                        plot_cmd = plot_cmd + plot_sep + " title=" + fn + " f=" + fn
                     elif rxn_output.count_location == 'Region':
-                        plot_cmd = plot_cmd + plot_sep + " f=" + "%s.%s.%s.0001.dat" % (molecule_name, object_name, region_name)
+                        fn = "%s.%s.%s.0001.dat" % (molecule_name, object_name, region_name)
+                        plot_cmd = plot_cmd + plot_sep + " title=" + fn + " f=" + fn
 
             print ( "plot_cmd = ", plot_cmd )
             plot_rxns ( plot_cmd )

@@ -65,6 +65,22 @@ def subdivide ( l, sep ):
 # Get a list of just the parameters (excluding the program name itself)
 params = sys.argv[1:]
 
+# Execute the global defaults file (if any) and remove from parameters list
+
+remaining_params = []
+
+for cmd in params:
+  if cmd[0:5] == "defs=":
+    print "Defaults: " + cmd
+    command = cmd[5:]
+    print "Executing " + command
+    execfile ( command )
+  else:
+    remaining_params = remaining_params + [cmd]
+
+params = remaining_params
+
+
 # Separate the commands into a list of lists (one list per page)
 
 pages = subdivide ( params, "page" )
@@ -77,15 +93,6 @@ for page in pages:
 
 
 print plot_cmds
-
-# Execute the global defaults if any
-
-for cmd in params:
-  if cmd[0:5] == "defs=":
-    print "Defaults: " + cmd
-    command = cmd[5:]
-    print "Executing " + command
-    execfile ( command )
 
 
 # Draw each plot
