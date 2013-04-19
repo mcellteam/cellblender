@@ -45,7 +45,8 @@ cellblender_info = {
         "io_mesh_mcell_mdl/import_mcell_mdl.py",
         "io_mesh_mcell_mdl/mdlmesh_parser.py"],
     "cellblender_source_sha1": "",
-    "cellblender_addon_path": ""
+    "cellblender_addon_path": "",
+    "cellblender_plotting_modules": []
 }
 
 
@@ -91,15 +92,24 @@ if "bpy" in locals():
     imp.reload(cellblender_panels)
     imp.reload(cellblender_operators)
     imp.reload(io_mesh_mcell_mdl)
+    # Use "try" for optional modules
+    try:
+        imp.reload(data_plotters)
+    except:
+        print ( "cellblender.data_plotters was not reloaded" )
 else:
     print ( "Importing CellBlender" )
-    from . import cellblender_properties, cellblender_panels, \
-        cellblender_operators, io_mesh_mcell_mdl
+    from . import \
+        cellblender_properties, \
+        cellblender_panels, \
+        cellblender_operators, \
+        io_mesh_mcell_mdl
 
-try:
-    import cellblender.data_plotters
-except ImportError:
-    print ( "cellblender.data_plotters was not found" )
+    # Use "try" for optional modules
+    try:
+        from . import data_plotters
+    except:
+        print ( "cellblender.data_plotters was not imported" )
 
 
 import bpy
@@ -132,6 +142,16 @@ def register():
     print ( "CellBlender Addon Path is ", cellblender_info["cellblender_addon_path"] )
     addon_path = os.path.dirname(__file__)
     identify_source_version ( addon_path )
+
+    # Use "try" for optional modules
+    try:
+        print ( "Reloading data_plottters" )
+        plotters_list = data_plotters.find_plotting_options()
+        # data_plotters.print_plotting_options()
+        for plotter in plotters_list:
+            print ( "  System meets requirements for %s"%(plotter.get_name()) )
+    except :
+        print ( "Plotting package is not installed" )
 
 
 
