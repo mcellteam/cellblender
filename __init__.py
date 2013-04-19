@@ -113,7 +113,7 @@ else:
 
 
 import bpy
-
+import sys
 
 # Initialize the data plotting functionality
 #try:
@@ -146,12 +146,24 @@ def register():
     # Use "try" for optional modules
     try:
         print ( "Reloading data_plottters" )
+        cellblender_info['cellblender_plotting_modules'] = []
         plotters_list = data_plotters.find_plotting_options()
         # data_plotters.print_plotting_options()
+        print ( "Begin installing the plotters" )
         for plotter in plotters_list:
+            #This assignment could be done all at once since plotters_list is already a list.
+            cellblender_info['cellblender_plotting_modules'] = cellblender_info['cellblender_plotting_modules'] + [plotter]
             print ( "  System meets requirements for %s"%(plotter.get_name()) )
+            '''
+            try:
+                s = bpy.data.scenes['Scene']
+                ro = s.mcell.rxn_output
+                ro.plotters_enum = ro.plotters_enum + [(plotter.get_name(), plotter.get_name(), "")]
+            except:
+                print ( "Unable to add to enum" + sys.exc_value )
+            '''
     except :
-        print ( "Plotting package is not installed" )
+        print ( "Error installing some plotting packages" + sys.exc_value )
 
 
 

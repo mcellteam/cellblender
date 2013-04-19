@@ -1435,7 +1435,7 @@ def plot_rxns ( plot_command ):
 class MCELL_OT_plot_rxn_output(bpy.types.Operator):
     bl_idname = "mcell.plot_rxn_output"
     bl_label = "Plot Reactions"
-    bl_description = "Plot the reactions using specified plotting package"
+    bl_description = "Plot the reactions using command line"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -1443,6 +1443,30 @@ class MCELL_OT_plot_rxn_output(bpy.types.Operator):
         print ( "Plotting with cmd=", mcell.reactions.plot_command )
         plot_rxns ( mcell.reactions.plot_command )
         return {'FINISHED'}
+
+
+
+
+class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
+    bl_idname = "mcell.plot_rxn_output_generic"
+    bl_label = "Plot Reactions"
+    bl_description = "Plot the reactions using specified plotting package"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        print ( "dir(self):" )
+        print ( dir(self) )
+        print ( "Name = %s" % self.name )
+        print ( "context: ", context )
+        print ( "dir(context): ", dir(context) )
+        print ( "properties: ", self.properties )
+        print ( "dir(properties): ", dir(self.properties) )
+        
+        mcell = context.scene.mcell
+        print ( "Generic Plotting with cmd=", mcell.reactions.plot_command )
+        # plot_rxns ( mcell.reactions.plot_command )
+        return {'FINISHED'}
+
 
 
 

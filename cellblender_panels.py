@@ -777,8 +777,28 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                         except KeyError:
                             pass
                 row = layout.row()
-                row.label(text="Plot Reaction Data:",
-                          icon='FORCE_LENNARDJONES')
+                row.label(text="Plot Reaction Data:", icon='FORCE_LENNARDJONES')
+
+
+
+                for plot_module in cellblender.cellblender_info['cellblender_plotting_modules']:
+                    # print ( "Laying out panel for %s" % plot_module.get_name() )
+                    row = layout.row()
+                    col = row.column()
+                    #col.operator ( "mcell.plot_rxn_output_generic", text=plot_module.get_name() )
+                    col.operator ( "mcell.plot_rxn_output_mpl", text=plot_module.get_name() )
+                    #plot_layout
+
+
+                row = layout.row()
+                col = row.column()
+                col.prop(mcell.rxn_output, "plotters_layout")
+
+
+                row = layout.row()
+                col = row.column()
+                col.operator ( "mcell.plot_rxn_output_generic", text="Plot" )
+
 
 
                 row = layout.row()

@@ -83,6 +83,9 @@ def find_plotting_options():
 
 
 def print_plotting_options():
+    print ( "This functionality has been moved to the individual plotting packages" )
+
+def old_print_plotting_options():
     plot_executables = ['python', 'xmgrace', 'java', 'excel']
     plot_modules = ['matplotlib', 'junkTESTlib', 'matplotlib.pyplot', 'pylab', 'numpy', 'scipy']
 
