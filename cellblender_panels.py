@@ -776,29 +776,64 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                                                icon='FACESEL_HLT')
                         except KeyError:
                             pass
+
+                layout.separator()
+                row = layout.row()
+                row.label(text="---------------------------------------------------------------------")
+                layout.separator()
+
+
                 row = layout.row()
                 row.label(text="Plot Reaction Data:", icon='FORCE_LENNARDJONES')
 
 
 
-                for plot_module in cellblender.cellblender_info['cellblender_plotting_modules']:
-                    # print ( "Laying out panel for %s" % plot_module.get_name() )
-                    row = layout.row()
-                    col = row.column()
-                    #col.operator ( "mcell.plot_rxn_output_generic", text=plot_module.get_name() )
-                    col.operator ( "mcell.plot_rxn_output_mpl", text=plot_module.get_name() )
-                    #plot_layout
+                row = layout.row()
+                col = row.column()
+                col.prop(mcell.rxn_output, "plot_layout")
 
+                row = layout.row()
+                button_num = 0
+                num_columns = len ( cellblender.cellblender_info['cellblender_plotting_modules'] )
+                if num_columns > 3:
+                    num_columns = 2
+                for plot_module in cellblender.cellblender_info['cellblender_plotting_modules']:
+                    mod_name = plot_module.get_name()
+                    # print ( "Laying out panel for %s" % plot_module.get_name() )
+                    if (button_num % num_columns) == 0:
+                        button_num = 0
+                        row = layout.row()
+                    col = row.column()
+                    col.operator ( "mcell.plot_rxn_output_generic", text=mod_name ).plotter_button_label = mod_name
+                    #col.operator ( "mcell.plot_rxn_output_mpl", text=mod_name )
+                    #plot_layout
+                    button_num = button_num + 1
+
+
+
+                layout.separator()
+                row = layout.row()
+                row.label(text="---------------------------------------------------------------------")
+                layout.separator()
 
                 row = layout.row()
                 col = row.column()
                 col.prop(mcell.rxn_output, "plotters_layout")
 
+                row = layout.row()
+                col = row.column()
+                col.prop(mcell.rxn_output, "plot_layout")
 
                 row = layout.row()
                 col = row.column()
                 col.operator ( "mcell.plot_rxn_output_generic", text="Plot" )
 
+
+
+                layout.separator()
+                row = layout.row()
+                row.label(text="---------------------------------------------------------------------")
+                layout.separator()
 
 
                 row = layout.row()
@@ -824,6 +859,15 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                 col = row.column()
                 col.operator("mcell.plot_rxn_output_xmgrace",
                               text="xmgrace ( All )")
+
+
+
+
+                layout.separator()
+                row = layout.row()
+                row.label(text="---------------------------------------------------------------------")
+                layout.separator()
+
 
 
                 row = layout.row()

@@ -646,9 +646,9 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
         type=MCellReactionOutputProperty, name="Reaction Output List")
     status = StringProperty(name="Status")
     plot_layout_enum = [
-        (' page ', "Each plot on its own page", ""),
-        (' plot ', "Separate plots on one page", ""),
-        (' ',      "All data in one single plot", "")]
+        (' page ', "Separate Page for each Plot", ""),
+        (' plot ', "One Page, Multiple Plots", ""),
+        (' ',      "One Page, One Plot", "")]
     #plot_layout = EnumProperty(items=plot_layout_enum, name="Plot Layout")
     plot_layout = bpy.props.EnumProperty ( items=plot_layout_enum, name="" )
     plotters_list = CollectionProperty(

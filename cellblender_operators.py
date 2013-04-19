@@ -1452,6 +1452,8 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
     bl_label = "Plot Reactions"
     bl_description = "Plot the reactions using specified plotting package"
     bl_options = {'REGISTER', 'UNDO'}
+    
+    plotter_button_label = bpy.props.StringProperty()
 
     def execute(self, context):
         print ( "dir(self):" )
@@ -1464,6 +1466,7 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
         
         mcell = context.scene.mcell
         print ( "Generic Plotting with cmd=", mcell.reactions.plot_command )
+        print ( "\n\nLabel = %s" % self.plotter_button_label )
         # plot_rxns ( mcell.reactions.plot_command )
         return {'FINISHED'}
 
