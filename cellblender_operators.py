@@ -1456,18 +1456,75 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
     plotter_button_label = bpy.props.StringProperty()
 
     def execute(self, context):
-        print ( "dir(self):" )
-        print ( dir(self) )
-        print ( "Name = %s" % self.name )
-        print ( "context: ", context )
-        print ( "dir(context): ", dir(context) )
-        print ( "properties: ", self.properties )
-        print ( "dir(properties): ", dir(self.properties) )
-        
         mcell = context.scene.mcell
-        print ( "Generic Plotting with cmd=", mcell.reactions.plot_command )
-        print ( "\n\nLabel = %s" % self.plotter_button_label )
-        # plot_rxns ( mcell.reactions.plot_command )
+        plot_sep = mcell.rxn_output.plot_layout
+        
+        plot_button_label = self.plotter_button_label
+
+        print ( "\n\nButton Label = %s" % (plot_button_label) )
+        
+        # Look up the plotting module by its name
+
+        for plot_module in cellblender.cellblender_info['cellblender_plotting_modules']:
+            mod_name = plot_module.get_name()
+            if mod_name == plot_button_label:
+                # Plot the data via this module
+                print ( "Preparing to call %s" % (mod_name) )
+                data_path = mcell.project_settings.project_dir
+                data_path = os.path.join(data_path,"react_data")
+                plot_spec_string = ""
+
+                settings = mcell.project_settings
+                if mcell.rxn_output.rxn_output_list:
+                    for rxn_output in mcell.rxn_output.rxn_output_list:
+                        molecule_name = rxn_output.molecule_name
+                        object_name = rxn_output.object_name
+                        region_name = rxn_output.region_name
+                        if rxn_output.count_location == 'World':
+                            fn = "%s.World.0001.dat" % (molecule_name)
+                            plot_spec_string = plot_spec_string + plot_sep + " title=" + fn + " f=" + fn
+                        elif rxn_output.count_location == 'Object':
+                            fn = "%s.%s.0001.dat" % (molecule_name, object_name)
+                            plot_spec_string = plot_spec_string + plot_sep + " title=" + fn + " f=" + fn
+                        elif rxn_output.count_location == 'Region':
+                            fn = "%s.%s.%s.0001.dat" % (molecule_name, object_name, region_name)
+                            plot_spec_string = plot_spec_string + plot_sep + " title=" + fn + " f=" + fn
+
+
+                plot_module.plot ( data_path, plot_spec_string )
+                
+                '''
+                plot_cmd = os.path.join(plot_cmd, 'data_plotters')
+                plot_cmd = os.path.join(plot_cmd, 'mpl_plot')
+                plot_cmd = os.path.join(plot_cmd, 'mpl_plot.py')
+                plot_cmd = program_path + ' ' + plot_cmd
+                
+                project_dir = mcell.project_settings.project_dir
+                defaults_name = os.path.join(project_dir,"react_data")
+                defaults_name = os.path.join(defaults_name,"mpl_defaults.py")
+                print ( "Checking for defaults file at: " + defaults_name )
+                if os.path.exists(defaults_name):
+                  plot_cmd = plot_cmd + " defs=" + defaults_name
+
+                settings = mcell.project_settings
+                if mcell.rxn_output.rxn_output_list:
+                    for rxn_output in mcell.rxn_output.rxn_output_list:
+                        molecule_name = rxn_output.molecule_name
+                        object_name = rxn_output.object_name
+                        region_name = rxn_output.region_name
+                        if rxn_output.count_location == 'World':
+                            fn = "%s.World.0001.dat" % (molecule_name)
+                            plot_cmd = plot_cmd + plot_sep + " title=" + fn + " f=" + fn
+                        elif rxn_output.count_location == 'Object':
+                            fn = "%s.%s.0001.dat" % (molecule_name, object_name)
+                            plot_cmd = plot_cmd + plot_sep + " title=" + fn + " f=" + fn
+                        elif rxn_output.count_location == 'Region':
+                            fn = "%s.%s.%s.0001.dat" % (molecule_name, object_name, region_name)
+                            plot_cmd = plot_cmd + plot_sep + " title=" + fn + " f=" + fn
+
+                print ( "plot_cmd = ", plot_cmd )
+                plot_rxns ( plot_cmd )
+                '''
         return {'FINISHED'}
 
 

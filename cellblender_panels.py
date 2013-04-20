@@ -816,9 +816,9 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                 row.label(text="---------------------------------------------------------------------")
                 layout.separator()
 
-                row = layout.row()
-                col = row.column()
-                col.prop(mcell.rxn_output, "plotters_layout")
+                #row = layout.row()
+                #col = row.column()
+                #col.prop(mcell.rxn_output, "plotters_layout")
 
                 row = layout.row()
                 col = row.column()
