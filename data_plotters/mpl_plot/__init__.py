@@ -31,7 +31,8 @@ def requirements_met():
             output = process.stdout.readline()
             strout = str(output)
             if (strout != None) & (strout.find("Found=OK")>=0):
-                print ( "  ", plot_mod, "is available through external python interpreter" )
+                # print ( "  ", plot_mod, "is available through external python interpreter" )
+                pass
             else:
                 print ( "  ", plot_mod, "is not available through external python interpreter" )
                 ok = False
@@ -40,8 +41,8 @@ def requirements_met():
 
 def plot ( data_path, plot_spec ):
     program_path = os.path.dirname(__file__)
-    print ( "MPL Plotter called with %s, %s" % (data_path, plot_spec) )
-    print ( "Plotter-specific files are located here: %s" % ( program_path ) )
+    # print ( "MPL Plotter called with %s, %s" % (data_path, plot_spec) )
+    # print ( "Plotter-specific files are located here: %s" % ( program_path ) )
     
     # mpl_plot.py accepts all generic parameters, so no translation is needed
     
@@ -52,10 +53,15 @@ def plot ( data_path, plot_spec ):
     else:
         plot_cmd = plot_cmd + " " + os.path.join(program_path,"mpl_plot.py")
 
-        defaults_name = os.path.join(data_path,"mpl_defaults.py")
+        defaults_name = os.path.join ( data_path, "mpl_defaults.py" )
         print ( "Checking for defaults file at: " + defaults_name )
         if os.path.exists(defaults_name):
             plot_cmd = plot_cmd + " defs=" + defaults_name
+        else:
+            defaults_name = os.path.join ( program_path, "mpl_defaults.py" )
+            print ( "Checking for defaults file at: " + defaults_name )
+            if os.path.exists(defaults_name):
+                plot_cmd = plot_cmd + " defs=" + defaults_name
 
         for generic_param in plot_spec.split():
             plot_cmd = plot_cmd + " " + generic_param

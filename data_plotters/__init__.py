@@ -59,24 +59,24 @@ def find_plotting_options():
     module_name_list = []
     module_list = []
 
-    print ( "=== Searching for installed plotting plugins in %s ==="%(plot_path) )
+    print ( "Searching for installed plotting plugins in %s"%(plot_path) )
 
     for f in os.listdir(plot_path):
         if (f != "__pycache__"):
             plot_plugin = os.path.join ( plot_path, f )
             if os.path.isdir(plot_plugin):
                 if os.path.exists(os.path.join(plot_plugin,"__init__.py")):
-                    print ( "Adding %s " % (plot_plugin) )
+                    # print ( "Adding %s " % (plot_plugin) )
                     import_name = plot_plugin
                     module_name_list = module_name_list + [f]
-                    print ( "Attempting to import %s" % (import_name) )
+                    # print ( "Attempting to import %s" % (import_name) )
                     try:
                         plot_module = __import__ ( f )
-                        print ( "Checking requirements for %s" % ( plot_module ) )
+                        print ( "Checking requirements for %s" % ( plot_module.get_name() ) )
                         if plot_module.requirements_met():
                             print ( "System requirements met for Plot Module \"%s\"" % ( plot_module.get_name() ) )
                             module_list = module_list + [ plot_module ]
-                        print ( "Imported __init__.py from %s" % (f) )
+                        # print ( "Imported __init__.py from %s" % (f) )
                     except:
                         print ( "Directory %s did not contain a working __init__.py file" % (f) )
     return ( module_list )

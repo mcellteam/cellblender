@@ -73,7 +73,7 @@ for cmd in params:
   if cmd[0:5] == "defs=":
     print "Defaults: " + cmd
     command = cmd[5:]
-    print "Executing " + command
+    # print "Executing " + command
     execfile ( command )
   else:
     remaining_params = remaining_params + [cmd]
@@ -92,7 +92,7 @@ for page in pages:
     plot_cmds = plot_cmds + [pc]
 
 
-print plot_cmds
+# print plot_cmds
 
 
 # Draw each plot
@@ -106,7 +106,7 @@ legend = -1
 name = None
 
 for page in plot_cmds:
-  print "Plotting " + str(page)
+  # print "Plotting " + str(page)
   
   num_plots = len(page)
 
@@ -126,46 +126,46 @@ for page in plot_cmds:
   plot_num = 1
   
   for plot in page:
-    print "  Plotting " + str(plot)
+    # print "  Plotting " + str(plot)
     
     ax = fig.add_subplot(num_rows,num_cols,plot_num) # (r,c,n): r=num_rows, c=num_cols, n=this_plot_number
 
     for cmd in plot:
       if cmd[0:4] == "cmd=":
-        print "Command: " + cmd
+        # print "Command: " + cmd
         command = cmd[4:]
-        print "Executing " + command
+        # print "Executing " + command
         exec ( command )
       if cmd[0:5] == "defs=":
         pass
       elif cmd[0:6] == "title=":
-        print "Title command: " + cmd
+        # print "Title command: " + cmd
         title = cmd[6:]
       elif cmd[0:10] == "pagetitle=":
-        print "Page Title command: " + cmd
+        # print "Page Title command: " + cmd
         pagetitle = cmd[10:]
       elif cmd[0:6] == "color=":
-        print "Color command: " + cmd
+        # print "Color command: " + cmd
         color = cmd[6:]
       elif cmd[0:7] == "xlabel=":
-        print "x label command: " + cmd
+        # print "x label command: " + cmd
         xlabel = cmd[7:]
       elif cmd[0:7] == "ylabel=":
-        print "y label command: " + cmd
+        # print "y label command: " + cmd
         ylabel = cmd[7:]
       elif cmd[0:7] == "legend=":
-        print "legend command: " + cmd
+        # print "legend command: " + cmd
         legend = int(cmd[7:])
       elif cmd[0:6] == "legend":
-        print "legend command: " + cmd
+        # print "legend command: " + cmd
         legend = 0
       elif cmd[0:2] == "n=":
-        print "Name command: " + cmd
+        # print "Name command: " + cmd
         name = cmd[2:]
       elif cmd[0:2] == "f=":
-        print "File command: " + cmd
+        # print "File command: " + cmd
         fn = cmd[2:]
-        print "  File name = " + fn
+        # print "  File name = " + fn
         data = loadtxt(fn)
         x = data[:,0]
         y = data[:,1]

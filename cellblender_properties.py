@@ -564,8 +564,6 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
     active_rxn_index = IntProperty(name="Active Reaction Index", default=0)
     plot_command = StringProperty(name="", default="")
     status = StringProperty(name="Status")
-    #plot_layout = bpy.props.EnumProperty(
-    #    items=plot_layout_enum, name="Plot Layout")
 
 
 class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
@@ -632,9 +630,6 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         name="Command")  # , update=cellblender_operators.check_rxn_output)
 
 
-class MCellPlotterProperty(bpy.types.PropertyGroup):
-    name = StringProperty(name="Plotter Name")
-
 
 import cellblender
 
@@ -649,18 +644,8 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
         (' page ', "Separate Page for each Plot", ""),
         (' plot ', "One Page, Multiple Plots", ""),
         (' ',      "One Page, One Plot", "")]
-    #plot_layout = EnumProperty(items=plot_layout_enum, name="Plot Layout")
     plot_layout = bpy.props.EnumProperty ( items=plot_layout_enum, name="" )
-    
-    #plotters_list = CollectionProperty(
-    #    type=MCellPlotterProperty, name="Plotters List")
-    #    # , update=cellblender_operators.check_rxn_output)
-    #print ( "+++++++++++++ Creating plotters_layout EnumProperty ++++++++++++" )
-    #plotters_enum = []
-    #for plot_module in cellblender.cellblender_info['cellblender_plotting_modules']:
-    #    plotters_enum = plotters_enum + [(plot_module.get_name(), plot_module.get_name(), "")]
-    #    print ( "Added plotter: %s" % plot_module.get_name() )
-    #plotters_layout = bpy.props.EnumProperty ( items=plotters_enum, name="" )
+
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):

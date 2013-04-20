@@ -31,7 +31,8 @@ def requirements_met():
             output = process.stdout.readline()
             strout = str(output)
             if (strout != None) & (strout.find("Found=OK")>=0):
-                print ( "  ", plot_mod, "is available through external python interpreter" )
+                # print ( "  ", plot_mod, "is available through external python interpreter" )
+                pass
             else:
                 print ( "  ", plot_mod, "is not available through external python interpreter" )
                 ok = False
@@ -40,8 +41,8 @@ def requirements_met():
 
 def plot ( data_path, plot_spec ):
     program_path = os.path.dirname(__file__)
-    print ( "Simple Plotter called with %s, %s" % (data_path, plot_spec) )
-    print ( "Plotter-specific files are located here: %s" % ( program_path ) )
+    # print ( "Simple Plotter called with %s, %s" % (data_path, plot_spec) )
+    # print ( "Plotter-specific files are located here: %s" % ( program_path ) )
     
     # mpl_simple.py expects plain file names so translate:
     
