@@ -857,7 +857,10 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
 class MCELL_UL_visualization_export_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
-        layout.label(item.name)
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
         layout.prop(item, "export_viz", text="Export")
 
 
