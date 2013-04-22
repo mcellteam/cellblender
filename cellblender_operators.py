@@ -1358,28 +1358,19 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
 
-def find_in_path(program_name):
-    for path in os.environ.get('PATH','').split(os.pathsep):
-        full_name = os.path.join(path,program_name)
-        if os.path.exists(full_name) and not os.path.isdir(full_name):
-            return full_name
-    return None
-
-
 def plot_rxns ( plot_command ):
     """ Plot a file """
     mcell = bpy.context.scene.mcell
     project_dir = mcell.project_settings.project_dir
     base_name = mcell.project_settings.base_name
     print ( "Plotting ", base_name, " with ", plot_command, " at ", project_dir )
-    # subprocess.call ( plot_command.split(), cwd=os.path.join(project_dir,"react_data") )
     pid = subprocess.Popen ( plot_command.split(), cwd=os.path.join(project_dir,"react_data") )
 
 
-class MCELL_OT_plot_rxn_output(bpy.types.Operator):
-    bl_idname = "mcell.plot_rxn_output"
+class MCELL_OT_plot_rxn_output_command(bpy.types.Operator):
+    bl_idname = "mcell.plot_rxn_output_command"
     bl_label = "Plot Reactions"
-    bl_description = "Plot the reactions using specified plotting package"
+    bl_description = "Plot the reactions using command line"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -1389,147 +1380,51 @@ class MCELL_OT_plot_rxn_output(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MCELL_OT_plot_rxn_output_mpl(bpy.types.Operator):
-    bl_idname = "mcell.plot_rxn_output_mpl"
+class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
+    bl_idname = "mcell.plot_rxn_output_generic"
     bl_label = "Plot Reactions"
-    bl_description = "Plot the reactions using MatPlotLib"
+    bl_description = "Plot the reactions using specified plotting package"
     bl_options = {'REGISTER', 'UNDO'}
+    
+    plotter_button_label = bpy.props.StringProperty()
 
     def execute(self, context):
-        program_path = find_in_path("python")
-        if program_path == None:
-            print ( "Unable to plot: python not found in path" )
-        else:
-            mcell = context.scene.mcell
-            print ( "CellBlender path = ", cellblender.cellblender_info['cellblender_addon_path'] )
-            plot_cmd = cellblender.cellblender_info['cellblender_addon_path']
-            plot_cmd = os.path.join(plot_cmd, 'data_plotters')
-            plot_cmd = os.path.join(plot_cmd, 'mpl_plot')
-            plot_cmd = os.path.join(plot_cmd, 'mpl_plot.py')
-            plot_cmd = program_path + ' ' + plot_cmd
+        mcell = context.scene.mcell
+        plot_sep = mcell.rxn_output.plot_layout
+        
+        plot_button_label = self.plotter_button_label
 
-            settings = mcell.project_settings
-            if mcell.rxn_output.rxn_output_list:
-                for rxn_output in mcell.rxn_output.rxn_output_list:
-                    molecule_name = rxn_output.molecule_name
-                    object_name = rxn_output.object_name
-                    region_name = rxn_output.region_name
-                    if rxn_output.count_location == 'World':
-                        plot_cmd = plot_cmd + " " + "%s.World.0001.dat" % (molecule_name)
-                    elif rxn_output.count_location == 'Object':
-                        plot_cmd = plot_cmd + " " + "%s.%s.0001.dat" % (molecule_name, object_name)
-                    elif rxn_output.count_location == 'Region':
-                        plot_cmd = plot_cmd + " " + "%s.%s.%s.0001.dat" % (molecule_name, object_name, region_name)
+        # Look up the plotting module by its name
 
-            print ( "plot_cmd = ", plot_cmd )
-            plot_rxns ( plot_cmd )
+        for plot_module in cellblender.cellblender_info['cellblender_plotting_modules']:
+            mod_name = plot_module.get_name()
+            if mod_name == plot_button_label:
+                # Plot the data via this module
+                print ( "Preparing to call %s" % (mod_name) )
+                data_path = mcell.project_settings.project_dir
+                data_path = os.path.join(data_path,"react_data")
+                plot_spec_string = ""
+
+                settings = mcell.project_settings
+                if mcell.rxn_output.rxn_output_list:
+                    for rxn_output in mcell.rxn_output.rxn_output_list:
+                        molecule_name = rxn_output.molecule_name
+                        object_name = rxn_output.object_name
+                        region_name = rxn_output.region_name
+                        if rxn_output.count_location == 'World':
+                            fn = "%s.World.0001.dat" % (molecule_name)
+                            plot_spec_string = plot_spec_string + plot_sep + " title=" + fn + " f=" + fn
+                        elif rxn_output.count_location == 'Object':
+                            fn = "%s.%s.0001.dat" % (molecule_name, object_name)
+                            plot_spec_string = plot_spec_string + plot_sep + " title=" + fn + " f=" + fn
+                        elif rxn_output.count_location == 'Region':
+                            fn = "%s.%s.%s.0001.dat" % (molecule_name, object_name, region_name)
+                            plot_spec_string = plot_spec_string + plot_sep + " title=" + fn + " f=" + fn
+
+                plot_module.plot ( data_path, plot_spec_string )
+                
         return {'FINISHED'}
 
-
-class MCELL_OT_plot_rxn_output_simple(bpy.types.Operator):
-    bl_idname = "mcell.plot_rxn_output_simple"
-    bl_label = "Plot Reactions"
-    bl_description = "Plot the reactions using a simple Python script"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        program_path = find_in_path("python")
-        if program_path == None:
-            print ( "Unable to plot: python not found in path" )
-        else:
-            mcell = context.scene.mcell
-            print ( "CellBlender path = ", cellblender.cellblender_info['cellblender_addon_path'] )
-            plot_cmd = cellblender.cellblender_info['cellblender_addon_path']
-            plot_cmd = os.path.join(plot_cmd, 'data_plotters')
-            plot_cmd = os.path.join(plot_cmd, 'mpl_simple')
-            plot_cmd = os.path.join(plot_cmd, 'mpl_simple.py')
-            plot_cmd = program_path + ' ' + plot_cmd
-
-            settings = mcell.project_settings
-            if mcell.rxn_output.rxn_output_list:
-                for rxn_output in mcell.rxn_output.rxn_output_list:
-                    molecule_name = rxn_output.molecule_name
-                    object_name = rxn_output.object_name
-                    region_name = rxn_output.region_name
-                    if rxn_output.count_location == 'World':
-                        plot_cmd = plot_cmd + " " + "%s.World.0001.dat" % (molecule_name)
-                    elif rxn_output.count_location == 'Object':
-                        plot_cmd = plot_cmd + " " + "%s.%s.0001.dat" % (molecule_name, object_name)
-                    elif rxn_output.count_location == 'Region':
-                        plot_cmd = plot_cmd + " " + "%s.%s.%s.0001.dat" % (molecule_name, object_name, region_name)
-
-            print ( "plot_cmd = ", plot_cmd )
-            plot_rxns ( plot_cmd )
-        return {'FINISHED'}
-
-
-class MCELL_OT_plot_rxn_output_xmgrace(bpy.types.Operator):
-    bl_idname = "mcell.plot_rxn_output_xmgrace"
-    bl_label = "Plot Reactions"
-    bl_description = "Plot the reactions using xmgrace"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        program_path = find_in_path("xmgrace")
-        if program_path == None:
-            print ( "Unable to plot: xmgrace not found in path" )
-        else:
-            mcell = context.scene.mcell
-            plot_cmd = program_path
-
-            settings = mcell.project_settings
-            if mcell.rxn_output.rxn_output_list:
-                for rxn_output in mcell.rxn_output.rxn_output_list:
-                    molecule_name = rxn_output.molecule_name
-                    object_name = rxn_output.object_name
-                    region_name = rxn_output.region_name
-                    if rxn_output.count_location == 'World':
-                        plot_cmd = plot_cmd + " %s.World.0001.dat" % (molecule_name)
-                    elif rxn_output.count_location == 'Object':
-                        plot_cmd = plot_cmd + " %s.%s.0001.dat" % (molecule_name, object_name)
-                    elif rxn_output.count_location == 'Region':
-                        plot_cmd = plot_cmd + " %s.%s.%s.0001.dat" % (molecule_name, object_name, region_name)
-
-            print ( "plot_cmd = ", plot_cmd )
-            plot_rxns ( plot_cmd )
-        return {'FINISHED'}
-
-
-class MCELL_OT_plot_rxn_output_java(bpy.types.Operator):
-    bl_idname = "mcell.plot_rxn_output_java"
-    bl_label = "Plot Reactions"
-    bl_description = "Plot the reactions using a simple Java program"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        program_path = find_in_path("java")
-        if program_path == None:
-            print ( "Unable to plot: java not found in path" )
-        else:
-            mcell = context.scene.mcell
-            print ( "CellBlender path = ", cellblender.cellblender_info['cellblender_addon_path'] )
-            plot_cmd = cellblender.cellblender_info['cellblender_addon_path']
-            plot_cmd = os.path.join(plot_cmd, 'data_plotters')
-            plot_cmd = os.path.join(plot_cmd, 'java_plot')
-            plot_cmd = os.path.join(plot_cmd, 'PlotData.jar')
-            plot_cmd = program_path + ' -jar ' + plot_cmd
-
-            settings = mcell.project_settings
-            if mcell.rxn_output.rxn_output_list:
-                for rxn_output in mcell.rxn_output.rxn_output_list:
-                    molecule_name = rxn_output.molecule_name
-                    object_name = rxn_output.object_name
-                    region_name = rxn_output.region_name
-                    if rxn_output.count_location == 'World':
-                        plot_cmd = plot_cmd + " fxy=" + "%s.World.0001.dat" % (molecule_name)
-                    elif rxn_output.count_location == 'Object':
-                        plot_cmd = plot_cmd + " fxy=" + "%s.%s.0001.dat" % (molecule_name, object_name)
-                    elif rxn_output.count_location == 'Region':
-                        plot_cmd = plot_cmd + " fxy=" + "%s.%s.%s.0001.dat" % (molecule_name, object_name, region_name)
-
-            print ( "plot_cmd = ", plot_cmd )
-            plot_rxns ( plot_cmd )
-        return {'FINISHED'}
 
 
 class MCELL_OT_toggle_viz_molecules(bpy.types.Operator):

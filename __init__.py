@@ -45,25 +45,12 @@ cellblender_info = {
         "io_mesh_mcell_mdl/import_mcell_mdl.py",
         "io_mesh_mcell_mdl/mdlmesh_parser.py"],
     "cellblender_source_sha1": "",
-    "cellblender_addon_path": ""
+    "cellblender_addon_path": "",
+    "cellblender_plotting_modules": []
 }
 
 
 
-# To support reload properly, try to access a package var.
-# If it's there, reload everything
-if "bpy" in locals():
-    import imp
-    imp.reload(cellblender_properties)
-    imp.reload(cellblender_panels)
-    imp.reload(cellblender_operators)
-    imp.reload(io_mesh_mcell_mdl)
-else:
-    from . import cellblender_properties, cellblender_panels, \
-        cellblender_operators, io_mesh_mcell_mdl
-
-
-import bpy
 import hashlib
 
 
@@ -85,57 +72,55 @@ def identify_source_version(addon_path):
     open(sha_file, 'w').write(hashobject.hexdigest())
 
 
-import subprocess
+if __name__ == '__main__':
+    print ( "CellBlender is running as __main__" )
+    identify_source_version ( "" )
+    # This might be a good place to exit since this version seems to
+    #  crash later if run from the comand line.
+    # This is NOT being done in this release in case there was some
+    #  other reason to continue, but future releases might uncomment:
+    #import sys
+    #sys.exit(0)
 
-def find_in_path(program_name):
-    for path in os.environ.get('PATH','').split(os.pathsep):
-        full_name = os.path.join(path,program_name)
-        if os.path.exists(full_name) and not os.path.isdir(full_name):
-            return full_name
-    return None
+
+# To support reload properly, try to access a package var.
+# If it's there, reload everything
+if "bpy" in locals():
+    print ( "Reloading CellBlender" )
+    import imp
+    imp.reload(cellblender_properties)
+    imp.reload(cellblender_panels)
+    imp.reload(cellblender_operators)
+    imp.reload(io_mesh_mcell_mdl)
+    # Use "try" for optional modules
+    try:
+        imp.reload(data_plotters)
+    except:
+        print ( "cellblender.data_plotters was not reloaded" )
+else:
+    print ( "Importing CellBlender" )
+    from . import \
+        cellblender_properties, \
+        cellblender_panels, \
+        cellblender_operators, \
+        io_mesh_mcell_mdl
+
+    # Use "try" for optional modules
+    try:
+        from . import data_plotters
+    except:
+        print ( "cellblender.data_plotters was not imported" )
 
 
-def print_plotting_options():
-    plot_executables = ['python', 'xmgrace', 'java', 'excel']
-    plot_modules = ['matplotlib', 'junktestlib', 'matplotlib.pyplot', 'pylab', 'numpy', 'scipy']
+import bpy
+import sys
 
-    for plot_app in plot_executables:
-        path = find_in_path ( plot_app )
-        if path != None:
-            print ( "  ", plot_app, "is available at", path )
-        else:
-            print ( "  ", plot_app, "is not found in the current path" )
+# Initialize the data plotting functionality
+#try:
+#    import cellblender.data_plotters
+#except ImportError:
+#    print("data_plotters was not found")
 
-    for plot_mod in plot_modules:
-        try:
-            __import__ ( plot_mod )
-            print ( "  ", plot_mod, "is importable" )
-        except:
-            print ( "  ", plot_mod, "is not importable in this configuration" )
-
-    python_command = find_in_path ( "python" )
-
-    for plot_mod in plot_modules:
-        import_test_program = 'import %s\nprint("Found=OK")'%(plot_mod)
-        #print ( "Test Program:" )
-        #print ( import_test_program )
-        process = subprocess.Popen([python_command, '-c', import_test_program], shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        #print ( "Back from Popen" )
-        process.poll()
-        #print ( "Back from poll" )
-        output = process.stdout.readline()
-        #print ( "Back from readline" )
-        #print ( "  output =", output )
-        strout = str(output)
-        if (strout != None) & (strout.find("Found=OK")>=0):
-            print ( "  ", plot_mod, "is available through external python interpreter" )
-        else:
-            print ( "  ", plot_mod, "is not available through external python interpreter" )
-
-try:
-    import cellblender.data_plotters
-except ImportError:
-    print("data_plotters was not found")
 
 # we use per module class registration/unregistration
 def register():
@@ -157,13 +142,29 @@ def register():
     print ( "CellBlender Addon Path is ", cellblender_info["cellblender_addon_path"] )
     addon_path = os.path.dirname(__file__)
     identify_source_version ( addon_path )
-    print ( "CellBlender is searching for known plotting plugins" )
+
+    # Use "try" for optional modules
     try:
-        # Trap exceptions in case this test code fails for some reason
-        print_plotting_options()
-    except:
-        print ( "Exception in print_plotting_options()" )
-        pass
+        print ( "Reloading data_plottters" )
+        cellblender_info['cellblender_plotting_modules'] = []
+        plotters_list = data_plotters.find_plotting_options()
+        # data_plotters.print_plotting_options()
+        print ( "Begin installing the plotters" )
+        for plotter in plotters_list:
+            #This assignment could be done all at once since plotters_list is already a list.
+            cellblender_info['cellblender_plotting_modules'] = cellblender_info['cellblender_plotting_modules'] + [plotter]
+            print ( "  System meets requirements for %s"%(plotter.get_name()) )
+            '''
+            try:
+                s = bpy.data.scenes['Scene']
+                ro = s.mcell.rxn_output
+                ro.plotters_enum = ro.plotters_enum + [(plotter.get_name(), plotter.get_name(), "")]
+            except:
+                print ( "Unable to add to enum" + sys.exc_value )
+            '''
+    except :
+        print ( "Error installing some plotting packages" + sys.exc_value )
+
 
 
 def unregister():
@@ -185,5 +186,4 @@ if len(bpy.app.handlers.save_pre) == 0:
 
 # for testing
 if __name__ == '__main__':
-    #identify_source_version ( "" )
     register()
