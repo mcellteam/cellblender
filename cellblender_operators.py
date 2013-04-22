@@ -2183,39 +2183,58 @@ def check_rxn_output(self, context):
     rxn_output_list = mcell.rxn_output.rxn_output_list
     rxn_output = rxn_output_list[
         mcell.rxn_output.active_rxn_output_index]
+    mol_list = mcell.molecules.molecule_list
     molecule_name = rxn_output.molecule_name
+    obj_list = mcell.model_objects.object_list
     object_name = rxn_output.object_name
     region_name = rxn_output.region_name
+    rxn_output_name = ""
 
-    if not molecule_name:
-        molecule_name = "N/A"
-    if not object_name:
-        object_name = "N/A"
-    if not region_name:
-        region_name = "N/A"
+    try:
+        region_list = bpy.data.objects[object_name].mcell.regions.region_list
+    except KeyError:
+        # The object name isn't a blender object
+        region_list = []
+
+    status = ""
+
+    # Check for illegal names (Starts with a letter. No special characters.)
+    mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)"
+    m = re.match(mol_filter, molecule_name)
+    if m is None:
+        status = "Molecule name error: %s" % (molecule_name)
+    else:
+        # Check for undefined names
+        mol_name = m.group(1)
+        if not mol_name in mol_list:
+            status = "Undefined molecule: %s" % (mol_name)
 
     # Use different formatting depending on where we are counting
     if rxn_output.count_location == 'World':
         rxn_output_name = "Count %s in World" % (molecule_name)
     elif rxn_output.count_location == 'Object':
-        rxn_output_name = "Count %s in/on %s" % (
-            molecule_name, object_name)
+        if not object_name in obj_list:
+            status = "Undefined object: %s" % object_name
+        else:
+            rxn_output_name = "Count %s in/on %s" % (
+                molecule_name, object_name)
     elif rxn_output.count_location == 'Region':
-        rxn_output_name = "Count %s in/on %s[%s]" % (
-            molecule_name, object_name, region_name)
+        if not region_name in region_list:
+            status = "Undefined region: %s" % region_name
+        else:
+            rxn_output_name = "Count %s in/on %s[%s]" % (
+                molecule_name, object_name, region_name)
 
     # Only update reaction output if necessary to avoid infinite recursion
     if rxn_output.name != rxn_output_name:
         rxn_output.name = rxn_output_name
 
-    status = ""
-
     # Check for duplicate reaction data
     rxn_output_keys = rxn_output_list.keys()
-    if rxn_output_keys.count(rxn_output.name) > 1:
+    if rxn_output_keys.count(rxn_output.name) > 1 and not status:
         status = "Duplicate reaction output: %s" % (rxn_output.name)
 
-    mcell.rxn_output.status = status
+    rxn_output.status = status
 
     return
 

@@ -630,7 +630,7 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.check_rxn_output)
     plot_command = StringProperty(
         name="Command")  # , update=cellblender_operators.check_rxn_output)
-
+    status = StringProperty(name="Status")
 
 
 import cellblender
@@ -641,7 +641,6 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
         name="Active Reaction Output Index", default=0)
     rxn_output_list = CollectionProperty(
         type=MCellReactionOutputProperty, name="Reaction Output List")
-    status = StringProperty(name="Status")
     plot_layout_enum = [
         (' page ', "Separate Page for each Plot", ""),
         (' plot ', "One Page, Multiple Plots", ""),

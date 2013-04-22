@@ -764,6 +764,15 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
             row.label(text="Define at least one molecule", icon='ERROR')
 
 
+class MCELL_UL_check_reaction_output_settings(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+
+
 class MCELL_PT_reaction_output_settings(bpy.types.Panel):
     bl_label = "CellBlender - Reaction Output Settings"
     bl_space_type = "PROPERTIES"
@@ -780,10 +789,10 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
             row.label(text="Reaction Data Output:", icon='FORCE_LENNARDJONES')
             row = layout.row()
             col = row.column()
-            col.template_list("UI_UL_list", "reaction_output",
-                              mcell.rxn_output, "rxn_output_list",
-                              mcell.rxn_output, "active_rxn_output_index",
-                              rows=2)
+            col.template_list("MCELL_UL_check_reaction_output_settings",
+                              "reaction_output", mcell.rxn_output,
+                              "rxn_output_list", mcell.rxn_output,
+                              "active_rxn_output_index", rows=2)
             col = row.column(align=True)
             col.operator("mcell.rxn_output_add", icon='ZOOMIN', text="")
             col.operator("mcell.rxn_output_remove", icon='ZOOMOUT', text="")
@@ -847,9 +856,6 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                 # col = row.column()
                 layout.prop(mcell.reactions, "plot_command")
 
-            if (mcell.rxn_output.status != ""):
-                row = layout.row()
-                row.label(text=mcell.rxn_output.status, icon='ERROR')
         else:
             row.label(text="Define at least one molecule", icon='ERROR')
 
