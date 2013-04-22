@@ -643,13 +643,16 @@ def save_rxn_output_mdl(context, out_file):
 
     mcell = context.scene.mcell
     settings = mcell.project_settings
+    unfiltered_rxn_output_list = mcell.rxn_output.rxn_output_list
+    rxn_output_list = [
+        rxn for rxn in unfiltered_rxn_output_list if not rxn.status]
 
-    if mcell.rxn_output.rxn_output_list:
+    if rxn_output_list:
         out_file.write("REACTION_DATA_OUTPUT\n{\n")
         rxn_step = mcell.initialization.time_step
         out_file.write("  STEP=%g\n" % rxn_step)
 
-        for rxn_output in mcell.rxn_output.rxn_output_list:
+        for rxn_output in rxn_output_list:
             molecule_name = rxn_output.molecule_name
             object_name = rxn_output.object_name
             region_name = rxn_output.region_name
