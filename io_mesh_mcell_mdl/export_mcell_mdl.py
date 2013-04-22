@@ -481,7 +481,8 @@ def save_surface_classes(context, out_file, surf_class_list):
             unfiltered_surf_class_props_list = \
                 active_surf_class.surf_class_props_list
             surf_class_props_list = [
-                scp for scp in unfiltered_surf_class_props_list if not scp.status]
+                scp for scp in unfiltered_surf_class_props_list if not
+                scp.status]
             for surf_class_props in surf_class_props_list:
                 molecule = surf_class_props.molecule
                 orient = surf_class_props.surf_class_orient
@@ -612,9 +613,10 @@ def save_viz_output_mdl(context, out_file):
     step = mcell.viz_output.step
     all_iterations = mcell.viz_output.all_iterations
 
-    molecule_list = mcell.molecules.molecule_list
+    unfiltered_mol_list = mcell.molecules.molecule_list
     molecule_viz_list = [
-        molecule.name for molecule in molecule_list if molecule.export_viz]
+        mol.name for mol in unfiltered_mol_list if mol.export_viz and
+        not mol.status]
 
     if molecule_viz_list:
         out_file.write("VIZ_OUTPUT\n{\n")
