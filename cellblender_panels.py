@@ -830,6 +830,8 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                 row = layout.row()
                 col = row.column()
                 col.prop(mcell.rxn_output, "plot_layout")
+                col = row.column()
+                col.prop(mcell.rxn_output, "combine_seeds")
 
                 row = layout.row()
                 button_num = 0

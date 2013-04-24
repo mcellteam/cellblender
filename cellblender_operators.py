@@ -1396,6 +1396,8 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
         mcell = context.scene.mcell
         plot_sep = mcell.rxn_output.plot_layout
         
+        combine_seeds = mcell.rxn_output.combine_seeds
+        
         plot_button_label = self.plotter_button_label
 
         # Look up the plotting module by its name
@@ -1429,31 +1431,21 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                             fn = "%s.%s.%s.*.dat" % (molecule_name, object_name, region_name)
                         if fn != None:
                             candidate_file_list = glob.glob ( os.path.join ( data_path,fn ) )
-                            print ( "Candidate file list for %s:" % (fn) )
-                            print ( "  ", candidate_file_list )
+                            # print ( "Candidate file list for %s:" % (fn) )
+                            # print ( "  ", candidate_file_list )
+                            first_pass = True
                             for f in candidate_file_list:
                                 if os.stat(f).st_mtime > start_time:
                                     # This file is both in the list and newer than the run time for MCell
                                     base_name = os.path.basename(f)
-                                    plot_spec_string = plot_spec_string + plot_sep + " title=" + base_name + " f=" + base_name
-
-                '''
-                # Old plotting approach uses list and fixed seed values
-                if mcell.rxn_output.rxn_output_list:
-                    for rxn_output in mcell.rxn_output.rxn_output_list:
-                        molecule_name = rxn_output.molecule_name
-                        object_name = rxn_output.object_name
-                        region_name = rxn_output.region_name
-                        if rxn_output.count_location == 'World':
-                            fn = "%s.World.0001.dat" % (molecule_name)
-                            plot_spec_string = plot_spec_string + plot_sep + " title=" + fn + " f=" + fn
-                        elif rxn_output.count_location == 'Object':
-                            fn = "%s.%s.0001.dat" % (molecule_name, object_name)
-                            plot_spec_string = plot_spec_string + plot_sep + " title=" + fn + " f=" + fn
-                        elif rxn_output.count_location == 'Region':
-                            fn = "%s.%s.%s.0001.dat" % (molecule_name, object_name, region_name)
-                            plot_spec_string = plot_spec_string + plot_sep + " title=" + fn + " f=" + fn
-                '''
+                                    if combine_seeds:
+                                        psep = " "
+                                        if first_pass:
+                                            psep = plot_sep
+                                            first_pass = False
+                                        plot_spec_string = plot_spec_string +   psep   + " title=" + base_name + " f=" + base_name
+                                    else:
+                                        plot_spec_string = plot_spec_string + plot_sep + " title=" + base_name + " f=" + base_name
 
                 plot_module.plot ( data_path, plot_spec_string )
                 

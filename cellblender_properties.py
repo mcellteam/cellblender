@@ -646,7 +646,10 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
         (' plot ', "One Page, Multiple Plots", ""),
         (' ',      "One Page, One Plot", "")]
     plot_layout = bpy.props.EnumProperty ( items=plot_layout_enum, name="" )
-
+    combine_seeds = BoolProperty(
+        name="Combine Seeds",
+        description="Combine all seeds onto the same plot",
+        default=True)
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
