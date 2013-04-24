@@ -1205,6 +1205,7 @@ def run_sim(seed):
             cwd=subprocess_cwd,
             stdout=log_file, stderr=error_file)
 
+import time
 
 class MCELL_OT_run_simulation(bpy.types.Operator):
     bl_idname = "mcell.run_simulation"
@@ -1213,8 +1214,11 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        self.report({'INFO'}, "Simulation Running")
         mcell = context.scene.mcell
+        print ( "Starting MCell ... create start_time.txt file:" )
+        with open ( os.path.join ( mcell.project_settings.project_dir, "start_time.txt" ), "w" ) as start_time_file:
+            start_time_file.write ( "Started MCell at: " + (str(time.ctime())) + "\n" )
+        self.report({'INFO'}, "Simulation Running")
         start = mcell.run_simulation.start_seed
         end = mcell.run_simulation.end_seed + 1
         mcell_processes = mcell.run_simulation.mcell_processes
@@ -1406,6 +1410,35 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                 plot_spec_string = ""
 
                 settings = mcell.project_settings
+
+                # New plotting approach uses list and modification dates
+                if mcell.rxn_output.rxn_output_list:
+                    # Use the start_time.txt file to find files modified since MCell was started
+                    start_time = os.stat ( os.path.join ( mcell.project_settings.project_dir, "start_time.txt" ) ).st_mtime
+                    print ( "Modification Time of start_time.txt is", start_time )
+                    for rxn_output in mcell.rxn_output.rxn_output_list:
+                        molecule_name = rxn_output.molecule_name
+                        object_name = rxn_output.object_name
+                        region_name = rxn_output.region_name
+                        fn = None
+                        if rxn_output.count_location == 'World':
+                            fn = "%s.World.*.dat" % (molecule_name)
+                        elif rxn_output.count_location == 'Object':
+                            fn = "%s.%s.*.dat" % (molecule_name, object_name)
+                        elif rxn_output.count_location == 'Region':
+                            fn = "%s.%s.%s.*.dat" % (molecule_name, object_name, region_name)
+                        if fn != None:
+                            candidate_file_list = glob.glob ( os.path.join ( data_path,fn ) )
+                            print ( "Candidate file list for %s:" % (fn) )
+                            print ( "  ", candidate_file_list )
+                            for f in candidate_file_list:
+                                if os.stat(f).st_mtime > start_time:
+                                    # This file is both in the list and newer than the run time for MCell
+                                    base_name = os.path.basename(f)
+                                    plot_spec_string = plot_spec_string + plot_sep + " title=" + base_name + " f=" + base_name
+
+                '''
+                # Old plotting approach uses list and fixed seed values
                 if mcell.rxn_output.rxn_output_list:
                     for rxn_output in mcell.rxn_output.rxn_output_list:
                         molecule_name = rxn_output.molecule_name
@@ -1420,6 +1453,7 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                         elif rxn_output.count_location == 'Region':
                             fn = "%s.%s.%s.0001.dat" % (molecule_name, object_name, region_name)
                             plot_spec_string = plot_spec_string + plot_sep + " title=" + fn + " f=" + fn
+                '''
 
                 plot_module.plot ( data_path, plot_spec_string )
                 
