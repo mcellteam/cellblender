@@ -1867,6 +1867,7 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
         mcell.meshalyzer.normal_status = ""
         mcell.meshalyzer.area = 0
         mcell.meshalyzer.volume = 0
+        mcell.meshalyzer.sav_ratio = 0
 
         if (len(objs) != 1):
             mcell.meshalyzer.status = "Please Select One Mesh Object"
@@ -1922,13 +1923,17 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
         else:
             mcell.meshalyzer.manifold = "Non-manifold Mesh"
 
+        volume = 0
         if is_orientable and is_manifold and is_closed:
             volume = mesh_vol(mesh, t_mat)
-            mcell.meshalyzer.volume = volume
             if volume >= 0:
                 mcell.meshalyzer.normal_status = "Outward Facing Normals"
             else:
                 mcell.meshalyzer.normal_status = "Inward Facing Normals"
+
+        mcell.meshalyzer.volume = volume
+        if (not volume == 0.0):
+          mcell.meshalyzer.sav_ratio = area/volume
 
         mcell.meshalyzer.status = ""
         return {'FINISHED'}

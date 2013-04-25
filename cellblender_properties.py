@@ -673,6 +673,7 @@ class MCellMeshalyzerPanelProperty(bpy.types.PropertyGroup):
     normal_status = StringProperty(name="Surface Normals")
     area = FloatProperty(name="Area", default=0)
     volume = FloatProperty(name="Volume", default=0)
+    sav_ratio = FloatProperty(name="SA/V Ratio", default=0)
     status = StringProperty(name="Status")
 
 
