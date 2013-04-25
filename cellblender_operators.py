@@ -63,6 +63,7 @@ class MCELL_OT_region_add(bpy.types.Operator):
             mcell_obj.regions.region_list)-1
         mcell_obj.regions.region_list[
             mcell_obj.regions.active_reg_index].name = "Region"
+
         return {'FINISHED'}
 
 
@@ -80,12 +81,55 @@ class MCELL_OT_region_remove(bpy.types.Operator):
         if (mcell_obj.regions.active_reg_index < 0):
             mcell_obj.regions.active_reg_index = 0
 
-        if mcell_obj.regions.region_list:
-            check_region(self, context)
-        else:
-            mcell_obj.regions.status = ""
-
         return {'FINISHED'}
+
+
+def inplace_quicksort(v, beg, end):  # collection array, int, int
+    """
+      Sorts a collection array, v, in place.
+        Sorts according values in v[i].name
+    """
+
+    if ((end - beg) > 0):  # only perform quicksort if we are dealing with > 1 values 
+        pivot = v[beg].name  # we set the first item as our initial pivot
+        i,j = beg,end
+
+        while (j > i):
+            while ((v[i].name <= pivot) and (j > i)):
+                i+=1
+            while ((v[j].name > pivot) and (j >= i)):
+                j-=1
+            if (j > i):
+                v.move(i,j)
+                v.move(j-1,i)
+
+        if (not beg == j):
+          v.move(beg,j)
+          v.move(j-1,beg)
+        inplace_quicksort(v, beg, j-1)
+        inplace_quicksort(v, j+1, end)
+    return
+
+
+def region_update(self, context):
+    """Sorts region list and performs checks after update of region names"""
+
+    mcell_obj = context.object.mcell
+    reg_list = mcell_obj.regions.region_list
+    act_reg_name = reg_list[mcell_obj.regions.active_reg_index].name
+
+    if reg_list:
+        check_region(self, context)
+    else:
+        mcell_obj.regions.status = ""
+
+    # Sort the region list
+    inplace_quicksort(reg_list,0,len(reg_list)-1)
+
+    act_i = reg_list.find(act_reg_name)
+    mcell_obj.regions.active_reg_index=act_i
+
+    return
 
 
 def check_region(self, context):

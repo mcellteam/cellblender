@@ -43,17 +43,11 @@ def unregister():
 
 
 #Custom Properties
-class MCellSurfaceRegionFaceProperty(bpy.types.PropertyGroup):
-    index = IntProperty(name="Face Index")
-
 
 class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Region Name", default="Region",
-        update=cellblender_operators.check_region)
-    faces = CollectionProperty(
-        type=MCellSurfaceRegionFaceProperty, name="Surface Region List")
-    active_face_index = IntProperty(name="Active Face Index", default=0)
+        update=cellblender_operators.region_update)
 
 
 class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
