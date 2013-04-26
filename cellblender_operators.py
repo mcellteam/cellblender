@@ -1196,9 +1196,11 @@ def run_sim(seed):
 
     mcell = bpy.context.scene.mcell
     mcell_binary = mcell.project_settings.mcell_binary
-    project_dir = mcell.project_settings.project_dir
+    # Force the project directory to be where the .blend file lives
+    project_dir = os.path.dirname(bpy.data.filepath)
     base_name = mcell.project_settings.base_name
-    mdl_filepath = '%s%s.main.mdl' % (project_dir, base_name)
+    mdl_filepath = '%s.main.mdl' % (base_name)
+    mdl_filepath = os.path.join ( project_dir, mdl_filepath )
     # Log filename will be log.year-month-day_hour:minute_seed.txt
     # (e.g. log.2013-03-12_11:45_1.txt)
     time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
@@ -1260,7 +1262,8 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         print ( "Starting MCell ... create start_time.txt file:" )
-        with open ( os.path.join ( mcell.project_settings.project_dir, "start_time.txt" ), "w" ) as start_time_file:
+        # Force the project directory to be where the .blend file lives
+        with open ( os.path.join ( os.path.dirname(bpy.data.filepath), "start_time.txt" ), "w" ) as start_time_file:
             start_time_file.write ( "Started MCell at: " + (str(time.ctime())) + "\n" )
         self.report({'INFO'}, "Simulation Running")
         start = mcell.run_simulation.start_seed
@@ -1285,19 +1288,22 @@ class MCELL_OT_export_project(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
 
+        # Force the project directory to be where the .blend file lives
+
         model_objects_update(context)
         if mcell.export_project.export_format == 'mcell_mdl_unified':
-            filepath = mcell.project_settings.project_dir + "/" + \
+            filepath = os.path.dirname(bpy.data.filepath) + "/" + \
                 mcell.project_settings.base_name + ".main.mdl"
             bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
         elif mcell.export_project.export_format == 'mcell_mdl_modular':
-            filepath = mcell.project_settings.project_dir + "/" + \
+            filepath = os.path.dirname(bpy.data.filepath) + "/" + \
                 mcell.project_settings.base_name + ".main.mdl"
             bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
 
         return {'FINISHED'}
 
 
+'''
 class MCELL_OT_set_project_dir(bpy.types.Operator):
     bl_idname = "mcell.set_project_dir"
     bl_label = "Set Project Directory"
@@ -1308,7 +1314,8 @@ class MCELL_OT_set_project_dir(bpy.types.Operator):
     directory = bpy.props.StringProperty(subtype='DIR_PATH')
 
     def __init__(self):
-        self.directory = bpy.context.scene.mcell.project_settings.project_dir
+        self.directory = os.path.dirname(bpy.data.filepath)
+
 
     # Note: use classmethod "poll" to determine when
     # runability of operator is valid
@@ -1330,12 +1337,13 @@ class MCELL_OT_set_project_dir(bpy.types.Operator):
             mcell.mol_viz.mol_file_list.remove(i)
 
         mcell.mol_viz.mol_file_name = ""
-        mcell.project_settings.project_dir = dir
+
         return {'FINISHED'}
 
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
+'''
 
 
 class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
@@ -1409,7 +1417,8 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
 def plot_rxns ( plot_command ):
     """ Plot a file """
     mcell = bpy.context.scene.mcell
-    project_dir = mcell.project_settings.project_dir
+    # Force the project directory to be where the .blend file lives
+    project_dir = os.path.dirname(bpy.data.filepath)
     base_name = mcell.project_settings.base_name
     print ( "Plotting ", base_name, " with ", plot_command, " at ", project_dir )
     pid = subprocess.Popen ( plot_command.split(), cwd=os.path.join(project_dir,"react_data") )
@@ -1451,7 +1460,8 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
             if mod_name == plot_button_label:
                 # Plot the data via this module
                 print ( "Preparing to call %s" % (mod_name) )
-                data_path = mcell.project_settings.project_dir
+                # Force the project directory to be where the .blend file lives
+                data_path = os.path.dirname(bpy.data.filepath)
                 data_path = os.path.join(data_path,"react_data")
                 plot_spec_string = ""
 
@@ -1460,7 +1470,7 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                 # New plotting approach uses list and modification dates
                 if mcell.rxn_output.rxn_output_list:
                     # Use the start_time.txt file to find files modified since MCell was started
-                    start_time = os.stat ( os.path.join ( mcell.project_settings.project_dir, "start_time.txt" ) ).st_mtime
+                    start_time = os.stat ( os.path.join ( os.path.dirname(bpy.data.filepath), "start_time.txt" ) ).st_mtime
                     print ( "Modification Time of start_time.txt is", start_time )
                     for rxn_output in mcell.rxn_output.rxn_output_list:
                         molecule_name = rxn_output.molecule_name

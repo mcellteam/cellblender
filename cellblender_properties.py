@@ -232,10 +232,20 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 
 #Panel Properties:
 
+class MCellScratchPanelProperty(bpy.types.PropertyGroup):
+    show_all_icons = BoolProperty(
+        name="Show All Icons",
+        description="Show all Blender icons and their names",
+        default=False)
+    print_all_icons = BoolProperty(
+        name="Print All Icon Names",
+        description="Print all Blender icon names (helpful for searching)",
+        default=False)
+
 class MCellProjectPanelProperty(bpy.types.PropertyGroup):
     base_name = StringProperty(
         name="Project Base Name", default="cellblender_project")
-    project_dir = StringProperty(name="Project Directory")
+    # project_dir = StringProperty(name="Project Directory")
     mcell_binary = StringProperty(name="MCell Binary")
 
 
@@ -722,6 +732,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         name="CellBlender Project Settings")
     molecule_glyphs = PointerProperty(
         type=MCellMoleculeGlyphsPanelProperty, name="Molecule Shapes")
+    scratch_settings = PointerProperty(
+        type=MCellScratchPanelProperty, name="CellBlender Scratch Settings")
 
 
 # CellBlender Properties Class for Objects:

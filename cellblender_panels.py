@@ -66,15 +66,59 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         row.label(
             text="MCell Binary: "+mcell.project_settings.mcell_binary)
         row = layout.row()
-        row.operator("mcell.set_project_dir",
-                     text="Set CellBlender Project Directory", icon='FILESEL')
-        row = layout.row()
-        row.label(
-            text="Project Directory: "+mcell.project_settings.project_dir)
+        #row.operator("mcell.set_project_dir",
+        #             text="Set CellBlender Project Directory", icon='FILESEL')
+        #row = layout.row()
+        # mcell.project_settings.project_dir = os.path.dirname(bpy.data.filepath)
+        # row.label(text="Project Directory: "+mcell.project_settings.project_dir)
+
+
+        if bpy.data.filepath == '':
+            row.label(text="No Project Directory: Use File/Save or File/SaveAs", icon='UNPINNED')
+        else:
+            row.label(text="Project Directory: "+os.path.dirname(bpy.data.filepath), icon='FILE_TICK')
+            
         row = layout.row()
         layout.prop(mcell.project_settings, "base_name")
-        layout.separator()
+
+
+
+
+class MCELL_PT_scratch(bpy.types.Panel):
+    bl_label = "CellBlender - Scratch Panel (testing)"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mcell = context.scene.mcell
+
         row = layout.row()
+        col = row.column(align=True)
+        col.prop(mcell.scratch_settings, "show_all_icons")
+        col = row.column(align=True)
+        col.prop(mcell.scratch_settings, "print_all_icons")
+
+        if mcell.scratch_settings.show_all_icons:
+            all_icons = bpy.types.UILayout.bl_rna.functions['prop'].parameters['icon'].enum_items.keys()
+            layout.separator()
+            row = layout.row()
+            for icon in all_icons:
+                row = layout.row()
+                row.label ( icon=icon, text=icon )
+
+        if mcell.scratch_settings.print_all_icons:
+            all_icons = bpy.types.UILayout.bl_rna.functions['prop'].parameters['icon'].enum_items.keys()
+            print ( "Icon list has ", len(all_icons), "icons" )
+            print ( "Icon names:" )
+            print ( all_icons )
+            # mcell.scratch_settings.print_all_icons = False
+            # AttributeError: Writing to ID classes in this context is not allowed:
+            #   Scene, Scene datablock, error setting MCellScratchPanelProperty.print_all_icons
+
+
 
 
 class MCELL_PT_export_project(bpy.types.Panel):
@@ -106,7 +150,7 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
         layout = self.layout
         mcell = context.scene.mcell
         main_mdl = ("%s.main.mdl" %
-                    os.path.join(mcell.project_settings.project_dir,
+                    os.path.join(os.path.dirname(bpy.data.filepath),
                     mcell.project_settings.base_name))
 
         row = layout.row()
@@ -116,7 +160,7 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
         # file present.
         if not mcell.project_settings.mcell_binary:
             row.label(text="Set an MCell binary", icon='ERROR')
-        elif not mcell.project_settings.project_dir:
+        elif not os.path.dirname(bpy.data.filepath):
             row.label(text="Set a project directory", icon='ERROR')
         elif not os.path.isfile(main_mdl):
             row.label(text="Export the project", icon='ERROR')
