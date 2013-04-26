@@ -312,6 +312,8 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
         row.label(text="Surface Area: %.5g" % (mcell.meshalyzer.area))
         row = layout.row()
         row.label(text="Volume: %.5g" % (mcell.meshalyzer.volume))
+        row = layout.row()
+        row.label(text="SA/V Ratio: %.5g" % (mcell.meshalyzer.sav_ratio))
 
         row = layout.row()
         row.label(text="Mesh Topology:")
