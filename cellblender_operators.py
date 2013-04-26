@@ -1204,9 +1204,10 @@ def run_sim(seed):
     # Log filename will be log.year-month-day_hour:minute_seed.txt
     # (e.g. log.2013-03-12_11:45_1.txt)
     time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
-    log_filepath = "%s%s" % (project_dir, "log.%s_%d.txt" % (time_now, seed))
-    error_filepath = "%s%s" % (
-        project_dir, "error.%s_%d.txt" % (time_now, seed))
+    log_filename = "log.%s_%d.txt" % (time_now, seed)
+    error_filename = "error.%s_%d.txt" % (time_now, seed)
+    log_filepath = os.path.join(project_dir, log_filename)
+    error_filepath = os.path.join(project_dir, error_filename)
 
     if mcell.run_simulation.error_file == 'none':
         error_file = subprocess.DEVNULL
