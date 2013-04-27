@@ -52,7 +52,7 @@ def save(operator, context, filepath=""):
         as MDL.
 
     """
-
+    print ( "export_mcell_mdl.py/save()" )
     with open(filepath, "w", encoding="utf8", newline="\n") as out_file:
         filedir = os.path.dirname(filepath)
         save_wrapper(context, out_file, filedir)

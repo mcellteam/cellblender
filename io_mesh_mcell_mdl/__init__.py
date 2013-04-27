@@ -81,20 +81,25 @@ class ExportMCellMDL(bpy.types.Operator, ExportHelper):
     bl_idname = "export_mdl_mesh.mdl"
     bl_label = "Export MCell MDL"
 
+    print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL initialization" )
+
     filename_ext = ".mdl"
     filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
 
     @classmethod
     def poll(cls, context):
+        print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL.poll()" )
         return context.active_object != None
 
     def execute(self, context):
+        print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL.execute()" )
         filepath = self.filepath
         filepath = bpy.path.ensure_ext(filepath, self.filename_ext)
         from . import export_mcell_mdl
         return export_mcell_mdl.save(self, context, **self.as_keywords(ignore=("check_existing", "filter_glob")))
 
     def draw(self, context):
+        print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL.draw()" )
         layout = self.layout
 
 

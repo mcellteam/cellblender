@@ -1263,7 +1263,6 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         print ( "Starting MCell ... create start_time.txt file:" )
-        # Force the project directory to be where the .blend file lives
         with open ( os.path.join ( os.path.dirname(bpy.data.filepath), "start_time.txt" ), "w" ) as start_time_file:
             start_time_file.write ( "Started MCell at: " + (str(time.ctime())) + "\n" )
         self.report({'INFO'}, "Simulation Running")
@@ -1280,6 +1279,69 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_read_viz_data(bpy.types.Operator):
+    bl_idname = "mcell.read_viz_data"
+    bl_label = "Read Viz Data"
+    bl_description = "Load the molecule visualization data into Blender"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        # Called when the molecule files are actually to be read
+        #  (when the "Read Molecule Files" button is pushed)
+        print ("MCELL_OT_read_viz_data.execute() called")
+        # self.report({'INFO'}, "Reading Visualization Data")
+
+        mcell = context.scene.mcell
+        #if (os.path.isdir(self.filepath)):
+        #    mol_file_dir = self.filepath
+        #else:
+        #    mol_file_dir = os.path.dirname(self.filepath)
+
+        # Force the mol_viz directory to be where the .blend file lives plus "viz_data"
+        mol_file_dir = os.path.join ( os.path.dirname(bpy.data.filepath), "viz_data" )
+
+        mol_file_list = glob.glob ( os.path.join ( mol_file_dir, "*" ) )
+        mol_file_list.sort()
+        
+        print ( "Getting molecules from", mol_file_dir )
+
+        # Reset mol_file_list to empty
+        for i in range(mcell.mol_viz.mol_file_num-1, -1, -1):
+            mcell.mol_viz.mol_file_list.remove(i)
+
+        mcell.mol_viz.mol_file_dir = mol_file_dir
+        i = 0
+        for mol_file_name in mol_file_list:
+            new_item = mcell.mol_viz.mol_file_list.add()
+            new_item.name = os.path.basename(mol_file_name)
+            i += 1
+
+        mcell.mol_viz.mol_file_num = len(mcell.mol_viz.mol_file_list)
+        mcell.mol_viz.mol_file_stop_index = mcell.mol_viz.mol_file_num-1
+        mcell.mol_viz.mol_file_index = 0
+
+        mcell.mol_viz.color_index = 0
+        if len(mcell.mol_viz.color_list) == 0:
+            # Create a list of colors to be assigned to the glyphs
+            for i in range(8):
+                mcell.mol_viz.color_list.add()
+            mcell.mol_viz.color_list[0].vec = [0.8, 0.0, 0.0]
+            mcell.mol_viz.color_list[1].vec = [0.0, 0.8, 0.0]
+            mcell.mol_viz.color_list[2].vec = [0.0, 0.0, 0.8]
+            mcell.mol_viz.color_list[3].vec = [0.0, 0.8, 0.8]
+            mcell.mol_viz.color_list[4].vec = [0.8, 0.0, 0.8]
+            mcell.mol_viz.color_list[5].vec = [0.8, 0.8, 0.0]
+            mcell.mol_viz.color_list[6].vec = [1.0, 1.0, 1.0]
+            mcell.mol_viz.color_list[7].vec = [0.0, 0.0, 0.0]
+
+        print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list))
+        context.scene.frame_end = len(mcell.mol_viz.mol_file_list)
+        mol_viz_update(self, context)
+        return {'FINISHED'}
+
+
+
+
 class MCELL_OT_export_project(bpy.types.Operator):
     bl_idname = "mcell.export_project"
     bl_label = "Export CellBlender Project"
@@ -1287,64 +1349,25 @@ class MCELL_OT_export_project(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
+        print ( "MCELL_OT_export_project.execute()" )
         mcell = context.scene.mcell
 
         # Force the project directory to be where the .blend file lives
-
         model_objects_update(context)
+
+        print ( "MCELL_OT_export_project.execute() before if" )
+        # These two branches of the if statement seem identical ?
         if mcell.export_project.export_format == 'mcell_mdl_unified':
-            filepath = os.path.dirname(bpy.data.filepath) + "/" + \
-                mcell.project_settings.base_name + ".main.mdl"
+            filepath = os.path.join ( os.path.dirname(bpy.data.filepath), (mcell.project_settings.base_name + ".main.mdl") )
             bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
         elif mcell.export_project.export_format == 'mcell_mdl_modular':
-            filepath = os.path.dirname(bpy.data.filepath) + "/" + \
-                mcell.project_settings.base_name + ".main.mdl"
+            filepath = os.path.join ( os.path.dirname(bpy.data.filepath), (mcell.project_settings.base_name + ".main.mdl") )
             bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
 
-        return {'FINISHED'}
-
-
-'''
-class MCELL_OT_set_project_dir(bpy.types.Operator):
-    bl_idname = "mcell.set_project_dir"
-    bl_label = "Set Project Directory"
-    bl_description = "Set CellBlender Project Directory"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
-    directory = bpy.props.StringProperty(subtype='DIR_PATH')
-
-    def __init__(self):
-        self.directory = os.path.dirname(bpy.data.filepath)
-
-
-    # Note: use classmethod "poll" to determine when
-    # runability of operator is valid
-    #
-    #    @classmethod
-    #    def poll(cls, context):
-    #        return context.object is not None
-
-    def execute(self, context):
-
-        mcell = context.scene.mcell
-        if (os.path.isdir(self.filepath)):
-            dir = self.filepath
-        else:
-            dir = os.path.dirname(self.filepath)
-
-        # Reset mol_file_list to empty
-        for i in range(mcell.mol_viz.mol_file_num-1, -1, -1):
-            mcell.mol_viz.mol_file_list.remove(i)
-
-        mcell.mol_viz.mol_file_name = ""
+        print ( "MCELL_OT_export_project.execute() after if with filepath", filepath )
 
         return {'FINISHED'}
 
-    def invoke(self, context, event):
-        context.window_manager.fileselect_add(self)
-        return {'RUNNING_MODAL'}
-'''
 
 
 class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
@@ -1367,14 +1390,23 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     #        return context.object is not None
 
     def execute(self, context):
+        # Called when the molecule files are actually to be read
+        #  (when the "Read Molecule Files" button is pushed)
+        print ("MCELL_OT_set_mol_viz_dir.execute() called")
 
         mcell = context.scene.mcell
-        if (os.path.isdir(self.filepath)):
-            mol_file_dir = self.filepath
-        else:
-            mol_file_dir = os.path.dirname(self.filepath)
-        mol_file_list = glob.glob(mol_file_dir + "/*")
+        #if (os.path.isdir(self.filepath)):
+        #    mol_file_dir = self.filepath
+        #else:
+        #    mol_file_dir = os.path.dirname(self.filepath)
+
+        # Force the mol_viz directory to be where the .blend file lives plus "viz_data"
+        mol_file_dir = os.path.join ( os.path.dirname(bpy.data.filepath), "viz_data" )
+
+        mol_file_list = glob.glob ( os.path.join ( mol_file_dir, "*" ) )
         mol_file_list.sort()
+        
+        print ( "Getting molecules from", mol_file_dir )
 
         # Reset mol_file_list to empty
         for i in range(mcell.mol_viz.mol_file_num-1, -1, -1):
@@ -1411,6 +1443,9 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
+        # Called when the file selection panel is requested
+        #  (when the "Set Molecule Viz Directory" button is pushed)
+        print ("MCELL_OT_set_mol_viz_dir.invoke() called")
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
@@ -1460,7 +1495,7 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
             mod_name = plot_module.get_name()
             if mod_name == plot_button_label:
                 # Plot the data via this module
-                print ( "Preparing to call %s" % (mod_name) )
+                # print ( "Preparing to call %s" % (mod_name) )
                 # Force the project directory to be where the .blend file lives
                 data_path = os.path.dirname(bpy.data.filepath)
                 data_path = os.path.join(data_path,"react_data")
@@ -1472,7 +1507,7 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                 if mcell.rxn_output.rxn_output_list:
                     # Use the start_time.txt file to find files modified since MCell was started
                     start_time = os.stat ( os.path.join ( os.path.dirname(bpy.data.filepath), "start_time.txt" ) ).st_mtime
-                    print ( "Modification Time of start_time.txt is", start_time )
+                    # print ( "Modification Time of start_time.txt is", start_time )
                     for rxn_output in mcell.rxn_output.rxn_output_list:
                         molecule_name = rxn_output.molecule_name
                         object_name = rxn_output.object_name

@@ -164,6 +164,7 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
             row.label(text="Set a project directory", icon='ERROR')
         elif not os.path.isfile(main_mdl):
             row.label(text="Export the project", icon='ERROR')
+            row.operator("mcell.export_project", text="Export CellBlender Project", icon='EXPORT')
         else:
             row = layout.row(align=True)
             row.prop(mcell.run_simulation, "start_seed")
@@ -174,9 +175,32 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
             row.prop(mcell.run_simulation, "log_file")
             row = layout.row()
             row.prop(mcell.run_simulation, "error_file")
+
+
+            '''
+            row = layout.row()
+            col = row.column()
+            col.prop(mcell.export_project, "export_format")
+            col = row.column()
+            col.operator("mcell.export_project", text="Export CellBlender Project",
+                         icon='EXPORT')
+
             row = layout.row()
             row.operator("mcell.run_simulation", text="Run Simulation",
                          icon='COLOR_RED')
+            row.operator("mcell.read_viz_data", text="Read Viz Data",
+                         icon='COLOR_GREEN')
+            '''
+
+            row = layout.row()
+
+            col = row.column()
+            col.prop(mcell.export_project, "export_format")
+            col.operator("mcell.run_simulation", text="Run Simulation", icon='COLOR_RED')
+            
+            col = row.column()
+            col.operator("mcell.export_project", text="Export CellBlender Project", icon='EXPORT')
+            col.operator("mcell.read_viz_data", text="Read Viz Data", icon='COLOR_GREEN')
 
 
 class MCELL_PT_model_objects(bpy.types.Panel):
