@@ -1359,10 +1359,12 @@ class MCELL_OT_export_project(bpy.types.Operator):
         # These two branches of the if statement seem identical ?
         if mcell.export_project.export_format == 'mcell_mdl_unified':
             filepath = os.path.join ( os.path.dirname(bpy.data.filepath), (mcell.project_settings.base_name + ".main.mdl") )
-            bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
+            bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
         elif mcell.export_project.export_format == 'mcell_mdl_modular':
             filepath = os.path.join ( os.path.dirname(bpy.data.filepath), (mcell.project_settings.base_name + ".main.mdl") )
-            bpy.ops.export_mdl_mesh.mdl('INVOKE_DEFAULT', filepath=filepath)
+            bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+
+        self.report({'INFO'}, "Project Exported")
 
         print ( "MCELL_OT_export_project.execute() after if with filepath", filepath )
 
