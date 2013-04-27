@@ -35,8 +35,8 @@ import os
 import random
 import re
 import subprocess
-import datetime
-import multiprocessing
+#import datetime
+#import multiprocessing
 
 import cellblender
 
@@ -1191,68 +1191,68 @@ class MCELL_OT_set_mcell_binary(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
 
-def run_sim(seed):
-    """ Run the MCell simulations. """
-
-    mcell = bpy.context.scene.mcell
-    mcell_binary = mcell.project_settings.mcell_binary
-    # Force the project directory to be where the .blend file lives
-    project_dir = os.path.dirname(bpy.data.filepath)
-    base_name = mcell.project_settings.base_name
-    mdl_filepath = '%s.main.mdl' % (base_name)
-    mdl_filepath = os.path.join ( project_dir, mdl_filepath )
-    # Log filename will be log.year-month-day_hour:minute_seed.txt
-    # (e.g. log.2013-03-12_11:45_1.txt)
-    time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
-    log_filename = "log.%s_%d.txt" % (time_now, seed)
-    error_filename = "error.%s_%d.txt" % (time_now, seed)
-    log_filepath = os.path.join(project_dir, log_filename)
-    error_filepath = os.path.join(project_dir, error_filename)
-
-    if mcell.run_simulation.error_file == 'none':
-        error_file = subprocess.DEVNULL
-    elif mcell.run_simulation.error_file == 'console':
-        error_file = None
-
-    if mcell.run_simulation.log_file == 'none':
-        log_file = subprocess.DEVNULL
-    elif mcell.run_simulation.log_file == 'console':
-        log_file = None
-
-    # Both output and error log file
-    print ( "Running", mcell_binary, "with", mdl_filepath )
-    subprocess_cwd = os.path.dirname(mdl_filepath)
-    print ( "  Should run from cwd =", subprocess_cwd )
-    if (mcell.run_simulation.log_file == 'file' and
-            mcell.run_simulation.error_file == 'file'):
-        with open(log_filepath, "w") as log_file, open(
-                error_filepath, "w") as error_file:
-            subprocess.call(
-                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-                cwd=subprocess_cwd,
-                stdout=log_file, stderr=error_file)
-    # Only output log file
-    elif mcell.run_simulation.log_file == 'file':
-        with open(log_filepath, "w") as log_file:
-            subprocess.call(
-                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-                cwd=subprocess_cwd,
-                stdout=log_file, stderr=error_file)
-    # Only error log file
-    elif mcell.run_simulation.error_file == 'file':
-        with open(error_filepath, "w") as error_file:
-            subprocess.call(
-                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-                cwd=subprocess_cwd,
-                stdout=log_file, stderr=error_file)
-    # Neither error nor output log
-    else:
-        subprocess.call(
-            [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-            cwd=subprocess_cwd,
-            stdout=log_file, stderr=error_file)
+#def run_sim(seed):
+#    """ Run the MCell simulations. """
+#
+#    mcell = bpy.context.scene.mcell
+#    mcell_binary = mcell.project_settings.mcell_binary
+#    # Force the project directory to be where the .blend file lives
+#    project_dir = os.path.dirname(bpy.data.filepath)
+#    base_name = mcell.project_settings.base_name
+#    mdl_filepath = '%s.main.mdl' % (base_name)
+#    mdl_filepath = os.path.join ( project_dir, mdl_filepath )
+#    # Log filename will be log.year-month-day_hour:minute_seed.txt
+#    # (e.g. log.2013-03-12_11:45_1.txt)
+#    time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
+#    log_filepath = "%s%s" % (project_dir, "log.%s_%d.txt" % (time_now, seed))
+#    error_filepath = "%s%s" % (
+#        project_dir, "error.%s_%d.txt" % (time_now, seed))
+#
+#    if mcell.run_simulation.error_file == 'none':
+#        error_file = subprocess.DEVNULL
+#    elif mcell.run_simulation.error_file == 'console':
+#        error_file = None
+#
+#    if mcell.run_simulation.log_file == 'none':
+#        log_file = subprocess.DEVNULL
+#    elif mcell.run_simulation.log_file == 'console':
+#        log_file = None
+#
+#    # Both output and error log file
+#    print ( "Running", mcell_binary, "with", mdl_filepath )
+#    subprocess_cwd = os.path.dirname(mdl_filepath)
+#    print ( "  Should run from cwd =", subprocess_cwd )
+#    if (mcell.run_simulation.log_file == 'file' and
+#            mcell.run_simulation.error_file == 'file'):
+#        with open(log_filepath, "w") as log_file, open(
+#                error_filepath, "w") as error_file:
+#            subprocess.call(
+#                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+#                cwd=subprocess_cwd,
+#                stdout=log_file, stderr=error_file)
+#    # Only output log file
+#    elif mcell.run_simulation.log_file == 'file':
+#        with open(log_filepath, "w") as log_file:
+#            subprocess.call(
+#                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+#                cwd=subprocess_cwd,
+#                stdout=log_file, stderr=error_file)
+#    # Only error log file
+#    elif mcell.run_simulation.error_file == 'file':
+#        with open(error_filepath, "w") as error_file:
+#            subprocess.call(
+#                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+#                cwd=subprocess_cwd,
+#                stdout=log_file, stderr=error_file)
+#    # Neither error nor output log
+#    else:
+#        subprocess.call(
+#            [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+#            cwd=subprocess_cwd,
+#            stdout=log_file, stderr=error_file)
 
 import time
+
 
 class MCELL_OT_run_simulation(bpy.types.Operator):
     bl_idname = "mcell.run_simulation"
@@ -1261,20 +1261,36 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        mcell = context.scene.mcell
-        print ( "Starting MCell ... create start_time.txt file:" )
-        with open ( os.path.join ( os.path.dirname(bpy.data.filepath), "start_time.txt" ), "w" ) as start_time_file:
-            start_time_file.write ( "Started MCell at: " + (str(time.ctime())) + "\n" )
-        self.report({'INFO'}, "Simulation Running")
-        start = mcell.run_simulation.start_seed
-        end = mcell.run_simulation.end_seed + 1
-        mcell_processes = mcell.run_simulation.mcell_processes
 
-        # Create a pool of mcell processes.
-        # NOTE: There could very well be something wrong or inneficient about
-        # this implementation, and it should be reviewed.
-        pool = multiprocessing.Pool(processes=mcell_processes)
-        pool.map_async(run_sim, range(start, end))
+        mcell = context.scene.mcell
+        start_str = str(mcell.run_simulation.start_seed)
+        end_str = str(mcell.run_simulation.end_seed + 1)
+        mcell_processes_str = str(mcell.run_simulation.mcell_processes)
+        mcell_binary = mcell.project_settings.mcell_binary
+        # Force the project directory to be where the .blend file lives
+        project_dir = os.path.dirname(bpy.data.filepath)
+        base_name = mcell.project_settings.base_name
+        error_file_option = mcell.run_simulation.error_file
+        log_file_option = mcell.run_simulation.log_file
+        script_dir_path = os.path.dirname(os.path.realpath(__file__))
+        script_file_path = os.path.join(script_dir_path, "run_simulations.py")
+
+        print("Starting MCell ... create start_time.txt file:")
+        with open(os.path.join(os.path.dirname(bpy.data.filepath),
+                  "start_time.txt"), "w") as start_time_file:
+            start_time_file.write(
+                "Started MCell at: " + (str(time.ctime())) + "\n")
+
+        # We have to create a new subprocess that in turn creates a
+        # multiprocessing pool, instead of directly creating it here, because
+        # the multiprocessing package requires that the __main__ module be
+        # importable by the children.
+
+        subprocess.Popen([
+            script_file_path, mcell_binary, start_str, end_str, project_dir,
+            base_name, error_file_option, log_file_option,
+            mcell_processes_str], stdout=None, stderr=None)
+        self.report({'INFO'}, "Simulation Running")
 
         return {'FINISHED'}
 
