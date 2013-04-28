@@ -1354,6 +1354,24 @@ class MCELL_OT_clear_run_list(bpy.types.Operator):
         return {'FINISHED'}
 
 
+@persistent
+def clear_run_list(context):
+    """ Clear processes_list when loading a blend.
+
+    Data in simulation_popen_list can not be saved with the blend, so we need
+    to clear the processes_list upon reload so the two aren't out of sync.
+
+    """
+
+    if not context:
+        context = bpy.context
+
+    processes_list = context.scene.mcell.run_simulation.processes_list
+
+    if not cellblender.simulation_popen_list:
+        processes_list.clear()
+
+
 class MCELL_OT_read_viz_data(bpy.types.Operator):
     bl_idname = "mcell.read_viz_data"
     bl_label = "Read Viz Data"

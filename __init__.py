@@ -179,6 +179,8 @@ if len(bpy.app.handlers.frame_change_pre) == 0:
 
 if len(bpy.app.handlers.load_post) == 0:
     bpy.app.handlers.load_post.append(
+        cellblender_operators.clear_run_list)
+    bpy.app.handlers.load_post.append(
         cellblender_operators.model_objects_update)
 
 if len(bpy.app.handlers.save_pre) == 0:
