@@ -139,6 +139,22 @@ class MCELL_PT_export_project(bpy.types.Panel):
                      icon='FILESEL')
 
 
+class MCELL_UL_run_simulation(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        
+        sp = cellblender.simulation_popen_list[index]
+        # Simulations are still running
+        if sp.poll() is None:
+            layout.label(item.name, icon='POSE_DATA')
+        # Simulations have failed or were killed
+        elif sp.returncode != 0:
+            layout.label(item.name, icon='ERROR')
+        # Simulations have finished
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+
+
 class MCELL_PT_run_simulatin(bpy.types.Panel):
     bl_label = "CellBlender - Run Simulation"
     bl_space_type = "PROPERTIES"
@@ -201,6 +217,16 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
             col = row.column()
             col.operator("mcell.export_project", text="Export CellBlender Project", icon='EXPORT')
             col.operator("mcell.read_viz_data", text="Read Viz Data", icon='COLOR_GREEN')
+
+            if mcell.run_simulation.processes_list and cellblender.simulation_popen_list:
+                row = layout.row()
+                row.label(text="Sets of MCell Processes:", icon='FORCE_LENNARDJONES')
+                row = layout.row()
+                row.template_list("MCELL_UL_run_simulation", "run_simulation", mcell.run_simulation,
+                                  "processes_list", mcell.run_simulation, "active_process_index",
+                                  rows=2)
+                row = layout.row()
+                row.operator("mcell.clear_run_list")
 
 
 class MCELL_PT_model_objects(bpy.types.Panel):

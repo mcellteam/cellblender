@@ -49,6 +49,7 @@ cellblender_info = {
     "cellblender_plotting_modules": []
 }
 
+simulation_popen_list = []
 
 
 import hashlib

@@ -1263,8 +1263,8 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
-        start_str = str(mcell.run_simulation.start_seed)
-        end_str = str(mcell.run_simulation.end_seed + 1)
+        start = mcell.run_simulation.start_seed
+        end = mcell.run_simulation.end_seed
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.project_settings.mcell_binary
         # Force the project directory to be where the .blend file lives
@@ -1274,6 +1274,13 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
         log_file_option = mcell.run_simulation.log_file
         script_dir_path = os.path.dirname(os.path.realpath(__file__))
         script_file_path = os.path.join(script_dir_path, "run_simulations.py")
+
+        processes_list = mcell.run_simulation.processes_list
+        processes_list.add()
+        mcell.run_simulation.active_process_index = len(
+            mcell.run_simulation.processes_list)-1
+        simulation_process = processes_list[
+            mcell.run_simulation.active_process_index]
 
         print("Starting MCell ... create start_time.txt file:")
         with open(os.path.join(os.path.dirname(bpy.data.filepath),
@@ -1285,12 +1292,61 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
         # multiprocessing pool, instead of directly creating it here, because
         # the multiprocessing package requires that the __main__ module be
         # importable by the children.
-
-        subprocess.Popen([
-            script_file_path, mcell_binary, start_str, end_str, project_dir,
-            base_name, error_file_option, log_file_option,
+        sp = subprocess.Popen([
+            script_file_path, mcell_binary, str(start), str(end + 1),
+            project_dir, base_name, error_file_option, log_file_option,
             mcell_processes_str], stdout=None, stderr=None)
         self.report({'INFO'}, "Simulation Running")
+
+        # This is a hackish workaround since we can't return arbitrary objects
+        # from operators or store arbitrary objects in collection properties,
+        # and we need to keep track of the progress of the subprocess objects
+        # in cellblender_panels.
+        cellblender.simulation_popen_list.append(sp)
+
+        #mcell.run_simulation.pid = sp.pid
+        if end-start == 0:
+            simulation_process.name = "PID: %d, MDL: %s.main.mdl, Seed: %d" % (
+                sp.pid, base_name, start)
+        else:
+            simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
+                                       "Seeds: %d-%d" % (sp.pid, base_name,
+                                                         start, end))
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_clear_run_list(bpy.types.Operator):
+    bl_idname = "mcell.clear_run_list"
+    bl_label = "Clear Completed MCell Runs"
+    bl_description = "Clear the list of completed and failed MCell runs"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        # The collection property of subprocesses
+        processes_list = mcell.run_simulation.processes_list
+        # A list holding actual subprocess objects
+        simulation_popen_list = cellblender.simulation_popen_list
+        sim_list_length = len(simulation_popen_list)
+        idx = 0
+        ctr = 0
+
+        while ctr < sim_list_length:
+            ctr += 1
+            sp = simulation_popen_list[idx]
+            # Simulation set is still running. Leave it in the collection
+            # property and list of subprocess objects.
+            if sp.poll() is None:
+                idx += 1
+            # Simulation set has failed or finished. Remove it from
+            # collection property and the list of subprocess objects.
+            else:
+                processes_list.remove(idx)
+                simulation_popen_list.pop(idx)
+                mcell.run_simulation.active_process_index -= 1
+                if (mcell.run_simulation.active_process_index < 0):
+                    mcell.run_simulation.active_process_index = 0
 
         return {'FINISHED'}
 

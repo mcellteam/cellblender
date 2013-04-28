@@ -258,6 +258,11 @@ class MCellExportProjectPanelProperty(bpy.types.PropertyGroup):
                                  default='mcell_mdl_modular')
 
 
+class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
+    name = StringProperty(name="Simulation Runner Process")
+    #pid = IntProperty(name="PID")
+
+
 class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
     start_seed = IntProperty(name="Start Seed", default=1, min=1)
     end_seed = IntProperty(name="End Seed", default=1, min=1)
@@ -281,6 +286,11 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
     error_file = EnumProperty(items=error_file_enum,
                               name="Error Log",
                               default='console')
+    processes_list = CollectionProperty(
+        type=MCellRunSimulationProcessesProperty,
+        name="Simulation Runner Processes")
+    active_process_index = IntProperty(
+        name="Active Simulation Runner Process Index", default=0)
 
 
 class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
