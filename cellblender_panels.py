@@ -69,19 +69,22 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         #row.operator("mcell.set_project_dir",
         #             text="Set CellBlender Project Directory", icon='FILESEL')
         #row = layout.row()
-        # mcell.project_settings.project_dir = os.path.dirname(bpy.data.filepath)
-        # row.label(text="Project Directory: "+mcell.project_settings.project_dir)
-
+        # mcell.project_settings.project_dir = os.path.dirname(
+        #     bpy.data.filepath)
+        # row.label(text="Project Directory: " +
+        #           mcell.project_settings.project_dir)
 
         if bpy.data.filepath == '':
-            row.label(text="No Project Directory: Use File/Save or File/SaveAs", icon='UNPINNED')
+            row.label(
+                text="No Project Directory: Use File/Save or File/SaveAs",
+                icon='UNPINNED')
         else:
-            row.label(text="Project Directory: "+os.path.dirname(bpy.data.filepath), icon='FILE_TICK')
-            
+            row.label(
+                text="Project Directory: "+os.path.dirname(bpy.data.filepath),
+                icon='FILE_TICK')
+
         row = layout.row()
         layout.prop(mcell.project_settings, "base_name")
-
-
 
 
 class MCELL_PT_scratch(bpy.types.Panel):
@@ -102,23 +105,24 @@ class MCELL_PT_scratch(bpy.types.Panel):
         col.prop(mcell.scratch_settings, "print_all_icons")
 
         if mcell.scratch_settings.show_all_icons:
-            all_icons = bpy.types.UILayout.bl_rna.functions['prop'].parameters['icon'].enum_items.keys()
+            all_icons = bpy.types.UILayout.bl_rna.functions[
+                'prop'].parameters['icon'].enum_items.keys()
             layout.separator()
             row = layout.row()
             for icon in all_icons:
                 row = layout.row()
-                row.label ( icon=icon, text=icon )
+                row.label(icon=icon, text=icon)
 
         if mcell.scratch_settings.print_all_icons:
-            all_icons = bpy.types.UILayout.bl_rna.functions['prop'].parameters['icon'].enum_items.keys()
-            print ( "Icon list has ", len(all_icons), "icons" )
-            print ( "Icon names:" )
-            print ( all_icons )
+            all_icons = bpy.types.UILayout.bl_rna.functions[
+                'prop'].parameters['icon'].enum_items.keys()
+            print("Icon list has ", len(all_icons), "icons")
+            print("Icon names:")
+            print(all_icons)
             # mcell.scratch_settings.print_all_icons = False
-            # AttributeError: Writing to ID classes in this context is not allowed:
-            #   Scene, Scene datablock, error setting MCellScratchPanelProperty.print_all_icons
-
-
+            # AttributeError: Writing to ID classes in this context is not
+            # allowed: Scene, Scene datablock, error setting
+            # MCellScratchPanelProperty.print_all_icons
 
 
 class MCELL_PT_export_project(bpy.types.Panel):
@@ -142,7 +146,7 @@ class MCELL_PT_export_project(bpy.types.Panel):
 class MCELL_UL_run_simulation(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
-        
+
         sp = cellblender.simulation_popen_list[index]
         # Simulations are still running
         if sp.poll() is None:
@@ -180,7 +184,9 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
             row.label(text="Set a project directory", icon='ERROR')
         elif not os.path.isfile(main_mdl):
             row.label(text="Export the project", icon='ERROR')
-            row.operator("mcell.export_project", text="Export CellBlender Project", icon='EXPORT')
+            row.operator(
+                "mcell.export_project",
+                text="Export CellBlender Project", icon='EXPORT')
         else:
             row = layout.row(align=True)
             row.prop(mcell.run_simulation, "start_seed")
@@ -192,14 +198,13 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
             row = layout.row()
             row.prop(mcell.run_simulation, "error_file")
 
-
             '''
             row = layout.row()
             col = row.column()
             col.prop(mcell.export_project, "export_format")
             col = row.column()
-            col.operator("mcell.export_project", text="Export CellBlender Project",
-                         icon='EXPORT')
+            col.operator("mcell.export_project",
+                         text="Export CellBlender Project", icon='EXPORT')
 
             row = layout.row()
             row.operator("mcell.run_simulation", text="Run Simulation",
@@ -212,18 +217,26 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
 
             col = row.column()
             col.prop(mcell.export_project, "export_format")
-            col.operator("mcell.run_simulation", text="Run Simulation", icon='COLOR_RED')
-            
-            col = row.column()
-            col.operator("mcell.export_project", text="Export CellBlender Project", icon='EXPORT')
-            col.operator("mcell.read_viz_data", text="Read Viz Data", icon='COLOR_GREEN')
+            col.operator("mcell.run_simulation", text="Run Simulation",
+                         icon='COLOR_RED')
 
-            if mcell.run_simulation.processes_list and cellblender.simulation_popen_list:
+            col = row.column()
+            col.operator(
+                "mcell.export_project", text="Export CellBlender Project",
+                icon='EXPORT')
+            col.operator(
+                "mcell.read_viz_data", text="Read Viz Data",
+                icon='COLOR_GREEN')
+
+            if (mcell.run_simulation.processes_list and
+                    cellblender.simulation_popen_list):
                 row = layout.row()
-                row.label(text="Sets of MCell Processes:", icon='FORCE_LENNARDJONES')
+                row.label(text="Sets of MCell Processes:",
+                          icon='FORCE_LENNARDJONES')
                 row = layout.row()
-                row.template_list("MCELL_UL_run_simulation", "run_simulation", mcell.run_simulation,
-                                  "processes_list", mcell.run_simulation, "active_process_index",
+                row.template_list("MCELL_UL_run_simulation", "run_simulation",
+                                  mcell.run_simulation, "processes_list",
+                                  mcell.run_simulation, "active_process_index",
                                   rows=2)
                 row = layout.row()
                 row.operator("mcell.clear_run_list")
@@ -581,9 +594,9 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
         row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
         row = layout.row()
         col = row.column()
-        col.template_list("MCELL_UL_check_molecule", "define_molecules", mcell.molecules,
-                          "molecule_list", mcell.molecules, "active_mol_index",
-                          rows=2)
+        col.template_list("MCELL_UL_check_molecule", "define_molecules",
+                          mcell.molecules, "molecule_list", mcell.molecules,
+                          "active_mol_index", rows=2)
         col = row.column(align=True)
         col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
         col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
@@ -692,8 +705,8 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
         row = layout.row()
         col = row.column()
         # The template_list for the surface classes themselves
-        col.template_list("MCELL_UL_check_surface_class", "define_surf_class", surf_class,
-                          "surf_class_list", surf_class,
+        col.template_list("MCELL_UL_check_surface_class", "define_surf_class",
+                          surf_class, "surf_class_list", surf_class,
                           "active_surf_class_index", rows=2)
         col = row.column(align=True)
         col.operator("mcell.surface_class_add", icon='ZOOMIN', text="")
@@ -767,17 +780,18 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
             row.label(text="Modified Surface Regions:", icon='FACESEL_HLT')
             row = layout.row()
             col = row.column()
-            col.template_list("MCELL_UL_check_mod_surface_regions", "mod_surf_regions",
-                              mod_surf_regions, "mod_surf_regions_list",
-                              mod_surf_regions,
+            col.template_list("MCELL_UL_check_mod_surface_regions",
+                              "mod_surf_regions", mod_surf_regions,
+                              "mod_surf_regions_list", mod_surf_regions,
                               "active_mod_surf_regions_index", rows=2)
             col = row.column(align=True)
             col.operator("mcell.mod_surf_regions_add", icon='ZOOMIN', text="")
             col.operator("mcell.mod_surf_regions_remove", icon='ZOOMOUT',
                          text="")
             if mod_surf_regions.mod_surf_regions_list:
-                active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
-                    mod_surf_regions.active_mod_surf_regions_index]
+                active_mod_surf_regions = \
+                    mod_surf_regions.mod_surf_regions_list[
+                        mod_surf_regions.active_mod_surf_regions_index]
                 row = layout.row()
                 row.prop_search(active_mod_surf_regions, "surf_class_name",
                                 mcell.surface_classes, "surf_class_list",
@@ -823,10 +837,10 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                       icon='FORCE_LENNARDJONES')
             row = layout.row()
             col = row.column()
-            col.template_list("MCELL_UL_check_molecule_release", "molecule_release",
-                              mcell.release_sites, "mol_release_list",
-                              mcell.release_sites, "active_release_index",
-                              rows=2)
+            col.template_list("MCELL_UL_check_molecule_release",
+                              "molecule_release", mcell.release_sites,
+                              "mol_release_list", mcell.release_sites,
+                              "active_release_index", rows=2)
             col = row.column(align=True)
             col.operator("mcell.release_site_add", icon='ZOOMIN', text="")
             col.operator("mcell.release_site_remove", icon='ZOOMOUT', text="")
@@ -921,7 +935,8 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                 layout.separator()
 
                 row = layout.row()
-                row.label(text="Plot Reaction Data:", icon='FORCE_LENNARDJONES')
+                row.label(text="Plot Reaction Data:",
+                          icon='FORCE_LENNARDJONES')
 
                 row = layout.row()
                 col = row.column()
@@ -931,21 +946,23 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
 
                 row = layout.row()
                 button_num = 0
-                num_columns = len ( cellblender.cellblender_info['cellblender_plotting_modules'] )
+                num_columns = len(cellblender.cellblender_info[
+                    'cellblender_plotting_modules'])
                 if num_columns > 3:
                     num_columns = 2
-                for plot_module in cellblender.cellblender_info['cellblender_plotting_modules']:
+                for plot_module in cellblender.cellblender_info[
+                        'cellblender_plotting_modules']:
                     mod_name = plot_module.get_name()
                     if (button_num % num_columns) == 0:
                         button_num = 0
                         row = layout.row()
                     col = row.column()
-                    col.operator ( "mcell.plot_rxn_output_generic", text=mod_name ).plotter_button_label = mod_name
+                    col.operator("mcell.plot_rxn_output_generic",
+                                 text=mod_name).plotter_button_label = mod_name
                     button_num = button_num + 1
 
                 layout.separator()
                 layout.separator()
-
 
                 row = layout.row()
                 col = row.column()
