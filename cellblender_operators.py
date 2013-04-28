@@ -40,6 +40,7 @@ import subprocess
 
 import cellblender
 
+
 # We use per module class registration/unregistration
 def register():
     bpy.utils.register_module(__name__)
@@ -90,22 +91,22 @@ def inplace_quicksort(v, beg, end):  # collection array, int, int
         Sorts according values in v[i].name
     """
 
-    if ((end - beg) > 0):  # only perform quicksort if we are dealing with > 1 values 
+    if ((end - beg) > 0):  # only perform quicksort if we are dealing with > 1 values
         pivot = v[beg].name  # we set the first item as our initial pivot
-        i,j = beg,end
+        i, j = beg, end
 
         while (j > i):
             while ((v[i].name <= pivot) and (j > i)):
-                i+=1
+                i += 1
             while ((v[j].name > pivot) and (j >= i)):
-                j-=1
+                j -= 1
             if (j > i):
-                v.move(i,j)
-                v.move(j-1,i)
+                v.move(i, j)
+                v.move(j-1, i)
 
         if (not beg == j):
-          v.move(beg,j)
-          v.move(j-1,beg)
+            v.move(beg, j)
+            v.move(j-1, beg)
         inplace_quicksort(v, beg, j-1)
         inplace_quicksort(v, j+1, end)
     return
@@ -124,10 +125,10 @@ def region_update(self, context):
         mcell_obj.regions.status = ""
 
     # Sort the region list
-    inplace_quicksort(reg_list,0,len(reg_list)-1)
+    inplace_quicksort(reg_list, 0, len(reg_list)-1)
 
     act_i = reg_list.find(act_reg_name)
-    mcell_obj.regions.active_reg_index=act_i
+    mcell_obj.regions.active_reg_index = act_i
 
     return
 
@@ -982,8 +983,10 @@ def check_mod_surf_regions(self, context):
         pass
 
     # Format the entry as it will appear in the Modify Surface Regions
-    active_mod_surf_regions.name = "Surface Class: %s   Object: %s   Region: %s" % (
-        surf_class_name, object_name, region_name)
+    active_mod_surf_regions.name = ("Surface Class: %s   Object: %s   "
+                                    "Region: %s" % (
+                                        surf_class_name, object_name,
+                                        region_name))
 
     status = ""
 
@@ -1360,7 +1363,7 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
     def execute(self, context):
         # Called when the molecule files are actually to be read
         #  (when the "Read Molecule Files" button is pushed)
-        print ("MCELL_OT_read_viz_data.execute() called")
+        print("MCELL_OT_read_viz_data.execute() called")
         # self.report({'INFO'}, "Reading Visualization Data")
 
         mcell = context.scene.mcell
@@ -1369,13 +1372,15 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
         #else:
         #    mol_file_dir = os.path.dirname(self.filepath)
 
-        # Force the mol_viz directory to be where the .blend file lives plus "viz_data"
-        mol_file_dir = os.path.join ( os.path.dirname(bpy.data.filepath), "viz_data" )
+        # Force the mol_viz directory to be where the .blend file lives plus
+        # "viz_data"
+        mol_file_dir = os.path.join(os.path.dirname(bpy.data.filepath),
+                                    "viz_data")
 
-        mol_file_list = glob.glob ( os.path.join ( mol_file_dir, "*" ) )
+        mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
         mol_file_list.sort()
-        
-        print ( "Getting molecules from", mol_file_dir )
+
+        print("Getting molecules from", mol_file_dir)
 
         # Reset mol_file_list to empty
         for i in range(mcell.mol_viz.mol_file_num-1, -1, -1):
@@ -1412,8 +1417,6 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
         return {'FINISHED'}
 
 
-
-
 class MCELL_OT_export_project(bpy.types.Operator):
     bl_idname = "mcell.export_project"
     bl_label = "Export CellBlender Project"
@@ -1421,27 +1424,31 @@ class MCELL_OT_export_project(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        print ( "MCELL_OT_export_project.execute()" )
+        print("MCELL_OT_export_project.execute()")
         mcell = context.scene.mcell
 
         # Force the project directory to be where the .blend file lives
         model_objects_update(context)
 
-        print ( "MCELL_OT_export_project.execute() before if" )
+        print("MCELL_OT_export_project.execute() before if")
         # These two branches of the if statement seem identical ?
         if mcell.export_project.export_format == 'mcell_mdl_unified':
-            filepath = os.path.join ( os.path.dirname(bpy.data.filepath), (mcell.project_settings.base_name + ".main.mdl") )
+            filepath = os.path.join(os.path.dirname(bpy.data.filepath),
+                                    (mcell.project_settings.base_name +
+                                    ".main.mdl"))
             bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
         elif mcell.export_project.export_format == 'mcell_mdl_modular':
-            filepath = os.path.join ( os.path.dirname(bpy.data.filepath), (mcell.project_settings.base_name + ".main.mdl") )
+            filepath = os.path.join(os.path.dirname(bpy.data.filepath),
+                                    (mcell.project_settings.base_name +
+                                    ".main.mdl"))
             bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
 
         self.report({'INFO'}, "Project Exported")
 
-        print ( "MCELL_OT_export_project.execute() after if with filepath", filepath )
+        print("MCELL_OT_export_project.execute() after if with filepath",
+              filepath)
 
         return {'FINISHED'}
-
 
 
 class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
@@ -1466,7 +1473,7 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     def execute(self, context):
         # Called when the molecule files are actually to be read
         #  (when the "Read Molecule Files" button is pushed)
-        print ("MCELL_OT_set_mol_viz_dir.execute() called")
+        print("MCELL_OT_set_mol_viz_dir.execute() called")
 
         mcell = context.scene.mcell
         #if (os.path.isdir(self.filepath)):
@@ -1474,13 +1481,15 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
         #else:
         #    mol_file_dir = os.path.dirname(self.filepath)
 
-        # Force the mol_viz directory to be where the .blend file lives plus "viz_data"
-        mol_file_dir = os.path.join ( os.path.dirname(bpy.data.filepath), "viz_data" )
+        # Force the mol_viz directory to be where the .blend file lives plus
+        # "viz_data"
+        mol_file_dir = os.path.join(os.path.dirname(bpy.data.filepath),
+                                    "viz_data")
 
-        mol_file_list = glob.glob ( os.path.join ( mol_file_dir, "*" ) )
+        mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
         mol_file_list.sort()
-        
-        print ( "Getting molecules from", mol_file_dir )
+
+        print("Getting molecules from", mol_file_dir)
 
         # Reset mol_file_list to empty
         for i in range(mcell.mol_viz.mol_file_num-1, -1, -1):
@@ -1519,19 +1528,20 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     def invoke(self, context, event):
         # Called when the file selection panel is requested
         #  (when the "Set Molecule Viz Directory" button is pushed)
-        print ("MCELL_OT_set_mol_viz_dir.invoke() called")
+        print("MCELL_OT_set_mol_viz_dir.invoke() called")
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
 
-def plot_rxns ( plot_command ):
+def plot_rxns(plot_command):
     """ Plot a file """
     mcell = bpy.context.scene.mcell
     # Force the project directory to be where the .blend file lives
     project_dir = os.path.dirname(bpy.data.filepath)
     base_name = mcell.project_settings.base_name
-    print ( "Plotting ", base_name, " with ", plot_command, " at ", project_dir )
-    pid = subprocess.Popen ( plot_command.split(), cwd=os.path.join(project_dir,"react_data") )
+    print("Plotting ", base_name, " with ", plot_command, " at ", project_dir)
+    pid = subprocess.Popen(
+        plot_command.split(), cwd=os.path.join(project_dir, "react_data"))
 
 
 class MCELL_OT_plot_rxn_output_command(bpy.types.Operator):
@@ -1542,8 +1552,8 @@ class MCELL_OT_plot_rxn_output_command(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
-        print ( "Plotting with cmd=", mcell.reactions.plot_command )
-        plot_rxns ( mcell.reactions.plot_command )
+        print("Plotting with cmd=", mcell.reactions.plot_command)
+        plot_rxns(mcell.reactions.plot_command)
         return {'FINISHED'}
 
 
@@ -1552,36 +1562,40 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
     bl_label = "Plot Reactions"
     bl_description = "Plot the reactions using specified plotting package"
     bl_options = {'REGISTER', 'UNDO'}
-    
+
     plotter_button_label = bpy.props.StringProperty()
 
     def execute(self, context):
         mcell = context.scene.mcell
         plot_sep = mcell.rxn_output.plot_layout
-        
+
         combine_seeds = mcell.rxn_output.combine_seeds
-        
+
         plot_button_label = self.plotter_button_label
 
         # Look up the plotting module by its name
 
-        for plot_module in cellblender.cellblender_info['cellblender_plotting_modules']:
+        for plot_module in cellblender.cellblender_info[
+                'cellblender_plotting_modules']:
             mod_name = plot_module.get_name()
             if mod_name == plot_button_label:
                 # Plot the data via this module
-                # print ( "Preparing to call %s" % (mod_name) )
+                # print("Preparing to call %s" % (mod_name))
                 # Force the project directory to be where the .blend file lives
                 data_path = os.path.dirname(bpy.data.filepath)
-                data_path = os.path.join(data_path,"react_data")
+                data_path = os.path.join(data_path, "react_data")
                 plot_spec_string = ""
 
                 settings = mcell.project_settings
 
                 # New plotting approach uses list and modification dates
                 if mcell.rxn_output.rxn_output_list:
-                    # Use the start_time.txt file to find files modified since MCell was started
-                    start_time = os.stat ( os.path.join ( os.path.dirname(bpy.data.filepath), "start_time.txt" ) ).st_mtime
-                    # print ( "Modification Time of start_time.txt is", start_time )
+                    # Use the start_time.txt file to find files modified since
+                    # MCell was started
+                    start_time = os.stat(os.path.join(os.path.dirname(
+                        bpy.data.filepath), "start_time.txt")).st_mtime
+                    # print("Modification Time of start_time.txt is",
+                    #       start_time)
                     for rxn_output in mcell.rxn_output.rxn_output_list:
                         molecule_name = rxn_output.molecule_name
                         object_name = rxn_output.object_name
@@ -1592,29 +1606,37 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                         elif rxn_output.count_location == 'Object':
                             fn = "%s.%s.*.dat" % (molecule_name, object_name)
                         elif rxn_output.count_location == 'Region':
-                            fn = "%s.%s.%s.*.dat" % (molecule_name, object_name, region_name)
-                        if fn != None:
-                            candidate_file_list = glob.glob ( os.path.join ( data_path,fn ) )
-                            # print ( "Candidate file list for %s:" % (fn) )
-                            # print ( "  ", candidate_file_list )
+                            fn = "%s.%s.%s.*.dat" % (molecule_name,
+                                                     object_name, region_name)
+                        if fn is not None:
+                            candidate_file_list = glob.glob(
+                                os.path.join(data_path, fn))
+                            # print("Candidate file list for %s:" % (fn))
+                            # print("  ", candidate_file_list)
                             first_pass = True
                             for f in candidate_file_list:
                                 if os.stat(f).st_mtime > start_time:
-                                    # This file is both in the list and newer than the run time for MCell
+                                    # This file is both in the list and newer
+                                    # than the run time for MCell
                                     base_name = os.path.basename(f)
                                     if combine_seeds:
                                         psep = " "
                                         if first_pass:
                                             psep = plot_sep
                                             first_pass = False
-                                        plot_spec_string = plot_spec_string +   psep   + " title=" + base_name + " f=" + base_name
+                                        plot_spec_string = (
+                                            plot_spec_string + psep +
+                                            " title=" + base_name + " f=" +
+                                            base_name)
                                     else:
-                                        plot_spec_string = plot_spec_string + plot_sep + " title=" + base_name + " f=" + base_name
+                                        plot_spec_string = (
+                                            plot_spec_string + plot_sep +
+                                            " title=" + base_name + " f=" +
+                                            base_name)
 
-                plot_module.plot ( data_path, plot_spec_string )
-                
+                plot_module.plot(data_path, plot_spec_string)
+
         return {'FINISHED'}
-
 
 
 class MCELL_OT_toggle_viz_molecules(bpy.types.Operator):
@@ -2053,7 +2075,7 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
 
         mcell.meshalyzer.volume = volume
         if (not volume == 0.0):
-          mcell.meshalyzer.sav_ratio = area/volume
+            mcell.meshalyzer.sav_ratio = area/volume
 
         mcell.meshalyzer.status = ""
         return {'FINISHED'}
@@ -2208,7 +2230,7 @@ def model_objects_update(context):
     mobjs = mcell.model_objects
     sobjs = context.scene.objects
 
-    model_obj_names = [obj.name for obj in sobjs if obj.mcell.include == True]
+    model_obj_names = [obj.name for obj in sobjs if obj.mcell.include]
 
     # Note: This bit only needed to convert
     #       old model object list (pre 0.1 rev_55) to new style.
@@ -2217,9 +2239,9 @@ def model_objects_update(context):
         for i in range(len(mobjs.object_list)-1):
             obj = sobjs.get(mobjs.object_list[i].name)
             if obj:
-              obj.mcell.include = True
+                obj.mcell.include = True
         model_obj_names = [
-            obj.name for obj in sobjs if obj.mcell.include == True]
+            obj.name for obj in sobjs if obj.mcell.include]
 
     # Update the model object list from objects marked obj.mcell.include = True
     if (len(model_obj_names) > 0):
@@ -2251,10 +2273,9 @@ class MCELL_OT_model_objects_add(bpy.types.Operator):
         # From the list of selected objects, only add MESH objects.
         objs = [obj for obj in context.selected_objects if obj.type == 'MESH']
         for obj in objs:
-          obj.mcell.include = True
+            obj.mcell.include = True
 
         model_objects_update(context)
-
 
 #        for obj in objs:
 #            # Prevent duplicate entries
