@@ -232,6 +232,10 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 
 #Panel Properties:
 
+class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
+    filter_invalid = BoolProperty(name="Filter Invalid Entries", default=True)
+
+
 class MCellScratchPanelProperty(bpy.types.PropertyGroup):
     show_all_icons = BoolProperty(
         name="Show All Icons",
@@ -708,6 +712,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         name="CellBlender Version", default="0.1.54")
     cellblender_source_hash = StringProperty(
         name="CellBlender Source Hash", default="unknown")
+    cellblender_preferences = PointerProperty(
+        type=CellBlenderPreferencesPanelProperty,
+        name="CellBlender Preferences")
     project_settings = PointerProperty(
         type=MCellProjectPanelProperty, name="CellBlender Project Settings")
     export_project = PointerProperty(

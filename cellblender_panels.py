@@ -44,6 +44,25 @@ def unregister():
 
 
 #CellBlendereGUI Panels:
+class MCELL_PT_cellblender_preferences(bpy.types.Panel):
+    bl_label = "CellBlender - Preferences"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mcell = context.scene.mcell
+
+        row = layout.row()
+        row.prop(mcell.cellblender_preferences, "filter_invalid")
+        layout.separator()
+        row = layout.row()
+        row.operator("wm.save_homefile", text="Save Startup File",
+                     icon='SAVE_PREFS')
+
+
 class MCELL_PT_project_settings(bpy.types.Panel):
     bl_label = "CellBlender - Project Settings"
     bl_space_type = "PROPERTIES"

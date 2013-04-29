@@ -112,8 +112,11 @@ def save_wrapper(context, out_file, filedir):
 
     # Export surface classes:
     unfiltered_surf_class_list = mcell.surface_classes.surf_class_list
-    surf_class_list = [
-        sc for sc in unfiltered_surf_class_list if not sc.status]
+    if mcell.cellblender_preferences.filter_invalid:
+        surf_class_list = [
+            sc for sc in unfiltered_surf_class_list if not sc.status]
+    else:
+        surf_class_list = unfiltered_surf_class_list
     have_surf_class = len(surf_class_list) != 0
     if have_surf_class and export_project.export_format == 'mcell_mdl_modular':
         out_file.write("INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n" %
@@ -127,7 +130,10 @@ def save_wrapper(context, out_file, filedir):
 
     # Export reactions:
     unfiltered_rxn_list = mcell.reactions.reaction_list
-    rxn_list = [rxn for rxn in unfiltered_rxn_list if not rxn.status]
+    if mcell.cellblender_preferences.filter_invalid:
+        rxn_list = [rxn for rxn in unfiltered_rxn_list if not rxn.status]
+    else:
+        rxn_list = unfiltered_rxn_list
     have_reactions = len(rxn_list) != 0
     if have_reactions and export_project.export_format == 'mcell_mdl_modular':
         out_file.write("INCLUDE_FILE = \"%s.reactions.mdl\"\n\n" %
@@ -154,8 +160,11 @@ def save_wrapper(context, out_file, filedir):
     # Export modify surface regions:
     unfiltered_mod_surf_regions_list = \
         mcell.mod_surf_regions.mod_surf_regions_list
-    mod_surf_regions_list = [
-        msr for msr in unfiltered_mod_surf_regions_list if not msr.status]
+    if mcell.cellblender_preferences.filter_invalid:
+        mod_surf_regions_list = [
+            msr for msr in unfiltered_mod_surf_regions_list if not msr.status]
+    else:
+        mod_surf_regions_list = unfiltered_mod_surf_regions_list
     have_mod_surf_regions = len(mod_surf_regions_list) != 0
     if (have_mod_surf_regions and
             export_project.export_format == 'mcell_mdl_modular'):
@@ -171,8 +180,11 @@ def save_wrapper(context, out_file, filedir):
     # Instantiate Model Geometry and Release sites:
     object_list = mcell.model_objects.object_list
     unfiltered_release_site_list = mcell.release_sites.mol_release_list
-    release_site_list = [
-        rel for rel in unfiltered_release_site_list if not rel.status]
+    if mcell.cellblender_preferences.filter_invalid:
+        release_site_list = [
+            rel for rel in unfiltered_release_site_list if not rel.status]
+    else:
+        release_site_list = unfiltered_release_site_list
     if object_list or release_site_list:
         out_file.write("INSTANTIATE %s OBJECT\n" % (context.scene.name))
         out_file.write("{\n")
@@ -439,7 +451,10 @@ def save_molecules(context, out_file):
 
     # Export Molecules:
     unfiltered_mol_list = mcell.molecules.molecule_list
-    mol_list = [mol for mol in unfiltered_mol_list if not mol.status]
+    if mcell.cellblender_preferences.filter_invalid:
+        mol_list = [mol for mol in unfiltered_mol_list if not mol.status]
+    else:
+        mol_list = unfiltered_mol_list
     if mol_list:
         out_file.write("DEFINE_MOLECULES\n")
         out_file.write("{\n")
@@ -471,6 +486,8 @@ def save_molecules(context, out_file):
 
 def save_surface_classes(context, out_file, surf_class_list):
     """ Saves surface class info to mdl output file. """
+    
+    mcell = context.scene.mcell
 
     if surf_class_list:
         out_file.write("DEFINE_SURFACE_CLASSES\n")
@@ -480,9 +497,12 @@ def save_surface_classes(context, out_file, surf_class_list):
             out_file.write("  {\n")
             unfiltered_surf_class_props_list = \
                 active_surf_class.surf_class_props_list
-            surf_class_props_list = [
-                scp for scp in unfiltered_surf_class_props_list if not
-                scp.status]
+            if mcell.cellblender_preferences.filter_invalid:
+                surf_class_props_list = [
+                    scp for scp in unfiltered_surf_class_props_list if not
+                    scp.status]
+            else:
+                surf_class_props_list = unfiltered_surf_class_props_list
             for surf_class_props in surf_class_props_list:
                 molecule = surf_class_props.molecule
                 orient = surf_class_props.surf_class_orient
@@ -614,9 +634,13 @@ def save_viz_output_mdl(context, out_file):
     all_iterations = mcell.viz_output.all_iterations
 
     unfiltered_mol_list = mcell.molecules.molecule_list
-    molecule_viz_list = [
-        mol.name for mol in unfiltered_mol_list if mol.export_viz and
-        not mol.status]
+    if mcell.cellblender_preferences.filter_invalid:
+        molecule_viz_list = [
+            mol.name for mol in unfiltered_mol_list if mol.export_viz and not
+            mol.status]
+    else:
+        molecule_viz_list = [
+            mol.name for mol in unfiltered_mol_list if mol.export_viz]
 
     if molecule_viz_list:
         out_file.write("VIZ_OUTPUT\n{\n")
@@ -644,8 +668,11 @@ def save_rxn_output_mdl(context, out_file):
     mcell = context.scene.mcell
     settings = mcell.project_settings
     unfiltered_rxn_output_list = mcell.rxn_output.rxn_output_list
-    rxn_output_list = [
-        rxn for rxn in unfiltered_rxn_output_list if not rxn.status]
+    if mcell.cellblender_preferences.filter_invalid:
+        rxn_output_list = [
+            rxn for rxn in unfiltered_rxn_output_list if not rxn.status]
+    else:
+        rxn_output_list = unfiltered_rxn_output_list
 
     if rxn_output_list:
         out_file.write("REACTION_DATA_OUTPUT\n{\n")
@@ -683,8 +710,11 @@ def save_mod_surf_regions(context, out_file):
     mcell = context.scene.mcell
     unfiltered_mod_surf_regions_list = \
         mcell.mod_surf_regions.mod_surf_regions_list
-    mod_surf_regions_list = [
-        msr for msr in unfiltered_mod_surf_regions_list if not msr.status]
+    if mcell.cellblender_preferences.filter_invalid:
+        mod_surf_regions_list = [
+            msr for msr in unfiltered_mod_surf_regions_list if not msr.status]
+    else:
+        mod_surf_regions_list = unfiltered_mod_surf_regions_list
     if mod_surf_regions_list:
         out_file.write("MODIFY_SURFACE_REGIONS\n")
         out_file.write("{\n")
