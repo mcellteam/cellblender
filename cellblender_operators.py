@@ -117,12 +117,11 @@ def region_update(self, context):
 
     mcell_obj = context.object.mcell
     reg_list = mcell_obj.regions.region_list
-    act_reg_name = reg_list[mcell_obj.regions.active_reg_index].name
+    act_reg = reg_list[mcell_obj.regions.active_reg_index]
+    act_reg_name = act_reg.name
 
     if reg_list:
         check_region(self, context)
-    else:
-        mcell_obj.regions.status = ""
 
     # Sort the region list
     inplace_quicksort(reg_list, 0, len(reg_list)-1)
@@ -138,22 +137,23 @@ def check_region(self, context):
 
     mcell_obj = context.object.mcell
     reg_list = mcell_obj.regions.region_list
-    reg = reg_list[mcell_obj.regions.active_reg_index]
+    act_reg = reg_list[mcell_obj.regions.active_reg_index]
+    act_reg_name = act_reg.name
 
     status = ""
 
     # Check for duplicate region name
     reg_keys = reg_list.keys()
-    if reg_keys.count(reg.name) > 1:
-        status = "Duplicate region: %s" % (reg.name)
+    if reg_keys.count(act_reg_name) > 1:
+        status = "Duplicate region: %s" % (act_reg_name)
 
     # Check for illegal names (Starts with a letter. No special characters)
     reg_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
-    m = re.match(reg_filter, reg.name)
+    m = re.match(reg_filter, act_reg_name)
     if m is None:
-        status = "Region name error: %s" % (reg.name)
+        status = "Region name error: %s" % (act_reg_name)
 
-    mcell_obj.regions.status = status
+    act_reg.status = status
 
     return
 

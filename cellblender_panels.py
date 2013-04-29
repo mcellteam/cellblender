@@ -1034,6 +1034,15 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
             row.label(text="Define at least one molecule", icon='ERROR')
 
 
+class MCELL_UL_check_region(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+
+
 class MCELL_PT_define_surface_regions(bpy.types.Panel):
     bl_label = "CellBlender - Define Surface Regions"
     bl_space_type = "PROPERTIES"
@@ -1052,16 +1061,13 @@ class MCELL_PT_define_surface_regions(bpy.types.Panel):
             row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
             row = layout.row()
             col = row.column()
-            col.template_list("UI_UL_list", "define_surf_regions", obj_regs,
-                              "region_list", obj_regs, "active_reg_index",
-                              rows=2)
+            col.template_list("MCELL_UL_check_region", "define_surf_regions",
+                          obj_regs, "region_list", obj_regs,
+                          "active_reg_index", rows=2)
             col = row.column(align=True)
             col.operator("mcell.region_add", icon='ZOOMIN', text="")
             col.operator("mcell.region_remove", icon='ZOOMOUT', text="")
             row = layout.row()
-            if (obj_regs.status != ""):
-                row = layout.row()
-                row.label(text=obj_regs.status, icon='ERROR')
             if len(obj_regs.region_list) > 0:
                 reg = obj_regs.region_list[obj_regs.active_reg_index]
                 layout.prop(reg, "name")

@@ -48,6 +48,7 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Region Name", default="Region",
         update=cellblender_operators.region_update)
+    status = StringProperty(name="Status")
 
 
 class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
@@ -760,4 +761,3 @@ class MCellObjectPropertyGroup(bpy.types.PropertyGroup):
     regions = PointerProperty(
         type=MCellSurfaceRegionListProperty, name="Defined Surface Regions")
     include = BoolProperty(name="Include Object in Model", default=False)
-    status = StringProperty(name="Status")
