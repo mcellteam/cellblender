@@ -1385,9 +1385,6 @@ def project_files_path ():
     filepath,dot,blend = bpy.data.filepath.rpartition(os.path.extsep)
     filepath = filepath + "_files"
     filepath = os.path.join ( filepath, "mcell" )
-    # filepath = os.path.join ( filepath, context.scene.name )
-    # filepath = os.path.join ( filepath, "mcell" )
-    print ( "project_files_path returning ", filepath )
     return filepath
     
 
