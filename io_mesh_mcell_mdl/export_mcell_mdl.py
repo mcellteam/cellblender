@@ -146,16 +146,21 @@ def save_wrapper(context, out_file, filedir):
         save_reactions(context, out_file, rxn_list)
 
     # Export model geometry:
-    have_geometry = len(context.scene.mcell.model_objects.object_list) != 0
+    unfiltered_object_list = context.scene.mcell.model_objects.object_list
+    if mcell.cellblender_preferences.filter_invalid:
+        object_list = [obj for obj in unfiltered_object_list if not obj.status]
+    else:
+        object_list = unfiltered_object_list
+    have_geometry = len(object_list) != 0
     if have_geometry and export_project.export_format == 'mcell_mdl_modular':
         out_file.write("INCLUDE_FILE = \"%s.geometry.mdl\"\n\n" %
                        (settings.base_name))
         filepath = ("%s/%s.geometry.mdl" %
                     (filedir, settings.base_name))
         with open(filepath, "w", encoding="utf8", newline="\n") as geom_file:
-            save_geometry(context, geom_file)
+            save_geometry(context, object_list, geom_file)
     else:
-        save_geometry(context, out_file)
+        save_geometry(context, object_list, out_file)
 
     # Export modify surface regions:
     unfiltered_mod_surf_regions_list = \
@@ -178,7 +183,7 @@ def save_wrapper(context, out_file, filedir):
         save_mod_surf_regions(context, out_file)
 
     # Instantiate Model Geometry and Release sites:
-    object_list = mcell.model_objects.object_list
+    #object_list = mcell.model_objects.object_list
     unfiltered_release_site_list = mcell.release_sites.mol_release_list
     if mcell.cellblender_preferences.filter_invalid:
         release_site_list = [
@@ -545,13 +550,13 @@ def save_reactions(context, out_file, rxn_list):
         out_file.write("}\n\n")
 
 
-def save_geometry(context, out_file):
+def save_geometry(context, object_list, out_file):
     """ Saves geometry info to mdl output file. """
 
     mcell = context.scene.mcell
 
     # Export Model Geometry:
-    object_list = mcell.model_objects.object_list
+    #object_list = mcell.model_objects.object_list
     if object_list:
 
         for object_item in object_list:

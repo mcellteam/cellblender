@@ -611,9 +611,15 @@ class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
     active_release_index = IntProperty(name="Active Release Index", default=0)
 
 
+class MCellModelObjectsProperty(bpy.types.PropertyGroup):
+    name = StringProperty(
+        name="Object Name", update=cellblender_operators.check_model_object)
+    status = StringProperty(name="Status")
+
+
 class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
     object_list = CollectionProperty(
-        type=MCellStringProperty, name="Object List")
+        type=MCellModelObjectsProperty, name="Object List")
     active_obj_index = IntProperty(name="Active Object Index", default=0)
 
 

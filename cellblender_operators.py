@@ -2381,6 +2381,26 @@ class MCELL_OT_model_objects_remove(bpy.types.Operator):
         return {'FINISHED'}
 
 
+def check_model_object(self, context):
+    """Checks for illegal object name"""
+
+    mcell = context.scene.mcell
+    model_object_list = mcell.model_objects.object_list
+    model_object = model_object_list[mcell.model_objects.active_obj_index]
+
+    status = ""
+
+    # Check for illegal names (Starts with a letter. No special characters.)
+    model_object_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
+    m = re.match(model_object_filter, model_object.name)
+    if m is None:
+        status = "Object name error: %s" % (model_object.name)
+
+    model_object.status = status
+
+    return
+
+
 class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
     bl_idname = "mcell.set_molecule_glyph"
     bl_label = "Set Molecule Glyph"

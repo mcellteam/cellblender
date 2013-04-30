@@ -285,6 +285,16 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
                 row.operator("mcell.clear_run_list")
 
 
+class MCELL_UL_model_objects(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+
+
 class MCELL_PT_model_objects(bpy.types.Panel):
     bl_label = "CellBlender - Model Objects"
     bl_space_type = "PROPERTIES"
@@ -301,9 +311,9 @@ class MCELL_PT_model_objects(bpy.types.Panel):
         row.label(text="Model Objects:", icon='MESH_ICOSPHERE')
         row = layout.row()
         col = row.column()
-        col.template_list("UI_UL_list", "model_objects", mcell.model_objects,
-                          "object_list", mcell.model_objects,
-                          "active_obj_index", rows=2)
+        col.template_list("MCELL_UL_model_objects", "model_objects",
+                          mcell.model_objects, "object_list",
+                          mcell.model_objects, "active_obj_index", rows=2)
         col = row.column(align=True)
 #        col.active = (len(context.selected_objects) == 1)
         col.operator("mcell.model_objects_add", icon='ZOOMIN', text="")
