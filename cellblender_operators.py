@@ -1443,6 +1443,11 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
     def execute(self, context):
         print("MCELL_OT_export_project.execute()")
+        print(" Scene name =", context.scene.name )
+
+        # Filter or replace problem characters (like space, ...)
+        context.scene.name = context.scene.name.replace ( " ", "_" )
+
         mcell = context.scene.mcell
 
         # Force the project directory to be where the .blend file lives
