@@ -1646,7 +1646,7 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                 # Plot the data via this module
                 # print("Preparing to call %s" % (mod_name))
                 # Force the project directory to be where the .blend file lives
-                data_path = os.path.dirname(bpy.data.filepath)
+                data_path = project_files_path()
                 data_path = os.path.join(data_path, "react_data")
                 plot_spec_string = ""
 
@@ -1698,6 +1698,8 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                                             " title=" + base_name + " f=" +
                                             base_name)
 
+                print ( "Plotting from", data_path )
+                print ( "Plotting with", plot_spec_string)
                 plot_module.plot(data_path, plot_spec_string)
 
         return {'FINISHED'}
