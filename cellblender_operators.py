@@ -1272,11 +1272,13 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
         mcell_binary = mcell.project_settings.mcell_binary
         # Force the project directory to be where the .blend file lives
         #project_dir = os.path.dirname(bpy.data.filepath)
-        
         project_dir = project_files_path()
+        react_dir = os.path.join(project_dir, "react_data")
+
+        if not os.path.exists(react_dir):
+            os.makedirs(react_dir)
         
         base_name = mcell.project_settings.base_name
-        
         
         error_file_option = mcell.run_simulation.error_file
         log_file_option = mcell.run_simulation.log_file
