@@ -1434,7 +1434,16 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
         mol_viz_update(self, context)
         return {'FINISHED'}
 
-
+def project_files_path ( context ):
+    ''' Consolidate the creation of the path to the project files'''
+    filepath = os.path.dirname(bpy.data.filepath)
+    filepath,dot,blend = bpy.data.filepath.rpartition(os.path.extsep)
+    filepath = filepath + "_files"
+    # filepath = os.path.join ( filepath, context.scene.name )
+    # filepath = os.path.join ( filepath, "mcell" )
+    return filepath
+    
+    
 class MCELL_OT_export_project(bpy.types.Operator):
     bl_idname = "mcell.export_project"
     bl_label = "Export CellBlender Project"
@@ -1452,18 +1461,29 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
         # Force the project directory to be where the .blend file lives
         model_objects_update(context)
+        
+        filepath = project_files_path(context)
+        os.makedirs ( filepath, exist_ok=True )
+        
+        # Set this for now to have it hopefully propagat until base_name can be removed
+        mcell.project_settings.base_name = context.scene.name
+
+        #filepath = os.path.join ( filepath, mcell.project_settings.base_name + ".main.mdl" )
+        filepath = os.path.join ( filepath, context.scene.name + ".main.mdl" )
+        bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
 
         # These two branches of the if statement seem identical ?
-        if mcell.export_project.export_format == 'mcell_mdl_unified':
-            filepath = os.path.join(os.path.dirname(bpy.data.filepath),
-                                    (mcell.project_settings.base_name +
-                                    ".main.mdl"))
-            bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
-        elif mcell.export_project.export_format == 'mcell_mdl_modular':
-            filepath = os.path.join(os.path.dirname(bpy.data.filepath),
-                                    (mcell.project_settings.base_name +
-                                    ".main.mdl"))
-            bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+        
+        #if mcell.export_project.export_format == 'mcell_mdl_unified':
+        #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
+        #                            (mcell.project_settings.base_name +
+        #                            ".main.mdl"))
+        #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+        #elif mcell.export_project.export_format == 'mcell_mdl_modular':
+        #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
+        #                            (mcell.project_settings.base_name +
+        #                            ".main.mdl"))
+        #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
 
         self.report({'INFO'}, "Project Exported")
 
