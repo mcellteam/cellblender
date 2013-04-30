@@ -178,6 +178,19 @@ class MCELL_UL_run_simulation(bpy.types.UIList):
             layout.label(item.name, icon='FILE_TICK')
 
 
+def project_files_path ( context ):
+    ''' Consolidate the creation of the path to the project files'''
+    # DUPLICATED FUNCTION ... I DON'T KNOW HOW TO SHARE IT YET
+    # print ( "DUPLICATED FUNCTION ... PLEASE FIX" )
+    filepath = os.path.dirname(bpy.data.filepath)
+    filepath,dot,blend = bpy.data.filepath.rpartition(os.path.extsep)
+    filepath = filepath + "_files"
+    # filepath = os.path.join ( filepath, context.scene.name )
+    # filepath = os.path.join ( filepath, "mcell" )
+    return filepath
+    
+    
+
 class MCELL_PT_run_simulatin(bpy.types.Panel):
     bl_label = "CellBlender - Run Simulation"
     bl_space_type = "PROPERTIES"
@@ -191,6 +204,16 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
         main_mdl = ("%s.main.mdl" %
                     os.path.join(os.path.dirname(bpy.data.filepath),
                     mcell.project_settings.base_name))
+
+        # Filter or replace problem characters (like space, ...)
+        scene_name = context.scene.name.replace ( " ", "_" )
+
+        # Set this for now to have it hopefully propagate until base_name can be removed
+        #mcell.project_settings.base_name = scene_name
+
+
+        main_mdl = project_files_path(context)
+        main_mdl = os.path.join ( main_mdl, scene_name + ".main.mdl" )
 
         row = layout.row()
 

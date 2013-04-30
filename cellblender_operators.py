@@ -1271,8 +1271,13 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.project_settings.mcell_binary
         # Force the project directory to be where the .blend file lives
-        project_dir = os.path.dirname(bpy.data.filepath)
+        #project_dir = os.path.dirname(bpy.data.filepath)
+        
+        project_dir = project_files_path()
+        
         base_name = mcell.project_settings.base_name
+        
+        
         error_file_option = mcell.run_simulation.error_file
         log_file_option = mcell.run_simulation.log_file
         script_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -1372,6 +1377,19 @@ def clear_run_list(context):
         processes_list.clear()
 
 
+def project_files_path ():
+    ''' Consolidate the creation of the path to the project files'''
+    # DUPLICATED FUNCTION ... I DON'T KNOW HOW TO SHARE IT YET
+    # print ( "DUPLICATED FUNCTION ... PLEASE FIX" )
+    filepath = os.path.dirname(bpy.data.filepath)
+    filepath,dot,blend = bpy.data.filepath.rpartition(os.path.extsep)
+    filepath = filepath + "_files"
+    # filepath = os.path.join ( filepath, context.scene.name )
+    # filepath = os.path.join ( filepath, "mcell" )
+    print ( "project_files_path returning ", filepath )
+    return filepath
+    
+
 class MCELL_OT_read_viz_data(bpy.types.Operator):
     bl_idname = "mcell.read_viz_data"
     bl_label = "Read Viz Data"
@@ -1392,13 +1410,12 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
 
         # Force the mol_viz directory to be where the .blend file lives plus
         # "viz_data"
-        mol_file_dir = os.path.join(os.path.dirname(bpy.data.filepath),
-                                    "viz_data")
+        mol_file_dir = os.path.join(project_files_path(), "viz_data")
 
         mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
         mol_file_list.sort()
 
-        print("Getting molecules from", mol_file_dir)
+        print("read_viz_data: Getting molecules from", mol_file_dir)
 
         # Reset mol_file_list to empty
         for i in range(mcell.mol_viz.mol_file_num-1, -1, -1):
@@ -1434,15 +1451,6 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
         mol_viz_update(self, context)
         return {'FINISHED'}
 
-def project_files_path ( context ):
-    ''' Consolidate the creation of the path to the project files'''
-    filepath = os.path.dirname(bpy.data.filepath)
-    filepath,dot,blend = bpy.data.filepath.rpartition(os.path.extsep)
-    filepath = filepath + "_files"
-    # filepath = os.path.join ( filepath, context.scene.name )
-    # filepath = os.path.join ( filepath, "mcell" )
-    return filepath
-    
     
 class MCELL_OT_export_project(bpy.types.Operator):
     bl_idname = "mcell.export_project"
@@ -1455,21 +1463,21 @@ class MCELL_OT_export_project(bpy.types.Operator):
         print(" Scene name =", context.scene.name )
 
         # Filter or replace problem characters (like space, ...)
-        context.scene.name = context.scene.name.replace ( " ", "_" )
+        scene_name = context.scene.name.replace ( " ", "_" )
 
         mcell = context.scene.mcell
 
         # Force the project directory to be where the .blend file lives
         model_objects_update(context)
         
-        filepath = project_files_path(context)
+        filepath = project_files_path()
         os.makedirs ( filepath, exist_ok=True )
         
-        # Set this for now to have it hopefully propagat until base_name can be removed
-        mcell.project_settings.base_name = context.scene.name
+        # Set this for now to have it hopefully propagate until base_name can be removed
+        mcell.project_settings.base_name = scene_name
 
         #filepath = os.path.join ( filepath, mcell.project_settings.base_name + ".main.mdl" )
-        filepath = os.path.join ( filepath, context.scene.name + ".main.mdl" )
+        filepath = os.path.join ( filepath, scene_name + ".main.mdl" )
         bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
 
         # These two branches of the if statement seem identical ?
@@ -1501,6 +1509,8 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
 
     def __init__(self):
         self.directory = bpy.context.scene.mcell.mol_viz.mol_file_dir
+        self.directory = os.path.join ( project_files_path(), "viz_data" )
+        print ( "Setting self.directory to ", self.directory )
 
     # Note: use classmethod "poll" to determine when
     # runability of operator is valid
@@ -1508,11 +1518,23 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     #    @classmethod
     #    def poll(cls, context):
     #        return context.object is not None
+    
+    def new_mol_viz_dir ( self, context ):
+        mol_file_dir = os.path.join ( project_files_path(), "viz_data" )
+        print ("new_mol_viz_dir returning path of: ", mol_file_dir )
+        
+        mcell = context.scene.mcell
+        mcell.mol_viz.mol_file_name = mol_file_dir
+        return ( mol_file_dir )
 
     def execute(self, context):
         # Called when the molecule files are actually to be read
         #  (when the "Read Molecule Files" button is pushed)
         print("MCELL_OT_set_mol_viz_dir.execute() called")
+        self.directory = os.path.join ( project_files_path(), "viz_data" )
+        print ( "self.directory = ", self.directory )
+        
+        self.new_mol_viz_dir ( context )
 
         mcell = context.scene.mcell
         #if (os.path.isdir(self.filepath)):
@@ -1522,13 +1544,15 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
 
         # Force the mol_viz directory to be where the .blend file lives plus
         # "viz_data"
-        mol_file_dir = os.path.join(os.path.dirname(bpy.data.filepath),
-                                    "viz_data")
+
+        # mol_file_dir = os.path.join(os.path.dirname(bpy.data.filepath), "viz_data")
+        mol_file_dir = self.new_mol_viz_dir ( context )
+        mcell.mol_viz.mol_file_name = mol_file_dir
 
         mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
         mol_file_list.sort()
 
-        print("Getting molecules from", mol_file_dir)
+        print("set_mol_viz_dir: Getting molecules from", mol_file_dir)
 
         # Reset mol_file_list to empty
         for i in range(mcell.mol_viz.mol_file_num-1, -1, -1):
@@ -1567,7 +1591,8 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     def invoke(self, context, event):
         # Called when the file selection panel is requested
         #  (when the "Set Molecule Viz Directory" button is pushed)
-        print("MCELL_OT_set_mol_viz_dir.invoke() called")
+        print("MCELL_OT_set_mol_viz_dir.invoke() called with self.filepath = %s and self.directory = %s " % (self.filepath, self.directory) )
+        self.new_mol_viz_dir ( context )
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
