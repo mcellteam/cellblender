@@ -1448,7 +1448,6 @@ class MCELL_OT_export_project(bpy.types.Operator):
         # Force the project directory to be where the .blend file lives
         model_objects_update(context)
 
-        print("MCELL_OT_export_project.execute() before if")
         # These two branches of the if statement seem identical ?
         if mcell.export_project.export_format == 'mcell_mdl_unified':
             filepath = os.path.join(os.path.dirname(bpy.data.filepath),
@@ -1462,9 +1461,6 @@ class MCELL_OT_export_project(bpy.types.Operator):
             bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
 
         self.report({'INFO'}, "Project Exported")
-
-        print("MCELL_OT_export_project.execute() after if with filepath",
-              filepath)
 
         return {'FINISHED'}
 

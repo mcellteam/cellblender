@@ -40,6 +40,7 @@ cellblender_info = {
         "cellblender_properties.py",
         "cellblender_panels.py",
         "cellblender_operators.py",
+        "run_simulations.py",
         "io_mesh_mcell_mdl/__init__.py",
         "io_mesh_mcell_mdl/export_mcell_mdl.py",
         "io_mesh_mcell_mdl/import_mcell_mdl.py",
