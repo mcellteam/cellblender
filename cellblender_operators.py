@@ -2322,6 +2322,13 @@ def model_objects_update(context):
             mobjs.object_list.add()
             mobjs.active_obj_index = len(mobjs.object_list)-1
             mobjs.object_list[mobjs.active_obj_index].name = obj_name
+            scene_object = sobjs[obj_name]
+            # Set an error status if object is not triangulated
+            for face in scene_object.data.polygons:
+                if not (len(face.vertices) == 3):
+                    status = "Object is not triangulated: %s" % (obj_name)
+                    mobjs.object_list[mobjs.active_obj_index].status = status
+                    break
 
         mobjs.active_obj_index = active_index
 
