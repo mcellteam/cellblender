@@ -178,7 +178,7 @@ class MCELL_UL_run_simulation(bpy.types.UIList):
             layout.label(item.name, icon='FILE_TICK')
 
 
-def project_files_path ( context ):
+def project_files_path():
     ''' Consolidate the creation of the path to the project files'''
     # DUPLICATED FUNCTION ... I DON'T KNOW HOW TO SHARE IT YET
     # print ( "DUPLICATED FUNCTION ... PLEASE FIX" )
@@ -186,8 +186,6 @@ def project_files_path ( context ):
     filepath,dot,blend = bpy.data.filepath.rpartition(os.path.extsep)
     filepath = filepath + "_files"
     filepath = os.path.join ( filepath, "mcell" )
-    # filepath = os.path.join ( filepath, context.scene.name )
-    # filepath = os.path.join ( filepath, "mcell" )
     return filepath
     
     
@@ -213,7 +211,7 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
         #mcell.project_settings.base_name = scene_name
 
 
-        main_mdl = project_files_path(context)
+        main_mdl = project_files_path()
         main_mdl = os.path.join ( main_mdl, scene_name + ".main.mdl" )
 
         row = layout.row()
