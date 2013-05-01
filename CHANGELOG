@@ -8,6 +8,13 @@ Changes since 0.1.52
   * Hid advanced molecule options
   * Compatible with Blender 2.66
     (Not compatible with previous versions of Blender)
+  * Export of reaction and visualization data
+  * Plotting of reaction data
+  * Run MCell simulations from within Blender
+  * Updated status system
+  * Better error checking
+  * New project directory layout
+  * CellBlender preferences
 
 * Bug Fixes:
   * Meshes could be exported with the wrong rotation
