@@ -51,6 +51,8 @@ def unregister():
 
 
 #CellBlender Operators:
+
+
 class MCELL_OT_region_add(bpy.types.Operator):
     bl_idname = "mcell.region_add"
     bl_label = "Add New Surface Region"
@@ -1379,7 +1381,7 @@ def clear_run_list(context):
 
 def project_files_path ():
     ''' Consolidate the creation of the path to the project files'''
-    # DUPLICATED FUNCTION ... I DON'T KNOW HOW TO SHARE IT YET
+    # DUPLICATED FUNCTION ... This is the same function as in cellblender_panesl.py
     # print ( "DUPLICATED FUNCTION ... PLEASE FIX" )
     filepath = os.path.dirname(bpy.data.filepath)
     filepath,dot,blend = bpy.data.filepath.rpartition(os.path.extsep)
@@ -1462,6 +1464,9 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
         # Filter or replace problem characters (like space, ...)
         scene_name = context.scene.name.replace ( " ", "_" )
+
+        # Change the actual scene name to the legal MCell Name
+        context.scene.name = scene_name
 
         mcell = context.scene.mcell
 

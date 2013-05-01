@@ -180,15 +180,14 @@ class MCELL_UL_run_simulation(bpy.types.UIList):
 
 def project_files_path():
     ''' Consolidate the creation of the path to the project files'''
-    # DUPLICATED FUNCTION ... I DON'T KNOW HOW TO SHARE IT YET
+    # DUPLICATED FUNCTION ... This is the same function as in cellblender_operators.py
     # print ( "DUPLICATED FUNCTION ... PLEASE FIX" )
     filepath = os.path.dirname(bpy.data.filepath)
     filepath,dot,blend = bpy.data.filepath.rpartition(os.path.extsep)
     filepath = filepath + "_files"
     filepath = os.path.join ( filepath, "mcell" )
     return filepath
-    
-    
+   
 
 class MCELL_PT_run_simulatin(bpy.types.Panel):
     bl_label = "CellBlender - Run Simulation"
@@ -222,7 +221,7 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
         if not mcell.project_settings.mcell_binary:
             row.label(text="Set an MCell binary", icon='ERROR')
         elif not os.path.dirname(bpy.data.filepath):
-            row.label(text="Set a project directory", icon='ERROR')
+            row.label(text="Open or save a .blend file to set the project directory", icon='ERROR')
         elif not os.path.isfile(main_mdl):
             row.label(text="Export the project", icon='ERROR')
             row.operator(
@@ -239,23 +238,7 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
             row = layout.row()
             row.prop(mcell.run_simulation, "error_file")
 
-            '''
             row = layout.row()
-            col = row.column()
-            col.prop(mcell.export_project, "export_format")
-            col = row.column()
-            col.operator("mcell.export_project",
-                         text="Export CellBlender Project", icon='EXPORT')
-
-            row = layout.row()
-            row.operator("mcell.run_simulation", text="Run Simulation",
-                         icon='COLOR_RED')
-            row.operator("mcell.read_viz_data", text="Read Viz Data",
-                         icon='COLOR_GREEN')
-            '''
-
-            row = layout.row()
-
             col = row.column()
             col.prop(mcell.export_project, "export_format")
             col.operator("mcell.run_simulation", text="Run Simulation",

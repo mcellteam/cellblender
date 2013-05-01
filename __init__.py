@@ -69,7 +69,7 @@ def identify_source_version(addon_path):
               source_file_name)
 
     cellblender_info['cellblender_source_sha1'] = hashobject.hexdigest()
-    print("CellBlender Source ID (SHA1) = ", cellblender_info['cellblender_source_sha1'])
+    print("CellBlender Source ID = %s" % (cellblender_info['cellblender_source_sha1']))
     sha_file = os.path.join(addon_path, "cellblender_source_sha1.txt")
     open(sha_file, 'w').write(hashobject.hexdigest())
 
@@ -117,14 +117,7 @@ else:
 import bpy
 import sys
 
-# Initialize the data plotting functionality
-#try:
-#    import cellblender.data_plotters
-#except ImportError:
-#    print("data_plotters was not found")
-
-
-# we use per module class registration/unregistration
+# We use per module class registration/unregistration
 def register():
     bpy.utils.register_module(__name__)
 
@@ -147,7 +140,7 @@ def register():
 
     # Use "try" for optional modules
     try:
-        print ( "Reloading data_plottters" )
+        # print ( "Reloading data_plottters" )
         cellblender_info['cellblender_plotting_modules'] = []
         plotters_list = data_plotters.find_plotting_options()
         # data_plotters.print_plotting_options()
@@ -156,14 +149,6 @@ def register():
             #This assignment could be done all at once since plotters_list is already a list.
             cellblender_info['cellblender_plotting_modules'] = cellblender_info['cellblender_plotting_modules'] + [plotter]
             print ( "  System meets requirements for %s"%(plotter.get_name()) )
-            '''
-            try:
-                s = bpy.data.scenes['Scene']
-                ro = s.mcell.rxn_output
-                ro.plotters_enum = ro.plotters_enum + [(plotter.get_name(), plotter.get_name(), "")]
-            except:
-                print ( "Unable to add to enum" + sys.exc_value )
-            '''
     except :
         print ( "Error installing some plotting packages" + sys.exc_value )
 
