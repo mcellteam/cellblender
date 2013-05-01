@@ -82,9 +82,14 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         row.operator("mcell.set_mcell_binary",
                      text="Set Path to MCell Binary", icon='FILESEL')
         row = layout.row()
-        row.label(
-            text="MCell Binary: "+mcell.project_settings.mcell_binary)
-        row = layout.row()
+        if not mcell.project_settings.mcell_binary:
+            # Using pin icon to be consistent with project directory, but maybe
+            # we should use error icon to be consistent with other sections.
+            row.label("MCell Binary not set", icon='UNPINNED')
+        else:
+            row.label(
+                text="MCell Binary: "+mcell.project_settings.mcell_binary,
+                icon='FILE_TICK')
         #row.operator("mcell.set_project_dir",
         #             text="Set CellBlender Project Directory", icon='FILESEL')
         #row = layout.row()
@@ -93,7 +98,8 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         # row.label(text="Project Directory: " +
         #           mcell.project_settings.project_dir)
 
-        if bpy.data.filepath == '':
+        row = layout.row()
+        if not bpy.data.filepath:
             row.label(
                 text="No Project Directory: Use File/Save or File/SaveAs",
                 icon='UNPINNED')
@@ -103,45 +109,45 @@ class MCELL_PT_project_settings(bpy.types.Panel):
                 icon='FILE_TICK')
 
         row = layout.row()
-        layout.prop(mcell.project_settings, "base_name")
+        layout.prop(context.scene, "name", text="Project Base Name")
 
 
-class MCELL_PT_scratch(bpy.types.Panel):
-    bl_label = "CellBlender - Scratch Panel (testing)"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        row = layout.row()
-        col = row.column(align=True)
-        col.prop(mcell.scratch_settings, "show_all_icons")
-        col = row.column(align=True)
-        col.prop(mcell.scratch_settings, "print_all_icons")
-
-        if mcell.scratch_settings.show_all_icons:
-            all_icons = bpy.types.UILayout.bl_rna.functions[
-                'prop'].parameters['icon'].enum_items.keys()
-            layout.separator()
-            row = layout.row()
-            for icon in all_icons:
-                row = layout.row()
-                row.label(icon=icon, text=icon)
-
-        if mcell.scratch_settings.print_all_icons:
-            all_icons = bpy.types.UILayout.bl_rna.functions[
-                'prop'].parameters['icon'].enum_items.keys()
-            print("Icon list has ", len(all_icons), "icons")
-            print("Icon names:")
-            print(all_icons)
-            # mcell.scratch_settings.print_all_icons = False
-            # AttributeError: Writing to ID classes in this context is not
-            # allowed: Scene, Scene datablock, error setting
-            # MCellScratchPanelProperty.print_all_icons
+#class MCELL_PT_scratch(bpy.types.Panel):
+#    bl_label = "CellBlender - Scratch Panel (testing)"
+#    bl_space_type = "PROPERTIES"
+#    bl_region_type = "WINDOW"
+#    bl_context = "scene"
+#    bl_options = {'DEFAULT_CLOSED'}
+#
+#    def draw(self, context):
+#        layout = self.layout
+#        mcell = context.scene.mcell
+#
+#        row = layout.row()
+#        col = row.column(align=True)
+#        col.prop(mcell.scratch_settings, "show_all_icons")
+#        col = row.column(align=True)
+#        col.prop(mcell.scratch_settings, "print_all_icons")
+#
+#        if mcell.scratch_settings.show_all_icons:
+#            all_icons = bpy.types.UILayout.bl_rna.functions[
+#                'prop'].parameters['icon'].enum_items.keys()
+#            layout.separator()
+#            row = layout.row()
+#            for icon in all_icons:
+#                row = layout.row()
+#                row.label(icon=icon, text=icon)
+#
+#        if mcell.scratch_settings.print_all_icons:
+#            all_icons = bpy.types.UILayout.bl_rna.functions[
+#                'prop'].parameters['icon'].enum_items.keys()
+#            print("Icon list has ", len(all_icons), "icons")
+#            print("Icon names:")
+#            print(all_icons)
+#            # mcell.scratch_settings.print_all_icons = False
+#            # AttributeError: Writing to ID classes in this context is not
+#            # allowed: Scene, Scene datablock, error setting
+#            # MCellScratchPanelProperty.print_all_icons
 
 
 class MCELL_PT_export_project(bpy.types.Panel):
@@ -156,10 +162,13 @@ class MCELL_PT_export_project(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
-        row.prop(mcell.export_project, "export_format")
-        row = layout.row()
-        row.operator("mcell.export_project", text="Export CellBlender Project",
-                     icon='FILESEL')
+        if not bpy.data.filepath:
+            row.label(text="Save the blend file", icon='ERROR')
+        else:
+            row.prop(mcell.export_project, "export_format")
+            row = layout.row()
+            row.operator("mcell.export_project",
+                         text="Export CellBlender Project", icon='EXPORT')
 
 
 class MCELL_UL_run_simulation(bpy.types.UIList):
@@ -181,16 +190,15 @@ class MCELL_UL_run_simulation(bpy.types.UIList):
 def project_files_path():
     ''' Consolidate the creation of the path to the project files'''
     # DUPLICATED FUNCTION ... I DON'T KNOW HOW TO SHARE IT YET
-    # print ( "DUPLICATED FUNCTION ... PLEASE FIX" )
+    # print("DUPLICATED FUNCTION ... PLEASE FIX")
     filepath = os.path.dirname(bpy.data.filepath)
-    filepath,dot,blend = bpy.data.filepath.rpartition(os.path.extsep)
+    filepath, dot, blend = bpy.data.filepath.rpartition(os.path.extsep)
     filepath = filepath + "_files"
-    filepath = os.path.join ( filepath, "mcell" )
+    filepath = os.path.join(filepath, "mcell")
     return filepath
-    
-    
 
-class MCELL_PT_run_simulatin(bpy.types.Panel):
+
+class MCELL_PT_run_simulation(bpy.types.Panel):
     bl_label = "CellBlender - Run Simulation"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -200,19 +208,19 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         mcell = context.scene.mcell
-        main_mdl = ("%s.main.mdl" %
-                    os.path.join(os.path.dirname(bpy.data.filepath),
-                    mcell.project_settings.base_name))
+        #main_mdl = ("%s.main.mdl" %
+        #            os.path.join(os.path.dirname(bpy.data.filepath),
+        #            mcell.project_settings.base_name))
 
         # Filter or replace problem characters (like space, ...)
-        scene_name = context.scene.name.replace ( " ", "_" )
+        scene_name = context.scene.name.replace(" ", "_")
 
-        # Set this for now to have it hopefully propagate until base_name can be removed
+        # Set this for now to have it hopefully propagate until base_name can
+        # be removed
         #mcell.project_settings.base_name = scene_name
 
-
         main_mdl = project_files_path()
-        main_mdl = os.path.join ( main_mdl, scene_name + ".main.mdl" )
+        main_mdl = os.path.join(main_mdl, scene_name + ".main.mdl")
 
         row = layout.row()
 
@@ -286,7 +294,7 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
 class MCELL_UL_model_objects(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
-        
+
         if item.status:
             layout.label(item.status, icon='ERROR')
         else:
@@ -1094,8 +1102,8 @@ class MCELL_PT_define_surface_regions(bpy.types.Panel):
             row = layout.row()
             col = row.column()
             col.template_list("MCELL_UL_check_region", "define_surf_regions",
-                          obj_regs, "region_list", obj_regs,
-                          "active_reg_index", rows=2)
+                              obj_regs, "region_list", obj_regs,
+                              "active_reg_index", rows=2)
             col = row.column(align=True)
             col.operator("mcell.region_add", icon='ZOOMIN', text="")
             col.operator("mcell.region_remove", icon='ZOOMOUT', text="")
