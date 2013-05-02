@@ -1587,7 +1587,7 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
             if mod_name == plot_button_label:
                 # Plot the data via this module
                 # print("Preparing to call %s" % (mod_name))
-                # Force the project directory to be where the .blend file lives
+                # The project_files_path is now where the MDL lives:
                 data_path = project_files_path()
                 data_path = os.path.join(data_path, "react_data")
                 plot_spec_string = ""
@@ -1608,22 +1608,33 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                         region_name = rxn_output.region_name
                         fn = None
                         if rxn_output.count_location == 'World':
-                            fn = "%s.World.*.dat" % (molecule_name)
+                            # fn = "%s.World.*.dat" % (molecule_name)
+                            fn = "%s.World.dat" % (molecule_name)
                         elif rxn_output.count_location == 'Object':
-                            fn = "%s.%s.*.dat" % (molecule_name, object_name)
+                            # fn = "%s.%s.*.dat" % (molecule_name, object_name)
+                            fn = "%s.%s.dat" % (molecule_name, object_name)
                         elif rxn_output.count_location == 'Region':
-                            fn = "%s.%s.%s.*.dat" % (molecule_name,
-                                                     object_name, region_name)
+                            #fn = "%s.%s.%s.*.dat" % (molecule_name,
+                            #                         object_name, region_name)
+                            fn = "%s.%s.%s.dat" % (molecule_name,
+                                                   object_name, region_name)
                         if fn is not None:
+                            fn = os.path.join ( "react_data_*", fn )
                             candidate_file_list = glob.glob(
                                 os.path.join(data_path, fn))
-                            # print("Candidate file list for %s:" % (fn))
-                            # print("  ", candidate_file_list)
+                            #print("Candidate file list for %s:" % (fn))
+                            #print("  ", candidate_file_list)
                             first_pass = True
-                            for f in candidate_file_list:
-                                if os.stat(f).st_mtime > start_time:
+                            for ffn in candidate_file_list:
+                                if os.stat(ffn).st_mtime > start_time:
                                     # This file is both in the list and newer
                                     # than the run time for MCell
+
+                                    # Create f as a relative path containing seed/file
+                                    split1 = os.path.split(ffn)
+                                    split2 = os.path.split(split1[0])
+                                    f = os.path.join ( split2[1], split1[1] )
+
                                     base_name = os.path.basename(f)
                                     if combine_seeds:
                                         psep = " "
@@ -1632,13 +1643,11 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                                             first_pass = False
                                         plot_spec_string = (
                                             plot_spec_string + psep +
-                                            " title=" + base_name + " f=" +
-                                            base_name)
+                                            " title=" + base_name + " f=" + f)
                                     else:
                                         plot_spec_string = (
                                             plot_spec_string + plot_sep +
-                                            " title=" + base_name + " f=" +
-                                            base_name)
+                                            " title=" + f + " f=" + f)
 
                 print("Plotting from", data_path)
                 print("Plotting with", plot_spec_string)
