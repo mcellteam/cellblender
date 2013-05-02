@@ -1650,7 +1650,7 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                                             " title=" + f + " f=" + f)
 
                 print("Plotting from", data_path)
-                print("Plotting with", plot_spec_string)
+                print("Plotting spec", plot_spec_string)
                 plot_module.plot(data_path, plot_spec_string)
 
         return {'FINISHED'}
