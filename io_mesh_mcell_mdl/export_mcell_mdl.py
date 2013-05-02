@@ -693,14 +693,14 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
             object_name = rxn_output.object_name
             region_name = rxn_output.region_name
             if rxn_output.count_location == 'World':
-                out_file.write("  {COUNT[%s,WORLD]}=> \"./react_data/react_data_\" & seed & \"/%s.World.dat\"\n" %
+                out_file.write("  {COUNT[%s,WORLD]}=> \"./react_data/seed_\" & seed & \"/%s.World.dat\"\n" %
                                (molecule_name, molecule_name,))
             elif rxn_output.count_location == 'Object':
-                out_file.write("  {COUNT[%s,%s.%s]}=> \"./react_data/react_data_\" & seed & \"/%s.%s.dat\"\n" %
+                out_file.write("  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & \"/%s.%s.dat\"\n" %
                                (molecule_name, context.scene.name, object_name,
                                 molecule_name, object_name))
             elif rxn_output.count_location == 'Region':
-                out_file.write("  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/react_data_\" & seed & \"/%s.%s.%s.dat\"\n" %
+                out_file.write("  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & \"/%s.%s.%s.dat\"\n" %
                                (molecule_name, context.scene.name, object_name,
                                 region_name, molecule_name, object_name,
                                 region_name))

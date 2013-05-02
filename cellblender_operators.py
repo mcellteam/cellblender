@@ -1619,7 +1619,7 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                             fn = "%s.%s.%s.dat" % (molecule_name,
                                                    object_name, region_name)
                         if fn is not None:
-                            fn = os.path.join ( "react_data_*", fn )
+                            fn = os.path.join ( "seed_*", fn )
                             candidate_file_list = glob.glob(
                                 os.path.join(data_path, fn))
                             #print("Candidate file list for %s:" % (fn))
