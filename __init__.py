@@ -156,6 +156,11 @@ def register():
 
 def unregister():
     bpy.utils.unregister_module(__name__)
+    bpy.app.handlers.load_post.remove(
+        cellblender_operators.clear_run_list)
+    bpy.app.handlers.load_post.remove(
+        cellblender_operators.model_objects_update)
+    
     print("CellBlender unregistered")
 
 
