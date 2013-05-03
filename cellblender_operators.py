@@ -1201,18 +1201,25 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
+
         start = mcell.run_simulation.start_seed
         end = mcell.run_simulation.end_seed
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.project_settings.mcell_binary
         # Force the project directory to be where the .blend file lives
-        #project_dir = os.path.dirname(bpy.data.filepath)
         project_dir = project_files_path()
-        react_dir = os.path.join(project_dir, "react_data")
 
+        if not mcell.cellblender_preferences.decouple_export_run:
+            bpy.ops.mcell.export_project()
+
+        react_dir = os.path.join(project_dir, "react_data")
         if not os.path.exists(react_dir):
             os.makedirs(react_dir)
-
+        
+        viz_data = os.path.join(project_dir, "viz_data")
+        if not os.path.exists(viz_data):
+            os.makedirs(viz_data)
+        
         base_name = mcell.project_settings.base_name
 
         error_file_option = mcell.run_simulation.error_file

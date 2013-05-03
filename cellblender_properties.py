@@ -235,6 +235,10 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 
 class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
     filter_invalid = BoolProperty(name="Filter Invalid Entries", default=True)
+    decouple_export_run = BoolProperty(
+        name="Decouple Export and Run", default=False,
+        description="Allow the project to be exported without also running"
+                    " the simulation.")
 
 
 class MCellScratchPanelProperty(bpy.types.PropertyGroup):
@@ -246,6 +250,7 @@ class MCellScratchPanelProperty(bpy.types.PropertyGroup):
         name="Print All Icon Names",
         description="Print all Blender icon names (helpful for searching)",
         default=False)
+
 
 class MCellProjectPanelProperty(bpy.types.PropertyGroup):
     base_name = StringProperty(

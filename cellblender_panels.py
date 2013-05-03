@@ -56,6 +56,8 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
+        row.prop(mcell.cellblender_preferences, "decouple_export_run")
+        row = layout.row()
         row.prop(mcell.cellblender_preferences, "filter_invalid")
         layout.separator()
         row = layout.row()
@@ -149,27 +151,25 @@ class MCELL_PT_project_settings(bpy.types.Panel):
 #            # allowed: Scene, Scene datablock, error setting
 #            # MCellScratchPanelProperty.print_all_icons
 
-
-class MCELL_PT_export_project(bpy.types.Panel):
-    bl_label = "CellBlender - Export Project"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        row = layout.row()
-        if not bpy.data.filepath:
-            row.label(text="Save the blend file", icon='ERROR')
-        else:
-            row.prop(mcell.export_project, "export_format")
-            row = layout.row()
-            row.operator("mcell.export_project",
-                         text="Export CellBlender Project", icon='EXPORT')
-
+#class MCELL_PT_export_project(bpy.types.Panel):
+#    bl_label = "CellBlender - Export Project"
+#    bl_space_type = "PROPERTIES"
+#    bl_region_type = "WINDOW"
+#    bl_context = "scene"
+#    bl_options = {'DEFAULT_CLOSED'}
+#
+#    def draw(self, context):
+#        layout = self.layout
+#        mcell = context.scene.mcell
+#
+#        row = layout.row()
+#        if not bpy.data.filepath:
+#            row.label(text="Save the blend file", icon='ERROR')
+#        else:
+#            row.prop(mcell.export_project, "export_format")
+#            row = layout.row()
+#            row.operator("mcell.export_project",
+#                         text="Export CellBlender Project", icon='EXPORT')
 
 class MCELL_UL_run_simulation(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
@@ -189,7 +189,8 @@ class MCELL_UL_run_simulation(bpy.types.UIList):
 
 def project_files_path():
     ''' Consolidate the creation of the path to the project files'''
-    # DUPLICATED FUNCTION ... This is the same function as in cellblender_operators.py
+    # DUPLICATED FUNCTION ... This is the same function as in
+    # cellblender_operators.py
     # print ( "DUPLICATED FUNCTION ... PLEASE FIX" )
     filepath = os.path.dirname(bpy.data.filepath)
     filepath, dot, blend = bpy.data.filepath.rpartition(os.path.extsep)
@@ -230,9 +231,13 @@ class MCELL_PT_run_simulation(bpy.types.Panel):
         if not mcell.project_settings.mcell_binary:
             row.label(text="Set an MCell binary", icon='ERROR')
         elif not os.path.dirname(bpy.data.filepath):
-            row.label(text="Open or save a .blend file to set the project directory", icon='ERROR')
-        elif not os.path.isfile(main_mdl):
+            row.label(
+                text="Open or save a .blend file to set the project directory",
+                icon='ERROR')
+        elif (not os.path.isfile(main_mdl) and
+                mcell.cellblender_preferences.decouple_export_run):
             row.label(text="Export the project", icon='ERROR')
+            row = layout.row()
             row.operator(
                 "mcell.export_project",
                 text="Export CellBlender Project", icon='EXPORT')
@@ -247,19 +252,16 @@ class MCELL_PT_run_simulation(bpy.types.Panel):
             row = layout.row()
             row.prop(mcell.run_simulation, "error_file")
 
+            if mcell.cellblender_preferences.decouple_export_run:
+                row = layout.row()
+                row.prop(mcell.export_project, "export_format")
+                row = layout.row()
+                row.operator(
+                    "mcell.export_project", text="Export CellBlender Project",
+                    icon='EXPORT')
             row = layout.row()
-            col = row.column()
-            col.prop(mcell.export_project, "export_format")
-            col.operator("mcell.run_simulation", text="Run Simulation",
+            row.operator("mcell.run_simulation", text="Run Simulation",
                          icon='COLOR_RED')
-
-            col = row.column()
-            col.operator(
-                "mcell.export_project", text="Export CellBlender Project",
-                icon='EXPORT')
-            col.operator(
-                "mcell.read_viz_data", text="Read Viz Data",
-                icon='COLOR_GREEN')
 
             if (mcell.run_simulation.processes_list and
                     cellblender.simulation_popen_list):
