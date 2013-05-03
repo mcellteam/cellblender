@@ -275,6 +275,44 @@ class MCELL_PT_run_simulation(bpy.types.Panel):
                 row.operator("mcell.clear_run_list")
 
 
+class MCELL_PT_viz_results(bpy.types.Panel):
+    bl_label = "CellBlender - Visualize Simulation Results"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        mcell = context.scene.mcell
+
+        row = layout.row()
+        #row = layout.row()
+        #row.operator("mcell.set_mol_viz_dir",
+        #             text="Set Molecule Viz Directory", icon="FILESEL")
+        row.operator(
+            "mcell.read_viz_data", text="Read Viz Data",
+            icon='IMPORT')
+        row = layout.row()
+        row.label(text="Molecule Viz Directory: "+mcell.mol_viz.mol_file_dir,
+                  icon='FILE_FOLDER')
+        row = layout.row()
+        row.template_list("UI_UL_list", "viz_seed", mcell.mol_viz,
+                          "mol_viz_seed_list", mcell.mol_viz,
+                          "active_mol_viz_seed_index", rows=2)
+        row = layout.row()
+        row = layout.row()
+        row.label(text="Current Molecule File: "+mcell.mol_viz.mol_file_name,
+                  icon='FILE')
+        row = layout.row()
+        row.template_list("UI_UL_list", "viz_results", mcell.mol_viz,
+                          "mol_file_list", mcell.mol_viz, "mol_file_index",
+                          rows=2)
+        row = layout.row()
+        layout.prop(mcell.mol_viz, "mol_viz_enable")
+
+
 class MCELL_UL_model_objects(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -314,44 +352,6 @@ class MCELL_PT_model_objects(bpy.types.Panel):
 #        sub = row.row(align=True)
 #        sub.operator("mcell.model_objects_select", text="Select")
 #        sub.operator("mcell.model_objects_deselect", text="Deselect")
-
-
-class MCELL_PT_viz_results(bpy.types.Panel):
-    bl_label = "CellBlender - Visualize Simulation Results"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-
-        mcell = context.scene.mcell
-
-        row = layout.row()
-        row.operator("mcell.set_mol_viz_dir",
-                     text="Set Molecule Viz Directory", icon="FILESEL")
-        row = layout.row()
-        row.label(text="Molecule Viz Directory: "+mcell.mol_viz.mol_file_dir)
-        row = layout.row()
-        row.label(text="Current Molecule File: "+mcell.mol_viz.mol_file_name)
-        row = layout.row()
-        row.template_list("UI_UL_list", "viz_results", mcell.mol_viz,
-                          "mol_file_list", mcell.mol_viz, "mol_file_index",
-                          rows=2)
-        row = layout.row()
-        layout.prop(mcell.mol_viz, "mol_viz_enable")
-#        row = layout.row()
-#        layout.prop(mcell.mol_viz, "render_and_save")
-
-#        col = row.column(align=True)
-#        col.operator("mcell.mol_viz_prev", icon="PLAY_REVERSE", text="")
-#        col = row.column(align=True)
-#        col.operator("mcell.mol_viz_set_index",
-#                     text=str(mcell.mol_viz.mol_file_index))
-#        col = row.column(align=True)
-#        col.operator("mcell.mol_viz_next", icon="PLAY", text="")
-
 
 '''
 class MCELL_PT_utilities(bpy.types.Panel):

@@ -218,7 +218,7 @@ def save_wrapper(context, out_file, filedir):
 
         out_file.write("}\n\n")
 
-    out_file.write("sprintf(seed,\"%04g\",SEED)\n\n")
+    out_file.write("sprintf(seed,\"%05g\",SEED)\n\n")
 
     # Export viz output:
 
@@ -663,7 +663,7 @@ def save_viz_output_mdl(context, out_file, molecule_viz_list):
     if molecule_viz_list:
         out_file.write("VIZ_OUTPUT\n{\n")
         out_file.write("  MODE = CELLBLENDER\n")
-        out_file.write("  FILENAME = \"./viz_data/%s\"\n" % settings.base_name)
+        out_file.write("  FILENAME = \"./viz_data/seed_\" & seed & \"/%s\"\n" % settings.base_name)
         out_file.write("  MOLECULES\n")
         out_file.write("  {\n")
         out_file.write("    NAME_LIST {%s}\n" % " ".join(molecule_viz_list))

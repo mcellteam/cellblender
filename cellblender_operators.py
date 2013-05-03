@@ -1325,6 +1325,12 @@ def project_files_path():
     return filepath
 
 
+# Operators can't be callbacks, so we need this function for now.  This is
+# temporary until we make importing viz data automatic.
+def read_viz_data(self, context):
+    bpy.ops.mcell.read_viz_data()
+
+
 class MCELL_OT_read_viz_data(bpy.types.Operator):
     bl_idname = "mcell.read_viz_data"
     bl_label = "Read Viz Data"
@@ -1332,58 +1338,75 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        # Called when the molecule files are actually to be read
-        #  (when the "Read Molecule Files" button is pushed)
+        # Called when the molecule files are actually to be read (when the
+        # "Read Molecule Files" button is pushed or a seed value is selected
+        # from the list)
         print("MCELL_OT_read_viz_data.execute() called")
         # self.report({'INFO'}, "Reading Visualization Data")
 
         mcell = context.scene.mcell
-        #if (os.path.isdir(self.filepath)):
-        #    mol_file_dir = self.filepath
-        #else:
-        #    mol_file_dir = os.path.dirname(self.filepath)
 
-        # Force the mol_viz directory to be where the .blend file lives plus
-        # "viz_data"
-        mol_file_dir = os.path.join(project_files_path(), "viz_data")
+        # Force the top level mol_viz directory to be where the .blend file
+        # lives plus "viz_data". The seed directories will live underneath it.
+        mol_viz_top_level_dir = os.path.join(project_files_path(), "viz_data/")
+        mol_viz_seed_list = glob.glob(os.path.join(mol_viz_top_level_dir, "*"))
+        mol_viz_seed_list.sort()
 
-        mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
-        mol_file_list.sort()
+        # Clear the list of seeds (e.g. seed_00001, seed_00002, etc) and the
+        # list of files (e.g. my_project.cellbin.0001.dat,
+        # my_project.cellbin.0002.dat)
+        mcell.mol_viz.mol_viz_seed_list.clear()
+        mcell.mol_viz.mol_file_list.clear()
 
-        print("read_viz_data: Getting molecules from", mol_file_dir)
+        # Add all the seed directories to the mol_viz_seed_list collection
+        # (seed_00001, seed_00002, etc)
+        for mol_viz_seed in mol_viz_seed_list:
+            new_item = mcell.mol_viz.mol_viz_seed_list.add()
+            new_item.name = os.path.basename(mol_viz_seed)
 
-        # Reset mol_file_list to empty
-        for i in range(mcell.mol_viz.mol_file_num-1, -1, -1):
-            mcell.mol_viz.mol_file_list.remove(i)
+        if mcell.mol_viz.mol_viz_seed_list:
+            active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[
+                mcell.mol_viz.active_mol_viz_seed_index]
 
-        mcell.mol_viz.mol_file_dir = mol_file_dir
-        i = 0
-        for mol_file_name in mol_file_list:
-            new_item = mcell.mol_viz.mol_file_list.add()
-            new_item.name = os.path.basename(mol_file_name)
-            i += 1
+            mol_file_dir = os.path.join(
+                project_files_path(), "viz_data/%s" % active_mol_viz_seed.name)
 
-        mcell.mol_viz.mol_file_num = len(mcell.mol_viz.mol_file_list)
-        mcell.mol_viz.mol_file_stop_index = mcell.mol_viz.mol_file_num-1
-        mcell.mol_viz.mol_file_index = 0
+            mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
+            mol_file_list.sort()
 
-        mcell.mol_viz.color_index = 0
-        if len(mcell.mol_viz.color_list) == 0:
-            # Create a list of colors to be assigned to the glyphs
-            for i in range(8):
-                mcell.mol_viz.color_list.add()
-            mcell.mol_viz.color_list[0].vec = [0.8, 0.0, 0.0]
-            mcell.mol_viz.color_list[1].vec = [0.0, 0.8, 0.0]
-            mcell.mol_viz.color_list[2].vec = [0.0, 0.0, 0.8]
-            mcell.mol_viz.color_list[3].vec = [0.0, 0.8, 0.8]
-            mcell.mol_viz.color_list[4].vec = [0.8, 0.0, 0.8]
-            mcell.mol_viz.color_list[5].vec = [0.8, 0.8, 0.0]
-            mcell.mol_viz.color_list[6].vec = [1.0, 1.0, 1.0]
-            mcell.mol_viz.color_list[7].vec = [0.0, 0.0, 0.0]
+            # Is there any reason to do it this way instead of using the clear
+            # method?
+            #for i in range(mcell.mol_viz.mol_file_num-1, -1, -1):
+            #    mcell.mol_viz.mol_file_list.remove(i)
 
-        print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list))
-        context.scene.frame_end = len(mcell.mol_viz.mol_file_list)
-        mol_viz_update(self, context)
+            mcell.mol_viz.mol_file_dir = mol_file_dir
+            # Add all the viz_data files to mol_file_list collection (e.g.
+            # my_project.cellbin.0001.dat, my_project.cellbin.0001.dat, etc)
+            for mol_file_name in mol_file_list:
+                new_item = mcell.mol_viz.mol_file_list.add()
+                new_item.name = os.path.basename(mol_file_name)
+
+            mcell.mol_viz.mol_file_num = len(mcell.mol_viz.mol_file_list)
+            mcell.mol_viz.mol_file_stop_index = mcell.mol_viz.mol_file_num-1
+            #mcell.mol_viz.mol_file_index = 0
+
+            mcell.mol_viz.color_index = 0
+            if not mcell.mol_viz.color_list:
+                # Create a list of colors to be assigned to the glyphs
+                for i in range(8):
+                    mcell.mol_viz.color_list.add()
+                mcell.mol_viz.color_list[0].vec = [0.8, 0.0, 0.0]
+                mcell.mol_viz.color_list[1].vec = [0.0, 0.8, 0.0]
+                mcell.mol_viz.color_list[2].vec = [0.0, 0.0, 0.8]
+                mcell.mol_viz.color_list[3].vec = [0.0, 0.8, 0.8]
+                mcell.mol_viz.color_list[4].vec = [0.8, 0.0, 0.8]
+                mcell.mol_viz.color_list[5].vec = [0.8, 0.8, 0.0]
+                mcell.mol_viz.color_list[6].vec = [1.0, 1.0, 1.0]
+                mcell.mol_viz.color_list[7].vec = [0.0, 0.0, 0.0]
+
+            print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list))
+            context.scene.frame_end = len(mcell.mol_viz.mol_file_list)
+            mol_viz_update(self, context)
         return {'FINISHED'}
 
 

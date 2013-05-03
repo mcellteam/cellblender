@@ -305,6 +305,12 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
 
     """
 
+    mol_viz_seed_list = CollectionProperty(
+        type=MCellStringProperty, name="Visualization Seed List")
+    active_mol_viz_seed_index = IntProperty(
+        name="Current Visualization Seed Index", default=0,
+        update=cellblender_operators.read_viz_data)
+        #update= bpy.ops.mcell.read_viz_data)
     mol_file_dir = StringProperty(
         name="Molecule File Dir", subtype='NONE')
     mol_file_list = CollectionProperty(
