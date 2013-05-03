@@ -36,6 +36,7 @@ import random
 import re
 import subprocess
 import time
+import shutil
 
 import cellblender
 
@@ -1213,12 +1214,16 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
             bpy.ops.mcell.export_project()
 
         react_dir = os.path.join(project_dir, "react_data")
+        if os.path.exists(react_dir) and mcell.run_simulation.remove_append == 'remove':
+            shutil.rmtree(react_dir)
         if not os.path.exists(react_dir):
             os.makedirs(react_dir)
-        
-        viz_data = os.path.join(project_dir, "viz_data")
-        if not os.path.exists(viz_data):
-            os.makedirs(viz_data)
+            
+        viz_dir = os.path.join(project_dir, "viz_data")
+        if os.path.exists(viz_dir) and mcell.run_simulation.remove_append == 'remove':
+            shutil.rmtree(viz_dir)
+        if not os.path.exists(viz_dir):
+            os.makedirs(viz_dir)
         
         base_name = mcell.project_settings.base_name
 
@@ -1372,8 +1377,11 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
             new_item.name = os.path.basename(mol_viz_seed)
 
         if mcell.mol_viz.mol_viz_seed_list:
-            active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[
-                mcell.mol_viz.active_mol_viz_seed_index]
+            try:
+                active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[
+                    mcell.mol_viz.active_mol_viz_seed_index]
+            except IndexError:
+                active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[0]
 
             mol_file_dir = os.path.join(
                 project_files_path(), "viz_data/%s" % active_mol_viz_seed.name)
@@ -1395,7 +1403,12 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
 
             mcell.mol_viz.mol_file_num = len(mcell.mol_viz.mol_file_list)
             mcell.mol_viz.mol_file_stop_index = mcell.mol_viz.mol_file_num-1
-            #mcell.mol_viz.mol_file_index = 0
+
+            try:
+                mol_file = mcell.mol_viz.mol_file_list[
+                    mcell.mol_viz.mol_file_index]
+            except IndexError:
+                mcell.mol_viz.mol_file_index = 0
 
             mcell.mol_viz.color_index = 0
             if not mcell.mol_viz.color_list:

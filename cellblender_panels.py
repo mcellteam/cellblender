@@ -260,6 +260,8 @@ class MCELL_PT_run_simulation(bpy.types.Panel):
                     "mcell.export_project", text="Export CellBlender Project",
                     icon='EXPORT')
             row = layout.row()
+            row.prop(mcell.run_simulation, "remove_append", expand=True)
+            row = layout.row()
             row.operator("mcell.run_simulation", text="Run Simulation",
                          icon='COLOR_RED')
 

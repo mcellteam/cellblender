@@ -296,6 +296,14 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
     error_file = EnumProperty(items=error_file_enum,
                               name="Error Log",
                               default='console')
+    remove_append_enum = [
+        ('remove', "Remove Previous Data", ""),
+        ('append', "Append to Previous Data", "")]
+    remove_append = EnumProperty(
+        items=remove_append_enum, name="Previous Simulation Data",
+        default='remove',
+        description="Remove or append to existing rxn/viz data from previous"
+                    " simulations")
     processes_list = CollectionProperty(
         type=MCellRunSimulationProcessesProperty,
         name="Simulation Runner Processes")
