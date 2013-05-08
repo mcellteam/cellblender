@@ -1655,7 +1655,7 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                 # The project_files_path is now where the MDL lives:
                 data_path = project_files_path()
                 data_path = os.path.join(data_path, "react_data")
-                plot_spec_string = ""
+                plot_spec_string = "xlabel=time(s) ylabel=count "
 
                 settings = mcell.project_settings
 
