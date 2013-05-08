@@ -255,8 +255,11 @@ class MCellScratchPanelProperty(bpy.types.PropertyGroup):
 class MCellProjectPanelProperty(bpy.types.PropertyGroup):
     base_name = StringProperty(
         name="Project Base Name", default="cellblender_project")
-    # project_dir = StringProperty(name="Project Directory")
-    mcell_binary = StringProperty(name="MCell Binary")
+    mcell_binary = StringProperty(name="MCell Binary",
+        update=cellblender_operators.check_mcell_binary)
+    mcell_binary_valid = BoolProperty(name="MCell Binary Valid",
+        default=False)
+    status = StringProperty(name="Status")
 
 
 class MCellExportProjectPanelProperty(bpy.types.PropertyGroup):

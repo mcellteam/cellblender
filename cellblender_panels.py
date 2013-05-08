@@ -84,10 +84,14 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         row.operator("mcell.set_mcell_binary",
                      text="Set Path to MCell Binary", icon='FILESEL')
         row = layout.row()
-        if not mcell.project_settings.mcell_binary:
+        mcell_binary = mcell.project_settings.mcell_binary
+        if not mcell_binary:
             # Using pin icon to be consistent with project directory, but maybe
             # we should use error icon to be consistent with other sections.
             row.label("MCell Binary not set", icon='UNPINNED')
+        elif (not mcell.project_settings.mcell_binary_valid) or (not cellblender.cellblender_operators.is_executable (mcell_binary)):
+            row.label("MCell File/Permissions Error: " +
+                mcell.project_settings.mcell_binary, icon='ERROR')
         else:
             row.label(
                 text="MCell Binary: "+mcell.project_settings.mcell_binary,

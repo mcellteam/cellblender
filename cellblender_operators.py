@@ -1169,7 +1169,29 @@ def check_release_object_expr(self, context):
                     status = "Undefined object: %s" % (obj_name)
                     break
 
-    return status
+    return
+
+
+def is_executable ( binary_path ):
+    """Checks for nonexistant or non-executable mcell binary file"""
+    is_exec = False
+    try:
+        st = os.stat ( binary_path )
+        if os.path.isfile( binary_path ):
+            if os.access( binary_path, os.X_OK ):
+                is_exec = True
+    except Exception as err:
+        is_exec = False
+    return is_exec
+    
+
+def check_mcell_binary(self, context):
+    """Callback to check for mcell executable"""
+    mcell = context.scene.mcell
+    binary_path = mcell.project_settings.mcell_binary
+    mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
+    return None
+
 
 
 class MCELL_OT_set_mcell_binary(bpy.types.Operator):
