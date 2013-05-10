@@ -713,6 +713,7 @@ def check_reaction(self, context):
     # clean up rxn.reactants only if necessary to avoid infinite recursion.
     reactants = rxn.reactants.replace(" ", "")
     reactants = reactants.replace("+", " + ")
+    reactants = reactants.replace("@", " @ ")
     if reactants != rxn.reactants:
         rxn.reactants = reactants
 
@@ -730,10 +731,24 @@ def check_reaction(self, context):
 
     #Check syntax of reactant specification
     mol_list = mcell.molecules.molecule_list
-    mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)((',)|(,')|(;)|(,*)|('*))$"
-    reactants = rxn.reactants.split(" + ")
+    surf_class_list = mcell.surface_classes.surf_class_list
+    mol_surf_class_filter = \
+        r"(^[A-Za-z]+[0-9A-Za-z_.]*)((',)|(,')|(;)|(,*)|('*))$"
+    # Check the syntax of the surface class if one exists
+    if rxn.reactants.count(" @ ") == 1:
+        reactants_no_surf_class, surf_class = rxn.reactants.split(" @ ")
+        m = re.match(mol_surf_class_filter, surf_class)
+        if m is None:
+            status = "Surface class error: %s" % (surf_class)
+        else:
+            surf_class_name = m.group(1)
+            if not surf_class_name in surf_class_list:
+                status = "Undefined surface class: %s" % (surf_class_name)
+    else:
+        reactants_no_surf_class = rxn.reactants
+    reactants = reactants_no_surf_class.split(" + ")
     for reactant in reactants:
-        m = re.match(mol_filter, reactant)
+        m = re.match(mol_surf_class_filter, reactant)
         if m is None:
             status = "Reactant error: %s" % (reactant)
             break
@@ -749,7 +764,7 @@ def check_reaction(self, context):
     else:
         products = rxn.products.split(" + ")
         for product in products:
-            m = re.match(mol_filter, product)
+            m = re.match(mol_surf_class_filter, product)
             if m is None:
                 status = "Product error: %s" % (product)
                 break
