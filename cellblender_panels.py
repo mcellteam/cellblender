@@ -89,7 +89,7 @@ class MCELL_PT_project_settings(bpy.types.Panel):
             # Using pin icon to be consistent with project directory, but maybe
             # we should use error icon to be consistent with other sections.
             row.label("MCell Binary not set", icon='UNPINNED')
-        elif (not mcell.project_settings.mcell_binary_valid) or (not cellblender.cellblender_operators.is_executable (mcell_binary)):
+        elif not mcell.project_settings.mcell_binary_valid:
             row.label("MCell File/Permissions Error: " +
                 mcell.project_settings.mcell_binary, icon='ERROR')
         else:

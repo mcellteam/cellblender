@@ -1225,6 +1225,9 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
 
         mcell = context.scene.mcell
 
+        binary_path = mcell.project_settings.mcell_binary
+        mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
+
         start = mcell.run_simulation.start_seed
         end = mcell.run_simulation.end_seed
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
@@ -1346,6 +1349,18 @@ def clear_run_list(context):
 
     if not cellblender.simulation_popen_list:
         processes_list.clear()
+
+
+
+@persistent
+def mcell_valid_update(context):
+    """ Check whether the mcell executable in the .blend file is valid """
+    if not context:
+        context = bpy.context
+    mcell = context.scene.mcell
+    binary_path = mcell.project_settings.mcell_binary
+    mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
+    # print ( "mcell_binary_valid = ", mcell.project_settings.mcell_binary_valid )
 
 
 def project_files_path():
