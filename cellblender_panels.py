@@ -997,6 +997,11 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                 col = row.column()
                 col.prop(mcell.rxn_output, "combine_seeds")
 
+                row = layout.row()
+
+                col = row.column()
+                col.prop(mcell.rxn_output, "plot_legend")
+
                 col = row.column()
                 col.prop(mcell.rxn_output, "mol_colors")
 
@@ -1018,15 +1023,14 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                                  text=mod_name).plotter_button_label = mod_name
                     button_num = button_num + 1
 
-                layout.separator()
-                layout.separator()
+                #layout.separator()
+                #layout.separator()
 
-                row = layout.row()
-                col = row.column()
-                col.operator("mcell.plot_rxn_output_command",
-                             text="Execute Custom Plot Command:")
-                # col = row.column()
-                layout.prop(mcell.reactions, "plot_command")
+                #row = layout.row()
+                #col = row.column()
+                #col.operator("mcell.plot_rxn_output_command",
+                #             text="Execute Custom Plot Command:")
+                #layout.prop(mcell.reactions, "plot_command")
 
         else:
             row.label(text="Define at least one molecule", icon='ERROR')

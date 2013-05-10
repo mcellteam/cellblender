@@ -1654,6 +1654,7 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         plot_sep = mcell.rxn_output.plot_layout
+        plot_legend = mcell.rxn_output.plot_legend
 
         combine_seeds = mcell.rxn_output.combine_seeds
         mol_colors = mcell.rxn_output.mol_colors
@@ -1672,6 +1673,8 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                 data_path = project_files_path()
                 data_path = os.path.join(data_path, "react_data")
                 plot_spec_string = "xlabel=time(s) ylabel=count "
+                if plot_legend != 'x':
+                    plot_spec_string = plot_spec_string + "legend=" + plot_legend
 
                 settings = mcell.project_settings
 
@@ -1703,6 +1706,8 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                             fn = os.path.join ( "seed_*", fn )
                             candidate_file_list = glob.glob(
                                 os.path.join(data_path, fn))
+                            # Without sorting, the seeds may not be increasing
+                            candidate_file_list.sort()
                             #print("Candidate file list for %s:" % (fn))
                             #print("  ", candidate_file_list)
                             first_pass = True
@@ -1732,6 +1737,16 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                                         color_string = " color=#%2.2x%2.2x%2.2x " % (mol_color_red, mol_color_green, mol_color_blue)
 
                                     base_name = os.path.basename(f)
+
+                                    if combine_seeds:
+                                        title_string = " title=" + base_name
+                                    else:
+                                        title_string = " title=" + f
+                                    
+                                    if plot_sep == ' ':
+                                        # No title when all are on the same plot since only last will show
+                                        title_string = ""
+
                                     if combine_seeds:
                                         psep = " "
                                         if first_pass:
@@ -1739,11 +1754,11 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                                             first_pass = False
                                         plot_spec_string = (
                                             plot_spec_string + psep + color_string +
-                                            " title=" + base_name + " f=" + f)
+                                            title_string + " f=" + f)
                                     else:
                                         plot_spec_string = (
                                             plot_spec_string + plot_sep + color_string +
-                                            " title=" + f + " f=" + f)
+                                            title_string + " f=" + f)
 
                 print("Plotting from", data_path)
                 print("Plotting spec", plot_spec_string)
