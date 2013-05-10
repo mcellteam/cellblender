@@ -990,10 +990,16 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                           icon='FORCE_LENNARDJONES')
 
                 row = layout.row()
+
                 col = row.column()
                 col.prop(mcell.rxn_output, "plot_layout")
+
                 col = row.column()
                 col.prop(mcell.rxn_output, "combine_seeds")
+
+                col = row.column()
+                col.prop(mcell.rxn_output, "mol_colors")
+
 
                 row = layout.row()
                 button_num = 0

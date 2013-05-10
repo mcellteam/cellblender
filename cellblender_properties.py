@@ -697,6 +697,10 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
         name="Combine Seeds",
         description="Combine all seeds onto the same plot",
         default=True)
+    mol_colors = BoolProperty(
+        name="Molecule Colors",
+        description="Use Molecule Colors for line colors",
+        default=False)
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):

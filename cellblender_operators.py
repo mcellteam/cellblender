@@ -1656,6 +1656,7 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
         plot_sep = mcell.rxn_output.plot_layout
 
         combine_seeds = mcell.rxn_output.combine_seeds
+        mol_colors = mcell.rxn_output.mol_colors
 
         plot_button_label = self.plotter_button_label
 
@@ -1714,6 +1715,21 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                                     split1 = os.path.split(ffn)
                                     split2 = os.path.split(split1[0])
                                     f = os.path.join ( split2[1], split1[1] )
+                                    
+                                    color_string = ""
+                                    if mol_colors:
+                                        # Use molecule colors for graphs
+                                        mol_mat_name = "mol_%s_mat" % (molecule_name)  # Should be standardized!!
+                                        #print ( "Molecule Material Name = ", mol_mat_name )
+                                        #Look up the material
+                                        mats = bpy.data.materials
+                                        mol_color = mats.get(mol_mat_name).diffuse_color
+                                        #print ( "Molecule color = ", mol_mat.diffuse_color )
+
+                                        mol_color_red = 255 * mol_color.r
+                                        mol_color_green = 255 * mol_color.g
+                                        mol_color_blue = 255 * mol_color.b
+                                        color_string = " color=#%2.2x%2.2x%2.2x " % (mol_color_red, mol_color_green, mol_color_blue)
 
                                     base_name = os.path.basename(f)
                                     if combine_seeds:
@@ -1722,11 +1738,11 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                                             psep = plot_sep
                                             first_pass = False
                                         plot_spec_string = (
-                                            plot_spec_string + psep +
+                                            plot_spec_string + psep + color_string +
                                             " title=" + base_name + " f=" + f)
                                     else:
                                         plot_spec_string = (
-                                            plot_spec_string + plot_sep +
+                                            plot_spec_string + plot_sep + color_string +
                                             " title=" + f + " f=" + f)
 
                 print("Plotting from", data_path)
