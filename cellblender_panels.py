@@ -56,6 +56,8 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
+        row.prop(mcell.cellblender_preferences, "decouple_export_run")
+        row = layout.row()
         row.prop(mcell.cellblender_preferences, "filter_invalid")
         layout.separator()
         row = layout.row()
@@ -82,9 +84,18 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         row.operator("mcell.set_mcell_binary",
                      text="Set Path to MCell Binary", icon='FILESEL')
         row = layout.row()
-        row.label(
-            text="MCell Binary: "+mcell.project_settings.mcell_binary)
-        row = layout.row()
+        mcell_binary = mcell.project_settings.mcell_binary
+        if not mcell_binary:
+            # Using pin icon to be consistent with project directory, but maybe
+            # we should use error icon to be consistent with other sections.
+            row.label("MCell Binary not set", icon='UNPINNED')
+        elif not mcell.project_settings.mcell_binary_valid:
+            row.label("MCell File/Permissions Error: " +
+                mcell.project_settings.mcell_binary, icon='ERROR')
+        else:
+            row.label(
+                text="MCell Binary: "+mcell.project_settings.mcell_binary,
+                icon='FILE_TICK')
         #row.operator("mcell.set_project_dir",
         #             text="Set CellBlender Project Directory", icon='FILESEL')
         #row = layout.row()
@@ -93,7 +104,8 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         # row.label(text="Project Directory: " +
         #           mcell.project_settings.project_dir)
 
-        if bpy.data.filepath == '':
+        row = layout.row()
+        if not bpy.data.filepath:
             row.label(
                 text="No Project Directory: Use File/Save or File/SaveAs",
                 icon='UNPINNED')
@@ -103,64 +115,65 @@ class MCELL_PT_project_settings(bpy.types.Panel):
                 icon='FILE_TICK')
 
         row = layout.row()
-        layout.prop(mcell.project_settings, "base_name")
+        layout.prop(context.scene, "name", text="Project Base Name")
 
 
-class MCELL_PT_scratch(bpy.types.Panel):
-    bl_label = "CellBlender - Scratch Panel (testing)"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
+#class MCELL_PT_scratch(bpy.types.Panel):
+#    bl_label = "CellBlender - Scratch Panel (testing)"
+#    bl_space_type = "PROPERTIES"
+#    bl_region_type = "WINDOW"
+#    bl_context = "scene"
+#    bl_options = {'DEFAULT_CLOSED'}
+#
+#    def draw(self, context):
+#        layout = self.layout
+#        mcell = context.scene.mcell
+#
+#        row = layout.row()
+#        col = row.column(align=True)
+#        col.prop(mcell.scratch_settings, "show_all_icons")
+#        col = row.column(align=True)
+#        col.prop(mcell.scratch_settings, "print_all_icons")
+#
+#        if mcell.scratch_settings.show_all_icons:
+#            all_icons = bpy.types.UILayout.bl_rna.functions[
+#                'prop'].parameters['icon'].enum_items.keys()
+#            layout.separator()
+#            row = layout.row()
+#            for icon in all_icons:
+#                row = layout.row()
+#                row.label(icon=icon, text=icon)
+#
+#        if mcell.scratch_settings.print_all_icons:
+#            all_icons = bpy.types.UILayout.bl_rna.functions[
+#                'prop'].parameters['icon'].enum_items.keys()
+#            print("Icon list has ", len(all_icons), "icons")
+#            print("Icon names:")
+#            print(all_icons)
+#            # mcell.scratch_settings.print_all_icons = False
+#            # AttributeError: Writing to ID classes in this context is not
+#            # allowed: Scene, Scene datablock, error setting
+#            # MCellScratchPanelProperty.print_all_icons
 
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        row = layout.row()
-        col = row.column(align=True)
-        col.prop(mcell.scratch_settings, "show_all_icons")
-        col = row.column(align=True)
-        col.prop(mcell.scratch_settings, "print_all_icons")
-
-        if mcell.scratch_settings.show_all_icons:
-            all_icons = bpy.types.UILayout.bl_rna.functions[
-                'prop'].parameters['icon'].enum_items.keys()
-            layout.separator()
-            row = layout.row()
-            for icon in all_icons:
-                row = layout.row()
-                row.label(icon=icon, text=icon)
-
-        if mcell.scratch_settings.print_all_icons:
-            all_icons = bpy.types.UILayout.bl_rna.functions[
-                'prop'].parameters['icon'].enum_items.keys()
-            print("Icon list has ", len(all_icons), "icons")
-            print("Icon names:")
-            print(all_icons)
-            # mcell.scratch_settings.print_all_icons = False
-            # AttributeError: Writing to ID classes in this context is not
-            # allowed: Scene, Scene datablock, error setting
-            # MCellScratchPanelProperty.print_all_icons
-
-
-class MCELL_PT_export_project(bpy.types.Panel):
-    bl_label = "CellBlender - Export Project"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        row = layout.row()
-        row.prop(mcell.export_project, "export_format")
-        row = layout.row()
-        row.operator("mcell.export_project", text="Export CellBlender Project",
-                     icon='FILESEL')
-
+#class MCELL_PT_export_project(bpy.types.Panel):
+#    bl_label = "CellBlender - Export Project"
+#    bl_space_type = "PROPERTIES"
+#    bl_region_type = "WINDOW"
+#    bl_context = "scene"
+#    bl_options = {'DEFAULT_CLOSED'}
+#
+#    def draw(self, context):
+#        layout = self.layout
+#        mcell = context.scene.mcell
+#
+#        row = layout.row()
+#        if not bpy.data.filepath:
+#            row.label(text="Save the blend file", icon='ERROR')
+#        else:
+#            row.prop(mcell.export_project, "export_format")
+#            row = layout.row()
+#            row.operator("mcell.export_project",
+#                         text="Export CellBlender Project", icon='EXPORT')
 
 class MCELL_UL_run_simulation(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
@@ -178,7 +191,19 @@ class MCELL_UL_run_simulation(bpy.types.UIList):
             layout.label(item.name, icon='FILE_TICK')
 
 
-class MCELL_PT_run_simulatin(bpy.types.Panel):
+def project_files_path():
+    ''' Consolidate the creation of the path to the project files'''
+    # DUPLICATED FUNCTION ... This is the same function as in
+    # cellblender_operators.py
+    # print ( "DUPLICATED FUNCTION ... PLEASE FIX" )
+    filepath = os.path.dirname(bpy.data.filepath)
+    filepath, dot, blend = bpy.data.filepath.rpartition(os.path.extsep)
+    filepath = filepath + "_files"
+    filepath = os.path.join(filepath, "mcell")
+    return filepath
+
+
+class MCELL_PT_run_simulation(bpy.types.Panel):
     bl_label = "CellBlender - Run Simulation"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -188,9 +213,19 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         mcell = context.scene.mcell
-        main_mdl = ("%s.main.mdl" %
-                    os.path.join(os.path.dirname(bpy.data.filepath),
-                    mcell.project_settings.base_name))
+        #main_mdl = ("%s.main.mdl" %
+        #            os.path.join(os.path.dirname(bpy.data.filepath),
+        #            mcell.project_settings.base_name))
+
+        # Filter or replace problem characters (like space, ...)
+        scene_name = context.scene.name.replace(" ", "_")
+
+        # Set this for now to have it hopefully propagate until base_name can
+        # be removed
+        #mcell.project_settings.base_name = scene_name
+
+        main_mdl = project_files_path()
+        main_mdl = os.path.join(main_mdl, scene_name + ".main.mdl")
 
         row = layout.row()
 
@@ -200,9 +235,13 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
         if not mcell.project_settings.mcell_binary:
             row.label(text="Set an MCell binary", icon='ERROR')
         elif not os.path.dirname(bpy.data.filepath):
-            row.label(text="Set a project directory", icon='ERROR')
-        elif not os.path.isfile(main_mdl):
+            row.label(
+                text="Open or save a .blend file to set the project directory",
+                icon='ERROR')
+        elif (not os.path.isfile(main_mdl) and
+                mcell.cellblender_preferences.decouple_export_run):
             row.label(text="Export the project", icon='ERROR')
+            row = layout.row()
             row.operator(
                 "mcell.export_project",
                 text="Export CellBlender Project", icon='EXPORT')
@@ -217,35 +256,18 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
             row = layout.row()
             row.prop(mcell.run_simulation, "error_file")
 
-            '''
+            if mcell.cellblender_preferences.decouple_export_run:
+                row = layout.row()
+                row.prop(mcell.export_project, "export_format")
+                row = layout.row()
+                row.operator(
+                    "mcell.export_project", text="Export CellBlender Project",
+                    icon='EXPORT')
             row = layout.row()
-            col = row.column()
-            col.prop(mcell.export_project, "export_format")
-            col = row.column()
-            col.operator("mcell.export_project",
-                         text="Export CellBlender Project", icon='EXPORT')
-
+            row.prop(mcell.run_simulation, "remove_append", expand=True)
             row = layout.row()
             row.operator("mcell.run_simulation", text="Run Simulation",
                          icon='COLOR_RED')
-            row.operator("mcell.read_viz_data", text="Read Viz Data",
-                         icon='COLOR_GREEN')
-            '''
-
-            row = layout.row()
-
-            col = row.column()
-            col.prop(mcell.export_project, "export_format")
-            col.operator("mcell.run_simulation", text="Run Simulation",
-                         icon='COLOR_RED')
-
-            col = row.column()
-            col.operator(
-                "mcell.export_project", text="Export CellBlender Project",
-                icon='EXPORT')
-            col.operator(
-                "mcell.read_viz_data", text="Read Viz Data",
-                icon='COLOR_GREEN')
 
             if (mcell.run_simulation.processes_list and
                     cellblender.simulation_popen_list):
@@ -259,6 +281,54 @@ class MCELL_PT_run_simulatin(bpy.types.Panel):
                                   rows=2)
                 row = layout.row()
                 row.operator("mcell.clear_run_list")
+
+
+class MCELL_PT_viz_results(bpy.types.Panel):
+    bl_label = "CellBlender - Visualize Simulation Results"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        mcell = context.scene.mcell
+
+        row = layout.row()
+        #row = layout.row()
+        #row.operator("mcell.set_mol_viz_dir",
+        #             text="Set Molecule Viz Directory", icon="FILESEL")
+        row.operator(
+            "mcell.read_viz_data", text="Read Viz Data",
+            icon='IMPORT')
+        row = layout.row()
+        row.label(text="Molecule Viz Directory: "+mcell.mol_viz.mol_file_dir,
+                  icon='FILE_FOLDER')
+        row = layout.row()
+        row.template_list("UI_UL_list", "viz_seed", mcell.mol_viz,
+                          "mol_viz_seed_list", mcell.mol_viz,
+                          "active_mol_viz_seed_index", rows=2)
+        row = layout.row()
+        row = layout.row()
+        row.label(text="Current Molecule File: "+mcell.mol_viz.mol_file_name,
+                  icon='FILE')
+        row = layout.row()
+        row.template_list("UI_UL_list", "viz_results", mcell.mol_viz,
+                          "mol_file_list", mcell.mol_viz, "mol_file_index",
+                          rows=2)
+        row = layout.row()
+        layout.prop(mcell.mol_viz, "mol_viz_enable")
+
+
+class MCELL_UL_model_objects(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
 
 
 class MCELL_PT_model_objects(bpy.types.Panel):
@@ -277,9 +347,9 @@ class MCELL_PT_model_objects(bpy.types.Panel):
         row.label(text="Model Objects:", icon='MESH_ICOSPHERE')
         row = layout.row()
         col = row.column()
-        col.template_list("UI_UL_list", "model_objects", mcell.model_objects,
-                          "object_list", mcell.model_objects,
-                          "active_obj_index", rows=2)
+        col.template_list("MCELL_UL_model_objects", "model_objects",
+                          mcell.model_objects, "object_list",
+                          mcell.model_objects, "active_obj_index", rows=2)
         col = row.column(align=True)
 #        col.active = (len(context.selected_objects) == 1)
         col.operator("mcell.model_objects_add", icon='ZOOMIN', text="")
@@ -290,44 +360,6 @@ class MCELL_PT_model_objects(bpy.types.Panel):
 #        sub = row.row(align=True)
 #        sub.operator("mcell.model_objects_select", text="Select")
 #        sub.operator("mcell.model_objects_deselect", text="Deselect")
-
-
-class MCELL_PT_viz_results(bpy.types.Panel):
-    bl_label = "CellBlender - Visualize Simulation Results"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-
-        mcell = context.scene.mcell
-
-        row = layout.row()
-        row.operator("mcell.set_mol_viz_dir",
-                     text="Set Molecule Viz Directory", icon="FILESEL")
-        row = layout.row()
-        row.label(text="Molecule Viz Directory: "+mcell.mol_viz.mol_file_dir)
-        row = layout.row()
-        row.label(text="Current Molecule File: "+mcell.mol_viz.mol_file_name)
-        row = layout.row()
-        row.template_list("UI_UL_list", "viz_results", mcell.mol_viz,
-                          "mol_file_list", mcell.mol_viz, "mol_file_index",
-                          rows=2)
-        row = layout.row()
-        layout.prop(mcell.mol_viz, "mol_viz_enable")
-#        row = layout.row()
-#        layout.prop(mcell.mol_viz, "render_and_save")
-
-#        col = row.column(align=True)
-#        col.operator("mcell.mol_viz_prev", icon="PLAY_REVERSE", text="")
-#        col = row.column(align=True)
-#        col.operator("mcell.mol_viz_set_index",
-#                     text=str(mcell.mol_viz.mol_file_index))
-#        col = row.column(align=True)
-#        col.operator("mcell.mol_viz_next", icon="PLAY", text="")
-
 
 '''
 class MCELL_PT_utilities(bpy.types.Panel):
@@ -958,10 +990,21 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                           icon='FORCE_LENNARDJONES')
 
                 row = layout.row()
+
                 col = row.column()
                 col.prop(mcell.rxn_output, "plot_layout")
+
                 col = row.column()
                 col.prop(mcell.rxn_output, "combine_seeds")
+
+                row = layout.row()
+
+                col = row.column()
+                col.prop(mcell.rxn_output, "plot_legend")
+
+                col = row.column()
+                col.prop(mcell.rxn_output, "mol_colors")
+
 
                 row = layout.row()
                 button_num = 0
@@ -980,15 +1023,14 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                                  text=mod_name).plotter_button_label = mod_name
                     button_num = button_num + 1
 
-                layout.separator()
-                layout.separator()
+                #layout.separator()
+                #layout.separator()
 
-                row = layout.row()
-                col = row.column()
-                col.operator("mcell.plot_rxn_output_command",
-                             text="Execute Custom Plot Command:")
-                # col = row.column()
-                layout.prop(mcell.reactions, "plot_command")
+                #row = layout.row()
+                #col = row.column()
+                #col.operator("mcell.plot_rxn_output_command",
+                #             text="Execute Custom Plot Command:")
+                #layout.prop(mcell.reactions, "plot_command")
 
         else:
             row.label(text="Define at least one molecule", icon='ERROR')
@@ -1062,8 +1104,8 @@ class MCELL_PT_define_surface_regions(bpy.types.Panel):
             row = layout.row()
             col = row.column()
             col.template_list("MCELL_UL_check_region", "define_surf_regions",
-                          obj_regs, "region_list", obj_regs,
-                          "active_reg_index", rows=2)
+                              obj_regs, "region_list", obj_regs,
+                              "active_reg_index", rows=2)
             col = row.column(align=True)
             col.operator("mcell.region_add", icon='ZOOMIN', text="")
             col.operator("mcell.region_remove", icon='ZOOMOUT', text="")

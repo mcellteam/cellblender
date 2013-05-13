@@ -80,6 +80,19 @@ for cmd in params:
 
 params = remaining_params
 
+# Remove any page or plot commands that come before the first file because they will create empty plots
+
+remaining_params = []
+found_file = False
+
+for cmd in params:
+    if cmd[0:2] == "f=":
+        found_file = True
+    if found_file or ((cmd != "page") and (cmd != "plot")):
+        remaining_params = remaining_params + [cmd]
+
+params = remaining_params
+
 
 # Separate the commands into a list of lists (one list per page)
 
@@ -180,6 +193,8 @@ for page in plot_cmds:
                 ax.spines['right'].set_color('none')
                 ax.xaxis.set_ticks_position('bottom')
                 ax.yaxis.set_ticks_position('left')
+            else:
+                print ( "Unknown command: " + cmd )
 
         if legend >= 0:
             ax.legend(loc=legend)

@@ -236,6 +236,10 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 
 class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
     filter_invalid = BoolProperty(name="Filter Invalid Entries", default=True)
+    decouple_export_run = BoolProperty(
+        name="Decouple Export and Run", default=False,
+        description="Allow the project to be exported without also running"
+                    " the simulation.")
 
 
 class MCellScratchPanelProperty(bpy.types.PropertyGroup):
@@ -248,11 +252,15 @@ class MCellScratchPanelProperty(bpy.types.PropertyGroup):
         description="Print all Blender icon names (helpful for searching)",
         default=False)
 
+
 class MCellProjectPanelProperty(bpy.types.PropertyGroup):
     base_name = StringProperty(
         name="Project Base Name", default="cellblender_project")
-    # project_dir = StringProperty(name="Project Directory")
-    mcell_binary = StringProperty(name="MCell Binary")
+    mcell_binary = StringProperty(name="MCell Binary",
+        update=cellblender_operators.check_mcell_binary)
+    mcell_binary_valid = BoolProperty(name="MCell Binary Valid",
+        default=False)
+    status = StringProperty(name="Status")
 
 
 class MCellExportProjectPanelProperty(bpy.types.PropertyGroup):
@@ -292,6 +300,14 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
     error_file = EnumProperty(items=error_file_enum,
                               name="Error Log",
                               default='console')
+    remove_append_enum = [
+        ('remove', "Remove Previous Data", ""),
+        ('append', "Append to Previous Data", "")]
+    remove_append = EnumProperty(
+        items=remove_append_enum, name="Previous Simulation Data",
+        default='remove',
+        description="Remove or append to existing rxn/viz data from previous"
+                    " simulations")
     processes_list = CollectionProperty(
         type=MCellRunSimulationProcessesProperty,
         name="Simulation Runner Processes")
@@ -306,6 +322,12 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
 
     """
 
+    mol_viz_seed_list = CollectionProperty(
+        type=MCellStringProperty, name="Visualization Seed List")
+    active_mol_viz_seed_index = IntProperty(
+        name="Current Visualization Seed Index", default=0,
+        update=cellblender_operators.read_viz_data)
+        #update= bpy.ops.mcell.read_viz_data)
     mol_file_dir = StringProperty(
         name="Molecule File Dir", subtype='NONE')
     mol_file_list = CollectionProperty(
@@ -612,9 +634,15 @@ class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
     active_release_index = IntProperty(name="Active Release Index", default=0)
 
 
+class MCellModelObjectsProperty(bpy.types.PropertyGroup):
+    name = StringProperty(
+        name="Object Name", update=cellblender_operators.check_model_object)
+    status = StringProperty(name="Status")
+
+
 class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
     object_list = CollectionProperty(
-        type=MCellStringProperty, name="Object List")
+        type=MCellModelObjectsProperty, name="Object List")
     active_obj_index = IntProperty(name="Active Object Index", default=0)
 
 
@@ -666,10 +694,28 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
         (' plot ', "One Page, Multiple Plots", ""),
         (' ',      "One Page, One Plot", "")]
     plot_layout = bpy.props.EnumProperty ( items=plot_layout_enum, name="" )
+    plot_legend_enum = [
+        ('x', "No Legend", ""),
+        ('0', "Legend with Automatic Placement", ""),
+        ('1', "Legend in Upper Right", ""),
+        ('2', "Legend in Upper Left", ""),
+        ('3', "Legend in Lower Left", ""),
+        ('4', "Legend in Lower Right", ""),
+        # ('5', "Legend on Right", ""), This appears to duplicate option 7
+        ('6', "Legend in Center Left", ""),
+        ('7', "Legend in Center Right", ""),
+        ('8', "Legend in Lower Center", ""),
+        ('9', "Legend in Upper Center", ""),
+        ('10', "Legend in Center", "")]
+    plot_legend = bpy.props.EnumProperty ( items=plot_legend_enum, name="", default='0' )
     combine_seeds = BoolProperty(
         name="Combine Seeds",
         description="Combine all seeds onto the same plot",
         default=True)
+    mol_colors = BoolProperty(
+        name="Molecule Colors",
+        description="Use Molecule Colors for line colors",
+        default=False)
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):

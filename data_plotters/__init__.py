@@ -23,7 +23,7 @@ import subprocess
 import sys
 
 
-print ( "Top of data_plotters/__init__.py" )
+# print ( "Top of data_plotters/__init__.py" )
 
 
 def find_in_path(program_name):
@@ -51,7 +51,7 @@ def find_plotting_options():
     except:
         inpath = False
     if not inpath:
-        print ( "Appending %s to path"%(plot_path) )
+        # print ( "Appending %s to path"%(plot_path) )
         sys.path.append ( plot_path )
 
 
@@ -72,10 +72,12 @@ def find_plotting_options():
                     # print ( "Attempting to import %s" % (import_name) )
                     try:
                         plot_module = __import__ ( f )
-                        print ( "Checking requirements for %s" % ( plot_module.get_name() ) )
+                        # print ( "Checking requirements for %s" % ( plot_module.get_name() ) )
                         if plot_module.requirements_met():
-                            print ( "System requirements met for Plot Module \"%s\"" % ( plot_module.get_name() ) )
+                            # print ( "System requirements met for Plot Module \"%s\"" % ( plot_module.get_name() ) )
                             module_list = module_list + [ plot_module ]
+                        else:
+                            print ( "System requirements NOT met for Plot Module \"%s\"" % ( plot_module.get_name() ) )
                         # print ( "Imported __init__.py from %s" % (f) )
                     except:
                         print ( "Directory %s did not contain a working __init__.py file" % (f) )
@@ -122,15 +124,6 @@ def old_print_plotting_options():
             print ( "  ", plot_mod, "is available through external python interpreter" )
         else:
             print ( "  ", plot_mod, "is not available through external python interpreter" )
-
-
-#try:
-#    # Trap exceptions in case this test code fails for some reason
-#    print ( "Checking plotting options from within data_plotters/__init__.py" )
-#    print_plotting_options()
-#except:
-#    print ( "Exception in print_plotting_options()" )
-#    pass
 
 
 if __name__ == "__main__":

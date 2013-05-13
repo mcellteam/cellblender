@@ -35,8 +35,8 @@ import os
 import random
 import re
 import subprocess
-#import datetime
-#import multiprocessing
+import time
+import shutil
 
 import cellblender
 
@@ -51,6 +51,8 @@ def unregister():
 
 
 #CellBlender Operators:
+
+
 class MCELL_OT_region_add(bpy.types.Operator):
     bl_idname = "mcell.region_add"
     bl_label = "Add New Surface Region"
@@ -460,6 +462,10 @@ def object_regions_format_update(context):
                         mesh["mcell"].pop("regions")
 
 
+# Legacy code from when we used to store regions as vertex groups
+#   Useful to run from Blender's python console on some older models
+#   We'll eliminate this when our face regions have query features akin
+#   to those available with vertex groups.
 class MCELL_OT_vertex_groups_to_regions(bpy.types.Operator):
     bl_idname = "mcell.vertex_groups_to_regions"
     bl_label = "Convert Vertex Groups of Selected Objects to Regions"
@@ -799,8 +805,6 @@ class MCELL_OT_molecule_remove(bpy.types.Operator):
 
         if mcell.molecules.molecule_list:
             check_molecule(self, context)
-        else:
-            mcell.molecules.status = ""
 
         return {'FINISHED'}
 
@@ -859,8 +863,6 @@ class MCELL_OT_reaction_remove(bpy.types.Operator):
 
         if mcell.reactions.reaction_list:
             check_reaction(self, context)
-        else:
-            mcell.reactions.status = ""
 
         return {'FINISHED'}
 
@@ -1337,7 +1339,29 @@ def check_release_object_expr(self, context):
                     status = "Undefined object: %s" % (obj_name)
                     break
 
-    return status
+    return
+
+
+def is_executable ( binary_path ):
+    """Checks for nonexistant or non-executable mcell binary file"""
+    is_exec = False
+    try:
+        st = os.stat ( binary_path )
+        if os.path.isfile( binary_path ):
+            if os.access( binary_path, os.X_OK ):
+                is_exec = True
+    except Exception as err:
+        is_exec = False
+    return is_exec
+    
+
+def check_mcell_binary(self, context):
+    """Callback to check for mcell executable"""
+    mcell = context.scene.mcell
+    binary_path = mcell.project_settings.mcell_binary
+    mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
+    return None
+
 
 
 class MCELL_OT_set_mcell_binary(bpy.types.Operator):
@@ -1361,69 +1385,6 @@ class MCELL_OT_set_mcell_binary(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
 
-#def run_sim(seed):
-#    """ Run the MCell simulations. """
-#
-#    mcell = bpy.context.scene.mcell
-#    mcell_binary = mcell.project_settings.mcell_binary
-#    # Force the project directory to be where the .blend file lives
-#    project_dir = os.path.dirname(bpy.data.filepath)
-#    base_name = mcell.project_settings.base_name
-#    mdl_filepath = '%s.main.mdl' % (base_name)
-#    mdl_filepath = os.path.join ( project_dir, mdl_filepath )
-#    # Log filename will be log.year-month-day_hour:minute_seed.txt
-#    # (e.g. log.2013-03-12_11:45_1.txt)
-#    time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
-#    log_filepath = "%s%s" % (project_dir, "log.%s_%d.txt" % (time_now, seed))
-#    error_filepath = "%s%s" % (
-#        project_dir, "error.%s_%d.txt" % (time_now, seed))
-#
-#    if mcell.run_simulation.error_file == 'none':
-#        error_file = subprocess.DEVNULL
-#    elif mcell.run_simulation.error_file == 'console':
-#        error_file = None
-#
-#    if mcell.run_simulation.log_file == 'none':
-#        log_file = subprocess.DEVNULL
-#    elif mcell.run_simulation.log_file == 'console':
-#        log_file = None
-#
-#    # Both output and error log file
-#    print ( "Running", mcell_binary, "with", mdl_filepath )
-#    subprocess_cwd = os.path.dirname(mdl_filepath)
-#    print ( "  Should run from cwd =", subprocess_cwd )
-#    if (mcell.run_simulation.log_file == 'file' and
-#            mcell.run_simulation.error_file == 'file'):
-#        with open(log_filepath, "w") as log_file, open(
-#                error_filepath, "w") as error_file:
-#            subprocess.call(
-#                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-#                cwd=subprocess_cwd,
-#                stdout=log_file, stderr=error_file)
-#    # Only output log file
-#    elif mcell.run_simulation.log_file == 'file':
-#        with open(log_filepath, "w") as log_file:
-#            subprocess.call(
-#                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-#                cwd=subprocess_cwd,
-#                stdout=log_file, stderr=error_file)
-#    # Only error log file
-#    elif mcell.run_simulation.error_file == 'file':
-#        with open(error_filepath, "w") as error_file:
-#            subprocess.call(
-#                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-#                cwd=subprocess_cwd,
-#                stdout=log_file, stderr=error_file)
-#    # Neither error nor output log
-#    else:
-#        subprocess.call(
-#            [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-#            cwd=subprocess_cwd,
-#            stdout=log_file, stderr=error_file)
-
-import time
-
-
 class MCELL_OT_run_simulation(bpy.types.Operator):
     bl_idname = "mcell.run_simulation"
     bl_label = "Run MCell Simulation"
@@ -1433,13 +1394,34 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
+
+        binary_path = mcell.project_settings.mcell_binary
+        mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
+
         start = mcell.run_simulation.start_seed
         end = mcell.run_simulation.end_seed
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.project_settings.mcell_binary
         # Force the project directory to be where the .blend file lives
-        project_dir = os.path.dirname(bpy.data.filepath)
+        project_dir = project_files_path()
+
+        if not mcell.cellblender_preferences.decouple_export_run:
+            bpy.ops.mcell.export_project()
+
+        react_dir = os.path.join(project_dir, "react_data")
+        if os.path.exists(react_dir) and mcell.run_simulation.remove_append == 'remove':
+            shutil.rmtree(react_dir)
+        if not os.path.exists(react_dir):
+            os.makedirs(react_dir)
+            
+        viz_dir = os.path.join(project_dir, "viz_data")
+        if os.path.exists(viz_dir) and mcell.run_simulation.remove_append == 'remove':
+            shutil.rmtree(viz_dir)
+        if not os.path.exists(viz_dir):
+            os.makedirs(viz_dir)
+        
         base_name = mcell.project_settings.base_name
+
         error_file_option = mcell.run_simulation.error_file
         log_file_option = mcell.run_simulation.log_file
         script_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -1539,6 +1521,35 @@ def clear_run_list(context):
         processes_list.clear()
 
 
+
+@persistent
+def mcell_valid_update(context):
+    """ Check whether the mcell executable in the .blend file is valid """
+    if not context:
+        context = bpy.context
+    mcell = context.scene.mcell
+    binary_path = mcell.project_settings.mcell_binary
+    mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
+    # print ( "mcell_binary_valid = ", mcell.project_settings.mcell_binary_valid )
+
+
+def project_files_path():
+    ''' Consolidate the creation of the path to the project files'''
+    # DUPLICATED FUNCTION ... This is the same function as in cellblender_panesl.py
+    # print ( "DUPLICATED FUNCTION ... PLEASE FIX" )
+    filepath = os.path.dirname(bpy.data.filepath)
+    filepath, dot, blend = bpy.data.filepath.rpartition(os.path.extsep)
+    filepath = filepath + "_files"
+    filepath = os.path.join(filepath, "mcell")
+    return filepath
+
+
+# Operators can't be callbacks, so we need this function for now.  This is
+# temporary until we make importing viz data automatic.
+def read_viz_data(self, context):
+    bpy.ops.mcell.read_viz_data()
+
+
 class MCELL_OT_read_viz_data(bpy.types.Operator):
     bl_idname = "mcell.read_viz_data"
     bl_label = "Read Viz Data"
@@ -1546,59 +1557,83 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        # Called when the molecule files are actually to be read
-        #  (when the "Read Molecule Files" button is pushed)
+        # Called when the molecule files are actually to be read (when the
+        # "Read Molecule Files" button is pushed or a seed value is selected
+        # from the list)
         print("MCELL_OT_read_viz_data.execute() called")
         # self.report({'INFO'}, "Reading Visualization Data")
 
         mcell = context.scene.mcell
-        #if (os.path.isdir(self.filepath)):
-        #    mol_file_dir = self.filepath
-        #else:
-        #    mol_file_dir = os.path.dirname(self.filepath)
 
-        # Force the mol_viz directory to be where the .blend file lives plus
-        # "viz_data"
-        mol_file_dir = os.path.join(os.path.dirname(bpy.data.filepath),
-                                    "viz_data")
+        # Force the top level mol_viz directory to be where the .blend file
+        # lives plus "viz_data". The seed directories will live underneath it.
+        mol_viz_top_level_dir = os.path.join(project_files_path(), "viz_data/")
+        mol_viz_seed_list = glob.glob(os.path.join(mol_viz_top_level_dir, "*"))
+        mol_viz_seed_list.sort()
 
-        mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
-        mol_file_list.sort()
+        # Clear the list of seeds (e.g. seed_00001, seed_00002, etc) and the
+        # list of files (e.g. my_project.cellbin.0001.dat,
+        # my_project.cellbin.0002.dat)
+        mcell.mol_viz.mol_viz_seed_list.clear()
+        mcell.mol_viz.mol_file_list.clear()
 
-        print("Getting molecules from", mol_file_dir)
+        # Add all the seed directories to the mol_viz_seed_list collection
+        # (seed_00001, seed_00002, etc)
+        for mol_viz_seed in mol_viz_seed_list:
+            new_item = mcell.mol_viz.mol_viz_seed_list.add()
+            new_item.name = os.path.basename(mol_viz_seed)
 
-        # Reset mol_file_list to empty
-        for i in range(mcell.mol_viz.mol_file_num-1, -1, -1):
-            mcell.mol_viz.mol_file_list.remove(i)
+        if mcell.mol_viz.mol_viz_seed_list:
+            try:
+                active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[
+                    mcell.mol_viz.active_mol_viz_seed_index]
+            except IndexError:
+                active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[0]
 
-        mcell.mol_viz.mol_file_dir = mol_file_dir
-        i = 0
-        for mol_file_name in mol_file_list:
-            new_item = mcell.mol_viz.mol_file_list.add()
-            new_item.name = os.path.basename(mol_file_name)
-            i += 1
+            mol_file_dir = os.path.join(
+                project_files_path(), "viz_data/%s" % active_mol_viz_seed.name)
 
-        mcell.mol_viz.mol_file_num = len(mcell.mol_viz.mol_file_list)
-        mcell.mol_viz.mol_file_stop_index = mcell.mol_viz.mol_file_num-1
-        mcell.mol_viz.mol_file_index = 0
+            mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
+            mol_file_list.sort()
 
-        mcell.mol_viz.color_index = 0
-        if len(mcell.mol_viz.color_list) == 0:
-            # Create a list of colors to be assigned to the glyphs
-            for i in range(8):
-                mcell.mol_viz.color_list.add()
-            mcell.mol_viz.color_list[0].vec = [0.8, 0.0, 0.0]
-            mcell.mol_viz.color_list[1].vec = [0.0, 0.8, 0.0]
-            mcell.mol_viz.color_list[2].vec = [0.0, 0.0, 0.8]
-            mcell.mol_viz.color_list[3].vec = [0.0, 0.8, 0.8]
-            mcell.mol_viz.color_list[4].vec = [0.8, 0.0, 0.8]
-            mcell.mol_viz.color_list[5].vec = [0.8, 0.8, 0.0]
-            mcell.mol_viz.color_list[6].vec = [1.0, 1.0, 1.0]
-            mcell.mol_viz.color_list[7].vec = [0.0, 0.0, 0.0]
+            # Is there any reason to do it this way instead of using the clear
+            # method?
+            #for i in range(mcell.mol_viz.mol_file_num-1, -1, -1):
+            #    mcell.mol_viz.mol_file_list.remove(i)
 
-        print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list))
-        context.scene.frame_end = len(mcell.mol_viz.mol_file_list)
-        mol_viz_update(self, context)
+            mcell.mol_viz.mol_file_dir = mol_file_dir
+            # Add all the viz_data files to mol_file_list collection (e.g.
+            # my_project.cellbin.0001.dat, my_project.cellbin.0001.dat, etc)
+            for mol_file_name in mol_file_list:
+                new_item = mcell.mol_viz.mol_file_list.add()
+                new_item.name = os.path.basename(mol_file_name)
+
+            mcell.mol_viz.mol_file_num = len(mcell.mol_viz.mol_file_list)
+            mcell.mol_viz.mol_file_stop_index = mcell.mol_viz.mol_file_num-1
+
+            try:
+                mol_file = mcell.mol_viz.mol_file_list[
+                    mcell.mol_viz.mol_file_index]
+            except IndexError:
+                mcell.mol_viz.mol_file_index = 0
+
+            mcell.mol_viz.color_index = 0
+            if not mcell.mol_viz.color_list:
+                # Create a list of colors to be assigned to the glyphs
+                for i in range(8):
+                    mcell.mol_viz.color_list.add()
+                mcell.mol_viz.color_list[0].vec = [0.8, 0.0, 0.0]
+                mcell.mol_viz.color_list[1].vec = [0.0, 0.8, 0.0]
+                mcell.mol_viz.color_list[2].vec = [0.0, 0.0, 0.8]
+                mcell.mol_viz.color_list[3].vec = [0.0, 0.8, 0.8]
+                mcell.mol_viz.color_list[4].vec = [0.8, 0.0, 0.8]
+                mcell.mol_viz.color_list[5].vec = [0.8, 0.8, 0.0]
+                mcell.mol_viz.color_list[6].vec = [1.0, 1.0, 1.0]
+                mcell.mol_viz.color_list[7].vec = [0.0, 0.0, 0.0]
+
+            print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list))
+            context.scene.frame_end = len(mcell.mol_viz.mol_file_list)
+            mol_viz_update(self, context)
         return {'FINISHED'}
 
 
@@ -1610,28 +1645,45 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
     def execute(self, context):
         print("MCELL_OT_export_project.execute()")
+        print(" Scene name =", context.scene.name)
+
+        # Filter or replace problem characters (like space, ...)
+        scene_name = context.scene.name.replace(" ", "_")
+
+        # Change the actual scene name to the legal MCell Name
+        context.scene.name = scene_name
+
         mcell = context.scene.mcell
 
         # Force the project directory to be where the .blend file lives
         model_objects_update(context)
 
-        print("MCELL_OT_export_project.execute() before if")
+        filepath = project_files_path()
+        os.makedirs(filepath, exist_ok=True)
+
+        # Set this for now to have it hopefully propagate until base_name can
+        # be removed
+        mcell.project_settings.base_name = scene_name
+
+        #filepath = os.path.join(
+        #   filepath, mcell.project_settings.base_name + ".main.mdl")
+        filepath = os.path.join(filepath, scene_name + ".main.mdl")
+        bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+
         # These two branches of the if statement seem identical ?
-        if mcell.export_project.export_format == 'mcell_mdl_unified':
-            filepath = os.path.join(os.path.dirname(bpy.data.filepath),
-                                    (mcell.project_settings.base_name +
-                                    ".main.mdl"))
-            bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
-        elif mcell.export_project.export_format == 'mcell_mdl_modular':
-            filepath = os.path.join(os.path.dirname(bpy.data.filepath),
-                                    (mcell.project_settings.base_name +
-                                    ".main.mdl"))
-            bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+
+        #if mcell.export_project.export_format == 'mcell_mdl_unified':
+        #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
+        #                            (mcell.project_settings.base_name +
+        #                            ".main.mdl"))
+        #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+        #elif mcell.export_project.export_format == 'mcell_mdl_modular':
+        #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
+        #                            (mcell.project_settings.base_name +
+        #                            ".main.mdl"))
+        #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
 
         self.report({'INFO'}, "Project Exported")
-
-        print("MCELL_OT_export_project.execute() after if with filepath",
-              filepath)
 
         return {'FINISHED'}
 
@@ -1647,6 +1699,8 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
 
     def __init__(self):
         self.directory = bpy.context.scene.mcell.mol_viz.mol_file_dir
+        self.directory = os.path.join(project_files_path(), "viz_data")
+        print("Setting self.directory to ", self.directory)
 
     # Note: use classmethod "poll" to determine when
     # runability of operator is valid
@@ -1655,10 +1709,22 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     #    def poll(cls, context):
     #        return context.object is not None
 
+    def new_mol_viz_dir(self, context):
+        mol_file_dir = os.path.join(project_files_path(), "viz_data")
+        print("new_mol_viz_dir returning path of: ", mol_file_dir)
+
+        mcell = context.scene.mcell
+        mcell.mol_viz.mol_file_name = mol_file_dir
+        return(mol_file_dir)
+
     def execute(self, context):
         # Called when the molecule files are actually to be read
         #  (when the "Read Molecule Files" button is pushed)
         print("MCELL_OT_set_mol_viz_dir.execute() called")
+        self.directory = os.path.join(project_files_path(), "viz_data")
+        print("self.directory = ", self.directory)
+
+        self.new_mol_viz_dir(context)
 
         mcell = context.scene.mcell
         #if (os.path.isdir(self.filepath)):
@@ -1668,13 +1734,16 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
 
         # Force the mol_viz directory to be where the .blend file lives plus
         # "viz_data"
-        mol_file_dir = os.path.join(os.path.dirname(bpy.data.filepath),
-                                    "viz_data")
+
+        # mol_file_dir = os.path.join(
+        #   os.path.dirname(bpy.data.filepath), "viz_data")
+        mol_file_dir = self.new_mol_viz_dir(context)
+        mcell.mol_viz.mol_file_name = mol_file_dir
 
         mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
         mol_file_list.sort()
 
-        print("Getting molecules from", mol_file_dir)
+        print("set_mol_viz_dir: Getting molecules from", mol_file_dir)
 
         # Reset mol_file_list to empty
         for i in range(mcell.mol_viz.mol_file_num-1, -1, -1):
@@ -1713,7 +1782,9 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
     def invoke(self, context, event):
         # Called when the file selection panel is requested
         #  (when the "Set Molecule Viz Directory" button is pushed)
-        print("MCELL_OT_set_mol_viz_dir.invoke() called")
+        print("MCELL_OT_set_mol_viz_dir.invoke() called with self.filepath ="
+              " %s and self.directory = %s " % (self.filepath, self.directory))
+        self.new_mol_viz_dir(context)
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
@@ -1753,8 +1824,10 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         plot_sep = mcell.rxn_output.plot_layout
+        plot_legend = mcell.rxn_output.plot_legend
 
         combine_seeds = mcell.rxn_output.combine_seeds
+        mol_colors = mcell.rxn_output.mol_colors
 
         plot_button_label = self.plotter_button_label
 
@@ -1766,10 +1839,12 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
             if mod_name == plot_button_label:
                 # Plot the data via this module
                 # print("Preparing to call %s" % (mod_name))
-                # Force the project directory to be where the .blend file lives
-                data_path = os.path.dirname(bpy.data.filepath)
+                # The project_files_path is now where the MDL lives:
+                data_path = project_files_path()
                 data_path = os.path.join(data_path, "react_data")
-                plot_spec_string = ""
+                plot_spec_string = "xlabel=time(s) ylabel=count "
+                if plot_legend != 'x':
+                    plot_spec_string = plot_spec_string + "legend=" + plot_legend
 
                 settings = mcell.project_settings
 
@@ -1787,38 +1862,76 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                         region_name = rxn_output.region_name
                         fn = None
                         if rxn_output.count_location == 'World':
-                            fn = "%s.World.*.dat" % (molecule_name)
+                            # fn = "%s.World.*.dat" % (molecule_name)
+                            fn = "%s.World.dat" % (molecule_name)
                         elif rxn_output.count_location == 'Object':
-                            fn = "%s.%s.*.dat" % (molecule_name, object_name)
+                            # fn = "%s.%s.*.dat" % (molecule_name, object_name)
+                            fn = "%s.%s.dat" % (molecule_name, object_name)
                         elif rxn_output.count_location == 'Region':
-                            fn = "%s.%s.%s.*.dat" % (molecule_name,
-                                                     object_name, region_name)
+                            #fn = "%s.%s.%s.*.dat" % (molecule_name,
+                            #                         object_name, region_name)
+                            fn = "%s.%s.%s.dat" % (molecule_name,
+                                                   object_name, region_name)
                         if fn is not None:
+                            fn = os.path.join ( "seed_*", fn )
                             candidate_file_list = glob.glob(
                                 os.path.join(data_path, fn))
-                            # print("Candidate file list for %s:" % (fn))
-                            # print("  ", candidate_file_list)
+                            # Without sorting, the seeds may not be increasing
+                            candidate_file_list.sort()
+                            #print("Candidate file list for %s:" % (fn))
+                            #print("  ", candidate_file_list)
                             first_pass = True
-                            for f in candidate_file_list:
-                                if os.stat(f).st_mtime > start_time:
+                            for ffn in candidate_file_list:
+                                if os.stat(ffn).st_mtime > start_time:
                                     # This file is both in the list and newer
                                     # than the run time for MCell
+
+                                    # Create f as a relative path containing seed/file
+                                    split1 = os.path.split(ffn)
+                                    split2 = os.path.split(split1[0])
+                                    f = os.path.join ( split2[1], split1[1] )
+                                    
+                                    color_string = ""
+                                    if mol_colors:
+                                        # Use molecule colors for graphs
+                                        mol_mat_name = "mol_%s_mat" % (molecule_name)  # Should be standardized!!
+                                        #print ( "Molecule Material Name = ", mol_mat_name )
+                                        #Look up the material
+                                        mats = bpy.data.materials
+                                        mol_color = mats.get(mol_mat_name).diffuse_color
+                                        #print ( "Molecule color = ", mol_mat.diffuse_color )
+
+                                        mol_color_red = 255 * mol_color.r
+                                        mol_color_green = 255 * mol_color.g
+                                        mol_color_blue = 255 * mol_color.b
+                                        color_string = " color=#%2.2x%2.2x%2.2x " % (mol_color_red, mol_color_green, mol_color_blue)
+
                                     base_name = os.path.basename(f)
+
+                                    if combine_seeds:
+                                        title_string = " title=" + base_name
+                                    else:
+                                        title_string = " title=" + f
+                                    
+                                    if plot_sep == ' ':
+                                        # No title when all are on the same plot since only last will show
+                                        title_string = ""
+
                                     if combine_seeds:
                                         psep = " "
                                         if first_pass:
                                             psep = plot_sep
                                             first_pass = False
                                         plot_spec_string = (
-                                            plot_spec_string + psep +
-                                            " title=" + base_name + " f=" +
-                                            base_name)
+                                            plot_spec_string + psep + color_string +
+                                            title_string + " f=" + f)
                                     else:
                                         plot_spec_string = (
-                                            plot_spec_string + plot_sep +
-                                            " title=" + base_name + " f=" +
-                                            base_name)
+                                            plot_spec_string + plot_sep + color_string +
+                                            title_string + " f=" + f)
 
+                print("Plotting from", data_path)
+                print("Plotting spec", plot_spec_string)
                 plot_module.plot(data_path, plot_spec_string)
 
         return {'FINISHED'}
@@ -2440,6 +2553,13 @@ def model_objects_update(context):
             mobjs.object_list.add()
             mobjs.active_obj_index = len(mobjs.object_list)-1
             mobjs.object_list[mobjs.active_obj_index].name = obj_name
+            scene_object = sobjs[obj_name]
+            # Set an error status if object is not triangulated
+            for face in scene_object.data.polygons:
+                if not (len(face.vertices) == 3):
+                    status = "Object is not triangulated: %s" % (obj_name)
+                    mobjs.object_list[mobjs.active_obj_index].status = status
+                    break
 
         mobjs.active_obj_index = active_index
 
@@ -2497,6 +2617,26 @@ class MCELL_OT_model_objects_remove(bpy.types.Operator):
                     mobjs.active_obj_index = 0
 
         return {'FINISHED'}
+
+
+def check_model_object(self, context):
+    """Checks for illegal object name"""
+
+    mcell = context.scene.mcell
+    model_object_list = mcell.model_objects.object_list
+    model_object = model_object_list[mcell.model_objects.active_obj_index]
+
+    status = ""
+
+    # Check for illegal names (Starts with a letter. No special characters.)
+    model_object_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
+    m = re.match(model_object_filter, model_object.name)
+    if m is None:
+        status = "Object name error: %s" % (model_object.name)
+
+    model_object.status = status
+
+    return
 
 
 class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
@@ -2571,8 +2711,6 @@ class MCELL_OT_rxn_output_remove(bpy.types.Operator):
 
         if mcell.rxn_output.rxn_output_list:
             check_rxn_output(self, context)
-        else:
-            mcell.rxn_output.status = ""
 
         return {'FINISHED'}
 
@@ -2669,9 +2807,9 @@ def update_clamp_value(self, context):
         mcell.surface_classes.active_surf_class_index]
     surf_class_props = active_surf_class.surf_class_props_list[
         active_surf_class.active_surf_class_props_index]
-    surf_class_type = surf_class_props.surf_class_type
-    orient = surf_class_props.surf_class_orient
-    molecule = surf_class_props.molecule
+    #surf_class_type = surf_class_props.surf_class_type
+    #orient = surf_class_props.surf_class_orient
+    #molecule = surf_class_props.molecule
     clamp_value_str = surf_class_props.clamp_value_str
 
     (clamp_value, status) = check_val_str(clamp_value_str, 0, None)
@@ -2679,21 +2817,21 @@ def update_clamp_value(self, context):
     if status == "":
         surf_class_props.clamp_value = clamp_value
     else:
-        status = status % ("clamp_value", clamp_value_str)
+        #status = status % ("clamp_value", clamp_value_str)
         surf_class_props.clamp_value_str = "%g" % (
             surf_class_props.clamp_value)
 
-    surf_class_type = convert_surf_class_str(surf_class_type)
-    orient = convert_orient_str(orient)
+    #surf_class_type = convert_surf_class_str(surf_class_type)
+    #orient = convert_orient_str(orient)
 
-    if molecule:
-        surf_class_props.name = "Molec.: %s   Orient.: %s   Type: %s" % (
-            molecule, orient, surf_class_type)
-    else:
-        surf_class_props.name = "Molec.: NA   Orient.: %s   Type: %s" % (
-            orient, surf_class_type)
+    #if molecule:
+    #    surf_class_props.name = "Molec.: %s   Orient.: %s   Type: %s" % (
+    #        molecule, orient, surf_class_type)
+    #else:
+    #    surf_class_props.name = "Molec.: NA   Orient.: %s   Type: %s" % (
+    #        orient, surf_class_type)
 
-    surf_class.surf_class_props_status = status
+    #surf_class.surf_class_props_status = status
 
     return
 
@@ -2755,7 +2893,7 @@ def update_space_step(self, context):
 
 
 def update_interaction_radius(self, context):
-    """ Store the space step as a float if it's legal or create an error """
+    """ Store interaction radius as a float if legal or create an error """
 
     mcell = context.scene.mcell
     interaction_radius_str = mcell.initialization.interaction_radius_str
@@ -2774,7 +2912,7 @@ def update_interaction_radius(self, context):
 
 
 def update_radial_directions(self, context):
-    """ Store the space step as a float if it's legal or create an error """
+    """ Store radial directions as a float if it's legal or create an error """
 
     mcell = context.scene.mcell
     radial_directions_str = mcell.initialization.radial_directions_str
@@ -2793,7 +2931,7 @@ def update_radial_directions(self, context):
 
 
 def update_radial_subdivisions(self, context):
-    """ Store the space step as a float if it's legal or create an error """
+    """ Store radial subdivisions as a float if legal or create an error """
 
     mcell = context.scene.mcell
     radial_subdivisions_str = mcell.initialization.radial_subdivisions_str
@@ -2812,7 +2950,7 @@ def update_radial_subdivisions(self, context):
 
 
 def update_vacancy_search_distance(self, context):
-    """ Store the space step as a float if it's legal or create an error """
+    """ Store vacancy search distance as float if legal or create an error """
 
     mcell = context.scene.mcell
     vacancy_search_distance_str = \
@@ -2846,10 +2984,10 @@ def update_diffusion_constant(self, context):
     if status == "":
         mol.diffusion_constant = diffusion_constant
     else:
-        status = status % ("diffusion_constant", diffusion_constant_str)
+        #status = status % ("diffusion_constant", diffusion_constant_str)
         mol.diffusion_constant_str = "%g" % (mol.diffusion_constant)
 
-    mcell.molecules.status = status
+    #mcell.molecules.status = status
 
     return
 
@@ -2866,10 +3004,10 @@ def update_custom_time_step(self, context):
     if status == "":
         mol.custom_time_step = custom_time_step
     else:
-        status = status % ("custom_time_step", custom_time_step_str)
+        #status = status % ("custom_time_step", custom_time_step_str)
         mol.custom_time_step_str = "%g" % (mol.custom_time_step)
 
-    mcell.molecules.status = status
+    #mcell.molecules.status = status
 
     return
 
@@ -2886,10 +3024,10 @@ def update_custom_space_step(self, context):
     if status == "":
         mol.custom_space_step = custom_space_step
     else:
-        status = status % ("custom_space_step", custom_space_step_str)
+        #status = status % ("custom_space_step", custom_space_step_str)
         mol.custom_space_step_str = "%g" % (mol.custom_space_step)
 
-    mcell.molecules.status = status
+    #mcell.molecules.status = status
 
     return
 
@@ -2906,10 +3044,10 @@ def update_fwd_rate(self, context):
     if status == "":
         rxn.fwd_rate = fwd_rate
     else:
-        status = status % ("fwd_rate", fwd_rate_str)
+        #status = status % ("fwd_rate", fwd_rate_str)
         rxn.fwd_rate_str = "%g" % (rxn.fwd_rate)
 
-    mcell.reactions.status = status
+    #mcell.reactions.status = status
 
     return
 
@@ -2926,9 +3064,9 @@ def update_bkwd_rate(self, context):
     if status == "":
         rxn.bkwd_rate = bkwd_rate
     else:
-        status = status % ("bkwd_rate", bkwd_rate_str)
+        #status = status % ("bkwd_rate", bkwd_rate_str)
         rxn.bkwd_rate_str = "%g" % (rxn.bkwd_rate)
 
-    mcell.reactions.status = status
+    #mcell.reactions.status = status
 
     return
