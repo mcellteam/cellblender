@@ -45,6 +45,7 @@ def unregister():
 #Custom Properties
 
 class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
+    id = IntProperty(name="Unique ID of This Region",default=-1)
     name = StringProperty(
         name="Region Name", default="Region",
         update=cellblender_operators.region_update)
@@ -54,8 +55,8 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
 class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
     region_list = CollectionProperty(
         type=MCellSurfaceRegionProperty, name="Surface Region List")
+    id_counter = IntProperty(name="Counter for Unique Region IDs", default=0)
     active_reg_index = IntProperty(name="Active Region Index", default=0)
-    status = StringProperty(name="Status")
 
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):

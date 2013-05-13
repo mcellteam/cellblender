@@ -182,6 +182,8 @@ if len(bpy.app.handlers.load_post) == 0:
         cellblender_operators.clear_run_list)
     bpy.app.handlers.load_post.append(
         cellblender_operators.model_objects_update)
+    bpy.app.handlers.load_post.append(
+        cellblender_operators.object_regions_format_update)
 
 if len(bpy.app.handlers.save_pre) == 0:
     bpy.app.handlers.save_pre.append(

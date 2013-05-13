@@ -35,6 +35,8 @@ import re
 # blender imports
 import bpy
 
+from cellblender import cellblender_operators
+
 
 def get_regions(obj):
     """ return a dictionary with region names """
@@ -42,7 +44,11 @@ def get_regions(obj):
     reg_dict = {}
     obj_regs = obj.mcell.regions.region_list
     for reg in obj_regs:
-        reg_dict[reg.name] = obj.data['mcell']['regions'][reg.name].to_list()
+        id = str(reg.id)
+        mesh = obj.data
+        reg_faces = list(cellblender_operators.get_region_faces(mesh,id))
+        reg_faces.sort()
+        reg_dict[reg.name] = reg_faces
 
     return reg_dict
 
