@@ -1246,66 +1246,77 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
         mcell_binary = mcell.project_settings.mcell_binary
         # Force the project directory to be where the .blend file lives
         project_dir = project_files_path()
+        status = ""
+        python_path = shutil.which("python")
 
-        if not mcell.cellblender_preferences.decouple_export_run:
-            bpy.ops.mcell.export_project()
+        if python_path:
+            if not mcell.cellblender_preferences.decouple_export_run:
+                bpy.ops.mcell.export_project()
 
-        react_dir = os.path.join(project_dir, "react_data")
-        if os.path.exists(react_dir) and mcell.run_simulation.remove_append == 'remove':
-            shutil.rmtree(react_dir)
-        if not os.path.exists(react_dir):
-            os.makedirs(react_dir)
-            
-        viz_dir = os.path.join(project_dir, "viz_data")
-        if os.path.exists(viz_dir) and mcell.run_simulation.remove_append == 'remove':
-            shutil.rmtree(viz_dir)
-        if not os.path.exists(viz_dir):
-            os.makedirs(viz_dir)
-        
-        base_name = mcell.project_settings.base_name
+            react_dir = os.path.join(project_dir, "react_data")
+            if (os.path.exists(react_dir) and
+                    mcell.run_simulation.remove_append == 'remove'):
+                shutil.rmtree(react_dir)
+            if not os.path.exists(react_dir):
+                os.makedirs(react_dir)
 
-        error_file_option = mcell.run_simulation.error_file
-        log_file_option = mcell.run_simulation.log_file
-        script_dir_path = os.path.dirname(os.path.realpath(__file__))
-        script_file_path = os.path.join(script_dir_path, "run_simulations.py")
+            viz_dir = os.path.join(project_dir, "viz_data")
+            if (os.path.exists(viz_dir) and
+                    mcell.run_simulation.remove_append == 'remove'):
+                shutil.rmtree(viz_dir)
+            if not os.path.exists(viz_dir):
+                os.makedirs(viz_dir)
 
-        processes_list = mcell.run_simulation.processes_list
-        processes_list.add()
-        mcell.run_simulation.active_process_index = len(
-            mcell.run_simulation.processes_list)-1
-        simulation_process = processes_list[
-            mcell.run_simulation.active_process_index]
+            base_name = mcell.project_settings.base_name
 
-        print("Starting MCell ... create start_time.txt file:")
-        with open(os.path.join(os.path.dirname(bpy.data.filepath),
-                  "start_time.txt"), "w") as start_time_file:
-            start_time_file.write(
-                "Started MCell at: " + (str(time.ctime())) + "\n")
+            error_file_option = mcell.run_simulation.error_file
+            log_file_option = mcell.run_simulation.log_file
+            script_dir_path = os.path.dirname(os.path.realpath(__file__))
+            script_file_path = os.path.join(
+                script_dir_path, "run_simulations.py")
 
-        # We have to create a new subprocess that in turn creates a
-        # multiprocessing pool, instead of directly creating it here, because
-        # the multiprocessing package requires that the __main__ module be
-        # importable by the children.
-        sp = subprocess.Popen([
-            script_file_path, mcell_binary, str(start), str(end + 1),
-            project_dir, base_name, error_file_option, log_file_option,
-            mcell_processes_str], stdout=None, stderr=None)
-        self.report({'INFO'}, "Simulation Running")
+            processes_list = mcell.run_simulation.processes_list
+            processes_list.add()
+            mcell.run_simulation.active_process_index = len(
+                mcell.run_simulation.processes_list) - 1
+            simulation_process = processes_list[
+                mcell.run_simulation.active_process_index]
 
-        # This is a hackish workaround since we can't return arbitrary objects
-        # from operators or store arbitrary objects in collection properties,
-        # and we need to keep track of the progress of the subprocess objects
-        # in cellblender_panels.
-        cellblender.simulation_popen_list.append(sp)
+            print("Starting MCell ... create start_time.txt file:")
+            with open(os.path.join(os.path.dirname(bpy.data.filepath),
+                      "start_time.txt"), "w") as start_time_file:
+                start_time_file.write(
+                    "Started MCell at: " + (str(time.ctime())) + "\n")
 
-        #mcell.run_simulation.pid = sp.pid
-        if end-start == 0:
-            simulation_process.name = "PID: %d, MDL: %s.main.mdl, Seed: %d" % (
-                sp.pid, base_name, start)
+            # We have to create a new subprocess that in turn creates a
+            # multiprocessing pool, instead of directly creating it here,
+            # because the multiprocessing package requires that the __main__
+            # module be importable by the children.
+            sp = subprocess.Popen([
+                python_path, script_file_path, mcell_binary, str(start),
+                str(end + 1), project_dir, base_name, error_file_option,
+                log_file_option, mcell_processes_str], stdout=None,
+                stderr=None)
+            self.report({'INFO'}, "Simulation Running")
+
+            # This is a hackish workaround since we can't return arbitrary
+            # objects from operators or store arbitrary objects in collection
+            # properties, and we need to keep track of the progress of the
+            # subprocess objects in cellblender_panels.
+            cellblender.simulation_popen_list.append(sp)
+
+            if ((end - start) == 0):
+                simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
+                                           "Seed: %d" % (sp.pid, base_name,
+                                                         start))
+            else:
+                simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
+                                           "Seeds: %d-%d" % (sp.pid, base_name,
+                                                             start, end))
         else:
-            simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                       "Seeds: %d-%d" % (sp.pid, base_name,
-                                                         start, end))
+            status = "Python not found."
+
+        mcell.run_simulation.status = status
 
         return {'FINISHED'}
 

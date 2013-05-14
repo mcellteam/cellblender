@@ -312,6 +312,7 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
         name="Simulation Runner Processes")
     active_process_index = IntProperty(
         name="Active Simulation Runner Process Index", default=0)
+    status = StringProperty(name="Status")
 
 
 class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
