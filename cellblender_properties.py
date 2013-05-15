@@ -45,6 +45,7 @@ def unregister():
 #Custom Properties
 
 class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
+    id = IntProperty(name="Unique ID of This Region",default=-1)
     name = StringProperty(
         name="Region Name", default="Region",
         update=cellblender_operators.region_update)
@@ -54,8 +55,8 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
 class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
     region_list = CollectionProperty(
         type=MCellSurfaceRegionProperty, name="Surface Region List")
+    id_counter = IntProperty(name="Counter for Unique Region IDs", default=0)
     active_reg_index = IntProperty(name="Active Region Index", default=0)
-    status = StringProperty(name="Status")
 
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
@@ -694,10 +695,28 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
         (' plot ', "One Page, Multiple Plots", ""),
         (' ',      "One Page, One Plot", "")]
     plot_layout = bpy.props.EnumProperty ( items=plot_layout_enum, name="" )
+    plot_legend_enum = [
+        ('x', "No Legend", ""),
+        ('0', "Legend with Automatic Placement", ""),
+        ('1', "Legend in Upper Right", ""),
+        ('2', "Legend in Upper Left", ""),
+        ('3', "Legend in Lower Left", ""),
+        ('4', "Legend in Lower Right", ""),
+        # ('5', "Legend on Right", ""), This appears to duplicate option 7
+        ('6', "Legend in Center Left", ""),
+        ('7', "Legend in Center Right", ""),
+        ('8', "Legend in Lower Center", ""),
+        ('9', "Legend in Upper Center", ""),
+        ('10', "Legend in Center", "")]
+    plot_legend = bpy.props.EnumProperty ( items=plot_legend_enum, name="", default='0' )
     combine_seeds = BoolProperty(
         name="Combine Seeds",
         description="Combine all seeds onto the same plot",
         default=True)
+    mol_colors = BoolProperty(
+        name="Molecule Colors",
+        description="Use Molecule Colors for line colors",
+        default=False)
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):

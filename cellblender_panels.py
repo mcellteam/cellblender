@@ -89,7 +89,7 @@ class MCELL_PT_project_settings(bpy.types.Panel):
             # Using pin icon to be consistent with project directory, but maybe
             # we should use error icon to be consistent with other sections.
             row.label("MCell Binary not set", icon='UNPINNED')
-        elif (not mcell.project_settings.mcell_binary_valid) or (not cellblender.cellblender_operators.is_executable (mcell_binary)):
+        elif not mcell.project_settings.mcell_binary_valid:
             row.label("MCell File/Permissions Error: " +
                 mcell.project_settings.mcell_binary, icon='ERROR')
         else:
@@ -993,10 +993,21 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                           icon='FORCE_LENNARDJONES')
 
                 row = layout.row()
+
                 col = row.column()
                 col.prop(mcell.rxn_output, "plot_layout")
+
                 col = row.column()
                 col.prop(mcell.rxn_output, "combine_seeds")
+
+                row = layout.row()
+
+                col = row.column()
+                col.prop(mcell.rxn_output, "plot_legend")
+
+                col = row.column()
+                col.prop(mcell.rxn_output, "mol_colors")
+
 
                 row = layout.row()
                 button_num = 0
@@ -1015,15 +1026,14 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                                  text=mod_name).plotter_button_label = mod_name
                     button_num = button_num + 1
 
-                layout.separator()
-                layout.separator()
+                #layout.separator()
+                #layout.separator()
 
-                row = layout.row()
-                col = row.column()
-                col.operator("mcell.plot_rxn_output_command",
-                             text="Execute Custom Plot Command:")
-                # col = row.column()
-                layout.prop(mcell.reactions, "plot_command")
+                #row = layout.row()
+                #col = row.column()
+                #col.operator("mcell.plot_rxn_output_command",
+                #             text="Execute Custom Plot Command:")
+                #layout.prop(mcell.reactions, "plot_command")
 
         else:
             row.label(text="Define at least one molecule", icon='ERROR')

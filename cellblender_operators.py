@@ -64,8 +64,12 @@ class MCELL_OT_region_add(bpy.types.Operator):
         mcell_obj.regions.region_list.add()
         mcell_obj.regions.active_reg_index = len(
             mcell_obj.regions.region_list)-1
+        id = mcell_obj.regions.id_counter
+        mcell_obj.regions.id_counter += 1
         mcell_obj.regions.region_list[
-            mcell_obj.regions.active_reg_index].name = "Region"
+            mcell_obj.regions.active_reg_index].id = id
+        mcell_obj.regions.region_list[
+            mcell_obj.regions.active_reg_index].name = "Region_%d" % (id)
 
         return {'FINISHED'}
 
@@ -77,12 +81,23 @@ class MCELL_OT_region_remove(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        mcell_obj = context.object.mcell
-        mcell_obj.regions.region_list.remove(
-            mcell_obj.regions.active_reg_index)
-        mcell_obj.regions.active_reg_index -= 1
-        if (mcell_obj.regions.active_reg_index < 0):
-            mcell_obj.regions.active_reg_index = 0
+        obj = context.object
+        obj_regs = context.object.mcell.regions
+
+        # Clear existing faces from this region id
+        reg = obj_regs.region_list[obj_regs.active_reg_index]
+        id = str(reg.id)
+        mesh = obj.data
+        for seg_id in mesh["mcell"]["regions"][id].keys():
+            mesh["mcell"]["regions"][id][seg_id] = []
+        mesh["mcell"]["regions"][id].clear()
+        mesh["mcell"]["regions"].pop(id)
+
+        # Now remove the region from the object
+        obj_regs.region_list.remove(obj_regs.active_reg_index)
+        obj_regs.active_reg_index -= 1
+        if (obj_regs.active_reg_index < 0):
+            obj_regs.active_reg_index = 0
 
         return {'FINISHED'}
 
@@ -114,30 +129,10 @@ def inplace_quicksort(v, beg, end):  # collection array, int, int
     return
 
 
-def region_update(self, context):
-    """Sorts region list and performs checks after update of region names"""
-
-    mcell_obj = context.object.mcell
-    reg_list = mcell_obj.regions.region_list
-    act_reg = reg_list[mcell_obj.regions.active_reg_index]
-    act_reg_name = act_reg.name
-
-    if reg_list:
-        check_region(self, context)
-
-    # Sort the region list
-    inplace_quicksort(reg_list, 0, len(reg_list)-1)
-
-    act_i = reg_list.find(act_reg_name)
-    mcell_obj.regions.active_reg_index = act_i
-
-    return
-
-
-def check_region(self, context):
+def check_region_name(obj):
     """Checks for duplicate or illegal region name"""
 
-    mcell_obj = context.object.mcell
+    mcell_obj = obj.mcell
     reg_list = mcell_obj.regions.region_list
     act_reg = reg_list[mcell_obj.regions.active_reg_index]
     act_reg_name = act_reg.name
@@ -160,6 +155,145 @@ def check_region(self, context):
     return
 
 
+def sort_region_list(obj):
+    """Sorts region list"""
+
+    mcell_obj = obj.mcell
+    reg_list = mcell_obj.regions.region_list
+    act_reg = reg_list[mcell_obj.regions.active_reg_index]
+    act_reg_name = act_reg.name
+
+    # Sort the region list
+    inplace_quicksort(reg_list, 0, len(reg_list)-1)
+
+    act_i = reg_list.find(act_reg_name)
+    mcell_obj.regions.active_reg_index = act_i
+
+    return
+
+
+def region_update(self, context):
+    """Performs checks and sorts region list after update of region names"""
+
+    obj = context.object
+    mcell_obj = obj.mcell
+    reg_list = mcell_obj.regions.region_list
+
+    if reg_list:
+        check_region_name(obj)
+        sort_region_list(obj)
+
+    return
+
+
+def rl_encode(l):
+    """Run-length encode an array of face indices"""
+
+    runlen = 0
+    runstart = 0
+    rle = []
+    i = 0
+
+    while (i < len(l)):
+      if (runlen == 0):
+        rle.append(l[i])
+        runstart = l[i]
+        runlen = 1
+        i+=1
+      elif (l[i] == (runstart+runlen)):
+        if (i < (len(l)-1)):
+          runlen += 1
+        else:
+          if (runlen == 1):
+            rle.append(runstart+1)
+          else:
+            rle.append(-runlen)
+        i+=1
+      elif (runlen == 1):
+        runlen = 0
+      elif (runlen == 2):
+        rle.append(runstart+1)
+        runlen = 0
+      else:
+        rle.append(-(runlen-1))
+        runlen = 0
+
+    return(rle)
+
+
+def rl_decode(l):
+    """Decode a run-length encoded array of face indices"""
+
+    runlen = 0
+    runstart = 0
+    rld = []
+    i = 0
+
+    while (i < len(l)):
+      if (runlen == 0):
+        rld.append(l[i])
+        runstart = l[i]
+        runlen = 1
+        i+=1
+      elif (l[i] > 0):
+        runlen = 0
+      else:
+        for j in range(1,-l[i]+1):
+          rld.append(runstart+j)
+        runlen = 0
+        i+=1
+
+    return(rld)
+
+
+def get_region_faces(mesh,id):
+    """Given a mesh and a region id, return the set of region face indices"""
+
+    if not mesh.get("mcell"):
+        mesh["mcell"] = {}
+    if not mesh["mcell"].get("regions"):
+        mesh["mcell"]["regions"] = {}
+    if not mesh["mcell"]["regions"].get(id):
+        mesh["mcell"]["regions"][id] = {}
+    face_rle = []
+    for seg_id in mesh["mcell"]["regions"][id].keys():
+      face_rle.extend(mesh["mcell"]["regions"][id][seg_id].to_list())
+    if (len(face_rle) > 0): 
+        face_set = set(rl_decode(face_rle))
+    else:
+        face_set = set([])
+
+    return(face_set)
+
+
+def set_region_faces(mesh,id,face_set):
+    """Set the faces of a given region id on a mesh, given a set of faces """
+
+    face_list = list(face_set)
+    face_list.sort()
+    face_rle = rl_encode(face_list)
+
+    # Clear existing faces from this region id
+    mesh["mcell"]["regions"][id].clear()
+
+    # segment face_rle into pieces <= max_len (i.e. <= 32767)
+    #   and assign these segments to the region id
+    max_len = 32767
+    seg_rle = face_rle
+    len_rle = len(seg_rle)
+    seg_idx = 0
+    while len_rle > 0:
+      if len_rle <= 32767:
+        mesh["mcell"]["regions"][id][str(seg_idx)] = seg_rle
+        len_rle = 0
+      else:
+        mesh["mcell"]["regions"][id][str(seg_idx)] = seg_rle[0:max_len]
+        tmp_rle = seg_rle[max_len:]
+        seg_rle = tmp_rle
+        len_rle = len(seg_rle)
+      seg_idx += 1
+
+
 class MCELL_OT_region_faces_assign(bpy.types.Operator):
     bl_idname = "mcell.region_faces_assign"
     bl_label = "Assign Selected Faces To Surface Region"
@@ -169,36 +303,18 @@ class MCELL_OT_region_faces_assign(bpy.types.Operator):
     def execute(self, context):
         active_obj = context.active_object
         obj_regs = active_obj.mcell.regions
-        if (active_obj.data.total_face_sel > 0):
-            if not active_obj.data.get("mcell"):
-                active_obj.data["mcell"] = {}
-            if not active_obj.data["mcell"].get("regions"):
-                active_obj.data["mcell"]["regions"] = {}
-            reg = obj_regs.region_list[obj_regs.active_reg_index]
-            if not active_obj.data["mcell"]["regions"].get(reg.name):
-                active_obj.data["mcell"]["regions"][reg.name] = []
-            mesh = active_obj.data
-            face_set = set([])
-            for f in active_obj.data["mcell"]["regions"][reg.name]:
-                face_set.add(f)
+        reg = obj_regs.region_list[obj_regs.active_reg_index]
+        id = str(reg.id)
+        mesh = active_obj.data
+        if (mesh.total_face_sel > 0):
+            face_set = get_region_faces(mesh,id) 
             bpy.ops.object.mode_set(mode='OBJECT')
             for f in mesh.polygons:
                 if f.select:
                     face_set.add(f.index)
             bpy.ops.object.mode_set(mode='EDIT')
 
-            reg_faces = list(face_set)
-            reg_faces.sort()
-            active_obj.data["mcell"]["regions"][reg.name] = reg_faces
-
-#        obj_regs = active_obj.mcell.regions
-#        reg = obj_regs.region_list[obj_regs.active_reg_index]
-#        mesh = active_obj.data
-#        for f in mesh.polygons:
-#            if f.select:
-#                reg.faces.add()
-#                reg.active_face_index = len(reg.faces)-1
-#                reg.faces[reg.active_face_index].index = f.index
+            set_region_faces(mesh,id,face_set) 
 
         return {'FINISHED'}
 
@@ -212,17 +328,11 @@ class MCELL_OT_region_faces_remove(bpy.types.Operator):
     def execute(self, context):
         active_obj = context.active_object
         obj_regs = active_obj.mcell.regions
-        if (active_obj.data.total_face_sel > 0):
-            if not active_obj.data.get("mcell"):
-                active_obj.data["mcell"] = {}
-            if not active_obj.data["mcell"].get("regions"):
-                active_obj.data["mcell"]["regions"] = {}
-            reg = obj_regs.region_list[obj_regs.active_reg_index]
-            if not active_obj.data["mcell"]["regions"].get(reg.name):
-                active_obj.data["mcell"]["regions"][reg.name] = []
-            mesh = active_obj.data
-            face_set = set(
-                active_obj.data["mcell"]["regions"][reg.name].to_list())
+        reg = obj_regs.region_list[obj_regs.active_reg_index]
+        id = str(reg.id)
+        mesh = active_obj.data
+        if (mesh.total_face_sel > 0):
+            face_set = get_region_faces(mesh,id) 
             bpy.ops.object.mode_set(mode='OBJECT')
             for f in mesh.polygons:
                 if f.select:
@@ -230,9 +340,7 @@ class MCELL_OT_region_faces_remove(bpy.types.Operator):
                         face_set.remove(f.index)
             bpy.ops.object.mode_set(mode='EDIT')
 
-            reg_faces = list(face_set)
-            reg_faces.sort()
-            active_obj.data["mcell"]["regions"][reg.name] = reg_faces
+            set_region_faces(mesh,id,face_set) 
 
         return {'FINISHED'}
 
@@ -246,15 +354,10 @@ class MCELL_OT_region_faces_select(bpy.types.Operator):
     def execute(self, context):
         active_obj = context.active_object
         obj_regs = active_obj.mcell.regions
-        if not active_obj.data.get("mcell"):
-            active_obj.data["mcell"] = {}
-        if not active_obj.data["mcell"].get("regions"):
-            active_obj.data["mcell"]["regions"] = {}
         reg = obj_regs.region_list[obj_regs.active_reg_index]
-        if not active_obj.data["mcell"]["regions"].get(reg.name):
-            active_obj.data["mcell"]["regions"][reg.name] = []
+        id = str(reg.id)
         mesh = active_obj.data
-        face_set = set(active_obj.data["mcell"]["regions"][reg.name].to_list())
+        face_set = get_region_faces(mesh,id) 
         bpy.ops.object.mode_set(mode='OBJECT')
         msm = context.tool_settings.mesh_select_mode[0:]
         context.tool_settings.mesh_select_mode = [False, False, True]
@@ -275,15 +378,10 @@ class MCELL_OT_region_faces_deselect(bpy.types.Operator):
     def execute(self, context):
         active_obj = context.active_object
         obj_regs = active_obj.mcell.regions
-        if not active_obj.data.get("mcell"):
-            active_obj.data["mcell"] = {}
-        if not active_obj.data["mcell"].get("regions"):
-            active_obj.data["mcell"]["regions"] = {}
         reg = obj_regs.region_list[obj_regs.active_reg_index]
-        if not active_obj.data["mcell"]["regions"].get(reg.name):
-            active_obj.data["mcell"]["regions"][reg.name] = []
+        id = str(reg.id)
         mesh = active_obj.data
-        face_set = set(active_obj.data["mcell"]["regions"][reg.name].to_list())
+        face_set = get_region_faces(mesh,id) 
         bpy.ops.object.mode_set(mode='OBJECT')
         msm = context.tool_settings.mesh_select_mode[0:]
         context.tool_settings.mesh_select_mode = [False, False, True]
@@ -295,7 +393,79 @@ class MCELL_OT_region_faces_deselect(bpy.types.Operator):
         return {'FINISHED'}
 
 
-# This isn't used anywhere. Do we need it?
+# Update format of object regions
+# This is required to update regions from pre v1.0 format to new v1.0 format
+# Note: This function is registered as a load_post handler
+@persistent
+def object_regions_format_update(context):
+
+    scn = bpy.context.scene
+    mcell = scn.mcell
+    objs = scn.objects
+    for obj in objs:
+        if obj.type == 'MESH':
+            obj_regs = obj.mcell.regions
+            regs = obj_regs.region_list 
+            mesh = obj.data
+            if len(regs) > 0:
+                # We have object regions so check for pre v1.0 region format
+                # We'll do that by checking the region name on the mesh.
+                # If even one mesh region is old then they're all old
+                sort_region_list(obj)
+                # Check that the mesh has regions
+                if mesh.get("mcell"):
+                    if mesh["mcell"].get("regions"):
+                        mregs =  mesh["mcell"]["regions"]
+                        if len(mregs.keys()) > 0:
+                            # if reg_name is alpha followed by alphanumeric
+                            #   then we've got an old format region
+                            reg_name = mregs.keys()[0]
+                            reg_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
+                            m = re.match(reg_filter, reg_name)
+                            if m is not None:
+                                # We have old region format
+                                # Make copies of old regions
+                                mreg_tmp = {}
+                                obj_regs.id_counter = 0
+                                for reg in regs:
+                                    reg.id = obj_regs.id_counter
+                                    obj_regs.id_counter += 1
+                                    mreg_tmp[reg.name] = set(
+                                        mregs[reg.name].to_list())
+                                # Clear old regions from mesh
+                                for key in mregs.keys():
+                                    mregs[key] = []
+                                mregs.clear()
+                                # Convert old regions to new format
+                                for reg in regs:
+                                    id = str(reg.id)
+                                    mregs[id] = {}
+                                    set_region_faces(
+                                        mesh,id,mreg_tmp[reg.name])
+                else:
+                    # The mesh did not have regions so the object regions are
+                    # empty. If id_counter is 0 then we have old object regions
+                    if obj_regs.id_counter == 0:
+                        for reg in regs:
+                            # Update the object region id's
+                            reg.id = obj_regs.id_counter
+                            obj_regs.id_counter += 1
+            else:
+                # There are no object regions but there might be mesh cruft
+                # Remove any region cruft we find attached to mesh["mcell"]
+                if mesh.get("mcell"):
+                    if mesh["mcell"].get("regions"):
+                        mregs =  mesh["mcell"]["regions"]
+                        for key in mregs.keys():
+                            mregs[key] = []
+                        mregs.clear()
+                        mesh["mcell"].pop("regions")
+
+
+# Legacy code from when we used to store regions as vertex groups
+#   Useful to run from Blender's python console on some older models
+#   We'll eliminate this when our face regions have query features akin
+#   to those available with vertex groups.
 class MCELL_OT_vertex_groups_to_regions(bpy.types.Operator):
     bl_idname = "mcell.vertex_groups_to_regions"
     bl_label = "Convert Vertex Groups of Selected Objects to Regions"
@@ -1240,6 +1410,9 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
 
         mcell = context.scene.mcell
 
+        binary_path = mcell.project_settings.mcell_binary
+        mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
+
         start = mcell.run_simulation.start_seed
         end = mcell.run_simulation.end_seed
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
@@ -1372,6 +1545,18 @@ def clear_run_list(context):
 
     if not cellblender.simulation_popen_list:
         processes_list.clear()
+
+
+
+@persistent
+def mcell_valid_update(context):
+    """ Check whether the mcell executable in the .blend file is valid """
+    if not context:
+        context = bpy.context
+    mcell = context.scene.mcell
+    binary_path = mcell.project_settings.mcell_binary
+    mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
+    # print ( "mcell_binary_valid = ", mcell.project_settings.mcell_binary_valid )
 
 
 def project_files_path():
@@ -1665,8 +1850,10 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         plot_sep = mcell.rxn_output.plot_layout
+        plot_legend = mcell.rxn_output.plot_legend
 
         combine_seeds = mcell.rxn_output.combine_seeds
+        mol_colors = mcell.rxn_output.mol_colors
 
         plot_button_label = self.plotter_button_label
 
@@ -1682,6 +1869,8 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                 data_path = project_files_path()
                 data_path = os.path.join(data_path, "react_data")
                 plot_spec_string = "xlabel=time(s) ylabel=count "
+                if plot_legend != 'x':
+                    plot_spec_string = plot_spec_string + "legend=" + plot_legend
 
                 settings = mcell.project_settings
 
@@ -1713,6 +1902,8 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                             fn = os.path.join ( "seed_*", fn )
                             candidate_file_list = glob.glob(
                                 os.path.join(data_path, fn))
+                            # Without sorting, the seeds may not be increasing
+                            candidate_file_list.sort()
                             #print("Candidate file list for %s:" % (fn))
                             #print("  ", candidate_file_list)
                             first_pass = True
@@ -1725,20 +1916,45 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                                     split1 = os.path.split(ffn)
                                     split2 = os.path.split(split1[0])
                                     f = os.path.join ( split2[1], split1[1] )
+                                    
+                                    color_string = ""
+                                    if mol_colors:
+                                        # Use molecule colors for graphs
+                                        mol_mat_name = "mol_%s_mat" % (molecule_name)  # Should be standardized!!
+                                        #print ( "Molecule Material Name = ", mol_mat_name )
+                                        #Look up the material
+                                        mats = bpy.data.materials
+                                        mol_color = mats.get(mol_mat_name).diffuse_color
+                                        #print ( "Molecule color = ", mol_mat.diffuse_color )
+
+                                        mol_color_red = 255 * mol_color.r
+                                        mol_color_green = 255 * mol_color.g
+                                        mol_color_blue = 255 * mol_color.b
+                                        color_string = " color=#%2.2x%2.2x%2.2x " % (mol_color_red, mol_color_green, mol_color_blue)
 
                                     base_name = os.path.basename(f)
+
+                                    if combine_seeds:
+                                        title_string = " title=" + base_name
+                                    else:
+                                        title_string = " title=" + f
+                                    
+                                    if plot_sep == ' ':
+                                        # No title when all are on the same plot since only last will show
+                                        title_string = ""
+
                                     if combine_seeds:
                                         psep = " "
                                         if first_pass:
                                             psep = plot_sep
                                             first_pass = False
                                         plot_spec_string = (
-                                            plot_spec_string + psep +
-                                            " title=" + base_name + " f=" + f)
+                                            plot_spec_string + psep + color_string +
+                                            title_string + " f=" + f)
                                     else:
                                         plot_spec_string = (
-                                            plot_spec_string + plot_sep +
-                                            " title=" + f + " f=" + f)
+                                            plot_spec_string + plot_sep + color_string +
+                                            title_string + " f=" + f)
 
                 print("Plotting from", data_path)
                 print("Plotting spec", plot_spec_string)
