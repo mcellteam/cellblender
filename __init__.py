@@ -22,7 +22,7 @@ import os
 bl_info = {
     "name": "CellBlender",
     "author": "Tom Bartol, Jacob Czech, Markus Dittrich, Bob Kuczewski",
-    "version": (0, 1, 57),
+    "version": (1, 0, 0),
     "blender": (2, 66, 1),
     "api": 55057,
     "location": "Properties > Scene > CellBlender Panel",
@@ -34,7 +34,7 @@ bl_info = {
 }
 
 cellblender_info = {
-    "supported_version_list": [(2, 64, 0), (2, 65, 0), (2, 66, 1)],
+    "supported_version_list": [(2, 66, 1), (2, 67, 0)],
     "cellblender_source_list": [
         "__init__.py",
         "cellblender_properties.py",
