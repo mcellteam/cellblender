@@ -599,7 +599,8 @@ class MCELL_OT_remove_partitions_object(bpy.types.Operator):
 class MCELL_OT_auto_generate_boundaries(bpy.types.Operator):
     bl_idname = "mcell.auto_generate_boundaries"
     bl_label = "Automatically Generate Boundaries"
-    bl_description = "Automatically generate partition boundaries"
+    bl_description = ("Automatically generate partition boundaries based off "
+                      "of Model Objects list")
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -1382,7 +1383,8 @@ def check_mcell_binary(self, context):
 class MCELL_OT_set_mcell_binary(bpy.types.Operator):
     bl_idname = "mcell.set_mcell_binary"
     bl_label = "Set MCell Binary"
-    bl_description = "Set MCell Binary"
+    bl_description = ("Set MCell Binary. If needed, download at "
+                      "mcell.org/download.html")
     bl_options = {'REGISTER'}
 
     filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
@@ -1497,7 +1499,8 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
 class MCELL_OT_clear_run_list(bpy.types.Operator):
     bl_idname = "mcell.clear_run_list"
     bl_label = "Clear Completed MCell Runs"
-    bl_description = "Clear the list of completed and failed MCell runs"
+    bl_description = ("Clear the list of completed and failed MCell runs. "
+                      "Does not remove rxn/viz data.")
     bl_options = {'REGISTER'}
 
     def execute(self, context):
@@ -2595,7 +2598,8 @@ def model_objects_update(context):
 class MCELL_OT_model_objects_add(bpy.types.Operator):
     bl_idname = "mcell.model_objects_add"
     bl_label = "Model Objects Include"
-    bl_description = "Include selected objects in model object export list"
+    bl_description = ("Include objects selected in 3D View Window in Model "
+                      "Objects export list")
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -2623,7 +2627,7 @@ class MCELL_OT_model_objects_add(bpy.types.Operator):
 class MCELL_OT_model_objects_remove(bpy.types.Operator):
     bl_idname = "mcell.model_objects_remove"
     bl_label = "Model Objects Remove"
-    bl_description = "Remove current item from model object export list"
+    bl_description = "Remove selected item from Model Objects export list"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -2724,7 +2728,7 @@ class MCELL_OT_rxn_output_add(bpy.types.Operator):
 class MCELL_OT_rxn_output_remove(bpy.types.Operator):
     bl_idname = "mcell.rxn_output_remove"
     bl_label = "Remove Reaction Data Output"
-    l_description = "Remove selected reaction data output from an MCell model"
+    bl_description = "Remove selected reaction data output from an MCell model"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):

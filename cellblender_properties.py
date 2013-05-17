@@ -62,29 +62,38 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Molecule Name", default="Molecule",
+        description="The molecule species name",
         update=cellblender_operators.check_molecule)
     type_enum = [
         ('2D', "Surface Molecule", ""),
         ('3D', "Volume Molecule", "")]
-    type = EnumProperty(items=type_enum, name="Molecule Type")
+    type = EnumProperty(
+        items=type_enum, name="Molecule Type",
+        description="Surface molecules are constrained to surfaces/meshes. "
+                    "Volume molecules exist in space.")
     diffusion_constant = FloatProperty(name="Diffusion Constant")
     diffusion_constant_str = StringProperty(
         name="Diffusion Constant",
         default="0",
         description="Diffusion Constant Units: cm^2/sec",
         update=cellblender_operators.update_diffusion_constant)
-    target_only = BoolProperty(name="Target Only")
+    target_only = BoolProperty(
+        name="Target Only",
+        description="If selected, molecule will not initiate reactions when "
+                    "it runs into other molecules. Can speed up simulations.")
     custom_time_step = FloatProperty(name="Custom Time Step")
     custom_time_step_str = StringProperty(
         name="Custom Time Step",
-        description="Custom Time Step Units: seconds",
+        description="Custom Time Step units: seconds",
         update=cellblender_operators.update_custom_time_step)
     custom_space_step = FloatProperty(name="Custom Space Step")
     custom_space_step_str = StringProperty(
         name="Custom Space Step",
-        description="Custom Space Step Units: microns",
+        description="Custom Space Step units: microns",
         update=cellblender_operators.update_custom_space_step)
-    export_viz = bpy.props.BoolProperty(default=False)
+    export_viz = bpy.props.BoolProperty(
+        default=False, description="If selected, the molecule will be "
+                                   "included in the visualization data.")
     status = StringProperty(name="Status")
 
 
@@ -100,16 +109,27 @@ class MCellFloatVectorProperty(bpy.types.PropertyGroup):
 
 class MCellReactionProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="The Reaction")
-    rxn_name = StringProperty(name="Reaction Name")
+    rxn_name = StringProperty(
+        name="Reaction Name",
+        description="The name of the reaction. "
+                    "Can be used in Reaction Output.")
     reactants = StringProperty(
-        name="Reactants", update=cellblender_operators.check_reaction)
+        name="Reactants", 
+        description="Specify 1-3 reactants separated by a + symbol. "
+                    "Optional: end with @ surface class. Ex: a; + b; @ sc;",
+        update=cellblender_operators.check_reaction)
     products = StringProperty(
-        name="Products", update=cellblender_operators.check_reaction)
+        name="Products",
+        description="Specify zero(NULL) or more products separated by a + "
+                    "symbol.",
+        update=cellblender_operators.check_reaction)
     type_enum = [
         ('irreversible', "->", ""),
         ('reversible', "<->", "")]
     type = EnumProperty(
         items=type_enum, name="Reaction Type",
+        description="A unidirectional/irreversible(->) reaction or a "
+                    "bidirectional/reversible(<->) reaction.",
         update=cellblender_operators.check_reaction)
     fwd_rate = FloatProperty(name="Forward Rate")
     fwd_rate_str = StringProperty(
@@ -130,39 +150,63 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Site Name", default="Release_Site",
+        description="The name of the release site",
         update=cellblender_operators.check_release_site)
     molecule = StringProperty(
-        name="Molecule", update=cellblender_operators.check_release_site)
+        name="Molecule",
+        description="The molecule to release",
+        update=cellblender_operators.check_release_site)
     shape_enum = [
         ('CUBIC', 'Cubic', ''),
         ('SPHERICAL', 'Spherical', ''),
         ('SPHERICAL SHELL', 'Spherical Shell', ''),
         #('LIST', 'List', ''),
         ('OBJECT', 'Object/Region', '')]
-    shape = EnumProperty(items=shape_enum, name="Release Shape",
-                         update=cellblender_operators.check_release_site)
+    shape = EnumProperty(
+        items=shape_enum, name="Release Shape",
+        description="Release in the specified shape. Surface molecules can "
+                    "only use Object/Region.",
+                    update=cellblender_operators.check_release_site)
     orient_enum = [
         ('\'', "Top Front", ""),
         (',', "Top Back", ""),
         (';', "Mixed", "")]
     orient = bpy.props.EnumProperty(
-        items=orient_enum, name="Initial Orientation")
+        items=orient_enum, name="Initial Orientation",
+        description="Release surface molecules with the specified initial "
+                    "orientation.")
     object_expr = StringProperty(
         name="Object/Region",
+        description="Release in/on the specified object/region.",
         update=cellblender_operators.check_release_site)
-    location = bpy.props.FloatVectorProperty(name="Location", precision=4)
-    diameter = FloatProperty(name="Site Diameter", precision=4, min=0.0)
-    probability = FloatProperty(name="Release Probability", precision=4,
-                                default=1.0, min=0.0, max=1.0)
+    location = bpy.props.FloatVectorProperty(
+        name="Location", precision=4,
+        description="The center of the release site specified by XYZ "
+                    "coordinates")
+    diameter = FloatProperty(
+        name="Site Diameter", precision=4, min=0.0,
+        description="Release molecules uniformly within the specified "
+                    "diameter.")
+    probability = FloatProperty(
+        name="Release Probability", precision=4,
+        description="Release does not occur every time, "
+                    "but rather with specified probability.",
+        default=1.0, min=0.0, max=1.0)
     quantity_type_enum = [
         ('NUMBER_TO_RELEASE', "Constant Number", ""),
         ('GAUSSIAN_RELEASE_NUMBER', "Gaussian Number", ""),
         ('DENSITY', "Concentration/Density", "")]
     quantity_type = EnumProperty(items=quantity_type_enum,
                                  name="Quantity Type")
-    quantity = FloatProperty(name="Quantity to Release", precision=4, min=0.0)
+    quantity = FloatProperty(
+        name="Quantity to Release", precision=4, min=0.0,
+        description="Concentration units: molar. Density units: molecules per "
+                    "square micron")
     stddev = FloatProperty(name="Standard Deviation", precision=4, min=0.0)
-    pattern = StringProperty(name="Release Pattern")
+    pattern = StringProperty(
+        name="Release Pattern",
+        description="Use the named release pattern. "
+                    "If blank, release molecules at start of simulation.")
     status = StringProperty(name="Status")
 
 
@@ -180,6 +224,7 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Molecule", default="Molecule")
     molecule = StringProperty(
         name="Molecule Name:",
+        description="The molecule that is affected by the surface class",
         update=cellblender_operators.check_surf_class_props)
     surf_class_orient_enum = [
         ('\'', "Top/Front", ""),
@@ -187,6 +232,8 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         (';', "Ignore", "")]
     surf_class_orient = EnumProperty(
         items=surf_class_orient_enum, name="Orientation",
+        description="Volume molecules affected at front or back of a surface. "
+                    "Surface molecules affected by orientation at border.",
         update=cellblender_operators.check_surf_class_props)
     surf_class_type_enum = [
         ('ABSORPTIVE', "Absorptive", ""),
@@ -195,6 +242,8 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         ('CLAMP_CONCENTRATION', "Clamp Concentration", "")]
     surf_class_type = EnumProperty(
         items=surf_class_type_enum, name="Type",
+        description="Molecules are destroyed by absorptive surfaces, pass "
+                    "through transparent, and \"bounce\" off of reflective.",
         update=cellblender_operators.check_surf_class_props)
     clamp_value = FloatProperty(name="Value", precision=4, min=0.0)
     clamp_value_str = StringProperty(
@@ -208,6 +257,7 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
 
     name = StringProperty(
         name="Surface Class Name", default="Surface_Class",
+        description="This name can be selected in Modify Surface Regions.",
         update=cellblender_operators.check_surface_class)
     surf_class_props_list = CollectionProperty(
         type=MCellSurfaceClassPropertiesProperty, name="Surface Classes List")
@@ -222,12 +272,18 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Modify Surface Region")
     surf_class_name = StringProperty(
         name="Surface Class Name:",
+        description="This surface class will be assigned to the surface "
+                    "region listed below.",
         update=cellblender_operators.check_mod_surf_regions)
     object_name = StringProperty(
         name="Object Name:",
+        description="A region on this object will have the above surface "
+                    "class assigned to it.",
         update=cellblender_operators.check_mod_surf_regions)
     region_name = StringProperty(
         name="Region Name:",
+        description="This surface region will have the above surface class "
+                    "assigned to it.",
         update=cellblender_operators.check_mod_surf_regions)
     status = StringProperty(name="Status")
 
@@ -235,7 +291,10 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 #Panel Properties:
 
 class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
-    filter_invalid = BoolProperty(name="Filter Invalid Entries", default=True)
+    filter_invalid = BoolProperty(
+        name="Filter Invalid Entries", default=True,
+        description="If selected, entries with a warning(!) icon will not be "
+                    "included in simulation.")
     decouple_export_run = BoolProperty(
         name="Decouple Export and Run", default=False,
         description="Allow the project to be exported without also running"
@@ -278,28 +337,32 @@ class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
 
 
 class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
-    start_seed = IntProperty(name="Start Seed", default=1, min=1)
-    end_seed = IntProperty(name="End Seed", default=1, min=1)
+    start_seed = IntProperty(
+        name="Start Seed", default=1, min=1,
+        description="The starting value of the random number generator seed")
+    end_seed = IntProperty(
+        name="End Seed", default=1, min=1,
+        description="The ending value of the random number generator seed")
     mcell_processes = IntProperty(
         name="Number of Processes",
         default=cpu_count(),
         min=1,
         max=cpu_count(),
-        description="Number of simultaneous MCell processes.")
+        description="Number of simultaneous MCell processes")
     log_file_enum = [
         ('none', "Do not Generate", ""),
         ('file', "Send to File", ""),
         ('console', "Send to Console", "")]
-    log_file = EnumProperty(items=log_file_enum,
-                            name="Output Log",
-                            default='file')
+    log_file = EnumProperty(
+        items=log_file_enum, name="Output Log", default='file',
+        description="Where to send MCell log output")
     error_file_enum = [
         ('none', "Do not Generate", ""),
         ('file', "Send to File", ""),
         ('console', "Send to Console", "")]
-    error_file = EnumProperty(items=error_file_enum,
-                              name="Error Log",
-                              default='console')
+    error_file = EnumProperty(
+        items=error_file_enum, name="Error Log", default='console',
+        description="Where to send MCell error output")
     remove_append_enum = [
         ('remove', "Remove Previous Data", ""),
         ('append', "Append to Previous Data", "")]
@@ -307,7 +370,7 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
         items=remove_append_enum, name="Previous Simulation Data",
         default='remove',
         description="Remove or append to existing rxn/viz data from previous"
-                    " simulations")
+                    " simulations before running new simulations.")
     processes_list = CollectionProperty(
         type=MCellRunSimulationProcessesProperty,
         name="Simulation Runner Processes")
@@ -359,7 +422,7 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
 class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     iterations = IntProperty(
         name="Simulation Iterations",
-        description="Number of Iterations to Run",
+        description="Number of iterations to run",
         default=0, min=0)
     time_step = FloatProperty(name="Time Step", default=1e-6, min=0.0)
     time_step_str = StringProperty(
@@ -388,31 +451,35 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     interaction_radius = FloatProperty(name="Interaction Radius", min=0.0)
     interaction_radius_str = StringProperty(
         name="Interaction Radius",
-        description="Molecules will interact when they get within N microns",
+        description="Molecules will interact when they get within N microns.",
         update=cellblender_operators.update_interaction_radius)
     radial_directions = FloatProperty(name="Radial Directions", min=0.0)
     radial_directions_str = StringProperty(
         name="Radial Directions",
-        description="Molecules will interact when they get within N microns",
+        description="Number of different directions to put in lookup table. "
+                    "Leave alone unless you know what you are doing.",
         update=cellblender_operators.update_radial_directions)
     radial_subdivisions = FloatProperty(name="Radial Subdivisions", min=0.0)
     radial_subdivisions_str = StringProperty(
         name="Radial Subdivisions",
-        description="Molecules will interact when they get within N microns",
+        description="Number of distances to put in look-up table. "
+                    "Leave alone unless you know what you are doing.",
         update=cellblender_operators.update_radial_subdivisions)
     accurate_3d_reactions = BoolProperty(
         name="Accurate 3D Reaction",
-        description="If true, molecules will look through partitions to react",
+        description="If selected, molecules will look through partitions to "
+                    "react.",
         default=True)
     center_molecules_grid = BoolProperty(
         name="Center Molecules on Grid",
-        description="If true, surface molecules will be centered on the grid",
+        description="If selected, surface molecules will be centered on the "
+                    "grid.",
         default=False)
     vacancy_search_distance = FloatProperty(
         name="Vacancy Search Distance", min=0.0)
     vacancy_search_distance_str = StringProperty(
         name="Vacancy Search Distance",
-        description="Surface molecule products can be created at N distance",
+        description="Surface molecule products can be created at N distance.",
         update=cellblender_operators.update_vacancy_search_distance)
     microscopic_reversibility_enum = [
         ('ON', "On", ""),
@@ -431,59 +498,64 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         ('OFF', "Off", "")]
     all_notifications = EnumProperty(
         items=all_notifications_enum, name="All Notifications",
-        description="If on, all notifications will be set to on",
+        description="If on/off, all notifications will be set to on/off "
+                    "respectively.",
         default='INDIVIDUAL')
     diffusion_constant_report_enum = [
         ('BRIEF', "Brief", ""),
         ('ON', "On", ""),
         ('OFF', "Off", "")]
     diffusion_constant_report = EnumProperty(
-        items=diffusion_constant_report_enum, name="Diffusion Constant Report")
+        items=diffusion_constant_report_enum, name="Diffusion Constant Report",
+        description="If brief, Mcell will report average diffusion distance "
+                    "per step for each molecule.")
     file_output_report = BoolProperty(
         name="File Output Report",
-        description="If on, MCell will report every time reaction data is"
-                    " written",
+        description="If selected, MCell will report every time that reaction "
+                    "data is written.",
         default=False)
     final_summary = BoolProperty(
         name="Final Summary",
-        description="If on, MCell will report about the CPU time used",
+        description="If selected, MCell will report about the CPU time used",
         default=True)
     iteration_report = BoolProperty(
         name="Iteration Report",
-        description="If on, MCell will report how many iterations have"
-                    " completed based on total",
+        description="If selected, MCell will report how many iterations have "
+                    "completed based on total.",
         default=True)
     partition_location_report = BoolProperty(
         name="Partition Location Report",
-        description="If on, the partition locations will be printed",
+        description="If selected, the partition locations will be printed.",
         default=False)
     probability_report_enum = [
         ('ON', "On", ""),
         ('OFF', "Off", ""),
         ('THRESHOLD', "Threshold", "")]
     probability_report = EnumProperty(
-        items=probability_report_enum, name="Probability Report", default='ON')
+        items=probability_report_enum, name="Probability Report", default='ON',
+        description="If on, MCell will report reaction probabilites for each "
+                    "reaction.")
     probability_report_threshold = bpy.props.FloatProperty(
         name="Threshold", min=0.0, max=1.0, precision=2)
     varying_probability_report = BoolProperty(
         name="Varying Probability Report",
-        description="If on, MCell will print out the reaction probabilites for"
-                    "time-varying reaction",
+        description="If selected, MCell will print out the reaction "
+                    "probabilites for time-varying reaction.",
         default=True)
     progress_report = BoolProperty(
         name="Progress Report",
-        description="If on, MCell will print out messages indicating which"
-                    "part of the simulation is underway",
+        description="If selected, MCell will print out messages indicating "
+                    "which part of the simulation is underway.",
         default=True)
     release_event_report = BoolProperty(
         name="Release Event Report",
-        description="If on, MCell will print a message every time molecules"
-                    "are released through a release site",
+        description="If selected, MCell will print a message every time "
+                    "molecules are released through a release site.",
         default=True)
     molecule_collision_report = BoolProperty(
         name="Molecule Collision Report",
-        description="If on, MCell will print the number of bi/trimolecular"
-                    "collisions that occured",
+        description="If selected, MCell will print the number of "
+                    "bi/trimolecular collisions that occured.",
         default=False)
 
     # Warnings
@@ -494,7 +566,8 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         ('ERROR', "Error", "")]
     all_warnings = EnumProperty(
         items=all_warnings_enum, name="All Warnings",
-        description="If on, all notifications will be set to on",
+        description="If not \"Set Individually\", all warnings will be set "
+                    "the same.",
         default='INDIVIDUAL')
     degenerate_polygons_enum = [
         ('IGNORED', "Ignored", ""),
@@ -502,6 +575,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         ('ERROR', "Error", "")]
     degenerate_polygons = EnumProperty(
         items=degenerate_polygons_enum, name="Degenerate Polygons",
+        description="Degenerate polygons have zero area and must be removed.",
         default='WARNING')
     high_reaction_probability_enum = [
         ('IGNORED', "Ignored", ""),
@@ -509,6 +583,8 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         ('ERROR', "Error", "")]
     high_reaction_probability = EnumProperty(
         items=high_reaction_probability_enum, name="High Reaction Probability",
+        description="Generate warnings or errors if probability reaches a "
+                    "specified threshold.",
         default='IGNORED')
     high_probability_threshold = bpy.props.FloatProperty(
         name="High Probability Threshold", min=0.0, max=1.0, default=1.0,
@@ -518,15 +594,16 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         ('WARNING', "Warning", "")]
     lifetime_too_short = EnumProperty(
         items=lifetime_too_short_enum, name="Lifetime Too Short",
+        description="Generate warning if molecules have short lifetimes.",
         default='WARNING')
-    lifetime_threshold = bpy.props.IntProperty(
-        name="Lifetime Threshold", min=0, default=50)
-    lifetime_threshold = IntProperty(name="Threshold", default=50)
+    lifetime_threshold = IntProperty(
+        name="Threshold", min=0, default=50)
     missed_reactions_enum = [
         ('IGNORED', "Ignored", ""),
         ('WARNING', "Warning", "")]
     missed_reactions = EnumProperty(
         items=missed_reactions_enum, name="Missed Reactions",
+        description="Generate warning if there are missed reactions.",
         default='WARNING')
     missed_reaction_threshold = bpy.props.FloatProperty(
         name="Threshold", min=0.0, max=1.0, default=0.001,
@@ -537,6 +614,8 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         ('ERROR', "Error", "")]
     negative_diffusion_constant = EnumProperty(
         items=negative_diffusion_constant_enum,
+        description="Diffusion constants cannot be negative and will be set "
+                    "to zero.",
         name="Negative Diffusion Constant", default='WARNING')
     missing_surface_orientation_enum = [
         ('IGNORED', "Ignored", ""),
@@ -544,6 +623,9 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         ('ERROR', "Error", "")]
     missing_surface_orientation = EnumProperty(
         items=missing_surface_orientation_enum,
+        description="Generate errors/warnings if molecules are placed on "
+                    "surfaces or reactions occur at surfaces without "
+                    "specified orientation.",
         name="Missing Surface Orientation",
         default='ERROR')
     negative_reaction_rate_enum = [
@@ -552,6 +634,8 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         ('ERROR', "Error", "")]
     negative_reaction_rate = EnumProperty(
         items=negative_reaction_rate_enum, name="Negative Reaction Rate",
+        description="Reaction rates cannot be negative and will be set "
+                    "to zero.",
         default='WARNING')
     useless_volume_orientation_enum = [
         ('IGNORED', "Ignored", ""),
@@ -559,13 +643,17 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         ('ERROR', "Error", "")]
     useless_volume_orientation = EnumProperty(
         items=useless_volume_orientation_enum,
+        description="Generate errors/warnings if molecules are released in a "
+                    "volume or reactions occur in a volume with specified "
+                    "orientation.",
         name="Useless Volume Orientation", default='WARNING')
 
 
 class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
     include = BoolProperty(
         name="Include Partitions",
-        description="Add PARTITIONS to main MDL file",
+        description="Partitions are a way of speeding up a simulation if used "
+                    "properly.",
         default=False)
     recursion_flag = BoolProperty(
         name="Recursion Flag",
@@ -573,30 +661,39 @@ class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
         default=False)
     x_start = bpy.props.FloatProperty(
         name="X Start", default=-1, precision=3,
+        description="The start of the partitions on the x-axis",
         update=cellblender_operators.transform_x_partition_boundary)
     x_end = bpy.props.FloatProperty(
         name="X End", default=1, precision=3,
+        description="The end of the partitions on the x-axis",
         update=cellblender_operators.transform_x_partition_boundary)
     x_step = bpy.props.FloatProperty(
         name="X Step", default=0.02, precision=3,
+        description="The distance between partitions on the x-axis",
         update=cellblender_operators.check_x_partition_step)
     y_start = bpy.props.FloatProperty(
         name="Y Start", default=-1, precision=3,
+        description="The start of the partitions on the y-axis",
         update=cellblender_operators.transform_y_partition_boundary)
     y_end = bpy.props.FloatProperty(
         name="Y End", default=1, precision=3,
+        description="The end of the partitions on the y-axis",
         update=cellblender_operators.transform_y_partition_boundary)
     y_step = bpy.props.FloatProperty(
         name="Y Step", default=0.02, precision=3,
+        description="The distance between partitions on the y-axis",
         update=cellblender_operators.check_y_partition_step)
     z_start = bpy.props.FloatProperty(
         name="Z Start", default=-1, precision=3,
+        description="The start of the partitions on the z-axis",
         update=cellblender_operators.transform_z_partition_boundary)
     z_end = bpy.props.FloatProperty(
         name="Z End", default=1, precision=3,
+        description="The end of the partitions on the z-axis",
         update=cellblender_operators.transform_z_partition_boundary)
     z_step = bpy.props.FloatProperty(
         name="Z Step", default=0.02, precision=3,
+        description="The distance between partitions on the z-axis",
         update=cellblender_operators.check_z_partition_step)
 
 
@@ -652,20 +749,23 @@ class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
         name="Active Molecule Viz Index", default=0)
     all_iterations = bpy.props.BoolProperty(
         name="All Iterations",
-        description="Include All Iterations for Visualization", default=True)
+        description="Include all iterations for visualization.", default=True)
     start = bpy.props.IntProperty(
-        name="Start", description="Starting Iteration", default=0, min=0)
+        name="Start", description="Starting iteration", default=0, min=0)
     end = bpy.props.IntProperty(
-        name="End", description="Ending Iteration", default=1, min=1)
+        name="End", description="Ending iteration", default=1, min=1)
     step = bpy.props.IntProperty(
-        name="Step", description="Step Value", default=1, min=1)
+        name="Step", description="Output viz data every n iterations.",
+        default=1, min=1)
 
 
 class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Reaction Output", update=cellblender_operators.check_rxn_output)
     molecule_name = StringProperty(
-        name="Molecule", update=cellblender_operators.check_rxn_output)
+        name="Molecule",
+        description="Count the selected molecule.",
+        update=cellblender_operators.check_rxn_output)
     object_name = StringProperty(
         name="Object", update=cellblender_operators.check_rxn_output)
     region_name = StringProperty(
@@ -676,6 +776,7 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         ('Region', "Region", "")]
     count_location = bpy.props.EnumProperty(
         items=count_location_enum, name="Count Location",
+        description="Count all molecules in the selected location.",
         update=cellblender_operators.check_rxn_output)
     plot_command = StringProperty(
         name="Command")  # , update=cellblender_operators.check_rxn_output)
@@ -711,11 +812,11 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
     plot_legend = bpy.props.EnumProperty ( items=plot_legend_enum, name="", default='0' )
     combine_seeds = BoolProperty(
         name="Combine Seeds",
-        description="Combine all seeds onto the same plot",
+        description="Combine all seeds onto the same plot.",
         default=True)
     mol_colors = BoolProperty(
         name="Molecule Colors",
-        description="Use Molecule Colors for line colors",
+        description="Use Molecule Colors for line colors.",
         default=False)
 
 
@@ -751,7 +852,9 @@ class MCellMeshalyzerPanelProperty(bpy.types.PropertyGroup):
 
 
 class MCellObjectSelectorPanelProperty(bpy.types.PropertyGroup):
-    filter = StringProperty(name="Object Name Filter")
+    filter = StringProperty(
+        name="Object Name Filter",
+        description="Enter a regular expression for object names.")
 
 
 # Main MCell (CellBlender) Properties Class:
