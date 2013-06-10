@@ -1,37 +1,10 @@
 import bpy
 import os
-from . import sbml_operators
-from . import sbml_properties
+import sys
 
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty
-from bpy.path import basename
 
-class ImportSBMLData(bpy.types.Operator, ImportHelper):
-    """This appears in the tooltip of the operator and in the generated docs"""
-    bl_idname = "import_sbml.model_data"  
-    bl_label = "Import SBML Data"
-
-    filename_ext = ".txt"
-
-    filter_glob = StringProperty(
-            default="*.txt",
-            options={'HIDDEN'},
-            )
-
-    def execute(self, context):
-        read_sbml_data(context, self.filepath)
-        return {'FINISHED'}
-	
-
-def read_sbml_data(context, filepath):
-    print("importing sbml data...")
-    f = open(filepath, 'r', encoding='utf-8')
-    data = f.read()
-    f.close()
-    from . import model
-    print(data)
-    return {'FINISHED'}
     
 class ImportBNGData(bpy.types.Operator, ImportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
@@ -46,67 +19,61 @@ class ImportBNGData(bpy.types.Operator, ImportHelper):
             )
 
     def execute(self, context):
-        from os import pathsep
-        import sys
-        from os.path import exists, join
-	
-        filepath = self.filepath         # Path for the bngl file
-        check_dir = os.path.dirname(filepath)   # Path for directory containing the bngl file
-        j = 0
-        while(j < 5):   # Search for the directory containing BNG2.pl (in the reverse direction, starting from the directory containing the bngl file)
-            bng_dir = check_dir      
-            print(bng_dir)
-            bngpath = bng_dir + "/BNG2.pl"
-            print(bngpath)
-
-            checked = {}    # Stores the list of directories already searched
-            i = 0
-       
-            for (dirpath, dirname, filename) in os.walk(bng_dir):
-                if (i==0):
-                    check_dir = os.path.dirname(dirpath)        #  Parent directory is stored for the next search step once the for loop is done 
-                    i = 1
-
-                if dirpath in checked:
-                    continue
-            
-                if os.path.exists(bngpath):
-                    print (bngpath)
-                    i = 2
-                    break
-	    
-                checked.update({dirpath:True})
-                print (checked[dirpath])
-		
-            if (i==2):
-                break       
-            j += 1
-
-        os.system("ls")
+        filepath = self.filepath         # bngl file path
         read_bng_data(context, self.filepath)
+        execute_bionetgen(filepath)        
+        try:
+            from . import net
+        except ImportError as e:
+            print (sys.stderr,e) 
+	    
         return {'FINISHED'}
 	
 
-def read_bng_data(context, filepath):
-    print("importing bng data...")
-    f = open(filepath, 'r', encoding='utf-8')
-    data = f.read()
-    f.close()
-    from . import model
-    print(data)
-    return {'FINISHED'}
+def execute_bionetgen(filepath):
+    from os.path import exists
+    filebasename = os.path.basename(filepath)
+    filedirpath = os.path.dirname(filepath)    # directory containing the bngl script 
+    check_dir = filedirpath;
+    n = 0
+    while(n!=20):    # iterative search for BNG execution directory (in the reverse direction, starting from the directory containing the bngl script)
+        bng_dir = check_dir  # current directory (and its child directories) to be checked 
+        checked = {}    # list to store directories for which search is complete
+        i = 0
+        for (dirpath, dirname, filename) in os.walk(bng_dir):    # iterate over the current directory and previously unchecked child directories 
+            if (i == 0):
+                check_dir = os.path.dirname(dirpath)    #  mark the parent directory for next search step (after current directory and its child directories are done) 
+                i = 1
+            if dirpath in checked:  # escape the (child) directory checked in the previous step
+                continue
+            bngpath = os.path.join(dirpath,"BNG2.pl")    # BNG executable file name
+            if os.path.exists(bngpath):    # if BNG executable file is identified, proceed for BNG execution 
+                exe_bng = bngpath + "    " + filepath    # create command string for BNG execution
+                os.system(exe_bng)    # execute BNG
+                srcname = os.path.join(os.getcwd(),(filebasename + ".py"))   # created python file containing the reaction network informaion 
+                dstname = os.path.join(os.path.dirname(__file__), "net.py")
+                os.system("mv" + " " + srcname + " " + dstname)
+                return{'FINISHED'}
+            checked.update({dirpath:True})    # store checked directory in the list
+        n +=1  
+        if (n==20):    # too many iteration for search. stop now
+            print ("Error running BioNetGen. BNG2.pl not found....")
+    return{'FINISHED'}
 
 def menu_func_import(self, context):
-    self.layout.operator(ImportSBMLData.bl_idname, text="SBML Model (.sbml)")
     self.layout.operator(ImportBNGData.bl_idname, text="BNG Model (.bngl)")
     
 def register():
-    bpy.utils.register_class(ImportSBMLData)
     bpy.types.INFO_MT_file_import.append(menu_func_import)
 
 def unregister():
-    bpy.utils.unregister_class(ImportSBMLData)
     bpy.types.INFO_MT_file_import.remove(menu_func_import)
-
+    
+class ErrBNG(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self): 
+        return ("search resulted no BNG executable")
+	
 register()
 

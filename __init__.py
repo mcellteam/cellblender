@@ -105,7 +105,8 @@ else:
         cellblender_properties, \
         cellblender_panels, \
         cellblender_operators, \
-        io_mesh_mcell_mdl
+        io_mesh_mcell_mdl, \
+        bngl
 
     # Use "try" for optional modules
     try:
