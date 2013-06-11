@@ -635,7 +635,7 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
     bl_region_type = "WINDOW"
     bl_context = "scene"
     bl_options = {'DEFAULT_CLOSED'}
-
+    
     def draw(self, context):
         layout = self.layout
 
@@ -656,7 +656,10 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
                 mcell.molecules.active_mol_index]
             layout.prop(mol, "name")
             layout.prop(mol, "type")
-            layout.prop(mol, "diffusion_constant_str")
+            if (mol.diffusion_constant_exp != "0"): #DB: This is added for diffusion constant to take expression; not sure if it has other implications 
+                layout.prop(mol, "diffusion_constant_exp")
+            else:
+                layout.prop(mol, "diffusion_constant_str")
 
             box = layout.box()
             row = box.row(align=True)
@@ -1170,3 +1173,4 @@ class MCELL_PT_molecule_glyphs(bpy.types.Panel):
         row = layout.row()
         row.operator("mcell.set_molecule_glyph", text="Set Molecule Shape",
                      icon='MESH_ICOSPHERE')
+

@@ -788,8 +788,8 @@ class MCELL_OT_molecule_add(bpy.types.Operator):
         mcell.molecules.molecule_list[
             mcell.molecules.active_mol_index].name = "Molecule"
         return {'FINISHED'}
-
-
+    
+ 
 class MCELL_OT_molecule_remove(bpy.types.Operator):
     bl_idname = "mcell.molecule_remove"
     bl_label = "Remove Molecule"
@@ -2976,11 +2976,12 @@ def update_diffusion_constant(self, context):
 
     mcell = context.scene.mcell
     mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
+
     diffusion_constant_str = mol.diffusion_constant_str
 
     (diffusion_constant, status) = check_val_str(
         diffusion_constant_str, 0, None)
-
+     
     if status == "":
         mol.diffusion_constant = diffusion_constant
     else:

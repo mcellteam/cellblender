@@ -45,6 +45,7 @@ cellblender_info = {
         "io_mesh_mcell_mdl/export_mcell_mdl.py",
         "io_mesh_mcell_mdl/import_mcell_mdl.py",
         "io_mesh_mcell_mdl/mdlmesh_parser.py"],
+         
     "cellblender_source_sha1": "",
     "cellblender_addon_path": "",
     "cellblender_plotting_modules": []
@@ -106,7 +107,7 @@ else:
         cellblender_panels, \
         cellblender_operators, \
         io_mesh_mcell_mdl, \
-        bngl
+        bng
 
     # Use "try" for optional modules
     try:

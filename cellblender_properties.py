@@ -73,6 +73,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         default="0",
         description="Diffusion Constant Units: cm^2/sec",
         update=cellblender_operators.update_diffusion_constant)
+    diffusion_constant_exp = StringProperty(        # DB: This property is included so that the diffusion cconstant take an expression 
+        name="Diffusion Constant",
+        default="0",
+        description="Diffusion Constant Units: cm^2/sec")
     target_only = BoolProperty(name="Target Only")
     custom_time_step = FloatProperty(name="Custom Time Step")
     custom_time_step_str = StringProperty(
