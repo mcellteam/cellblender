@@ -73,10 +73,11 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         default="0",
         description="Diffusion Constant Units: cm^2/sec",
         update=cellblender_operators.update_diffusion_constant)
-    diffusion_constant_exp = StringProperty(        # DB: This property is included so that the diffusion cconstant take an expression 
+    diffusion_constant_expr = StringProperty(        # DB: This property is added so that the diffusion constants take expressions 
         name="Diffusion Constant",
         default="0",
-        description="Diffusion Constant Units: cm^2/sec")
+        description="Diffusion Constant Units: cm^2/sec",
+	update=cellblender_operators.update_diffusion_constant)
     target_only = BoolProperty(name="Target Only")
     custom_time_step = FloatProperty(name="Custom Time Step")
     custom_time_step_str = StringProperty(
@@ -122,6 +123,11 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         description="Forward Rate Units: sec^-1 (unimolecular),"
                     " M^-1*sec^-1 (bimolecular)",
         update=cellblender_operators.update_fwd_rate)
+    fwd_rate_expr = StringProperty(    # DB: This property is added so that the rate laws (forward rate constants) take expressions 
+        name="Forward Rate",
+        default="0",
+        description="Forward Rate Units: sec^-1 (unimolecular),"
+                    " M^-1*sec^-1 (bimolecular)")
     bkwd_rate = FloatProperty(name="Backward Rate")
     bkwd_rate_str = StringProperty(
         name="Backward Rate",

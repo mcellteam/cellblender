@@ -2976,6 +2976,7 @@ def update_diffusion_constant(self, context):
 
     mcell = context.scene.mcell
     mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
+    diffusion_constant_exp = mol.diffusion_constant_expr
 
     diffusion_constant_str = mol.diffusion_constant_str
 

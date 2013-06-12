@@ -656,8 +656,8 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
                 mcell.molecules.active_mol_index]
             layout.prop(mol, "name")
             layout.prop(mol, "type")
-            if (mol.diffusion_constant_exp != "0"): #DB: This is added for diffusion constant to take expression; not sure if it has other implications 
-                layout.prop(mol, "diffusion_constant_exp")
+            if (mol.diffusion_constant_expr != "0"): #DB: This is added for diffusion constant to take expression; not sure if it has other implications 
+                layout.prop(mol, "diffusion_constant_expr")
             else:
                 layout.prop(mol, "diffusion_constant_str")
 
@@ -715,7 +715,10 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
                 layout.prop(rxn, "reactants")
                 layout.prop(rxn, "type")
                 layout.prop(rxn, "products")
-                layout.prop(rxn, "fwd_rate_str")
+                if (rxn.fwd_rate_expr != "0"):
+                    layout.prop(rxn, "fwd_rate_expr")
+                else:
+                    layout.prop(rxn, "fwd_rate_str")
                 if rxn.type == "reversible":
                     layout.prop(rxn, "bkwd_rate_str")
                 layout.prop(rxn, "rxn_name")
