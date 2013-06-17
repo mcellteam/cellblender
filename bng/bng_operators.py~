@@ -3,7 +3,6 @@ import os
 import sys
 import io
 
-from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty
 
 import cellblender
@@ -18,31 +17,32 @@ def register():
 def unregister():
     bpy.utils.unregister_module(__name__)
 
-class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
-    """This appears in the tooltip of the operator and in the generated docs"""
-    bl_idname = "bng.import_data"  
-    bl_label = "Import BNG"
-    bl_description = "Import BioNetGen-generated reaction network information"
- 
-    filename_ext = ".bngl"
+class BNG_OT_parameter_add(bpy.types.Operator):
+    bl_idname = "bng.parameter_add"
+    bl_label = "Add Parameter"
+    bl_description = "Add imported parameters to an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
 
-    filter_glob = StringProperty(
-            default="*.bngl",
-            options={'HIDDEN'},
-            )
     def execute(self, context):
-        bngfilepath = self.filepath         # bngl file path
-        execute_bionetgen(bngfilepath)
-        import imp
-        imp.reload(net)
+        mcell = context.scene.mcell
+        par_list = net.par_list
+        index = -1
+        for key in sorted(par_list.keys()):
+            index += 1
+            mcell.parameters.parameter_list.add()
+            mcell.parameters.active_par_index = index
+            parameter = mcell.parameters.parameter_list[
+                mcell.parameters.active_par_index]
 
-        bpy.ops.bng.molecule_add()
-        bpy.ops.bng.reaction_add()
-        bpy.ops.bng.release_site_add()
-        
-        print ("*** Done with BioNetGen model import ***")
+            parameter.name = par_list[key]['name']
+            parameter.value = par_list[key]['value']
+            parameter.unit = par_list[key]['unit']
+            parameter.type = par_list[key]['type']
+ 
         return {'FINISHED'}
 
+	
+	
 class BNG_OT_molecule_add(bpy.types.Operator):
     bl_idname = "bng.molecule_add"
     bl_label = "Add Molecule"
@@ -111,9 +111,13 @@ class BNG_OT_release_site_add(bpy.types.Operator):
             release_site.shape = rel_list[key]['shape']
             release_site.orient = rel_list[key]['orient']
             release_site.object_expr = rel_list[key]['object_expr']
+            release_site.quantity_type = rel_list[key]['quantity_type']
+            release_site.quantity_expr = rel_list[key]['quantity_expr']
             cellblender_operators.check_release_molecule(self, context)
+	    
         return {'FINISHED'}
-      
+
+    
 def execute_bionetgen(filepath):
     from os.path import exists
     filebasename = os.path.basename(filepath)
