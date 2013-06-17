@@ -102,6 +102,22 @@ class MCellFloatVectorProperty(bpy.types.PropertyGroup):
     """ Generic PropertyGroup to hold float vector for a CollectionProperty """
     vec = bpy.props.FloatVectorProperty(name="Float Vector")
 
+######################## DB: added for imported parameters from BNG, SBML or other models###############################
+class MCellParameterProperty(bpy.types.PropertyGroup):
+    name = StringProperty(name="Parameter Name", default="Parameter")
+    value = StringProperty(name="Parameter Value", default="0")
+    unit = StringProperty(
+        name="Parameter Unit",
+        default="",
+        description="Forward Rate Units: sec^-1 (unimolecular),"
+                    " M^-1*sec^-1 (bimolecular)")
+    type = StringProperty(
+        name="Parameter type",
+        default="",
+        description="")		    
+    status = StringProperty(name="Status")
+
+#########################################################################################################################
 
 class MCellReactionProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="The Reaction")
@@ -171,6 +187,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     quantity_type = EnumProperty(items=quantity_type_enum,
                                  name="Quantity Type")
     quantity = FloatProperty(name="Quantity to Release", precision=4, min=0.0)
+    quantity_expr = StringProperty(name="Quantity to Release",default="0")  ####### DB: added to include expressions for imported quantities ###
     stddev = FloatProperty(name="Standard Deviation", precision=4, min=0.0)
     pattern = StringProperty(name="Release Pattern")
     status = StringProperty(name="Status")
@@ -608,6 +625,13 @@ class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
         name="Z Step", default=0.02, precision=3,
         update=cellblender_operators.check_z_partition_step)
 
+#####################DB: Included for parameter import from BNG, SBML or other types of model #############################
+class MCellParametersPanelProperty(bpy.types.PropertyGroup):
+    parameter_list = CollectionProperty(
+        type=MCellParameterProperty, name="Parameter List")
+    active_par_index = IntProperty(name="Active Parameter Index", default=0)
+    plot_command = StringProperty(name="", default="")
+###########################################################################################################################
 
 class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
     molecule_list = CollectionProperty(
@@ -785,6 +809,10 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellInitializationPanelProperty, name="Model Initialization")
     partitions = bpy.props.PointerProperty(
         type=MCellPartitionsPanelProperty, name="Partitions")
+############## DB: added for parameter import from BNG, SBML models####
+    parameters = PointerProperty(
+        type=MCellParametersPanelProperty, name="Defined Parameters")
+########################################################################
     molecules = PointerProperty(
         type=MCellMoleculesPanelProperty, name="Defined Molecules")
     reactions = PointerProperty(

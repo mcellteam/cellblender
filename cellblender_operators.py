@@ -774,6 +774,37 @@ def check_partition_step(self, context, start, end, step):
         step *= -1
     return step
 
+############### DB: The following to classes are included to create a parameter input panel: only relevant for BNG, SBML or other model import #################
+class MCELL_OT_parameter_add(bpy.types.Operator):
+    bl_idname = "mcell.parameter_add"
+    bl_label = "Add Parameter"
+    bl_description = "Add a new parameter to an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.parameters.parameter_list.add()
+        mcell.parameters.active_par_index = len(mcell.parameters.parameter_list)-1
+        mcell.parameters.parameter_list[
+            mcell.parameters.active_par_index].name = "Parameter"
+        return {'FINISHED'}
+	
+class MCELL_OT_parameter_remove(bpy.types.Operator):
+    bl_idname = "mcell.parameter_remove"
+    bl_label = "Remove Parameter"
+    bl_description = "Remove selected parameter type from an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.parameters.parameter_list.remove(mcell.parameters.active_par_index)
+        mcell.parameters.active_par_index = mcell.parameters.active_par_index-1
+        if (mcell.parameters.active_par_index < 0):
+            mcell.parameters.active_par_index = 0
+
+        return {'FINISHED'}	
+	
+#########################################################################################################################################
 
 class MCELL_OT_molecule_add(bpy.types.Operator):
     bl_idname = "mcell.molecule_add"
@@ -2976,8 +3007,7 @@ def update_diffusion_constant(self, context):
 
     mcell = context.scene.mcell
     mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
-    diffusion_constant_exp = mol.diffusion_constant_expr
-
+   
     diffusion_constant_str = mol.diffusion_constant_str
 
     (diffusion_constant, status) = check_val_str(

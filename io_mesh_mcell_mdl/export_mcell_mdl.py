@@ -80,7 +80,8 @@ def save_wrapper(context, out_file, filedir):
 
     # Export model initialization:
     out_file.write("ITERATIONS = %d\n" % (mcell.initialization.iterations))
-    out_file.write("TIME_STEP = %g\n\n" % (mcell.initialization.time_step))
+    out_file.write("TIME_STEP = %g\n" % (mcell.initialization.time_step))
+    out_file.write("VACANCY_SEARCH_DISTANCE = 10\n\n") # DB: added to avoid error (I think it should have a default value to avoid error in most of the reaction networks)
 
     # Export optional initialization commands:
     if export_project.export_format == 'mcell_mdl_modular':
@@ -104,7 +105,19 @@ def save_wrapper(context, out_file, filedir):
         out_file.write("PARTITION_Z = [[%g TO %g STEP %g]]\n\n" % (
             mcell.partitions.z_start, mcell.partitions.z_end,
             mcell.partitions.z_step))
-
+	    
+    # Export parameters: 
+    par_list = mcell.parameters.parameter_list
+    if export_project.export_format == 'mcell_mdl_modular':
+        out_file.write("INCLUDE_FILE = \"%s.parameters.mdl\"\n\n" %
+                       (settings.base_name))
+        filepath = ("%s/%s.parameters.mdl" %
+                    (filedir, settings.base_name))
+        with open(filepath, "w", encoding="utf8", newline="\n") as par_file:
+            save_parameters(context, par_file, par_list)
+    else:
+        save_parameters(context, out_file, par_list)
+    
     # Export molecules:
     unfiltered_mol_list = mcell.molecules.molecule_list
     if mcell.cellblender_preferences.filter_invalid:
@@ -457,7 +470,11 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
                 out_file.write("   MOLECULE = %s\n" % (release_site.molecule))
 
         if release_site.quantity_type == 'NUMBER_TO_RELEASE':
-            out_file.write("   NUMBER_TO_RELEASE = %d\n" %
+            if release_site.quantity_expr != "0":
+                out_file.write("   NUMBER_TO_RELEASE = %s\n" %  ###### DB: included to include expression for imported release quantities
+                           (release_site.quantity_expr))
+            else:
+                out_file.write("   NUMBER_TO_RELEASE = %d\n" %
                            (int(release_site.quantity)))
 
         elif release_site.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
@@ -487,6 +504,28 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
 
         out_file.write('  }\n')
 
+def save_parameters(context, out_file, par_list):
+    """ Saves parameter info to mdl output file. """
+
+    # Export Molecules:
+    if par_list:
+        out_file.write("/* DEFINE PARAMETERS */\n")
+                
+        for par_item in par_list:
+            out_file.write("    %s = %s" % (par_item.name, par_item.value))
+            
+            if ((par_item.unit != "") | (par_item.type != "")):
+                out_file.write("    /* ")
+            
+                if par_item.unit != "":
+                    out_file.write("%s. " % (par_item.unit))
+            
+                if par_item.type != "":
+                    out_file.write("%s. " % (par_item.type))
+            
+                out_file.write("*/") 		 
+                out_file.write("\n") 
+        out_file.write("\n")
 
 def save_molecules(context, out_file, mol_list):
     """ Saves molecule info to mdl output file. """
@@ -499,13 +538,20 @@ def save_molecules(context, out_file, mol_list):
         for mol_item in mol_list:
             out_file.write("  %s\n" % (mol_item.name))
             out_file.write("  {\n")
-
-            if mol_item.type == '2D':
-                out_file.write("    DIFFUSION_CONSTANT_2D = %g\n" %
-                               (mol_item.diffusion_constant))
-            else:
-                out_file.write("    DIFFUSION_CONSTANT_3D = %g\n" %
-                               (mol_item.diffusion_constant))
+            if (mol_item.diffusion_constant_expr != "0"):    # DB: Extra if-else bloc for diffusion constant to take expressions
+                if mol_item.type == '2D':
+                    out_file.write("    DIFFUSION_CONSTANT_2D = %s\n" %    
+                                   (mol_item.diffusion_constant_expr))
+                else:   
+                    out_file.write("    DIFFUSION_CONSTANT_3D = %s\n" %    
+                                   (mol_item.diffusion_constant_expr))           
+            else: 
+                if mol_item.type == '2D':
+                    out_file.write("    DIFFUSION_CONSTANT_2D = %g\n" %
+                                   (mol_item.diffusion_constant))
+                else:
+                    out_file.write("    DIFFUSION_CONSTANT_3D = %g\n" %
+                                   (mol_item.diffusion_constant))
 
             if mol_item.custom_time_step > 0:
                 out_file.write("    CUSTOM_TIME_STEP = %g\n" %
@@ -568,7 +614,10 @@ def save_reactions(context, out_file, rxn_list):
             out_file.write("  %s " % (rxn_item.name))
 
             if rxn_item.type == 'irreversible':
-                out_file.write("[%g]" % (rxn_item.fwd_rate))
+                if (rxn_item.fwd_rate_expr != "0"):    # DB: extra if bloc for foward rate constants to take expressions 
+                    out_file.write("[%s]" % (rxn_item.fwd_rate_expr))    
+                else:
+                    out_file.write("[%g]" % (rxn_item.fwd_rate))
             else:
                 out_file.write("[>%g, <%g]" %
                                (rxn_item.fwd_rate, rxn_item.bkwd_rate))
@@ -780,3 +829,7 @@ def instance_object_expr(context, expression):
         pass
 
     return instantiated_expression
+    
+    
+    
+   

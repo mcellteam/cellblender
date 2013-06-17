@@ -619,6 +619,49 @@ class MCELL_PT_partitions(bpy.types.Panel):
                 layout.operator("mcell.remove_partitions_object",
                                 icon='OUTLINER_OB_LATTICE')
 
+############### DB: The following to classes are included to create a parameter input panel: only relevant for BNG, SBML or other model import #################
+
+class MCELL_UL_check_parameter(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                 active_propname, index):
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+	    
+  
+class MCELL_PT_define_parameters(bpy.types.Panel):
+    bl_label = "CellBlender - Imported Parameters"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mcell = context.scene.mcell
+
+        row = layout.row()
+        if mcell.parameters.parameter_list:
+            row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
+            row = layout.row()
+            col = row.column()
+            col.template_list("MCELL_UL_check_parameter", "define_parameters",
+                              mcell.parameters, "parameter_list",
+                              mcell.parameters, "active_par_index", rows=2)
+            col = row.column(align=True)
+            col.operator("mcell.parameter_add", icon='ZOOMIN', text="")
+            col.operator("mcell.parameter_remove", icon='ZOOMOUT', text="")
+            if len(mcell.parameters.parameter_list) > 0:
+                par = mcell.parameters.parameter_list[
+                    mcell.parameters.active_par_index]
+                layout.prop(par, "name")
+                layout.prop(par, "value")
+                layout.prop(par, "unit")
+                layout.prop(par, "type")
+        else:
+            row.label(text="Import atleast one parameter", icon='ERROR')
+#########################################################################################################################################
 
 class MCELL_UL_check_molecule(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
@@ -922,7 +965,10 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
 
                 layout.prop(rel, "probability")
                 layout.prop(rel, "quantity_type")
-                layout.prop(rel, "quantity")
+                if rel.quantity_expr != "0":
+                   layout.prop(rel, "quantity_expr")
+                else:
+                   layout.prop(rel, "quantity")
                 if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
                     layout.prop(rel, "stddev")
 
