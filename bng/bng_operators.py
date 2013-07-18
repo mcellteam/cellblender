@@ -39,8 +39,7 @@ class BNG_OT_parameter_add(bpy.types.Operator):
  
         return {'FINISHED'}
 
-	
-	
+
 class BNG_OT_molecule_add(bpy.types.Operator):
     bl_idname = "bng.molecule_add"
     bl_label = "Add Molecule"
