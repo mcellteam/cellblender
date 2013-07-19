@@ -1,3 +1,5 @@
+# The code below (and in associated files) is intended to import BioNetGen models in Cellblender
+
 import bpy
 from . import bng_operators
 from bpy_extras.io_utils import ImportHelper
