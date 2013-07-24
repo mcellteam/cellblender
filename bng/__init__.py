@@ -1,11 +1,3 @@
-# To support reload properly, try to access a package var, if it's there, reload everything
-#if "bpy" in locals():
-#    import imp
-#    if "export_mcell_mdl" in locals():
-#        imp.reload(export_mcell_mdl)
-#    if "import_mcell_mdl" in locals():
-        imp.reload(import_mcell_mdl)
-
 import bpy
 from . import bng_operators
 from bpy_extras.io_utils import ImportHelper

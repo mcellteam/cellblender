@@ -631,7 +631,7 @@ class MCELL_UL_check_parameter(bpy.types.UIList):
 	    
   
 class MCELL_PT_define_parameters(bpy.types.Panel):
-    bl_label = "CellBlender - Imported Parameters"
+    bl_label = "CellBlender - Parameters"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -660,7 +660,7 @@ class MCELL_PT_define_parameters(bpy.types.Panel):
                 layout.prop(par, "unit")
                 layout.prop(par, "type")
         else:
-            row.label(text="Import atleast one parameter", icon='ERROR')
+            row.label(text="No imported/defined parameter found", icon='ERROR')
 #########################################################################################################################################
 
 class MCELL_UL_check_molecule(bpy.types.UIList):
