@@ -108,15 +108,16 @@ def save_wrapper(context, out_file, filedir):
 	    
     # Export parameters: 
     par_list = mcell.parameters.parameter_list
-    if export_project.export_format == 'mcell_mdl_modular':
-        out_file.write("INCLUDE_FILE = \"%s.parameters.mdl\"\n\n" %
-                       (settings.base_name))
-        filepath = ("%s/%s.parameters.mdl" %
-                    (filedir, settings.base_name))
-        with open(filepath, "w", encoding="utf8", newline="\n") as par_file:
-            save_parameters(context, par_file, par_list)
-    else:
-        save_parameters(context, out_file, par_list)
+    if (len(par_list) > 0):
+        if export_project.export_format == 'mcell_mdl_modular':
+            out_file.write("INCLUDE_FILE = \"%s.parameters.mdl\"\n\n" %
+                           (settings.base_name))
+            filepath = ("%s/%s.parameters.mdl" %
+                        (filedir, settings.base_name))
+            with open(filepath, "w", encoding="utf8", newline="\n") as par_file:
+                save_parameters(context, par_file, par_list)
+        else:
+            save_parameters(context, out_file, par_list)
     
     # Export molecules:
     unfiltered_mol_list = mcell.molecules.molecule_list
