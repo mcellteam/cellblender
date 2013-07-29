@@ -599,7 +599,8 @@ class MCELL_OT_remove_partitions_object(bpy.types.Operator):
 class MCELL_OT_auto_generate_boundaries(bpy.types.Operator):
     bl_idname = "mcell.auto_generate_boundaries"
     bl_label = "Automatically Generate Boundaries"
-    bl_description = "Automatically generate partition boundaries"
+    bl_description = ("Automatically generate partition boundaries based off "
+                      "of Model Objects list")
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -914,6 +915,7 @@ def check_reaction(self, context):
     # clean up rxn.reactants only if necessary to avoid infinite recursion.
     reactants = rxn.reactants.replace(" ", "")
     reactants = reactants.replace("+", " + ")
+    reactants = reactants.replace("@", " @ ")
     if reactants != rxn.reactants:
         rxn.reactants = reactants
 
@@ -931,10 +933,24 @@ def check_reaction(self, context):
 
     #Check syntax of reactant specification
     mol_list = mcell.molecules.molecule_list
-    mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)((',)|(,')|(;)|(,*)|('*))$"
-    reactants = rxn.reactants.split(" + ")
+    surf_class_list = mcell.surface_classes.surf_class_list
+    mol_surf_class_filter = \
+        r"(^[A-Za-z]+[0-9A-Za-z_.]*)((',)|(,')|(;)|(,*)|('*))$"
+    # Check the syntax of the surface class if one exists
+    if rxn.reactants.count(" @ ") == 1:
+        reactants_no_surf_class, surf_class = rxn.reactants.split(" @ ")
+        m = re.match(mol_surf_class_filter, surf_class)
+        if m is None:
+            status = "Surface class error: %s" % (surf_class)
+        else:
+            surf_class_name = m.group(1)
+            if not surf_class_name in surf_class_list:
+                status = "Undefined surface class: %s" % (surf_class_name)
+    else:
+        reactants_no_surf_class = rxn.reactants
+    reactants = reactants_no_surf_class.split(" + ")
     for reactant in reactants:
-        m = re.match(mol_filter, reactant)
+        m = re.match(mol_surf_class_filter, reactant)
         if m is None:
             status = "Reactant error: %s" % (reactant)
             break
@@ -950,7 +966,7 @@ def check_reaction(self, context):
     else:
         products = rxn.products.split(" + ")
         for product in products:
-            m = re.match(mol_filter, product)
+            m = re.match(mol_surf_class_filter, product)
             if m is None:
                 status = "Product error: %s" % (product)
                 break
@@ -1398,7 +1414,8 @@ def check_mcell_binary(self, context):
 class MCELL_OT_set_mcell_binary(bpy.types.Operator):
     bl_idname = "mcell.set_mcell_binary"
     bl_label = "Set MCell Binary"
-    bl_description = "Set MCell Binary"
+    bl_description = ("Set MCell Binary. If needed, download at "
+                      "mcell.org/download.html")
     bl_options = {'REGISTER'}
 
     filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
@@ -1435,66 +1452,77 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
         mcell_binary = mcell.project_settings.mcell_binary
         # Force the project directory to be where the .blend file lives
         project_dir = project_files_path()
+        status = ""
+        python_path = shutil.which("python")
 
-        if not mcell.cellblender_preferences.decouple_export_run:
-            bpy.ops.mcell.export_project()
+        if python_path:
+            if not mcell.cellblender_preferences.decouple_export_run:
+                bpy.ops.mcell.export_project()
 
-        react_dir = os.path.join(project_dir, "react_data")
-        if os.path.exists(react_dir) and mcell.run_simulation.remove_append == 'remove':
-            shutil.rmtree(react_dir)
-        if not os.path.exists(react_dir):
-            os.makedirs(react_dir)
-            
-        viz_dir = os.path.join(project_dir, "viz_data")
-        if os.path.exists(viz_dir) and mcell.run_simulation.remove_append == 'remove':
-            shutil.rmtree(viz_dir)
-        if not os.path.exists(viz_dir):
-            os.makedirs(viz_dir)
-        
-        base_name = mcell.project_settings.base_name
+            react_dir = os.path.join(project_dir, "react_data")
+            if (os.path.exists(react_dir) and
+                    mcell.run_simulation.remove_append == 'remove'):
+                shutil.rmtree(react_dir)
+            if not os.path.exists(react_dir):
+                os.makedirs(react_dir)
 
-        error_file_option = mcell.run_simulation.error_file
-        log_file_option = mcell.run_simulation.log_file
-        script_dir_path = os.path.dirname(os.path.realpath(__file__))
-        script_file_path = os.path.join(script_dir_path, "run_simulations.py")
+            viz_dir = os.path.join(project_dir, "viz_data")
+            if (os.path.exists(viz_dir) and
+                    mcell.run_simulation.remove_append == 'remove'):
+                shutil.rmtree(viz_dir)
+            if not os.path.exists(viz_dir):
+                os.makedirs(viz_dir)
 
-        processes_list = mcell.run_simulation.processes_list
-        processes_list.add()
-        mcell.run_simulation.active_process_index = len(
-            mcell.run_simulation.processes_list)-1
-        simulation_process = processes_list[
-            mcell.run_simulation.active_process_index]
+            base_name = mcell.project_settings.base_name
 
-        print("Starting MCell ... create start_time.txt file:")
-        with open(os.path.join(os.path.dirname(bpy.data.filepath),
-                  "start_time.txt"), "w") as start_time_file:
-            start_time_file.write(
-                "Started MCell at: " + (str(time.ctime())) + "\n")
+            error_file_option = mcell.run_simulation.error_file
+            log_file_option = mcell.run_simulation.log_file
+            script_dir_path = os.path.dirname(os.path.realpath(__file__))
+            script_file_path = os.path.join(
+                script_dir_path, "run_simulations.py")
 
-        # We have to create a new subprocess that in turn creates a
-        # multiprocessing pool, instead of directly creating it here, because
-        # the multiprocessing package requires that the __main__ module be
-        # importable by the children.
-        sp = subprocess.Popen([
-            script_file_path, mcell_binary, str(start), str(end + 1),
-            project_dir, base_name, error_file_option, log_file_option,
-            mcell_processes_str], stdout=None, stderr=None)
-        self.report({'INFO'}, "Simulation Running")
+            processes_list = mcell.run_simulation.processes_list
+            processes_list.add()
+            mcell.run_simulation.active_process_index = len(
+                mcell.run_simulation.processes_list) - 1
+            simulation_process = processes_list[
+                mcell.run_simulation.active_process_index]
 
-        # This is a hackish workaround since we can't return arbitrary objects
-        # from operators or store arbitrary objects in collection properties,
-        # and we need to keep track of the progress of the subprocess objects
-        # in cellblender_panels.
-        cellblender.simulation_popen_list.append(sp)
+            print("Starting MCell ... create start_time.txt file:")
+            with open(os.path.join(os.path.dirname(bpy.data.filepath),
+                      "start_time.txt"), "w") as start_time_file:
+                start_time_file.write(
+                    "Started MCell at: " + (str(time.ctime())) + "\n")
 
-        #mcell.run_simulation.pid = sp.pid
-        if end-start == 0:
-            simulation_process.name = "PID: %d, MDL: %s.main.mdl, Seed: %d" % (
-                sp.pid, base_name, start)
+            # We have to create a new subprocess that in turn creates a
+            # multiprocessing pool, instead of directly creating it here,
+            # because the multiprocessing package requires that the __main__
+            # module be importable by the children.
+            sp = subprocess.Popen([
+                python_path, script_file_path, mcell_binary, str(start),
+                str(end + 1), project_dir, base_name, error_file_option,
+                log_file_option, mcell_processes_str], stdout=None,
+                stderr=None)
+            self.report({'INFO'}, "Simulation Running")
+
+            # This is a hackish workaround since we can't return arbitrary
+            # objects from operators or store arbitrary objects in collection
+            # properties, and we need to keep track of the progress of the
+            # subprocess objects in cellblender_panels.
+            cellblender.simulation_popen_list.append(sp)
+
+            if ((end - start) == 0):
+                simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
+                                           "Seed: %d" % (sp.pid, base_name,
+                                                         start))
+            else:
+                simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
+                                           "Seeds: %d-%d" % (sp.pid, base_name,
+                                                             start, end))
         else:
-            simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                       "Seeds: %d-%d" % (sp.pid, base_name,
-                                                         start, end))
+            status = "Python not found."
+
+        mcell.run_simulation.status = status
 
         return {'FINISHED'}
 
@@ -1502,7 +1530,8 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
 class MCELL_OT_clear_run_list(bpy.types.Operator):
     bl_idname = "mcell.clear_run_list"
     bl_label = "Clear Completed MCell Runs"
-    bl_description = "Clear the list of completed and failed MCell runs"
+    bl_description = ("Clear the list of completed and failed MCell runs. "
+                      "Does not remove rxn/viz data.")
     bl_options = {'REGISTER'}
 
     def execute(self, context):
@@ -1662,8 +1691,10 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
                 mcell.mol_viz.color_list[6].vec = [1.0, 1.0, 1.0]
                 mcell.mol_viz.color_list[7].vec = [0.0, 0.0, 0.0]
 
-            print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list))
-            context.scene.frame_end = len(mcell.mol_viz.mol_file_list)
+            print("Setting frame_start to 0")
+            print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list)-1)
+            context.scene.frame_start = 0
+            context.scene.frame_end = len(mcell.mol_viz.mol_file_list)-1
             mol_viz_update(self, context)
         return {'FINISHED'}
 
@@ -2600,7 +2631,8 @@ def model_objects_update(context):
 class MCELL_OT_model_objects_add(bpy.types.Operator):
     bl_idname = "mcell.model_objects_add"
     bl_label = "Model Objects Include"
-    bl_description = "Include selected objects in model object export list"
+    bl_description = ("Include objects selected in 3D View Window in Model "
+                      "Objects export list")
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -2628,7 +2660,7 @@ class MCELL_OT_model_objects_add(bpy.types.Operator):
 class MCELL_OT_model_objects_remove(bpy.types.Operator):
     bl_idname = "mcell.model_objects_remove"
     bl_label = "Model Objects Remove"
-    bl_description = "Remove current item from model object export list"
+    bl_description = "Remove selected item from Model Objects export list"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -2729,7 +2761,7 @@ class MCELL_OT_rxn_output_add(bpy.types.Operator):
 class MCELL_OT_rxn_output_remove(bpy.types.Operator):
     bl_idname = "mcell.rxn_output_remove"
     bl_label = "Remove Reaction Data Output"
-    l_description = "Remove selected reaction data output from an MCell model"
+    bl_description = "Remove selected reaction data output from an MCell model"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):

@@ -36,12 +36,12 @@ def run_sim(seed):
 
     # Both output and error log file
     if (log_file_option == 'file' and error_file_option == 'file'):
-        with open(log_filepath, "w") as log_file, open(
-                error_filepath, "w") as error_file:
-            subprocess.call(
-                [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-                cwd=subprocess_cwd,
-                stdout=log_file, stderr=error_file)
+        with open(log_filepath, "w") as log_file:
+            with open (error_filepath, "w") as error_file:
+                subprocess.call(
+                    [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
+                    cwd=subprocess_cwd,
+                    stdout=log_file, stderr=error_file)
     # Only output log file
     elif log_file_option == 'file':
         with open(log_filepath, "w") as log_file:

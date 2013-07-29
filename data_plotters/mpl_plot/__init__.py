@@ -51,24 +51,26 @@ def plot(data_path, plot_spec):
 
     # mpl_plot.py accepts all generic parameters, so no translation is needed
 
-    plot_cmd = find_in_path("python")
+    python_cmd = find_in_path("python")
 
-    if plot_cmd is None:
+    if python_cmd is None:
         print("Unable to plot: python not found in path")
     else:
-        plot_cmd = plot_cmd + " " + os.path.join(program_path, "mpl_plot.py")
+        plot_cmd = []
+        plot_cmd.append(python_cmd)
+        plot_cmd.append(os.path.join(program_path, "mpl_plot.py"))
 
         defaults_name = os.path.join(data_path, "mpl_defaults.py")
         print("Checking for defaults file at: " + defaults_name)
         if os.path.exists(defaults_name):
-            plot_cmd = plot_cmd + " defs=" + defaults_name
+            plot_cmd.append("defs=" + defaults_name)
         else:
             defaults_name = os.path.join(program_path, "mpl_defaults.py")
             print("Checking for defaults file at: " + defaults_name)
             if os.path.exists(defaults_name):
-                plot_cmd = plot_cmd + " defs=" + defaults_name
+                plot_cmd.append("defs=" + defaults_name)
 
         for generic_param in plot_spec.split():
-            plot_cmd = plot_cmd + " " + generic_param
+            plot_cmd.append(generic_param)
 
-        pid = subprocess.Popen(plot_cmd.split(), cwd=data_path)
+        pid = subprocess.Popen(plot_cmd, cwd=data_path)

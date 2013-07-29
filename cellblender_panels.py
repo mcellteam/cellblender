@@ -281,6 +281,9 @@ class MCELL_PT_run_simulation(bpy.types.Panel):
                                   rows=2)
                 row = layout.row()
                 row.operator("mcell.clear_run_list")
+        if mcell.run_simulation.status:
+            row = layout.row()
+            row.label(text=mcell.run_simulation.status, icon='ERROR')
 
 
 class MCELL_PT_viz_results(bpy.types.Panel):
