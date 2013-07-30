@@ -1018,9 +1018,15 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
             if mcell.rxn_output.rxn_output_list:
                 rxn_output = mcell.rxn_output.rxn_output_list[
                     mcell.rxn_output.active_rxn_output_index]
-                layout.prop_search(
-                    rxn_output, "molecule_name", mcell.molecules,
-                    "molecule_list", icon='FORCE_LENNARDJONES')
+                layout.prop(rxn_output, "rxn_or_mol", expand=True)
+                if rxn_output.rxn_or_mol == 'Molecule':
+                    layout.prop_search(
+                        rxn_output, "molecule_name", mcell.molecules,
+                        "molecule_list", icon='FORCE_LENNARDJONES')
+                else:
+                    layout.prop_search(
+                        rxn_output, "reaction_name", mcell.reactions,
+                        "reaction_name_list", icon='FORCE_LENNARDJONES')
                 layout.prop(rxn_output, "count_location", expand=True)
                 # Show the object selector if Object or Region is selected
                 if rxn_output.count_location != "World":

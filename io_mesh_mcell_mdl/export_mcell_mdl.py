@@ -272,9 +272,8 @@ def save_wrapper(context, out_file, filedir):
     else:
         rxn_output_list = unfiltered_rxn_output_list
 
-    have_rxn_output = len(rxn_output_list) != 0
-    if (have_rxn_output and
-            export_project.export_format == 'mcell_mdl_modular'):
+    #have_rxn_output = len(rxn_output_list) != 0
+    if (rxn_output_list and export_project.export_format == 'mcell_mdl_modular'):
         out_file.write("INCLUDE_FILE = \"%s.rxn_output.mdl\"\n\n" %
                        (settings.base_name))
         filepath = ("%s/%s.rxn_output.mdl" % (filedir, settings.base_name))
@@ -745,20 +744,23 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
         out_file.write("  STEP=%g\n" % rxn_step)
 
         for rxn_output in rxn_output_list:
-            molecule_name = rxn_output.molecule_name
+            if rxn_output.rxn_or_mol == 'Reaction':
+                count_name = rxn_output.reaction_name
+            else:
+                count_name = rxn_output.molecule_name
             object_name = rxn_output.object_name
             region_name = rxn_output.region_name
             if rxn_output.count_location == 'World':
                 out_file.write("  {COUNT[%s,WORLD]}=> \"./react_data/seed_\" & seed & \"/%s.World.dat\"\n" %
-                               (molecule_name, molecule_name,))
+                               (count_name, count_name,))
             elif rxn_output.count_location == 'Object':
                 out_file.write("  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & \"/%s.%s.dat\"\n" %
-                               (molecule_name, context.scene.name, object_name,
-                                molecule_name, object_name))
+                               (count_name, context.scene.name, object_name,
+                                count_name, object_name))
             elif rxn_output.count_location == 'Region':
                 out_file.write("  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & \"/%s.%s.%s.dat\"\n" %
-                               (molecule_name, context.scene.name, object_name,
-                                region_name, molecule_name, object_name,
+                               (count_name, context.scene.name, object_name,
+                                region_name, count_name, object_name,
                                 region_name))
 
         out_file.write("}\n\n")

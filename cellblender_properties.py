@@ -133,7 +133,8 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
     rxn_name = StringProperty(
         name="Reaction Name",
         description="The name of the reaction. "
-                    "Can be used in Reaction Output.")
+                    "Can be used in Reaction Output.",
+        update=cellblender_operators.update_reaction_name_list)
     reactants = StringProperty(
         name="Reactants", 
         description="Specify 1-3 reactants separated by a + symbol. "
@@ -746,6 +747,8 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
     reaction_list = CollectionProperty(
         type=MCellReactionProperty, name="Reaction List")
     active_rxn_index = IntProperty(name="Active Reaction Index", default=0)
+    reaction_name_list = CollectionProperty(
+        type=MCellStringProperty, name="Reaction Name List")
     plot_command = StringProperty(name="", default="")
 
 
@@ -804,6 +807,10 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         name="Molecule",
         description="Count the selected molecule.",
         update=cellblender_operators.check_rxn_output)
+    reaction_name = StringProperty(
+        name="Reaction",
+        description="Count the selected reaction.",
+        update=cellblender_operators.check_rxn_output)
     object_name = StringProperty(
         name="Object", update=cellblender_operators.check_rxn_output)
     region_name = StringProperty(
@@ -815,6 +822,13 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     count_location = bpy.props.EnumProperty(
         items=count_location_enum, name="Count Location",
         description="Count all molecules in the selected location.",
+        update=cellblender_operators.check_rxn_output)
+    rxn_or_mol_enum = [
+        ('Reaction', "Reaction", ""),
+        ('Molecule', "Molecule", "")]
+    rxn_or_mol = bpy.props.EnumProperty(
+        items=rxn_or_mol_enum, name="Count Reaction or Molecule",
+        description="Select between counting a reaction or molecule.",
         update=cellblender_operators.check_rxn_output)
     plot_command = StringProperty(
         name="Command")  # , update=cellblender_operators.check_rxn_output)
