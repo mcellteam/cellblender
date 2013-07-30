@@ -1603,6 +1603,22 @@ def project_files_path():
     filepath = os.path.join(filepath, "mcell")
     return filepath
 
+def create_color_list():
+    """ Create a list of colors to be assigned to the glyphs. """ 
+
+    mcell = bpy.context.scene.mcell
+    mcell.mol_viz.color_index = 0
+    if not mcell.mol_viz.color_list:
+        for i in range(8):
+            mcell.mol_viz.color_list.add()
+        mcell.mol_viz.color_list[0].vec = [0.8, 0.0, 0.0]
+        mcell.mol_viz.color_list[1].vec = [0.0, 0.8, 0.0]
+        mcell.mol_viz.color_list[2].vec = [0.0, 0.0, 0.8]
+        mcell.mol_viz.color_list[3].vec = [0.0, 0.8, 0.8]
+        mcell.mol_viz.color_list[4].vec = [0.8, 0.0, 0.8]
+        mcell.mol_viz.color_list[5].vec = [0.8, 0.8, 0.0]
+        mcell.mol_viz.color_list[6].vec = [1.0, 1.0, 1.0]
+        mcell.mol_viz.color_list[7].vec = [0.0, 0.0, 0.0]
 
 # Operators can't be callbacks, so we need this function for now.  This is
 # temporary until we make importing viz data automatic.
@@ -1644,57 +1660,29 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
             new_item.name = os.path.basename(mol_viz_seed)
 
         if mcell.mol_viz.mol_viz_seed_list:
-            try:
-                active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[
-                    mcell.mol_viz.active_mol_viz_seed_index]
-            except IndexError:
-                active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[0]
-
-            mol_file_dir = os.path.join(
-                project_files_path(), "viz_data/%s" % active_mol_viz_seed.name)
+            mol_file_dir = get_mol_file_dir()
+            mcell.mol_viz.mol_file_dir = mol_file_dir
 
             mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
             mol_file_list.sort()
 
-            # Is there any reason to do it this way instead of using the clear
-            # method?
-            #for i in range(mcell.mol_viz.mol_file_num-1, -1, -1):
-            #    mcell.mol_viz.mol_file_list.remove(i)
-
-            mcell.mol_viz.mol_file_dir = mol_file_dir
             # Add all the viz_data files to mol_file_list collection (e.g.
             # my_project.cellbin.0001.dat, my_project.cellbin.0001.dat, etc)
             for mol_file_name in mol_file_list:
                 new_item = mcell.mol_viz.mol_file_list.add()
                 new_item.name = os.path.basename(mol_file_name)
 
-            mcell.mol_viz.mol_file_num = len(mcell.mol_viz.mol_file_list)
-            mcell.mol_viz.mol_file_stop_index = mcell.mol_viz.mol_file_num-1
-
+            # If you previously had some viz data loaded, but reran the
+            # simulation with less iterations, you can receive an index error.
             try:
                 mol_file = mcell.mol_viz.mol_file_list[
                     mcell.mol_viz.mol_file_index]
             except IndexError:
                 mcell.mol_viz.mol_file_index = 0
 
-            mcell.mol_viz.color_index = 0
-            if not mcell.mol_viz.color_list:
-                # Create a list of colors to be assigned to the glyphs
-                for i in range(8):
-                    mcell.mol_viz.color_list.add()
-                mcell.mol_viz.color_list[0].vec = [0.8, 0.0, 0.0]
-                mcell.mol_viz.color_list[1].vec = [0.0, 0.8, 0.0]
-                mcell.mol_viz.color_list[2].vec = [0.0, 0.0, 0.8]
-                mcell.mol_viz.color_list[3].vec = [0.0, 0.8, 0.8]
-                mcell.mol_viz.color_list[4].vec = [0.8, 0.0, 0.8]
-                mcell.mol_viz.color_list[5].vec = [0.8, 0.8, 0.0]
-                mcell.mol_viz.color_list[6].vec = [1.0, 1.0, 1.0]
-                mcell.mol_viz.color_list[7].vec = [0.0, 0.0, 0.0]
+            create_color_list()
+            set_viz_boundaries()
 
-            print("Setting frame_start to 0")
-            print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list)-1)
-            context.scene.frame_start = 0
-            context.scene.frame_end = len(mcell.mol_viz.mol_file_list)-1
             mol_viz_update(self, context)
         return {'FINISHED'}
 
@@ -1749,10 +1737,21 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
         return {'FINISHED'}
 
+def set_viz_boundaries():
+        mcell = bpy.context.scene.mcell
 
-class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
-    bl_idname = "mcell.set_mol_viz_dir"
-    bl_label = "Read Molecule Files"
+        mcell.mol_viz.mol_file_num = len(mcell.mol_viz.mol_file_list)
+        mcell.mol_viz.mol_file_stop_index = mcell.mol_viz.mol_file_num - 1
+
+        print("Setting frame_start to 0")
+        print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list)-1)
+        bpy.context.scene.frame_start = 0
+        bpy.context.scene.frame_end = len(mcell.mol_viz.mol_file_list)-1
+
+
+class MCELL_OT_select_viz_data(bpy.types.Operator):
+    bl_idname = "mcell.select_viz_data"
+    bl_label = "Read Viz Data"
     bl_description = "Read MCell Molecule Files for Visualization"
     bl_options = {'REGISTER'}
 
@@ -1761,92 +1760,38 @@ class MCELL_OT_set_mol_viz_dir(bpy.types.Operator):
 
     def __init__(self):
         self.directory = bpy.context.scene.mcell.mol_viz.mol_file_dir
-        self.directory = os.path.join(project_files_path(), "viz_data")
-        print("Setting self.directory to ", self.directory)
-
-    # Note: use classmethod "poll" to determine when
-    # runability of operator is valid
-    #
-    #    @classmethod
-    #    def poll(cls, context):
-    #        return context.object is not None
-
-    def new_mol_viz_dir(self, context):
-        mol_file_dir = os.path.join(project_files_path(), "viz_data")
-        print("new_mol_viz_dir returning path of: ", mol_file_dir)
-
-        mcell = context.scene.mcell
-        mcell.mol_viz.mol_file_name = mol_file_dir
-        return(mol_file_dir)
 
     def execute(self, context):
-        # Called when the molecule files are actually to be read
-        #  (when the "Read Molecule Files" button is pushed)
-        print("MCELL_OT_set_mol_viz_dir.execute() called")
-        self.directory = os.path.join(project_files_path(), "viz_data")
-        print("self.directory = ", self.directory)
-
-        self.new_mol_viz_dir(context)
 
         mcell = context.scene.mcell
-        #if (os.path.isdir(self.filepath)):
-        #    mol_file_dir = self.filepath
-        #else:
-        #    mol_file_dir = os.path.dirname(self.filepath)
-
-        # Force the mol_viz directory to be where the .blend file lives plus
-        # "viz_data"
-
-        # mol_file_dir = os.path.join(
-        #   os.path.dirname(bpy.data.filepath), "viz_data")
-        mol_file_dir = self.new_mol_viz_dir(context)
-        mcell.mol_viz.mol_file_name = mol_file_dir
-
+        
+        if (os.path.isdir(self.filepath)):
+            mol_file_dir = self.filepath
+        else:
+            # Strip the file name off of the file path.
+            mol_file_dir = os.path.dirname(self.filepath)
         mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
         mol_file_list.sort()
 
-        print("set_mol_viz_dir: Getting molecules from", mol_file_dir)
-
-        # Reset mol_file_list to empty
-        for i in range(mcell.mol_viz.mol_file_num-1, -1, -1):
-            mcell.mol_viz.mol_file_list.remove(i)
+        # Reset mol_file_list and mol_viz_seed_list to empty
+        mcell.mol_viz.mol_file_list.clear()
 
         mcell.mol_viz.mol_file_dir = mol_file_dir
-        i = 0
         for mol_file_name in mol_file_list:
             new_item = mcell.mol_viz.mol_file_list.add()
             new_item.name = os.path.basename(mol_file_name)
-            i += 1
 
-        mcell.mol_viz.mol_file_num = len(mcell.mol_viz.mol_file_list)
-        mcell.mol_viz.mol_file_stop_index = mcell.mol_viz.mol_file_num-1
+        create_color_list()
+        set_viz_boundaries()
         mcell.mol_viz.mol_file_index = 0
 
-        mcell.mol_viz.color_index = 0
-        if len(mcell.mol_viz.color_list) == 0:
-            # Create a list of colors to be assigned to the glyphs
-            for i in range(8):
-                mcell.mol_viz.color_list.add()
-            mcell.mol_viz.color_list[0].vec = [0.8, 0.0, 0.0]
-            mcell.mol_viz.color_list[1].vec = [0.0, 0.8, 0.0]
-            mcell.mol_viz.color_list[2].vec = [0.0, 0.0, 0.8]
-            mcell.mol_viz.color_list[3].vec = [0.0, 0.8, 0.8]
-            mcell.mol_viz.color_list[4].vec = [0.8, 0.0, 0.8]
-            mcell.mol_viz.color_list[5].vec = [0.8, 0.8, 0.0]
-            mcell.mol_viz.color_list[6].vec = [1.0, 1.0, 1.0]
-            mcell.mol_viz.color_list[7].vec = [0.0, 0.0, 0.0]
-
-        print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list))
-        context.scene.frame_end = len(mcell.mol_viz.mol_file_list)
         mol_viz_update(self, context)
         return {'FINISHED'}
 
     def invoke(self, context, event):
         # Called when the file selection panel is requested
-        #  (when the "Set Molecule Viz Directory" button is pushed)
-        print("MCELL_OT_set_mol_viz_dir.invoke() called with self.filepath ="
-              " %s and self.directory = %s " % (self.filepath, self.directory))
-        self.new_mol_viz_dir(context)
+        # (when the "Set Molecule Viz Directory" button is pushed)
+        print("MCELL_OT_select_viz_data.invoke() called")
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
@@ -2029,7 +1974,7 @@ class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
-        if (len(mcell.mol_viz.mol_file_list) > 0):
+        if mcell.mol_viz.mol_file_list:
             i = mcell.mol_viz.mol_file_index
             if (i > mcell.mol_viz.mol_file_stop_index):
                 i = mcell.mol_viz.mol_file_stop_index
@@ -2105,6 +2050,41 @@ def frame_change_handler(scn):
 #    scn.update()
 
 
+def mol_viz_toggle_manual_select(self, context):
+    """ Toggle the option to manually load viz data. """
+
+    mcell = context.scene.mcell
+
+    mcell.mol_viz.mol_file_dir = ""
+    mcell.mol_viz.mol_file_name = ""
+    mcell.mol_viz.mol_file_list.clear()
+    mcell.mol_viz.mol_viz_seed_list.clear()
+
+    if not mcell.mol_viz.manual_select_viz_dir:
+        bpy.ops.mcell.read_viz_data()
+
+    mol_viz_clear(mcell)
+
+
+def get_mol_file_dir():
+    """ Get the viz dir """
+
+    mcell = bpy.context.scene.mcell
+
+    # If you previously had some viz data loaded, but reran the
+    # simulation with less seeds, you can receive an index error.
+    try:
+        active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[
+            mcell.mol_viz.active_mol_viz_seed_index]
+    except IndexError:
+        mcell.mol_viz.active_mol_viz_seed_index = 0
+        active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[0]
+    filepath = os.path.join(
+        project_files_path(), "viz_data/%s" % active_mol_viz_seed.name)
+
+    return filepath
+
+
 def mol_viz_update(self, context):
     """ Clear the old viz data. Draw the new viz data. """
 
@@ -2112,7 +2092,14 @@ def mol_viz_update(self, context):
 
     filename = mcell.mol_viz.mol_file_list[mcell.mol_viz.mol_file_index].name
     mcell.mol_viz.mol_file_name = filename
-    filepath = os.path.join(mcell.mol_viz.mol_file_dir, filename)
+    # filepath is relative to blend file location under default scenarios (i.e.
+    # when we can expect to find the standard CellBlender directory layout).
+    if not mcell.mol_viz.manual_select_viz_dir:
+        filepath = os.path.join(get_mol_file_dir(), filename)
+    # filepath is absolute in case of manually selecting viz data, since it may
+    # have nothing to do with the particular blend file in question.
+    else:
+        filepath = os.path.join(mcell.mol_viz.mol_file_dir, filename)
 
     # Save current global_undo setting. Turn undo off to save memory
     global_undo = bpy.context.user_preferences.edit.use_global_undo
@@ -2344,6 +2331,7 @@ def mol_viz_file_read(mcell_prop, filepath):
 
     except IOError:
         print(("\n***** File not found: %s\n") % (filepath))
+
     except ValueError:
         print(("\n***** Invalid data in file: %s\n") % (filepath))
 

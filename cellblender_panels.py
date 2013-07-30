@@ -299,19 +299,20 @@ class MCELL_PT_viz_results(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
-        #row = layout.row()
-        #row.operator("mcell.set_mol_viz_dir",
-        #             text="Set Molecule Viz Directory", icon="FILESEL")
-        row.operator(
-            "mcell.read_viz_data", text="Read Viz Data",
-            icon='IMPORT')
+        row.prop(mcell.mol_viz, "manual_select_viz_dir")
         row = layout.row()
-        row.label(text="Molecule Viz Directory: "+mcell.mol_viz.mol_file_dir,
+        if mcell.mol_viz.manual_select_viz_dir:
+            row.operator("mcell.select_viz_data", icon='IMPORT')
+        else:
+            row.operator("mcell.read_viz_data", icon='IMPORT')
+        row = layout.row()
+        row.label(text="Molecule Viz Directory: " + mcell.mol_viz.mol_file_dir,
                   icon='FILE_FOLDER')
         row = layout.row()
-        row.template_list("UI_UL_list", "viz_seed", mcell.mol_viz,
-                          "mol_viz_seed_list", mcell.mol_viz,
-                          "active_mol_viz_seed_index", rows=2)
+        if not mcell.mol_viz.manual_select_viz_dir:
+            row.template_list("UI_UL_list", "viz_seed", mcell.mol_viz,
+                            "mol_viz_seed_list", mcell.mol_viz,
+                            "active_mol_viz_seed_index", rows=2)
         row = layout.row()
         row = layout.row()
         row.label(text="Current Molecule File: "+mcell.mol_viz.mol_file_name,

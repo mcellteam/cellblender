@@ -444,6 +444,10 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
     color_list = CollectionProperty(
         type=MCellFloatVectorProperty, name="Molecule Color List")
     color_index = IntProperty(name="Color Index", default=0)
+    manual_select_viz_dir = BoolProperty(
+        name="Manually Select Viz Directory", default=False,
+        description="Toggle the option to manually load viz data.",
+        update=cellblender_operators.mol_viz_toggle_manual_select)
 
 
 class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
