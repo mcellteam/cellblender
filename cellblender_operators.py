@@ -1371,13 +1371,8 @@ def check_release_object_expr(self, context):
                     break
                 obj = scn.objects[obj_name]
                 if reg_name != "ALL":
-                    if not obj.data.get("mcell"):
-                        status = "Undefined region: %s" % (reg_name)
-                        break
-                    if not obj.data["mcell"].get("regions"):
-                        status = "Undefined region: %s" % (reg_name)
-                        break
-                    if not obj.data["mcell"]["regions"].get(reg_name):
+                    if (not obj.mcell.regions.region_list or 
+                            reg_name not in obj.mcell.regions.region_list):
                         status = "Undefined region: %s" % (reg_name)
                         break
             else:
@@ -1386,7 +1381,7 @@ def check_release_object_expr(self, context):
                     status = "Undefined object: %s" % (obj_name)
                     break
 
-    return
+    return status
 
 
 def is_executable ( binary_path ):
