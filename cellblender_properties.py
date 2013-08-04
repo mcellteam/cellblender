@@ -238,6 +238,52 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     status = StringProperty(name="Status")
 
 
+class MCellReleasePatternProperty(bpy.types.PropertyGroup):
+    name = StringProperty(
+        name="Site Name", default="Release_Site",
+        description="The name of the release site",
+        update=cellblender_operators.check_release_pattern_name)
+
+    delay = FloatProperty(name="Delay")
+    delay_str = StringProperty(
+        name="Delay",
+        default="0",
+        description="The time at which the release pattern will start "
+                    "(units: seconds).",
+        update=cellblender_operators.update_delay)
+
+    release_interval = FloatProperty(name="Release Interval", default=1e-12)
+    release_interval_str = StringProperty(
+        name="Release Interval",
+        default="1e-12",
+        description="During a train, release molecules after every interval "
+                    "(units: seconds). Default is once.",
+        update=cellblender_operators.update_release_interval)
+
+    train_duration = FloatProperty(name="Train Duration", default=1e-12)
+    train_duration_str = StringProperty(
+        name="Train Duration",
+        default="1e-12",
+        description="The duration of the train before turning off "
+                    "(units: seconds). Default is to never turn off.",
+        update=cellblender_operators.update_train_duration)
+
+    train_interval = FloatProperty(name="Train Interval", default=1e-12)
+    train_interval_str = StringProperty(
+        name="Train Interval",
+        default="1e-12",
+        description="A new train happens every interval (units: seconds). "
+                    "Default is no new trains.",
+        update=cellblender_operators.update_train_interval)
+
+    number_of_trains = IntProperty(
+        name="Number of Trains", min=0,
+        description="Repeat the release process this number of times. "
+                    "Default is one train.")
+
+    status = StringProperty(name="Status")
+
+
 class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
 
     """ This is where properties for a given surface class are stored.
@@ -767,6 +813,13 @@ class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
         name="Active Modify Surface Region Index", default=0)
 
 
+class MCellReleasePatternPanelProperty(bpy.types.PropertyGroup):
+    release_pattern_list = CollectionProperty(
+        type=MCellReleasePatternProperty, name="Release Pattern List")
+    active_release_pattern_index = IntProperty(
+        name="Active Release Pattern Index", default=0)
+
+
 class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
     mol_release_list = CollectionProperty(
         type=MCellMoleculeReleaseProperty, name="Molecule Release List")
@@ -943,6 +996,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellSurfaceClassesPanelProperty, name="Defined Surface Classes")
     mod_surf_regions = PointerProperty(
         type=MCellModSurfRegionsPanelProperty, name="Modify Surface Regions")
+    release_patterns = PointerProperty(
+        type=MCellReleasePatternPanelProperty, name="Defined Release Patterns")
     release_sites = PointerProperty(
         type=MCellMoleculeReleasePanelProperty, name="Defined Release Sites")
     model_objects = PointerProperty(

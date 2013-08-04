@@ -217,6 +217,28 @@ def save_wrapper(context, out_file, filedir):
         else:
             save_mod_surf_regions(context, out_file, mod_surf_regions_list)
 
+    # Export release patterns:
+    if mcell.release_patterns.release_pattern_list:
+        unfiltered_rel_pattern_list = mcell.release_patterns.release_pattern_list
+        if mcell.cellblender_preferences.filter_invalid:
+            rel_patterns_list = [
+                rel_pattern for rel_pattern in unfiltered_rel_pattern_list if not rel_pattern.status]
+        else:
+            rel_patterns_list = unfiltered_rel_pattern_list
+
+        if (rel_patterns_list and
+                export_project.export_format == 'mcell_mdl_modular'):
+            out_file.write("INCLUDE_FILE = \"%s.release_patterns.mdl\"\n\n" %
+                           (settings.base_name))
+            filepath = ("%s/%s.release_patterns.mdl" %
+                        (filedir, settings.base_name))
+            with open(filepath, "w", encoding="utf8",
+                      newline="\n") as rel_pattern_file:
+                save_rel_patterns(
+                    context, rel_pattern_file, rel_patterns_list)
+        else:
+            save_rel_patterns(context, out_file, rel_patterns_list)
+
     # Instantiate Model Geometry and Release sites:
     unfiltered_release_site_list = mcell.release_sites.mol_release_list
     if mcell.cellblender_preferences.filter_invalid:
@@ -601,6 +623,31 @@ def save_surface_classes(context, out_file, surf_class_list):
                                                         molecule, orient))
             out_file.write("  }\n")
         out_file.write("}\n\n")
+
+
+def save_rel_patterns(context, out_file, release_pattern_list):
+    """ Saves release pattern info to mdl output file. """
+
+    mcell = context.scene.mcell
+
+    if release_pattern_list:
+        for active_release_pattern in release_pattern_list:
+            out_file.write("DEFINE_RELEASE_PATTERN %s\n" % (active_release_pattern.name))
+            out_file.write("{\n")
+            out_file.write("  DELAY = %g\n" % active_release_pattern.delay)
+            out_file.write(
+                "  RELEASE_INTERVAL = %g\n" %
+                active_release_pattern.release_interval)
+            out_file.write(
+                "  TRAIN_DURATION = %g\n" %
+                active_release_pattern.train_duration)
+            out_file.write(
+                "  TRAIN_INTERVAL = %g\n" %
+                active_release_pattern.train_interval)
+            out_file.write(
+                "  NUMBER_OF_TRAINS = %g\n" %
+                active_release_pattern.number_of_trains)
+            out_file.write("}\n\n")
 
 
 def save_reactions(context, out_file, rxn_list):
