@@ -623,7 +623,7 @@ class MCELL_PT_partitions(bpy.types.Panel):
                 layout.operator("mcell.remove_partitions_object",
                                 icon='OUTLINER_OB_LATTICE')
 
-############### DB: The following to classes are included to create a parameter input panel: only relevant for BNG, SBML or other model import #################
+############### DB: The following two classes are included to create a parameter input panel: only relevant for BNG, SBML or other model import #################
 
 class MCELL_UL_check_parameter(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
@@ -635,7 +635,7 @@ class MCELL_UL_check_parameter(bpy.types.UIList):
 	    
   
 class MCELL_PT_define_parameters(bpy.types.Panel):
-    bl_label = "CellBlender - Parameters"
+    bl_label = "CellBlender - Imported Parameters"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -665,6 +665,50 @@ class MCELL_PT_define_parameters(bpy.types.Panel):
                 layout.prop(par, "type")
         else:
             row.label(text="No imported/defined parameter found", icon='ERROR')
+#########################################################################################################################################
+
+############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
+
+class MCELL_UL_draw_parameter(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            mcell = context.scene.mcell        
+            par = mcell.general_parameters.parameter_list[index]
+            disp = par.name + " = " + par.value
+            if par.unit != "":
+                disp = disp + " (" + par.unit + ")"
+            layout.label(disp, icon='FILE_TICK')
+	    
+  
+class MCELL_PT_general_parameters(bpy.types.Panel):
+    bl_label = "CellBlender - General Parameters"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mcell = context.scene.mcell
+
+        row = layout.row()
+        row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
+        row = layout.row()
+        col = row.column()
+        col.template_list("MCELL_UL_draw_parameter", "general_parameters",
+                          mcell.general_parameters, "parameter_string",
+                          mcell.general_parameters, "active_par_index", rows=2)
+        col = row.column(align=True)
+        col.operator("mcell.add_parameter", icon='ZOOMIN', text="")
+        col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
+        if len(mcell.general_parameters.parameter_list) > 0:
+            par = mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index]
+            layout.prop(par, "name")
+            layout.prop(par, "value")
+            layout.prop(par, "unit")
+            layout.prop(par, "type")
 #########################################################################################################################################
 
 class MCELL_UL_check_molecule(bpy.types.UIList):

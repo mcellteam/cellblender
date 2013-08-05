@@ -115,16 +115,12 @@ class MCellFloatVectorProperty(bpy.types.PropertyGroup):
 class MCellParameterProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Parameter Name", default="Parameter")
     value = StringProperty(name="Parameter Value", default="0")
-    unit = StringProperty(
-        name="Parameter Unit",
-        default="",
+    unit = StringProperty(name="Parameter Unit", default="",
         description="Forward Rate Units: sec^-1 (unimolecular),"
                     " M^-1*sec^-1 (bimolecular)")
-    type = StringProperty(
-        name="Parameter type",
-        default="",
-        description="")		    
+    type = StringProperty(name="Parameter type", default="", description="")		    
     status = StringProperty(name="Status")
+    # display = StringProperty(name="Display String", default="Param = value (units)")
 
 #########################################################################################################################
 
@@ -736,6 +732,13 @@ class MCellParametersPanelProperty(bpy.types.PropertyGroup):
     plot_command = StringProperty(name="", default="")
 ###########################################################################################################################
 
+##################### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #############################
+class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
+    parameter_list = CollectionProperty(type=MCellParameterProperty, name="Parameters List")
+    parameter_string = CollectionProperty(type=MCellParameterProperty, name="Parameter Strings")
+    active_par_index = IntProperty(name="Active Parameter", default=0)
+###########################################################################################################################
+
 class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
     molecule_list = CollectionProperty(
         type=MCellMoleculeProperty, name="Molecule List")
@@ -934,6 +937,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 ############## DB: added for parameter import from BNG, SBML models####
     parameters = PointerProperty(
         type=MCellParametersPanelProperty, name="Defined Parameters")
+############## BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters ####
+    general_parameters = PointerProperty(
+        type=MCellParametersPropertyGroup, name="General Parameters")
 ########################################################################
     molecules = PointerProperty(
         type=MCellMoleculesPanelProperty, name="Defined Molecules")
