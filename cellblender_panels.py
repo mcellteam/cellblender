@@ -959,6 +959,49 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
                         pass
 
 
+class MCELL_UL_check_release_pattern(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+
+
+class MCELL_PT_release_pattern(bpy.types.Panel):
+    bl_label = "CellBlender - Release Pattern"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mcell = context.scene.mcell
+
+        row = layout.row()
+        row.label(text="Release Patterns:",
+                    icon='FORCE_LENNARDJONES')
+        row = layout.row()
+        col = row.column()
+        col.template_list("MCELL_UL_check_release_pattern",
+                            "release_pattern", mcell.release_patterns,
+                            "release_pattern_list", mcell.release_patterns,
+                            "active_release_pattern_index", rows=2)
+        col = row.column(align=True)
+        col.operator("mcell.release_pattern_add", icon='ZOOMIN', text="")
+        col.operator("mcell.release_pattern_remove", icon='ZOOMOUT', text="")
+        if mcell.release_patterns.release_pattern_list:
+            rel_pattern = mcell.release_patterns.release_pattern_list[
+                mcell.release_patterns.active_release_pattern_index]
+            layout.prop(rel_pattern, "name")
+            layout.prop(rel_pattern, "delay_str")
+            layout.prop(rel_pattern, "release_interval_str")
+            layout.prop(rel_pattern, "train_duration_str")
+            layout.prop(rel_pattern, "train_interval_str")
+            layout.prop(rel_pattern, "number_of_trains")
+
+
 class MCELL_UL_check_molecule_release(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -1020,7 +1063,10 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                 if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
                     layout.prop(rel, "stddev")
 
-                layout.prop(rel, "pattern")
+                #layout.prop(rel, "pattern")
+                layout.prop_search(rel, "pattern", mcell.release_patterns,
+                                   "release_pattern_list",
+                                   icon='FORCE_LENNARDJONES')
         else:
             row.label(text="Define at least one molecule", icon='ERROR')
 

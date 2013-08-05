@@ -1255,6 +1255,68 @@ def check_mod_surf_regions(self, context):
     return
 
 
+class MCELL_OT_release_pattern_add(bpy.types.Operator):
+    bl_idname = "mcell.release_pattern_add"
+    bl_label = "Add Release Pattern"
+    bl_description = "Add a new Release Pattern to an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.release_patterns.release_pattern_list.add()
+        mcell.release_patterns.active_release_pattern_index = len(
+            mcell.release_patterns.release_pattern_list)-1
+        mcell.release_patterns.release_pattern_list[
+            mcell.release_patterns.active_release_pattern_index].name = "Release_Pattern"
+        check_release_pattern_name(self, context)
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_release_pattern_remove(bpy.types.Operator):
+    bl_idname = "mcell.release_pattern_remove"
+    bl_label = "Remove Release Pattern"
+    bl_description = "Remove selected Release Pattern from MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.release_patterns.release_pattern_list.remove(
+            mcell.release_patterns.active_release_pattern_index)
+        mcell.release_patterns.active_release_pattern_index -= 1
+        if (mcell.release_patterns.active_release_pattern_index < 0):
+            mcell.release_patterns.active_release_pattern_index = 0
+
+        if mcell.release_patterns.release_pattern_list:
+            check_release_pattern_name(self, context)
+
+        return {'FINISHED'}
+
+
+def check_release_pattern_name(self, context):
+    """Checks for duplicate or illegal release pattern name."""
+
+    mcell = context.scene.mcell
+    rel_pattern_list = mcell.release_patterns.release_pattern_list
+    rel_pattern = rel_pattern_list[
+        mcell.release_patterns.active_release_pattern_index]
+
+    status = ""
+
+    # Check for duplicate release pattern name
+    rel_pattern_keys = rel_pattern_list.keys()
+    if rel_pattern_keys.count(rel_pattern.name) > 1:
+        status = "Duplicate release pattern: %s" % (rel_pattern.name)
+
+    # Check for illegal names (Starts with a letter. No special characters.)
+    rel_pattern_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
+    m = re.match(rel_pattern_filter, rel_pattern.name)
+    if m is None:
+        status = "Release Pattern name error: %s" % (rel_pattern.name)
+
+    rel_pattern.status = status
+
+
 class MCELL_OT_release_site_add(bpy.types.Operator):
     bl_idname = "mcell.release_site_add"
     bl_label = "Add Release Site"
@@ -2899,6 +2961,74 @@ def check_val_str(val_str, min_val, max_val):
         status = "Invalid value for %s: %s"
 
     return (val, status)
+
+
+def update_delay(self, context):
+    """ Store the release pattern delay as a float if it's legal """
+
+    mcell = context.scene.mcell
+    release_pattern = mcell.release_patterns.release_pattern_list[
+        mcell.release_patterns.active_release_pattern_index]
+    delay_str = release_pattern.delay_str
+
+    (delay, status) = check_val_str(delay_str, 0, None)
+
+    if status == "":
+        release_pattern.delay = delay
+    else:
+        release_pattern.delay_str = "%g" % (release_pattern.delay)
+
+
+def update_release_interval(self, context):
+    """ Store the release interval as a float if it's legal """
+
+    mcell = context.scene.mcell
+    release_pattern = mcell.release_patterns.release_pattern_list[
+        mcell.release_patterns.active_release_pattern_index]
+    release_interval_str = release_pattern.release_interval_str
+
+    (release_interval, status) = check_val_str(
+        release_interval_str, 1e-12, None)
+
+    if status == "":
+        release_pattern.release_interval = release_interval
+    else:
+        release_pattern.release_interval_str = "%g" % (
+            release_pattern.release_interval)
+
+
+def update_train_duration(self, context):
+    """ Store the train duration as a float if it's legal """
+
+    mcell = context.scene.mcell
+    release_pattern = mcell.release_patterns.release_pattern_list[
+        mcell.release_patterns.active_release_pattern_index]
+    train_duration_str = release_pattern.train_duration_str
+
+    (train_duration, status) = check_val_str(train_duration_str, 1e-12, None)
+
+    if status == "":
+        release_pattern.train_duration = train_duration
+    else:
+        release_pattern.train_duration_str = "%g" % (
+            release_pattern.train_duration)
+
+
+def update_train_interval(self, context):
+    """ Store the train interval as a float if it's legal """
+
+    mcell = context.scene.mcell
+    release_pattern = mcell.release_patterns.release_pattern_list[
+        mcell.release_patterns.active_release_pattern_index]
+    train_interval_str = release_pattern.train_interval_str
+
+    (train_interval, status) = check_val_str(train_interval_str, 1e-12, None)
+
+    if status == "":
+        release_pattern.train_interval = train_interval
+    else:
+        release_pattern.train_interval_str = "%g" % (
+            release_pattern.train_interval)
 
 
 def update_clamp_value(self, context):
