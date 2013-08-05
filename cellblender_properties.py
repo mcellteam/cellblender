@@ -881,6 +881,7 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         ('Molecule', "Molecule", "")]
     rxn_or_mol = bpy.props.EnumProperty(
         items=rxn_or_mol_enum, name="Count Reaction or Molecule",
+        default='Molecule',
         description="Select between counting a reaction or molecule.",
         update=cellblender_operators.check_rxn_output)
     plot_command = StringProperty(
