@@ -683,7 +683,7 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
 	    
   
 class MCELL_PT_general_parameters(bpy.types.Panel):
-    bl_label = "CellBlender - General Parameters"
+    bl_label = "CellBlender - General Parameters (experimental)"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"

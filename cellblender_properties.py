@@ -974,3 +974,5 @@ class MCellObjectPropertyGroup(bpy.types.PropertyGroup):
     regions = PointerProperty(
         type=MCellSurfaceRegionListProperty, name="Defined Surface Regions")
     include = BoolProperty(name="Include Object in Model", default=False)
+
+
