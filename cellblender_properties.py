@@ -790,7 +790,6 @@ class MCellParametersPanelProperty(bpy.types.PropertyGroup):
 ##################### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #############################
 class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
     parameter_list = CollectionProperty(type=MCellGeneralParameterProperty, name="Parameters List")
-    # parameter_string = CollectionProperty(type=MCellGeneralParameterProperty, name="Parameter Strings")
     active_par_index = IntProperty(name="Active Parameter", default=0)
 ###########################################################################################################################
 
