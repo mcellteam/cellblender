@@ -817,10 +817,10 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         mcell.general_parameters.parameter_list.add()
-        mcell.general_parameters.parameter_string.add()
+        # mcell.general_parameters.parameter_string.add()
         mcell.general_parameters.active_par_index = len(mcell.general_parameters.parameter_list)-1
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = "Parameter Name"
-        mcell.general_parameters.parameter_string[mcell.general_parameters.active_par_index].name = "Parameter String"
+        # mcell.general_parameters.parameter_string[mcell.general_parameters.active_par_index].name = "Parameter String"
         return {'FINISHED'}
 	
 class MCELL_OT_remove_parameter(bpy.types.Operator):
@@ -832,6 +832,7 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         mcell.general_parameters.parameter_list.remove(mcell.general_parameters.active_par_index)
+        # mcell.general_parameters.parameter_string.remove(mcell.general_parameters.active_par_index)
         mcell.general_parameters.active_par_index = mcell.general_parameters.active_par_index-1
         if (mcell.general_parameters.active_par_index < 0):
             mcell.general_parameters.active_par_index = 0

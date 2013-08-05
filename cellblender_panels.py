@@ -698,7 +698,7 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
         row = layout.row()
         col = row.column()
         col.template_list("MCELL_UL_draw_parameter", "general_parameters",
-                          mcell.general_parameters, "parameter_string",
+                          mcell.general_parameters, "parameter_list",
                           mcell.general_parameters, "active_par_index", rows=2)
         col = row.column(align=True)
         col.operator("mcell.add_parameter", icon='ZOOMIN', text="")
@@ -708,7 +708,7 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
             layout.prop(par, "name")
             layout.prop(par, "value")
             layout.prop(par, "unit")
-            layout.prop(par, "type")
+            layout.prop(par, "desc")
 #########################################################################################################################################
 
 class MCELL_UL_check_molecule(bpy.types.UIList):

@@ -121,7 +121,16 @@ class MCellParameterProperty(bpy.types.PropertyGroup):
     type = StringProperty(name="Parameter type", default="", description="")		    
     status = StringProperty(name="Status")
     # display = StringProperty(name="Display String", default="Param = value (units)")
+#########################################################################################################################
 
+############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
+class MCellGeneralParameterProperty(bpy.types.PropertyGroup):
+    name = StringProperty(name="Parameter Name", default="Parameter")
+    value = StringProperty(name="Parameter Value", default="0")
+    unit = StringProperty(name="Parameter Unit", default="", description="Parameter Unit")
+    desc = StringProperty(name="Parameter Description", default="", description="Parameter Description")		    
+    status = StringProperty(name="Status")
+    # display = StringProperty(name="Display String", default="Param = value (units)")
 #########################################################################################################################
 
 class MCellReactionProperty(bpy.types.PropertyGroup):
@@ -780,8 +789,8 @@ class MCellParametersPanelProperty(bpy.types.PropertyGroup):
 
 ##################### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #############################
 class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
-    parameter_list = CollectionProperty(type=MCellParameterProperty, name="Parameters List")
-    parameter_string = CollectionProperty(type=MCellParameterProperty, name="Parameter Strings")
+    parameter_list = CollectionProperty(type=MCellGeneralParameterProperty, name="Parameters List")
+    # parameter_string = CollectionProperty(type=MCellGeneralParameterProperty, name="Parameter Strings")
     active_par_index = IntProperty(name="Active Parameter", default=0)
 ###########################################################################################################################
 
