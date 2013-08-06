@@ -675,9 +675,10 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
         else:
             mcell = context.scene.mcell        
             par = mcell.general_parameters.parameter_list[index]
-            disp = par.name + " = " + par.value + " = " + par.expr
+            disp = par.name + " = " + par.value
             if par.unit != "":
                 disp = disp + " (" + par.unit + ")"
+            disp = disp + " from " + par.expr
             layout.label(disp, icon='FILE_TICK')
 	    
   

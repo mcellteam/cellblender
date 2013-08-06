@@ -784,17 +784,12 @@ class MCellParametersPanelProperty(bpy.types.PropertyGroup):
 
 
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
-from math import *
-import parser
-import re
-from random import uniform, gauss
-
 class MCellGeneralParameterProperty(bpy.types.PropertyGroup):
     id = IntProperty(name="ID", default=0, description="Unique ID for each parameter")
     name = StringProperty(name="Parameter Name", default="Parameter", description="Unique name for this parameter",
-        update=cellblender_operators.change_parameter_name)
+        update=cellblender_operators.update_parameter_name)
     expr = StringProperty(name="Parameter Expression", default="", description="Expression to be evaluated for this parameter",
-        update=cellblender_operators.parse_parameter_expression)
+        update=cellblender_operators.update_parameter_expression)
 
     value = StringProperty(name="Parameter Value", default="0", description="Current evaluated value for this parameter" )
     unit = StringProperty(name="Parameter Unit", default="", description="Parameter Unit")
