@@ -820,7 +820,7 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
         mcell.general_parameters.active_par_index = len(mcell.general_parameters.parameter_list)-1
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = "Parameter Name"
         return {'FINISHED'}
-	
+
 class MCELL_OT_remove_parameter(bpy.types.Operator):
     bl_idname = "mcell.remove_parameter"
     bl_label = "Remove Parameter"
@@ -836,11 +836,249 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
+# These functions belong in the MCellGeneralParameterProperty class (in cellblender_properties.py) ... but they didn't work there!!
+
+"""
+#### Making a dictionary ####
+data = {}
+# OR #
+data = dict()
+
+#### Initially adding values ####
+data = {'a':1,'b':2,'c':3}
+# OR #
+data = dict(a=1, b=2, c=3)
+
+#### Inserting/Updating value ####
+data['a']=1  # updates if 'a' exists, else adds 'a'
+# OR #
+data.update({'a':1})
+# OR #
+data.update(dict(a=1))
+
+#### Merging 2 dictionaries ####
+data.update(data2)  # Where data2 is also a dict.
+"""
+
+
+"""
+Experimenting in the Blender Console
+>>> C.scene.mcell['general_parameters']["parameter_list"][0].
+                                                             clear(
+                                                             get(
+                                                             items(
+                                                             iteritems(
+                                                             keys(
+                                                             name
+                                                             pop(
+                                                             to_dict(
+                                                             update(
+                                                             values(
+>>> C.scene.mcell['general_parameters']["parameter_list"][0].items()
+[('name', 'A'), ('value', '1'), ('unit', 'counts'), ('type', ''), ('desc', 'Parameter A in counts'), ('expr', '1')]
+
+>>> C.scene.mcell['general_parameters']["parameter_list"][0]['name']
+'A'
+
+>>> C.scene.mcell['general_parameters']["parameter_list"][1]['name']
+'B'
+
+>>> for p in C.scene.mcell['general_parameters']["parameter_list"]:
+...   print p['name']
+  File "<blender_console>", line 2
+    print p['name']
+          ^
+SyntaxError: invalid syntax
+
+>>> for p in C.scene.mcell['general_parameters']["parameter_list"]:
+...   p['name']
+... 
+'A'
+'B'
+'C'
+'D'
+
+>>> 
+"""
+
+
+def check_parameter_dict ( mcell ):
+    if len ( mcell.general_parameters.parameter_dict ) == 0:
+        print ( "\nBuildiing the dictionary!!\n" )
+        mcell.general_parameters.parameter_dict = {}
+        print ("After assignment ", mcell.general_parameters.parameter_dict )
+        d = mcell.general_parameters.parameter_dict
+        # Search through the existing Blender Properties (if any) to initialize
+        plist = mcell.general_parameters.parameter_list
+        for p in plist:
+            d.update ( { p['name']: p['expr'] } )
+        print ( d )
+            
+
+
+
 def change_parameter_name ( self, context ):
     print ( "\nChanging Parameter Name\n" )
+    mcell = context.scene.mcell
+    check_parameter_dict(mcell)
+    print ( "\nmcell OK\n" )
 
 def parse_parameter_expression ( self, context ):
     print ( "\nParsing Parameter Expression\n" )
+    parameter = self
+    mcell = context.scene.mcell
+    check_parameter_dict(mcell)
+    param_dict = mcell.general_parameters.parameter_dict
+    
+    print ( "Parms: ", param_dict )
+
+    print ( "expr: ", parameter.expr )
+
+
+
+
+# Tom's Parameter Parsing / Evaluation Code
+
+def toms_check_param_name(param_name,param_dict):
+    # Check for duplicate param name
+    if param_name in param_dict.keys():
+        print("name already in dict: %s" %(param_name))
+        return 0
+
+    # Check for illegal names (Starts with a letter. No special characters.)
+    name_filter = r'^[A-Za-z]+[0-9A-Za-z_.]*$'
+    m = re.match(name_filter, param_name)
+    if m is None:
+        print("name not ok: %s %d" %(param_name,len(param_name)))
+        return 0
+
+    print("name ok: %s" %(param_name))
+    return 1
+
+
+def toms_check_param_expr(param_expr,param_dict):
+
+    # remove white space
+    pe = re.sub(r'[ \t]','',param_expr)
+
+    # Now make sure we have a parsable python expression
+    try:
+        st = parser.expr(pe)
+    except:
+        print("syntax error in expression: %s" %(param_expr))
+        return None
+
+    func_list = ['SQRT(','EXP(','LOG(','LOG10(','SIN(','COS(','TAN(','ASIN(','ACOS(','ATAN(','ABS(','CEIL(','FLOOR(','MAX(','MIN(','RAND_UNIFORM(','RAND_GAUSSIAN(']
+    const_list = ['PI','SEED']
+
+    # Extract vars, numeric constants, and functions from expression
+    pe_nop = re.sub(r'[+\-*/^)]',' ',pe)
+    pe_nofunc = re.sub(r'[A-Z]+[A-Z0-9_]*\(',' ',pe_nop)
+    pe_var = re.findall(r'[A-Za-z]+[A-Za-z0-9_]*',pe_nofunc)
+    pe_numconst = re.sub(r'[A-Za-z]+[A-Za-z0-9_]*',' ',pe_nofunc).split()
+    pe_func = re.findall(r'[A-Z]+[A-Z0-9_]*\(',pe_nop)
+
+    # Check function calls
+    for f in pe_func:
+        if f not in func_list:
+            print("func %s invalid in expression: %s" %(f,param_expr))
+            return None
+
+    # Check vars
+    param_dep = []
+    for v in pe_var:
+        if v not in param_dict:
+            if v not in const_list:
+                print("var %s undefined in expression: %s" %(v,param_expr))
+                return None
+        else:
+            if v not in param_dep:
+                param_dep.append(v)
+
+    return param_dep
+
+
+def toms_eval_param(param_expr,param_dict):
+    # remove white space
+    pe = re.sub(r'[ \t]','',param_expr)
+
+    # Convert expression from MDL syntax to equivalent python syntax
+    # Substitute "^" with "**"
+    pe_py = re.sub(r'[\^]','**',pe)
+    # Substitute MDL funcs with python funcs
+    func_dict = {'SQRT\(': 'sqrt(', 'EXP\(': 'exp(', 'LOG\(': 'log(', 'LOG10\(': 'log10(', 'SIN\(': 'sin(', 'COS\(': 'cos(', 'TAN\(': 'tan(', 'ASIN\(': 'asin(', 'ACOS\(':'acos(', 'ATAN\(': 'atan(', 'ABS\(': 'abs(', 'CEIL\(': 'ceil(', 'FLOOR\(': 'floor(', 'MAX\(': 'max(', 'MIN\(': 'min(', 'RAND_UNIFORM\(': 'uniform(', 'RAND_GAUSSIAN\(': 'gauss('}
+
+    const_dict = {'PI':pi,'SEED':1}
+
+    for mdl_func in func_dict.keys():
+        pe_py = re.sub(mdl_func,func_dict[mdl_func],pe_py)
+
+    # Extract vars, numeric constants, and functions from expression
+    pe_nop = re.sub(r'[+\-*/^)]',' ',pe_py)
+    pe_nofunc = re.sub(r'[a-z]+[0-9]*\(',' ',pe_nop)
+    pe_var = re.findall(r'[A-Za-z]+[A-Za-z0-9_]*',pe_nofunc)
+    pe_numconst = re.sub(r'[A-Za-z]+[A-Za-z0-9_]*',' ',pe_nofunc).split()
+    pe_func = re.findall(r'[a-z]+[0-9]*\(',pe_nop)
+
+    for v in pe_var:
+        if v in const_dict:
+            v_stmt = ('%s = %g') % (v,const_dict[v])
+        else:
+            v_stmt = ('%s = %g') % (v,param_dict[v][1])
+        exec(v_stmt)
+
+    val = eval(pe_py,locals())
+
+    return val
+
+
+def toms_add_param(param_stmt,param_dict):
+    param_clean = param_stmt.replace(' ','')
+    param_split = param_stmt.split('=')
+    if(len(param_split)==2):
+        param_name = param_split[0].strip()
+        param_expr = param_split[1].strip()
+    else:
+        return 0
+
+    if not toms_check_param_name(param_name,param_dict):
+        return 0
+
+    param_dep = toms_check_param_expr(param_expr,param_dict)
+    if (param_dep == None):
+        return 0
+
+    param_val = toms_eval_param(param_expr,param_dict)
+      
+    param_dict[param_name] = [param_expr,param_val,param_dep]
+
+    return 1
+
+def sort_params(param_dict):
+    return 1
+
+
+"""
+# Testing code
+
+my_param_dict = {}
+
+toms_add_param("a = 1.0",my_param_dict)
+toms_add_param("b = 2.0",my_param_dict)
+toms_add_param("c = 3.0",my_param_dict)
+toms_add_param("d12_5ft = 4.0",my_param_dict)
+toms_add_param("mu = 10.0",my_param_dict)
+toms_add_param("sigma = 2.0",my_param_dict)
+
+toms_add_param("p = SQRT(EXP(b + c/2.718)) + LOG10(a*d12_5ft \t+ 123.5 + 34^(a+b)) + RAND_GAUSSIAN(mu,sigma)",my_param_dict)
+
+toms_add_param("pi_e = PI*EXP(p)",my_param_dict)
+
+sort_params(my_param_dict)
+
+print(my_param_dict)
+"""
 
 
 	
