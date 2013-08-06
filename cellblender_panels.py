@@ -657,8 +657,7 @@ class MCELL_PT_define_parameters(bpy.types.Panel):
             col.operator("mcell.parameter_add", icon='ZOOMIN', text="")
             col.operator("mcell.parameter_remove", icon='ZOOMOUT', text="")
             if len(mcell.parameters.parameter_list) > 0:
-                par = mcell.parameters.parameter_list[
-                    mcell.parameters.active_par_index]
+                par = mcell.parameters.parameter_list[mcell.parameters.active_par_index]
                 layout.prop(par, "name")
                 layout.prop(par, "value")
                 layout.prop(par, "unit")
@@ -676,7 +675,7 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
         else:
             mcell = context.scene.mcell        
             par = mcell.general_parameters.parameter_list[index]
-            disp = par.name + " = " + par.value
+            disp = par.name + " = " + par.value + " = " + par.expr
             if par.unit != "":
                 disp = disp + " (" + par.unit + ")"
             layout.label(disp, icon='FILE_TICK')
@@ -706,7 +705,8 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
         if len(mcell.general_parameters.parameter_list) > 0:
             par = mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index]
             layout.prop(par, "name")
-            layout.prop(par, "value")
+            layout.prop(par, "expr")
+            # layout.prop(par, "value")
             layout.prop(par, "unit")
             layout.prop(par, "desc")
 #########################################################################################################################################

@@ -834,7 +834,15 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
         if (mcell.general_parameters.active_par_index < 0):
             mcell.general_parameters.active_par_index = 0
 
-        return {'FINISHED'}	
+        return {'FINISHED'}
+
+def change_parameter_name ( self, context ):
+    print ( "\nChanging Parameter Name\n" )
+
+def parse_parameter_expression ( self, context ):
+    print ( "\nParsing Parameter Expression\n" )
+
+
 	
 #########################################################################################################################################
 
