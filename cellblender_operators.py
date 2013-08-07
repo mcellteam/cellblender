@@ -807,6 +807,8 @@ class MCELL_OT_parameter_remove(bpy.types.Operator):
 	
 #########################################################################################################################################
 
+
+  
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
 class MCELL_OT_add_parameter(bpy.types.Operator):
     bl_idname = "mcell.add_parameter"
@@ -816,9 +818,11 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
+        mcell.general_parameters.next_parameter_ID += 1
         mcell.general_parameters.parameter_list.add()
         mcell.general_parameters.active_par_index = len(mcell.general_parameters.parameter_list)-1
-        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = "Parameter Name"
+        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = "P%s" %(mcell.general_parameters.next_parameter_ID)
+        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].id = mcell.general_parameters.next_parameter_ID
         return {'FINISHED'}
 
 class MCELL_OT_remove_parameter(bpy.types.Operator):
@@ -831,110 +835,70 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
         mcell = context.scene.mcell
         mcell.general_parameters.parameter_list.remove(mcell.general_parameters.active_par_index)
         mcell.general_parameters.active_par_index = mcell.general_parameters.active_par_index-1
+        if len(mcell.general_parameters.parameter_list) == 0:
+            # Reset the parameter ID when the list is empty (provides some way to reset)
+            mcell.general_parameters.next_parameter_ID = 0
         if (mcell.general_parameters.active_par_index < 0):
+            # Ensure that the active parameter isn't negative
             mcell.general_parameters.active_par_index = 0
-
         return {'FINISHED'}
 
 
 # These functions belong in the MCellGeneralParameterProperty class (in cellblender_properties.py) ... but they didn't work there!!
 
-"""
-#### Making a dictionary ####
-data = {}
-# OR #
-data = dict()
-
-#### Initially adding values ####
-data = {'a':1,'b':2,'c':3}
-# OR #
-data = dict(a=1, b=2, c=3)
-
-#### Inserting/Updating value ####
-data['a']=1  # updates if 'a' exists, else adds 'a'
-# OR #
-data.update({'a':1})
-# OR #
-data.update(dict(a=1))
-
-#### Merging 2 dictionaries ####
-data.update(data2)  # Where data2 is also a dict.
-"""
-
-
-"""
-Experimenting in the Blender Console
->>> C.scene.mcell['general_parameters']["parameter_list"][0].
-                                                             clear(
-                                                             get(
-                                                             items(
-                                                             iteritems(
-                                                             keys(
-                                                             name
-                                                             pop(
-                                                             to_dict(
-                                                             update(
-                                                             values(
->>> C.scene.mcell['general_parameters']["parameter_list"][0].items()
-[('name', 'A'), ('value', '1'), ('unit', 'counts'), ('type', ''), ('desc', 'Parameter A in counts'), ('expr', '1')]
-
->>> C.scene.mcell['general_parameters']["parameter_list"][0]['name']
-'A'
-
->>> C.scene.mcell['general_parameters']["parameter_list"][1]['name']
-'B'
-
->>> for p in C.scene.mcell['general_parameters']["parameter_list"]:
-...   print p['name']
-  File "<blender_console>", line 2
-    print p['name']
-          ^
-SyntaxError: invalid syntax
-
->>> for p in C.scene.mcell['general_parameters']["parameter_list"]:
-...   p['name']
-... 
-'A'
-'B'
-'C'
-'D'
-
->>> 
-"""
-
 
 def update_parameter_dictionary ( mcell ):
-    if len ( mcell.general_parameters.parameter_dict ) == 0:
-        print ( "\nBuilding the dictionary!!\n" )
-        mcell.general_parameters.parameter_dict = {}
-        print ("After assignment ", mcell.general_parameters.parameter_dict )
-        d = mcell.general_parameters.parameter_dict
-        # Search through the existing Blender Properties (if any) to initialize
-        plist = mcell.general_parameters.parameter_list
-        for p in plist:
-            add_param ( p['name'] + " = " +  p['expr'], d )
-            #d.update ( { p['name']: p['expr'] } )
-        print ( d )
+    plist = mcell.general_parameters.parameter_list
+    print ("List contains ", len(plist) )
+    pd = {}
+    for p in plist:
+        print ("Expression: ", p['name'], " = ", p['expr'])
+        if add_param ( p['name'] + " = " + p['expr'], pd ) != 0:
+            v = eval_param(p['expr'], pd)
+            p.value = str(v)
+            print ("  = ", v, " = ", p.value )
+            p.valid = True
+        else:
+            print ("  = Error!!!")
+            p.valid = False
+
+
+#"""
+#if len ( mcell.general_parameters.parameter_dict ) == 0:
+#    print ( "\nBuilding the dictionary!!\n" )
+#    mcell.general_parameters.parameter_dict = {}
+#    print ("After assignment ", mcell.general_parameters.parameter_dict )
+#    d = mcell.general_parameters.parameter_dict
+#    # Search through the existing Blender Properties (if any) to initialize
+#    plist = mcell.general_parameters.parameter_list
+#    for p in plist:
+#        add_param ( p['name'] + " = " +  p['expr'], d )
+#        #d.update ( { p['name']: p['expr'] } )
+#    print ( d )
+#"""
 
 
 def update_parameter_name ( self, context ):
+    # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one
     print ( "\nChanging Parameter Name\n" )
     mcell = context.scene.mcell
     update_parameter_dictionary(mcell)
     print ( "\nmcell OK\n" )
 
 def update_parameter_expression ( self, context ):
+    # Called when a parameter expression changes - needs to recompute the result and update all parameters that depend on this one
     print ( "\n\nParsing Parameter Expression" )
     parameter = self
     mcell = context.scene.mcell
     update_parameter_dictionary(mcell)
+    """
     param_dictionary = mcell.general_parameters.parameter_dict
     s = parameter.name + " = " + parameter.expr
     print ( "Statement: ", s )
 
     add_param ( s, param_dictionary )    
     print ( "Parms: ", param_dictionary )
-    
+    """
     """
     assignment = parameter.name + " = " + parameter.expr
 
@@ -965,10 +929,8 @@ def check_param_name(param_name,param_dict):
         print("name not ok: %s %d" %(param_name,len(param_name)))
         return 0
 
-    print("name ok: %s" %(param_name))
+    # print("name ok: %s" %(param_name))
     return 1
-
-
 
 
 def check_param_name(param_name,param_dict):
@@ -984,8 +946,9 @@ def check_param_name(param_name,param_dict):
         print("name not ok: %s %d" %(param_name,len(param_name)))
         return 0
 
-    print("name ok: %s" %(param_name))
+    # print("name ok: %s" %(param_name))
     return 1
+
 
 
 def check_param_expr(param_expr,param_dict):
@@ -1213,6 +1176,70 @@ toms_add_param("pi_e = PI*EXP(p)",my_param_dict)
 toms_sort_params(my_param_dict)
 
 print(my_param_dict)
+"""
+
+"""
+#### Making a dictionary ####
+data = {}
+# OR #
+data = dict()
+
+#### Initially adding values ####
+data = {'a':1,'b':2,'c':3}
+# OR #
+data = dict(a=1, b=2, c=3)
+
+#### Inserting/Updating value ####
+data['a']=1  # updates if 'a' exists, else adds 'a'
+# OR #
+data.update({'a':1})
+# OR #
+data.update(dict(a=1))
+
+#### Merging 2 dictionaries ####
+data.update(data2)  # Where data2 is also a dict.
+"""
+
+
+
+"""
+Experimenting in the Blender Console
+>>> C.scene.mcell['general_parameters']["parameter_list"][0].
+                                                             clear(
+                                                             get(
+                                                             items(
+                                                             iteritems(
+                                                             keys(
+                                                             name
+                                                             pop(
+                                                             to_dict(
+                                                             update(
+                                                             values(
+>>> C.scene.mcell['general_parameters']["parameter_list"][0].items()
+[('name', 'A'), ('value', '1'), ('unit', 'counts'), ('type', ''), ('desc', 'Parameter A in counts'), ('expr', '1')]
+
+>>> C.scene.mcell['general_parameters']["parameter_list"][0]['name']
+'A'
+
+>>> C.scene.mcell['general_parameters']["parameter_list"][1]['name']
+'B'
+
+>>> for p in C.scene.mcell['general_parameters']["parameter_list"]:
+...   print p['name']
+  File "<blender_console>", line 2
+    print p['name']
+          ^
+SyntaxError: invalid syntax
+
+>>> for p in C.scene.mcell['general_parameters']["parameter_list"]:
+...   p['name']
+... 
+'A'
+'B'
+'C'
+'D'
+
+>>> 
 """
 
 

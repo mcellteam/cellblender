@@ -27,7 +27,7 @@ This script contains the custom properties used in CellBlender.
 import bpy
 from . import cellblender_operators
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
-    FloatProperty, IntProperty, PointerProperty, StringProperty
+    FloatProperty, FloatVectorProperty, IntProperty, IntVectorProperty, PointerProperty, StringProperty
 
 # python imports
 from multiprocessing import cpu_count
@@ -786,14 +786,24 @@ class MCellParametersPanelProperty(bpy.types.PropertyGroup):
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
 class MCellGeneralParameterProperty(bpy.types.PropertyGroup):
     id = IntProperty(name="ID", default=0, description="Unique ID for each parameter")
-    name = StringProperty(name="Parameter Name", default="Parameter", description="Unique name for this parameter",
+    name = StringProperty(name="Name", default="Parameter", description="Unique name for this parameter",
         update=cellblender_operators.update_parameter_name)
-    expr = StringProperty(name="Parameter Expression", default="", description="Expression to be evaluated for this parameter",
+    expr = StringProperty(name="Expression", default="", description="Expression to be evaluated for this parameter",
         update=cellblender_operators.update_parameter_expression)
 
-    value = StringProperty(name="Parameter Value", default="0", description="Current evaluated value for this parameter" )
-    unit = StringProperty(name="Parameter Unit", default="", description="Parameter Unit")
-    desc = StringProperty(name="Parameter Description", default="", description="Parameter Description")
+    value = StringProperty(name="Value", default="0", description="Current evaluated value for this parameter" )
+    valid = BoolProperty(default=True)
+
+    unit = StringProperty(name="Units", default="", description="Parameter Unit")
+    desc = StringProperty(name="Description", default="", description="Parameter Description")
+    
+    # Experiment with integer arrays:
+    intarr = IntVectorProperty(name="IntArray", description="Integer Array", default=(0, 1, 5), min=0, subtype='NONE', size=3, update=None, get=None, set=None)
+
+    # Experiment with float arrays:
+    floatarr = FloatVectorProperty(name="FloatArray", description="Float Array", default=(0.0, 0.1, 0.5), subtype='NONE', size=3, update=None, get=None, set=None)
+
+
     status = StringProperty(name="Status")
 
 

@@ -666,6 +666,9 @@ class MCELL_PT_define_parameters(bpy.types.Panel):
             row.label(text="No imported/defined parameter found", icon='ERROR')
 #########################################################################################################################################
 
+
+
+
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
 
 class MCELL_UL_draw_parameter(bpy.types.UIList):
@@ -673,13 +676,16 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
         if item.status:
             layout.label(item.status, icon='ERROR')
         else:
-            mcell = context.scene.mcell        
+            mcell = context.scene.mcell
             par = mcell.general_parameters.parameter_list[index]
-            disp = par.name + " = " + par.value
+            disp = par.name + " = " + par.expr
+            disp = disp + " = " + par.value
             if par.unit != "":
                 disp = disp + " (" + par.unit + ")"
-            disp = disp + " from " + par.expr
-            layout.label(disp, icon='FILE_TICK')
+            if par.valid:
+                layout.label(disp, icon='FILE_TICK')
+            else:
+                layout.label(disp, icon='COLOR_RED')
 	    
   
 class MCELL_PT_general_parameters(bpy.types.Panel):
@@ -705,6 +711,9 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
         col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
         if len(mcell.general_parameters.parameter_list) > 0:
             par = mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index]
+            layout.prop(par, "id")
+            layout.prop(par, "intarr")
+            layout.prop(par, "floatarr")
             layout.prop(par, "name")
             layout.prop(par, "expr")
             # layout.prop(par, "value")
