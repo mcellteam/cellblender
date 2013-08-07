@@ -995,6 +995,10 @@ def check_param_expr(param_expr,param_dict):
 
 
 def eval_param(param_expr,param_dict):
+
+    from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
+    from random import uniform, gauss
+
     # remove white space
     pe = re.sub(r'[ \t]','',param_expr)
 
@@ -1098,6 +1102,8 @@ def toms_check_param_expr(param_expr,param_dict):
 
 
 def toms_eval_param(param_expr,param_dict):
+    # from math import *
+    from random import uniform, gauss
     # remove white space
     pe = re.sub(r'[ \t]','',param_expr)
 
