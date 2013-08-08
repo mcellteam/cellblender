@@ -818,11 +818,20 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
-        mcell.general_parameters.next_parameter_ID += 1
-        mcell.general_parameters.parameter_list.add()
-        mcell.general_parameters.active_par_index = len(mcell.general_parameters.parameter_list)-1
-        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = "P%s" %(mcell.general_parameters.next_parameter_ID)
-        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].id = mcell.general_parameters.next_parameter_ID
+        for i in range(50000):
+            print ( i )
+            mcell.general_parameters.next_parameter_ID += 1
+            mcell.general_parameters.parameter_list.add()
+            mcell.general_parameters.active_par_index = len(mcell.general_parameters.parameter_list)-1
+            mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = "P%s" %(mcell.general_parameters.next_parameter_ID)
+            mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].expr = "0"
+
+            mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].expr = "%s" %(mcell.general_parameters.next_parameter_ID)
+            if mcell.general_parameters.next_parameter_ID > 1:
+                mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].expr += " + P%s" %(mcell.general_parameters.next_parameter_ID-1)
+                if mcell.general_parameters.next_parameter_ID > 2:
+                    mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].expr += " + P%s" %(mcell.general_parameters.next_parameter_ID-2)
+            mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].id = mcell.general_parameters.next_parameter_ID
         return {'FINISHED'}
 
 class MCELL_OT_remove_parameter(bpy.types.Operator):
@@ -849,17 +858,17 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
 
 def update_parameter_dictionary ( mcell ):
     plist = mcell.general_parameters.parameter_list
-    print ("List contains ", len(plist) )
+    #print ("List contains ", len(plist) )
     pd = {}
     for p in plist:
-        print ("Expression: ", p['name'], " = ", p['expr'])
+        #print ("Expression: ", p['name'], " = ", p['expr'])
         if add_param ( p['name'] + " = " + p['expr'], pd ) != 0:
             v = eval_param(p['expr'], pd)
             p.value = str(v)
-            print ("  = ", v, " = ", p.value )
+            #print ("  = ", v, " = ", p.value )
             p.valid = True
         else:
-            print ("  = Error!!!")
+            #print ("  = Error!!!")
             p.valid = False
 
 
@@ -880,28 +889,28 @@ def update_parameter_dictionary ( mcell ):
 
 def update_parameter_name ( self, context ):
     # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one
-    print ( "\nUpdating Parameter Name\n" )
+    #print ( "\nUpdating Parameter Name\n" )
     mcell = context.scene.mcell
     # update_parameter_dictionary(mcell)
-    print ( "\nmcell OK\n" )
+    #print ( "\nmcell OK\n" )
 
 def update_parameter_expression ( self, context ):
     # Called when a parameter expression changes - needs to recompute the result and update all parameters that depend on this one
-    print ( "\n\nUpdating Parameter Expression" )
+    #print ( "\n\nUpdating Parameter Expression" )
     mcell = context.scene.mcell
     pdict_string = mcell.general_parameters.parameter_name_ID_dict
-    print ( "pdict_string = ", pdict_string )
+    #print ( "pdict_string = ", pdict_string )
     # Extract the dictionary from the string property
     pdict = eval(pdict_string)
     if len(pdict) == 0:
-        print ( "\nPopulating an empty dictionary!!\n" )
+        #print ( "\nPopulating an empty dictionary!!\n" )
         pdict = {}
         # Search through the existing Blender Properties (if any) to initialize
         plist = mcell.general_parameters.parameter_list
         for p in plist:
             add_param ( p['name'] + " = " +  p['expr'], pdict )
             #d.update ( { p['name']: p['expr'] } )
-        print ( pdict )
+        #print ( pdict )
 
     parameter = self
 
@@ -922,7 +931,7 @@ def update_parameter_expression ( self, context ):
 
     # Store the dictionary back into the string property
     mcell.general_parameters.parameter_name_ID_dict = ("%s"%pdict)
-    print ( "Parameter Dictionary = ", mcell.general_parameters.parameter_name_ID_dict )
+    #print ( "Parameter Dictionary = ", mcell.general_parameters.parameter_name_ID_dict )
 
 
 
@@ -938,14 +947,14 @@ from random import uniform, gauss
 def check_param_name(param_name,param_dict):
     # Check for duplicate param name
     if param_name in param_dict.keys():
-        print("name already in dict: %s" %(param_name))
+        #print("name already in dict: %s" %(param_name))
         return 0
 
     # Check for illegal names (Starts with a letter. No special characters.)
     name_filter = r'^[A-Za-z]+[0-9A-Za-z_.]*$'
     m = re.match(name_filter, param_name)
     if m is None:
-        print("name not ok: %s %d" %(param_name,len(param_name)))
+        #print("name not ok: %s %d" %(param_name,len(param_name)))
         return 0
 
     # print("name ok: %s" %(param_name))
@@ -962,7 +971,7 @@ def check_param_name(param_name,param_dict):
     name_filter = r'^[A-Za-z]+[0-9A-Za-z_.]*$'
     m = re.match(name_filter, param_name)
     if m is None:
-        print("name not ok: %s %d" %(param_name,len(param_name)))
+        #print("name not ok: %s %d" %(param_name,len(param_name)))
         return 0
 
     # print("name ok: %s" %(param_name))
@@ -979,8 +988,8 @@ def check_param_expr(param_expr,param_dict):
     try:
         st = parser.expr(pe)
     except Exception as e:
-        print("syntax error in expression: %s" %(param_expr))
-        print("  exception is: ", e)
+        #print("syntax error in expression: %s" %(param_expr))
+        #print("  exception is: ", e)
         return None
 
     func_list = ['SQRT(','EXP(','LOG(','LOG10(','SIN(','COS(','TAN(','ASIN(','ACOS(','ATAN(','ABS(','CEIL(','FLOOR(','MAX(','MIN(','RAND_UNIFORM(','RAND_GAUSSIAN(']
@@ -996,7 +1005,7 @@ def check_param_expr(param_expr,param_dict):
     # Check function calls
     for f in pe_func:
         if f not in func_list:
-            print("func %s invalid in expression: %s" %(f,param_expr))
+            #print("func %s invalid in expression: %s" %(f,param_expr))
             return None
 
     # Check vars
@@ -1004,7 +1013,7 @@ def check_param_expr(param_expr,param_dict):
     for v in pe_var:
         if v not in param_dict:
             if v not in const_list:
-                print("var %s undefined in expression: %s" %(v,param_expr))
+                #print("var %s undefined in expression: %s" %(v,param_expr))
                 return None
         else:
             if v not in param_dep:
