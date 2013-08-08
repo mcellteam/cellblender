@@ -880,17 +880,32 @@ def update_parameter_dictionary ( mcell ):
 
 def update_parameter_name ( self, context ):
     # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one
-    print ( "\nChanging Parameter Name\n" )
+    print ( "\nUpdating Parameter Name\n" )
     mcell = context.scene.mcell
-    update_parameter_dictionary(mcell)
+    # update_parameter_dictionary(mcell)
     print ( "\nmcell OK\n" )
 
 def update_parameter_expression ( self, context ):
     # Called when a parameter expression changes - needs to recompute the result and update all parameters that depend on this one
-    print ( "\n\nParsing Parameter Expression" )
-    parameter = self
+    print ( "\n\nUpdating Parameter Expression" )
     mcell = context.scene.mcell
-    update_parameter_dictionary(mcell)
+    pdict_string = mcell.general_parameters.parameter_name_ID_dict
+    print ( "pdict_string = ", pdict_string )
+    # Extract the dictionary from the string property
+    pdict = eval(pdict_string)
+    if len(pdict) == 0:
+        print ( "\nPopulating an empty dictionary!!\n" )
+        pdict = {}
+        # Search through the existing Blender Properties (if any) to initialize
+        plist = mcell.general_parameters.parameter_list
+        for p in plist:
+            add_param ( p['name'] + " = " +  p['expr'], pdict )
+            #d.update ( { p['name']: p['expr'] } )
+        print ( pdict )
+
+    parameter = self
+
+    #update_parameter_dictionary(mcell)
     """
     param_dictionary = mcell.general_parameters.parameter_dict
     s = parameter.name + " = " + parameter.expr
@@ -904,6 +919,10 @@ def update_parameter_expression ( self, context ):
 
     print ( "Add: ", assignment )
     """
+
+    # Store the dictionary back into the string property
+    mcell.general_parameters.parameter_name_ID_dict = ("%s"%pdict)
+    print ( "Parameter Dictionary = ", mcell.general_parameters.parameter_name_ID_dict )
 
 
 

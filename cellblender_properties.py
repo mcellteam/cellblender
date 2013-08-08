@@ -790,6 +790,7 @@ class MCellGeneralParameterProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.update_parameter_name)
     expr = StringProperty(name="Expression", default="", description="Expression to be evaluated for this parameter",
         update=cellblender_operators.update_parameter_expression)
+    parsed_expr = StringProperty(name="Parsed Expression", default="", description="Parsed Expression with Parameter Indicies")
 
     value = StringProperty(name="Value", default="0", description="Current evaluated value for this parameter" )
     valid = BoolProperty(default=True)
@@ -798,10 +799,10 @@ class MCellGeneralParameterProperty(bpy.types.PropertyGroup):
     desc = StringProperty(name="Description", default="", description="Parameter Description")
     
     # Experiment with integer arrays:
-    intarr = IntVectorProperty(name="IntArray", description="Integer Array", default=(0, 1, 5), min=0, subtype='NONE', size=3, update=None, get=None, set=None)
+    # intarr = IntVectorProperty(name="IntArray", description="Integer Array", default=(0, 1, 5), min=0, subtype='NONE', size=3, update=None, get=None, set=None)
 
     # Experiment with float arrays:
-    floatarr = FloatVectorProperty(name="FloatArray", description="Float Array", default=(0.0, 0.1, 0.5), subtype='NONE', size=3, update=None, get=None, set=None)
+    # floatarr = FloatVectorProperty(name="FloatArray", description="Float Array", default=(0.0, 0.1, 0.5), subtype='NONE', size=3, update=None, get=None, set=None)
 
 
     status = StringProperty(name="Status")
@@ -811,7 +812,8 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
     parameter_list = CollectionProperty(type=MCellGeneralParameterProperty, name="Parameters List")
     active_par_index = IntProperty(name="Active Parameter", default=0)
     next_parameter_ID = IntProperty(name="Next Parameter ID", default=0)
-    parameter_dict = {}  # Tried initializing to None, but then it couldn't be reassigned to {} in check_parameter_dict()
+    #parameter_dict = {}  # Tried initializing to None, but then it couldn't be reassigned to {} in check_parameter_dict()
+    parameter_name_ID_dict = StringProperty(name="ParNameIDDict", default="{}", description="Parameter Dictionary associating parameter names and parameter IDs stored in a string")
 
 
 
