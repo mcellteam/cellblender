@@ -711,7 +711,7 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
         col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
         if len(mcell.general_parameters.parameter_list) > 0:
             par = mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index]
-            layout.prop(par, "id")
+            #layout.prop(par, "id")
             #layout.prop(par, "intarr")
             #layout.prop(par, "floatarr")
             layout.prop(par, "name")

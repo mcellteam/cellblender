@@ -874,7 +874,7 @@ def update_parameter_dictionary ( mcell ):
 
 
 def update_parameter_name ( self, context ):
-    # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one
+    # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one so their expressions show the new name
     print ( "\nUpdating Parameter Name\n" )
     mcell = context.scene.mcell
     update_parameter_dictionary(mcell)
@@ -890,16 +890,6 @@ def update_parameter_expression ( self, context ):
     # print ( "pdict_string = ", pdict_string )
     # Extract the dictionary from the string property
     pdict = eval(pdict_string)
-    if len(pdict) == 0:
-        print ( "\nPopulating an empty dictionary!!\n" )
-        pdict = {}
-        # Search through the existing Blender Properties (if any) to initialize
-        plist = mcell.general_parameters.parameter_list
-        for p in plist:
-            add_param ( p['name'] + " = " +  p['expr'], pdict )
-            #d.update ( { p['name']: p['expr'] } )
-        # print ( pdict )
-
     parameter = self
 
     update_parameter_dictionary(mcell)
