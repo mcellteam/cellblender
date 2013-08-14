@@ -117,43 +117,44 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         row = layout.row()
         layout.prop(context.scene, "name", text="Project Base Name")
 
+"""
+class MCELL_PT_scratch(bpy.types.Panel):
+    bl_label = "CellBlender - Scratch Panel (testing)"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
 
-#class MCELL_PT_scratch(bpy.types.Panel):
-#    bl_label = "CellBlender - Scratch Panel (testing)"
-#    bl_space_type = "PROPERTIES"
-#    bl_region_type = "WINDOW"
-#    bl_context = "scene"
-#    bl_options = {'DEFAULT_CLOSED'}
-#
-#    def draw(self, context):
-#        layout = self.layout
-#        mcell = context.scene.mcell
-#
-#        row = layout.row()
-#        col = row.column(align=True)
-#        col.prop(mcell.scratch_settings, "show_all_icons")
-#        col = row.column(align=True)
-#        col.prop(mcell.scratch_settings, "print_all_icons")
-#
-#        if mcell.scratch_settings.show_all_icons:
-#            all_icons = bpy.types.UILayout.bl_rna.functions[
-#                'prop'].parameters['icon'].enum_items.keys()
-#            layout.separator()
-#            row = layout.row()
-#            for icon in all_icons:
-#                row = layout.row()
-#                row.label(icon=icon, text=icon)
-#
-#        if mcell.scratch_settings.print_all_icons:
-#            all_icons = bpy.types.UILayout.bl_rna.functions[
-#                'prop'].parameters['icon'].enum_items.keys()
-#            print("Icon list has ", len(all_icons), "icons")
-#            print("Icon names:")
-#            print(all_icons)
-#            # mcell.scratch_settings.print_all_icons = False
-#            # AttributeError: Writing to ID classes in this context is not
-#            # allowed: Scene, Scene datablock, error setting
-#            # MCellScratchPanelProperty.print_all_icons
+    def draw(self, context):
+        layout = self.layout
+        mcell = context.scene.mcell
+
+        row = layout.row()
+        col = row.column(align=True)
+        col.prop(mcell.scratch_settings, "show_all_icons")
+        col = row.column(align=True)
+        col.prop(mcell.scratch_settings, "print_all_icons")
+
+        if mcell.scratch_settings.show_all_icons:
+            all_icons = bpy.types.UILayout.bl_rna.functions[
+                'prop'].parameters['icon'].enum_items.keys()
+            layout.separator()
+            row = layout.row()
+            for icon in all_icons:
+                row = layout.row()
+                row.label(icon=icon, text=icon)
+
+        if mcell.scratch_settings.print_all_icons:
+            all_icons = bpy.types.UILayout.bl_rna.functions[
+                'prop'].parameters['icon'].enum_items.keys()
+            print("Icon list has ", len(all_icons), "icons")
+            print("Icon names:")
+            print(all_icons)
+            # mcell.scratch_settings.print_all_icons = False
+            # AttributeError: Writing to ID classes in this context is not
+            # allowed: Scene, Scene datablock, error setting
+            # MCellScratchPanelProperty.print_all_icons
+"""
 
 #class MCELL_PT_export_project(bpy.types.Panel):
 #    bl_label = "CellBlender - Export Project"
@@ -711,7 +712,7 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
         col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
         if len(mcell.general_parameters.parameter_list) > 0:
             par = mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index]
-            #layout.prop(par, "id")
+            layout.prop(par, "id")
             #layout.prop(par, "intarr")
             #layout.prop(par, "floatarr")
             layout.prop(par, "name")

@@ -788,12 +788,13 @@ class MCellGeneralParameterProperty(bpy.types.PropertyGroup):
     id = IntProperty(name="ID", default=0, description="Unique ID for each parameter")
     name = StringProperty(name="Name", default="Parameter", description="Unique name for this parameter",
         update=cellblender_operators.update_parameter_name)
-    expr = StringProperty(name="Expression", default="", description="Expression to be evaluated for this parameter",
+    expr = StringProperty(name="Expression", default="0", description="Expression to be evaluated for this parameter",
         update=cellblender_operators.update_parameter_expression)
     parsed_expr = StringProperty(name="Parsed Expression", default="", description="Parsed Expression with Parameter Indicies")
 
     value = StringProperty(name="Value", default="0", description="Current evaluated value for this parameter" )
-    valid = BoolProperty(default=True)
+    valid = BoolProperty(default=False)
+    initialized = BoolProperty(default=False)
 
     unit = StringProperty(name="Units", default="", description="Parameter Unit")
     desc = StringProperty(name="Description", default="", description="Parameter Description")
@@ -814,6 +815,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
     next_parameter_ID = IntProperty(name="Next Parameter ID", default=0)
     #parameter_dict = {}  # Tried initializing to None, but then it couldn't be reassigned to {} in check_parameter_dict()
     parameter_name_ID_dict = StringProperty(name="ParNameIDDict", default="{}", description="Parameter Dictionary associating parameter names and parameter IDs stored in a string")
+    parameter_name_exp_dict = StringProperty(name="ParNameExpDict", default="{}", description="Parameter Dictionary associating parameter names and parameter expressions stored in a string")
 
 
 

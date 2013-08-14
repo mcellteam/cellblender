@@ -826,13 +826,18 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        print ( "Adding Parameter ... inside execute" )
         mcell = context.scene.mcell
         mcell.general_parameters.next_parameter_ID += 1
         mcell.general_parameters.parameter_list.add()
         mcell.general_parameters.active_par_index = len(mcell.general_parameters.parameter_list)-1
+        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].id = mcell.general_parameters.next_parameter_ID
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = "P%s" %(mcell.general_parameters.next_parameter_ID)
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].expr = "0"
-        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].id = mcell.general_parameters.next_parameter_ID
+        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].parsed_expr = "0"
+        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].value = "0"
+        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].valid = True
+        
         return {'FINISHED'}
 
 class MCELL_OT_remove_parameter(bpy.types.Operator):
@@ -854,15 +859,123 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# Imports for Parameter Parsing / Evaluation Code
+
+from math import *
+from random import uniform, gauss
+import parser
+import re
+import token
+import symbol
+
+
+def recurse_tree_symbols ( pt, current_expr, param_marker, spacing, param_name_id_dict, param_expr_dict ):
+
+    MDL_KEYWORDS = { 'SQRT': 'sqrt', 'EXP': 'exp', 'LOG': 'log', 'LOG10': 'log10', 'SIN': 'sin', 'COS': 'cos', 'TAN': 'tan', 'ASIN': 'asin', 'ACOS':'acos', 'ATAN': 'atan', 'ABS': 'abs', 'CEIL': 'ceil', 'FLOOR': 'floor', 'MAX': 'max', 'MIN': 'min', 'RAND_UNIFORM': 'uniform', 'RAND_GAUSSIAN': 'gauss', 'PI': 'PI', 'SEED': 'SEED' }
+
+    if (type(pt) == type((1,1))):
+        # This is a tuple, so find out if it's a terminal leaf in the parse tree
+
+        print ( "recurse_tree_symbols with a tuple (", current_expr, ")" )
+
+        terminal = False
+        if len(pt) == 2:
+            if type(pt[1]) == type("abc"):
+                terminal = True
+
+        if terminal:
+            # This is a 2-tuple with a type and value
+            if pt[0] == token.NAME:
+                if pt[1] in MDL_KEYWORDS:
+                    # This is a recognized name and not a user-defined symbol
+                    return current_expr + spacing + pt[1]
+                else:
+                    # This must be a user-defined symbol
+                    par_id = -1
+                    if pt[1] in param_name_id_dict:
+                        par_id = param_name_id_dict[pt[1]]
+                    return current_expr + spacing + param_marker + str(par_id) + param_marker
+            else:
+                return current_expr + spacing + pt[1]
+        else:
+            # Break it down further
+            for i in range(len(pt)):
+                next_segment = recurse_tree_symbols ( pt[i], current_expr, param_marker, spacing, param_name_id_dict, param_expr_dict )
+                if next_segment != None:
+                    current_expr = next_segment
+            return current_expr
+    return None
+
+
+def build_param_expr ( param_id, expr, param_name_id_dict, param_expr_dict ):
+    """ Converts a string expression into a string expression with separator-delimited parameter indicies"""
+    """ Notes (assuming the param_marker char is $):
+          Expression: "A * (B + C)" becomes something like: "$3$ * ( $22$ + $5$ )"
+            where A is at index 3, B is at index 22, and C is at index 5
+          The param_id_dict dictionary contains the current mapping of names and ID numbers
+          The param_expr_dict dictionary contains the current mapping of names and expressions
+          An ID of -1 means that the parameter is not found: "$3$ * ($-1$ + $5$)"
+          If expr contains an equal sign, then the left-hand parameter is added to the dictionary if not already present
+    """
+
+    new_entry = None
+    param_expr = expr
+    param_split = expr.split('=')
+    if(len(param_split)==2):
+        new_entry = param_split[0].strip()
+        param_expr = param_split[1].strip()
+    else:
+        return 0
+    
+    param_marker = '$'
+    st = parser.expr(param_expr)
+    pt = st.totuple()
+    parameterized_expr = recurse_tree_symbols ( pt, "", param_marker, "", param_name_id_dict, param_expr_dict );
+
+    if new_entry != None:
+        param_name_id_dict[new_entry] = param_id
+        param_expr_dict[new_entry] = parameterized_expr
+      
+    return parameterized_expr
+
+
 # These functions belong in the MCellGeneralParameterProperty class (in cellblender_properties.py) ... but they didn't work there!!
+
+def update_param_expr_string ( p, param_name_id_mapping, param_name_expr_mapping ):
+    # This function appears to cause an infinite recursion when there is more than one parameter ....
+    # TODO Fix it!!!
+    return ( p['expr'] )
+    #return ( "123.0" )
 
 
 def update_parameter_dictionary ( mcell ):
     plist = mcell.general_parameters.parameter_list
     print ("List contains ", len(plist), " parameters" )
+
+    # Build it the new way ...
+    
+    # Parse all of the expressions and rebuild the mapping dictionaries
+    param_name_id_mapping = {}
+    param_name_expr_mapping = {}
+    for p in plist:
+        p.parsed_expr = build_param_expr ( p['id'], p['name'] + " = " + p['expr'], param_name_id_mapping, param_name_expr_mapping )
+
+    # Recompute all parameters
+    for p in plist:
+        p.expr = update_param_expr_string ( p, param_name_id_mapping, param_name_expr_mapping )
+
+
+    # Save the dictionary in the mcell properties
+    mcell.general_parameters.parameter_name_ID_dict = ("%s"%param_name_id_mapping)
+    mcell.general_parameters.parameter_name_exp_dict = ("%s"%param_name_expr_mapping)
+    print ( "Parameter Name/ID Dictionary:\n" + str(param_name_id_mapping) )
+    print ( "Parameter Name/Expression Dictionary:\n" + str(param_name_expr_mapping) )
+    
+    
+    # Build it the old way ... should still work
     pd = {}
     for p in plist:
-        # print ("Expression: ", p['name'], " = ", p['expr'])
+        print ("Expression: ", p['name'], "[", p['id'], "]", " = ", p['expr'])
         if add_param ( p['name'] + " = " + p['expr'], pd ) != 0:
             v = eval_param(p['expr'], pd)
             p.value = str(v)
@@ -875,14 +988,16 @@ def update_parameter_dictionary ( mcell ):
 
 def update_parameter_name ( self, context ):
     # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one so their expressions show the new name
-    print ( "\nUpdating Parameter Name\n" )
-    mcell = context.scene.mcell
-    update_parameter_dictionary(mcell)
-    print ( "\nmcell OK\n" )
+    print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
+    # The following check was needed because mcell.general_parameters.parameter_list[newest_item]['expr'] wasn't being set yet for some reason
+    if self.initialized:
+        mcell = context.scene.mcell
+        update_parameter_dictionary(mcell)
+    #print ( "\nmcell OK\n" )
 
 def update_parameter_expression ( self, context ):
     # Called when a parameter expression changes - needs to recompute the result and update all parameters that depend on this one
-    print ( "\n\nUpdating Parameter Expression" )
+    print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "]" )
     mcell = context.scene.mcell
     pdict_string = mcell.general_parameters.parameter_name_ID_dict
     # For now, don't use the stored parameters ... rebuild them from the individual properties first to ensure consistency.
@@ -911,33 +1026,10 @@ def update_parameter_expression ( self, context ):
     mcell.general_parameters.parameter_name_ID_dict = ("%s"%pdict)
     # print ( "Parameter Dictionary = ", mcell.general_parameters.parameter_name_ID_dict )
 
-
+    self.initialized = True
 
 
 # Tom's Parameter Parsing / Evaluation Code
-
-from math import *
-import parser
-import re
-from random import uniform, gauss
-
-
-def check_param_name(param_name,param_dict):
-    # Check for duplicate param name
-    if param_name in param_dict.keys():
-        print("name already in dict: %s" %(param_name))
-        return 0
-
-    # Check for illegal names (Starts with a letter. No special characters.)
-    name_filter = r'^[A-Za-z]+[0-9A-Za-z_.]*$'
-    m = re.match(name_filter, param_name)
-    if m is None:
-        print("name not ok: %s %d" %(param_name,len(param_name)))
-        return 0
-
-    # print("name ok: %s" %(param_name))
-    return 1
-
 
 def check_param_name(param_name,param_dict):
     # Check for duplicate param name
@@ -1009,13 +1101,13 @@ def eval_param(param_expr,param_dict):
     pe = re.sub(r'[ \t]','',param_expr)
 
     # Convert expression from MDL syntax to equivalent python syntax
+
     # Substitute "^" with "**"
     pe_py = re.sub(r'[\^]','**',pe)
+
     # Substitute MDL funcs with python funcs
     func_dict = {'SQRT\(': 'sqrt(', 'EXP\(': 'exp(', 'LOG\(': 'log(', 'LOG10\(': 'log10(', 'SIN\(': 'sin(', 'COS\(': 'cos(', 'TAN\(': 'tan(', 'ASIN\(': 'asin(', 'ACOS\(':'acos(', 'ATAN\(': 'atan(', 'ABS\(': 'abs(', 'CEIL\(': 'ceil(', 'FLOOR\(': 'floor(', 'MAX\(': 'max(', 'MIN\(': 'min(', 'RAND_UNIFORM\(': 'uniform(', 'RAND_GAUSSIAN\(': 'gauss('}
-
     const_dict = {'PI':pi,'SEED':1}
-
     for mdl_func in func_dict.keys():
         pe_py = re.sub(mdl_func,func_dict[mdl_func],pe_py)
 
@@ -1026,6 +1118,7 @@ def eval_param(param_expr,param_dict):
     pe_numconst = re.sub(r'[A-Za-z]+[A-Za-z0-9_]*',' ',pe_nofunc).split()
     pe_func = re.findall(r'[a-z]+[0-9]*\(',pe_nop)
 
+    # Evaluate all parameters needed by this parameter giving them values in the local scope
     for v in pe_var:
         if v in const_dict:
             v_stmt = ('%s = %g') % (v,const_dict[v])
@@ -1033,6 +1126,7 @@ def eval_param(param_expr,param_dict):
             v_stmt = ('%s = %g') % (v,param_dict[v][1])
         exec(v_stmt)
 
+    # Evaluate the entire expression relying on local values already being assigned
     val = eval(pe_py,locals())
 
     return val
@@ -1062,6 +1156,22 @@ def add_param(param_stmt,param_dict):
 
 
 ################ Tom's Originals (for reference) #######################
+
+def toms_check_param_name(param_name,param_dict):
+    # Check for duplicate param name
+    if param_name in param_dict.keys():
+        print("name already in dict: %s" %(param_name))
+        return 0
+
+    # Check for illegal names (Starts with a letter. No special characters.)
+    name_filter = r'^[A-Za-z]+[0-9A-Za-z_.]*$'
+    m = re.match(name_filter, param_name)
+    if m is None:
+        print("name not ok: %s %d" %(param_name,len(param_name)))
+        return 0
+
+    # print("name ok: %s" %(param_name))
+    return 1
 
 
 def toms_check_param_expr(param_expr,param_dict):
