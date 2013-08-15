@@ -868,15 +868,24 @@ import re
 import token
 import symbol
 
+import sys
+print ( "Recursion Limit = ", sys.getrecursionlimit() )
+sys.setrecursionlimit(1000)
+
+recurse_depth = 0
 
 def recurse_tree_symbols ( pt, current_expr, param_marker, spacing, param_name_id_dict, param_expr_dict ):
+
+    global recurse_depth
+    #print ( "Depth = " + str(recurse_depth) )
 
     MDL_KEYWORDS = { 'SQRT': 'sqrt', 'EXP': 'exp', 'LOG': 'log', 'LOG10': 'log10', 'SIN': 'sin', 'COS': 'cos', 'TAN': 'tan', 'ASIN': 'asin', 'ACOS':'acos', 'ATAN': 'atan', 'ABS': 'abs', 'CEIL': 'ceil', 'FLOOR': 'floor', 'MAX': 'max', 'MIN': 'min', 'RAND_UNIFORM': 'uniform', 'RAND_GAUSSIAN': 'gauss', 'PI': 'PI', 'SEED': 'SEED' }
 
     if (type(pt) == type((1,1))):
         # This is a tuple, so find out if it's a terminal leaf in the parse tree
 
-        print ( "recurse_tree_symbols with a tuple (", current_expr, ")" )
+        #print ( "recurse_tree_symbols with a tuple (", current_expr, ")" )
+        #print ( "  pt = ", str(pt) )
 
         terminal = False
         if len(pt) == 2:
@@ -900,7 +909,9 @@ def recurse_tree_symbols ( pt, current_expr, param_marker, spacing, param_name_i
         else:
             # Break it down further
             for i in range(len(pt)):
+                recurse_depth += 1
                 next_segment = recurse_tree_symbols ( pt[i], current_expr, param_marker, spacing, param_name_id_dict, param_expr_dict )
+                recurse_depth += -1
                 if next_segment != None:
                     current_expr = next_segment
             return current_expr
@@ -930,7 +941,11 @@ def build_param_expr ( param_id, expr, param_name_id_dict, param_expr_dict ):
     param_marker = '$'
     st = parser.expr(param_expr)
     pt = st.totuple()
+    
+    global recurse_depth
+    print ( "Before call to recurse_tree_symbols, depth = " + str(recurse_depth) )
     parameterized_expr = recurse_tree_symbols ( pt, "", param_marker, "", param_name_id_dict, param_expr_dict );
+    print ( "After call to recurse_tree_symbols, depth = " + str(recurse_depth) )
 
     if new_entry != None:
         param_name_id_dict[new_entry] = param_id
@@ -946,6 +961,7 @@ def update_param_expr_string ( p, param_name_id_mapping, param_name_expr_mapping
     # TODO Fix it!!!
     return ( p['expr'] )
     #return ( "123.0" )
+
 
 
 def update_parameter_dictionary ( mcell ):
@@ -968,11 +984,13 @@ def update_parameter_dictionary ( mcell ):
     # Save the dictionary in the mcell properties
     mcell.general_parameters.parameter_name_ID_dict = ("%s"%param_name_id_mapping)
     mcell.general_parameters.parameter_name_exp_dict = ("%s"%param_name_expr_mapping)
+    print ( "Recursion depth = " + str(recurse_depth) )
     print ( "Parameter Name/ID Dictionary:\n" + str(param_name_id_mapping) )
     print ( "Parameter Name/Expression Dictionary:\n" + str(param_name_expr_mapping) )
     
     
     # Build it the old way ... should still work
+
     pd = {}
     for p in plist:
         print ("Expression: ", p['name'], "[", p['id'], "]", " = ", p['expr'])
@@ -986,6 +1004,7 @@ def update_parameter_dictionary ( mcell ):
             p.valid = False
 
 
+
 def update_parameter_name ( self, context ):
     # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one so their expressions show the new name
     print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
@@ -995,7 +1014,13 @@ def update_parameter_name ( self, context ):
         update_parameter_dictionary(mcell)
     #print ( "\nmcell OK\n" )
 
+already_updating = False
+
 def update_parameter_expression ( self, context ):
+    global already_updating
+    if already_updating:
+      return
+    already_updating = True
     # Called when a parameter expression changes - needs to recompute the result and update all parameters that depend on this one
     print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "]" )
     mcell = context.scene.mcell
@@ -1027,6 +1052,8 @@ def update_parameter_expression ( self, context ):
     # print ( "Parameter Dictionary = ", mcell.general_parameters.parameter_name_ID_dict )
 
     self.initialized = True
+
+    already_updating = False
 
 
 # Tom's Parameter Parsing / Evaluation Code
