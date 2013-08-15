@@ -1014,13 +1014,13 @@ def update_parameter_name ( self, context ):
         update_parameter_dictionary(mcell)
     #print ( "\nmcell OK\n" )
 
-already_updating = False
+update_depth = 0
 
 def update_parameter_expression ( self, context ):
-    global already_updating
-    if already_updating:
+    global update_depth
+    if update_depth > 10:
       return
-    already_updating = True
+    update_depth += 1
     # Called when a parameter expression changes - needs to recompute the result and update all parameters that depend on this one
     print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "]" )
     mcell = context.scene.mcell
@@ -1053,7 +1053,7 @@ def update_parameter_expression ( self, context ):
 
     self.initialized = True
 
-    already_updating = False
+    update_depth += -1
 
 
 # Tom's Parameter Parsing / Evaluation Code
