@@ -963,8 +963,9 @@ def update_param_expr_string ( p, param_id_name_mapping, param_name_id_mapping, 
     # Substitute the proper names for all $#$ strings in the parsed expression
     pe = p['parsed_expr']
     print ( "Substitute into ", pe )
-    # Build a set of all variables
-    vset = set ( re.findall(r'\$[0-9]\$',pe) )
+    # Build a set of all variables where a variable is an integer enclosed in dollar signs ($). For example "$32$" represents a variable
+    # This regular expression will match $ followed by one or more digits followed by $
+    vset = set ( re.findall(r'\$[0-9]+\$',pe) )
     # Replace each string
     for vexp in vset:
         vindex = int(vexp.replace("$",""))
@@ -1006,6 +1007,7 @@ def update_parameter_dictionary ( mcell ):
     # Recompute all parameters
     for p in plist:
         new_expr = update_param_expr_string ( p, param_id_name_mapping, param_name_id_mapping, param_name_expr_mapping )
+        # Check to see if it's really changed ... without this check, updating can become recursive because Blender triggers callbacks even if the value is the same
         if new_expr != p.expr:
             print ( new_expr, " != ", p.expr )
             p.expr = new_expr
@@ -1048,7 +1050,7 @@ update_depth = 0
 
 def update_parameter_expression ( self, context ):
     global update_depth
-    if update_depth > 10:
+    if update_depth > 10000:
       return
     update_depth += 1
     # Called when a parameter expression changes - needs to recompute the result and update all parameters that depend on this one
