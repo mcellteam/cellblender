@@ -918,7 +918,7 @@ def recurse_tree_symbols ( pt, current_expr, param_marker, spacing, param_name_i
     return None
 
 
-def build_param_expr ( param_id, expr, param_name_id_dict, param_expr_dict ):
+def build_param_expr ( param_id, expr, param_id_name_dict, param_name_id_dict, param_expr_dict ):
     """ Converts a string expression into a string expression with separator-delimited parameter indicies"""
     """ Notes (assuming the param_marker char is $):
           Expression: "A * (B + C)" becomes something like: "$3$ * ( $22$ + $5$ )"
@@ -948,7 +948,10 @@ def build_param_expr ( param_id, expr, param_name_id_dict, param_expr_dict ):
     print ( "After call to recurse_tree_symbols, depth = " + str(recurse_depth) )
 
     if new_entry != None:
+        # Set up the name to ID mapping as bi-directional
+        param_id_name_dict[param_id] = new_entry
         param_name_id_dict[new_entry] = param_id
+        # Set up the parameter name to expression mapping
         param_expr_dict[new_entry] = parameterized_expr
       
     return parameterized_expr
@@ -956,10 +959,33 @@ def build_param_expr ( param_id, expr, param_name_id_dict, param_expr_dict ):
 
 # These functions belong in the MCellGeneralParameterProperty class (in cellblender_properties.py) ... but they didn't work there!!
 
-def update_param_expr_string ( p, param_name_id_mapping, param_name_expr_mapping ):
-    # This function appears to cause an infinite recursion when there is more than one parameter ....
-    # TODO Fix it!!!
-    return ( p['expr'] )
+def update_param_expr_string ( p, param_id_name_mapping, param_name_id_mapping, param_name_expr_mapping ):
+    # Substitute the proper names for all $#$ strings in the parsed expression
+    pe = p['parsed_expr']
+    print ( "Substitute into ", pe )
+    # Build a set of all variables
+    vset = set ( re.findall(r'\$[0-9]\$',pe) )
+    # Replace each string
+    for vexp in vset:
+        vindex = int(vexp.replace("$",""))
+        vname = param_id_name_mapping[vindex]
+        print ( "Substitute variable name ", vname, " in place of $" + str(vindex) + "$" )
+        pe = pe.replace ( vexp, vname )
+        print ( "  Result of sub: ", pe )
+    return pe    
+
+    """
+    fe = ""
+    i = 0
+    while True:
+        first_marker = pe.find ( "$", i )
+        if first_marker < 0:
+            break
+        second_marker = pe.find ( "$", first_marker+1 )
+        if second_marker < 0:
+            break
+    """
+    #return ( p['expr'] )
     #return ( "123.0" )
 
 
@@ -971,26 +997,31 @@ def update_parameter_dictionary ( mcell ):
     # Build it the new way ...
     
     # Parse all of the expressions and rebuild the mapping dictionaries
+    param_id_name_mapping = {}
     param_name_id_mapping = {}
     param_name_expr_mapping = {}
     for p in plist:
-        p.parsed_expr = build_param_expr ( p['id'], p['name'] + " = " + p['expr'], param_name_id_mapping, param_name_expr_mapping )
+        p.parsed_expr = build_param_expr ( p['id'], p['name'] + " = " + p['expr'], param_id_name_mapping, param_name_id_mapping, param_name_expr_mapping )
 
     # Recompute all parameters
     for p in plist:
-        p.expr = update_param_expr_string ( p, param_name_id_mapping, param_name_expr_mapping )
+        new_expr = update_param_expr_string ( p, param_id_name_mapping, param_name_id_mapping, param_name_expr_mapping )
+        if new_expr != p.expr:
+            print ( new_expr, " != ", p.expr )
+            p.expr = new_expr
 
 
     # Save the dictionary in the mcell properties
+    mcell.general_parameters.parameter_ID_name_dict = ("%s"%param_id_name_mapping)
     mcell.general_parameters.parameter_name_ID_dict = ("%s"%param_name_id_mapping)
     mcell.general_parameters.parameter_name_exp_dict = ("%s"%param_name_expr_mapping)
     print ( "Recursion depth = " + str(recurse_depth) )
+    print ( "Parameter ID/Name Dictionary:\n" + str(param_id_name_mapping) )
     print ( "Parameter Name/ID Dictionary:\n" + str(param_name_id_mapping) )
     print ( "Parameter Name/Expression Dictionary:\n" + str(param_name_expr_mapping) )
-    
-    
-    # Build it the old way ... should still work
 
+    # Build it the old way ... should still work
+    plist = mcell.general_parameters.parameter_list
     pd = {}
     for p in plist:
         print ("Expression: ", p['name'], "[", p['id'], "]", " = ", p['expr'])
@@ -1002,7 +1033,6 @@ def update_parameter_dictionary ( mcell ):
         else:
             print ("  = Error!!!")
             p.valid = False
-
 
 
 def update_parameter_name ( self, context ):

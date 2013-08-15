@@ -814,6 +814,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
     active_par_index = IntProperty(name="Active Parameter", default=0)
     next_parameter_ID = IntProperty(name="Next Parameter ID", default=0)
     #parameter_dict = {}  # Tried initializing to None, but then it couldn't be reassigned to {} in check_parameter_dict()
+    parameter_ID_name_dict = StringProperty(name="ParIDNameDict", default="{}", description="Parameter Dictionary associating parameter IDs and parameter names stored in a string")
     parameter_name_ID_dict = StringProperty(name="ParNameIDDict", default="{}", description="Parameter Dictionary associating parameter names and parameter IDs stored in a string")
     parameter_name_exp_dict = StringProperty(name="ParNameExpDict", default="{}", description="Parameter Dictionary associating parameter names and parameter expressions stored in a string")
 
