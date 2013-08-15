@@ -868,16 +868,11 @@ import re
 import token
 import symbol
 
-import sys
-print ( "Recursion Limit = ", sys.getrecursionlimit() )
-sys.setrecursionlimit(1000)
-
-recurse_depth = 0
+#import sys
+#print ( "Recursion Limit = ", sys.getrecursionlimit() )
+#sys.setrecursionlimit(1000)
 
 def recurse_tree_symbols ( pt, current_expr, param_marker, spacing, param_name_id_dict, param_expr_dict ):
-
-    global recurse_depth
-    #print ( "Depth = " + str(recurse_depth) )
 
     MDL_KEYWORDS = { 'SQRT': 'sqrt', 'EXP': 'exp', 'LOG': 'log', 'LOG10': 'log10', 'SIN': 'sin', 'COS': 'cos', 'TAN': 'tan', 'ASIN': 'asin', 'ACOS':'acos', 'ATAN': 'atan', 'ABS': 'abs', 'CEIL': 'ceil', 'FLOOR': 'floor', 'MAX': 'max', 'MIN': 'min', 'RAND_UNIFORM': 'uniform', 'RAND_GAUSSIAN': 'gauss', 'PI': 'PI', 'SEED': 'SEED' }
 
@@ -909,9 +904,7 @@ def recurse_tree_symbols ( pt, current_expr, param_marker, spacing, param_name_i
         else:
             # Break it down further
             for i in range(len(pt)):
-                recurse_depth += 1
                 next_segment = recurse_tree_symbols ( pt[i], current_expr, param_marker, spacing, param_name_id_dict, param_expr_dict )
-                recurse_depth += -1
                 if next_segment != None:
                     current_expr = next_segment
             return current_expr
@@ -937,15 +930,12 @@ def build_param_expr ( param_id, expr, param_id_name_dict, param_name_id_dict, p
         param_expr = param_split[1].strip()
     else:
         return 0
-    
+
     param_marker = '$'
     st = parser.expr(param_expr)
     pt = st.totuple()
     
-    global recurse_depth
-    print ( "Before call to recurse_tree_symbols, depth = " + str(recurse_depth) )
     parameterized_expr = recurse_tree_symbols ( pt, "", param_marker, "", param_name_id_dict, param_expr_dict );
-    print ( "After call to recurse_tree_symbols, depth = " + str(recurse_depth) )
 
     if new_entry != None:
         # Set up the name to ID mapping as bi-directional
@@ -953,7 +943,7 @@ def build_param_expr ( param_id, expr, param_id_name_dict, param_name_id_dict, p
         param_name_id_dict[new_entry] = param_id
         # Set up the parameter name to expression mapping
         param_expr_dict[new_entry] = parameterized_expr
-      
+
     return parameterized_expr
 
 
@@ -962,7 +952,7 @@ def build_param_expr ( param_id, expr, param_id_name_dict, param_name_id_dict, p
 def update_param_expr_string ( p, param_id_name_mapping, param_name_id_mapping, param_name_expr_mapping ):
     # Substitute the proper names for all $#$ strings in the parsed expression
     pe = p['parsed_expr']
-    print ( "Substitute into ", pe )
+    #print ( "Substitute into ", pe )
     # Build a set of all variables where a variable is an integer enclosed in dollar signs ($). For example "$32$" represents a variable
     # This regular expression will match $ followed by one or more digits followed by $
     vset = set ( re.findall(r'\$[0-9]+\$',pe) )
@@ -970,9 +960,9 @@ def update_param_expr_string ( p, param_id_name_mapping, param_name_id_mapping, 
     for vexp in vset:
         vindex = int(vexp.replace("$",""))
         vname = param_id_name_mapping[vindex]
-        print ( "Substitute variable name ", vname, " in place of $" + str(vindex) + "$" )
+        #print ( "Substitute variable name ", vname, " in place of $" + str(vindex) + "$" )
         pe = pe.replace ( vexp, vname )
-        print ( "  Result of sub: ", pe )
+        #print ( "  Result of sub: ", pe )
     return pe    
 
     """
@@ -993,7 +983,7 @@ def update_param_expr_string ( p, param_id_name_mapping, param_name_id_mapping, 
 
 def update_parameter_dictionary ( mcell ):
     plist = mcell.general_parameters.parameter_list
-    print ("List contains ", len(plist), " parameters" )
+    #print ("List contains ", len(plist), " parameters" )
 
     # Build it the new way ...
     
@@ -1007,9 +997,9 @@ def update_parameter_dictionary ( mcell ):
     # Recompute all parameters
     for p in plist:
         new_expr = update_param_expr_string ( p, param_id_name_mapping, param_name_id_mapping, param_name_expr_mapping )
-        # Check to see if it's really changed ... without this check, updating can become recursive because Blender triggers callbacks even if the value is the same
+        # Check to see if it's really changed ... without this check, updating can become recursive because Blender triggers callbacks even if the new value is unchanged
         if new_expr != p.expr:
-            print ( new_expr, " != ", p.expr )
+            #print ( new_expr, " != ", p.expr )
             p.expr = new_expr
 
 
@@ -1017,16 +1007,15 @@ def update_parameter_dictionary ( mcell ):
     mcell.general_parameters.parameter_ID_name_dict = ("%s"%param_id_name_mapping)
     mcell.general_parameters.parameter_name_ID_dict = ("%s"%param_name_id_mapping)
     mcell.general_parameters.parameter_name_exp_dict = ("%s"%param_name_expr_mapping)
-    print ( "Recursion depth = " + str(recurse_depth) )
-    print ( "Parameter ID/Name Dictionary:\n" + str(param_id_name_mapping) )
-    print ( "Parameter Name/ID Dictionary:\n" + str(param_name_id_mapping) )
-    print ( "Parameter Name/Expression Dictionary:\n" + str(param_name_expr_mapping) )
+    #print ( "Parameter ID/Name Dictionary:\n" + str(param_id_name_mapping) )
+    #print ( "Parameter Name/ID Dictionary:\n" + str(param_name_id_mapping) )
+    #print ( "Parameter Name/Expression Dictionary:\n" + str(param_name_expr_mapping) )
 
     # Build it the old way ... should still work
     plist = mcell.general_parameters.parameter_list
     pd = {}
     for p in plist:
-        print ("Expression: ", p['name'], "[", p['id'], "]", " = ", p['expr'])
+        #print ("Expression: ", p['name'], "[", p['id'], "]", " = ", p['expr'])
         if add_param ( p['name'] + " = " + p['expr'], pd ) != 0:
             v = eval_param(p['expr'], pd)
             p.value = str(v)
@@ -1039,22 +1028,16 @@ def update_parameter_dictionary ( mcell ):
 
 def update_parameter_name ( self, context ):
     # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one so their expressions show the new name
-    print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
+    #print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
     # The following check was needed because mcell.general_parameters.parameter_list[newest_item]['expr'] wasn't being set yet for some reason
     if self.initialized:
         mcell = context.scene.mcell
         update_parameter_dictionary(mcell)
     #print ( "\nmcell OK\n" )
 
-update_depth = 0
-
 def update_parameter_expression ( self, context ):
-    global update_depth
-    if update_depth > 10000:
-      return
-    update_depth += 1
     # Called when a parameter expression changes - needs to recompute the result and update all parameters that depend on this one
-    print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "]" )
+    #print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "]" )
     mcell = context.scene.mcell
     pdict_string = mcell.general_parameters.parameter_name_ID_dict
     # For now, don't use the stored parameters ... rebuild them from the individual properties first to ensure consistency.
@@ -1084,8 +1067,6 @@ def update_parameter_expression ( self, context ):
     # print ( "Parameter Dictionary = ", mcell.general_parameters.parameter_name_ID_dict )
 
     self.initialized = True
-
-    update_depth += -1
 
 
 # Tom's Parameter Parsing / Evaluation Code
@@ -1336,93 +1317,6 @@ def toms_add_param(param_stmt,param_dict):
 
 def toms_sort_params(param_dict):
     return 1
-
-
-"""
-# Testing code
-
-my_param_dict = {}
-
-toms_add_param("a = 1.0",my_param_dict)
-toms_add_param("b = 2.0",my_param_dict)
-toms_add_param("c = 3.0",my_param_dict)
-toms_add_param("d12_5ft = 4.0",my_param_dict)
-toms_add_param("mu = 10.0",my_param_dict)
-toms_add_param("sigma = 2.0",my_param_dict)
-
-toms_add_param("p = SQRT(EXP(b + c/2.718)) + LOG10(a*d12_5ft \t+ 123.5 + 34^(a+b)) + RAND_GAUSSIAN(mu,sigma)",my_param_dict)
-
-toms_add_param("pi_e = PI*EXP(p)",my_param_dict)
-
-toms_sort_params(my_param_dict)
-
-print(my_param_dict)
-"""
-
-"""
-#### Making a dictionary ####
-data = {}
-# OR #
-data = dict()
-
-#### Initially adding values ####
-data = {'a':1,'b':2,'c':3}
-# OR #
-data = dict(a=1, b=2, c=3)
-
-#### Inserting/Updating value ####
-data['a']=1  # updates if 'a' exists, else adds 'a'
-# OR #
-data.update({'a':1})
-# OR #
-data.update(dict(a=1))
-
-#### Merging 2 dictionaries ####
-data.update(data2)  # Where data2 is also a dict.
-"""
-
-
-
-"""
-Experimenting in the Blender Console
->>> C.scene.mcell['general_parameters']["parameter_list"][0].
-                                                             clear(
-                                                             get(
-                                                             items(
-                                                             iteritems(
-                                                             keys(
-                                                             name
-                                                             pop(
-                                                             to_dict(
-                                                             update(
-                                                             values(
->>> C.scene.mcell['general_parameters']["parameter_list"][0].items()
-[('name', 'A'), ('value', '1'), ('unit', 'counts'), ('type', ''), ('desc', 'Parameter A in counts'), ('expr', '1')]
-
->>> C.scene.mcell['general_parameters']["parameter_list"][0]['name']
-'A'
-
->>> C.scene.mcell['general_parameters']["parameter_list"][1]['name']
-'B'
-
->>> for p in C.scene.mcell['general_parameters']["parameter_list"]:
-...   print p['name']
-  File "<blender_console>", line 2
-    print p['name']
-          ^
-SyntaxError: invalid syntax
-
->>> for p in C.scene.mcell['general_parameters']["parameter_list"]:
-...   p['name']
-... 
-'A'
-'B'
-'C'
-'D'
-
->>> 
-"""
-
 
 	
 #########################################################################################################################################
