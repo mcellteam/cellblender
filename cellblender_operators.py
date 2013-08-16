@@ -947,19 +947,20 @@ def build_param_expr ( param_id, expr, param_id_name_dict, param_name_id_dict, p
     return parameterized_expr
 
 
-# These functions belong in the MCellGeneralParameterProperty class (in cellblender_properties.py) ... but they didn't work there!!
-
 def update_param_expr_string ( p, param_id_name_mapping, param_name_id_mapping, param_name_expr_mapping ):
     # Substitute the proper names for all $#$ strings in the parsed expression
     pe = p['parsed_expr']
     #print ( "Substitute into ", pe )
     # Build a set of all variables where a variable is an integer enclosed in dollar signs ($). For example "$32$" represents a variable
     # This regular expression will match $ followed by one or more digits followed by $
-    vset = set ( re.findall(r'\$[0-9]+\$',pe) )
+    vset = set ( re.findall(r'\$[\-0-9]+\$',pe) )
     # Replace each string
     for vexp in vset:
         vindex = int(vexp.replace("$",""))
-        vname = param_id_name_mapping[vindex]
+        if vindex < 0:
+          vname = "?"
+        else:
+          vname = param_id_name_mapping[vindex]
         #print ( "Substitute variable name ", vname, " in place of $" + str(vindex) + "$" )
         pe = pe.replace ( vexp, vname )
         #print ( "  Result of sub: ", pe )
@@ -994,13 +995,23 @@ def update_parameter_dictionary ( mcell ):
     for p in plist:
         p.parsed_expr = build_param_expr ( p['id'], p['name'] + " = " + p['expr'], param_id_name_mapping, param_name_id_mapping, param_name_expr_mapping )
 
-    # Recompute all parameters
+    # Rebuild all parameter expressions
     for p in plist:
         new_expr = update_param_expr_string ( p, param_id_name_mapping, param_name_id_mapping, param_name_expr_mapping )
         # Check to see if it's really changed ... without this check, updating can become recursive because Blender triggers callbacks even if the new value is unchanged
-        if new_expr != p.expr:
+        if p.expr != new_expr:
             #print ( new_expr, " != ", p.expr )
             p.expr = new_expr
+
+    """
+    # Recompute all parameter values
+    for p in plist:
+        new_expr = update_param_expr_string ( p, param_id_name_mapping, param_name_id_mapping, param_name_expr_mapping )
+        # Check to see if it's really changed ... without this check, updating can become recursive because Blender triggers callbacks even if the new value is unchanged
+        if p.expr != new_expr:
+            #print ( new_expr, " != ", p.expr )
+            p.expr = new_expr
+    """
 
 
     # Save the dictionary in the mcell properties
@@ -1011,6 +1022,7 @@ def update_parameter_dictionary ( mcell ):
     #print ( "Parameter Name/ID Dictionary:\n" + str(param_name_id_mapping) )
     #print ( "Parameter Name/Expression Dictionary:\n" + str(param_name_expr_mapping) )
 
+    """
     # Build it the old way ... should still work
     plist = mcell.general_parameters.parameter_list
     pd = {}
@@ -1024,14 +1036,18 @@ def update_parameter_dictionary ( mcell ):
         else:
             print ("  = Error!!!")
             p.valid = False
+    """
 
 
 def update_parameter_name ( self, context ):
     # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one so their expressions show the new name
-    #print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
+    print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" + "   self is of type " + str(type(self)) )
     # The following check was needed because mcell.general_parameters.parameter_list[newest_item]['expr'] wasn't being set yet for some reason
     if self.initialized:
         mcell = context.scene.mcell
+        #pdict_string = mcell.general_parameters.parameter_name_ID_dict
+        #pdict = eval(pdict_string)
+    
         update_parameter_dictionary(mcell)
     #print ( "\nmcell OK\n" )
 
