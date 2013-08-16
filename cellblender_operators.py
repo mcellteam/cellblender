@@ -872,7 +872,7 @@ import symbol
 #print ( "Recursion Limit = ", sys.getrecursionlimit() )
 #sys.setrecursionlimit(1000)
 
-def recurse_tree_symbols ( pt, current_expr, param_marker, spacing, param_name_id_dict, param_expr_dict ):
+def recurse_tree_symbols ( pt, current_expr, param_marker, spacing, parameter_name_ID_dict ):
 
     MDL_KEYWORDS = { 'SQRT': 'sqrt', 'EXP': 'exp', 'LOG': 'log', 'LOG10': 'log10', 'SIN': 'sin', 'COS': 'cos', 'TAN': 'tan', 'ASIN': 'asin', 'ACOS':'acos', 'ATAN': 'atan', 'ABS': 'abs', 'CEIL': 'ceil', 'FLOOR': 'floor', 'MAX': 'max', 'MIN': 'min', 'RAND_UNIFORM': 'uniform', 'RAND_GAUSSIAN': 'gauss', 'PI': 'PI', 'SEED': 'SEED' }
 
@@ -896,28 +896,28 @@ def recurse_tree_symbols ( pt, current_expr, param_marker, spacing, param_name_i
                 else:
                     # This must be a user-defined symbol
                     par_id = -1
-                    if pt[1] in param_name_id_dict:
-                        par_id = param_name_id_dict[pt[1]]
+                    if pt[1] in parameter_name_ID_dict:
+                        par_id = parameter_name_ID_dict[pt[1]]
                     return current_expr + spacing + param_marker + str(par_id) + param_marker
             else:
                 return current_expr + spacing + pt[1]
         else:
             # Break it down further
             for i in range(len(pt)):
-                next_segment = recurse_tree_symbols ( pt[i], current_expr, param_marker, spacing, param_name_id_dict, param_expr_dict )
+                next_segment = recurse_tree_symbols ( pt[i], current_expr, param_marker, spacing, parameter_name_ID_dict )
                 if next_segment != None:
                     current_expr = next_segment
             return current_expr
     return None
 
 
-def build_param_expr ( param_id, expr, param_id_name_dict, param_name_id_dict, param_expr_dict ):
+def build_param_expr ( param_id, expr, param_id_name_dict, parameter_name_ID_dict, parameter_name_expr_dict ):
     """ Converts a string expression into a string expression with separator-delimited parameter indicies"""
     """ Notes (assuming the param_marker char is $):
           Expression: "A * (B + C)" becomes something like: "$3$ * ( $22$ + $5$ )"
             where A is at index 3, B is at index 22, and C is at index 5
           The param_id_dict dictionary contains the current mapping of names and ID numbers
-          The param_expr_dict dictionary contains the current mapping of names and expressions
+          The parameter_name_expr_dict dictionary contains the current mapping of names and expressions
           An ID of -1 means that the parameter is not found: "$3$ * ($-1$ + $5$)"
           If expr contains an equal sign, then the left-hand parameter is added to the dictionary if not already present
     """
@@ -935,50 +935,38 @@ def build_param_expr ( param_id, expr, param_id_name_dict, param_name_id_dict, p
     st = parser.expr(param_expr)
     pt = st.totuple()
     
-    parameterized_expr = recurse_tree_symbols ( pt, "", param_marker, "", param_name_id_dict, param_expr_dict );
+    parameterized_expr = recurse_tree_symbols ( pt, "", param_marker, "", parameter_name_ID_dict );
 
     if new_entry != None:
         # Set up the name to ID mapping as bi-directional
         param_id_name_dict[param_id] = new_entry
-        param_name_id_dict[new_entry] = param_id
+        parameter_name_ID_dict[new_entry] = param_id
         # Set up the parameter name to expression mapping
-        param_expr_dict[new_entry] = parameterized_expr
+        parameter_name_expr_dict[new_entry] = parameterized_expr
 
     return parameterized_expr
 
 
-def update_param_expr_string ( p, param_id_name_mapping, param_name_id_mapping, param_name_expr_mapping ):
+def update_param_expr_string ( p, parameter_ID_name_dict, parameter_name_ID_dict, parameter_name_expr_dict ):
     # Substitute the proper names for all $#$ strings in the parsed expression
     pe = p['parsed_expr']
     #print ( "Substitute into ", pe )
     # Build a set of all variables where a variable is an integer enclosed in dollar signs ($). For example "$32$" represents a variable
-    # This regular expression will match $ followed by one or more digits followed by $
-    vset = set ( re.findall(r'\$[\-0-9]+\$',pe) )
+    # This regular expression will match $ followed by zero or more "minuses" followed by one or more digits followed by $
+    # vset = set ( re.findall(r'\$[\-]*[0-9]+\$',pe) )
+    # This regular expression will match $ followed by an optional minus sign followed by one or more digits followed by $
+    vset = set ( re.findall(r'\$\-?[0-9]+\$',pe) )
     # Replace each string
     for vexp in vset:
         vindex = int(vexp.replace("$",""))
         if vindex < 0:
           vname = "?"
         else:
-          vname = param_id_name_mapping[vindex]
+          vname = parameter_ID_name_dict[vindex]
         #print ( "Substitute variable name ", vname, " in place of $" + str(vindex) + "$" )
         pe = pe.replace ( vexp, vname )
         #print ( "  Result of sub: ", pe )
     return pe    
-
-    """
-    fe = ""
-    i = 0
-    while True:
-        first_marker = pe.find ( "$", i )
-        if first_marker < 0:
-            break
-        second_marker = pe.find ( "$", first_marker+1 )
-        if second_marker < 0:
-            break
-    """
-    #return ( p['expr'] )
-    #return ( "123.0" )
 
 
 
@@ -987,17 +975,18 @@ def update_parameter_dictionary ( mcell ):
     #print ("List contains ", len(plist), " parameters" )
 
     # Build it the new way ...
-    
+
     # Parse all of the expressions and rebuild the mapping dictionaries
-    param_id_name_mapping = {}
-    param_name_id_mapping = {}
-    param_name_expr_mapping = {}
+    parameter_ID_name_dict = {}
+    parameter_name_ID_dict = {}
+    parameter_name_expr_dict = {}
     for p in plist:
-        p.parsed_expr = build_param_expr ( p['id'], p['name'] + " = " + p['expr'], param_id_name_mapping, param_name_id_mapping, param_name_expr_mapping )
+        p.valid = True
+        p.parsed_expr = build_param_expr ( p['id'], p['name'] + " = " + p['expr'], parameter_ID_name_dict, parameter_name_ID_dict, parameter_name_expr_dict )
 
     # Rebuild all parameter expressions
     for p in plist:
-        new_expr = update_param_expr_string ( p, param_id_name_mapping, param_name_id_mapping, param_name_expr_mapping )
+        new_expr = update_param_expr_string ( p, parameter_ID_name_dict, parameter_name_ID_dict, parameter_name_expr_dict )
         # Check to see if it's really changed ... without this check, updating can become recursive because Blender triggers callbacks even if the new value is unchanged
         if p.expr != new_expr:
             #print ( new_expr, " != ", p.expr )
@@ -1006,7 +995,7 @@ def update_parameter_dictionary ( mcell ):
     """
     # Recompute all parameter values
     for p in plist:
-        new_expr = update_param_expr_string ( p, param_id_name_mapping, param_name_id_mapping, param_name_expr_mapping )
+        new_expr = update_param_expr_string ( p, parameter_ID_name_dict, parameter_name_ID_dict, parameter_name_expr_dict )
         # Check to see if it's really changed ... without this check, updating can become recursive because Blender triggers callbacks even if the new value is unchanged
         if p.expr != new_expr:
             #print ( new_expr, " != ", p.expr )
@@ -1015,12 +1004,12 @@ def update_parameter_dictionary ( mcell ):
 
 
     # Save the dictionary in the mcell properties
-    mcell.general_parameters.parameter_ID_name_dict = ("%s"%param_id_name_mapping)
-    mcell.general_parameters.parameter_name_ID_dict = ("%s"%param_name_id_mapping)
-    mcell.general_parameters.parameter_name_exp_dict = ("%s"%param_name_expr_mapping)
-    #print ( "Parameter ID/Name Dictionary:\n" + str(param_id_name_mapping) )
-    #print ( "Parameter Name/ID Dictionary:\n" + str(param_name_id_mapping) )
-    #print ( "Parameter Name/Expression Dictionary:\n" + str(param_name_expr_mapping) )
+    mcell.general_parameters.parameter_ID_name_dict = ("%s"%parameter_ID_name_dict)
+    mcell.general_parameters.parameter_name_ID_dict = ("%s"%parameter_name_ID_dict)
+    mcell.general_parameters.parameter_name_expr_dict = ("%s"%parameter_name_expr_dict)
+    #print ( "Parameter ID/Name Dictionary:\n" + str(parameter_ID_name_dict) )
+    #print ( "Parameter Name/ID Dictionary:\n" + str(parameter_name_ID_dict) )
+    #print ( "Parameter Name/Expression Dictionary:\n" + str(parameter_name_expr_dict) )
 
     """
     # Build it the old way ... should still work
