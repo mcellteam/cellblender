@@ -911,13 +911,13 @@ def recurse_tree_symbols ( pt, current_expr, param_marker, spacing, parameter_na
     return None
 
 
-def build_param_expr ( param_id, expr, param_id_name_dict, parameter_name_ID_dict, parameter_name_expr_dict ):
+def build_param_expr ( param_id, expr, parameter_ID_name_dict, parameter_name_ID_dict, parameter_ID_expr_dict ):
     """ Converts a string expression into a string expression with separator-delimited parameter indicies"""
     """ Notes (assuming the param_marker char is $):
           Expression: "A * (B + C)" becomes something like: "$3$ * ( $22$ + $5$ )"
             where A is at index 3, B is at index 22, and C is at index 5
-          The param_id_dict dictionary contains the current mapping of names and ID numbers
-          The parameter_name_expr_dict dictionary contains the current mapping of names and expressions
+          The parameter_ID_name_dict and parameter_name_ID_dict dictionaries contain the current mapping of names and ID numbers
+          The parameter_ID_expr_dict dictionary contains the current mapping of IDs and expressions
           An ID of -1 means that the parameter is not found: "$3$ * ($-1$ + $5$)"
           If expr contains an equal sign, then the left-hand parameter is added to the dictionary if not already present
     """
@@ -939,15 +939,15 @@ def build_param_expr ( param_id, expr, param_id_name_dict, parameter_name_ID_dic
 
     if new_entry != None:
         # Set up the name to ID mapping as bi-directional
-        param_id_name_dict[param_id] = new_entry
+        parameter_ID_name_dict[param_id] = new_entry
         parameter_name_ID_dict[new_entry] = param_id
-        # Set up the parameter name to expression mapping
-        parameter_name_expr_dict[new_entry] = parameterized_expr
+        # Set up the parameter ID to expression mapping
+        parameter_ID_expr_dict[param_id] = parameterized_expr
 
     return parameterized_expr
 
 
-def update_param_expr_string ( p, parameter_ID_name_dict, parameter_name_ID_dict, parameter_name_expr_dict ):
+def update_param_expr_string ( p, parameter_ID_name_dict, parameter_name_ID_dict, parameter_ID_expr_dict ):
     # Substitute the proper names for all $#$ strings in the parsed expression
     pe = p['parsed_expr']
     #print ( "Substitute into ", pe )
@@ -979,23 +979,25 @@ def update_parameter_dictionary ( mcell ):
     # Parse all of the expressions and rebuild the mapping dictionaries
     parameter_ID_name_dict = {}
     parameter_name_ID_dict = {}
-    parameter_name_expr_dict = {}
+    parameter_ID_expr_dict = {}
     for p in plist:
         p.valid = True
-        p.parsed_expr = build_param_expr ( p['id'], p['name'] + " = " + p['expr'], parameter_ID_name_dict, parameter_name_ID_dict, parameter_name_expr_dict )
+        p.parsed_expr = build_param_expr ( p['id'], p['name'] + " = " + p['expr'], parameter_ID_name_dict, parameter_name_ID_dict, parameter_ID_expr_dict )
 
     # Rebuild all parameter expressions
     for p in plist:
-        new_expr = update_param_expr_string ( p, parameter_ID_name_dict, parameter_name_ID_dict, parameter_name_expr_dict )
+        new_expr = update_param_expr_string ( p, parameter_ID_name_dict, parameter_name_ID_dict, parameter_ID_expr_dict )
         # Check to see if it's really changed ... without this check, updating can become recursive because Blender triggers callbacks even if the new value is unchanged
         if p.expr != new_expr:
             #print ( new_expr, " != ", p.expr )
             p.expr = new_expr
+        if '?' in p.expr:
+            p.valid = False
 
     """
     # Recompute all parameter values
     for p in plist:
-        new_expr = update_param_expr_string ( p, parameter_ID_name_dict, parameter_name_ID_dict, parameter_name_expr_dict )
+        new_expr = update_param_expr_string ( p, parameter_ID_name_dict, parameter_name_ID_dict, parameter_ID_expr_dict )
         # Check to see if it's really changed ... without this check, updating can become recursive because Blender triggers callbacks even if the new value is unchanged
         if p.expr != new_expr:
             #print ( new_expr, " != ", p.expr )
@@ -1006,10 +1008,10 @@ def update_parameter_dictionary ( mcell ):
     # Save the dictionary in the mcell properties
     mcell.general_parameters.parameter_ID_name_dict = ("%s"%parameter_ID_name_dict)
     mcell.general_parameters.parameter_name_ID_dict = ("%s"%parameter_name_ID_dict)
-    mcell.general_parameters.parameter_name_expr_dict = ("%s"%parameter_name_expr_dict)
+    mcell.general_parameters.parameter_ID_expr_dict = ("%s"%parameter_ID_expr_dict)
     #print ( "Parameter ID/Name Dictionary:\n" + str(parameter_ID_name_dict) )
     #print ( "Parameter Name/ID Dictionary:\n" + str(parameter_name_ID_dict) )
-    #print ( "Parameter Name/Expression Dictionary:\n" + str(parameter_name_expr_dict) )
+    #print ( "Parameter ID/Expression Dictionary:\n" + str(parameter_ID_expr_dict) )
 
     """
     # Build it the old way ... should still work
@@ -1034,6 +1036,8 @@ def update_parameter_name ( self, context ):
     # The following check was needed because mcell.general_parameters.parameter_list[newest_item]['expr'] wasn't being set yet for some reason
     if self.initialized:
         mcell = context.scene.mcell
+        p_id_name_dict = eval(mcell.general_parameters.parameter_ID_name_dict)
+        p_id_name_dict[self.id] = self.name
         #pdict_string = mcell.general_parameters.parameter_name_ID_dict
         #pdict = eval(pdict_string)
     
