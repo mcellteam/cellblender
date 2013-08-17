@@ -41,6 +41,9 @@ import shutil
 import cellblender
 
 
+from . import ParameterSpace
+
+
 # We use per module class registration/unregistration
 def register():
     bpy.utils.register_module(__name__)
