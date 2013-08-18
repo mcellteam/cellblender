@@ -1083,6 +1083,27 @@ def update_parameter_dictionary ( mcell ):
     """
 
 
+
+def update_parameter_properties ( mcell, ps ):
+    plist = mcell.general_parameters.parameter_list
+    
+    ps.eval_all()
+
+    for p in plist:
+        p.valid = True
+        p.parsed_expr = "no longer needed"
+
+    # Rebuild all parameter expressions
+    for p in plist:
+        new_expr = ps.get_expr(p.id)
+        if p.expr != new_expr:
+            #print ( new_expr, " != ", p.expr )
+            p.expr = new_expr
+        if '?' in p.expr:
+            p.valid = False
+
+
+
 def update_parameter_name ( self, context ):
     # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one so their expressions show the new name
     print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" + "   self is of type " + str(type(self)) )
@@ -1096,6 +1117,8 @@ def update_parameter_name ( self, context ):
         ps.dump()
         
         ps.set_name ( self.id, self.name )
+
+        update_parameter_properties ( mcell, ps )
         
         print ( "After Rename:" )
         ps.dump()
@@ -1103,27 +1126,46 @@ def update_parameter_name ( self, context ):
         mcell.general_parameters.parameter_space_string = check_in_parameter_space ( ps )
 
         
-        p_id_name_dict = eval(mcell.general_parameters.parameter_ID_name_dict)
-        p_id_name_dict[self.id] = self.name
+        #p_id_name_dict = eval(mcell.general_parameters.parameter_ID_name_dict)
+        #p_id_name_dict[self.id] = self.name
         #pdict_string = mcell.general_parameters.parameter_name_ID_dict
         #pdict = eval(pdict_string)
     
-        update_parameter_dictionary(mcell)
+        #update_parameter_dictionary(mcell)
     #print ( "\nmcell OK\n" )
 
 def update_parameter_expression ( self, context ):
     # Called when a parameter expression changes - needs to recompute the result and update all parameters that depend on this one
-    #print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "]" )
+    print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "] to " + self.expr )
     mcell = context.scene.mcell
-    pdict_string = mcell.general_parameters.parameter_name_ID_dict
+    
+    
+    ps = check_out_parameter_space ( mcell.general_parameters.parameter_space_string )
+
+    print ( "Before Updating Expression:" )
+    ps.dump()
+    
+    ps.set_expr ( self.id, self.expr )
+    
+    update_parameter_properties ( mcell, ps )
+        
+    print ( "After Updating Expression:" )
+    ps.dump()
+    
+    mcell.general_parameters.parameter_space_string = check_in_parameter_space ( ps )
+
+    
+    
+    
+    #pdict_string = mcell.general_parameters.parameter_name_ID_dict
     # For now, don't use the stored parameters ... rebuild them from the individual properties first to ensure consistency.
-    pdict_string = "{}"
+    #pdict_string = "{}"
     # print ( "pdict_string = ", pdict_string )
     # Extract the dictionary from the string property
-    pdict = eval(pdict_string)
-    parameter = self
+    #pdict = eval(pdict_string)
+    #parameter = self
 
-    update_parameter_dictionary(mcell)
+    #update_parameter_dictionary(mcell)
     """
     param_dictionary = mcell.general_parameters.parameter_dict
     s = parameter.name + " = " + parameter.expr
@@ -1139,7 +1181,7 @@ def update_parameter_expression ( self, context ):
     """
 
     # Store the dictionary back into the string property
-    mcell.general_parameters.parameter_name_ID_dict = ("%s"%pdict)
+    #mcell.general_parameters.parameter_name_ID_dict = ("%s"%pdict)
     # print ( "Parameter Dictionary = ", mcell.general_parameters.parameter_name_ID_dict )
 
     self.initialized = True
