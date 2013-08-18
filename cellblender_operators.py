@@ -925,6 +925,7 @@ import symbol
 #print ( "Recursion Limit = ", sys.getrecursionlimit() )
 #sys.setrecursionlimit(1000)
 
+"""
 def recurse_tree_symbols ( pt, current_expr, param_marker, spacing, parameter_name_ID_dict ):
 
     MDL_KEYWORDS = { 'SQRT': 'sqrt', 'EXP': 'exp', 'LOG': 'log', 'LOG10': 'log10', 'SIN': 'sin', 'COS': 'cos', 'TAN': 'tan', 'ASIN': 'asin', 'ACOS':'acos', 'ATAN': 'atan', 'ABS': 'abs', 'CEIL': 'ceil', 'FLOOR': 'floor', 'MAX': 'max', 'MIN': 'min', 'RAND_UNIFORM': 'uniform', 'RAND_GAUSSIAN': 'gauss', 'PI': 'PI', 'SEED': 'SEED' }
@@ -962,18 +963,10 @@ def recurse_tree_symbols ( pt, current_expr, param_marker, spacing, parameter_na
                     current_expr = next_segment
             return current_expr
     return None
+"""
 
-
+"""
 def build_param_expr ( param_id, expr, parameter_ID_name_dict, parameter_name_ID_dict, parameter_ID_expr_dict ):
-    """ Converts a string expression into a string expression with separator-delimited parameter indicies"""
-    """ Notes (assuming the param_marker char is $):
-          Expression: "A * (B + C)" becomes something like: "$3$ * ( $22$ + $5$ )"
-            where A is at index 3, B is at index 22, and C is at index 5
-          The parameter_ID_name_dict and parameter_name_ID_dict dictionaries contain the current mapping of names and ID numbers
-          The parameter_ID_expr_dict dictionary contains the current mapping of IDs and expressions
-          An ID of -1 means that the parameter is not found: "$3$ * ($-1$ + $5$)"
-          If expr contains an equal sign, then the left-hand parameter is added to the dictionary if not already present
-    """
 
     new_entry = None
     param_expr = expr
@@ -998,8 +991,9 @@ def build_param_expr ( param_id, expr, parameter_ID_name_dict, parameter_name_ID
         parameter_ID_expr_dict[param_id] = parameterized_expr
 
     return parameterized_expr
+"""
 
-
+"""
 def update_param_expr_string ( p, parameter_ID_name_dict, parameter_name_ID_dict, parameter_ID_expr_dict ):
     # Substitute the proper names for all $#$ strings in the parsed expression
     pe = p['parsed_expr']
@@ -1020,9 +1014,9 @@ def update_param_expr_string ( p, parameter_ID_name_dict, parameter_name_ID_dict
         pe = pe.replace ( vexp, vname )
         #print ( "  Result of sub: ", pe )
     return pe    
+"""
 
-
-
+"""
 def update_parameter_dictionary ( mcell ):
     plist = mcell.general_parameters.parameter_list
     #print ("List contains ", len(plist), " parameters" )
@@ -1047,17 +1041,6 @@ def update_parameter_dictionary ( mcell ):
         if '?' in p.expr:
             p.valid = False
 
-    """
-    # Recompute all parameter values
-    for p in plist:
-        new_expr = update_param_expr_string ( p, parameter_ID_name_dict, parameter_name_ID_dict, parameter_ID_expr_dict )
-        # Check to see if it's really changed ... without this check, updating can become recursive because Blender triggers callbacks even if the new value is unchanged
-        if p.expr != new_expr:
-            #print ( new_expr, " != ", p.expr )
-            p.expr = new_expr
-    """
-
-
     # Save the dictionary in the mcell properties
     mcell.general_parameters.parameter_ID_name_dict = ("%s"%parameter_ID_name_dict)
     mcell.general_parameters.parameter_name_ID_dict = ("%s"%parameter_name_ID_dict)
@@ -1065,22 +1048,7 @@ def update_parameter_dictionary ( mcell ):
     #print ( "Parameter ID/Name Dictionary:\n" + str(parameter_ID_name_dict) )
     #print ( "Parameter Name/ID Dictionary:\n" + str(parameter_name_ID_dict) )
     #print ( "Parameter ID/Expression Dictionary:\n" + str(parameter_ID_expr_dict) )
-
-    """
-    # Build it the old way ... should still work
-    plist = mcell.general_parameters.parameter_list
-    pd = {}
-    for p in plist:
-        #print ("Expression: ", p['name'], "[", p['id'], "]", " = ", p['expr'])
-        if add_param ( p['name'] + " = " + p['expr'], pd ) != 0:
-            v = eval_param(p['expr'], pd)
-            p.value = str(v)
-            # print ("  = ", v, " = ", p.value )
-            p.valid = True
-        else:
-            print ("  = Error!!!")
-            p.valid = False
-    """
+"""
 
 
 
