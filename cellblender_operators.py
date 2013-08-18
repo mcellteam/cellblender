@@ -814,23 +814,52 @@ import pickle
   
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
 
+import threading
 
-def check_out_parameter_space ( pickled_ps_string ):
+# This locking system currently assumes that there is no mult-threading
+global checked_out_parameter_space
+checked_out_parameter_space = None
+global parameter_space_lock
+parameter_space_lock = threading.Lock()
+global num_checked_out
+num_checked_out = 0
+
+
+def check_out_parameter_space ( pickled_ps_string_parent ):
+    global parameter_space_lock
+    global checked_out_parameter_space
+    global num_checked_out
     print ( "Checking out parameters..." )
-    if (pickled_ps_string == None) or (len(pickled_ps_string) <= 0):
-        print ( "No parameters stored, generating a new parameter space" )
-        ps = ParameterSpace.ParameterSpace()
-    else:
-        print ( "Parameter space found, calling pickle.loads" )
-        ps = pickle.loads ( pickled_ps_string.encode('latin1') )
-    #ps.eval_all ( True )
-    return ps
+    if parameter_space_lock.acquire(False):
+        # The lock was successful so no one else is using this parameter space
+        print ("@@@@ Locked")
+        pickled_ps_string = pickled_ps_string_parent.parameter_space_string
+        ps = None
+        if (pickled_ps_string == None) or (len(pickled_ps_string) <= 0):
+            print ( "No parameters stored, generating a new parameter space" )
+            ps = ParameterSpace.ParameterSpace()
+        else:
+            print ( "Parameter space found, calling pickle.loads" )
+            ps = pickle.loads ( pickled_ps_string.encode('latin1') )
+        checked_out_parameter_space = ps
+    num_checked_out += 1
+    return checked_out_parameter_space
 
-def check_in_parameter_space ( ps ):
+def check_in_parameter_space ( pickled_ps_string_parent, ps ):
+    global parameter_space_lock
+    global checked_out_parameter_space
+    global num_checked_out
     print ( "Checking in parameters." )
     ps_string = pickle.dumps(ps,protocol=0).decode('latin1')
     # print ( "Parameter string = " + ps_string )
-    return ps_string
+    # Always save the parameters whenever checked in to ensure the latest is saved in the .blend file
+    pickled_ps_string_parent.parameter_space_string = ps_string
+    num_checked_out += -1
+    if num_checked_out <= 0:
+        parameter_space_lock.release()
+        num_checked_out = 0
+        print ("@@@@ UnLocked")
+
 
 
 class MCELL_OT_add_parameter(bpy.types.Operator):
@@ -843,7 +872,7 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
         print ( "Adding Parameter ... inside execute" )
         mcell = context.scene.mcell
         
-        ps = check_out_parameter_space ( mcell.general_parameters.parameter_space_string )
+        ps = check_out_parameter_space ( mcell.general_parameters )
         print ( "Before adding a new parameter:" )
         ps.dump()
 
@@ -867,7 +896,7 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
         print ( "After adding a new parameter:" )
         ps.dump()
 
-        mcell.general_parameters.parameter_space_string = check_in_parameter_space ( ps )
+        check_in_parameter_space ( mcell.general_parameters, ps )
         
         return {'FINISHED'}
 
@@ -883,7 +912,7 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
         
         if mcell.general_parameters.active_par_index >= 0:
 
-            ps = check_out_parameter_space ( mcell.general_parameters.parameter_space_string )
+            ps = check_out_parameter_space ( mcell.general_parameters )
             print ( "Before deleting a parameter:" )
             ps.dump()
 
@@ -904,7 +933,7 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
             print ( "After deleting a parameter:" )
             ps.dump()
             
-            mcell.general_parameters.parameter_space_string = check_in_parameter_space ( ps )
+            check_in_parameter_space ( mcell.general_parameters, ps )
         
         return {'FINISHED'}
 
@@ -930,11 +959,6 @@ def update_parameter_properties ( mcell, ps ):
             #print ( new_value, " != ", p.value )
             p.value = new_value
 
-import threading
-
-global parameter_space_lock
-
-parameter_space_lock = threading.Lock()
 
 def update_parameter_name ( self, context ):
     # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one so their expressions show the new name
@@ -943,23 +967,19 @@ def update_parameter_name ( self, context ):
     if self.initialized:
         mcell = context.scene.mcell
 
-        parameter_space_lock.acquire()
-        try:
-            ps = check_out_parameter_space ( mcell.general_parameters.parameter_space_string )
+        ps = check_out_parameter_space ( mcell.general_parameters )
 
-            print ( "Before Rename:" )
-            ps.dump()
-            
-            ps.set_name ( self.id, self.name )
+        print ( "Before Rename:" )
+        ps.dump()
+        
+        ps.set_name ( self.id, self.name )
 
-            update_parameter_properties ( mcell, ps )
-            
-            print ( "After Rename:" )
-            ps.dump()
-            
-            mcell.general_parameters.parameter_space_string = check_in_parameter_space ( ps )
-        finally:
-            parameter_space_lock.release()
+        update_parameter_properties ( mcell, ps )
+        
+        print ( "After Rename:" )
+        ps.dump()
+        
+        check_in_parameter_space ( mcell.general_parameters, ps )
 
 
 def update_parameter_expression ( self, context ):
@@ -967,26 +987,22 @@ def update_parameter_expression ( self, context ):
     print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "] to " + self.expr )
     mcell = context.scene.mcell
 
-    parameter_space_lock.acquire()
-    try:
-        ps = check_out_parameter_space ( mcell.general_parameters.parameter_space_string )
+    ps = check_out_parameter_space ( mcell.general_parameters )
 
-        print ( "Before Updating Expression:" )
-        ps.dump()
+    print ( "Before Updating Expression:" )
+    ps.dump()
 
-        # # # # # #    P R O B L E M    H E R E   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! <<<<<<<<<<<<<<<<<<<<<<<<<<
-        ps.set_expr ( self.id, self.expr )
+    # # # # # #    P R O B L E M    H E R E   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! <<<<<<<<<<<<<<<<<<<<<<<<<<
+    ps.set_expr ( self.id, self.expr )
+    
+    update_parameter_properties ( mcell, ps )
         
-        update_parameter_properties ( mcell, ps )
-            
-        print ( "After Updating Expression:" )
-        ps.dump()
-        
-        mcell.general_parameters.parameter_space_string = check_in_parameter_space ( ps )
+    print ( "After Updating Expression:" )
+    ps.dump()
+    
+    check_in_parameter_space ( mcell.general_parameters, ps )
 
-        self.initialized = True
-    finally:
-        parameter_space_lock.release()
+    self.initialized = True
 
 	
 #########################################################################################################################################
