@@ -877,19 +877,34 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
         ps.dump()
         """
 
-        mcell.general_parameters.next_parameter_ID += 1
+        mcell.general_parameters.next_parameter_ID += 1  # May not be needed with ParameterSpace
         mcell.general_parameters.parameter_list.add()
         mcell.general_parameters.active_par_index = len(mcell.general_parameters.parameter_list)-1
-        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].id = mcell.general_parameters.next_parameter_ID
-        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = "P%s" %(mcell.general_parameters.next_parameter_ID)
-        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].expr = "0"
-        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].parsed_expr = "0"
-        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].value = "0"
+        # mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].id = mcell.general_parameters.next_parameter_ID
+        # mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = "P%s" %(mcell.general_parameters.next_parameter_ID)
+
+        new_id = ps.define ( None, "0" )   # Let the ParameterSpace pick the name
+        new_name = ps.get_name ( new_id )  # Get whatever ID was created
+
+        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].id = new_id
+        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = new_name
+        
+        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].expr = ps.get_expr(new_id)
+        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].value = str ( ps.eval_all(False,new_id) )
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].valid = True
+
+
+        #mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].parsed_expr = "0"
+        #mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].value = "0"
+        #mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].valid = True
+
+        print ( "After adding a new parameter:" )
+        ps.dump()
 
         mcell.general_parameters.parameter_space_string = check_in_parameter_space ( ps )
         
         return {'FINISHED'}
+
 
 class MCELL_OT_remove_parameter(bpy.types.Operator):
     bl_idname = "mcell.remove_parameter"
@@ -899,14 +914,36 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
-        mcell.general_parameters.parameter_list.remove(mcell.general_parameters.active_par_index)
-        mcell.general_parameters.active_par_index = mcell.general_parameters.active_par_index-1
-        if len(mcell.general_parameters.parameter_list) == 0:
-            # Reset the parameter ID when the list is empty (provides some way to reset)
-            mcell.general_parameters.next_parameter_ID = 0
-        if (mcell.general_parameters.active_par_index < 0):
-            # Ensure that the active parameter isn't negative
-            mcell.general_parameters.active_par_index = 0
+        
+        if mcell.general_parameters.active_par_index >= 0:
+
+            ps = check_out_parameter_space ( mcell.general_parameters.parameter_space_string )
+            print ( "After check_out_parameter_space:" )
+            ps.dump()
+
+            id_to_delete = ps.get_id(mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name)
+            if id_to_delete > 0:
+                ps.delete ( id_to_delete )
+
+            mcell.general_parameters.parameter_list.remove(mcell.general_parameters.active_par_index)
+            mcell.general_parameters.active_par_index = mcell.general_parameters.active_par_index-1
+
+            if len(mcell.general_parameters.parameter_list) == 0:
+                # Reset the parameter ID when the list is empty (provides some way to reset)
+                mcell.general_parameters.next_parameter_ID = 0
+            if (mcell.general_parameters.active_par_index < 0):
+                # Ensure that the active parameter isn't negative
+                mcell.general_parameters.active_par_index = 0
+
+            print ( "After deleting a parameter:" )
+            ps.dump()
+            
+            #ps.delete_all()
+            #print ( "After deleting ALL:" )
+            #ps.dump()
+
+            mcell.general_parameters.parameter_space_string = check_in_parameter_space ( ps )
+        
         return {'FINISHED'}
 
 
