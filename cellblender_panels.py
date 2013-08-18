@@ -718,7 +718,7 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
             #layout.prop(par, "floatarr")
             layout.prop(par, "name")
             layout.prop(par, "expr")
-            layout.prop(par, "value")
+            #layout.prop(par, "value")
             layout.prop(par, "unit")
             layout.prop(par, "desc")
 #########################################################################################################################################
