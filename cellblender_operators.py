@@ -1059,7 +1059,7 @@ def update_parameter_properties ( mcell, ps ):
 
     for p in plist:
         p.valid = True
-        p.parsed_expr = "no longer needed"
+        #p.parsed_expr = "no longer needed"
 
     # Rebuild all parameter expressions
     for p in plist:
@@ -1069,6 +1069,10 @@ def update_parameter_properties ( mcell, ps ):
             p.expr = new_expr
         if '?' in p.expr:
             p.valid = False
+        new_value = ps.get_value(p.id)
+        if p.value != new_value:
+            #print ( new_value, " != ", p.value )
+            p.value = new_value
 
 
 

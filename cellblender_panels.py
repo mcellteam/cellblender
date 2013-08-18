@@ -713,12 +713,12 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
         if len(mcell.general_parameters.parameter_list) > 0:
             par = mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index]
             layout.prop(par, "id")
-            layout.prop(par, "parsed_expr")
+            #layout.prop(par, "parsed_expr")
             #layout.prop(par, "intarr")
             #layout.prop(par, "floatarr")
             layout.prop(par, "name")
             layout.prop(par, "expr")
-            # layout.prop(par, "value")
+            layout.prop(par, "value")
             layout.prop(par, "unit")
             layout.prop(par, "desc")
 #########################################################################################################################################

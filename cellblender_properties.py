@@ -790,7 +790,7 @@ class MCellGeneralParameterProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.update_parameter_name)
     expr = StringProperty(name="Expression", default="0", description="Expression to be evaluated for this parameter",
         update=cellblender_operators.update_parameter_expression)
-    parsed_expr = StringProperty(name="Parsed Expression", default="", description="Parsed Expression with Parameter Indicies")
+    parsed_expr = StringProperty(name="Parsed Expression", default="No longer needed", description="Parsed Expression with Parameter Indicies")
 
     value = StringProperty(name="Value", default="0", description="Current evaluated value for this parameter" )
     valid = BoolProperty(default=False)
