@@ -820,6 +820,10 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
 
 
 
+    parameter_space_string = StringProperty ( name="ParameterSpace", default="", description="ParameterSpace object pickled as a string" )
+
+
+
 ###########################################################################################################################
 
 class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):

@@ -810,9 +810,42 @@ class MCELL_OT_parameter_remove(bpy.types.Operator):
 	
 #########################################################################################################################################
 
-
+import pickle
   
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
+
+"""
+I did a lot of struggling to get the pickled object into a string so Blender could save it.
+
+For example, create a byte array of all possible 8 bit values:
+
+  b = bytes ( [i for i in range(256)] )
+
+Then to convert those bytes to a string and back:
+
+  s = b.decode('latin1')
+  s2b = s.encode('latin1')
+  s == s2b
+  True
+"""
+
+def check_out_parameter_space ( pickled_ps_string ):
+    print ( "Taking out parameters!!" )
+    if (pickled_ps_string == None) or (len(pickled_ps_string) <= 0):
+        print ( "No parameters stored, generating a new parameter space" )
+        ps = ParameterSpace.ParameterSpace()
+    else:
+        print ( "Parameter space found, calling pickle.loads" )
+        ps = pickle.loads ( pickled_ps_string.encode('latin1') )
+    ps.eval_all ( True )
+    return ps
+
+def check_in_parameter_space ( ps ):
+    print ( "Putting away parameters!!" )
+    ps_string = pickle.dumps(ps,protocol=0).decode('latin1')
+    # print ( "Parameter string = " + ps_string )
+    return ps_string
+
 
 """
 Notes:
@@ -831,6 +864,19 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
     def execute(self, context):
         print ( "Adding Parameter ... inside execute" )
         mcell = context.scene.mcell
+        
+        ps = check_out_parameter_space ( mcell.general_parameters.parameter_space_string )
+        print ( "After check_out_parameter_space:" )
+        ps.dump()
+
+        """
+        ps.define ( "A", "5" )
+        ps.define ( "B", "A * 2" )
+        ps.define ( "C", "A + B" )
+        print ( "After defining some parameters:" )
+        ps.dump()
+        """
+
         mcell.general_parameters.next_parameter_ID += 1
         mcell.general_parameters.parameter_list.add()
         mcell.general_parameters.active_par_index = len(mcell.general_parameters.parameter_list)-1
@@ -840,6 +886,8 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].parsed_expr = "0"
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].value = "0"
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].valid = True
+
+        mcell.general_parameters.parameter_space_string = check_in_parameter_space ( ps )
         
         return {'FINISHED'}
 
