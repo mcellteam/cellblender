@@ -814,20 +814,6 @@ import pickle
   
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
 
-"""
-I did a lot of struggling to get the pickled object into a string so Blender could save it.
-
-For example, create a byte array of all possible 8 bit values:
-
-  b = bytes ( [i for i in range(256)] )
-
-Then to convert those bytes to a string and back:
-
-  s = b.decode('latin1')
-  s2b = s.encode('latin1')
-  s == s2b
-  True
-"""
 
 def check_out_parameter_space ( pickled_ps_string ):
     print ( "Taking out parameters!!" )
@@ -847,14 +833,6 @@ def check_in_parameter_space ( ps ):
     return ps_string
 
 
-"""
-Notes:
-  Loading 50000 parameters (32.3MB blend file) took about 30 seconds overall  (and many minutes to build)
-  Loading 10000 parameters ( 6.8MB blend file) took about  2 seconds overall
-  Loading  5000 parameters ( 3.6MB blend file) took about  1 second  overall
-  Loading  2000 parameters ( 3.6MB blend file) was not easily distinguished from loading 20 parameters
-  
-"""
 class MCELL_OT_add_parameter(bpy.types.Operator):
     bl_idname = "mcell.add_parameter"
     bl_label = "Add Parameter"
@@ -868,14 +846,6 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
         ps = check_out_parameter_space ( mcell.general_parameters.parameter_space_string )
         print ( "After check_out_parameter_space:" )
         ps.dump()
-
-        """
-        ps.define ( "A", "5" )
-        ps.define ( "B", "A * 2" )
-        ps.define ( "C", "A + B" )
-        print ( "After defining some parameters:" )
-        ps.dump()
-        """
 
         mcell.general_parameters.next_parameter_ID += 1  # May not be needed with ParameterSpace
         mcell.general_parameters.parameter_list.add()
@@ -892,7 +862,6 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].expr = ps.get_expr(new_id)
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].value = str ( ps.eval_all(False,new_id) )
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].valid = True
-
 
         #mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].parsed_expr = "0"
         #mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].value = "0"
@@ -938,10 +907,6 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
             print ( "After deleting a parameter:" )
             ps.dump()
             
-            #ps.delete_all()
-            #print ( "After deleting ALL:" )
-            #ps.dump()
-
             mcell.general_parameters.parameter_space_string = check_in_parameter_space ( ps )
         
         return {'FINISHED'}
@@ -1124,6 +1089,20 @@ def update_parameter_name ( self, context ):
     # The following check was needed because mcell.general_parameters.parameter_list[newest_item]['expr'] wasn't being set yet for some reason
     if self.initialized:
         mcell = context.scene.mcell
+
+        ps = check_out_parameter_space ( mcell.general_parameters.parameter_space_string )
+
+        print ( "Before Rename:" )
+        ps.dump()
+        
+        ps.set_name ( self.id, self.name )
+        
+        print ( "After Rename:" )
+        ps.dump()
+        
+        mcell.general_parameters.parameter_space_string = check_in_parameter_space ( ps )
+
+        
         p_id_name_dict = eval(mcell.general_parameters.parameter_ID_name_dict)
         p_id_name_dict[self.id] = self.name
         #pdict_string = mcell.general_parameters.parameter_name_ID_dict
