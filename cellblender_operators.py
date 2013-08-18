@@ -816,18 +816,18 @@ import pickle
 
 
 def check_out_parameter_space ( pickled_ps_string ):
-    print ( "Taking out parameters!!" )
+    print ( "Checking out parameters..." )
     if (pickled_ps_string == None) or (len(pickled_ps_string) <= 0):
         print ( "No parameters stored, generating a new parameter space" )
         ps = ParameterSpace.ParameterSpace()
     else:
         print ( "Parameter space found, calling pickle.loads" )
         ps = pickle.loads ( pickled_ps_string.encode('latin1') )
-    ps.eval_all ( True )
+    #ps.eval_all ( True )
     return ps
 
 def check_in_parameter_space ( ps ):
-    print ( "Putting away parameters!!" )
+    print ( "Checking in parameters." )
     ps_string = pickle.dumps(ps,protocol=0).decode('latin1')
     # print ( "Parameter string = " + ps_string )
     return ps_string
@@ -844,14 +844,12 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
         mcell = context.scene.mcell
         
         ps = check_out_parameter_space ( mcell.general_parameters.parameter_space_string )
-        print ( "After check_out_parameter_space:" )
+        print ( "Before adding a new parameter:" )
         ps.dump()
 
-        mcell.general_parameters.next_parameter_ID += 1  # May not be needed with ParameterSpace
+        # mcell.general_parameters.next_parameter_ID += 1  # May not be needed with ParameterSpace
         mcell.general_parameters.parameter_list.add()
         mcell.general_parameters.active_par_index = len(mcell.general_parameters.parameter_list)-1
-        # mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].id = mcell.general_parameters.next_parameter_ID
-        # mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = "P%s" %(mcell.general_parameters.next_parameter_ID)
 
         new_id = ps.define ( None, "0" )   # Let the ParameterSpace pick the name
         new_name = ps.get_name ( new_id )  # Get whatever ID was created
@@ -860,12 +858,11 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = new_name
         
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].expr = ps.get_expr(new_id)
+        
+        ps.eval_all(False,-1)  # Try forcing the re-evaluation of all parameters
+
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].value = str ( ps.eval_all(False,new_id) )
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].valid = True
-
-        #mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].parsed_expr = "0"
-        #mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].value = "0"
-        #mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].valid = True
 
         print ( "After adding a new parameter:" )
         ps.dump()
@@ -887,7 +884,7 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
         if mcell.general_parameters.active_par_index >= 0:
 
             ps = check_out_parameter_space ( mcell.general_parameters.parameter_space_string )
-            print ( "After check_out_parameter_space:" )
+            print ( "Before deleting a parameter:" )
             ps.dump()
 
             id_to_delete = ps.get_id(mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name)
@@ -897,9 +894,9 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
             mcell.general_parameters.parameter_list.remove(mcell.general_parameters.active_par_index)
             mcell.general_parameters.active_par_index = mcell.general_parameters.active_par_index-1
 
-            if len(mcell.general_parameters.parameter_list) == 0:
-                # Reset the parameter ID when the list is empty (provides some way to reset)
-                mcell.general_parameters.next_parameter_ID = 0
+            #if len(mcell.general_parameters.parameter_list) == 0:
+            #    # Reset the parameter ID when the list is empty (provides some way to reset)
+            #    mcell.general_parameters.next_parameter_ID = 0
             if (mcell.general_parameters.active_par_index < 0):
                 # Ensure that the active parameter isn't negative
                 mcell.general_parameters.active_par_index = 0
@@ -912,146 +909,6 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
         return {'FINISHED'}
 
 
-# Imports for Parameter Parsing / Evaluation Code
-
-from math import *
-from random import uniform, gauss
-import parser
-import re
-import token
-import symbol
-
-#import sys
-#print ( "Recursion Limit = ", sys.getrecursionlimit() )
-#sys.setrecursionlimit(1000)
-
-"""
-def recurse_tree_symbols ( pt, current_expr, param_marker, spacing, parameter_name_ID_dict ):
-
-    MDL_KEYWORDS = { 'SQRT': 'sqrt', 'EXP': 'exp', 'LOG': 'log', 'LOG10': 'log10', 'SIN': 'sin', 'COS': 'cos', 'TAN': 'tan', 'ASIN': 'asin', 'ACOS':'acos', 'ATAN': 'atan', 'ABS': 'abs', 'CEIL': 'ceil', 'FLOOR': 'floor', 'MAX': 'max', 'MIN': 'min', 'RAND_UNIFORM': 'uniform', 'RAND_GAUSSIAN': 'gauss', 'PI': 'PI', 'SEED': 'SEED' }
-
-    if (type(pt) == type((1,1))):
-        # This is a tuple, so find out if it's a terminal leaf in the parse tree
-
-        #print ( "recurse_tree_symbols with a tuple (", current_expr, ")" )
-        #print ( "  pt = ", str(pt) )
-
-        terminal = False
-        if len(pt) == 2:
-            if type(pt[1]) == type("abc"):
-                terminal = True
-
-        if terminal:
-            # This is a 2-tuple with a type and value
-            if pt[0] == token.NAME:
-                if pt[1] in MDL_KEYWORDS:
-                    # This is a recognized name and not a user-defined symbol
-                    return current_expr + spacing + pt[1]
-                else:
-                    # This must be a user-defined symbol
-                    par_id = -1
-                    if pt[1] in parameter_name_ID_dict:
-                        par_id = parameter_name_ID_dict[pt[1]]
-                    return current_expr + spacing + param_marker + str(par_id) + param_marker
-            else:
-                return current_expr + spacing + pt[1]
-        else:
-            # Break it down further
-            for i in range(len(pt)):
-                next_segment = recurse_tree_symbols ( pt[i], current_expr, param_marker, spacing, parameter_name_ID_dict )
-                if next_segment != None:
-                    current_expr = next_segment
-            return current_expr
-    return None
-"""
-
-"""
-def build_param_expr ( param_id, expr, parameter_ID_name_dict, parameter_name_ID_dict, parameter_ID_expr_dict ):
-
-    new_entry = None
-    param_expr = expr
-    param_split = expr.split('=')
-    if(len(param_split)==2):
-        new_entry = param_split[0].strip()
-        param_expr = param_split[1].strip()
-    else:
-        return 0
-
-    param_marker = '$'
-    st = parser.expr(param_expr)
-    pt = st.totuple()
-    
-    parameterized_expr = recurse_tree_symbols ( pt, "", param_marker, "", parameter_name_ID_dict );
-
-    if new_entry != None:
-        # Set up the name to ID mapping as bi-directional
-        parameter_ID_name_dict[param_id] = new_entry
-        parameter_name_ID_dict[new_entry] = param_id
-        # Set up the parameter ID to expression mapping
-        parameter_ID_expr_dict[param_id] = parameterized_expr
-
-    return parameterized_expr
-"""
-
-"""
-def update_param_expr_string ( p, parameter_ID_name_dict, parameter_name_ID_dict, parameter_ID_expr_dict ):
-    # Substitute the proper names for all $#$ strings in the parsed expression
-    pe = p['parsed_expr']
-    #print ( "Substitute into ", pe )
-    # Build a set of all variables where a variable is an integer enclosed in dollar signs ($). For example "$32$" represents a variable
-    # This regular expression will match $ followed by zero or more "minuses" followed by one or more digits followed by $
-    # vset = set ( re.findall(r'\$[\-]*[0-9]+\$',pe) )
-    # This regular expression will match $ followed by an optional minus sign followed by one or more digits followed by $
-    vset = set ( re.findall(r'\$\-?[0-9]+\$',pe) )
-    # Replace each string
-    for vexp in vset:
-        vindex = int(vexp.replace("$",""))
-        if vindex < 0:
-          vname = "?"
-        else:
-          vname = parameter_ID_name_dict[vindex]
-        #print ( "Substitute variable name ", vname, " in place of $" + str(vindex) + "$" )
-        pe = pe.replace ( vexp, vname )
-        #print ( "  Result of sub: ", pe )
-    return pe    
-"""
-
-"""
-def update_parameter_dictionary ( mcell ):
-    plist = mcell.general_parameters.parameter_list
-    #print ("List contains ", len(plist), " parameters" )
-
-    # Build it the new way ...
-
-    # Parse all of the expressions and rebuild the mapping dictionaries
-    parameter_ID_name_dict = {}
-    parameter_name_ID_dict = {}
-    parameter_ID_expr_dict = {}
-    for p in plist:
-        p.valid = True
-        p.parsed_expr = build_param_expr ( p['id'], p['name'] + " = " + p['expr'], parameter_ID_name_dict, parameter_name_ID_dict, parameter_ID_expr_dict )
-
-    # Rebuild all parameter expressions
-    for p in plist:
-        new_expr = update_param_expr_string ( p, parameter_ID_name_dict, parameter_name_ID_dict, parameter_ID_expr_dict )
-        # Check to see if it's really changed ... without this check, updating can become recursive because Blender triggers callbacks even if the new value is unchanged
-        if p.expr != new_expr:
-            #print ( new_expr, " != ", p.expr )
-            p.expr = new_expr
-        if '?' in p.expr:
-            p.valid = False
-
-    # Save the dictionary in the mcell properties
-    mcell.general_parameters.parameter_ID_name_dict = ("%s"%parameter_ID_name_dict)
-    mcell.general_parameters.parameter_name_ID_dict = ("%s"%parameter_name_ID_dict)
-    mcell.general_parameters.parameter_ID_expr_dict = ("%s"%parameter_ID_expr_dict)
-    #print ( "Parameter ID/Name Dictionary:\n" + str(parameter_ID_name_dict) )
-    #print ( "Parameter Name/ID Dictionary:\n" + str(parameter_name_ID_dict) )
-    #print ( "Parameter ID/Expression Dictionary:\n" + str(parameter_ID_expr_dict) )
-"""
-
-
-
 def update_parameter_properties ( mcell, ps ):
     plist = mcell.general_parameters.parameter_list
     
@@ -1059,7 +916,6 @@ def update_parameter_properties ( mcell, ps ):
 
     for p in plist:
         p.valid = True
-        #p.parsed_expr = "no longer needed"
 
     # Rebuild all parameter expressions
     for p in plist:
@@ -1074,339 +930,63 @@ def update_parameter_properties ( mcell, ps ):
             #print ( new_value, " != ", p.value )
             p.value = new_value
 
+import threading
 
+global parameter_space_lock
+
+parameter_space_lock = threading.Lock()
 
 def update_parameter_name ( self, context ):
     # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one so their expressions show the new name
-    print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" + "   self is of type " + str(type(self)) )
+    print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
     # The following check was needed because mcell.general_parameters.parameter_list[newest_item]['expr'] wasn't being set yet for some reason
     if self.initialized:
         mcell = context.scene.mcell
 
-        ps = check_out_parameter_space ( mcell.general_parameters.parameter_space_string )
+        parameter_space_lock.acquire()
+        try:
+            ps = check_out_parameter_space ( mcell.general_parameters.parameter_space_string )
 
-        print ( "Before Rename:" )
-        ps.dump()
-        
-        ps.set_name ( self.id, self.name )
+            print ( "Before Rename:" )
+            ps.dump()
+            
+            ps.set_name ( self.id, self.name )
 
-        update_parameter_properties ( mcell, ps )
-        
-        print ( "After Rename:" )
-        ps.dump()
-        
-        mcell.general_parameters.parameter_space_string = check_in_parameter_space ( ps )
+            update_parameter_properties ( mcell, ps )
+            
+            print ( "After Rename:" )
+            ps.dump()
+            
+            mcell.general_parameters.parameter_space_string = check_in_parameter_space ( ps )
+        finally:
+            parameter_space_lock.release()
 
-        
-        #p_id_name_dict = eval(mcell.general_parameters.parameter_ID_name_dict)
-        #p_id_name_dict[self.id] = self.name
-        #pdict_string = mcell.general_parameters.parameter_name_ID_dict
-        #pdict = eval(pdict_string)
-    
-        #update_parameter_dictionary(mcell)
-    #print ( "\nmcell OK\n" )
 
 def update_parameter_expression ( self, context ):
     # Called when a parameter expression changes - needs to recompute the result and update all parameters that depend on this one
     print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "] to " + self.expr )
     mcell = context.scene.mcell
-    
-    
-    ps = check_out_parameter_space ( mcell.general_parameters.parameter_space_string )
 
-    print ( "Before Updating Expression:" )
-    ps.dump()
-    
-    ps.set_expr ( self.id, self.expr )
-    
-    update_parameter_properties ( mcell, ps )
+    parameter_space_lock.acquire()
+    try:
+        ps = check_out_parameter_space ( mcell.general_parameters.parameter_space_string )
+
+        print ( "Before Updating Expression:" )
+        ps.dump()
+
+        # # # # # #    P R O B L E M    H E R E   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! <<<<<<<<<<<<<<<<<<<<<<<<<<
+        ps.set_expr ( self.id, self.expr )
         
-    print ( "After Updating Expression:" )
-    ps.dump()
-    
-    mcell.general_parameters.parameter_space_string = check_in_parameter_space ( ps )
-
-    
-    
-    
-    #pdict_string = mcell.general_parameters.parameter_name_ID_dict
-    # For now, don't use the stored parameters ... rebuild them from the individual properties first to ensure consistency.
-    #pdict_string = "{}"
-    # print ( "pdict_string = ", pdict_string )
-    # Extract the dictionary from the string property
-    #pdict = eval(pdict_string)
-    #parameter = self
-
-    #update_parameter_dictionary(mcell)
-    """
-    param_dictionary = mcell.general_parameters.parameter_dict
-    s = parameter.name + " = " + parameter.expr
-    print ( "Statement: ", s )
-
-    add_param ( s, param_dictionary )    
-    print ( "Parms: ", param_dictionary )
-    """
-    """
-    assignment = parameter.name + " = " + parameter.expr
-
-    print ( "Add: ", assignment )
-    """
-
-    # Store the dictionary back into the string property
-    #mcell.general_parameters.parameter_name_ID_dict = ("%s"%pdict)
-    # print ( "Parameter Dictionary = ", mcell.general_parameters.parameter_name_ID_dict )
-
-    self.initialized = True
-
-
-# Tom's Parameter Parsing / Evaluation Code
-
-def check_param_name(param_name,param_dict):
-    # Check for duplicate param name
-    #if param_name in param_dict.keys():
-    #    print("name already in dict: %s" %(param_name))
-    #    return 0
-
-    # Check for illegal names (Starts with a letter. No special characters.)
-    name_filter = r'^[A-Za-z]+[0-9A-Za-z_.]*$'
-    m = re.match(name_filter, param_name)
-    if m is None:
-        print("name not ok: %s %d" %(param_name,len(param_name)))
-        return 0
-
-    # print("name ok: %s" %(param_name))
-    return 1
-
-
-
-def check_param_expr(param_expr,param_dict):
-
-    # remove white space
-    pe = re.sub(r'[ \t]','',param_expr)
-
-    # Now make sure we have a parsable python expression
-    try:
-        st = parser.expr(pe)
-    except Exception as e:
-        print("syntax error in expression: %s" %(param_expr))
-        print("  exception is: ", e)
-        return None
-
-    func_list = ['SQRT(','EXP(','LOG(','LOG10(','SIN(','COS(','TAN(','ASIN(','ACOS(','ATAN(','ABS(','CEIL(','FLOOR(','MAX(','MIN(','RAND_UNIFORM(','RAND_GAUSSIAN(']
-    const_list = ['PI','SEED']
-
-    # Extract vars, numeric constants, and functions from expression
-    pe_nop = re.sub(r'[+\-*/^)]',' ',pe)
-    pe_nofunc = re.sub(r'[A-Z]+[A-Z0-9_]*\(',' ',pe_nop)
-    pe_var = re.findall(r'[A-Za-z]+[A-Za-z0-9_]*',pe_nofunc)
-    pe_numconst = re.sub(r'[A-Za-z]+[A-Za-z0-9_]*',' ',pe_nofunc).split()
-    pe_func = re.findall(r'[A-Z]+[A-Z0-9_]*\(',pe_nop)
-
-    # Check function calls
-    for f in pe_func:
-        if f not in func_list:
-            print("func %s invalid in expression: %s" %(f,param_expr))
-            return None
-
-    # Check vars
-    param_dep = []
-    for v in pe_var:
-        if v not in param_dict:
-            if v not in const_list:
-                print("var %s undefined in expression: %s" %(v,param_expr))
-                return None
-        else:
-            if v not in param_dep:
-                param_dep.append(v)
-
-    return param_dep
-
-
-def eval_param(param_expr,param_dict):
-
-    from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
-    from random import uniform, gauss
-
-    # remove white space
-    pe = re.sub(r'[ \t]','',param_expr)
-
-    # Convert expression from MDL syntax to equivalent python syntax
-
-    # Substitute "^" with "**"
-    pe_py = re.sub(r'[\^]','**',pe)
-
-    # Substitute MDL funcs with python funcs
-    func_dict = {'SQRT\(': 'sqrt(', 'EXP\(': 'exp(', 'LOG\(': 'log(', 'LOG10\(': 'log10(', 'SIN\(': 'sin(', 'COS\(': 'cos(', 'TAN\(': 'tan(', 'ASIN\(': 'asin(', 'ACOS\(':'acos(', 'ATAN\(': 'atan(', 'ABS\(': 'abs(', 'CEIL\(': 'ceil(', 'FLOOR\(': 'floor(', 'MAX\(': 'max(', 'MIN\(': 'min(', 'RAND_UNIFORM\(': 'uniform(', 'RAND_GAUSSIAN\(': 'gauss('}
-    const_dict = {'PI':pi,'SEED':1}
-    for mdl_func in func_dict.keys():
-        pe_py = re.sub(mdl_func,func_dict[mdl_func],pe_py)
-
-    # Extract vars, numeric constants, and functions from expression
-    pe_nop = re.sub(r'[+\-*/^)]',' ',pe_py)
-    pe_nofunc = re.sub(r'[a-z]+[0-9]*\(',' ',pe_nop)
-    pe_var = re.findall(r'[A-Za-z]+[A-Za-z0-9_]*',pe_nofunc)
-    pe_numconst = re.sub(r'[A-Za-z]+[A-Za-z0-9_]*',' ',pe_nofunc).split()
-    pe_func = re.findall(r'[a-z]+[0-9]*\(',pe_nop)
-
-    # Evaluate all parameters needed by this parameter giving them values in the local scope
-    for v in pe_var:
-        if v in const_dict:
-            v_stmt = ('%s = %g') % (v,const_dict[v])
-        else:
-            v_stmt = ('%s = %g') % (v,param_dict[v][1])
-        exec(v_stmt)
-
-    # Evaluate the entire expression relying on local values already being assigned
-    val = eval(pe_py,locals())
-
-    return val
-
-
-def add_param(param_stmt,param_dict):
-    param_clean = param_stmt.replace(' ','')
-    param_split = param_stmt.split('=')
-    if(len(param_split)==2):
-        param_name = param_split[0].strip()
-        param_expr = param_split[1].strip()
-    else:
-        return 0
-
-    if not check_param_name(param_name,param_dict):
-        return 0
-
-    param_dep = check_param_expr(param_expr,param_dict)
-    if (param_dep == None):
-        return 0
-
-    param_val = eval_param(param_expr,param_dict)
-      
-    param_dict[param_name] = [param_expr,param_val,param_dep]
-
-    return 1
-
-
-################ Tom's Originals (for reference) #######################
-
-def toms_check_param_name(param_name,param_dict):
-    # Check for duplicate param name
-    if param_name in param_dict.keys():
-        print("name already in dict: %s" %(param_name))
-        return 0
-
-    # Check for illegal names (Starts with a letter. No special characters.)
-    name_filter = r'^[A-Za-z]+[0-9A-Za-z_.]*$'
-    m = re.match(name_filter, param_name)
-    if m is None:
-        print("name not ok: %s %d" %(param_name,len(param_name)))
-        return 0
-
-    # print("name ok: %s" %(param_name))
-    return 1
-
-
-def toms_check_param_expr(param_expr,param_dict):
-
-    # remove white space
-    pe = re.sub(r'[ \t]','',param_expr)
-
-    # Now make sure we have a parsable python expression
-    try:
-        st = parser.expr(pe)
-    except Exception as e:
-        print("syntax error in expression: %s" %(param_expr))
-        print("  exception is: ", e)
-        return None
-
-    func_list = ['SQRT(','EXP(','LOG(','LOG10(','SIN(','COS(','TAN(','ASIN(','ACOS(','ATAN(','ABS(','CEIL(','FLOOR(','MAX(','MIN(','RAND_UNIFORM(','RAND_GAUSSIAN(']
-    const_list = ['PI','SEED']
-
-    # Extract vars, numeric constants, and functions from expression
-    pe_nop = re.sub(r'[+\-*/^)]',' ',pe)
-    pe_nofunc = re.sub(r'[A-Z]+[A-Z0-9_]*\(',' ',pe_nop)
-    pe_var = re.findall(r'[A-Za-z]+[A-Za-z0-9_]*',pe_nofunc)
-    pe_numconst = re.sub(r'[A-Za-z]+[A-Za-z0-9_]*',' ',pe_nofunc).split()
-    pe_func = re.findall(r'[A-Z]+[A-Z0-9_]*\(',pe_nop)
-
-    # Check function calls
-    for f in pe_func:
-        if f not in func_list:
-            print("func %s invalid in expression: %s" %(f,param_expr))
-            return None
-
-    # Check vars
-    param_dep = []
-    for v in pe_var:
-        if v not in param_dict:
-            if v not in const_list:
-                print("var %s undefined in expression: %s" %(v,param_expr))
-                return None
-        else:
-            if v not in param_dep:
-                param_dep.append(v)
-
-    return param_dep
-
-
-def toms_eval_param(param_expr,param_dict):
-    # from math import *
-    from random import uniform, gauss
-    # remove white space
-    pe = re.sub(r'[ \t]','',param_expr)
-
-    # Convert expression from MDL syntax to equivalent python syntax
-    # Substitute "^" with "**"
-    pe_py = re.sub(r'[\^]','**',pe)
-    # Substitute MDL funcs with python funcs
-    func_dict = {'SQRT\(': 'sqrt(', 'EXP\(': 'exp(', 'LOG\(': 'log(', 'LOG10\(': 'log10(', 'SIN\(': 'sin(', 'COS\(': 'cos(', 'TAN\(': 'tan(', 'ASIN\(': 'asin(', 'ACOS\(':'acos(', 'ATAN\(': 'atan(', 'ABS\(': 'abs(', 'CEIL\(': 'ceil(', 'FLOOR\(': 'floor(', 'MAX\(': 'max(', 'MIN\(': 'min(', 'RAND_UNIFORM\(': 'uniform(', 'RAND_GAUSSIAN\(': 'gauss('}
-
-    const_dict = {'PI':pi,'SEED':1}
-
-    for mdl_func in func_dict.keys():
-        pe_py = re.sub(mdl_func,func_dict[mdl_func],pe_py)
-
-    # Extract vars, numeric constants, and functions from expression
-    pe_nop = re.sub(r'[+\-*/^)]',' ',pe_py)
-    pe_nofunc = re.sub(r'[a-z]+[0-9]*\(',' ',pe_nop)
-    pe_var = re.findall(r'[A-Za-z]+[A-Za-z0-9_]*',pe_nofunc)
-    pe_numconst = re.sub(r'[A-Za-z]+[A-Za-z0-9_]*',' ',pe_nofunc).split()
-    pe_func = re.findall(r'[a-z]+[0-9]*\(',pe_nop)
-
-    for v in pe_var:
-        if v in const_dict:
-            v_stmt = ('%s = %g') % (v,const_dict[v])
-        else:
-            v_stmt = ('%s = %g') % (v,param_dict[v][1])
-        exec(v_stmt)
-
-    val = eval(pe_py,locals())
-
-    return val
-
-
-def toms_add_param(param_stmt,param_dict):
-    param_clean = param_stmt.replace(' ','')
-    param_split = param_stmt.split('=')
-    if(len(param_split)==2):
-        param_name = param_split[0].strip()
-        param_expr = param_split[1].strip()
-    else:
-        return 0
-
-    if not toms_check_param_name(param_name,param_dict):
-        return 0
-
-    param_dep = toms_check_param_expr(param_expr,param_dict)
-    if (param_dep == None):
-        return 0
-
-    param_val = toms_eval_param(param_expr,param_dict)
-      
-    param_dict[param_name] = [param_expr,param_val,param_dep]
-
-    return 1
-
-def toms_sort_params(param_dict):
-    return 1
+        update_parameter_properties ( mcell, ps )
+            
+        print ( "After Updating Expression:" )
+        ps.dump()
+        
+        mcell.general_parameters.parameter_space_string = check_in_parameter_space ( ps )
+
+        self.initialized = True
+    finally:
+        parameter_space_lock.release()
 
 	
 #########################################################################################################################################

@@ -712,7 +712,9 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
         col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
         if len(mcell.general_parameters.parameter_list) > 0:
             par = mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index]
-            layout.prop(par, "id")
+            #row = layout.row()
+            #row.label(text="Parameter ID = " + str(par.id) )
+            #layout.prop(par, "id")
             #layout.prop(par, "parsed_expr")
             #layout.prop(par, "intarr")
             #layout.prop(par, "floatarr")
@@ -721,6 +723,9 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
             #layout.prop(par, "value")
             layout.prop(par, "unit")
             layout.prop(par, "desc")
+            row = layout.row()
+            row.label(text="Parameter ID = " + str(par.id) )
+
 #########################################################################################################################################
 
 class MCELL_UL_check_molecule(bpy.types.UIList):
