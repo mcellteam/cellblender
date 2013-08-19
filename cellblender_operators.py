@@ -810,10 +810,9 @@ class MCELL_OT_parameter_remove(bpy.types.Operator):
 	
 #########################################################################################################################################
 
-import pickle
-  
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
 
+import pickle
 import threading
 
 # This locking system currently assumes that there is no mult-threading
@@ -829,17 +828,17 @@ def check_out_parameter_space ( pickled_ps_string_parent ):
     global parameter_space_lock
     global checked_out_parameter_space
     global num_checked_out
-    print ( "Checking out parameters..." )
+    #print ( "Checking out parameters..." )
     if parameter_space_lock.acquire(False):
         # The lock was successful so no one else is using this parameter space
-        print ("@@@@ Locked")
+        #print ("@@@@ Locked")
         pickled_ps_string = pickled_ps_string_parent.parameter_space_string
         ps = None
         if (pickled_ps_string == None) or (len(pickled_ps_string) <= 0):
-            print ( "No parameters stored, generating a new parameter space" )
+            #print ( "No parameters stored, generating a new parameter space" )
             ps = ParameterSpace.ParameterSpace()
         else:
-            print ( "Parameter space found, calling pickle.loads" )
+            #print ( "Parameter space found, calling pickle.loads" )
             ps = pickle.loads ( pickled_ps_string.encode('latin1') )
         checked_out_parameter_space = ps
     num_checked_out += 1
@@ -849,7 +848,7 @@ def check_in_parameter_space ( pickled_ps_string_parent, ps ):
     global parameter_space_lock
     global checked_out_parameter_space
     global num_checked_out
-    print ( "Checking in parameters." )
+    #print ( "Checking in parameters." )
     ps_string = pickle.dumps(ps,protocol=0).decode('latin1')
     # print ( "Parameter string = " + ps_string )
     # Always save the parameters whenever checked in to ensure the latest is saved in the .blend file
@@ -858,7 +857,7 @@ def check_in_parameter_space ( pickled_ps_string_parent, ps ):
     if num_checked_out <= 0:
         parameter_space_lock.release()
         num_checked_out = 0
-        print ("@@@@ UnLocked")
+        #print ("@@@@ UnLocked")
 
 
 
@@ -869,13 +868,13 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        print ( "Adding Parameter ... inside execute" )
+        #print ( "Adding Parameter ... inside execute" )
         mcell = context.scene.mcell
         
         ps = check_out_parameter_space ( mcell.general_parameters )
-        print ( "Before adding a new parameter:" )
+        #print ( "Before adding a new parameter:" )
         ps.dump()
-
+        
         # mcell.general_parameters.next_parameter_ID += 1  # May not be needed with ParameterSpace
         mcell.general_parameters.parameter_list.add()
         mcell.general_parameters.active_par_index = len(mcell.general_parameters.parameter_list)-1
@@ -885,15 +884,39 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
 
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].id = new_id
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = new_name
-        
+    
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].expr = ps.get_expr(new_id)
-        
+    
         ps.eval_all(False,-1)  # Try forcing the re-evaluation of all parameters
 
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].value = str ( ps.eval_all(False,new_id) )
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].valid = True
 
-        print ( "After adding a new parameter:" )
+        if False:
+            # Make a whole bunch of parameters for testing !!!
+            for i in range(100):
+
+                # mcell.general_parameters.next_parameter_ID += 1  # May not be needed with ParameterSpace
+                mcell.general_parameters.parameter_list.add()
+                mcell.general_parameters.active_par_index = len(mcell.general_parameters.parameter_list)-1
+
+                new_id = ps.define ( ("P%d"%(i+2)), ("(P%d+1) * 1.2"%(i+1)) )   # Let the ParameterSpace pick the name
+                new_name = ps.get_name ( new_id )  # Get whatever ID was created
+
+                mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].id = new_id
+                mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = new_name
+            
+                mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].expr = ps.get_expr(new_id)
+            
+                ps.eval_all(False,-1)  # Try forcing the re-evaluation of all parameters
+
+                mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].value = str ( ps.eval_all(False,new_id) )
+                mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].valid = True
+           
+            ps.eval_all(False,-1)  # Try forcing the re-evaluation of all parameters
+
+
+        #print ( "After adding a new parameter:" )
         ps.dump()
 
         check_in_parameter_space ( mcell.general_parameters, ps )
@@ -913,7 +936,7 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
         if mcell.general_parameters.active_par_index >= 0:
 
             ps = check_out_parameter_space ( mcell.general_parameters )
-            print ( "Before deleting a parameter:" )
+            #print ( "Before deleting a parameter:" )
             ps.dump()
 
             id_to_delete = ps.get_id(mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name)
@@ -930,7 +953,7 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
                 # Ensure that the active parameter isn't negative
                 mcell.general_parameters.active_par_index = 0
 
-            print ( "After deleting a parameter:" )
+            #print ( "After deleting a parameter:" )
             ps.dump()
             
             check_in_parameter_space ( mcell.general_parameters, ps )
@@ -962,21 +985,21 @@ def update_parameter_properties ( mcell, ps ):
 
 def update_parameter_name ( self, context ):
     # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one so their expressions show the new name
-    print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
+    #print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
     # The following check was needed because mcell.general_parameters.parameter_list[newest_item]['expr'] wasn't being set yet for some reason
     if self.initialized:
         mcell = context.scene.mcell
 
         ps = check_out_parameter_space ( mcell.general_parameters )
 
-        print ( "Before Rename:" )
+        #print ( "Before Rename:" )
         ps.dump()
         
         ps.set_name ( self.id, self.name )
 
         update_parameter_properties ( mcell, ps )
         
-        print ( "After Rename:" )
+        #print ( "After Rename:" )
         ps.dump()
         
         check_in_parameter_space ( mcell.general_parameters, ps )
@@ -984,12 +1007,12 @@ def update_parameter_name ( self, context ):
 
 def update_parameter_expression ( self, context ):
     # Called when a parameter expression changes - needs to recompute the result and update all parameters that depend on this one
-    print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "] to " + self.expr )
+    #print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "] to " + self.expr )
     mcell = context.scene.mcell
 
     ps = check_out_parameter_space ( mcell.general_parameters )
 
-    print ( "Before Updating Expression:" )
+    #print ( "Before Updating Expression:" )
     ps.dump()
 
     # # # # # #    P R O B L E M    H E R E   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! <<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -997,7 +1020,7 @@ def update_parameter_expression ( self, context ):
     
     update_parameter_properties ( mcell, ps )
         
-    print ( "After Updating Expression:" )
+    #print ( "After Updating Expression:" )
     ps.dump()
     
     check_in_parameter_space ( mcell.general_parameters, ps )
