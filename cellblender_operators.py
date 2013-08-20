@@ -941,17 +941,15 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
 
             id_to_delete = ps.get_id(mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name)
             if id_to_delete > 0:
-                ps.delete ( id_to_delete )
-
-            mcell.general_parameters.parameter_list.remove(mcell.general_parameters.active_par_index)
-            mcell.general_parameters.active_par_index = mcell.general_parameters.active_par_index-1
-
-            #if len(mcell.general_parameters.parameter_list) == 0:
-            #    # Reset the parameter ID when the list is empty (provides some way to reset)
-            #    mcell.general_parameters.next_parameter_ID = 0
-            if (mcell.general_parameters.active_par_index < 0):
-                # Ensure that the active parameter isn't negative
-                mcell.general_parameters.active_par_index = 0
+                if ( ps.delete ( id_to_delete ) ):
+                    # Delete was successful so update the list to reflect the change
+                    mcell.general_parameters.parameter_list.remove(mcell.general_parameters.active_par_index)
+                    mcell.general_parameters.active_par_index = mcell.general_parameters.active_par_index-1
+                    if (mcell.general_parameters.active_par_index < 0):
+                        # Ensure that the active parameter isn't negative
+                        mcell.general_parameters.active_par_index = 0
+                else:
+                    print ( "Unable to delete parameter" )
 
             #print ( "After deleting a parameter:" )
             ps.dump()
