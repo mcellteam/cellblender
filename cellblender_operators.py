@@ -815,7 +815,7 @@ class MCELL_OT_parameter_remove(bpy.types.Operator):
 import pickle
 import threading
 
-# This locking system currently assumes that there is no mult-threading
+# This locking system currently assumes that there is no multi-threading
 global checked_out_parameter_space
 checked_out_parameter_space = None
 global parameter_space_lock
@@ -823,28 +823,40 @@ parameter_space_lock = threading.Lock()
 global num_checked_out
 num_checked_out = 0
 
+def build_new_parameter_space ( mcell_general_parameters ):
+    #print ( "Building new parameter space" )
+    ps = ParameterSpace.ParameterSpace()
+    for param in mcell_general_parameters.parameter_list:
+        ps.define(param.name,param.expr)
+    #print ( "Returning new parameter space with " + str(ps.num_parameters()) + " parameters" )
+    return ps
 
-def check_out_parameter_space ( pickled_ps_string_parent ):
+def check_out_parameter_space ( mcell_general_parameters ):
     global parameter_space_lock
     global checked_out_parameter_space
     global num_checked_out
     #print ( "Checking out parameters..." )
     if parameter_space_lock.acquire(False):
         # The lock was successful so no one else is using this parameter space
-        #print ("@@@@ Locked")
-        pickled_ps_string = pickled_ps_string_parent.parameter_space_string
+        pickled_ps_string = mcell_general_parameters.parameter_space_string
         ps = None
         if (pickled_ps_string == None) or (len(pickled_ps_string) <= 0):
             #print ( "No parameters stored, generating a new parameter space" )
-            ps = ParameterSpace.ParameterSpace()
+            ps = build_new_parameter_space(mcell_general_parameters)
         else:
             #print ( "Parameter space found, calling pickle.loads" )
             ps = pickle.loads ( pickled_ps_string.encode('latin1') )
+            if ps.version_match():
+                #print ( "Parameter Versions Matched" )
+                checked_out_parameter_space = ps
+            else:
+                print ( "Warning: Parameter versions did not match. You may be using an old blend file." )
+                ps = build_new_parameter_space(mcell_general_parameters)
         checked_out_parameter_space = ps
     num_checked_out += 1
     return checked_out_parameter_space
 
-def check_in_parameter_space ( pickled_ps_string_parent, ps ):
+def check_in_parameter_space ( mcell_general_parameters, ps ):
     global parameter_space_lock
     global checked_out_parameter_space
     global num_checked_out
@@ -852,12 +864,11 @@ def check_in_parameter_space ( pickled_ps_string_parent, ps ):
     ps_string = pickle.dumps(ps,protocol=0).decode('latin1')
     # print ( "Parameter string = " + ps_string )
     # Always save the parameters whenever checked in to ensure the latest is saved in the .blend file
-    pickled_ps_string_parent.parameter_space_string = ps_string
+    mcell_general_parameters.parameter_space_string = ps_string
     num_checked_out += -1
     if num_checked_out <= 0:
         parameter_space_lock.release()
         num_checked_out = 0
-        #print ("@@@@ UnLocked")
 
 
 
@@ -920,7 +931,7 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
         ps.dump()
 
         check_in_parameter_space ( mcell.general_parameters, ps )
-        
+
         return {'FINISHED'}
 
 
@@ -933,7 +944,7 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         
-        if mcell.general_parameters.active_par_index >= 0:
+        if (len(mcell.general_parameters.parameter_list) > 0) and (mcell.general_parameters.active_par_index >= 0):
 
             ps = check_out_parameter_space ( mcell.general_parameters )
             #print ( "Before deleting a parameter:" )
@@ -949,7 +960,12 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
                         # Ensure that the active parameter isn't negative
                         mcell.general_parameters.active_par_index = 0
                 else:
-                    print ( "Unable to delete parameter" )
+                    depends = str(ps.get_dependents_names(id_to_delete))
+                    depends = depends.replace("'","")
+                    depends = depends.replace("[","")
+                    depends = depends.replace("]","")
+                    # One of ‘DEBUG’, ‘INFO’, ‘OPERATOR’, ‘PROPERTY’, ‘WARNING’, ‘ERROR’, ‘ERROR_INVALID_INPUT’, ‘ERROR_INVALID_CONTEXT’, ‘ERROR_OUT_OF_MEMORY’
+                    self.report({'WARNING'}, "Needed by: " + depends )
 
             #print ( "After deleting a parameter:" )
             ps.dump()
@@ -973,19 +989,24 @@ def update_parameter_properties ( mcell, ps ):
         if p.expr != new_expr:
             #print ( new_expr, " != ", p.expr )
             p.expr = new_expr
-        if '?' in p.expr:
+        if ps.UNDEFINED_NAME in p.expr:
             p.valid = False
+            # One of ‘DEBUG’, ‘INFO’, ‘OPERATOR’, ‘PROPERTY’, ‘WARNING’, ‘ERROR’, ‘ERROR_INVALID_INPUT’, ‘ERROR_INVALID_CONTEXT’, ‘ERROR_OUT_OF_MEMORY’
+            #self.report({'ERROR'}, "Parameter Error" )
         new_value = ps.get_value(p.id)
         if p.value != new_value:
             #print ( new_value, " != ", p.value )
             p.value = new_value
 
+global skip_update
+skip_update = False
 
 def update_parameter_name ( self, context ):
+    global skip_update
     # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one so their expressions show the new name
     #print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
     # The following check was needed because mcell.general_parameters.parameter_list[newest_item]['expr'] wasn't being set yet for some reason
-    if self.initialized:
+    if self.initialized and (not skip_update):
         mcell = context.scene.mcell
 
         ps = check_out_parameter_space ( mcell.general_parameters )
@@ -993,7 +1014,15 @@ def update_parameter_name ( self, context ):
         #print ( "Before Rename:" )
         ps.dump()
         
-        ps.set_name ( self.id, self.name )
+        old_name = ps.get_name(self.id)
+        if old_name == None:
+            ps.set_name ( self.id, self.name )
+        else:
+            if not ps.rename ( old_name, self.name ):
+                # Changing the self.name back to the old name will force another update call, so flag it to skip!!
+                skip_update = True
+                self.name = old_name
+                #self.report({'WARNING'}, "Duplicate Name" )
 
         update_parameter_properties ( mcell, ps )
         
@@ -1001,6 +1030,7 @@ def update_parameter_name ( self, context ):
         ps.dump()
         
         check_in_parameter_space ( mcell.general_parameters, ps )
+    skip_update = False
 
 
 def update_parameter_expression ( self, context ):
@@ -1013,7 +1043,6 @@ def update_parameter_expression ( self, context ):
     #print ( "Before Updating Expression:" )
     ps.dump()
 
-    # # # # # #    P R O B L E M    H E R E   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! <<<<<<<<<<<<<<<<<<<<<<<<<<
     ps.set_expr ( self.id, self.expr )
     
     update_parameter_properties ( mcell, ps )
