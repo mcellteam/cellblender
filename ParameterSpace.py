@@ -11,8 +11,14 @@ print ( "ParameterSpace.py being processed ..." )
 
 class ParameterSpace:
 
-    """ Encapsulate a parameter space with mutable parameter names associated with parameter expressions
-        IDs currently run from 1 to n, with negative IDs typically indicating an error and ID 0 unused
+    """ Encapsulate a parameter space with mutable parameter names associated with parameter expressions:
+
+        IDs currently run from 1 to n, with negative IDs typically indicating an error. ID 0 is unused.
+        The expression for each parameter is always valid (default is "0"). It cannot contain any negative ids.
+        When an invalid expression is defined, the original expression remains in effect, and the invalid
+          expression is stored and displayed along with the original (current) expression.
+        It is not allowable to delete a parameter which is used in other parameter expressions.
+        
     """
 
     def __init__ ( self ):
@@ -24,7 +30,7 @@ class ParameterSpace:
         self.init_param_space()
 
     def get_version ( self ):
-        return ( 1 )  # N O T E: This constant is in the function to keep it from being saved when pickling!!!
+        return ( 0.001 )  # N O T E: This constant is in the function to keep it from being saved when pickling!!!
     
     def version_match ( self ):
         if self.VERSION == self.get_version():
@@ -37,9 +43,10 @@ class ParameterSpace:
         self.name_ID_dict = {}  # Maps string names to integer IDs
         self.ID_name_dict = {}  # Maps IDs to string names
         self.ID_expr_dict = {}  # Maps IDs to expression list containing either string literals or integer IDs
-        self.ID_valu_dict = {}  # Maps IDs to their current value as a string
-        self.ID_edit_dict = {}  # When not None this contains an expression that needs further editing because it is in error
-        self.next_id = 1
+        self.ID_value_dict = {}  # Maps IDs to their current value as a string
+        self.ID_error_dict = {}  # When not None this contains an expression that needs further editing because it is in error
+        self.ID_valid_dict = {}  # Boolean value for each parameter indicating that it's value is valid with respect to all other parameters
+        self.next_xxxid = 1
 
     def delete_all ( self ):
         """ Delete all parameters """
@@ -49,28 +56,31 @@ class ParameterSpace:
     def num_parameters ( self ):
         return ( len(self.ID_name_dict) )
 
-    def get_next_id ( self ):
-        return self.next_id
+    def get_next_xxxid ( self ):
+        return self.next_xxxid
 
 
     def dump ( self, prnt=False ):
         # For right now, this function defaults to silence (an easy way to turn it on and off globally)
         if prnt:
             print ( " Parameter space:" )
-            print ( "  next_id = " + str(self.next_id) )
+            print ( "  next_xxxid = " + str(self.next_xxxid) )
             print ( "  name->ID = " + str(self.name_ID_dict) )
             print ( "  ID->name = " + str(self.ID_name_dict) )
             print ( "  ID->expr = " + str(self.ID_expr_dict) )
-            print ( "  ID->valu = " + str(self.ID_valu_dict) )
-            print ( "  ID->text = " + str(self.ID_edit_dict) )
+            print ( "  ID->valu = " + str(self.ID_value_dict) )
+            print ( "  ID->erro = " + str(self.ID_error_dict) )
+            print ( "  ID->vali = " + str(self.ID_valid_dict) )
             for i in self.ID_name_dict:
-                #print ( "    " + str(self.ID_name_dict[i]) + " = " + str(self.ID_valu_dict[i]) + " = " + self.get_expr(i) + " = " + self.get_expr(i,to_py=True) + " = " + str(self.ID_expr_dict[i]) )
+                #print ( "    " + str(self.ID_name_dict[i]) + " = " + str(self.ID_value_dict[i]) + " = " + self.get_expr(i) + " = " + self.get_expr(i,to_py=True) + " = " + str(self.ID_expr_dict[i]) )
 
-                print ( "    " + str(self.ID_name_dict[i])  )
-                print ( "    " + str(self.ID_valu_dict[i]) )
-                print ( "    " + self.get_expr(i) )
-                print ( "    " + self.get_expr(i,to_py=True) )
-                print ( "    " + str(self.ID_expr_dict[i]) )
+                print ( "    " + str(i) + ": " + str(self.ID_name_dict[i])  )
+                print ( "    " + str(i) + ": " + str(self.ID_value_dict[i]) )
+                print ( "    " + str(i) + ": " + self.get_expr(i) )
+                print ( "    " + str(i) + ": " + self.get_expr(i,to_py=True) )
+                print ( "    " + str(i) + ": " + str(self.ID_expr_dict[i]) )
+                print ( "    " + str(i) + ": " + str(self.ID_error_dict[i]) )
+                print ( "    " + str(i) + ": " + str(self.ID_valid_dict[i]) )
 
                 #print ( "    " + str(self.ID_name_dict[i]) + " = " + self.get_expr(i) + " = " + self.get_expr(i,to_py=True) + " = " + str(self.ID_expr_dict[i]) )
             self.eval_all(True)
@@ -81,135 +91,82 @@ class ParameterSpace:
             print ( "  " + mdl_keyword + " = " + self.EXPRESSION_KEYWORDS[mdl_keyword] )
 
 
+    """
+    The following functions (define, set_expr, and get_expr) provide the core functionality
+      for setting and getting expressions.
+    """
+
     def define ( self, name, expr ):
         """ Define a parameter ... may be new or may overwrite an existing parameter"""
         """ Return the ID of this parameter whether it's new or not """
         # print "Define: " + str(name) + " = " + str(expr)
         if name == None:
-            # Try to choose a name with this mext ID if possible, but search further as needed
-            next_unused_number = self.next_id
-            while self.get_id( "P%d" % (next_unused_number) ) >= 0:
+            # Try to choose a name with this next ID if possible, but search further as needed
+            next_unused_number = self.next_xxxid
+            while self.get_xxxid( "P%d" % (next_unused_number) ) != None:
                 next_unused_number += 1
             name = "P%d" % (next_unused_number)
             
-        this_id = -1
+        this_xxxid = -1
         if name in self.name_ID_dict:
             # This parameter already exists, so just update its expression
             # print ( "Parameter " + name + " already exists, so just update the expression" )
-            this_id = self.get_id(name)
-            self.set_expr ( this_id, expr )
+            this_xxxid = self.get_xxxid(name)
+            self.set_expr ( this_xxxid, expr )
         else:
             # This is a new name, so make a new entry
             # print ( "Parameter " + name + " is new, so make new name/ID entries as well as update the expression" )
-            this_id = self.next_id
-            self.name_ID_dict.update ( { name : this_id } )
-            self.ID_name_dict.update ( { this_id : name } )
-            self.set_expr ( this_id, expr )
-            self.next_id += 1
-        return this_id
+            this_xxxid = self.next_xxxid
+            self.name_ID_dict.update ( { name : this_xxxid } )
+            self.ID_name_dict.update ( { this_xxxid : name } )
+            # Always set the default ("original") value to 0
+            self.ID_expr_dict.update ( { this_xxxid : "0" } )
+            # Now try to set the expression
+            # Note that set_expr will validate the expression before replacing the current one.
+            #  If the new expression is not valid, it will not replace the current expression and
+            #  instead, it will update the error expression.
+            self.set_expr ( this_xxxid, expr )
+            self.next_xxxid += 1
+        return this_xxxid
 
 
-    def get_dependents_list ( self, id ):
-        """ Return a list of all parameter ids that reference this parameter id directly """
-        dependents = []
-        for test_id in self.ID_expr_dict:
-            exp_list = self.ID_expr_dict[test_id]
-            for token in exp_list:
-                if type(token) == int:
-                    if token == id:
-                        dependents = dependents + [ test_id ]
-                        break
-        return dependents
-
-
-    def get_dependents_names ( self, id ):
-        """ Return a list of all parameter names that reference this parameter id directly """
-        dlist = self.get_dependents_list(id)
-        if len(dlist) > 0:
-            dlist = [self.get_name(i) for i in dlist]
-        return dlist
-
-
-    def absolute_delete ( self, id ):
-        """ Delete a parameter """
-        name = self.get_name ( id )
-        if name != None:
-            self.name_ID_dict.pop(name)
-            self.ID_name_dict.pop(id)
-            self.ID_expr_dict.pop(id)
-            self.ID_valu_dict.pop(id)
-            self.ID_edit_dict.pop(id)
-            if len(self.name_ID_dict) <= 0:
-                # Reset the ID numbers when the list becomes empty
-                self.next_id = 1
-
-    def delete ( self, id ):
-        """ Delete a parameter only if it has no dependencies """
-        dependents = self.get_dependents_list(id)
-        if len(dependents) == 0:
-          self.absolute_delete ( id )
-          return True
-        else:
-          return False
-
-
-    def get_id ( self, name ):
-        """ Get the ID of a parameter by name """
-        if (len(self.name_ID_dict) > 0) and (name in self.name_ID_dict):
-            return self.name_ID_dict[name]
-        else:
-            return -1
-
-
-    def get_name ( self, id ):
-        """ Get the name of the parameter with the specified ID """
-        if id in self.ID_name_dict:
-            return self.ID_name_dict[id]
-        else:
-            return None
-
-
-    def set_name ( self, id, name ):
-        """ Change the name of the parameter for the specified ID """
-        old_name = self.get_name ( id )
-        if old_name != None:
-            self.ID_name_dict.update ( { id : name } )
-            self.name_ID_dict.update ( { name : self.name_ID_dict.pop(old_name) } )
-
-
-    def set_expr ( self, id, expr ):
+    def set_expr ( self, parid, expr ):
         """ Store original text and parse and store the expression for the specified parameter ID """
-        self.ID_edit_dict.update ( { id : expr } )
+        # self.ID_error_dict.update ( { parid : expr } )  # This may be redundant, but is here fro clarity
         parsed_expr = self.parse_param_expr ( expr )
-        self.ID_expr_dict.update ( { id : parsed_expr } )
-        self.eval_all()
-        self.ID_valu_dict.update ( { id : self.get_value(id) } )
 
 
-    def get_text ( self, id ):
-        """ Get the original text expression for the specified parameter ID """
-        if id in self.ID_edit_dict:
-            return self.ID_edit_dict[id]
+        # Try parsing a second time to catch forward references?
+        parsed_expr = self.parse_param_expr ( expr )
+
+        if (parsed_expr == None) or (-1 in parsed_expr):
+            # There was an error in the string expression, so save the error version and don't change anything else
+            self.ID_error_dict.update ( { parid : expr } )
         else:
-            return ""
+            # The expression parsed fine, so set error version to None, update the expression, and evaluate it's value
+            self.ID_error_dict.update ( { parid : None } )
+            self.ID_expr_dict.update ( { parid : parsed_expr } )
+            self.ID_valid_dict.update ( { parid : False } )
+            self.eval_all()
+            self.ID_value_dict.update ( { parid : self.get_value(parid) } )
 
-    def get_value ( self, id ):
-        """ Get the current value for the specified parameter ID """
-        if id in self.ID_valu_dict:
-            return self.ID_valu_dict[id]
-        else:
-            return ""
 
-    def get_expr ( self, id, to_py=False, prefix='', suffix='' ):
+    def get_expr ( self, parid, to_py=False, prefix='', suffix='' ):
         """ Construct a string representation of the expression by substituting symbols for IDs """
-        exp_list = self.ID_expr_dict[id]
+        exp_list = self.ID_expr_dict[parid]
         expr = ""
         for token in exp_list:
             if type(token) == int:
-                # This is an integer id, so look up the variable name to concatenate
+                # This is an integer parid, so look up the variable name to concatenate
                 if token in self.ID_name_dict:
                     expr = expr + (prefix + self.ID_name_dict[token] + suffix)
                 else:
+                    # In previous versions, this case might have defined a new parameter here.
+                    # # Assume that this use is defining a new parameter with a value of 0
+                    # if self.define ( token, "0" ) > 0:
+                    #     # The name was successfully defined as a new parameter
+                    #     expr = expr + (prefix + self.ID_name_dict[token] + suffix)
+                    # In this version, it should never happen, but appends an undefined name in case it does
                     expr = expr + self.UNDEFINED_NAME
             else:
                 # This is a string so simply concatenate it after translation as needed
@@ -219,9 +176,43 @@ class ParameterSpace:
                     expr = expr + token
         return expr
 
-    def get_depend_list ( self, id ):
+
+
+    """
+    These functions (get_dependents_list and get_dependents_names) find parameters
+    that reference the requested ID.
+    """
+
+    def get_dependents_list ( self, parid ):
+        """ Return a list of all parameter ids that reference this parameter id directly """
+        dependents = []
+        for test_xxxid in self.ID_expr_dict:
+            exp_list = self.ID_expr_dict[test_xxxid]
+            for token in exp_list:
+                if type(token) == int:
+                    if token == parid:
+                        dependents = dependents + [ test_xxxid ]
+                        break
+        return dependents
+
+
+    def get_dependents_names ( self, parid ):
+        """ Return a list of all parameter names that reference this parameter id directly """
+        dlist = self.get_dependents_list(parid)
+        if len(dlist) > 0:
+            dlist = [self.get_name(i) for i in dlist]
+        return dlist
+
+
+
+    """
+    These functions (get_depend_list and get_depend_dict) find parameters that
+    are referenced by the requested id.
+    """
+
+    def get_depend_list ( self, parid ):
         """ Construct a list of ids that this id depends upon (or is a function of) """
-        exp_list = self.ID_expr_dict[id]
+        exp_list = self.ID_expr_dict[parid]
         depends_on = set ( [] )
         for token in exp_list:
             if type(token) == int:
@@ -229,9 +220,9 @@ class ParameterSpace:
         return [ x for x in depends_on ]
 
 
-    def get_depend_dict ( self, id ):
+    def get_depend_dict ( self, parid ):
         """ Construct a dictionary of ids and names that this id depends upon (or is a function of) """
-        exp_list = self.ID_expr_dict[id]
+        exp_list = self.ID_expr_dict[parid]
         depends_on = {}
         for token in exp_list:
             if type(token) == int:
@@ -239,11 +230,114 @@ class ParameterSpace:
         return depends_on
 
 
-    def eval_all ( self, prnt=False, requested_id=-1 ):
+
+    """
+    These functions delete parameters.
+    """    
+
+    def absolute_delete ( self, parid ):
+        """ Delete a parameter """
+        name = self.get_name ( parid )
+        if name != None:
+            self.name_ID_dict.pop(name)
+            self.ID_name_dict.pop(parid)
+            self.ID_expr_dict.pop(parid)
+            self.ID_value_dict.pop(parid)
+            self.ID_error_dict.pop(parid)
+            self.ID_valid_dict.pop(parid)
+            if len(self.name_ID_dict) <= 0:
+                # Reset the ID numbers when the list becomes empty
+                self.next_xxxid = 1
+
+    def delete ( self, parid ):
+        """ Delete a parameter only if it has no dependencies """
+        dependents = self.get_dependents_list(parid)
+        if len(dependents) == 0:
+          self.absolute_delete ( parid )
+          return True
+        else:
+          return False
+
+
+    """
+    These are general purpose "get" and "set" functions that don't do
+       much processing.
+    """
+
+    def get_xxxid ( self, name ):
+        """ Get the ID of a parameter by name """
+        if (len(self.name_ID_dict) > 0) and (name in self.name_ID_dict):
+            return self.name_ID_dict[name]
+        else:
+            return None
+
+    def get_name ( self, parid ):
+        """ Get the name of the parameter with the specified ID """
+        if parid in self.ID_name_dict:
+            return self.ID_name_dict[parid]
+        else:
+            return None
+
+    def get_error ( self, parid ):
+        """ Get the text expression that is currently in error for the specified parameter ID """
+        if parid in self.ID_error_dict:
+            return self.ID_error_dict[parid]
+        else:
+            return None
+
+    def get_value ( self, parid ):
+        """ Get the current value for the specified parameter ID """
+        if parid in self.ID_value_dict:
+            return self.ID_value_dict[parid]
+        else:
+            return None
+
+    def set_name ( self, parid, name ):
+        """ Change the name of the parameter for the specified ID returning a boolean success value"""
+        old_name = self.get_name ( parid )
+        if old_name != None:
+            self.ID_name_dict.update ( { parid : name } )
+            self.name_ID_dict.update ( { name : self.name_ID_dict.pop(old_name) } )
+            return True
+        return False
+
+
+    def rename ( self, old_name, new_name ):
+        """ Rename a parameter returning a boolean success value """
+        parid = self.get_xxxid ( old_name )
+        if parid < 0:
+            # Old name doesn't exist so it can't be renamed
+            return False
+        else:
+            new_xxxid = self.get_xxxid ( new_name )
+            if new_xxxid != None:
+                # New name already exists so a duplicate name can't be created
+                return False
+            else:
+                # It's ok to rename, so update the two dictionaries that associate names and IDs
+                self.ID_name_dict.update ( { parid : new_name } )
+                self.name_ID_dict.update ( { new_name : self.name_ID_dict.pop(old_name) } )
+                return True
+
+
+
+    """
+    These are the parsing and evaluation functions.
+    These functions currently rely on the python parsing and evaluation capabilities.
+    """
+
+
+    def eval_all ( self, prnt=False, requested_xxxid=None ):
         """ Evaluate all parameters in order, printing either a requested ID or all (-1) when prnt is True """
         # from math import *
         from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
         from random import uniform, gauss
+
+
+
+        # self.eval_all_depend ( prnt=prnt )
+
+
 
         # The following prefix and suffix are used to ensure that parameter names (like "if" and "def") are not interpreted as python keywords.
         # Note that this works with evaluation, but the parsing itself still fails when certain names (like "if" and "def") are used.
@@ -251,55 +345,158 @@ class ParameterSpace:
         suffix = ''   # '_cellblender'
 
         requested_val = 0
-        if prnt and (requested_id<0):
-            print ( "==============================================================================" )
+        if requested_xxxid == None:
+            requested_xxxid = -1   # This eliminated the need to check the type for NoneType all the time!!
+        
+        # local_variables = locals()
 
-        for id in self.ID_name_dict:
-            py_statement = (prefix + self.get_name(id) + suffix) + " = " + self.get_expr ( id, to_py=True, prefix=prefix, suffix=suffix )
-            try:
-                exec ( py_statement )
-                val = eval ( (prefix + self.get_name(id) + suffix), locals() )
-                self.ID_valu_dict.update ( { id : str(val) } )
-                if (requested_id == id):
-                    requested_val = val
-                if prnt:
-                    if (requested_id == -1) or (requested_id == id):
-                        print ( self.get_name(id) + " = " + str(val) + " = " + self.get_expr ( id, to_py=True ) + " = " + self.get_expr ( id, to_py=False ) + 
-                                ", " + self.get_name(id) + " depends on " + str(self.get_depend_list(id)) +   # " = " + str(self.get_depend_dict(id)) +
-                                ", " + self.get_name(id) + " is referenced by " + str(self.get_dependents_list(id)) )
+        # Loop through as many times as IDs to ensure catching all non-circular dependencies (forward references):
 
-            except:
-                print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
-                if prnt:
-                    print ( "  Error in statement:   " + self.get_name(id) + " = " + self.get_text(id) )
-                    print ( "    ... interpreted as: " + py_statement )
+        for pass_num in self.ID_name_dict:
+            # print ( "Looping ... " + str(pass_num) )
 
-        if prnt and (requested_id<0):
-            print ( "==============================================================================" )
+            something_changed = False
+
+            if prnt and (requested_xxxid<0):
+                print ( "==============================================================================" )
+
+            for parid in self.ID_name_dict:
+                #print ( "get_name(): " + str(self.get_name(parid)) )
+                #print ( "prefix: " + prefix )
+                #print ( "suffix: " + suffix )
+                #print ( "parid = " + str(parid) )
+                py_statement = (prefix + self.get_name(parid) + suffix) + " = " + self.get_expr ( parid, to_py=True, prefix=prefix, suffix=suffix )
+                try:
+                    #print ( "Before executing \"" + py_statement + "\":" + str(locals()) )
+                    exec ( py_statement )
+                    val = eval ( (prefix + self.get_name(parid) + suffix), locals() )
+                    #print ( "After executing \"" + py_statement + "\":" + str(locals()) )
+                    
+                    # Check for changes ...
+                    if parid in self.ID_value_dict:
+                        # The parameter is already there, so check if it's different
+                        if str(val) != self.ID_value_dict[parid]:
+                            something_changed = True
+                    else:
+                        # If it wasn't there, then this is a change!!
+                        something_changed = True
+
+                    self.ID_value_dict.update ( { parid : str(val) } )
+                    if (requested_xxxid == parid):
+                        requested_val = val
+                    if prnt:
+                        if (requested_xxxid == -1) or (requested_xxxid == parid):
+                            error_string = ""
+                            if self.get_error(parid) != None:
+                                error_string = ", *** Error Pending: " + self.get_error(parid)
+                            print ( str(parid) + ": " + self.get_name(parid) + " = " + str(val) + " = " + self.get_expr ( parid, to_py=True ) + " = " + self.get_expr ( parid, to_py=False ) + 
+                                    ", " + self.get_name(parid) + " depends on " + str(self.get_depend_list(parid)) +   # " = " + str(self.get_depend_dict(parid)) +
+                                    ", " + self.get_name(parid) + " is referenced by " + str(self.get_dependents_list(parid)) + error_string )
+
+                except:
+                    print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
+                    if prnt:
+                        print ( "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
+                        print ( "    ... interpreted as: " + py_statement )
+
+            if prnt and (requested_xxxid<0):
+                print ( "==============================================================================" )
+
+            if something_changed == False:
+                break
 
         return requested_val
 
 
 
-    def rename ( self, old_name, new_name ):
-        id = self.get_id ( old_name )
-        if id < 0:
-            # Old name doesn't exist so it can't be renamed
-            return False
-        else:
-            new_id = self.get_id ( new_name )
-            if new_id >= 0:
-                # New name already exists so a duplicate name can't be created
-                return False
+    def eval_one ( self, dep_locals, parid, prnt=False ):
+        # from math import *
+        from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
+        from random import uniform, gauss
+
+        something_changed = False
+        prefix = ''   # 'cellblender_'
+        suffix = ''   # '_cellblender'
+        py_statement = ""
+        try:
+            py_statement = str(prefix + str(self.get_name(parid)) + suffix) + " = " + str(self.get_expr ( parid, to_py=True, prefix=prefix, suffix=suffix ))
+            #print ( "Before executing \"" + py_statement + "\":" + str(locals()) )
+            exec ( py_statement )
+            val = eval ( (prefix + self.get_name(parid) + suffix), dep_locals )
+            #print ( "After executing \"" + py_statement + "\":" + str(locals()) )
+            
+            # Check for changes ...
+            if parid in self.ID_value_dict:
+                # The parameter is already there, so check if it's different
+                if str(val) != self.ID_value_dict[parid]:
+                    something_changed = True
             else:
-                # It's ok to rename, so update the two dictionaries that associate names and IDs
-                self.ID_name_dict.update ( { id : new_name } )
-                self.name_ID_dict.update ( { new_name : self.name_ID_dict.pop(old_name) } )
-                return True
+                # If it wasn't there, then this is a change!!
+                something_changed = True
+
+            self.ID_value_dict.update ( { parid : str(val) } )
+            if (requested_xxxid == parid):
+                requested_val = val
+            if prnt:
+                if (requested_xxxid == -1) or (requested_xxxid == parid):
+                    error_string = ""
+                    if self.get_error(parid) != None:
+                        error_string = ", *** Error Pending: " + self.get_error(parid)
+                    print ( str(parid) + ": " + self.get_name(parid) + " = " + str(val) + " = " + self.get_expr ( parid, to_py=True ) + " = " + self.get_expr ( parid, to_py=False ) + 
+                            ", " + self.get_name(parid) + " depends on " + str(self.get_depend_list(parid)) +   # " = " + str(self.get_depend_dict(parid)) +
+                            ", " + self.get_name(parid) + " is referenced by " + str(self.get_dependents_list(parid)) + error_string )
+
+        except:
+            print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
+            if prnt:
+                print ( "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
+                print ( "    ... interpreted as: " + py_statement )
+
+
+    
+
+    def eval_all_depend ( self, prnt=False, requested_xxxid=None ):
+        """ Evaluate all parameters based on dependencies. """
+        
+        # Start by marking all parameters as invalid
+        
+        # Loop through all parameters over and over evaluating those parameters with valid dependencies
+        
+        if prnt:
+            print ( "================= Begin eval_all_depend =============================================================" )
+
+        num_passes = 0
+        all_valid = False
+        while (num_passes <= len(self.ID_name_dict)) and (all_valid == False):
+            num_passes = num_passes + 1
+            # Visit each parameter and try to update it
+            for parid in self.ID_name_dict:
+                # Check to see if this parameter can be updated based on its dependencies all being valid
+                dep_list = self.get_depend_list ( parid )
+                dep_satisfied = True
+                for dep_xxxid in dep_list:
+                    if not self.ID_valid_dict[dep_xxxid]:
+                        dep_satisfied = False
+                        break
+                if dep_satisfied:
+                    # It's OK to evaluate this parameter
+                    self.eval_one ( locals(), parid, True )
+                    self.ID_valid_dict[parid] = True
+            # Check to see if they're all valid yet
+            all_valid = True
+            for parid in self.ID_name_dict:
+                if not self.ID_valid_dict[parid]:
+                    all_valid = False
+                    break
+
+        if prnt:
+            print ( "================= End eval_all_depend =============================================================" )
+
 
 
     def parse_param_expr ( self, param_expr ):
-        """ Converts a string expression into a list expression with variable id's as integers and all others as strings
+        """ Converts a string expression into a list expression with variable parid's as integers and all others as strings
+            Returns either a list (if successful or None if there is an error
             Example:
               Expression: "A * (B + C)" becomes something like: [ 3, "*", "(", 22, "+", 5, ")", "" ]
                  where 3, 22, and 5 are the ID numbers for parameters A, B, and C respectively
@@ -314,16 +511,18 @@ class ParameterSpace:
         except:
             print ( "==> Parsing Exception: " + str ( sys.exc_info() ) )
 
-        parameterized_expr = param_expr
+        parameterized_expr = None  # param_expr
         if pt != None:
         
-            parameterized_expr = self.recurse_tree_symbols ( pt, [] );
+            parameterized_expr = self.recurse_tree_symbols ( pt, [] )
             
-            # Remove trailing empty strings from parse tree - why are they there?
-            while len(parameterized_expr) > 0:
-                if parameterized_expr[-1] != '':
-                    break
-                parameterized_expr = parameterized_expr[0:-2]
+            if parameterized_expr != None:
+            
+                # Remove trailing empty strings from parse tree - why are they there?
+                while len(parameterized_expr) > 0:
+                    if parameterized_expr[-1] != '':
+                        break
+                    parameterized_expr = parameterized_expr[0:-2]
 
         return parameterized_expr
 
@@ -350,10 +549,10 @@ class ParameterSpace:
                         return current_expr + [ pt[1] ]
                     else:
                         # This must be a user-defined symbol
-                        par_id = -1
+                        par_xxxid = -1
                         if pt[1] in self.name_ID_dict:
-                            par_id = self.name_ID_dict[pt[1]]
-                        return current_expr + [ par_id ]
+                            par_xxxid = self.name_ID_dict[pt[1]]
+                        return current_expr + [ par_xxxid ]
                 else:
                     # This is a non-name part of the expression
                     return current_expr + [ pt[1] ]
@@ -380,6 +579,7 @@ if __name__ == "__main__":
     s = "?" # Initialize with the command for help
     while True:
         try:
+            s = s.strip()
             if s == '?':
                 print ( "" )
                 print ( " Expression Keywords: MDL = Python" )
@@ -392,6 +592,7 @@ if __name__ == "__main__":
                 print ( "  param = expression : Assign expression to parameter" )
                 print ( "  param : Evaluate param" )
                 print ( "  old @ new : Rename parameter old to new" )
+                print ( "  # n: Generate n parameters where each is the sum of the preceding 3" )
                 print ( "  .par : Delete Parameter par" )
                 print ( "  . : Delete All Parameters" )
                 print ( "  Control-C : Exit program" )
@@ -399,29 +600,52 @@ if __name__ == "__main__":
             elif '=' in s:
                 # Perform an assignment
                 sparts = s.split('=')
-                ps.define ( sparts[0].strip(), sparts[1].strip() )
-                ps.eval_all(True, ps.get_id(sparts[0].strip()))
+                lhs = sparts[0].strip()
+                rhs = sparts[1].strip()
+                if len(lhs) == 0:
+                    lhs = None
+                parid = ps.define ( lhs, rhs )
+                ps.eval_all(True, parid)
+                    
             elif s == '\\':
                 # Dump all parameters
                 ps.dump(True)
             elif s == '!':
                 # Dump all parameters as a pickled object
-                print ( pickle.dumps(ps) )
+                s = pickle.dumps(ps,protocol=0)
+                print ( "Length = " + str(len(s)) + ", String = ", s )
             elif s == '.':
                 # Delete all parameters
                 print ( "Deleting all" )
                 ps.delete_all()
+            elif (len(s) > 0) and (s[0] == '#'):
+                # Delete selected parameter
+                count = int(s[1:].strip())
+                print ( "Generating " + str(count) + " parameters" )
+                for i in range(count):
+                    name = ("p%s" % i)
+                    if i == 0:
+                        expr = "1"
+                    else:
+                        expr = ""
+                        n = min(i,3)  # Constant value limits the number of parameters in each expression
+                        for j in range(n):
+                            if j > 0:
+                                expr = expr + "+"
+                            expr = expr + ("p%s" % (j+i-n))
+                    ps.define ( name, expr )
+                ps.eval_all(True)
             elif (len(s) > 0) and (s[0] == '.'):
                 # Delete selected parameter
                 name = s[1:].strip()
                 print ( "Deleting " + name )
-                id = ps.get_id ( name )
-                if id < 0:
+                parid = ps.get_xxxid ( name )
+                if parid < 0:
                     print ( "Unable to delete " + name + " because it is not a valid parameter name" )
                 else:
-                    ok = ps.delete ( id )
+                    ok = ps.delete ( parid )
                     if not ok:
-                        print ( "Unable to delete " + name + " because it is used by " + str(ps.get_dependents_names(id)) )
+                        print ( "Unable to delete " + name + " because it is used by " + str(ps.get_dependents_names(parid)) )
             elif (len(s) > 0) and ("@" in s):
                 # Rename old to new
                 old,new = s.split("@")
@@ -433,8 +657,8 @@ if __name__ == "__main__":
                     print ( "Unable to rename " + old + " to because it is not a valid parameter name" )
             elif s != '':
                 # Assume s is a parameter name to print
-                req_id = ps.get_id ( s )
-                ps.eval_all(True, req_id)
+                req_xxxid = ps.get_xxxid ( s )
+                ps.eval_all(True, req_xxxid)
             else:
                 # Print all parameters
                 ps.eval_all(True)
