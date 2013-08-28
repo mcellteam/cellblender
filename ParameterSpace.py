@@ -46,7 +46,7 @@ class ParameterSpace:
         self.ID_value_dict = {}  # Maps IDs to their current value as a string
         self.ID_error_dict = {}  # When not None this contains an expression that needs further editing because it is in error
         self.ID_valid_dict = {}  # Boolean value for each parameter indicating that it's value is valid with respect to all other parameters
-        self.next_xxxid = 1
+        self.next_id = 1
 
     def delete_all ( self ):
         """ Delete all parameters """
@@ -56,15 +56,15 @@ class ParameterSpace:
     def num_parameters ( self ):
         return ( len(self.ID_name_dict) )
 
-    def get_next_xxxid ( self ):
-        return self.next_xxxid
+    def get_next_id ( self ):
+        return self.next_id
 
 
     def dump ( self, prnt=False ):
         # For right now, this function defaults to silence (an easy way to turn it on and off globally)
         if prnt:
             print ( " Parameter space:" )
-            print ( "  next_xxxid = " + str(self.next_xxxid) )
+            print ( "  next_id = " + str(self.next_id) )
             print ( "  name->ID = " + str(self.name_ID_dict) )
             print ( "  ID->name = " + str(self.ID_name_dict) )
             print ( "  ID->expr = " + str(self.ID_expr_dict) )
@@ -102,32 +102,32 @@ class ParameterSpace:
         # print "Define: " + str(name) + " = " + str(expr)
         if name == None:
             # Try to choose a name with this next ID if possible, but search further as needed
-            next_unused_number = self.next_xxxid
-            while self.get_xxxid( "P%d" % (next_unused_number) ) != None:
+            next_unused_number = self.next_id
+            while self.get_id( "P%d" % (next_unused_number) ) != None:
                 next_unused_number += 1
             name = "P%d" % (next_unused_number)
             
-        this_xxxid = -1
+        this_id = -1
         if name in self.name_ID_dict:
             # This parameter already exists, so just update its expression
             # print ( "Parameter " + name + " already exists, so just update the expression" )
-            this_xxxid = self.get_xxxid(name)
-            self.set_expr ( this_xxxid, expr )
+            this_id = self.get_id(name)
+            self.set_expr ( this_id, expr )
         else:
             # This is a new name, so make a new entry
             # print ( "Parameter " + name + " is new, so make new name/ID entries as well as update the expression" )
-            this_xxxid = self.next_xxxid
-            self.name_ID_dict.update ( { name : this_xxxid } )
-            self.ID_name_dict.update ( { this_xxxid : name } )
+            this_id = self.next_id
+            self.name_ID_dict.update ( { name : this_id } )
+            self.ID_name_dict.update ( { this_id : name } )
             # Always set the default ("original") value to 0
-            self.ID_expr_dict.update ( { this_xxxid : "0" } )
+            self.ID_expr_dict.update ( { this_id : "0" } )
             # Now try to set the expression
             # Note that set_expr will validate the expression before replacing the current one.
             #  If the new expression is not valid, it will not replace the current expression and
             #  instead, it will update the error expression.
-            self.set_expr ( this_xxxid, expr )
-            self.next_xxxid += 1
-        return this_xxxid
+            self.set_expr ( this_id, expr )
+            self.next_id += 1
+        return this_id
 
 
     def set_expr ( self, parid, expr ):
@@ -186,12 +186,12 @@ class ParameterSpace:
     def get_dependents_list ( self, parid ):
         """ Return a list of all parameter ids that reference this parameter id directly """
         dependents = []
-        for test_xxxid in self.ID_expr_dict:
-            exp_list = self.ID_expr_dict[test_xxxid]
+        for test_id in self.ID_expr_dict:
+            exp_list = self.ID_expr_dict[test_id]
             for token in exp_list:
                 if type(token) == int:
                     if token == parid:
-                        dependents = dependents + [ test_xxxid ]
+                        dependents = dependents + [ test_id ]
                         break
         return dependents
 
@@ -247,7 +247,7 @@ class ParameterSpace:
             self.ID_valid_dict.pop(parid)
             if len(self.name_ID_dict) <= 0:
                 # Reset the ID numbers when the list becomes empty
-                self.next_xxxid = 1
+                self.next_id = 1
 
     def delete ( self, parid ):
         """ Delete a parameter only if it has no dependencies """
@@ -264,7 +264,7 @@ class ParameterSpace:
        much processing.
     """
 
-    def get_xxxid ( self, name ):
+    def get_id ( self, name ):
         """ Get the ID of a parameter by name """
         if (len(self.name_ID_dict) > 0) and (name in self.name_ID_dict):
             return self.name_ID_dict[name]
@@ -304,13 +304,13 @@ class ParameterSpace:
 
     def rename ( self, old_name, new_name ):
         """ Rename a parameter returning a boolean success value """
-        parid = self.get_xxxid ( old_name )
+        parid = self.get_id ( old_name )
         if parid < 0:
             # Old name doesn't exist so it can't be renamed
             return False
         else:
-            new_xxxid = self.get_xxxid ( new_name )
-            if new_xxxid != None:
+            new_id = self.get_id ( new_name )
+            if new_id != None:
                 # New name already exists so a duplicate name can't be created
                 return False
             else:
@@ -327,7 +327,7 @@ class ParameterSpace:
     """
 
 
-    def eval_all ( self, prnt=False, requested_xxxid=None ):
+    def eval_all ( self, prnt=False, requested_id=None ):
         """ Evaluate all parameters in order, printing either a requested ID or all (-1) when prnt is True """
         # from math import *
         from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
@@ -345,8 +345,8 @@ class ParameterSpace:
         suffix = ''   # '_cellblender'
 
         requested_val = 0
-        if requested_xxxid == None:
-            requested_xxxid = -1   # This eliminated the need to check the type for NoneType all the time!!
+        if requested_id == None:
+            requested_id = -1   # This eliminated the need to check the type for NoneType all the time!!
         
         # local_variables = locals()
 
@@ -357,7 +357,7 @@ class ParameterSpace:
 
             something_changed = False
 
-            if prnt and (requested_xxxid<0):
+            if prnt and (requested_id<0):
                 print ( "==============================================================================" )
 
             for parid in self.ID_name_dict:
@@ -382,10 +382,10 @@ class ParameterSpace:
                         something_changed = True
 
                     self.ID_value_dict.update ( { parid : str(val) } )
-                    if (requested_xxxid == parid):
+                    if (requested_id == parid):
                         requested_val = val
                     if prnt:
-                        if (requested_xxxid == -1) or (requested_xxxid == parid):
+                        if (requested_id == -1) or (requested_id == parid):
                             error_string = ""
                             if self.get_error(parid) != None:
                                 error_string = ", *** Error Pending: " + self.get_error(parid)
@@ -399,7 +399,7 @@ class ParameterSpace:
                         print ( "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
                         print ( "    ... interpreted as: " + py_statement )
 
-            if prnt and (requested_xxxid<0):
+            if prnt and (requested_id<0):
                 print ( "==============================================================================" )
 
             if something_changed == False:
@@ -435,10 +435,10 @@ class ParameterSpace:
                 something_changed = True
 
             self.ID_value_dict.update ( { parid : str(val) } )
-            if (requested_xxxid == parid):
+            if (requested_id == parid):
                 requested_val = val
             if prnt:
-                if (requested_xxxid == -1) or (requested_xxxid == parid):
+                if (requested_id == -1) or (requested_id == parid):
                     error_string = ""
                     if self.get_error(parid) != None:
                         error_string = ", *** Error Pending: " + self.get_error(parid)
@@ -455,8 +455,11 @@ class ParameterSpace:
 
     
 
-    def eval_all_depend ( self, prnt=False, requested_xxxid=None ):
+    def eval_all_depend ( self, prnt=False, requested_id=None ):
         """ Evaluate all parameters based on dependencies. """
+        # from math import *
+        from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
+        from random import uniform, gauss
         
         # Start by marking all parameters as invalid
         
@@ -474,12 +477,16 @@ class ParameterSpace:
                 # Check to see if this parameter can be updated based on its dependencies all being valid
                 dep_list = self.get_depend_list ( parid )
                 dep_satisfied = True
-                for dep_xxxid in dep_list:
-                    if not self.ID_valid_dict[dep_xxxid]:
+                for dep_id in dep_list:
+                    if not self.ID_valid_dict[dep_id]:
                         dep_satisfied = False
                         break
                 if dep_satisfied:
                     # It's OK to evaluate this parameter
+
+
+
+
                     self.eval_one ( locals(), parid, True )
                     self.ID_valid_dict[parid] = True
             # Check to see if they're all valid yet
@@ -549,10 +556,10 @@ class ParameterSpace:
                         return current_expr + [ pt[1] ]
                     else:
                         # This must be a user-defined symbol
-                        par_xxxid = -1
+                        par_id = -1
                         if pt[1] in self.name_ID_dict:
-                            par_xxxid = self.name_ID_dict[pt[1]]
-                        return current_expr + [ par_xxxid ]
+                            par_id = self.name_ID_dict[pt[1]]
+                        return current_expr + [ par_id ]
                 else:
                     # This is a non-name part of the expression
                     return current_expr + [ pt[1] ]
@@ -639,7 +646,7 @@ if __name__ == "__main__":
                 # Delete selected parameter
                 name = s[1:].strip()
                 print ( "Deleting " + name )
-                parid = ps.get_xxxid ( name )
+                parid = ps.get_id ( name )
                 if parid < 0:
                     print ( "Unable to delete " + name + " because it is not a valid parameter name" )
                 else:
@@ -657,8 +664,8 @@ if __name__ == "__main__":
                     print ( "Unable to rename " + old + " to because it is not a valid parameter name" )
             elif s != '':
                 # Assume s is a parameter name to print
-                req_xxxid = ps.get_xxxid ( s )
-                ps.eval_all(True, req_xxxid)
+                req_id = ps.get_id ( s )
+                ps.eval_all(True, req_id)
             else:
                 # Print all parameters
                 ps.eval_all(True)
