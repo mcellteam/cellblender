@@ -383,7 +383,7 @@ class ParameterSpace:
                     if (requested_id == parid):
                         requested_val = val
                     if prnt:
-                        if (requested_id == -1) or (requested_id == parid):
+                        if (requested_id == None) or (requested_id == -1) or (requested_id == parid):
                             error_string = ""
                             if self.get_error(parid) != None:
                                 error_string = ", *** Error Pending: " + self.get_error(parid)
@@ -404,56 +404,13 @@ class ParameterSpace:
                 break
         return requested_val
 
-
-
-    def eval_one ( self, dep_locals, parid, prnt=False ):
-        # from math import *
-        from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
-        from random import uniform, gauss
-
-        something_changed = False
-        prefix = ''   # 'cellblender_'
-        suffix = ''   # '_cellblender'
-        py_statement = ""
-        try:
-            py_statement = str(prefix + str(self.get_name(parid)) + suffix) + " = " + str(self.get_expr ( parid, to_py=True, prefix=prefix, suffix=suffix ))
-            #print ( "Before executing \"" + py_statement + "\":" + str(locals()) )
-            exec ( py_statement )
-            val = eval ( (prefix + self.get_name(parid) + suffix), dep_locals )
-            #print ( "After executing \"" + py_statement + "\":" + str(locals()) )
-            
-            # Check for changes ...
-            if parid in self.ID_value_dict:
-                # The parameter is already there, so check if it's different
-                if str(val) != self.ID_value_dict[parid]:
-                    something_changed = True
-            else:
-                # If it wasn't there, then this is a change!!
-                something_changed = True
-
-            self.ID_value_dict.update ( { parid : str(val) } )
-            if (requested_id == parid):
-                requested_val = val
-            if prnt:
-                if (requested_id == -1) or (requested_id == parid):
-                    error_string = ""
-                    if self.get_error(parid) != None:
-                        error_string = ", *** Error Pending: " + self.get_error(parid)
-                    print ( str(parid) + ": " + self.get_name(parid) + " = " + str(val) + " = " + self.get_expr ( parid, to_py=True ) + " = " + self.get_expr ( parid, to_py=False ) + 
-                            ", " + self.get_name(parid) + " depends on " + str(self.get_depend_list(parid)) +   # " = " + str(self.get_depend_dict(parid)) +
-                            ", " + self.get_name(parid) + " is referenced by " + str(self.get_dependents_list(parid)) + error_string )
-
-        except:
-            print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
-            if prnt:
-                print ( "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
-                print ( "    ... interpreted as: " + py_statement )
-
-
     
 
     def eval_all ( self, prnt=False, requested_id=None ):
         """ Evaluate all parameters based on dependencies. """
+
+        requested_val = 0
+
         # from math import *
         from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
         from random import uniform, gauss
@@ -465,9 +422,6 @@ class ParameterSpace:
         
         # Loop through all parameters over and over evaluating those parameters with valid dependencies
         
-        #if prnt:
-        #    print ( "================= Begin eval_all_depend =============================================================" )
-
         num_passes = 0
         all_valid = False
 
@@ -478,7 +432,7 @@ class ParameterSpace:
 
             # Visit each parameter and try to update it as needed
             for parid in self.ID_name_dict:
-                # Check to see if this parameter can be updated based on its dependencies all being valid
+                # Check to see if this parameter can be updated based on its dependencies ALL being valid
                 dep_list = self.get_depend_list ( parid )
                 dep_satisfied = True
                 for dep_id in dep_list:
@@ -511,16 +465,6 @@ class ParameterSpace:
                         self.ID_value_dict.update ( { parid : str(val) } )
                         if (requested_id == parid):
                             requested_val = val
-                        if prnt:
-                            #print ( "requested_id = " + str(requested_id) )
-                            if (requested_id == None) or (requested_id == -1) or (requested_id == parid):
-                                error_string = ""
-                                if self.get_error(parid) != None:
-                                    error_string = ", *** Error Pending: " + self.get_error(parid)
-                                print ( str(parid) + ": " + self.get_name(parid) + " = " + str(val) + " = " + self.get_expr ( parid, to_py=True ) + " = " + self.get_expr ( parid, to_py=False ) + 
-                                        ", " + self.get_name(parid) + " depends on " + str(self.get_depend_list(parid)) +   # " = " + str(self.get_depend_dict(parid)) +
-                                        ", " + self.get_name(parid) + " is referenced by " + str(self.get_dependents_list(parid)) + error_string )
-
                     except:
                         print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
                         if prnt:
@@ -544,12 +488,28 @@ class ParameterSpace:
             if not self.ID_valid_dict[parid]:
                 all_valid = False
                 break
-        
-        if not all_valid:
-            print ( "!!!!!!!!! WARNING: CIRCULAR REFERENCE !!!!!!!!!!!!" )
 
-        #if prnt:
-        #    print ( "================= End eval_all_depend =============================================================" )
+        if prnt:
+            for parid in self.ID_name_dict:
+                if (requested_id == None) or (requested_id == -1) or (requested_id == parid):
+                    error_string = ""
+                    if self.get_error(parid) != None:
+                        error_string = ", *** Error Pending: " + self.get_error(parid)
+                    print ( str(parid) + ": " + self.get_name(parid) + 
+                            " = " + str(self.get_value(parid)) + 
+                            " = " + self.get_expr ( parid, to_py=True ) + 
+                            " = " + self.get_expr ( parid, to_py=False ) + 
+                            ", " + self.get_name(parid) + 
+                            " depends on " + str(self.get_depend_list(parid)) + 
+                            ", " + self.get_name(parid) + 
+                            " is referenced by " + str(self.get_dependents_list(parid)) + error_string )
+
+        if prnt:
+            if not all_valid:
+                print ( "!!!!!!!!! WARNING: CIRCULAR REFERENCE !!!!!!!!!!!!" )
+
+        return ( requested_val )
+
 
 
 
