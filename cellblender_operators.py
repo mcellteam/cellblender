@@ -928,7 +928,6 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
            
             ps.eval_all(False,-1)  # Try forcing the re-evaluation of all parameters
 
-
         #print ( "After adding a new parameter:" )
         ps.dump()
 
@@ -949,7 +948,7 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
         if (len(mcell.general_parameters.parameter_list) > 0) and (mcell.general_parameters.active_par_index >= 0):
 
             ps = check_out_parameter_space ( mcell.general_parameters )
-            #print ( "Before deleting a parameter:" )
+            ## print ( "Before deleting a parameter:" )
             ps.dump()
 
             id_to_delete = ps.get_id(mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name)
@@ -962,19 +961,33 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
                         # Ensure that the active parameter isn't negative
                         mcell.general_parameters.active_par_index = 0
                 else:
+                    # Construct a message describing the dependencies
+                    # First get the list of names that depend on this parameter in a string of the form: "['a', 'b', 'c']"
                     depends = str(ps.get_dependents_names(id_to_delete))
+                    # Remove the brackets and quotes leaving a string of the form: "a, b, c"
                     depends = depends.replace("'","")
                     depends = depends.replace("[","")
                     depends = depends.replace("]","")
                     # One of ‘DEBUG’, ‘INFO’, ‘OPERATOR’, ‘PROPERTY’, ‘WARNING’, ‘ERROR’, ‘ERROR_INVALID_INPUT’, ‘ERROR_INVALID_CONTEXT’, ‘ERROR_OUT_OF_MEMORY’
                     self.report({'WARNING'}, "Needed by: " + depends )
 
-            #print ( "After deleting a parameter:" )
+                # Re-evaluate all the parameters to update them on the screen
+                ps.eval_all(True,-1)
+                # Update the error message for the entire parameter group
+                update_parameter_block_message ( mcell, ps )
+                ## print ( "After reevaluating a parameter:" )
             ps.dump()
             
             check_in_parameter_space ( mcell.general_parameters, ps )
         
         return {'FINISHED'}
+
+
+def update_parameter_block_message ( mcell, ps ):
+    if ps.all_valid():
+        mcell.general_parameters.param_group_error = ""
+    else:
+        mcell.general_parameters.param_group_error = "Parameter Error or Circular Reference:"
 
 
 def update_parameter_properties ( mcell, ps ):
@@ -1009,10 +1022,7 @@ def update_parameter_properties ( mcell, ps ):
             p.pending_expr = ps.get_error(p.id)
             p.valid = False
 
-    if ps.all_valid():
-        gen_params.param_group_error = ""
-    else:
-        gen_params.param_group_error = "Parameter Error or Circular Reference:"
+    update_parameter_block_message ( mcell, ps )
 
 
 global skip_parameter_name_update

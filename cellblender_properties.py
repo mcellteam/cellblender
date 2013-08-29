@@ -808,8 +808,6 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
     parameter_list = CollectionProperty(type=MCellGeneralParameterProperty, name="Parameters List")
     active_par_index = IntProperty(name="Active Parameter", default=0)
     param_group_error = StringProperty( default="", description="Error Message for Entire Parameter Group")
-    # next_parameter_ID = IntProperty(name="Next Parameter ID", default=0)
-
     parameter_space_string = StringProperty ( name="ParameterSpace", default="", description="ParameterSpace object pickled as a string" )
 
 ###########################################################################################################################
