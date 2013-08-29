@@ -151,7 +151,7 @@ class ParameterSpace:
             self.ID_value_dict.update ( { parid : self.get_value(parid) } )
 
 
-    def get_expr ( self, parid, to_py=False, prefix='', suffix='' ):
+    def get_expr ( self, parid, to_py=False ):
         """ Construct a string representation of the expression by substituting symbols for IDs """
         exp_list = self.ID_expr_dict[parid]
         expr = ""
@@ -159,14 +159,10 @@ class ParameterSpace:
             if type(token) == int:
                 # This is an integer parid, so look up the variable name to concatenate
                 if token in self.ID_name_dict:
-                    expr = expr + (prefix + self.ID_name_dict[token] + suffix)
+                    expr = expr + self.ID_name_dict[token]
                 else:
                     # In previous versions, this case might have defined a new parameter here.
-                    # # Assume that this use is defining a new parameter with a value of 0
-                    # if self.define ( token, "0" ) > 0:
-                    #     # The name was successfully defined as a new parameter
-                    #     expr = expr + (prefix + self.ID_name_dict[token] + suffix)
-                    # In this version, it should never happen, but appends an undefined name in case it does
+                    # In this version, it should never happen, but appends an undefined name ... just in case!!
                     expr = expr + self.UNDEFINED_NAME
             else:
                 # This is a string so simply concatenate it after translation as needed
@@ -229,6 +225,15 @@ class ParameterSpace:
                 depends_on.update ( {token : self.get_name(token)} )
         return depends_on
 
+
+    def all_valid ( self ):
+        # Check to see if all values are currently valid
+        valid = True
+        for parid in self.ID_name_dict:
+            if not self.ID_valid_dict[parid]:
+                valid = False
+                break
+        return ( valid )
 
 
     """
@@ -326,170 +331,15 @@ class ParameterSpace:
     These functions currently rely on the python parsing and evaluation capabilities.
     """
 
-
-    def eval_all_ordered ( self, prnt=False, requested_id=None ):
-        """ Evaluate all parameters in order, printing either a requested ID or all (-1) when prnt is True """
-
-        # requested_val = self.eval_all_depend ( prnt=prnt, requested_id=requested_id )
-
-
-        # from math import *
-        from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
-        from random import uniform, gauss
-
-        # The following prefix and suffix are used to ensure that parameter names (like "if" and "def") are not interpreted as python keywords.
-        # Note that this works with evaluation, but the parsing itself still fails when certain names (like "if" and "def") are used.
-        prefix = ''   # 'cellblender_'
-        suffix = ''   # '_cellblender'
-
-        requested_val = 0
-        if requested_id == None:
-            requested_id = -1   # This eliminated the need to check the type for NoneType all the time!!
-        
-        # local_variables = locals()
-
-        # Loop through as many times as IDs to ensure catching all non-circular dependencies (forward references):
-
-        for pass_num in self.ID_name_dict:
-            # print ( "Looping ... " + str(pass_num) )
-
-            something_changed = False
-
-            if prnt and (requested_id<0):
-                print ( "==============================================================================" )
-
-            for parid in self.ID_name_dict:
-                #print ( "get_name(): " + str(self.get_name(parid)) )
-                #print ( "prefix: " + prefix )
-                #print ( "suffix: " + suffix )
-                #print ( "parid = " + str(parid) )
-                py_statement = (prefix + self.get_name(parid) + suffix) + " = " + self.get_expr ( parid, to_py=True, prefix=prefix, suffix=suffix )
-                try:
-                    #print ( "Before executing \"" + py_statement + "\":" + str(locals()) )
-                    exec ( py_statement )
-                    val = eval ( (prefix + self.get_name(parid) + suffix), locals() )
-                    #print ( "After executing \"" + py_statement + "\":" + str(locals()) )
-                    
-                    # Check for changes ...
-                    if parid in self.ID_value_dict:
-                        # The parameter is already there, so check if it's different
-                        if str(val) != self.ID_value_dict[parid]:
-                            something_changed = True
-                    else:
-                        # If it wasn't there, then this is a change!!
-                        something_changed = True
-
-                    self.ID_value_dict.update ( { parid : str(val) } )
-                    if (requested_id == parid):
-                        requested_val = val
-                    if prnt:
-                        if (requested_id == None) or (requested_id == -1) or (requested_id == parid):
-                            error_string = ""
-                            if self.get_error(parid) != None:
-                                error_string = ", *** Error Pending: " + self.get_error(parid)
-                            print ( str(parid) + ": " + self.get_name(parid) + " = " + str(val) + " = " + self.get_expr ( parid, to_py=True ) + " = " + self.get_expr ( parid, to_py=False ) + 
-                                    ", " + self.get_name(parid) + " depends on " + str(self.get_depend_list(parid)) +   # " = " + str(self.get_depend_dict(parid)) +
-                                    ", " + self.get_name(parid) + " is referenced by " + str(self.get_dependents_list(parid)) + error_string )
-
-                except:
-                    print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
-                    if prnt:
-                        print ( "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
-                        print ( "    ... interpreted as: " + py_statement )
-
-            if prnt and (requested_id<0):
-                print ( "==============================================================================" )
-
-            if something_changed == False:
-                break
-        return requested_val
-
-    
-
     def eval_all ( self, prnt=False, requested_id=None ):
-        """ Evaluate all parameters based on dependencies. """
 
-        requested_val = 0
-
-        # from math import *
-        from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
-        from random import uniform, gauss
-        
-        # Start by marking all parameters as invalid
-
-        for parid in self.ID_name_dict:
-            self.ID_valid_dict[parid] = False
-        
-        # Loop through all parameters over and over evaluating those parameters with valid dependencies
-        
-        num_passes = 0
-        all_valid = False
-
-        while (num_passes <= len(self.ID_name_dict)) and (all_valid == False):
-
-            num_passes = num_passes + 1
-            # print ( "Pass = " + str(num_passes) )
-
-            # Visit each parameter and try to update it as needed
-            for parid in self.ID_name_dict:
-                # Check to see if this parameter can be updated based on its dependencies ALL being valid
-                dep_list = self.get_depend_list ( parid )
-                dep_satisfied = True
-                for dep_id in dep_list:
-                    if not self.ID_valid_dict[dep_id]:
-                        dep_satisfied = False
-                        break
-                if dep_satisfied:
-                    # It's OK to evaluate this parameter
-                    
-                    # It would be nice if this were a function call, but couldn't get it to work
-
-                    something_changed = False
-                    py_statement = ""
-                    try:
-                        py_statement = str(str(self.get_name(parid))) + " = " + str(self.get_expr ( parid, to_py=True ))
-                        # print ( "Before executing " + py_statement )
-                        exec ( py_statement )
-                        val = eval ( self.get_name(parid), locals() )
-                        # print ( "After executing " + py_statement )
-                        
-                        # Check for changes ...
-                        if parid in self.ID_value_dict:
-                            # The parameter is already there, so check if it's different
-                            if str(val) != self.ID_value_dict[parid]:
-                                something_changed = True
-                        else:
-                            # If it wasn't there, then this is a change!!
-                            something_changed = True
-
-                        self.ID_value_dict.update ( { parid : str(val) } )
-                        if (requested_id == parid):
-                            requested_val = val
-                    except:
-                        print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
-                        if prnt:
-                            print ( "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
-                            print ( "    ... interpreted as: " + py_statement )
-
-                    self.ID_valid_dict[parid] = True
-
-            # Check to see if they're all valid yet
-            all_valid = True
-            for parid in self.ID_name_dict:
-                if not self.ID_valid_dict[parid]:
-                    all_valid = False
-                    break
-
-        # End While
-
-        # Check to see if they all got updated or not
-        all_valid = True
-        for parid in self.ID_name_dict:
-            if not self.ID_valid_dict[parid]:
-                all_valid = False
-                break
+        # self.eval_all_ordered ( self, prnt=prnt, requested_id=requested_id )
+        self.eval_all_any_order ( prnt=prnt, requested_id=requested_id )
 
         if prnt:
+            if (requested_id == None) or (requested_id == -1):
+                print ( "==============================================================================" )
+
             for parid in self.ID_name_dict:
                 if (requested_id == None) or (requested_id == -1) or (requested_id == parid):
                     error_string = ""
@@ -504,18 +354,155 @@ class ParameterSpace:
                             ", " + self.get_name(parid) + 
                             " is referenced by " + str(self.get_dependents_list(parid)) + error_string )
 
+            if (requested_id == None) or (requested_id == -1):
+                print ( "==============================================================================" )
+
         if prnt:
-            if not all_valid:
+            if not self.all_valid():
                 print ( "!!!!!!!!! WARNING: CIRCULAR REFERENCE !!!!!!!!!!!!" )
+
+
+
+    def eval_all_ordered ( self, prnt=False, requested_id=None ):
+        """ Evaluate all parameters in order, printing either a requested ID or all (-1) when prnt is True """
+
+        # from math import *
+        from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
+        from random import uniform, gauss
+
+        requested_val = 0
+        if requested_id == None:
+            requested_id = -1   # This eliminated the need to check the type for NoneType all the time!!
+        
+        # Loop through as many times as IDs to ensure catching all non-circular dependencies (forward references):
+
+        for pass_num in self.ID_name_dict:
+            # print ( "Looping ... " + str(pass_num) )
+
+            something_changed = False
+
+            for parid in self.ID_name_dict:
+                #print ( "get_name(): " + str(self.get_name(parid)) )
+                #print ( "parid = " + str(parid) )
+                py_statement = self.get_name(parid) + " = " + self.get_expr ( parid, to_py=True )
+                try:
+                    exec ( py_statement )
+                    val = eval ( self.get_name(parid), locals() )
+                    
+                    # Check for changes ...
+                    if parid in self.ID_value_dict:
+                        # The parameter is already there, so check if it's different
+                        if str(val) != self.ID_value_dict[parid]:
+                            something_changed = True
+                    else:
+                        # If it wasn't there, then this is a change!!
+                        something_changed = True
+
+                    self.ID_value_dict.update ( { parid : str(val) } )
+                    if (requested_id == parid):
+                        requested_val = val
+                except:
+                    print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
+                    if prnt:
+                        print ( "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
+                        print ( "    ... interpreted as: " + py_statement )
+
+            if something_changed == False:
+                break
+
+        return requested_val
+
+
+
+    def eval_all_any_order ( self, prnt=False, requested_id=None ):
+        """ Evaluate all parameters based on dependencies. """
+
+        # from math import *
+        from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
+        from random import uniform, gauss
+        
+        requested_val = 0
+
+        # Start by marking all parameters as invalid
+
+        for parid in self.ID_name_dict:
+            self.ID_valid_dict[parid] = False
+        
+        # Loop through all parameters over and over evaluating those parameters with valid dependencies
+        
+        num_passes = 0
+        #all_valid = False
+
+        while (num_passes <= len(self.ID_name_dict)) and (self.all_valid() == False):
+
+            num_passes = num_passes + 1
+            # print ( "Pass = " + str(num_passes) )
+
+            # Visit each parameter
+            for parid in self.ID_name_dict:
+
+                # Only need to update parameters with invalid values
+                if not self.ID_valid_dict[parid]:
+
+                    # Check to see if this parameter can be updated based on ALL of its dependencies being valid
+                    dep_list = self.get_depend_list ( parid )
+                    dep_satisfied = True
+                    for dep_id in dep_list:
+                        if not self.ID_valid_dict[dep_id]:
+                            dep_satisfied = False
+                            break
+                    if dep_satisfied:
+                        # It's OK to evaluate this parameter
+                        
+                        something_changed = False
+                        py_statement = ""
+                        try:
+                            py_statement = str(str(self.get_name(parid))) + " = " + str(self.get_expr ( parid, to_py=True ))
+                            # print ( "Before executing " + py_statement )
+                            exec ( py_statement )
+                            val = eval ( self.get_name(parid), locals() )
+                            # print ( "After executing " + py_statement )
+                            
+                            # Check for changes ...
+                            if parid in self.ID_value_dict:
+                                # The parameter is already there, so check if it's different
+                                if str(val) != self.ID_value_dict[parid]:
+                                    something_changed = True
+                            else:
+                                # If it wasn't there, then this is a change!!
+                                something_changed = True
+
+                            self.ID_value_dict.update ( { parid : str(val) } )
+                            if (requested_id == parid):
+                                requested_val = val
+                        except:
+                            print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
+                            if prnt:
+                                print ( "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
+                                print ( "    ... interpreted as: " + py_statement )
+
+                        self.ID_valid_dict[parid] = True
+
+            """
+            # Check to see if they're all valid yet
+            all_valid = True
+            for parid in self.ID_name_dict:
+                if not self.ID_valid_dict[parid]:
+                    all_valid = False
+                    break
+            """
+
+        # End While
 
         return ( requested_val )
 
 
 
 
+
     def parse_param_expr ( self, param_expr ):
-        """ Converts a string expression into a list expression with variable parid's as integers and all others as strings
-            Returns either a list (if successful or None if there is an error
+        """ Converts a string expression into a list expression with variable id's as integers and all others as strings
+            Returns either a list (if successful) or None if there is an error
             Example:
               Expression: "A * (B + C)" becomes something like: [ 3, "*", "(", 22, "+", 5, ")", "" ]
                  where 3, 22, and 5 are the ID numbers for parameters A, B, and C respectively
@@ -544,6 +531,7 @@ class ParameterSpace:
                     parameterized_expr = parameterized_expr[0:-2]
 
         return parameterized_expr
+
 
 
     def recurse_tree_symbols ( self, pt, current_expr ):
