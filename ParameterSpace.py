@@ -231,6 +231,9 @@ class ParameterSpace:
         # Check to see if all values are currently valid
         valid = True
         for parid in self.ID_name_dict:
+            if self.ID_error_dict[parid] != None:
+                valid = False
+                break
             if not self.ID_valid_dict[parid]:
                 valid = False
                 break
@@ -308,8 +311,11 @@ class ParameterSpace:
         return False
 
 
-    def rename ( self, old_name, new_name ):
+    def rename ( self, old_name, new_name, illegal_names=None ):
         """ Rename a parameter returning a boolean success value """
+        if new_name in illegal_names:
+            # Can't rename to an illegal name
+            return False
         parid = self.get_id ( old_name )
         if parid < 0:
             # Old name doesn't exist so it can't be renamed

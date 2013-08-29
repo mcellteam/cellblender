@@ -680,13 +680,16 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
             mcell = context.scene.mcell
             par = mcell.general_parameters.parameter_list[index]
             disp = par.name + " = " + par.expr
+            # Try to force None to be 0 ... doesn't seem to work!!
+            if par.value == None:
+                par.value = "0"
             disp = disp + " = " + par.value
             if par.unit != "":
                 disp = disp + " (" + par.unit + ")"
             if par.valid:
                 layout.label(disp, icon='FILE_TICK')
             else:
-                layout.label(disp, icon='COLOR_RED')
+                layout.label(disp, icon='ERROR')  # also try 'COLOR_RED'
 	    
   
 class MCELL_PT_general_parameters(bpy.types.Panel):
@@ -701,7 +704,10 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
-        row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
+        if mcell.general_parameters.param_group_error == "":
+            row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
+        else:
+            row.label(text=mcell.general_parameters.param_group_error, icon='ERROR')
         row = layout.row()
         col = row.column()
         col.template_list("MCELL_UL_draw_parameter", "general_parameters",
@@ -712,19 +718,18 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
         col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
         if len(mcell.general_parameters.parameter_list) > 0:
             par = mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index]
-            #row = layout.row()
-            #row.label(text="Parameter ID = " + str(par.id) )
-            #layout.prop(par, "id")
-            #layout.prop(par, "parsed_expr")
-            #layout.prop(par, "intarr")
-            #layout.prop(par, "floatarr")
             layout.prop(par, "name")
-            layout.prop(par, "expr")
+            if len(par.pending_expr) > 0:
+                layout.prop(par, "expr")
+                row = layout.row()
+                row.label(text="Undefined Expression: " + str(par.pending_expr) + ", reverting to " + str(par.value), icon='ERROR')  # also try 'COLOR_RED'
+            else:
+                layout.prop(par, "expr")
             #layout.prop(par, "value")
             layout.prop(par, "unit")
             layout.prop(par, "desc")
             row = layout.row()
-            row.label(text="Parameter ID = " + str(par.id) )
+            row.label(text="Parameter ID = " + str(par.id) + "   (temporary for debugging)")
 
 #########################################################################################################################################
 

@@ -792,6 +792,8 @@ class MCellGeneralParameterProperty(bpy.types.PropertyGroup):
     expr = StringProperty(name="Expression", default="0", description="Expression to be evaluated for this parameter",
         update=cellblender_operators.update_parameter_expression)
 
+    pending_expr = StringProperty(name="PendingExpression", default="0", description="Expression as entered with errors pending correction")
+
     value = StringProperty(name="Value", default="0", description="Current evaluated value for this parameter" )
     valid = BoolProperty(default=False)
     initialized = BoolProperty(default=False)
@@ -805,6 +807,7 @@ class MCellGeneralParameterProperty(bpy.types.PropertyGroup):
 class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
     parameter_list = CollectionProperty(type=MCellGeneralParameterProperty, name="Parameters List")
     active_par_index = IntProperty(name="Active Parameter", default=0)
+    param_group_error = StringProperty( default="", description="Error Message for Entire Parameter Group")
     # next_parameter_ID = IntProperty(name="Next Parameter ID", default=0)
 
     parameter_space_string = StringProperty ( name="ParameterSpace", default="", description="ParameterSpace object pickled as a string" )

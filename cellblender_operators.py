@@ -896,9 +896,11 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].id = new_id
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = new_name
     
+        ps.eval_all(False,-1)  # Try forcing the re-evaluation of all parameters
+
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].expr = ps.get_expr(new_id)
     
-        ps.eval_all(False,-1)  # Try forcing the re-evaluation of all parameters
+        # Moved above ps.get_expr:   ps.eval_all(False,-1)  # Try forcing the re-evaluation of all parameters
 
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].value = str ( ps.eval_all(False,new_id) )
         mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].valid = True
@@ -976,37 +978,52 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
 
 
 def update_parameter_properties ( mcell, ps ):
-    plist = mcell.general_parameters.parameter_list
+    gen_params = mcell.general_parameters
+    plist = gen_params.parameter_list
     
     ps.eval_all()
+    
+    # print ( "After eval_all, all_valid() = " + str(ps.all_valid()) )
 
     for p in plist:
         p.valid = True
 
     # Rebuild all parameter expressions
     for p in plist:
-        new_expr = ps.get_expr(p.id)
-        if p.expr != new_expr:
-            #print ( new_expr, " != ", p.expr )
-            p.expr = new_expr
-        if ps.UNDEFINED_NAME in p.expr:
+        if ps.get_error(p.id) == None:
+            p.pending_expr = ""
+            new_expr = ps.get_expr(p.id)
+            # Check before copying since the act of copying will force another call to this function for infinite recursion!!
+            if p.expr != new_expr:
+                p.expr = new_expr
+            if ps.UNDEFINED_NAME in p.expr:
+                p.valid = False
+                # One of ‘DEBUG’, ‘INFO’, ‘OPERATOR’, ‘PROPERTY’, ‘WARNING’, ‘ERROR’, ‘ERROR_INVALID_INPUT’, ‘ERROR_INVALID_CONTEXT’, ‘ERROR_OUT_OF_MEMORY’
+                #self.report({'ERROR'}, "Parameter Error" )
+            new_value = ps.get_value(p.id)
+            # Check before copying since the act of copying will force another call to this function for infinite recursion!!
+            if p.value != new_value:
+                p.value = new_value
+        else:
+            # The text entered for this parameter isn't correct, so show both
+            p.pending_expr = ps.get_error(p.id)
             p.valid = False
-            # One of ‘DEBUG’, ‘INFO’, ‘OPERATOR’, ‘PROPERTY’, ‘WARNING’, ‘ERROR’, ‘ERROR_INVALID_INPUT’, ‘ERROR_INVALID_CONTEXT’, ‘ERROR_OUT_OF_MEMORY’
-            #self.report({'ERROR'}, "Parameter Error" )
-        new_value = ps.get_value(p.id)
-        if p.value != new_value:
-            #print ( new_value, " != ", p.value )
-            p.value = new_value
 
-global skip_update
-skip_update = False
+    if ps.all_valid():
+        gen_params.param_group_error = ""
+    else:
+        gen_params.param_group_error = "Parameter Error or Circular Reference:"
+
+
+global skip_parameter_name_update
+skip_parameter_name_update = False
 
 def update_parameter_name ( self, context ):
-    global skip_update
+    global skip_parameter_name_update
     # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one so their expressions show the new name
     #print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
     # The following check was needed because mcell.general_parameters.parameter_list[newest_item]['expr'] wasn't being set yet for some reason
-    if self.initialized and (not skip_update):
+    if self.initialized and (not skip_parameter_name_update):
         mcell = context.scene.mcell
 
         ps = check_out_parameter_space ( mcell.general_parameters )
@@ -1018,19 +1035,23 @@ def update_parameter_name ( self, context ):
         if old_name == None:
             ps.set_name ( self.id, self.name )
         else:
-            if not ps.rename ( old_name, self.name ):
+            python_keywords = ['class','def','return','global',
+                   'if','else','elif','while','for','break',
+                   'try','except','finally',
+                   'in','not','and','or','None','True','False']
+            if not ps.rename ( old_name, self.name, illegal_names=python_keywords ):
                 # Changing the self.name back to the old name will force another update call, so flag it to skip!!
-                skip_update = True
+                skip_parameter_name_update = True
                 self.name = old_name
                 #self.report({'WARNING'}, "Duplicate Name" )
 
         update_parameter_properties ( mcell, ps )
         
         #print ( "After Rename:" )
-        ps.dump()
+        ps.dump(True)
         
         check_in_parameter_space ( mcell.general_parameters, ps )
-    skip_update = False
+    skip_parameter_name_update = False
 
 
 def update_parameter_expression ( self, context ):
@@ -1048,7 +1069,7 @@ def update_parameter_expression ( self, context ):
     update_parameter_properties ( mcell, ps )
         
     #print ( "After Updating Expression:" )
-    ps.dump()
+    ps.dump(True)
     
     check_in_parameter_space ( mcell.general_parameters, ps )
 
