@@ -45,7 +45,7 @@ class ParameterSpace:
         self.ID_expr_dict = {}  # Maps IDs to expression list containing either string literals or integer IDs
         self.ID_value_dict = {}  # Maps IDs to their current value as a string
         self.ID_error_dict = {}  # When not None this contains an expression that needs further editing because it is in error
-        self.ID_valid_dict = {}  # Boolean value for each parameter indicating that it's value is valid with respect to all other parameters
+        self.ID_valid_dict = {}  # Boolean value for each parameter indicating that it's value is valid with respect to all other parameters - This is NOT an indication of the validity of the expression!!!
         self.next_id = 1
 
     def delete_all ( self ):
@@ -130,13 +130,13 @@ class ParameterSpace:
         return this_id
 
 
-    def set_expr ( self, parid, expr ):
+    def set_expr ( self, parid, expr, reeval_all=True ):
         """ Store original text and parse and store the expression for the specified parameter ID """
         # self.ID_error_dict.update ( { parid : expr } )  # This may be redundant, but is here for clarity
         parsed_expr = self.parse_param_expr ( expr )
 
 
-        # Try parsing a second time to catch forward references?
+        # Try parsing a second time to catch forward references?  Is this still needed with newer code?
         parsed_expr = self.parse_param_expr ( expr )
 
         if (parsed_expr == None) or (-1 in parsed_expr):
@@ -147,7 +147,8 @@ class ParameterSpace:
             self.ID_error_dict.update ( { parid : None } )
             self.ID_expr_dict.update ( { parid : parsed_expr } )
             self.ID_valid_dict.update ( { parid : False } )
-            self.eval_all()
+            if reeval_all:
+                self.eval_all()
             self.ID_value_dict.update ( { parid : self.get_value(parid) } )
 
 
@@ -332,6 +333,14 @@ class ParameterSpace:
     """
 
     def eval_all ( self, prnt=False, requested_id=None ):
+    
+        # Re-parse any parameters that remain unparsed
+
+        for parid in self.ID_name_dict:
+            if self.ID_error_dict[parid] != None:
+                self.set_expr ( parid, self.ID_error_dict[parid], reeval_all=False )
+
+        # Evaluate assuming either ordered or unordered parameters    
 
         # self.eval_all_ordered ( self, prnt=prnt, requested_id=requested_id )
         self.eval_all_any_order ( prnt=prnt, requested_id=requested_id )
@@ -377,13 +386,10 @@ class ParameterSpace:
         # Loop through as many times as IDs to ensure catching all non-circular dependencies (forward references):
 
         for pass_num in self.ID_name_dict:
-            # print ( "Looping ... " + str(pass_num) )
 
             something_changed = False
 
             for parid in self.ID_name_dict:
-                #print ( "get_name(): " + str(self.get_name(parid)) )
-                #print ( "parid = " + str(parid) )
                 py_statement = self.get_name(parid) + " = " + self.get_expr ( parid, to_py=True )
                 try:
                     exec ( py_statement )
@@ -431,12 +437,10 @@ class ParameterSpace:
         # Loop through all parameters over and over evaluating those parameters with valid dependencies
         
         num_passes = 0
-        #all_valid = False
 
         while (num_passes <= len(self.ID_name_dict)) and (self.all_valid() == False):
 
             num_passes = num_passes + 1
-            # print ( "Pass = " + str(num_passes) )
 
             # Visit each parameter
             for parid in self.ID_name_dict:
@@ -458,10 +462,8 @@ class ParameterSpace:
                         py_statement = ""
                         try:
                             py_statement = str(str(self.get_name(parid))) + " = " + str(self.get_expr ( parid, to_py=True ))
-                            # print ( "Before executing " + py_statement )
                             exec ( py_statement )
                             val = eval ( self.get_name(parid), locals() )
-                            # print ( "After executing " + py_statement )
                             
                             # Check for changes ...
                             if parid in self.ID_value_dict:
@@ -482,15 +484,6 @@ class ParameterSpace:
                                 print ( "    ... interpreted as: " + py_statement )
 
                         self.ID_valid_dict[parid] = True
-
-            """
-            # Check to see if they're all valid yet
-            all_valid = True
-            for parid in self.ID_name_dict:
-                if not self.ID_valid_dict[parid]:
-                    all_valid = False
-                    break
-            """
 
         # End While
 
@@ -594,7 +587,8 @@ if __name__ == "__main__":
                 print ( "" )
                 print ( " Commands:" )
                 print ( "  ? : Print help" )
-                print ( "  \ : Dump All Parameters" )
+                print ( "  Enter : Print All Parameters ... one line each" )
+                print ( "  \ : Dump All Parameters ... in great detail" )
                 print ( "  ! : Dump Parameters object as a pickled string" )
                 print ( "  param = expression : Assign expression to parameter" )
                 print ( "  param : Evaluate param" )
@@ -602,7 +596,7 @@ if __name__ == "__main__":
                 print ( "  # n: Generate n parameters where each is the sum of the preceding 3" )
                 print ( "  .par : Delete Parameter par" )
                 print ( "  . : Delete All Parameters" )
-                print ( "  Control-C : Exit program" )
+                print ( "  Control-C or Control-D : Exit program" )
                 print ( "" )
             elif '=' in s:
                 # Perform an assignment
