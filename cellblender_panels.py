@@ -472,7 +472,8 @@ class MCELL_PT_initialization(bpy.types.Panel):
         mcell = context.scene.mcell
 
         layout.prop(mcell.initialization, "iterations")
-        layout.prop(mcell.initialization, "time_step_str")
+        layout.prop(mcell.initialization, "time_step_str", text="Time Step="+str(mcell.initialization.time_step))
+        layout.prop(mcell.initialization, "time_step", text="Experimental View of Time Step")
 
         # Advanced Options
         box = layout.box()

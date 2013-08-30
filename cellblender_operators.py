@@ -3191,6 +3191,47 @@ def check_rxn_output(self, context):
     return
 
 
+
+
+
+def check_expr_str(mcell, param_str, min_val, max_val):
+    """ Convert param_str to float if possible. Otherwise, generate error. """
+
+    val = None
+    status = ""
+
+    ps = check_out_parameter_space ( mcell.general_parameters )
+    ps.dump(True)
+    (value,valid) = ps.eval_all ( expression = param_str )
+    check_in_parameter_space ( mcell.general_parameters, ps )
+
+    if valid:
+        print ( "  = " + str ( value ) )
+        val = value
+    else:
+        print ( "  = " + str ( value ) + " ... with Error" )
+        try:
+            val = float(param_str)
+        except ValueError:
+            status = "Invalid value for %s: %s"
+
+    try:
+        if min_val is not None:
+            if val < min_val:
+                status = "Invalid value for %s: %s"
+        if max_val is not None:
+            if val > max_val:
+                status = "Invalid value for %s: %s"
+    except ValueError:
+        status = "Invalid value for %s: %s"
+
+    print ( "\ncheck_param_str returning " + str(val) + " with status = " + str(status) )
+
+    return (val, status)
+
+
+
+
 def check_val_str(val_str, min_val, max_val):
     """ Convert val_str to float if possible. Otherwise, generate error. """
 
@@ -3323,7 +3364,7 @@ def update_time_step(self, context):
     mcell = context.scene.mcell
     time_step_str = mcell.initialization.time_step_str
 
-    (time_step, status) = check_val_str(time_step_str, 0, None)
+    (time_step, status) = check_expr_str(mcell, time_step_str, 0, None)
 
     if status == "":
         mcell.initialization.time_step = time_step
