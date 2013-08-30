@@ -6,6 +6,7 @@ import re
 import token
 import symbol
 import sys
+# from pdb import set_trace as debug # Debug help from Lee
 
 print ( "ParameterSpace.py being processed ..." )
 
@@ -313,9 +314,10 @@ class ParameterSpace:
 
     def rename ( self, old_name, new_name, illegal_names=None ):
         """ Rename a parameter returning a boolean success value """
-        if new_name in illegal_names:
-            # Can't rename to an illegal name
-            return False
+        if illegal_names != None:
+          if new_name in illegal_names:
+              # Can't rename to an illegal name
+              return False
         parid = self.get_id ( old_name )
         if parid < 0:
             # Old name doesn't exist so it can't be renamed
@@ -338,7 +340,9 @@ class ParameterSpace:
     These functions currently rely on the python parsing and evaluation capabilities.
     """
 
-    def eval_all ( self, prnt=False, requested_id=None ):
+
+
+    def eval_all ( self, prnt=False, requested_id=None, expression=None ):
     
         # Re-parse any parameters that remain unparsed
 
@@ -348,8 +352,8 @@ class ParameterSpace:
 
         # Evaluate assuming either ordered or unordered parameters    
 
-        # self.eval_all_ordered ( self, prnt=prnt, requested_id=requested_id )
-        self.eval_all_any_order ( prnt=prnt, requested_id=requested_id )
+        # (requested_val, valid) = self.eval_all_ordered ( self, prnt=prnt, requested_id=requested_id, expression=expression )
+        (requested_val, valid) = self.eval_all_any_order ( prnt=prnt, requested_id=requested_id, expression=expression )
 
         if prnt:
             if (requested_id == None) or (requested_id == -1):
@@ -376,9 +380,14 @@ class ParameterSpace:
             if not self.all_valid():
                 print ( "!!!!!!!!! WARNING: CIRCULAR REFERENCE !!!!!!!!!!!!" )
 
+        if expression != None:
+            # Only return the valid flag for expressions because the information is in the database for parameters
+            return (requested_val, valid)
+
+        return requested_val
 
 
-    def eval_all_ordered ( self, prnt=False, requested_id=None ):
+    def eval_all_ordered ( self, prnt=False, requested_id=None, expression=None ):
         """ Evaluate all parameters in order, printing either a requested ID or all (-1) when prnt is True """
 
         # from math import *
@@ -386,6 +395,8 @@ class ParameterSpace:
         from random import uniform, gauss
 
         requested_val = 0
+        valid = True
+
         if requested_id == None:
             requested_id = -1   # This eliminated the need to check the type for NoneType all the time!!
         
@@ -397,6 +408,8 @@ class ParameterSpace:
 
             for parid in self.ID_name_dict:
                 py_statement = self.get_name(parid) + " = " + self.get_expr ( parid, to_py=True )
+                #py_statement = "{0} = {1}".format( self.get_name(parid), self.get_expr ( parid, to_py=True ) )
+                #debug() # help from Lee
                 try:
                     exec ( py_statement )
                     val = eval ( self.get_name(parid), locals() )
@@ -414,6 +427,7 @@ class ParameterSpace:
                     if (requested_id == parid):
                         requested_val = val
                 except:
+                    valid = False
                     print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
                     if prnt:
                         print ( "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
@@ -422,11 +436,22 @@ class ParameterSpace:
             if something_changed == False:
                 break
 
-        return requested_val
+        if expression != None:
+            # Evaluate the requested expression in the context of the variables that have already been evaluated:
+            try:
+                val = eval ( expression, locals() )
+                requested_val = val
+            except:
+                valid = False
+                print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
+                if prnt:
+                    print ( "  Error in statement:   " + expression )
+            
+        return (requested_val, valid)
 
 
 
-    def eval_all_any_order ( self, prnt=False, requested_id=None ):
+    def eval_all_any_order ( self, prnt=False, requested_id=None, expression=None ):
         """ Evaluate all parameters based on dependencies. """
 
         # from math import *
@@ -434,6 +459,7 @@ class ParameterSpace:
         from random import uniform, gauss
         
         requested_val = 0
+        valid = True
 
         # Start by marking all parameters as invalid
 
@@ -484,6 +510,7 @@ class ParameterSpace:
                             if (requested_id == parid):
                                 requested_val = val
                         except:
+                            valid = False
                             print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
                             if prnt:
                                 print ( "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
@@ -493,7 +520,18 @@ class ParameterSpace:
 
         # End While
 
-        return ( requested_val )
+        if expression != None:
+            # Evaluate the requested expression in the context of the variables that have already been evaluated:
+            try:
+                val = eval ( expression, locals() )
+                requested_val = val
+            except:
+                valid = False
+                print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
+                if prnt:
+                    print ( "  Error in statement:   " + expression )
+
+        return ( requested_val, valid )
 
 
 
@@ -573,6 +611,15 @@ class ParameterSpace:
     
 
 ###############   T E S T    C O D E   ##################
+"""
+To run in debugger:
+$ python3
+>>> import pdb
+>>> import ParameterSpace
+>>> pdb.run('ParameterSpace')
+(Pdb) h
+
+"""
 
 if __name__ == "__main__":
 
@@ -596,8 +643,8 @@ if __name__ == "__main__":
                 print ( "  Enter : Print All Parameters ... one line each" )
                 print ( "  \ : Dump All Parameters ... in great detail" )
                 print ( "  ! : Dump Parameters object as a pickled string" )
+                print ( "  expression : Evaluate expression" )
                 print ( "  param = expression : Assign expression to parameter" )
-                print ( "  param : Evaluate param" )
                 print ( "  old @ new : Rename parameter old to new" )
                 print ( "  # n: Generate n parameters where each is the sum of the preceding 3" )
                 print ( "  .par : Delete Parameter par" )
@@ -663,9 +710,12 @@ if __name__ == "__main__":
                 if not ok:
                     print ( "Unable to rename " + old + " to because it is not a valid parameter name" )
             elif s != '':
-                # Assume s is a parameter name to print
-                req_id = ps.get_id ( s )
-                ps.eval_all(True, req_id)
+                # Assume s is an expression to evaluate and print
+                (value,valid) = ps.eval_all ( expression=s )
+                if valid:
+                    print ( "  = " + str ( value ) )
+                else:
+                    print ( "  = " + str ( value ) + " ... with Error" )
             else:
                 # Print all parameters
                 ps.eval_all(True)
