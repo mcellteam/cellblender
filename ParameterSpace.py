@@ -75,13 +75,13 @@ class ParameterSpace:
             for i in self.ID_name_dict:
                 #print ( "    " + str(self.ID_name_dict[i]) + " = " + str(self.ID_value_dict[i]) + " = " + self.get_expr(i) + " = " + self.get_expr(i,to_py=True) + " = " + str(self.ID_expr_dict[i]) )
 
-                print ( "    " + str(i) + ": " + str(self.ID_name_dict[i])  )
-                print ( "    " + str(i) + ": " + str(self.ID_value_dict[i]) )
-                print ( "    " + str(i) + ": " + self.get_expr(i) )
-                print ( "    " + str(i) + ": " + self.get_expr(i,to_py=True) )
-                print ( "    " + str(i) + ": " + str(self.ID_expr_dict[i]) )
-                print ( "    " + str(i) + ": " + str(self.ID_error_dict[i]) )
-                print ( "    " + str(i) + ": " + str(self.ID_valid_dict[i]) )
+                print ( "    " + str(i) + ": name  = " + str(self.ID_name_dict[i])  )
+                print ( "    " + str(i) + ": value = " + str(self.ID_value_dict[i]) )
+                print ( "    " + str(i) + ": expr  = " + self.get_expr(i) )
+                print ( "    " + str(i) + ": pyexp = " + self.get_expr(i,to_py=True) )
+                print ( "    " + str(i) + ": idexp = " + str(self.ID_expr_dict[i]) )
+                print ( "    " + str(i) + ": error = " + str(self.ID_error_dict[i]) )
+                print ( "    " + str(i) + ": valid = " + str(self.ID_valid_dict[i]) )
 
                 #print ( "    " + str(self.ID_name_dict[i]) + " = " + self.get_expr(i) + " = " + self.get_expr(i,to_py=True) + " = " + str(self.ID_expr_dict[i]) )
             self.eval_all(True)
@@ -378,7 +378,7 @@ class ParameterSpace:
 
         if prnt:
             if not self.all_valid():
-                print ( "!!!!!!!!! WARNING: CIRCULAR REFERENCE !!!!!!!!!!!!" )
+                print ( "!!!!!!!!! WARNING: ERROR OR CIRCULAR REFERENCE !!!!!!!!!!!!" )
 
         if expression != None:
             # Only return the valid flag for expressions because the information is in the database for parameters

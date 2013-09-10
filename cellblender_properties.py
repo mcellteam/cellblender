@@ -484,32 +484,52 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.mol_viz_toggle_manual_select)
 
 
+#class MCellFloatParameterProperty(bpy.types.FloatProperty):
+#    pass
+
+#class MCellFloatParameterProperty(bpy.types.FloatProperty):
+#    def __init__ (self,name="",default=0.0,min=0.0,max=1.0):
+#        super(bpy.types.FloatProperty, self).__init__()
+#        #super().__init__()
+#        pass
+
+#class MCellFloatParameterProperty(bpy.types.PropertyGroup):
+#    param_value = FloatProperty(name="value", default=0)
+#    param_id = IntProperty(name="id", default=-1)
+
 class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     iterations = IntProperty(
         name="Simulation Iterations",
         description="Number of iterations to run",
         default=0, min=0)
-    time_step = FloatProperty(name="Time Step", default=1e-6, min=0.0)
+    #test_float = MCellFloatParameterProperty()
+
+    time_step = FloatProperty(name="param.uni.Time Step", default=1e-6, min=0.0)
     time_step_str = StringProperty(
-        name="Time Step", default="1e-6",
+        name="param.uni.Time Step", default="1e-6",
         description="Simulation Time Step Units: seconds",
         update=cellblender_operators.update_time_step)
+
     status = StringProperty(name="Status")
+
     advanced = bpy.props.BoolProperty(default=False)
     warnings = bpy.props.BoolProperty(default=False)
     notifications = bpy.props.BoolProperty(default=False)
 
     # Advanced/Optional Commands
+
     time_step_max = FloatProperty(name="Time Step", min=0.0)
     time_step_max_str = StringProperty(
         name="Maximum Time Step",
         description="The longest possible time step",
         update=cellblender_operators.update_time_step_max)
+
     space_step = FloatProperty(name="Space Step", min=0.0)
     space_step_str = StringProperty(
         name="Space Step",
         description="Have molecules take the same mean diffusion distance",
         update=cellblender_operators.update_space_step)
+
     surface_grid_density = IntProperty(
         name="Surface Grid Density", default=10000, min=0,
         description="Number of molecules that can be stored per square micron")
@@ -811,6 +831,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
     parameter_space_string = StringProperty ( name="ParameterSpace", default="", description="ParameterSpace object pickled as a string" )
 
 ###########################################################################################################################
+
 
 class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
     molecule_list = CollectionProperty(

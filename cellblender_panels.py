@@ -473,6 +473,7 @@ class MCELL_PT_initialization(bpy.types.Panel):
 
         layout.prop(mcell.initialization, "iterations")
         layout.prop(mcell.initialization, "time_step_str", text="Time Step="+str(mcell.initialization.time_step))
+        layout.label(text="Time Step="+str(mcell.initialization.time_step))
         layout.prop(mcell.initialization, "time_step", text="Experimental View of Time Step")
 
         # Advanced Options
@@ -723,7 +724,7 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
             if len(par.pending_expr) > 0:
                 layout.prop(par, "expr")
                 row = layout.row()
-                row.label(text="Undefined Expression: " + str(par.pending_expr) + ", reverting to " + str(par.value), icon='ERROR')  # also try 'COLOR_RED'
+                row.label(text="Undefined Expression: " + str(par.pending_expr) + ", reverting to " + str(par.expr), icon='ERROR')  # also try 'COLOR_RED'
             else:
                 layout.prop(par, "expr")
             #layout.prop(par, "value")

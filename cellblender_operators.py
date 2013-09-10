@@ -810,6 +810,8 @@ class MCELL_OT_parameter_remove(bpy.types.Operator):
 	
 #########################################################################################################################################
 
+
+
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
 
 import pickle
@@ -1029,10 +1031,10 @@ global skip_parameter_name_update
 skip_parameter_name_update = False
 
 def update_parameter_name ( self, context ):
-    global skip_parameter_name_update
     # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one so their expressions show the new name
     #print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
     # The following check was needed because mcell.general_parameters.parameter_list[newest_item]['expr'] wasn't being set yet for some reason
+    global skip_parameter_name_update
     if self.initialized and (not skip_parameter_name_update):
         mcell = context.scene.mcell
 
@@ -1077,6 +1079,12 @@ def update_parameter_expression ( self, context ):
     ps.set_expr ( self.id, self.expr )
     
     update_parameter_properties ( mcell, ps )
+    
+    # Try forcing the update of all panel parameters - This appears to work!
+    # If we use this approach, we'll end up listing all of the panel update functions
+    #   either here or collected together in another function
+    update_time_step ( self, context )
+
         
     #print ( "After Updating Expression:" )
     ps.dump(True)
