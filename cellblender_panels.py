@@ -724,7 +724,8 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
             if len(par.pending_expr) > 0:
                 layout.prop(par, "expr")
                 row = layout.row()
-                row.label(text="Undefined Expression: " + str(par.pending_expr) + ", reverting to " + str(par.expr), icon='ERROR')  # also try 'COLOR_RED'
+                #row.label(text="Undefined Expression: " + str(par.pending_expr) + ", reverting to " + str(par.expr), icon='ERROR')  # also try 'COLOR_RED'
+                row.label(text="Undefined Expression: " + str(par.pending_expr), icon='ERROR')  # also try 'COLOR_RED'
             else:
                 layout.prop(par, "expr")
             #layout.prop(par, "value")

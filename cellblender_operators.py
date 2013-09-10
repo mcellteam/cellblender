@@ -954,7 +954,7 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
             ps.dump()
 
             id_to_delete = ps.get_id(mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name)
-            if id_to_delete > 0:
+            if (id_to_delete != None) and (id_to_delete > 0):
                 if ( ps.delete ( id_to_delete ) ):
                     # Delete was successful so update the list to reflect the change
                     mcell.general_parameters.parameter_list.remove(mcell.general_parameters.active_par_index)
@@ -1059,6 +1059,13 @@ def update_parameter_name ( self, context ):
 
         update_parameter_properties ( mcell, ps )
         
+
+        # Try forcing the update of all panel parameters - This appears to work!
+        # If we use this approach, we'll end up listing all of the panel update functions
+        #   either here or collected together in another function
+        update_time_step ( self, context )
+
+
         #print ( "After Rename:" )
         ps.dump(True)
         
@@ -3202,7 +3209,7 @@ def check_rxn_output(self, context):
 
 
 
-def check_expr_str(mcell, param_str, min_val, max_val):
+def check_expr_str(mcell, panel_param_name, param_str, min_val, max_val):
     """ Convert param_str to float if possible. Otherwise, generate error. """
 
     val = None
@@ -3210,6 +3217,12 @@ def check_expr_str(mcell, param_str, min_val, max_val):
 
     ps = check_out_parameter_space ( mcell.general_parameters )
     ps.dump(True)
+    if panel_param_name != None:
+        # Make an assignment to this name in the parameter space
+        ps.define ( panel_param_name, param_str )
+        # Return a value to update the parameter string in the panel
+        print ( "Should be returning ", ps.get_expr ( ps.get_id(panel_param_name) ) )
+    # Evaluate the parameter string (whether it's a panel parameter or not)
     (value,valid) = ps.eval_all ( expression = param_str )
     check_in_parameter_space ( mcell.general_parameters, ps )
 
@@ -3230,7 +3243,8 @@ def check_expr_str(mcell, param_str, min_val, max_val):
         if max_val is not None:
             if val > max_val:
                 status = "Invalid value for %s: %s"
-    except ValueError:
+    #except ValueError:
+    except:
         status = "Invalid value for %s: %s"
 
     print ( "\ncheck_param_str returning " + str(val) + " with status = " + str(status) )
@@ -3372,7 +3386,7 @@ def update_time_step(self, context):
     mcell = context.scene.mcell
     time_step_str = mcell.initialization.time_step_str
 
-    (time_step, status) = check_expr_str(mcell, time_step_str, 0, None)
+    (time_step, status) = check_expr_str ( mcell, "time_step", time_step_str, 0, None )
 
     if status == "":
         mcell.initialization.time_step = time_step

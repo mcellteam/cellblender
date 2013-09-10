@@ -47,7 +47,7 @@ class ParameterSpace:
         self.ID_value_dict = {}  # Maps IDs to their current value as a string
         self.ID_error_dict = {}  # When not None this contains an expression that needs further editing because it is in error
         self.ID_valid_dict = {}  # Boolean value for each parameter indicating that it's value is valid with respect to all other parameters - This is NOT an indication of the validity of the expression!!!
-        self.next_id = 1
+        # self.next_id = 1
 
     def delete_all ( self ):
         """ Delete all parameters """
@@ -57,15 +57,15 @@ class ParameterSpace:
     def num_parameters ( self ):
         return ( len(self.ID_name_dict) )
 
-    def get_next_id ( self ):
-        return self.next_id
+    #def get_next_id ( self ):
+    #    return self.next_id
 
 
     def dump ( self, prnt=False ):
         # For right now, this function defaults to silence (an easy way to turn it on and off globally)
         if prnt:
             print ( " Parameter space:" )
-            print ( "  next_id = " + str(self.next_id) )
+            #print ( "  next_id = " + str(self.next_id) )
             print ( "  name->ID = " + str(self.name_ID_dict) )
             print ( "  ID->name = " + str(self.ID_name_dict) )
             print ( "  ID->expr = " + str(self.ID_expr_dict) )
@@ -101,13 +101,20 @@ class ParameterSpace:
         """ Define a parameter ... may be new or may overwrite an existing parameter"""
         """ Return the ID of this parameter whether it's new or not """
         # print "Define: " + str(name) + " = " + str(expr)
+
+        next_available_id = 1;
+        while next_available_id in self.ID_name_dict:
+            print ( "Can't use ", next_available_id )
+            next_available_id += 1
+        # self.next_id = next_available_id
+
         if name == None:
             # Try to choose a name with this next ID if possible, but search further as needed
-            next_unused_number = self.next_id
+            next_unused_number = next_available_id
             while self.get_id( "P%d" % (next_unused_number) ) != None:
                 next_unused_number += 1
             name = "P%d" % (next_unused_number)
-            
+
         this_id = -1
         if name in self.name_ID_dict:
             # This parameter already exists, so just update its expression
@@ -117,7 +124,7 @@ class ParameterSpace:
         else:
             # This is a new name, so make a new entry
             # print ( "Parameter " + name + " is new, so make new name/ID entries as well as update the expression" )
-            this_id = self.next_id
+            this_id = next_available_id
             self.name_ID_dict.update ( { name : this_id } )
             self.ID_name_dict.update ( { this_id : name } )
             # Always set the default ("original") value to 0
@@ -127,7 +134,15 @@ class ParameterSpace:
             #  If the new expression is not valid, it will not replace the current expression and
             #  instead, it will update the error expression.
             self.set_expr ( this_id, expr )
-            self.next_id += 1
+            """
+            # self.next_id += 1
+            # This would be a place to search for the first unused id rather than simply incrementing the next_id
+            next_available_id = 1;
+            while next_available_id in self.ID_name_dict:
+                print ( "Can't use ", next_available_id )
+                next_available_id += 1
+            self.next_id = next_available_id
+            """
         return this_id
 
 
