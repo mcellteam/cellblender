@@ -985,6 +985,82 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class ReportingOperator(bpy.types.Operator):
+    """Since only Operators (and Macros) can issue the self.report function,
+       this class is intended to provide that service for non-operators.
+       Currently, this does not seem to work. It prints to the console
+       rather than to the status panel (as the other report calls do)."""
+    bl_idname = "params.report"
+    bl_label = "Report"
+    bl_description = "Report information to the user"
+    bl_options = {'REGISTER'}
+    
+    message = bpy.props.StringProperty()
+    
+    def execute ( self, context ):
+        self.report ( {'WARNING'}, self.message )
+        return {'FINISHED'}
+
+
+class DialogOperator(bpy.types.Operator):
+    bl_idname = "object.dialog_operator"
+    bl_label = "Parameter Error"
+
+    message = bpy.props.StringProperty(name="Message")
+    
+    def draw ( self, context ):
+        layout = self.layout
+        row = layout.row()
+        row.label ( text=self.message )
+
+    def execute(self, context):
+        wm = context.window_manager
+        wm.invoke_props_dialog(self)
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+
+############## Needed for:  cellblender_properties.update_callback
+#from . import cellblender_properties
+def update_callback ( context, param_name, expr ):
+    """Given a parameter name and an expression, put the expression into the location for that name.
+       Always check to see if it is already equal to the expression first to avoid infinite recursion!! """
+    print ( "User's update callback has been called" )
+
+    mcell = context.scene.mcell
+
+    if param_name == "PARAM_location_x":
+        if mcell.mesh_creation_parameters.PARAM_location_x != expr:
+            mcell.mesh_creation_parameters.PARAM_location_x = expr
+    elif param_name == "PARAM_location_y":
+        if mcell.mesh_creation_parameters.PARAM_location_y != expr:
+            mcell.mesh_creation_parameters.PARAM_location_y = expr
+    elif param_name == "PARAM_location_z":
+        if mcell.mesh_creation_parameters.PARAM_location_z != expr:
+            mcell.mesh_creation_parameters.PARAM_location_z = expr
+
+    elif param_name == "PARAM_time_step_str":
+        if mcell.initialization.PARAM_time_step_str != expr:
+            mcell.initialization.PARAM_time_step_str = expr
+    
+
+def update_all_panel_parameters ( context ):
+    """This forces a redraw of all panel parameters. It should be called when updating general parameters."""
+    print ( "Forcing redraw of all panel parameters." )
+
+    mcell = context.scene.mcell
+
+    mcell.mesh_creation_parameters.PARAM_location_x = mcell.mesh_creation_parameters.PARAM_location_x
+    mcell.mesh_creation_parameters.PARAM_location_y = mcell.mesh_creation_parameters.PARAM_location_y
+    mcell.mesh_creation_parameters.PARAM_location_z = mcell.mesh_creation_parameters.PARAM_location_z
+    mcell.initialization.PARAM_time_step_str = mcell.initialization.PARAM_time_step_str
+    
+
+############## Needed for:  cellblender_properties.update_callback
+
 def update_parameter_block_message ( mcell, ps ):
     if ps.all_valid():
         mcell.general_parameters.param_group_error = ""
@@ -992,7 +1068,8 @@ def update_parameter_block_message ( mcell, ps ):
         mcell.general_parameters.param_group_error = "Parameter Error or Circular Reference:"
 
 
-def update_parameter_properties ( mcell, ps ):
+def update_parameter_properties ( mcell, ps, context ):
+    """ Note that the "context" parameter is added as a "fix" to give access to hard-coded panel parameters"""
     gen_params = mcell.general_parameters
     plist = gen_params.parameter_list
     
@@ -1023,6 +1100,32 @@ def update_parameter_properties ( mcell, ps ):
             # The text entered for this parameter isn't correct, so show both
             p.pending_expr = ps.get_error(p.id)
             p.valid = False
+
+    # Rebuild all panel parameter expressions
+    # This is currently a hard-coded list
+    
+    mcell = context.scene.mcell
+
+    for pid in ps.get_id_list():
+        pname = ps.get_name(pid)
+        if pname.startswith("PARAM_"):
+            expr = ps.get_expr ( pid )
+            if (ps.get_error(pid) != None):
+                error_message = "Expression Error: " + ps.get_error(pid) + ", using " + expr + " instead"
+                print ( "=================================================" )
+                print ( error_message )
+                print ( "=================================================" )
+                #bpy.ops.params.report('EXEC_DEFAULT', message=error_message )
+                #bpy.ops.object.dialog_operator('INVOKE_DEFAULT')
+                bpy.ops.object.dialog_operator('EXEC_DEFAULT', message=error_message )
+                # Problem: self.report is only defined for Operators!!!!!
+                # self.report({'ERROR'}, "Error: " + expr )
+
+            #print ( ">>>> Got a Parameter: " + pname )
+            #print ( "     Expression = " + expr )
+            
+            #cellblender_properties.update_callback ( context, pname, expr )
+            update_callback ( context, pname, expr )
 
     update_parameter_block_message ( mcell, ps )
 
@@ -1057,14 +1160,8 @@ def update_parameter_name ( self, context ):
                 self.name = old_name
                 #self.report({'WARNING'}, "Duplicate Name" )
 
-        update_parameter_properties ( mcell, ps )
-        
-
-        # Try forcing the update of all panel parameters - This appears to work!
-        # If we use this approach, we'll end up listing all of the panel update functions
-        #   either here or collected together in another function
-        update_time_step ( self, context )
-
+        # Force the update of all panel parameters to cause the numeric values to be updated even if the string (expression) hasn't changed
+        update_parameter_properties ( mcell, ps, context )
 
         #print ( "After Rename:" )
         ps.dump(True)
@@ -1084,21 +1181,67 @@ def update_parameter_expression ( self, context ):
     ps.dump()
 
     ps.set_expr ( self.id, self.expr )
+    if (ps.get_error(self.id) != None):
+        print ( "\n\nExpression Error in update_parameter_expression\n\n" )
     
-    update_parameter_properties ( mcell, ps )
+
+    update_parameter_properties ( mcell, ps, context )
     
     # Try forcing the update of all panel parameters - This appears to work!
     # If we use this approach, we'll end up listing all of the panel update functions
     #   either here or collected together in another function
-    update_time_step ( self, context )
+    # update_time_step ( self, context )
 
-        
+    update_all_panel_parameters ( context )
+
     #print ( "After Updating Expression:" )
     ps.dump(True)
     
     check_in_parameter_space ( mcell.general_parameters, ps )
 
     self.initialized = True
+
+
+def get_panel_parameter ( self ):
+    print ( "get_panel_parameter(self), self = " + str(self) )
+    return "get"
+
+def set_panel_parameter ( self, value ):
+    print ( "set_panel_parameter(self), self = " + str(self) + ", value = " + str(value) )
+    return "set"
+
+
+def update_panel_parameter ( self, context, field_name ):
+    print ( "Changed " + field_name + " to " + str(getattr(self,field_name)) )
+
+    # Called when a panel parameter expression changes - needs to recompute the result and update all parameters that depend on this one
+    #print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "] to " + self.expr )
+    mcell = context.scene.mcell
+
+    ps = check_out_parameter_space ( mcell.general_parameters )
+
+    #print ( "Before Updating Expression:" )
+    ps.dump()
+
+    ps.define ( field_name, str(getattr(self,field_name)) )
+
+    update_parameter_properties ( mcell, ps, context )
+    
+    # Try forcing the update of all panel parameters - This appears to work!
+    # If we use this approach, we'll end up listing all of the panel update functions
+    #   either here or collected together in another function
+    #update_time_step ( self, context )
+
+    value = ps.get_value(ps.get_id(field_name))
+        
+    print ( "After Updating Expression:" )
+    ps.dump(True)
+    
+    check_in_parameter_space ( mcell.general_parameters, ps )
+
+    self.initialized = True
+    return value
+
 
 	
 #########################################################################################################################################
@@ -3234,18 +3377,18 @@ def check_expr_str(mcell, panel_param_name, param_str, min_val, max_val):
         try:
             val = float(param_str)
         except ValueError:
-            status = "Invalid value for %s: %s"
+            status = "Invalid value for %s: %s" % (panel_param_name, param_str)
 
     try:
         if min_val is not None:
             if val < min_val:
-                status = "Invalid value for %s: %s"
+                status = "Invalid value for %s (%s): %f < %f" % (panel_param_name, param_str, val, min_val)
         if max_val is not None:
             if val > max_val:
-                status = "Invalid value for %s: %s"
+                status = "Invalid value for %s (%s): %f > %f" % (panel_param_name, param_str, val, max_val)
     #except ValueError:
     except:
-        status = "Invalid value for %s: %s"
+        status = "Exception extracting value for %s: %s" % (panel_param_name, param_str)
 
     print ( "\ncheck_param_str returning " + str(val) + " with status = " + str(status) )
 
@@ -3264,12 +3407,12 @@ def check_val_str(val_str, min_val, max_val):
         val = float(val_str)
         if min_val is not None:
             if val < min_val:
-                status = "Invalid value for %s: %s"
+                status = "Invalid value: %f < %f" % (val, min_val)
         if max_val is not None:
             if val > max_val:
-                status = "Invalid value for %s: %s"
+                status = "Invalid value: %f > %f" % (val, min_val)
     except ValueError:
-        status = "Invalid value for %s: %s"
+        status = "Value Error Exception: %s" % (val_str)
 
     return (val, status)
 
@@ -3382,11 +3525,31 @@ def update_clamp_value(self, context):
 
 def update_time_step(self, context):
     """ Store the time step as a float if it's legal or generate an error """
+    print ( "Call to update_time_step" )
+    update_panel_parameter ( self, context,"PARAM_time_step_str" )
 
     mcell = context.scene.mcell
-    time_step_str = mcell.initialization.time_step_str
+    time_step_str = mcell.initialization.PARAM_time_step_str
+    status = ""
 
-    (time_step, status) = check_expr_str ( mcell, "time_step", time_step_str, 0, None )
+    try:
+      time_step = float(time_step_str)
+      mcell.initialization.time_step = time_step
+    except:
+      # print ("Value must be an expression, try to evaluate..." )
+      (time_step, status) = check_expr_str ( mcell, "PARAM_time_step_str", time_step_str, 0, None )
+      # (time_step,valid) = ps.eval_all ( expression = mcell.initialization.PARAM_time_step_str )
+      if status == "":
+          mcell.initialization.time_step = time_step
+
+    mcell.initialization.status = status
+
+    """
+    mcell = context.scene.mcell
+    time_step_str = mcell.initialization.PARAM_time_step_str
+
+    #(time_step, status) = check_expr_str ( mcell, "time_step", time_step_str, 0, None )
+    (time_step, status) = check_val_str ( time_step_str, 0, None )
 
     if status == "":
         mcell.initialization.time_step = time_step
@@ -3396,6 +3559,7 @@ def update_time_step(self, context):
             mcell.initialization.time_step)
 
     mcell.initialization.status = status
+    """
 
     return
 

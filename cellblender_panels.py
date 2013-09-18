@@ -472,9 +472,10 @@ class MCELL_PT_initialization(bpy.types.Panel):
         mcell = context.scene.mcell
 
         layout.prop(mcell.initialization, "iterations")
-        layout.prop(mcell.initialization, "time_step_str", text="Time Step="+str(mcell.initialization.time_step))
-        layout.label(text="Time Step="+str(mcell.initialization.time_step))
-        layout.prop(mcell.initialization, "time_step", text="Experimental View of Time Step")
+        layout.prop(mcell.initialization, "PARAM_time_step_str", text="Time Step="+str(mcell.initialization.time_step))
+        
+        #layout.label(text="Time Step="+str(mcell.initialization.time_step))
+        #layout.prop(mcell.initialization, "time_step", text="Experimental View of Time Step")
 
         # Advanced Options
         box = layout.box()
@@ -674,6 +675,77 @@ class MCELL_PT_define_parameters(bpy.types.Panel):
 
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
 
+
+# T E S T   C O D E  (begin)
+from . import cellblender_operators
+class AddMeshPanel(bpy.types.Panel):
+  bl_label = "Experimental Panel: Parameter Testing"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
+
+  def draw(self, context):
+    mcell = context.scene.mcell
+    self.layout.operator("parameters.add", text="Add cube").obj_type = "cube"
+    self.layout.operator("parameters.add", text="Add cylinder").obj_type = "cylinder"
+    self.layout.operator("parameters.add", text="Add sphere").obj_type = "sphere"
+
+    row = self.layout.row ( align = True )
+    row.prop ( mcell.mesh_creation_parameters, "PARAM_location_x", text="X = "+str(mcell.mesh_creation_parameters.location_x) )
+    row = self.layout.row ( align = True )
+    row.prop ( mcell.mesh_creation_parameters, "PARAM_location_y", text="Y = "+str(mcell.mesh_creation_parameters.location_y) )
+    row = self.layout.row ( align = True )
+    row.prop ( mcell.mesh_creation_parameters, "PARAM_location_z", text="Z = "+str(mcell.mesh_creation_parameters.location_z) )
+
+
+    #layout.prop(mcell.initialization, "PARAM_time_step_str", text="Time Step="+str(mcell.initialization.time_step))
+
+
+
+class OBJECT_OT_AddButton(bpy.types.Operator):
+  bl_idname = "parameters.add"
+  bl_label = "Add"
+  obj_type = bpy.props.StringProperty()
+
+  def execute(self, context):
+
+    # This code is called when an "Add [Object]" button is pressed
+    print ("Adding a " + str(self.obj_type))
+    mcell = context.scene.mcell
+    ps = cellblender_operators.check_out_parameter_space ( mcell.general_parameters )
+    ps.dump(True)
+    try:
+      x = float(mcell.mesh_creation_parameters.PARAM_location_x)
+    except:
+      print ("Value must be an expression, try to evaluate..." )
+      (x,valid) = ps.eval_all ( expression = mcell.mesh_creation_parameters.PARAM_location_x )
+    try:
+      y = float(mcell.mesh_creation_parameters.PARAM_location_y)
+    except:
+      print ("Value must be an expression, try to evaluate..." )
+      (y,valid) = ps.eval_all ( expression = mcell.mesh_creation_parameters.PARAM_location_y )
+    try:
+      z = float(mcell.mesh_creation_parameters.PARAM_location_z)
+    except:
+      print ("Value must be an expression, try to evaluate..." )
+      (z,valid) = ps.eval_all ( expression = mcell.mesh_creation_parameters.PARAM_location_z )
+
+    if self.obj_type == "cube":
+      bpy.ops.mesh.primitive_cube_add(location=(x,y,z))
+    elif self.obj_type == "cylinder":
+      bpy.ops.mesh.primitive_cylinder_add(location=(x,y,z))
+    elif self.obj_type == "sphere":
+      bpy.ops.mesh.primitive_ico_sphere_add(location=(x,y,z))
+    print ("Added a " + str(self.obj_type) + " at " + str(x) + "," + str(y) + "," + str(z) )
+    cellblender_operators.check_in_parameter_space ( mcell.general_parameters, ps )
+
+    return{'FINISHED'}    
+# T E S T   C O D E   (end)
+
+
+
+
 class MCELL_UL_draw_parameter(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         if item.status:
@@ -731,8 +803,8 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
             #layout.prop(par, "value")
             layout.prop(par, "unit")
             layout.prop(par, "desc")
-            row = layout.row()
-            row.label(text="Parameter ID = " + str(par.id) + "   (temporary for debugging)")
+            ##row = layout.row()
+            ##row.label(text="Parameter ID = " + str(par.id) + "   (temporary for debugging)")
 
 #########################################################################################################################################
 

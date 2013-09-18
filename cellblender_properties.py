@@ -504,9 +504,13 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         default=0, min=0)
     #test_float = MCellFloatParameterProperty()
 
-    time_step = FloatProperty(name="param.uni.Time Step", default=1e-6, min=0.0)
-    time_step_str = StringProperty(
-        name="param.uni.Time Step", default="1e-6",
+
+    time_step = FloatProperty(name="Time Step", default=1e-6, min=0.0)
+
+    #PARAM_time_step_str = StringProperty(name="PARAM_location_x", default="1", update=update_loc_x) #, get=get_panel_parameter, set=set_panel_parameter)
+
+    PARAM_time_step_str = StringProperty(
+        name="PARAM_Time_Step", default="1e-6",
         description="Simulation Time Step Units: seconds",
         update=cellblender_operators.update_time_step)
 
@@ -806,6 +810,7 @@ class MCellParametersPanelProperty(bpy.types.PropertyGroup):
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
 
 class MCellGeneralParameterProperty(bpy.types.PropertyGroup):
+    """An instance of this class exists for every parameter"""
     id = IntProperty(name="ID", default=0, description="Unique ID for each parameter")
     name = StringProperty(name="Name", default="Parameter", description="Unique name for this parameter",
         update=cellblender_operators.update_parameter_name)
@@ -825,6 +830,7 @@ class MCellGeneralParameterProperty(bpy.types.PropertyGroup):
 
 
 class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
+    """This is the class that encapsulates a group (or list) of parameters"""
     parameter_list = CollectionProperty(type=MCellGeneralParameterProperty, name="Parameters List")
     active_par_index = IntProperty(name="Active Parameter", default=0)
     param_group_error = StringProperty( default="", description="Error Message for Entire Parameter Group")
@@ -1014,6 +1020,35 @@ class MCellObjectSelectorPanelProperty(bpy.types.PropertyGroup):
         description="Enter a regular expression for object names.")
 
 
+
+#############################################################################################################
+# This is some "user code" intended to demonstrate the use of parameters
+
+def update_loc_x ( self, context ):
+    value = cellblender_operators.update_panel_parameter ( self, context, "PARAM_location_x" )
+    self.location_x = float(value)
+
+def update_loc_y ( self, context ):
+    value = cellblender_operators.update_panel_parameter ( self, context, "PARAM_location_y" )
+    self.location_y = float(value)
+
+def update_loc_z ( self, context ):
+    value = cellblender_operators.update_panel_parameter ( self, context, "PARAM_location_z" )
+    self.location_z = float(value)
+
+
+class MeshCreationPropertyGroup(bpy.types.PropertyGroup):
+    # These can be found via bpy.context.scene.params.mesh_creation_parameters.items() or .keys() or .values()
+    PARAM_location_x = StringProperty(name="PARAM_location_x", default="1", update=update_loc_x) #, get=get_panel_parameter, set=set_panel_parameter)
+    PARAM_location_y = StringProperty(name="PARAM_location_y", default="2", update=update_loc_y) #, get=get_panel_parameter, set=set_panel_parameter)
+    PARAM_location_z = StringProperty(name="PARAM_location_z", default="3", update=update_loc_z) #, get=get_panel_parameter, set=set_panel_parameter)
+
+    location_x = FloatProperty(name="location_x", default=1)
+    location_y = FloatProperty(name="location_y", default=2)
+    location_z = FloatProperty(name="location_z", default=3)
+
+
+
 # Main MCell (CellBlender) Properties Class:
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
@@ -1042,6 +1077,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 ############## BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters ####
     general_parameters = PointerProperty(
         type=MCellParametersPropertyGroup, name="General Parameters")
+    mesh_creation_parameters = PointerProperty(type=MeshCreationPropertyGroup, name="===== Mesh Creation Parameters")
 ########################################################################
     molecules = PointerProperty(
         type=MCellMoleculesPanelProperty, name="Defined Molecules")

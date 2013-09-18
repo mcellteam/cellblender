@@ -31,7 +31,7 @@ class ParameterSpace:
         self.init_param_space()
 
     def get_version ( self ):
-        return ( 0.001 )  # N O T E: This constant is in the function to keep it from being saved when pickling!!!
+        return ( 0.002 )  # N O T E: This constant is in the function to keep it from being saved when pickling!!!
     
     def version_match ( self ):
         if self.VERSION == self.get_version():
@@ -59,6 +59,9 @@ class ParameterSpace:
 
     #def get_next_id ( self ):
     #    return self.next_id
+
+    def get_id_list ( self ):
+        return self.ID_name_dict.keys()
 
 
     def dump ( self, prnt=False ):
@@ -104,12 +107,12 @@ class ParameterSpace:
 
         next_available_id = 1;
         while next_available_id in self.ID_name_dict:
-            print ( "Can't use ", next_available_id )
+            # print ( "Can't use ", next_available_id )
             next_available_id += 1
         # self.next_id = next_available_id
 
         if name == None:
-            # Try to choose a name with this next ID if possible, but search further as needed
+            # Try to choose a name (P#) with this next ID if possible, but search further as needed
             next_unused_number = next_available_id
             while self.get_id( "P%d" % (next_unused_number) ) != None:
                 next_unused_number += 1
@@ -153,7 +156,7 @@ class ParameterSpace:
 
 
         # Try parsing a second time to catch forward references?  Is this still needed with newer code?
-        parsed_expr = self.parse_param_expr ( expr )
+        # parsed_expr = self.parse_param_expr ( expr )
 
         if (parsed_expr == None) or (-1 in parsed_expr):
             # There was an error in the string expression, so save the error version and don't change anything else
