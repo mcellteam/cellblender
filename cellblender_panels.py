@@ -471,8 +471,8 @@ class MCELL_PT_initialization(bpy.types.Panel):
         layout = self.layout
         mcell = context.scene.mcell
 
-        layout.prop(mcell.initialization, "iterations")
-        layout.prop(mcell.initialization, "PARAM_time_step_str", text="Time Step="+str(mcell.initialization.time_step))
+        layout.prop(mcell.initialization, "PARAM_iterations", text="Iterations="+str(mcell.initialization.iterations))
+        layout.prop(mcell.initialization, "PARAM_time_step", text="Time Step="+str(mcell.initialization.time_step))
         
         #layout.label(text="Time Step="+str(mcell.initialization.time_step))
         #layout.prop(mcell.initialization, "time_step", text="Experimental View of Time Step")
@@ -485,11 +485,11 @@ class MCELL_PT_initialization(bpy.types.Panel):
             row.prop(mcell.initialization, "advanced", icon='TRIA_DOWN',
                      text="Advanced Options", emboss=False)
             row = box.row()
-            row.prop(mcell.initialization, "time_step_max_str")
+            row.prop(mcell.initialization, "PARAM_time_step_max", text="Max Time Step="+str(mcell.initialization.time_step_max))
             row = box.row()
-            row.prop(mcell.initialization, "space_step_str")
+            row.prop(mcell.initialization, "PARAM_space_step", text="Space Step="+str(mcell.initialization.space_step))
             row = box.row()
-            row.prop(mcell.initialization, "interaction_radius_str")
+            row.prop(mcell.initialization, "PARAM_interaction_radius", text="Interaction Radius="+str(mcell.initialization.interaction_radius))
             row = box.row()
             row.prop(mcell.initialization, "radial_directions_str")
             row = box.row()
@@ -699,7 +699,7 @@ class AddMeshPanel(bpy.types.Panel):
     row.prop ( mcell.mesh_creation_parameters, "PARAM_location_z", text="Z = "+str(mcell.mesh_creation_parameters.location_z) )
 
 
-    #layout.prop(mcell.initialization, "PARAM_time_step_str", text="Time Step="+str(mcell.initialization.time_step))
+    #layout.prop(mcell.initialization, "PARAM_time_step", text="Time Step="+str(mcell.initialization.time_step))
 
 
 

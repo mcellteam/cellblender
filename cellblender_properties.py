@@ -502,14 +502,18 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         name="Simulation Iterations",
         description="Number of iterations to run",
         default=0, min=0)
-    #test_float = MCellFloatParameterProperty()
+
+    PARAM_iterations = StringProperty(
+        name="PARAM_iterations", default="0",
+        description="Number of iterations to run",
+        update=cellblender_operators.update_iterations)
 
 
     time_step = FloatProperty(name="Time Step", default=1e-6, min=0.0)
 
-    #PARAM_time_step_str = StringProperty(name="PARAM_location_x", default="1", update=update_loc_x) #, get=get_panel_parameter, set=set_panel_parameter)
+    #PARAM_time_step = StringProperty(name="PARAM_location_x", default="1", update=update_loc_x) #, get=get_panel_parameter, set=set_panel_parameter)
 
-    PARAM_time_step_str = StringProperty(
+    PARAM_time_step = StringProperty(
         name="PARAM_Time_Step", default="1e-6",
         description="Simulation Time Step Units: seconds",
         update=cellblender_operators.update_time_step)
@@ -523,37 +527,48 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     # Advanced/Optional Commands
 
     time_step_max = FloatProperty(name="Time Step", min=0.0)
-    time_step_max_str = StringProperty(
-        name="Maximum Time Step",
+    PARAM_time_step_max = StringProperty(
+        name="Maximum Time Step", default="0",
         description="The longest possible time step",
         update=cellblender_operators.update_time_step_max)
 
     space_step = FloatProperty(name="Space Step", min=0.0)
-    space_step_str = StringProperty(
-        name="Space Step",
+    PARAM_space_step = StringProperty(
+        name="Space Step", default="0",
         description="Have molecules take the same mean diffusion distance",
         update=cellblender_operators.update_space_step)
+
+    interaction_radius = FloatProperty(name="Interaction Radius", min=0.0)
+    PARAM_interaction_radius = StringProperty(
+        name="Interaction Radius", default="0",
+        description="Molecules will interact when they get within N microns.",
+        update=cellblender_operators.update_interaction_radius)
+
+    radial_directions = FloatProperty(name="Radial Directions", min=0.0)
+    radial_directions_str = StringProperty(
+        name="Radial Directions", default="0",
+        description="Number of different directions to put in lookup table. "
+                    "Leave alone unless you know what you are doing.",
+        update=cellblender_operators.update_radial_directions)
+
+    radial_subdivisions = FloatProperty(name="Radial Subdivisions", min=0.0)
+    radial_subdivisions_str = StringProperty(
+        name="Radial Subdivisions", default="0",
+        description="Number of distances to put in look-up table. "
+                    "Leave alone unless you know what you are doing.",
+        update=cellblender_operators.update_radial_subdivisions)
+
+    vacancy_search_distance = FloatProperty(
+        name="Vacancy Search Distance", min=0.0)
+    vacancy_search_distance_str = StringProperty(
+        name="Vacancy Search Distance", default="0",
+        description="Surface molecule products can be created at N distance.",
+        update=cellblender_operators.update_vacancy_search_distance)
 
     surface_grid_density = IntProperty(
         name="Surface Grid Density", default=10000, min=0,
         description="Number of molecules that can be stored per square micron")
-    interaction_radius = FloatProperty(name="Interaction Radius", min=0.0)
-    interaction_radius_str = StringProperty(
-        name="Interaction Radius",
-        description="Molecules will interact when they get within N microns.",
-        update=cellblender_operators.update_interaction_radius)
-    radial_directions = FloatProperty(name="Radial Directions", min=0.0)
-    radial_directions_str = StringProperty(
-        name="Radial Directions",
-        description="Number of different directions to put in lookup table. "
-                    "Leave alone unless you know what you are doing.",
-        update=cellblender_operators.update_radial_directions)
-    radial_subdivisions = FloatProperty(name="Radial Subdivisions", min=0.0)
-    radial_subdivisions_str = StringProperty(
-        name="Radial Subdivisions",
-        description="Number of distances to put in look-up table. "
-                    "Leave alone unless you know what you are doing.",
-        update=cellblender_operators.update_radial_subdivisions)
+
     accurate_3d_reactions = BoolProperty(
         name="Accurate 3D Reaction",
         description="If selected, molecules will look through partitions to "
@@ -564,12 +579,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         description="If selected, surface molecules will be centered on the "
                     "grid.",
         default=False)
-    vacancy_search_distance = FloatProperty(
-        name="Vacancy Search Distance", min=0.0)
-    vacancy_search_distance_str = StringProperty(
-        name="Vacancy Search Distance",
-        description="Surface molecule products can be created at N distance.",
-        update=cellblender_operators.update_vacancy_search_distance)
+
     microscopic_reversibility_enum = [
         ('ON', "On", ""),
         ('OFF', "Off", ""),

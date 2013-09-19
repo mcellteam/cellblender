@@ -886,7 +886,7 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
         
         ps = check_out_parameter_space ( mcell.general_parameters )
         #print ( "Before adding a new parameter:" )
-        ps.dump()
+        # ps.dump()
         
         # mcell.general_parameters.next_parameter_ID += 1  # May not be needed with ParameterSpace
         mcell.general_parameters.parameter_list.add()
@@ -931,7 +931,7 @@ class MCELL_OT_add_parameter(bpy.types.Operator):
             ps.eval_all(False,-1)  # Try forcing the re-evaluation of all parameters
 
         #print ( "After adding a new parameter:" )
-        ps.dump()
+        # ps.dump()
 
         check_in_parameter_space ( mcell.general_parameters, ps )
 
@@ -951,7 +951,7 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
 
             ps = check_out_parameter_space ( mcell.general_parameters )
             ## print ( "Before deleting a parameter:" )
-            ps.dump()
+            #ps.dump()
 
             id_to_delete = ps.get_id(mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name)
             if (id_to_delete != None) and (id_to_delete > 0):
@@ -973,12 +973,60 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
                     # One of ‘DEBUG’, ‘INFO’, ‘OPERATOR’, ‘PROPERTY’, ‘WARNING’, ‘ERROR’, ‘ERROR_INVALID_INPUT’, ‘ERROR_INVALID_CONTEXT’, ‘ERROR_OUT_OF_MEMORY’
                     self.report({'WARNING'}, "Needed by: " + depends )
 
+                    # Try to use dialog instead of report ... this crashes Blender!!
+                    """
+                    error_message = "Can't delete, needed by " + depends
+                    print ( "=================================================" )
+                    print ( error_message )
+                    print ( "=================================================" )
+                    bpy.ops.object.dialog_operator('EXEC_DEFAULT', message=error_message )
+                    """
+
+                    """
+                      # Blender 2.68 (sub 0), Revision: 58536
+                      bpy.context.space_data.context = 'SCENE'  # Property
+                      bpy.ops.mcell.add_parameter()  # Operator
+                      bpy.context.scene.mcell.general_parameters.parameter_list[0].name = "a"  # Property
+                      bpy.ops.mcell.remove_parameter()  # Operator
+                      bpy.ops.mcell.add_parameter()  # Operator
+                      bpy.context.scene.mcell.general_parameters.parameter_list[0].name = "a"  # Property
+                      bpy.context.scene.mcell.general_parameters.parameter_list[0].expr = "0"  # Property
+                      bpy.ops.mcell.add_parameter()  # Operator
+                      bpy.context.scene.mcell.general_parameters.parameter_list[1].name = "b"  # Property
+                      bpy.context.scene.mcell.general_parameters.parameter_list[1].expr = "a"  # Property
+                      bpy.context.scene.mcell.general_parameters.active_par_index = 1  # Property
+                      bpy.ops.mcell.remove_parameter()  # Operator
+                      bpy.context.scene.mcell.general_parameters.active_par_index = 0  # Property
+                      bpy.ops.mcell.add_parameter()  # Operator
+                      bpy.context.scene.mcell.general_parameters.parameter_list[1].name = "b"  # Property
+                      bpy.context.scene.mcell.general_parameters.parameter_list[1].expr = "a"  # Property
+                      bpy.context.scene.mcell.general_parameters.active_par_index = 0  # Property
+                      bpy.ops.mcell.remove_parameter()  # Operator
+
+                      # backtrace
+                      blender268() [0xf6ccd7]
+                      blender268() [0xf6cf15]
+                      /lib/x86_64-linux-gnu/libc.so.6(+0x324f0) [0x7f9a494494f0]
+                      blender268(WM_operator_poll+0xa) [0xf86c9a]
+                      blender268() [0xf87b53]
+                      blender268() [0xf7cff4]
+                      blender268() [0x122e046]
+                      blender268() [0x123c741]
+                      blender268() [0xf88908]
+                      blender268() [0xf88f06]
+                      blender268(wm_event_do_handlers+0x19a) [0xf891fa]
+                      blender268(WM_main+0x18) [0xf743d8]
+                      blender268(main+0x368) [0xf6f2c4]
+                      /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xfd) [0x7f9a49435ead]
+                      blender268() [0xeabf25]                      
+                    """
+
                 # Re-evaluate all the parameters to update them on the screen
                 ps.eval_all(True,-1)
                 # Update the error message for the entire parameter group
                 update_parameter_block_message ( mcell, ps )
                 ## print ( "After reevaluating a parameter:" )
-            ps.dump()
+            #ps.dump()
             
             check_in_parameter_space ( mcell.general_parameters, ps )
         
@@ -1024,15 +1072,37 @@ class DialogOperator(bpy.types.Operator):
 
 
 ############## Needed for:  cellblender_properties.update_callback
-#from . import cellblender_properties
+
 def update_callback ( context, param_name, expr ):
     """Given a parameter name and an expression, put the expression into the location for that name.
        Always check to see if it is already equal to the expression first to avoid infinite recursion!! """
-    print ( "User's update callback has been called" )
+    # print ( "User's update callback has been called" )
 
     mcell = context.scene.mcell
 
-    if param_name == "PARAM_location_x":
+    if param_name == "PARAM_iterations":
+        if mcell.initialization.PARAM_iterations != expr:
+            mcell.initialization.PARAM_ierations = expr
+    
+    elif param_name == "PARAM_time_step":
+        if mcell.initialization.PARAM_time_step != expr:
+            mcell.initialization.PARAM_time_step = expr
+
+    elif param_name == "PARAM_time_step_max":
+        if mcell.initialization.PARAM_time_step_max != expr:
+            mcell.initialization.PARAM_time_step_max = expr
+
+    elif param_name == "PARAM_space_step":
+        if mcell.initialization.PARAM_space_step != expr:
+            mcell.initialization.PARAM_space_step = expr
+
+    elif param_name == "PARAM_interaction_radius":
+        if mcell.initialization.PARAM_interaction_radius != expr:
+            mcell.initialization.PARAM_interaction_radius = expr
+
+
+    ### These are for testing:    
+    elif param_name == "PARAM_location_x":
         if mcell.mesh_creation_parameters.PARAM_location_x != expr:
             mcell.mesh_creation_parameters.PARAM_location_x = expr
     elif param_name == "PARAM_location_y":
@@ -1042,24 +1112,25 @@ def update_callback ( context, param_name, expr ):
         if mcell.mesh_creation_parameters.PARAM_location_z != expr:
             mcell.mesh_creation_parameters.PARAM_location_z = expr
 
-    elif param_name == "PARAM_time_step_str":
-        if mcell.initialization.PARAM_time_step_str != expr:
-            mcell.initialization.PARAM_time_step_str = expr
-    
 
 def update_all_panel_parameters ( context ):
     """This forces a redraw of all panel parameters. It should be called when updating general parameters."""
-    print ( "Forcing redraw of all panel parameters." )
+    # print ( "Forcing redraw of all panel parameters." )
 
     mcell = context.scene.mcell
+
+    mcell.initialization.PARAM_iterations = mcell.initialization.PARAM_iterations
+    mcell.initialization.PARAM_time_step = mcell.initialization.PARAM_time_step
+    mcell.initialization.PARAM_time_step_max = mcell.initialization.PARAM_time_step_max
+    mcell.initialization.PARAM_space_step = mcell.initialization.PARAM_space_step
+    mcell.initialization.PARAM_interaction_radius = mcell.initialization.PARAM_interaction_radius
 
     mcell.mesh_creation_parameters.PARAM_location_x = mcell.mesh_creation_parameters.PARAM_location_x
     mcell.mesh_creation_parameters.PARAM_location_y = mcell.mesh_creation_parameters.PARAM_location_y
     mcell.mesh_creation_parameters.PARAM_location_z = mcell.mesh_creation_parameters.PARAM_location_z
-    mcell.initialization.PARAM_time_step_str = mcell.initialization.PARAM_time_step_str
-    
 
 ############## Needed for:  cellblender_properties.update_callback
+
 
 def update_parameter_block_message ( mcell, ps ):
     if ps.all_valid():
@@ -1072,9 +1143,9 @@ def update_parameter_properties ( mcell, ps, context ):
     """ Note that the "context" parameter is added as a "fix" to give access to hard-coded panel parameters"""
     gen_params = mcell.general_parameters
     plist = gen_params.parameter_list
-    
+
     ps.eval_all()
-    
+
     # print ( "After eval_all, all_valid() = " + str(ps.all_valid()) )
 
     for p in plist:
@@ -1094,8 +1165,10 @@ def update_parameter_properties ( mcell, ps, context ):
                 #self.report({'ERROR'}, "Parameter Error" )
             new_value = ps.get_value(p.id)
             # Check before copying since the act of copying will force another call to this function for infinite recursion!!
-            if p.value != new_value:
-                p.value = new_value
+            if new_value != None:
+                # The previous "None" check was needed for importing BNG parameters for some undiscovered reason
+                if p.value != new_value:
+                    p.value = new_value
         else:
             # The text entered for this parameter isn't correct, so show both
             p.pending_expr = ps.get_error(p.id)
@@ -1103,7 +1176,7 @@ def update_parameter_properties ( mcell, ps, context ):
 
     # Rebuild all panel parameter expressions
     # This is currently a hard-coded list
-    
+
     mcell = context.scene.mcell
 
     for pid in ps.get_id_list():
@@ -1144,7 +1217,7 @@ def update_parameter_name ( self, context ):
         ps = check_out_parameter_space ( mcell.general_parameters )
 
         #print ( "Before Rename:" )
-        ps.dump()
+        #ps.dump()
         
         old_name = ps.get_name(self.id)
         if old_name == None:
@@ -1164,7 +1237,7 @@ def update_parameter_name ( self, context ):
         update_parameter_properties ( mcell, ps, context )
 
         #print ( "After Rename:" )
-        ps.dump(True)
+        #ps.dump(True)
         
         check_in_parameter_space ( mcell.general_parameters, ps )
     skip_parameter_name_update = False
@@ -1178,7 +1251,7 @@ def update_parameter_expression ( self, context ):
     ps = check_out_parameter_space ( mcell.general_parameters )
 
     #print ( "Before Updating Expression:" )
-    ps.dump()
+    #ps.dump()
 
     ps.set_expr ( self.id, self.expr )
     if (ps.get_error(self.id) != None):
@@ -1195,7 +1268,7 @@ def update_parameter_expression ( self, context ):
     update_all_panel_parameters ( context )
 
     #print ( "After Updating Expression:" )
-    ps.dump(True)
+    #ps.dump(True)
     
     check_in_parameter_space ( mcell.general_parameters, ps )
 
@@ -1212,7 +1285,7 @@ def set_panel_parameter ( self, value ):
 
 
 def update_panel_parameter ( self, context, field_name ):
-    print ( "Changed " + field_name + " to " + str(getattr(self,field_name)) )
+    # print ( "Changed " + field_name + " to " + str(getattr(self,field_name)) )
 
     # Called when a panel parameter expression changes - needs to recompute the result and update all parameters that depend on this one
     #print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "] to " + self.expr )
@@ -1221,7 +1294,7 @@ def update_panel_parameter ( self, context, field_name ):
     ps = check_out_parameter_space ( mcell.general_parameters )
 
     #print ( "Before Updating Expression:" )
-    ps.dump()
+    #ps.dump()
 
     ps.define ( field_name, str(getattr(self,field_name)) )
 
@@ -1234,8 +1307,8 @@ def update_panel_parameter ( self, context, field_name ):
 
     value = ps.get_value(ps.get_id(field_name))
         
-    print ( "After Updating Expression:" )
-    ps.dump(True)
+    #print ( "After Updating Expression:" )
+    #ps.dump(True)
     
     check_in_parameter_space ( mcell.general_parameters, ps )
 
@@ -3359,18 +3432,18 @@ def check_expr_str(mcell, panel_param_name, param_str, min_val, max_val):
     status = ""
 
     ps = check_out_parameter_space ( mcell.general_parameters )
-    ps.dump(True)
+    # ps.dump(True)
     if panel_param_name != None:
         # Make an assignment to this name in the parameter space
         ps.define ( panel_param_name, param_str )
         # Return a value to update the parameter string in the panel
-        print ( "Should be returning ", ps.get_expr ( ps.get_id(panel_param_name) ) )
+        # print ( "Should be returning ", ps.get_expr ( ps.get_id(panel_param_name) ) )
     # Evaluate the parameter string (whether it's a panel parameter or not)
     (value,valid) = ps.eval_all ( expression = param_str )
     check_in_parameter_space ( mcell.general_parameters, ps )
 
     if valid:
-        print ( "  = " + str ( value ) )
+        # print ( "  = " + str ( value ) )
         val = value
     else:
         print ( "  = " + str ( value ) + " ... with Error" )
@@ -3390,7 +3463,7 @@ def check_expr_str(mcell, panel_param_name, param_str, min_val, max_val):
     except:
         status = "Exception extracting value for %s: %s" % (panel_param_name, param_str)
 
-    print ( "\ncheck_param_str returning " + str(val) + " with status = " + str(status) )
+    # print ( "\ncheck_param_str returning " + str(val) + " with status = " + str(status) )
 
     return (val, status)
 
@@ -3523,55 +3596,44 @@ def update_clamp_value(self, context):
     return
 
 
+def update_iterations(self, context):
+    """ Store the iterations if it's legal or generate an error """
+    update_panel_parameter ( self, context,"PARAM_iterations" )
+
+    mcell = context.scene.mcell
+
+    (iterations, status) = check_expr_str ( mcell, "PARAM_iterations", mcell.initialization.PARAM_iterations, 0, None )
+    if status == "":
+        mcell.initialization.iterations = iterations
+
+    mcell.initialization.status = status
+    return
+
+
 def update_time_step(self, context):
     """ Store the time step as a float if it's legal or generate an error """
-    print ( "Call to update_time_step" )
-    update_panel_parameter ( self, context,"PARAM_time_step_str" )
+    update_panel_parameter ( self, context,"PARAM_time_step" )
 
     mcell = context.scene.mcell
-    time_step_str = mcell.initialization.PARAM_time_step_str
-    status = ""
 
-    try:
-      time_step = float(time_step_str)
-      mcell.initialization.time_step = time_step
-    except:
-      # print ("Value must be an expression, try to evaluate..." )
-      (time_step, status) = check_expr_str ( mcell, "PARAM_time_step_str", time_step_str, 0, None )
-      # (time_step,valid) = ps.eval_all ( expression = mcell.initialization.PARAM_time_step_str )
-      if status == "":
-          mcell.initialization.time_step = time_step
-
-    mcell.initialization.status = status
-
-    """
-    mcell = context.scene.mcell
-    time_step_str = mcell.initialization.PARAM_time_step_str
-
-    #(time_step, status) = check_expr_str ( mcell, "time_step", time_step_str, 0, None )
-    (time_step, status) = check_val_str ( time_step_str, 0, None )
-
+    (time_step, status) = check_expr_str ( mcell, "PARAM_time_step", mcell.initialization.PARAM_time_step, 0, None )
     if status == "":
         mcell.initialization.time_step = time_step
-    else:
-        status = status % ("time_step", time_step_str)
-        mcell.initialization.time_step_str = "%g" % (
-            mcell.initialization.time_step)
 
     mcell.initialization.status = status
-    """
-
     return
 
 
 def update_time_step_max(self, context):
     """ Store the max time step as a float if it's legal or create an error """
+    update_panel_parameter ( self, context,"PARAM_time_step_max" )
 
     mcell = context.scene.mcell
-    time_step_max_str = mcell.initialization.time_step_max_str
+    time_step_max_str = mcell.initialization.PARAM_time_step_max
 
     if time_step_max_str:
-        (time_step_max, status) = check_val_str(time_step_max_str, 0, None)
+        (time_step_max, status) = check_expr_str ( mcell, "PARAM_time_step_max", mcell.initialization.PARAM_time_step_max, 0, None )
+        # (time_step_max, status) = check_val_str(time_step_max_str, 0, None)
 
         if not status:
             mcell.initialization.time_step_max = time_step_max
@@ -3584,12 +3646,13 @@ def update_time_step_max(self, context):
 
 def update_space_step(self, context):
     """ Store the space step as a float if it's legal or create an error """
+    update_panel_parameter ( self, context,"PARAM_space_step" )
 
     mcell = context.scene.mcell
-    space_step_str = mcell.initialization.space_step_str
+    space_step_str = mcell.initialization.PARAM_space_step
 
     if space_step_str:
-        (space_step, status) = check_val_str(space_step_str, 0, None)
+        (space_step, status) = check_expr_str ( mcell, "PARAM_space_step", mcell.initialization.PARAM_space_step, 0, None )
 
         if not status:
             mcell.initialization.space_step = space_step
@@ -3602,13 +3665,13 @@ def update_space_step(self, context):
 
 def update_interaction_radius(self, context):
     """ Store interaction radius as a float if legal or create an error """
+    update_panel_parameter ( self, context,"PARAM_interaction_radius" )
 
     mcell = context.scene.mcell
-    interaction_radius_str = mcell.initialization.interaction_radius_str
+    interaction_radius_str = mcell.initialization.PARAM_interaction_radius
 
     if interaction_radius_str:
-        (interaction_radius, status) = check_val_str(
-            interaction_radius_str, 0, None)
+        (interaction_radius, status) = check_expr_str ( mcell, "PARAM_interaction_radius", mcell.initialization.PARAM_interaction_radius, 0, None )
 
         if not status:
             mcell.initialization.interaction_radius = interaction_radius
