@@ -80,7 +80,9 @@ class BNG_OT_parameter_add(bpy.types.Operator):
             
             new_id = ps.define ( parameter.name, parameter.expr )
             parameter.id = new_id
-        
+            
+            # The following code works, but the re-evaluation might be taking too much time
+            
             ps.eval_all(False,-1)  # Try forcing the re-evaluation of all parameters
 
             parameter.expr = ps.get_expr(new_id)
@@ -88,6 +90,18 @@ class BNG_OT_parameter_add(bpy.types.Operator):
             parameter.value = str ( ps.eval_all(False,new_id) )
             parameter.valid = True
 
+        """
+        # Evaluate all parameters to update their values
+        
+        ps.eval_all ( False, -1 )
+
+        # After evaluation, re-evaluate each parameter to update the Blender parameters 
+        for parameter in mcell.parameters.parameter_list:
+            pid = parameter.id
+            parameter.expr = ps.get_exprr(pid)
+            parameter.value = str ( ps.eval_all(False,pid) )
+            parameter.valid = true
+        """
 
         ##print ( "After adding new parameters:" )
         ##ps.dump(True)
@@ -178,10 +192,11 @@ def execute_bionetgen(filepath):
     filedirpath = os.path.dirname(filepath)    # dir of the bngl script file
     
     # Just execute it without the search!!!
-    os.system("~/proj/MCell/BioNetGen/BioNetGen-2.2.4-stable/BNG2.pl --outdir ~/.config/blender/2.68/scripts/addons/cellblender/bng ~/proj/MCell/src/cellblender_git/cellblender_trunk/bng/")    # execute BNG    
+    #os.system("~/proj/MCell/BioNetGen/BioNetGen-2.2.4-stable/BNG2.pl --outdir ~/.config/blender/2.68/scripts/addons/cellblender/bng ~/proj/MCell/src/cellblender_git/cellblender_trunk/bng/")    # execute BNG    
     
     # This search took over a full minute every time it was run!!!
-    """
+    print ( "Searching for BioNetGen ... this can take a long time on some systems!!!" )
+    
     check_dir = filedirpath;
     n = 0
     while(n!=20):    # iterative search for BNG exe file (starts from the dir containing the bngl script file)
@@ -189,7 +204,7 @@ def execute_bionetgen(filepath):
         checked = {}    # list of dirs for which search is complete
         i = 0
         for (dirpath, dirname, filename) in os.walk(bng_dir):    # Search over the current and previously unchecked child dirs 
-            print ( "n=" + str(n) + "Checking " + str(dirpath) + ", " + str(dirname) + ", " + str(filename) )
+            #print ( "n=" + str(n) + "Checking " + str(dirpath) + ", " + str(dirname) + ", " + str(filename) )
             if (i == 0):
                 check_dir = os.path.dirname(dirpath)    #  mark the parent dir for next search (after current and child dirs are done) 
                 i = 1
@@ -208,6 +223,6 @@ def execute_bionetgen(filepath):
         n +=1  
         if (n==20):    # too many iterations; BNG not found, stop further search
             print ("Error running BioNetGen. BNG2.pl not found....")
-    """
+    
     return{'FINISHED'}
    
