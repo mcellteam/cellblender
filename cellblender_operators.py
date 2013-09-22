@@ -1082,7 +1082,7 @@ def update_callback ( context, param_name, expr ):
 
     if param_name == "PARAM_iterations":
         if mcell.initialization.PARAM_iterations != expr:
-            mcell.initialization.PARAM_ierations = expr
+            mcell.initialization.PARAM_iterations = expr
     
     elif param_name == "PARAM_time_step":
         if mcell.initialization.PARAM_time_step != expr:
@@ -1099,6 +1099,22 @@ def update_callback ( context, param_name, expr ):
     elif param_name == "PARAM_interaction_radius":
         if mcell.initialization.PARAM_interaction_radius != expr:
             mcell.initialization.PARAM_interaction_radius = expr
+
+    elif param_name == "PARAM_radial_directions":
+        if mcell.initialization.PARAM_radial_directions != expr:
+            mcell.initialization.PARAM_radial_directions = expr
+
+    elif param_name == "PARAM_radial_subdivisions":
+        if mcell.initialization.PARAM_radial_subdivisions != expr:
+            mcell.initialization.PARAM_radial_subdivisions = expr
+
+    elif param_name == "PARAM_vacancy_search_distance":
+        if mcell.initialization.PARAM_vacancy_search_distance != expr:
+            mcell.initialization.PARAM_vacancy_search_distance = expr
+
+    elif param_name == "PARAM_surface_grid_density":
+        if mcell.initialization.PARAM_surface_grid_density != expr:
+            mcell.initialization.PARAM_surface_grid_density = expr
 
 
     ### These are for testing:    
@@ -1124,6 +1140,10 @@ def update_all_panel_parameters ( context ):
     mcell.initialization.PARAM_time_step_max = mcell.initialization.PARAM_time_step_max
     mcell.initialization.PARAM_space_step = mcell.initialization.PARAM_space_step
     mcell.initialization.PARAM_interaction_radius = mcell.initialization.PARAM_interaction_radius
+    mcell.initialization.PARAM_radial_directions = mcell.initialization.PARAM_radial_directions
+    mcell.initialization.PARAM_radial_subdivisions = mcell.initialization.PARAM_radial_subdivisions
+    mcell.initialization.PARAM_vacancy_search_distance = mcell.initialization.PARAM_vacancy_search_distance
+    mcell.initialization.PARAM_surface_grid_density = mcell.initialization.PARAM_surface_grid_density
 
     mcell.mesh_creation_parameters.PARAM_location_x = mcell.mesh_creation_parameters.PARAM_location_x
     mcell.mesh_creation_parameters.PARAM_location_y = mcell.mesh_creation_parameters.PARAM_location_y
@@ -3658,7 +3678,7 @@ def update_space_step(self, context):
             mcell.initialization.space_step = space_step
         else:
             status = status % ("space_step", space_step_str)
-            mcell.initialization.space_step_str = ""
+            #mcell.initialization.space_step_str = ""
 
         mcell.initialization.status = status
 
@@ -3677,59 +3697,58 @@ def update_interaction_radius(self, context):
             mcell.initialization.interaction_radius = interaction_radius
         else:
             status = status % ("interaction_radius", interaction_radius_str)
-            mcell.initialization.interaction_radius_str = ""
+            #mcell.initialization.interaction_radius_str = ""
 
         mcell.initialization.status = status
 
 
 def update_radial_directions(self, context):
     """ Store radial directions as a float if it's legal or create an error """
+    update_panel_parameter ( self, context,"PARAM_radial_directions" )
 
     mcell = context.scene.mcell
-    radial_directions_str = mcell.initialization.radial_directions_str
+    radial_directions_str = mcell.initialization.PARAM_radial_directions
 
     if radial_directions_str:
-        (radial_directions, status) = check_val_str(
-            radial_directions_str, 0, None)
+        (radial_directions, status) = check_expr_str(mcell, "PARAM_radial_directions", mcell.initialization.PARAM_radial_directions, 0, None)
 
-        if status == "":
+        if not status:
             mcell.initialization.radial_directions = radial_directions
         else:
             status = status % ("radial_directions", radial_directions_str)
-            mcell.initialization.radial_directions_str = ""
+            #mcell.initialization.radial_directions_str = ""
 
         mcell.initialization.status = status
 
 
 def update_radial_subdivisions(self, context):
     """ Store radial subdivisions as a float if legal or create an error """
+    update_panel_parameter ( self, context,"PARAM_radial_subdivisions" )
 
     mcell = context.scene.mcell
-    radial_subdivisions_str = mcell.initialization.radial_subdivisions_str
+    radial_subdivisions_str = mcell.initialization.PARAM_radial_subdivisions
 
     if radial_subdivisions_str:
-        (radial_subdivisions, status) = check_val_str(
-            radial_subdivisions_str, 0, None)
+        (radial_subdivisions, status) = check_expr_str(mcell, "PARAM_radial_subdivisions", mcell.initialization.PARAM_radial_subdivisions, 0, None)
 
-        if status == "":
+        if not status:
             mcell.initialization.radial_subdivisions = radial_subdivisions
         else:
             status = status % ("radial_subdivisions", radial_subdivisions_str)
-            mcell.initialization.radial_subdivisions_str = ""
+            #mcell.initialization.radial_subdivisions_str = ""
 
         mcell.initialization.status = status
 
 
 def update_vacancy_search_distance(self, context):
     """ Store vacancy search distance as float if legal or create an error """
+    update_panel_parameter ( self, context,"PARAM_vacancy_search_distance" )
 
     mcell = context.scene.mcell
-    vacancy_search_distance_str = \
-        mcell.initialization.vacancy_search_distance_str
+    vacancy_search_distance_str = mcell.initialization.PARAM_vacancy_search_distance
 
     if vacancy_search_distance_str:
-        (vacancy_search_distance, status) = check_val_str(
-            vacancy_search_distance_str, 0, None)
+        (vacancy_search_distance, status) = check_expr_str(mcell, "PARAM_vacancy_search_distance", mcell.initialization.PARAM_vacancy_search_distance, 0, None)
 
         if not status:
             mcell.initialization.vacancy_search_distance = \
@@ -3737,9 +3756,33 @@ def update_vacancy_search_distance(self, context):
         else:
             status = status % (
                 "vacancy_search_distance", vacancy_search_distance_str)
-            mcell.initialization.vacancy_search_distance_str = ""
+            #mcell.initialization.vacancy_search_distance_str = ""
 
         mcell.initialization.status = status
+
+
+def update_surface_grid_density(self, context):
+    """ Store surface_grid_density as float if legal or create an error """
+    update_panel_parameter ( self, context,"PARAM_surface_grid_density" )
+
+    mcell = context.scene.mcell
+    surface_grid_density_str = mcell.initialization.PARAM_surface_grid_density
+
+    if surface_grid_density_str:
+        (surface_grid_density, status) = check_expr_str(mcell, "PARAM_surface_grid_density", mcell.initialization.PARAM_surface_grid_density, 0, None)
+
+        if not status:
+            mcell.initialization.surface_grid_density = \
+                surface_grid_density
+        else:
+            status = status % (
+                "surface_grid_density", surface_grid_density_str)
+            #mcell.initialization.surface_grid_density_str = ""
+
+        mcell.initialization.status = status
+
+
+
 
 
 def update_diffusion_constant(self, context):

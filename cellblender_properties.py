@@ -545,29 +545,32 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.update_interaction_radius)
 
     radial_directions = FloatProperty(name="Radial Directions", min=0.0)
-    radial_directions_str = StringProperty(
+    PARAM_radial_directions = StringProperty(
         name="Radial Directions", default="0",
         description="Number of different directions to put in lookup table. "
                     "Leave alone unless you know what you are doing.",
         update=cellblender_operators.update_radial_directions)
 
     radial_subdivisions = FloatProperty(name="Radial Subdivisions", min=0.0)
-    radial_subdivisions_str = StringProperty(
+    PARAM_radial_subdivisions = StringProperty(
         name="Radial Subdivisions", default="0",
         description="Number of distances to put in look-up table. "
                     "Leave alone unless you know what you are doing.",
         update=cellblender_operators.update_radial_subdivisions)
 
-    vacancy_search_distance = FloatProperty(
-        name="Vacancy Search Distance", min=0.0)
-    vacancy_search_distance_str = StringProperty(
+    vacancy_search_distance = FloatProperty(name="Vacancy Search Distance", min=0.0)
+    PARAM_vacancy_search_distance = StringProperty(
         name="Vacancy Search Distance", default="0",
         description="Surface molecule products can be created at N distance.",
         update=cellblender_operators.update_vacancy_search_distance)
 
-    surface_grid_density = IntProperty(
-        name="Surface Grid Density", default=10000, min=0,
+    # Why is this an integer? Could a density be non-integral?
+    surface_grid_density = IntProperty(name="Surface Grid Density", default=10000, min=0,
         description="Number of molecules that can be stored per square micron")
+    PARAM_surface_grid_density = StringProperty(
+        name="Surface Grid Density", default="10000",
+        description="Number of molecules that can be stored per square micron",
+        update=cellblender_operators.update_surface_grid_density)
 
     accurate_3d_reactions = BoolProperty(
         name="Accurate 3D Reaction",
