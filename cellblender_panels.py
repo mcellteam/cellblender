@@ -844,11 +844,8 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
                 mcell.molecules.active_mol_index]
             layout.prop(mol, "name")
             layout.prop(mol, "type")
-            if (mol.diffusion_constant_expr != "0"): #DB: This is added for diffusion constant to take expression; not sure if it has other implications 
-                layout.prop(mol, "diffusion_constant_expr")
-            else:
-                layout.prop(mol, "diffusion_constant_str")
-
+            layout.prop(mol, "PARAM_diffusion_constant")            
+            layout.prop(mol, "diffusion_constant_str")
             box = layout.box()
             row = box.row(align=True)
             row.alignment = 'LEFT'

@@ -60,6 +60,7 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
 
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
+    id = IntProperty(name="Unique ID of this Molecule", default=-1)
     name = StringProperty(
         name="Molecule Name", default="Molecule",
         description="The molecule species name",
@@ -72,12 +73,12 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         description="Surface molecules are constrained to surfaces/meshes. "
                     "Volume molecules exist in space.")
     diffusion_constant = FloatProperty(name="Diffusion Constant")
-    diffusion_constant_str = StringProperty(
+    PARAM_diffusion_constant = StringProperty(
         name="Diffusion Constant",
         default="0",
         description="Diffusion Constant Units: cm^2/sec",
         update=cellblender_operators.update_diffusion_constant)
-    diffusion_constant_expr = StringProperty(        # DB: This property is added so that the diffusion constants take expressions 
+    diffusion_constant_str = StringProperty(
         name="Diffusion Constant",
         default="0",
         description="Diffusion Constant Units: cm^2/sec",
@@ -856,6 +857,7 @@ class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
     molecule_list = CollectionProperty(
         type=MCellMoleculeProperty, name="Molecule List")
     active_mol_index = IntProperty(name="Active Molecule Index", default=0)
+    id_counter = IntProperty(name="Counter for Unique Molecule IDs", default=1)  # Start ID's at 1 to confirm initialization
     advanced = bpy.props.BoolProperty(default=False)
 
 

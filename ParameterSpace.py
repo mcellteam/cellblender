@@ -446,7 +446,7 @@ class ParameterSpace:
                         requested_val = val
                 except:
                     valid = False
-                    print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
+                    print ( "==> Evaluation Exception for " + py_statement + ": " + str ( sys.exc_info() ) )
                     if prnt:
                         print ( "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
                         print ( "    ... interpreted as: " + py_statement )
@@ -461,7 +461,7 @@ class ParameterSpace:
                 requested_val = val
             except:
                 valid = False
-                print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
+                print ( "==> Evaluation Exception for " + expression + ": " + str ( sys.exc_info() ) )
                 if prnt:
                     print ( "  Error in statement:   " + expression )
             
@@ -529,7 +529,7 @@ class ParameterSpace:
                                 requested_val = val
                         except:
                             valid = False
-                            print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
+                            print ( "==> Evaluation Exception for " + py_statement + ": " + str ( sys.exc_info() ) )
                             if prnt:
                                 print ( "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
                                 print ( "    ... interpreted as: " + py_statement )
@@ -545,7 +545,7 @@ class ParameterSpace:
                 requested_val = val
             except:
                 valid = False
-                print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
+                print ( "==> Evaluation Exception for " + expression + ": " + str ( sys.exc_info() ) )
                 if prnt:
                     print ( "  Error in statement:   " + expression )
 
