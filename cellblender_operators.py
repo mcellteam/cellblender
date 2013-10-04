@@ -1158,8 +1158,8 @@ def update_all_panel_parameters ( context ):
     mcell.initialization.PARAM_vacancy_search_distance = mcell.initialization.PARAM_vacancy_search_distance
     mcell.initialization.PARAM_surface_grid_density = mcell.initialization.PARAM_surface_grid_density
 
-    mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
-    mol.PARAM_diffusion_constant = mol.PARAM_diffusion_constant
+    for mol in mcell.molecules.molecule_list:
+        mol.PARAM_diffusion_constant = str ( mol.PARAM_diffusion_constant )
 
 
     mcell.mesh_creation_parameters.PARAM_location_x = mcell.mesh_creation_parameters.PARAM_location_x
@@ -1294,9 +1294,12 @@ def update_parameter_expression ( self, context ):
     if (ps.get_error(self.id) != None):
         print ( "\n\nExpression Error in update_parameter_expression\n\n" )
     
+    ps.eval_all()
 
     update_parameter_properties ( mcell, ps, context )
     
+    ps.eval_all()
+
     # Try forcing the update of all panel parameters - This appears to work!
     # If we use this approach, we'll end up listing all of the panel update functions
     #   either here or collected together in another function

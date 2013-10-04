@@ -472,7 +472,7 @@ class MCELL_PT_initialization(bpy.types.Panel):
         mcell = context.scene.mcell
 
         layout.prop(mcell.initialization, "PARAM_iterations", text="Iterations="+str(mcell.initialization.iterations))
-        layout.prop(mcell.initialization, "PARAM_time_step", text="Time Step="+str(mcell.initialization.time_step))
+        layout.prop(mcell.initialization, "PARAM_time_step", text="Time Step="+('%.3g' % mcell.initialization.time_step))
         
         #layout.label(text="Time Step="+str(mcell.initialization.time_step))
         #layout.prop(mcell.initialization, "time_step", text="Experimental View of Time Step")
@@ -844,8 +844,16 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
                 mcell.molecules.active_mol_index]
             layout.prop(mol, "name")
             layout.prop(mol, "type")
-            layout.prop(mol, "PARAM_diffusion_constant")            
-            layout.prop(mol, "diffusion_constant_str")
+            layout.prop(mol, "PARAM_diffusion_constant", text="Diff Const="+str() )            
+            layout.prop(mol, "id", text="Mol ID")
+            """
+                text="Iterations="+str(mcell.initialization.iterations)
+            par = mcell.general_parameters.parameter_list[index]
+            disp = par.name + " = " + par.expr
+            """
+
+            
+            # Old method:  layout.prop(mol, "diffusion_constant_str")
             box = layout.box()
             row = box.row(align=True)
             row.alignment = 'LEFT'

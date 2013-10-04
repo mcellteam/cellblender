@@ -529,13 +529,13 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
     time_step_max = FloatProperty(name="Time Step", min=0.0)
     PARAM_time_step_max = StringProperty(
-        name="Maximum Time Step", default="0",
+        name="Maximum Time Step", default="1",
         description="The longest possible time step",
         update=cellblender_operators.update_time_step_max)
 
     space_step = FloatProperty(name="Space Step", min=0.0)
     PARAM_space_step = StringProperty(
-        name="Space Step", default="0",
+        name="Space Step", default="1",
         description="Have molecules take the same mean diffusion distance",
         update=cellblender_operators.update_space_step)
 
