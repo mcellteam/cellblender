@@ -78,11 +78,11 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         default="0",
         description="Diffusion Constant Units: cm^2/sec",
         update=cellblender_operators.update_diffusion_constant)
-    diffusion_constant_str = StringProperty(
-        name="Diffusion Constant",
-        default="0",
-        description="Diffusion Constant Units: cm^2/sec",
-        update=cellblender_operators.update_diffusion_constant)
+    #diffusion_constant_str = StringProperty(
+    #    name="Diffusion Constant",
+    #    default="0",
+    #    description="Diffusion Constant Units: cm^2/sec",
+    #    update=cellblender_operators.update_diffusion_constant)
     target_only = BoolProperty(
         name="Target Only",
         description="If selected, molecule will not initiate reactions when "

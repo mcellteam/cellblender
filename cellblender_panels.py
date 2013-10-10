@@ -844,7 +844,7 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
                 mcell.molecules.active_mol_index]
             layout.prop(mol, "name")
             layout.prop(mol, "type")
-            layout.prop(mol, "PARAM_diffusion_constant", text="Diff Const="+str() )            
+            layout.prop(mol, "PARAM_diffusion_constant", text="Diff Const="+ ('%.3g' % mol.diffusion_constant) )
             layout.prop(mol, "id", text="Mol ID")
             """
                 text="Iterations="+str(mcell.initialization.iterations)

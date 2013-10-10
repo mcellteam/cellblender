@@ -1073,10 +1073,10 @@ class DialogOperator(bpy.types.Operator):
 
 ############## Needed for:  cellblender_properties.update_callback
 
-def update_callback ( context, param_name, expr ):
+def update_callback ( context, param_name, expr, value ):
     """Given a parameter name and an expression, put the expression into the location for that name.
        Always check to see if it is already equal to the expression first to avoid infinite recursion!! """
-    # print ( "User's update callback has been called" )
+    print ( "User's update callback has been called for \"" + param_name + "\" = \"" + expr + "\" and value " + value )
 
     mcell = context.scene.mcell
 
@@ -1123,8 +1123,11 @@ def update_callback ( context, param_name, expr ):
         mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
         # Check if this molecule matches this parameter
         if mol.id == index:
+            print ( 'param_name.startswith PARAM_diffusion_constant_, mol.dc=' + str(mol.diffusion_constant) + ", val=" + str(value) )
             if mol.PARAM_diffusion_constant != expr:
                 mol.PARAM_diffusion_constant = expr
+            if mol.diffusion_constant != float(value):
+               mol.diffusion_constant = float(value)
 
 
     ### These are for testing:    
@@ -1144,7 +1147,7 @@ def update_callback ( context, param_name, expr ):
 
 def update_all_panel_parameters ( context ):
     """This forces a redraw of all panel parameters. It should be called when updating general parameters."""
-    # print ( "Forcing redraw of all panel parameters." )
+    print ( "Forcing redraw of all panel parameters." )
 
     mcell = context.scene.mcell
 
@@ -1158,9 +1161,15 @@ def update_all_panel_parameters ( context ):
     mcell.initialization.PARAM_vacancy_search_distance = mcell.initialization.PARAM_vacancy_search_distance
     mcell.initialization.PARAM_surface_grid_density = mcell.initialization.PARAM_surface_grid_density
 
-    for mol in mcell.molecules.molecule_list:
-        mol.PARAM_diffusion_constant = str ( mol.PARAM_diffusion_constant )
-
+    # Save the index of the currently selected molecule
+    users_active_selection_index = mcell.molecules.active_mol_index
+    # Force an update of all molecule parameters
+    for i in range(len( mcell.molecules.molecule_list)):
+        mol = mcell.molecules.molecule_list[i]
+        mcell.molecules.active_mol_index = i 
+        mol.PARAM_diffusion_constant = mol.PARAM_diffusion_constant
+    # Restore the index of the currently selected molecule
+    mcell.molecules.active_mol_index = users_active_selection_index
 
     mcell.mesh_creation_parameters.PARAM_location_x = mcell.mesh_creation_parameters.PARAM_location_x
     mcell.mesh_creation_parameters.PARAM_location_y = mcell.mesh_creation_parameters.PARAM_location_y
@@ -1170,6 +1179,7 @@ def update_all_panel_parameters ( context ):
 
 
 def update_parameter_block_message ( mcell, ps ):
+    print ( "Call to update_parameter_block_message ... checking for undefined or circular reference" )
     if ps.all_valid():
         mcell.general_parameters.param_group_error = ""
     else:
@@ -1178,6 +1188,7 @@ def update_parameter_block_message ( mcell, ps ):
 
 def update_parameter_properties ( mcell, ps, context ):
     """ Note that the "context" parameter is added as a "fix" to give access to hard-coded panel parameters"""
+    print ( "Call to update_parameter_properties" )
     gen_params = mcell.general_parameters
     plist = gen_params.parameter_list
 
@@ -1235,7 +1246,7 @@ def update_parameter_properties ( mcell, ps, context ):
             #print ( "     Expression = " + expr )
             
             #cellblender_properties.update_callback ( context, pname, expr )
-            update_callback ( context, pname, expr )
+            update_callback ( context, pname, expr, ps.get_value(pid) )
 
     update_parameter_block_message ( mcell, ps )
 
@@ -1245,7 +1256,7 @@ skip_parameter_name_update = False
 
 def update_parameter_name ( self, context ):
     # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one so their expressions show the new name
-    #print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
+    print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
     # The following check was needed because mcell.general_parameters.parameter_list[newest_item]['expr'] wasn't being set yet for some reason
     global skip_parameter_name_update
     if self.initialized and (not skip_parameter_name_update):
@@ -1282,7 +1293,7 @@ def update_parameter_name ( self, context ):
 
 def update_parameter_expression ( self, context ):
     # Called when a parameter expression changes - needs to recompute the result and update all parameters that depend on this one
-    #print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "] to " + self.expr )
+    print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "] to " + self.expr )
     mcell = context.scene.mcell
 
     ps = check_out_parameter_space ( mcell.general_parameters )
@@ -1323,13 +1334,16 @@ def set_panel_parameter ( self, value ):
     print ( "set_panel_parameter(self), self = " + str(self) + ", value = " + str(value) )
     return "set"
 
+import traceback
 
 def update_panel_parameter ( self, context, field_name, id_index=None ):
     # Called when a panel parameter expression changes - needs to recompute the result and update all parameters that depend on this one
+    print ( "call to update_panel_parameter with field_name = " + str(field_name) + ", id = " + str(id_index) + ", self=" + str(self) )
+
     
     # If the id_index is None, then perform a normal define and return the value
     # If the id_index is -1, define a new parameter by appending the parameter id to the field name and return the id
-    # If the id_index is >0, get the parameter by appending the parameter id to the field name or use the id directly?
+    # If the id_index is >0, get the parameter by appending the parameter id to the field name (cannot use id directly because it's a mol_id etc)
     
 
     # print ( "Changed " + field_name + " to " + str(getattr(self,field_name)) )
@@ -1366,6 +1380,8 @@ def update_panel_parameter ( self, context, field_name, id_index=None ):
 
     else:
         print ( "W A R N I N G :   This code isn't done yet!!" )
+        print ( "Stack trace:" )
+        traceback.print_stack()
         print ( "field_name = " + field_name + ", id_index = " + str(id_index) + ", expr = " + str(getattr(self,field_name)) )
         
         """
@@ -3878,13 +3894,15 @@ def update_diffusion_constant(self, context):
    
     diffusion_constant_str = mol.PARAM_diffusion_constant
 
-    (diffusion_constant, status) = check_expr_str ( mcell, "PARAM_diffusion_constant_" + str(mol.id), mol.PARAM_diffusion_constant, 0, None)
+    (diffusion_constant, status) = check_expr_str(mcell, "PARAM_diffusion_constant_" + str(mol.id), mol.PARAM_diffusion_constant, 0, None)
      
     if status == "":
         mol.diffusion_constant = diffusion_constant
     else:
         #status = status % ("diffusion_constant", diffusion_constant_str)
-        mol.diffusion_constant_str = "%g" % (mol.diffusion_constant)
+        # Don't do this?
+        ### mol.diffusion_constant_str = "%g" % (mol.diffusion_constant)
+        pass
 
     #mcell.molecules.status = status
 
