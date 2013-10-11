@@ -805,6 +805,7 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
             layout.prop(par, "desc")
             ##row = layout.row()
             ##row.label(text="Parameter ID = " + str(par.id) + "   (temporary for debugging)")
+        self.layout.operator("mcell.print_parameters")
 
 #########################################################################################################################################
 
@@ -845,15 +846,6 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
             layout.prop(mol, "name")
             layout.prop(mol, "type")
             layout.prop(mol, "PARAM_diffusion_constant", text="Diff Const="+ ('%.3g' % mol.diffusion_constant) )
-            layout.prop(mol, "id", text="Mol ID")
-            """
-                text="Iterations="+str(mcell.initialization.iterations)
-            par = mcell.general_parameters.parameter_list[index]
-            disp = par.name + " = " + par.expr
-            """
-
-            
-            # Old method:  layout.prop(mol, "diffusion_constant_str")
             box = layout.box()
             row = box.row(align=True)
             row.alignment = 'LEFT'

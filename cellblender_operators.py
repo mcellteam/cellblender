@@ -872,6 +872,21 @@ def check_in_parameter_space ( mcell_general_parameters, ps ):
         parameter_space_lock.release()
         num_checked_out = 0
 
+class MCELL_OT_print_parameters(bpy.types.Operator):
+    bl_idname = "mcell.print_parameters"
+    bl_label = "Print All Parameters"
+    bl_description = "Print all currently defined parameters"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        #print ( "Adding Parameter ... inside execute" )
+        mcell = context.scene.mcell
+        
+        ps = check_out_parameter_space ( mcell.general_parameters )
+        ps.eval_all(True)
+        check_in_parameter_space ( mcell.general_parameters, ps )
+
+        return {'FINISHED'}
 
 
 class MCELL_OT_add_parameter(bpy.types.Operator):
@@ -1022,7 +1037,7 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
                     """
 
                 # Re-evaluate all the parameters to update them on the screen
-                ps.eval_all(True,-1)
+                ps.eval_all(False,-1)
                 # Update the error message for the entire parameter group
                 update_parameter_block_message ( mcell, ps )
                 ## print ( "After reevaluating a parameter:" )
@@ -1076,7 +1091,7 @@ class DialogOperator(bpy.types.Operator):
 def update_callback ( context, param_name, expr, value ):
     """Given a parameter name and an expression, put the expression into the location for that name.
        Always check to see if it is already equal to the expression first to avoid infinite recursion!! """
-    print ( "User's update callback has been called for \"" + param_name + "\" = \"" + expr + "\" and value " + value )
+    #print ( "User's update callback has been called for \"" + param_name + "\" = \"" + expr + "\" and value " + value )
 
     mcell = context.scene.mcell
 
@@ -1123,7 +1138,7 @@ def update_callback ( context, param_name, expr, value ):
         mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
         # Check if this molecule matches this parameter
         if mol.id == index:
-            print ( 'param_name.startswith PARAM_diffusion_constant_, mol.dc=' + str(mol.diffusion_constant) + ", val=" + str(value) )
+            #print ( 'param_name.startswith PARAM_diffusion_constant_, mol.dc=' + str(mol.diffusion_constant) + ", val=" + str(value) )
             if mol.PARAM_diffusion_constant != expr:
                 mol.PARAM_diffusion_constant = expr
             if mol.diffusion_constant != float(value):
@@ -1147,7 +1162,7 @@ def update_callback ( context, param_name, expr, value ):
 
 def update_all_panel_parameters ( context ):
     """This forces a redraw of all panel parameters. It should be called when updating general parameters."""
-    print ( "Forcing redraw of all panel parameters." )
+    #print ( "Forcing redraw of all panel parameters." )
 
     mcell = context.scene.mcell
 
@@ -1179,7 +1194,7 @@ def update_all_panel_parameters ( context ):
 
 
 def update_parameter_block_message ( mcell, ps ):
-    print ( "Call to update_parameter_block_message ... checking for undefined or circular reference" )
+    #print ( "Call to update_parameter_block_message ... checking for undefined or circular reference" )
     if ps.all_valid():
         mcell.general_parameters.param_group_error = ""
     else:
@@ -1188,11 +1203,11 @@ def update_parameter_block_message ( mcell, ps ):
 
 def update_parameter_properties ( mcell, ps, context ):
     """ Note that the "context" parameter is added as a "fix" to give access to hard-coded panel parameters"""
-    print ( "Call to update_parameter_properties" )
+    #print ( "Call to update_parameter_properties" )
     gen_params = mcell.general_parameters
     plist = gen_params.parameter_list
 
-    ps.eval_all()
+    ps.eval_all(False)
 
     # print ( "After eval_all, all_valid() = " + str(ps.all_valid()) )
 
@@ -1256,7 +1271,7 @@ skip_parameter_name_update = False
 
 def update_parameter_name ( self, context ):
     # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one so their expressions show the new name
-    print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
+    #print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
     # The following check was needed because mcell.general_parameters.parameter_list[newest_item]['expr'] wasn't being set yet for some reason
     global skip_parameter_name_update
     if self.initialized and (not skip_parameter_name_update):
@@ -1284,7 +1299,7 @@ def update_parameter_name ( self, context ):
         # Force the update of all panel parameters to cause the numeric values to be updated even if the string (expression) hasn't changed
         update_parameter_properties ( mcell, ps, context )
 
-        #print ( "After Rename:" )
+        #print ( "After Renameing:" )
         #ps.dump(True)
         
         check_in_parameter_space ( mcell.general_parameters, ps )
@@ -1293,7 +1308,7 @@ def update_parameter_name ( self, context ):
 
 def update_parameter_expression ( self, context ):
     # Called when a parameter expression changes - needs to recompute the result and update all parameters that depend on this one
-    print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "] to " + self.expr )
+    #print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "] to " + self.expr )
     mcell = context.scene.mcell
 
     ps = check_out_parameter_space ( mcell.general_parameters )
@@ -1305,11 +1320,11 @@ def update_parameter_expression ( self, context ):
     if (ps.get_error(self.id) != None):
         print ( "\n\nExpression Error in update_parameter_expression\n\n" )
     
-    ps.eval_all()
+    ps.eval_all(False)
 
     update_parameter_properties ( mcell, ps, context )
     
-    ps.eval_all()
+    ps.eval_all(False)
 
     # Try forcing the update of all panel parameters - This appears to work!
     # If we use this approach, we'll end up listing all of the panel update functions
@@ -1338,7 +1353,7 @@ import traceback
 
 def update_panel_parameter ( self, context, field_name, id_index=None ):
     # Called when a panel parameter expression changes - needs to recompute the result and update all parameters that depend on this one
-    print ( "call to update_panel_parameter with field_name = " + str(field_name) + ", id = " + str(id_index) + ", self=" + str(self) )
+    #print ( "call to update_panel_parameter with field_name = " + str(field_name) + ", id = " + str(id_index) + ", self=" + str(self) )
 
     
     # If the id_index is None, then perform a normal define and return the value
@@ -1379,10 +1394,10 @@ def update_panel_parameter ( self, context, field_name, id_index=None ):
         return value
 
     else:
-        print ( "W A R N I N G :   This code isn't done yet!!" )
-        print ( "Stack trace:" )
-        traceback.print_stack()
-        print ( "field_name = " + field_name + ", id_index = " + str(id_index) + ", expr = " + str(getattr(self,field_name)) )
+        # print ( "W A R N I N G :   Array parameter code isn't fully tested yet!!" )
+        #print ( "Stack trace:" )
+        #traceback.print_stack()
+        # print ( "field_name = " + field_name + ", id_index = " + str(id_index) + ", expr = " + str(getattr(self,field_name)) )
         
         """
         if id_index < 0:
@@ -1395,7 +1410,7 @@ def update_panel_parameter ( self, context, field_name, id_index=None ):
         # This is processing for non-scalar parameters which take an index
         field_name_indexed = field_name + "_" + str(id_index)
         
-        print ( "About to define " + field_name_indexed + " = " + str(getattr(self,field_name)) )
+        #print ( "About to define " + field_name_indexed + " = " + str(getattr(self,field_name)) )
 
         ps.define ( field_name_indexed, str(getattr(self,field_name)) )
 
@@ -1408,8 +1423,8 @@ def update_panel_parameter ( self, context, field_name, id_index=None ):
 
         value = ps.get_value(ps.get_id(field_name_indexed))
             
-        print ( "After Updating Expression:" )
-        ps.dump(True)
+        #print ( "After Updating Expression:" )
+        #ps.dump(True)
         
         check_in_parameter_space ( mcell.general_parameters, ps )
 
@@ -3555,7 +3570,7 @@ def check_expr_str(mcell, panel_param_name, param_str, min_val, max_val):
         # Return a value to update the parameter string in the panel
         # print ( "Should be returning ", ps.get_expr ( ps.get_id(panel_param_name) ) )
     # Evaluate the parameter string (whether it's a panel parameter or not)
-    (value,valid) = ps.eval_all ( expression = param_str )
+    (value,valid) = ps.eval_all ( False, expression = param_str )
     check_in_parameter_space ( mcell.general_parameters, ps )
 
     if valid:
@@ -3887,7 +3902,7 @@ def update_diffusion_constant(self, context):
     mcell = context.scene.mcell
     mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
     
-    print ( "Called update_diffusion_constant with mol.id=" + str(mol.id) )
+    #print ( "Called update_diffusion_constant with mol.id=" + str(mol.id) )
     
     update_panel_parameter ( self, context, "PARAM_diffusion_constant", mol.id )
 

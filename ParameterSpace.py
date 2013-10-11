@@ -28,7 +28,7 @@ class ParameterSpace:
         self.VERSION = self.get_version()
         self.EXPRESSION_KEYWORDS = { '^': '**', 'SQRT': 'sqrt', 'EXP': 'exp', 'LOG': 'log', 'LOG10': 'log10', 'SIN': 'sin', 'COS': 'cos', 'TAN': 'tan', 'ASIN': 'asin', 'ACOS':'acos', 'ATAN': 'atan', 'ABS': 'abs', 'CEIL': 'ceil', 'FLOOR': 'floor', 'MAX': 'max', 'MIN': 'min', 'RAND_UNIFORM': 'uniform', 'RAND_GAUSSIAN': 'gauss', 'PI': 'pi', 'SEED': '1' }
         self.UNDEFINED_NAME = "   (0*1111111111*0)   "
-        self.PRINT_MODE = "NONE"
+        self.PRINT_MODE = "DEFAULT"
         self.init_param_space()
 
     def get_version ( self ):
@@ -367,6 +367,7 @@ class ParameterSpace:
     def eval_all ( self, prnt=False, requested_id=None, expression=None ):
     
         # Re-parse any parameters that remain unparsed
+        # print ( "Called eval_all with prnt = " + str(prnt) + ", and self.PRINT_MODE = " + self.PRINT_MODE )
 
         for parid in self.ID_name_dict:
             if self.ID_error_dict[parid] != None:
