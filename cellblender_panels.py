@@ -806,6 +806,7 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
             ##row = layout.row()
             ##row.label(text="Parameter ID = " + str(par.id) + "   (temporary for debugging)")
         self.layout.operator("mcell.print_parameters")
+        self.layout.operator("mcell.dump_parameters")
 
 #########################################################################################################################################
 

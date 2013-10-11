@@ -888,6 +888,22 @@ class MCELL_OT_print_parameters(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class MCELL_OT_dump_parameters(bpy.types.Operator):
+    bl_idname = "mcell.dump_parameters"
+    bl_label = "Dump All Parameters"
+    bl_description = "Dump all currently defined parameters in detail"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        #print ( "Adding Parameter ... inside execute" )
+        mcell = context.scene.mcell
+        
+        ps = check_out_parameter_space ( mcell.general_parameters )
+        ps.dump(True)
+        check_in_parameter_space ( mcell.general_parameters, ps )
+
+        return {'FINISHED'}
+
 
 class MCELL_OT_add_parameter(bpy.types.Operator):
     bl_idname = "mcell.add_parameter"
@@ -1160,7 +1176,7 @@ def update_callback ( context, param_name, expr, value ):
         print ( "update_callback called with an unexpected parameter name: " + param_name )
 
 
-def update_all_panel_parameters ( context ):
+def force_all_panel_parameter_updates ( context ):
     """This forces a redraw of all panel parameters. It should be called when updating general parameters."""
     #print ( "Forcing redraw of all panel parameters." )
 
@@ -1238,7 +1254,6 @@ def update_parameter_properties ( mcell, ps, context ):
             p.valid = False
 
     # Rebuild all panel parameter expressions
-    # This is currently a hard-coded list
 
     mcell = context.scene.mcell
 
@@ -1296,6 +1311,8 @@ def update_parameter_name ( self, context ):
                 self.name = old_name
                 #self.report({'WARNING'}, "Duplicate Name" )
 
+        force_all_panel_parameter_updates ( context )
+
         # Force the update of all panel parameters to cause the numeric values to be updated even if the string (expression) hasn't changed
         update_parameter_properties ( mcell, ps, context )
 
@@ -1303,6 +1320,8 @@ def update_parameter_name ( self, context ):
         #ps.dump(True)
         
         check_in_parameter_space ( mcell.general_parameters, ps )
+
+
     skip_parameter_name_update = False
 
 
@@ -1331,7 +1350,7 @@ def update_parameter_expression ( self, context ):
     #   either here or collected together in another function
     # update_time_step ( self, context )
 
-    update_all_panel_parameters ( context )
+    force_all_panel_parameter_updates ( context )
 
     #print ( "After Updating Expression:" )
     #ps.dump(True)
