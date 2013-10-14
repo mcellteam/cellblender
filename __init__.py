@@ -97,6 +97,7 @@ if "bpy" in locals():
     imp.reload(cellblender_operators)
     imp.reload(io_mesh_mcell_mdl)
     imp.reload(bng)         # DB: Adde for BNG
+    imp.reload(sbml)        #JJT: Added for SBML
     # Use "try" for optional modules
     try:
         imp.reload(data_plotters)
@@ -109,7 +110,8 @@ else:
         cellblender_panels, \
         cellblender_operators, \
         io_mesh_mcell_mdl, \
-        bng  # DB: Added for BNG
+        bng,  \
+        sbml #JJT
 
     # Use "try" for optional modules
     try:
@@ -130,6 +132,9 @@ def register():
     bpy.types.INFO_MT_file_export.append(io_mesh_mcell_mdl.menu_func_export)
     # DB: Added for BioNetGen import
     bpy.types.INFO_MT_file_import.append(bng.menu_func_import)
+    #JJT: And SBML import
+    bpy.types.INFO_MT_file_import.append(sbml.menu_func_import)
+    
     bpy.types.Scene.mcell = bpy.props.PointerProperty(
         type=cellblender_properties.MCellPropertyGroup)
     bpy.types.Object.mcell = bpy.props.PointerProperty(
