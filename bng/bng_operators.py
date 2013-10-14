@@ -4,7 +4,7 @@ import sys
 import io
 
 import cellblender
-from cellblender import cellblender_properties, cellblender_operators
+from cellblender import cellblender_properties, cellblender_operators, ParameterSpace
 from . import net
 
 # We use per module class registration/unregistration
@@ -21,7 +21,7 @@ class BNG_OT_parameter_add(bpy.types.Operator):
     bl_description = "Add imported parameters to an MCell model"
     bl_options = {'REGISTER', 'UNDO'}
 
-    def execute(self, context):
+    """ def execute_dipaks_original (self, context):
         mcell = context.scene.mcell
         par_list = net.par_list
         index = -1
@@ -36,7 +36,78 @@ class BNG_OT_parameter_add(bpy.types.Operator):
             parameter.value = par_list[key]['value']
             parameter.unit = par_list[key]['unit']
             parameter.type = par_list[key]['type']
- 
+
+        return {'FINISHED'}
+    """
+
+
+    def execute(self, context):
+        print ( "Importing Parameters" )
+        mcell = context.scene.mcell
+
+        ps = cellblender_operators.check_out_parameter_space ( mcell.general_parameters )
+        ##print ( "Before adding new parameters:" )
+        ##ps.dump(True)
+        
+        par_list = net.par_list
+        index = -1
+        for key in sorted(par_list.keys()):
+            print ( "Importing key " + str(key) )
+            index += 1
+
+            # Dipak's parameters
+            mcell.parameters.parameter_list.add()
+            mcell.parameters.active_par_index = index
+            parameter = mcell.parameters.parameter_list[mcell.parameters.active_par_index]
+
+            parameter.name = par_list[key]['name']
+            parameter.value = par_list[key]['value']
+            parameter.unit = par_list[key]['unit']
+            parameter.type = par_list[key]['type']
+
+
+            # General parameters
+            mcell.general_parameters.parameter_list.add()
+            mcell.general_parameters.active_par_index = len(mcell.general_parameters.parameter_list)-1
+            
+            parameter = mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index]
+
+            parameter.name = par_list[key]['name']
+            parameter.expr = par_list[key]['value']
+            parameter.value = par_list[key]['value']
+            parameter.unit = par_list[key]['unit']
+            parameter.desc = par_list[key]['type']
+            
+            new_id = ps.define ( parameter.name, parameter.expr )
+            parameter.id = new_id
+            
+            # The following code works, but the re-evaluation might be taking too much time
+            
+            ps.eval_all(False,-1)  # Try forcing the re-evaluation of all parameters
+
+            parameter.expr = ps.get_expr(new_id)
+        
+            parameter.value = str ( ps.eval_all(False,new_id) )
+            parameter.valid = True
+
+        """
+        # Evaluate all parameters to update their values
+        
+        ps.eval_all ( False, -1 )
+
+        # After evaluation, re-evaluate each parameter to update the Blender parameters 
+        for parameter in mcell.parameters.parameter_list:
+            pid = parameter.id
+            parameter.expr = ps.get_exprr(pid)
+            parameter.value = str ( ps.eval_all(False,pid) )
+            parameter.valid = true
+        """
+
+        ##print ( "After adding new parameters:" )
+        ##ps.dump(True)
+
+        cellblender_operators.check_in_parameter_space ( mcell.general_parameters, ps )
+
         return {'FINISHED'}
 
 
@@ -119,6 +190,13 @@ def execute_bionetgen(filepath):
     from os.path import exists
     filebasename = os.path.basename(filepath)
     filedirpath = os.path.dirname(filepath)    # dir of the bngl script file
+    
+    # Just execute it without the search!!!
+    #os.system("~/proj/MCell/BioNetGen/BioNetGen-2.2.4-stable/BNG2.pl --outdir ~/.config/blender/2.68/scripts/addons/cellblender/bng ~/proj/MCell/src/cellblender_git/cellblender_trunk/bng/")    # execute BNG    
+    
+    # This search took over a full minute every time it was run!!!
+    print ( "Searching for BioNetGen ... this can take a long time on some systems!!!" )
+    
     check_dir = filedirpath;
     n = 0
     while(n!=20):    # iterative search for BNG exe file (starts from the dir containing the bngl script file)
@@ -126,6 +204,7 @@ def execute_bionetgen(filepath):
         checked = {}    # list of dirs for which search is complete
         i = 0
         for (dirpath, dirname, filename) in os.walk(bng_dir):    # Search over the current and previously unchecked child dirs 
+            #print ( "n=" + str(n) + "Checking " + str(dirpath) + ", " + str(dirname) + ", " + str(filename) )
             if (i == 0):
                 check_dir = os.path.dirname(dirpath)    #  mark the parent dir for next search (after current and child dirs are done) 
                 i = 1
@@ -137,11 +216,13 @@ def execute_bionetgen(filepath):
                 destpath = os.path.dirname(__file__)
                 exe_bng = "    ".join([bngpath, "--outdir", destpath, filepath])    # create command string for BNG execution
                 print("*** Started BioNetGen execution ***")
+                print("  Command = " + exe_bng )
                 os.system(exe_bng)    # execute BNG
                 return{'FINISHED'}
             checked.update({dirpath:True})    # store checked directory in the list
         n +=1  
         if (n==20):    # too many iterations; BNG not found, stop further search
             print ("Error running BioNetGen. BNG2.pl not found....")
+    
     return{'FINISHED'}
    

@@ -117,43 +117,44 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         row = layout.row()
         layout.prop(context.scene, "name", text="Project Base Name")
 
+"""
+class MCELL_PT_scratch(bpy.types.Panel):
+    bl_label = "CellBlender - Scratch Panel (testing)"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
 
-#class MCELL_PT_scratch(bpy.types.Panel):
-#    bl_label = "CellBlender - Scratch Panel (testing)"
-#    bl_space_type = "PROPERTIES"
-#    bl_region_type = "WINDOW"
-#    bl_context = "scene"
-#    bl_options = {'DEFAULT_CLOSED'}
-#
-#    def draw(self, context):
-#        layout = self.layout
-#        mcell = context.scene.mcell
-#
-#        row = layout.row()
-#        col = row.column(align=True)
-#        col.prop(mcell.scratch_settings, "show_all_icons")
-#        col = row.column(align=True)
-#        col.prop(mcell.scratch_settings, "print_all_icons")
-#
-#        if mcell.scratch_settings.show_all_icons:
-#            all_icons = bpy.types.UILayout.bl_rna.functions[
-#                'prop'].parameters['icon'].enum_items.keys()
-#            layout.separator()
-#            row = layout.row()
-#            for icon in all_icons:
-#                row = layout.row()
-#                row.label(icon=icon, text=icon)
-#
-#        if mcell.scratch_settings.print_all_icons:
-#            all_icons = bpy.types.UILayout.bl_rna.functions[
-#                'prop'].parameters['icon'].enum_items.keys()
-#            print("Icon list has ", len(all_icons), "icons")
-#            print("Icon names:")
-#            print(all_icons)
-#            # mcell.scratch_settings.print_all_icons = False
-#            # AttributeError: Writing to ID classes in this context is not
-#            # allowed: Scene, Scene datablock, error setting
-#            # MCellScratchPanelProperty.print_all_icons
+    def draw(self, context):
+        layout = self.layout
+        mcell = context.scene.mcell
+
+        row = layout.row()
+        col = row.column(align=True)
+        col.prop(mcell.scratch_settings, "show_all_icons")
+        col = row.column(align=True)
+        col.prop(mcell.scratch_settings, "print_all_icons")
+
+        if mcell.scratch_settings.show_all_icons:
+            all_icons = bpy.types.UILayout.bl_rna.functions[
+                'prop'].parameters['icon'].enum_items.keys()
+            layout.separator()
+            row = layout.row()
+            for icon in all_icons:
+                row = layout.row()
+                row.label(icon=icon, text=icon)
+
+        if mcell.scratch_settings.print_all_icons:
+            all_icons = bpy.types.UILayout.bl_rna.functions[
+                'prop'].parameters['icon'].enum_items.keys()
+            print("Icon list has ", len(all_icons), "icons")
+            print("Icon names:")
+            print(all_icons)
+            # mcell.scratch_settings.print_all_icons = False
+            # AttributeError: Writing to ID classes in this context is not
+            # allowed: Scene, Scene datablock, error setting
+            # MCellScratchPanelProperty.print_all_icons
+"""
 
 #class MCELL_PT_export_project(bpy.types.Panel):
 #    bl_label = "CellBlender - Export Project"
@@ -470,8 +471,11 @@ class MCELL_PT_initialization(bpy.types.Panel):
         layout = self.layout
         mcell = context.scene.mcell
 
-        layout.prop(mcell.initialization, "iterations")
-        layout.prop(mcell.initialization, "time_step_str")
+        layout.prop(mcell.initialization, "PARAM_iterations", text="Iterations="+str(mcell.initialization.iterations))
+        layout.prop(mcell.initialization, "PARAM_time_step", text="Time Step="+str(mcell.initialization.time_step))
+        
+        #layout.label(text="Time Step="+str(mcell.initialization.time_step))
+        #layout.prop(mcell.initialization, "time_step", text="Experimental View of Time Step")
 
         # Advanced Options
         box = layout.box()
@@ -481,19 +485,19 @@ class MCELL_PT_initialization(bpy.types.Panel):
             row.prop(mcell.initialization, "advanced", icon='TRIA_DOWN',
                      text="Advanced Options", emboss=False)
             row = box.row()
-            row.prop(mcell.initialization, "time_step_max_str")
+            row.prop(mcell.initialization, "PARAM_time_step_max", text="Max Time Step="+str(mcell.initialization.time_step_max))
             row = box.row()
-            row.prop(mcell.initialization, "space_step_str")
+            row.prop(mcell.initialization, "PARAM_space_step", text="Space Step="+str(mcell.initialization.space_step))
             row = box.row()
-            row.prop(mcell.initialization, "interaction_radius_str")
+            row.prop(mcell.initialization, "PARAM_interaction_radius", text="Interaction Radius="+str(mcell.initialization.interaction_radius))
             row = box.row()
-            row.prop(mcell.initialization, "radial_directions_str")
+            row.prop(mcell.initialization, "PARAM_radial_directions", text="Radial Directions="+str(mcell.initialization.radial_directions))
             row = box.row()
-            row.prop(mcell.initialization, "radial_subdivisions_str")
+            row.prop(mcell.initialization, "PARAM_radial_subdivisions", text="Radial Subdivisions="+str(mcell.initialization.radial_subdivisions))
             row = box.row()
-            row.prop(mcell.initialization, "vacancy_search_distance_str")
+            row.prop(mcell.initialization, "PARAM_vacancy_search_distance", text="Vacancy Search Distance="+str(mcell.initialization.vacancy_search_distance))
             row = box.row()
-            row.prop(mcell.initialization, "surface_grid_density")
+            row.prop(mcell.initialization, "PARAM_surface_grid_density", text="Surface Grid Density="+str(mcell.initialization.surface_grid_density))
             row = box.row()
             row.prop(mcell.initialization, "accurate_3d_reactions")
             row = box.row()
@@ -671,6 +675,77 @@ class MCELL_PT_define_parameters(bpy.types.Panel):
 
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
 
+
+# T E S T   C O D E  (begin)
+from . import cellblender_operators
+class AddMeshPanel(bpy.types.Panel):
+  bl_label = "Experimental Panel: Parameter Testing"
+  bl_space_type = "PROPERTIES"
+  bl_region_type = "WINDOW"
+  bl_context = "scene"
+  bl_options = {'DEFAULT_CLOSED'}
+
+  def draw(self, context):
+    mcell = context.scene.mcell
+    self.layout.operator("parameters.add", text="Add cube").obj_type = "cube"
+    self.layout.operator("parameters.add", text="Add cylinder").obj_type = "cylinder"
+    self.layout.operator("parameters.add", text="Add sphere").obj_type = "sphere"
+
+    row = self.layout.row ( align = True )
+    row.prop ( mcell.mesh_creation_parameters, "PARAM_location_x", text="X = "+str(mcell.mesh_creation_parameters.location_x) )
+    row = self.layout.row ( align = True )
+    row.prop ( mcell.mesh_creation_parameters, "PARAM_location_y", text="Y = "+str(mcell.mesh_creation_parameters.location_y) )
+    row = self.layout.row ( align = True )
+    row.prop ( mcell.mesh_creation_parameters, "PARAM_location_z", text="Z = "+str(mcell.mesh_creation_parameters.location_z) )
+
+
+    #layout.prop(mcell.initialization, "PARAM_time_step", text="Time Step="+str(mcell.initialization.time_step))
+
+
+
+class OBJECT_OT_AddButton(bpy.types.Operator):
+  bl_idname = "parameters.add"
+  bl_label = "Add"
+  obj_type = bpy.props.StringProperty()
+
+  def execute(self, context):
+
+    # This code is called when an "Add [Object]" button is pressed
+    print ("Adding a " + str(self.obj_type))
+    mcell = context.scene.mcell
+    ps = cellblender_operators.check_out_parameter_space ( mcell.general_parameters )
+    ps.dump(True)
+    try:
+      x = float(mcell.mesh_creation_parameters.PARAM_location_x)
+    except:
+      print ("Value must be an expression, try to evaluate..." )
+      (x,valid) = ps.eval_all ( expression = mcell.mesh_creation_parameters.PARAM_location_x )
+    try:
+      y = float(mcell.mesh_creation_parameters.PARAM_location_y)
+    except:
+      print ("Value must be an expression, try to evaluate..." )
+      (y,valid) = ps.eval_all ( expression = mcell.mesh_creation_parameters.PARAM_location_y )
+    try:
+      z = float(mcell.mesh_creation_parameters.PARAM_location_z)
+    except:
+      print ("Value must be an expression, try to evaluate..." )
+      (z,valid) = ps.eval_all ( expression = mcell.mesh_creation_parameters.PARAM_location_z )
+
+    if self.obj_type == "cube":
+      bpy.ops.mesh.primitive_cube_add(location=(x,y,z))
+    elif self.obj_type == "cylinder":
+      bpy.ops.mesh.primitive_cylinder_add(location=(x,y,z))
+    elif self.obj_type == "sphere":
+      bpy.ops.mesh.primitive_ico_sphere_add(location=(x,y,z))
+    print ("Added a " + str(self.obj_type) + " at " + str(x) + "," + str(y) + "," + str(z) )
+    cellblender_operators.check_in_parameter_space ( mcell.general_parameters, ps )
+
+    return{'FINISHED'}    
+# T E S T   C O D E   (end)
+
+
+
+
 class MCELL_UL_draw_parameter(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         if item.status:
@@ -679,13 +754,16 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
             mcell = context.scene.mcell
             par = mcell.general_parameters.parameter_list[index]
             disp = par.name + " = " + par.expr
+            # Try to force None to be 0 ... doesn't seem to work!!
+            if par.value == None:
+                par.value = "0"
             disp = disp + " = " + par.value
             if par.unit != "":
                 disp = disp + " (" + par.unit + ")"
             if par.valid:
                 layout.label(disp, icon='FILE_TICK')
             else:
-                layout.label(disp, icon='COLOR_RED')
+                layout.label(disp, icon='ERROR')  # also try 'COLOR_RED'
 	    
   
 class MCELL_PT_general_parameters(bpy.types.Panel):
@@ -700,7 +778,10 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row()
-        row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
+        if mcell.general_parameters.param_group_error == "":
+            row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
+        else:
+            row.label(text=mcell.general_parameters.param_group_error, icon='ERROR')
         row = layout.row()
         col = row.column()
         col.template_list("MCELL_UL_draw_parameter", "general_parameters",
@@ -711,14 +792,20 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
         col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
         if len(mcell.general_parameters.parameter_list) > 0:
             par = mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index]
-            #layout.prop(par, "id")
-            #layout.prop(par, "intarr")
-            #layout.prop(par, "floatarr")
             layout.prop(par, "name")
-            layout.prop(par, "expr")
-            # layout.prop(par, "value")
+            if len(par.pending_expr) > 0:
+                layout.prop(par, "expr")
+                row = layout.row()
+                #row.label(text="Undefined Expression: " + str(par.pending_expr) + ", reverting to " + str(par.expr), icon='ERROR')  # also try 'COLOR_RED'
+                row.label(text="Undefined Expression: " + str(par.pending_expr), icon='ERROR')  # also try 'COLOR_RED'
+            else:
+                layout.prop(par, "expr")
+            #layout.prop(par, "value")
             layout.prop(par, "unit")
             layout.prop(par, "desc")
+            ##row = layout.row()
+            ##row.label(text="Parameter ID = " + str(par.id) + "   (temporary for debugging)")
+
 #########################################################################################################################################
 
 class MCELL_UL_check_molecule(bpy.types.UIList):
