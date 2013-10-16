@@ -510,11 +510,19 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
 
         elif release_site.quantity_type == 'DENSITY':
             if release_site.molecule in mol_list:
-                if mol_list[release_site.molecule].type == '2D':
-                    out_file.write("   DENSITY = %g\n" %
-                                   (release_site.quantity))
+                if release_site.quantity_expr != "0":
+                    if mol_list[release_site.molecule].type == '2D':
+                        out_file.write("   DENSITY = %s\n" %
+                                   (release_site.quantity_expr))
+                    else:
+                        out_file.write("   CONCENTRATION = %s\n" %
+                                   (release_site.quantity_expr))
                 else:
-                    out_file.write("   CONCENTRATION = %g\n" %
+                    if mol_list[release_site.molecule].type == '2D':
+                        out_file.write("   DENSITY = %g\n" %
+                                   (release_site.quantity))
+                    else:
+                        out_file.write("   CONCENTRATION = %g\n" %
                                    (release_site.quantity))
 
         out_file.write("   RELEASE_PROBABILITY = %g\n" %
