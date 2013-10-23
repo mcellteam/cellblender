@@ -28,7 +28,6 @@ class ParameterSpace:
         self.VERSION = self.get_version()
         self.EXPRESSION_KEYWORDS = { '^': '**', 'SQRT': 'sqrt', 'EXP': 'exp', 'LOG': 'log', 'LOG10': 'log10', 'SIN': 'sin', 'COS': 'cos', 'TAN': 'tan', 'ASIN': 'asin', 'ACOS':'acos', 'ATAN': 'atan', 'ABS': 'abs', 'CEIL': 'ceil', 'FLOOR': 'floor', 'MAX': 'max', 'MIN': 'min', 'RAND_UNIFORM': 'uniform', 'RAND_GAUSSIAN': 'gauss', 'PI': 'pi', 'SEED': '1' }
         self.UNDEFINED_NAME = "   (0*1111111111*0)   "
-        self.PRINT_MODE = "DEFAULT"
         self.init_param_space()
 
     def get_version ( self ):
@@ -65,12 +64,9 @@ class ParameterSpace:
         return self.ID_name_dict.keys()
 
 
-    def set_print_mode ( self, mode ):
-        self.PRINT_MODE = mode
-
     def dump ( self, prnt=False ):
         # For right now, this function defaults to silence (an easy way to turn it on and off globally)
-        if (prnt or (self.PRINT_MODE == "ALL")) and (self.PRINT_MODE != "NONE"):
+        if prnt:
             print ( " Parameter space:" )
             #print ( "  next_id = " + str(self.next_id) )
             print ( "  name->ID = " + str(self.name_ID_dict) )
@@ -367,7 +363,6 @@ class ParameterSpace:
     def eval_all ( self, prnt=False, requested_id=None, expression=None ):
     
         # Re-parse any parameters that remain unparsed
-        # print ( "Called eval_all with prnt = " + str(prnt) + ", and self.PRINT_MODE = " + self.PRINT_MODE )
 
         for parid in self.ID_name_dict:
             if self.ID_error_dict[parid] != None:
@@ -378,7 +373,7 @@ class ParameterSpace:
         # (requested_val, valid) = self.eval_all_ordered ( self, prnt=prnt, requested_id=requested_id, expression=expression )
         (requested_val, valid) = self.eval_all_any_order ( prnt=prnt, requested_id=requested_id, expression=expression )
 
-        if (prnt or (self.PRINT_MODE == "ALL")) and (self.PRINT_MODE != "NONE"):
+        if prnt:
             if (requested_id == None) or (requested_id == -1):
                 print ( "==============================================================================" )
 
@@ -399,7 +394,7 @@ class ParameterSpace:
             if (requested_id == None) or (requested_id == -1):
                 print ( "==============================================================================" )
 
-        if (prnt or (self.PRINT_MODE == "ALL")) and (self.PRINT_MODE != "NONE"):
+        if prnt:
             if not self.all_valid():
                 print ( "!!!!!!!!! WARNING: ERROR OR CIRCULAR REFERENCE !!!!!!!!!!!!" )
 
@@ -451,7 +446,7 @@ class ParameterSpace:
                         requested_val = val
                 except:
                     valid = False
-                    print ( "==> Evaluation Exception for " + py_statement + ": " + str ( sys.exc_info() ) )
+                    print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
                     if prnt:
                         print ( "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
                         print ( "    ... interpreted as: " + py_statement )
@@ -466,7 +461,7 @@ class ParameterSpace:
                 requested_val = val
             except:
                 valid = False
-                print ( "==> Evaluation Exception for " + expression + ": " + str ( sys.exc_info() ) )
+                print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
                 if prnt:
                     print ( "  Error in statement:   " + expression )
             
@@ -534,7 +529,7 @@ class ParameterSpace:
                                 requested_val = val
                         except:
                             valid = False
-                            print ( "==> Evaluation Exception for " + py_statement + ": " + str ( sys.exc_info() ) )
+                            print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
                             if prnt:
                                 print ( "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
                                 print ( "    ... interpreted as: " + py_statement )
@@ -550,7 +545,7 @@ class ParameterSpace:
                 requested_val = val
             except:
                 valid = False
-                print ( "==> Evaluation Exception for " + expression + ": " + str ( sys.exc_info() ) )
+                print ( "==> Evaluation Exception: " + str ( sys.exc_info() ) )
                 if prnt:
                     print ( "  Error in statement:   " + expression )
 
@@ -631,7 +626,7 @@ class ParameterSpace:
                         current_expr = next_segment
                 return current_expr
         return None
-
+    
 
 ###############   T E S T    C O D E   ##################
 """
@@ -672,7 +667,6 @@ if __name__ == "__main__":
                 print ( "  # n: Generate n parameters where each is the sum of the preceding 3" )
                 print ( "  .par : Delete Parameter par" )
                 print ( "  . : Delete All Parameters" )
-                print ( "  ~ : Set print mode (~0 for none, or ~1 for all, or just ~ for default)" )
                 print ( "  Control-C or Control-D : Exit program" )
                 print ( "" )
             elif '=' in s:
@@ -684,7 +678,7 @@ if __name__ == "__main__":
                     lhs = None
                 parid = ps.define ( lhs, rhs )
                 ps.eval_all(True, parid)
-
+                    
             elif s == '\\':
                 # Dump all parameters
                 ps.dump(True)
@@ -696,16 +690,6 @@ if __name__ == "__main__":
                 # Delete all parameters
                 print ( "Deleting all" )
                 ps.delete_all()
-            elif (len(s) > 0) and (s[0] == '~'):
-                # Change print mode
-                if (len(s) == 1) :
-                    ps.set_print_mode ( "DEFAULT" )
-                else:
-                    if s[1] == '0':
-                        ps.set_print_mode ( "NONE" )
-                    else:
-                        ps.set_print_mode ( "ALL" )
-                ps.dump(True)
             elif (len(s) > 0) and (s[0] == '#'):
                 # Delete selected parameter
                 count = int(s[1:].strip())

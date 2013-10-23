@@ -510,11 +510,19 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
 
         elif release_site.quantity_type == 'DENSITY':
             if release_site.molecule in mol_list:
-                if mol_list[release_site.molecule].type == '2D':
-                    out_file.write("   DENSITY = %g\n" %
-                                   (release_site.quantity))
+                if release_site.quantity_expr != "0":
+                    if mol_list[release_site.molecule].type == '2D':
+                        out_file.write("   DENSITY = %s\n" %
+                                   (release_site.quantity_expr))
+                    else:
+                        out_file.write("   CONCENTRATION = %s\n" %
+                                   (release_site.quantity_expr))
                 else:
-                    out_file.write("   CONCENTRATION = %g\n" %
+                    if mol_list[release_site.molecule].type == '2D':
+                        out_file.write("   DENSITY = %g\n" %
+                                   (release_site.quantity))
+                    else:
+                        out_file.write("   CONCENTRATION = %g\n" %
                                    (release_site.quantity))
 
         out_file.write("   RELEASE_PROBABILITY = %g\n" %
@@ -560,7 +568,6 @@ def save_molecules(context, out_file, mol_list):
         for mol_item in mol_list:
             out_file.write("  %s\n" % (mol_item.name))
             out_file.write("  {\n")
-            """  # Bob: PARAM_diffusion_constant
             if (mol_item.diffusion_constant_expr != "0"):    # DB: Extra if-else bloc for diffusion constant to take expressions
                 if mol_item.type == '2D':
                     out_file.write("    DIFFUSION_CONSTANT_2D = %s\n" %    
@@ -569,14 +576,12 @@ def save_molecules(context, out_file, mol_list):
                     out_file.write("    DIFFUSION_CONSTANT_3D = %s\n" %    
                                    (mol_item.diffusion_constant_expr))           
             else: 
-            """
-            # Note that these currently export the float value rather than the parameter expression because general parameters are not yet exported as MDL
-            if mol_item.type == '2D':
-                out_file.write("    DIFFUSION_CONSTANT_2D = %g\n" %
-                               (mol_item.diffusion_constant))
-            else:
-                out_file.write("    DIFFUSION_CONSTANT_3D = %g\n" %
-                               (mol_item.diffusion_constant))
+                if mol_item.type == '2D':
+                    out_file.write("    DIFFUSION_CONSTANT_2D = %g\n" %
+                                   (mol_item.diffusion_constant))
+                else:
+                    out_file.write("    DIFFUSION_CONSTANT_3D = %g\n" %
+                                   (mol_item.diffusion_constant))
 
             if mol_item.custom_time_step > 0:
                 out_file.write("    CUSTOM_TIME_STEP = %g\n" %

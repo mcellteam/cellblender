@@ -60,7 +60,6 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
 
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
-    id = IntProperty(name="Unique ID of this Molecule", default=-1)
     name = StringProperty(
         name="Molecule Name", default="Molecule",
         description="The molecule species name",
@@ -73,16 +72,16 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         description="Surface molecules are constrained to surfaces/meshes. "
                     "Volume molecules exist in space.")
     diffusion_constant = FloatProperty(name="Diffusion Constant")
-    PARAM_diffusion_constant = StringProperty(
+    diffusion_constant_str = StringProperty(
         name="Diffusion Constant",
         default="0",
         description="Diffusion Constant Units: cm^2/sec",
         update=cellblender_operators.update_diffusion_constant)
-    #diffusion_constant_str = StringProperty(
-    #    name="Diffusion Constant",
-    #    default="0",
-    #    description="Diffusion Constant Units: cm^2/sec",
-    #    update=cellblender_operators.update_diffusion_constant)
+    diffusion_constant_expr = StringProperty(        # DB: This property is added so that the diffusion constants take expressions 
+        name="Diffusion Constant",
+        default="0",
+        description="Diffusion Constant Units: cm^2/sec",
+        update=cellblender_operators.update_diffusion_constant)
     target_only = BoolProperty(
         name="Target Only",
         description="If selected, molecule will not initiate reactions when "
@@ -485,94 +484,52 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.mol_viz_toggle_manual_select)
 
 
-#class MCellFloatParameterProperty(bpy.types.FloatProperty):
-#    pass
-
-#class MCellFloatParameterProperty(bpy.types.FloatProperty):
-#    def __init__ (self,name="",default=0.0,min=0.0,max=1.0):
-#        super(bpy.types.FloatProperty, self).__init__()
-#        #super().__init__()
-#        pass
-
-#class MCellFloatParameterProperty(bpy.types.PropertyGroup):
-#    param_value = FloatProperty(name="value", default=0)
-#    param_id = IntProperty(name="id", default=-1)
-
 class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     iterations = IntProperty(
         name="Simulation Iterations",
         description="Number of iterations to run",
         default=0, min=0)
-
-    PARAM_iterations = StringProperty(
-        name="PARAM_iterations", default="0",
-        description="Number of iterations to run",
-        update=cellblender_operators.update_iterations)
-
-
     time_step = FloatProperty(name="Time Step", default=1e-6, min=0.0)
-
-    #PARAM_time_step = StringProperty(name="PARAM_location_x", default="1", update=update_loc_x) #, get=get_panel_parameter, set=set_panel_parameter)
-
-    PARAM_time_step = StringProperty(
-        name="PARAM_Time_Step", default="1e-6",
+    time_step_str = StringProperty(
+        name="Time Step", default="1e-6",
         description="Simulation Time Step Units: seconds",
         update=cellblender_operators.update_time_step)
-
     status = StringProperty(name="Status")
-
     advanced = bpy.props.BoolProperty(default=False)
     warnings = bpy.props.BoolProperty(default=False)
     notifications = bpy.props.BoolProperty(default=False)
 
     # Advanced/Optional Commands
-
     time_step_max = FloatProperty(name="Time Step", min=0.0)
-    PARAM_time_step_max = StringProperty(
-        name="Maximum Time Step", default="1",
+    time_step_max_str = StringProperty(
+        name="Maximum Time Step",
         description="The longest possible time step",
         update=cellblender_operators.update_time_step_max)
-
     space_step = FloatProperty(name="Space Step", min=0.0)
-    PARAM_space_step = StringProperty(
-        name="Space Step", default="1",
+    space_step_str = StringProperty(
+        name="Space Step",
         description="Have molecules take the same mean diffusion distance",
         update=cellblender_operators.update_space_step)
-
+    surface_grid_density = IntProperty(
+        name="Surface Grid Density", default=10000, min=0,
+        description="Number of molecules that can be stored per square micron")
     interaction_radius = FloatProperty(name="Interaction Radius", min=0.0)
-    PARAM_interaction_radius = StringProperty(
-        name="Interaction Radius", default="0",
+    interaction_radius_str = StringProperty(
+        name="Interaction Radius",
         description="Molecules will interact when they get within N microns.",
         update=cellblender_operators.update_interaction_radius)
-
     radial_directions = FloatProperty(name="Radial Directions", min=0.0)
-    PARAM_radial_directions = StringProperty(
-        name="Radial Directions", default="0",
+    radial_directions_str = StringProperty(
+        name="Radial Directions",
         description="Number of different directions to put in lookup table. "
                     "Leave alone unless you know what you are doing.",
         update=cellblender_operators.update_radial_directions)
-
     radial_subdivisions = FloatProperty(name="Radial Subdivisions", min=0.0)
-    PARAM_radial_subdivisions = StringProperty(
-        name="Radial Subdivisions", default="0",
+    radial_subdivisions_str = StringProperty(
+        name="Radial Subdivisions",
         description="Number of distances to put in look-up table. "
                     "Leave alone unless you know what you are doing.",
         update=cellblender_operators.update_radial_subdivisions)
-
-    vacancy_search_distance = FloatProperty(name="Vacancy Search Distance", min=0.0)
-    PARAM_vacancy_search_distance = StringProperty(
-        name="Vacancy Search Distance", default="0",
-        description="Surface molecule products can be created at N distance.",
-        update=cellblender_operators.update_vacancy_search_distance)
-
-    # Why is this an integer? Could a density be non-integral?
-    surface_grid_density = IntProperty(name="Surface Grid Density", default=10000, min=0,
-        description="Number of molecules that can be stored per square micron")
-    PARAM_surface_grid_density = StringProperty(
-        name="Surface Grid Density", default="10000",
-        description="Number of molecules that can be stored per square micron",
-        update=cellblender_operators.update_surface_grid_density)
-
     accurate_3d_reactions = BoolProperty(
         name="Accurate 3D Reaction",
         description="If selected, molecules will look through partitions to "
@@ -583,7 +540,12 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         description="If selected, surface molecules will be centered on the "
                     "grid.",
         default=False)
-
+    vacancy_search_distance = FloatProperty(
+        name="Vacancy Search Distance", min=0.0)
+    vacancy_search_distance_str = StringProperty(
+        name="Vacancy Search Distance",
+        description="Surface molecule products can be created at N distance.",
+        update=cellblender_operators.update_vacancy_search_distance)
     microscopic_reversibility_enum = [
         ('ON', "On", ""),
         ('OFF', "Off", ""),
@@ -824,7 +786,6 @@ class MCellParametersPanelProperty(bpy.types.PropertyGroup):
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
 
 class MCellGeneralParameterProperty(bpy.types.PropertyGroup):
-    """An instance of this class exists for every parameter"""
     id = IntProperty(name="ID", default=0, description="Unique ID for each parameter")
     name = StringProperty(name="Name", default="Parameter", description="Unique name for this parameter",
         update=cellblender_operators.update_parameter_name)
@@ -844,7 +805,6 @@ class MCellGeneralParameterProperty(bpy.types.PropertyGroup):
 
 
 class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
-    """This is the class that encapsulates a group (or list) of parameters"""
     parameter_list = CollectionProperty(type=MCellGeneralParameterProperty, name="Parameters List")
     active_par_index = IntProperty(name="Active Parameter", default=0)
     param_group_error = StringProperty( default="", description="Error Message for Entire Parameter Group")
@@ -852,12 +812,10 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
 
 ###########################################################################################################################
 
-
 class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
     molecule_list = CollectionProperty(
         type=MCellMoleculeProperty, name="Molecule List")
     active_mol_index = IntProperty(name="Active Molecule Index", default=0)
-    id_counter = IntProperty(name="Counter for Unique Molecule IDs", default=1)  # Start ID's at 1 to confirm initialization
     advanced = bpy.props.BoolProperty(default=False)
 
 
@@ -1035,35 +993,6 @@ class MCellObjectSelectorPanelProperty(bpy.types.PropertyGroup):
         description="Enter a regular expression for object names.")
 
 
-
-#############################################################################################################
-# This is some "user code" intended to demonstrate the use of parameters
-
-def update_loc_x ( self, context ):
-    value = cellblender_operators.update_panel_parameter ( self, context, "PARAM_location_x" )
-    self.location_x = float(value)
-
-def update_loc_y ( self, context ):
-    value = cellblender_operators.update_panel_parameter ( self, context, "PARAM_location_y" )
-    self.location_y = float(value)
-
-def update_loc_z ( self, context ):
-    value = cellblender_operators.update_panel_parameter ( self, context, "PARAM_location_z" )
-    self.location_z = float(value)
-
-
-class MeshCreationPropertyGroup(bpy.types.PropertyGroup):
-    # These can be found via bpy.context.scene.params.mesh_creation_parameters.items() or .keys() or .values()
-    PARAM_location_x = StringProperty(name="PARAM_location_x", default="1", update=update_loc_x) #, get=get_panel_parameter, set=set_panel_parameter)
-    PARAM_location_y = StringProperty(name="PARAM_location_y", default="2", update=update_loc_y) #, get=get_panel_parameter, set=set_panel_parameter)
-    PARAM_location_z = StringProperty(name="PARAM_location_z", default="3", update=update_loc_z) #, get=get_panel_parameter, set=set_panel_parameter)
-
-    location_x = FloatProperty(name="location_x", default=1)
-    location_y = FloatProperty(name="location_y", default=2)
-    location_z = FloatProperty(name="location_z", default=3)
-
-
-
 # Main MCell (CellBlender) Properties Class:
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
@@ -1092,7 +1021,6 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 ############## BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters ####
     general_parameters = PointerProperty(
         type=MCellParametersPropertyGroup, name="General Parameters")
-    mesh_creation_parameters = PointerProperty(type=MeshCreationPropertyGroup, name="===== Mesh Creation Parameters")
 ########################################################################
     molecules = PointerProperty(
         type=MCellMoleculesPanelProperty, name="Defined Molecules")
