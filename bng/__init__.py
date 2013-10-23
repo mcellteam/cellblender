@@ -18,8 +18,8 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
         bngfilepath = self.filepath         # bngl file path
         bng_operators.execute_bionetgen(bngfilepath)
         import imp
-        imp.reload(net)                     # This loads (and runs?) net.py which defines par_list and other lists
-        bpy.ops.bng.parameter_add()         # This processes all entries in the par_list parameter list
+        imp.reload(net)
+        bpy.ops.bng.parameter_add()
         bpy.ops.bng.molecule_add()
         bpy.ops.bng.reaction_add()
         bpy.ops.bng.release_site_add()

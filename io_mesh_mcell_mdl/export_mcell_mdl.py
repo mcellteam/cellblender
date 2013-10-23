@@ -315,23 +315,23 @@ def save_initialization_commands(context, out_file):
 
     init = context.scene.mcell.initialization
     # Maximum Time Step
-    if init.PARAM_time_step_max:
+    if init.time_step_max_str:
         out_file.write("TIME_STEP_MAX = %g\n" % (init.time_step_max))
     # Space Step
-    if init.PARAM_space_step:
+    if init.space_step_str:
         out_file.write("SPACE_STEP = %g\n" % (init.space_step))
     # Interaction Radius
-    if init.PARAM_interaction_radius:
+    if init.interaction_radius_str:
         out_file.write("INTERACTION_RADIUS = %g\n" % (init.interaction_radius))
     # Radial Directions
-    if init.PARAM_radial_directions:
+    if init.radial_directions_str:
         out_file.write("RADIAL_DIRECTIONS = %d\n" % (init.radial_directions))
     # Radial Subdivisions
-    if init.PARAM_radial_subdivisions:
+    if init.radial_subdivisions_str:
         out_file.write(
             "RADIAL_SUBDIVISIONS = %d\n" % (init.radial_subdivisions))
     # Vacancy Search Distance
-    if init.PARAM_vacancy_search_distance:
+    if init.vacancy_search_distance_str:
         out_file.write(
             "VACANCY_SEARCH_DISTANCE = %g\n" % (init.vacancy_search_distance))
     # Surface Grid Density
