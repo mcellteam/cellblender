@@ -96,6 +96,22 @@ class MCELL_PT_project_settings(bpy.types.Panel):
             row.label(
                 text="MCell Binary: "+mcell.project_settings.mcell_binary,
                 icon='FILE_TICK')
+
+        row = layout.row()
+        row.operator("mcell.set_python_binary",
+                     text="Set Path to Python Binary", icon='FILESEL')
+        row = layout.row()
+        python_path = mcell.project_settings.python_binary
+        if not python_path:
+            row.label("Python Binary not set", icon='UNPINNED')
+        elif not mcell.project_settings.python_binary_valid:
+            row.label("Python File/Permissions Error: " +
+                mcell.project_settings.python_binary, icon='ERROR')
+        else:
+            row.label(
+                text="Python Binary: "+mcell.project_settings.python_binary,
+                icon='FILE_TICK')
+
         #row.operator("mcell.set_project_dir",
         #             text="Set CellBlender Project Directory", icon='FILESEL')
         #row = layout.row()

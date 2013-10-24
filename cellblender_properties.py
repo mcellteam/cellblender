@@ -380,6 +380,10 @@ class MCellProjectPanelProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.check_mcell_binary)
     mcell_binary_valid = BoolProperty(name="MCell Binary Valid",
         default=False)
+    python_binary = StringProperty(name="Python Binary",
+        update=cellblender_operators.check_python_binary)
+    python_binary_valid = BoolProperty(name="Python Binary Valid",
+        default=False)
     status = StringProperty(name="Status")
 
 

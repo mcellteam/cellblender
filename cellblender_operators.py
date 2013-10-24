@@ -1727,26 +1727,51 @@ def check_release_object_expr(self, context):
     return status
 
 
-def is_executable ( binary_path ):
-    """Checks for nonexistant or non-executable mcell binary file"""
+def is_executable(binary_path):
+    """Checks for nonexistant or non-executable binary file"""
     is_exec = False
     try:
-        st = os.stat ( binary_path )
-        if os.path.isfile( binary_path ):
-            if os.access( binary_path, os.X_OK ):
+        st = os.stat(binary_path)
+        if os.path.isfile(binary_path):
+            if os.access(binary_path, os.X_OK):
                 is_exec = True
     except Exception as err:
         is_exec = False
     return is_exec
-    
+
+
+def check_python_binary(self, context):
+    """Callback to check for python executable"""
+    mcell = context.scene.mcell
+    binary_path = mcell.project_settings.python_binary
+    mcell.project_settings.python_binary_valid = is_executable(binary_path)
+    return None
+
+
+class MCELL_OT_set_python_binary(bpy.types.Operator):
+    bl_idname = "mcell.set_python_binary"
+    bl_label = "Set Python Binary"
+    bl_description = "Set Python Binary"
+    bl_options = {'REGISTER'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.project_settings.python_binary = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
 
 def check_mcell_binary(self, context):
     """Callback to check for mcell executable"""
     mcell = context.scene.mcell
     binary_path = mcell.project_settings.mcell_binary
-    mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
+    mcell.project_settings.mcell_binary_valid = is_executable(binary_path)
     return None
-
 
 
 class MCELL_OT_set_mcell_binary(bpy.types.Operator):
@@ -1758,8 +1783,8 @@ class MCELL_OT_set_mcell_binary(bpy.types.Operator):
 
     filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
 
-    def __init__(self):
-        self.filepath = bpy.context.scene.mcell.project_settings.mcell_binary
+    #def __init__(self):
+    #    self.filepath = bpy.context.scene.mcell.project_settings.mcell_binary
 
     def execute(self, context):
         mcell = context.scene.mcell
@@ -1791,7 +1816,13 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
         # Force the project directory to be where the .blend file lives
         project_dir = project_files_path()
         status = ""
-        python_path = shutil.which("python")
+        # If python path was set by user, use that one. Otherwise, try to
+        # automatically find it. This will probably fail on Windows unless it's
+        # set in the PATH.
+        if mcell.project_settings.python_binary_valid:
+            python_path = mcell.project_settings.python_binary
+        else:
+            python_path = shutil.which("python", mode=os.X_OK)
 
         if python_path:
             if not mcell.cellblender_preferences.decouple_export_run:
@@ -1858,7 +1889,7 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
                                            "Seeds: %d-%d" % (sp.pid, base_name,
                                                              start, end))
         else:
-            status = "Python not found."
+            status = "Python not found. Set it in Project Settings."
 
         mcell.run_simulation.status = status
 

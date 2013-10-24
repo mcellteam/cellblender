@@ -7,9 +7,10 @@ import os
 import subprocess
 
 
-def run_sim(seed):
+def run_sim(arglist):
     """ Run the MCell simulations. """
 
+    mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed = arglist
     mdl_filename = '%s.main.mdl' % (base_name)
     mdl_filepath = os.path.join(project_dir, mdl_filename)
     # Log filename will be log.year-month-day_hour:minute_seed.txt
@@ -71,6 +72,8 @@ if __name__ == "__main__":
     end = int(end_str)
     mcell_processes = int(mcell_processes_str)
 
+    arglist = [[mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed] for seed in range(start, end)]
+
     # Create a pool of mcell processes.
     pool = multiprocessing.Pool(processes=mcell_processes)
-    pool.map(run_sim, range(start, end))
+    pool.map(run_sim, arglist)
