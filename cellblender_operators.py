@@ -2592,7 +2592,7 @@ def mol_viz_file_read(mcell_prop, filepath):
             # [molec_name, [x_pos, y_pos, z_pos, x_orient, y_orient, z_orient]]
             # Orientations are zero in the case of volume molecules.
             mol_data = [[s.split()[0], [
-                float(x) for x in s.split()[1:]]] for s in open(
+                float(x) for x in s.split()[2:]]] for s in open(
                     filepath, "r").read().split("\n") if s != ""]
 
             for mol in mol_data:
