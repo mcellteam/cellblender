@@ -15,6 +15,7 @@ Changes since 0.1.52
   * Better error checking
   * New project directory layout
   * CellBlender preferences
+  * MDL geometry importer implemented in c/flex/bison/swig/python
 
 * Bug Fixes:
   * Meshes could be exported with the wrong rotation
