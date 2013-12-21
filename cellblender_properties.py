@@ -44,21 +44,6 @@ def unregister():
 
 #Custom Properties
 
-class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
-    id = IntProperty(name="Unique ID of This Region",default=-1)
-    name = StringProperty(
-        name="Region Name", default="Region",
-        update=cellblender_operators.region_update)
-    status = StringProperty(name="Status")
-
-
-class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
-    region_list = CollectionProperty(
-        type=MCellSurfaceRegionProperty, name="Surface Region List")
-    id_counter = IntProperty(name="Counter for Unique Region IDs", default=0)
-    active_reg_index = IntProperty(name="Active Region Index", default=0)
-
-
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Molecule Name", default="Molecule",
@@ -1053,13 +1038,5 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellMoleculeGlyphsPanelProperty, name="Molecule Shapes")
     scratch_settings = PointerProperty(
         type=MCellScratchPanelProperty, name="CellBlender Scratch Settings")
-
-
-# CellBlender Properties Class for Objects:
-
-class MCellObjectPropertyGroup(bpy.types.PropertyGroup):
-    regions = PointerProperty(
-        type=MCellSurfaceRegionListProperty, name="Defined Surface Regions")
-    include = BoolProperty(name="Include Object in Model", default=False)
 
 

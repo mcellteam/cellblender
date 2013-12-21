@@ -59,6 +59,7 @@ def load_mcell_mdl(filepath):
       if not mesh:
         mesh = meshes.new(objname)
         mesh.from_pydata(mdlobj.vertices,[],mdlobj.faces)
+#        obj.reg_list.regions_from_pydata(mdlobj.regions)
 
       if not mesh.materials.get('obj_mat'):
         mesh.materials.append(obj_mat)

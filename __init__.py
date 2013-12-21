@@ -40,6 +40,7 @@ cellblender_info = {
         "cellblender_properties.py",
         "cellblender_panels.py",
         "cellblender_operators.py",
+        "object_surface_regions.py",
         "run_simulations.py",
         "io_mesh_mcell_mdl/__init__.py",
         "io_mesh_mcell_mdl/export_mcell_mdl.py",
@@ -95,6 +96,7 @@ if "bpy" in locals():
     imp.reload(cellblender_properties)
     imp.reload(cellblender_panels)
     imp.reload(cellblender_operators)
+    imp.reload(object_surface_regions)
     imp.reload(io_mesh_mcell_mdl)
     imp.reload(bng)         # DB: Adde for BNG
     # Use "try" for optional modules
@@ -108,6 +110,7 @@ else:
         cellblender_properties, \
         cellblender_panels, \
         cellblender_operators, \
+        object_surface_regions, \
         io_mesh_mcell_mdl, \
         bng  # DB: Added for BNG
 
@@ -133,7 +136,7 @@ def register():
     bpy.types.Scene.mcell = bpy.props.PointerProperty(
         type=cellblender_properties.MCellPropertyGroup)
     bpy.types.Object.mcell = bpy.props.PointerProperty(
-        type=cellblender_properties.MCellObjectPropertyGroup)
+        type=object_surface_regions.MCellObjectPropertyGroup)
     print("CellBlender registered")
     if (bpy.app.version not in cellblender_info['supported_version_list']):
         print("Warning, current Blender version", bpy.app.version,
@@ -166,9 +169,17 @@ def register():
 
 def unregister():
     bpy.utils.unregister_module(__name__)
+    bpy.app.handlers.frame_change_pre.remove(
+        cellblender_operators.frame_change_handler)
     bpy.app.handlers.load_post.remove(
         cellblender_operators.clear_run_list)
     bpy.app.handlers.load_post.remove(
+        cellblender_operators.model_objects_update)
+    bpy.app.handlers.load_post.remove(
+        object_surface_regions.object_regions_format_update)
+    bpy.app.handlers.load_post.remove(
+        cellblender_operators.mcell_valid_update)
+    bpy.app.handlers.save_pre.remove(
         cellblender_operators.model_objects_update)
 
     print("CellBlender unregistered")
@@ -184,7 +195,7 @@ if len(bpy.app.handlers.load_post) == 0:
     bpy.app.handlers.load_post.append(
         cellblender_operators.model_objects_update)
     bpy.app.handlers.load_post.append(
-        cellblender_operators.object_regions_format_update)
+        object_surface_regions.object_regions_format_update)
     bpy.app.handlers.load_post.append(
         cellblender_operators.mcell_valid_update)
 

@@ -1266,53 +1266,6 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
             row.label(text="Define at least one molecule", icon='ERROR')
 
 
-class MCELL_UL_check_region(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data,
-                  active_propname, index):
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            layout.label(item.name, icon='FILE_TICK')
-
-
-class MCELL_PT_define_surface_regions(bpy.types.Panel):
-    bl_label = "CellBlender - Define Surface Regions"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "object"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-
-        obj_regs = context.object.mcell.regions
-        active_obj = context.active_object
-
-        if active_obj.type == 'MESH':
-            row = layout.row()
-            row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
-            row = layout.row()
-            col = row.column()
-            col.template_list("MCELL_UL_check_region", "define_surf_regions",
-                              obj_regs, "region_list", obj_regs,
-                              "active_reg_index", rows=2)
-            col = row.column(align=True)
-            col.operator("mcell.region_add", icon='ZOOMIN', text="")
-            col.operator("mcell.region_remove", icon='ZOOMOUT', text="")
-            row = layout.row()
-            if len(obj_regs.region_list) > 0:
-                reg = obj_regs.region_list[obj_regs.active_reg_index]
-                layout.prop(reg, "name")
-            if active_obj.mode == 'EDIT':
-                row = layout.row()
-                sub = row.row(align=True)
-                sub.operator("mcell.region_faces_assign", text="Assign")
-                sub.operator("mcell.region_faces_remove", text="Remove")
-                sub = row.row(align=True)
-                sub.operator("mcell.region_faces_select", text="Select")
-                sub.operator("mcell.region_faces_deselect", text="Deselect")
-
-
 class MCELL_PT_molecule_glyphs(bpy.types.Panel):
     bl_label = "CellBlender - Molecule Shape"
     bl_space_type = "PROPERTIES"

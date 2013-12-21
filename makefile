@@ -1,5 +1,5 @@
 
-INSTALL_DIR = ~/.config/blender/2.68/scripts/addons/
+INSTALL_DIR = ~/.config/blender/2.69/scripts/addons/
 
 SHELL = /bin/sh
 
@@ -27,6 +27,6 @@ clean:
 
 install: cellblender.zip
 	@if [ "$(INSTALL_DIR)" ]; then \
-	  unzip cellblender.zip -d $(INSTALL_DIR); \
+	  unzip -o cellblender.zip -d $(INSTALL_DIR); \
 	fi
 
