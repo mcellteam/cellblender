@@ -19,7 +19,7 @@
 # <pep8 compliant>
 
 # Copyright (C) 2012: Tom Bartol, bartol@salk.edu
-# Contributors: Tom Bartol
+# Contributors: Tom Bartol, Bob Kuczewski
 
 
 """
@@ -35,18 +35,23 @@ import re
 # blender imports
 import bpy
 
-from cellblender import cellblender_operators
+# from cellblender import cellblender_operators  # Shouldn't need this anymore!!
+
+from cellblender import object_surface_regions
 
 
 def get_regions(obj):
     """ Return a dictionary with region names """
 
     reg_dict = {}
+
     obj_regs = obj.mcell.regions.region_list
     for reg in obj_regs:
         id = str(reg.id)
         mesh = obj.data
-        reg_faces = list(cellblender_operators.get_region_faces(mesh,id))
+        #reg_faces = list(cellblender_operators.get_region_faces(mesh,id))
+        reg_faces = list(reg.get_region_faces(mesh))
+
         reg_faces.sort()
         reg_dict[reg.name] = reg_faces
 
