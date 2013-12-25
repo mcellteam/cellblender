@@ -749,6 +749,7 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
 
 #########################################################################################################################################
 
+"""
 class MCELL_UL_check_molecule(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -772,6 +773,8 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
 
         row = layout.row()
         row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
+        row.label(text="This is from cellblender_panels!!", icon='ERROR')
+        
         row = layout.row()
         col = row.column()
         col.template_list("MCELL_UL_check_molecule", "define_molecules",
@@ -805,6 +808,7 @@ class MCELL_PT_define_molecules(bpy.types.Panel):
                 row.prop(mol, "custom_time_step_str")
                 row = box.row()
                 row.prop(mol, "custom_space_step_str")
+"""
 
 
 class MCELL_UL_check_reaction(bpy.types.UIList):

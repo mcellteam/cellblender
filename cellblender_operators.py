@@ -600,6 +600,7 @@ def update_parameter_expression ( self, context ):
 	
 #########################################################################################################################################
 
+"""
 class MCELL_OT_molecule_add(bpy.types.Operator):
     bl_idname = "mcell.molecule_add"
     bl_label = "Add Molecule"
@@ -632,7 +633,7 @@ class MCELL_OT_molecule_remove(bpy.types.Operator):
             check_molecule(self, context)
 
         return {'FINISHED'}
-
+"""
 
 def check_molecule(self, context):
     """Checks for duplicate or illegal molecule name"""
@@ -2994,9 +2995,8 @@ def update_vacancy_search_distance(self, context):
 
         mcell.initialization.status = status
 
-
+"""
 def update_diffusion_constant(self, context):
-    """ Store the diffusion constant as a float if it's legal """
 
     mcell = context.scene.mcell
     mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
@@ -3018,7 +3018,6 @@ def update_diffusion_constant(self, context):
 
 
 def update_custom_time_step(self, context):
-    """ Store the custom time step as a float if it's legal """
 
     mcell = context.scene.mcell
     mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
@@ -3038,7 +3037,6 @@ def update_custom_time_step(self, context):
 
 
 def update_custom_space_step(self, context):
-    """ Store the custom space step as a float if it's legal """
 
     mcell = context.scene.mcell
     mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
@@ -3055,7 +3053,7 @@ def update_custom_space_step(self, context):
     #mcell.molecules.status = status
 
     return
-
+"""
 
 def update_fwd_rate(self, context):
     """ Store the forward reaction rate as a float if it's legal """

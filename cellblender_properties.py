@@ -21,13 +21,14 @@
 This script contains the custom properties used in CellBlender.
 
 """
-
-
 # blender imports
 import bpy
 from . import cellblender_operators
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
     FloatProperty, FloatVectorProperty, IntProperty, IntVectorProperty, PointerProperty, StringProperty
+
+from . import cellblender_molecules
+
 
 # python imports
 from multiprocessing import cpu_count
@@ -43,7 +44,7 @@ def unregister():
 
 
 #Custom Properties
-
+"""
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Molecule Name", default="Molecule",
@@ -85,7 +86,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         default=False, description="If selected, the molecule will be "
                                    "included in the visualization data.")
     status = StringProperty(name="Status")
-
+"""
 
 class MCellStringProperty(bpy.types.PropertyGroup):
     """ Generic PropertyGroup to hold string for a CollectionProperty """
@@ -801,12 +802,13 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
 
 ###########################################################################################################################
 
+"""
 class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
     molecule_list = CollectionProperty(
         type=MCellMoleculeProperty, name="Molecule List")
     active_mol_index = IntProperty(name="Active Molecule Index", default=0)
     advanced = bpy.props.BoolProperty(default=False)
-
+"""
 
 class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
     reaction_list = CollectionProperty(
@@ -1012,7 +1014,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellParametersPropertyGroup, name="General Parameters")
 ########################################################################
     molecules = PointerProperty(
-        type=MCellMoleculesPanelProperty, name="Defined Molecules")
+        type=cellblender_molecules.MCellMoleculesListProperty, name="Defined New Molecules")
+    #molecules = PointerProperty(
+    #    type=MCellMoleculesPanelProperty, name="Defined Molecules")
     reactions = PointerProperty(
         type=MCellReactionsPanelProperty, name="Defined Reactions")
     surface_classes = PointerProperty(
@@ -1038,5 +1042,4 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellMoleculeGlyphsPanelProperty, name="Molecule Shapes")
     scratch_settings = PointerProperty(
         type=MCellScratchPanelProperty, name="CellBlender Scratch Settings")
-
 

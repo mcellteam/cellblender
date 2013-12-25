@@ -573,7 +573,8 @@ def save_molecules(context, out_file, mol_list):
         for mol_item in mol_list:
             out_file.write("  %s\n" % (mol_item.name))
             out_file.write("  {\n")
-            if (mol_item.diffusion_constant_expr != "0"):    # DB: Extra if-else bloc for diffusion constant to take expressions
+            #if (mol_item.diffusion_constant_expr != "0"):    # DB: Extra if-else bloc for diffusion constant to take expressions
+            if (False):    # BK: These are back to being floats until the new parameter system is installed
                 if mol_item.type == '2D':
                     out_file.write("    DIFFUSION_CONSTANT_2D = %s\n" %    
                                    (mol_item.diffusion_constant_expr))
