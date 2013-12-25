@@ -36,7 +36,7 @@ import re
 import cellblender
 
 
-from . import ParameterSpace
+# from . import ParameterSpace
 
 
 # We use per module class registration/unregistration
