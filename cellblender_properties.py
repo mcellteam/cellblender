@@ -44,49 +44,6 @@ def unregister():
 
 
 #Custom Properties
-"""
-class MCellMoleculeProperty(bpy.types.PropertyGroup):
-    name = StringProperty(
-        name="Molecule Name", default="Molecule",
-        description="The molecule species name",
-        update=cellblender_operators.check_molecule)
-    type_enum = [
-        ('2D', "Surface Molecule", ""),
-        ('3D', "Volume Molecule", "")]
-    type = EnumProperty(
-        items=type_enum, name="Molecule Type",
-        description="Surface molecules are constrained to surfaces/meshes. "
-                    "Volume molecules exist in space.")
-    diffusion_constant = FloatProperty(name="Diffusion Constant")
-    diffusion_constant_str = StringProperty(
-        name="Diffusion Constant",
-        default="0",
-        description="Diffusion Constant Units: cm^2/sec",
-        update=cellblender_operators.update_diffusion_constant)
-    diffusion_constant_expr = StringProperty(        # DB: This property is added so that the diffusion constants take expressions 
-        name="Diffusion Constant",
-        default="0",
-        description="Diffusion Constant Units: cm^2/sec",
-        update=cellblender_operators.update_diffusion_constant)
-    target_only = BoolProperty(
-        name="Target Only",
-        description="If selected, molecule will not initiate reactions when "
-                    "it runs into other molecules. Can speed up simulations.")
-    custom_time_step = FloatProperty(name="Custom Time Step")
-    custom_time_step_str = StringProperty(
-        name="Custom Time Step",
-        description="Custom Time Step units: seconds",
-        update=cellblender_operators.update_custom_time_step)
-    custom_space_step = FloatProperty(name="Custom Space Step")
-    custom_space_step_str = StringProperty(
-        name="Custom Space Step",
-        description="Custom Space Step units: microns",
-        update=cellblender_operators.update_custom_space_step)
-    export_viz = bpy.props.BoolProperty(
-        default=False, description="If selected, the molecule will be "
-                                   "included in the visualization data.")
-    status = StringProperty(name="Status")
-"""
 
 class MCellStringProperty(bpy.types.PropertyGroup):
     """ Generic PropertyGroup to hold string for a CollectionProperty """
@@ -802,13 +759,6 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
 
 ###########################################################################################################################
 
-"""
-class MCellMoleculesPanelProperty(bpy.types.PropertyGroup):
-    molecule_list = CollectionProperty(
-        type=MCellMoleculeProperty, name="Molecule List")
-    active_mol_index = IntProperty(name="Active Molecule Index", default=0)
-    advanced = bpy.props.BoolProperty(default=False)
-"""
 
 class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
     reaction_list = CollectionProperty(
@@ -1014,9 +964,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellParametersPropertyGroup, name="General Parameters")
 ########################################################################
     molecules = PointerProperty(
-        type=cellblender_molecules.MCellMoleculesListProperty, name="Defined New Molecules")
-    #molecules = PointerProperty(
-    #    type=MCellMoleculesPanelProperty, name="Defined Molecules")
+        type=cellblender_molecules.MCellMoleculesListProperty, name="Defined Molecules")
     reactions = PointerProperty(
         type=MCellReactionsPanelProperty, name="Defined Reactions")
     surface_classes = PointerProperty(

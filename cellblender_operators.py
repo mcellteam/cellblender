@@ -600,40 +600,6 @@ def update_parameter_expression ( self, context ):
 	
 #########################################################################################################################################
 
-"""
-class MCELL_OT_molecule_add(bpy.types.Operator):
-    bl_idname = "mcell.molecule_add"
-    bl_label = "Add Molecule"
-    bl_description = "Add a new molecule type to an MCell model"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        mcell.molecules.molecule_list.add()
-        mcell.molecules.active_mol_index = len(mcell.molecules.molecule_list)-1
-        mcell.molecules.molecule_list[
-            mcell.molecules.active_mol_index].name = "Molecule"
-        return {'FINISHED'}
-    
- 
-class MCELL_OT_molecule_remove(bpy.types.Operator):
-    bl_idname = "mcell.molecule_remove"
-    bl_label = "Remove Molecule"
-    bl_description = "Remove selected molecule type from an MCell model"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        mcell.molecules.molecule_list.remove(mcell.molecules.active_mol_index)
-        mcell.molecules.active_mol_index = mcell.molecules.active_mol_index-1
-        if (mcell.molecules.active_mol_index < 0):
-            mcell.molecules.active_mol_index = 0
-
-        if mcell.molecules.molecule_list:
-            check_molecule(self, context)
-
-        return {'FINISHED'}
-"""
 
 def check_molecule(self, context):
     """Checks for duplicate or illegal molecule name"""
@@ -1867,41 +1833,6 @@ class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
         return{'FINISHED'}
 
 
-# These next two classes don't seem to be used anywhere. Unnecessary?
-# Commented out for now.
-
-"""
-class MCELL_OT_mol_viz_next(bpy.types.Operator):
-    bl_idname = "mcell.mol_viz_next"
-    bl_label = "Step to Next Molecule File"
-    bl_description = "Step to Next MCell Molecule File for Visualization"
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        i = mcell.mol_viz.mol_file_index + mcell.mol_viz.mol_file_step_index
-        if (i > mcell.mol_viz.mol_file_stop_index):
-            i = mcell.mol_viz.mol_file_stop_index
-        mcell.mol_viz.mol_file_index = i
-        mol_viz_update(self, context)
-        return{'FINISHED'}
-
-
-class MCELL_OT_mol_viz_prev(bpy.types.Operator):
-    bl_idname = "mcell.mol_viz_prev"
-    bl_label = "Step to Previous Molecule File"
-    bl_description = "Step to Previous MCell Molecule File for Visualization"
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        i = mcell.mol_viz.mol_file_index - mcell.mol_viz.mol_file_step_index
-        if (i < mcell.mol_viz.mol_file_start_index):
-            i = mcell.mol_viz.mol_file_start_index
-        mcell.mol_viz.mol_file_index = i
-        mol_viz_update(self, context)
-        return{'FINISHED'}
-"""
 
 #CellBlender operator helper functions:
 
@@ -2994,66 +2925,6 @@ def update_vacancy_search_distance(self, context):
             mcell.initialization.vacancy_search_distance_str = ""
 
         mcell.initialization.status = status
-
-"""
-def update_diffusion_constant(self, context):
-
-    mcell = context.scene.mcell
-    mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
-   
-    diffusion_constant_str = mol.diffusion_constant_str
-
-    (diffusion_constant, status) = check_val_str(
-        diffusion_constant_str, 0, None)
-     
-    if status == "":
-        mol.diffusion_constant = diffusion_constant
-    else:
-        #status = status % ("diffusion_constant", diffusion_constant_str)
-        mol.diffusion_constant_str = "%g" % (mol.diffusion_constant)
-
-    #mcell.molecules.status = status
-
-    return
-
-
-def update_custom_time_step(self, context):
-
-    mcell = context.scene.mcell
-    mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
-    custom_time_step_str = mol.custom_time_step_str
-
-    (custom_time_step, status) = check_val_str(custom_time_step_str, 0, None)
-
-    if status == "":
-        mol.custom_time_step = custom_time_step
-    else:
-        #status = status % ("custom_time_step", custom_time_step_str)
-        mol.custom_time_step_str = "%g" % (mol.custom_time_step)
-
-    #mcell.molecules.status = status
-
-    return
-
-
-def update_custom_space_step(self, context):
-
-    mcell = context.scene.mcell
-    mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
-    custom_space_step_str = mol.custom_space_step_str
-
-    (custom_space_step, status) = check_val_str(custom_space_step_str, 0, None)
-
-    if status == "":
-        mol.custom_space_step = custom_space_step
-    else:
-        #status = status % ("custom_space_step", custom_space_step_str)
-        mol.custom_space_step_str = "%g" % (mol.custom_space_step)
-
-    #mcell.molecules.status = status
-
-    return
-"""
 
 def update_fwd_rate(self, context):
     """ Store the forward reaction rate as a float if it's legal """

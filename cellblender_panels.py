@@ -133,64 +133,6 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         row = layout.row()
         layout.prop(context.scene, "name", text="Project Base Name")
 
-"""
-class MCELL_PT_scratch(bpy.types.Panel):
-    bl_label = "CellBlender - Scratch Panel (testing)"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        row = layout.row()
-        col = row.column(align=True)
-        col.prop(mcell.scratch_settings, "show_all_icons")
-        col = row.column(align=True)
-        col.prop(mcell.scratch_settings, "print_all_icons")
-
-        if mcell.scratch_settings.show_all_icons:
-            all_icons = bpy.types.UILayout.bl_rna.functions[
-                'prop'].parameters['icon'].enum_items.keys()
-            layout.separator()
-            row = layout.row()
-            for icon in all_icons:
-                row = layout.row()
-                row.label(icon=icon, text=icon)
-
-        if mcell.scratch_settings.print_all_icons:
-            all_icons = bpy.types.UILayout.bl_rna.functions[
-                'prop'].parameters['icon'].enum_items.keys()
-            print("Icon list has ", len(all_icons), "icons")
-            print("Icon names:")
-            print(all_icons)
-            # mcell.scratch_settings.print_all_icons = False
-            # AttributeError: Writing to ID classes in this context is not
-            # allowed: Scene, Scene datablock, error setting
-            # MCellScratchPanelProperty.print_all_icons
-"""
-
-#class MCELL_PT_export_project(bpy.types.Panel):
-#    bl_label = "CellBlender - Export Project"
-#    bl_space_type = "PROPERTIES"
-#    bl_region_type = "WINDOW"
-#    bl_context = "scene"
-#    bl_options = {'DEFAULT_CLOSED'}
-#
-#    def draw(self, context):
-#        layout = self.layout
-#        mcell = context.scene.mcell
-#
-#        row = layout.row()
-#        if not bpy.data.filepath:
-#            row.label(text="Save the blend file", icon='ERROR')
-#        else:
-#            row.prop(mcell.export_project, "export_format")
-#            row = layout.row()
-#            row.operator("mcell.export_project",
-#                         text="Export CellBlender Project", icon='EXPORT')
 
 class MCELL_UL_run_simulation(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
@@ -382,22 +324,6 @@ class MCELL_PT_model_objects(bpy.types.Panel):
 #        sub.operator("mcell.model_objects_select", text="Select")
 #        sub.operator("mcell.model_objects_deselect", text="Deselect")
 
-'''
-class MCELL_PT_utilities(bpy.types.Panel):
-    bl_label = "CellBlender - Utilities"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        row = layout.row()
-#        row.operator("mcell.vertex_groups_to_regions",
-#                     text="Convert Vertex Group to Region")
-'''
 
 
 class MCELL_PT_object_selector(bpy.types.Panel):
@@ -748,67 +674,6 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
             row.label(text="Parameter ID = " + str(par.id) + "   (temporary for debugging)")
 
 #########################################################################################################################################
-
-"""
-class MCELL_UL_check_molecule(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data,
-                  active_propname, index):
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            layout.label(item.name, icon='FILE_TICK')
-
-
-class MCELL_PT_define_molecules(bpy.types.Panel):
-    bl_label = "CellBlender - Define Molecules"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-    
-    def draw(self, context):
-        layout = self.layout
-
-        mcell = context.scene.mcell
-
-        row = layout.row()
-        row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
-        row.label(text="This is from cellblender_panels!!", icon='ERROR')
-        
-        row = layout.row()
-        col = row.column()
-        col.template_list("MCELL_UL_check_molecule", "define_molecules",
-                          mcell.molecules, "molecule_list", mcell.molecules,
-                          "active_mol_index", rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
-        col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
-        if mcell.molecules.molecule_list:
-            mol = mcell.molecules.molecule_list[
-                mcell.molecules.active_mol_index]
-            layout.prop(mol, "name")
-            layout.prop(mol, "type")
-            if (mol.diffusion_constant_expr != "0"): #DB: This is added for diffusion constant to take expression; not sure if it has other implications 
-                layout.prop(mol, "diffusion_constant_expr")
-            else:
-                layout.prop(mol, "diffusion_constant_str")
-
-            box = layout.box()
-            row = box.row(align=True)
-            row.alignment = 'LEFT'
-            if not mcell.molecules.advanced:
-                row.prop(mcell.molecules, "advanced", icon='TRIA_RIGHT',
-                         text="Advanced Options", emboss=False)
-            else:
-                row.prop(mcell.molecules, "advanced", icon='TRIA_DOWN',
-                         text="Advanced Options", emboss=False)
-                row = box.row()
-                row.prop(mol, "target_only")
-                row = box.row()
-                row.prop(mol, "custom_time_step_str")
-                row = box.row()
-                row.prop(mol, "custom_space_step_str")
-"""
 
 
 class MCELL_UL_check_reaction(bpy.types.UIList):
