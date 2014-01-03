@@ -600,32 +600,6 @@ def update_parameter_expression ( self, context ):
 	
 #########################################################################################################################################
 
-
-def check_molecule(self, context):
-    """Checks for duplicate or illegal molecule name"""
-
-    mcell = context.scene.mcell
-    mol_list = mcell.molecules.molecule_list
-    mol = mol_list[mcell.molecules.active_mol_index]
-
-    status = ""
-
-    # Check for duplicate molecule name
-    mol_keys = mol_list.keys()
-    if mol_keys.count(mol.name) > 1:
-        status = "Duplicate molecule: %s" % (mol.name)
-
-    # Check for illegal names (Starts with a letter. No special characters.)
-    mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
-    m = re.match(mol_filter, mol.name)
-    if m is None:
-        status = "Molecule name error: %s" % (mol.name)
-
-    mol.status = status
-
-    return
-
-
 class MCELL_OT_reaction_add(bpy.types.Operator):
     bl_idname = "mcell.reaction_add"
     bl_label = "Add Reaction"
