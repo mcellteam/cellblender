@@ -34,6 +34,7 @@ import mathutils
 import re
 
 import cellblender
+from . import cellblender_parameters
 
 
 # We use per module class registration/unregistration
@@ -106,11 +107,14 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         items=type_enum, name="Molecule Type",
         description="Surface molecules are constrained to surfaces/meshes. "
                     "Volume molecules exist in space.")
-    diffusion_constant = FloatProperty(  #name="Diffusion Constant")
+    diffusion_constant_old = FloatProperty(  #name="Diffusion Constant")
         name="Diffusion Constant",
         default=0.0,
         description="Diffusion Constant Units: cm^2/sec",
         update=check_callback)
+
+    diffusion_constant = PointerProperty(name="Diffusion Constant", type=cellblender_parameters.PanelParameterFloat)
+
     target_only = BoolProperty(
         name="Target Only",
         description="If selected, molecule will not initiate reactions when "
@@ -125,6 +129,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def set_defaults(self):
         self.name = "Molecule_"+str(self.id)
+        self.diffusion_constant.param_data.label = "Diffusion Constant" # Tried self.diffusion_constant.name
 
     # Exporting to an MDL file could be done just like this
     def print_details( self ):
@@ -133,7 +138,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     def draw_props ( self, layout, molecules ):
         layout.prop ( self, "name" )
         layout.prop ( self, "type" )
-        layout.prop ( self, "diffusion_constant")
+        # layout.prop ( self, "diffusion_constant")
+        self.diffusion_constant.draw_in_new_row(layout)
 
         box = layout.box()
         row = box.row(align=True)

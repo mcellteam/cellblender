@@ -41,7 +41,7 @@ import shutil
 import cellblender
 
 
-from . import ParameterSpace
+# from . import ParameterSpace
 
 
 # We use per module class registration/unregistration
@@ -324,6 +324,7 @@ class MCELL_OT_parameter_remove(bpy.types.Operator):
 
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
 
+"""
 import pickle
 import threading
 
@@ -596,7 +597,7 @@ def update_parameter_expression ( self, context ):
     check_in_parameter_space ( mcell.general_parameters, ps )
 
     self.initialized = True
-
+"""
 	
 #########################################################################################################################################
 

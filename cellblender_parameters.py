@@ -331,8 +331,9 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
             if p.param_data.expression != expr:
                 p.param_data.expression = expr
             value = gen_params.eval_panel_param_ID_expr ( p.param_data.ID_expression )
-            if p.param_data.value != value:
-                p.param_data.value = value
+            if value != None:
+                if p.param_data.value != value:
+                    p.param_data.value = value
         threshold_print ( 30, "Done updating expression for parameter " + self.name )
         threshold_print ( 30, "==================================================================" )
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})

@@ -40,6 +40,7 @@ cellblender_info = {
         "cellblender_properties.py",
         "cellblender_panels.py",
         "cellblender_operators.py",
+        "cellblender_parameters.py",
         "cellblender_molecules.py",
         "object_surface_regions.py",
         "run_simulations.py",
@@ -97,6 +98,7 @@ if "bpy" in locals():
     imp.reload(cellblender_properties)
     imp.reload(cellblender_panels)
     imp.reload(cellblender_operators)
+    imp.reload(cellblender_parameters)
     imp.reload(cellblender_molecules)
     imp.reload(object_surface_regions)
     imp.reload(io_mesh_mcell_mdl)
@@ -112,6 +114,7 @@ else:
         cellblender_properties, \
         cellblender_panels, \
         cellblender_operators, \
+        cellblender_parameters, \
         cellblender_molecules, \
         object_surface_regions, \
         io_mesh_mcell_mdl, \
@@ -120,6 +123,7 @@ else:
     from . import cellblender_properties
     from . import cellblender_panels
     from . import cellblender_operators
+    from . import cellblender_parameters
     from . import cellblender_molecules
     from . import object_surface_regions
     from . import io_mesh_mcell_mdl
