@@ -59,6 +59,8 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
         row.prop(mcell.cellblender_preferences, "decouple_export_run")
         row = layout.row()
         row.prop(mcell.cellblender_preferences, "filter_invalid")
+        row = layout.row()
+        row.prop(mcell.cellblender_preferences, "debug_level")
         layout.separator()
         row = layout.row()
         row.operator("wm.save_homefile", text="Save Startup File",
@@ -613,7 +615,7 @@ class MCELL_PT_define_parameters(bpy.types.Panel):
 
 
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
-
+"""
 class MCELL_UL_draw_parameter(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         if item.status:
@@ -633,7 +635,7 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
             else:
                 layout.label(disp, icon='ERROR')  # also try 'COLOR_RED'
 	    
-  
+
 class MCELL_PT_general_parameters(bpy.types.Panel):
     bl_label = "CellBlender - General Parameters (experimental)"
     bl_space_type = "PROPERTIES"
@@ -672,7 +674,7 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
             layout.prop(par, "desc")
             row = layout.row()
             row.label(text="Parameter ID = " + str(par.id) + "   (temporary for debugging)")
-
+"""
 #########################################################################################################################################
 
 

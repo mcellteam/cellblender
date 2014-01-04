@@ -1,33 +1,25 @@
-"""
-This program demonstrates a parameter space based on Blender's native properties.
-Much of the code was borrowed from the previous ParameterSpace.py program.
-"""
-
-# Check Version numbers with: bzr log --line --forward
-
-#----------------------------------------------------------
-# File Property_Params.py
-#----------------------------------------------------------
+# ##### BEGIN GPL LICENSE BLOCK #####
 #
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+# ##### END GPL LICENSE BLOCK #####
 
-# Addon info
+"""
+This file contains classes supporting CellBlender Parameters.
 
-bl_info = {
-  "version": "0.50",
-  "name": "Property Parameters",
-  'author': 'Bob Kuczewski',
-  "location": "Properties > Scene",
-  "category": "Blender Experiments"
-  }
-
-# To support reload properly, try to access a package var, 
-# if it's there, reload everything
-if "bpy" in locals():
-  import imp
-  print("Reloaded Parameters")
-else:
-  print("Imported Parameters")
-
+"""
+print ( "Top of importing cellblender_parameters.py" );
 
 import bpy
 from bpy.props import *
@@ -41,11 +33,26 @@ import symbol
 import sys
 
 
+import cellblender
+
+
+# We use per module class registration/unregistration
+def register():
+    bpy.utils.register_module(__name__)
+
+
+def unregister():
+    bpy.utils.unregister_module(__name__)
+
+
+
+
 def threshold_print ( thresh, s ):
     # Items will print if the user selected level is greater than the level in the print statement (thresh)
     #  User setting = 100 -> print everything
     #  User setting =   0 -> print nothing
-    if thresh < bpy.context.scene.app.debug_level:
+    
+    if thresh < bpy.context.scene.mcell.cellblender_preferences.debug_level:
         print ( s )
 
 def print_info_about_self ( self, thresh, context ):
@@ -73,35 +80,35 @@ def get_parent(self_object):
 
 ##### vvvvvvvvv   General Parameter Code   vvvvvvvvv
 
-class APP_OT_add_parameter(bpy.types.Operator):
-    bl_idname = "app.add_parameter"
+class MCELL_OT_add_parameter(bpy.types.Operator):
+    bl_idname = "mcell.add_parameter"
     bl_label = "Add Parameter"
     bl_description = "Add a new parameter"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        context.scene.app.general_parameters.add_parameter(context)
+        context.scene.mcell.general_parameters.add_parameter(context)
         return {'FINISHED'}
         
 
-class APP_OT_remove_parameter(bpy.types.Operator):
-    bl_idname = "app.remove_parameter"
+class MCELL_OT_remove_parameter(bpy.types.Operator):
+    bl_idname = "mcell.remove_parameter"
     bl_label = "Remove Parameter"
     bl_description = "Remove selected parameter"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        status = context.scene.app.general_parameters.remove_active_parameter(context)
+        status = context.scene.mcell.general_parameters.remove_active_parameter(context)
         if status != "":
             # One of: 'DEBUG', 'INFO', 'OPERATOR', 'PROPERTY', 'WARNING', 'ERROR', 'ERROR_INVALID_INPUT', 'ERROR_INVALID_CONTEXT', 'ERROR_OUT_OF_MEMORY'
             self.report({'ERROR'}, status)
         return {'FINISHED'}
 
 
-class APP_UL_draw_parameter(bpy.types.UIList):
+class MCELL_UL_draw_parameter(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        app = context.scene.app
-        par = app.general_parameters.parameter_list[index]
+        mcell = context.scene.mcell
+        par = mcell.general_parameters.parameter_list[index]
         disp = par.name + " = " + par.expr
         # Try to force None to be 0 ... doesn't seem to work!!
         if par.value == None:
@@ -118,8 +125,8 @@ class APP_UL_draw_parameter(bpy.types.UIList):
         layout.label(disp, icon=icon)
 
   
-class APP_PT_general_parameters(bpy.types.Panel):
-    bl_label = "General Parameters"
+class MCELL_PT_general_parameters(bpy.types.Panel):
+    bl_label = "CellBlender - General Parameters (new)"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -127,26 +134,26 @@ class APP_PT_general_parameters(bpy.types.Panel):
 
     def draw(self, context):
 
-        threshold_print (99, "Panel Draw with context.scene.app = " + str(context.scene.app) + " of type " + str(type(context.scene.app)) )
-        app = context.scene.app
+        threshold_print (99, "Panel Draw with context.scene.mcell = " + str(context.scene.mcell) + " of type " + str(type(context.scene.mcell)) )
+        mcell = context.scene.mcell
 
         layout = self.layout
         row = layout.row()
-        if app.general_parameters.param_group_error == "":
+        if mcell.general_parameters.param_group_error == "":
             row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
         else:
-            row.label(text=app.general_parameters.param_group_error, icon='ERROR')
+            row.label(text=mcell.general_parameters.param_group_error, icon='ERROR')
 
         row = layout.row()
         col = row.column()
-        col.template_list("APP_UL_draw_parameter", "general_parameters",
-                          app.general_parameters, "parameter_list",
-                          app.general_parameters, "active_par_index", rows=5)
+        col.template_list("MCELL_UL_draw_parameter", "general_parameters",
+                          mcell.general_parameters, "parameter_list",
+                          mcell.general_parameters, "active_par_index", rows=5)
         col = row.column(align=True)
-        col.operator("app.add_parameter", icon='ZOOMIN', text="")
-        col.operator("app.remove_parameter", icon='ZOOMOUT', text="")
-        if len(app.general_parameters.parameter_list) > 0:
-            par = app.general_parameters.parameter_list[app.general_parameters.active_par_index]
+        col.operator("mcell.add_parameter", icon='ZOOMIN', text="")
+        col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
+        if len(mcell.general_parameters.parameter_list) > 0:
+            par = mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index]
             layout.prop(par, "name")
             if len(par.pending_expr) > 0:
                 layout.prop(par, "expr")
@@ -331,7 +338,7 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
-class ParametersPropertyGroup(bpy.types.PropertyGroup):
+class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
     """This is the class that encapsulates a group (or list) of general purpose parameters"""
     parameter_list = CollectionProperty(type=GeneralParameterProperty, name="Parameters List")
     active_par_index = IntProperty(name="Active Parameter", default=0)
@@ -629,7 +636,7 @@ class ParametersPropertyGroup(bpy.types.PropertyGroup):
 
     def name_change ( self, param ):
         """ Change the name of a parameter and reflect the change in all expressions. This does not change any values. """
-        threshold_print ( 30, "ParametersPropertyGroup.name_change() called by parameter " + param.name + ":" )
+        threshold_print ( 30, "MCellParametersPropertyGroup.name_change() called by parameter " + param.name + ":" )
         param.print_details ( 30, prefix="  " )
         threshold_print ( 30, "  All other parameters:" )
         for p in self.parameter_list:
@@ -668,7 +675,7 @@ class ParametersPropertyGroup(bpy.types.PropertyGroup):
 
     def expression_change ( self, param ):
         """ Change the expression of a parameter and reflect the change in all expressions. This can change values. """
-        threshold_print ( 60, "ParametersPropertyGroup.expression_change() called by parameter " + param.name + ":" )
+        threshold_print ( 60, "MCellParametersPropertyGroup.expression_change() called by parameter " + param.name + ":" )
         status = ""
         expr_list = self.parse_param_expr ( param.expr )
         if None in expr_list:
@@ -957,8 +964,8 @@ def update_PanelParameter ( self, context ):
     threshold_print ( 30, "  self.expression = " + str(self.expression) )
     threshold_print ( 30, "  self.value = " + str(self.value) )
     
-    app = context.scene.app
-    gen_params = app.general_parameters
+    mcell = context.scene.mcell
+    gen_params = mcell.general_parameters
     
     # Always test values first before setting to avoid infinite recursion since setting triggers re-evaluation
     
@@ -1122,7 +1129,7 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
     threshold_print ( 95, "get_numeric_parameter_list() called with objpath = " + str(objpath) )
     if (objpath == None):
         # Start with default path
-        objpath = "bpy.context.scene.app"
+        objpath = "bpy.context.scene.mcell"
     obj = eval(objpath)
     threshold_print ( 95, "Path = " + str(objpath) + ", obj = " + str(obj) )
     threshold_print ( 98, "  plist = " + str(plist) )
@@ -1205,7 +1212,7 @@ class Iterations_class(PanelParameter):
 ##### ^^^^^^^^^   Panel Parameter Code   ^^^^^^^^^
 
 
-
+'''
 #################################################################################################################
 ##########################    Application's "User" Code Starts Here   ###########################################
 #################################################################################################################
@@ -1214,7 +1221,7 @@ class Iterations_class(PanelParameter):
 ### Model Initialization Code:
 
 
-class APP_PT_Initialization(bpy.types.Panel):
+class MCELL_PT_Initialization(bpy.types.Panel):
     bl_label = "Initialization"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -1222,9 +1229,9 @@ class APP_PT_Initialization(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
     
     def draw(self, context):
-        # "self" is an APP_PT_Initialization object not an AppInitializationProperties object
+        # "self" is an MCELL_PT_Initialization object not an AppInitializationProperties object
         # Call the draw_panel function for the instance being drawn in this panel
-        context.scene.app.initialization.draw_panel ( context, panel=self )
+        context.scene.mcell.initialization.draw_panel ( context, panel=self )
 
 
 class AppInitializationProperties(bpy.types.PropertyGroup):
@@ -1251,10 +1258,10 @@ class AppInitializationProperties(bpy.types.PropertyGroup):
         threshold_print ( thresh, prefix + "Space Step Max = " + self.space_step.get_text()    + " meters" )
 
     def draw_panel ( self, context, panel ):
-        app = context.scene.app
+        mcell = context.scene.mcell
         layout = panel.layout
 
-        layout.row().prop ( app, "debug_level", text="Debug Level" )
+        layout.row().prop ( mcell, "debug_level", text="Debug Level" )
         self.iterations.draw_in_new_row(layout)
         self.time_step.draw_in_new_row(layout)
         
@@ -1269,32 +1276,32 @@ class AppInitializationProperties(bpy.types.PropertyGroup):
             row.prop(self, "show_advanced", icon='TRIA_RIGHT', text="Advanced Options", emboss=False)
         
         row = layout.row()
-        row.operator("app.run_simulation", text="Export (print) the Current Model", icon='COLOR_RED')
-        row.operator("app.reset_everything", text="Reset all to defaults", icon='ERROR')
+        row.operator("mcell.run_simulation", text="Export (print) the Current Model", icon='COLOR_RED')
+        row.operator("mcell.reset_everything", text="Reset all to defaults", icon='ERROR')
 
 
 
 ### Molecule Definition Code:
 
 
-class APP_OT_molecule_add(bpy.types.Operator):
-    bl_idname = "app.molecule_add"
+class MCELL_OT_molecule_add(bpy.types.Operator):
+    bl_idname = "mcell.molecule_add"
     bl_label = "Add Molecule"
     bl_description = "Add a new molecule type to an MCell model"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        context.scene.app.molecules.add_molecule(context)
+        context.scene.mcell.molecules.add_molecule(context)
         return {'FINISHED'}
 
-class APP_OT_molecule_remove(bpy.types.Operator):
-    bl_idname = "app.molecule_remove"
+class MCELL_OT_molecule_remove(bpy.types.Operator):
+    bl_idname = "mcell.molecule_remove"
     bl_label = "Remove Molecule"
     bl_description = "Remove selected molecule type from an MCell model"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        context.scene.app.molecules.remove_active_molecule(context)
+        context.scene.mcell.molecules.remove_active_molecule(context)
         # One of: 'DEBUG', 'INFO', 'OPERATOR', 'PROPERTY', 'WARNING', 'ERROR', 'ERROR_INVALID_INPUT', 'ERROR_INVALID_CONTEXT', 'ERROR_OUT_OF_MEMORY'
         self.report({'INFO'}, "Deleted Molecule")
         return {'FINISHED'}
@@ -1341,16 +1348,16 @@ class AppMoleculeProperty(bpy.types.PropertyGroup):
         return
 
 
-class APP_UL_check_molecule(bpy.types.UIList):
+class MCELL_UL_check_molecule(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        threshold_print ( 90, "APP_UL_check_molecule called" )
+        threshold_print ( 90, "MCELL_UL_check_molecule called" )
         if item.status:
             layout.label(item.status, icon='ERROR')
         else:
             layout.label(item.name, icon='FILE_TICK')
 
 
-class APP_PT_define_molecules(bpy.types.Panel):
+class MCELL_PT_define_molecules(bpy.types.Panel):
     bl_label = "Define Molecules"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
@@ -1359,7 +1366,7 @@ class APP_PT_define_molecules(bpy.types.Panel):
 
     def draw ( self, context ):
         # Call the draw function for the instance being drawn in this panel
-        context.scene.app.molecules.draw_panel ( context, self )
+        context.scene.mcell.molecules.draw_panel ( context, self )
 
 
 class AppMoleculesListProperty(bpy.types.PropertyGroup):
@@ -1438,13 +1445,13 @@ class AppMoleculesListProperty(bpy.types.PropertyGroup):
         row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
         row = layout.row()
         col = row.column()
-        col.template_list("APP_UL_check_molecule", "define_molecules",
+        col.template_list("MCELL_UL_check_molecule", "define_molecules",
                           self, "molecule_list",
                           self, "active_mol_index",
                           rows=2)
         col = row.column(align=True)
-        col.operator("app.molecule_add", icon='ZOOMIN', text="")
-        col.operator("app.molecule_remove", icon='ZOOMOUT', text="")
+        col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
+        col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
         if self.molecule_list:
             mol = self.molecule_list[self.active_mol_index]
             mol.draw_props ( layout )
@@ -1454,15 +1461,15 @@ class AppMoleculesListProperty(bpy.types.PropertyGroup):
 ### An operator for running the simulation (essentially exporting state to MDL or other format)
 
 class PARAMS_OT_run_simulation(bpy.types.Operator):
-    bl_idname = "app.run_simulation"
+    bl_idname = "mcell.run_simulation"
     bl_label = "Run Simulation"
     bl_description = "Run Simulation"
     bl_options = {'REGISTER'}
 
     def execute(self, context):
         # Pretend to run a simulation by printing all of the parameters that would be used
-        app = context.scene.app
-        app.print_self()
+        mcell = context.scene.mcell
+        mcell.print_self()
         return {'FINISHED'}
 
 
@@ -1470,28 +1477,28 @@ class PARAMS_OT_run_simulation(bpy.types.Operator):
 ### An operator for resetting everything
 
 class PARAMS_OT_reset_everything(bpy.types.Operator):
-    bl_idname = "app.reset_everything"
+    bl_idname = "mcell.reset_everything"
     bl_label = "Reset Everything"
     bl_description = "Reset Everything - Set everything to defaults"
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        app = context.scene.app
-        app.set_defaults(context)
+        mcell = context.scene.mcell
+        mcell.set_defaults(context)
         return {'FINISHED'}
 
 
 # Main Parameters Properties Class:
 
 class AppPropertyGroup(bpy.types.PropertyGroup):
-    """This is the top level property group that contains user code and a ParametersPropertyGroup"""
+    """This is the top level property group that contains user code and a MCellParametersPropertyGroup"""
 
     initialized = BoolProperty(default=False)
     
     parameter_version = StringProperty(name="Parameters Version", default="0.1")
     debug_level = IntProperty(name="Debug", default=10, min=0, max=100, description="Amount of debug information to print")
 
-    general_parameters = PointerProperty(type=ParametersPropertyGroup, name="General Parameters")
+    general_parameters = PointerProperty(type=MCellParametersPropertyGroup, name="General Parameters")
 
     initialization = PointerProperty(type=AppInitializationProperties, name="Model Initialization")
     molecules = PointerProperty(type=AppMoleculesListProperty, name="Defined Molecules")
@@ -1535,10 +1542,10 @@ def auto_initialize(context):
         context = bpy.context
     if "app" in dir(context.scene):
         app = context.scene.app
-        if not app.initialized:
+        if not mcell.initialized:
             # Initialize the application defaults
-            app.set_defaults(context)
-            app.initialized = True
+            mcell.set_defaults(context)
+            mcell.initialized = True
 
 
 
@@ -1552,14 +1559,14 @@ def auto_initialize(context):
 def register():
   print ("Registering ", __name__)
   bpy.utils.register_module(__name__)
-  bpy.types.Scene.app = bpy.props.PointerProperty(type=AppPropertyGroup)
+  bpy.types.Scene.mcell = bpy.props.PointerProperty(type=AppPropertyGroup)
   # Try calling the set defaults function?
   # This doesn't seem to work ... it might need to be added to a hook prior to loading a .blend file
-  # bpy.context.scene.app.set_defaults ( bpy.context )
+  # bpy.context.scene.mcell.set_defaults ( bpy.context )
 
 def unregister():
   print ("Unregistering ", __name__)
-  del bpy.types.Scene.app
+  del bpy.types.Scene.mcell
   bpy.utils.unregister_module(__name__)
 
 
@@ -1569,4 +1576,7 @@ if len(bpy.app.handlers.load_post) == 0:
 
 if __name__ == "__main__":
   register()
+'''
+
+print ( "Bottom of importing cellblender_parameters.py" );
 

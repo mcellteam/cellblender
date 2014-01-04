@@ -27,6 +27,9 @@ from . import cellblender_operators
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
     FloatProperty, FloatVectorProperty, IntProperty, IntVectorProperty, PointerProperty, StringProperty
 
+print ( "Importing cellblender_parameters inside cellblender_properties.py" )
+from . import cellblender_parameters
+print ( "Done importing cellblender_parameters inside cellblender_properties.py" )
 from . import cellblender_molecules
 
 
@@ -303,6 +306,9 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
         name="Decouple Export and Run", default=False,
         description="Allow the project to be exported without also running"
                     " the simulation.")
+    debug_level = IntProperty(
+        name="Debug", default=10, min=0, max=100,
+        description="Amount of debug information to print")
 
 
 class MCellScratchPanelProperty(bpy.types.PropertyGroup):
@@ -732,6 +738,8 @@ class MCellParametersPanelProperty(bpy.types.PropertyGroup):
 
 ############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
 
+"""
+# This is now being replaced by code from cellblender_parameters.py
 class MCellGeneralParameterProperty(bpy.types.PropertyGroup):
     id = IntProperty(name="ID", default=0, description="Unique ID for each parameter")
     name = StringProperty(name="Name", default="Parameter", description="Unique name for this parameter",
@@ -756,7 +764,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
     active_par_index = IntProperty(name="Active Parameter", default=0)
     param_group_error = StringProperty( default="", description="Error Message for Entire Parameter Group")
     parameter_space_string = StringProperty ( name="ParameterSpace", default="", description="ParameterSpace object pickled as a string" )
-
+"""
 ###########################################################################################################################
 
 
@@ -961,7 +969,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellParametersPanelProperty, name="Defined Parameters")
 ############## BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters ####
     general_parameters = PointerProperty(
-        type=MCellParametersPropertyGroup, name="General Parameters")
+        type=cellblender_parameters.MCellParametersPropertyGroup, name="General Parameters")
 ########################################################################
     molecules = PointerProperty(
         type=cellblender_molecules.MCellMoleculesListProperty, name="Defined Molecules")
