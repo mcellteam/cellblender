@@ -19,7 +19,6 @@
 This file contains classes supporting CellBlender Parameters.
 
 """
-print ( "Top of importing cellblender_parameters.py" );
 
 import bpy
 from bpy.props import *
@@ -1011,7 +1010,7 @@ class PanelParameterData(bpy.types.PropertyGroup):
 
     status = StringProperty(name="status", default="")
 
-    expression = StringProperty(name="expression", default="0", update=update_PanelParameter)
+    expression = StringProperty(name="expression", default="0", description="Panel Parameter Expression.", update=update_PanelParameter)
     ID_expression = StringProperty(name="ID_expression", default="0")
     value = FloatProperty(name="value", default=0)
     label = StringProperty(name="label", default="Parameter")
@@ -1020,17 +1019,6 @@ class PanelParameterData(bpy.types.PropertyGroup):
     max_set = bpy.props.BoolProperty(name="max_set", default=False)
     min_value = FloatProperty(name="min_value", default=0)
     max_value = FloatProperty(name="max_value", default=1)
-
-    """
-    def ok(self):
-        return ( "" )
-    def uninitialized(self):
-        return ( "Uninitialized" )
-    def undefined_parameter(self):
-        return ( "Undefined Parameter" )
-    def illegal_expression(self):
-        return ( "Illegal Expression" )
-    """
     
 
 
@@ -1124,8 +1112,20 @@ class PanelParameterInt(PanelParameter):
     def get_value(self):
         return int(self.param_data.value)
 
+numeric_parameter_recursion_depth = 0
+max_numeric_parameter_recursion_depth = 0
+num_calls = 0
 
 def get_numeric_parameter_list ( objpath, plist, debug=False ):
+
+    global numeric_parameter_recursion_depth
+    global max_numeric_parameter_recursion_depth
+    global num_calls
+    num_calls += 1
+    numeric_parameter_recursion_depth += 1
+    if numeric_parameter_recursion_depth > max_numeric_parameter_recursion_depth:
+      max_numeric_parameter_recursion_depth = numeric_parameter_recursion_depth
+
     """ Recursive routine that builds a list of numeric (PanelParameterInt and PanelParameterFloat) parameters """
     threshold_print ( 95, "get_numeric_parameter_list() called with objpath = " + str(objpath) )
     if (objpath == None):
@@ -1167,6 +1167,14 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
     else:
         # This could be anything else ... like <'int'> or <'str'>
         pass
+
+    numeric_parameter_recursion_depth += -1
+    if numeric_parameter_recursion_depth == 0:
+      print ( "Max recursion depth = " + str(max_numeric_parameter_recursion_depth) )
+      print ( "Num Calls = " + str(num_calls) )
+      max_numeric_parameter_recursion_depth = 0
+      num_calls = 0
+
     return plist
 
 
@@ -1209,375 +1217,4 @@ class Iterations_class(PanelParameter):
     def update( self ):
         parent = get_parent ( self )
 
-
-##### ^^^^^^^^^   Panel Parameter Code   ^^^^^^^^^
-
-
-'''
-#################################################################################################################
-##########################    Application's "User" Code Starts Here   ###########################################
-#################################################################################################################
-
-
-### Model Initialization Code:
-
-
-class MCELL_PT_Initialization(bpy.types.Panel):
-    bl_label = "Initialization"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-    
-    def draw(self, context):
-        # "self" is an MCELL_PT_Initialization object not an AppInitializationProperties object
-        # Call the draw_panel function for the instance being drawn in this panel
-        context.scene.mcell.initialization.draw_panel ( context, panel=self )
-
-
-class AppInitializationProperties(bpy.types.PropertyGroup):
-    """ Example of top level application parameters """
-    iterations = PointerProperty(name="Iterations", type=PanelParameterInt)
-    time_step = PointerProperty(name="Time Step", type=PanelParameterFloat)
-    show_advanced = bpy.props.BoolProperty(default=False)
-    time_step_max = PointerProperty(name="Time Step Max", type=PanelParameterFloat)
-    space_step = PointerProperty(name="Space Step", type=PanelParameterFloat)
-    
-    def set_defaults(self):
-        # Set defaults for all Properties or they may not exist for printing or exporting!!
-        self.iterations.set_fields ( label="Iterations", expr="1000", min_val=0, max_val=None )
-        self.time_step.set_fields ( label="Time Step", expr="0.001", min_val=0, max_val=None )
-        self.show_advanced = False
-        self.time_step_max.set_fields ( label="Time Step Max", expr="0.01", min_val=0, max_val=None )
-        self.space_step.set_fields ( label="Space Step", expr="0.1", min_val=0, max_val=None )
-
-    # Exporting to an MDL file could be done just like this or via a non-member function that knows the details of this class
-    def print_details( self, thresh, prefix=""):
-        threshold_print ( thresh, prefix + "Running for "      + self.iterations.get_text()    + " iterations" )
-        threshold_print ( thresh, prefix + "Time Step = "      + self.time_step.get_text()     + " seconds" )
-        threshold_print ( thresh, prefix + "Time Step Max = "  + self.time_step_max.get_text() + " seconds" )
-        threshold_print ( thresh, prefix + "Space Step Max = " + self.space_step.get_text()    + " meters" )
-
-    def draw_panel ( self, context, panel ):
-        mcell = context.scene.mcell
-        layout = panel.layout
-
-        layout.row().prop ( mcell, "debug_level", text="Debug Level" )
-        self.iterations.draw_in_new_row(layout)
-        self.time_step.draw_in_new_row(layout)
-        
-        box = layout.box()
-        row = box.row(align=True)
-        row.alignment = 'LEFT'
-        if self.show_advanced:
-            row.prop ( self, "show_advanced", icon='TRIA_DOWN', text="Advanced Options", emboss=False )
-            self.time_step_max.draw_in_new_row(box)
-            self.space_step.draw_in_new_row(box)
-        else:
-            row.prop(self, "show_advanced", icon='TRIA_RIGHT', text="Advanced Options", emboss=False)
-        
-        row = layout.row()
-        row.operator("mcell.run_simulation", text="Export (print) the Current Model", icon='COLOR_RED')
-        row.operator("mcell.reset_everything", text="Reset all to defaults", icon='ERROR')
-
-
-
-### Molecule Definition Code:
-
-
-class MCELL_OT_molecule_add(bpy.types.Operator):
-    bl_idname = "mcell.molecule_add"
-    bl_label = "Add Molecule"
-    bl_description = "Add a new molecule type to an MCell model"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        context.scene.mcell.molecules.add_molecule(context)
-        return {'FINISHED'}
-
-class MCELL_OT_molecule_remove(bpy.types.Operator):
-    bl_idname = "mcell.molecule_remove"
-    bl_label = "Remove Molecule"
-    bl_description = "Remove selected molecule type from an MCell model"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        context.scene.mcell.molecules.remove_active_molecule(context)
-        # One of: 'DEBUG', 'INFO', 'OPERATOR', 'PROPERTY', 'WARNING', 'ERROR', 'ERROR_INVALID_INPUT', 'ERROR_INVALID_CONTEXT', 'ERROR_OUT_OF_MEMORY'
-        self.report({'INFO'}, "Deleted Molecule")
-        return {'FINISHED'}
-
-
-# Callbacks for all Property updates appear to require global (non-member) functions.
-# This is circumvented by simply calling the associated member function passed as self:
-
-def check_callback(self, context):
-    self.check_callback(context)
-    return
-
-class AppMoleculeProperty(bpy.types.PropertyGroup):
-    """ Example class for handling the molecules panel parameters """
-    id = IntProperty(name="ID", default=-1)
-    name = StringProperty ( name="Molecule Name", default="Molecule", description="The molecule species name", update=check_callback )
-    diffusion_constant = PointerProperty(name="Diffusion Constant", type=PanelParameterFloat)
-    diameter = PointerProperty(name="Diameter", type=PanelParameterFloat)
-    mol_wt = PointerProperty(name="Molecular Weight", type=PanelParameterInt)
-    status = StringProperty(name="Status")
-
-    def set_defaults(self):
-        self.name = "Molecule_"+str(self.id)
-        self.diffusion_constant.set_fields ( label="Diff Const", expr="0.001", min_val=0, max_val=None )        
-        self.diameter.set_fields ( label="Diameter", expr="0.002", min_val=0, max_val=None )
-        self.mol_wt.set_fields ( label="Mol Wt", expr="5", min_val=0, max_val=None )
-
-    # Exporting to an MDL file could be done just like this or via a non-member function that knows the details of this class
-    def print_details( self, thresh, prefix=""):
-        threshold_print ( thresh, prefix + "Name = " + self.name )
-        threshold_print ( thresh, prefix + "  " + self.diffusion_constant.get_label() + " = " + self.diffusion_constant.get_text() )
-        threshold_print ( thresh, prefix + "  " + self.diameter.get_label() + " = " + self.diameter.get_text() )
-        threshold_print ( thresh, prefix + "  " + self.mol_wt.get_label() + " = " + self.mol_wt.get_text() )
-
-    def draw_props ( self, layout ):
-        layout.prop ( self, "name" )
-        self.diffusion_constant.draw_in_new_row(layout)
-        self.diameter.draw_in_new_row(layout)
-        self.mol_wt.draw_in_new_row(layout)
-
-    def check_callback(self, context):
-        """Allow the parent molecule list (AppMoleculesListProperty) to do the checking"""
-        get_parent(self).check(context)
-        return
-
-
-class MCELL_UL_check_molecule(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        threshold_print ( 90, "MCELL_UL_check_molecule called" )
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            layout.label(item.name, icon='FILE_TICK')
-
-
-class MCELL_PT_define_molecules(bpy.types.Panel):
-    bl_label = "Define Molecules"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw ( self, context ):
-        # Call the draw function for the instance being drawn in this panel
-        context.scene.mcell.molecules.draw_panel ( context, self )
-
-
-class AppMoleculesListProperty(bpy.types.PropertyGroup):
-    molecule_list = CollectionProperty(type=AppMoleculeProperty, name="Molecule List")
-    active_mol_index = IntProperty(name="Active Molecule Index", default=0)
-    next_id = IntProperty(name="Counter for Unique Molecule IDs", default=1)  # Start ID's at 1 to confirm initialization
-    show_advanced = bpy.props.BoolProperty(default=True)  # If Properties are not shown, they may not exist!!!
-
-    def set_defaults(self):
-        # It's not clear if setting the defaults for the molecule list should
-        #    set defaults for each molecule in the list or
-        #    delete all the molecules to create an empty list
-        # Since it's more interesting to set the molecules back to their defaults ... do that.
-        if self.molecule_list:
-            for mol in self.molecule_list:
-                mol.set_defaults()
-    
-    def add_molecule ( self, context ):
-        """ Add a new molecule to the list of molecules and set as the active molecule """
-        new_mol = self.molecule_list.add()
-        new_mol.id = self.allocate_available_id()
-        new_mol.set_defaults()
-        self.active_mol_index = len(self.molecule_list)-1
-
-    def remove_active_molecule ( self, context ):
-        """ Remove the active molecule from the list of molecules """
-        self.molecule_list.remove ( self.active_mol_index )
-        self.active_mol_index -= 1
-        if self.active_mol_index < 0:
-            self.active_mol_index = 0
-        if self.molecule_list:
-            threshold_print ( 90, "Inside remove_active_molecule with self of type " + str(type(self)) )
-            threshold_print ( 90, "  remove_active_molecule calling self.check_molecule(context)" )
-            self.check(context)
-
-    def check ( self, context ):
-        """Checks for duplicate or illegal molecule name"""
-        # Note: Some of the list-oriented functionality is appropriate here (since this
-        #        is a list), but some of the molecule-specific checks (like name legality)
-        #        could be handled by the the molecules themselves. They're left here for now.
-        threshold_print ( 90, "Top of local check with self of type " + str(type(self)) )
-        threshold_print ( 90, "  and parent of type " + str(type(get_parent(self))) )
-
-        mol = self.molecule_list[self.active_mol_index]
-
-        status = ""
-
-        # Check for duplicate molecule name
-        mol_keys = self.molecule_list.keys()
-        if mol_keys.count(mol.name) > 1:
-            status = "Duplicate molecule: %s" % (mol.name)
-
-        # Check for illegal names (Starts with a letter. No special characters.)
-        mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
-        m = re.match(mol_filter, mol.name)
-        if m is None:
-            status = "Molecule name error: %s" % (mol.name)
-
-        mol.status = status
-
-        threshold_print ( 90, "Bottom of local check with self of type " + str(type(self)) )
-        return
-
-
-    def allocate_available_id ( self ):
-        """ Return a unique molecule ID for a new molecule """
-        if len(self.molecule_list) <= 0:
-            # Reset the ID to 1 when there are no more molecules
-            self.next_id = 1
-        self.next_id += 1
-        return ( self.next_id - 1 )
-
-    def draw_panel ( self, context, panel ):
-        layout = panel.layout
-        row = layout.row()
-        row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
-        row = layout.row()
-        col = row.column()
-        col.template_list("MCELL_UL_check_molecule", "define_molecules",
-                          self, "molecule_list",
-                          self, "active_mol_index",
-                          rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
-        col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
-        if self.molecule_list:
-            mol = self.molecule_list[self.active_mol_index]
-            mol.draw_props ( layout )
-
-
-
-### An operator for running the simulation (essentially exporting state to MDL or other format)
-
-class PARAMS_OT_run_simulation(bpy.types.Operator):
-    bl_idname = "mcell.run_simulation"
-    bl_label = "Run Simulation"
-    bl_description = "Run Simulation"
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-        # Pretend to run a simulation by printing all of the parameters that would be used
-        mcell = context.scene.mcell
-        mcell.print_self()
-        return {'FINISHED'}
-
-
-
-### An operator for resetting everything
-
-class PARAMS_OT_reset_everything(bpy.types.Operator):
-    bl_idname = "mcell.reset_everything"
-    bl_label = "Reset Everything"
-    bl_description = "Reset Everything - Set everything to defaults"
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        mcell.set_defaults(context)
-        return {'FINISHED'}
-
-
-# Main Parameters Properties Class:
-
-class AppPropertyGroup(bpy.types.PropertyGroup):
-    """This is the top level property group that contains user code and a MCellParametersPropertyGroup"""
-
-    initialized = BoolProperty(default=False)
-    
-    parameter_version = StringProperty(name="Parameters Version", default="0.1")
-    debug_level = IntProperty(name="Debug", default=10, min=0, max=100, description="Amount of debug information to print")
-
-    general_parameters = PointerProperty(type=MCellParametersPropertyGroup, name="General Parameters")
-
-    initialization = PointerProperty(type=AppInitializationProperties, name="Model Initialization")
-    molecules = PointerProperty(type=AppMoleculesListProperty, name="Defined Molecules")
-    
-    def set_defaults ( self, context ):
-        self.debug_level = 31 # Normally 10
-        self.initialization.set_defaults()
-        self.molecules.set_defaults()
-
-    def print_self(self):
-
-        # import pdb; pdb.Pdb(completekey='tab').set_trace()
-        
-
-        threshold_print ( 5, "==================== Simulation Parameters ==========================" )
-
-        threshold_print ( 5, "----- All General Parameters -----" )
-        self.general_parameters.print_all_general_parameters ( 5, prefix="  " )
-
-        threshold_print ( 5, "----- All Panel Parameters -----" )
-        print_numeric_parameter_list ( 5, prefix = "  ")
-
-        threshold_print ( 5, "----- Formatted Panel Parameters -----" )
-
-        mols = self.molecules.molecule_list
-        threshold_print ( 5, "  Model contains " + str(len(mols)) + " molecules" )
-        for mol in mols:
-            mol.print_details ( 5, prefix = "    " )
-        self.initialization.print_details ( 5, prefix = "  " )
-
-
-
-
-from bpy.app.handlers import persistent
-
-@persistent
-def auto_initialize(context):
-    """ Check whether the application data has been initialized """
-    print ( "auto_initialize() has been called" )
-    if not context:
-        context = bpy.context
-    if "app" in dir(context.scene):
-        app = context.scene.app
-        if not mcell.initialized:
-            # Initialize the application defaults
-            mcell.set_defaults(context)
-            mcell.initialized = True
-
-
-
-#############################################################################################################
-
-
-#
-#    Registration
-#
-
-def register():
-  print ("Registering ", __name__)
-  bpy.utils.register_module(__name__)
-  bpy.types.Scene.mcell = bpy.props.PointerProperty(type=AppPropertyGroup)
-  # Try calling the set defaults function?
-  # This doesn't seem to work ... it might need to be added to a hook prior to loading a .blend file
-  # bpy.context.scene.mcell.set_defaults ( bpy.context )
-
-def unregister():
-  print ("Unregistering ", __name__)
-  del bpy.types.Scene.mcell
-  bpy.utils.unregister_module(__name__)
-
-
-# Establish handlers
-if len(bpy.app.handlers.load_post) == 0:
-    bpy.app.handlers.load_post.append ( auto_initialize )
-
-if __name__ == "__main__":
-  register()
-'''
-
-print ( "Bottom of importing cellblender_parameters.py" );
 

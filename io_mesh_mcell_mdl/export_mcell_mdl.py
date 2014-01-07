@@ -573,27 +573,17 @@ def save_molecules(context, out_file, mol_list):
         for mol_item in mol_list:
             out_file.write("  %s\n" % (mol_item.name))
             out_file.write("  {\n")
-            #if (mol_item.diffusion_constant_expr != "0"):    # DB: Extra if-else bloc for diffusion constant to take expressions
-            if (False):    # BK: These were back to being floats until the new parameter system is installed
-                if mol_item.type == '2D':
-                    out_file.write("    DIFFUSION_CONSTANT_2D = %s\n" %    
-                                   (mol_item.diffusion_constant_expr))
-                else:   
-                    out_file.write("    DIFFUSION_CONSTANT_3D = %s\n" %    
-                                   (mol_item.diffusion_constant_expr))           
-            else:          # BK: These are currently calling "get_value" to export a numeric value, but could call "get_expression" instead
-                if mol_item.type == '2D':
-                    out_file.write("    DIFFUSION_CONSTANT_2D = %g\n" %
-                                   (mol_item.diffusion_constant.get_value()))  # Could use .get_expression() to export the expression
-                else:
-                    out_file.write("    DIFFUSION_CONSTANT_3D = %g\n" %
-                                   (mol_item.diffusion_constant.get_value()))  # Could use .get_expression() to export the expression
+
+            if mol_item.type == '2D':
+                out_file.write("    DIFFUSION_CONSTANT_2D = %g\n" %
+                               (mol_item.diffusion_constant.get_value()))  # Could use .get_expression() to export the expression
+            else:
+                out_file.write("    DIFFUSION_CONSTANT_3D = %g\n" %
+                               (mol_item.diffusion_constant.get_value()))  # Could use .get_expression() to export the expression
 
             if mol_item.custom_time_step.get_value() > 0:
-                #out_file.write("    CUSTOM_TIME_STEP = %g\n" % (mol_item.custom_time_step))
                 out_file.write("    CUSTOM_TIME_STEP = %g\n" % (mol_item.custom_time_step.get_value()))
             elif mol_item.custom_space_step.get_value() > 0:
-                #out_file.write("    CUSTOM_SPACE_STEP = %g\n" % (mol_item.custom_space_step))
                 out_file.write("    CUSTOM_SPACE_STEP = %g\n" % (mol_item.custom_space_step.get_value()))
 
             if mol_item.target_only:
