@@ -1097,7 +1097,8 @@ class PanelParameter(bpy.types.PropertyGroup):
         """ Default drawing for parameters ... overload for different functionality """
         row = layout.row()
         value = self.get_value()
-        row.prop ( self.param_data, "expression", text=self.param_data.label+" = "+str(value) )
+        # row.prop ( self.param_data, "expression", text=self.param_data.label+" = "+str(value) )
+        row.prop ( self.param_data, "expression", text=self.param_data.label+" = "+'{:g}'.format(value) )
         if not self.is_status_ok():
             row = layout.row()
             row.label(icon='ERROR', text=self.param_data.status)
@@ -1161,7 +1162,7 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
         # This is a collection, so step through its elements as if it's an array using keys
         for objkey in obj.keys():
             try:
-                plist = get_numeric_parameter_list(objpath+"['"+str(objkey)+"']", plist, debug)
+                plist = get_numeric_parameter_list(objpath+"[\""+str(objkey)+"\"]", plist, debug)
             except:
                 threshold_print ( 0, " ===> Exception in get_numeric_parameter_list idprop branch with " + objpath + "['" + str(objkey) + "']" )
     else:
