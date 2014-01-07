@@ -1097,7 +1097,6 @@ class PanelParameter(bpy.types.PropertyGroup):
         """ Default drawing for parameters ... overload for different functionality """
         row = layout.row()
         value = self.get_value()
-        # row.prop ( self.param_data, "expression", text=self.param_data.label+" = "+str(value) )
         row.prop ( self.param_data, "expression", text=self.param_data.label+" = "+'{:g}'.format(value) )
         if not self.is_status_ok():
             row = layout.row()

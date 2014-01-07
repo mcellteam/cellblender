@@ -589,12 +589,12 @@ def save_molecules(context, out_file, mol_list):
                     out_file.write("    DIFFUSION_CONSTANT_3D = %g\n" %
                                    (mol_item.diffusion_constant.get_value()))  # Could use .get_expression() to export the expression
 
-            if mol_item.custom_time_step > 0:
-                out_file.write("    CUSTOM_TIME_STEP = %g\n" %
-                               (mol_item.custom_time_step))
-            elif mol_item.custom_space_step > 0:
-                out_file.write("    CUSTOM_SPACE_STEP = %g\n" %
-                               (mol_item.custom_space_step))
+            if mol_item.custom_time_step.get_value() > 0:
+                #out_file.write("    CUSTOM_TIME_STEP = %g\n" % (mol_item.custom_time_step))
+                out_file.write("    CUSTOM_TIME_STEP = %g\n" % (mol_item.custom_time_step.get_value()))
+            elif mol_item.custom_space_step.get_value() > 0:
+                #out_file.write("    CUSTOM_SPACE_STEP = %g\n" % (mol_item.custom_space_step))
+                out_file.write("    CUSTOM_SPACE_STEP = %g\n" % (mol_item.custom_space_step.get_value()))
 
             if mol_item.target_only:
                 out_file.write("    TARGET_ONLY\n")

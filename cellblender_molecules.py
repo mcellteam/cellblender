@@ -100,6 +100,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         name="Molecule Name", default="Molecule",
         description="The molecule species name",
         update=check_callback)
+    id = IntProperty(name="Molecule ID", default=0)
     type_enum = [
         ('2D', "Surface Molecule", ""),
         ('3D', "Volume Molecule", "")]
@@ -107,11 +108,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         items=type_enum, name="Molecule Type",
         description="Surface molecules are constrained to surfaces/meshes. "
                     "Volume molecules exist in space.")
-    diffusion_constant_old = FloatProperty(  #name="Diffusion Constant")
-        name="Diffusion Constant",
-        default=0.0,
-        description="Diffusion Constant Units: cm^2/sec",
-        update=check_callback)
 
     diffusion_constant = PointerProperty(name="Diffusion Constant", type=cellblender_parameters.PanelParameterFloat)
 
@@ -119,8 +115,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         name="Target Only",
         description="If selected, molecule will not initiate reactions when "
                     "it runs into other molecules. Can speed up simulations.")
-    custom_time_step = FloatProperty(name="Custom Time Step")
-    custom_space_step = FloatProperty(name="Custom Space Step")
+
+    custom_time_step = PointerProperty(name="Custom Time Step", type=cellblender_parameters.PanelParameterFloat)
+    custom_space_step = PointerProperty(name="Custom Space Step", type=cellblender_parameters.PanelParameterFloat)
+
     export_viz = bpy.props.BoolProperty(
         default=False, description="If selected, the molecule will be "
                                    "included in the visualization data.")
@@ -129,7 +127,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def set_defaults(self):
         self.name = "Molecule_"+str(self.id)
-        self.diffusion_constant.param_data.label = "Diffusion Constant" # Tried self.diffusion_constant.name
+        self.diffusion_constant.set_label ( "Diffusion Constant" )  # Tried self.diffusion_constant.name but didn't work.
+        self.custom_time_step.set_label ( "Custom Time Step" )
+        self.custom_space_step.set_label ( "Custom Space Step" )
+
 
     # Exporting to an MDL file could be done just like this
     def print_details( self ):
@@ -152,10 +153,12 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                      text="Advanced Options", emboss=False)
             row = box.row()
             row.prop(self, "target_only")
-            row = box.row()
-            row.prop(self, "custom_time_step")
-            row = box.row()
-            row.prop(self, "custom_space_step")
+            self.custom_time_step.draw_in_new_row(box)
+            self.custom_space_step.draw_in_new_row(box)
+            #row = box.row()
+            #row.prop(self, "custom_time_step")
+            #row = box.row()
+            #row.prop(self, "custom_space_step")
 
     def check_callback(self, context):
         """Allow the parent molecule list (MCellMoleculesListProperty) to do the checking"""
