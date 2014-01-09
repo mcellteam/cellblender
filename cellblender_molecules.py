@@ -96,6 +96,7 @@ def check_callback(self, context):
     return
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     name = StringProperty(
         name="Molecule Name", default="Molecule",
         description="The molecule species name",
@@ -188,6 +189,7 @@ class MCell_PT_define_molecules(bpy.types.Panel):
 
 
 class MCellMoleculesListProperty(bpy.types.PropertyGroup):
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     molecule_list = CollectionProperty(type=MCellMoleculeProperty, name="Molecule List")
     active_mol_index = IntProperty(name="Active Molecule Index", default=0)
     next_id = IntProperty(name="Counter for Unique Molecule IDs", default=1)  # Start ID's at 1 to confirm initialization

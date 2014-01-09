@@ -308,7 +308,7 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
                     " the simulation.")
     debug_level = IntProperty(
         name="Debug", default=10, min=0, max=100,
-        description="Amount of debug information to print")
+        description="Amount of debug information to print: 0 to 100")
 
 
 class MCellScratchPanelProperty(bpy.types.PropertyGroup):
@@ -945,6 +945,8 @@ class MCellObjectSelectorPanelProperty(bpy.types.PropertyGroup):
 # Main MCell (CellBlender) Properties Class:
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
+    contains_cellblender_parameters = BoolProperty(
+        name="Contains CellBlender Parameters", default=True)
     cellblender_version = StringProperty(
         name="CellBlender Version", default="0.1.54")
     cellblender_source_hash = StringProperty(

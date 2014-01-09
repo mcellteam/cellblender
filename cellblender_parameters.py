@@ -44,14 +44,14 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 
-
-
-def threshold_print ( thresh, s ):
+def threshold_print_enabled ( thresh ):
     # Items will print if the user selected level is greater than the level in the print statement (thresh)
     #  User setting = 100 -> print everything
     #  User setting =   0 -> print nothing
-    
-    if thresh < bpy.context.scene.mcell.cellblender_preferences.debug_level:
+    return thresh < bpy.context.scene.mcell.cellblender_preferences.debug_level
+
+def threshold_print ( thresh, s ):
+    if threshold_print_enabled ( thresh ):
         print ( s )
 
 def print_info_about_self ( self, thresh, context ):
@@ -1021,7 +1021,6 @@ class PanelParameterData(bpy.types.PropertyGroup):
     max_value = FloatProperty(name="max_value", default=1)
     
 
-
 class PanelParameter(bpy.types.PropertyGroup):
     # For some reason, subclassing this class inherits functions, but not Properties. Is this a Blender/Python inconsistency?
     # Otherwise, the "param_data" would be here rather than in the subclasses.  : (
@@ -1055,6 +1054,10 @@ class PanelParameter(bpy.types.PropertyGroup):
     def get_text(self):
         """ Default string expression for parameters ... overload for different functionality """
         return (  self.get_expression() + " = " + str(self.get_value()) )
+
+    def get_formatted_string(self):
+      return "PanelParameter " + self.get_label() + " = " + self.get_ID_expression() + " = " + self.get_expression() + " = " + '{:g}'.format(self.get_value() )
+
 
     def set_fields(self, label=None, expr=None, min_val=None, max_val=None):
         if label != None:
@@ -1117,23 +1120,34 @@ max_numeric_parameter_recursion_depth = 0
 num_calls = 0
 
 def get_numeric_parameter_list ( objpath, plist, debug=False ):
+    """ Recursive routine that builds a list of numeric (PanelParameterInt and PanelParameterFloat) parameters """
 
     global numeric_parameter_recursion_depth
     global max_numeric_parameter_recursion_depth
     global num_calls
+
+    threshold_print ( 98, "get_numeric_parameter_list() called with objpath = " + str(objpath) )
+
+    if numeric_parameter_recursion_depth == 0:
+        threshold_print ( 90, "get_numeric_parameter_list() called with objpath = " + str(objpath) )
+
+    if objpath != None:
+        if objpath.endswith("rna_type"):
+            # Don't search anything that is of type "rna_type"
+            return plist
+
     num_calls += 1
     numeric_parameter_recursion_depth += 1
     if numeric_parameter_recursion_depth > max_numeric_parameter_recursion_depth:
       max_numeric_parameter_recursion_depth = numeric_parameter_recursion_depth
 
-    """ Recursive routine that builds a list of numeric (PanelParameterInt and PanelParameterFloat) parameters """
-    threshold_print ( 95, "get_numeric_parameter_list() called with objpath = " + str(objpath) )
-    if (objpath == None):
+    if objpath == None:
         # Start with default path
         objpath = "bpy.context.scene.mcell"
     obj = eval(objpath)
     threshold_print ( 95, "Path = " + str(objpath) + ", obj = " + str(obj) )
     threshold_print ( 98, "  plist = " + str(plist) )
+
     # Note, even though PanelParameterFloat and PanelParameterInt are subclasses of PanelParameter, they're not found that way!!
     if isinstance(obj,(bpy.types.PanelParameterInt,bpy.types.PanelParameterFloat)):
         # This is what we're looking for so add it to the list
@@ -1143,20 +1157,22 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
         # This might be some other (non-numeric) type of PanelParameter ... ignore it
         pass
     elif isinstance(obj,bpy.types.PropertyGroup):
-        # This is a property group, so walk through all of its properties using keys
-        # for objkey in obj.keys():
-        for objkey in obj.bl_rna.properties.keys():    # This is somewhat ugly, but works best!!
-            try:
-                pstr = objpath+"."+str(objkey)
-                plist = get_numeric_parameter_list(pstr, plist, debug)
-            except:
-                # This can happen with properties in the .blend file that are no longer in the code or have been renamed!!!
-                threshold_print ( 0, "  ===> Exception:" )
-                threshold_print ( 0, "    ===> Exception type = " + sys.exc_type )
-                threshold_print ( 0, "    ===> Exception value = " + sys.exc_value )
-                threshold_print ( 0, "    ===> Exception traceback = " + sys.exc_traceback )
-                threshold_print ( 0, "    ===> Exception in recursive call to get_numeric_parameter_list ( " + pstr + " )" )
-                # threshold_print ( 0, "    ===> Exception in get_numeric_parameter_list isinstance branch with " + objpath + "." + str(objkey) )
+        # This is a property group, so check to see if it has parameters or not
+        if 'contains_cellblender_parameters' in dir(obj):
+            # Walk through all of its properties using keys
+            # for objkey in obj.keys():
+            for objkey in obj.bl_rna.properties.keys():    # This is somewhat ugly, but works best!!
+                try:
+                    pstr = objpath+"."+str(objkey)
+                    plist = get_numeric_parameter_list(pstr, plist, debug)
+                except:
+                    # This can happen with properties in the .blend file that are no longer in the code or have been renamed!!!
+                    threshold_print ( 0, "  ===> Exception:" )
+                    threshold_print ( 0, "    ===> Exception type = " + sys.exc_type )
+                    threshold_print ( 0, "    ===> Exception value = " + sys.exc_value )
+                    threshold_print ( 0, "    ===> Exception traceback = " + sys.exc_traceback )
+                    threshold_print ( 0, "    ===> Exception in recursive call to get_numeric_parameter_list ( " + pstr + " )" )
+                    # threshold_print ( 0, "    ===> Exception in get_numeric_parameter_list isinstance branch with " + objpath + "." + str(objkey) )
     elif type(obj).__name__ == 'bpy_prop_collection_idprop':
         # This is a collection, so step through its elements as if it's an array using keys
         for objkey in obj.keys():
@@ -1170,22 +1186,30 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
 
     numeric_parameter_recursion_depth += -1
     if numeric_parameter_recursion_depth == 0:
-      print ( "Max recursion depth = " + str(max_numeric_parameter_recursion_depth) )
-      print ( "Num Calls = " + str(num_calls) )
-      max_numeric_parameter_recursion_depth = 0
-      num_calls = 0
+        threshold_print ( 50, "Max recursion depth = " + str(max_numeric_parameter_recursion_depth) )
+        threshold_print ( 50, "Num Calls = " + str(num_calls) )
+        max_numeric_parameter_recursion_depth = 0
+        num_calls = 0
+
+    if threshold_print_enabled ( 90 ):
+        print ( "  Parameters found so far by get_numeric_parameter_list(" + str(objpath) + ") at depth " + str(numeric_parameter_recursion_depth) + ":" )
+        for p in plist:
+            print ( "    " + p.get_formatted_string() )      
 
     return plist
 
 
-def print_numeric_parameter_list ( thresh, prefix="" ):
+def print_numeric_parameter_list ( thresh, prefix="", param_list=None ):
     """ Obtains a list of all numeric panel parameters and prints them to the console """
-    plist = get_numeric_parameter_list ( None, [] )
+    plist = param_list
+    if plist == None:
+        plist = get_numeric_parameter_list ( None, [] )
     # Remove the leading and trailing brackets and split by commas
     plist_names = str(plist)[1:-1].split(",")
     threshold_print ( thresh, prefix + "There are " + str(len(plist)) + " panel parameters defined" )
     for i in range(len(plist)):
         threshold_print ( thresh, prefix + "  " +  plist_names[i].strip() + " = " + str(plist[i].get_expression()) + " = " + str(plist[i].get_ID_expression()) + " = " + str(plist[i].get_value()) )
+
 
 ### Some generic example classes ... WARNING: The examples in this section contain ideas that have not been fully tested
 
