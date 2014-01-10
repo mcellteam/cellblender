@@ -110,6 +110,40 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_print_general_parameters(bpy.types.Operator):
+    bl_idname = "mcell.print_general_parameters"
+    bl_label = "Print General Parameters"
+    bl_description = "Print all General Parameters to the console"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        context.scene.mcell.general_parameters.print_all_general_parameters(-1)
+        return {'FINISHED'}
+        
+
+class MCELL_OT_print_panel_parameters(bpy.types.Operator):
+    bl_idname = "mcell.print_panel_parameters"
+    bl_label = "Print Panel Params"
+    bl_description = "Print all Panel Parameters to the console"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        print_numeric_parameter_list ( -1, prefix="", fast=False )
+        return {'FINISHED'}
+        
+
+class MCELL_OT_print_panel_parameters_fast(bpy.types.Operator):
+    bl_idname = "mcell.print_panel_parameters_fast"
+    bl_label = "Print Panel Params Fast"
+    bl_description = "Print all Panel Parameters to the console without showing their path"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        print_numeric_parameter_list ( -1, prefix="", fast=True )
+        return {'FINISHED'}
+        
+
+
 class MCELL_UL_draw_parameter(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         mcell = context.scene.mcell
@@ -140,6 +174,7 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
     def draw(self, context):
 
         threshold_print (99, "Panel Draw with context.scene.mcell = " + str(context.scene.mcell) + " of type " + str(type(context.scene.mcell)) )
+
         mcell = context.scene.mcell
 
         layout = self.layout
@@ -168,6 +203,14 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
                 layout.prop(par, "expr")
             layout.prop(par, "unit")
             layout.prop(par, "desc")
+        if mcell.cellblender_preferences.debug_level > 0:
+            row = layout.row()
+            col = row.column()
+            col.operator("mcell.print_general_parameters")
+            col = row.column()
+            col.operator("mcell.print_panel_parameters")
+            col = row.column()
+            col.operator("mcell.print_panel_parameters_fast")
 
 
 # Callbacks for Property updates appear to require global (non-member) functions
@@ -993,11 +1036,6 @@ def update_PanelParameter ( self, context ):
             self.value = value
         self.status = ""
 
-    #try:
-    #    self.value = float(self.expression)
-    #except:
-    #    self.value = 0.0
-
     threshold_print ( 60, " After Automatic Update:" )
     threshold_print ( 60, "  self.expression = " + str(self.expression) )
     threshold_print ( 60, "  self.value = " + str(self.value) )
@@ -1125,7 +1163,9 @@ class PanelParameterInt(PanelParameter):
 def get_numeric_parameter_list ( objpath, plist, debug=False ):
     """ Recursive routine that builds a list of numeric (PanelParameterInt and PanelParameterFloat) parameters """
 
-    threshold_print ( 98, "get_numeric_parameter_list() called with objpath = " + str(objpath) )
+    threshold_print ( 98, "get_numeric_parameter_list() called with objpath = ", objpath )
+
+    # This check can be used to speed up parameter searching in the future, but hasn't been critical so far
 
     if objpath != None:
         if objpath.endswith("rna_type"):
@@ -1149,6 +1189,7 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
         pass
     elif isinstance(obj,bpy.types.PropertyGroup):
         # This is a property group, so check to see if it has parameters or not
+        # The contains_cellblender_parameters check greatly sped up parameter searching
         if 'contains_cellblender_parameters' in dir(obj):
             # Walk through all of its properties using keys
             # for objkey in obj.keys():
@@ -1184,16 +1225,27 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
     return plist
 
 
-def print_numeric_parameter_list ( thresh, prefix="", param_list=None ):
+
+def print_numeric_parameter_list ( thresh, prefix="", param_list=None, fast=False ):
     """ Obtains a list of all numeric panel parameters and prints them to the console """
     plist = param_list
     if plist == None:
         plist = get_numeric_parameter_list ( None, [] )
-    # Remove the leading and trailing brackets and split by commas
-    plist_names = str(plist)[1:-1].split(",")
-    threshold_print ( thresh, prefix + "There are " + str(len(plist)) + " panel parameters defined" )
-    for i in range(len(plist)):
-        threshold_print ( thresh, prefix + "  " +  plist_names[i].strip() + " = " + str(plist[i].get_expression()) + " = " + str(plist[i].get_ID_expression()) + " = " + str(plist[i].get_value()) )
+
+    threshold_print ( thresh, prefix + "There are " + str(len(plist)) + " panel parameters defined ..." )
+
+    if fast:
+        # Because converting the object to a string takes so long, process the list one at a time so it doesn't appear to freeze
+        for i in range(len(plist)):
+            plist_name = str(plist[i])  # For some reason, this doesn't give the full path name (like bpy.data.scenes['Scene'].mcell.molecules.molecule_list[0].diffusion_constant)
+            threshold_print ( thresh, prefix + "  " +  plist_name.strip() + " = " + str(plist[i].get_expression()) + " = " + str(plist[i].get_ID_expression()) + " = " + str(plist[i].get_value()) )
+    else:
+        # Remove the leading and trailing brackets and split by commas
+        plist_names = str(plist)[1:-1].split(",")
+        # Print each parameter
+        for i in range(len(plist)):
+            threshold_print ( thresh, prefix + "  " +  plist_names[i].strip() + " = " + str(plist[i].get_expression()) + " = " + str(plist[i].get_ID_expression()) + " = " + str(plist[i].get_value()) )
+
 
 
 ### Some generic example classes ... WARNING: The examples in this section contain ideas that have not been fully tested
