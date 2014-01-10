@@ -52,9 +52,13 @@ def threshold_print_enabled ( thresh ):
     #  User setting =   0 -> print nothing
     return thresh < bpy.context.scene.mcell.cellblender_preferences.debug_level
 
-def threshold_print ( thresh, s ):
+def threshold_print ( thresh, s, obj=None ):
+    # Pass in the optional object when you don't want to convert it to a string before the call (in case it might be expensive)
     if threshold_print_enabled ( thresh ):
-        print ( str(s) )
+        if obj == None:
+            print ( s )
+        else:
+            print ( s + str(obj) )
 
 def print_info_about_self ( self, thresh, context ):
     threshold_print ( thresh, "Info:" )
@@ -1117,63 +1121,29 @@ class PanelParameterInt(PanelParameter):
     def get_value(self):
         return int(self.param_data.value)
 
-numeric_parameter_recursion_depth = 0
-max_recursion_depth = 0
-num_calls = 0
-total_time = 0
-start_time = 0
 
 def get_numeric_parameter_list ( objpath, plist, debug=False ):
     """ Recursive routine that builds a list of numeric (PanelParameterInt and PanelParameterFloat) parameters """
 
-    global numeric_parameter_recursion_depth
-    global max_recursion_depth
-    global num_calls
-    global total_time
-    global start_time
-
     threshold_print ( 98, "get_numeric_parameter_list() called with objpath = " + str(objpath) )
-
-    if numeric_parameter_recursion_depth == 0:
-        threshold_print ( 20, "Start of get_numeric_parameter_list() called with objpath = " + str(objpath) )
-        num_calls = 0
-        total_time = 0
-        max_recursion_depth = 0
-
-    # Start here for timing
-    start_time = time.clock()
 
     if objpath != None:
         if objpath.endswith("rna_type"):
             # Don't search anything that is of type "rna_type"
             return plist
 
-    num_calls += 1
-    numeric_parameter_recursion_depth += 1
-    if numeric_parameter_recursion_depth > max_recursion_depth:
-      max_recursion_depth = numeric_parameter_recursion_depth
-
     if objpath == None:
         # Start with default path
         objpath = "bpy.context.scene.mcell"
-    # 0.0
-    # total_time += time.clock() - start_time
     obj = eval(objpath)
-    # 0.0 here
-    # total_time += time.clock() - start_time
-    #threshold_print ( 95, "Path = " + str(objpath) + ", obj = " + str(obj) )
-    #threshold_print ( 98, "  plist = " + str(plist) )
-    #print ((str(plist)))
-    #foo = str(plist)
-
-    # 6.58 and 3.32 and 4.16
-    #total_time += time.clock() - start_time
+    threshold_print ( 95, "Path = " + str(objpath) + ", obj = ", obj )
+    threshold_print ( 98, "  plist = ", plist )
 
     # Note, even though PanelParameterFloat and PanelParameterInt are subclasses of PanelParameter, they're not found that way!!
     if isinstance(obj,(bpy.types.PanelParameterInt,bpy.types.PanelParameterFloat)):
         # This is what we're looking for so add it to the list
         plist.append ( obj )
-        #threshold_print ( 98, "   plist.append gives " + str(plist) )
+        threshold_print ( 98, "   plist.append gives ", plist )
     elif isinstance(obj,bpy.types.PanelParameter):
         # This might be some other (non-numeric) type of PanelParameter ... ignore it
         pass
@@ -1193,37 +1163,18 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
                     threshold_print ( 0, "    ===> Exception value = " + sys.exc_value )
                     threshold_print ( 0, "    ===> Exception traceback = " + sys.exc_traceback )
                     threshold_print ( 0, "    ===> Exception in recursive call to get_numeric_parameter_list ( " + pstr + " )" )
-                    # threshold_print ( 0, "    ===> Exception in get_numeric_parameter_list isinstance branch with " + objpath + "." + str(objkey) )
+                    threshold_print ( 0, "    ===> Exception in get_numeric_parameter_list isinstance branch with " + objpath + "." + str(objkey) )
     elif type(obj).__name__ == 'bpy_prop_collection_idprop':
         # This is a collection, so step through its elements as if it's an array using keys
         for objkey in obj.keys():
             try:
                 plist = get_numeric_parameter_list(objpath+"[\""+str(objkey)+"\"]", plist, debug)
             except:
-                #threshold_print ( 0, " ===> Exception in get_numeric_parameter_list idprop branch with " + objpath + "['" + str(objkey) + "']" )
+                threshold_print ( 0, " ===> Exception in get_numeric_parameter_list idprop branch with " + objpath + "['" + str(objkey) + "']" )
                 pass
     else:
         # This could be anything else ... like <'int'> or <'str'>
         pass
-
-    # 7.89
-    total_time += time.clock() - start_time
-
-    numeric_parameter_recursion_depth += -1
-    if numeric_parameter_recursion_depth == 0:
-        threshold_print ( 20, "End of get_numeric_parameter_list() called with objpath = " + str(objpath) )
-        threshold_print ( 20, "Max recursion depth = " + str(max_recursion_depth) )
-        threshold_print ( 20, "Num Calls = " + str(num_calls) )
-        threshold_print ( 20, "Found " + str(len(plist)) + " panel parameters" )
-        if threshold_print_enabled ( 20 ):
-            for p in plist:
-                print ( "    " + p.get_formatted_string() )      
-        
-        max_recursion_depth = 0
-        num_calls = 0
-        
-        threshold_print ( 20, "Total time = " + str(total_time) )
-        total_time = 0
 
     if threshold_print_enabled ( 90 ):
         print ( "  Parameters found so far by get_numeric_parameter_list(" + str(objpath) + ") at depth " + str(numeric_parameter_recursion_depth) + ":" )
