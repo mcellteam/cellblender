@@ -307,7 +307,7 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
         description="Allow the project to be exported without also running"
                     " the simulation.")
     debug_level = IntProperty(
-        name="Debug", default=10, min=0, max=100,
+        name="Debug", default=0, min=0, max=100,
         description="Amount of debug information to print: 0 to 100")
 
 
