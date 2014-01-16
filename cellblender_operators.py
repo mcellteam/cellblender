@@ -1416,6 +1416,17 @@ def mcell_valid_update(context):
     # print ( "mcell_binary_valid = ", mcell.project_settings.mcell_binary_valid )
 
 
+@persistent
+def set_defaults(context):
+    """ Initialize MCell if not already initialized """
+    if not context:
+        context = bpy.context
+    mcell = context.scene.mcell
+    if not mcell.is_initialized:
+        mcell.set_defaults()
+        mcell.is_initialized = True
+
+
 def project_files_path():
     ''' Consolidate the creation of the path to the project files'''
     # DUPLICATED FUNCTION ... This is the same function as in cellblender_panesl.py

@@ -84,7 +84,9 @@ def save_wrapper(context, out_file, filedir):
     project_settings = mcell.project_settings
 
     # Export model initialization:
-    out_file.write("ITERATIONS = %d\n" % (mcell.initialization.iterations))
+    # out_file.write("ITERATIONS = %d\n" % (mcell.initialization.iterations))
+    out_file.write("ITERATIONS = %d\n" % (mcell.initialization.iterations.get_value()))
+    
     out_file.write("TIME_STEP = %g\n" % (mcell.initialization.time_step))
     out_file.write("VACANCY_SEARCH_DISTANCE = 10\n\n") # DB: added to avoid error (I think it should have a default value to avoid error in most of the reaction networks)
 

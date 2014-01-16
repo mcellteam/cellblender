@@ -209,8 +209,8 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
             col.operator("mcell.print_general_parameters")
             col = row.column()
             col.operator("mcell.print_panel_parameters")
-            col = row.column()
-            col.operator("mcell.print_panel_parameters_fast")
+            #col = row.column()
+            #col.operator("mcell.print_panel_parameters_fast")
 
 
 # Callbacks for Property updates appear to require global (non-member) functions
@@ -1218,7 +1218,7 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
         pass
 
     if threshold_print_enabled ( 90 ):
-        print ( "  Parameters found so far by get_numeric_parameter_list(" + str(objpath) + ") at depth " + str(numeric_parameter_recursion_depth) + ":" )
+        print ( "  Parameters found so far by get_numeric_parameter_list(" + str(objpath) + "):" )
         for p in plist:
             print ( "    " + p.get_formatted_string() )      
 

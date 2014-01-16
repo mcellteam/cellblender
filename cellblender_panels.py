@@ -415,7 +415,10 @@ class MCELL_PT_initialization(bpy.types.Panel):
         layout = self.layout
         mcell = context.scene.mcell
 
-        layout.prop(mcell.initialization, "iterations")
+        mcell.initialization.iterations.draw_in_new_row(layout)
+        #mcell.initialization.time_step.draw_in_new_row(layout)
+
+        #layout.prop(mcell.initialization, "iterations")
         layout.prop(mcell.initialization, "time_step_str")
 
         # Advanced Options

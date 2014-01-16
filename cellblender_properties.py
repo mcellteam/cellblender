@@ -438,7 +438,15 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
 
 
 class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
-    iterations = IntProperty(
+    # The following line must be added to every PropertyGroup to be searched for CellBlender Parameters:
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
+    
+    iterations = PointerProperty(name="Simulation Iterations",
+        type=cellblender_parameters.PanelParameterInt)
+    time_step_param = PointerProperty(name="Time Step",
+        type=cellblender_parameters.PanelParameterFloat)
+
+    iterations_old = IntProperty(
         name="Simulation Iterations",
         description="Number of iterations to run",
         default=0, min=0)
@@ -447,6 +455,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         name="Time Step", default="1e-6",
         description="Simulation Time Step Units: seconds",
         update=cellblender_operators.update_time_step)
+
     status = StringProperty(name="Status")
     advanced = bpy.props.BoolProperty(default=False)
     warnings = bpy.props.BoolProperty(default=False)
@@ -665,6 +674,14 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
                     "volume or reactions occur in a volume with specified "
                     "orientation.",
         name="Useless Volume Orientation", default='WARNING')
+
+    def set_defaults(self):
+        print ( "MCellInitializationPanelProperty is setting defaults." )
+        self.iterations.set_label ( "Iterations" )
+        self.iterations.set_expression ( "0" )
+        #self.time_step.set_label ( "Time Step" )
+        #self.time_step.set_expression ( "1e-6" )
+
 
 
 class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
@@ -947,6 +964,8 @@ class MCellObjectSelectorPanelProperty(bpy.types.PropertyGroup):
 class MCellPropertyGroup(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(
         name="Contains CellBlender Parameters", default=True)
+    is_initialized = BoolProperty(
+        name="Is Initialized", default=False)
     cellblender_version = StringProperty(
         name="CellBlender Version", default="0.1.54")
     cellblender_source_hash = StringProperty(
@@ -1001,3 +1020,6 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     scratch_settings = PointerProperty(
         type=MCellScratchPanelProperty, name="CellBlender Scratch Settings")
 
+    def set_defaults(self):
+        print ( "MCellPropertyGroup is setting defaults." )
+        self.initialization.set_defaults()

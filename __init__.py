@@ -182,6 +182,8 @@ def register():
             print("  System meets requirements for %s" % (plotter.get_name()))
     except:
         print("Error installing some plotting packages" + sys.exc_value)
+    
+    # Can't do this here: bpy.context.scene.mcell.set_defaults()
 
 
 def unregister():
@@ -215,6 +217,8 @@ if len(bpy.app.handlers.load_post) == 0:
         object_surface_regions.object_regions_format_update)
     bpy.app.handlers.load_post.append(
         cellblender_operators.mcell_valid_update)
+    bpy.app.handlers.load_post.append(
+        cellblender_operators.set_defaults)
 
 if len(bpy.app.handlers.save_pre) == 0:
     bpy.app.handlers.save_pre.append(
