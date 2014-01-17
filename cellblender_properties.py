@@ -678,17 +678,11 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
     def set_defaults(self):
         print ( "MCellInitializationPanelProperty is setting defaults." )
-        self.iterations.set_label ( "Iterations" )
-        self.iterations.set_expression ( "0" )
-        self.time_step.set_label ( "Time Step" )
-        self.time_step.set_expression ( "1e-6" )
-        self.time_step_max.set_label ( "Time Step Max" )
-        self.time_step_max.set_expression ( "" )
-        self.space_step.set_label ( "Space Step" )
-        self.space_step.set_expression ( "" )
-        self.surface_grid_density.set_label ( "Surface Grid Density" )
-        self.surface_grid_density.set_expression ( "10000" )
-
+        self.iterations.set_fields           ( "Iterations",           "0" )
+        self.time_step.set_fields            ( "Time Step",            "1e-6" )
+        self.time_step_max.set_fields        ( "Time Step Max",        "" )
+        self.space_step.set_fields           ( "Space Step",           "" )
+        self.surface_grid_density.set_fields ( "Surface Grid Density", "10000" )
 
 
 
