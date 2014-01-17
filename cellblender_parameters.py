@@ -1130,6 +1130,7 @@ class PanelParameter(bpy.types.PropertyGroup):
 
     def draw_in_new_row(self, layout):
         """ Default drawing for parameters ... overload for different functionality """
+        # print ( self.param_data.expression.description ) # Attempting to get ahold of the description tool tip data ... failed
         row = layout.row()
         value = self.get_value()
         row.prop ( self.param_data, "expression", text=self.param_data.label+" = "+'{:g}'.format(value) )

@@ -438,23 +438,34 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
 
 
 class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
+
+    def __init__(self):
+        print ( "\n\n__init__() called\n\n" )
+
     # The following line must be added to every PropertyGroup to be searched for CellBlender Parameters:
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     
     iterations = PointerProperty(name="Simulation Iterations",
-        type=cellblender_parameters.PanelParameterInt)
-    time_step_param = PointerProperty(name="Time Step",
-        type=cellblender_parameters.PanelParameterFloat)
+        type=cellblender_parameters.PanelParameterInt,
+        description="Number of iterations to run")
 
+
+    time_step = PointerProperty(name="Time Step",
+        type=cellblender_parameters.PanelParameterFloat,
+        description="Simulation Time Step Units: seconds")
+
+    """
     iterations_old = IntProperty(
         name="Simulation Iterations",
         description="Number of iterations to run",
         default=0, min=0)
-    time_step = FloatProperty(name="Time Step", default=1e-6, min=0.0)
+
+    time_step_old = FloatProperty(name="Time Step", default=1e-6, min=0.0)
     time_step_str = StringProperty(
         name="Time Step", default="1e-6",
         description="Simulation Time Step Units: seconds",
         update=cellblender_operators.update_time_step)
+    """
 
     status = StringProperty(name="Status")
     advanced = bpy.props.BoolProperty(default=False)
@@ -679,8 +690,8 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         print ( "MCellInitializationPanelProperty is setting defaults." )
         self.iterations.set_label ( "Iterations" )
         self.iterations.set_expression ( "0" )
-        #self.time_step.set_label ( "Time Step" )
-        #self.time_step.set_expression ( "1e-6" )
+        self.time_step.set_label ( "Time Step" )
+        self.time_step.set_expression ( "1e-6" )
 
 
 

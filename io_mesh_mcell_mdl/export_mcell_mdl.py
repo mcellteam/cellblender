@@ -87,7 +87,7 @@ def save_wrapper(context, out_file, filedir):
     # out_file.write("ITERATIONS = %d\n" % (mcell.initialization.iterations))
     out_file.write("ITERATIONS = %d\n" % (mcell.initialization.iterations.get_value()))
     
-    out_file.write("TIME_STEP = %g\n" % (mcell.initialization.time_step))
+    out_file.write("TIME_STEP = %g\n" % (mcell.initialization.time_step.get_value()))
     out_file.write("VACANCY_SEARCH_DISTANCE = 10\n\n") # DB: added to avoid error (I think it should have a default value to avoid error in most of the reaction networks)
 
     # Export optional initialization commands:
@@ -793,7 +793,7 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
 
     if rxn_output_list:
         out_file.write("REACTION_DATA_OUTPUT\n{\n")
-        rxn_step = mcell.initialization.time_step
+        rxn_step = mcell.initialization.time_step.get_value()
         out_file.write("  STEP=%g\n" % rxn_step)
 
         for rxn_output in rxn_output_list:

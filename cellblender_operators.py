@@ -2777,9 +2777,9 @@ def update_clamp_value(self, context):
 
     return
 
-
+"""
 def update_time_step(self, context):
-    """ Store the time step as a float if it's legal or generate an error """
+    #Store the time step as a float if it's legal or generate an error
 
     mcell = context.scene.mcell
     time_step_str = mcell.initialization.time_step_str
@@ -2796,7 +2796,7 @@ def update_time_step(self, context):
     mcell.initialization.status = status
 
     return
-
+"""
 
 def update_time_step_max(self, context):
     """ Store the max time step as a float if it's legal or create an error """
