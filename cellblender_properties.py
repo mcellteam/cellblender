@@ -86,24 +86,24 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         description="A unidirectional/irreversible(->) reaction or a "
                     "bidirectional/reversible(<->) reaction.",
         update=cellblender_operators.check_reaction)
-    fwd_rate = FloatProperty(name="Forward Rate")
-    fwd_rate_str = StringProperty(
-        name="Forward Rate",
-        default="0",
-        description="Forward Rate Units: sec^-1 (unimolecular),"
-                    " M^-1*sec^-1 (bimolecular)",
-        update=cellblender_operators.update_fwd_rate)
-    fwd_rate_expr = StringProperty(    # DB: This property is added so that the rate laws (forward rate constants) take expressions 
-        name="Forward Rate",
-        default="0",
+
+
+    fwd_rate = PointerProperty(name="Forward Rate",
+        type=cellblender_parameters.PanelParameterFloat,
         description="Forward Rate Units: sec^-1 (unimolecular),"
                     " M^-1*sec^-1 (bimolecular)")
-    bkwd_rate = FloatProperty(name="Backward Rate")
-    bkwd_rate_str = StringProperty(
-        name="Backward Rate",
+
+    bkwd_rate = PointerProperty(name="Backward Rate",
+        type=cellblender_parameters.PanelParameterFloat,
         description="Backward Rate Units: sec^-1 (unimolecular),"
-                    " M^-1*sec^-1 (bimolecular)",
-        update=cellblender_operators.update_bkwd_rate)
+                    " M^-1*sec^-1 (bimolecular)")
+
+    def set_defaults(self):
+        print ( "MCellReactionProperty is setting defaults." )
+        # Panel Parameter                         Name             Default
+        self.fwd_rate.set_fields                ( "Forward Rate",      "0" )
+        self.bkwd_rate.set_fields               ( "Backward Rate",      "" )
+
     status = StringProperty(name="Status")
 
 
@@ -471,28 +471,21 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     surface_grid_density = PointerProperty(name="Surface Grid Density",
         type=cellblender_parameters.PanelParameterInt,
         description="Number of molecules that can be stored per square micron")
-    """
-    surface_grid_density = IntProperty(
-        name="Surface Grid Density", default=10000, min=0,
-        description="Number of molecules that can be stored per square micron")
-    """
-    interaction_radius = FloatProperty(name="Interaction Radius", min=0.0)
-    interaction_radius_str = StringProperty(
-        name="Interaction Radius",
-        description="Molecules will interact when they get within N microns.",
-        update=cellblender_operators.update_interaction_radius)
-    radial_directions = FloatProperty(name="Radial Directions", min=0.0)
-    radial_directions_str = StringProperty(
-        name="Radial Directions",
+
+    interaction_radius = PointerProperty(name="Interaction Radius",
+        type=cellblender_parameters.PanelParameterFloat,
+        description="Molecules will interact when they get within N microns.")
+
+    radial_directions = PointerProperty(name="Radial Directions",
+        type=cellblender_parameters.PanelParameterFloat,
         description="Number of different directions to put in lookup table. "
-                    "Leave alone unless you know what you are doing.",
-        update=cellblender_operators.update_radial_directions)
-    radial_subdivisions = FloatProperty(name="Radial Subdivisions", min=0.0)
-    radial_subdivisions_str = StringProperty(
-        name="Radial Subdivisions",
+                    "Leave alone unless you know what you are doing.")
+
+    radial_subdivisions = PointerProperty(name="Radial Subdivisions",
+        type=cellblender_parameters.PanelParameterFloat,
         description="Number of distances to put in look-up table. "
-                    "Leave alone unless you know what you are doing.",
-        update=cellblender_operators.update_radial_subdivisions)
+                    "Leave alone unless you know what you are doing.")
+
     accurate_3d_reactions = BoolProperty(
         name="Accurate 3D Reaction",
         description="If selected, molecules will look through partitions to "
@@ -503,12 +496,11 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         description="If selected, surface molecules will be centered on the "
                     "grid.",
         default=False)
-    vacancy_search_distance = FloatProperty(
-        name="Vacancy Search Distance", min=0.0)
-    vacancy_search_distance_str = StringProperty(
-        name="Vacancy Search Distance",
-        description="Surface molecule products can be created at N distance.",
-        update=cellblender_operators.update_vacancy_search_distance)
+
+    vacancy_search_distance = PointerProperty(name="Vacancy Search Distance",
+        type=cellblender_parameters.PanelParameterFloat,
+        description="Surface molecule products can be created at N distance.")
+
     microscopic_reversibility_enum = [
         ('ON', "On", ""),
         ('OFF', "Off", ""),
@@ -678,11 +670,16 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
     def set_defaults(self):
         print ( "MCellInitializationPanelProperty is setting defaults." )
-        self.iterations.set_fields           ( "Iterations",           "0" )
-        self.time_step.set_fields            ( "Time Step",            "1e-6" )
-        self.time_step_max.set_fields        ( "Time Step Max",        "" )
-        self.space_step.set_fields           ( "Space Step",           "" )
-        self.surface_grid_density.set_fields ( "Surface Grid Density", "10000" )
+        # Panel Parameter                         Name                    Default    Min
+        self.iterations.set_fields              ( "Iterations",               "0",   0.0 )
+        self.time_step.set_fields               ( "Time Step",             "1e-6",   0.0 )
+        self.time_step_max.set_fields           ( "Time Step Max",             "",   0.0 )
+        self.space_step.set_fields              ( "Space Step",                "",   0.0 )
+        self.surface_grid_density.set_fields    ( "Surface Grid Density", "10000",   0.0 )
+        self.interaction_radius.set_fields      ( "Interaction Radius",        "",   0.0 )
+        self.radial_directions.set_fields       ( "Radial Directions",         "",   0.0 )
+        self.radial_subdivisions.set_fields     ( "Radial Subdivisions",       "",   0.0 )
+        self.vacancy_search_distance.set_fields ( "Vacancy Search Distance",   "",   0.0 )
 
 
 
@@ -1025,3 +1022,4 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     def set_defaults(self):
         print ( "MCellPropertyGroup is setting defaults." )
         self.initialization.set_defaults()
+        

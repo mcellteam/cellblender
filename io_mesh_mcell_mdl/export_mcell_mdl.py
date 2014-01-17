@@ -328,19 +328,19 @@ def save_initialization_commands(context, out_file):
     if init.space_step.get_expression() != '':
         out_file.write("SPACE_STEP = %g\n" % (init.space_step.get_value()))
     # Interaction Radius
-    if init.interaction_radius_str:
-        out_file.write("INTERACTION_RADIUS = %g\n" % (init.interaction_radius))
+    if init.interaction_radius.get_expression() != '':
+        out_file.write("INTERACTION_RADIUS = %g\n" % (init.interaction_radius.get_value()))
     # Radial Directions
-    if init.radial_directions_str:
-        out_file.write("RADIAL_DIRECTIONS = %d\n" % (init.radial_directions))
+    if init.radial_directions.get_expression() != '':
+        out_file.write("RADIAL_DIRECTIONS = %d\n" % (init.radial_directions.get_value()))
     # Radial Subdivisions
-    if init.radial_subdivisions_str:
+    if init.radial_subdivisions.get_expression() != '':
         out_file.write(
-            "RADIAL_SUBDIVISIONS = %d\n" % (init.radial_subdivisions))
+            "RADIAL_SUBDIVISIONS = %d\n" % (init.radial_subdivisions.get_value()))
     # Vacancy Search Distance
-    if init.vacancy_search_distance_str:
+    if init.vacancy_search_distance.get_expression() != '':
         out_file.write(
-            "VACANCY_SEARCH_DISTANCE = %g\n" % (init.vacancy_search_distance))
+            "VACANCY_SEARCH_DISTANCE = %g\n" % (init.vacancy_search_distance.get_value()))
     # Surface Grid Density
     ##### TODO: If surface_grid_density is an integer (as it is) why output it as %g format?
     out_file.write("SURFACE_GRID_DENSITY = %g\n" % (init.surface_grid_density.get_value()))
@@ -668,13 +668,10 @@ def save_reactions(context, out_file, rxn_list):
             out_file.write("  %s " % (rxn_item.name))
 
             if rxn_item.type == 'irreversible':
-                if (rxn_item.fwd_rate_expr != "0"):    # DB: extra if bloc for foward rate constants to take expressions 
-                    out_file.write("[%s]" % (rxn_item.fwd_rate_expr))    
-                else:
-                    out_file.write("[%g]" % (rxn_item.fwd_rate))
+                out_file.write("[%s]" % (rxn_item.fwd_rate.get_value()))    
             else:
                 out_file.write("[>%g, <%g]" %
-                               (rxn_item.fwd_rate, rxn_item.bkwd_rate))
+                               (rxn_item.fwd_rate.get_value(), rxn_item.bkwd_rate.get_value()))
 
             if rxn_item.rxn_name:
                 out_file.write(" : %s\n" % (rxn_item.rxn_name))

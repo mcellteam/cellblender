@@ -430,18 +430,11 @@ class MCELL_PT_initialization(bpy.types.Panel):
                      text="Advanced Options", emboss=False)
             mcell.initialization.time_step_max.draw_in_new_row(box)
             mcell.initialization.space_step.draw_in_new_row(box)
-
-            row = box.row()
-            row.prop(mcell.initialization, "interaction_radius_str")
-            row = box.row()
-            row.prop(mcell.initialization, "radial_directions_str")
-            row = box.row()
-            row.prop(mcell.initialization, "radial_subdivisions_str")
-            row = box.row()
-            row.prop(mcell.initialization, "vacancy_search_distance_str")
-
+            mcell.initialization.interaction_radius.draw_in_new_row(box)
+            mcell.initialization.radial_directions.draw_in_new_row(box)
+            mcell.initialization.radial_subdivisions.draw_in_new_row(box)
+            mcell.initialization.vacancy_search_distance.draw_in_new_row(box)
             mcell.initialization.surface_grid_density.draw_in_new_row(box)
-
             row = box.row()
             row.prop(mcell.initialization, "accurate_3d_reactions")
             row = box.row()
@@ -617,70 +610,6 @@ class MCELL_PT_define_parameters(bpy.types.Panel):
 
 
 
-############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
-"""
-class MCELL_UL_draw_parameter(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            mcell = context.scene.mcell
-            par = mcell.general_parameters.parameter_list[index]
-            disp = par.name + " = " + par.expr
-            # Try to force None to be 0 ... doesn't seem to work!!
-            if par.value == None:
-                par.value = "0"
-            disp = disp + " = " + par.value
-            if par.unit != "":
-                disp = disp + " (" + par.unit + ")"
-            if par.valid:
-                layout.label(disp, icon='FILE_TICK')
-            else:
-                layout.label(disp, icon='ERROR')  # also try 'COLOR_RED'
-	    
-
-class MCELL_PT_general_parameters(bpy.types.Panel):
-    bl_label = "CellBlender - General Parameters (experimental)"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        row = layout.row()
-        if mcell.general_parameters.param_group_error == "":
-            row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
-        else:
-            row.label(text=mcell.general_parameters.param_group_error, icon='ERROR')
-        row = layout.row()
-        col = row.column()
-        col.template_list("MCELL_UL_draw_parameter", "general_parameters",
-                          mcell.general_parameters, "parameter_list",
-                          mcell.general_parameters, "active_par_index", rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.add_parameter", icon='ZOOMIN', text="")
-        col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
-        if len(mcell.general_parameters.parameter_list) > 0:
-            par = mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index]
-            layout.prop(par, "name")
-            if len(par.pending_expr) > 0:
-                layout.prop(par, "expr")
-                row = layout.row()
-                row.label(text="Undefined Expression: " + str(par.pending_expr) + ", reverting to " + str(par.value), icon='ERROR')  # also try 'COLOR_RED'
-            else:
-                layout.prop(par, "expr")
-            #layout.prop(par, "value")
-            layout.prop(par, "unit")
-            layout.prop(par, "desc")
-            row = layout.row()
-            row.label(text="Parameter ID = " + str(par.id) + "   (temporary for debugging)")
-"""
-#########################################################################################################################################
-
-
 class MCELL_UL_check_reaction(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -718,12 +647,9 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
                 layout.prop(rxn, "reactants")
                 layout.prop(rxn, "type")
                 layout.prop(rxn, "products")
-                if (rxn.fwd_rate_expr != "0"):
-                    layout.prop(rxn, "fwd_rate_expr")
-                else:
-                    layout.prop(rxn, "fwd_rate_str")
+                rxn.fwd_rate.draw_in_new_row(layout)
                 if rxn.type == "reversible":
-                    layout.prop(rxn, "bkwd_rate_str")
+                    rxn.bkwd_rate.draw_in_new_row(layout)
                 layout.prop(rxn, "rxn_name")
 
         else:
