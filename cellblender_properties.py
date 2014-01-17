@@ -449,23 +449,9 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         type=cellblender_parameters.PanelParameterInt,
         description="Number of iterations to run")
 
-
     time_step = PointerProperty(name="Time Step",
         type=cellblender_parameters.PanelParameterFloat,
         description="Simulation Time Step Units: seconds")
-
-    """
-    iterations_old = IntProperty(
-        name="Simulation Iterations",
-        description="Number of iterations to run",
-        default=0, min=0)
-
-    time_step_old = FloatProperty(name="Time Step", default=1e-6, min=0.0)
-    time_step_str = StringProperty(
-        name="Time Step", default="1e-6",
-        description="Simulation Time Step Units: seconds",
-        update=cellblender_operators.update_time_step)
-    """
 
     status = StringProperty(name="Status")
     advanced = bpy.props.BoolProperty(default=False)
@@ -473,11 +459,18 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     notifications = bpy.props.BoolProperty(default=False)
 
     # Advanced/Optional Commands
+
+    time_step_max = PointerProperty(name="Maximum Time Step",
+        type=cellblender_parameters.PanelParameterFloat,
+        description="The longest possible time step")
+
+    """
     time_step_max = FloatProperty(name="Time Step", min=0.0)
     time_step_max_str = StringProperty(
         name="Maximum Time Step",
         description="The longest possible time step",
         update=cellblender_operators.update_time_step_max)
+    """
     space_step = FloatProperty(name="Space Step", min=0.0)
     space_step_str = StringProperty(
         name="Space Step",
@@ -692,6 +685,8 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         self.iterations.set_expression ( "0" )
         self.time_step.set_label ( "Time Step" )
         self.time_step.set_expression ( "1e-6" )
+        self.time_step_max.set_label ( "Time Step Max" )
+        self.time_step_max.set_expression ( "" )
 
 
 

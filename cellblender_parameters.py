@@ -1133,7 +1133,10 @@ class PanelParameter(bpy.types.PropertyGroup):
         # print ( self.param_data.expression.description ) # Attempting to get ahold of the description tool tip data ... failed
         row = layout.row()
         value = self.get_value()
-        row.prop ( self.param_data, "expression", text=self.param_data.label+" = "+'{:g}'.format(value) )
+        if (self.param_data.expression == None) or (self.param_data.expression == ''):
+          row.prop ( self.param_data, "expression", text=self.param_data.label+" (Undefined)" )
+        else:
+          row.prop ( self.param_data, "expression", text=self.param_data.label+" = "+'{:g}'.format(value) )
         if not self.is_status_ok():
             row = layout.row()
             row.label(icon='ERROR', text=self.param_data.status)

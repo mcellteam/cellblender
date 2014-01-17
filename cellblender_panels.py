@@ -428,8 +428,11 @@ class MCELL_PT_initialization(bpy.types.Panel):
         if mcell.initialization.advanced:
             row.prop(mcell.initialization, "advanced", icon='TRIA_DOWN',
                      text="Advanced Options", emboss=False)
-            row = box.row()
-            row.prop(mcell.initialization, "time_step_max_str")
+            mcell.initialization.time_step_max.draw_in_new_row(box)
+
+            #row = box.row()
+            #row.prop(mcell.initialization, "time_step_max_str")
+
             row = box.row()
             row.prop(mcell.initialization, "space_step_str")
             row = box.row()
