@@ -322,12 +322,11 @@ def save_initialization_commands(context, out_file):
 
     init = context.scene.mcell.initialization
     # Maximum Time Step
-    # if init.time_step_max_str:
     if init.time_step_max.get_expression() != '':
         out_file.write("TIME_STEP_MAX = %g\n" % (init.time_step_max.get_value()))
     # Space Step
-    if init.space_step_str:
-        out_file.write("SPACE_STEP = %g\n" % (init.space_step))
+    if init.space_step.get_expression() != '':
+        out_file.write("SPACE_STEP = %g\n" % (init.space_step.get_value()))
     # Interaction Radius
     if init.interaction_radius_str:
         out_file.write("INTERACTION_RADIUS = %g\n" % (init.interaction_radius))
@@ -343,7 +342,8 @@ def save_initialization_commands(context, out_file):
         out_file.write(
             "VACANCY_SEARCH_DISTANCE = %g\n" % (init.vacancy_search_distance))
     # Surface Grid Density
-    out_file.write("SURFACE_GRID_DENSITY = %g\n" % (init.surface_grid_density))
+    ##### TODO: If surface_grid_density is an integer (as it is) why output it as %g format?
+    out_file.write("SURFACE_GRID_DENSITY = %g\n" % (init.surface_grid_density.get_value()))
     # Accurate 3D Reactions
     if init.accurate_3d_reactions:
         out_file.write("ACCURATE_3D_REACTIONS = TRUE\n")

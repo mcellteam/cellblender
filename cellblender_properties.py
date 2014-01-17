@@ -464,21 +464,18 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         type=cellblender_parameters.PanelParameterFloat,
         description="The longest possible time step")
 
+    space_step = PointerProperty(name="Space Step",
+        type=cellblender_parameters.PanelParameterFloat,
+        description="Have molecules take the same mean diffusion distance")
+
+    surface_grid_density = PointerProperty(name="Surface Grid Density",
+        type=cellblender_parameters.PanelParameterInt,
+        description="Number of molecules that can be stored per square micron")
     """
-    time_step_max = FloatProperty(name="Time Step", min=0.0)
-    time_step_max_str = StringProperty(
-        name="Maximum Time Step",
-        description="The longest possible time step",
-        update=cellblender_operators.update_time_step_max)
-    """
-    space_step = FloatProperty(name="Space Step", min=0.0)
-    space_step_str = StringProperty(
-        name="Space Step",
-        description="Have molecules take the same mean diffusion distance",
-        update=cellblender_operators.update_space_step)
     surface_grid_density = IntProperty(
         name="Surface Grid Density", default=10000, min=0,
         description="Number of molecules that can be stored per square micron")
+    """
     interaction_radius = FloatProperty(name="Interaction Radius", min=0.0)
     interaction_radius_str = StringProperty(
         name="Interaction Radius",
@@ -687,6 +684,11 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         self.time_step.set_expression ( "1e-6" )
         self.time_step_max.set_label ( "Time Step Max" )
         self.time_step_max.set_expression ( "" )
+        self.space_step.set_label ( "Space Step" )
+        self.space_step.set_expression ( "" )
+        self.surface_grid_density.set_label ( "Surface Grid Density" )
+        self.surface_grid_density.set_expression ( "10000" )
+
 
 
 

@@ -2777,63 +2777,6 @@ def update_clamp_value(self, context):
 
     return
 
-"""
-def update_time_step(self, context):
-    #Store the time step as a float if it's legal or generate an error
-
-    mcell = context.scene.mcell
-    time_step_str = mcell.initialization.time_step_str
-
-    (time_step, status) = check_val_str(time_step_str, 0, None)
-
-    if status == "":
-        mcell.initialization.time_step = time_step
-    else:
-        status = status % ("time_step", time_step_str)
-        mcell.initialization.time_step_str = "%g" % (
-            mcell.initialization.time_step)
-
-    mcell.initialization.status = status
-
-    return
-"""
-
-"""
-def update_time_step_max(self, context):
-    #Store the max time step as a float if it's legal or create an error 
-
-    mcell = context.scene.mcell
-    time_step_max_str = mcell.initialization.time_step_max_str
-
-    if time_step_max_str:
-        (time_step_max, status) = check_val_str(time_step_max_str, 0, None)
-
-        if not status:
-            mcell.initialization.time_step_max = time_step_max
-        else:
-            status = status % ("time_step_max", time_step_max_str)
-            mcell.initialization.time_step_max_str = ""
-
-        mcell.initialization.status = status
-"""
-
-def update_space_step(self, context):
-    """ Store the space step as a float if it's legal or create an error """
-
-    mcell = context.scene.mcell
-    space_step_str = mcell.initialization.space_step_str
-
-    if space_step_str:
-        (space_step, status) = check_val_str(space_step_str, 0, None)
-
-        if not status:
-            mcell.initialization.space_step = space_step
-        else:
-            status = status % ("space_step", space_step_str)
-            mcell.initialization.space_step_str = ""
-
-        mcell.initialization.status = status
-
 
 def update_interaction_radius(self, context):
     """ Store interaction radius as a float if legal or create an error """

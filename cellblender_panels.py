@@ -429,12 +429,8 @@ class MCELL_PT_initialization(bpy.types.Panel):
             row.prop(mcell.initialization, "advanced", icon='TRIA_DOWN',
                      text="Advanced Options", emboss=False)
             mcell.initialization.time_step_max.draw_in_new_row(box)
+            mcell.initialization.space_step.draw_in_new_row(box)
 
-            #row = box.row()
-            #row.prop(mcell.initialization, "time_step_max_str")
-
-            row = box.row()
-            row.prop(mcell.initialization, "space_step_str")
             row = box.row()
             row.prop(mcell.initialization, "interaction_radius_str")
             row = box.row()
@@ -443,8 +439,9 @@ class MCELL_PT_initialization(bpy.types.Panel):
             row.prop(mcell.initialization, "radial_subdivisions_str")
             row = box.row()
             row.prop(mcell.initialization, "vacancy_search_distance_str")
-            row = box.row()
-            row.prop(mcell.initialization, "surface_grid_density")
+
+            mcell.initialization.surface_grid_density.draw_in_new_row(box)
+
             row = box.row()
             row.prop(mcell.initialization, "accurate_3d_reactions")
             row = box.row()
