@@ -446,7 +446,10 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
         row = layout.row()
         row.label(text="Surface Area: %.5g" % (mcell.meshalyzer.area))
         row = layout.row()
-        row.label(text="Volume: %.5g" % (mcell.meshalyzer.volume))
+        if (mcell.meshalyzer.watertight == 'Watertight Mesh'):
+          row.label(text="Volume: %.5g" % (mcell.meshalyzer.volume))
+        else:
+          row.label(text="Volume: approx: %.5g" % (mcell.meshalyzer.volume))
         row = layout.row()
         row.label(text="SA/V Ratio: %.5g" % (mcell.meshalyzer.sav_ratio))
 

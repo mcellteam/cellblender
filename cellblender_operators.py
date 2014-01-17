@@ -2295,7 +2295,8 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
             mcell.meshalyzer.manifold = "Non-manifold Mesh"
 
         volume = 0
-        if is_orientable and is_manifold and is_closed:
+#        if is_orientable and is_manifold and is_closed:
+        if is_orientable:
             volume = mesh_vol(mesh, t_mat)
             if volume >= 0:
                 mcell.meshalyzer.normal_status = "Outward Facing Normals"

@@ -124,6 +124,28 @@ class MCELL_OT_region_faces_deselect(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_face_get_regions(bpy.types.Operator):
+    bl_idname = "mcell.face_get_regions"
+    bl_label = "Get Region Membership of Selected Face"
+    bl_description = "Get region membership of selected face"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        context.object.mcell.regions.face_get_regions(context)
+        return {'FINISHED'}
+
+
+class MCELL_OT_faces_get_regions(bpy.types.Operator):
+    bl_idname = "mcell.faces_get_regions"
+    bl_label = "Get Region Membership of Selected Faces"
+    bl_description = "Get region membership of selected faces"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        context.object.mcell.regions.faces_get_regions(context)
+        return {'FINISHED'}
+
+
 # Object Surface Region Panel:
 
 class MCELL_UL_check_region(bpy.types.UIList):
@@ -254,6 +276,13 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
         mesh["mcell"]["regions"].pop(id)
 
 
+    def face_in_region(self, context, face_index):
+        """Return True if face is in this region"""
+        mesh = context.active_object.data
+        reg_faces = self.get_region_faces(mesh)
+        return(face_index in reg_faces)
+
+
     def init_region(self, context, id):
 
         self.id = id
@@ -378,6 +407,8 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
         type=MCellSurfaceRegionProperty, name="Surface Region List")
     active_reg_index = IntProperty(name="Active Region Index", default=0)
     id_counter = IntProperty(name="Counter for Unique Region IDs", default=0)
+    get_region_info = BoolProperty(
+        name="Toggle to enable/disable region_info", default=False)
 
 
     def get_active_region(self):
@@ -397,6 +428,38 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
         return(id)
 
 
+    def face_get_regions(self,context):
+        """ Return the list of region IDs associated with one selected face """
+        reg_list = ""
+        mesh = context.active_object.data
+        if (mesh.total_face_sel == 1):
+          bpy.ops.object.mode_set(mode='OBJECT')
+          face_index = [f.index for f in mesh.polygons if f.select][0]
+          bpy.ops.object.mode_set(mode='EDIT')
+          for reg in self.region_list: 
+            if reg.face_in_region(context,face_index):
+              reg_list = reg_list + " " + reg.name
+        
+        return(reg_list)
+
+
+    def faces_get_regions(self,context):
+        """ Return list of region names associated with the selected faces """
+        reg_info = []
+        mesh = context.active_object.data
+        if (mesh.total_face_sel > 0):
+          bpy.ops.object.mode_set(mode='OBJECT')
+          selface_set = set([f.index for f in mesh.polygons if f.select])
+          bpy.ops.object.mode_set(mode='EDIT')
+          for reg in self.region_list: 
+            reg_faces = reg.get_region_faces(mesh)
+            if not selface_set.isdisjoint(reg_faces):
+              reg_info.append(reg.name)
+
+
+        return(reg_info)
+
+
     def add_region(self, context):
         """ Add a new region to the list of regions and set as the active region """
         id = self.allocate_id()
@@ -405,6 +468,28 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
 # FIXME: CHECK FOR NAME COLLISION HERE: FIX BY ALLOCATING NEXT ID...
         new_reg.name = "Region_%d" % (new_reg.id)
         self.active_reg_index = len(self.region_list)-1
+
+
+    def add_region_by_name(self, context, reg_name):
+        """ Add a new region to the list of regions and set as the active region """
+        id = self.allocate_id()
+        new_reg=self.region_list.add()
+        new_reg.init_region(context, id)
+# FIXME: CHECK FOR NAME COLLISION HERE: FIX BY ALLOCATING NEXT ID...
+        new_reg.name = reg_name
+        self.active_reg_index = len(self.region_list)-1
+
+
+    def remove_all_regions(self, context):
+        for i in range(len(self.region_list)):
+            # First remove region data from mesh:
+            reg = self.region_list[0]
+            reg.destroy_region(context)
+
+            # Now remove the region from the object
+            self.region_list.remove(0)
+
+        self.active_reg_index = 0
 
 
     def remove_region(self, context):
@@ -505,6 +590,26 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
                 sub = row.row(align=True)
                 sub.operator("mcell.region_faces_select", text="Select")
                 sub.operator("mcell.region_faces_deselect", text="Deselect")
+
+                # Option to Get Region Info
+                box = layout.box()
+                row = box.row(align=True)
+                row.alignment = 'LEFT'
+                if self.get_region_info:
+                    row.prop(self, "get_region_info", icon='TRIA_DOWN',
+                             text="Region Info for Selected Faces",
+                              emboss=False)
+                    reg_info = self.faces_get_regions(context)
+                    for reg_name in reg_info:
+                        row = box.row()
+                        row.label(text=reg_name)
+                else:
+                    row.prop(self, "get_region_info", icon='TRIA_RIGHT',
+                             text="Region Info for Selected Faces",
+                             emboss=False)
+
+
+                
 
 
     def format_update(self, obj):
