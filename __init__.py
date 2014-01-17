@@ -34,12 +34,14 @@ bl_info = {
 }
 
 cellblender_info = {
-    "supported_version_list": [(2, 66, 1), (2, 67, 0), (2, 68, 0)],
+    "supported_version_list": [(2, 66, 1), (2, 67, 0), (2, 68, 0), (2, 69, 0)],
     "cellblender_source_list": [
         "__init__.py",
         "cellblender_properties.py",
         "cellblender_panels.py",
         "cellblender_operators.py",
+        "cellblender_parameters.py",
+        "cellblender_molecules.py",
         "object_surface_regions.py",
         "run_simulations.py",
         "io_mesh_mcell_mdl/__init__.py",
@@ -96,6 +98,8 @@ if "bpy" in locals():
     imp.reload(cellblender_properties)
     imp.reload(cellblender_panels)
     imp.reload(cellblender_operators)
+    imp.reload(cellblender_parameters)
+    imp.reload(cellblender_molecules)
     imp.reload(object_surface_regions)
     imp.reload(io_mesh_mcell_mdl)
     imp.reload(bng)         # DB: Adde for BNG
@@ -106,13 +110,24 @@ if "bpy" in locals():
         print("cellblender.data_plotters was not reloaded")
 else:
     print("Importing CellBlender")
-    from . import \
+    """from . import \
         cellblender_properties, \
         cellblender_panels, \
         cellblender_operators, \
+        cellblender_parameters, \
+        cellblender_molecules, \
         object_surface_regions, \
         io_mesh_mcell_mdl, \
-        bng  # DB: Added for BNG
+        bng  # DB: Added for BNG"""
+
+    from . import cellblender_properties
+    from . import cellblender_panels
+    from . import cellblender_operators
+    from . import cellblender_parameters
+    from . import cellblender_molecules
+    from . import object_surface_regions
+    from . import io_mesh_mcell_mdl
+    from . import bng  # DB: Added for BNG
 
     # Use "try" for optional modules
     try:
@@ -131,8 +146,10 @@ def register():
 
     bpy.types.INFO_MT_file_import.append(io_mesh_mcell_mdl.menu_func_import)
     bpy.types.INFO_MT_file_export.append(io_mesh_mcell_mdl.menu_func_export)
+
     # DB: Added for BioNetGen import
     bpy.types.INFO_MT_file_import.append(bng.menu_func_import)
+
     bpy.types.Scene.mcell = bpy.props.PointerProperty(
         type=cellblender_properties.MCellPropertyGroup)
     bpy.types.Object.mcell = bpy.props.PointerProperty(
@@ -165,6 +182,8 @@ def register():
             print("  System meets requirements for %s" % (plotter.get_name()))
     except:
         print("Error installing some plotting packages" + sys.exc_value)
+    
+    # Can't do this here: bpy.context.scene.mcell.set_defaults()
 
 
 def unregister():
@@ -198,6 +217,8 @@ if len(bpy.app.handlers.load_post) == 0:
         object_surface_regions.object_regions_format_update)
     bpy.app.handlers.load_post.append(
         cellblender_operators.mcell_valid_update)
+    bpy.app.handlers.load_post.append(
+        cellblender_operators.set_defaults)
 
 if len(bpy.app.handlers.save_pre) == 0:
     bpy.app.handlers.save_pre.append(

@@ -59,6 +59,8 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
         row.prop(mcell.cellblender_preferences, "decouple_export_run")
         row = layout.row()
         row.prop(mcell.cellblender_preferences, "filter_invalid")
+        row = layout.row()
+        row.prop(mcell.cellblender_preferences, "debug_level")
         layout.separator()
         row = layout.row()
         row.operator("wm.save_homefile", text="Save Startup File",
@@ -133,64 +135,6 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         row = layout.row()
         layout.prop(context.scene, "name", text="Project Base Name")
 
-"""
-class MCELL_PT_scratch(bpy.types.Panel):
-    bl_label = "CellBlender - Scratch Panel (testing)"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        row = layout.row()
-        col = row.column(align=True)
-        col.prop(mcell.scratch_settings, "show_all_icons")
-        col = row.column(align=True)
-        col.prop(mcell.scratch_settings, "print_all_icons")
-
-        if mcell.scratch_settings.show_all_icons:
-            all_icons = bpy.types.UILayout.bl_rna.functions[
-                'prop'].parameters['icon'].enum_items.keys()
-            layout.separator()
-            row = layout.row()
-            for icon in all_icons:
-                row = layout.row()
-                row.label(icon=icon, text=icon)
-
-        if mcell.scratch_settings.print_all_icons:
-            all_icons = bpy.types.UILayout.bl_rna.functions[
-                'prop'].parameters['icon'].enum_items.keys()
-            print("Icon list has ", len(all_icons), "icons")
-            print("Icon names:")
-            print(all_icons)
-            # mcell.scratch_settings.print_all_icons = False
-            # AttributeError: Writing to ID classes in this context is not
-            # allowed: Scene, Scene datablock, error setting
-            # MCellScratchPanelProperty.print_all_icons
-"""
-
-#class MCELL_PT_export_project(bpy.types.Panel):
-#    bl_label = "CellBlender - Export Project"
-#    bl_space_type = "PROPERTIES"
-#    bl_region_type = "WINDOW"
-#    bl_context = "scene"
-#    bl_options = {'DEFAULT_CLOSED'}
-#
-#    def draw(self, context):
-#        layout = self.layout
-#        mcell = context.scene.mcell
-#
-#        row = layout.row()
-#        if not bpy.data.filepath:
-#            row.label(text="Save the blend file", icon='ERROR')
-#        else:
-#            row.prop(mcell.export_project, "export_format")
-#            row = layout.row()
-#            row.operator("mcell.export_project",
-#                         text="Export CellBlender Project", icon='EXPORT')
 
 class MCELL_UL_run_simulation(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
@@ -382,22 +326,6 @@ class MCELL_PT_model_objects(bpy.types.Panel):
 #        sub.operator("mcell.model_objects_select", text="Select")
 #        sub.operator("mcell.model_objects_deselect", text="Deselect")
 
-'''
-class MCELL_PT_utilities(bpy.types.Panel):
-    bl_label = "CellBlender - Utilities"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        row = layout.row()
-#        row.operator("mcell.vertex_groups_to_regions",
-#                     text="Convert Vertex Group to Region")
-'''
 
 
 class MCELL_PT_object_selector(bpy.types.Panel):
@@ -490,8 +418,11 @@ class MCELL_PT_initialization(bpy.types.Panel):
         layout = self.layout
         mcell = context.scene.mcell
 
-        layout.prop(mcell.initialization, "iterations")
-        layout.prop(mcell.initialization, "time_step_str")
+        mcell.initialization.iterations.draw_in_new_row(layout)
+        mcell.initialization.time_step.draw_in_new_row(layout)
+
+        #layout.prop(mcell.initialization, "iterations")
+        #layout.prop(mcell.initialization, "time_step_str")
 
         # Advanced Options
         box = layout.box()
@@ -500,20 +431,13 @@ class MCELL_PT_initialization(bpy.types.Panel):
         if mcell.initialization.advanced:
             row.prop(mcell.initialization, "advanced", icon='TRIA_DOWN',
                      text="Advanced Options", emboss=False)
-            row = box.row()
-            row.prop(mcell.initialization, "time_step_max_str")
-            row = box.row()
-            row.prop(mcell.initialization, "space_step_str")
-            row = box.row()
-            row.prop(mcell.initialization, "interaction_radius_str")
-            row = box.row()
-            row.prop(mcell.initialization, "radial_directions_str")
-            row = box.row()
-            row.prop(mcell.initialization, "radial_subdivisions_str")
-            row = box.row()
-            row.prop(mcell.initialization, "vacancy_search_distance_str")
-            row = box.row()
-            row.prop(mcell.initialization, "surface_grid_density")
+            mcell.initialization.time_step_max.draw_in_new_row(box)
+            mcell.initialization.space_step.draw_in_new_row(box)
+            mcell.initialization.interaction_radius.draw_in_new_row(box)
+            mcell.initialization.radial_directions.draw_in_new_row(box)
+            mcell.initialization.radial_subdivisions.draw_in_new_row(box)
+            mcell.initialization.vacancy_search_distance.draw_in_new_row(box)
+            mcell.initialization.surface_grid_density.draw_in_new_row(box)
             row = box.row()
             row.prop(mcell.initialization, "accurate_3d_reactions")
             row = box.row()
@@ -689,127 +613,6 @@ class MCELL_PT_define_parameters(bpy.types.Panel):
 
 
 
-############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
-
-class MCELL_UL_draw_parameter(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            mcell = context.scene.mcell
-            par = mcell.general_parameters.parameter_list[index]
-            disp = par.name + " = " + par.expr
-            # Try to force None to be 0 ... doesn't seem to work!!
-            if par.value == None:
-                par.value = "0"
-            disp = disp + " = " + par.value
-            if par.unit != "":
-                disp = disp + " (" + par.unit + ")"
-            if par.valid:
-                layout.label(disp, icon='FILE_TICK')
-            else:
-                layout.label(disp, icon='ERROR')  # also try 'COLOR_RED'
-	    
-  
-class MCELL_PT_general_parameters(bpy.types.Panel):
-    bl_label = "CellBlender - General Parameters (experimental)"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        row = layout.row()
-        if mcell.general_parameters.param_group_error == "":
-            row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
-        else:
-            row.label(text=mcell.general_parameters.param_group_error, icon='ERROR')
-        row = layout.row()
-        col = row.column()
-        col.template_list("MCELL_UL_draw_parameter", "general_parameters",
-                          mcell.general_parameters, "parameter_list",
-                          mcell.general_parameters, "active_par_index", rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.add_parameter", icon='ZOOMIN', text="")
-        col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
-        if len(mcell.general_parameters.parameter_list) > 0:
-            par = mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index]
-            layout.prop(par, "name")
-            if len(par.pending_expr) > 0:
-                layout.prop(par, "expr")
-                row = layout.row()
-                row.label(text="Undefined Expression: " + str(par.pending_expr) + ", reverting to " + str(par.value), icon='ERROR')  # also try 'COLOR_RED'
-            else:
-                layout.prop(par, "expr")
-            #layout.prop(par, "value")
-            layout.prop(par, "unit")
-            layout.prop(par, "desc")
-            row = layout.row()
-            row.label(text="Parameter ID = " + str(par.id) + "   (temporary for debugging)")
-
-#########################################################################################################################################
-
-class MCELL_UL_check_molecule(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data,
-                  active_propname, index):
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            layout.label(item.name, icon='FILE_TICK')
-
-
-class MCELL_PT_define_molecules(bpy.types.Panel):
-    bl_label = "CellBlender - Define Molecules"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-    
-    def draw(self, context):
-        layout = self.layout
-
-        mcell = context.scene.mcell
-
-        row = layout.row()
-        row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
-        row = layout.row()
-        col = row.column()
-        col.template_list("MCELL_UL_check_molecule", "define_molecules",
-                          mcell.molecules, "molecule_list", mcell.molecules,
-                          "active_mol_index", rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
-        col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
-        if mcell.molecules.molecule_list:
-            mol = mcell.molecules.molecule_list[
-                mcell.molecules.active_mol_index]
-            layout.prop(mol, "name")
-            layout.prop(mol, "type")
-            if (mol.diffusion_constant_expr != "0"): #DB: This is added for diffusion constant to take expression; not sure if it has other implications 
-                layout.prop(mol, "diffusion_constant_expr")
-            else:
-                layout.prop(mol, "diffusion_constant_str")
-
-            box = layout.box()
-            row = box.row(align=True)
-            row.alignment = 'LEFT'
-            if not mcell.molecules.advanced:
-                row.prop(mcell.molecules, "advanced", icon='TRIA_RIGHT',
-                         text="Advanced Options", emboss=False)
-            else:
-                row.prop(mcell.molecules, "advanced", icon='TRIA_DOWN',
-                         text="Advanced Options", emboss=False)
-                row = box.row()
-                row.prop(mol, "target_only")
-                row = box.row()
-                row.prop(mol, "custom_time_step_str")
-                row = box.row()
-                row.prop(mol, "custom_space_step_str")
-
-
 class MCELL_UL_check_reaction(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -847,12 +650,9 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
                 layout.prop(rxn, "reactants")
                 layout.prop(rxn, "type")
                 layout.prop(rxn, "products")
-                if (rxn.fwd_rate_expr != "0"):
-                    layout.prop(rxn, "fwd_rate_expr")
-                else:
-                    layout.prop(rxn, "fwd_rate_str")
+                rxn.fwd_rate.draw_in_new_row(layout)
                 if rxn.type == "reversible":
-                    layout.prop(rxn, "bkwd_rate_str")
+                    rxn.bkwd_rate.draw_in_new_row(layout)
                 layout.prop(rxn, "rxn_name")
 
         else:
