@@ -62,6 +62,7 @@ class MCellFloatVectorProperty(bpy.types.PropertyGroup):
 
 
 class MCellReactionProperty(bpy.types.PropertyGroup):
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     name = StringProperty(name="The Reaction")
     rxn_name = StringProperty(
         name="Reaction Name",
@@ -108,6 +109,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
 
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     name = StringProperty(
         name="Site Name", default="Release_Site",
         description="The name of the release site",
@@ -785,6 +787,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
 
 
 class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     reaction_list = CollectionProperty(
         type=MCellReactionProperty, name="Reaction List")
     active_rxn_index = IntProperty(name="Active Reaction Index", default=0)

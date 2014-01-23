@@ -72,12 +72,15 @@ def print_info_about_self ( self, thresh, context ):
 def get_path_to_parent(self_object):
     """ Return the Blender class path to the parent object with regard to the Blender Property Tree System """
     path_to_self = "bpy.context.scene." + self_object.path_from_id()
+    print ( "Path to self = " + path_to_self )
     path_to_parent = path_to_self[0:path_to_self.rfind(".")]
     return path_to_parent
 
 def get_parent(self_object):
     """ Return the parent Blender object with regard to the Blender Property Tree System """
+    print ( "top of get_parent" )
     path_to_parent = get_path_to_parent(self_object)
+    print ( "Path to parent = " + path_to_parent )
     parent = eval(path_to_parent)
     return parent
 
@@ -173,7 +176,7 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
 
     def draw(self, context):
 
-        threshold_print (99, "Panel Draw with context.scene.mcell = " + str(context.scene.mcell) + " of type " + str(type(context.scene.mcell)) )
+        #threshold_print (99, "Panel Draw with context.scene.mcell = " + str(context.scene.mcell) + " of type " + str(type(context.scene.mcell)) )
 
         mcell = context.scene.mcell
 
@@ -209,8 +212,8 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
             col.operator("mcell.print_general_parameters")
             col = row.column()
             col.operator("mcell.print_panel_parameters")
-            #col = row.column()
-            #col.operator("mcell.print_panel_parameters_fast")
+            col = row.column()
+            col.operator("mcell.print_panel_parameters_fast")
 
 
 # Callbacks for Property updates appear to require global (non-member) functions
@@ -267,18 +270,20 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
         self.initialized = True
 
     def print_parameter(self, thresh, prefix=""):
-        threshold_print ( thresh, prefix + self.name + " (#" + str(self.id) + ") = " + self.expr + " = " + self.id_expr_str + " = " + str(self.value) )
+        #threshold_print ( thresh, prefix + self.name + " (#" + str(self.id) + ") = " + self.expr + " = " + self.id_expr_str + " = " + str(self.value) )
+        pass
 
     def print_details(self, thresh, prefix=""):
-        threshold_print ( thresh, prefix + "ID = " + str(self.id) )
-        threshold_print ( thresh, prefix + "  Name  = " + self.name + ", previously " + self.last_name )
-        threshold_print ( thresh, prefix + "  Expr  = " + self.expr + ", previously " + self.last_expr )
-        threshold_print ( thresh, prefix + "  IDExp = " + self.id_expr_str )
-        threshold_print ( thresh, prefix + "  _expr = " + self.pending_expr )
-        threshold_print ( thresh, prefix + "  Value = " + str(self.value) )
-        threshold_print ( thresh, prefix + "  Valid = " + str(self.valid) )
-        threshold_print ( thresh, prefix + "  Init  = " + str(self.initialized) )
-        threshold_print ( thresh, prefix + "  Stat  = " + str(self.status) )
+        #threshold_print ( thresh, prefix + "ID = " + str(self.id) )
+        #threshold_print ( thresh, prefix + "  Name  = " + self.name + ", previously " + self.last_name )
+        #threshold_print ( thresh, prefix + "  Expr  = " + self.expr + ", previously " + self.last_expr )
+        #threshold_print ( thresh, prefix + "  IDExp = " + self.id_expr_str )
+        #threshold_print ( thresh, prefix + "  _expr = " + self.pending_expr )
+        #threshold_print ( thresh, prefix + "  Value = " + str(self.value) )
+        #threshold_print ( thresh, prefix + "  Valid = " + str(self.valid) )
+        #threshold_print ( thresh, prefix + "  Init  = " + str(self.initialized) )
+        #threshold_print ( thresh, prefix + "  Stat  = " + str(self.status) )
+        pass
 
     def update_name ( self, context ):
         """
@@ -290,12 +295,13 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
 
         The "self" passed in is a GeneralParameterProperty object.
         """
-        threshold_print ( 60, "==================================================================" )
-        threshold_print ( 60, "Updating name for parameter " + self.name )
+        #threshold_print ( 60, "==================================================================" )
+        #threshold_print ( 60, "Updating name for parameter " + self.name )
         if (self.name == self.last_name):
-            threshold_print ( 60, "Names are identical, no change made" )
+            #threshold_print ( 60, "Names are identical, no change made" )
+            pass
         else:
-            threshold_print ( 60, "Names are different, ask parent to change name checking for duplicates" )
+            #threshold_print ( 60, "Names are different, ask parent to change name checking for duplicates" )
             gen_params = get_parent ( self )
             gen_params.name_update_in_progress = True
             
@@ -311,12 +317,12 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
                 fixed_expression = gen_params.fix_broken_references ( p.param_data.ID_expression )
                 if fixed_expression != p.param_data.ID_expression:
                     # Re-evaluate the fixed expression
-                    threshold_print ( 60, "Fixing reference from " + str(p.param_data.ID_expression) + " to " + fixed_expression )
+                    #threshold_print ( 60, "Fixing reference from " + str(p.param_data.ID_expression) + " to " + fixed_expression )
                     p.param_data.ID_expression = fixed_expression
 
                     value = gen_params.eval_panel_param_ID_expr ( p.param_data.ID_expression )
                     if value == None:
-                        threshold_print ( 5, "Invalid expression detected in update_name!!!" )
+                        #threshold_print ( 5, "Invalid expression detected in update_name!!!" )
                         p.param_data.status = "Invalid Expression"
                     else:
                         if p.param_data.value != value:
@@ -325,14 +331,14 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
                     
                     p.param_data.expression = gen_params.translate_panel_param_ID_expr ( p.param_data.ID_expression )
                 # Translate the expression to reflect the new name
-                threshold_print ( 60, "Translating " + str(p.param_data.ID_expression) + " during update_name" )
+                #threshold_print ( 60, "Translating " + str(p.param_data.ID_expression) + " during update_name" )
                 expr = gen_params.translate_panel_param_ID_expr ( p.param_data.ID_expression )
                 if p.param_data.expression != expr:
                     p.param_data.expression = expr
             gen_params.name_update_in_progress = False
 
-        threshold_print ( 60, "Done updating name for parameter " + self.name )
-        threshold_print ( 60, "==================================================================" )
+        #threshold_print ( 60, "Done updating name for parameter " + self.name )
+        #threshold_print ( 60, "==================================================================" )
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     def update_expression ( self, context ):
@@ -345,13 +351,13 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
 
         The "self" passed in is a GeneralParameterProperty object.
         """
-        threshold_print ( 60, "==================================================================" )
-        threshold_print ( 60, "Inside update_expression with self = " + str(self) )
+        #threshold_print ( 60, "==================================================================" )
+        #threshold_print ( 60, "Inside update_expression with self = " + str(self) )
 
         gen_params = get_parent ( self )
 
         if gen_params.name_update_in_progress:
-            threshold_print ( 60, "update_expression not executed because name update is in progress" )
+            #threshold_print ( 60, "update_expression not executed because name update is in progress" )
             return
 
         status = gen_params.expression_change(self)
@@ -363,7 +369,7 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
 
         # Is this needed?   gen_params.eval_all_any_order()
 
-        threshold_print ( 60, "Inside update_expression, calling print_all_general_parameters()" )
+        #threshold_print ( 60, "Inside update_expression, calling print_all_general_parameters()" )
         gen_params.print_all_general_parameters(60)
 
         plist = get_numeric_parameter_list ( None, [], debug=False )
@@ -371,10 +377,10 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
         for p in plist:
             # Create a string encoded version of the expression (like "#1~+~3~*~(~#2~+~7.0~)")
             id_expr = gen_params.parse_panel_param_expr ( p.param_data.expression )
-            threshold_print ( 60, "Inside update_expression, id_expr = " + str(id_expr) )
+            #threshold_print ( 60, "Inside update_expression, id_expr = " + str(id_expr) )
             if p.param_data.ID_expression != id_expr:
                 p.param_data.ID_expression = id_expr
-                threshold_print ( 60, "Changing self.ID_expression to " + str(p.param_data.ID_expression) )
+                #threshold_print ( 60, "Changing self.ID_expression to " + str(p.param_data.ID_expression) )
             expr = gen_params.translate_panel_param_ID_expr ( p.param_data.ID_expression )
             if p.param_data.expression != expr:
                 p.param_data.expression = expr
@@ -382,8 +388,8 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
             if value != None:
                 if p.param_data.value != value:
                     p.param_data.value = value
-        threshold_print ( 60, "Done updating expression for parameter " + self.name )
-        threshold_print ( 60, "==================================================================" )
+        #threshold_print ( 60, "Done updating expression for parameter " + self.name )
+        #threshold_print ( 60, "==================================================================" )
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
@@ -440,7 +446,8 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                 elif type(e) == type("a"):
                     expr_str += term_sep + e
                 else:
-                    threshold_print ( 0, "Unexepected type while encoding list: " + str(expr_list) )
+                    #threshold_print ( 0, "Unexepected type while encoding list: " + str(expr_list) )
+                    pass
 
         if len(expr_str) >= len(term_sep):
             # Remove the first term_sep string (easier here than checking above)
@@ -452,11 +459,11 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         """ Recovers an expression list from a string that has been stored as a Blender StringProperty """
         expr_list = []
         terms = expr_str.split(self.get_term_sep())
-        threshold_print ( 90, "   ...breaking into terms: " + str(terms) )
+        #threshold_print ( 90, "   ...breaking into terms: " + str(terms) )
         for e in terms:
-            threshold_print ( 90, "  ...checking term: " + str(e) )
+            #threshold_print ( 90, "  ...checking term: " + str(e) )
             if len(e) > 0:
-                threshold_print ( 90, "  ...storing term: " + str(e) )
+                #threshold_print ( 90, "  ...storing term: " + str(e) )
                 if e[0] == '#':
                     if (len(e) > 1) and (e[1] == '?'):
                         expr_list = expr_list + [None] + [e[2:]]
@@ -469,8 +476,8 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
 
     def print_all_general_parameters ( self, thresh, prefix="" ):
         """ Prints all general parameters based on comparison to a user-adjustable threshold """
-        threshold_print ( thresh, prefix + "There are " + str(len(self.parameter_list)) + " general parameters defined" )
-        threshold_print ( thresh, prefix + "  [ name (#id) = expr = idexpr = value ]" )
+        #threshold_print ( thresh, prefix + "There are " + str(len(self.parameter_list)) + " general parameters defined" )
+        #threshold_print ( thresh, prefix + "  [ name (#id) = expr = idexpr = value ]" )
         for p in self.parameter_list:
             p.print_parameter( thresh, prefix=prefix+"    " )
 
@@ -622,7 +629,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
 
     def build_ID_pyexpr_dict ( self, ID_name_dict ):
         """ Construct a dictionary containing python executable string representations of the expressions by substituting symbols for IDs """
-        threshold_print ( 90, "Inside build_ID_pyexpr_dict ... " )
+        #threshold_print ( 90, "Inside build_ID_pyexpr_dict ... " )
         expression_keywords = self.get_expression_keywords()
         ID_pyexpr_dict = {}
         for p in self.parameter_list:
@@ -639,8 +646,8 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                         else:
                             # In previous versions, this case might have defined a new parameter here.
                             # In this version, it should never happen, but appends an undefined name flag ... just in case!!
-                            #threshold_print ( 5, "build_ID_pyexpr_dict adding an undefined name to " + expr )
-                            threshold_print ( 1, "build_ID_pyexpr_dict did not find " + str(token) + " in " + str(ID_name_dict) + ", adding an undefined name flag to " + expr )
+                            ####  threshold_print ( 5, "build_ID_pyexpr_dict adding an undefined name to " + expr )
+                            #threshold_print ( 1, "build_ID_pyexpr_dict did not find " + str(token) + " in " + str(ID_name_dict) + ", adding an undefined name flag to " + expr )
                             expr = expr + self.UNDEFINED_NAME()
                     else:
                         # This is a string so simply concatenate it after translation as needed
@@ -654,8 +661,8 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
 
     def build_expr_str ( self, encoded_ID_expr, ID_name_dict ):
         """ Translate an encoded ID expression string into a human-readable expression string with respect to current parameters """
-        threshold_print ( 60, "Inside build_expr_str ... translating " + str(encoded_ID_expr) )
-        threshold_print ( 60, "  using dictionary: " + str(ID_name_dict) )
+        #threshold_print ( 60, "Inside build_expr_str ... translating " + str(encoded_ID_expr) )
+        #threshold_print ( 60, "  using dictionary: " + str(ID_name_dict) )
         new_expr = ""
         expr_list = self.decode_str_to_expr_list ( encoded_ID_expr )
         next_is_undefined = False
@@ -669,7 +676,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                 else:
                     # In previous versions, this case might have defined a new parameter here.
                     # In this version, it should never happen, but appends an undefined name flag ... just in case!!
-                    threshold_print ( 1, "build_expr_str did not find " + str(token) + " in " + str(ID_name_dict) + ", adding an undefined name flag to " + new_expr )
+                    #threshold_print ( 1, "build_expr_str did not find " + str(token) + " in " + str(ID_name_dict) + ", adding an undefined name flag to " + new_expr )
                     new_expr = new_expr + self.UNDEFINED_NAME()
             else:
                 # This is a string so simply concatenate it
@@ -679,15 +686,15 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                 else:
                     new_expr = new_expr + token
 
-        threshold_print ( 60, "Returning from build_exp_str with     " + str(new_expr) )
+        #threshold_print ( 60, "Returning from build_exp_str with     " + str(new_expr) )
         return new_expr
 
 
     def name_change ( self, param ):
         """ Change the name of a parameter and reflect the change in all expressions. This does not change any values. """
-        threshold_print ( 60, "MCellParametersPropertyGroup.name_change() called by parameter " + param.name + ":" )
+        #threshold_print ( 60, "MCellParametersPropertyGroup.name_change() called by parameter " + param.name + ":" )
         param.print_details ( 60, prefix="  " )
-        threshold_print ( 60, "  All other parameters:" )
+        #threshold_print ( 60, "  All other parameters:" )
         for p in self.parameter_list:
             p.print_details( 60, prefix="    " )
         # Assume name is OK, then test for various illegal conditions
@@ -701,17 +708,17 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
             if param.name == p.name:
                 if param != p:
                     name_ok = False
-                    threshold_print ( 20, " Name conflict between " + param.name + " and " + p.name )
+                    #threshold_print ( 20, " Name conflict between " + param.name + " and " + p.name )
                     break
         if not name_ok:
-            threshold_print ( 0, "Error: Name is not legal or duplicates another name, reverting to previous" )
+            #threshold_print ( 0, "Error: Name is not legal or duplicates another name, reverting to previous" )
             param.name = param.last_name
         else:
             param.last_name = param.name
             # Update all parameter expressions to reflect the new name
             ID_name_dict = self.build_ID_name_dict()
             for p in self.parameter_list:
-                threshold_print ( 60, "Inside name_change, building a new expression from " + p.id_expr_str + " and the current ID_name_dict" )
+                #threshold_print ( 60, "Inside name_change, building a new expression from " + p.id_expr_str + " and the current ID_name_dict" )
                 new_expr = self.build_expr_str ( p.id_expr_str, ID_name_dict )
                 # To prevent infinite recursion, only update the expression if it differs from the current one
                 if p.expr != new_expr:
@@ -724,12 +731,12 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
 
     def expression_change ( self, param ):
         """ Change the expression of a parameter and reflect the change in all expressions. This can change values. """
-        threshold_print ( 60, "MCellParametersPropertyGroup.expression_change() called by parameter " + param.name + ":" )
+        #threshold_print ( 60, "MCellParametersPropertyGroup.expression_change() called by parameter " + param.name + ":" )
         status = ""
         expr_list = self.parse_param_expr ( param.expr )
         if None in expr_list:
             param.status = "Undefined variables in " + str(param.expr)
-            threshold_print ( 1, "Undefined variables in expression: " + param.expr )
+            #threshold_print ( 1, "Undefined variables in expression: " + param.expr )
         else:
             param.status = ""
         # Store the ID expression string back in the parameter
@@ -737,7 +744,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         new_expr = self.translate_panel_param_ID_expr ( param.id_expr_str )
         if param.expr != new_expr:
             param.expr = new_expr
-        threshold_print ( 60, "After update: expr = " + param.expr + ", id_expr = " + param.id_expr_str )
+        #threshold_print ( 60, "After update: expr = " + param.expr + ", id_expr = " + param.id_expr_str )
         # Re-evaluate all the parameters
         self.eval_all_any_order()
         return status
@@ -749,14 +756,14 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
 
     def translate_panel_param_ID_expr ( self, panel_param_ID_expr ):
         """ Translate a panel parameter's encoded ID expression into a string for display """
-        threshold_print ( 60, "Inside translate_panel_param_ID_expr: Translating expression " + str(panel_param_ID_expr ) )
+        #threshold_print ( 60, "Inside translate_panel_param_ID_expr: Translating expression " + str(panel_param_ID_expr ) )
         return self.build_expr_str ( panel_param_ID_expr, self.build_ID_name_dict() )
 
     def eval_panel_param_ID_expr ( self, panel_param_ID_expr ):
         """ Evaluate a panel parameter's ID expression (like "#1~+~3~*~(~#2~+~7.0~)") into a numeric value or None if invalid """
-        threshold_print ( 60, "Evaluating ID expression " + str(panel_param_ID_expr) )
+        #threshold_print ( 60, "Evaluating ID expression " + str(panel_param_ID_expr) )
         expr_list = self.decode_str_to_expr_list(panel_param_ID_expr)
-        threshold_print ( 60, "  Expression: " + str(panel_param_ID_expr) + " evaluates to list: " + str(expr_list) )
+        #threshold_print ( 60, "  Expression: " + str(panel_param_ID_expr) + " evaluates to list: " + str(expr_list) )
         (value,valid) = (None,False)
         if not (None in expr_list):
             (value,valid) = self.eval_all_any_order ( expression = self.translate_panel_param_ID_expr ( panel_param_ID_expr ) )
@@ -821,11 +828,11 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                         try:
                             if (len(str(ID_name_dict[parid]).strip()) <= 0) or (len(str(ID_py_expr_dict[parid]).strip()) <= 0):
                                 val = 0
-                                threshold_print ( 20, "Empty name or expression: \"" + str(ID_name_dict[parid]) + " = " + str(ID_py_expr_dict[parid]) + "\"" )
+                                #threshold_print ( 20, "Empty name or expression: \"" + str(ID_name_dict[parid]) + " = " + str(ID_py_expr_dict[parid]) + "\"" )
                             else:
                                 #py_statement = str(str(self.get_name(parid))) + " = " + str(self.get_expr ( parid, to_py=True ))
                                 py_statement = str(ID_name_dict[parid]) + " = " + str(ID_py_expr_dict[parid])
-                                threshold_print ( 90, "About to exec: " + py_statement )
+                                #threshold_print ( 90, "About to exec: " + py_statement )
                                 exec ( py_statement )
                                 val = eval ( ID_name_dict[parid], locals() )
                             
@@ -843,10 +850,11 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                                 requested_val = val
                         except:
                             valid = False
-                            threshold_print ( 0, "==> Evaluation Exception for " + py_statement + ": " + str ( sys.exc_info() ) )
+                            #threshold_print ( 0, "==> Evaluation Exception for " + py_statement + ": " + str ( sys.exc_info() ) )
                             if prnt:
-                                threshold_print ( 0, "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
-                                threshold_print ( 0, "    ... interpreted as: " + py_statement )
+                                #threshold_print ( 0, "  Error in statement:   " + self.get_name(parid) + " = " + self.get_error(parid) )
+                                #threshold_print ( 0, "    ... interpreted as: " + py_statement )
+                                pass
 
                         ID_valid_dict[parid] = True
 
@@ -864,9 +872,10 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                     requested_val = val
             except:
                 valid = False
-                threshold_print ( 0, "==> Evaluation Exception for requested expression " + expression + ": " + str ( sys.exc_info() ) )
+                #threshold_print ( 0, "==> Evaluation Exception for requested expression " + expression + ": " + str ( sys.exc_info() ) )
                 if prnt:
-                    threshold_print ( 0, "  Error in requested statement:   " + expression )
+                    #threshold_print ( 0, "  Error in requested statement:   " + expression )
+                    pass
 
         # Load the updated values back into the Properties
         self.load_ID_value_dict ( ID_value_dict, ID_valid_dict )
@@ -933,7 +942,8 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
             st = parser.expr(param_expr)
             pt = st.totuple()
         except:
-            threshold_print ( 0, "==> Parsing Exception: " + str ( sys.exc_info() ) )
+            #threshold_print ( 0, "==> Parsing Exception: " + str ( sys.exc_info() ) )
+            pass
 
         parameterized_expr = None  # param_expr
         if pt != None:
@@ -959,8 +969,8 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         if type(pt) == tuple:
             # This is a tuple, so find out if it's a terminal leaf in the parse tree
 
-            threshold_print ( 95, "recurse_tree_symbols with a tuple (" + str(current_expr) + ")" )
-            threshold_print ( 95, "  pt = " + str(pt) )
+            #threshold_print ( 95, "recurse_tree_symbols with a tuple (" + str(current_expr) + ")" )
+            #threshold_print ( 95, "  pt = " + str(pt) )
 
             terminal = False
             if len(pt) == 2:
@@ -1001,17 +1011,20 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
 
 # These are the classes that make up panel parameters
 
-def update_PanelParameter ( self, context ):
-    """
-    This is the callback function for all panel parameters.
-    This function should do all of the generic parsing and
-    updating and then call a specific user update callback
-    function to do any special processing with the result.
-    """
+#    """
+#    This is the callback function for all panel parameters.
+#    This function should do all of the generic parsing and
+#    updating and then call a specific user update callback
+#    function to do any special processing with the result.
+#    """
 
-    threshold_print ( 60, "update_PanelParameter called" )
-    threshold_print ( 60, "  self.expression = " + str(self.expression) )
-    threshold_print ( 60, "  self.value = " + str(self.value) )
+def update_PanelParameter ( self, context ):
+
+    print ( "1 - top of call to update_PanelParameter" )
+
+    #threshold_print ( 60, "update_PanelParameter called" )
+    #threshold_print ( 60, "  self.expression = " + str(self.expression) )
+    #threshold_print ( 60, "  self.value = " + str(self.value) )
     
     mcell = context.scene.mcell
     gen_params = mcell.general_parameters
@@ -1020,32 +1033,39 @@ def update_PanelParameter ( self, context ):
     
     # Create a string encoded version of the expression (like "#1~+~3~*~(~#2~+~7.0~)")
     id_expr = gen_params.parse_panel_param_expr ( self.expression )
-    threshold_print ( 60, "update_PanelParameter with id_expr = " + str(id_expr) )
+    #threshold_print ( 60, "update_PanelParameter with id_expr = " + str(id_expr) )
     if self.ID_expression != id_expr:
         self.ID_expression = id_expr
-        threshold_print ( 60, "changing self.ID_expression to " + str(self.ID_expression) )
+        #threshold_print ( 60, "changing self.ID_expression to " + str(self.ID_expression) )
     expr = gen_params.translate_panel_param_ID_expr ( self.ID_expression )
     if self.expression != expr:
         self.expression = expr
     value = gen_params.eval_panel_param_ID_expr ( self.ID_expression )
     if value == None:
-        threshold_print ( 5, "Invalid expression detected in update_PanelParameter!!!" )
+        #threshold_print ( 5, "Invalid expression detected in update_PanelParameter!!!" )
         self.status = "Invalid Expression: " + expr
     else:
         if self.value != value:
             self.value = value
         self.status = ""
 
-    threshold_print ( 60, " After Automatic Update:" )
-    threshold_print ( 60, "  self.expression = " + str(self.expression) )
-    threshold_print ( 60, "  self.value = " + str(self.value) )
+    #threshold_print ( 60, " After Automatic Update:" )
+    #threshold_print ( 60, "  self.expression = " + str(self.expression) )
+    #threshold_print ( 60, "  self.value = " + str(self.value) )
 
-    get_parent(self).update()
+    #get_parent(self).update()
 
-    threshold_print ( 60, " After User Update:" )
-    threshold_print ( 60, "  self.expression = " + str(self.expression) )
-    threshold_print ( 60, "  self.value = " + str(self.value) )
+    print ( "2 - before call to get_parent(self).update(), value of \"" + expr + "\" = " + str(value) )
+    temp_parent = get_parent(self)
+    print ( "3 - between call to get_parent(self).update()" )
+    temp_parent.update()
+    print ( "4 - after call to get_parent(self).update()\n" )
 
+    #threshold_print ( 60, " After User Update:" )
+    #threshold_print ( 60, "  self.expression = " + str(self.expression) )
+    #threshold_print ( 60, "  self.value = " + str(self.value) )
+
+    #print ( "5 - bottom of call to update_PanelParameter" )
 
 
 class PanelParameterData(bpy.types.PropertyGroup):
@@ -1117,16 +1137,19 @@ class PanelParameter(bpy.types.PropertyGroup):
         return True
 
     def update(self):
-        threshold_print ( 90, "   Default PanelParameter.update() function ... overload for functionality" )
-        plist = get_numeric_parameter_list ( None, [] )
-        threshold_print ( 95, "     List of all panel parameters:" )
-        for pp in plist:
-            threshold_print ( 95, pp )
-        plist_names = str(plist)[1:-1].split(",")
-        for pp in plist_names:
-            threshold_print ( 95, "       " + pp.strip() )
-        for i in range(len(plist)):
-            threshold_print ( 95, "      " + plist_names[i].strip() + " = " + str(plist[i].get_value()) )
+        #threshold_print ( 90, "   Default PanelParameter.update() function ... overload for functionality" )
+        """#plist = get_numeric_parameter_list ( None, [] )
+        if threshold_print_enabled(95):
+            #threshold_print ( 95, "     List of all panel parameters:" )
+            #for pp in plist:
+            #    threshold_print ( 95, pp )
+            #plist_names = str(plist)[1:-1].split(",")
+            #for pp in plist_names:
+            #    threshold_print ( 95, "       " + pp.strip() )
+            #for i in range(len(plist)):
+            #    threshold_print ( 95, "      " + plist_names[i].strip() + " = " + str(plist[i].get_value()) )
+        """
+        pass
 
     def draw_in_new_row(self, layout):
         """ Default drawing for parameters ... overload for different functionality """
@@ -1134,9 +1157,9 @@ class PanelParameter(bpy.types.PropertyGroup):
         row = layout.row()
         value = self.get_value()
         if (self.param_data.expression == None) or (self.param_data.expression == ''):
-          row.prop ( self.param_data, "expression", text=self.param_data.label+" (Undefined)" )
+            row.prop ( self.param_data, "expression", text=self.param_data.label+" (Undefined)" )
         else:
-          row.prop ( self.param_data, "expression", text=self.param_data.label+" = "+'{:g}'.format(value) )
+            row.prop ( self.param_data, "expression", text=self.param_data.label+" = "+'{:g}'.format(value) )
         if not self.is_status_ok():
             row = layout.row()
             row.label(icon='ERROR', text=self.param_data.status)
@@ -1152,9 +1175,12 @@ class PanelParameter(bpy.types.PropertyGroup):
 
 
 
-class PanelParameterFloat(PanelParameter):
-    """ Simple (but useful) subclass of PanelParameter """
-    param_data = PointerProperty(type=PanelParameterData)
+#This is the normal PanelParameterFloat that inherits from PanelParameter
+
+#class PanelParameterFloat(PanelParameter):
+#    """ Simple (but useful) subclass of PanelParameter """
+#    param_data = PointerProperty(type=PanelParameterData)
+
 
 class PanelParameterInt(PanelParameter):
     """ Simple (but useful) subclass of PanelParameter """
@@ -1164,10 +1190,101 @@ class PanelParameterInt(PanelParameter):
         return int(self.param_data.value)
 
 
+class PanelParameterFloat(bpy.types.PropertyGroup):
+    # This is a "hard-coded" version of PanelParameterFloat that doesn't inherit from PanelParameter
+
+    param_data = PointerProperty(type=PanelParameterData)
+
+    def get_status(self):
+        return str(self.param_data.status)
+    def append_status(self, stat_string):
+        self.param_data.status = self.param_data.status + "   " + stat_string
+    def set_status_ok(self):
+        self.param_data.status = ""
+    def is_status_ok(self):
+        return len(self.param_data.status) == 0
+
+    def set_label(self, label):
+        self.param_data.label = label
+    def get_label(self):
+        return str(self.param_data.label)
+
+    def set_expression(self, expr):
+        self.param_data.expression = expr
+        return True
+    def get_expression(self):
+        return str(self.param_data.expression)
+
+    def get_ID_expression(self):
+        return str(self.param_data.ID_expression)
+
+    def get_value(self):
+        return float(self.param_data.value)
+
+    def get_text(self):
+        """ Default string expression for parameters ... overload for different functionality """
+        return (  self.get_expression() + " = " + str(self.get_value()) )
+
+    def get_formatted_string(self):
+      return "PanelParameter " + self.get_label() + " = " + self.get_ID_expression() + " = " + self.get_expression() + " = " + '{:g}'.format(self.get_value() )
+
+
+    def set_fields(self, label=None, expr=None, min_val=None, max_val=None):
+        if label != None:
+            self.set_label(label)
+        if expr != None:
+            self.set_expression(expr)
+        if min_val != None:
+            self.param_data.min_value = min_val
+            self.param_data.min_set = True
+        if max_val != None:
+            self.param_data.max_value = max_val
+            self.param_data.max_set = True
+        return True
+
+    def update(self):
+        #threshold_print ( 90, "   Default PanelParameter.update() function ... overload for functionality" )
+        """#plist = get_numeric_parameter_list ( None, [] )
+        if threshold_print_enabled(95):
+            #threshold_print ( 95, "     List of all panel parameters:" )
+            #for pp in plist:
+            #    threshold_print ( 95, pp )
+            #plist_names = str(plist)[1:-1].split(",")
+            #for pp in plist_names:
+            #    threshold_print ( 95, "       " + pp.strip() )
+            #for i in range(len(plist)):
+            #    threshold_print ( 95, "      " + plist_names[i].strip() + " = " + str(plist[i].get_value()) )
+        """
+        pass
+
+    def draw_in_new_row(self, layout):
+        """ Default drawing for parameters ... overload for different functionality """
+        # print ( self.param_data.expression.description ) # Attempting to get ahold of the description tool tip data ... failed
+        row = layout.row()
+        value = self.get_value()
+        if (self.param_data.expression == None) or (self.param_data.expression == ''):
+            row.prop ( self.param_data, "expression", text=self.param_data.label+" (Undefined)" )
+        else:
+            row.prop ( self.param_data, "expression", text=self.param_data.label+" = "+'{:g}'.format(value) )
+        if not self.is_status_ok():
+            row = layout.row()
+            row.label(icon='ERROR', text=self.param_data.status)
+        else:
+            if self.param_data.min_set:
+                if value < self.param_data.min_value:
+                    row = layout.row()
+                    row.label(icon='ERROR', text="Warning: Value of " + str(value) + " for " + self.get_label() + " is less than minimum of "+str(self.param_data.min_value))
+            if self.param_data.max_set:
+                if value > self.param_data.max_value:
+                    row = layout.row()
+                    row.label(icon='ERROR', text="Warning: Value of " + str(value) + " for " + self.get_label() + " is greater than maximum of "+str(self.param_data.max_value))
+
+
+
 def get_numeric_parameter_list ( objpath, plist, debug=False ):
     """ Recursive routine that builds a list of numeric (PanelParameterInt and PanelParameterFloat) parameters """
 
-    threshold_print ( 98, "get_numeric_parameter_list() called with objpath = ", objpath )
+    #threshold_print ( 98, "get_numeric_parameter_list() called with objpath = ", objpath )
 
     # This check can be used to speed up parameter searching in the future, but hasn't been critical so far
 
@@ -1180,14 +1297,14 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
         # Start with default path
         objpath = "bpy.context.scene.mcell"
     obj = eval(objpath)
-    threshold_print ( 95, "Path = " + str(objpath) + ", obj = ", obj )
-    threshold_print ( 98, "  plist = ", plist )
+    #threshold_print ( 95, "Path = " + str(objpath) + ", obj = ", obj )
+    #threshold_print ( 98, "  plist = ", plist )
 
     # Note, even though PanelParameterFloat and PanelParameterInt are subclasses of PanelParameter, they're not found that way!!
     if isinstance(obj,(bpy.types.PanelParameterInt,bpy.types.PanelParameterFloat)):
         # This is what we're looking for so add it to the list
         plist.append ( obj )
-        threshold_print ( 98, "   plist.append gives ", plist )
+        #threshold_print ( 98, "   plist.append gives ", plist )
     elif isinstance(obj,bpy.types.PanelParameter):
         # This might be some other (non-numeric) type of PanelParameter ... ignore it
         pass
@@ -1209,6 +1326,7 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
                     threshold_print ( 0, "    ===> Exception traceback = " + sys.exc_traceback )
                     threshold_print ( 0, "    ===> Exception in recursive call to get_numeric_parameter_list ( " + pstr + " )" )
                     threshold_print ( 0, "    ===> Exception in get_numeric_parameter_list isinstance branch with " + objpath + "." + str(objkey) )
+                    pass
     elif type(obj).__name__ == 'bpy_prop_collection_idprop':
         # This is a collection, so step through its elements as if it's an array using keys
         for objkey in obj.keys():
@@ -1236,19 +1354,20 @@ def print_numeric_parameter_list ( thresh, prefix="", param_list=None, fast=Fals
     if plist == None:
         plist = get_numeric_parameter_list ( None, [] )
 
-    threshold_print ( thresh, prefix + "There are " + str(len(plist)) + " panel parameters defined ..." )
+    #threshold_print ( thresh, prefix + "There are " + str(len(plist)) + " panel parameters defined ..." )
 
     if fast:
         # Because converting the object to a string takes so long, process the list one at a time so it doesn't appear to freeze
         for i in range(len(plist)):
             plist_name = str(plist[i])  # For some reason, this doesn't give the full path name (like bpy.data.scenes['Scene'].mcell.molecules.molecule_list[0].diffusion_constant)
-            threshold_print ( thresh, prefix + "  " +  plist_name.strip() + " = " + str(plist[i].get_expression()) + " = " + str(plist[i].get_ID_expression()) + " = " + str(plist[i].get_value()) )
+            #threshold_print ( thresh, prefix + "  " +  plist_name.strip() + " = " + str(plist[i].get_expression()) + " = " + str(plist[i].get_ID_expression()) + " = " + str(plist[i].get_value()) )
     else:
         # Remove the leading and trailing brackets and split by commas
         plist_names = str(plist)[1:-1].split(",")
         # Print each parameter
         for i in range(len(plist)):
-            threshold_print ( thresh, prefix + "  " +  plist_names[i].strip() + " = " + str(plist[i].get_expression()) + " = " + str(plist[i].get_ID_expression()) + " = " + str(plist[i].get_value()) )
+            #threshold_print ( thresh, prefix + "  " +  plist_names[i].strip() + " = " + str(plist[i].get_expression()) + " = " + str(plist[i].get_ID_expression()) + " = " + str(plist[i].get_value()) )
+            pass
 
 
 
@@ -1258,11 +1377,12 @@ class PARAM_debug_class(PanelParameter):
     """ Example of subclassing PanelParameter and overloading its methods """
     param_data = PointerProperty(type=PanelParameterData)
     def update( self ):
-        threshold_print ( 20, "   User's update called with " + " self.param_data.expression = " + str(self.param_data.expression) + ", self.param_data.value = " + str(self.param_data.value) )
-        threshold_print ( 20, "     dir(self) = " + str(dir(self)) )
-        threshold_print ( 20, "     Starting python interactive console ... control-D to continue running..." )
+        #threshold_print ( 20, "   User's update called with " + " self.param_data.expression = " + str(self.param_data.expression) + ", self.param_data.value = " + str(self.param_data.value) )
+        #threshold_print ( 20, "     dir(self) = " + str(dir(self)) )
+        #threshold_print ( 20, "     Starting python interactive console ... control-D to continue running..." )
         # This drops into a python interpreter on the console ( don't start Blender with an & !! )
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        pass
 
 
 class ExampleOverloadedPanelParameter(PanelParameter):
@@ -1272,7 +1392,7 @@ class ExampleOverloadedPanelParameter(PanelParameter):
         return (  str(self.param_data.expression) + "=" + str(self.param_data.value) )
     def update( self ):
         parent = get_parent ( self )
-        threshold_print ( 50, "Parent = " + str(parent) )
+        #threshold_print ( 50, "Parent = " + str(parent) )
 
 class Iterations_class(PanelParameter):
     """ Example class for handling the iterations panel parameter """
