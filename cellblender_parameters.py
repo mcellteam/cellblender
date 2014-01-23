@@ -72,15 +72,15 @@ def print_info_about_self ( self, thresh, context ):
 def get_path_to_parent(self_object):
     """ Return the Blender class path to the parent object with regard to the Blender Property Tree System """
     path_to_self = "bpy.context.scene." + self_object.path_from_id()
-    print ( "Path to self = " + path_to_self )
+    #print ( "Path to self = " + path_to_self )
     path_to_parent = path_to_self[0:path_to_self.rfind(".")]
     return path_to_parent
 
 def get_parent(self_object):
     """ Return the parent Blender object with regard to the Blender Property Tree System """
-    print ( "top of get_parent" )
+    #print ( "top of get_parent" )
     path_to_parent = get_path_to_parent(self_object)
-    print ( "Path to parent = " + path_to_parent )
+    #print ( "Path to parent = " + path_to_parent )
     parent = eval(path_to_parent)
     return parent
 
@@ -1020,7 +1020,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
 
 def update_PanelParameter ( self, context ):
 
-    print ( "1 - top of call to update_PanelParameter" )
+    #print ( "1 - top of call to update_PanelParameter" )
 
     #threshold_print ( 60, "update_PanelParameter called" )
     #threshold_print ( 60, "  self.expression = " + str(self.expression) )
@@ -1055,11 +1055,11 @@ def update_PanelParameter ( self, context ):
 
     #get_parent(self).update()
 
-    print ( "2 - before call to get_parent(self).update(), value of \"" + expr + "\" = " + str(value) )
+    #print ( "2 - before call to get_parent(self).update(), value of \"" + expr + "\" = " + str(value) )
     temp_parent = get_parent(self)
-    print ( "3 - between call to get_parent(self).update()" )
+    #print ( "3 - between call to get_parent(self).update()" )
     temp_parent.update()
-    print ( "4 - after call to get_parent(self).update()\n" )
+    #print ( "4 - after call to get_parent(self).update()\n" )
 
     #threshold_print ( 60, " After User Update:" )
     #threshold_print ( 60, "  self.expression = " + str(self.expression) )
