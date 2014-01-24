@@ -297,6 +297,17 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
             mesh["mcell"]["regions"][str_id] = {}
 
 
+    def reset_region(self, context):
+
+        id = str(self.id)
+
+        mesh = context.active_object.data
+
+        for seg_id in mesh["mcell"]["regions"][id].keys():
+            mesh["mcell"]["regions"][id][seg_id] = []
+        mesh["mcell"]["regions"][id].clear()
+
+
     def get_region_faces(self, mesh):
         """Given a mesh and a region id, return the set of region face indices"""
 
