@@ -1937,8 +1937,7 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
             mcell.meshalyzer.manifold = "Non-manifold Mesh"
 
         volume = 0
-#        if is_orientable and is_manifold and is_closed:
-        if is_orientable:
+        if is_orientable and is_manifold and is_closed:
             volume = mesh_vol(mesh, t_mat)
             if volume >= 0:
                 mcell.meshalyzer.normal_status = "Outward Facing Normals"
@@ -1950,6 +1949,105 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
             mcell.meshalyzer.sav_ratio = area/volume
 
         mcell.meshalyzer.status = ""
+        return {'FINISHED'}
+
+
+class MCELL_OT_gen_meshalyzer_report(bpy.types.Operator):
+    bl_idname = "mcell.gen_meshalyzer_report"
+    bl_label = "Analyze Geometric Properties of Multiple Meshes"
+    bl_description = "Generate Analysis Report of Geometric Properties of Multiple Meshes"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self,context):
+
+        mcell = context.scene.mcell
+        objs = context.selected_objects
+
+        mcell.meshalyzer.object_name = ''
+        mcell.meshalyzer.vertices = 0
+        mcell.meshalyzer.edges = 0
+        mcell.meshalyzer.faces = 0
+        mcell.meshalyzer.watertight = ''
+        mcell.meshalyzer.manifold = ''
+        mcell.meshalyzer.normal_status = ''
+        mcell.meshalyzer.area = 0
+        mcell.meshalyzer.volume = 0
+        mcell.meshalyzer.sav_ratio = 0
+
+        if (len(objs) == 0):
+            mcell.meshalyzer.status = 'Please Select One or More Mesh Objects'
+            return {'FINISHED'}
+
+        bpy.ops.text.new()
+        report = bpy.data.texts['Text']
+        report.name = 'mesh_analysis.txt'
+        report.write("# Object  Surface Area  Volume\n")
+
+        for obj in objs:
+
+            mcell.meshalyzer.object_name = obj.name
+
+            if not (obj.type == 'MESH'):
+                mcell.meshalyzer.status = 'Selected Object Not a Mesh'
+                return {'FINISHED'}
+
+            t_mat = obj.matrix_world
+            mesh=obj.data
+
+            mcell.meshalyzer.vertices = len(mesh.vertices)
+            mcell.meshalyzer.edges = len(mesh.edges)
+            mcell.meshalyzer.faces = len(mesh.polygons)
+
+            area = 0
+            for f in mesh.polygons:
+                if not (len(f.vertices) == 3):
+                    mcell.meshalyzer.status = '***** Mesh Not Triangulated *****'
+                    mcell.meshalyzer.watertight = 'Mesh Not Triangulated'
+                    return {'FINISHED'}
+
+                tv0 = mesh.vertices[f.vertices[0]].co * t_mat
+                tv1 = mesh.vertices[f.vertices[1]].co * t_mat
+                tv2 = mesh.vertices[f.vertices[2]].co * t_mat
+                area = area + mathutils.geometry.area_tri(tv0,tv1,tv2)
+
+            mcell.meshalyzer.area = area
+
+            (edge_faces, edge_face_count) = make_efdict(mesh)
+
+            is_closed = check_closed(edge_face_count)
+            is_manifold = check_manifold(edge_face_count)
+            is_orientable = check_orientable(mesh,edge_faces,edge_face_count)
+
+            if is_orientable:
+                mcell.meshalyzer.normal_status = 'Consistent Normals'
+            else:
+                mcell.meshalyzer.normal_status = 'Inconsistent Normals'
+
+            if is_closed:
+                mcell.meshalyzer.watertight = 'Watertight Mesh'
+            else:
+                mcell.meshalyzer.watertight = 'Non-watertight Mesh'
+
+            if is_manifold:
+                mcell.meshalyzer.manifold = 'Manifold Mesh'
+            else:
+                mcell.meshalyzer.manifold = 'Non-manifold Mesh'
+
+            volume = 0
+            if is_orientable and is_manifold and is_closed:
+                volume = mesh_vol(mesh,t_mat)
+                if volume >= 0:
+                    mcell.meshalyzer.normal_status = 'Outward Facing Normals'
+                else:
+                    mcell.meshalyzer.normal_status = 'Inward Facing Normals'
+
+            mcell.meshalyzer.volume = volume
+            if (not volume == 0.0):
+                mcell.meshalyzer.sav_ratio = area/volume
+
+            report.write("%s %.9g %.9g\n" % (obj.name, mcell.meshalyzer.area, mcell.meshalyzer.volume))
+
+        mcell.meshalyzer.status = ''
         return {'FINISHED'}
 
 
@@ -2088,6 +2186,54 @@ class MCELL_OT_deselect_filtered(bpy.types.Operator):
                         obj.select = False
 
         return {'FINISHED'}
+
+
+class MCELL_OT_toggle_visibility_filtered(bpy.types.Operator):
+  bl_idname = "mcell.toggle_visibility_filtered"
+  bl_label = "Visibility Filtered"
+  bl_description = "Toggle visibility of objects matching the filter"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self,context):
+
+    scn = context.scene
+    mcell = scn.mcell
+    objs = scn.objects
+
+    filter = mcell.object_selector.filter
+
+    for obj in objs:
+      if obj.type == 'MESH':
+        m = re.match(filter,obj.name)
+        if m != None:
+          if m.end() == len(obj.name):
+            obj.hide = not obj.hide
+
+    return {'FINISHED'}
+
+
+class MCELL_OT_toggle_renderability_filtered(bpy.types.Operator):
+  bl_idname = "mcell.toggle_renderability_filtered"
+  bl_label = "Renderability Filtered"
+  bl_description = "Toggle renderability of objects matching the filter"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self,context):
+
+    scn = context.scene
+    mcell = scn.mcell
+    objs = scn.objects
+
+    filter = mcell.object_selector.filter
+
+    for obj in objs:
+      if obj.type == 'MESH':
+        m = re.match(filter,obj.name)
+        if m != None:
+          if m.end() == len(obj.name):
+            obj.hide_render= not obj.hide_render
+
+    return {'FINISHED'}
 
 
 # Rebuild Model Objects List from Scratch

@@ -343,6 +343,9 @@ class MCELL_PT_object_selector(bpy.types.Panel):
         row = layout.row(align=True)
         row.operator("mcell.select_filtered", text="Select Filtered")
         row.operator("mcell.deselect_filtered", text="Deselect Filtered")
+        row=layout.row(align=True)
+        row.operator("mcell.toggle_visibility_filtered",text="Visibility Filtered")
+        row.operator("mcell.toggle_renderability_filtered",text="Renderability Filtered")
 
 
 class MCELL_PT_meshalyzer(bpy.types.Panel):
@@ -358,7 +361,10 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
 
         row = layout.row()
         row.operator("mcell.meshalyzer", text="Analyze Mesh",
-                     icon='MESH_ICOSPHERE')
+            icon='MESH_ICOSPHERE')
+        row = layout.row()
+        row.operator("mcell.gen_meshalyzer_report",
+            text="Generate Analysis Report",icon="MESH_ICOSPHERE")
 
         if (mcell.meshalyzer.status != ""):
             row = layout.row()
