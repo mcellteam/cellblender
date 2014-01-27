@@ -6,7 +6,9 @@ OBJS = mdlparse.bison.o mdlmesh_parser.o vector.o mdlmesh_parser_wrap.o
 
 _mdlmesh_parser.so: setup.py mdlobj.py mdlparse.bison.c mdlmesh_parser.c vector.c mdlmesh_parser_wrap.c 
 	python3.3 setup.py build_ext --inplace
-	mv _mdlmesh_parser.cpython-33m.so _mdlmesh_parser.so
+	@if [ -e _mdlmesh_parser.cpython-33m.so ] ; then \
+	    mv _mdlmesh_parser.cpython-33m.so _mdlmesh_parser.so; \
+	fi
 
 mdllex.flex.c: mdllex.l
 	flex -Crema mdllex.l
