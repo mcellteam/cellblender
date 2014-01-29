@@ -176,7 +176,7 @@ class MCell_UL_check_molecule(bpy.types.UIList):
             layout.label(item.name, icon='FILE_TICK')
 
 
-class MCell_PT_define_molecules(bpy.types.Panel):
+class MCELL_PT_define_molecules(bpy.types.Panel):
     bl_label = "CellBlender - Define Molecules"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
