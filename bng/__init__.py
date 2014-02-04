@@ -17,7 +17,7 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
     def execute(self, context):
         bngfilepath = self.filepath         # bngl file path
         print ( "Calling bng_operators.execute_bionetgen("+bngfilepath+")" )
-        bng_operators.execute_bionetgen(bngfilepath)
+        bng_operators.execute_bionetgen(bngfilepath,context)
         print ( "Back from bng_operators.execute_bionetgen("+bngfilepath+")" )
         import imp
         imp.reload(net)                     # This loads (and runs?) net.py which defines par_list and other lists
