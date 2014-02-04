@@ -335,6 +335,10 @@ class MCellProjectPanelProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.check_python_binary)
     python_binary_valid = BoolProperty(name="Python Binary Valid",
         default=False)
+    bionetgen_location = StringProperty(name="BioNetGen Location",
+        update=cellblender_operators.check_bionetgen_location)
+    bionetgen_location_valid = BoolProperty(name="BioNetGen Location Valid",
+        default=False)
     status = StringProperty(name="Status")
 
 

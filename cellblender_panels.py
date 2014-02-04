@@ -100,6 +100,24 @@ class MCELL_PT_project_settings(bpy.types.Panel):
                 icon='FILE_TICK')
 
         row = layout.row()
+        row.operator("mcell.set_bionetgen_location",
+                     text="Set Path to BioNetGen File", icon='FILESEL')
+        row = layout.row()
+        bionetgen_location = mcell.project_settings.bionetgen_location
+        if not bionetgen_location:
+            # Using pin icon to be consistent with project directory, but maybe
+            # we should use error icon to be consistent with other sections.
+            row.label("BioNetGen location not set", icon='UNPINNED')
+        elif not mcell.project_settings.bionetgen_location_valid:
+            row.label("BioNetGen File/Permissions Error: " +
+                mcell.project_settings.bionetgen_location, icon='ERROR')
+        else:
+            row.label(
+                text="BioNetGen Location: "+mcell.project_settings.bionetgen_location,
+                icon='FILE_TICK')
+
+
+        row = layout.row()
         row.operator("mcell.set_python_binary",
                      text="Set Path to Python Binary", icon='FILESEL')
         row = layout.row()

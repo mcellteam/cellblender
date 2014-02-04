@@ -114,7 +114,19 @@ class BNG_OT_release_site_add(bpy.types.Operator):
 	    
         return {'FINISHED'}
 
-    
+
+def execute_bionetgen(filepath):
+    bngpath = "/home/bobkuczewski/proj/MCell/BioNetGen/BioNetGen-2.2.4-stable/BNG2.pl"
+    print ("\nBioNetGen exe found: " + bngpath)
+    destpath = os.path.dirname(__file__)
+    exe_bng = "  ".join([bngpath, "--outdir", destpath, filepath])    # create command string for BNG execution
+    print("*** Starting BioNetGen execution ***")
+    print("    Command: " + exe_bng )
+    os.system(exe_bng)    # execute BNG
+    return{'FINISHED'}
+
+
+"""
 def execute_bionetgen(filepath):
     from os.path import exists
     filebasename = os.path.basename(filepath)
@@ -131,7 +143,8 @@ def execute_bionetgen(filepath):
                 i = 1
             if dirpath in checked:  # escape any child dir if already been checked
                 continue
-            bngpath = os.path.join(dirpath,"BNG2.pl")    # tentative path for the BNG exe. file 
+            bngpath = os.path.join(dirpath,"BNG2.pl")    # tentative path for the BNG exe. file
+            print ( "Searching for " + bngpath )
             if os.path.exists(bngpath):    # if BNG exe.file found, proceed for BNG execution
                 print ("\nBioNetGen exe found: " + bngpath)
                 destpath = os.path.dirname(__file__)
@@ -144,4 +157,4 @@ def execute_bionetgen(filepath):
         if (n==20):    # too many iterations; BNG not found, stop further search
             print ("Error running BioNetGen. BNG2.pl not found....")
     return{'FINISHED'}
-   
+"""

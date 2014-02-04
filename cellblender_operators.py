@@ -944,6 +944,36 @@ class MCELL_OT_set_python_binary(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
 
+def check_bionetgen_location(self, context):
+    """Callback to check for mcell executable"""
+    mcell = context.scene.mcell
+    application_path = mcell.project_settings.bionetgen_location
+    mcell.project_settings.bionetgen_location_valid = is_executable(application_path)
+    return None
+
+
+class MCELL_OT_set_check_bionetgen_location(bpy.types.Operator):
+    bl_idname = "mcell.set_bionetgen_location"
+    bl_label = "Set BioNetGen Location"
+    bl_description = ("Set BioNetGen Location. If needed, download at "
+                      "bionetgen.org")
+    bl_options = {'REGISTER'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+
+    #def __init__(self):
+    #    self.filepath = bpy.context.scene.mcell.project_settings.mcell_binary
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.project_settings.bionetgen_location = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
 def check_mcell_binary(self, context):
     """Callback to check for mcell executable"""
     mcell = context.scene.mcell
