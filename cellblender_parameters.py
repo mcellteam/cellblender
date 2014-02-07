@@ -329,12 +329,12 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
                             p.param_data.value = value
                         p.param_data.status = ""
                     
-                    p.param_data.expression = gen_params.translate_panel_param_ID_expr ( p.param_data.ID_expression )
+                    p.expression = gen_params.translate_panel_param_ID_expr ( p.param_data.ID_expression )
                 # Translate the expression to reflect the new name
                 #threshold_print ( 60, "Translating " + str(p.param_data.ID_expression) + " during update_name" )
                 expr = gen_params.translate_panel_param_ID_expr ( p.param_data.ID_expression )
-                if p.param_data.expression != expr:
-                    p.param_data.expression = expr
+                if p.expression != expr:
+                    p.expression = expr
             gen_params.name_update_in_progress = False
 
         #threshold_print ( 60, "Done updating name for parameter " + self.name )
@@ -376,14 +376,14 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
 
         for p in plist:
             # Create a string encoded version of the expression (like "#1~+~3~*~(~#2~+~7.0~)")
-            id_expr = gen_params.parse_panel_param_expr ( p.param_data.expression )
+            id_expr = gen_params.parse_panel_param_expr ( p.expression )
             #threshold_print ( 60, "Inside update_expression, id_expr = " + str(id_expr) )
             if p.param_data.ID_expression != id_expr:
                 p.param_data.ID_expression = id_expr
                 #threshold_print ( 60, "Changing self.ID_expression to " + str(p.param_data.ID_expression) )
             expr = gen_params.translate_panel_param_ID_expr ( p.param_data.ID_expression )
-            if p.param_data.expression != expr:
-                p.param_data.expression = expr
+            if p.expression != expr:
+                p.expression = expr
             value = gen_params.eval_panel_param_ID_expr ( p.param_data.ID_expression )
             if value != None:
                 if p.param_data.value != value:
@@ -1074,7 +1074,7 @@ class PanelParameterData(bpy.types.PropertyGroup):
 
     status = StringProperty(name="status", default="")
 
-    expression = StringProperty(name="expression", default="0", description="Panel Parameter Expression.", update=update_PanelParameter)
+    # expression = StringProperty(name="expression", default="0", description="Panel Parameter Expression.", update=update_PanelParameter)
     ID_expression = StringProperty(name="ID_expression", default="0")
     value = FloatProperty(name="value", default=0)
     label = StringProperty(name="label", default="Parameter")
@@ -1104,10 +1104,10 @@ class PanelParameter(bpy.types.PropertyGroup):
         return str(self.param_data.label)
 
     def set_expression(self, expr):
-        self.param_data.expression = expr
+        self.expression = expr
         return True
     def get_expression(self):
-        return str(self.param_data.expression)
+        return str(self.expression)
 
     def get_ID_expression(self):
         return str(self.param_data.ID_expression)
@@ -1153,10 +1153,10 @@ class PanelParameter(bpy.types.PropertyGroup):
 
     def draw_in_new_row(self, layout):
         """ Default drawing for parameters ... overload for different functionality """
-        # print ( self.param_data.expression.description ) # Attempting to get ahold of the description tool tip data ... failed
+        # print ( self.expression.description ) # Attempting to get ahold of the description tool tip data ... failed
         row = layout.row()
         value = self.get_value()
-        if (self.param_data.expression == None) or (self.param_data.expression == ''):
+        if (self.expression == None) or (self.expression == ''):
             row.prop ( self.param_data, "expression", text=self.param_data.label+" (Undefined)" )
         else:
             row.prop ( self.param_data, "expression", text=self.param_data.label+" = "+'{:g}'.format(value) )
@@ -1210,10 +1210,10 @@ class PanelParameterFloat(bpy.types.PropertyGroup):
         return str(self.param_data.label)
 
     def set_expression(self, expr):
-        self.param_data.expression = expr
+        self.expression = expr
         return True
     def get_expression(self):
-        return str(self.param_data.expression)
+        return str(self.expression)
 
     def get_ID_expression(self):
         return str(self.param_data.ID_expression)
@@ -1259,10 +1259,10 @@ class PanelParameterFloat(bpy.types.PropertyGroup):
 
     def draw_in_new_row(self, layout):
         """ Default drawing for parameters ... overload for different functionality """
-        # print ( self.param_data.expression.description ) # Attempting to get ahold of the description tool tip data ... failed
+        # print ( self.expression.description ) # Attempting to get ahold of the description tool tip data ... failed
         row = layout.row()
         value = self.get_value()
-        if (self.param_data.expression == None) or (self.param_data.expression == ''):
+        if (self.expression == None) or (self.expression == ''):
             row.prop ( self.param_data, "expression", text=self.param_data.label+" (Undefined)" )
         else:
             row.prop ( self.param_data, "expression", text=self.param_data.label+" = "+'{:g}'.format(value) )
@@ -1377,7 +1377,7 @@ class PARAM_debug_class(PanelParameter):
     """ Example of subclassing PanelParameter and overloading its methods """
     param_data = PointerProperty(type=PanelParameterData)
     def update( self ):
-        #threshold_print ( 20, "   User's update called with " + " self.param_data.expression = " + str(self.param_data.expression) + ", self.param_data.value = " + str(self.param_data.value) )
+        #threshold_print ( 20, "   User's update called with " + " self.expression = " + str(self.expression) + ", self.param_data.value = " + str(self.param_data.value) )
         #threshold_print ( 20, "     dir(self) = " + str(dir(self)) )
         #threshold_print ( 20, "     Starting python interactive console ... control-D to continue running..." )
         # This drops into a python interpreter on the console ( don't start Blender with an & !! )
@@ -1389,7 +1389,7 @@ class ExampleOverloadedPanelParameter(PanelParameter):
     """ Example of subclassing PanelParameter and overloading its methods """
     param_data = PointerProperty(type=PanelParameterData)
     def get_text(self):
-        return (  str(self.param_data.expression) + "=" + str(self.param_data.value) )
+        return (  str(self.expression) + "=" + str(self.param_data.value) )
     def update( self ):
         parent = get_parent ( self )
         #threshold_print ( 50, "Parent = " + str(parent) )
