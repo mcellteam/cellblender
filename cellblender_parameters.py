@@ -1024,7 +1024,7 @@ def update_PanelParameter ( self, context ):
 
     #threshold_print ( 60, "update_PanelParameter called" )
     #threshold_print ( 60, "  self.expression = " + str(self.expression) )
-    #threshold_print ( 60, "  self.value = " + str(self.value) )
+    #threshold_print ( 60, "  self.param_data.value = " + str(self.param_data.value) )
     
     mcell = context.scene.mcell
     gen_params = mcell.general_parameters
@@ -1034,31 +1034,32 @@ def update_PanelParameter ( self, context ):
     # Create a string encoded version of the expression (like "#1~+~3~*~(~#2~+~7.0~)")
     id_expr = gen_params.parse_panel_param_expr ( self.expression )
     #threshold_print ( 60, "update_PanelParameter with id_expr = " + str(id_expr) )
-    if self.ID_expression != id_expr:
-        self.ID_expression = id_expr
-        #threshold_print ( 60, "changing self.ID_expression to " + str(self.ID_expression) )
-    expr = gen_params.translate_panel_param_ID_expr ( self.ID_expression )
+    if self.param_data.ID_expression != id_expr:
+        self.param_data.ID_expression = id_expr
+        #threshold_print ( 60, "changing self.param_data.ID_expression to " + str(self.param_data.ID_expression) )
+    expr = gen_params.translate_panel_param_ID_expr ( self.param_data.ID_expression )
     if self.expression != expr:
         self.expression = expr
-    value = gen_params.eval_panel_param_ID_expr ( self.ID_expression )
+    value = gen_params.eval_panel_param_ID_expr ( self.param_data.ID_expression )
     if value == None:
         #threshold_print ( 5, "Invalid expression detected in update_PanelParameter!!!" )
-        self.status = "Invalid Expression: " + expr
+        self.param_data.status = "Invalid Expression: " + expr
     else:
-        if self.value != value:
-            self.value = value
-        self.status = ""
+        if self.param_data.value != value:
+            self.param_data.value = value
+        self.param_data.status = ""
 
     #threshold_print ( 60, " After Automatic Update:" )
     #threshold_print ( 60, "  self.expression = " + str(self.expression) )
-    #threshold_print ( 60, "  self.value = " + str(self.value) )
+    #threshold_print ( 60, "  self.param_data.value = " + str(self.param_data.value) )
 
     #get_parent(self).update()
 
     #print ( "2 - before call to get_parent(self).update(), value of \"" + expr + "\" = " + str(value) )
-    temp_parent = get_parent(self)
+    #   temp_parent = get_parent(self)
     #print ( "3 - between call to get_parent(self).update()" )
-    temp_parent.update()
+    #   temp_parent.update()
+    self.update()
     #print ( "4 - after call to get_parent(self).update()\n" )
 
     #threshold_print ( 60, " After User Update:" )
@@ -1066,6 +1067,7 @@ def update_PanelParameter ( self, context ):
     #threshold_print ( 60, "  self.value = " + str(self.value) )
 
     #print ( "5 - bottom of call to update_PanelParameter" )
+    
 
 
 class PanelParameterData(bpy.types.PropertyGroup):
@@ -1157,9 +1159,9 @@ class PanelParameter(bpy.types.PropertyGroup):
         row = layout.row()
         value = self.get_value()
         if (self.expression == None) or (self.expression == ''):
-            row.prop ( self.param_data, "expression", text=self.param_data.label+" (Undefined)" )
+            row.prop ( self, "expression", text=self.param_data.label+" (Undefined)" )
         else:
-            row.prop ( self.param_data, "expression", text=self.param_data.label+" = "+'{:g}'.format(value) )
+            row.prop ( self, "expression", text=self.param_data.label+" = "+'{:g}'.format(value) )
         if not self.is_status_ok():
             row = layout.row()
             row.label(icon='ERROR', text=self.param_data.status)
@@ -1185,6 +1187,9 @@ class PanelParameter(bpy.types.PropertyGroup):
 class PanelParameterInt(PanelParameter):
     """ Simple (but useful) subclass of PanelParameter """
     param_data = PointerProperty(type=PanelParameterData)
+    expression = StringProperty(name="Parameter", default="0",
+                 description="Generic Parameter",
+                 update=update_PanelParameter)
     # Over-ride the "get_value" function to return an integer
     def get_value(self):
         return int(self.param_data.value)
@@ -1194,6 +1199,9 @@ class PanelParameterFloat(bpy.types.PropertyGroup):
     # This is a "hard-coded" version of PanelParameterFloat that doesn't inherit from PanelParameter
 
     param_data = PointerProperty(type=PanelParameterData)
+    expression = StringProperty(name="Parameter", default="0",
+                 description="Generic Parameter",
+                 update=update_PanelParameter)
 
     def get_status(self):
         return str(self.param_data.status)
@@ -1263,9 +1271,9 @@ class PanelParameterFloat(bpy.types.PropertyGroup):
         row = layout.row()
         value = self.get_value()
         if (self.expression == None) or (self.expression == ''):
-            row.prop ( self.param_data, "expression", text=self.param_data.label+" (Undefined)" )
+            row.prop ( self, "expression", text=self.param_data.label+" (Undefined)" )
         else:
-            row.prop ( self.param_data, "expression", text=self.param_data.label+" = "+'{:g}'.format(value) )
+            row.prop ( self, "expression", text=self.param_data.label+" = "+'{:g}'.format(value) )
         if not self.is_status_ok():
             row = layout.row()
             row.label(icon='ERROR', text=self.param_data.status)
@@ -1300,19 +1308,18 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
     #threshold_print ( 95, "Path = " + str(objpath) + ", obj = ", obj )
     #threshold_print ( 98, "  plist = ", plist )
 
-    # Note, even though PanelParameterFloat and PanelParameterInt are subclasses of PanelParameter, they're not found that way!!
-    if isinstance(obj,(bpy.types.PanelParameterInt,bpy.types.PanelParameterFloat)):
-        # This is what we're looking for so add it to the list
+
+    if isinstance(obj,bpy.types.PanelParameter):
+        # This is what we're looking for, so add it to the list (although this doesn't seem to happen!!)
         plist.append ( obj )
-        #threshold_print ( 98, "   plist.append gives ", plist )
-    elif isinstance(obj,bpy.types.PanelParameter):
-        # This might be some other (non-numeric) type of PanelParameter ... ignore it
-        pass
+        #threshold_print ( 98, "   plist.append gives " + str(plist) )
     elif isinstance(obj,bpy.types.PropertyGroup):
-        # This is a property group, so check to see if it has parameters or not
-        # The contains_cellblender_parameters check greatly sped up parameter searching
-        if 'contains_cellblender_parameters' in dir(obj):
-            # Walk through all of its properties using keys
+        if 'expression' in obj.keys() and 'param_data' in obj.keys():
+            # This is also what we're looking for, so add it to the list
+            plist.append ( obj )
+            #threshold_print ( 98, "   plist.append gives " + str(plist) )
+        else:
+            # This is a property group, so walk through all of its properties using keys
             # for objkey in obj.keys():
             for objkey in obj.bl_rna.properties.keys():    # This is somewhat ugly, but works best!!
                 try:
@@ -1320,13 +1327,15 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
                     plist = get_numeric_parameter_list(pstr, plist, debug)
                 except:
                     # This can happen with properties in the .blend file that are no longer in the code or have been renamed!!!
-                    threshold_print ( 0, "  ===> Exception:" )
-                    threshold_print ( 0, "    ===> Exception type = " + sys.exc_type )
-                    threshold_print ( 0, "    ===> Exception value = " + sys.exc_value )
-                    threshold_print ( 0, "    ===> Exception traceback = " + sys.exc_traceback )
-                    threshold_print ( 0, "    ===> Exception in recursive call to get_numeric_parameter_list ( " + pstr + " )" )
-                    threshold_print ( 0, "    ===> Exception in get_numeric_parameter_list isinstance branch with " + objpath + "." + str(objkey) )
+                    print ( "Exception inside get_numeric_parameter()" )
+                    # threshold_print ( 0, "  ===> Exception in get_numeric_parameter_list:" + str ( sys.exc_info() ) )
+                    #threshold_print ( 0, "    ===> Exception type = " + sys.exc_type )
+                    #threshold_print ( 0, "    ===> Exception value = " + sys.exc_value )
+                    #threshold_print ( 0, "    ===> Exception traceback = " + sys.exc_traceback )
+                    #threshold_print ( 0, "    ===> Exception in recursive call to get_numeric_parameter_list ( " + pstr + " )" )
+                    # threshold_print ( 0, "    ===> Exception in get_numeric_parameter_list isinstance branch with " + objpath + "." + str(objkey) )
                     pass
+
     elif type(obj).__name__ == 'bpy_prop_collection_idprop':
         # This is a collection, so step through its elements as if it's an array using keys
         for objkey in obj.keys():

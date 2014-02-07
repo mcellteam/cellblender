@@ -443,6 +443,16 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.mol_viz_toggle_manual_select)
 
 
+class Iterations_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Simulation Iterations", default="0",
+                 description="Number of iterations to run",
+                 update=cellblender_parameters.update_PanelParameter)
+    # Over-ride the "get_value" function to return an integer
+    def get_value(self):
+        return int(self.param_data.value)
+
+
 class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
     def __init__(self):
@@ -451,9 +461,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     # The following line must be added to every PropertyGroup to be searched for CellBlender Parameters:
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     
-    iterations = PointerProperty(name="Simulation Iterations",
-        type=cellblender_parameters.PanelParameterInt,
-        description="Number of iterations to run")
+    iterations = PointerProperty(name="Simulation Iterations", type=Iterations_PropertyGroup)
 
     time_step = PointerProperty(name="Time Step",
         type=cellblender_parameters.PanelParameterFloat,
