@@ -448,7 +448,6 @@ class Iterations_PropertyGroup(cellblender_parameters.PanelParameter):
     expression = StringProperty(name="Simulation Iterations", default="0",
                  description="Number of iterations to run",
                  update=cellblender_parameters.update_PanelParameter)
-    # Over-ride the "get_value" function to return an integer
     def get_value(self):
         return int(self.param_data.value)
 
@@ -456,6 +455,32 @@ class TimeStep_PropertyGroup(cellblender_parameters.PanelParameter):
     param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
     expression = StringProperty(name="Time Step", default="1e-6",
                  description="Simulation Time Step Units: seconds",
+                 update=cellblender_parameters.update_PanelParameter)
+
+class TimeStepMax_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Maximum Time Step", default="",
+                 description="The longest possible time step",
+                 update=cellblender_parameters.update_PanelParameter)
+
+class SpaceStep_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Space Step", default="",
+                 description="Have molecules take the same mean diffusion distance",
+                 update=cellblender_parameters.update_PanelParameter)
+
+class SurfaceGridDensity_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Surface Grid Density", default="10000",
+                 description="Number of molecules that can be stored per square micron",
+                 update=cellblender_parameters.update_PanelParameter)
+    def get_value(self):
+        return int(self.param_data.value)
+
+class InteractionRadius_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Interaction Radius", default="",
+                 description="Molecules will interact when they get within N microns.",
                  update=cellblender_parameters.update_PanelParameter)
 
 
@@ -477,21 +502,10 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
     # Advanced/Optional Commands
 
-    time_step_max = PointerProperty(name="Maximum Time Step",
-        type=cellblender_parameters.PanelParameterFloat,
-        description="The longest possible time step")
-
-    space_step = PointerProperty(name="Space Step",
-        type=cellblender_parameters.PanelParameterFloat,
-        description="Have molecules take the same mean diffusion distance")
-
-    surface_grid_density = PointerProperty(name="Surface Grid Density",
-        type=cellblender_parameters.PanelParameterInt,
-        description="Number of molecules that can be stored per square micron")
-
-    interaction_radius = PointerProperty(name="Interaction Radius",
-        type=cellblender_parameters.PanelParameterFloat,
-        description="Molecules will interact when they get within N microns.")
+    time_step_max = PointerProperty(name="Maximum Time Step", type=TimeStepMax_PropertyGroup)
+    space_step = PointerProperty(name="Space Step", type=SpaceStep_PropertyGroup)
+    surface_grid_density = PointerProperty(name="Surface Grid Density", type=SurfaceGridDensity_PropertyGroup)
+    interaction_radius = PointerProperty(name="Interaction Radius", type=InteractionRadius_PropertyGroup)
 
     radial_directions = PointerProperty(name="Radial Directions",
         type=cellblender_parameters.PanelParameterFloat,

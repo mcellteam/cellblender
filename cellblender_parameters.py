@@ -1076,6 +1076,7 @@ class PanelParameterData(bpy.types.PropertyGroup):
 
     status = StringProperty(name="status", default="")
 
+    # The expression itself has been moved out of PanelParameterData so it can get a custom description as a tool tip.
     # expression = StringProperty(name="expression", default="0", description="Panel Parameter Expression.", update=update_PanelParameter)
     ID_expression = StringProperty(name="ID_expression", default="0")
     value = FloatProperty(name="value", default=0)
