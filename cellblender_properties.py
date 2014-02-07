@@ -483,6 +483,26 @@ class InteractionRadius_PropertyGroup(cellblender_parameters.PanelParameter):
                  description="Molecules will interact when they get within N microns.",
                  update=cellblender_parameters.update_PanelParameter)
 
+class RadialDirections_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Radial Directions", default="",
+                 description="Number of different directions to put in lookup table. "
+                             "Leave alone unless you know what you are doing.",
+                 update=cellblender_parameters.update_PanelParameter)
+
+class RadialSubdivisions_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Radial Subdivisions", default="",
+                 description="Number of distances to put in look-up table. "
+                             "Leave alone unless you know what you are doing.",
+                 update=cellblender_parameters.update_PanelParameter)
+
+class VacancySearchDistance_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Vacancy Search Distance", default="",
+                 description="Surface molecule products can be created at N distance.",
+                 update=cellblender_parameters.update_PanelParameter)
+
 
 class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
@@ -507,15 +527,9 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     surface_grid_density = PointerProperty(name="Surface Grid Density", type=SurfaceGridDensity_PropertyGroup)
     interaction_radius = PointerProperty(name="Interaction Radius", type=InteractionRadius_PropertyGroup)
 
-    radial_directions = PointerProperty(name="Radial Directions",
-        type=cellblender_parameters.PanelParameterFloat,
-        description="Number of different directions to put in lookup table. "
-                    "Leave alone unless you know what you are doing.")
+    radial_directions = PointerProperty(name="Radial Directions", type=RadialDirections_PropertyGroup)
 
-    radial_subdivisions = PointerProperty(name="Radial Subdivisions",
-        type=cellblender_parameters.PanelParameterFloat,
-        description="Number of distances to put in look-up table. "
-                    "Leave alone unless you know what you are doing.")
+    radial_subdivisions = PointerProperty(name="Radial Subdivisions", type=RadialSubdivisions_PropertyGroup)
 
     accurate_3d_reactions = BoolProperty(
         name="Accurate 3D Reaction",
@@ -528,9 +542,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
                     "grid.",
         default=False)
 
-    vacancy_search_distance = PointerProperty(name="Vacancy Search Distance",
-        type=cellblender_parameters.PanelParameterFloat,
-        description="Surface molecule products can be created at N distance.")
+    vacancy_search_distance = PointerProperty(name="Vacancy Search Distance", type=VacancySearchDistance_PropertyGroup)
 
     microscopic_reversibility_enum = [
         ('ON', "On", ""),
