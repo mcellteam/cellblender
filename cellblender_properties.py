@@ -452,6 +452,12 @@ class Iterations_PropertyGroup(cellblender_parameters.PanelParameter):
     def get_value(self):
         return int(self.param_data.value)
 
+class TimeStep_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Time Step", default="1e-6",
+                 description="Simulation Time Step Units: seconds",
+                 update=cellblender_parameters.update_PanelParameter)
+
 
 class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
@@ -462,10 +468,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     
     iterations = PointerProperty(name="Simulation Iterations", type=Iterations_PropertyGroup)
-
-    time_step = PointerProperty(name="Time Step",
-        type=cellblender_parameters.PanelParameterFloat,
-        description="Simulation Time Step Units: seconds")
+    time_step = PointerProperty(name="Time Step", type=TimeStep_PropertyGroup)
 
     status = StringProperty(name="Status")
     advanced = bpy.props.BoolProperty(default=False)

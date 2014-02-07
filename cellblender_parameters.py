@@ -1188,7 +1188,7 @@ class PanelParameterInt(PanelParameter):
     """ Simple (but useful) subclass of PanelParameter """
     param_data = PointerProperty(type=PanelParameterData)
     expression = StringProperty(name="Parameter", default="0",
-                 description="Generic Parameter",
+                 description="Generic Int Parameter - Please report missing tool tip.",
                  update=update_PanelParameter)
     # Over-ride the "get_value" function to return an integer
     def get_value(self):
@@ -1200,7 +1200,7 @@ class PanelParameterFloat(bpy.types.PropertyGroup):
 
     param_data = PointerProperty(type=PanelParameterData)
     expression = StringProperty(name="Parameter", default="0",
-                 description="Generic Parameter",
+                 description="Generic Float Parameter - Please report missing tool tip.",
                  update=update_PanelParameter)
 
     def get_status(self):
