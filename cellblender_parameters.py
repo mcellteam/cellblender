@@ -1179,9 +1179,12 @@ class PanelParameter(bpy.types.PropertyGroup):
 
 #This is the normal PanelParameterFloat that inherits from PanelParameter
 
-#class PanelParameterFloat(PanelParameter):
-#    """ Simple (but useful) subclass of PanelParameter """
-#    param_data = PointerProperty(type=PanelParameterData)
+class PanelParameterFloat(PanelParameter):
+    """ Simple (but useful) subclass of PanelParameter """
+    param_data = PointerProperty(type=PanelParameterData)
+    expression = StringProperty(name="Parameter", default="0",
+                 description="Generic Float Parameter - Please report missing tool tip.",
+                 update=update_PanelParameter)
 
 
 class PanelParameterInt(PanelParameter):
@@ -1195,6 +1198,7 @@ class PanelParameterInt(PanelParameter):
         return int(self.param_data.value)
 
 
+"""
 class PanelParameterFloat(bpy.types.PropertyGroup):
     # This is a "hard-coded" version of PanelParameterFloat that doesn't inherit from PanelParameter
 
@@ -1230,7 +1234,7 @@ class PanelParameterFloat(bpy.types.PropertyGroup):
         return float(self.param_data.value)
 
     def get_text(self):
-        """ Default string expression for parameters ... overload for different functionality """
+        # Default string expression for parameters ... overload for different functionality
         return (  self.get_expression() + " = " + str(self.get_value()) )
 
     def get_formatted_string(self):
@@ -1252,21 +1256,21 @@ class PanelParameterFloat(bpy.types.PropertyGroup):
 
     def update(self):
         #threshold_print ( 90, "   Default PanelParameter.update() function ... overload for functionality" )
-        """#plist = get_numeric_parameter_list ( None, [] )
-        if threshold_print_enabled(95):
-            #threshold_print ( 95, "     List of all panel parameters:" )
-            #for pp in plist:
-            #    threshold_print ( 95, pp )
-            #plist_names = str(plist)[1:-1].split(",")
-            #for pp in plist_names:
-            #    threshold_print ( 95, "       " + pp.strip() )
-            #for i in range(len(plist)):
-            #    threshold_print ( 95, "      " + plist_names[i].strip() + " = " + str(plist[i].get_value()) )
-        """
+        #plist = get_numeric_parameter_list ( None, [] )
+        #if threshold_print_enabled(95):
+        #    #threshold_print ( 95, "     List of all panel parameters:" )
+        #    #for pp in plist:
+        #    #    threshold_print ( 95, pp )
+        #    #plist_names = str(plist)[1:-1].split(",")
+        #    #for pp in plist_names:
+        #    #    threshold_print ( 95, "       " + pp.strip() )
+        #    #for i in range(len(plist)):
+        #    #    threshold_print ( 95, "      " + plist_names[i].strip() + " = " + str(plist[i].get_value()) )
+        
         pass
 
     def draw_in_new_row(self, layout):
-        """ Default drawing for parameters ... overload for different functionality """
+        # Default drawing for parameters ... overload for different functionality
         # print ( self.expression.description ) # Attempting to get ahold of the description tool tip data ... failed
         row = layout.row()
         value = self.get_value()
@@ -1286,7 +1290,7 @@ class PanelParameterFloat(bpy.types.PropertyGroup):
                 if value > self.param_data.max_value:
                     row = layout.row()
                     row.label(icon='ERROR', text="Warning: Value of " + str(value) + " for " + self.get_label() + " is greater than maximum of "+str(self.param_data.max_value))
-
+"""
 
 
 def get_numeric_parameter_list ( objpath, plist, debug=False ):
