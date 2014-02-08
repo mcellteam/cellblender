@@ -115,7 +115,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
 class ReleaseProbability_PropertyGroup(cellblender_parameters.PanelParameter):
     param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Release Probability", default="",
+    expression = StringProperty(name="Release Probability", default="1",
                  description="Release does not occur every time, but rather with specified probability.",
                  update=cellblender_parameters.update_PanelParameter)
 
@@ -201,7 +201,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     def set_defaults(self):
         print ( "MCellMoleculeReleaseProperty is setting defaults." )
         # Panel Parameter                         Name                    Default    Min  Max
-        self.probability.set_fields             ( "Probability",              "0",   0.0, 1.0 )
+        self.probability.set_fields             ( "Probability",              "1",   0.0, 1.0 )
         self.quantity.set_fields                ( "Quantity to Release",      "0",   0.0      )
 
 
