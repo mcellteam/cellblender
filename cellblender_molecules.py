@@ -95,6 +95,26 @@ def check_callback(self, context):
     self.check_callback(context)
     return
 
+
+
+class MoleculeDiffusionConstant_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Diffusion Constant", default="",
+                 description="Diffusion Constant Units: cm^2/sec",
+                 update=cellblender_parameters.update_PanelParameter)
+
+class MoleculeCustomTimeStep_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Custom Time Step", default="",
+                 description="Custom Time Step Units: seconds",
+                 update=cellblender_parameters.update_PanelParameter)
+
+class MoleculeCustomSpaceStep_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Custom Space Step", default="",
+                 description="Custom Space Step Units: microns",
+                 update=cellblender_parameters.update_PanelParameter)
+
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     name = StringProperty(
@@ -110,15 +130,15 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         description="Surface molecules are constrained to surfaces/meshes. "
                     "Volume molecules exist in space.")
 
-    diffusion_constant = PointerProperty(name="Diffusion Constant", type=cellblender_parameters.PanelParameterFloat)
+    diffusion_constant = PointerProperty(type=MoleculeDiffusionConstant_PropertyGroup)
 
     target_only = BoolProperty(
         name="Target Only",
         description="If selected, molecule will not initiate reactions when "
                     "it runs into other molecules. Can speed up simulations.")
 
-    custom_time_step = PointerProperty(name="Custom Time Step", type=cellblender_parameters.PanelParameterFloat)
-    custom_space_step = PointerProperty(name="Custom Space Step", type=cellblender_parameters.PanelParameterFloat)
+    custom_time_step = PointerProperty(type=MoleculeCustomTimeStep_PropertyGroup)
+    custom_space_step = PointerProperty(type=MoleculeCustomSpaceStep_PropertyGroup)
 
     export_viz = bpy.props.BoolProperty(
         default=False, description="If selected, the molecule will be "
@@ -128,7 +148,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def set_defaults(self):
         self.name = "Molecule_"+str(self.id)
-        self.diffusion_constant.set_label ( "Diffusion Constant" )  # Tried self.diffusion_constant.name but didn't work.
+        self.diffusion_constant.set_label ( "Diffusion Constant" )
         self.custom_time_step.set_label ( "Custom Time Step" )
         self.custom_space_step.set_label ( "Custom Space Step" )
 
@@ -140,7 +160,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     def draw_props ( self, layout, molecules ):
         layout.prop ( self, "name" )
         layout.prop ( self, "type" )
-        # layout.prop ( self, "diffusion_constant")
         self.diffusion_constant.draw_in_new_row(layout)
 
         box = layout.box()
@@ -156,10 +175,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             row.prop(self, "target_only")
             self.custom_time_step.draw_in_new_row(box)
             self.custom_space_step.draw_in_new_row(box)
-            #row = box.row()
-            #row.prop(self, "custom_time_step")
-            #row = box.row()
-            #row.prop(self, "custom_space_step")
 
     def check_callback(self, context):
         """Allow the parent molecule list (MCellMoleculesListProperty) to do the checking"""

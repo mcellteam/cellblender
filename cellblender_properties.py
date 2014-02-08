@@ -60,6 +60,20 @@ class MCellFloatVectorProperty(bpy.types.PropertyGroup):
 
 ######################## The definitions of MCellParameterProperty and MCellGeneralParameterProperty were here ########################
 
+class ReactionFwdRate_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Forward Rate", default="",
+                 description="Forward Rate Units: sec^-1 (unimolecular),"
+                             " M^-1*sec^-1 (bimolecular)",
+                 update=cellblender_parameters.update_PanelParameter)
+
+class ReactionBkwdRate_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Backward Rate", default="",
+                 description="Backward Rate Units: sec^-1 (unimolecular),"
+                             " M^-1*sec^-1 (bimolecular)",
+                 update=cellblender_parameters.update_PanelParameter)
+
 
 class MCellReactionProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
@@ -89,18 +103,10 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.check_reaction)
 
 
-    fwd_rate = PointerProperty(name="Forward Rate",
-        type=cellblender_parameters.PanelParameterFloat,
-        description="Forward Rate Units: sec^-1 (unimolecular),"
-                    " M^-1*sec^-1 (bimolecular)")
-
-    bkwd_rate = PointerProperty(name="Backward Rate",
-        type=cellblender_parameters.PanelParameterFloat,
-        description="Backward Rate Units: sec^-1 (unimolecular),"
-                    " M^-1*sec^-1 (bimolecular)")
+    fwd_rate = PointerProperty(type=ReactionFwdRate_PropertyGroup)
+    bkwd_rate = PointerProperty(type=ReactionBkwdRate_PropertyGroup)
 
     def set_defaults(self):
-        print ( "MCellReactionProperty is setting defaults." )
         # Panel Parameter                         Name             Default
         self.fwd_rate.set_fields                ( "Forward Rate",      "0" )
         self.bkwd_rate.set_fields               ( "Backward Rate",      "" )
@@ -512,8 +518,8 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     # The following line must be added to every PropertyGroup to be searched for CellBlender Parameters:
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     
-    iterations = PointerProperty(name="Simulation Iterations", type=Iterations_PropertyGroup)
-    time_step = PointerProperty(name="Time Step", type=TimeStep_PropertyGroup)
+    iterations = PointerProperty(type=Iterations_PropertyGroup)
+    time_step = PointerProperty(type=TimeStep_PropertyGroup)
 
     status = StringProperty(name="Status")
     advanced = bpy.props.BoolProperty(default=False)
@@ -522,14 +528,12 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
     # Advanced/Optional Commands
 
-    time_step_max = PointerProperty(name="Maximum Time Step", type=TimeStepMax_PropertyGroup)
-    space_step = PointerProperty(name="Space Step", type=SpaceStep_PropertyGroup)
-    surface_grid_density = PointerProperty(name="Surface Grid Density", type=SurfaceGridDensity_PropertyGroup)
-    interaction_radius = PointerProperty(name="Interaction Radius", type=InteractionRadius_PropertyGroup)
-
-    radial_directions = PointerProperty(name="Radial Directions", type=RadialDirections_PropertyGroup)
-
-    radial_subdivisions = PointerProperty(name="Radial Subdivisions", type=RadialSubdivisions_PropertyGroup)
+    time_step_max = PointerProperty(type=TimeStepMax_PropertyGroup)
+    space_step = PointerProperty(type=SpaceStep_PropertyGroup)
+    surface_grid_density = PointerProperty(type=SurfaceGridDensity_PropertyGroup)
+    interaction_radius = PointerProperty(type=InteractionRadius_PropertyGroup)
+    radial_directions = PointerProperty(type=RadialDirections_PropertyGroup)
+    radial_subdivisions = PointerProperty(type=RadialSubdivisions_PropertyGroup)
 
     accurate_3d_reactions = BoolProperty(
         name="Accurate 3D Reaction",
