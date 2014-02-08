@@ -756,6 +756,10 @@ class MCELL_OT_release_site_add(bpy.types.Operator):
             mcell.release_sites.mol_release_list)-1
         mcell.release_sites.mol_release_list[
             mcell.release_sites.active_release_index].name = "Release_Site"
+
+        relsite = mcell.release_sites.mol_release_list[mcell.release_sites.active_release_index]
+        relsite.set_defaults()
+            
         check_release_molecule(self, context)
 
         return {'FINISHED'}

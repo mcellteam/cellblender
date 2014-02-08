@@ -919,12 +919,15 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                 if rel.shape == 'OBJECT':
                     layout.prop(rel, "object_expr")
 
-                layout.prop(rel, "probability")
+                #layout.prop(rel, "probability")
+                rel.probability.draw_in_new_row(layout)
+
                 layout.prop(rel, "quantity_type")
                 if rel.quantity_expr != "0":
                    layout.prop(rel, "quantity_expr")
                 else:
-                   layout.prop(rel, "quantity")
+                   #layout.prop(rel, "quantity")
+                   rel.quantity.draw_in_new_row(layout)
                 if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
                     layout.prop(rel, "stddev")
 

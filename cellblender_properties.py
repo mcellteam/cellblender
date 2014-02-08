@@ -113,6 +113,17 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
     status = StringProperty(name="Status")
 
+class ReleaseProbability_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Release Probability", default="",
+                 description="Release does not occur every time, but rather with specified probability.",
+                 update=cellblender_parameters.update_PanelParameter)
+
+class ReleaseQuantity_PropertyGroup(cellblender_parameters.PanelParameter):
+    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+    expression = StringProperty(name="Quantity to Release", default="",
+                 description="Concentration units: molar. Density units: molecules per square micron",
+                 update=cellblender_parameters.update_PanelParameter)
 
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
@@ -155,21 +166,30 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         name="Site Diameter", precision=4, min=0.0,
         description="Release molecules uniformly within the specified "
                     "diameter.")
+
+    probability = PointerProperty(type=ReleaseProbability_PropertyGroup)
+    """
     probability = FloatProperty(
         name="Release Probability", precision=4,
         description="Release does not occur every time, "
                     "but rather with specified probability.",
         default=1.0, min=0.0, max=1.0)
+    """
+
     quantity_type_enum = [
         ('NUMBER_TO_RELEASE', "Constant Number", ""),
         ('GAUSSIAN_RELEASE_NUMBER', "Gaussian Number", ""),
         ('DENSITY', "Concentration/Density", "")]
     quantity_type = EnumProperty(items=quantity_type_enum,
                                  name="Quantity Type")
+
+    quantity = PointerProperty(type=ReleaseQuantity_PropertyGroup)
+    """
     quantity = FloatProperty(
         name="Quantity to Release", precision=4, min=0.0,
         description="Concentration units: molar. Density units: molecules per "
                     "square micron")
+    """
     quantity_expr = StringProperty(name="Quantity to Release",default="0")  ####### DB: added to include expressions for imported quantities ###
     stddev = FloatProperty(name="Standard Deviation", precision=4, min=0.0)
     pattern = StringProperty(
@@ -177,6 +197,12 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         description="Use the named release pattern. "
                     "If blank, release molecules at start of simulation.")
     status = StringProperty(name="Status")
+
+    def set_defaults(self):
+        print ( "MCellMoleculeReleaseProperty is setting defaults." )
+        # Panel Parameter                         Name                    Default    Min  Max
+        self.probability.set_fields             ( "Probability",              "0",   0.0, 1.0 )
+        self.quantity.set_fields                ( "Quantity to Release",      "0",   0.0      )
 
 
 class MCellReleasePatternProperty(bpy.types.PropertyGroup):
