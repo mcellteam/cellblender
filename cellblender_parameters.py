@@ -883,12 +883,27 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         return ( requested_val, valid )
 
 
-    def add_parameter ( self, context ):
-        """ Add a new parameter to the list of parameters and set as the active parameter """
+    def new_parameter ( self ):
+        """ Add a new parameter to the list of parameters """
         new_par = self.parameter_list.add()
         new_par.id = self.allocate_available_id()
         new_par.set_defaults()
+        return new_par
+
+    def add_parameter_with_values ( self, name, expression, units, description ):
+        """ Add a new parameter to the list of parameters """
+        p = self.new_parameter()
+        p.name = name
+        p.expr = expression
+        p.unit = units
+        p.desc = description
+        return p
+
+    def add_parameter ( self, context ):
+        """ Add a new parameter to the list of parameters and set as the active parameter """
+        p = self.new_parameter()
         self.active_par_index = len(self.parameter_list)-1
+        return p
 
     def remove_active_parameter ( self, context ):
         """ Remove the active parameter from the list of parameters if not needed by others """
