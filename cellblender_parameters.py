@@ -54,19 +54,21 @@ def threshold_print_enabled ( thresh ):
 
 def threshold_print ( thresh, s, obj=None ):
     # Pass in the optional object when you don't want to convert it to a string before the call (in case it might be expensive)
-    if threshold_print_enabled ( thresh ):
-        if obj == None:
-            print ( s )
-        else:
-            print ( s + str(obj) )
+    #if threshold_print_enabled ( thresh ):
+    #    if obj == None:
+    #        print ( s )
+    #    else:
+    #        print ( s + str(obj) )
+    pass
 
 def print_info_about_self ( self, thresh, context ):
-    threshold_print ( thresh, "Info:" )
-    threshold_print ( thresh, "  Self: " + str(self) )
-    threshold_print ( thresh, "    Self contains " + str(dir(self)) )
-    threshold_print ( thresh, "__qualname__ = " + str(self.__qualname__) )
-    threshold_print ( thresh, "name = \"" + str(self.name) + "\"" )
-    threshold_print ( thresh, "rna_type = \"" + str(self.rna_type) + "\"" )
+    #threshold_print ( thresh, "Info:" )
+    #threshold_print ( thresh, "  Self: " + str(self) )
+    #threshold_print ( thresh, "    Self contains " + str(dir(self)) )
+    #threshold_print ( thresh, "__qualname__ = " + str(self.__qualname__) )
+    #threshold_print ( thresh, "name = \"" + str(self.name) + "\"" )
+    #threshold_print ( thresh, "rna_type = \"" + str(self.rna_type) + "\"" )
+    pass
 
 
 def get_path_to_parent(self_object):
@@ -295,6 +297,7 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
 
         The "self" passed in is a GeneralParameterProperty object.
         """
+        #print ( "Top of update name" )
         #threshold_print ( 60, "==================================================================" )
         #threshold_print ( 60, "Updating name for parameter " + self.name )
         if (self.name == self.last_name):
@@ -340,6 +343,7 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
         #threshold_print ( 60, "Done updating name for parameter " + self.name )
         #threshold_print ( 60, "==================================================================" )
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        #print ( "Bottom of update name" )
 
     def update_expression ( self, context ):
         """ 
@@ -351,6 +355,7 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
 
         The "self" passed in is a GeneralParameterProperty object.
         """
+        #print ( "Top of update expression" )
         #threshold_print ( 60, "==================================================================" )
         #threshold_print ( 60, "Inside update_expression with self = " + str(self) )
 
@@ -391,6 +396,7 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
         #threshold_print ( 60, "Done updating expression for parameter " + self.name )
         #threshold_print ( 60, "==================================================================" )
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        #print ( "Bottom of update expression" )
 
 
 class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
@@ -1308,17 +1314,30 @@ class PanelParameterFloat(bpy.types.PropertyGroup):
                     row.label(icon='ERROR', text="Warning: Value of " + str(value) + " for " + self.get_label() + " is greater than maximum of "+str(self.param_data.max_value))
 """
 
+depth_in_get_numeric_parameter_list = 0
 
 def get_numeric_parameter_list ( objpath, plist, debug=False ):
     """ Recursive routine that builds a list of numeric (PanelParameterInt and PanelParameterFloat) parameters """
 
+    global depth_in_get_numeric_parameter_list
+    depth_to_print = -1
+    
+    if depth_in_get_numeric_parameter_list < depth_to_print:
+        print ( "Call to get_numeric_parameter_list with " + str(objpath) )
+
+    depth_in_get_numeric_parameter_list += 1
+    
+    # print ( "Top of get_numeric_parameter_list" )
     #threshold_print ( 98, "get_numeric_parameter_list() called with objpath = ", objpath )
 
     # This check can be used to speed up parameter searching in the future, but hasn't been critical so far
 
     if objpath != None:
-        if objpath.endswith("rna_type"):
-            # Don't search anything that is of type "rna_type"
+        if objpath.endswith("rna_type") or objpath.endswith("mcell.mol_viz.mol_file_list"):
+            # Don't search anything that is of type "rna_type" or is an mcell.mol_viz.mol_file_list
+            depth_in_get_numeric_parameter_list += -1
+            if depth_in_get_numeric_parameter_list < depth_to_print:
+                print ( "Return from call to get_numeric_parameter_list with " + str(objpath) )
             return plist
 
     if objpath == None:
@@ -1362,17 +1381,22 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
             try:
                 plist = get_numeric_parameter_list(objpath+"[\""+str(objkey)+"\"]", plist, debug)
             except:
-                threshold_print ( 0, " ===> Exception in get_numeric_parameter_list idprop branch with " + objpath + "['" + str(objkey) + "']" )
+                # threshold_print ( 0, " ===> Exception in get_numeric_parameter_list idprop branch with " + objpath + "['" + str(objkey) + "']" )
                 pass
     else:
         # This could be anything else ... like <'int'> or <'str'>
         pass
 
-    if threshold_print_enabled ( 90 ):
-        print ( "  Parameters found so far by get_numeric_parameter_list(" + str(objpath) + "):" )
-        for p in plist:
-            print ( "    " + p.get_formatted_string() )      
+    #if threshold_print_enabled ( 90 ):
+    #    print ( "  Parameters found so far by get_numeric_parameter_list(" + str(objpath) + "):" )
+    #    for p in plist:
+    #        print ( "    " + p.get_formatted_string() )      
 
+    # print ( "Bottom of get_numeric_parameter_list" )
+
+    depth_in_get_numeric_parameter_list += -1
+    if depth_in_get_numeric_parameter_list < depth_to_print:
+        print ( "Return from call to get_numeric_parameter_list with " + str(objpath) )
     return plist
 
 
