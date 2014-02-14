@@ -19,7 +19,7 @@
 # <pep8 compliant>
 
 # Copyright (C) 2012: Tom Bartol, bartol@salk.edu
-# Contributors: Tom Bartol
+# Contributors: Tom Bartol, Bob Kuczewski
 
 
 """
@@ -35,18 +35,23 @@ import re
 # blender imports
 import bpy
 
-from cellblender import cellblender_operators
+# from cellblender import cellblender_operators  # Shouldn't need this anymore!!
+
+from cellblender import object_surface_regions
 
 
 def get_regions(obj):
     """ Return a dictionary with region names """
 
     reg_dict = {}
+
     obj_regs = obj.mcell.regions.region_list
     for reg in obj_regs:
         id = str(reg.id)
         mesh = obj.data
-        reg_faces = list(cellblender_operators.get_region_faces(mesh,id))
+        #reg_faces = list(cellblender_operators.get_region_faces(mesh,id))
+        reg_faces = list(reg.get_region_faces(mesh))
+
         reg_faces.sort()
         reg_dict[reg.name] = reg_faces
 
@@ -79,8 +84,10 @@ def save_wrapper(context, out_file, filedir):
     project_settings = mcell.project_settings
 
     # Export model initialization:
-    out_file.write("ITERATIONS = %d\n" % (mcell.initialization.iterations))
-    out_file.write("TIME_STEP = %g\n" % (mcell.initialization.time_step))
+    # out_file.write("ITERATIONS = %d\n" % (mcell.initialization.iterations))
+    out_file.write("ITERATIONS = %d\n" % (mcell.initialization.iterations.get_value()))
+    
+    out_file.write("TIME_STEP = %g\n" % (mcell.initialization.time_step.get_value()))
     out_file.write("VACANCY_SEARCH_DISTANCE = 10\n\n") # DB: added to avoid error (I think it should have a default value to avoid error in most of the reaction networks)
 
     # Export optional initialization commands:
@@ -315,27 +322,28 @@ def save_initialization_commands(context, out_file):
 
     init = context.scene.mcell.initialization
     # Maximum Time Step
-    if init.PARAM_time_step_max:
-        out_file.write("TIME_STEP_MAX = %g\n" % (init.time_step_max))
+    if init.time_step_max.get_expression() != '':
+        out_file.write("TIME_STEP_MAX = %g\n" % (init.time_step_max.get_value()))
     # Space Step
-    if init.PARAM_space_step:
-        out_file.write("SPACE_STEP = %g\n" % (init.space_step))
+    if init.space_step.get_expression() != '':
+        out_file.write("SPACE_STEP = %g\n" % (init.space_step.get_value()))
     # Interaction Radius
-    if init.PARAM_interaction_radius:
-        out_file.write("INTERACTION_RADIUS = %g\n" % (init.interaction_radius))
+    if init.interaction_radius.get_expression() != '':
+        out_file.write("INTERACTION_RADIUS = %g\n" % (init.interaction_radius.get_value()))
     # Radial Directions
-    if init.PARAM_radial_directions:
-        out_file.write("RADIAL_DIRECTIONS = %d\n" % (init.radial_directions))
+    if init.radial_directions.get_expression() != '':
+        out_file.write("RADIAL_DIRECTIONS = %d\n" % (init.radial_directions.get_value()))
     # Radial Subdivisions
-    if init.PARAM_radial_subdivisions:
+    if init.radial_subdivisions.get_expression() != '':
         out_file.write(
-            "RADIAL_SUBDIVISIONS = %d\n" % (init.radial_subdivisions))
+            "RADIAL_SUBDIVISIONS = %d\n" % (init.radial_subdivisions.get_value()))
     # Vacancy Search Distance
-    if init.PARAM_vacancy_search_distance:
+    if init.vacancy_search_distance.get_expression() != '':
         out_file.write(
-            "VACANCY_SEARCH_DISTANCE = %g\n" % (init.vacancy_search_distance))
+            "VACANCY_SEARCH_DISTANCE = %g\n" % (init.vacancy_search_distance.get_value()))
     # Surface Grid Density
-    out_file.write("SURFACE_GRID_DENSITY = %g\n" % (init.surface_grid_density))
+    ##### TODO: If surface_grid_density is an integer (as it is) why output it as %g format?
+    out_file.write("SURFACE_GRID_DENSITY = %g\n" % (init.surface_grid_density.get_value()))
     # Accurate 3D Reactions
     if init.accurate_3d_reactions:
         out_file.write("ACCURATE_3D_REACTIONS = TRUE\n")
@@ -497,7 +505,7 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
                            (release_site.quantity_expr))
             else:
                 out_file.write("   NUMBER_TO_RELEASE = %d\n" %
-                           (int(release_site.quantity)))
+                           (int(release_site.quantity.get_value())))
 
         elif release_site.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
             out_file.write("   GAUSSIAN_RELEASE_NUMBER\n")
@@ -510,15 +518,23 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
 
         elif release_site.quantity_type == 'DENSITY':
             if release_site.molecule in mol_list:
-                if mol_list[release_site.molecule].type == '2D':
-                    out_file.write("   DENSITY = %g\n" %
-                                   (release_site.quantity))
+                if release_site.quantity_expr != "0":
+                    if mol_list[release_site.molecule].type == '2D':
+                        out_file.write("   DENSITY = %s\n" %
+                                   (release_site.quantity_expr))
+                    else:
+                        out_file.write("   CONCENTRATION = %s\n" %
+                                   (release_site.quantity_expr))
                 else:
-                    out_file.write("   CONCENTRATION = %g\n" %
-                                   (release_site.quantity))
+                    if mol_list[release_site.molecule].type == '2D':
+                        out_file.write("   DENSITY = %g\n" %
+                                   (release_site.quantity.get_value()))
+                    else:
+                        out_file.write("   CONCENTRATION = %g\n" %
+                                   (release_site.quantity.get_value()))
 
         out_file.write("   RELEASE_PROBABILITY = %g\n" %
-                       (release_site.probability))
+                       (release_site.probability.get_value()))
 
         if release_site.pattern:
             out_file.write("   RELEASE_PATTERN = %s\n" %
@@ -560,27 +576,18 @@ def save_molecules(context, out_file, mol_list):
         for mol_item in mol_list:
             out_file.write("  %s\n" % (mol_item.name))
             out_file.write("  {\n")
-            if (mol_item.diffusion_constant_expr != "0"):    # DB: Extra if-else bloc for diffusion constant to take expressions
-                if mol_item.type == '2D':
-                    out_file.write("    DIFFUSION_CONSTANT_2D = %s\n" %    
-                                   (mol_item.diffusion_constant_expr))
-                else:   
-                    out_file.write("    DIFFUSION_CONSTANT_3D = %s\n" %    
-                                   (mol_item.diffusion_constant_expr))           
-            else: 
-                if mol_item.type == '2D':
-                    out_file.write("    DIFFUSION_CONSTANT_2D = %g\n" %
-                                   (mol_item.diffusion_constant))
-                else:
-                    out_file.write("    DIFFUSION_CONSTANT_3D = %g\n" %
-                                   (mol_item.diffusion_constant))
 
-            if mol_item.custom_time_step > 0:
-                out_file.write("    CUSTOM_TIME_STEP = %g\n" %
-                               (mol_item.custom_time_step))
-            elif mol_item.custom_space_step > 0:
-                out_file.write("    CUSTOM_SPACE_STEP = %g\n" %
-                               (mol_item.custom_space_step))
+            if mol_item.type == '2D':
+                out_file.write("    DIFFUSION_CONSTANT_2D = %g\n" %
+                               (mol_item.diffusion_constant.get_value()))  # Could use .get_expression() to export the expression
+            else:
+                out_file.write("    DIFFUSION_CONSTANT_3D = %g\n" %
+                               (mol_item.diffusion_constant.get_value()))  # Could use .get_expression() to export the expression
+
+            if mol_item.custom_time_step.get_value() > 0:
+                out_file.write("    CUSTOM_TIME_STEP = %g\n" % (mol_item.custom_time_step.get_value()))
+            elif mol_item.custom_space_step.get_value() > 0:
+                out_file.write("    CUSTOM_SPACE_STEP = %g\n" % (mol_item.custom_space_step.get_value()))
 
             if mol_item.target_only:
                 out_file.write("    TARGET_ONLY\n")
@@ -661,13 +668,10 @@ def save_reactions(context, out_file, rxn_list):
             out_file.write("  %s " % (rxn_item.name))
 
             if rxn_item.type == 'irreversible':
-                if (rxn_item.fwd_rate_expr != "0"):    # DB: extra if bloc for foward rate constants to take expressions 
-                    out_file.write("[%s]" % (rxn_item.fwd_rate_expr))    
-                else:
-                    out_file.write("[%g]" % (rxn_item.fwd_rate))
+                out_file.write("[%s]" % (rxn_item.fwd_rate.get_value()))    
             else:
                 out_file.write("[>%g, <%g]" %
-                               (rxn_item.fwd_rate, rxn_item.bkwd_rate))
+                               (rxn_item.fwd_rate.get_value(), rxn_item.bkwd_rate.get_value()))
 
             if rxn_item.rxn_name:
                 out_file.write(" : %s\n" % (rxn_item.rxn_name))
@@ -787,7 +791,7 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
 
     if rxn_output_list:
         out_file.write("REACTION_DATA_OUTPUT\n{\n")
-        rxn_step = mcell.initialization.time_step
+        rxn_step = mcell.initialization.time_step.get_value()
         out_file.write("  STEP=%g\n" % rxn_step)
 
         for rxn_output in rxn_output_list:

@@ -59,6 +59,8 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
         row.prop(mcell.cellblender_preferences, "decouple_export_run")
         row = layout.row()
         row.prop(mcell.cellblender_preferences, "filter_invalid")
+        row = layout.row()
+        row.prop(mcell.cellblender_preferences, "debug_level")
         layout.separator()
         row = layout.row()
         row.operator("wm.save_homefile", text="Save Startup File",
@@ -96,6 +98,40 @@ class MCELL_PT_project_settings(bpy.types.Panel):
             row.label(
                 text="MCell Binary: "+mcell.project_settings.mcell_binary,
                 icon='FILE_TICK')
+
+        row = layout.row()
+        row.operator("mcell.set_bionetgen_location",
+                     text="Set Path to BioNetGen File", icon='FILESEL')
+        row = layout.row()
+        bionetgen_location = mcell.project_settings.bionetgen_location
+        if not bionetgen_location:
+            # Using pin icon to be consistent with project directory, but maybe
+            # we should use error icon to be consistent with other sections.
+            row.label("BioNetGen location not set", icon='UNPINNED')
+        elif not mcell.project_settings.bionetgen_location_valid:
+            row.label("BioNetGen File/Permissions Error: " +
+                mcell.project_settings.bionetgen_location, icon='ERROR')
+        else:
+            row.label(
+                text="BioNetGen Location: "+mcell.project_settings.bionetgen_location,
+                icon='FILE_TICK')
+
+
+        row = layout.row()
+        row.operator("mcell.set_python_binary",
+                     text="Set Path to Python Binary", icon='FILESEL')
+        row = layout.row()
+        python_path = mcell.project_settings.python_binary
+        if not python_path:
+            row.label("Python Binary not set", icon='UNPINNED')
+        elif not mcell.project_settings.python_binary_valid:
+            row.label("Python File/Permissions Error: " +
+                mcell.project_settings.python_binary, icon='ERROR')
+        else:
+            row.label(
+                text="Python Binary: "+mcell.project_settings.python_binary,
+                icon='FILE_TICK')
+
         #row.operator("mcell.set_project_dir",
         #             text="Set CellBlender Project Directory", icon='FILESEL')
         #row = layout.row()
@@ -146,64 +182,6 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         row = layout.row()
         layout.prop(context.scene, "name", text="Project Base Name")
 
-"""
-class MCELL_PT_scratch(bpy.types.Panel):
-    bl_label = "CellBlender - Scratch Panel (testing)"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        row = layout.row()
-        col = row.column(align=True)
-        col.prop(mcell.scratch_settings, "show_all_icons")
-        col = row.column(align=True)
-        col.prop(mcell.scratch_settings, "print_all_icons")
-
-        if mcell.scratch_settings.show_all_icons:
-            all_icons = bpy.types.UILayout.bl_rna.functions[
-                'prop'].parameters['icon'].enum_items.keys()
-            layout.separator()
-            row = layout.row()
-            for icon in all_icons:
-                row = layout.row()
-                row.label(icon=icon, text=icon)
-
-        if mcell.scratch_settings.print_all_icons:
-            all_icons = bpy.types.UILayout.bl_rna.functions[
-                'prop'].parameters['icon'].enum_items.keys()
-            print("Icon list has ", len(all_icons), "icons")
-            print("Icon names:")
-            print(all_icons)
-            # mcell.scratch_settings.print_all_icons = False
-            # AttributeError: Writing to ID classes in this context is not
-            # allowed: Scene, Scene datablock, error setting
-            # MCellScratchPanelProperty.print_all_icons
-"""
-
-#class MCELL_PT_export_project(bpy.types.Panel):
-#    bl_label = "CellBlender - Export Project"
-#    bl_space_type = "PROPERTIES"
-#    bl_region_type = "WINDOW"
-#    bl_context = "scene"
-#    bl_options = {'DEFAULT_CLOSED'}
-#
-#    def draw(self, context):
-#        layout = self.layout
-#        mcell = context.scene.mcell
-#
-#        row = layout.row()
-#        if not bpy.data.filepath:
-#            row.label(text="Save the blend file", icon='ERROR')
-#        else:
-#            row.prop(mcell.export_project, "export_format")
-#            row = layout.row()
-#            row.operator("mcell.export_project",
-#                         text="Export CellBlender Project", icon='EXPORT')
 
 class MCELL_UL_run_simulation(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
@@ -395,22 +373,6 @@ class MCELL_PT_model_objects(bpy.types.Panel):
 #        sub.operator("mcell.model_objects_select", text="Select")
 #        sub.operator("mcell.model_objects_deselect", text="Deselect")
 
-'''
-class MCELL_PT_utilities(bpy.types.Panel):
-    bl_label = "CellBlender - Utilities"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        row = layout.row()
-#        row.operator("mcell.vertex_groups_to_regions",
-#                     text="Convert Vertex Group to Region")
-'''
 
 
 class MCELL_PT_object_selector(bpy.types.Panel):
@@ -428,6 +390,9 @@ class MCELL_PT_object_selector(bpy.types.Panel):
         row = layout.row(align=True)
         row.operator("mcell.select_filtered", text="Select Filtered")
         row.operator("mcell.deselect_filtered", text="Deselect Filtered")
+        row=layout.row(align=True)
+        row.operator("mcell.toggle_visibility_filtered",text="Visibility Filtered")
+        row.operator("mcell.toggle_renderability_filtered",text="Renderability Filtered")
 
 
 class MCELL_PT_meshalyzer(bpy.types.Panel):
@@ -443,7 +408,10 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
 
         row = layout.row()
         row.operator("mcell.meshalyzer", text="Analyze Mesh",
-                     icon='MESH_ICOSPHERE')
+            icon='MESH_ICOSPHERE')
+        row = layout.row()
+        row.operator("mcell.gen_meshalyzer_report",
+            text="Generate Analysis Report",icon="MESH_ICOSPHERE")
 
         if (mcell.meshalyzer.status != ""):
             row = layout.row()
@@ -459,7 +427,10 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
         row = layout.row()
         row.label(text="Surface Area: %.5g" % (mcell.meshalyzer.area))
         row = layout.row()
-        row.label(text="Volume: %.5g" % (mcell.meshalyzer.volume))
+        if (mcell.meshalyzer.watertight == 'Watertight Mesh'):
+          row.label(text="Volume: %.5g" % (mcell.meshalyzer.volume))
+        else:
+          row.label(text="Volume: approx: %.5g" % (mcell.meshalyzer.volume))
         row = layout.row()
         row.label(text="SA/V Ratio: %.5g" % (mcell.meshalyzer.sav_ratio))
 
@@ -500,11 +471,11 @@ class MCELL_PT_initialization(bpy.types.Panel):
         layout = self.layout
         mcell = context.scene.mcell
 
-        layout.prop(mcell.initialization, "PARAM_iterations", text="Iterations="+str(mcell.initialization.iterations))
-        layout.prop(mcell.initialization, "PARAM_time_step", text="Time Step="+str(mcell.initialization.time_step))
-        
-        #layout.label(text="Time Step="+str(mcell.initialization.time_step))
-        #layout.prop(mcell.initialization, "time_step", text="Experimental View of Time Step")
+        mcell.initialization.iterations.draw_in_new_row(layout)
+        mcell.initialization.time_step.draw_in_new_row(layout)
+
+        #layout.prop(mcell.initialization, "iterations")
+        #layout.prop(mcell.initialization, "time_step_str")
 
         # Advanced Options
         box = layout.box()
@@ -513,20 +484,13 @@ class MCELL_PT_initialization(bpy.types.Panel):
         if mcell.initialization.advanced:
             row.prop(mcell.initialization, "advanced", icon='TRIA_DOWN',
                      text="Advanced Options", emboss=False)
-            row = box.row()
-            row.prop(mcell.initialization, "PARAM_time_step_max", text="Max Time Step="+str(mcell.initialization.time_step_max))
-            row = box.row()
-            row.prop(mcell.initialization, "PARAM_space_step", text="Space Step="+str(mcell.initialization.space_step))
-            row = box.row()
-            row.prop(mcell.initialization, "PARAM_interaction_radius", text="Interaction Radius="+str(mcell.initialization.interaction_radius))
-            row = box.row()
-            row.prop(mcell.initialization, "PARAM_radial_directions", text="Radial Directions="+str(mcell.initialization.radial_directions))
-            row = box.row()
-            row.prop(mcell.initialization, "PARAM_radial_subdivisions", text="Radial Subdivisions="+str(mcell.initialization.radial_subdivisions))
-            row = box.row()
-            row.prop(mcell.initialization, "PARAM_vacancy_search_distance", text="Vacancy Search Distance="+str(mcell.initialization.vacancy_search_distance))
-            row = box.row()
-            row.prop(mcell.initialization, "PARAM_surface_grid_density", text="Surface Grid Density="+str(mcell.initialization.surface_grid_density))
+            mcell.initialization.time_step_max.draw_in_new_row(box)
+            mcell.initialization.space_step.draw_in_new_row(box)
+            mcell.initialization.interaction_radius.draw_in_new_row(box)
+            mcell.initialization.radial_directions.draw_in_new_row(box)
+            mcell.initialization.radial_subdivisions.draw_in_new_row(box)
+            mcell.initialization.vacancy_search_distance.draw_in_new_row(box)
+            mcell.initialization.surface_grid_density.draw_in_new_row(box)
             row = box.row()
             row.prop(mcell.initialization, "accurate_3d_reactions")
             row = box.row()
@@ -702,199 +666,6 @@ class MCELL_PT_define_parameters(bpy.types.Panel):
 
 
 
-############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
-
-
-# T E S T   C O D E  (begin)
-from . import cellblender_operators
-class AddMeshPanel(bpy.types.Panel):
-  bl_label = "Experimental Panel: Parameter Testing"
-  bl_space_type = "PROPERTIES"
-  bl_region_type = "WINDOW"
-  bl_context = "scene"
-  bl_options = {'DEFAULT_CLOSED'}
-
-  def draw(self, context):
-    mcell = context.scene.mcell
-    self.layout.operator("parameters.add", text="Add cube").obj_type = "cube"
-    self.layout.operator("parameters.add", text="Add cylinder").obj_type = "cylinder"
-    self.layout.operator("parameters.add", text="Add sphere").obj_type = "sphere"
-
-    row = self.layout.row ( align = True )
-    row.prop ( mcell.mesh_creation_parameters, "PARAM_location_x", text="X = "+str(mcell.mesh_creation_parameters.location_x) )
-    row = self.layout.row ( align = True )
-    row.prop ( mcell.mesh_creation_parameters, "PARAM_location_y", text="Y = "+str(mcell.mesh_creation_parameters.location_y) )
-    row = self.layout.row ( align = True )
-    row.prop ( mcell.mesh_creation_parameters, "PARAM_location_z", text="Z = "+str(mcell.mesh_creation_parameters.location_z) )
-
-
-    #layout.prop(mcell.initialization, "PARAM_time_step", text="Time Step="+str(mcell.initialization.time_step))
-
-
-
-class OBJECT_OT_AddButton(bpy.types.Operator):
-  bl_idname = "parameters.add"
-  bl_label = "Add"
-  obj_type = bpy.props.StringProperty()
-
-  def execute(self, context):
-
-    # This code is called when an "Add [Object]" button is pressed
-    print ("Adding a " + str(self.obj_type))
-    mcell = context.scene.mcell
-    ps = cellblender_operators.check_out_parameter_space ( mcell.general_parameters )
-    ps.dump(True)
-    try:
-      x = float(mcell.mesh_creation_parameters.PARAM_location_x)
-    except:
-      print ("Value must be an expression, try to evaluate..." )
-      (x,valid) = ps.eval_all ( expression = mcell.mesh_creation_parameters.PARAM_location_x )
-    try:
-      y = float(mcell.mesh_creation_parameters.PARAM_location_y)
-    except:
-      print ("Value must be an expression, try to evaluate..." )
-      (y,valid) = ps.eval_all ( expression = mcell.mesh_creation_parameters.PARAM_location_y )
-    try:
-      z = float(mcell.mesh_creation_parameters.PARAM_location_z)
-    except:
-      print ("Value must be an expression, try to evaluate..." )
-      (z,valid) = ps.eval_all ( expression = mcell.mesh_creation_parameters.PARAM_location_z )
-
-    if self.obj_type == "cube":
-      bpy.ops.mesh.primitive_cube_add(location=(x,y,z))
-    elif self.obj_type == "cylinder":
-      bpy.ops.mesh.primitive_cylinder_add(location=(x,y,z))
-    elif self.obj_type == "sphere":
-      bpy.ops.mesh.primitive_ico_sphere_add(location=(x,y,z))
-    print ("Added a " + str(self.obj_type) + " at " + str(x) + "," + str(y) + "," + str(z) )
-    cellblender_operators.check_in_parameter_space ( mcell.general_parameters, ps )
-
-    return{'FINISHED'}    
-# T E S T   C O D E   (end)
-
-
-
-
-class MCELL_UL_draw_parameter(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            mcell = context.scene.mcell
-            par = mcell.general_parameters.parameter_list[index]
-            disp = par.name + " = " + par.expr
-            # Try to force None to be 0 ... doesn't seem to work!!
-            if par.value == None:
-                par.value = "0"
-            disp = disp + " = " + par.value
-            if par.unit != "":
-                disp = disp + " (" + par.unit + ")"
-            if par.valid:
-                layout.label(disp, icon='FILE_TICK')
-            else:
-                layout.label(disp, icon='ERROR')  # also try 'COLOR_RED'
-	    
-  
-class MCELL_PT_general_parameters(bpy.types.Panel):
-    bl_label = "CellBlender - General Parameters (experimental)"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        row = layout.row()
-        if mcell.general_parameters.param_group_error == "":
-            row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
-        else:
-            row.label(text=mcell.general_parameters.param_group_error, icon='ERROR')
-        row = layout.row()
-        col = row.column()
-        col.template_list("MCELL_UL_draw_parameter", "general_parameters",
-                          mcell.general_parameters, "parameter_list",
-                          mcell.general_parameters, "active_par_index", rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.add_parameter", icon='ZOOMIN', text="")
-        col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
-        if len(mcell.general_parameters.parameter_list) > 0:
-            par = mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index]
-            layout.prop(par, "name")
-            if len(par.pending_expr) > 0:
-                layout.prop(par, "expr")
-                row = layout.row()
-                #row.label(text="Undefined Expression: " + str(par.pending_expr) + ", reverting to " + str(par.expr), icon='ERROR')  # also try 'COLOR_RED'
-                row.label(text="Undefined Expression: " + str(par.pending_expr), icon='ERROR')  # also try 'COLOR_RED'
-            else:
-                layout.prop(par, "expr")
-            #layout.prop(par, "value")
-            layout.prop(par, "unit")
-            layout.prop(par, "desc")
-            ##row = layout.row()
-            ##row.label(text="Parameter ID = " + str(par.id) + "   (temporary for debugging)")
-
-#########################################################################################################################################
-
-class MCELL_UL_check_molecule(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data,
-                  active_propname, index):
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            layout.label(item.name, icon='FILE_TICK')
-
-
-class MCELL_PT_define_molecules(bpy.types.Panel):
-    bl_label = "CellBlender - Define Molecules"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-    
-    def draw(self, context):
-        layout = self.layout
-
-        mcell = context.scene.mcell
-
-        row = layout.row()
-        row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
-        row = layout.row()
-        col = row.column()
-        col.template_list("MCELL_UL_check_molecule", "define_molecules",
-                          mcell.molecules, "molecule_list", mcell.molecules,
-                          "active_mol_index", rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
-        col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
-        if mcell.molecules.molecule_list:
-            mol = mcell.molecules.molecule_list[
-                mcell.molecules.active_mol_index]
-            layout.prop(mol, "name")
-            layout.prop(mol, "type")
-            if (mol.diffusion_constant_expr != "0"): #DB: This is added for diffusion constant to take expression; not sure if it has other implications 
-                layout.prop(mol, "diffusion_constant_expr")
-            else:
-                layout.prop(mol, "diffusion_constant_str")
-
-            box = layout.box()
-            row = box.row(align=True)
-            row.alignment = 'LEFT'
-            if not mcell.molecules.advanced:
-                row.prop(mcell.molecules, "advanced", icon='TRIA_RIGHT',
-                         text="Advanced Options", emboss=False)
-            else:
-                row.prop(mcell.molecules, "advanced", icon='TRIA_DOWN',
-                         text="Advanced Options", emboss=False)
-                row = box.row()
-                row.prop(mol, "target_only")
-                row = box.row()
-                row.prop(mol, "custom_time_step_str")
-                row = box.row()
-                row.prop(mol, "custom_space_step_str")
-
-
 class MCELL_UL_check_reaction(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -932,12 +703,9 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
                 layout.prop(rxn, "reactants")
                 layout.prop(rxn, "type")
                 layout.prop(rxn, "products")
-                if (rxn.fwd_rate_expr != "0"):
-                    layout.prop(rxn, "fwd_rate_expr")
-                else:
-                    layout.prop(rxn, "fwd_rate_str")
+                rxn.fwd_rate.draw_in_new_row(layout)
                 if rxn.type == "reversible":
-                    layout.prop(rxn, "bkwd_rate_str")
+                    rxn.bkwd_rate.draw_in_new_row(layout)
                 layout.prop(rxn, "rxn_name")
 
         else:
@@ -1180,12 +948,15 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                 if rel.shape == 'OBJECT':
                     layout.prop(rel, "object_expr")
 
-                layout.prop(rel, "probability")
+                #layout.prop(rel, "probability")
+                rel.probability.draw_in_new_row(layout)
+
                 layout.prop(rel, "quantity_type")
                 if rel.quantity_expr != "0":
                    layout.prop(rel, "quantity_expr")
                 else:
-                   layout.prop(rel, "quantity")
+                   #layout.prop(rel, "quantity")
+                   rel.quantity.draw_in_new_row(layout)
                 if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
                     layout.prop(rel, "stddev")
 
@@ -1352,53 +1123,6 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
                 row.prop(mcell.viz_output, "step")
         else:
             row.label(text="Define at least one molecule", icon='ERROR')
-
-
-class MCELL_UL_check_region(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data,
-                  active_propname, index):
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            layout.label(item.name, icon='FILE_TICK')
-
-
-class MCELL_PT_define_surface_regions(bpy.types.Panel):
-    bl_label = "CellBlender - Define Surface Regions"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "object"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-
-        obj_regs = context.object.mcell.regions
-        active_obj = context.active_object
-
-        if active_obj.type == 'MESH':
-            row = layout.row()
-            row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
-            row = layout.row()
-            col = row.column()
-            col.template_list("MCELL_UL_check_region", "define_surf_regions",
-                              obj_regs, "region_list", obj_regs,
-                              "active_reg_index", rows=2)
-            col = row.column(align=True)
-            col.operator("mcell.region_add", icon='ZOOMIN', text="")
-            col.operator("mcell.region_remove", icon='ZOOMOUT', text="")
-            row = layout.row()
-            if len(obj_regs.region_list) > 0:
-                reg = obj_regs.region_list[obj_regs.active_reg_index]
-                layout.prop(reg, "name")
-            if active_obj.mode == 'EDIT':
-                row = layout.row()
-                sub = row.row(align=True)
-                sub.operator("mcell.region_faces_assign", text="Assign")
-                sub.operator("mcell.region_faces_remove", text="Remove")
-                sub = row.row(align=True)
-                sub.operator("mcell.region_faces_select", text="Select")
-                sub.operator("mcell.region_faces_deselect", text="Deselect")
 
 
 class MCELL_PT_molecule_glyphs(bpy.types.Panel):

@@ -41,7 +41,7 @@ import shutil
 import cellblender
 
 
-from . import ParameterSpace
+# from . import ParameterSpace
 
 
 # We use per module class registration/unregistration
@@ -54,494 +54,6 @@ def unregister():
 
 
 #CellBlender Operators:
-
-
-class MCELL_OT_region_add(bpy.types.Operator):
-    bl_idname = "mcell.region_add"
-    bl_label = "Add New Surface Region"
-    bl_description = "Add a new surface region to an object"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        mcell_obj = context.object.mcell
-        mcell_obj.regions.region_list.add()
-        mcell_obj.regions.active_reg_index = len(
-            mcell_obj.regions.region_list)-1
-        id = mcell_obj.regions.id_counter
-        mcell_obj.regions.id_counter += 1
-        mcell_obj.regions.region_list[
-            mcell_obj.regions.active_reg_index].id = id
-        mcell_obj.regions.region_list[
-            mcell_obj.regions.active_reg_index].name = "Region_%d" % (id)
-
-        return {'FINISHED'}
-
-
-class MCELL_OT_region_remove(bpy.types.Operator):
-    bl_idname = "mcell.region_remove"
-    bl_label = "Remove Surface Region"
-    bl_description = "Remove selected surface region from object"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        obj = context.object
-        obj_regs = context.object.mcell.regions
-
-        # Clear existing faces from this region id
-        reg = obj_regs.region_list[obj_regs.active_reg_index]
-        id = str(reg.id)
-        mesh = obj.data
-        for seg_id in mesh["mcell"]["regions"][id].keys():
-            mesh["mcell"]["regions"][id][seg_id] = []
-        mesh["mcell"]["regions"][id].clear()
-        mesh["mcell"]["regions"].pop(id)
-
-        # Now remove the region from the object
-        obj_regs.region_list.remove(obj_regs.active_reg_index)
-        obj_regs.active_reg_index -= 1
-        if (obj_regs.active_reg_index < 0):
-            obj_regs.active_reg_index = 0
-
-        return {'FINISHED'}
-
-
-def inplace_quicksort(v, beg, end):  # collection array, int, int
-    """
-      Sorts a collection array, v, in place.
-        Sorts according values in v[i].name
-    """
-
-    if ((end - beg) > 0):  # only perform quicksort if we are dealing with > 1 values
-        pivot = v[beg].name  # we set the first item as our initial pivot
-        i, j = beg, end
-
-        while (j > i):
-            while ((v[i].name <= pivot) and (j > i)):
-                i += 1
-            while ((v[j].name > pivot) and (j >= i)):
-                j -= 1
-            if (j > i):
-                v.move(i, j)
-                v.move(j-1, i)
-
-        if (not beg == j):
-            v.move(beg, j)
-            v.move(j-1, beg)
-        inplace_quicksort(v, beg, j-1)
-        inplace_quicksort(v, j+1, end)
-    return
-
-
-def check_region_name(obj):
-    """Checks for duplicate or illegal region name"""
-
-    mcell_obj = obj.mcell
-    reg_list = mcell_obj.regions.region_list
-    act_reg = reg_list[mcell_obj.regions.active_reg_index]
-    act_reg_name = act_reg.name
-
-    status = ""
-
-    # Check for duplicate region name
-    reg_keys = reg_list.keys()
-    if reg_keys.count(act_reg_name) > 1:
-        status = "Duplicate region: %s" % (act_reg_name)
-
-    # Check for illegal names (Starts with a letter. No special characters)
-    reg_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
-    m = re.match(reg_filter, act_reg_name)
-    if m is None:
-        status = "Region name error: %s" % (act_reg_name)
-
-    act_reg.status = status
-
-    return
-
-
-def sort_region_list(obj):
-    """Sorts region list"""
-
-    mcell_obj = obj.mcell
-    reg_list = mcell_obj.regions.region_list
-    act_reg = reg_list[mcell_obj.regions.active_reg_index]
-    act_reg_name = act_reg.name
-
-    # Sort the region list
-    inplace_quicksort(reg_list, 0, len(reg_list)-1)
-
-    act_i = reg_list.find(act_reg_name)
-    mcell_obj.regions.active_reg_index = act_i
-
-    return
-
-
-def region_update(self, context):
-    """Performs checks and sorts region list after update of region names"""
-
-    obj = context.object
-    mcell_obj = obj.mcell
-    reg_list = mcell_obj.regions.region_list
-
-    if reg_list:
-        check_region_name(obj)
-        sort_region_list(obj)
-
-    return
-
-
-def rl_encode(l):
-    """Run-length encode an array of face indices"""
-
-    runlen = 0
-    runstart = 0
-    rle = []
-    i = 0
-
-    while (i < len(l)):
-      if (runlen == 0):
-        rle.append(l[i])
-        runstart = l[i]
-        runlen = 1
-        i+=1
-      elif (l[i] == (runstart+runlen)):
-        if (i < (len(l)-1)):
-          runlen += 1
-        else:
-          if (runlen == 1):
-            rle.append(runstart+1)
-          else:
-            rle.append(-runlen)
-        i+=1
-      elif (runlen == 1):
-        runlen = 0
-      elif (runlen == 2):
-        rle.append(runstart+1)
-        runlen = 0
-      else:
-        rle.append(-(runlen-1))
-        runlen = 0
-
-    return(rle)
-
-
-def rl_decode(l):
-    """Decode a run-length encoded array of face indices"""
-
-    runlen = 0
-    runstart = 0
-    rld = []
-    i = 0
-
-    while (i < len(l)):
-      if (runlen == 0):
-        rld.append(l[i])
-        runstart = l[i]
-        runlen = 1
-        i+=1
-      elif (l[i] > 0):
-        runlen = 0
-      else:
-        for j in range(1,-l[i]+1):
-          rld.append(runstart+j)
-        runlen = 0
-        i+=1
-
-    return(rld)
-
-
-def get_region_faces(mesh,id):
-    """Given a mesh and a region id, return the set of region face indices"""
-
-    if not mesh.get("mcell"):
-        mesh["mcell"] = {}
-    if not mesh["mcell"].get("regions"):
-        mesh["mcell"]["regions"] = {}
-    if not mesh["mcell"]["regions"].get(id):
-        mesh["mcell"]["regions"][id] = {}
-    face_rle = []
-    for seg_id in mesh["mcell"]["regions"][id].keys():
-      face_rle.extend(mesh["mcell"]["regions"][id][seg_id].to_list())
-    if (len(face_rle) > 0): 
-        face_set = set(rl_decode(face_rle))
-    else:
-        face_set = set([])
-
-    return(face_set)
-
-
-def set_region_faces(mesh,id,face_set):
-    """Set the faces of a given region id on a mesh, given a set of faces """
-
-    face_list = list(face_set)
-    face_list.sort()
-    face_rle = rl_encode(face_list)
-
-    # Clear existing faces from this region id
-    mesh["mcell"]["regions"][id].clear()
-
-    # segment face_rle into pieces <= max_len (i.e. <= 32767)
-    #   and assign these segments to the region id
-    max_len = 32767
-    seg_rle = face_rle
-    len_rle = len(seg_rle)
-    seg_idx = 0
-    while len_rle > 0:
-      if len_rle <= 32767:
-        mesh["mcell"]["regions"][id][str(seg_idx)] = seg_rle
-        len_rle = 0
-      else:
-        mesh["mcell"]["regions"][id][str(seg_idx)] = seg_rle[0:max_len]
-        tmp_rle = seg_rle[max_len:]
-        seg_rle = tmp_rle
-        len_rle = len(seg_rle)
-      seg_idx += 1
-
-
-class MCELL_OT_region_faces_assign(bpy.types.Operator):
-    bl_idname = "mcell.region_faces_assign"
-    bl_label = "Assign Selected Faces To Surface Region"
-    bl_description = "Assign selected faces to surface region"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        active_obj = context.active_object
-        obj_regs = active_obj.mcell.regions
-        reg = obj_regs.region_list[obj_regs.active_reg_index]
-        id = str(reg.id)
-        mesh = active_obj.data
-        if (mesh.total_face_sel > 0):
-            face_set = get_region_faces(mesh,id) 
-            bpy.ops.object.mode_set(mode='OBJECT')
-            for f in mesh.polygons:
-                if f.select:
-                    face_set.add(f.index)
-            bpy.ops.object.mode_set(mode='EDIT')
-
-            set_region_faces(mesh,id,face_set) 
-
-        return {'FINISHED'}
-
-
-class MCELL_OT_region_faces_remove(bpy.types.Operator):
-    bl_idname = "mcell.region_faces_remove"
-    bl_label = "Remove Selected Faces From Surface Region"
-    bl_description = "Remove selected faces from surface region"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        active_obj = context.active_object
-        obj_regs = active_obj.mcell.regions
-        reg = obj_regs.region_list[obj_regs.active_reg_index]
-        id = str(reg.id)
-        mesh = active_obj.data
-        if (mesh.total_face_sel > 0):
-            face_set = get_region_faces(mesh,id) 
-            bpy.ops.object.mode_set(mode='OBJECT')
-            for f in mesh.polygons:
-                if f.select:
-                    if f.index in face_set:
-                        face_set.remove(f.index)
-            bpy.ops.object.mode_set(mode='EDIT')
-
-            set_region_faces(mesh,id,face_set) 
-
-        return {'FINISHED'}
-
-
-class MCELL_OT_region_faces_select(bpy.types.Operator):
-    bl_idname = "mcell.region_faces_select"
-    bl_label = "Select Faces of Selected Surface Region"
-    bl_description = "Select faces of selected surface region"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        active_obj = context.active_object
-        obj_regs = active_obj.mcell.regions
-        reg = obj_regs.region_list[obj_regs.active_reg_index]
-        id = str(reg.id)
-        mesh = active_obj.data
-        face_set = get_region_faces(mesh,id) 
-        bpy.ops.object.mode_set(mode='OBJECT')
-        msm = context.tool_settings.mesh_select_mode[0:]
-        context.tool_settings.mesh_select_mode = [False, False, True]
-        for f in face_set:
-            mesh.polygons[f].select = True
-        bpy.ops.object.mode_set(mode='EDIT')
-
-        context.tool_settings.mesh_select_mode = msm
-        return {'FINISHED'}
-
-
-class MCELL_OT_region_faces_deselect(bpy.types.Operator):
-    bl_idname = "mcell.region_faces_deselect"
-    bl_label = "Deselect Faces of Selected Surface Region"
-    bl_description = "Deselect faces of selected surface region"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        active_obj = context.active_object
-        obj_regs = active_obj.mcell.regions
-        reg = obj_regs.region_list[obj_regs.active_reg_index]
-        id = str(reg.id)
-        mesh = active_obj.data
-        face_set = get_region_faces(mesh,id) 
-        bpy.ops.object.mode_set(mode='OBJECT')
-        msm = context.tool_settings.mesh_select_mode[0:]
-        context.tool_settings.mesh_select_mode = [False, False, True]
-        for f in face_set:
-            mesh.polygons[f].select = False
-        bpy.ops.object.mode_set(mode='EDIT')
-
-        context.tool_settings.mesh_select_mode = msm
-        return {'FINISHED'}
-
-
-# Update format of object regions
-# This is required to update regions from pre v1.0 format to new v1.0 format
-# Note: This function is registered as a load_post handler
-@persistent
-def object_regions_format_update(context):
-
-    scn = bpy.context.scene
-    mcell = scn.mcell
-    objs = scn.objects
-    for obj in objs:
-        if obj.type == 'MESH':
-            obj_regs = obj.mcell.regions
-            regs = obj_regs.region_list 
-            mesh = obj.data
-            if len(regs) > 0:
-                # We have object regions so check for pre v1.0 region format
-                # We'll do that by checking the region name on the mesh.
-                # If even one mesh region is old then they're all old
-                sort_region_list(obj)
-                # Check that the mesh has regions
-                if mesh.get("mcell"):
-                    if mesh["mcell"].get("regions"):
-                        mregs =  mesh["mcell"]["regions"]
-                        if len(mregs.keys()) > 0:
-                            # if reg_name is alpha followed by alphanumeric
-                            #   then we've got an old format region
-                            reg_name = mregs.keys()[0]
-                            reg_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
-                            m = re.match(reg_filter, reg_name)
-                            if m is not None:
-                                # We have old region format
-                                # Make copies of old regions
-                                mreg_tmp = {}
-                                obj_regs.id_counter = 0
-                                for reg in regs:
-                                    reg.id = obj_regs.id_counter
-                                    obj_regs.id_counter += 1
-                                    mreg_tmp[reg.name] = set(
-                                        mregs[reg.name].to_list())
-                                # Clear old regions from mesh
-                                for key in mregs.keys():
-                                    mregs[key] = []
-                                mregs.clear()
-                                # Convert old regions to new format
-                                for reg in regs:
-                                    id = str(reg.id)
-                                    mregs[id] = {}
-                                    set_region_faces(
-                                        mesh,id,mreg_tmp[reg.name])
-                else:
-                    # The mesh did not have regions so the object regions are
-                    # empty. If id_counter is 0 then we have old object regions
-                    if obj_regs.id_counter == 0:
-                        for reg in regs:
-                            # Update the object region id's
-                            reg.id = obj_regs.id_counter
-                            obj_regs.id_counter += 1
-            else:
-                # There are no object regions but there might be mesh cruft
-                # Remove any region cruft we find attached to mesh["mcell"]
-                if mesh.get("mcell"):
-                    if mesh["mcell"].get("regions"):
-                        mregs =  mesh["mcell"]["regions"]
-                        for key in mregs.keys():
-                            mregs[key] = []
-                        mregs.clear()
-                        mesh["mcell"].pop("regions")
-
-
-# Legacy code from when we used to store regions as vertex groups
-#   Useful to run from Blender's python console on some older models
-#   We'll eliminate this when our face regions have query features akin
-#   to those available with vertex groups.
-class MCELL_OT_vertex_groups_to_regions(bpy.types.Operator):
-    bl_idname = "mcell.vertex_groups_to_regions"
-    bl_label = "Convert Vertex Groups of Selected Objects to Regions"
-    bl_description = "Convert Vertex Groups to Regions"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        scn = context.scene
-        select_objs = context.selected_objects
-
-        # For each selected object:
-        for obj in select_objs:
-            print(obj.name)
-            scn.objects.active = obj
-            obj.select = True
-            obj_regs = obj.mcell.regions
-            vert_groups = obj.vertex_groups
-
-            # If there are vertex groups to convert:
-            if vert_groups:
-                mesh = obj.data
-
-                # For each vertex group:
-                for vg in vert_groups:
-
-                    # Deselect the whole mesh:
-                    bpy.ops.object.mode_set(mode='EDIT')
-                    bpy.ops.mesh.select_all(action='DESELECT')
-
-                    # Select the vertex group:
-                    print(vg.name)
-                    bpy.ops.object.vertex_group_set_active(group=vg.name)
-                    bpy.ops.object.vertex_group_select()
-
-                    # If there are selected faces:
-                    if (mesh.total_face_sel > 0):
-                        print("  vg faces: %d" % (mesh.total_face_sel))
-
-                        # Setup mesh regions IDProp if necessary:
-                        if not mesh.get("mcell"):
-                            mesh["mcell"] = {}
-                        if not mesh["mcell"].get("regions"):
-                            mesh["mcell"]["regions"] = {}
-
-                        # look for vg.name in region_list and add if not found:
-                        # method 1:
-                        if (obj_regs.region_list.find(vg.name) == -1):
-                            bpy.ops.mcell.region_add()
-                            reg = obj_regs.region_list[
-                                obj_regs.active_reg_index]
-                            reg.name = vg.name
-                        reg = obj_regs.region_list[vg.name]
-
-                        # append faces in vertex group to faces in region:
-                        # retreive or create region on mesh:
-                        if not mesh["mcell"]["regions"].get(vg.name):
-                            mesh["mcell"]["regions"][reg.name] = []
-                        face_set = set([])
-                        for f in mesh["mcell"]["regions"][reg.name]:
-                            face_set.add(f)
-                        print("  reg faces 0: %d" % (len(face_set)))
-                        bpy.ops.object.mode_set(mode='OBJECT')
-                        for f in mesh.polygons:
-                            if f.select:
-                                face_set.add(f.index)
-                        bpy.ops.object.mode_set(mode='EDIT')
-                        reg_faces = list(face_set)
-                        reg_faces.sort()
-                        print("  reg faces 1: %d" % (len(reg_faces)))
-                        mesh["mcell"]["regions"][reg.name] = reg_faces
-                        bpy.ops.object.mode_set(mode='OBJECT')
-
-        return {'FINISHED'}
 
 
 class MCELL_OT_create_partitions_object(bpy.types.Operator):
@@ -811,593 +323,6 @@ class MCELL_OT_parameter_remove(bpy.types.Operator):
 #########################################################################################################################################
 
 
-
-############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
-
-import pickle
-import threading
-
-# This locking system currently assumes that there is no multi-threading
-global checked_out_parameter_space
-checked_out_parameter_space = None
-global parameter_space_lock
-parameter_space_lock = threading.Lock()
-global num_checked_out
-num_checked_out = 0
-
-def build_new_parameter_space ( mcell_general_parameters ):
-    #print ( "Building new parameter space" )
-    ps = ParameterSpace.ParameterSpace()
-    for param in mcell_general_parameters.parameter_list:
-        ps.define(param.name,param.expr)
-    #print ( "Returning new parameter space with " + str(ps.num_parameters()) + " parameters" )
-    return ps
-
-def check_out_parameter_space ( mcell_general_parameters ):
-    global parameter_space_lock
-    global checked_out_parameter_space
-    global num_checked_out
-    #print ( "Checking out parameters..." )
-    if parameter_space_lock.acquire(False):
-        # The lock was successful so no one else is using this parameter space
-        pickled_ps_string = mcell_general_parameters.parameter_space_string
-        ps = None
-        if (pickled_ps_string == None) or (len(pickled_ps_string) <= 0):
-            #print ( "No parameters stored, generating a new parameter space" )
-            ps = build_new_parameter_space(mcell_general_parameters)
-        else:
-            #print ( "Parameter space found, calling pickle.loads" )
-            ps = pickle.loads ( pickled_ps_string.encode('latin1') )
-            if ps.version_match():
-                #print ( "Parameter Versions Matched" )
-                checked_out_parameter_space = ps
-            else:
-                print ( "Warning: Parameter versions did not match. You may be using an old blend file." )
-                ps = build_new_parameter_space(mcell_general_parameters)
-        checked_out_parameter_space = ps
-    num_checked_out += 1
-    return checked_out_parameter_space
-
-def check_in_parameter_space ( mcell_general_parameters, ps ):
-    global parameter_space_lock
-    global checked_out_parameter_space
-    global num_checked_out
-    #print ( "Checking in parameters." )
-    ps_string = pickle.dumps(ps,protocol=0).decode('latin1')
-    # print ( "Parameter string = " + ps_string )
-    # Always save the parameters whenever checked in to ensure the latest is saved in the .blend file
-    mcell_general_parameters.parameter_space_string = ps_string
-    num_checked_out += -1
-    if num_checked_out <= 0:
-        parameter_space_lock.release()
-        num_checked_out = 0
-
-
-
-class MCELL_OT_add_parameter(bpy.types.Operator):
-    bl_idname = "mcell.add_parameter"
-    bl_label = "Add Parameter"
-    bl_description = "Add a new parameter to an MCell model"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        #print ( "Adding Parameter ... inside execute" )
-        mcell = context.scene.mcell
-        
-        ps = check_out_parameter_space ( mcell.general_parameters )
-        #print ( "Before adding a new parameter:" )
-        # ps.dump()
-        
-        # mcell.general_parameters.next_parameter_ID += 1  # May not be needed with ParameterSpace
-        mcell.general_parameters.parameter_list.add()
-        mcell.general_parameters.active_par_index = len(mcell.general_parameters.parameter_list)-1
-
-        new_id = ps.define ( None, "0" )   # Let the ParameterSpace pick the name
-        new_name = ps.get_name ( new_id )  # Get whatever ID was created
-
-        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].id = new_id
-        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = new_name
-    
-        ps.eval_all(False,-1)  # Try forcing the re-evaluation of all parameters
-
-        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].expr = ps.get_expr(new_id)
-    
-        # Moved above ps.get_expr:   ps.eval_all(False,-1)  # Try forcing the re-evaluation of all parameters
-
-        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].value = str ( ps.eval_all(False,new_id) )
-        mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].valid = True
-
-        if False:
-            # Make a whole bunch of parameters for testing !!!
-            for i in range(100):
-
-                # mcell.general_parameters.next_parameter_ID += 1  # May not be needed with ParameterSpace
-                mcell.general_parameters.parameter_list.add()
-                mcell.general_parameters.active_par_index = len(mcell.general_parameters.parameter_list)-1
-
-                new_id = ps.define ( ("P%d"%(i+2)), ("(P%d+1) * 1.2"%(i+1)) )   # Let the ParameterSpace pick the name
-                new_name = ps.get_name ( new_id )  # Get whatever ID was created
-
-                mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].id = new_id
-                mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name = new_name
-            
-                mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].expr = ps.get_expr(new_id)
-            
-                ps.eval_all(False,-1)  # Try forcing the re-evaluation of all parameters
-
-                mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].value = str ( ps.eval_all(False,new_id) )
-                mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].valid = True
-           
-            ps.eval_all(False,-1)  # Try forcing the re-evaluation of all parameters
-
-        #print ( "After adding a new parameter:" )
-        # ps.dump()
-
-        check_in_parameter_space ( mcell.general_parameters, ps )
-
-        return {'FINISHED'}
-
-
-class MCELL_OT_remove_parameter(bpy.types.Operator):
-    bl_idname = "mcell.remove_parameter"
-    bl_label = "Remove Parameter"
-    bl_description = "Remove selected parameter from an MCell model"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        
-        if (len(mcell.general_parameters.parameter_list) > 0) and (mcell.general_parameters.active_par_index >= 0):
-
-            ps = check_out_parameter_space ( mcell.general_parameters )
-            ## print ( "Before deleting a parameter:" )
-            #ps.dump()
-
-            id_to_delete = ps.get_id(mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index].name)
-            if (id_to_delete != None) and (id_to_delete > 0):
-                if ( ps.delete ( id_to_delete ) ):
-                    # Delete was successful so update the list to reflect the change
-                    mcell.general_parameters.parameter_list.remove(mcell.general_parameters.active_par_index)
-                    mcell.general_parameters.active_par_index = mcell.general_parameters.active_par_index-1
-                    if (mcell.general_parameters.active_par_index < 0):
-                        # Ensure that the active parameter isn't negative
-                        mcell.general_parameters.active_par_index = 0
-                else:
-                    # Construct a message describing the dependencies
-                    # First get the list of names that depend on this parameter in a string of the form: "['a', 'b', 'c']"
-                    depends = str(ps.get_dependents_names(id_to_delete))
-                    # Remove the brackets and quotes leaving a string of the form: "a, b, c"
-                    depends = depends.replace("'","")
-                    depends = depends.replace("[","")
-                    depends = depends.replace("]","")
-                    # One of ‘DEBUG’, ‘INFO’, ‘OPERATOR’, ‘PROPERTY’, ‘WARNING’, ‘ERROR’, ‘ERROR_INVALID_INPUT’, ‘ERROR_INVALID_CONTEXT’, ‘ERROR_OUT_OF_MEMORY’
-                    self.report({'WARNING'}, "Needed by: " + depends )
-
-                    # Try to use dialog instead of report ... this crashes Blender!!
-                    """
-                    error_message = "Can't delete, needed by " + depends
-                    print ( "=================================================" )
-                    print ( error_message )
-                    print ( "=================================================" )
-                    bpy.ops.object.dialog_operator('EXEC_DEFAULT', message=error_message )
-                    """
-
-                    """
-                      # Blender 2.68 (sub 0), Revision: 58536
-                      bpy.context.space_data.context = 'SCENE'  # Property
-                      bpy.ops.mcell.add_parameter()  # Operator
-                      bpy.context.scene.mcell.general_parameters.parameter_list[0].name = "a"  # Property
-                      bpy.ops.mcell.remove_parameter()  # Operator
-                      bpy.ops.mcell.add_parameter()  # Operator
-                      bpy.context.scene.mcell.general_parameters.parameter_list[0].name = "a"  # Property
-                      bpy.context.scene.mcell.general_parameters.parameter_list[0].expr = "0"  # Property
-                      bpy.ops.mcell.add_parameter()  # Operator
-                      bpy.context.scene.mcell.general_parameters.parameter_list[1].name = "b"  # Property
-                      bpy.context.scene.mcell.general_parameters.parameter_list[1].expr = "a"  # Property
-                      bpy.context.scene.mcell.general_parameters.active_par_index = 1  # Property
-                      bpy.ops.mcell.remove_parameter()  # Operator
-                      bpy.context.scene.mcell.general_parameters.active_par_index = 0  # Property
-                      bpy.ops.mcell.add_parameter()  # Operator
-                      bpy.context.scene.mcell.general_parameters.parameter_list[1].name = "b"  # Property
-                      bpy.context.scene.mcell.general_parameters.parameter_list[1].expr = "a"  # Property
-                      bpy.context.scene.mcell.general_parameters.active_par_index = 0  # Property
-                      bpy.ops.mcell.remove_parameter()  # Operator
-
-                      # backtrace
-                      blender268() [0xf6ccd7]
-                      blender268() [0xf6cf15]
-                      /lib/x86_64-linux-gnu/libc.so.6(+0x324f0) [0x7f9a494494f0]
-                      blender268(WM_operator_poll+0xa) [0xf86c9a]
-                      blender268() [0xf87b53]
-                      blender268() [0xf7cff4]
-                      blender268() [0x122e046]
-                      blender268() [0x123c741]
-                      blender268() [0xf88908]
-                      blender268() [0xf88f06]
-                      blender268(wm_event_do_handlers+0x19a) [0xf891fa]
-                      blender268(WM_main+0x18) [0xf743d8]
-                      blender268(main+0x368) [0xf6f2c4]
-                      /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xfd) [0x7f9a49435ead]
-                      blender268() [0xeabf25]                      
-                    """
-
-                # Re-evaluate all the parameters to update them on the screen
-                ps.eval_all(True,-1)
-                # Update the error message for the entire parameter group
-                update_parameter_block_message ( mcell, ps )
-                ## print ( "After reevaluating a parameter:" )
-            #ps.dump()
-            
-            check_in_parameter_space ( mcell.general_parameters, ps )
-        
-        return {'FINISHED'}
-
-
-class ReportingOperator(bpy.types.Operator):
-    """Since only Operators (and Macros) can issue the self.report function,
-       this class is intended to provide that service for non-operators.
-       Currently, this does not seem to work. It prints to the console
-       rather than to the status panel (as the other report calls do)."""
-    bl_idname = "params.report"
-    bl_label = "Report"
-    bl_description = "Report information to the user"
-    bl_options = {'REGISTER'}
-    
-    message = bpy.props.StringProperty()
-    
-    def execute ( self, context ):
-        self.report ( {'WARNING'}, self.message )
-        return {'FINISHED'}
-
-
-class DialogOperator(bpy.types.Operator):
-    bl_idname = "object.dialog_operator"
-    bl_label = "Parameter Error"
-
-    message = bpy.props.StringProperty(name="Message")
-    
-    def draw ( self, context ):
-        layout = self.layout
-        row = layout.row()
-        row.label ( text=self.message )
-
-    def execute(self, context):
-        wm = context.window_manager
-        wm.invoke_props_dialog(self)
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self)
-
-
-############## Needed for:  cellblender_properties.update_callback
-
-def update_callback ( context, param_name, expr ):
-    """Given a parameter name and an expression, put the expression into the location for that name.
-       Always check to see if it is already equal to the expression first to avoid infinite recursion!! """
-    # print ( "User's update callback has been called" )
-
-    mcell = context.scene.mcell
-
-    if param_name == "PARAM_iterations":
-        if mcell.initialization.PARAM_iterations != expr:
-            mcell.initialization.PARAM_iterations = expr
-    
-    elif param_name == "PARAM_time_step":
-        if mcell.initialization.PARAM_time_step != expr:
-            mcell.initialization.PARAM_time_step = expr
-
-    elif param_name == "PARAM_time_step_max":
-        if mcell.initialization.PARAM_time_step_max != expr:
-            mcell.initialization.PARAM_time_step_max = expr
-
-    elif param_name == "PARAM_space_step":
-        if mcell.initialization.PARAM_space_step != expr:
-            mcell.initialization.PARAM_space_step = expr
-
-    elif param_name == "PARAM_interaction_radius":
-        if mcell.initialization.PARAM_interaction_radius != expr:
-            mcell.initialization.PARAM_interaction_radius = expr
-
-    elif param_name == "PARAM_radial_directions":
-        if mcell.initialization.PARAM_radial_directions != expr:
-            mcell.initialization.PARAM_radial_directions = expr
-
-    elif param_name == "PARAM_radial_subdivisions":
-        if mcell.initialization.PARAM_radial_subdivisions != expr:
-            mcell.initialization.PARAM_radial_subdivisions = expr
-
-    elif param_name == "PARAM_vacancy_search_distance":
-        if mcell.initialization.PARAM_vacancy_search_distance != expr:
-            mcell.initialization.PARAM_vacancy_search_distance = expr
-
-    elif param_name == "PARAM_surface_grid_density":
-        if mcell.initialization.PARAM_surface_grid_density != expr:
-            mcell.initialization.PARAM_surface_grid_density = expr
-
-
-    ### These are for testing:    
-    elif param_name == "PARAM_location_x":
-        if mcell.mesh_creation_parameters.PARAM_location_x != expr:
-            mcell.mesh_creation_parameters.PARAM_location_x = expr
-    elif param_name == "PARAM_location_y":
-        if mcell.mesh_creation_parameters.PARAM_location_y != expr:
-            mcell.mesh_creation_parameters.PARAM_location_y = expr
-    elif param_name == "PARAM_location_z":
-        if mcell.mesh_creation_parameters.PARAM_location_z != expr:
-            mcell.mesh_creation_parameters.PARAM_location_z = expr
-
-
-def update_all_panel_parameters ( context ):
-    """This forces a redraw of all panel parameters. It should be called when updating general parameters."""
-    # print ( "Forcing redraw of all panel parameters." )
-
-    mcell = context.scene.mcell
-
-    mcell.initialization.PARAM_iterations = mcell.initialization.PARAM_iterations
-    mcell.initialization.PARAM_time_step = mcell.initialization.PARAM_time_step
-    mcell.initialization.PARAM_time_step_max = mcell.initialization.PARAM_time_step_max
-    mcell.initialization.PARAM_space_step = mcell.initialization.PARAM_space_step
-    mcell.initialization.PARAM_interaction_radius = mcell.initialization.PARAM_interaction_radius
-    mcell.initialization.PARAM_radial_directions = mcell.initialization.PARAM_radial_directions
-    mcell.initialization.PARAM_radial_subdivisions = mcell.initialization.PARAM_radial_subdivisions
-    mcell.initialization.PARAM_vacancy_search_distance = mcell.initialization.PARAM_vacancy_search_distance
-    mcell.initialization.PARAM_surface_grid_density = mcell.initialization.PARAM_surface_grid_density
-
-    mcell.mesh_creation_parameters.PARAM_location_x = mcell.mesh_creation_parameters.PARAM_location_x
-    mcell.mesh_creation_parameters.PARAM_location_y = mcell.mesh_creation_parameters.PARAM_location_y
-    mcell.mesh_creation_parameters.PARAM_location_z = mcell.mesh_creation_parameters.PARAM_location_z
-
-############## Needed for:  cellblender_properties.update_callback
-
-
-def update_parameter_block_message ( mcell, ps ):
-    if ps.all_valid():
-        mcell.general_parameters.param_group_error = ""
-    else:
-        mcell.general_parameters.param_group_error = "Parameter Error or Circular Reference:"
-
-
-def update_parameter_properties ( mcell, ps, context ):
-    """ Note that the "context" parameter is added as a "fix" to give access to hard-coded panel parameters"""
-    gen_params = mcell.general_parameters
-    plist = gen_params.parameter_list
-
-    ps.eval_all()
-
-    # print ( "After eval_all, all_valid() = " + str(ps.all_valid()) )
-
-    for p in plist:
-        p.valid = True
-
-    # Rebuild all parameter expressions
-    for p in plist:
-        if ps.get_error(p.id) == None:
-            p.pending_expr = ""
-            new_expr = ps.get_expr(p.id)
-            # Check before copying since the act of copying will force another call to this function for infinite recursion!!
-            if p.expr != new_expr:
-                p.expr = new_expr
-            if ps.UNDEFINED_NAME in p.expr:
-                p.valid = False
-                # One of ‘DEBUG’, ‘INFO’, ‘OPERATOR’, ‘PROPERTY’, ‘WARNING’, ‘ERROR’, ‘ERROR_INVALID_INPUT’, ‘ERROR_INVALID_CONTEXT’, ‘ERROR_OUT_OF_MEMORY’
-                #self.report({'ERROR'}, "Parameter Error" )
-            new_value = ps.get_value(p.id)
-            # Check before copying since the act of copying will force another call to this function for infinite recursion!!
-            if new_value != None:
-                # The previous "None" check was needed for importing BNG parameters for some undiscovered reason
-                if p.value != new_value:
-                    p.value = new_value
-        else:
-            # The text entered for this parameter isn't correct, so show both
-            p.pending_expr = ps.get_error(p.id)
-            p.valid = False
-
-    # Rebuild all panel parameter expressions
-    # This is currently a hard-coded list
-
-    mcell = context.scene.mcell
-
-    for pid in ps.get_id_list():
-        pname = ps.get_name(pid)
-        if pname.startswith("PARAM_"):
-            expr = ps.get_expr ( pid )
-            if (ps.get_error(pid) != None):
-                error_message = "Expression Error: " + ps.get_error(pid) + ", using " + expr + " instead"
-                print ( "=================================================" )
-                print ( error_message )
-                print ( "=================================================" )
-                #bpy.ops.params.report('EXEC_DEFAULT', message=error_message )
-                #bpy.ops.object.dialog_operator('INVOKE_DEFAULT')
-                bpy.ops.object.dialog_operator('EXEC_DEFAULT', message=error_message )
-                # Problem: self.report is only defined for Operators!!!!!
-                # self.report({'ERROR'}, "Error: " + expr )
-
-            #print ( ">>>> Got a Parameter: " + pname )
-            #print ( "     Expression = " + expr )
-            
-            #cellblender_properties.update_callback ( context, pname, expr )
-            update_callback ( context, pname, expr )
-
-    update_parameter_block_message ( mcell, ps )
-
-
-global skip_parameter_name_update
-skip_parameter_name_update = False
-
-def update_parameter_name ( self, context ):
-    # Called when a parameter name changes - needs to force redraw of all parameters that depend on this one so their expressions show the new name
-    #print ( "\nUpdating Parameter Name for " + self.name + "[" + str(self.id) + "]" )
-    # The following check was needed because mcell.general_parameters.parameter_list[newest_item]['expr'] wasn't being set yet for some reason
-    global skip_parameter_name_update
-    if self.initialized and (not skip_parameter_name_update):
-        mcell = context.scene.mcell
-
-        ps = check_out_parameter_space ( mcell.general_parameters )
-
-        #print ( "Before Rename:" )
-        #ps.dump()
-        
-        old_name = ps.get_name(self.id)
-        if old_name == None:
-            ps.set_name ( self.id, self.name )
-        else:
-            python_keywords = ['class','def','return','global',
-                   'if','else','elif','while','for','break',
-                   'try','except','finally',
-                   'in','not','and','or','None','True','False']
-            if not ps.rename ( old_name, self.name, illegal_names=python_keywords ):
-                # Changing the self.name back to the old name will force another update call, so flag it to skip!!
-                skip_parameter_name_update = True
-                self.name = old_name
-                #self.report({'WARNING'}, "Duplicate Name" )
-
-        # Force the update of all panel parameters to cause the numeric values to be updated even if the string (expression) hasn't changed
-        update_parameter_properties ( mcell, ps, context )
-
-        #print ( "After Rename:" )
-        #ps.dump(True)
-        
-        check_in_parameter_space ( mcell.general_parameters, ps )
-    skip_parameter_name_update = False
-
-
-def update_parameter_expression ( self, context ):
-    # Called when a parameter expression changes - needs to recompute the result and update all parameters that depend on this one
-    #print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "] to " + self.expr )
-    mcell = context.scene.mcell
-
-    ps = check_out_parameter_space ( mcell.general_parameters )
-
-    #print ( "Before Updating Expression:" )
-    #ps.dump()
-
-    ps.set_expr ( self.id, self.expr )
-    if (ps.get_error(self.id) != None):
-        print ( "\n\nExpression Error in update_parameter_expression\n\n" )
-    
-
-    update_parameter_properties ( mcell, ps, context )
-    
-    # Try forcing the update of all panel parameters - This appears to work!
-    # If we use this approach, we'll end up listing all of the panel update functions
-    #   either here or collected together in another function
-    # update_time_step ( self, context )
-
-    update_all_panel_parameters ( context )
-
-    #print ( "After Updating Expression:" )
-    #ps.dump(True)
-    
-    check_in_parameter_space ( mcell.general_parameters, ps )
-
-    self.initialized = True
-
-
-def get_panel_parameter ( self ):
-    print ( "get_panel_parameter(self), self = " + str(self) )
-    return "get"
-
-def set_panel_parameter ( self, value ):
-    print ( "set_panel_parameter(self), self = " + str(self) + ", value = " + str(value) )
-    return "set"
-
-
-def update_panel_parameter ( self, context, field_name ):
-    # print ( "Changed " + field_name + " to " + str(getattr(self,field_name)) )
-
-    # Called when a panel parameter expression changes - needs to recompute the result and update all parameters that depend on this one
-    #print ( "\n\nUpdating Parameter Expression for " + self.name + "[" + str(self.id) + "] to " + self.expr )
-    mcell = context.scene.mcell
-
-    ps = check_out_parameter_space ( mcell.general_parameters )
-
-    #print ( "Before Updating Expression:" )
-    #ps.dump()
-
-    ps.define ( field_name, str(getattr(self,field_name)) )
-
-    update_parameter_properties ( mcell, ps, context )
-    
-    # Try forcing the update of all panel parameters - This appears to work!
-    # If we use this approach, we'll end up listing all of the panel update functions
-    #   either here or collected together in another function
-    #update_time_step ( self, context )
-
-    value = ps.get_value(ps.get_id(field_name))
-        
-    #print ( "After Updating Expression:" )
-    #ps.dump(True)
-    
-    check_in_parameter_space ( mcell.general_parameters, ps )
-
-    self.initialized = True
-    return value
-
-
-	
-#########################################################################################################################################
-
-class MCELL_OT_molecule_add(bpy.types.Operator):
-    bl_idname = "mcell.molecule_add"
-    bl_label = "Add Molecule"
-    bl_description = "Add a new molecule type to an MCell model"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        mcell.molecules.molecule_list.add()
-        mcell.molecules.active_mol_index = len(mcell.molecules.molecule_list)-1
-        mcell.molecules.molecule_list[
-            mcell.molecules.active_mol_index].name = "Molecule"
-        return {'FINISHED'}
-    
- 
-class MCELL_OT_molecule_remove(bpy.types.Operator):
-    bl_idname = "mcell.molecule_remove"
-    bl_label = "Remove Molecule"
-    bl_description = "Remove selected molecule type from an MCell model"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        mcell.molecules.molecule_list.remove(mcell.molecules.active_mol_index)
-        mcell.molecules.active_mol_index = mcell.molecules.active_mol_index-1
-        if (mcell.molecules.active_mol_index < 0):
-            mcell.molecules.active_mol_index = 0
-
-        if mcell.molecules.molecule_list:
-            check_molecule(self, context)
-
-        return {'FINISHED'}
-
-
-def check_molecule(self, context):
-    """Checks for duplicate or illegal molecule name"""
-
-    mcell = context.scene.mcell
-    mol_list = mcell.molecules.molecule_list
-    mol = mol_list[mcell.molecules.active_mol_index]
-
-    status = ""
-
-    # Check for duplicate molecule name
-    mol_keys = mol_list.keys()
-    if mol_keys.count(mol.name) > 1:
-        status = "Duplicate molecule: %s" % (mol.name)
-
-    # Check for illegal names (Starts with a letter. No special characters.)
-    mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
-    m = re.match(mol_filter, mol.name)
-    if m is None:
-        status = "Molecule name error: %s" % (mol.name)
-
-    mol.status = status
-
-    return
-
-
 class MCELL_OT_reaction_add(bpy.types.Operator):
     bl_idname = "mcell.reaction_add"
     bl_label = "Add Reaction"
@@ -1408,6 +333,8 @@ class MCELL_OT_reaction_add(bpy.types.Operator):
         mcell = context.scene.mcell
         mcell.reactions.reaction_list.add()
         mcell.reactions.active_rxn_index = len(mcell.reactions.reaction_list)-1
+        rxn = mcell.reactions.reaction_list[mcell.reactions.active_rxn_index]
+        rxn.set_defaults()
         check_reaction(self, context)
         return {'FINISHED'}
 
@@ -1829,6 +756,10 @@ class MCELL_OT_release_site_add(bpy.types.Operator):
             mcell.release_sites.mol_release_list)-1
         mcell.release_sites.mol_release_list[
             mcell.release_sites.active_release_index].name = "Release_Site"
+
+        relsite = mcell.release_sites.mol_release_list[mcell.release_sites.active_release_index]
+        relsite.set_defaults()
+            
         check_release_molecule(self, context)
 
         return {'FINISHED'}
@@ -1978,24 +909,24 @@ def check_release_object_expr(self, context):
     return status
 
 
-def is_executable ( binary_path ):
-    """Checks for nonexistant or non-executable mcell binary file"""
+def is_executable(binary_path):
+    """Checks for nonexistant or non-executable binary file"""
     is_exec = False
     try:
-        st = os.stat ( binary_path )
-        if os.path.isfile( binary_path ):
-            if os.access( binary_path, os.X_OK ):
+        st = os.stat(binary_path)
+        if os.path.isfile(binary_path):
+            if os.access(binary_path, os.X_OK):
                 is_exec = True
     except Exception as err:
         is_exec = False
     return is_exec
-    
 
-def check_mcell_binary(self, context):
-    """Callback to check for mcell executable"""
+
+def check_python_binary(self, context):
+    """Callback to check for python executable"""
     mcell = context.scene.mcell
-    binary_path = mcell.project_settings.mcell_binary
-    mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
+    binary_path = mcell.project_settings.python_binary
+    mcell.project_settings.python_binary_valid = is_executable(binary_path)
     return None
 
 def check_sbml2mcell(self, context):
@@ -2004,6 +935,62 @@ def check_sbml2mcell(self, context):
     binary_path = mcell.project_settings.sbml2mcell
     mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
     return None
+
+class MCELL_OT_set_python_binary(bpy.types.Operator):
+    bl_idname = "mcell.set_python_binary"
+    bl_label = "Set Python Binary"
+    bl_description = "Set Python Binary"
+    bl_options = {'REGISTER'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.project_settings.python_binary = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
+def check_bionetgen_location(self, context):
+    """Callback to check for mcell executable"""
+    mcell = context.scene.mcell
+    application_path = mcell.project_settings.bionetgen_location
+    mcell.project_settings.bionetgen_location_valid = is_executable(application_path)
+    return None
+
+
+class MCELL_OT_set_check_bionetgen_location(bpy.types.Operator):
+    bl_idname = "mcell.set_bionetgen_location"
+    bl_label = "Set BioNetGen Location"
+    bl_description = ("Set BioNetGen Location. If needed, download at "
+                      "bionetgen.org")
+    bl_options = {'REGISTER'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+
+    #def __init__(self):
+    #    self.filepath = bpy.context.scene.mcell.project_settings.mcell_binary
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.project_settings.bionetgen_location = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
+def check_mcell_binary(self, context):
+    """Callback to check for mcell executable"""
+    mcell = context.scene.mcell
+    binary_path = mcell.project_settings.mcell_binary
+    mcell.project_settings.mcell_binary_valid = is_executable(binary_path)
+    return None
+
 
 class MCELL_OT_set_mcell_binary(bpy.types.Operator):
     bl_idname = "mcell.set_mcell_binary"
@@ -2014,33 +1001,12 @@ class MCELL_OT_set_mcell_binary(bpy.types.Operator):
 
     filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
 
-    def __init__(self):
-        self.filepath = bpy.context.scene.mcell.project_settings.mcell_binary
+    #def __init__(self):
+    #    self.filepath = bpy.context.scene.mcell.project_settings.mcell_binary
 
     def execute(self, context):
         mcell = context.scene.mcell
         mcell.project_settings.mcell_binary = self.filepath
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        context.window_manager.fileselect_add(self)
-        return {'RUNNING_MODAL'}
-
-class MCELL_OT_set_sbml2mcell(bpy.types.Operator):
-    bl_idname = "mcell.set_sbml2mcell"
-    bl_label = "Set sbml2mcell Binary"
-    bl_description = ("Set SBML2Mcell binary. If needed, download at "
-                      "mcell.org/download.html")
-    bl_options = {'REGISTER'}
-
-    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
-
-    def __init__(self):
-        self.filepath = bpy.context.scene.mcell.project_settings.sbml2mcell
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        mcell.project_settings.sbml2mcell = self.filepath
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -2068,7 +1034,13 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
         # Force the project directory to be where the .blend file lives
         project_dir = project_files_path()
         status = ""
-        python_path = shutil.which("python")
+        # If python path was set by user, use that one. Otherwise, try to
+        # automatically find it. This will probably fail on Windows unless it's
+        # set in the PATH.
+        if mcell.project_settings.python_binary_valid:
+            python_path = mcell.project_settings.python_binary
+        else:
+            python_path = shutil.which("python", mode=os.X_OK)
 
         if python_path:
             if not mcell.cellblender_preferences.decouple_export_run:
@@ -2135,7 +1107,7 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
                                            "Seeds: %d-%d" % (sp.pid, base_name,
                                                              start, end))
         else:
-            status = "Python not found."
+            status = "Python not found. Set it in Project Settings."
 
         mcell.run_simulation.status = status
 
@@ -2206,6 +1178,17 @@ def mcell_valid_update(context):
     binary_path = mcell.project_settings.mcell_binary
     mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
     # print ( "mcell_binary_valid = ", mcell.project_settings.mcell_binary_valid )
+
+
+@persistent
+def set_defaults(context):
+    """ Initialize MCell if not already initialized """
+    if not context:
+        context = bpy.context
+    mcell = context.scene.mcell
+    if not mcell.is_initialized:
+        mcell.set_defaults()
+        mcell.is_initialized = True
 
 
 def project_files_path():
@@ -2600,41 +1583,6 @@ class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
         return{'FINISHED'}
 
 
-# These next two classes don't seem to be used anywhere. Unnecessary?
-# Commented out for now.
-
-"""
-class MCELL_OT_mol_viz_next(bpy.types.Operator):
-    bl_idname = "mcell.mol_viz_next"
-    bl_label = "Step to Next Molecule File"
-    bl_description = "Step to Next MCell Molecule File for Visualization"
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        i = mcell.mol_viz.mol_file_index + mcell.mol_viz.mol_file_step_index
-        if (i > mcell.mol_viz.mol_file_stop_index):
-            i = mcell.mol_viz.mol_file_stop_index
-        mcell.mol_viz.mol_file_index = i
-        mol_viz_update(self, context)
-        return{'FINISHED'}
-
-
-class MCELL_OT_mol_viz_prev(bpy.types.Operator):
-    bl_idname = "mcell.mol_viz_prev"
-    bl_label = "Step to Previous Molecule File"
-    bl_description = "Step to Previous MCell Molecule File for Visualization"
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        i = mcell.mol_viz.mol_file_index - mcell.mol_viz.mol_file_step_index
-        if (i < mcell.mol_viz.mol_file_start_index):
-            i = mcell.mol_viz.mol_file_start_index
-        mcell.mol_viz.mol_file_index = i
-        mol_viz_update(self, context)
-        return{'FINISHED'}
-"""
 
 #CellBlender operator helper functions:
 
@@ -2838,7 +1786,7 @@ def mol_viz_file_read(mcell_prop, filepath):
             # [molec_name, [x_pos, y_pos, z_pos, x_orient, y_orient, z_orient]]
             # Orientations are zero in the case of volume molecules.
             mol_data = [[s.split()[0], [
-                float(x) for x in s.split()[1:]]] for s in open(
+                float(x) for x in s.split()[2:]]] for s in open(
                     filepath, "r").read().split("\n") if s != ""]
 
             for mol in mol_data:
@@ -3044,6 +1992,105 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_gen_meshalyzer_report(bpy.types.Operator):
+    bl_idname = "mcell.gen_meshalyzer_report"
+    bl_label = "Analyze Geometric Properties of Multiple Meshes"
+    bl_description = "Generate Analysis Report of Geometric Properties of Multiple Meshes"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self,context):
+
+        mcell = context.scene.mcell
+        objs = context.selected_objects
+
+        mcell.meshalyzer.object_name = ''
+        mcell.meshalyzer.vertices = 0
+        mcell.meshalyzer.edges = 0
+        mcell.meshalyzer.faces = 0
+        mcell.meshalyzer.watertight = ''
+        mcell.meshalyzer.manifold = ''
+        mcell.meshalyzer.normal_status = ''
+        mcell.meshalyzer.area = 0
+        mcell.meshalyzer.volume = 0
+        mcell.meshalyzer.sav_ratio = 0
+
+        if (len(objs) == 0):
+            mcell.meshalyzer.status = 'Please Select One or More Mesh Objects'
+            return {'FINISHED'}
+
+        bpy.ops.text.new()
+        report = bpy.data.texts['Text']
+        report.name = 'mesh_analysis.txt'
+        report.write("# Object  Surface Area  Volume\n")
+
+        for obj in objs:
+
+            mcell.meshalyzer.object_name = obj.name
+
+            if not (obj.type == 'MESH'):
+                mcell.meshalyzer.status = 'Selected Object Not a Mesh'
+                return {'FINISHED'}
+
+            t_mat = obj.matrix_world
+            mesh=obj.data
+
+            mcell.meshalyzer.vertices = len(mesh.vertices)
+            mcell.meshalyzer.edges = len(mesh.edges)
+            mcell.meshalyzer.faces = len(mesh.polygons)
+
+            area = 0
+            for f in mesh.polygons:
+                if not (len(f.vertices) == 3):
+                    mcell.meshalyzer.status = '***** Mesh Not Triangulated *****'
+                    mcell.meshalyzer.watertight = 'Mesh Not Triangulated'
+                    return {'FINISHED'}
+
+                tv0 = mesh.vertices[f.vertices[0]].co * t_mat
+                tv1 = mesh.vertices[f.vertices[1]].co * t_mat
+                tv2 = mesh.vertices[f.vertices[2]].co * t_mat
+                area = area + mathutils.geometry.area_tri(tv0,tv1,tv2)
+
+            mcell.meshalyzer.area = area
+
+            (edge_faces, edge_face_count) = make_efdict(mesh)
+
+            is_closed = check_closed(edge_face_count)
+            is_manifold = check_manifold(edge_face_count)
+            is_orientable = check_orientable(mesh,edge_faces,edge_face_count)
+
+            if is_orientable:
+                mcell.meshalyzer.normal_status = 'Consistent Normals'
+            else:
+                mcell.meshalyzer.normal_status = 'Inconsistent Normals'
+
+            if is_closed:
+                mcell.meshalyzer.watertight = 'Watertight Mesh'
+            else:
+                mcell.meshalyzer.watertight = 'Non-watertight Mesh'
+
+            if is_manifold:
+                mcell.meshalyzer.manifold = 'Manifold Mesh'
+            else:
+                mcell.meshalyzer.manifold = 'Non-manifold Mesh'
+
+            volume = 0
+            if is_orientable and is_manifold and is_closed:
+                volume = mesh_vol(mesh,t_mat)
+                if volume >= 0:
+                    mcell.meshalyzer.normal_status = 'Outward Facing Normals'
+                else:
+                    mcell.meshalyzer.normal_status = 'Inward Facing Normals'
+
+            mcell.meshalyzer.volume = volume
+            if (not volume == 0.0):
+                mcell.meshalyzer.sav_ratio = area/volume
+
+            report.write("%s %.9g %.9g\n" % (obj.name, mcell.meshalyzer.area, mcell.meshalyzer.volume))
+
+        mcell.meshalyzer.status = ''
+        return {'FINISHED'}
+
+
 def mesh_vol(mesh, t_mat):
     """Compute volume of triangulated, orientable, watertight, manifold mesh
 
@@ -3179,6 +2226,54 @@ class MCELL_OT_deselect_filtered(bpy.types.Operator):
                         obj.select = False
 
         return {'FINISHED'}
+
+
+class MCELL_OT_toggle_visibility_filtered(bpy.types.Operator):
+  bl_idname = "mcell.toggle_visibility_filtered"
+  bl_label = "Visibility Filtered"
+  bl_description = "Toggle visibility of objects matching the filter"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self,context):
+
+    scn = context.scene
+    mcell = scn.mcell
+    objs = scn.objects
+
+    filter = mcell.object_selector.filter
+
+    for obj in objs:
+      if obj.type == 'MESH':
+        m = re.match(filter,obj.name)
+        if m != None:
+          if m.end() == len(obj.name):
+            obj.hide = not obj.hide
+
+    return {'FINISHED'}
+
+
+class MCELL_OT_toggle_renderability_filtered(bpy.types.Operator):
+  bl_idname = "mcell.toggle_renderability_filtered"
+  bl_label = "Renderability Filtered"
+  bl_description = "Toggle renderability of objects matching the filter"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self,context):
+
+    scn = context.scene
+    mcell = scn.mcell
+    objs = scn.objects
+
+    filter = mcell.object_selector.filter
+
+    for obj in objs:
+      if obj.type == 'MESH':
+        m = re.match(filter,obj.name)
+        if m != None:
+          if m.end() == len(obj.name):
+            obj.hide_render= not obj.hide_render
+
+    return {'FINISHED'}
 
 
 # Rebuild Model Objects List from Scratch
@@ -3468,54 +2563,6 @@ def check_rxn_output(self, context):
     return
 
 
-
-
-
-def check_expr_str(mcell, panel_param_name, param_str, min_val, max_val):
-    """ Convert param_str to float if possible. Otherwise, generate error. """
-
-    val = None
-    status = ""
-
-    ps = check_out_parameter_space ( mcell.general_parameters )
-    # ps.dump(True)
-    if panel_param_name != None:
-        # Make an assignment to this name in the parameter space
-        ps.define ( panel_param_name, param_str )
-        # Return a value to update the parameter string in the panel
-        # print ( "Should be returning ", ps.get_expr ( ps.get_id(panel_param_name) ) )
-    # Evaluate the parameter string (whether it's a panel parameter or not)
-    (value,valid) = ps.eval_all ( expression = param_str )
-    check_in_parameter_space ( mcell.general_parameters, ps )
-
-    if valid:
-        # print ( "  = " + str ( value ) )
-        val = value
-    else:
-        print ( "  = " + str ( value ) + " ... with Error" )
-        try:
-            val = float(param_str)
-        except ValueError:
-            status = "Invalid value for %s: %s" % (panel_param_name, param_str)
-
-    try:
-        if min_val is not None:
-            if val < min_val:
-                status = "Invalid value for %s (%s): %f < %f" % (panel_param_name, param_str, val, min_val)
-        if max_val is not None:
-            if val > max_val:
-                status = "Invalid value for %s (%s): %f > %f" % (panel_param_name, param_str, val, max_val)
-    #except ValueError:
-    except:
-        status = "Exception extracting value for %s: %s" % (panel_param_name, param_str)
-
-    # print ( "\ncheck_param_str returning " + str(val) + " with status = " + str(status) )
-
-    return (val, status)
-
-
-
-
 def check_val_str(val_str, min_val, max_val):
     """ Convert val_str to float if possible. Otherwise, generate error. """
 
@@ -3526,12 +2573,12 @@ def check_val_str(val_str, min_val, max_val):
         val = float(val_str)
         if min_val is not None:
             if val < min_val:
-                status = "Invalid value: %f < %f" % (val, min_val)
+                status = "Invalid value for %s: %s"
         if max_val is not None:
             if val > max_val:
-                status = "Invalid value: %f > %f" % (val, min_val)
+                status = "Invalid value for %s: %s"
     except ValueError:
-        status = "Value Error Exception: %s" % (val_str)
+        status = "Invalid value for %s: %s"
 
     return (val, status)
 
@@ -3642,272 +2689,3 @@ def update_clamp_value(self, context):
     return
 
 
-def update_iterations(self, context):
-    """ Store the iterations if it's legal or generate an error """
-    update_panel_parameter ( self, context,"PARAM_iterations" )
-
-    mcell = context.scene.mcell
-
-    (iterations, status) = check_expr_str ( mcell, "PARAM_iterations", mcell.initialization.PARAM_iterations, 0, None )
-    if status == "":
-        mcell.initialization.iterations = iterations
-
-    mcell.initialization.status = status
-    return
-
-
-def update_time_step(self, context):
-    """ Store the time step as a float if it's legal or generate an error """
-    update_panel_parameter ( self, context,"PARAM_time_step" )
-
-    mcell = context.scene.mcell
-
-    (time_step, status) = check_expr_str ( mcell, "PARAM_time_step", mcell.initialization.PARAM_time_step, 0, None )
-    if status == "":
-        mcell.initialization.time_step = time_step
-
-    mcell.initialization.status = status
-    return
-
-
-def update_time_step_max(self, context):
-    """ Store the max time step as a float if it's legal or create an error """
-    update_panel_parameter ( self, context,"PARAM_time_step_max" )
-
-    mcell = context.scene.mcell
-    time_step_max_str = mcell.initialization.PARAM_time_step_max
-
-    if time_step_max_str:
-        (time_step_max, status) = check_expr_str ( mcell, "PARAM_time_step_max", mcell.initialization.PARAM_time_step_max, 0, None )
-        # (time_step_max, status) = check_val_str(time_step_max_str, 0, None)
-
-        if not status:
-            mcell.initialization.time_step_max = time_step_max
-        else:
-            status = status % ("time_step_max", time_step_max_str)
-            mcell.initialization.time_step_max_str = ""
-
-        mcell.initialization.status = status
-
-
-def update_space_step(self, context):
-    """ Store the space step as a float if it's legal or create an error """
-    update_panel_parameter ( self, context,"PARAM_space_step" )
-
-    mcell = context.scene.mcell
-    space_step_str = mcell.initialization.PARAM_space_step
-
-    if space_step_str:
-        (space_step, status) = check_expr_str ( mcell, "PARAM_space_step", mcell.initialization.PARAM_space_step, 0, None )
-
-        if not status:
-            mcell.initialization.space_step = space_step
-        else:
-            status = status % ("space_step", space_step_str)
-            #mcell.initialization.space_step_str = ""
-
-        mcell.initialization.status = status
-
-
-def update_interaction_radius(self, context):
-    """ Store interaction radius as a float if legal or create an error """
-    update_panel_parameter ( self, context,"PARAM_interaction_radius" )
-
-    mcell = context.scene.mcell
-    interaction_radius_str = mcell.initialization.PARAM_interaction_radius
-
-    if interaction_radius_str:
-        (interaction_radius, status) = check_expr_str ( mcell, "PARAM_interaction_radius", mcell.initialization.PARAM_interaction_radius, 0, None )
-
-        if not status:
-            mcell.initialization.interaction_radius = interaction_radius
-        else:
-            status = status % ("interaction_radius", interaction_radius_str)
-            #mcell.initialization.interaction_radius_str = ""
-
-        mcell.initialization.status = status
-
-
-def update_radial_directions(self, context):
-    """ Store radial directions as a float if it's legal or create an error """
-    update_panel_parameter ( self, context,"PARAM_radial_directions" )
-
-    mcell = context.scene.mcell
-    radial_directions_str = mcell.initialization.PARAM_radial_directions
-
-    if radial_directions_str:
-        (radial_directions, status) = check_expr_str(mcell, "PARAM_radial_directions", mcell.initialization.PARAM_radial_directions, 0, None)
-
-        if not status:
-            mcell.initialization.radial_directions = radial_directions
-        else:
-            status = status % ("radial_directions", radial_directions_str)
-            #mcell.initialization.radial_directions_str = ""
-
-        mcell.initialization.status = status
-
-
-def update_radial_subdivisions(self, context):
-    """ Store radial subdivisions as a float if legal or create an error """
-    update_panel_parameter ( self, context,"PARAM_radial_subdivisions" )
-
-    mcell = context.scene.mcell
-    radial_subdivisions_str = mcell.initialization.PARAM_radial_subdivisions
-
-    if radial_subdivisions_str:
-        (radial_subdivisions, status) = check_expr_str(mcell, "PARAM_radial_subdivisions", mcell.initialization.PARAM_radial_subdivisions, 0, None)
-
-        if not status:
-            mcell.initialization.radial_subdivisions = radial_subdivisions
-        else:
-            status = status % ("radial_subdivisions", radial_subdivisions_str)
-            #mcell.initialization.radial_subdivisions_str = ""
-
-        mcell.initialization.status = status
-
-
-def update_vacancy_search_distance(self, context):
-    """ Store vacancy search distance as float if legal or create an error """
-    update_panel_parameter ( self, context,"PARAM_vacancy_search_distance" )
-
-    mcell = context.scene.mcell
-    vacancy_search_distance_str = mcell.initialization.PARAM_vacancy_search_distance
-
-    if vacancy_search_distance_str:
-        (vacancy_search_distance, status) = check_expr_str(mcell, "PARAM_vacancy_search_distance", mcell.initialization.PARAM_vacancy_search_distance, 0, None)
-
-        if not status:
-            mcell.initialization.vacancy_search_distance = \
-                vacancy_search_distance
-        else:
-            status = status % (
-                "vacancy_search_distance", vacancy_search_distance_str)
-            #mcell.initialization.vacancy_search_distance_str = ""
-
-        mcell.initialization.status = status
-
-
-def update_surface_grid_density(self, context):
-    """ Store surface_grid_density as float if legal or create an error """
-    update_panel_parameter ( self, context,"PARAM_surface_grid_density" )
-
-    mcell = context.scene.mcell
-    surface_grid_density_str = mcell.initialization.PARAM_surface_grid_density
-
-    if surface_grid_density_str:
-        (surface_grid_density, status) = check_expr_str(mcell, "PARAM_surface_grid_density", mcell.initialization.PARAM_surface_grid_density, 0, None)
-
-        if not status:
-            mcell.initialization.surface_grid_density = \
-                surface_grid_density
-        else:
-            status = status % (
-                "surface_grid_density", surface_grid_density_str)
-            #mcell.initialization.surface_grid_density_str = ""
-
-        mcell.initialization.status = status
-
-
-
-
-
-def update_diffusion_constant(self, context):
-    """ Store the diffusion constant as a float if it's legal """
-
-    mcell = context.scene.mcell
-    mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
-   
-    diffusion_constant_str = mol.diffusion_constant_str
-
-    (diffusion_constant, status) = check_val_str(
-        diffusion_constant_str, 0, None)
-     
-    if status == "":
-        mol.diffusion_constant = diffusion_constant
-    else:
-        #status = status % ("diffusion_constant", diffusion_constant_str)
-        mol.diffusion_constant_str = "%g" % (mol.diffusion_constant)
-
-    #mcell.molecules.status = status
-
-    return
-
-
-def update_custom_time_step(self, context):
-    """ Store the custom time step as a float if it's legal """
-
-    mcell = context.scene.mcell
-    mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
-    custom_time_step_str = mol.custom_time_step_str
-
-    (custom_time_step, status) = check_val_str(custom_time_step_str, 0, None)
-
-    if status == "":
-        mol.custom_time_step = custom_time_step
-    else:
-        #status = status % ("custom_time_step", custom_time_step_str)
-        mol.custom_time_step_str = "%g" % (mol.custom_time_step)
-
-    #mcell.molecules.status = status
-
-    return
-
-
-def update_custom_space_step(self, context):
-    """ Store the custom space step as a float if it's legal """
-
-    mcell = context.scene.mcell
-    mol = mcell.molecules.molecule_list[mcell.molecules.active_mol_index]
-    custom_space_step_str = mol.custom_space_step_str
-
-    (custom_space_step, status) = check_val_str(custom_space_step_str, 0, None)
-
-    if status == "":
-        mol.custom_space_step = custom_space_step
-    else:
-        #status = status % ("custom_space_step", custom_space_step_str)
-        mol.custom_space_step_str = "%g" % (mol.custom_space_step)
-
-    #mcell.molecules.status = status
-
-    return
-
-
-def update_fwd_rate(self, context):
-    """ Store the forward reaction rate as a float if it's legal """
-
-    mcell = context.scene.mcell
-    rxn = mcell.reactions.reaction_list[mcell.reactions.active_rxn_index]
-    fwd_rate_str = rxn.fwd_rate_str
-
-    (fwd_rate, status) = check_val_str(fwd_rate_str, 0, None)
-
-    if status == "":
-        rxn.fwd_rate = fwd_rate
-    else:
-        #status = status % ("fwd_rate", fwd_rate_str)
-        rxn.fwd_rate_str = "%g" % (rxn.fwd_rate)
-
-    #mcell.reactions.status = status
-
-    return
-
-
-def update_bkwd_rate(self, context):
-    """ Store the backward reaction rate as a float if it's legal """
-
-    mcell = context.scene.mcell
-    rxn = mcell.reactions.reaction_list[mcell.reactions.active_rxn_index]
-    bkwd_rate_str = rxn.bkwd_rate_str
-
-    (bkwd_rate, status) = check_val_str(bkwd_rate_str, 0, None)
-
-    if status == "":
-        rxn.bkwd_rate = bkwd_rate
-    else:
-        #status = status % ("bkwd_rate", bkwd_rate_str)
-        rxn.bkwd_rate_str = "%g" % (rxn.bkwd_rate)
-
-    #mcell.reactions.status = status
-
-    return
