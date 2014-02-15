@@ -476,6 +476,7 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
 
 
 class Iterations_PropertyGroup(cellblender_parameters.PanelParameter):
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
     expression = StringProperty(name="Simulation Iterations", default="0",
                  description="Number of iterations to run",
@@ -484,24 +485,28 @@ class Iterations_PropertyGroup(cellblender_parameters.PanelParameter):
         return int(self.param_data.value)
 
 class TimeStep_PropertyGroup(cellblender_parameters.PanelParameter):
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
     expression = StringProperty(name="Time Step", default="1e-6",
                  description="Simulation Time Step Units: seconds",
                  update=cellblender_parameters.update_PanelParameter)
 
 class TimeStepMax_PropertyGroup(cellblender_parameters.PanelParameter):
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
     expression = StringProperty(name="Maximum Time Step", default="",
                  description="The longest possible time step",
                  update=cellblender_parameters.update_PanelParameter)
 
 class SpaceStep_PropertyGroup(cellblender_parameters.PanelParameter):
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
     expression = StringProperty(name="Space Step", default="",
                  description="Have molecules take the same mean diffusion distance",
                  update=cellblender_parameters.update_PanelParameter)
 
 class SurfaceGridDensity_PropertyGroup(cellblender_parameters.PanelParameter):
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
     expression = StringProperty(name="Surface Grid Density", default="10000",
                  description="Number of molecules that can be stored per square micron",
@@ -510,12 +515,14 @@ class SurfaceGridDensity_PropertyGroup(cellblender_parameters.PanelParameter):
         return int(self.param_data.value)
 
 class InteractionRadius_PropertyGroup(cellblender_parameters.PanelParameter):
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
     expression = StringProperty(name="Interaction Radius", default="",
                  description="Molecules will interact when they get within N microns.",
                  update=cellblender_parameters.update_PanelParameter)
 
 class RadialDirections_PropertyGroup(cellblender_parameters.PanelParameter):
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
     expression = StringProperty(name="Radial Directions", default="",
                  description="Number of different directions to put in lookup table. "
@@ -523,6 +530,7 @@ class RadialDirections_PropertyGroup(cellblender_parameters.PanelParameter):
                  update=cellblender_parameters.update_PanelParameter)
 
 class RadialSubdivisions_PropertyGroup(cellblender_parameters.PanelParameter):
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
     expression = StringProperty(name="Radial Subdivisions", default="",
                  description="Number of distances to put in look-up table. "
@@ -530,6 +538,7 @@ class RadialSubdivisions_PropertyGroup(cellblender_parameters.PanelParameter):
                  update=cellblender_parameters.update_PanelParameter)
 
 class VacancySearchDistance_PropertyGroup(cellblender_parameters.PanelParameter):
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
     expression = StringProperty(name="Vacancy Search Distance", default="",
                  description="Surface molecule products can be created at N distance.",
