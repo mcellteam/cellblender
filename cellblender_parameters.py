@@ -668,13 +668,16 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         return ID_pyexpr_dict
 
 
-    def build_expr_str ( self, encoded_ID_expr, ID_name_dict ):
+    def build_expr_str ( self, encoded_ID_expr, ID_name_dict, to_python=False ):
         """ Translate an encoded ID expression string into a human-readable expression string with respect to current parameters """
+        """ The to_python flag is used to generate a python executable string rather than the default MDL compatible string """
         #threshold_print ( 60, "Inside build_expr_str ... translating " + str(encoded_ID_expr) )
         #threshold_print ( 60, "  using dictionary: " + str(ID_name_dict) )
         new_expr = ""
         expr_list = self.decode_str_to_expr_list ( encoded_ID_expr )
         next_is_undefined = False
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        expression_keywords = self.get_expression_keywords()
         for token in expr_list:
             if token == None:
                 next_is_undefined = True
@@ -689,11 +692,15 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                     new_expr = new_expr + self.UNDEFINED_NAME()
             else:
                 # This is a string so simply concatenate it
+                next_part = token
+                if to_python:
+                    if token in expression_keywords:
+                        next_part = expression_keywords[token]
                 if next_is_undefined:
-                    new_expr = new_expr + token
+                    new_expr = new_expr + next_part
                     next_is_undefined = False
                 else:
-                    new_expr = new_expr + token
+                    new_expr = new_expr + next_part
 
         #threshold_print ( 60, "Returning from build_exp_str with     " + str(new_expr) )
         return new_expr
@@ -768,10 +775,10 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         """ Convert a string expression into an encoded ID expression string with respect to current parameters """
         return self.encode_expr_list_to_str ( self.parse_param_expr(panel_param_expr) )
 
-    def translate_panel_param_ID_expr ( self, panel_param_ID_expr ):
+    def translate_panel_param_ID_expr ( self, panel_param_ID_expr, to_python=False ):
         """ Translate a panel parameter's encoded ID expression into a string for display """
         #threshold_print ( 60, "Inside translate_panel_param_ID_expr: Translating expression " + str(panel_param_ID_expr ) )
-        return self.build_expr_str ( panel_param_ID_expr, self.build_ID_name_dict() )
+        return self.build_expr_str ( panel_param_ID_expr, self.build_ID_name_dict(), to_python )
 
     def eval_panel_param_ID_expr ( self, panel_param_ID_expr ):
         """ Evaluate a panel parameter's ID expression (like "#1~+~3~*~(~#2~+~7.0~)") into a numeric value or None if invalid """
@@ -780,14 +787,14 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         #threshold_print ( 60, "  Expression: " + str(panel_param_ID_expr) + " evaluates to list: " + str(expr_list) )
         (value,valid) = (None,False)
         if not (None in expr_list):
-            (value,valid) = self.eval_all_any_order ( expression = self.translate_panel_param_ID_expr ( panel_param_ID_expr ) )
+            (value,valid) = self.eval_all_any_order ( expression = self.translate_panel_param_ID_expr ( panel_param_ID_expr, to_python=True ) )
         return value
 
     def eval_all_any_order ( self, prnt=False, requested_id=None, expression=None ):
         """ Evaluate all parameters based on dependencies without assuming any order of definition """
 
         # from math import *
-        from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
+        from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor, pi  # abs, max, and min are not from math?
         from random import uniform, gauss
 
         # Start by trying to fix any broken references
