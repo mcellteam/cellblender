@@ -37,6 +37,8 @@ class BNG_OT_parameter_add(bpy.types.Operator):
             parameter.unit = par_list[key]['unit']
             parameter.type = par_list[key]['type']
             mcell.general_parameters.add_parameter_with_values ( parameter.name, parameter.value, parameter.unit, parameter.type )
+            print ( "Adding parameter \"" + str(parameter.name) + "\"  =  \"" + str(parameter.value) + "\"  (" + str(parameter.unit) + ")" )
+
         return {'FINISHED'}
 
 
@@ -61,6 +63,7 @@ class BNG_OT_molecule_add(bpy.types.Operator):
             molecule.type = mol_list[key]['type']
             molecule.diffusion_constant.expression = mol_list[key]['dif']
             molecule.diffusion_constant.param_data.label = "Diffusion Constant"
+            print ( "Adding molecule " + str(molecule.name) )
 
         return {'FINISHED'}
     
@@ -85,6 +88,7 @@ class BNG_OT_reaction_add(bpy.types.Operator):
             reaction.products = rxn_list[key]['products']
             reaction.fwd_rate.expression = rxn_list[key]['fwd_rate']
             reaction.fwd_rate.param_data.label = "Forward Rate"
+            print ( "Adding reaction  " + str(reaction.reactants) + "  ->  " + str(reaction.products) )
 
         return {'FINISHED'}
 
@@ -113,6 +117,7 @@ class BNG_OT_release_site_add(bpy.types.Operator):
             release_site.quantity_type = rel_list[key]['quantity_type']
             release_site.quantity_expr = rel_list[key]['quantity_expr']
             cellblender_operators.check_release_molecule(self, context)
+            print ( "Adding release site " + str(release_site.name) )
 	    
         return {'FINISHED'}
 

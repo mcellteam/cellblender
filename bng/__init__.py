@@ -21,10 +21,15 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
         print ( "Back from bng_operators.execute_bionetgen("+bngfilepath+")" )
         import imp
         imp.reload(net)                     # This loads (and runs?) net.py which defines par_list and other lists
+        print ( "Loading parameters from BNGL model..." )
         bpy.ops.bng.parameter_add()         # This processes all entries in the par_list parameter list
+        print ( "Loading molecules from BNGL model..." )
         bpy.ops.bng.molecule_add()
+        print ( "Loading reactions from BNGL model..." )
         bpy.ops.bng.reaction_add()
+        print ( "Loading release sites from BNGL model..." )
         bpy.ops.bng.release_site_add()
+        print ( "Done Loading BNGL model" )
         
         return {'FINISHED'}
 
