@@ -908,8 +908,7 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                                    "molecule_list", text="Molecule:",
                                    icon='FORCE_LENNARDJONES')
                 if rel.molecule in mcell.molecules.molecule_list:
-                    if mcell.molecules.molecule_list[
-                            rel.molecule].type == '2D':
+                    if mcell.molecules.molecule_list[rel.molecule].type == '2D':
                         layout.prop(rel, "orient")
                 layout.prop(rel, "shape")
                 if ((rel.shape == 'CUBIC') | (rel.shape == 'SPHERICAL') |
@@ -923,13 +922,14 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                 rel.probability.draw_in_new_row(layout)
 
                 layout.prop(rel, "quantity_type")
-                if rel.quantity_expr != "0":
-                   layout.prop(rel, "quantity_expr")
-                else:
-                   #layout.prop(rel, "quantity")
-                   rel.quantity.draw_in_new_row(layout)
+                #if rel.quantity_expr != "0":
+                #    layout.prop(rel, "quantity_expr")
+                #else:
+                #    #layout.prop(rel, "quantity")
+                rel.quantity.draw_in_new_row(layout)
                 if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
-                    layout.prop(rel, "stddev")
+                    #layout.prop(rel, "stddev")
+                    rel.stddev.draw_in_new_row(layout)
 
                 #layout.prop(rel, "pattern")
                 layout.prop_search(rel, "pattern", mcell.release_patterns,
