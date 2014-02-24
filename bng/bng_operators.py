@@ -36,7 +36,9 @@ class BNG_OT_parameter_add(bpy.types.Operator):
             parameter.value = par_list[key]['value']
             parameter.unit = par_list[key]['unit']
             parameter.type = par_list[key]['type']
- 
+            mcell.general_parameters.add_parameter_with_values ( parameter.name, parameter.value, parameter.unit, parameter.type )
+            print ( "Adding parameter \"" + str(parameter.name) + "\"  =  \"" + str(parameter.value) + "\"  (" + str(parameter.unit) + ")" )
+
         return {'FINISHED'}
 
 
@@ -56,10 +58,13 @@ class BNG_OT_molecule_add(bpy.types.Operator):
             mcell.molecules.active_mol_index = index
             molecule = mcell.molecules.molecule_list[
                 mcell.molecules.active_mol_index]
+            molecule.set_defaults()
 
             molecule.name = mol_list[key]['name']
             molecule.type = mol_list[key]['type']
-            molecule.diffusion_constant_expr = mol_list[key]['dif']
+            molecule.diffusion_constant.expression = mol_list[key]['dif']
+            molecule.diffusion_constant.param_data.label = "Diffusion Constant"
+            print ( "Adding molecule " + str(molecule.name) )
 
         return {'FINISHED'}
     
@@ -79,10 +84,13 @@ class BNG_OT_reaction_add(bpy.types.Operator):
             mcell.reactions.active_rxn_index = index
             reaction = mcell.reactions.reaction_list[
                 mcell.reactions.active_rxn_index]
+            reaction.set_defaults()
 		
             reaction.reactants = rxn_list[key]['reactants']
             reaction.products = rxn_list[key]['products']
-            reaction.fwd_rate_expr = rxn_list[key]['fwd_rate']
+            reaction.fwd_rate.expression = rxn_list[key]['fwd_rate']
+            reaction.fwd_rate.param_data.label = "Forward Rate"
+            print ( "Adding reaction  " + str(reaction.reactants) + "  ->  " + str(reaction.products) )
 
         return {'FINISHED'}
 
@@ -102,15 +110,17 @@ class BNG_OT_release_site_add(bpy.types.Operator):
             mcell.release_sites.active_release_index = index
             release_site = mcell.release_sites.mol_release_list[
                 mcell.release_sites.active_release_index]
+            release_site.set_defaults()
             
             release_site.name = rel_list[key]['name']
             release_site.molecule = rel_list[key]['molecule']
             release_site.shape = rel_list[key]['shape']
             release_site.orient = rel_list[key]['orient']
-            release_site.object_expr = rel_list[key]['object_expr']
+            release_site.object_expr = rel_list[key]['object_expr']     # This may not be the best name to use for Release Shape
             release_site.quantity_type = rel_list[key]['quantity_type']
-            release_site.quantity_expr = rel_list[key]['quantity_expr']
+            release_site.quantity.expression = rel_list[key]['quantity_expr']
             cellblender_operators.check_release_molecule(self, context)
+            print ( "Adding release site " + str(release_site.name) )
 	    
         return {'FINISHED'}
 

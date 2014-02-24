@@ -102,6 +102,7 @@ if "bpy" in locals():
     imp.reload(cellblender_molecules)
     imp.reload(object_surface_regions)
     imp.reload(io_mesh_mcell_mdl)
+    imp.reload(mdl)         # BK: Added for MDL
     imp.reload(bng)         # DB: Adde for BNG
     imp.reload(sbml)        #JJT: Added for SBML
 
@@ -120,6 +121,7 @@ else:
         cellblender_molecules, \
         object_surface_regions, \
         io_mesh_mcell_mdl, \
+	    mdl, \ #BK: Added for MDL
         bng, \  # DB: Added for BNG"""
         sbml #JJT
 
@@ -131,6 +133,7 @@ else:
     from . import cellblender_molecules
     from . import object_surface_regions
     from . import io_mesh_mcell_mdl
+    from . import mdl  # BK: Added for MDL
     from . import bng  # DB: Added for BNG
     from . import sbml #JJT: Added for SBML
 
@@ -187,6 +190,10 @@ def register():
 
     bpy.types.INFO_MT_file_import.append(io_mesh_mcell_mdl.menu_func_import)
     bpy.types.INFO_MT_file_export.append(io_mesh_mcell_mdl.menu_func_export)
+
+
+    # BK: Added for MDL import
+    bpy.types.INFO_MT_file_import.append(mdl.menu_func_import)
 
     # DB: Added for BioNetGen import
     bpy.types.INFO_MT_file_import.append(bng.menu_func_import)

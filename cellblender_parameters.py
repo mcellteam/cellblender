@@ -193,7 +193,8 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
         col = row.column()
         col.template_list("MCELL_UL_draw_parameter", "general_parameters",
                           mcell.general_parameters, "parameter_list",
-                          mcell.general_parameters, "active_par_index", rows=5)
+                          mcell.general_parameters, "active_par_index",
+                          rows=5, maxrows=12)
         col = row.column(align=True)
         col.operator("mcell.add_parameter", icon='ZOOMIN', text="")
         col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
@@ -314,7 +315,8 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
             gen_params.eval_all_any_order()
 
             # Update all the panel parameters based on all the general parameters
-            plist = get_numeric_parameter_list ( None, [], debug=False )
+            plist = get_numeric_parameter_list ( None, [], debug=False )      # <<<<<<<  This could be changed to be just the panel parameters that depend on this one
+            # current_numeric_parameter_list = plist
             for p in plist:
                 # Fix any potential broken references
                 fixed_expression = gen_params.fix_broken_references ( p.param_data.ID_expression )
@@ -372,12 +374,13 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
             #self.report({'ERROR'}, status)
             pass
 
-        # Is this needed?   gen_params.eval_all_any_order()
+        # Is this needed? No, it's now done in gen_params.expression_change()  gen_params.eval_all_any_order()
 
         #threshold_print ( 60, "Inside update_expression, calling print_all_general_parameters()" )
-        gen_params.print_all_general_parameters(60)
+        # gen_params.print_all_general_parameters(60)
 
         plist = get_numeric_parameter_list ( None, [], debug=False )
+        # current_numeric_parameter_list = plist
 
         for p in plist:
             # Create a string encoded version of the expression (like "#1~+~3~*~(~#2~+~7.0~)")
@@ -665,13 +668,16 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         return ID_pyexpr_dict
 
 
-    def build_expr_str ( self, encoded_ID_expr, ID_name_dict ):
+    def build_expr_str ( self, encoded_ID_expr, ID_name_dict, to_python=False ):
         """ Translate an encoded ID expression string into a human-readable expression string with respect to current parameters """
+        """ The to_python flag is used to generate a python executable string rather than the default MDL compatible string """
         #threshold_print ( 60, "Inside build_expr_str ... translating " + str(encoded_ID_expr) )
         #threshold_print ( 60, "  using dictionary: " + str(ID_name_dict) )
         new_expr = ""
         expr_list = self.decode_str_to_expr_list ( encoded_ID_expr )
         next_is_undefined = False
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        expression_keywords = self.get_expression_keywords()
         for token in expr_list:
             if token == None:
                 next_is_undefined = True
@@ -686,11 +692,15 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                     new_expr = new_expr + self.UNDEFINED_NAME()
             else:
                 # This is a string so simply concatenate it
+                next_part = token
+                if to_python:
+                    if token in expression_keywords:
+                        next_part = expression_keywords[token]
                 if next_is_undefined:
-                    new_expr = new_expr + token
+                    new_expr = new_expr + next_part
                     next_is_undefined = False
                 else:
-                    new_expr = new_expr + token
+                    new_expr = new_expr + next_part
 
         #threshold_print ( 60, "Returning from build_exp_str with     " + str(new_expr) )
         return new_expr
@@ -709,8 +719,13 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         if not param.name.isidentifier():
             name_ok = False
         # Check to see if the new name already exists
+        """
+        if self.parameter_list.get(param.name) != None:
+            name_ok = False
+            #threshold_print ( 20, " Name conflict between " + param.name + " and " + p.name )
+        """
         for p in self.parameter_list:
-            p.print_details( 40, prefix="  " )
+            # p.print_details( 40, prefix="  " )
             if param.name == p.name:
                 if param != p:
                     name_ok = False
@@ -760,10 +775,10 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         """ Convert a string expression into an encoded ID expression string with respect to current parameters """
         return self.encode_expr_list_to_str ( self.parse_param_expr(panel_param_expr) )
 
-    def translate_panel_param_ID_expr ( self, panel_param_ID_expr ):
+    def translate_panel_param_ID_expr ( self, panel_param_ID_expr, to_python=False ):
         """ Translate a panel parameter's encoded ID expression into a string for display """
         #threshold_print ( 60, "Inside translate_panel_param_ID_expr: Translating expression " + str(panel_param_ID_expr ) )
-        return self.build_expr_str ( panel_param_ID_expr, self.build_ID_name_dict() )
+        return self.build_expr_str ( panel_param_ID_expr, self.build_ID_name_dict(), to_python )
 
     def eval_panel_param_ID_expr ( self, panel_param_ID_expr ):
         """ Evaluate a panel parameter's ID expression (like "#1~+~3~*~(~#2~+~7.0~)") into a numeric value or None if invalid """
@@ -772,14 +787,14 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         #threshold_print ( 60, "  Expression: " + str(panel_param_ID_expr) + " evaluates to list: " + str(expr_list) )
         (value,valid) = (None,False)
         if not (None in expr_list):
-            (value,valid) = self.eval_all_any_order ( expression = self.translate_panel_param_ID_expr ( panel_param_ID_expr ) )
+            (value,valid) = self.eval_all_any_order ( expression = self.translate_panel_param_ID_expr ( panel_param_ID_expr, to_python=True ) )
         return value
 
     def eval_all_any_order ( self, prnt=False, requested_id=None, expression=None ):
         """ Evaluate all parameters based on dependencies without assuming any order of definition """
 
         # from math import *
-        from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
+        from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor, pi  # abs, max, and min are not from math?
         from random import uniform, gauss
 
         # Start by trying to fix any broken references
@@ -807,6 +822,8 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
 
             # Visit each parameter
             for parid in ID_name_dict:
+            
+                # ID_valid_dict[parid] = True   # Used for performance testing to skip all this code
 
                 # Only need to update parameters with invalid values
                 if not ID_valid_dict[parid]:
@@ -1316,14 +1333,21 @@ class PanelParameterFloat(bpy.types.PropertyGroup):
 
 depth_in_get_numeric_parameter_list = 0
 
+# current_numeric_parameter_list = None
+
 def get_numeric_parameter_list ( objpath, plist, debug=False ):
     """ Recursive routine that builds a list of numeric (PanelParameterInt and PanelParameterFloat) parameters """
+    #global current_numeric_parameter_list
+    #if current_numeric_parameter_list != None:
+    #    return plist
 
     global depth_in_get_numeric_parameter_list
-    depth_to_print = -1
+    depth_to_print = -100
     
     if depth_in_get_numeric_parameter_list < depth_to_print:
-        print ( "Call to get_numeric_parameter_list with " + str(objpath) )
+        if objpath == None:
+            print ( "=======================================================================" )
+        print ( "Call to             get_numeric_parameter_list with " + str(objpath) )
 
     depth_in_get_numeric_parameter_list += 1
     
@@ -1337,7 +1361,8 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
             # Don't search anything that is of type "rna_type" or is an mcell.mol_viz.mol_file_list
             depth_in_get_numeric_parameter_list += -1
             if depth_in_get_numeric_parameter_list < depth_to_print:
-                print ( "Return from call to get_numeric_parameter_list with " + str(objpath) )
+                #print ( "Return from call to get_numeric_parameter_list with " + str(objpath) )
+                pass
             return plist
 
     if objpath == None:
@@ -1353,13 +1378,19 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
         plist.append ( obj )
         #threshold_print ( 98, "   plist.append gives " + str(plist) )
     elif isinstance(obj,bpy.types.PropertyGroup):
+        # print ( "Found a property group: " + str(objpath) )
         if 'expression' in obj.keys() and 'param_data' in obj.keys():
-            # This is also what we're looking for, so add it to the list
+            # This is also what we're looking for (should be a PanelParameter), so add it to the list
             plist.append ( obj )
+            if depth_in_get_numeric_parameter_list < depth_to_print:
+                print ( "   ---------------- Parameter --------------------> " + str(objpath) )
             #threshold_print ( 98, "   plist.append gives " + str(plist) )
-        else:
-            # This is a property group, so walk through all of its properties using keys
+        elif 'contains_cellblender_parameters' in dir(obj):  # For some reason, obj.keys() didn't find this in mcell!?!
+            # print ( "   " + str(objpath) + " contains cellblender parameters" )
+            # This is some other property group with parameters, so walk through all of its properties using keys
             # for objkey in obj.keys():
+            if depth_in_get_numeric_parameter_list < depth_to_print:
+                print ( "   ---------------- Contains Parameters ----------> " + str(objpath) )
             for objkey in obj.bl_rna.properties.keys():    # This is somewhat ugly, but works best!!
                 try:
                     pstr = objpath+"."+str(objkey)
@@ -1396,7 +1427,8 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
 
     depth_in_get_numeric_parameter_list += -1
     if depth_in_get_numeric_parameter_list < depth_to_print:
-        print ( "Return from call to get_numeric_parameter_list with " + str(objpath) )
+        # print ( "Return from call to get_numeric_parameter_list with " + str(objpath) )
+        pass
     return plist
 
 
