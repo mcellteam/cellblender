@@ -122,8 +122,8 @@ else:
         object_surface_regions, \
         io_mesh_mcell_mdl, \
 	    mdl, \ #BK: Added for MDL
-        bng, \  # DB: Added for BNG"""
-        sbml #JJT
+        bng, \  # DB: Added for BNG
+	sbml #JJT:SBML"""
 
 
     from . import cellblender_properties

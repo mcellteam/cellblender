@@ -18,7 +18,7 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
         sbmlfilepath = self.filepath
         sbml_operators.filePath = sbmlfilepath
          # sbml file path
-        sbml_operators.execute_bionetgen(sbmlfilepath,context)
+        sbml_operators.execute_sbml2mcell(sbmlfilepath,context)
         
         #import imp
         #imp.reload(net)

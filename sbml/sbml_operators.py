@@ -44,6 +44,8 @@ class SBML_OT_parameter_add(bpy.types.Operator):
             parameter.value = str(key['value'])
             parameter.unit = str(key['unit'])
             parameter.type = str(key['type'])
+            mcell.general_parameters.add_parameter_with_values ( parameter.name, parameter.value, parameter.unit, parameter.type )
+            print ( "Adding parameter \"" + str(parameter.name) + "\"  =  \"" + str(parameter.value) + "\"  (" + str(parameter.unit) + ")" )
  
         return {'FINISHED'}
 
@@ -66,10 +68,13 @@ class SBML_OT_molecule_add(bpy.types.Operator):
             mcell.molecules.active_mol_index = index
             molecule = mcell.molecules.molecule_list[
                 mcell.molecules.active_mol_index]
+            molecule.set_defaults()
 
             molecule.name = str(key['name'])
             molecule.type = str(key['type'])
-            molecule.diffusion_constant_expr = str(key['dif'])
+            molecule.diffusion_constant.expression = str(key['dif']
+            molecule.diffusion_constant.param_data.label = "Diffusion Constant"
+            print ( "Adding molecule " + str(molecule.name) )
 
         return {'FINISHED'}
     
@@ -91,10 +96,13 @@ class SBML_OT_reaction_add(bpy.types.Operator):
             mcell.reactions.active_rxn_index = index
             reaction = mcell.reactions.reaction_list[
                 mcell.reactions.active_rxn_index]
+            reaction.set_defaults()
 		
             reaction.reactants = str(key['reactants'])
             reaction.products = str(key['products'])
             reaction.fwd_rate_expr = str(key['fwd_rate'])
+            reaction.fwd_rate.param_data.label = "Forward Rate"
+            print ( "Adding reaction  " + str(reaction.reactants) + "  ->  " + str(reaction.products) )
 
         return {'FINISHED'}
 
@@ -116,6 +124,7 @@ class SBML_OT_release_site_add(bpy.types.Operator):
             mcell.release_sites.active_release_index = index
             release_site = mcell.release_sites.mol_release_list[
                 mcell.release_sites.active_release_index]
+            release_site.set_defaults()
             
             release_site.name = str(key['name'])
             release_site.molecule = str(key['molecule'])
@@ -125,11 +134,12 @@ class SBML_OT_release_site_add(bpy.types.Operator):
             release_site.quantity_type = str(key['quantity_type'])
             release_site.quantity_expr = str(key['quantity_expr'])
             cellblender_operators.check_release_molecule(self, context)
-	    
+            print ( "Adding release site " + str(release_site.name) )
+
         return {'FINISHED'}
 
     
-def execute_bionetgen(filepath,context):
+def execute_sbml2mcell(filepath,context):
     mcell = context.scene.mcell
     exe_sbml = "python {2} -i {0} -o {1}".format(filepath,filepath +'.json',mcell.project_settings.sbml2mcell)
     os.system(exe_sbml)    #

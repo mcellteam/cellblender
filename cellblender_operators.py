@@ -922,6 +922,31 @@ def is_executable(binary_path):
     return is_exec
 
 
+def check_sbml2mcell(self, context):
+    """Callback to check for sbml2mcell script"""
+    mcell = context.scene.mcell
+    binary_path = mcell.project_settings.sbml2mcell
+    mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
+    return None
+
+class MCELL_OT_set_sbml2mcell(bpy.types.Operator):
+    bl_idname = "mcell.set_sbml2mcell"
+    bl_label = "Set SBML2Mcell converter"
+    bl_description = "Set SBML2Mcell converter"
+    bl_options = {'REGISTER'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.project_settings.sbml2mcell = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
 def check_python_binary(self, context):
     """Callback to check for python executable"""
     mcell = context.scene.mcell
@@ -929,12 +954,7 @@ def check_python_binary(self, context):
     mcell.project_settings.python_binary_valid = is_executable(binary_path)
     return None
 
-def check_sbml2mcell(self, context):
-    """Callback to check for sbml2mcell script"""
-    mcell = context.scene.mcell
-    binary_path = mcell.project_settings.sbml2mcell
-    mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
-    return None
+
 
 class MCELL_OT_set_python_binary(bpy.types.Operator):
     bl_idname = "mcell.set_python_binary"
