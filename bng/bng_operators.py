@@ -25,6 +25,7 @@ class BNG_OT_parameter_add(bpy.types.Operator):
         mcell = context.scene.mcell
         par_list = net.par_list
         index = -1
+        mcell.general_parameters.start_batch_addition()
         for key in sorted(par_list.keys()):
             index += 1
             mcell.parameters.parameter_list.add()
@@ -39,6 +40,7 @@ class BNG_OT_parameter_add(bpy.types.Operator):
             mcell.general_parameters.add_parameter_with_values ( parameter.name, parameter.value, parameter.unit, parameter.type )
             print ( "Adding parameter \"" + str(parameter.name) + "\"  =  \"" + str(parameter.value) + "\"  (" + str(parameter.unit) + ")" )
 
+        mcell.general_parameters.finish_batch_addition()
         return {'FINISHED'}
 
 

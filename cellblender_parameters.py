@@ -67,15 +67,15 @@ class profile:
 #def print_statistics(c):
 def print_statistics():
     '''Prints profiling results to the console. Run from a Python controller.'''
-    
+
     #if not c.sensors[0].positive:
     #    return
-    
+
     def timekey(stat):
         return stat[1] / float(stat[2])
-    
+
     stats = sorted(prof.values(), key=timekey, reverse=True)
-    
+
     print ( '=== Execution Statistics ===' )
     print ( '{:<55} {:>6} {:>7} {:>6}'.format('FUNCTION', 'CALLS', 'SUM(ms)', 'AV(ms)'))
     for stat in stats:
@@ -95,6 +95,21 @@ class MCELL_OT_print_profiling(bpy.types.Operator):
 
     def invoke(self, context, event):
         print_statistics()
+        return {'RUNNING_MODAL'}
+
+
+class MCELL_OT_clear_profiling(bpy.types.Operator):
+    bl_idname = "mcell.clear_profiling"
+    bl_label = "Clear Profiling"
+    bl_description = ("Clear Profiling Information")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        prof.clear()
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        prof.clear()
         return {'RUNNING_MODAL'}
 
 
@@ -286,7 +301,10 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
             col.operator("mcell.print_panel_parameters_fast")
 
         row = layout.row()
-        row.operator("mcell.print_profiling", text="Print Profiling")
+        col = row.column()
+        col.operator("mcell.print_profiling", text="Print Profiling")
+        col = row.column()
+        col.operator("mcell.clear_profiling", text="Clear Profiling")
 
 
 # Callbacks for Property updates appear to require global (non-member) functions
@@ -481,6 +499,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
     param_group_error = StringProperty( default="", description="Error Message for Entire Parameter Group")
     next_id = IntProperty(name="Counter for Unique Parameter IDs", default=1)  # Start ID's at 1 to confirm initialization
     name_update_in_progress = BoolProperty(default=False)  # Used to disable expression evaluation when names are being changed
+    batch_add_in_progress = BoolProperty(default=False)  # Used to disable expression evaluation when many new parameters are being added
     # parameter_space_string = StringProperty ( name="ParameterSpace", default="", description="ParameterSpace object pickled as a string" )
     
     """
@@ -892,6 +911,8 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
     @profile('eval_all_any_order')
     def eval_all_any_order ( self, prnt=False, requested_id=None, expression=None ):
         """ Evaluate all parameters based on dependencies without assuming any order of definition """
+        if self.batch_add_in_progress:
+            return (0,False)
 
         # from math import *
         from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor, pi  # abs, max, and min are not from math?
@@ -1013,6 +1034,19 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         new_par.id = self.allocate_available_id()
         new_par.set_defaults()
         return new_par
+
+    @profile('start_batch_addition')
+    def start_batch_addition ( self ):
+        """ Disable evaluation of parameters while they are added """
+        self.batch_add_in_progress = True
+        return
+
+    @profile('finish_batch_addition')
+    def finish_batch_addition ( self ):
+        """ Enable evaluation of parameters """
+        self.batch_add_in_progress = False
+        self.eval_all_any_order()
+        return
 
     @profile('add_parameter_with_values')
     def add_parameter_with_values ( self, name, expression, units, description ):
@@ -1439,7 +1473,7 @@ class PanelParameterFloat(bpy.types.PropertyGroup):
                     row.label(icon='ERROR', text="Warning: Value of " + str(value) + " for " + self.get_label() + " is greater than maximum of "+str(self.param_data.max_value))
 """
 
-depth_in_get_numeric_parameter_list = 0
+depth_in_get_num_param_list = 0
 
 # current_numeric_parameter_list = None
 
@@ -1450,15 +1484,15 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
     #if current_numeric_parameter_list != None:
     #    return plist
 
-    global depth_in_get_numeric_parameter_list
+    global depth_in_get_num_param_list
     depth_to_print = -100
     
-    if depth_in_get_numeric_parameter_list < depth_to_print:
+    if depth_in_get_num_param_list < depth_to_print:
         if objpath == None:
             print ( "=======================================================================" )
         print ( "Call to             get_numeric_parameter_list with " + str(objpath) )
 
-    depth_in_get_numeric_parameter_list += 1
+    depth_in_get_num_param_list += 1
     
     # print ( "Top of get_numeric_parameter_list" )
     #threshold_print ( 98, "get_numeric_parameter_list() called with objpath = ", objpath )
@@ -1468,8 +1502,8 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
     if objpath != None:
         if objpath.endswith("rna_type") or objpath.endswith("mcell.mol_viz.mol_file_list"):
             # Don't search anything that is of type "rna_type" or is an mcell.mol_viz.mol_file_list
-            depth_in_get_numeric_parameter_list += -1
-            if depth_in_get_numeric_parameter_list < depth_to_print:
+            depth_in_get_num_param_list += -1
+            if depth_in_get_num_param_list < depth_to_print:
                 #print ( "Return from call to get_numeric_parameter_list with " + str(objpath) )
                 pass
             return plist
@@ -1491,14 +1525,14 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
         if 'expression' in obj.keys() and 'param_data' in obj.keys():
             # This is also what we're looking for (should be a PanelParameter), so add it to the list
             plist.append ( obj )
-            if depth_in_get_numeric_parameter_list < depth_to_print:
+            if depth_in_get_num_param_list < depth_to_print:
                 print ( "   ---------------- Parameter --------------------> " + str(objpath) )
             #threshold_print ( 98, "   plist.append gives " + str(plist) )
         elif 'contains_cellblender_parameters' in dir(obj):  # For some reason, obj.keys() didn't find this in mcell!?!
             # print ( "   " + str(objpath) + " contains cellblender parameters" )
             # This is some other property group with parameters, so walk through all of its properties using keys
             # for objkey in obj.keys():
-            if depth_in_get_numeric_parameter_list < depth_to_print:
+            if depth_in_get_num_param_list < depth_to_print:
                 print ( "   ---------------- Contains Parameters ----------> " + str(objpath) )
             for objkey in obj.bl_rna.properties.keys():    # This is somewhat ugly, but works best!!
                 try:
@@ -1534,8 +1568,8 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
 
     # print ( "Bottom of get_numeric_parameter_list" )
 
-    depth_in_get_numeric_parameter_list += -1
-    if depth_in_get_numeric_parameter_list < depth_to_print:
+    depth_in_get_num_param_list += -1
+    if depth_in_get_num_param_list < depth_to_print:
         # print ( "Return from call to get_numeric_parameter_list with " + str(objpath) )
         pass
     return plist
