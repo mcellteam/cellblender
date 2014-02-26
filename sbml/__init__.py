@@ -1,4 +1,5 @@
 import bpy
+from . import sbml2blender
 from . import sbml_operators
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty
@@ -18,6 +19,7 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
         sbmlfilepath = self.filepath
         sbml_operators.filePath = sbmlfilepath
          # sbml file path
+        sbml_operators.execute_sbml2blender(sbmlfilepath,context)
         sbml_operators.execute_sbml2mcell(sbmlfilepath,context)
         
         #import imp

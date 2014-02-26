@@ -4,8 +4,12 @@ import sys
 import io
 import json
 
+from . import sbml2blender
+
 import cellblender
 from cellblender import cellblender_properties, cellblender_operators
+
+
 #from . import sbml2json
 #from . import sbml2json
 # We use per module class registration/unregistration
@@ -72,7 +76,7 @@ class SBML_OT_molecule_add(bpy.types.Operator):
 
             molecule.name = str(key['name'])
             molecule.type = str(key['type'])
-            molecule.diffusion_constant.expression = str(key['dif']
+            molecule.diffusion_constant.expression = str(key['dif'])
             molecule.diffusion_constant.param_data.label = "Diffusion Constant"
             print ( "Adding molecule " + str(molecule.name) )
 
@@ -146,3 +150,7 @@ def execute_sbml2mcell(filepath,context):
     #sbml2json.sbml2json(filepath)
     return{'FINISHED'}
    
+def execute_sbml2blender(filepath,context):
+    mcell = context.scene.mcell
+    sbml2blender.sbml2blender(filepath)
+
