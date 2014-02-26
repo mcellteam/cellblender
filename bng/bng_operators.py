@@ -24,6 +24,7 @@ class BNG_OT_parameter_add(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         par_list = net.par_list
+        print ( "Adding " + str(len(par_list)) + " parameters..." )
         index = -1
         mcell.general_parameters.start_batch_addition()
         for key in sorted(par_list.keys()):
@@ -53,6 +54,7 @@ class BNG_OT_molecule_add(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         mol_list = net.mol_list
+        print ( "Adding " + str(len(mol_list)) + " molecules..." )
         index = -1
         mcell.general_parameters.start_batch_addition()
         for key in sorted(mol_list.keys()):
@@ -81,6 +83,7 @@ class BNG_OT_reaction_add(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         rxn_list = net.rxn_list
+        print ( "Adding " + str(len(rxn_list)) + " reactions..." )
         index = -1
         mcell.general_parameters.start_batch_addition()
         for key in sorted(rxn_list.keys()):
@@ -109,6 +112,7 @@ class BNG_OT_release_site_add(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         rel_list = net.rel_list
+        print ( "Adding " + str(len(rel_list)) + " release sites..." )
         index = -1
         mcell.general_parameters.start_batch_addition()
         for key in sorted(rel_list.keys()):

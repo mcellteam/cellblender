@@ -1479,6 +1479,12 @@ depth_in_get_num_param_list = 0
 
 @profile('get_numeric_parameter_list')
 def get_numeric_parameter_list ( objpath, plist, debug=False ):
+    """ Separate call to distinguish recursive calls from non-recursive calls """
+    return get_numeric_parameter_list_recurse ( objpath, plist, debug )
+
+
+@profile('get_numeric_parameter_list_recurse')
+def get_numeric_parameter_list_recurse ( objpath, plist, debug=False ):
     """ Recursive routine that builds a list of numeric (PanelParameterInt and PanelParameterFloat) parameters """
     #global current_numeric_parameter_list
     #if current_numeric_parameter_list != None:
@@ -1490,12 +1496,12 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
     if depth_in_get_num_param_list < depth_to_print:
         if objpath == None:
             print ( "=======================================================================" )
-        print ( "Call to             get_numeric_parameter_list with " + str(objpath) )
+        print ( "Call to             get_numeric_parameter_list_recurse with " + str(objpath) )
 
     depth_in_get_num_param_list += 1
     
-    # print ( "Top of get_numeric_parameter_list" )
-    #threshold_print ( 98, "get_numeric_parameter_list() called with objpath = ", objpath )
+    # print ( "Top of get_numeric_parameter_list_recurse" )
+    #threshold_print ( 98, "get_numeric_parameter_list_recurse() called with objpath = ", objpath )
 
     # This check can be used to speed up parameter searching in the future, but hasn't been critical so far
 
@@ -1504,7 +1510,7 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
             # Don't search anything that is of type "rna_type" or is an mcell.mol_viz.mol_file_list
             depth_in_get_num_param_list += -1
             if depth_in_get_num_param_list < depth_to_print:
-                #print ( "Return from call to get_numeric_parameter_list with " + str(objpath) )
+                #print ( "Return from call to get_numeric_parameter_list_recurse with " + str(objpath) )
                 pass
             return plist
 
@@ -1537,40 +1543,40 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
             for objkey in obj.bl_rna.properties.keys():    # This is somewhat ugly, but works best!!
                 try:
                     pstr = objpath+"."+str(objkey)
-                    plist = get_numeric_parameter_list(pstr, plist, debug)
+                    plist = get_numeric_parameter_list_recurse(pstr, plist, debug)
                 except:
                     # This can happen with properties in the .blend file that are no longer in the code or have been renamed!!!
                     print ( "Exception inside get_numeric_parameter()" )
-                    # threshold_print ( 0, "  ===> Exception in get_numeric_parameter_list:" + str ( sys.exc_info() ) )
+                    # threshold_print ( 0, "  ===> Exception in get_numeric_parameter_list_recurse:" + str ( sys.exc_info() ) )
                     #threshold_print ( 0, "    ===> Exception type = " + sys.exc_type )
                     #threshold_print ( 0, "    ===> Exception value = " + sys.exc_value )
                     #threshold_print ( 0, "    ===> Exception traceback = " + sys.exc_traceback )
-                    #threshold_print ( 0, "    ===> Exception in recursive call to get_numeric_parameter_list ( " + pstr + " )" )
-                    # threshold_print ( 0, "    ===> Exception in get_numeric_parameter_list isinstance branch with " + objpath + "." + str(objkey) )
+                    #threshold_print ( 0, "    ===> Exception in recursive call to get_numeric_parameter_list_recurse ( " + pstr + " )" )
+                    # threshold_print ( 0, "    ===> Exception in get_numeric_parameter_list_recurse isinstance branch with " + objpath + "." + str(objkey) )
                     pass
 
     elif type(obj).__name__ == 'bpy_prop_collection_idprop':
         # This is a collection, so step through its elements as if it's an array using keys
         for objkey in obj.keys():
             try:
-                plist = get_numeric_parameter_list(objpath+"[\""+str(objkey)+"\"]", plist, debug)
+                plist = get_numeric_parameter_list_recurse(objpath+"[\""+str(objkey)+"\"]", plist, debug)
             except:
-                # threshold_print ( 0, " ===> Exception in get_numeric_parameter_list idprop branch with " + objpath + "['" + str(objkey) + "']" )
+                # threshold_print ( 0, " ===> Exception in get_numeric_parameter_list_recurse idprop branch with " + objpath + "['" + str(objkey) + "']" )
                 pass
     else:
         # This could be anything else ... like <'int'> or <'str'>
         pass
 
     #if threshold_print_enabled ( 90 ):
-    #    print ( "  Parameters found so far by get_numeric_parameter_list(" + str(objpath) + "):" )
+    #    print ( "  Parameters found so far by get_numeric_parameter_list_recurse(" + str(objpath) + "):" )
     #    for p in plist:
     #        print ( "    " + p.get_formatted_string() )      
 
-    # print ( "Bottom of get_numeric_parameter_list" )
+    # print ( "Bottom of get_numeric_parameter_list_recurse" )
 
     depth_in_get_num_param_list += -1
     if depth_in_get_num_param_list < depth_to_print:
-        # print ( "Return from call to get_numeric_parameter_list with " + str(objpath) )
+        # print ( "Return from call to get_numeric_parameter_list_recurse with " + str(objpath) )
         pass
     return plist
 
