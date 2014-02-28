@@ -12,7 +12,7 @@ import libsbml
 from scipy.misc import factorial, comb
 import json
 from optparse import OptionParser
-
+from math import isnan
 class SBML2JSON:
     
     def __init__(self, model):
@@ -68,8 +68,9 @@ time	 second	 second
             #if parameter.getUnits() == '':
             #    parameterSpecs['value'] *= float(6.022e8*1000)
             #    parameterSpecs['unit'] = '{0}*{1}'.format(parameterSpecs['unit'],'avo.num*1000')
-            
-            parameters.append(parameterSpecs)
+            print parameter.getId(),parameter.getConstant()
+            if not isnan(parameterSpecs['value']) and parameter.getConstant():
+                parameters.append(parameterSpecs)
         prx = {'name':"rxn_layer_t",'value':"0.01",'unit':"um",'type':""}
         ph = {'name':"h",'value':"rxn_layer_t",'unit':"um",'type':""}
         pRs = {'name':"Rs",'value':"0.002564",'unit':"um",'type':""}
@@ -120,11 +121,10 @@ time	 second	 second
             compartment = species.getCompartment()
             if compartmentList[compartment][0] == 3:
                 typeD = '3D'
-                outside,inside = self.getOutsideInsideCompartment(compartmentList, compartment)
                 diffusion = 'KB*T/(6*PI*mu_{0}*Rs)'.format(compartment)
             else:
                 typeD = '2D'
-                
+                outside,inside = self.getOutsideInsideCompartment(compartmentList, compartment)
                 diffusion = 'KB*T*LOG((mu_{0}*h/(SQRT(4)*Rc*(mu_{1}+mu_{2})/2))-gamma)/(4*PI*mu_{0}*h)'.format(compartment,outside,inside)
             self.moleculeData[species.getId()] = [compartmentList[compartment][0]]
             moleculeSpecs={'name':species.getId(),'type':typeD,'extendedName':species.getName(),'dif':diffusion}
@@ -257,7 +257,13 @@ time	 second	 second
             kineticLaw = reaction.getKineticLaw()
             rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
             rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
-
+            for index in range(0,len(rReactant)):
+                if isnan(rReactant[index][1]):
+                    rReactant[index] = (rReactant[index][0],1.0)
+            for index in range(len(rProduct)):
+                if isnan(rProduct[index][1]):
+                    rProduct[index] = (rProduct[index][0],1.0)
+                
             parameters = [(parameter.getId(), parameter.getValue()) for parameter in kineticLaw.getListOfParameters()]
             
             math = kineticLaw.getMath()
@@ -265,7 +271,6 @@ time	 second	 second
             compartmentList  = []
             for compartment in (self.model.getListOfCompartments()):
                 compartmentList.append(compartment.getId())
-                
             rateL, rateR = self.getInstanceRate(math,compartmentList,reversible,rReactant,rProduct)
             #finalReactant = [x[0]]    
             #testing whether we have volume-surface interactions
@@ -311,10 +316,10 @@ def sbml2json(filePath):
     molecules,release = parser.getMolecules()      
     reactions =  parser.getReactions(parameters)
     definition = {}
-    definition['par_list'] = parameters
-    definition['mol_list'] = molecules
-    definition['rxn_list'] = reactions
-    definition['rel_list'] = release
+    definition['par_list'] = sort(parameters)
+    definition['mol_list'] = sort(molecules)
+    definition['rxn_list'] = sort(reactions)
+    definition['rel_list'] = sort(release)
     with open(filePath + '.json','w') as f:
         json.dump(definition,f,sort_keys=True,indent=1, separators=(',', ': '))
     return True
@@ -324,7 +329,7 @@ def main():
 	
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
-		default='/home/proto/workspace/bionetgen/parsers/SBMLparser/XMLExamples/curated/BIOMD0000000314.xml',type="string",
+		default='/home/proto//workspace/cellblender/sbml/EndoAcidification.xml',type="string",
 		help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
     parser.add_option("-o","--output",dest="output",
 		type="string",
@@ -342,6 +347,7 @@ def main():
         return
     parser = SBML2JSON(document.getModel())
     parameters =  parser.getParameters()
+
     molecules,release = parser.getMolecules()
     reactions =  parser.getReactions(parameters)
     definition = {}
