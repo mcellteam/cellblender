@@ -37,6 +37,86 @@ import cellblender
 # For timing code:
 import time
 
+
+####################### Start of Profiling Code #######################
+
+# From: http://wiki.blender.org/index.php/User:Z0r/PyDevAndProfiling
+
+prof = {}
+
+class profile:
+    ''' Function decorator for code profiling.'''
+    
+    def __init__(self,name):
+        self.name = name
+    
+    def __call__(self,fun):
+        def profile_fun(*args, **kwargs):
+            start = time.clock()
+            try:
+                return fun(*args, **kwargs)
+            finally:
+                duration = time.clock() - start
+                if not fun in prof:
+                    prof[fun] = [self.name, duration, 1]
+                else:
+                    prof[fun][1] += duration
+                    prof[fun][2] += 1
+        return profile_fun
+
+#def print_statistics(c):
+def print_statistics():
+    '''Prints profiling results to the console. Run from a Python controller.'''
+
+    #if not c.sensors[0].positive:
+    #    return
+
+    def timekey(stat):
+        return stat[1] / float(stat[2])
+
+    stats = sorted(prof.values(), key=timekey, reverse=True)
+
+    print ( '=== Execution Statistics ===' )
+    print ( '{:<55} {:>6} {:>7} {:>6}'.format('FUNCTION', 'CALLS', 'SUM(ms)', 'AV(ms)'))
+    for stat in stats:
+        print ( '{:<55} {:>6} {:>7.0f} {:>6.2f}'.format(stat[0],stat[2],stat[1]*1000,(stat[1]/float(stat[2]))*1000))
+
+
+class MCELL_OT_print_profiling(bpy.types.Operator):
+    bl_idname = "mcell.print_profiling"
+    bl_label = "Print Profiling"
+    bl_description = ("Print Profiling Information")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        print_statistics()
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        print_statistics()
+        return {'RUNNING_MODAL'}
+
+
+class MCELL_OT_clear_profiling(bpy.types.Operator):
+    bl_idname = "mcell.clear_profiling"
+    bl_label = "Clear Profiling"
+    bl_description = ("Clear Profiling Information")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        prof.clear()
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        prof.clear()
+        return {'RUNNING_MODAL'}
+
+
+####################### End of Profiling Code #######################
+
+
+
 # We use per module class registration/unregistration
 def register():
     bpy.utils.register_module(__name__)
@@ -71,6 +151,7 @@ def print_info_about_self ( self, thresh, context ):
     pass
 
 
+#@profile('get_path_to_parent')
 def get_path_to_parent(self_object):
     """ Return the Blender class path to the parent object with regard to the Blender Property Tree System """
     path_to_self = "bpy.context.scene." + self_object.path_from_id()
@@ -78,6 +159,7 @@ def get_path_to_parent(self_object):
     path_to_parent = path_to_self[0:path_to_self.rfind(".")]
     return path_to_parent
 
+#@profile('get_parent')
 def get_parent(self_object):
     """ Return the parent Blender object with regard to the Blender Property Tree System """
     #print ( "top of get_parent" )
@@ -218,6 +300,12 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
             col = row.column()
             col.operator("mcell.print_panel_parameters_fast")
 
+        row = layout.row()
+        col = row.column()
+        col.operator("mcell.print_profiling", text="Print Profiling")
+        col = row.column()
+        col.operator("mcell.clear_profiling", text="Clear Profiling")
+
 
 # Callbacks for Property updates appear to require global (non-member) functions
 # This is circumvented by simply calling the associated member function passed as self
@@ -288,6 +376,7 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
         #threshold_print ( thresh, prefix + "  Stat  = " + str(self.status) )
         pass
 
+    #@profile('update_name')
     def update_name ( self, context ):
         """
         Update the entire parameter system based on a parameter's name being changed.
@@ -347,6 +436,7 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         #print ( "Bottom of update name" )
 
+    #@profile('update_expression')
     def update_expression ( self, context ):
         """ 
         Update the entire parameter system based on a parameter's expression being changed.
@@ -409,6 +499,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
     param_group_error = StringProperty( default="", description="Error Message for Entire Parameter Group")
     next_id = IntProperty(name="Counter for Unique Parameter IDs", default=1)  # Start ID's at 1 to confirm initialization
     name_update_in_progress = BoolProperty(default=False)  # Used to disable expression evaluation when names are being changed
+    batch_add_in_progress = BoolProperty(default=False)  # Used to disable expression evaluation when many new parameters are being added
     # parameter_space_string = StringProperty ( name="ParameterSpace", default="", description="ParameterSpace object pickled as a string" )
     
     """
@@ -429,15 +520,19 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
           Expression as string:  #1~+~5~+~#2~+~#?c
     """
     
+    @profile('get_term_sep')
     def get_term_sep (self):
         return ( "~" )    # This is the string used to separate terms in an expression. It should be illegal in whatever syntax is being parsed.
 
+    @profile('UNDEFINED_NAME')
     def UNDEFINED_NAME(self):
         return ( "   (0*1111111*0)   " )   # This is a string that evaluates to zero, but is easy to spot in expressions
     
+    @profile('get_expression_keywords')
     def get_expression_keywords(self):
         return ( { '^': '**', 'SQRT': 'sqrt', 'EXP': 'exp', 'LOG': 'log', 'LOG10': 'log10', 'SIN': 'sin', 'COS': 'cos', 'TAN': 'tan', 'ASIN': 'asin', 'ACOS':'acos', 'ATAN': 'atan', 'ABS': 'abs', 'CEIL': 'ceil', 'FLOOR': 'floor', 'MAX': 'max', 'MIN': 'min', 'RAND_UNIFORM': 'uniform', 'RAND_GAUSSIAN': 'gauss', 'PI': 'pi', 'SEED': '1' } )
 
+    @profile('encode_expr_list_to_str')
     def encode_expr_list_to_str ( self, expr_list ):
         """ Turns an expression list into a string that can be stored as a Blender StringProperty """
         term_sep = self.get_term_sep()
@@ -464,6 +559,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         return expr_str
 
 
+    @profile('decode_str_to_expr_list')
     def decode_str_to_expr_list ( self, expr_str ):
         """ Recovers an expression list from a string that has been stored as a Blender StringProperty """
         expr_list = []
@@ -483,6 +579,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         return expr_list
 
 
+    @profile('print_all_general_parameters')
     def print_all_general_parameters ( self, thresh, prefix="" ):
         """ Prints all general parameters based on comparison to a user-adjustable threshold """
         #threshold_print ( thresh, prefix + "There are " + str(len(self.parameter_list)) + " general parameters defined" )
@@ -491,6 +588,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
             p.print_parameter( thresh, prefix=prefix+"    " )
 
 
+    @profile('fix_broken_references')
     def fix_broken_references ( self, id_expr_str ):
         """ Attempts to fix any broken references in this expression by searching for names """
         if "#?" in id_expr_str:
@@ -523,12 +621,14 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         else:
             return ( id_expr_str )
 
+    @profile('fix_all_broken_references')
     def fix_all_broken_references ( self ):
         """ Attempts to fix all broken references """
         for p in self.parameter_list:
             p.id_expr_str = self.fix_broken_references ( p.id_expr_str )
 
 
+    @profile('build_name_ID_dict')
     def build_name_ID_dict ( self ):
         """ Builds a dictionary mapping parameter names to their IDs """
         name_ID_dict = {}
@@ -536,6 +636,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
             name_ID_dict.update ( { p.name : p.id } )
         return name_ID_dict
 
+    @profile('build_ID_name_dict')
     def build_ID_name_dict ( self ):
         """ Builds a dictionary mapping parameter IDs to their names """
         ID_name_dict = {}
@@ -543,6 +644,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
             ID_name_dict.update ( { p.id : p.name } )
         return ID_name_dict
 
+    @profile('build_ID_value_dict')
     def build_ID_value_dict ( self ):
         """ Builds a dictionary mapping parameter IDs to their values """
         ID_value_dict = {}
@@ -550,6 +652,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
             ID_value_dict.update ( { p.id : p.value } )
         return ID_value_dict
 
+    @profile('load_ID_value_dict')
     def load_ID_value_dict ( self, ID_value_dict, ID_valid_dict ):
         """ Uses a Python dictionary to update values into the parameter properties """
         for p in self.parameter_list:
@@ -561,6 +664,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                 else:
                     p.status = "Evaluation Error"
 
+    @profile('build_ID_valid_dict')
     def build_ID_valid_dict ( self, is_valid ):
         """ Builds a dictionary mapping each parameter ID to the is_valid value """
         ID_valid_dict = {}
@@ -568,6 +672,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
             ID_valid_dict.update ( { p.id : is_valid } )
         return ID_valid_dict
 
+    @profile('build_depend_list_dict')
     def build_depend_list_dict ( self ):
         """ Builds a dictionary containing ID:[dependency_list] pairs for all parameters """
         dep_list_dict = {}
@@ -580,6 +685,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
             dep_list_dict.update ( { p.id : dep_list_p } )
         return dep_list_dict
 
+    @profile('used_by_other_general_parameters')
     def used_by_other_general_parameters ( self, id ):
         """ Return a boolean reflecting whether any general parameters use this parameter id (True) or not (False) """
         for p in self.parameter_list:
@@ -588,6 +694,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                 return True
         return False
 
+    @profile('used_by_these_general_parameters')
     def used_by_these_general_parameters ( self, id ):
         """ Return a string of names of any general parameters that use this parameter id """
         name_list = ""
@@ -599,6 +706,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                 name_list = name_list + p.name
         return name_list
 
+    @profile('used_by_panel_parameters')
     def used_by_panel_parameters ( self, id ):
         """ Return a boolean reflecting whether any panel parameters use this parameter id (True) or not (False) """
         plist = get_numeric_parameter_list ( None, [] )
@@ -608,6 +716,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                 return True
         return False
 
+    @profile('used_by_these_panel_parameters')
     def used_by_these_panel_parameters ( self, id ):
         """ Return a string of names of any panel parameters that use this parameter id """
         name_list = ""
@@ -622,9 +731,11 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                 name_list = name_list + plist_names[i].split(".")[-1]
         return name_list
 
+    @profile('used_by_any_other_parameters')
     def used_by_any_other_parameters ( self, id ):
         return self.used_by_other_general_parameters(id) | self.used_by_panel_parameters(id)
 
+    @profile('used_by_these_other_parameters')
     def used_by_these_other_parameters ( self, id ):
         gpu = self.used_by_these_general_parameters(id)
         ppu = self.used_by_these_panel_parameters(id)
@@ -636,6 +747,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         return apu
 
 
+    @profile('build_ID_pyexpr_dict')
     def build_ID_pyexpr_dict ( self, ID_name_dict ):
         """ Construct a dictionary containing python executable string representations of the expressions by substituting symbols for IDs """
         #threshold_print ( 90, "Inside build_ID_pyexpr_dict ... " )
@@ -668,6 +780,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         return ID_pyexpr_dict
 
 
+    @profile('build_expr_str')
     def build_expr_str ( self, encoded_ID_expr, ID_name_dict, to_python=False ):
         """ Translate an encoded ID expression string into a human-readable expression string with respect to current parameters """
         """ The to_python flag is used to generate a python executable string rather than the default MDL compatible string """
@@ -706,6 +819,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         return new_expr
 
 
+    @profile('name_change')
     def name_change ( self, param ):
         """ Change the name of a parameter and reflect the change in all expressions. This does not change any values. """
         #threshold_print ( 60, "MCellParametersPropertyGroup.name_change() called by parameter " + param.name + ":" )
@@ -750,6 +864,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         # Note that updating of the panel parameters is done after calling this function
 
 
+    @profile('expression_change')
     def expression_change ( self, param ):
         """ Change the expression of a parameter and reflect the change in all expressions. This can change values. """
         #threshold_print ( 60, "MCellParametersPropertyGroup.expression_change() called by parameter " + param.name + ":" )
@@ -771,15 +886,18 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         return status
 
 
+    @profile('parse_panel_param_expr')
     def parse_panel_param_expr ( self, panel_param_expr ):
         """ Convert a string expression into an encoded ID expression string with respect to current parameters """
         return self.encode_expr_list_to_str ( self.parse_param_expr(panel_param_expr) )
 
+    @profile('translate_panel_param_ID_expr')
     def translate_panel_param_ID_expr ( self, panel_param_ID_expr, to_python=False ):
         """ Translate a panel parameter's encoded ID expression into a string for display """
         #threshold_print ( 60, "Inside translate_panel_param_ID_expr: Translating expression " + str(panel_param_ID_expr ) )
         return self.build_expr_str ( panel_param_ID_expr, self.build_ID_name_dict(), to_python )
 
+    @profile('eval_panel_param_ID_expr')
     def eval_panel_param_ID_expr ( self, panel_param_ID_expr ):
         """ Evaluate a panel parameter's ID expression (like "#1~+~3~*~(~#2~+~7.0~)") into a numeric value or None if invalid """
         #threshold_print ( 60, "Evaluating ID expression " + str(panel_param_ID_expr) )
@@ -790,8 +908,11 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
             (value,valid) = self.eval_all_any_order ( expression = self.translate_panel_param_ID_expr ( panel_param_ID_expr, to_python=True ) )
         return value
 
+    @profile('eval_all_any_order')
     def eval_all_any_order ( self, prnt=False, requested_id=None, expression=None ):
         """ Evaluate all parameters based on dependencies without assuming any order of definition """
+        if self.batch_add_in_progress:
+            return (0,False)
 
         # from math import *
         from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor, pi  # abs, max, and min are not from math?
@@ -906,6 +1027,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         return ( requested_val, valid )
 
 
+    @profile('new_parameter')
     def new_parameter ( self ):
         """ Add a new parameter to the list of parameters """
         new_par = self.parameter_list.add()
@@ -913,6 +1035,20 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         new_par.set_defaults()
         return new_par
 
+    @profile('start_batch_addition')
+    def start_batch_addition ( self ):
+        """ Disable evaluation of parameters while they are added """
+        self.batch_add_in_progress = True
+        return
+
+    @profile('finish_batch_addition')
+    def finish_batch_addition ( self ):
+        """ Enable evaluation of parameters """
+        self.batch_add_in_progress = False
+        self.eval_all_any_order()
+        return
+
+    @profile('add_parameter_with_values')
     def add_parameter_with_values ( self, name, expression, units, description ):
         """ Add a new parameter to the list of parameters """
         p = self.new_parameter()
@@ -922,12 +1058,14 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         p.desc = description
         return p
 
+    @profile('add_parameter')
     def add_parameter ( self, context ):
         """ Add a new parameter to the list of parameters and set as the active parameter """
         p = self.new_parameter()
         self.active_par_index = len(self.parameter_list)-1
         return p
 
+    @profile('remove_active_parameter')
     def remove_active_parameter ( self, context ):
         """ Remove the active parameter from the list of parameters if not needed by others """
         status = ""
@@ -941,6 +1079,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                     self.active_par_index = 0
         return ( status )
 
+    @profile('allocate_available_id')
     def allocate_available_id ( self ):
         """ Return a unique parameter ID for a new parameter """
         if len(self.parameter_list) <= 0:
@@ -950,6 +1089,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         return ( self.next_id - 1 )
 
 
+    @profile('parse_param_expr')
     def parse_param_expr ( self, param_expr ):
         """ Converts a string expression into a list expression with:
                  variable id's as integers,
@@ -999,6 +1139,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         return parameterized_expr
 
 
+    @profile('recurse_tree_symbols')
     def recurse_tree_symbols ( self, name_ID_dict, pt, current_expr ):
         """ Recurse through the parse tree looking for "terminal" items which are added to the list """
 
@@ -1056,6 +1197,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
 #    function to do any special processing with the result.
 #    """
 
+#@profile('update_PanelParameter')
 def update_PanelParameter ( self, context ):
 
     #print ( "1 - top of call to update_PanelParameter" )
@@ -1331,37 +1473,44 @@ class PanelParameterFloat(bpy.types.PropertyGroup):
                     row.label(icon='ERROR', text="Warning: Value of " + str(value) + " for " + self.get_label() + " is greater than maximum of "+str(self.param_data.max_value))
 """
 
-depth_in_get_numeric_parameter_list = 0
+depth_in_get_num_param_list = 0
 
 # current_numeric_parameter_list = None
 
+@profile('get_numeric_parameter_list')
 def get_numeric_parameter_list ( objpath, plist, debug=False ):
+    """ Separate call to distinguish recursive calls from non-recursive calls """
+    return get_numeric_parameter_list_recurse ( objpath, plist, debug )
+
+
+@profile('get_numeric_parameter_list_recurse')
+def get_numeric_parameter_list_recurse ( objpath, plist, debug=False ):
     """ Recursive routine that builds a list of numeric (PanelParameterInt and PanelParameterFloat) parameters """
     #global current_numeric_parameter_list
     #if current_numeric_parameter_list != None:
     #    return plist
 
-    global depth_in_get_numeric_parameter_list
+    global depth_in_get_num_param_list
     depth_to_print = -100
     
-    if depth_in_get_numeric_parameter_list < depth_to_print:
+    if depth_in_get_num_param_list < depth_to_print:
         if objpath == None:
             print ( "=======================================================================" )
-        print ( "Call to             get_numeric_parameter_list with " + str(objpath) )
+        print ( "Call to             get_numeric_parameter_list_recurse with " + str(objpath) )
 
-    depth_in_get_numeric_parameter_list += 1
+    depth_in_get_num_param_list += 1
     
-    # print ( "Top of get_numeric_parameter_list" )
-    #threshold_print ( 98, "get_numeric_parameter_list() called with objpath = ", objpath )
+    # print ( "Top of get_numeric_parameter_list_recurse" )
+    #threshold_print ( 98, "get_numeric_parameter_list_recurse() called with objpath = ", objpath )
 
     # This check can be used to speed up parameter searching in the future, but hasn't been critical so far
 
     if objpath != None:
         if objpath.endswith("rna_type") or objpath.endswith("mcell.mol_viz.mol_file_list"):
             # Don't search anything that is of type "rna_type" or is an mcell.mol_viz.mol_file_list
-            depth_in_get_numeric_parameter_list += -1
-            if depth_in_get_numeric_parameter_list < depth_to_print:
-                #print ( "Return from call to get_numeric_parameter_list with " + str(objpath) )
+            depth_in_get_num_param_list += -1
+            if depth_in_get_num_param_list < depth_to_print:
+                #print ( "Return from call to get_numeric_parameter_list_recurse with " + str(objpath) )
                 pass
             return plist
 
@@ -1382,52 +1531,52 @@ def get_numeric_parameter_list ( objpath, plist, debug=False ):
         if 'expression' in obj.keys() and 'param_data' in obj.keys():
             # This is also what we're looking for (should be a PanelParameter), so add it to the list
             plist.append ( obj )
-            if depth_in_get_numeric_parameter_list < depth_to_print:
+            if depth_in_get_num_param_list < depth_to_print:
                 print ( "   ---------------- Parameter --------------------> " + str(objpath) )
             #threshold_print ( 98, "   plist.append gives " + str(plist) )
         elif 'contains_cellblender_parameters' in dir(obj):  # For some reason, obj.keys() didn't find this in mcell!?!
             # print ( "   " + str(objpath) + " contains cellblender parameters" )
             # This is some other property group with parameters, so walk through all of its properties using keys
             # for objkey in obj.keys():
-            if depth_in_get_numeric_parameter_list < depth_to_print:
+            if depth_in_get_num_param_list < depth_to_print:
                 print ( "   ---------------- Contains Parameters ----------> " + str(objpath) )
             for objkey in obj.bl_rna.properties.keys():    # This is somewhat ugly, but works best!!
                 try:
                     pstr = objpath+"."+str(objkey)
-                    plist = get_numeric_parameter_list(pstr, plist, debug)
+                    plist = get_numeric_parameter_list_recurse(pstr, plist, debug)
                 except:
                     # This can happen with properties in the .blend file that are no longer in the code or have been renamed!!!
                     print ( "Exception inside get_numeric_parameter()" )
-                    # threshold_print ( 0, "  ===> Exception in get_numeric_parameter_list:" + str ( sys.exc_info() ) )
+                    # threshold_print ( 0, "  ===> Exception in get_numeric_parameter_list_recurse:" + str ( sys.exc_info() ) )
                     #threshold_print ( 0, "    ===> Exception type = " + sys.exc_type )
                     #threshold_print ( 0, "    ===> Exception value = " + sys.exc_value )
                     #threshold_print ( 0, "    ===> Exception traceback = " + sys.exc_traceback )
-                    #threshold_print ( 0, "    ===> Exception in recursive call to get_numeric_parameter_list ( " + pstr + " )" )
-                    # threshold_print ( 0, "    ===> Exception in get_numeric_parameter_list isinstance branch with " + objpath + "." + str(objkey) )
+                    #threshold_print ( 0, "    ===> Exception in recursive call to get_numeric_parameter_list_recurse ( " + pstr + " )" )
+                    # threshold_print ( 0, "    ===> Exception in get_numeric_parameter_list_recurse isinstance branch with " + objpath + "." + str(objkey) )
                     pass
 
     elif type(obj).__name__ == 'bpy_prop_collection_idprop':
         # This is a collection, so step through its elements as if it's an array using keys
         for objkey in obj.keys():
             try:
-                plist = get_numeric_parameter_list(objpath+"[\""+str(objkey)+"\"]", plist, debug)
+                plist = get_numeric_parameter_list_recurse(objpath+"[\""+str(objkey)+"\"]", plist, debug)
             except:
-                # threshold_print ( 0, " ===> Exception in get_numeric_parameter_list idprop branch with " + objpath + "['" + str(objkey) + "']" )
+                # threshold_print ( 0, " ===> Exception in get_numeric_parameter_list_recurse idprop branch with " + objpath + "['" + str(objkey) + "']" )
                 pass
     else:
         # This could be anything else ... like <'int'> or <'str'>
         pass
 
     #if threshold_print_enabled ( 90 ):
-    #    print ( "  Parameters found so far by get_numeric_parameter_list(" + str(objpath) + "):" )
+    #    print ( "  Parameters found so far by get_numeric_parameter_list_recurse(" + str(objpath) + "):" )
     #    for p in plist:
     #        print ( "    " + p.get_formatted_string() )      
 
-    # print ( "Bottom of get_numeric_parameter_list" )
+    # print ( "Bottom of get_numeric_parameter_list_recurse" )
 
-    depth_in_get_numeric_parameter_list += -1
-    if depth_in_get_numeric_parameter_list < depth_to_print:
-        # print ( "Return from call to get_numeric_parameter_list with " + str(objpath) )
+    depth_in_get_num_param_list += -1
+    if depth_in_get_num_param_list < depth_to_print:
+        # print ( "Return from call to get_numeric_parameter_list_recurse with " + str(objpath) )
         pass
     return plist
 

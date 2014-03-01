@@ -24,7 +24,9 @@ class BNG_OT_parameter_add(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         par_list = net.par_list
+        print ( "Adding " + str(len(par_list)) + " parameters..." )
         index = -1
+        mcell.general_parameters.start_batch_addition()
         for key in sorted(par_list.keys()):
             index += 1
             mcell.parameters.parameter_list.add()
@@ -37,7 +39,8 @@ class BNG_OT_parameter_add(bpy.types.Operator):
             parameter.unit = par_list[key]['unit']
             parameter.type = par_list[key]['type']
             mcell.general_parameters.add_parameter_with_values ( parameter.name, parameter.value, parameter.unit, parameter.type )
-            print ( "Adding parameter \"" + str(parameter.name) + "\"  =  \"" + str(parameter.value) + "\"  (" + str(parameter.unit) + ")" )
+            #print ( "Adding parameter \"" + str(parameter.name) + "\"  =  \"" + str(parameter.value) + "\"  (" + str(parameter.unit) + ")" )
+        mcell.general_parameters.finish_batch_addition()
 
         return {'FINISHED'}
 
@@ -51,7 +54,9 @@ class BNG_OT_molecule_add(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         mol_list = net.mol_list
+        print ( "Adding " + str(len(mol_list)) + " molecules..." )
         index = -1
+        mcell.general_parameters.start_batch_addition()
         for key in sorted(mol_list.keys()):
             index += 1
             mcell.molecules.molecule_list.add()
@@ -64,7 +69,8 @@ class BNG_OT_molecule_add(bpy.types.Operator):
             molecule.type = mol_list[key]['type']
             molecule.diffusion_constant.expression = mol_list[key]['dif']
             molecule.diffusion_constant.param_data.label = "Diffusion Constant"
-            print ( "Adding molecule " + str(molecule.name) )
+            #print ( "Adding molecule " + str(molecule.name) )
+        mcell.general_parameters.finish_batch_addition()
 
         return {'FINISHED'}
     
@@ -77,7 +83,9 @@ class BNG_OT_reaction_add(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         rxn_list = net.rxn_list
+        print ( "Adding " + str(len(rxn_list)) + " reactions..." )
         index = -1
+        mcell.general_parameters.start_batch_addition()
         for key in sorted(rxn_list.keys()):
             index += 1
             mcell.reactions.reaction_list.add()
@@ -90,7 +98,8 @@ class BNG_OT_reaction_add(bpy.types.Operator):
             reaction.products = rxn_list[key]['products']
             reaction.fwd_rate.expression = rxn_list[key]['fwd_rate']
             reaction.fwd_rate.param_data.label = "Forward Rate"
-            print ( "Adding reaction  " + str(reaction.reactants) + "  ->  " + str(reaction.products) )
+            #print ( "Adding reaction  " + str(reaction.reactants) + "  ->  " + str(reaction.products) )
+        mcell.general_parameters.finish_batch_addition()
 
         return {'FINISHED'}
 
@@ -103,7 +112,9 @@ class BNG_OT_release_site_add(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         rel_list = net.rel_list
+        print ( "Adding " + str(len(rel_list)) + " release sites..." )
         index = -1
+        mcell.general_parameters.start_batch_addition()
         for key in sorted(rel_list.keys()):
             index += 1
             mcell.release_sites.mol_release_list.add()
@@ -120,7 +131,8 @@ class BNG_OT_release_site_add(bpy.types.Operator):
             release_site.quantity_type = rel_list[key]['quantity_type']
             release_site.quantity.expression = rel_list[key]['quantity_expr']
             cellblender_operators.check_release_molecule(self, context)
-            print ( "Adding release site " + str(release_site.name) )
+            #print ( "Adding release site " + str(release_site.name) )
+        mcell.general_parameters.finish_batch_addition()
 	    
         return {'FINISHED'}
 
