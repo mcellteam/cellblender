@@ -68,10 +68,21 @@ class ImportMCellMDL(bpy.types.Operator, ImportHelper):
         if not paths:
             paths.append(self.filepath)
 
-        from . import import_mcell_mdl
+        # Attempt to use fast swig importer (assuming make was successful)
+        try:
+            from . import import_mcell_mdl
+            from . import mdlmesh_parser
 
-        for path in paths:
-            import_mcell_mdl.load(self, context, path)
+            for path in paths:
+                import_mcell_mdl.load(self, context, path)
+
+        # Fall back on slow pure python parser (pyparsing)
+        except ImportError:
+            from . import import_mcell_mdl_pyparsing
+        
+            for path in paths:
+                import_mcell_mdl_pyparsing.load(self, context, path)
+
 
         return {'FINISHED'}
 

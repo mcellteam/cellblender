@@ -756,6 +756,10 @@ class MCELL_OT_release_site_add(bpy.types.Operator):
             mcell.release_sites.mol_release_list)-1
         mcell.release_sites.mol_release_list[
             mcell.release_sites.active_release_index].name = "Release_Site"
+
+        relsite = mcell.release_sites.mol_release_list[mcell.release_sites.active_release_index]
+        relsite.set_defaults()
+            
         check_release_molecule(self, context)
 
         return {'FINISHED'}
@@ -918,12 +922,38 @@ def is_executable(binary_path):
     return is_exec
 
 
+def check_sbml2mcell(self, context):
+    """Callback to check for sbml2mcell script"""
+    mcell = context.scene.mcell
+    binary_path = mcell.project_settings.sbml2mcell
+    mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
+    return None
+
+class MCELL_OT_set_sbml2mcell(bpy.types.Operator):
+    bl_idname = "mcell.set_sbml2mcell"
+    bl_label = "Set SBML2Mcell converter"
+    bl_description = "Set SBML2Mcell converter"
+    bl_options = {'REGISTER'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.project_settings.sbml2mcell = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
 def check_python_binary(self, context):
     """Callback to check for python executable"""
     mcell = context.scene.mcell
     binary_path = mcell.project_settings.python_binary
     mcell.project_settings.python_binary_valid = is_executable(binary_path)
     return None
+
 
 
 class MCELL_OT_set_python_binary(bpy.types.Operator):
@@ -937,6 +967,36 @@ class MCELL_OT_set_python_binary(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         mcell.project_settings.python_binary = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
+def check_bionetgen_location(self, context):
+    """Callback to check for mcell executable"""
+    mcell = context.scene.mcell
+    application_path = mcell.project_settings.bionetgen_location
+    mcell.project_settings.bionetgen_location_valid = is_executable(application_path)
+    return None
+
+
+class MCELL_OT_set_check_bionetgen_location(bpy.types.Operator):
+    bl_idname = "mcell.set_bionetgen_location"
+    bl_label = "Set BioNetGen Location"
+    bl_description = ("Set BioNetGen Location. If needed, download at "
+                      "bionetgen.org")
+    bl_options = {'REGISTER'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+
+    #def __init__(self):
+    #    self.filepath = bpy.context.scene.mcell.project_settings.mcell_binary
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.project_settings.bionetgen_location = self.filepath
         return {'FINISHED'}
 
     def invoke(self, context, event):

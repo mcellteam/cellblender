@@ -100,6 +100,24 @@ class MCELL_PT_project_settings(bpy.types.Panel):
                 icon='FILE_TICK')
 
         row = layout.row()
+        row.operator("mcell.set_bionetgen_location",
+                     text="Set Path to BioNetGen File", icon='FILESEL')
+        row = layout.row()
+        bionetgen_location = mcell.project_settings.bionetgen_location
+        if not bionetgen_location:
+            # Using pin icon to be consistent with project directory, but maybe
+            # we should use error icon to be consistent with other sections.
+            row.label("BioNetGen location not set", icon='UNPINNED')
+        elif not mcell.project_settings.bionetgen_location_valid:
+            row.label("BioNetGen File/Permissions Error: " +
+                mcell.project_settings.bionetgen_location, icon='ERROR')
+        else:
+            row.label(
+                text="BioNetGen Location: "+mcell.project_settings.bionetgen_location,
+                icon='FILE_TICK')
+
+
+        row = layout.row()
         row.operator("mcell.set_python_binary",
                      text="Set Path to Python Binary", icon='FILESEL')
         row = layout.row()
@@ -131,6 +149,35 @@ class MCELL_PT_project_settings(bpy.types.Panel):
             row.label(
                 text="Project Directory: "+os.path.dirname(bpy.data.filepath),
                 icon='FILE_TICK')
+
+        #layout.prop(context.scene, "name", text="Project Base Name")
+
+        #--------
+        
+
+        row = layout.row()
+        row.operator("mcell.set_sbml2mcell",
+                     text="Set Path to SBML2MCELL script", icon='FILESEL')
+        row = layout.row()
+        sbml2mcell = mcell.project_settings.sbml2mcell
+        if not sbml2mcell:
+            # Using pin icon to be consistent with project directory, but maybe
+            # we should use error icon to be consistent with other sections.
+            row.label("sbml2mcell script not set", icon='UNPINNED')
+        elif not mcell.project_settings.sbml2mcell_valid:
+            row.label("sbml2mcell File/Permissions Error: " +
+                mcell.project_settings.sbml2mcell, icon='ERROR')
+        else:
+            row.label(
+                text="sbml2mcell Binary: "+mcell.project_settings.sbml2mcell,
+                icon='FILE_TICK')
+        #row.operator("mcell.set_project_dir",
+        #             text="Set CellBlender Project Directory", icon='FILESEL')
+        #row = layout.row()
+        # mcell.project_settings.project_dir = os.path.dirname(
+        #     bpy.data.filepath)
+        # row.label(text="Project Directory: " +
+        #           mcell.project_settings.project_dir)
 
         row = layout.row()
         layout.prop(context.scene, "name", text="Project Base Name")
@@ -890,8 +937,7 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                                    "molecule_list", text="Molecule:",
                                    icon='FORCE_LENNARDJONES')
                 if rel.molecule in mcell.molecules.molecule_list:
-                    if mcell.molecules.molecule_list[
-                            rel.molecule].type == '2D':
+                    if mcell.molecules.molecule_list[rel.molecule].type == '2D':
                         layout.prop(rel, "orient")
                 layout.prop(rel, "shape")
                 if ((rel.shape == 'CUBIC') | (rel.shape == 'SPHERICAL') |
@@ -901,14 +947,18 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                 if rel.shape == 'OBJECT':
                     layout.prop(rel, "object_expr")
 
-                layout.prop(rel, "probability")
+                #layout.prop(rel, "probability")
+                rel.probability.draw_in_new_row(layout)
+
                 layout.prop(rel, "quantity_type")
-                if rel.quantity_expr != "0":
-                   layout.prop(rel, "quantity_expr")
-                else:
-                   layout.prop(rel, "quantity")
+                #if rel.quantity_expr != "0":
+                #    layout.prop(rel, "quantity_expr")
+                #else:
+                #    #layout.prop(rel, "quantity")
+                rel.quantity.draw_in_new_row(layout)
                 if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
-                    layout.prop(rel, "stddev")
+                    #layout.prop(rel, "stddev")
+                    rel.stddev.draw_in_new_row(layout)
 
                 #layout.prop(rel, "pattern")
                 layout.prop_search(rel, "pattern", mcell.release_patterns,

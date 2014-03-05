@@ -699,12 +699,13 @@ if __name__ == "__main__":
                     if i == 0:
                         expr = "1"
                     else:
-                        expr = ""
+                        expr = "("
                         n = min(i,3)  # Constant value limits the number of parameters in each expression
                         for j in range(n):
                             if j > 0:
                                 expr = expr + "+"
                             expr = expr + ("p%s" % (j+i-n))
+                        expr = expr + ") / 3.0"
                     ps.define ( name, expr )
                 ps.eval_all(True)
             elif (len(s) > 0) and (s[0] == '.'):

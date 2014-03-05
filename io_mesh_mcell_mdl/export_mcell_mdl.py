@@ -505,7 +505,7 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
                            (release_site.quantity_expr))
             else:
                 out_file.write("   NUMBER_TO_RELEASE = %d\n" %
-                           (int(release_site.quantity)))
+                           (int(release_site.quantity.get_value())))
 
         elif release_site.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
             out_file.write("   GAUSSIAN_RELEASE_NUMBER\n")
@@ -528,13 +528,13 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
                 else:
                     if mol_list[release_site.molecule].type == '2D':
                         out_file.write("   DENSITY = %g\n" %
-                                   (release_site.quantity))
+                                   (release_site.quantity.get_value()))
                     else:
                         out_file.write("   CONCENTRATION = %g\n" %
-                                   (release_site.quantity))
+                                   (release_site.quantity.get_value()))
 
         out_file.write("   RELEASE_PROBABILITY = %g\n" %
-                       (release_site.probability))
+                       (release_site.probability.get_value()))
 
         if release_site.pattern:
             out_file.write("   RELEASE_PATTERN = %s\n" %
@@ -883,7 +883,3 @@ def instance_object_expr(context, expression):
         pass
 
     return instantiated_expression
-    
-    
-    
-   
