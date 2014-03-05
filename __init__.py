@@ -47,6 +47,9 @@ cellblender_info = {
         "io_mesh_mcell_mdl/__init__.py",
         "io_mesh_mcell_mdl/export_mcell_mdl.py",
         "io_mesh_mcell_mdl/import_mcell_mdl.py",
+        "io_mesh_mcell_mdl/import_mcell_mdl_pyparsing.py",
+        "io_mesh_mcell_mdl/import_shared.py",
+        "io_mesh_mcell_mdl/pyparsing.py",
         "io_mesh_mcell_mdl/mdlmesh_parser.py"],
 
     "cellblender_source_sha1": "",
@@ -68,9 +71,14 @@ def identify_source_version(addon_path):
     hashobject = hashlib.sha1()
     for source_file_basename in cbsl:
         source_file_name = os.path.join(addon_path, source_file_basename)
-        hashobject.update(open(source_file_name, 'r').read().encode("utf-8"))
-        print("  Cumulative SHA1: ", hashobject.hexdigest(), "=",
-              source_file_name)
+        if os.path.isfile(source_file_name):
+            hashobject.update(open(source_file_name, 'r').read().encode("utf-8"))
+            print("  Cumulative SHA1: ", hashobject.hexdigest(), "=",
+                  source_file_name)
+        else:
+            # This is mainly needed in case the make file wasn't run. 
+            # (i.e. missing mdlmesh_parser.py)
+            print('  File "%s" does not exist' % source_file_name)
 
     cellblender_info['cellblender_source_sha1'] = hashobject.hexdigest()
     print("CellBlender Source ID = %s" % (cellblender_info[

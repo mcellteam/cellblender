@@ -12,6 +12,9 @@ cellblender.zip: io_mesh_mcell_mdl/_mdlmesh_parser.so
 	cp io_mesh_mcell_mdl/mdlobj.py cellblender/io_mesh_mcell_mdl/
 	cp io_mesh_mcell_mdl/mdlmesh_parser.py cellblender/io_mesh_mcell_mdl/
 	cp io_mesh_mcell_mdl/import_mcell_mdl.py cellblender/io_mesh_mcell_mdl/
+	cp io_mesh_mcell_mdl/import_mcell_mdl_pyparsing.py cellblender/io_mesh_mcell_mdl/
+	cp io_mesh_mcell_mdl/import_shared.py cellblender/io_mesh_mcell_mdl/
+	cp io_mesh_mcell_mdl/pyparsing.py cellblender/io_mesh_mcell_mdl/
 	cp io_mesh_mcell_mdl/export_mcell_mdl.py cellblender/io_mesh_mcell_mdl/
 	cp -r bng cellblender/
 	cp -r data_plotters cellblender/
