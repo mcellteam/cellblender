@@ -23,6 +23,13 @@ def register():
 def unregister():
     bpy.utils.unregister_module(__name__)
 
+def accessFile(filePath):
+    if not hasattr(accessFile, 'info'):
+        filePointer = open(filePath + '.json','r')
+        accessFile.info = json.load(filePointer)
+    return accessFile.info
+
+
 class SBML_OT_parameter_add(bpy.types.Operator):
     
     bl_idname = "sbml.parameter_add"
@@ -33,8 +40,9 @@ class SBML_OT_parameter_add(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
-        filePointer= open(filePath + '.json','r')
-        jfile = json.load(filePointer)        
+        #filePointer= open(filePath + '.json','r')
+        #jfile = json.load(filePointer) 
+        jfile = accessFile(filePath)       
         par_list = jfile['par_list']
         index = -1
         for key in par_list:
@@ -62,8 +70,10 @@ class SBML_OT_molecule_add(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
-        filePointer= open(filePath + '.json','r')
-        jfile = json.load(filePointer)        
+        #filePointer= open(filePath + '.json','r')
+        #json.load(filePointer)        
+
+        jfile = accessFile(filePath)
         mol_list = jfile['mol_list']
         index = -1
         for key in mol_list:
@@ -90,8 +100,9 @@ class SBML_OT_reaction_add(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
-        filePointer= open(filePath + '.json','r')
-        jfile = json.load(filePointer)        
+        #filePointer= open(filePath + '.json','r')
+        #jfile = json.load(filePointer) 
+        jfile = accessFile(filePath)       
         rxn_list = jfile['rxn_list']        
         index = -1
         for key in rxn_list:
@@ -118,8 +129,9 @@ class SBML_OT_release_site_add(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
-        filePointer= open(filePath + '.json','r')
-        jfile = json.load(filePointer)        
+        #filePointer= open(filePath + '.json','r')
+        #jfile = json.load(filePointer) 
+        jfile = accessFile(filePath)        
         rel_list = jfile['rel_list']     
         index = -1
         for key in rel_list:
