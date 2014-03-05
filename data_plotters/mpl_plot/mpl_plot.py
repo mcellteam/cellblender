@@ -74,7 +74,8 @@ for cmd in params:
         print("Defaults: " + cmd)
         command = cmd[5:]
         # print "Executing " + command
-        execfile(command)
+#        execfile(command)
+        exec(open(command).read())
     else:
         remaining_params = remaining_params + [cmd]
 

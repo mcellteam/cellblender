@@ -22,6 +22,7 @@ cellblender.zip: io_mesh_mcell_mdl/_mdlmesh_parser.so
 	cp io_mesh_mcell_mdl/export_mcell_mdl.py cellblender/io_mesh_mcell_mdl/
 	cp -r bng cellblender/
 	cp -r data_plotters cellblender/
+	cp -r mdl cellblender/
 	zip -rv cellblender.zip cellblender
 
 io_mesh_mcell_mdl/_mdlmesh_parser.so: 
