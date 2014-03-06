@@ -64,12 +64,9 @@ class profile:
                     prof[fun][2] += 1
         return profile_fun
 
-#def print_statistics(c):
+
 def print_statistics():
     '''Prints profiling results to the console. Run from a Python controller.'''
-
-    #if not c.sensors[0].positive:
-    #    return
 
     def timekey(stat):
         return stat[1] / float(stat[2])
