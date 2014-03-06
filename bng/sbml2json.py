@@ -5,13 +5,27 @@ Created on Mon Jun 17 11:19:37 2013
 @author: proto
 """
 
-import sys
-sys.path.append("/usr/share/pyshared/")
-import libsbml
+#import sys
+#sys.path.insert(0,"./libsbml3/lib/python3/dist-packages")
+#import libsbml
 
-from scipy.misc import factorial, comb
+from .libsbml3.linux.lib.python3.dist_packages import libsbml
+#from . import libsbml
+#from scipy.misc import factorial, comb
 import json
 from optparse import OptionParser
+
+def factorial(x):
+    temp = x
+    acc = 1
+    while temp > 0:
+        acc *= temp
+        temp -= 1
+    return acc
+
+def comb(x,y):
+    return factorial(x)/(factorial(y) * factorial(x-y))
+
 
 class SBML2JSON:
     
@@ -203,6 +217,7 @@ time	 second	 second
             pass
         return rateL,rateR
 
+
     def removeFactorFromMath(self, math, reactants, products):
         
             
@@ -216,7 +231,7 @@ time	 second	 second
             # this is basically there to address the case where theres more products
             #than reactants (synthesis)
             if x[1] > y:
-                highStoichoiMetryFactor /= comb(int(x[1]), int(y), exact=True)
+                highStoichoiMetryFactor /= comb(int(x[1]), int(y))
             for counter in range(0, int(x[1])):
                 remainderPatterns.append(x[0])
         #for x in products:
@@ -300,9 +315,10 @@ time	 second	 second
             #SBML USE INSTANCE RATE 
             #HOW TO GET THE DIFFUSION CONSTANT
 
-def sbml2json(filePath):
+def transform(filePath):
     reader = libsbml.SBMLReader()
-    print filePath
+
+    print(filePath)
     document = reader.readSBMLFromFile(filePath)
     if document.getModel() == None:
         return False
@@ -336,7 +352,7 @@ def main():
         outputFile = nameStr + '.json'
     else:
         outputFile = options.output
-    print outputFile
+    print(outputFile)
     document = reader.readSBMLFromFile(nameStr)
     if document.getModel() == None:
         return

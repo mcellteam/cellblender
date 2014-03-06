@@ -5,6 +5,7 @@ import io
 import json
 
 from . import sbml2blender
+from . import sbml2json
 
 import cellblender
 from cellblender import cellblender_properties, cellblender_operators
@@ -157,8 +158,9 @@ class SBML_OT_release_site_add(bpy.types.Operator):
     
 def execute_sbml2mcell(filepath,context):
     mcell = context.scene.mcell
-    exe_sbml = "python {2} -i {0} -o {1}".format(filepath,filepath +'.json',mcell.project_settings.sbml2mcell)
-    os.system(exe_sbml)    #
+    #exe_sbml = "python {2} -i {0} -o {1}".format(filepath,filepath +'.json',mcell.project_settings.sbml2mcell)
+    sbml2json.transform(filePath)
+    #os.system(exe_sbml)    #
     #sbml2json.sbml2json(filepath)
     return{'FINISHED'}
    
