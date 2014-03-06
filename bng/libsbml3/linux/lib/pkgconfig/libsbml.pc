@@ -1,0 +1,13 @@
+Name: libSBML
+Description: An API library for reading/writing/manipulating SBML
+URL: http://sbml.org/Software/libSBML
+Version: 5.9.0
+
+prefix=/home/proto/libsbml3
+exec_prefix=/home/proto/libsbml3
+libdir=/home/proto/libsbml3/lib
+includedir=/home/proto/libsbml3/include
+
+Libs: -L${libdir}        -lxml2 -lz -lbz2 -lsbml -lstdc++ -lm
+Cflags: -I${includedir}  
+Requires: libxml-2.0 >= 2.6.22
