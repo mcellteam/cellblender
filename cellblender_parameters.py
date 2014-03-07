@@ -232,7 +232,7 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         mcell = context.scene.mcell
         par = mcell.general_parameters.parameter_list[index]
-        disp = par.name + " = " + par.expr
+        disp = par.par_name + " = " + par.expr
         # Try to force None to be 0 ... doesn't seem to work!!
         if par.value == None:
             par.value = "0"
@@ -279,7 +279,7 @@ class MCELL_PT_general_parameters(bpy.types.Panel):
         col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
         if len(mcell.general_parameters.parameter_list) > 0:
             par = mcell.general_parameters.parameter_list[mcell.general_parameters.active_par_index]
-            layout.prop(par, "name")
+            layout.prop(par, "par_name")
             if len(par.pending_expr) > 0:
                 layout.prop(par, "expr")
                 row = layout.row()
@@ -323,7 +323,7 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
     """An instance of this class exists for every general parameter"""
 
     id = IntProperty(name="ID", default=0, description="Unique ID for each parameter")
-    name = StringProperty(name="Name", default="Parameter", description="Unique name for this parameter", update=update_parameter_name)
+    par_name = StringProperty(name="Name", default="Parameter", description="Unique name for this parameter", update=update_parameter_name)
     expr = StringProperty(name="Expression", default="0", description="Expression to be evaluated for this parameter", update=update_parameter_expression)
     value = StringProperty(name="Value", default="0", description="Current evaluated value for this parameter" )
 
@@ -345,11 +345,11 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
     status = StringProperty(name="Status", default="")  # Normal="", Otherwise contains any error messages
     
     def set_defaults ( self ):
-        self.name = "Parameter_" + str(self.id)
+        self.par_name = "Parameter_" + str(self.id)
         self.expr = "0"
         self.value = "0"
         
-        self.last_name = self.name
+        self.last_name = self.par_name
         self.last_expr = self.expr
         self.last_value = self.value
 
@@ -358,12 +358,12 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
         self.initialized = True
 
     def print_parameter(self, thresh, prefix=""):
-        #threshold_print ( thresh, prefix + self.name + " (#" + str(self.id) + ") = " + self.expr + " = " + self.id_expr_str + " = " + str(self.value) )
+        #threshold_print ( thresh, prefix + self.par_name + " (#" + str(self.id) + ") = " + self.expr + " = " + self.id_expr_str + " = " + str(self.value) )
         pass
 
     def print_details(self, thresh, prefix=""):
         #threshold_print ( thresh, prefix + "ID = " + str(self.id) )
-        #threshold_print ( thresh, prefix + "  Name  = " + self.name + ", previously " + self.last_name )
+        #threshold_print ( thresh, prefix + "  Name  = " + self.par_name + ", previously " + self.last_name )
         #threshold_print ( thresh, prefix + "  Expr  = " + self.expr + ", previously " + self.last_expr )
         #threshold_print ( thresh, prefix + "  IDExp = " + self.id_expr_str )
         #threshold_print ( thresh, prefix + "  _expr = " + self.pending_expr )
@@ -386,8 +386,8 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
         """
         #print ( "Top of update name" )
         #threshold_print ( 60, "==================================================================" )
-        #threshold_print ( 60, "Updating name for parameter " + self.name )
-        if (self.name == self.last_name):
+        #threshold_print ( 60, "Updating name for parameter " + self.par_name )
+        if (self.par_name == self.last_name):
             #threshold_print ( 60, "Names are identical, no change made" )
             pass
         else:
@@ -428,7 +428,7 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
                     p.expression = expr
             gen_params.name_update_in_progress = False
 
-        #threshold_print ( 60, "Done updating name for parameter " + self.name )
+        #threshold_print ( 60, "Done updating name for parameter " + self.par_name )
         #threshold_print ( 60, "==================================================================" )
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         #print ( "Bottom of update name" )
@@ -483,7 +483,7 @@ class GeneralParameterProperty(bpy.types.PropertyGroup):
             if value != None:
                 if p.param_data.value != value:
                     p.param_data.value = value
-        #threshold_print ( 60, "Done updating expression for parameter " + self.name )
+        #threshold_print ( 60, "Done updating expression for parameter " + self.par_name )
         #threshold_print ( 60, "==================================================================" )
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         #print ( "Bottom of update expression" )
@@ -598,7 +598,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
                     # The previous term was none, so try to evaluate this term as a name
                     found = False
                     for q in self.parameter_list:
-                        if term.strip() == q.name.strip():
+                        if term.strip() == q.par_name.strip():
                             # Add the id to the list as an integer index
                             fixed_list.append ( int(q.id) )
                             found = True
@@ -630,7 +630,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         """ Builds a dictionary mapping parameter names to their IDs """
         name_ID_dict = {}
         for p in self.parameter_list:
-            name_ID_dict.update ( { p.name : p.id } )
+            name_ID_dict.update ( { p.par_name : p.id } )
         return name_ID_dict
 
     @profile('build_ID_name_dict')
@@ -638,7 +638,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         """ Builds a dictionary mapping parameter IDs to their names """
         ID_name_dict = {}
         for p in self.parameter_list:
-            ID_name_dict.update ( { p.id : p.name } )
+            ID_name_dict.update ( { p.id : p.par_name } )
         return ID_name_dict
 
     @profile('build_ID_value_dict')
@@ -700,7 +700,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
             if id in expr_list:
                 if len(name_list) > 0:
                     name_list = name_list + ","
-                name_list = name_list + p.name
+                name_list = name_list + p.par_name
         return name_list
 
     @profile('used_by_panel_parameters')
@@ -819,7 +819,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
     @profile('name_change')
     def name_change ( self, param ):
         """ Change the name of a parameter and reflect the change in all expressions. This does not change any values. """
-        #threshold_print ( 60, "MCellParametersPropertyGroup.name_change() called by parameter " + param.name + ":" )
+        #threshold_print ( 60, "MCellParametersPropertyGroup.name_change() called by parameter " + param.par_name + ":" )
         param.print_details ( 60, prefix="  " )
         #threshold_print ( 60, "  All other parameters:" )
         for p in self.parameter_list:
@@ -827,26 +827,26 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
         # Assume name is OK, then test for various illegal conditions
         name_ok = True
         # Check to see if the new name is legal
-        if not param.name.isidentifier():
+        if not param.par_name.isidentifier():
             name_ok = False
         # Check to see if the new name already exists
         """
-        if self.parameter_list.get(param.name) != None:
+        if self.parameter_list.get(param.par_name) != None:
             name_ok = False
-            #threshold_print ( 20, " Name conflict between " + param.name + " and " + p.name )
+            #threshold_print ( 20, " Name conflict between " + param.par_name + " and " + p.par_name )
         """
         for p in self.parameter_list:
             # p.print_details( 40, prefix="  " )
-            if param.name == p.name:
+            if param.par_name == p.par_name:
                 if param != p:
                     name_ok = False
-                    #threshold_print ( 20, " Name conflict between " + param.name + " and " + p.name )
+                    #threshold_print ( 20, " Name conflict between " + param.par_name + " and " + p.par_name )
                     break
         if not name_ok:
             #threshold_print ( 0, "Error: Name is not legal or duplicates another name, reverting to previous" )
-            param.name = param.last_name
+            param.par_name = param.last_name
         else:
-            param.last_name = param.name
+            param.last_name = param.par_name
             # Update all parameter expressions to reflect the new name
             ID_name_dict = self.build_ID_name_dict()
             for p in self.parameter_list:
@@ -864,7 +864,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
     @profile('expression_change')
     def expression_change ( self, param ):
         """ Change the expression of a parameter and reflect the change in all expressions. This can change values. """
-        #threshold_print ( 60, "MCellParametersPropertyGroup.expression_change() called by parameter " + param.name + ":" )
+        #threshold_print ( 60, "MCellParametersPropertyGroup.expression_change() called by parameter " + param.par_name + ":" )
         status = ""
         expr_list = self.parse_param_expr ( param.expr )
         if None in expr_list:
@@ -1049,7 +1049,7 @@ class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
     def add_parameter_with_values ( self, name, expression, units, description ):
         """ Add a new parameter to the list of parameters """
         p = self.new_parameter()
-        p.name = name
+        p.par_name = name
         p.expr = expression
         p.unit = units
         p.desc = description
