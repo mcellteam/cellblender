@@ -26,6 +26,7 @@ for what the buttons do when pressed (amongst other things).
 # blender imports
 import bpy
 from bpy.app.handlers import persistent
+from bl_operators.presets import AddPresetBase
 import mathutils
 
 # python imports
@@ -926,7 +927,7 @@ def check_sbml2mcell(self, context):
     """Callback to check for sbml2mcell script"""
     mcell = context.scene.mcell
     binary_path = mcell.project_settings.sbml2mcell
-    mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
+    mcell.project_settings.sbml2mcell_valid = is_executable ( binary_path )
     return None
 
 class MCELL_OT_set_sbml2mcell(bpy.types.Operator):
@@ -1010,6 +1011,31 @@ def check_mcell_binary(self, context):
     binary_path = mcell.project_settings.mcell_binary
     mcell.project_settings.mcell_binary_valid = is_executable(binary_path)
     return None
+
+
+class MCELL_OT_set_presets(AddPresetBase, bpy.types.Operator):
+    """Add CellBlender Presets"""
+
+    bl_idname = "mcell.preset_add"
+    bl_label = "Add CellBlender Presets"
+    # This needs to be the same name as the preset menu class in
+    # cellblender_panels
+    preset_menu = "MCELL_MT_presets" 
+
+    preset_defines = [
+        "scene = bpy.context.scene"
+    ]
+
+    # These are the values which will be saved/loaded
+    preset_values = [
+        "scene.mcell.project_settings.mcell_binary",
+        "scene.mcell.project_settings.bionetgen_location",
+        "scene.mcell.project_settings.python_binary",
+        "scene.mcell.project_settings.sbml2mcell",
+    ]
+
+    # This needs to be the same as what's in the menu class
+    preset_subdir = "cellblender" 
 
 
 class MCELL_OT_set_mcell_binary(bpy.types.Operator):
