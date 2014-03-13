@@ -411,7 +411,7 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
         ('file', "Send to File", ""),
         ('console', "Send to Console", "")]
     log_file = EnumProperty(
-        items=log_file_enum, name="Output Log", default='file',
+        items=log_file_enum, name="Output Log", default='console',
         description="Where to send MCell log output")
     error_file_enum = [
         ('none', "Do not Generate", ""),
@@ -758,7 +758,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     def set_defaults(self):
         print ( "MCellInitializationPanelProperty is setting defaults." )
         # Panel Parameter                         Name                    Default    Min
-        self.iterations.set_fields              ( "Iterations",               "0",   0.0 )
+        self.iterations.set_fields              ( "Iterations",               "1",   0.0 )
         self.time_step.set_fields               ( "Time Step",             "1e-6",   0.0 )
         self.time_step_max.set_fields           ( "Time Step Max",             "",   0.0 )
         self.space_step.set_fields              ( "Space Step",                "",   0.0 )

@@ -24,6 +24,7 @@ This script draws the panels and other UI elements for CellBlender.
 
 # blender imports
 import bpy
+from bpy.types import Menu
 
 
 # python imports
@@ -67,6 +68,13 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
                      icon='SAVE_PREFS')
 
 
+class MCELL_MT_presets(Menu):
+    bl_label = "CellBlender Presets"
+    preset_subdir = "cellblender"
+    preset_operator = "script.execute_preset"
+    draw = Menu.draw_preset
+
+
 class MCELL_PT_project_settings(bpy.types.Panel):
     bl_label = "CellBlender - Project Settings"
     bl_space_type = "PROPERTIES"
@@ -81,6 +89,11 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         row = layout.row()
         row.label(text="CellBlender ID: "+cellblender.cellblender_info[
             'cellblender_source_sha1'])
+
+        row = layout.row(align=True)
+        row.menu("MCELL_MT_presets", text=bpy.types.MCELL_MT_presets.bl_label)
+        row.operator("mcell.preset_add", text="", icon='ZOOMIN')
+        row.operator("mcell.preset_add", text="", icon='ZOOMOUT').remove_active = True
 
         row = layout.row()
         row.operator("mcell.set_mcell_binary",
@@ -116,7 +129,6 @@ class MCELL_PT_project_settings(bpy.types.Panel):
                 text="BioNetGen Location: "+mcell.project_settings.bionetgen_location,
                 icon='FILE_TICK')
 
-
         row = layout.row()
         row.operator("mcell.set_python_binary",
                      text="Set Path to Python Binary", icon='FILESEL')
@@ -131,29 +143,6 @@ class MCELL_PT_project_settings(bpy.types.Panel):
             row.label(
                 text="Python Binary: "+mcell.project_settings.python_binary,
                 icon='FILE_TICK')
-
-        #row.operator("mcell.set_project_dir",
-        #             text="Set CellBlender Project Directory", icon='FILESEL')
-        #row = layout.row()
-        # mcell.project_settings.project_dir = os.path.dirname(
-        #     bpy.data.filepath)
-        # row.label(text="Project Directory: " +
-        #           mcell.project_settings.project_dir)
-
-        row = layout.row()
-        if not bpy.data.filepath:
-            row.label(
-                text="No Project Directory: Use File/Save or File/SaveAs",
-                icon='UNPINNED')
-        else:
-            row.label(
-                text="Project Directory: "+os.path.dirname(bpy.data.filepath),
-                icon='FILE_TICK')
-
-        #layout.prop(context.scene, "name", text="Project Base Name")
-
-        #--------
-        
 
         row = layout.row()
         row.operator("mcell.set_sbml2mcell",
@@ -171,13 +160,16 @@ class MCELL_PT_project_settings(bpy.types.Panel):
             row.label(
                 text="sbml2mcell Binary: "+mcell.project_settings.sbml2mcell,
                 icon='FILE_TICK')
-        #row.operator("mcell.set_project_dir",
-        #             text="Set CellBlender Project Directory", icon='FILESEL')
-        #row = layout.row()
-        # mcell.project_settings.project_dir = os.path.dirname(
-        #     bpy.data.filepath)
-        # row.label(text="Project Directory: " +
-        #           mcell.project_settings.project_dir)
+
+        row = layout.row()
+        if not bpy.data.filepath:
+            row.label(
+                text="No Project Directory: Use File/Save or File/SaveAs",
+                icon='UNPINNED')
+        else:
+            row.label(
+                text="Project Directory: "+os.path.dirname(bpy.data.filepath),
+                icon='FILE_TICK')
 
         row = layout.row()
         layout.prop(context.scene, "name", text="Project Base Name")
