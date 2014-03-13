@@ -7,9 +7,9 @@ Created on Mon Jun 17 11:19:37 2013
 
 #import sys
 #sys.path.insert(0,"./libsbml3/lib/python3/dist-packages")
-#import libsbml
+import libsbml
 
-from .libsbml3.linux.lib.python3.dist_packages import libsbml
+#from .libsbml3.linux.lib.python3.dist_packages import libsbml
 #from . import libsbml
 #from scipy.misc import factorial, comb
 import json
@@ -35,12 +35,26 @@ class SBML2JSON:
         self.moleculeData = {}
     def getUnits(self):
         self.unitDictionary = {}
+        self.mcellUnitDictionary = {}
+        
+        self.mcellUnitDictionary[libsbml.UNIT_KIND_METER] = [[-6,1]]
+        self.mcellUnitDictionary[libsbml.UNIT_KIND_METRE] = [[-6,1]]
         #unitDictionary['substance'] = [libsbml.UNIT_KIND_MOLE,1]
         #unitDictionary['volume'] = [libsbml.UNIT_KIND_LITER,1]
         #unitDictionary['area'] = [libsbml.UNIT_KIND_METER,1]
         #unitDictionary['length'] = [libsbml.UNIT_KIND_METER,1]
         #unitDictionary['time'] = [libsbml.UNIT_KIND_SECOND,1]
         
+        '''
+        mcell units
+        - - lengths: microns
+        - - times  : seconds
+        - - diffusion coef: cm^2/s
+        - - unimol rate constant : 1/s
+        - - bimo rate constants:  1/(Mol s)
+        -- bimolecular surface 1/(um^2 N s)
+        '''
+
         for unitDefinition in self.model.getListOfUnitDefinitions():
             unitList = []
             for unit in unitDefinition.getListOfUnits():
@@ -49,16 +63,17 @@ class SBML2JSON:
                 
             self.unitDictionary[unitDefinition.getId()] = unitList
         '''
-        
-Table 3: SBML's built-in units.
-Name	 Possible Scalable Units	 Default Units	
-substance	 mole, item	 mole	
-volume	 litre, cubic metre	 litre	
-area	 square metre	 square metre	
-length	 metre	 metre	
-time	 second	 second	
-'''
-        
+       
+        Table 3: SBML's built-in units.
+        Name	 Possible Scalable Units	 Default Units	
+        substance	 mole, item	 mole	
+        volume	 litre, cubic metre	 litre	
+        area	 square metre	 square metre	
+        length	 metre	 metre	
+        time	 second	 second	
+        '''
+
+                
     def getParameters(self):
         parameters = []
         prx = {'name':"Nav",'value':"6.022e8",'unit':"",'type':"Avogadro number for 1 um^3"}
@@ -72,10 +87,16 @@ time	 second	 second
             if parameterSpecs[1] == 0:
                 zparam.append(parameterSpecs[0])
             '''
+            #transform to standard units
             if parameter.getUnits() in self.unitDictionary:
                 for factor in self.unitDictionary[parameter.getUnits()]:
                     parameterSpecs['value'] *= 10 ** (factor[1] * factor[2])
                     parameterSpecs['unit'] = '{0}*1e{1}'.format(parameterSpecs['unit'],factor[1]*factor[2])
+                #adjust for mcell units
+                if parameter.getUnits() in self.mcellUnitDictionary:
+                    mcellfactor = self.mcellUnitDictionary[factor[0]]
+                    parameterSpecs['value'] /= 10**(mcellfactor[0]*mcellfactor[1])
+                    parameterSpecs['unit'] = '{0}/1e{1}'.format(parameterSpecs['unit'],mcellfactor[0]*mcellfactor[1])
                 if 'mole' in parameter.getUnits() and 'per_mole' not in parameter.getUnits():
                     parameterSpecs['value' ] *= float(6.022e8)
                     parameterSpecs['unit'] = '{0}*{1}'.format(parameterSpecs['unit'],'avo.num')
@@ -138,7 +159,6 @@ time	 second	 second
                 diffusion = 'KB*T/(6*PI*mu_{0}*Rs)'.format(compartment)
             else:
                 typeD = '2D'
-                
                 diffusion = 'KB*T*LOG((mu_{0}*h/(SQRT(4)*Rc*(mu_{1}+mu_{2})/2))-gamma)/(4*PI*mu_{0}*h)'.format(compartment,outside,inside)
             self.moleculeData[species.getId()] = [compartmentList[compartment][0]]
             moleculeSpecs={'name':species.getId(),'type':typeD,'extendedName':species.getName(),'dif':diffusion}
