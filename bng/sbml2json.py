@@ -7,9 +7,9 @@ Created on Mon Jun 17 11:19:37 2013
 
 #import sys
 #sys.path.insert(0,"./libsbml3/lib/python3/dist-packages")
-import libsbml
+#import libsbml
 
-#from .libsbml3.linux.lib.python3.dist_packages import libsbml
+from .libsbml3.linux.lib.python3.dist_packages import libsbml
 #from . import libsbml
 #from scipy.misc import factorial, comb
 import json
