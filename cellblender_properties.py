@@ -942,6 +942,10 @@ class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
     step = bpy.props.IntProperty(
         name="Step", description="Output viz data every n iterations.",
         default=1, min=1)
+    export_all = BoolProperty(
+        name="Export All",
+        description="Visualize all molecules",
+        default=False)
 
 
 class MCellReactionOutputProperty(bpy.types.PropertyGroup):

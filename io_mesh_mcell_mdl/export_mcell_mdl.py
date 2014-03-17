@@ -151,11 +151,7 @@ def save_wrapper(context, out_file, filedir):
     else:
         surf_class_list = unfiltered_surf_class_list
 
-    # It seems more pythonic/simpler to just have "if surf_class_list..." than
-    # to create have_surf_class and check "if have_surf_class...", but I'll
-    # leave it as it is. -Jacob
-    have_surf_class = len(surf_class_list) != 0
-    if have_surf_class and export_project.export_format == 'mcell_mdl_modular':
+    if surf_class_list and export_project.export_format == 'mcell_mdl_modular':
         out_file.write("INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n" %
                        (settings.base_name))
         filepath = ("%s/%s.surface_classes.mdl" %
@@ -172,8 +168,7 @@ def save_wrapper(context, out_file, filedir):
     else:
         rxn_list = unfiltered_rxn_list
 
-    have_reactions = len(rxn_list) != 0
-    if have_reactions and export_project.export_format == 'mcell_mdl_modular':
+    if rxn_list and export_project.export_format == 'mcell_mdl_modular':
         out_file.write("INCLUDE_FILE = \"%s.reactions.mdl\"\n\n" %
                        (settings.base_name))
         filepath = ("%s/%s.reactions.mdl" %
@@ -190,8 +185,7 @@ def save_wrapper(context, out_file, filedir):
     else:
         object_list = unfiltered_object_list
 
-    have_geometry = len(object_list) != 0
-    if have_geometry and export_project.export_format == 'mcell_mdl_modular':
+    if object_list and export_project.export_format == 'mcell_mdl_modular':
         out_file.write("INCLUDE_FILE = \"%s.geometry.mdl\"\n\n" %
                        (settings.base_name))
         filepath = ("%s/%s.geometry.mdl" %
@@ -202,7 +196,7 @@ def save_wrapper(context, out_file, filedir):
         save_geometry(context, out_file, object_list)
 
     # Export modify surface regions:
-    if have_surf_class:
+    if surf_class_list:
         unfiltered_msr_list = mcell.mod_surf_regions.mod_surf_regions_list
         if mcell.cellblender_preferences.filter_invalid:
             mod_surf_regions_list = [
@@ -210,8 +204,7 @@ def save_wrapper(context, out_file, filedir):
         else:
             mod_surf_regions_list = unfiltered_msr_list
 
-        have_mod_surf_regions = len(mod_surf_regions_list) != 0
-        if (have_mod_surf_regions and
+        if (mod_surf_regions_list and
                 export_project.export_format == 'mcell_mdl_modular'):
             out_file.write("INCLUDE_FILE = \"%s.mod_surf_regions.mdl\"\n\n" %
                            (settings.base_name))
@@ -280,17 +273,17 @@ def save_wrapper(context, out_file, filedir):
         molecule_viz_list = [
             mol.name for mol in unfiltered_mol_list if mol.export_viz]
 
-    have_viz_output = len(molecule_viz_list) != 0
-    if (have_viz_output and
-            export_project.export_format == 'mcell_mdl_modular'):
+    export_all = mcell.viz_output.export_all
+    if (export_all or (molecule_viz_list and
+            export_project.export_format == 'mcell_mdl_modular')):
         out_file.write("INCLUDE_FILE = \"%s.viz_output.mdl\"\n\n" %
                        (settings.base_name))
         filepath = ("%s/%s.viz_output.mdl" % (filedir, settings.base_name))
-        with open(
-                filepath, "w", encoding="utf8", newline="\n") as mod_viz_file:
-            save_viz_output_mdl(context, mod_viz_file, molecule_viz_list)
+        with open(filepath, "w", encoding="utf8", newline="\n") as viz_file:
+            save_viz_output_mdl(
+                context, viz_file, molecule_viz_list, export_all)
     else:
-        save_viz_output_mdl(context, out_file, molecule_viz_list)
+        save_viz_output_mdl(context, out_file, molecule_viz_list, export_all)
 
     # Export reaction output:
     settings = mcell.project_settings
@@ -301,7 +294,6 @@ def save_wrapper(context, out_file, filedir):
     else:
         rxn_output_list = unfiltered_rxn_output_list
 
-    #have_rxn_output = len(rxn_output_list) != 0
     if (rxn_output_list and export_project.export_format == 'mcell_mdl_modular'):
         out_file.write("INCLUDE_FILE = \"%s.rxn_output.mdl\"\n\n" %
                        (settings.base_name))
@@ -768,7 +760,7 @@ def save_geometry(context, out_file, object_list):
                 data_object.hide = saved_hide_status
 
 
-def save_viz_output_mdl(context, out_file, molecule_viz_list):
+def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all):
     """ Saves visualizaton output info to mdl output file. """
 
     mcell = context.scene.mcell
@@ -778,13 +770,16 @@ def save_viz_output_mdl(context, out_file, molecule_viz_list):
     step = mcell.viz_output.step
     all_iterations = mcell.viz_output.all_iterations
 
-    if molecule_viz_list:
+    if molecule_viz_list or export_all:
         out_file.write("VIZ_OUTPUT\n{\n")
         out_file.write("  MODE = CELLBLENDER\n")
         out_file.write("  FILENAME = \"./viz_data/seed_\" & seed & \"/%s\"\n" % settings.base_name)
         out_file.write("  MOLECULES\n")
         out_file.write("  {\n")
-        out_file.write("    NAME_LIST {%s}\n" % " ".join(molecule_viz_list))
+        if export_all:
+            out_file.write("    NAME_LIST {ALL_MOLECULES}\n")
+        else:
+            out_file.write("    NAME_LIST {%s}\n" % " ".join(molecule_viz_list))
         if all_iterations:
             out_file.write(
                 "    ITERATION_NUMBERS {ALL_DATA @ ALL_ITERATIONS}\n")

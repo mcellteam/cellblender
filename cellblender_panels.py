@@ -1099,7 +1099,11 @@ class MCELL_UL_visualization_export_list(bpy.types.UIList):
             layout.label(item.status, icon='ERROR')
         else:
             layout.label(item.name, icon='FILE_TICK')
-        layout.prop(item, "export_viz", text="Export")
+
+        # Don't bother showing individual export option if the user has already
+        # asked to export everything
+        if not context.scene.mcell.viz_output.export_all:
+            layout.prop(item, "export_viz", text="Export")
 
 
 class MCELL_PT_visualization_output_settings(bpy.types.Panel):
@@ -1117,7 +1121,7 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
         if mcell.molecules.molecule_list:
             row.label(text="Molecules To Visualize:",
                       icon='FORCE_LENNARDJONES')
-            row.operator("mcell.toggle_viz_molecules", text="Toggle All")
+            row.prop(mcell.viz_output, "export_all")
             layout.template_list("MCELL_UL_visualization_export_list",
                                  "viz_export", mcell.molecules,
                                  "molecule_list", mcell.viz_output,
