@@ -101,7 +101,15 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         description="A unidirectional/irreversible(->) reaction or a "
                     "bidirectional/reversible(<->) reaction.",
         update=cellblender_operators.check_reaction)
-
+    variable_rate_switch = BoolProperty(
+        name="Enable Variable Rate Constant",
+        description="If set, use a variable rate constant defined by a two "
+                    "column file (col1=time, col2=rate).",
+        default=False, update=cellblender_operators.check_reaction)
+    variable_rate = StringProperty(
+        name="Variable Rate", subtype='FILE_PATH', default="")
+    variable_rate_valid = BoolProperty(name="Variable Rate Valid",
+        default=False, update=cellblender_operators.check_reaction)
 
     fwd_rate = PointerProperty(type=ReactionFwdRate_PropertyGroup)
     bkwd_rate = PointerProperty(type=ReactionBkwdRate_PropertyGroup)

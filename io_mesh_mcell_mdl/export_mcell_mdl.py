@@ -179,9 +179,9 @@ def save_wrapper(context, out_file, filedir):
         filepath = ("%s/%s.reactions.mdl" %
                    (filedir, settings.base_name))
         with open(filepath, "w", encoding="utf8", newline="\n") as react_file:
-            save_reactions(context, react_file, rxn_list)
+            save_reactions(context, react_file, rxn_list, filedir)
     else:
-        save_reactions(context, out_file, rxn_list)
+        save_reactions(context, out_file, rxn_list, filedir)
 
     # Export model geometry:
     unfiltered_object_list = context.scene.mcell.model_objects.object_list
@@ -657,7 +657,7 @@ def save_rel_patterns(context, out_file, release_pattern_list):
             out_file.write("}\n\n")
 
 
-def save_reactions(context, out_file, rxn_list):
+def save_reactions(context, out_file, rxn_list, filedir):
     """ Saves reaction info to mdl output file. """
 
     if rxn_list:
@@ -668,7 +668,19 @@ def save_reactions(context, out_file, rxn_list):
             out_file.write("  %s " % (rxn_item.name))
 
             if rxn_item.type == 'irreversible':
-                out_file.write("[%s]" % (rxn_item.fwd_rate.get_value()))    
+                # Use a variable rate constant file if specified
+                if rxn_item.variable_rate_switch and rxn_item.variable_rate_valid:
+                    variable_rate_name = rxn_item.variable_rate
+                    out_file.write('["%s"]' % (variable_rate_name))
+                    variable_rate_text = bpy.data.texts[variable_rate_name]
+                    variable_out_filename = os.path.join(
+                        filedir, variable_rate_name)
+                    with open(variable_out_filename, "w", encoding="utf8",
+                              newline="\n") as variable_out_file:
+                        variable_out_file.write(variable_rate_text.as_string())
+                # Use a single-value rate constant
+                else:
+                    out_file.write("[%s]" % (rxn_item.fwd_rate.get_value()))    
             else:
                 out_file.write("[>%g, <%g]" %
                                (rxn_item.fwd_rate.get_value(), rxn_item.bkwd_rate.get_value()))

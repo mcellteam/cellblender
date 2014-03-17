@@ -695,9 +695,24 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
                 layout.prop(rxn, "reactants")
                 layout.prop(rxn, "type")
                 layout.prop(rxn, "products")
-                rxn.fwd_rate.draw_in_new_row(layout)
-                if rxn.type == "reversible":
-                    rxn.bkwd_rate.draw_in_new_row(layout)
+                layout.prop(rxn, "variable_rate_switch")
+                if rxn.variable_rate_switch:
+                    layout.operator("mcell.variable_rate_add", icon='FILESEL')
+                    # Do we need these messages in addition to the status
+                    # message that appears in the list? I'll leave it for now.
+                    if not rxn.variable_rate:
+                        layout.label("Rate file not set", icon='UNPINNED')
+                    elif not rxn.variable_rate_valid:
+                        layout.label("File/Permissions Error: " +
+                            rxn.variable_rate, icon='ERROR')
+                    else:
+                        layout.label(
+                            text="Rate File: " + rxn.variable_rate,
+                            icon='FILE_TICK')
+                else:
+                    rxn.fwd_rate.draw_in_new_row(layout)
+                    if rxn.type == "reversible":
+                        rxn.bkwd_rate.draw_in_new_row(layout)
                 layout.prop(rxn, "rxn_name")
 
         else:

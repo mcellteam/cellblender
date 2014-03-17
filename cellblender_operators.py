@@ -359,6 +359,53 @@ class MCELL_OT_reaction_remove(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_add_variable_rate_constant(bpy.types.Operator):
+    """ Create variable rate constant text object from a file.
+
+    Create a text object from an existing text file that represents the
+    variable rate constant. This ensures that the variable rate constant is
+    actually stored in the blend. Although, ultimately, this text object will
+    be exported as another text file in the project directory when the MDLs are
+    exported so it can be used by MCell.
+    """
+
+    bl_idname = "mcell.variable_rate_add"
+    bl_label = "Add Variable Rate Constant"
+    bl_description = "Add a variable rate constant to a reaction."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        rxn = mcell.reactions.reaction_list[
+            mcell.reactions.active_rxn_index]
+        rxn.variable_rate = os.path.basename(self.filepath)
+        texts = bpy.data.texts
+
+        # Overwrite existing text objects.
+        # XXX: Add warning.
+        if rxn.variable_rate in texts:
+            texts.remove(texts[rxn.variable_rate])
+
+        # Create the text object from the text file
+        try:
+            with open(self.filepath, "r") as rate_file:
+                rate_string = rate_file.read()
+            text_object = texts.new(rxn.variable_rate)
+            # Should add in some simple error checking
+            text_object.write(rate_string)
+            rxn.variable_rate_valid = True
+        except (UnicodeDecodeError, IsADirectoryError, FileNotFoundError):
+            rxn.variable_rate_valid = False
+
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
 def check_reaction(self, context):
     """Checks for duplicate or illegal reaction name. Cleans up formatting."""
 
@@ -434,6 +481,18 @@ def check_reaction(self, context):
                 mol_name = m.group(1)
                 if not mol_name in mol_list:
                     status = "Undefined molecule: %s" % (mol_name)
+
+    if rxn.variable_rate_switch:
+        # Make sure that the file has not been deleted
+        if rxn.variable_rate not in bpy.data.texts:
+            rxn.variable_rate_valid = False
+
+        if not rxn.variable_rate_valid:
+            status = ("Variable rate constant is not valid: "
+                      "%s" % rxn.variable_rate)
+        # Variable rate constants only support irreversible reactions
+        elif rxn.variable_rate_valid and rxn.type == 'reversible':
+            rxn.type = 'irreversible'
 
     rxn.status = status
     return
