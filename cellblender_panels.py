@@ -24,6 +24,7 @@ This script draws the panels and other UI elements for CellBlender.
 
 # blender imports
 import bpy
+from bpy.types import Menu
 
 
 # python imports
@@ -32,6 +33,7 @@ import os
 
 # cellblender imports
 import cellblender
+from cellblender.utils import project_files_path
 
 
 # we use per module class registration/unregistration
@@ -43,9 +45,14 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 
+class MCELL_MT_presets(Menu):
+    bl_label = "CellBlender Presets"
+    preset_subdir = "cellblender"
+    preset_operator = "script.execute_preset"
+    draw = Menu.draw_preset
+
 
 #CellBlendereGUI Panels:
-
 class MCELL_PT_cellblender_preferences(bpy.types.Panel):
     bl_label = "CellBlender - Preferences"
     bl_space_type = "PROPERTIES"
@@ -57,16 +64,78 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
         layout = self.layout
         mcell = context.scene.mcell
 
+        row = layout.row(align=True)
+        row.menu("MCELL_MT_presets", text=bpy.types.MCELL_MT_presets.bl_label)
+        row.operator("mcell.preset_add", text="", icon='ZOOMIN')
+        row.operator("mcell.preset_add", text="", icon='ZOOMOUT').remove_active = True
+        layout.separator()
+
+        row = layout.row()
+        row.operator("mcell.set_mcell_binary",
+                     text="Set Path to MCell Binary", icon='FILESEL')
+        row = layout.row()
+        mcell_binary = mcell.cellblender_preferences.mcell_binary
+        if not mcell_binary:
+            row.label("MCell Binary not set", icon='UNPINNED')
+        elif not mcell.cellblender_preferences.mcell_binary_valid:
+            row.label("MCell File/Permissions Error: " +
+                mcell.cellblender_preferences.mcell_binary, icon='ERROR')
+        else:
+            row.label(
+                text="MCell Binary: "+mcell.cellblender_preferences.mcell_binary,
+                icon='FILE_TICK')
+
+        row = layout.row()
+        row.operator("mcell.set_bionetgen_location",
+                     text="Set Path to BioNetGen File", icon='FILESEL')
+        row = layout.row()
+        bionetgen_location = mcell.cellblender_preferences.bionetgen_location
+        if not bionetgen_location:
+            row.label("BioNetGen location not set", icon='UNPINNED')
+        elif not mcell.cellblender_preferences.bionetgen_location_valid:
+            row.label("BioNetGen File/Permissions Error: " +
+                mcell.cellblender_preferences.bionetgen_location, icon='ERROR')
+        else:
+            row.label(
+                text="BioNetGen Location: " + mcell.cellblender_preferences.bionetgen_location,
+                icon='FILE_TICK')
+
+        row = layout.row()
+        row.operator("mcell.set_python_binary",
+                     text="Set Path to Python Binary", icon='FILESEL')
+        row = layout.row()
+        python_path = mcell.cellblender_preferences.python_binary
+        if not python_path:
+            row.label("Python Binary not set", icon='UNPINNED')
+        elif not mcell.cellblender_preferences.python_binary_valid:
+            row.label("Python File/Permissions Error: " +
+                mcell.cellblender_preferences.python_binary, icon='ERROR')
+        else:
+            row.label(
+                text="Python Binary: " + mcell.cellblender_preferences.python_binary,
+                icon='FILE_TICK')
+
+        row = layout.row()
+        row.operator("mcell.set_sbml2mcell",
+                     text="Set Path to SBML2MCELL script", icon='FILESEL')
+        row = layout.row()
+        sbml2mcell = mcell.cellblender_preferences.sbml2mcell
+        if not sbml2mcell:
+            row.label("sbml2mcell script not set", icon='UNPINNED')
+        elif not mcell.cellblender_preferences.sbml2mcell_valid:
+            row.label("sbml2mcell File/Permissions Error: " +
+                mcell.cellblender_preferences.sbml2mcell, icon='ERROR')
+        else:
+            row.label(
+                text="sbml2mcell Binary: " + mcell.cellblender_preferences.sbml2mcell,
+                icon='FILE_TICK')
+
         row = layout.row()
         row.prop(mcell.cellblender_preferences, "decouple_export_run")
         row = layout.row()
         row.prop(mcell.cellblender_preferences, "filter_invalid")
         row = layout.row()
         row.prop(mcell.cellblender_preferences, "debug_level")
-        layout.separator()
-        row = layout.row()
-        row.operator("wm.save_homefile", text="Save Startup File",
-                     icon='SAVE_PREFS')
 
 
 class MCELL_PT_project_settings(bpy.types.Panel):
@@ -84,63 +153,6 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         row.label(text="CellBlender ID: "+cellblender.cellblender_info[
             'cellblender_source_sha1'])
 
-        row = layout.row()
-        row.operator("mcell.set_mcell_binary",
-                     text="Set Path to MCell Binary", icon='FILESEL')
-        row = layout.row()
-        mcell_binary = mcell.project_settings.mcell_binary
-        if not mcell_binary:
-            # Using pin icon to be consistent with project directory, but maybe
-            # we should use error icon to be consistent with other sections.
-            row.label("MCell Binary not set", icon='UNPINNED')
-        elif not mcell.project_settings.mcell_binary_valid:
-            row.label("MCell File/Permissions Error: " +
-                mcell.project_settings.mcell_binary, icon='ERROR')
-        else:
-            row.label(
-                text="MCell Binary: "+mcell.project_settings.mcell_binary,
-                icon='FILE_TICK')
-
-        row = layout.row()
-        row.operator("mcell.set_bionetgen_location",
-                     text="Set Path to BioNetGen File", icon='FILESEL')
-        row = layout.row()
-        bionetgen_location = mcell.project_settings.bionetgen_location
-        if not bionetgen_location:
-            # Using pin icon to be consistent with project directory, but maybe
-            # we should use error icon to be consistent with other sections.
-            row.label("BioNetGen location not set", icon='UNPINNED')
-        elif not mcell.project_settings.bionetgen_location_valid:
-            row.label("BioNetGen File/Permissions Error: " +
-                mcell.project_settings.bionetgen_location, icon='ERROR')
-        else:
-            row.label(
-                text="BioNetGen Location: "+mcell.project_settings.bionetgen_location,
-                icon='FILE_TICK')
-
-
-        row = layout.row()
-        row.operator("mcell.set_python_binary",
-                     text="Set Path to Python Binary", icon='FILESEL')
-        row = layout.row()
-        python_path = mcell.project_settings.python_binary
-        if not python_path:
-            row.label("Python Binary not set", icon='UNPINNED')
-        elif not mcell.project_settings.python_binary_valid:
-            row.label("Python File/Permissions Error: " +
-                mcell.project_settings.python_binary, icon='ERROR')
-        else:
-            row.label(
-                text="Python Binary: "+mcell.project_settings.python_binary,
-                icon='FILE_TICK')
-
-        #row.operator("mcell.set_project_dir",
-        #             text="Set CellBlender Project Directory", icon='FILESEL')
-        #row = layout.row()
-        # mcell.project_settings.project_dir = os.path.dirname(
-        #     bpy.data.filepath)
-        # row.label(text="Project Directory: " +
-        #           mcell.project_settings.project_dir)
 
         row = layout.row()
         if not bpy.data.filepath:
@@ -149,7 +161,7 @@ class MCELL_PT_project_settings(bpy.types.Panel):
                 icon='UNPINNED')
         else:
             row.label(
-                text="Project Directory: "+os.path.dirname(bpy.data.filepath),
+                text="Project Directory: " + os.path.dirname(bpy.data.filepath),
                 icon='FILE_TICK')
 
         row = layout.row()
@@ -170,18 +182,6 @@ class MCELL_UL_run_simulation(bpy.types.UIList):
         # Simulations have finished
         else:
             layout.label(item.name, icon='FILE_TICK')
-
-
-def project_files_path():
-    ''' Consolidate the creation of the path to the project files'''
-    # DUPLICATED FUNCTION ... This is the same function as in
-    # cellblender_operators.py
-    # print ( "DUPLICATED FUNCTION ... PLEASE FIX" )
-    filepath = os.path.dirname(bpy.data.filepath)
-    filepath, dot, blend = bpy.data.filepath.rpartition(os.path.extsep)
-    filepath = filepath + "_files"
-    filepath = os.path.join(filepath, "mcell")
-    return filepath
 
 
 class MCELL_PT_run_simulation(bpy.types.Panel):
@@ -213,7 +213,7 @@ class MCELL_PT_run_simulation(bpy.types.Panel):
         # Only allow the simulation to be run if both an MCell binary and a
         # project dir have been selected. There also needs to be a main mdl
         # file present.
-        if not mcell.project_settings.mcell_binary:
+        if not mcell.cellblender_preferences.mcell_binary:
             row.label(text="Set an MCell binary", icon='ERROR')
         elif not os.path.dirname(bpy.data.filepath):
             row.label(
@@ -676,9 +676,24 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
                 layout.prop(rxn, "reactants")
                 layout.prop(rxn, "type")
                 layout.prop(rxn, "products")
-                rxn.fwd_rate.draw_in_new_row(layout)
-                if rxn.type == "reversible":
-                    rxn.bkwd_rate.draw_in_new_row(layout)
+                layout.prop(rxn, "variable_rate_switch")
+                if rxn.variable_rate_switch:
+                    layout.operator("mcell.variable_rate_add", icon='FILESEL')
+                    # Do we need these messages in addition to the status
+                    # message that appears in the list? I'll leave it for now.
+                    if not rxn.variable_rate:
+                        layout.label("Rate file not set", icon='UNPINNED')
+                    elif not rxn.variable_rate_valid:
+                        layout.label("File/Permissions Error: " +
+                            rxn.variable_rate, icon='ERROR')
+                    else:
+                        layout.label(
+                            text="Rate File: " + rxn.variable_rate,
+                            icon='FILE_TICK')
+                else:
+                    rxn.fwd_rate.draw_in_new_row(layout)
+                    if rxn.type == "reversible":
+                        rxn.bkwd_rate.draw_in_new_row(layout)
                 layout.prop(rxn, "rxn_name")
 
         else:
@@ -1065,7 +1080,11 @@ class MCELL_UL_visualization_export_list(bpy.types.UIList):
             layout.label(item.status, icon='ERROR')
         else:
             layout.label(item.name, icon='FILE_TICK')
-        layout.prop(item, "export_viz", text="Export")
+
+        # Don't bother showing individual export option if the user has already
+        # asked to export everything
+        if not context.scene.mcell.viz_output.export_all:
+            layout.prop(item, "export_viz", text="Export")
 
 
 class MCELL_PT_visualization_output_settings(bpy.types.Panel):
@@ -1083,7 +1102,7 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
         if mcell.molecules.molecule_list:
             row.label(text="Molecules To Visualize:",
                       icon='FORCE_LENNARDJONES')
-            row.operator("mcell.toggle_viz_molecules", text="Toggle All")
+            row.prop(mcell.viz_output, "export_all")
             layout.template_list("MCELL_UL_visualization_export_list",
                                  "viz_export", mcell.molecules,
                                  "molecule_list", mcell.viz_output,

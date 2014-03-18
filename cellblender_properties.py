@@ -101,7 +101,15 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         description="A unidirectional/irreversible(->) reaction or a "
                     "bidirectional/reversible(<->) reaction.",
         update=cellblender_operators.check_reaction)
-
+    variable_rate_switch = BoolProperty(
+        name="Enable Variable Rate Constant",
+        description="If set, use a variable rate constant defined by a two "
+                    "column file (col1=time, col2=rate).",
+        default=False, update=cellblender_operators.check_reaction)
+    variable_rate = StringProperty(
+        name="Variable Rate", subtype='FILE_PATH', default="")
+    variable_rate_valid = BoolProperty(name="Variable Rate Valid",
+        default=False, update=cellblender_operators.check_reaction)
 
     fwd_rate = PointerProperty(type=ReactionFwdRate_PropertyGroup)
     bkwd_rate = PointerProperty(type=ReactionBkwdRate_PropertyGroup)
@@ -332,6 +340,24 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 #Panel Properties:
 
 class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
+
+    mcell_binary = StringProperty(name="MCell Binary",
+        update=cellblender_operators.check_mcell_binary)
+    mcell_binary_valid = BoolProperty(name="MCell Binary Valid",
+        default=False)
+    python_binary = StringProperty(name="Python Binary",
+        update=cellblender_operators.check_python_binary)
+    python_binary_valid = BoolProperty(name="Python Binary Valid",
+        default=False)
+    bionetgen_location = StringProperty(name="BioNetGen Location",
+        update=cellblender_operators.check_bionetgen_location)
+    bionetgen_location_valid = BoolProperty(name="BioNetGen Location Valid",
+        default=False)
+    sbml2mcell = StringProperty(name="SBML2Mcell Script",
+        update=cellblender_operators.check_sbml2mcell)
+    sbml2mcell_valid = BoolProperty(name="SBML2Mcell Script Valid",
+        default=False)
+
     filter_invalid = BoolProperty(
         name="Filter Invalid Entries", default=True,
         description="If selected, entries with a warning(!) icon will not be "
@@ -359,18 +385,7 @@ class MCellScratchPanelProperty(bpy.types.PropertyGroup):
 class MCellProjectPanelProperty(bpy.types.PropertyGroup):
     base_name = StringProperty(
         name="Project Base Name", default="cellblender_project")
-    mcell_binary = StringProperty(name="MCell Binary",
-        update=cellblender_operators.check_mcell_binary)
-    mcell_binary_valid = BoolProperty(name="MCell Binary Valid",
-        default=False)
-    python_binary = StringProperty(name="Python Binary",
-        update=cellblender_operators.check_python_binary)
-    python_binary_valid = BoolProperty(name="Python Binary Valid",
-        default=False)
-    bionetgen_location = StringProperty(name="BioNetGen Location",
-        update=cellblender_operators.check_bionetgen_location)
-    bionetgen_location_valid = BoolProperty(name="BioNetGen Location Valid",
-        default=False)
+
     status = StringProperty(name="Status")
 
 
@@ -406,7 +421,7 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
         ('file', "Send to File", ""),
         ('console', "Send to Console", "")]
     log_file = EnumProperty(
-        items=log_file_enum, name="Output Log", default='file',
+        items=log_file_enum, name="Output Log", default='console',
         description="Where to send MCell log output")
     error_file_enum = [
         ('none', "Do not Generate", ""),
@@ -753,7 +768,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     def set_defaults(self):
         print ( "MCellInitializationPanelProperty is setting defaults." )
         # Panel Parameter                         Name                    Default    Min
-        self.iterations.set_fields              ( "Iterations",               "0",   0.0 )
+        self.iterations.set_fields              ( "Iterations",               "1",   0.0 )
         self.time_step.set_fields               ( "Time Step",             "1e-6",   0.0 )
         self.time_step_max.set_fields           ( "Time Step Max",             "",   0.0 )
         self.space_step.set_fields              ( "Space Step",                "",   0.0 )
@@ -929,6 +944,10 @@ class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
     step = bpy.props.IntProperty(
         name="Step", description="Output viz data every n iterations.",
         default=1, min=1)
+    export_all = BoolProperty(
+        name="Export All",
+        description="Visualize all molecules",
+        default=False)
 
 
 class MCellReactionOutputProperty(bpy.types.PropertyGroup):

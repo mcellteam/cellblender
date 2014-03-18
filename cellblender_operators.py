@@ -26,6 +26,7 @@ for what the buttons do when pressed (amongst other things).
 # blender imports
 import bpy
 from bpy.app.handlers import persistent
+from bl_operators.presets import AddPresetBase
 import mathutils
 
 # python imports
@@ -39,7 +40,7 @@ import time
 import shutil
 
 import cellblender
-
+from cellblender.utils import project_files_path
 
 # from . import ParameterSpace
 
@@ -358,6 +359,53 @@ class MCELL_OT_reaction_remove(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_add_variable_rate_constant(bpy.types.Operator):
+    """ Create variable rate constant text object from a file.
+
+    Create a text object from an existing text file that represents the
+    variable rate constant. This ensures that the variable rate constant is
+    actually stored in the blend. Although, ultimately, this text object will
+    be exported as another text file in the project directory when the MDLs are
+    exported so it can be used by MCell.
+    """
+
+    bl_idname = "mcell.variable_rate_add"
+    bl_label = "Add Variable Rate Constant"
+    bl_description = "Add a variable rate constant to a reaction."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        rxn = mcell.reactions.reaction_list[
+            mcell.reactions.active_rxn_index]
+        rxn.variable_rate = os.path.basename(self.filepath)
+        texts = bpy.data.texts
+
+        # Overwrite existing text objects.
+        # XXX: Add warning.
+        if rxn.variable_rate in texts:
+            texts.remove(texts[rxn.variable_rate])
+
+        # Create the text object from the text file
+        try:
+            with open(self.filepath, "r") as rate_file:
+                rate_string = rate_file.read()
+            text_object = texts.new(rxn.variable_rate)
+            # Should add in some simple error checking
+            text_object.write(rate_string)
+            rxn.variable_rate_valid = True
+        except (UnicodeDecodeError, IsADirectoryError, FileNotFoundError):
+            rxn.variable_rate_valid = False
+
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
 def check_reaction(self, context):
     """Checks for duplicate or illegal reaction name. Cleans up formatting."""
 
@@ -433,6 +481,18 @@ def check_reaction(self, context):
                 mol_name = m.group(1)
                 if not mol_name in mol_list:
                     status = "Undefined molecule: %s" % (mol_name)
+
+    if rxn.variable_rate_switch:
+        # Make sure that the file has not been deleted
+        if rxn.variable_rate not in bpy.data.texts:
+            rxn.variable_rate_valid = False
+
+        if not rxn.variable_rate_valid:
+            status = ("Variable rate constant is not valid: "
+                      "%s" % rxn.variable_rate)
+        # Variable rate constants only support irreversible reactions
+        elif rxn.variable_rate_valid and rxn.type == 'reversible':
+            rxn.type = 'irreversible'
 
     rxn.status = status
     return
@@ -922,12 +982,38 @@ def is_executable(binary_path):
     return is_exec
 
 
+def check_sbml2mcell(self, context):
+    """Callback to check for sbml2mcell script"""
+    mcell = context.scene.mcell
+    binary_path = mcell.cellblender_preferences.sbml2mcell
+    mcell.cellblender_preferences.sbml2mcell_valid = is_executable ( binary_path )
+    return None
+
+class MCELL_OT_set_sbml2mcell(bpy.types.Operator):
+    bl_idname = "mcell.set_sbml2mcell"
+    bl_label = "Set SBML2Mcell converter"
+    bl_description = "Set SBML2Mcell converter"
+    bl_options = {'REGISTER'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.cellblender_preferences.sbml2mcell = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
 def check_python_binary(self, context):
     """Callback to check for python executable"""
     mcell = context.scene.mcell
-    binary_path = mcell.project_settings.python_binary
-    mcell.project_settings.python_binary_valid = is_executable(binary_path)
+    binary_path = mcell.cellblender_preferences.python_binary
+    mcell.cellblender_preferences.python_binary_valid = is_executable(binary_path)
     return None
+
 
 
 class MCELL_OT_set_python_binary(bpy.types.Operator):
@@ -940,7 +1026,7 @@ class MCELL_OT_set_python_binary(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
-        mcell.project_settings.python_binary = self.filepath
+        mcell.cellblender_preferences.python_binary = self.filepath
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -951,8 +1037,8 @@ class MCELL_OT_set_python_binary(bpy.types.Operator):
 def check_bionetgen_location(self, context):
     """Callback to check for mcell executable"""
     mcell = context.scene.mcell
-    application_path = mcell.project_settings.bionetgen_location
-    mcell.project_settings.bionetgen_location_valid = is_executable(application_path)
+    application_path = mcell.cellblender_preferences.bionetgen_location
+    mcell.cellblender_preferences.bionetgen_location_valid = is_executable(application_path)
     return None
 
 
@@ -965,12 +1051,9 @@ class MCELL_OT_set_check_bionetgen_location(bpy.types.Operator):
 
     filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
 
-    #def __init__(self):
-    #    self.filepath = bpy.context.scene.mcell.project_settings.mcell_binary
-
     def execute(self, context):
         mcell = context.scene.mcell
-        mcell.project_settings.bionetgen_location = self.filepath
+        mcell.cellblender_preferences.bionetgen_location = self.filepath
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -981,9 +1064,36 @@ class MCELL_OT_set_check_bionetgen_location(bpy.types.Operator):
 def check_mcell_binary(self, context):
     """Callback to check for mcell executable"""
     mcell = context.scene.mcell
-    binary_path = mcell.project_settings.mcell_binary
-    mcell.project_settings.mcell_binary_valid = is_executable(binary_path)
+    binary_path = mcell.cellblender_preferences.mcell_binary
+    mcell.cellblender_preferences.mcell_binary_valid = is_executable(binary_path)
     return None
+
+
+class MCELL_OT_set_presets(AddPresetBase, bpy.types.Operator):
+    """Add CellBlender Presets"""
+
+    bl_idname = "mcell.preset_add"
+    bl_label = "Add CellBlender Presets"
+    # This needs to be the same name as the preset menu class in
+    # cellblender_panels
+    preset_menu = "MCELL_MT_presets" 
+
+    preset_defines = [
+        "scene = bpy.context.scene"
+    ]
+
+    # These are the values which will be saved/loaded
+    preset_values = [
+        "scene.mcell.cellblender_preferences.mcell_binary",
+        "scene.mcell.cellblender_preferences.bionetgen_location",
+        "scene.mcell.cellblender_preferences.python_binary",
+        "scene.mcell.cellblender_preferences.sbml2mcell",
+        "scene.mcell.cellblender_preferences.decouple_export_run",
+        "scene.mcell.cellblender_preferences.filter_invalid",
+    ]
+
+    # This needs to be the same as what's in the menu class
+    preset_subdir = "cellblender" 
 
 
 class MCELL_OT_set_mcell_binary(bpy.types.Operator):
@@ -995,12 +1105,9 @@ class MCELL_OT_set_mcell_binary(bpy.types.Operator):
 
     filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
 
-    #def __init__(self):
-    #    self.filepath = bpy.context.scene.mcell.project_settings.mcell_binary
-
     def execute(self, context):
         mcell = context.scene.mcell
-        mcell.project_settings.mcell_binary = self.filepath
+        mcell.cellblender_preferences.mcell_binary = self.filepath
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -1018,21 +1125,21 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
 
         mcell = context.scene.mcell
 
-        binary_path = mcell.project_settings.mcell_binary
-        mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
+        binary_path = mcell.cellblender_preferences.mcell_binary
+        mcell.cellblender_preferences.mcell_binary_valid = is_executable ( binary_path )
 
         start = mcell.run_simulation.start_seed
         end = mcell.run_simulation.end_seed
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
-        mcell_binary = mcell.project_settings.mcell_binary
+        mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
         project_dir = project_files_path()
         status = ""
         # If python path was set by user, use that one. Otherwise, try to
         # automatically find it. This will probably fail on Windows unless it's
         # set in the PATH.
-        if mcell.project_settings.python_binary_valid:
-            python_path = mcell.project_settings.python_binary
+        if mcell.cellblender_preferences.python_binary_valid:
+            python_path = mcell.cellblender_preferences.python_binary
         else:
             python_path = shutil.which("python", mode=os.X_OK)
 
@@ -1169,9 +1276,9 @@ def mcell_valid_update(context):
     if not context:
         context = bpy.context
     mcell = context.scene.mcell
-    binary_path = mcell.project_settings.mcell_binary
-    mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
-    # print ( "mcell_binary_valid = ", mcell.project_settings.mcell_binary_valid )
+    binary_path = mcell.cellblender_preferences.mcell_binary
+    mcell.cellblender_preferences.mcell_binary_valid = is_executable ( binary_path )
+    # print ( "mcell_binary_valid = ", mcell.cellblender_preferences.mcell_binary_valid )
 
 
 @persistent
@@ -1184,16 +1291,6 @@ def set_defaults(context):
         mcell.set_defaults()
         mcell.is_initialized = True
 
-
-def project_files_path():
-    ''' Consolidate the creation of the path to the project files'''
-    # DUPLICATED FUNCTION ... This is the same function as in cellblender_panesl.py
-    # print ( "DUPLICATED FUNCTION ... PLEASE FIX" )
-    filepath = os.path.dirname(bpy.data.filepath)
-    filepath, dot, blend = bpy.data.filepath.rpartition(os.path.extsep)
-    filepath = filepath + "_files"
-    filepath = os.path.join(filepath, "mcell")
-    return filepath
 
 def create_color_list():
     """ Create a list of colors to be assigned to the glyphs. """ 
@@ -1236,6 +1333,7 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
         # Force the top level mol_viz directory to be where the .blend file
         # lives plus "viz_data". The seed directories will live underneath it.
         mol_viz_top_level_dir = os.path.join(project_files_path(), "viz_data/")
+        mol_viz_top_level_dir = os.path.relpath(mol_viz_top_level_dir)
         mol_viz_seed_list = glob.glob(os.path.join(mol_viz_top_level_dir, "*"))
         mol_viz_seed_list.sort()
 
@@ -1445,8 +1543,6 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                 if plot_legend != 'x':
                     plot_spec_string = plot_spec_string + "legend=" + plot_legend
 
-                settings = mcell.project_settings
-
                 # New plotting approach uses list and modification dates
                 if mcell.rxn_output.rxn_output_list:
                     # Use the start_time.txt file to find files modified since
@@ -1536,28 +1632,6 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MCELL_OT_toggle_viz_molecules(bpy.types.Operator):
-    bl_idname = "mcell.toggle_viz_molecules"
-    bl_label = "Toggle Molecules"
-    bl_description = "Toggle all molecules for export in visualization output"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        molecule_list = mcell.molecules.molecule_list
-
-        # If the viz export option for the entire molecule list is already set
-        # to true, then set them all to false
-        if all([molecule.export_viz for molecule in molecule_list]):
-            for molecule in molecule_list:
-                molecule.export_viz = False
-        else:
-            for molecule in molecule_list:
-                molecule.export_viz = True
-
-        return {'FINISHED'}
-
-
 class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
     bl_idname = "mcell.mol_viz_set_index"
     bl_label = "Set Molecule File Index"
@@ -1638,6 +1712,7 @@ def get_mol_file_dir():
         active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[0]
     filepath = os.path.join(
         project_files_path(), "viz_data/%s" % active_mol_viz_seed.name)
+    filepath = os.path.relpath(filepath)
 
     return filepath
 
