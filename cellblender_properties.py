@@ -340,6 +340,24 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 #Panel Properties:
 
 class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
+
+    mcell_binary = StringProperty(name="MCell Binary",
+        update=cellblender_operators.check_mcell_binary)
+    mcell_binary_valid = BoolProperty(name="MCell Binary Valid",
+        default=False)
+    python_binary = StringProperty(name="Python Binary",
+        update=cellblender_operators.check_python_binary)
+    python_binary_valid = BoolProperty(name="Python Binary Valid",
+        default=False)
+    bionetgen_location = StringProperty(name="BioNetGen Location",
+        update=cellblender_operators.check_bionetgen_location)
+    bionetgen_location_valid = BoolProperty(name="BioNetGen Location Valid",
+        default=False)
+    sbml2mcell = StringProperty(name="SBML2Mcell Script",
+        update=cellblender_operators.check_sbml2mcell)
+    sbml2mcell_valid = BoolProperty(name="SBML2Mcell Script Valid",
+        default=False)
+
     filter_invalid = BoolProperty(
         name="Filter Invalid Entries", default=True,
         description="If selected, entries with a warning(!) icon will not be "
@@ -367,22 +385,6 @@ class MCellScratchPanelProperty(bpy.types.PropertyGroup):
 class MCellProjectPanelProperty(bpy.types.PropertyGroup):
     base_name = StringProperty(
         name="Project Base Name", default="cellblender_project")
-    mcell_binary = StringProperty(name="MCell Binary",
-        update=cellblender_operators.check_mcell_binary)
-    mcell_binary_valid = BoolProperty(name="MCell Binary Valid",
-        default=False)
-    python_binary = StringProperty(name="Python Binary",
-        update=cellblender_operators.check_python_binary)
-    python_binary_valid = BoolProperty(name="Python Binary Valid",
-        default=False)
-    bionetgen_location = StringProperty(name="BioNetGen Location",
-        update=cellblender_operators.check_bionetgen_location)
-    bionetgen_location_valid = BoolProperty(name="BioNetGen Location Valid",
-        default=False)
-    sbml2mcell = StringProperty(name="SBML2Mcell Script",
-        update=cellblender_operators.check_sbml2mcell)
-    sbml2mcell_valid = BoolProperty(name="SBML2Mcell Script Valid",
-        default=False)
 
     status = StringProperty(name="Status")
 

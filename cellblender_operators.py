@@ -985,8 +985,8 @@ def is_executable(binary_path):
 def check_sbml2mcell(self, context):
     """Callback to check for sbml2mcell script"""
     mcell = context.scene.mcell
-    binary_path = mcell.project_settings.sbml2mcell
-    mcell.project_settings.sbml2mcell_valid = is_executable ( binary_path )
+    binary_path = mcell.cellblender_preferences.sbml2mcell
+    mcell.cellblender_preferences.sbml2mcell_valid = is_executable ( binary_path )
     return None
 
 class MCELL_OT_set_sbml2mcell(bpy.types.Operator):
@@ -999,7 +999,7 @@ class MCELL_OT_set_sbml2mcell(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
-        mcell.project_settings.sbml2mcell = self.filepath
+        mcell.cellblender_preferences.sbml2mcell = self.filepath
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -1010,8 +1010,8 @@ class MCELL_OT_set_sbml2mcell(bpy.types.Operator):
 def check_python_binary(self, context):
     """Callback to check for python executable"""
     mcell = context.scene.mcell
-    binary_path = mcell.project_settings.python_binary
-    mcell.project_settings.python_binary_valid = is_executable(binary_path)
+    binary_path = mcell.cellblender_preferences.python_binary
+    mcell.cellblender_preferences.python_binary_valid = is_executable(binary_path)
     return None
 
 
@@ -1026,7 +1026,7 @@ class MCELL_OT_set_python_binary(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
-        mcell.project_settings.python_binary = self.filepath
+        mcell.cellblender_preferences.python_binary = self.filepath
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -1037,8 +1037,8 @@ class MCELL_OT_set_python_binary(bpy.types.Operator):
 def check_bionetgen_location(self, context):
     """Callback to check for mcell executable"""
     mcell = context.scene.mcell
-    application_path = mcell.project_settings.bionetgen_location
-    mcell.project_settings.bionetgen_location_valid = is_executable(application_path)
+    application_path = mcell.cellblender_preferences.bionetgen_location
+    mcell.cellblender_preferences.bionetgen_location_valid = is_executable(application_path)
     return None
 
 
@@ -1051,12 +1051,9 @@ class MCELL_OT_set_check_bionetgen_location(bpy.types.Operator):
 
     filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
 
-    #def __init__(self):
-    #    self.filepath = bpy.context.scene.mcell.project_settings.mcell_binary
-
     def execute(self, context):
         mcell = context.scene.mcell
-        mcell.project_settings.bionetgen_location = self.filepath
+        mcell.cellblender_preferences.bionetgen_location = self.filepath
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -1067,8 +1064,8 @@ class MCELL_OT_set_check_bionetgen_location(bpy.types.Operator):
 def check_mcell_binary(self, context):
     """Callback to check for mcell executable"""
     mcell = context.scene.mcell
-    binary_path = mcell.project_settings.mcell_binary
-    mcell.project_settings.mcell_binary_valid = is_executable(binary_path)
+    binary_path = mcell.cellblender_preferences.mcell_binary
+    mcell.cellblender_preferences.mcell_binary_valid = is_executable(binary_path)
     return None
 
 
@@ -1087,10 +1084,12 @@ class MCELL_OT_set_presets(AddPresetBase, bpy.types.Operator):
 
     # These are the values which will be saved/loaded
     preset_values = [
-        "scene.mcell.project_settings.mcell_binary",
-        "scene.mcell.project_settings.bionetgen_location",
-        "scene.mcell.project_settings.python_binary",
-        "scene.mcell.project_settings.sbml2mcell",
+        "scene.mcell.cellblender_preferences.mcell_binary",
+        "scene.mcell.cellblender_preferences.bionetgen_location",
+        "scene.mcell.cellblender_preferences.python_binary",
+        "scene.mcell.cellblender_preferences.sbml2mcell",
+        "scene.mcell.cellblender_preferences.decouple_export_run",
+        "scene.mcell.cellblender_preferences.filter_invalid",
     ]
 
     # This needs to be the same as what's in the menu class
@@ -1106,12 +1105,9 @@ class MCELL_OT_set_mcell_binary(bpy.types.Operator):
 
     filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
 
-    #def __init__(self):
-    #    self.filepath = bpy.context.scene.mcell.project_settings.mcell_binary
-
     def execute(self, context):
         mcell = context.scene.mcell
-        mcell.project_settings.mcell_binary = self.filepath
+        mcell.cellblender_preferences.mcell_binary = self.filepath
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -1129,21 +1125,21 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
 
         mcell = context.scene.mcell
 
-        binary_path = mcell.project_settings.mcell_binary
-        mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
+        binary_path = mcell.cellblender_preferences.mcell_binary
+        mcell.cellblender_preferences.mcell_binary_valid = is_executable ( binary_path )
 
         start = mcell.run_simulation.start_seed
         end = mcell.run_simulation.end_seed
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
-        mcell_binary = mcell.project_settings.mcell_binary
+        mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
         project_dir = project_files_path()
         status = ""
         # If python path was set by user, use that one. Otherwise, try to
         # automatically find it. This will probably fail on Windows unless it's
         # set in the PATH.
-        if mcell.project_settings.python_binary_valid:
-            python_path = mcell.project_settings.python_binary
+        if mcell.cellblender_preferences.python_binary_valid:
+            python_path = mcell.cellblender_preferences.python_binary
         else:
             python_path = shutil.which("python", mode=os.X_OK)
 
@@ -1280,9 +1276,9 @@ def mcell_valid_update(context):
     if not context:
         context = bpy.context
     mcell = context.scene.mcell
-    binary_path = mcell.project_settings.mcell_binary
-    mcell.project_settings.mcell_binary_valid = is_executable ( binary_path )
-    # print ( "mcell_binary_valid = ", mcell.project_settings.mcell_binary_valid )
+    binary_path = mcell.cellblender_preferences.mcell_binary
+    mcell.cellblender_preferences.mcell_binary_valid = is_executable ( binary_path )
+    # print ( "mcell_binary_valid = ", mcell.cellblender_preferences.mcell_binary_valid )
 
 
 @persistent
@@ -1555,8 +1551,6 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                 plot_spec_string = "xlabel=time(s) ylabel=count "
                 if plot_legend != 'x':
                     plot_spec_string = plot_spec_string + "legend=" + plot_legend
-
-                settings = mcell.project_settings
 
                 # New plotting approach uses list and modification dates
                 if mcell.rxn_output.rxn_output_list:
