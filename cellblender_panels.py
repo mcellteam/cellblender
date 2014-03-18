@@ -33,6 +33,7 @@ import os
 
 # cellblender imports
 import cellblender
+from cellblender.utils import project_files_path
 
 
 # we use per module class registration/unregistration
@@ -181,18 +182,6 @@ class MCELL_UL_run_simulation(bpy.types.UIList):
         # Simulations have finished
         else:
             layout.label(item.name, icon='FILE_TICK')
-
-
-def project_files_path():
-    ''' Consolidate the creation of the path to the project files'''
-    # DUPLICATED FUNCTION ... This is the same function as in
-    # cellblender_operators.py
-    # print ( "DUPLICATED FUNCTION ... PLEASE FIX" )
-    filepath = os.path.dirname(bpy.data.filepath)
-    filepath, dot, blend = bpy.data.filepath.rpartition(os.path.extsep)
-    filepath = filepath + "_files"
-    filepath = os.path.join(filepath, "mcell")
-    return filepath
 
 
 class MCELL_PT_run_simulation(bpy.types.Panel):

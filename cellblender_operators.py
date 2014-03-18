@@ -40,7 +40,7 @@ import time
 import shutil
 
 import cellblender
-
+from cellblender.utils import project_files_path
 
 # from . import ParameterSpace
 
@@ -1292,16 +1292,6 @@ def set_defaults(context):
         mcell.is_initialized = True
 
 
-def project_files_path():
-    ''' Consolidate the creation of the path to the project files'''
-    # DUPLICATED FUNCTION ... This is the same function as in cellblender_panesl.py
-    # print ( "DUPLICATED FUNCTION ... PLEASE FIX" )
-    filepath = os.path.dirname(bpy.data.filepath)
-    filepath, dot, blend = bpy.data.filepath.rpartition(os.path.extsep)
-    filepath = filepath + "_files"
-    filepath = os.path.join(filepath, "mcell")
-    return filepath
-
 def create_color_list():
     """ Create a list of colors to be assigned to the glyphs. """ 
 
@@ -1343,6 +1333,7 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
         # Force the top level mol_viz directory to be where the .blend file
         # lives plus "viz_data". The seed directories will live underneath it.
         mol_viz_top_level_dir = os.path.join(project_files_path(), "viz_data/")
+        mol_viz_top_level_dir = os.path.relpath(mol_viz_top_level_dir)
         mol_viz_seed_list = glob.glob(os.path.join(mol_viz_top_level_dir, "*"))
         mol_viz_seed_list.sort()
 
@@ -1721,6 +1712,7 @@ def get_mol_file_dir():
         active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[0]
     filepath = os.path.join(
         project_files_path(), "viz_data/%s" % active_mol_viz_seed.name)
+    filepath = os.path.relpath(filepath)
 
     return filepath
 
