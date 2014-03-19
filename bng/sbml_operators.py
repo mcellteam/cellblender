@@ -158,10 +158,8 @@ class SBML_OT_release_site_add(bpy.types.Operator):
     
 def execute_sbml2mcell(filepath,context):
     mcell = context.scene.mcell
-    #exe_sbml = "python {2} -i {0} -o {1}".format(filepath,filepath +'.json',mcell.project_settings.sbml2mcell)
-    sbml2json.transform(filePath)
-    #os.system(exe_sbml)    #
-    #sbml2json.sbml2json(filepath)
+    isTransfomed = sbml2json.transform(filePath)
+    #TODO: If isTransformed is false a window should be shown that the model failed to load
     return{'FINISHED'}
    
 def execute_sbml2blender(filepath,context):

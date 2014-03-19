@@ -5,13 +5,12 @@ Created on Mon Jun 17 11:19:37 2013
 @author: proto
 """
 
-#import sys
-#sys.path.insert(0,"./libsbml3/lib/python3/dist-packages")
-#import libsbml
 
-from .libsbml3.linux.lib.python3.dist_packages import libsbml
+try:
+    from .libsbml3.linux.lib.python3.dist_packages import libsbml
+except ImportError:
+    libsbml = None
 #from . import libsbml
-#from scipy.misc import factorial, comb
 import json
 from optparse import OptionParser
 
@@ -336,6 +335,9 @@ class SBML2JSON:
             #HOW TO GET THE DIFFUSION CONSTANT
 
 def transform(filePath):
+    if libsbml == None:
+        return False
+        
     reader = libsbml.SBMLReader()
 
     print(filePath)
