@@ -72,6 +72,17 @@ class MCELL_OT_region_remove(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_region_remove_all(bpy.types.Operator):
+    bl_idname = "mcell.region_remove_all"
+    bl_label = "Remove All Surface Regions"
+    bl_description = "Remove all surface regions from object"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        context.object.mcell.regions.remove_all_regions(context)
+        return {'FINISHED'}
+
+
 class MCELL_OT_region_faces_assign(bpy.types.Operator):
     bl_idname = "mcell.region_faces_assign"
     bl_label = "Assign Selected Faces To Surface Region"
@@ -587,6 +598,7 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
             col = row.column(align=True)
             col.operator("mcell.region_add", icon='ZOOMIN', text="")
             col.operator("mcell.region_remove", icon='ZOOMOUT', text="")
+            col.operator("mcell.region_remove_all", icon='X', text="")
 
             # Could have region item draw itself in new row here:
             row = layout.row()
