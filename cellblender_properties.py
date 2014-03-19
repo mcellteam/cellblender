@@ -353,10 +353,6 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.check_bionetgen_location)
     bionetgen_location_valid = BoolProperty(name="BioNetGen Location Valid",
         default=False)
-    sbml2mcell = StringProperty(name="SBML2Mcell Script",
-        update=cellblender_operators.check_sbml2mcell)
-    sbml2mcell_valid = BoolProperty(name="SBML2Mcell Script Valid",
-        default=False)
 
     filter_invalid = BoolProperty(
         name="Filter Invalid Entries", default=True,

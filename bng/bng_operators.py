@@ -127,8 +127,8 @@ class BNG_OT_release_site_add(bpy.types.Operator):
 
 def execute_bionetgen(filepath,context):
     mcell = context.scene.mcell
-    if mcell.project_settings.bionetgen_location_valid:
-      bngpath = mcell.project_settings.bionetgen_location
+    if mcell.cellblender_preferences.bionetgen_location_valid:
+      bngpath = mcell.cellblender_preferences.bionetgen_location
       print ("\nBioNetGen exe found: " + bngpath)
       destpath = os.path.dirname(__file__)
       exe_bng = "  ".join([bngpath, "--outdir", destpath, filepath])    # create command string for BNG execution

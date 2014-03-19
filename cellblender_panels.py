@@ -114,21 +114,6 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
                 icon='FILE_TICK')
 
         row = layout.row()
-        row.operator("mcell.set_sbml2mcell",
-                     text="Set Path to SBML2MCELL script", icon='FILESEL')
-        row = layout.row()
-        sbml2mcell = mcell.cellblender_preferences.sbml2mcell
-        if not sbml2mcell:
-            row.label("sbml2mcell script not set", icon='UNPINNED')
-        elif not mcell.cellblender_preferences.sbml2mcell_valid:
-            row.label("sbml2mcell File/Permissions Error: " +
-                mcell.cellblender_preferences.sbml2mcell, icon='ERROR')
-        else:
-            row.label(
-                text="sbml2mcell Binary: " + mcell.cellblender_preferences.sbml2mcell,
-                icon='FILE_TICK')
-
-        row = layout.row()
         row.prop(mcell.cellblender_preferences, "decouple_export_run")
         row = layout.row()
         row.prop(mcell.cellblender_preferences, "filter_invalid")

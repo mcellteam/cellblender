@@ -982,30 +982,6 @@ def is_executable(binary_path):
     return is_exec
 
 
-def check_sbml2mcell(self, context):
-    """Callback to check for sbml2mcell script"""
-    mcell = context.scene.mcell
-    binary_path = mcell.cellblender_preferences.sbml2mcell
-    mcell.cellblender_preferences.sbml2mcell_valid = is_executable ( binary_path )
-    bpy.ops.mcell.preferences_save(name='Cb')
-    return None
-
-class MCELL_OT_set_sbml2mcell(bpy.types.Operator):
-    bl_idname = "mcell.set_sbml2mcell"
-    bl_label = "Set SBML2Mcell converter"
-    bl_description = "Set SBML2Mcell converter"
-    bl_options = {'REGISTER'}
-
-    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        mcell.cellblender_preferences.sbml2mcell = self.filepath
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        context.window_manager.fileselect_add(self)
-        return {'RUNNING_MODAL'}
 
 
 def check_python_binary(self, context):
@@ -1091,7 +1067,6 @@ class MCELL_OT_save_preferences(AddPresetBase, bpy.types.Operator):
         "scene.mcell.cellblender_preferences.mcell_binary",
         "scene.mcell.cellblender_preferences.bionetgen_location",
         "scene.mcell.cellblender_preferences.python_binary",
-        "scene.mcell.cellblender_preferences.sbml2mcell",
         "scene.mcell.cellblender_preferences.decouple_export_run",
         "scene.mcell.cellblender_preferences.filter_invalid",
     ]
@@ -1119,7 +1094,6 @@ class MCELL_OT_reset_preferences(bpy.types.Operator):
         mcell.cellblender_preferences.mcell_binary = ""
         mcell.cellblender_preferences.python_binary = ""
         mcell.cellblender_preferences.bionetgen_location = ""
-        mcell.cellblender_preferences.sbml2mcell = ""
         mcell.cellblender_preferences.filter_invalid = True
         mcell.cellblender_preferences.decouple_export_run = False
 
