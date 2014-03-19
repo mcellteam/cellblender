@@ -987,6 +987,7 @@ def check_sbml2mcell(self, context):
     mcell = context.scene.mcell
     binary_path = mcell.cellblender_preferences.sbml2mcell
     mcell.cellblender_preferences.sbml2mcell_valid = is_executable ( binary_path )
+    bpy.ops.mcell.preferences_save(name='Cb')
     return None
 
 class MCELL_OT_set_sbml2mcell(bpy.types.Operator):
@@ -1012,6 +1013,7 @@ def check_python_binary(self, context):
     mcell = context.scene.mcell
     binary_path = mcell.cellblender_preferences.python_binary
     mcell.cellblender_preferences.python_binary_valid = is_executable(binary_path)
+    bpy.ops.mcell.preferences_save(name='Cb')
     return None
 
 
@@ -1039,6 +1041,7 @@ def check_bionetgen_location(self, context):
     mcell = context.scene.mcell
     application_path = mcell.cellblender_preferences.bionetgen_location
     mcell.cellblender_preferences.bionetgen_location_valid = is_executable(application_path)
+    bpy.ops.mcell.preferences_save(name='Cb')
     return None
 
 
@@ -1066,14 +1069,15 @@ def check_mcell_binary(self, context):
     mcell = context.scene.mcell
     binary_path = mcell.cellblender_preferences.mcell_binary
     mcell.cellblender_preferences.mcell_binary_valid = is_executable(binary_path)
+    bpy.ops.mcell.preferences_save(name='Cb')
     return None
 
 
-class MCELL_OT_set_presets(AddPresetBase, bpy.types.Operator):
-    """Add CellBlender Presets"""
+class MCELL_OT_save_preferences(AddPresetBase, bpy.types.Operator):
+    """Save CellBlender Preferences."""
 
-    bl_idname = "mcell.preset_add"
-    bl_label = "Add CellBlender Presets"
+    bl_idname = "mcell.preferences_save"
+    bl_label = "Save Preferences"
     # This needs to be the same name as the preset menu class in
     # cellblender_panels
     preset_menu = "MCELL_MT_presets" 
@@ -1094,6 +1098,54 @@ class MCELL_OT_set_presets(AddPresetBase, bpy.types.Operator):
 
     # This needs to be the same as what's in the menu class
     preset_subdir = "cellblender" 
+
+
+# Operators can't be callbacks, so we need this function.
+def save_preferences(self, context):
+    bpy.ops.mcell.preferences_save(name='Cb')
+    return None
+
+
+class MCELL_OT_reset_preferences(bpy.types.Operator):
+    """Reset CellBlender preferences"""
+
+    bl_idname = "mcell.preferences_reset"
+    bl_label = "Reset Preferences"
+    bl_description = ("Reset preferences to their original values.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.cellblender_preferences.mcell_binary = ""
+        mcell.cellblender_preferences.python_binary = ""
+        mcell.cellblender_preferences.bionetgen_location = ""
+        mcell.cellblender_preferences.sbml2mcell = ""
+        mcell.cellblender_preferences.filter_invalid = True
+        mcell.cellblender_preferences.decouple_export_run = False
+
+        return {'FINISHED'}
+
+
+@persistent
+def load_preferences(context):
+    """ Load CB preferences using preset on startup. """
+
+    #active_preset = bpy.types.MCELL_MT_presets.bl_label
+    #bpy.ops.script.execute_preset(
+    #    filepath=preset_path, menu_idname="MCELL_MT_presets")
+
+    # Cant use execute_preset here because of incorrect context
+    # Look for existing preset named "Cb" in "cellblender" preset subdir
+    # Presets are named with leading capital, but modules are lowercase
+    # Therefore the preset "Cb" corresponds to the file "cb.py"
+    try:
+        preset_path = bpy.utils.preset_find(
+            "Cb", 'cellblender', display_name=True)
+        with open(preset_path, 'r') as preset_file:
+            preset_string = preset_file.read()
+            exec(preset_string)
+    except TypeError:
+        print('No preset file found')
 
 
 class MCELL_OT_set_mcell_binary(bpy.types.Operator):

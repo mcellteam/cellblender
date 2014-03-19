@@ -361,11 +361,13 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
     filter_invalid = BoolProperty(
         name="Filter Invalid Entries", default=True,
         description="If selected, entries with a warning(!) icon will not be "
-                    "included in simulation.")
+                    "included in simulation.",
+        update=cellblender_operators.save_preferences)
     decouple_export_run = BoolProperty(
         name="Decouple Export and Run", default=False,
         description="Allow the project to be exported without also running"
-                    " the simulation.")
+                    " the simulation.",
+        update=cellblender_operators.save_preferences)
     debug_level = IntProperty(
         name="Debug", default=0, min=0, max=100,
         description="Amount of debug information to print: 0 to 100")

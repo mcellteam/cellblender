@@ -277,6 +277,8 @@ if len(bpy.app.handlers.load_post) == 0:
         cellblender_operators.mcell_valid_update)
     bpy.app.handlers.load_post.append(
         cellblender_operators.set_defaults)
+    bpy.app.handlers.load_post.append(
+        cellblender_operators.load_preferences)
 
 if len(bpy.app.handlers.save_pre) == 0:
     bpy.app.handlers.save_pre.append(

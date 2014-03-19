@@ -65,9 +65,7 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
         mcell = context.scene.mcell
 
         row = layout.row(align=True)
-        row.menu("MCELL_MT_presets", text=bpy.types.MCELL_MT_presets.bl_label)
-        row.operator("mcell.preset_add", text="", icon='ZOOMIN')
-        row.operator("mcell.preset_add", text="", icon='ZOOMOUT').remove_active = True
+        row.operator("mcell.preferences_reset")
         layout.separator()
 
         row = layout.row()
