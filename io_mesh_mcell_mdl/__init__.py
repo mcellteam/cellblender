@@ -43,7 +43,7 @@ if "bpy" in locals():
 
 import os
 import bpy
-from bpy.props import CollectionProperty, StringProperty, BoolProperty
+from bpy.props import CollectionProperty, StringProperty, BoolProperty, EnumProperty
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 
 
@@ -88,7 +88,7 @@ class ImportMCellMDL(bpy.types.Operator, ImportHelper):
 
 
 class ExportMCellMDL(bpy.types.Operator, ExportHelper):
-    '''Export a single mesh object as an MCell MDL geometry file with regions'''
+    '''Export selected mesh objects as MCell MDL geometry with regions'''
     bl_idname = "export_mdl_mesh.mdl"
     bl_label = "Export MCell MDL"
 
@@ -100,18 +100,18 @@ class ExportMCellMDL(bpy.types.Operator, ExportHelper):
     @classmethod
     def poll(cls, context):
         print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL.poll()" )
-        return context.active_object != None
+        return len([obj for obj in context.selected_objects if obj.type == 'MESH']) != 0
 
     def execute(self, context):
         print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL.execute()" )
         filepath = self.filepath
         filepath = bpy.path.ensure_ext(filepath, self.filename_ext)
         from . import export_mcell_mdl
-        return export_mcell_mdl.save(self, context, **self.as_keywords(ignore=("check_existing", "filter_glob")))
+        object_list = [obj for obj in context.selected_objects if obj.type == 'MESH']
+        with open(filepath, "w", encoding="utf8", newline="\n") as out_file:
+            export_mcell_mdl.save_geometry(context, out_file, object_list)
 
-    def draw(self, context):
-        print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL.draw()" )
-        layout = self.layout
+        return {'FINISHED'}
 
 
 def menu_func_import(self, context):

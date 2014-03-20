@@ -58,7 +58,7 @@ def get_regions(obj):
     return reg_dict
 
 
-def save(operator, context, filepath=""):
+def save(context, filepath=""):
     """ Top level function for saving the current MCell model
         as MDL.
 
@@ -67,8 +67,6 @@ def save(operator, context, filepath=""):
     with open(filepath, "w", encoding="utf8", newline="\n") as out_file:
         filedir = os.path.dirname(filepath)
         save_wrapper(context, out_file, filedir)
-
-    return {'FINISHED'}
 
 
 def save_wrapper(context, out_file, filedir):
@@ -693,7 +691,7 @@ def save_geometry(context, out_file, object_list):
 
         for object_item in object_list:
 
-            data_object = bpy.data.objects[object_item.name]
+            data_object = context.scene.objects[object_item.name]
 
             if data_object.type == 'MESH':
 

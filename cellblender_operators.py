@@ -41,6 +41,7 @@ import shutil
 
 import cellblender
 from cellblender.utils import project_files_path
+from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
 
 # from . import ParameterSpace
 
@@ -1434,7 +1435,8 @@ class MCELL_OT_export_project(bpy.types.Operator):
         #filepath = os.path.join(
         #   filepath, mcell.project_settings.base_name + ".main.mdl")
         filepath = os.path.join(filepath, scene_name + ".main.mdl")
-        bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+#        bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+        export_mcell_mdl.save(context, filepath)
 
         # These two branches of the if statement seem identical ?
 
