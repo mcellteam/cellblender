@@ -23,8 +23,6 @@ create_n_items calls:
     update_name_ID_dictionary()
 """
 
-
-
 bl_info = {
   "version": "0.1",
   "name": "Optimal Property Referencing",
@@ -248,11 +246,11 @@ class APP_OT_add_parameters(bpy.types.Operator):
         
 
 class APP_PT_parameter_control(bpy.types.Panel):
-    bl_label = "Parameter Controls (Testing)"
+    bl_label = "New Parameters: Parameter Controls (Testing)"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
-    #bl_options = {'DEFAULT_CLOSED'}
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
 
@@ -378,11 +376,11 @@ class APP_UL_draw_parameter(bpy.types.UIList):
 
 
 class APP_PT_parameter_system(bpy.types.Panel):
-    bl_label = "General Parameters"
+    bl_label = "New Parameters: General Parameters"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
-    #bl_options = {'DEFAULT_CLOSED'}
+    bl_options = {'DEFAULT_CLOSED'}
 
 
     def draw(self, context):
@@ -1730,10 +1728,11 @@ class AppInitializationGroup(bpy.types.PropertyGroup):
     
 
 class APP_PT_Initialization(bpy.types.Panel):
-    bl_label = "App Initialization"
+    bl_label = "New Parameters: App Initialization"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
 
     #@profile('draw')
     def draw(self, context):
@@ -1844,11 +1843,11 @@ class APP_UL_check_molecule(bpy.types.UIList):
 
 
 class APP_PT_define_molecules(bpy.types.Panel):
-    bl_label = "Define Molecules"
+    bl_label = "New Parameters: Define Molecules"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
-    #bl_options = {'DEFAULT_CLOSED'}
+    bl_options = {'DEFAULT_CLOSED'}
 
     #@profile('draw')
     def draw ( self, context ):
@@ -1961,9 +1960,9 @@ class AppMoleculesListProperty(bpy.types.PropertyGroup):
 
 
 
-###
-### Overall Application Code:
-###
+####
+#### Overall Application Code:
+####
 
 
 class AppPropertyGroup(bpy.types.PropertyGroup):
@@ -2005,12 +2004,11 @@ class AppPropertyGroup(bpy.types.PropertyGroup):
     #@profile('draw_uninitialized')
     def draw_uninitialized ( self, layout ):
         row = layout.row()
-        row.operator("app.init_app", text="Initialize App")
+        row.operator("app.init_app", text="Initialize New Parameters")
     
     @profile('__init__')
     def __init__ ( self ):
         print ( "AppPropertyGroup.__init__ called." )
-
 
 
 def register():

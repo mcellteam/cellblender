@@ -34,9 +34,10 @@ bl_info = {
 }
 
 cellblender_info = {
-    "supported_version_list": [(2, 66, 1), (2, 67, 0), (2, 68, 0), (2, 69, 0)],
+    "supported_version_list": [(2, 66, 1), (2, 67, 0), (2, 68, 0), (2, 69, 0), (2, 70, 0)],
     "cellblender_source_list": [
         "__init__.py",
+        "parameters.py",
         "cellblender_properties.py",
         "cellblender_panels.py",
         "cellblender_operators.py",
@@ -103,6 +104,7 @@ if __name__ == '__main__':
 if "bpy" in locals():
     print("Reloading CellBlender")
     import imp
+    imp.reload(parameters)
     imp.reload(cellblender_properties)
     imp.reload(cellblender_panels)
     imp.reload(cellblender_operators)
@@ -112,7 +114,7 @@ if "bpy" in locals():
     imp.reload(io_mesh_mcell_mdl)
     imp.reload(mdl)         # BK: Added for MDL
     imp.reload(bng)         # DB: Adde for BNG
-#    imp.reload(sbml)        #JJT: Added for SBML
+    #    imp.reload(sbml)        #JJT: Added for SBML
 
     # Use "try" for optional modules
     try:
@@ -122,6 +124,7 @@ if "bpy" in locals():
 else:
     print("Importing CellBlender")
     """from . import \
+        parameters, \
         cellblender_properties, \
         cellblender_panels, \
         cellblender_operators, \
@@ -134,6 +137,7 @@ else:
 	      sbml #JJT:SBML"""
 
 
+    from . import parameters
     from . import cellblender_properties
     from . import cellblender_panels
     from . import cellblender_operators
@@ -143,7 +147,7 @@ else:
     from . import io_mesh_mcell_mdl
     from . import mdl  # BK: Added for MDL
     from . import bng  # DB: Added for BNG
-#    from . import sbml #JJT: Added for SBML
+    #    from . import sbml #JJT: Added for SBML
 
     # Use "try" for optional modules
     try:
@@ -159,6 +163,7 @@ import sys
 # We use per module class registration/unregistration
 def register():
     bpy.utils.register_module(__name__)
+
 
     # Unregister and re-register panels to display them in order
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_cellblender_preferences)
@@ -205,13 +210,20 @@ def register():
 
     # DB: Added for BioNetGen import
     bpy.types.INFO_MT_file_import.append(bng.menu_func_import)
-   #JJT: And SBML import
+
+    #JJT: And SBML import
     #bpy.types.INFO_MT_file_import.append(sbml.menu_func_import)
 
     bpy.types.Scene.mcell = bpy.props.PointerProperty(
         type=cellblender_properties.MCellPropertyGroup)
     bpy.types.Object.mcell = bpy.props.PointerProperty(
         type=object_surface_regions.MCellObjectPropertyGroup)
+
+    # BK: Added for newer parameters ....
+    # bpy.utils.register_module(parameters)
+    bpy.types.Scene.app = bpy.props.PointerProperty(type=parameters.AppPropertyGroup)
+
+
     print("CellBlender registered")
     if (bpy.app.version not in cellblender_info['supported_version_list']):
         print("Warning, current Blender version", bpy.app.version,
