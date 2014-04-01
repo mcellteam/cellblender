@@ -23,22 +23,22 @@ create_n_items calls:
     update_name_ID_dictionary()
 """
 
-bl_info = {
-  "version": "0.1",
-  "name": "Optimal Property Referencing",
-  'author': 'BlenderHawk',
-  "location": "Properties > Scene",
-  "category": "Cell Modeling"
-  }
+#bl_info = {
+#  "version": "0.1",
+#  "name": "Optimal Property Referencing",
+#  'author': 'BlenderHawk',
+#  "location": "Properties > Scene",
+#  "category": "Cell Modeling"
+#  }
 
 
 # To support reload properly, try to access a package var, 
 # if it's there, reload everything
-if "bpy" in locals():
-  import imp
-  print("Reloaded Parameters")
-else:
-  print("Imported Parameters")
+#if "bpy" in locals():
+#  import imp
+#  print("Reloaded Parameters")
+#else:
+#  print("Imported Parameters")
 
 
 import bpy
@@ -53,6 +53,9 @@ import symbol
 import sys
 # Debugging:
 from pdb import set_trace
+
+import cellblender
+
 
 # For timing code:
 import time
@@ -150,7 +153,6 @@ class APP_OT_clear_profiling(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
 ####################### End of Profiling Code #######################
-
 
 ####################### Start of Testing Code #######################
 
@@ -2020,6 +2022,7 @@ def unregister():
     print ("Unregistering ", __name__)
     del bpy.types.Scene.app
     bpy.utils.unregister_module(__name__)
+
 
 if __name__ == "__main__":
     register()

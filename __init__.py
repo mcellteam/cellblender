@@ -37,7 +37,7 @@ cellblender_info = {
     "supported_version_list": [(2, 66, 1), (2, 67, 0), (2, 68, 0), (2, 69, 0), (2, 70, 0)],
     "cellblender_source_list": [
         "__init__.py",
-        "parameters.py",
+        "parameter_system.py",
         "cellblender_properties.py",
         "cellblender_panels.py",
         "cellblender_operators.py",
@@ -104,11 +104,11 @@ if __name__ == '__main__':
 if "bpy" in locals():
     print("Reloading CellBlender")
     import imp
-    imp.reload(parameters)
     imp.reload(cellblender_properties)
     imp.reload(cellblender_panels)
     imp.reload(cellblender_operators)
     imp.reload(cellblender_parameters)
+    imp.reload(parameter_system)
     imp.reload(cellblender_molecules)
     imp.reload(object_surface_regions)
     imp.reload(io_mesh_mcell_mdl)
@@ -124,11 +124,11 @@ if "bpy" in locals():
 else:
     print("Importing CellBlender")
     """from . import \
-        parameters, \
         cellblender_properties, \
         cellblender_panels, \
         cellblender_operators, \
         cellblender_parameters, \
+        parameter_system, \
         cellblender_molecules, \
         object_surface_regions, \
         io_mesh_mcell_mdl, \
@@ -137,11 +137,11 @@ else:
 	      sbml #JJT:SBML"""
 
 
-    from . import parameters
     from . import cellblender_properties
     from . import cellblender_panels
     from . import cellblender_operators
     from . import cellblender_parameters
+    from . import parameter_system
     from . import cellblender_molecules
     from . import object_surface_regions
     from . import io_mesh_mcell_mdl
@@ -163,6 +163,10 @@ import sys
 # We use per module class registration/unregistration
 def register():
     bpy.utils.register_module(__name__)
+
+    # BK: Added for newer parameters ....
+    #print ( "Registering parameter_system" )
+    #bpy.utils.register_module(parameter_system)
 
 
     # Unregister and re-register panels to display them in order
@@ -219,9 +223,13 @@ def register():
     bpy.types.Object.mcell = bpy.props.PointerProperty(
         type=object_surface_regions.MCellObjectPropertyGroup)
 
+
     # BK: Added for newer parameters ....
-    # bpy.utils.register_module(parameters)
-    bpy.types.Scene.app = bpy.props.PointerProperty(type=parameters.AppPropertyGroup)
+    #bpy.utils.register_module(parameter_system)
+    #print ( "Adding app to Scene" )
+    bpy.types.Scene.app = bpy.props.PointerProperty(type=parameter_system.AppPropertyGroup)
+    #bpy.types.Scene.pspg = bpy.props.PointerProperty(type=parameter_system.ParameterSystemPropertyGroup)
+    #print ( "Done adding app to Scene" )
 
 
     print("CellBlender registered")

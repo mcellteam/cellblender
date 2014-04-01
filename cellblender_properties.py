@@ -32,8 +32,9 @@ from . import cellblender_parameters
 print ( "Done importing cellblender_parameters inside cellblender_properties.py" )
 from . import cellblender_molecules
 
-print ( "Importing parameters inside cellblender_properties.py" )
-from . import parameters
+print ( "Importing parameter_system inside cellblender_properties.py" )
+from . import parameter_system
+print ( "Done importing parameter_system inside cellblender_properties.py" )
 
 # python imports
 from multiprocessing import cpu_count
@@ -1093,8 +1094,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     general_parameters = PointerProperty(
         type=cellblender_parameters.MCellParametersPropertyGroup, name="General Parameters")
 
-    #parameter_system = PointerProperty(
-    #    type=ParameterSystemPropertyGroup, name="Parameter System")
+    parameter_system = PointerProperty(
+        type=parameter_system.ParameterSystemPropertyGroup, name="Parameter System")
 ########################################################################
     molecules = PointerProperty(
         type=cellblender_molecules.MCellMoleculesListProperty, name="Defined Molecules")
