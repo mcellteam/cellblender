@@ -157,6 +157,7 @@ def mdl_format_bnf():
 
 def load(operator, context, filepath=""):
     global my_objects
+    my_objects = {}
 
     obj_mat, reg_mat = import_shared.create_materials()
 
