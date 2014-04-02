@@ -560,6 +560,7 @@ class VacancySearchDistance_PropertyGroup(cellblender_parameters.PanelParameter)
                  description="Surface molecule products can be created at N distance.",
                  update=cellblender_parameters.update_PanelParameter)
 
+from . import parameter_system
 
 class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
@@ -569,8 +570,10 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     # The following line must be added to every PropertyGroup to be searched for CellBlender Parameters:
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     
-    iterations = PointerProperty(type=Iterations_PropertyGroup)
-    time_step = PointerProperty(type=TimeStep_PropertyGroup)
+    #old_iterations = PointerProperty(type=Iterations_PropertyGroup)
+    iterations = PointerProperty ( name="iterations", type=parameter_system.Parameter_Reference )
+    #old_time_step = PointerProperty(type=TimeStep_PropertyGroup)
+    time_step = PointerProperty ( name="Time Step", type=parameter_system.Parameter_Reference )
 
     status = StringProperty(name="Status")
     advanced = bpy.props.BoolProperty(default=False)
@@ -769,7 +772,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     def set_defaults(self):
         print ( "MCellInitializationPanelProperty is setting defaults." )
         # Panel Parameter                         Name                    Default    Min
-        self.iterations.set_fields              ( "Iterations",               "1",   0.0 )
+        # self.old_iterations.set_fields              ( "Iterations",               "1",   0.0 )
         self.time_step.set_fields               ( "Time Step",             "1e-6",   0.0 )
         self.time_step_max.set_fields           ( "Time Step Max",             "",   0.0 )
         self.space_step.set_fields              ( "Space Step",                "",   0.0 )
@@ -779,6 +782,18 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         self.radial_subdivisions.set_fields     ( "Radial Subdivisions",       "",   0.0 )
         self.vacancy_search_distance.set_fields ( "Vacancy Search Distance",   "",   0.0 )
 
+        #self.new_iterations.init_ref(parameter_system, "Iteration_Type", user_name="Iterations", user_expr="1", user_units="", user_descr="Iterations to run", user_int=True)
+
+
+    # @profile('MCellInitializationGroup.init_properties')
+    def init_properties ( self, parameter_system ):
+        print ( "Inside init_properties for MCellInitializationGroup" )
+        self.iterations.init_ref(parameter_system, "Iteration_Type", user_name="Iterations", user_expr="1", user_units="", user_descr="Iterations to run", user_int=True)
+
+        self.time_step.init_ref(parameter_system, "Time_Step_Type", user_name="Time Step", user_expr="1e-6", user_units="", user_descr="Simulation Time Step Units: seconds", user_int=False)
+        #self.iterations.init_ref(parameter_system, "Iteration_Type", user_name="Iterations", user_expr="1", user_units="", user_descr="Iterations to run", user_int=True)
+        #self.time_step.init_ref(parameter_system, "TimeStep_Type", user_name="Time Step", user_expr="1e-6", user_units="sec", user_descr="Time step for each iteration")
+        #self.initialized = True
 
 
 class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
@@ -1061,11 +1076,26 @@ class MCellObjectSelectorPanelProperty(bpy.types.PropertyGroup):
         description="Enter a regular expression for object names.")
 
 
+class PP_OT_init_mcell(bpy.types.Operator):
+    bl_idname = "mcell.init_mcell"
+    bl_label = "Init MCell"
+    bl_description = "Initialize MCell"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        print ( "Initialize MCell" )
+        context.scene.mcell.init_properties()
+        return {'FINISHED'}
+
+
+
 # Main MCell (CellBlender) Properties Class:
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(
         name="Contains CellBlender Parameters", default=True)
+    initialized = BoolProperty(
+        name="Initialized", default=False)
     is_initialized = BoolProperty(
         name="Is Initialized", default=False)
     cellblender_version = StringProperty(
@@ -1125,7 +1155,21 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     scratch_settings = PointerProperty(
         type=MCellScratchPanelProperty, name="CellBlender Scratch Settings")
 
+
     def set_defaults(self):
         print ( "MCellPropertyGroup is setting defaults." )
         self.initialization.set_defaults()
+
+
+    def init_properties ( self ):
+        print ( "Inside init_properties for MCell" )
+        self.parameter_system.init_properties()
+        self.initialization.init_properties ( self.parameter_system )
+        #self.molecules.init_properties ( self.parameter_system )
+        self.initialized = True
+
+
+    def draw_uninitialized ( self, layout ):
+        row = layout.row()
+        row.operator("app.init_app", text="Initialize CellBlender")
         

@@ -1,27 +1,27 @@
-"""
-This program explores property initialization for property groups
+#"""
+#This program explores property initialization for property groups
 
-Flow:
+#Flow:
 
-create_n_items calls:
-  app.parameter_system.new_parameter
+#create_n_items calls:
+#  app.parameter_system.new_parameter
 
-  app.parameter_system.new_parameter calls:
-    par_name_already_in_use()
+#  app.parameter_system.new_parameter calls:
+#    par_name_already_in_use()
 
-      par_name_already_in_use returns:
-        par_name in self['gname_to_id_dict']
+#      par_name_already_in_use returns:
+#        par_name in self['gname_to_id_dict']
 
-    allocate_available_pid()
-        allocate_available_pid checks lengths of lists
+#    allocate_available_pid()
+#        allocate_available_pid checks lengths of lists
 
-    pan/gen_parameter_list.add()
-    
-    new_par.init_par_properties()
-      init_par_properties only sets properties
-    
-    update_name_ID_dictionary()
-"""
+#    pan/gen_parameter_list.add()
+#    
+#    new_par.init_par_properties()
+#      init_par_properties only sets properties
+#    
+#    update_name_ID_dictionary()
+#"""
 
 #bl_info = {
 #  "version": "0.1",
@@ -248,7 +248,7 @@ class APP_OT_add_parameters(bpy.types.Operator):
         
 
 class APP_PT_parameter_control(bpy.types.Panel):
-    bl_label = "New Parameters: Parameter Controls (Testing)"
+    bl_label = "Parameter Testing: Parameter Controls (Testing)"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -256,6 +256,7 @@ class APP_PT_parameter_control(bpy.types.Panel):
 
     def draw(self, context):
 
+        mcell = context.scene.mcell
         app = context.scene.app
         if not app.initialized:
             app.draw_uninitialized ( self.layout )
@@ -275,7 +276,7 @@ class APP_PT_parameter_control(bpy.types.Panel):
 
             row = layout.row()
             col = row.column()
-            col.prop(app.parameter_system, "auto_update")
+            col.prop(mcell.parameter_system, "auto_update")
             col = row.column()
             col.prop(app, "silent_mode")
 
@@ -307,16 +308,16 @@ class APP_PT_parameter_control(bpy.types.Panel):
             col.operator("app.clear_profiling", text="Clear Profiling")
 
             row = layout.row()
-            if not app.parameter_system.show_panel:
-                row.prop(app.parameter_system, "show_panel", text="Show Parameter Options", icon='TRIA_RIGHT')
+            if not mcell.parameter_system.show_panel:
+                row.prop(mcell.parameter_system, "show_panel", text="Show Parameter Options", icon='TRIA_RIGHT')
             else:
-                row.prop(app.parameter_system, "show_panel", text="Hide Parameter Options", icon='TRIA_DOWN')
+                row.prop(mcell.parameter_system, "show_panel", text="Hide Parameter Options", icon='TRIA_DOWN')
                 row = layout.row()
-                row.prop(app.parameter_system, "param_display_mode", text="Parameter Display Mode")
+                row.prop(mcell.parameter_system, "param_display_mode", text="Parameter Display Mode")
                 row = layout.row()
-                row.prop(app.parameter_system, "param_display_format", text="Parameter Display Format")
+                row.prop(mcell.parameter_system, "param_display_format", text="Parameter Display Format")
                 row = layout.row()
-                row.prop(app.parameter_system, "param_label_fraction", text="Parameter Label Fraction")
+                row.prop(mcell.parameter_system, "param_label_fraction", text="Parameter Label Fraction")
 
                 row = layout.row()
                 if not app.show_all_icons:
@@ -359,10 +360,10 @@ def spaced_strings_from_list ( list_of_strings ):
     return space.join(list_of_strings)
 
 
-class APP_UL_draw_parameter(bpy.types.UIList):
+class MCELL_UL_draw_parameter(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        app = context.scene.app
-        parsys = app.parameter_system
+        mcell = context.scene.mcell
+        parsys = mcell.parameter_system
         par = parsys.general_parameter_list[index]
         # disp = par.par_name + " = " + str(par.expr) + " = " + str(par.value)
 
@@ -377,8 +378,8 @@ class APP_UL_draw_parameter(bpy.types.UIList):
         layout.label(disp, icon=icon)
 
 
-class APP_PT_parameter_system(bpy.types.Panel):
-    bl_label = "New Parameters: General Parameters"
+class MCELL_PT_parameter_system(bpy.types.Panel):
+    bl_label = "CellBlender - General Parameters"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -387,11 +388,11 @@ class APP_PT_parameter_system(bpy.types.Panel):
 
     def draw(self, context):
 
-        app = context.scene.app
-        if not app.initialized:
-            app.draw_uninitialized ( self.layout )
+        mcell = context.scene.mcell
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
         else:
-            ps = app.parameter_system
+            ps = mcell.parameter_system
             layout = self.layout
             row = layout.row()
             if ps.param_error_list == "":
@@ -402,15 +403,15 @@ class APP_PT_parameter_system(bpy.types.Panel):
             row = layout.row()
 
             col = row.column()
-            col.template_list("APP_UL_draw_parameter", "parameter_system",
+            col.template_list("MCELL_UL_draw_parameter", "parameter_system",
                               ps, "general_parameter_list",
                               ps, "active_par_index", rows=5)
 
             col = row.column(align=True)
 
             subcol = col.column(align=True)
-            subcol.operator("app.add_parameter", icon='ZOOMIN', text="")
-            subcol.operator("app.remove_parameter", icon='ZOOMOUT', text="")
+            subcol.operator("mcell.add_parameter", icon='ZOOMIN', text="")
+            subcol.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
 
             # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -437,24 +438,24 @@ class APP_PT_parameter_system(bpy.types.Panel):
 
 
 
-class PP_OT_add_parameter(bpy.types.Operator):
-    bl_idname = "app.add_parameter"
+class MCELL_OT_add_parameter(bpy.types.Operator):
+    bl_idname = "mcell.add_parameter"
     bl_label = "Add Parameter"
     bl_description = "Add a new parameter"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        context.scene.app.parameter_system.add_parameter(context)
+        context.scene.mcell.parameter_system.add_parameter(context)
         return {'FINISHED'}
 
-class APP_OT_remove_parameter(bpy.types.Operator):
-    bl_idname = "app.remove_parameter"
+class MCELL_OT_remove_parameter(bpy.types.Operator):
+    bl_idname = "mcell.remove_parameter"
     bl_label = "Remove Parameter"
     bl_description = "Remove selected parameter"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        status = context.scene.app.parameter_system.remove_active_parameter(context)
+        status = context.scene.mcell.parameter_system.remove_active_parameter(context)
         if status != "":
             # One of: 'DEBUG', 'INFO', 'OPERATOR', 'PROPERTY', 'WARNING', 'ERROR', 'ERROR_INVALID_INPUT', 'ERROR_INVALID_CONTEXT', 'ERROR_OUT_OF_MEMORY'
             self.report({'ERROR'}, status)
@@ -468,7 +469,7 @@ class PP_OT_update_all_parameters(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        context.scene.app.parameter_system.update_all_parameters()
+        context.scene.mcell.parameter_system.update_all_parameters()
         return {'FINISHED'}
 
 class PP_OT_print_all_parameters(bpy.types.Operator):
@@ -478,8 +479,8 @@ class PP_OT_print_all_parameters(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        context.scene.app.parameter_system.print_general_parameter_list()
-        context.scene.app.parameter_system.print_panel_parameter_list()
+        context.scene.mcell.parameter_system.print_general_parameter_list()
+        context.scene.mcell.parameter_system.print_panel_parameter_list()
         return {'FINISHED'}
 
 class PP_OT_print_parameter_system(bpy.types.Operator):
@@ -489,7 +490,7 @@ class PP_OT_print_parameter_system(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        context.scene.app.parameter_system.print_general_parameter_list()
+        context.scene.mcell.parameter_system.print_general_parameter_list()
         return {'FINISHED'}
 
 class PP_OT_print_panel_parameters(bpy.types.Operator):
@@ -499,7 +500,7 @@ class PP_OT_print_panel_parameters(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        context.scene.app.parameter_system.print_panel_parameter_list()
+        context.scene.mcell.parameter_system.print_panel_parameter_list()
         return {'FINISHED'}
 
 class PP_OT_print_name_id_map(bpy.types.Operator):
@@ -509,7 +510,7 @@ class PP_OT_print_name_id_map(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        context.scene.app.parameter_system.print_name_id_map()
+        context.scene.mcell.parameter_system.print_name_id_map()
         return {'FINISHED'}
 
 
@@ -556,7 +557,11 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         return self.get_param(plist).expr
 
     @profile('get_value')
-    def get_value ( self, plist ):
+    def get_value ( self, plist=None ):
+        if plist == None:
+            # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
+            mcell = bpy.context.scene.mcell
+            plist = mcell.parameter_system.panel_parameter_list
         p = self.get_param(plist)
         if p.isint:
             return int(p.get_numeric_value())
@@ -578,8 +583,10 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         self.draw_stub()
 
         plist = parameter_system.panel_parameter_list
+        # print ( "plist = " + str(plist) )
         try:
             p = self.get_param(plist)
+            # print ( "p = " + str(p) )
             if parameter_system.param_display_mode == 'two_line':
                 # Create a box to put everything inside
                 # Cheat by using the same name (layout) so subsequent code doesn't change
@@ -623,9 +630,9 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
                 if len(p.units) > 0:
                     box.label(text="Units = " + p.units)
 
-        except:
+        except Exception as ex:
             # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-            print ( "Parameter not found (or other error) for: " + self.unique_static_name )
+            print ( "Parameter not found (or other error) for: \"" + self.unique_static_name + "\" (" + str(self) + "), exception = " + str(ex) )
             pass
 
 
@@ -1115,8 +1122,8 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
             # Nothing to do ...
             return
         
-        app = context.scene.app
-        params = app.parameter_system
+        mcell = context.scene.mcell
+        params = mcell.parameter_system
         general_param_list = params.general_parameter_list
         panel_param_list = params.panel_parameter_list
 
@@ -1168,8 +1175,8 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
 
         #print ( "Expression Changed for " + str(self.name) )
 
-        app = context.scene.app
-        params = app.parameter_system
+        mcell = context.scene.mcell
+        params = mcell.parameter_system
         gen_param_list = params.general_parameter_list
         
         #if params.suspend_evaluation:
@@ -1214,8 +1221,8 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         The "self" passed in is a Property_Reference.Parameter_Data object.
         """
 
-        app = context.scene.app
-        params = app.parameter_system
+        mcell = context.scene.mcell
+        params = mcell.parameter_system
         gen_param_list = params.general_parameter_list
         
         #if params.suspend_evaluation:
@@ -1312,8 +1319,8 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         The "self" passed in is a Property_Reference.Parameter_Data object.
         """
 
-        app = context.scene.app
-        params = app.parameter_system
+        mcell = context.scene.mcell
+        params = mcell.parameter_system
         gen_param_list = params.general_parameter_list
         
         #if params.suspend_evaluation:
@@ -1683,6 +1690,7 @@ class PP_OT_init_app(bpy.types.Operator):
 
     def execute(self, context):
         print ( "Initialize Application" )
+        context.scene.mcell.init_properties()
         context.scene.app.init_properties()
         return {'FINISHED'}
 
@@ -1730,7 +1738,7 @@ class AppInitializationGroup(bpy.types.PropertyGroup):
     
 
 class APP_PT_Initialization(bpy.types.Panel):
-    bl_label = "New Parameters: App Initialization"
+    bl_label = "Parameter Testing: App Initialization"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -1739,11 +1747,12 @@ class APP_PT_Initialization(bpy.types.Panel):
     #@profile('draw')
     def draw(self, context):
         app = context.scene.app
+        mcell = context.scene.mcell
         if not app.initialized:
             app.draw_uninitialized ( self.layout )
         else:
             # print ( "Inside APP_PT_Initialization.draw, app.initialization is of type " + str(type(app.initialization)) )
-            app.initialization.draw ( self.layout, app.parameter_system )
+            app.initialization.draw ( self.layout, mcell.parameter_system )
 
 
 
@@ -1759,7 +1768,7 @@ class APP_OT_molecule_add(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        context.scene.app.molecules.add_molecule(context, context.scene.app.parameter_system)
+        context.scene.app.molecules.add_molecule(context, context.scene.mcell.parameter_system)
         return {'FINISHED'}
 
 class APP_OT_molecule_remove(bpy.types.Operator):
@@ -1769,7 +1778,7 @@ class APP_OT_molecule_remove(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        context.scene.app.molecules.remove_active_molecule(context, context.scene.app.parameter_system)
+        context.scene.app.molecules.remove_active_molecule(context, context.scene.mcell.parameter_system)
         # One of: 'DEBUG', 'INFO', 'OPERATOR', 'PROPERTY', 'WARNING', 'ERROR', 'ERROR_INVALID_INPUT', 'ERROR_INVALID_CONTEXT', 'ERROR_OUT_OF_MEMORY'
         self.report({'INFO'}, "Deleted Molecule")
         return {'FINISHED'}
@@ -1845,7 +1854,7 @@ class APP_UL_check_molecule(bpy.types.UIList):
 
 
 class APP_PT_define_molecules(bpy.types.Panel):
-    bl_label = "New Parameters: Define Molecules"
+    bl_label = "Parameter Testing: Define Molecules"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
@@ -1854,12 +1863,13 @@ class APP_PT_define_molecules(bpy.types.Panel):
     #@profile('draw')
     def draw ( self, context ):
         # Call the draw function for the instance being drawn in this panel
+        mcell = context.scene.mcell
         app = context.scene.app
         if not app.initialized:
             app.draw_uninitialized ( self.layout )
         else:
             # print ( "Inside APP_PT_Initialization.draw, app.initialization is of type " + str(type(app.initialization)) )
-            app.molecules.draw ( self.layout, app.parameter_system )
+            app.molecules.draw ( self.layout, mcell.parameter_system )
 
 
 class AppMoleculesListProperty(bpy.types.PropertyGroup):
@@ -1970,7 +1980,7 @@ class AppMoleculesListProperty(bpy.types.PropertyGroup):
 class AppPropertyGroup(bpy.types.PropertyGroup):
     """ Properties for this particular application """
 
-    parameter_system = PointerProperty(type=ParameterSystemPropertyGroup, name="Parameter System")
+    # parameter_system = PointerProperty(type=ParameterSystemPropertyGroup, name="Parameter System")
 
     initialization = PointerProperty(type=AppInitializationGroup, name="Initialization")
     molecules = PointerProperty(type=AppMoleculesListProperty, name="Defined Molecules")
@@ -1997,16 +2007,17 @@ class AppPropertyGroup(bpy.types.PropertyGroup):
 
     @profile('AppPropertyGroup.init_properties')
     def init_properties ( self ):
-        # print ( "Inside init_properties for AppPropertyGroup" )
-        self.parameter_system.init_properties()
-        self.initialization.init_properties ( self.parameter_system )
-        self.molecules.init_properties ( self.parameter_system )
+        mcell = bpy.context.scene.mcell
+        print ( "Inside init_properties for AppPropertyGroup" )
+        mcell.parameter_system.init_properties()
+        self.initialization.init_properties ( mcell.parameter_system )
+        self.molecules.init_properties ( mcell.parameter_system )
         self.initialized = True
 
     #@profile('draw_uninitialized')
     def draw_uninitialized ( self, layout ):
         row = layout.row()
-        row.operator("app.init_app", text="Initialize New Parameters")
+        row.operator("app.init_app", text="Initialize Testing App")
     
     @profile('__init__')
     def __init__ ( self ):

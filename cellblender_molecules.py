@@ -270,20 +270,24 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         return ( self.next_id - 1 )
 
     def draw_panel ( self, context, panel ):
-        layout = panel.layout
-        row = layout.row()
-        row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
-        row = layout.row()
-        col = row.column()
-        col.template_list("MCell_UL_check_molecule", "define_molecules",
-                          self, "molecule_list",
-                          self, "active_mol_index",
-                          rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
-        col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
-        if self.molecule_list:
-            mol = self.molecule_list[self.active_mol_index]
-            # The self is needed to pass the "advanced" flag to the molecule
-            mol.draw_props ( layout, self )
+        mcell = context.scene.mcell
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( panel.layout )
+        else:
+            layout = panel.layout
+            row = layout.row()
+            row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
+            row = layout.row()
+            col = row.column()
+            col.template_list("MCell_UL_check_molecule", "define_molecules",
+                              self, "molecule_list",
+                              self, "active_mol_index",
+                              rows=2)
+            col = row.column(align=True)
+            col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
+            col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
+            if self.molecule_list:
+                mol = self.molecule_list[self.active_mol_index]
+                # The self is needed to pass the "advanced" flag to the molecule
+                mol.draw_props ( layout, self )
 
