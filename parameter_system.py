@@ -1690,7 +1690,7 @@ class PP_OT_init_app(bpy.types.Operator):
 
     def execute(self, context):
         print ( "Initialize Application" )
-        context.scene.mcell.init_properties()
+        # context.scene.mcell.init_properties()
         context.scene.app.init_properties()
         return {'FINISHED'}
 

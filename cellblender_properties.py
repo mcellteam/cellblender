@@ -773,7 +773,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         print ( "MCellInitializationPanelProperty is setting defaults." )
         # Panel Parameter                         Name                    Default    Min
         # self.old_iterations.set_fields              ( "Iterations",               "1",   0.0 )
-        self.time_step.set_fields               ( "Time Step",             "1e-6",   0.0 )
+        # self.time_step.set_fields               ( "Time Step",             "1e-6",   0.0 )
         self.time_step_max.set_fields           ( "Time Step Max",             "",   0.0 )
         self.space_step.set_fields              ( "Space Step",                "",   0.0 )
         self.surface_grid_density.set_fields    ( "Surface Grid Density", "10000",   0.0 )
@@ -1076,15 +1076,18 @@ class MCellObjectSelectorPanelProperty(bpy.types.PropertyGroup):
         description="Enter a regular expression for object names.")
 
 
+
+
 class PP_OT_init_mcell(bpy.types.Operator):
-    bl_idname = "mcell.init_mcell"
-    bl_label = "Init MCell"
-    bl_description = "Initialize MCell"
+    bl_idname = "mcell.init_cellblender"
+    bl_label = "Init CellBlender"
+    bl_description = "Initialize CellBlender"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        print ( "Initialize MCell" )
+        print ( "Initializing CellBlender" )
         context.scene.mcell.init_properties()
+        print ( "CellBlender has been initialized" )
         return {'FINISHED'}
 
 
@@ -1171,5 +1174,5 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
     def draw_uninitialized ( self, layout ):
         row = layout.row()
-        row.operator("app.init_app", text="Initialize CellBlender")
+        row.operator("mcell.init_cellblender", text="Initialize CellBlender")
         
