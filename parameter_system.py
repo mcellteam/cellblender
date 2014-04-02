@@ -435,6 +435,17 @@ class MCELL_PT_parameter_system(bpy.types.Panel):
                     layout.prop(par, "units")
                     layout.prop(par, "descr")
 
+            row = layout.row()
+            if not mcell.parameter_system.show_panel:
+                row.prop(mcell.parameter_system, "show_panel", text="Show Parameter Options", icon='TRIA_RIGHT')
+            else:
+                row.prop(mcell.parameter_system, "show_panel", text="Hide Parameter Options", icon='TRIA_DOWN')
+                row = layout.row()
+                row.prop(mcell.parameter_system, "param_display_mode", text="Parameter Display Mode")
+                row = layout.row()
+                row.prop(mcell.parameter_system, "param_display_format", text="Parameter Display Format")
+                row = layout.row()
+                row.prop(mcell.parameter_system, "param_label_fraction", text="Parameter Label Fraction")
 
 
 
