@@ -336,7 +336,8 @@ class MCELL_OT_reaction_add(bpy.types.Operator):
         mcell.reactions.reaction_list.add()
         mcell.reactions.active_rxn_index = len(mcell.reactions.reaction_list)-1
         rxn = mcell.reactions.reaction_list[mcell.reactions.active_rxn_index]
-        rxn.set_defaults()
+        rxn.init_properties(mcell.parameter_system)
+        # rxn.set_defaults()
         check_reaction(self, context)
         return {'FINISHED'}
 

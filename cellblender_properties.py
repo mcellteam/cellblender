@@ -114,13 +114,71 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
     variable_rate_valid = BoolProperty(name="Variable Rate Valid",
         default=False, update=cellblender_operators.check_reaction)
 
-    fwd_rate = PointerProperty(type=ReactionFwdRate_PropertyGroup)
-    bkwd_rate = PointerProperty(type=ReactionBkwdRate_PropertyGroup)
 
-    def set_defaults(self):
-        # Panel Parameter                         Name             Default
-        self.fwd_rate.set_fields                ( "Forward Rate",      "0" )
-        self.bkwd_rate.set_fields               ( "Backward Rate",      "" )
+
+
+
+#    # The following line must be added to every PropertyGroup to be searched for CellBlender Parameters:
+#    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
+#    
+#    iterations = PointerProperty ( name="iterations", type=parameter_system.Parameter_Reference )
+#    time_step =  PointerProperty ( name="Time Step", type=parameter_system.Parameter_Reference )
+
+#    status = StringProperty(name="Status")
+#    advanced = bpy.props.BoolProperty(default=False)
+#    warnings = bpy.props.BoolProperty(default=False)
+#    notifications = bpy.props.BoolProperty(default=False)
+
+
+#    # Advanced/Optional Commands
+
+#    #time_step_max = PointerProperty(type=TimeStepMax_PropertyGroup)
+#    time_step_max = PointerProperty ( name="Time Step Max", type=parameter_system.Parameter_Reference )
+
+
+#    def set_defaults(self):
+#        print ( "MCellInitializationPanelProperty is setting defaults." )
+#        # Panel Parameter                         Name                    Default    Min
+#        # self.old_iterations.set_fields          ( "Iterations",               "1",   0.0 )
+#        # self.time_step.set_fields               ( "Time Step",             "1e-6",   0.0 )
+#        # self.time_step_max.set_fields           ( "Time Step Max",             "",   0.0 )
+#        self.space_step.set_fields              ( "Space Step",                "",   0.0 )
+#        self.surface_grid_density.set_fields    ( "Surface Grid Density", "10000",   0.0 )
+#        self.interaction_radius.set_fields      ( "Interaction Radius",        "",   0.0 )
+#        self.radial_directions.set_fields       ( "Radial Directions",         "",   0.0 )
+#        self.radial_subdivisions.set_fields     ( "Radial Subdivisions",       "",   0.0 )
+#        self.vacancy_search_distance.set_fields ( "Vacancy Search Distance",   "",   0.0 )
+
+#        #self.new_iterations.init_ref(parameter_system, "Iteration_Type", user_name="Iterations", user_expr="1", user_units="", user_descr="Iterations to run", user_int=True)
+
+
+#    # @profile('MCellInitializationGroup.init_properties')
+#    def init_properties ( self, parameter_system ):
+#        print ( "Inside init_properties for MCellInitializationGroup" )
+#        self.iterations.init_ref    ( parameter_system, "Iteration_Type", user_name="Iterations", user_expr="1",    user_units="",  user_descr="Iterations to run",  user_int=True )
+#        self.time_step.init_ref     ( parameter_system, "Time_Step_Type", user_name="Time Step",  user_expr="1e-6", user_units="s", user_descr="Simulation Time Step" )
+
+#        self.time_step_max.init_ref ( parameter_system, "Time_Step_Max_Type", user_name="Time Step Max", user_expr="", user_units="s", user_descr="Maximum Time Step" )
+
+
+
+
+
+    #fwd_rate = PointerProperty(type=ReactionFwdRate_PropertyGroup)
+    #bkwd_rate = PointerProperty(type=ReactionBkwdRate_PropertyGroup)
+    fwd_rate = PointerProperty ( name="Forward Rate", type=parameter_system.Parameter_Reference )
+    bkwd_rate = PointerProperty ( name="Forward Rate", type=parameter_system.Parameter_Reference )
+
+
+    #def set_defaults(self):
+    #    # Panel Parameter                         Name             Default
+    #    self.fwd_rate.set_fields                ( "Forward Rate",      "0" )
+    #    self.bkwd_rate.set_fields               ( "Backward Rate",      "" )
+
+    def init_properties ( self, parameter_system ):
+        print ( "Inside init_properties for MCellReactionProperty" )
+        self.fwd_rate.init_ref   ( parameter_system, "FW_Rate_Type", user_name="Forward Rate",  user_expr="0", user_units="",  user_descr="Forward Rate" )
+        self.bkwd_rate.init_ref  ( parameter_system, "BW_Rate_Type", user_name="Backward Rate", user_expr="",  user_units="s", user_descr="Backward Rate" )
 
     status = StringProperty(name="Status")
 
@@ -570,19 +628,47 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     # The following line must be added to every PropertyGroup to be searched for CellBlender Parameters:
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     
-    #old_iterations = PointerProperty(type=Iterations_PropertyGroup)
     iterations = PointerProperty ( name="iterations", type=parameter_system.Parameter_Reference )
-    #old_time_step = PointerProperty(type=TimeStep_PropertyGroup)
-    time_step = PointerProperty ( name="Time Step", type=parameter_system.Parameter_Reference )
+    time_step =  PointerProperty ( name="Time Step", type=parameter_system.Parameter_Reference )
 
     status = StringProperty(name="Status")
     advanced = bpy.props.BoolProperty(default=False)
     warnings = bpy.props.BoolProperty(default=False)
     notifications = bpy.props.BoolProperty(default=False)
 
+
     # Advanced/Optional Commands
 
-    time_step_max = PointerProperty(type=TimeStepMax_PropertyGroup)
+    #time_step_max = PointerProperty(type=TimeStepMax_PropertyGroup)
+    time_step_max = PointerProperty ( name="Time Step Max", type=parameter_system.Parameter_Reference )
+
+
+    def set_defaults(self):
+        print ( "MCellInitializationPanelProperty is setting defaults." )
+        # Panel Parameter                         Name                    Default    Min
+        # self.old_iterations.set_fields          ( "Iterations",               "1",   0.0 )
+        # self.time_step.set_fields               ( "Time Step",             "1e-6",   0.0 )
+        # self.time_step_max.set_fields           ( "Time Step Max",             "",   0.0 )
+        self.space_step.set_fields              ( "Space Step",                "",   0.0 )
+        self.surface_grid_density.set_fields    ( "Surface Grid Density", "10000",   0.0 )
+        self.interaction_radius.set_fields      ( "Interaction Radius",        "",   0.0 )
+        self.radial_directions.set_fields       ( "Radial Directions",         "",   0.0 )
+        self.radial_subdivisions.set_fields     ( "Radial Subdivisions",       "",   0.0 )
+        self.vacancy_search_distance.set_fields ( "Vacancy Search Distance",   "",   0.0 )
+
+        #self.new_iterations.init_ref(parameter_system, "Iteration_Type", user_name="Iterations", user_expr="1", user_units="", user_descr="Iterations to run", user_int=True)
+
+
+    # @profile('MCellInitializationGroup.init_properties')
+    def init_properties ( self, parameter_system ):
+        print ( "Inside init_properties for MCellInitializationGroup" )
+        self.iterations.init_ref    ( parameter_system, "Iteration_Type", user_name="Iterations", user_expr="1",    user_units="",  user_descr="Iterations to run",  user_int=True )
+        self.time_step.init_ref     ( parameter_system, "Time_Step_Type", user_name="Time Step",  user_expr="1e-6", user_units="s", user_descr="Simulation Time Step" )
+
+        self.time_step_max.init_ref ( parameter_system, "Time_Step_Max_Type", user_name="Time Step Max", user_expr="", user_units="s", user_descr="Maximum Time Step" )
+
+
+
     space_step = PointerProperty(type=SpaceStep_PropertyGroup)
     surface_grid_density = PointerProperty(type=SurfaceGridDensity_PropertyGroup)
     interaction_radius = PointerProperty(type=InteractionRadius_PropertyGroup)
@@ -768,32 +854,6 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
                     "volume or reactions occur in a volume with specified "
                     "orientation.",
         name="Useless Volume Orientation", default='WARNING')
-
-    def set_defaults(self):
-        print ( "MCellInitializationPanelProperty is setting defaults." )
-        # Panel Parameter                         Name                    Default    Min
-        # self.old_iterations.set_fields              ( "Iterations",               "1",   0.0 )
-        # self.time_step.set_fields               ( "Time Step",             "1e-6",   0.0 )
-        self.time_step_max.set_fields           ( "Time Step Max",             "",   0.0 )
-        self.space_step.set_fields              ( "Space Step",                "",   0.0 )
-        self.surface_grid_density.set_fields    ( "Surface Grid Density", "10000",   0.0 )
-        self.interaction_radius.set_fields      ( "Interaction Radius",        "",   0.0 )
-        self.radial_directions.set_fields       ( "Radial Directions",         "",   0.0 )
-        self.radial_subdivisions.set_fields     ( "Radial Subdivisions",       "",   0.0 )
-        self.vacancy_search_distance.set_fields ( "Vacancy Search Distance",   "",   0.0 )
-
-        #self.new_iterations.init_ref(parameter_system, "Iteration_Type", user_name="Iterations", user_expr="1", user_units="", user_descr="Iterations to run", user_int=True)
-
-
-    # @profile('MCellInitializationGroup.init_properties')
-    def init_properties ( self, parameter_system ):
-        print ( "Inside init_properties for MCellInitializationGroup" )
-        self.iterations.init_ref(parameter_system, "Iteration_Type", user_name="Iterations", user_expr="1", user_units="", user_descr="Iterations to run", user_int=True)
-
-        self.time_step.init_ref(parameter_system, "Time_Step_Type", user_name="Time Step", user_expr="1e-6", user_units="", user_descr="Simulation Time Step Units: seconds", user_int=False)
-        #self.iterations.init_ref(parameter_system, "Iteration_Type", user_name="Iterations", user_expr="1", user_units="", user_descr="Iterations to run", user_int=True)
-        #self.time_step.init_ref(parameter_system, "TimeStep_Type", user_name="Time Step", user_expr="1e-6", user_units="sec", user_descr="Time step for each iteration")
-        #self.initialized = True
 
 
 class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):

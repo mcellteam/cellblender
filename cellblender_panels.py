@@ -472,7 +472,9 @@ class MCELL_PT_initialization(bpy.types.Panel):
             if mcell.initialization.advanced:
                 row.prop(mcell.initialization, "advanced", icon='TRIA_DOWN',
                          text="Advanced Options", emboss=False)
-                mcell.initialization.time_step_max.draw_in_new_row(box)
+                #mcell.initialization.time_step_max.draw_in_new_row(box)
+                mcell.initialization.time_step_max.draw(box,mcell.parameter_system)
+
                 mcell.initialization.space_step.draw_in_new_row(box)
                 mcell.initialization.interaction_radius.draw_in_new_row(box)
                 mcell.initialization.radial_directions.draw_in_new_row(box)
@@ -715,11 +717,12 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
                                 text="Rate File: " + rxn.variable_rate,
                                 icon='FILE_TICK')
                     else:
-                        rxn.fwd_rate.draw_in_new_row(layout)
+                        #rxn.fwd_rate.draw_in_new_row(layout)
+                        rxn.fwd_rate.draw(layout,mcell.parameter_system)
                         if rxn.type == "reversible":
-                            rxn.bkwd_rate.draw_in_new_row(layout)
+                            #rxn.bkwd_rate.draw_in_new_row(layout)
+                            rxn.bkwd_rate.draw(layout,mcell.parameter_system)
                     layout.prop(rxn, "rxn_name")
-
             else:
                 row.label(text="Define at least one molecule", icon='ERROR')
 

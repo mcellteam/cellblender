@@ -310,9 +310,11 @@ def save_initialization_commands(context, out_file):
 
     """
 
-    init = context.scene.mcell.initialization
+    mcell = context.scene.mcell
+    init = mcell.initialization
+    parameter_system = mcell.parameter_system
     # Maximum Time Step
-    if init.time_step_max.get_expression() != '':
+    if init.time_step_max.get_expr(parameter_system) != '':
         out_file.write("TIME_STEP_MAX = %g\n" % (init.time_step_max.get_value()))
     # Space Step
     if init.space_step.get_expression() != '':

@@ -248,7 +248,7 @@ class APP_OT_add_parameters(bpy.types.Operator):
         
 
 class APP_PT_parameter_control(bpy.types.Panel):
-    bl_label = "Parameter Testing: Parameter Controls (Testing)"
+    bl_label = "Parameter Testing: Parameter Controls"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"

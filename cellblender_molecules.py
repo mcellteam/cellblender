@@ -35,6 +35,7 @@ import re
 
 import cellblender
 from . import cellblender_parameters
+from . import parameter_system
 
 
 # We use per module class registration/unregistration
@@ -130,7 +131,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         description="Surface molecules are constrained to surfaces/meshes. "
                     "Volume molecules exist in space.")
 
-    diffusion_constant = PointerProperty(type=MoleculeDiffusionConstant_PropertyGroup)
+    # diffusion_constant = PointerProperty(type=MoleculeDiffusionConstant_PropertyGroup)
+    diffusion_constant = PointerProperty ( name="Molecule Diffusion Constant", type=parameter_system.Parameter_Reference )
 
     target_only = BoolProperty(
         name="Target Only",
@@ -145,10 +147,23 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                                    "included in the visualization data.")
     status = StringProperty(name="Status")
 
+    def init_properties ( self, parameter_system ):
+        print ( "Inside init_properties for MCellMoleculeProperty" )
+        self.name = "Molecule_"+str(self.id)
+
+        self.diffusion_constant.init_ref ( parameter_system, "Diff_Const_Type", user_name="Diffusion Constant", user_expr="0", user_units="cm^2/sec", user_descr="Molecule Diffusion Constant" )
+
+        # self.diffusion_constant.set_label ( "Diffusion Constant" )
+        self.custom_time_step.set_label ( "Custom Time Step" )
+        self.custom_space_step.set_label ( "Custom Space Step" )
+
 
     def set_defaults(self):
         self.name = "Molecule_"+str(self.id)
-        self.diffusion_constant.set_label ( "Diffusion Constant" )
+
+        self.diffusion_constant.init_ref ( parameter_system, "Diff_Const_Type", user_name="Diffusion Constant", user_expr="0", user_units="cm^2/sec", user_descr="Molecule Diffusion Constant" )
+
+        # self.diffusion_constant.set_label ( "Diffusion Constant" )
         self.custom_time_step.set_label ( "Custom Time Step" )
         self.custom_space_step.set_label ( "Custom Space Step" )
 
@@ -157,11 +172,11 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     def print_details( self ):
         print ( "Name = " + self.name )
 
-    def draw_props ( self, layout, molecules ):
+    def draw_props ( self, layout, molecules, parameter_system ):
         layout.prop ( self, "name" )
         layout.prop ( self, "type" )
-        self.diffusion_constant.draw_in_new_row(layout)
-
+        self.diffusion_constant.draw(layout,parameter_system)
+            
         box = layout.box()
         row = box.row(align=True)
         row.alignment = 'LEFT'
@@ -218,12 +233,18 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         if self.molecule_list:
             for mol in self.molecule_list:
                 mol.set_defaults()
+
+    def init_properties ( self, parameter_system ):
+        if self.molecule_list:
+            for mol in self.molecule_list:
+                mol.init_properties(parameter_system)
     
     def add_molecule ( self, context ):
         """ Add a new molecule to the list of molecules and set as the active molecule """
         new_mol = self.molecule_list.add()
         new_mol.id = self.allocate_available_id()
-        new_mol.set_defaults()
+        new_mol.init_properties(context.scene.mcell.parameter_system)
+        #new_mol.set_defaults()
         self.active_mol_index = len(self.molecule_list)-1
 
     def remove_active_molecule ( self, context ):
@@ -289,5 +310,5 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             if self.molecule_list:
                 mol = self.molecule_list[self.active_mol_index]
                 # The self is needed to pass the "advanced" flag to the molecule
-                mol.draw_props ( layout, self )
+                mol.draw_props ( layout, self, mcell.parameter_system )
 
