@@ -643,7 +643,19 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     time_step_max = PointerProperty ( name="Time Step Max", type=parameter_system.Parameter_Reference )
     #space_step = PointerProperty(type=SpaceStep_PropertyGroup)
     space_step = PointerProperty ( name="Space Step", type=parameter_system.Parameter_Reference )
+    #interaction_radius = PointerProperty(type=InteractionRadius_PropertyGroup)
+    interaction_radius = PointerProperty ( name="Interaction Radius", type=parameter_system.Parameter_Reference )
+    #surface_grid_density = PointerProperty(type=SurfaceGridDensity_PropertyGroup)
+    surface_grid_density = PointerProperty ( name="Surface Grid Density", type=parameter_system.Parameter_Reference )
 
+    #radial_directions = PointerProperty(type=RadialDirections_PropertyGroup)
+    radial_directions = PointerProperty ( name="Radial Directions", type=parameter_system.Parameter_Reference )
+
+    #radial_subdivisions = PointerProperty(type=RadialSubdivisions_PropertyGroup)
+    radial_subdivisions = PointerProperty ( name="Radial Subdivisions", type=parameter_system.Parameter_Reference )
+
+    #vacancy_search_distance = PointerProperty(name="Vacancy Search Distance", type=VacancySearchDistance_PropertyGroup)
+    vacancy_search_distance = PointerProperty ( name="Radial Subdivisions", type=parameter_system.Parameter_Reference )
 
     def set_defaults(self):
         print ( "MCellInitializationPanelProperty is setting defaults." )
@@ -652,11 +664,11 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         # self.time_step.set_fields               ( "Time Step",             "1e-6",   0.0 )
         # self.time_step_max.set_fields           ( "Time Step Max",             "",   0.0 )
         # self.space_step.set_fields              ( "Space Step",                "",   0.0 )
-        self.surface_grid_density.set_fields    ( "Surface Grid Density", "10000",   0.0 )
-        self.interaction_radius.set_fields      ( "Interaction Radius",        "",   0.0 )
-        self.radial_directions.set_fields       ( "Radial Directions",         "",   0.0 )
-        self.radial_subdivisions.set_fields     ( "Radial Subdivisions",       "",   0.0 )
-        self.vacancy_search_distance.set_fields ( "Vacancy Search Distance",   "",   0.0 )
+        # self.surface_grid_density.set_fields    ( "Surface Grid Density", "10000",   0.0 )
+        # self.interaction_radius.set_fields      ( "Interaction Radius",        "",   0.0 )
+        # self.radial_directions.set_fields       ( "Radial Directions",         "",   0.0 )
+        # self.radial_subdivisions.set_fields     ( "Radial Subdivisions",       "",   0.0 )
+        # self.vacancy_search_distance.set_fields ( "Vacancy Search Distance",   "",   0.0 )
 
         #self.new_iterations.init_ref(parameter_system, "Iteration_Type", user_name="Iterations", user_expr="1", user_units="", user_descr="Iterations to run", user_int=True)
 
@@ -670,12 +682,15 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         self.time_step_max.init_ref ( parameter_system, "Time_Step_Max_Type", user_name="Time Step Max", user_expr="", user_units="seconds", user_descr="Maximum Time Step" )
         self.space_step.init_ref    ( parameter_system, "Space_Step_Type",    user_name="Space Step",    user_expr="", user_units="microns", user_descr="Custom Space Step" )
 
+        self.interaction_radius.init_ref ( parameter_system, "Int_Rad_Type", user_name="Interaction Radius", user_expr="", user_units="microns", user_descr="Molecules will interact when they get within N microns" )
+        self.radial_directions.init_ref   ( parameter_system, "Rad_Dir_Type", user_name="Radial Directions",   user_expr="", user_units="microns", user_descr="Molecules will interact when they get within N microns" )
+        self.radial_subdivisions.init_ref ( parameter_system, "Rad_Sub_Type", user_name="Radial Subdivisions", user_expr="", user_units="microns", user_descr="Molecules will interact when they get within N microns" )
+
+        self.vacancy_search_distance.init_ref ( parameter_system, "Vac_SD_Type", user_name="Vacancy Search Distance", user_expr="", user_units="microns", user_descr="Surface molecule products can be created at N distance" )
+
+        self.surface_grid_density.init_ref ( parameter_system, "Int_Rad_Type", user_name="Surface Grid Density", user_expr="10000", user_units="count / sq micron", user_descr="Number of molecules that can be stored per square micron" )
 
 
-    surface_grid_density = PointerProperty(type=SurfaceGridDensity_PropertyGroup)
-    interaction_radius = PointerProperty(type=InteractionRadius_PropertyGroup)
-    radial_directions = PointerProperty(type=RadialDirections_PropertyGroup)
-    radial_subdivisions = PointerProperty(type=RadialSubdivisions_PropertyGroup)
 
     accurate_3d_reactions = BoolProperty(
         name="Accurate 3D Reaction",
@@ -688,7 +703,6 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
                     "grid.",
         default=False)
 
-    vacancy_search_distance = PointerProperty(name="Vacancy Search Distance", type=VacancySearchDistance_PropertyGroup)
 
     microscopic_reversibility_enum = [
         ('ON', "On", ""),

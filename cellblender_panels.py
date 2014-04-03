@@ -478,11 +478,23 @@ class MCELL_PT_initialization(bpy.types.Panel):
                 #mcell.initialization.space_step.draw_in_new_row(box)
                 mcell.initialization.space_step.draw(box,mcell.parameter_system)
 
-                mcell.initialization.interaction_radius.draw_in_new_row(box)
-                mcell.initialization.radial_directions.draw_in_new_row(box)
-                mcell.initialization.radial_subdivisions.draw_in_new_row(box)
-                mcell.initialization.vacancy_search_distance.draw_in_new_row(box)
-                mcell.initialization.surface_grid_density.draw_in_new_row(box)
+                #mcell.initialization.interaction_radius.draw_in_new_row(box)
+                mcell.initialization.interaction_radius.draw(box,mcell.parameter_system)
+                
+                
+                #mcell.initialization.radial_directions.draw_in_new_row(box)
+                mcell.initialization.radial_directions.draw(box,mcell.parameter_system)
+
+
+                #mcell.initialization.radial_subdivisions.draw_in_new_row(box)
+                mcell.initialization.radial_subdivisions.draw(box,mcell.parameter_system)
+
+                #mcell.initialization.vacancy_search_distance.draw_in_new_row(box)
+                mcell.initialization.vacancy_search_distance.draw(box,mcell.parameter_system)
+
+                #mcell.initialization.surface_grid_density.draw_in_new_row(box)
+                mcell.initialization.surface_grid_density.draw(box,mcell.parameter_system)
+
                 row = box.row()
                 row.prop(mcell.initialization, "accurate_3d_reactions")
                 row = box.row()
@@ -989,8 +1001,8 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                     #    #layout.prop(rel, "quantity")
                     rel.quantity.draw_in_new_row(layout)
                     if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
-                        #layout.prop(rel, "stddev")
-                        rel.stddev.draw_in_new_row(layout)
+                        layout.prop(rel, "stddev")
+                        #rel.stddev.draw_in_new_row(layout)
 
                     #layout.prop(rel, "pattern")
                     layout.prop_search(rel, "pattern", mcell.release_patterns,
