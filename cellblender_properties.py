@@ -126,6 +126,9 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
     status = StringProperty(name="Status")
 
+
+
+
 class ReleaseProbability_PropertyGroup(cellblender_parameters.PanelParameter):
     param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
     expression = StringProperty(name="Release Probability", default="1",
@@ -137,6 +140,9 @@ class ReleaseQuantity_PropertyGroup(cellblender_parameters.PanelParameter):
     expression = StringProperty(name="Quantity to Release", default="",
                  description="Concentration units: molar. Density units: molecules per square micron",
                  update=cellblender_parameters.update_PanelParameter)
+
+
+
 
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
@@ -180,7 +186,9 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         description="Release molecules uniformly within the specified "
                     "diameter.")
 
-    probability = PointerProperty(type=ReleaseProbability_PropertyGroup)
+    #probability = PointerProperty(type=ReleaseProbability_PropertyGroup)
+    probability = PointerProperty ( name="Release Probability", type=parameter_system.Parameter_Reference )
+
     """
     probability = FloatProperty(
         name="Release Probability", precision=4,
@@ -196,15 +204,20 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     quantity_type = EnumProperty(items=quantity_type_enum,
                                  name="Quantity Type")
 
-    quantity = PointerProperty(type=ReleaseQuantity_PropertyGroup)
+    #quantity = PointerProperty(type=ReleaseQuantity_PropertyGroup)
+    quantity = PointerProperty ( name="Quantity to Release", type=parameter_system.Parameter_Reference )
+
     """
     quantity = FloatProperty(
         name="Quantity to Release", precision=4, min=0.0,
         description="Concentration units: molar. Density units: molecules per "
                     "square micron")
     """
-    quantity_expr = StringProperty(name="Quantity to Release",default="0")  ####### DB: added to include expressions for imported quantities ###
-    stddev = FloatProperty(name="Standard Deviation", precision=4, min=0.0)
+    # quantity_expr = StringProperty(name="Quantity to Release",default="0")  ####### DB: added to include expressions for imported quantities ###
+
+    #stddev = FloatProperty(name="Standard Deviation", precision=4, min=0.0)
+    stddev = PointerProperty ( name="Standard Deviation", type=parameter_system.Parameter_Reference )
+
     pattern = StringProperty(
         name="Release Pattern",
         description="Use the named release pattern. "
@@ -213,9 +226,16 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
 
     def set_defaults(self):
         print ( "MCellMoleculeReleaseProperty is setting defaults." )
+        pass
         # Panel Parameter                         Name                    Default    Min  Max
-        self.probability.set_fields             ( "Probability",              "1",   0.0, 1.0 )
-        self.quantity.set_fields                ( "Quantity to Release",      "0",   0.0      )
+        #self.probability.set_fields             ( "Probability",              "1",   0.0, 1.0 )
+        #self.quantity.set_fields                ( "Quantity to Release",      "0",   0.0      )
+
+    def init_properties ( self, parameter_system ):
+        print ( "Inside init_properties for MCellMoleculeReleaseProperty" )
+        self.probability.init_ref ( parameter_system, "Rel_Prob", user_name="Release Probability",  user_expr="1", user_units="", user_descr="Release does not occur every time,\nbut rather with specified probability." )
+        self.quantity.init_ref    ( parameter_system, "Rel_Quant", user_name="Quantity to Release", user_expr="",  user_units="", user_descr="Concentration units: molar. Density units: molecules per square micron" )
+        self.stddev.init_ref      ( parameter_system, "Rel_StdDev", user_name="Standard Deviation", user_expr="0", user_units="", user_descr="Standard Deviation" )
 
 
 class MCellReleasePatternProperty(bpy.types.PropertyGroup):
@@ -493,79 +513,7 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.mol_viz_toggle_manual_select)
 
 
-"""
-class Iterations_PropertyGroup(cellblender_parameters.PanelParameter):
-    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Simulation Iterations", default="0",
-                 description="Number of iterations to run",
-                 update=cellblender_parameters.update_PanelParameter)
-    def get_value(self):
-        return int(self.param_data.value)
-
-class TimeStep_PropertyGroup(cellblender_parameters.PanelParameter):
-    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Time Step", default="1e-6",
-                 description="Simulation Time Step Units: seconds",
-                 update=cellblender_parameters.update_PanelParameter)
-
-class TimeStepMax_PropertyGroup(cellblender_parameters.PanelParameter):
-    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Maximum Time Step", default="",
-                 description="The longest possible time step",
-                 update=cellblender_parameters.update_PanelParameter)
-
-class SpaceStep_PropertyGroup(cellblender_parameters.PanelParameter):
-    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Space Step", default="",
-                 description="Have molecules take the same mean diffusion distance",
-                 update=cellblender_parameters.update_PanelParameter)
-
-class SurfaceGridDensity_PropertyGroup(cellblender_parameters.PanelParameter):
-    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Surface Grid Density", default="10000",
-                 description="Number of molecules that can be stored per square micron",
-                 update=cellblender_parameters.update_PanelParameter)
-    def get_value(self):
-        return int(self.param_data.value)
-
-class InteractionRadius_PropertyGroup(cellblender_parameters.PanelParameter):
-    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Interaction Radius", default="",
-                 description="Molecules will interact when they get within N microns.",
-                 update=cellblender_parameters.update_PanelParameter)
-
-class RadialDirections_PropertyGroup(cellblender_parameters.PanelParameter):
-    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Radial Directions", default="",
-                 description="Number of different directions to put in lookup table. "
-                             "Leave alone unless you know what you are doing.",
-                 update=cellblender_parameters.update_PanelParameter)
-
-class RadialSubdivisions_PropertyGroup(cellblender_parameters.PanelParameter):
-    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Radial Subdivisions", default="",
-                 description="Number of distances to put in look-up table. "
-                             "Leave alone unless you know what you are doing.",
-                 update=cellblender_parameters.update_PanelParameter)
-
-class VacancySearchDistance_PropertyGroup(cellblender_parameters.PanelParameter):
-    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Vacancy Search Distance", default="",
-                 description="Surface molecule products can be created at N distance.",
-                 update=cellblender_parameters.update_PanelParameter)
-"""
-
 from . import parameter_system
-
 
 
 class MCellInitializationPanelProperty(bpy.types.PropertyGroup):

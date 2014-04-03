@@ -457,13 +457,9 @@ class MCELL_PT_initialization(bpy.types.Panel):
         if not mcell.initialized:
             mcell.draw_uninitialized ( self.layout )
         else:
-            #mcell.initialization.old_iterations.draw_in_new_row(layout)
-            mcell.initialization.iterations.draw(layout,mcell.parameter_system)
-            #mcell.initialization.old_time_step.draw_in_new_row(layout)
-            mcell.initialization.time_step.draw(layout,mcell.parameter_system)
-
-            #layout.prop(mcell.initialization, "iterations")
-            #layout.prop(mcell.initialization, "time_step_str")
+            ps = mcell.parameter_system
+            mcell.initialization.iterations.draw(layout,ps)
+            mcell.initialization.time_step.draw(layout,ps)
 
             # Advanced Options
             box = layout.box()
@@ -472,28 +468,14 @@ class MCELL_PT_initialization(bpy.types.Panel):
             if mcell.initialization.advanced:
                 row.prop(mcell.initialization, "advanced", icon='TRIA_DOWN',
                          text="Advanced Options", emboss=False)
-                #mcell.initialization.time_step_max.draw_in_new_row(box)
-                mcell.initialization.time_step_max.draw(box,mcell.parameter_system)
 
-                #mcell.initialization.space_step.draw_in_new_row(box)
-                mcell.initialization.space_step.draw(box,mcell.parameter_system)
-
-                #mcell.initialization.interaction_radius.draw_in_new_row(box)
-                mcell.initialization.interaction_radius.draw(box,mcell.parameter_system)
-                
-                
-                #mcell.initialization.radial_directions.draw_in_new_row(box)
-                mcell.initialization.radial_directions.draw(box,mcell.parameter_system)
-
-
-                #mcell.initialization.radial_subdivisions.draw_in_new_row(box)
-                mcell.initialization.radial_subdivisions.draw(box,mcell.parameter_system)
-
-                #mcell.initialization.vacancy_search_distance.draw_in_new_row(box)
-                mcell.initialization.vacancy_search_distance.draw(box,mcell.parameter_system)
-
-                #mcell.initialization.surface_grid_density.draw_in_new_row(box)
-                mcell.initialization.surface_grid_density.draw(box,mcell.parameter_system)
+                mcell.initialization.time_step_max.draw(box,ps)
+                mcell.initialization.space_step.draw(box,ps)
+                mcell.initialization.interaction_radius.draw(box,ps)
+                mcell.initialization.radial_directions.draw(box,ps)
+                mcell.initialization.radial_subdivisions.draw(box,ps)
+                mcell.initialization.vacancy_search_distance.draw(box,ps)
+                mcell.initialization.surface_grid_density.draw(box,ps)
 
                 row = box.row()
                 row.prop(mcell.initialization, "accurate_3d_reactions")
@@ -699,6 +681,7 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
         if not mcell.initialized:
             mcell.draw_uninitialized ( self.layout )
         else:
+            ps = mcell.parameter_system
             row = layout.row()
             if mcell.molecules.molecule_list:
                 row.label(text="Defined Reactions:", icon='FORCE_LENNARDJONES')
@@ -732,10 +715,10 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
                                 icon='FILE_TICK')
                     else:
                         #rxn.fwd_rate.draw_in_new_row(layout)
-                        rxn.fwd_rate.draw(layout,mcell.parameter_system)
+                        rxn.fwd_rate.draw(layout,ps)
                         if rxn.type == "reversible":
                             #rxn.bkwd_rate.draw_in_new_row(layout)
-                            rxn.bkwd_rate.draw(layout,mcell.parameter_system)
+                            rxn.bkwd_rate.draw(layout,ps)
                     layout.prop(rxn, "rxn_name")
             else:
                 row.label(text="Define at least one molecule", icon='ERROR')
@@ -960,8 +943,11 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
         if not mcell.initialized:
             mcell.draw_uninitialized ( self.layout )
         else:
+            ps = mcell.parameter_system
             row = layout.row()
-            if mcell.molecules.molecule_list:
+            if not mcell.molecules.molecule_list:
+                row.label(text="Define at least one molecule", icon='ERROR')
+            else:
                 row.label(text="Release/Placement Sites:",
                           icon='FORCE_LENNARDJONES')
                 row = layout.row()
@@ -992,24 +978,26 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                         layout.prop(rel, "object_expr")
 
                     #layout.prop(rel, "probability")
-                    rel.probability.draw_in_new_row(layout)
-
+                    #rel.probability.draw_in_new_row(layout)
+                    #row = layout.row()
+                    rel.probability.draw(layout,ps)
+            
                     layout.prop(rel, "quantity_type")
                     #if rel.quantity_expr != "0":
                     #    layout.prop(rel, "quantity_expr")
                     #else:
                     #    #layout.prop(rel, "quantity")
-                    rel.quantity.draw_in_new_row(layout)
+                    #rel.quantity.draw_in_new_row(layout)
+                    rel.quantity.draw(layout,ps)
                     if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
-                        layout.prop(rel, "stddev")
+                        #layout.prop(rel, "stddev")
                         #rel.stddev.draw_in_new_row(layout)
+                        rel.stddev.draw(layout,ps)
 
                     #layout.prop(rel, "pattern")
                     layout.prop_search(rel, "pattern", mcell.release_patterns,
                                        "release_pattern_list",
                                        icon='FORCE_LENNARDJONES')
-            else:
-                row.label(text="Define at least one molecule", icon='ERROR')
 
 
 class MCELL_UL_check_reaction_output_settings(bpy.types.UIList):
