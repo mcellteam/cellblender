@@ -584,6 +584,11 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
     def get_expr ( self, plist ):
         return self.get_param(plist).expr
 
+    @profile('set_expr')
+    def set_expr ( self, expr, plist ):
+        p = self.get_param(plist)
+        p.expr = expr
+
     @profile('get_value')
     def get_value ( self, plist=None ):
         if plist == None:
@@ -1561,8 +1566,15 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 return None
 
 
+    @profile('add_general_parameter_with_values')
+    def add_general_parameter_with_values ( self, name, expression, units, description ):
+        """ Add a new parameter to the list of parameters """
+        p = self.new_parameter ( new_name=name, pp=False, new_expr=expression, new_units=units, new_desc=description )
+        return p
+
+
     @profile('new_parameter')
-    def new_parameter ( self, new_name=None, pp=False, new_expr=None ):
+    def new_parameter ( self, new_name=None, pp=False, new_expr=None, new_units=None, new_desc=None ):
         """ Add a new parameter to the list of parameters """
         #print ( "new_parameter called with a requested name of " + str(new_name) )
 

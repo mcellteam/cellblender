@@ -150,7 +150,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     status = StringProperty(name="Status")
 
     def init_properties ( self, parameter_system ):
-        print ( "Inside init_properties for MCellMoleculeProperty" )
+        # print ( "Inside init_properties for MCellMoleculeProperty" )
         self.name = "Molecule_"+str(self.id)
 
         self.diffusion_constant.init_ref ( parameter_system, "Mol_Diff_Const_Type", user_name="Diffusion Constant", user_expr="0", user_units="cm^2/sec", user_descr="Molecule Diffusion Constant" )

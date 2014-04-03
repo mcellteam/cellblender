@@ -120,26 +120,11 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
 
     def init_properties ( self, parameter_system ):
-        print ( "Inside init_properties for MCellReactionProperty" )
+        # print ( "Inside init_properties for MCellReactionProperty" )
         self.fwd_rate.init_ref   ( parameter_system, "FW_Rate_Type", user_name="Forward Rate",  user_expr="0", user_units="",  user_descr="Forward Rate" )
         self.bkwd_rate.init_ref  ( parameter_system, "BW_Rate_Type", user_name="Backward Rate", user_expr="",  user_units="s", user_descr="Backward Rate" )
 
     status = StringProperty(name="Status")
-
-
-
-
-class ReleaseProbability_PropertyGroup(cellblender_parameters.PanelParameter):
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Release Probability", default="1",
-                 description="Release does not occur every time, but rather with specified probability.",
-                 update=cellblender_parameters.update_PanelParameter)
-
-class ReleaseQuantity_PropertyGroup(cellblender_parameters.PanelParameter):
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Quantity to Release", default="",
-                 description="Concentration units: molar. Density units: molecules per square micron",
-                 update=cellblender_parameters.update_PanelParameter)
 
 
 
@@ -232,7 +217,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         #self.quantity.set_fields                ( "Quantity to Release",      "0",   0.0      )
 
     def init_properties ( self, parameter_system ):
-        print ( "Inside init_properties for MCellMoleculeReleaseProperty" )
+        # print ( "Inside init_properties for MCellMoleculeReleaseProperty" )
         self.probability.init_ref ( parameter_system, "Rel_Prob", user_name="Release Probability",  user_expr="1", user_units="", user_descr="Release does not occur every time,\nbut rather with specified probability." )
         self.quantity.init_ref    ( parameter_system, "Rel_Quant", user_name="Quantity to Release", user_expr="",  user_units="", user_descr="Concentration units: molar. Density units: molecules per square micron" )
         self.stddev.init_ref      ( parameter_system, "Rel_StdDev", user_name="Standard Deviation", user_expr="0", user_units="", user_descr="Standard Deviation" )
@@ -550,7 +535,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
     # @profile('MCellInitializationGroup.init_properties')
     def init_properties ( self, parameter_system ):
-        print ( "Inside init_properties for MCellInitializationGroup" )
+        # print ( "Inside init_properties for MCellInitializationGroup" )
         self.iterations.init_ref    ( parameter_system, "Iteration_Type", user_name="Iterations", user_expr="1",    user_units="",  user_descr="Number of iterations to run",  user_int=True )
         self.time_step.init_ref     ( parameter_system, "Time_Step_Type", user_name="Time Step",  user_expr="1e-6", user_units="seconds", user_descr="Simulation Time Step" )
         self.time_step_max.init_ref ( parameter_system, "Time_Step_Max_Type", user_name="Maximum Time Step", user_expr="", user_units="seconds", user_descr="The longest possible time step" )
@@ -1115,7 +1100,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
 
     def init_properties ( self ):
-        print ( "Inside init_properties for MCell" )
+        # print ( "Inside init_properties for MCell" )
         self.parameter_system.init_properties()
         self.initialization.init_properties ( self.parameter_system )
         #self.molecules.init_properties ( self.parameter_system )
