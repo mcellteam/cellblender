@@ -641,6 +641,8 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
     #time_step_max = PointerProperty(type=TimeStepMax_PropertyGroup)
     time_step_max = PointerProperty ( name="Time Step Max", type=parameter_system.Parameter_Reference )
+    #space_step = PointerProperty(type=SpaceStep_PropertyGroup)
+    space_step = PointerProperty ( name="Space Step", type=parameter_system.Parameter_Reference )
 
 
     def set_defaults(self):
@@ -649,7 +651,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         # self.old_iterations.set_fields          ( "Iterations",               "1",   0.0 )
         # self.time_step.set_fields               ( "Time Step",             "1e-6",   0.0 )
         # self.time_step_max.set_fields           ( "Time Step Max",             "",   0.0 )
-        self.space_step.set_fields              ( "Space Step",                "",   0.0 )
+        # self.space_step.set_fields              ( "Space Step",                "",   0.0 )
         self.surface_grid_density.set_fields    ( "Surface Grid Density", "10000",   0.0 )
         self.interaction_radius.set_fields      ( "Interaction Radius",        "",   0.0 )
         self.radial_directions.set_fields       ( "Radial Directions",         "",   0.0 )
@@ -663,13 +665,13 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     def init_properties ( self, parameter_system ):
         print ( "Inside init_properties for MCellInitializationGroup" )
         self.iterations.init_ref    ( parameter_system, "Iteration_Type", user_name="Iterations", user_expr="1",    user_units="",  user_descr="Iterations to run",  user_int=True )
-        self.time_step.init_ref     ( parameter_system, "Time_Step_Type", user_name="Time Step",  user_expr="1e-6", user_units="s", user_descr="Simulation Time Step" )
+        self.time_step.init_ref     ( parameter_system, "Time_Step_Type", user_name="Time Step",  user_expr="1e-6", user_units="seconds", user_descr="Simulation Time Step" )
 
-        self.time_step_max.init_ref ( parameter_system, "Time_Step_Max_Type", user_name="Time Step Max", user_expr="", user_units="s", user_descr="Maximum Time Step" )
+        self.time_step_max.init_ref ( parameter_system, "Time_Step_Max_Type", user_name="Time Step Max", user_expr="", user_units="seconds", user_descr="Maximum Time Step" )
+        self.space_step.init_ref    ( parameter_system, "Space_Step_Type",    user_name="Space Step",    user_expr="", user_units="microns", user_descr="Custom Space Step" )
 
 
 
-    space_step = PointerProperty(type=SpaceStep_PropertyGroup)
     surface_grid_density = PointerProperty(type=SurfaceGridDensity_PropertyGroup)
     interaction_radius = PointerProperty(type=InteractionRadius_PropertyGroup)
     radial_directions = PointerProperty(type=RadialDirections_PropertyGroup)

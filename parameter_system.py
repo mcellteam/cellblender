@@ -430,14 +430,14 @@ class MCELL_PT_parameter_system(bpy.types.Panel):
             row = box.row(align=True)
             row.alignment = 'LEFT'
             #row = layout.row()
-            if not mcell.parameter_system.show_panel:
-                row.prop(mcell.parameter_system, "show_panel", text="Show Parameter Options", icon='TRIA_RIGHT', emboss=False)
+            if not ps.show_panel:
+                row.prop(ps, "show_panel", text="Show Parameter Options", icon='TRIA_RIGHT', emboss=False)
             else:
                 col = row.column()
                 col.alignment = 'LEFT'
-                col.prop(mcell.parameter_system, "show_panel", text="Hide Parameter Options", icon='TRIA_DOWN', emboss=False)
+                col.prop(ps, "show_panel", text="Hide Parameter Options", icon='TRIA_DOWN', emboss=False)
                 col = row.column()
-                col.prop(mcell.parameter_system, "show_all_details", text="Show Internal Details for All")
+                col.prop(ps, "show_all_details", text="Show Internal Details for All")
 
                 if ps.show_all_details:
                     detail_box = box.box()
@@ -446,15 +446,22 @@ class MCELL_PT_parameter_system(bpy.types.Panel):
                         par.draw_details(detail_box)
                     else:
                         detail_box.label(text="No General Parameters Defined")
+                    if len(ps.param_error_list) > 0:
+                    
+                        # Note that this is the kind of logic that should be used to check
+                        #    for undefined names matching newly created names:
+                        
+                        error_names_box = box.box()
+                        param_error_names = ps.param_error_list.split()
+                        for name in param_error_names:
+                            error_names_box.label(text="Parameter Error for: " + name, icon='ERROR')
 
                 row = box.row()
-                row.prop(mcell.parameter_system, "param_display_mode", text="Parameter Display Mode")
+                row.prop(ps, "param_display_mode", text="Parameter Display Mode")
                 row = box.row()
-                row.prop(mcell.parameter_system, "param_display_format", text="Parameter Display Format")
+                row.prop(ps, "param_display_format", text="Parameter Display Format")
                 row = box.row()
-                row.prop(mcell.parameter_system, "param_label_fraction", text="Parameter Label Fraction")
-
-
+                row.prop(ps, "param_label_fraction", text="Parameter Label Fraction")
 
 
 
@@ -614,18 +621,22 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
                 layout = layout.box()
             row = layout.row()
             if p.isvalid:
-                value = p.get_numeric_value()
+                value = 0
+                disp_val = " "
+                if p.expr.strip() != "":
+                    value = p.get_numeric_value()
+                    disp_val = parameter_system.param_display_format%value
                 if parameter_system.param_display_mode == 'one_line':
                     split = row.split(parameter_system.param_label_fraction)
                     col = split.column()
-                    col.label ( text=p.par_name+" = "+parameter_system.param_display_format%value )
+                    col.label ( text=p.par_name+" = "+disp_val )
                     
                     col = split.column()
                     col.prop ( p, "expr", text="" )
                     col = row.column()
                     col.prop ( p, "show_help", icon='QUESTION', text="" )
                 elif parameter_system.param_display_mode == 'two_line':
-                    row.label ( icon='NONE', text=p.par_name+" = "+parameter_system.param_display_format%value )  # was icon='FORWARD'
+                    row.label ( icon='NONE', text=p.par_name+" = "+disp_val )  # was icon='FORWARD'
                     row = layout.row()
 
                     split = row.split(0.03)
@@ -1215,7 +1226,9 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
             params.update_name_ID_dictionary(self)
 
         self.old_par_name = self.par_name
-        
+
+        # Update any expressions that use this parameter (to change this name in their expressions)
+
         who_depends_on_me_list = self.who_depends_on_me.split()
         for pname in who_depends_on_me_list:
             p = None
@@ -1225,6 +1238,21 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
                 p = panel_param_list[pname]
             p.regenerate_expr_from_parsed_expr ( general_param_list )
 
+        # Check the parameters with errors in case this name change fixes any of them
+
+        if len(params.param_error_list) > 0:
+            # There are parameters with errors that this name change might fix
+            param_error_names = params.param_error_list.split()
+            for pname in param_error_names:
+                # pname will be the name of a parameter that contains an error - possibly an invalid name!
+                if pname != self.name:   # Some small attempt to avoid recursion?
+                    p = None
+                    if pname[0] == "g":
+                        p = general_param_list[pname]
+                    else:
+                        p = panel_param_list[pname]
+                    # "Touch" the parameter's expression to cause it to be re-evaluated
+                    p.expr = p.expr
 
 
     @profile('expression_changed')
@@ -1267,12 +1295,16 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
             else:
                 self.isvalid = True
                 self.pending_expr = ""
+                if (self.expr.strip() == "") and (self.parsed_expr != ""):
+                    # When an expression is empty, it's value should be zero
+                    self.parsed_expr = ""
                 params.register_validity ( self.name, True )
             parsed_expr = self.encode_expr_list_to_str ( expr_list )
             if self.parsed_expr != parsed_expr:
                 # Force an update by changing the property
                 #print ( "Old expression of \"" + str(self.parsed_expr) + "\" != \"" + str(parsed_expr) + "\" making assignment..." )
                 self.parsed_expr = parsed_expr
+
 
 
     @profile('parsed_expression_changed')
@@ -1298,7 +1330,12 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
 
         #print ( "Parsed Expression Changed for " + str(self.name) + " = " + str(self.parsed_expr) )
 
-        if self.parsed_expr != "":
+        if self.parsed_expr == "":
+            self.parsed_expr_py = ""
+            self.who_I_depend_on = ""
+            if self.value != 0:
+                self.value = 0
+        else:
             # self.update_parsed_and_dependencies(params)
 
             old_who_I_depend_on_set = set(self.who_I_depend_on.split())
@@ -1422,8 +1459,9 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
     def regenerate_expr_from_parsed_expr ( self, general_parameter_list ):
         expr_list = self.decode_str_to_expr_list ( self.parsed_expr )
         regen_expr = self.build_mdl_expr ( expr_list, general_parameter_list )
-        if self.expr != regen_expr:
-            self.expr = regen_expr
+        if regen_expr != None:
+            if self.expr != regen_expr:
+                self.expr = regen_expr
 
 
     @profile('build_mdl_expr')

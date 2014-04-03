@@ -475,7 +475,9 @@ class MCELL_PT_initialization(bpy.types.Panel):
                 #mcell.initialization.time_step_max.draw_in_new_row(box)
                 mcell.initialization.time_step_max.draw(box,mcell.parameter_system)
 
-                mcell.initialization.space_step.draw_in_new_row(box)
+                #mcell.initialization.space_step.draw_in_new_row(box)
+                mcell.initialization.space_step.draw(box,mcell.parameter_system)
+
                 mcell.initialization.interaction_radius.draw_in_new_row(box)
                 mcell.initialization.radial_directions.draw_in_new_row(box)
                 mcell.initialization.radial_subdivisions.draw_in_new_row(box)
