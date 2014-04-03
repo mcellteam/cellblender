@@ -6,11 +6,11 @@ Created on Mon Jun 17 11:19:37 2013
 """
 
 
-#try:
-#    from .libsbml3.linux.lib.python3.dist_packages import libsbml
-#except ImportError:
-#    libsbml = None
-import libsbml
+try:
+    from .libsbml3.linux.lib.python3.dist_packages import libsbml
+except ImportError:
+    libsbml = None
+#import libsbml
 import json
 from optparse import OptionParser
 
