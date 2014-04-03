@@ -683,7 +683,9 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
                 col = split.column()
                 col = split.column()
                 box = col.box()
-                box.label (text=p.descr)
+                desc_list = p.descr.split("\n")
+                for desc_line in desc_list:
+                    box.label (text=desc_line)
                 if len(p.units) > 0:
                     box.label(text="Units = " + p.units)
                 if parameter_system.show_all_details:
