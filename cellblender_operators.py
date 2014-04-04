@@ -1353,17 +1353,6 @@ def mcell_valid_update(context):
     # print ( "mcell_binary_valid = ", mcell.cellblender_preferences.mcell_binary_valid )
 
 
-#@persistent
-#def set_defaults(context):
-#    """ Initialize MCell if not already initialized """
-#    if not context:
-#        context = bpy.context
-#    mcell = context.scene.mcell
-#    if not mcell.is_initialized:
-#        mcell.set_defaults()
-#        mcell.is_initialized = True
-
-
 @persistent
 def init_properties(context):
     """ Initialize MCell properties if not already initialized """

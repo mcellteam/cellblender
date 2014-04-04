@@ -27,14 +27,14 @@ from . import cellblender_operators
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
     FloatProperty, FloatVectorProperty, IntProperty, IntVectorProperty, PointerProperty, StringProperty
 
-print ( "Importing cellblender_parameters inside cellblender_properties.py" )
+#print ( "Importing cellblender_parameters inside cellblender_properties.py" )
 from . import cellblender_parameters
-print ( "Done importing cellblender_parameters inside cellblender_properties.py" )
+#print ( "Done importing cellblender_parameters inside cellblender_properties.py" )
 from . import cellblender_molecules
 
-print ( "Importing parameter_system inside cellblender_properties.py" )
+#print ( "Importing parameter_system inside cellblender_properties.py" )
 from . import parameter_system
-print ( "Done importing parameter_system inside cellblender_properties.py" )
+#print ( "Done importing parameter_system inside cellblender_properties.py" )
 
 # python imports
 from multiprocessing import cpu_count
@@ -63,19 +63,19 @@ class MCellFloatVectorProperty(bpy.types.PropertyGroup):
 
 ######################## The definitions of MCellParameterProperty and MCellGeneralParameterProperty were here ########################
 
-class ReactionFwdRate_PropertyGroup(cellblender_parameters.PanelParameter):
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Forward Rate", default="",
-                 description="Forward Rate Units: sec^-1 (unimolecular),"
-                             " M^-1*sec^-1 (bimolecular)",
-                 update=cellblender_parameters.update_PanelParameter)
+#class ReactionFwdRate_PropertyGroup(cellblender_parameters.PanelParameter):
+#    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+#    expression = StringProperty(name="Forward Rate", default="",
+#                 description="Forward Rate Units: sec^-1 (unimolecular),"
+#                             " M^-1*sec^-1 (bimolecular)",
+#                 update=cellblender_parameters.update_PanelParameter)
 
-class ReactionBkwdRate_PropertyGroup(cellblender_parameters.PanelParameter):
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Backward Rate", default="",
-                 description="Backward Rate Units: sec^-1 (unimolecular),"
-                             " M^-1*sec^-1 (bimolecular)",
-                 update=cellblender_parameters.update_PanelParameter)
+#class ReactionBkwdRate_PropertyGroup(cellblender_parameters.PanelParameter):
+#    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+#    expression = StringProperty(name="Backward Rate", default="",
+#                 description="Backward Rate Units: sec^-1 (unimolecular),"
+#                             " M^-1*sec^-1 (bimolecular)",
+#                 update=cellblender_parameters.update_PanelParameter)
 
 
 class MCellReactionProperty(bpy.types.PropertyGroup):
@@ -208,13 +208,6 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         description="Use the named release pattern. "
                     "If blank, release molecules at start of simulation.")
     status = StringProperty(name="Status")
-
-    #def set_defaults(self):
-    #    print ( "MCellMoleculeReleaseProperty is setting defaults." )
-    #    pass
-    #    # Panel Parameter                         Name                    Default    Min  Max
-    #    #self.probability.set_fields             ( "Probability",              "1",   0.0, 1.0 )
-    #    #self.quantity.set_fields                ( "Quantity to Release",      "0",   0.0      )
 
     def init_properties ( self, parameter_system ):
         # print ( "Inside init_properties for MCellMoleculeReleaseProperty" )
@@ -504,7 +497,7 @@ from . import parameter_system
 class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
     def __init__(self):
-        print ( "\n\n__init__() called\n\n" )
+        print ( "\n\nMCellInitializationPanelProperty.__init__() called\n\n" )
 
     # The following line must be added to every PropertyGroup to be searched for CellBlender Parameters:
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
@@ -527,24 +520,52 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     vacancy_search_distance = PointerProperty ( name="Radial Subdivisions", type=parameter_system.Parameter_Reference )
     surface_grid_density = PointerProperty ( name="Surface Grid Density", type=parameter_system.Parameter_Reference )
 
-    #def set_defaults(self):
-    #    print ( "##############################################################################" )
-    #    print ( "MCellInitializationPanelProperty called set_defaults ... not used any more!!!!" )
-    #    print ( "##############################################################################" )
-
-
-    # @profile('MCellInitializationGroup.init_properties')
     def init_properties ( self, parameter_system ):
         # print ( "Inside init_properties for MCellInitializationGroup" )
-        self.iterations.init_ref    ( parameter_system, "Iteration_Type", user_name="Iterations", user_expr="1",    user_units="",  user_descr="Number of iterations to run",  user_int=True )
-        self.time_step.init_ref     ( parameter_system, "Time_Step_Type", user_name="Time Step",  user_expr="1e-6", user_units="seconds", user_descr="Simulation Time Step" )
-        self.time_step_max.init_ref ( parameter_system, "Time_Step_Max_Type", user_name="Maximum Time Step", user_expr="", user_units="seconds", user_descr="The longest possible time step" )
-        self.space_step.init_ref    ( parameter_system, "Space_Step_Type",    user_name="Space Step",    user_expr="", user_units="microns", user_descr="Have molecules take the same mean diffusion distance" )
-        self.interaction_radius.init_ref ( parameter_system, "Int_Rad_Type", user_name="Interaction Radius", user_expr="", user_units="microns", user_descr="Molecules will interact when they get within N microns" )
-        self.radial_directions.init_ref   ( parameter_system, "Rad_Dir_Type", user_name="Radial Directions",   user_expr="", user_units="microns", user_descr="Number of different directions to put in lookup table\n  Leave alone unless you know what you are doing" )
-        self.radial_subdivisions.init_ref ( parameter_system, "Rad_Sub_Type", user_name="Radial Subdivisions", user_expr="", user_units="microns", user_descr="Molecules will interact when they get within N microns" )
-        self.vacancy_search_distance.init_ref ( parameter_system, "Vac_SD_Type", user_name="Vacancy Search Distance", user_expr="", user_units="microns", user_descr="Surface molecule products can be created at N distance" )
-        self.surface_grid_density.init_ref ( parameter_system, "Int_Rad_Type", user_name="Surface Grid Density", user_expr="10000", user_units="count / sq micron", user_descr="Number of molecules that can be stored per square micron" )
+        self.iterations.init_ref    ( parameter_system, "Iteration_Type", 
+                                      user_name="Iterations", 
+                                      user_expr="1",    
+                                      user_units="",  
+                                      user_descr="Number of iterations to run",  
+                                      user_int=True )
+        self.time_step.init_ref     ( parameter_system, "Time_Step_Type", 
+                                      user_name="Time Step",  
+                                      user_expr="1e-6", 
+                                      user_units="seconds", 
+                                      user_descr="Simulation Time Step" )
+        self.time_step_max.init_ref ( parameter_system, "Time_Step_Max_Type", 
+                                      user_name="Maximum Time Step", 
+                                      user_expr="", 
+                                      user_units="seconds", 
+                                      user_descr="The longest possible time step" )
+        self.space_step.init_ref    ( parameter_system, "Space_Step_Type",    
+                                      user_name="Space Step",    
+                                      user_expr="", 
+                                      user_units="microns", 
+                                      user_descr="Have molecules take the same mean diffusion distance" )
+        self.interaction_radius.init_ref ( parameter_system, "Int_Rad_Type", 
+                                           user_name="Interaction Radius", 
+                                           user_expr="", user_units="microns", 
+                                           user_descr="Molecules will interact when they get within N microns" )
+        self.radial_directions.init_ref   ( parameter_system, "Rad_Dir_Type", 
+                                            user_name="Radial Directions",   
+                                            user_expr="", user_units="microns", 
+                                            user_descr="Number of different directions to put in lookup table\n  Leave alone unless you know what you are doing" )
+        self.radial_subdivisions.init_ref ( parameter_system, "Rad_Sub_Type", 
+                                            user_name="Radial Subdivisions", 
+                                            user_expr="", 
+                                            user_units="microns", 
+                                            user_descr="Molecules will interact when they get within N microns" )
+        self.vacancy_search_distance.init_ref ( parameter_system, "Vac_SD_Type", 
+                                                user_name="Vacancy Search Distance", 
+                                                user_expr="", 
+                                                user_units="microns", 
+                                                user_descr="Surface molecule products can be created at N distance" )
+        self.surface_grid_density.init_ref ( parameter_system, "Int_Rad_Type", 
+                                             user_name="Surface Grid Density", 
+                                             user_expr="10000", 
+                                             user_units="count / sq micron", 
+                                             user_descr="Number of molecules that can be stored per square micron" )
 
 
     accurate_3d_reactions = BoolProperty(
@@ -790,41 +811,6 @@ class MCellParametersPanelProperty(bpy.types.PropertyGroup):
         type=MCellParameterProperty, name="Parameter List")
     active_par_index = IntProperty(name="Active Parameter Index", default=0)
     plot_command = StringProperty(name="", default="")
-###########################################################################################################################
-
-
-
-
-
-############### BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters #################
-
-"""
-# This is now being replaced by code from cellblender_parameters.py
-class MCellGeneralParameterProperty(bpy.types.PropertyGroup):
-    id = IntProperty(name="ID", default=0, description="Unique ID for each parameter")
-    name = StringProperty(name="Name", default="Parameter", description="Unique name for this parameter",
-        update=cellblender_operators.update_parameter_name)
-    expr = StringProperty(name="Expression", default="0", description="Expression to be evaluated for this parameter",
-        update=cellblender_operators.update_parameter_expression)
-
-    pending_expr = StringProperty(name="PendingExpression", default="0", description="Expression as entered with errors pending correction")
-
-    value = StringProperty(name="Value", default="0", description="Current evaluated value for this parameter" )
-    valid = BoolProperty(default=False)
-    initialized = BoolProperty(default=False)
-
-    unit = StringProperty(name="Units", default="", description="Parameter Unit")
-    desc = StringProperty(name="Description", default="", description="Parameter Description")
-    
-    status = StringProperty(name="Status")
-
-
-class MCellParametersPropertyGroup(bpy.types.PropertyGroup):
-    parameter_list = CollectionProperty(type=MCellGeneralParameterProperty, name="Parameters List")
-    active_par_index = IntProperty(name="Active Parameter", default=0)
-    param_group_error = StringProperty( default="", description="Error Message for Entire Parameter Group")
-    parameter_space_string = StringProperty ( name="ParameterSpace", default="", description="ParameterSpace object pickled as a string" )
-"""
 ###########################################################################################################################
 
 
@@ -1088,15 +1074,6 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellMoleculeGlyphsPanelProperty, name="Molecule Shapes")
     scratch_settings = PointerProperty(
         type=MCellScratchPanelProperty, name="CellBlender Scratch Settings")
-
-
-    #def set_defaults(self):
-    #    print ( "##############################################################################" )
-    #    print ( "      MCellPropertyGroup.set_defaults called ... not used any more!!!!" )
-    #    print ( "               Should be calling init_properties instead." )
-    #    print ( "##############################################################################" )
-    #    print ( "MCellPropertyGroup is setting defaults." )
-    #    #self.initialization.set_defaults()
 
 
     def init_properties ( self ):
