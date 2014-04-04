@@ -234,7 +234,7 @@ def register():
     # BK: Added for newer parameters ....
     #bpy.utils.register_module(parameter_system)
     #print ( "Adding app to Scene" )
-    bpy.types.Scene.app = bpy.props.PointerProperty(type=parameter_system.AppPropertyGroup)
+    #bpy.types.Scene.app = bpy.props.PointerProperty(type=parameter_system.AppPropertyGroup)
     #bpy.types.Scene.pspg = bpy.props.PointerProperty(type=parameter_system.ParameterSystemPropertyGroup)
     #print ( "Done adding app to Scene" )
 

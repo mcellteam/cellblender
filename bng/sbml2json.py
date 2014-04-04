@@ -129,7 +129,7 @@ class SBML2JSON:
             outside = compartment.getOutside()
             dimensions = compartment.getSpatialDimensions()
             compartmentList[name] = [dimensions,size,outside]
-        print compartmentList
+        print ( str(compartmentList) )
         return compartmentList
     
     def getOutsideInsideCompartment(self,compartmentList,compartment):
@@ -311,7 +311,7 @@ class SBML2JSON:
                 > 1 and self.moleculeData[element[0]] == '3' else "'"
                 prdList.append("{0}{1}".format(element[0],orientation))
             if len(reactant) == 1 and len(product) ==1 and reactant[0][2] != product[0][2]:
-                print reactant,product
+                print ( str(reactant) + str(product) )
             if rateL != '0':
                 tmp = {}
                 tmp['reactants'] = ' + '.join(rcList)
