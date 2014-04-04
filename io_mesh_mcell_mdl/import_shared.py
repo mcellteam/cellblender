@@ -37,21 +37,22 @@ def import_obj(mdlobj, obj_mat, reg_mat):
 
     objname = mdlobj.name
     print(objname, len(mdlobj.vertices), len(mdlobj.faces))
-    mesh = meshes.get(objname)
-    if not mesh:
-        mesh = meshes.new(objname)
-        mesh.from_pydata(mdlobj.vertices, [], mdlobj.faces)
-
-    if not mesh.materials.get('obj_mat'):
-        mesh.materials.append(obj_mat)
-
-    if not mesh.materials.get('reg_mat'):
-        mesh.materials.append(reg_mat)
-
     obj = objs.get(objname)
-    if not obj:
-        obj = objs.new(objname, mesh)
-        scn_objs.link(obj)
+
+    # Overwrite existing object if it has the same name as the object we are
+    # trying to import
+    if obj:
+        scn.objects.unlink(obj)
+        objs.remove(obj)
+
+    mesh = meshes.new(objname)
+    mesh.from_pydata(mdlobj.vertices, [], mdlobj.faces)
+
+    mesh.materials.append(obj_mat)
+    mesh.materials.append(reg_mat)
+
+    obj = objs.new(objname, mesh)
+    scn_objs.link(obj)
 
     # Object needs to be active to add a region to it because of how
     # init_region (called by add_region_by_name) works.

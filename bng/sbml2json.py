@@ -10,7 +10,7 @@ try:
     from .libsbml3.linux.lib.python3.dist_packages import libsbml
 except ImportError:
     libsbml = None
-#from . import libsbml
+#import libsbml
 import json
 from optparse import OptionParser
 
@@ -32,6 +32,7 @@ class SBML2JSON:
         self.model = model
         self.getUnits()
         self.moleculeData = {}
+        self.compartmentMapping = {}
     def getUnits(self):
         self.unitDictionary = {}
         self.mcellUnitDictionary = {}
@@ -128,6 +129,7 @@ class SBML2JSON:
             outside = compartment.getOutside()
             dimensions = compartment.getSpatialDimensions()
             compartmentList[name] = [dimensions,size,outside]
+        print compartmentList
         return compartmentList
     
     def getOutsideInsideCompartment(self,compartmentList,compartment):
@@ -160,6 +162,7 @@ class SBML2JSON:
                 typeD = '2D'
                 diffusion = 'KB*T*LOG((mu_{0}*h/(SQRT(4)*Rc*(mu_{1}+mu_{2})/2))-gamma)/(4*PI*mu_{0}*h)'.format(compartment,outside,inside)
             self.moleculeData[species.getId()] = [compartmentList[compartment][0]]
+            self.compartmentMapping[species.getId()] = compartment
             moleculeSpecs={'name':species.getId(),'type':typeD,'extendedName':species.getName(),'dif':diffusion}
             initialConcentration = species.getInitialConcentration()
 
@@ -280,20 +283,14 @@ class SBML2JSON:
             
     def getReactions(self,sparameters):
         reactionSpecs = []
+        from copy import deepcopy
         for index, reaction in enumerate(self.model.getListOfReactions()):
-            reactant = [(reactant.getSpecies(), reactant.getStoichiometry())
-            for reactant in reaction.getListOfReactants() if
-            reactant.getSpecies() != 'EmptySet']
-            product = [(product.getSpecies(), product.getStoichiometry())
-            for product in reaction.getListOfProducts() if product.getSpecies()
-            != 'EmptySet']
-
             kineticLaw = reaction.getKineticLaw()
-            rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
-            rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
-
+            rReactant = [(x.getSpecies(), x.getStoichiometry(),self.compartmentMapping[x.getSpecies()]) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
+            rProduct = [(x.getSpecies(), x.getStoichiometry(),self.compartmentMapping[x.getSpecies()]) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
+            reactant = deepcopy(rReactant)
+            product = deepcopy(rProduct)
             parameters = [(parameter.getId(), parameter.getValue()) for parameter in kineticLaw.getListOfParameters()]
-            
             math = kineticLaw.getMath()
             reversible = reaction.getReversible()
             compartmentList  = []
@@ -312,8 +309,9 @@ class SBML2JSON:
             for element in product:
                 orientation = "," if len(set(self.moleculeData[x[0]][0] for x in reactant)) \
                 > 1 and self.moleculeData[element[0]] == '3' else "'"
-                
                 prdList.append("{0}{1}".format(element[0],orientation))
+            if len(reactant) == 1 and len(product) ==1 and reactant[0][2] != product[0][2]:
+                print reactant,product
             if rateL != '0':
                 tmp = {}
                 tmp['reactants'] = ' + '.join(rcList)
@@ -362,7 +360,7 @@ def main():
 	
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
-		default='/home/proto/workspace/bionetgen/parsers/SBMLparser/XMLExamples/curated/BIOMD0000000314.xml',type="string",
+		default='/home/proto/workspace/bionetgen/bng2/Validate/Motivating_example_cBNGL_sbml.xml',type="string",
 		help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
     parser.add_option("-o","--output",dest="output",
 		type="string",

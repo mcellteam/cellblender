@@ -420,74 +420,116 @@ def check_reaction(self, context):
 
     status = ""
 
-    # clean up rxn.reactants only if necessary to avoid infinite recursion.
+    # Clean up rxn.reactants only if necessary to avoid infinite recursion.
     reactants = rxn.reactants.replace(" ", "")
     reactants = reactants.replace("+", " + ")
     reactants = reactants.replace("@", " @ ")
     if reactants != rxn.reactants:
         rxn.reactants = reactants
 
-    # clean up rxn.products only if necessary to avoid infinite recursion.
+    # Clean up rxn.products only if necessary to avoid infinite recursion.
     products = rxn.products.replace(" ", "")
     products = products.replace("+", " + ")
     if products != rxn.products:
         rxn.products = products
 
-    #Check for duplicate reaction
+    # Check for duplicate reaction
     rxn.name = ("%s %s %s") % (rxn.reactants, rxtype, rxn.products)
     rxn_keys = mcell.reactions.reaction_list.keys()
     if rxn_keys.count(rxn.name) > 1:
         status = "Duplicate reaction: %s" % (rxn.name)
 
-    #Check syntax of reactant specification
+    # Does the reaction need reaction directionality (i.e. there is at least
+    # one surface molecule or a surface class)
+    need_rxn_direction = False
+    # Are there ever any reactants, products, or surface classes that don't
+    # specify reaction directionality?
+    ever_no_direction = False
+    # Conversely, are there ever any reactants/products/SCs which do?
+    ever_direction = False
+
+    # Check syntax of reactant specification
     mol_list = mcell.molecules.molecule_list
     surf_class_list = mcell.surface_classes.surf_class_list
     mol_surf_class_filter = \
         r"(^[A-Za-z]+[0-9A-Za-z_.]*)((',)|(,')|(;)|(,*)|('*))$"
     # Check the syntax of the surface class if one exists
     if rxn.reactants.count(" @ ") == 1:
+        need_rxn_direction = True
         reactants_no_surf_class, surf_class = rxn.reactants.split(" @ ")
-        m = re.match(mol_surf_class_filter, surf_class)
-        if m is None:
-            status = "Surface class error: %s" % (surf_class)
+        match = re.match(mol_surf_class_filter, surf_class)
+        if match is None:
+            status = "Illegal surface class name: %s" % (surf_class)
         else:
-            surf_class_name = m.group(1)
+            surf_class_name = match.group(1)
+            surf_class_direction = match.group(2)
             if not surf_class_name in surf_class_list:
                 status = "Undefined surface class: %s" % (surf_class_name)
+            if not surf_class_direction:
+                status = ("No directionality specified for surface class: "
+                          "%s" % (surf_class_name))
     else:
         reactants_no_surf_class = rxn.reactants
+        surf_class = None
+
     reactants = reactants_no_surf_class.split(" + ")
     for reactant in reactants:
-        m = re.match(mol_surf_class_filter, reactant)
-        if m is None:
-            status = "Reactant error: %s" % (reactant)
+        match = re.match(mol_surf_class_filter, reactant)
+        if match is None:
+            status = "Illegal reactant name: %s" % (reactant)
             break
         else:
-            mol_name = m.group(1)
+            mol_name = match.group(1)
+            mol_direction = match.group(2)
             if not mol_name in mol_list:
                 status = "Undefined molecule: %s" % (mol_name)
+            else:
+                if mol_list[mol_name].type == '2D':
+                    need_rxn_direction = True
+                if not mol_direction:
+                    ever_no_direction = True
+                else:
+                    ever_direction = True
 
-    #Check syntax of product specification
+    # Check syntax of product specification
     if rxn.products == "NULL":
         if rxn.type == 'reversible':
             rxn.type = 'irreversible'
     else:
         products = rxn.products.split(" + ")
         for product in products:
-            m = re.match(mol_surf_class_filter, product)
-            if m is None:
-                status = "Product error: %s" % (product)
+            match = re.match(mol_surf_class_filter, product)
+            if match is None:
+                status = "Illegal product name: %s" % (product)
                 break
             else:
-                mol_name = m.group(1)
+                mol_name = match.group(1)
+                mol_direction = match.group(2)
                 if not mol_name in mol_list:
                     status = "Undefined molecule: %s" % (mol_name)
+                else:
+                    if mol_list[mol_name].type == '2D':
+                        need_rxn_direction = True
+                    if not mol_direction:
+                        ever_no_direction = True
+                    else:
+                        ever_direction = True
 
+    # Is directionality required (i.e. any surface molecules or surface class)?
+    # If so, is it missing anywhere in the rxn?
+    if need_rxn_direction and ever_no_direction:
+        status = "Reaction directionality required (e.g. semicolon after name)"
+    # Is reaction directionality specified despite there only being vol. mols?
+    if not surf_class and not need_rxn_direction and ever_direction:
+        status = "Unneeded reaction directionality"
+
+    # Check for a variable rate constant
     if rxn.variable_rate_switch:
         # Make sure that the file has not been deleted
         if rxn.variable_rate not in bpy.data.texts:
             rxn.variable_rate_valid = False
 
+        # Check if file doesn't exist, isn't UTF8, is a directory, etc
         if not rxn.variable_rate_valid:
             status = ("Variable rate constant is not valid: "
                       "%s" % rxn.variable_rate)
@@ -1562,100 +1604,104 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                 'cellblender_plotting_modules']:
             mod_name = plot_module.get_name()
             if mod_name == plot_button_label:
-                # Plot the data via this module
-                # print("Preparing to call %s" % (mod_name))
-                # The project_files_path is now where the MDL lives:
-                data_path = project_files_path()
-                data_path = os.path.join(data_path, "react_data")
-                plot_spec_string = "xlabel=time(s) ylabel=count "
-                if plot_legend != 'x':
-                    plot_spec_string = plot_spec_string + "legend=" + plot_legend
+                break
 
-                # New plotting approach uses list and modification dates
-                if mcell.rxn_output.rxn_output_list:
-                    # Use the start_time.txt file to find files modified since
-                    # MCell was started
-                    start_time = os.stat(os.path.join(os.path.dirname(
-                        bpy.data.filepath), "start_time.txt")).st_mtime
-                    # print("Modification Time of start_time.txt is",
-                    #       start_time)
-                    for rxn_output in mcell.rxn_output.rxn_output_list:
-                        molecule_name = rxn_output.molecule_name
-                        object_name = rxn_output.object_name
-                        region_name = rxn_output.region_name
-                        fn = None
-                        if rxn_output.count_location == 'World':
-                            # fn = "%s.World.*.dat" % (molecule_name)
-                            fn = "%s.World.dat" % (molecule_name)
-                        elif rxn_output.count_location == 'Object':
-                            # fn = "%s.%s.*.dat" % (molecule_name, object_name)
-                            fn = "%s.%s.dat" % (molecule_name, object_name)
-                        elif rxn_output.count_location == 'Region':
-                            #fn = "%s.%s.%s.*.dat" % (molecule_name,
-                            #                         object_name, region_name)
-                            fn = "%s.%s.%s.dat" % (molecule_name,
-                                                   object_name, region_name)
-                        if fn is not None:
-                            fn = os.path.join ( "seed_*", fn )
-                            candidate_file_list = glob.glob(
-                                os.path.join(data_path, fn))
-                            # Without sorting, the seeds may not be increasing
-                            candidate_file_list.sort()
-                            #print("Candidate file list for %s:" % (fn))
-                            #print("  ", candidate_file_list)
-                            first_pass = True
-                            for ffn in candidate_file_list:
-                                if os.stat(ffn).st_mtime > start_time:
-                                    # This file is both in the list and newer
-                                    # than the run time for MCell
+        # Plot the data via this module
+        # print("Preparing to call %s" % (mod_name))
+        # The project_files_path is now where the MDL lives:
+        data_path = project_files_path()
+        data_path = os.path.join(data_path, "react_data")
+        plot_spec_string = "xlabel=time(s) ylabel=count "
+        if plot_legend != 'x':
+            plot_spec_string = plot_spec_string + "legend=" + plot_legend
 
-                                    # Create f as a relative path containing seed/file
-                                    split1 = os.path.split(ffn)
-                                    split2 = os.path.split(split1[0])
-                                    f = os.path.join ( split2[1], split1[1] )
-                                    
-                                    color_string = ""
-                                    if mol_colors:
-                                        # Use molecule colors for graphs
-                                        mol_mat_name = "mol_%s_mat" % (molecule_name)  # Should be standardized!!
-                                        #print ( "Molecule Material Name = ", mol_mat_name )
-                                        #Look up the material
-                                        mats = bpy.data.materials
-                                        mol_color = mats.get(mol_mat_name).diffuse_color
-                                        #print ( "Molecule color = ", mol_mat.diffuse_color )
+        for rxn_output in mcell.rxn_output.rxn_output_list:
+            molecule_name = rxn_output.molecule_name
+            object_name = rxn_output.object_name
+            region_name = rxn_output.region_name
+            file_name = None
 
-                                        mol_color_red = 255 * mol_color.r
-                                        mol_color_green = 255 * mol_color.g
-                                        mol_color_blue = 255 * mol_color.b
-                                        color_string = " color=#%2.2x%2.2x%2.2x " % (mol_color_red, mol_color_green, mol_color_blue)
+            if rxn_output.rxn_or_mol == 'Molecule':
+                if rxn_output.count_location == 'World':
+                    file_name = "%s.World.dat" % (molecule_name)
+                elif rxn_output.count_location == 'Object':
+                    file_name = "%s.%s.dat" % (molecule_name, object_name)
+                elif rxn_output.count_location == 'Region':
+                    file_name = "%s.%s.%s.dat" % (molecule_name,
+                                           object_name, region_name)
+            else:
+                rxn_name = rxn_output.reaction_name
+                file_name = "%s.World.dat" % (rxn_name)
 
-                                    base_name = os.path.basename(f)
+            if file_name:
+                file_name = os.path.join("seed_*", file_name)
+                candidate_file_list = glob.glob(
+                    os.path.join(data_path, file_name))
+                # Without sorting, the seeds may not be increasing
+                candidate_file_list.sort()
+                #print("Candidate file list for %s:" % (file_name))
+                #print("  ", candidate_file_list)
+                first_pass = True
+                # Use the start_time.txt file to find files modified since
+                # MCell was started
+                start_time = os.stat(os.path.join(os.path.dirname(
+                    bpy.data.filepath), "start_time.txt")).st_mtime
+                # This file is both in the list and newer
+                # than the run time for MCell
+                candidate_file_list = [
+                    ffn for ffn in candidate_file_list if os.stat(ffn).st_mtime > start_time]
+                for ffn in candidate_file_list:
 
-                                    if combine_seeds:
-                                        title_string = " title=" + base_name
-                                    else:
-                                        title_string = " title=" + f
-                                    
-                                    if plot_sep == ' ':
-                                        # No title when all are on the same plot since only last will show
-                                        title_string = ""
+                    # Create f as a relative path containing seed/file
+                    split1 = os.path.split(ffn)
+                    split2 = os.path.split(split1[0])
+                    f = os.path.join(split2[1], split1[1])
+                    
+                    color_string = ""
+                    if rxn_output.rxn_or_mol == 'Molecule' and mol_colors:
+                        # Use molecule colors for graphs
+                        # Should be standardized!!
+                        mol_mat_name = "mol_%s_mat" % (molecule_name)
+                        #print ("Molecule Material Name = ", mol_mat_name)
+                        #Look up the material
+                        mats = bpy.data.materials
+                        mol_color = mats.get(mol_mat_name).diffuse_color
+                        #print("Molecule color = ", mol_mat.diffuse_color)
 
-                                    if combine_seeds:
-                                        psep = " "
-                                        if first_pass:
-                                            psep = plot_sep
-                                            first_pass = False
-                                        plot_spec_string = (
-                                            plot_spec_string + psep + color_string +
-                                            title_string + " f=" + f)
-                                    else:
-                                        plot_spec_string = (
-                                            plot_spec_string + plot_sep + color_string +
-                                            title_string + " f=" + f)
+                        mol_color_red = 255 * mol_color.r
+                        mol_color_green = 255 * mol_color.g
+                        mol_color_blue = 255 * mol_color.b
+                        color_string = " color=#%2.2x%2.2x%2.2x " % (
+                            mol_color_red, mol_color_green, mol_color_blue)
 
-                print("Plotting from", data_path)
-                print("Plotting spec", plot_spec_string)
-                plot_module.plot(data_path, plot_spec_string)
+                    base_name = os.path.basename(f)
+
+                    if combine_seeds:
+                        title_string = " title=" + base_name
+                    else:
+                        title_string = " title=" + f
+                    
+                    if plot_sep == ' ':
+                        # No title when all are on the same plot since only
+                        # last will show
+                        title_string = ""
+
+                    if combine_seeds:
+                        psep = " "
+                        if first_pass:
+                            psep = plot_sep
+                            first_pass = False
+                        plot_spec_string = (
+                            plot_spec_string + psep + color_string +
+                            title_string + " f=" + f)
+                    else:
+                        plot_spec_string = (
+                            plot_spec_string + plot_sep + color_string +
+                            title_string + " f=" + f)
+
+        print("Plotting from", data_path)
+        print("Plotting spec", plot_spec_string)
+        plot_module.plot(data_path, plot_spec_string)
 
         return {'FINISHED'}
 
