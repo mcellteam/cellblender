@@ -27,14 +27,10 @@ from . import cellblender_operators
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
     FloatProperty, FloatVectorProperty, IntProperty, IntVectorProperty, PointerProperty, StringProperty
 
-#print ( "Importing cellblender_parameters inside cellblender_properties.py" )
-from . import cellblender_parameters
-#print ( "Done importing cellblender_parameters inside cellblender_properties.py" )
+# from . import cellblender_parameters
 from . import cellblender_molecules
 
-#print ( "Importing parameter_system inside cellblender_properties.py" )
 from . import parameter_system
-#print ( "Done importing parameter_system inside cellblender_properties.py" )
 
 # python imports
 from multiprocessing import cpu_count
@@ -1041,8 +1037,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     parameters = PointerProperty(
         type=MCellParametersPanelProperty, name="Defined Parameters")
 ############## BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters ####
-    general_parameters = PointerProperty(
-        type=cellblender_parameters.MCellParametersPropertyGroup, name="General Parameters")
+    #general_parameters = PointerProperty(
+    #    type=cellblender_parameters.MCellParametersPropertyGroup, name="General Parameters")
 
     parameter_system = PointerProperty(
         type=parameter_system.ParameterSystemPropertyGroup, name="Parameter System")

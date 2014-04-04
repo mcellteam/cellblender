@@ -41,7 +41,6 @@ cellblender_info = {
         "cellblender_properties.py",
         "cellblender_panels.py",
         "cellblender_operators.py",
-        "cellblender_parameters.py",
         "cellblender_molecules.py",
         "object_surface_regions.py",
         "run_simulations.py",
@@ -107,7 +106,7 @@ if "bpy" in locals():
     imp.reload(cellblender_properties)
     imp.reload(cellblender_panels)
     imp.reload(cellblender_operators)
-    imp.reload(cellblender_parameters)
+    #imp.reload(cellblender_parameters)
     imp.reload(parameter_system)
     imp.reload(cellblender_molecules)
     imp.reload(object_surface_regions)
@@ -127,7 +126,7 @@ else:
         cellblender_properties, \
         cellblender_panels, \
         cellblender_operators, \
-        cellblender_parameters, \
+        #cellblender_parameters, \
         parameter_system, \
         cellblender_molecules, \
         object_surface_regions, \
@@ -140,7 +139,7 @@ else:
     from . import cellblender_properties
     from . import cellblender_panels
     from . import cellblender_operators
-    from . import cellblender_parameters
+    #from . import cellblender_parameters
     from . import parameter_system
     from . import cellblender_molecules
     from . import object_surface_regions
@@ -174,7 +173,7 @@ def register():
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_viz_results)
-    bpy.utils.unregister_class(cellblender_parameters.MCELL_PT_general_parameters)
+    #bpy.utils.unregister_class(cellblender_parameters.MCELL_PT_general_parameters)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_partitions)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_initialization)

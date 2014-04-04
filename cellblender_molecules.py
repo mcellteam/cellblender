@@ -34,7 +34,7 @@ import mathutils
 import re
 
 import cellblender
-from . import cellblender_parameters
+# from . import cellblender_parameters
 from . import parameter_system
 
 
@@ -98,23 +98,24 @@ def check_callback(self, context):
 
 
 
-class MoleculeDiffusionConstant_PropertyGroup(cellblender_parameters.PanelParameter):
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Diffusion Constant", default="",
-                 description="Diffusion Constant Units: cm^2/sec",
-                 update=cellblender_parameters.update_PanelParameter)
+#class MoleculeDiffusionConstant_PropertyGroup(cellblender_parameters.PanelParameter):
+#    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+#    expression = StringProperty(name="Diffusion Constant", default="",
+#                 description="Diffusion Constant Units: cm^2/sec",
+#                 update=cellblender_parameters.update_PanelParameter)
 
-class MoleculeCustomTimeStep_PropertyGroup(cellblender_parameters.PanelParameter):
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Custom Time Step", default="",
-                 description="Custom Time Step Units: seconds",
-                 update=cellblender_parameters.update_PanelParameter)
+#class MoleculeCustomTimeStep_PropertyGroup(cellblender_parameters.PanelParameter):
+#    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+#    expression = StringProperty(name="Custom Time Step", default="",
+#                 description="Custom Time Step Units: seconds",
+#                 update=cellblender_parameters.update_PanelParameter)
 
-class MoleculeCustomSpaceStep_PropertyGroup(cellblender_parameters.PanelParameter):
-    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-    expression = StringProperty(name="Custom Space Step", default="",
-                 description="Custom Space Step Units: microns",
-                 update=cellblender_parameters.update_PanelParameter)
+#class MoleculeCustomSpaceStep_PropertyGroup(cellblender_parameters.PanelParameter):
+#    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
+#    expression = StringProperty(name="Custom Space Step", default="",
+#                 description="Custom Space Step Units: microns",
+#                 update=cellblender_parameters.update_PanelParameter)
+
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
