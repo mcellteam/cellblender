@@ -120,8 +120,8 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
             row.prop(mcell.cellblender_preferences, "decouple_export_run")
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "filter_invalid")
-            row = layout.row()
-            row.prop(mcell.cellblender_preferences, "debug_level")
+            #row = layout.row()
+            #row.prop(mcell.cellblender_preferences, "debug_level")
 
 
 class MCELL_PT_project_settings(bpy.types.Panel):
@@ -209,7 +209,7 @@ class MCELL_PT_run_simulation(bpy.types.Panel):
             # project dir have been selected. There also needs to be a main mdl
             # file present.
             if not mcell.cellblender_preferences.mcell_binary:
-                row.label(text="Set an MCell binary", icon='ERROR')
+                row.label(text="Set an MCell binary in CellBlender - Preferences Panel", icon='ERROR')
             elif not os.path.dirname(bpy.data.filepath):
                 row.label(
                     text="Open or save a .blend file to set the project directory",
@@ -969,32 +969,25 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                     if rel.molecule in mcell.molecules.molecule_list:
                         if mcell.molecules.molecule_list[rel.molecule].type == '2D':
                             layout.prop(rel, "orient")
+
                     layout.prop(rel, "shape")
+
                     if ((rel.shape == 'CUBIC') | (rel.shape == 'SPHERICAL') |
                             (rel.shape == 'SPHERICAL SHELL')):
                         layout.prop(rel, "location")
-                        layout.prop(rel, "diameter")
+                        rel.diameter.draw(layout,ps)
+
                     if rel.shape == 'OBJECT':
                         layout.prop(rel, "object_expr")
 
-                    #layout.prop(rel, "probability")
-                    #rel.probability.draw_in_new_row(layout)
-                    #row = layout.row()
                     rel.probability.draw(layout,ps)
             
                     layout.prop(rel, "quantity_type")
-                    #if rel.quantity_expr != "0":
-                    #    layout.prop(rel, "quantity_expr")
-                    #else:
-                    #    #layout.prop(rel, "quantity")
-                    #rel.quantity.draw_in_new_row(layout)
                     rel.quantity.draw(layout,ps)
+
                     if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
-                        #layout.prop(rel, "stddev")
-                        #rel.stddev.draw_in_new_row(layout)
                         rel.stddev.draw(layout,ps)
 
-                    #layout.prop(rel, "pattern")
                     layout.prop_search(rel, "pattern", mcell.release_patterns,
                                        "release_pattern_list",
                                        icon='FORCE_LENNARDJONES')

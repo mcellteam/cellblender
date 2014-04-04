@@ -97,26 +97,6 @@ def check_callback(self, context):
     return
 
 
-
-#class MoleculeDiffusionConstant_PropertyGroup(cellblender_parameters.PanelParameter):
-#    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-#    expression = StringProperty(name="Diffusion Constant", default="",
-#                 description="Diffusion Constant Units: cm^2/sec",
-#                 update=cellblender_parameters.update_PanelParameter)
-
-#class MoleculeCustomTimeStep_PropertyGroup(cellblender_parameters.PanelParameter):
-#    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-#    expression = StringProperty(name="Custom Time Step", default="",
-#                 description="Custom Time Step Units: seconds",
-#                 update=cellblender_parameters.update_PanelParameter)
-
-#class MoleculeCustomSpaceStep_PropertyGroup(cellblender_parameters.PanelParameter):
-#    param_data = PointerProperty(type=cellblender_parameters.PanelParameterData)
-#    expression = StringProperty(name="Custom Space Step", default="",
-#                 description="Custom Space Step Units: microns",
-#                 update=cellblender_parameters.update_PanelParameter)
-
-
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     name = StringProperty(
@@ -132,7 +112,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         description="Surface molecules are constrained to surfaces/meshes. "
                     "Volume molecules exist in space.")
 
-    # diffusion_constant = PointerProperty(type=MoleculeDiffusionConstant_PropertyGroup)
     diffusion_constant = PointerProperty ( name="Molecule Diffusion Constant", type=parameter_system.Parameter_Reference )
 
     target_only = BoolProperty(
@@ -140,8 +119,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         description="If selected, molecule will not initiate reactions when "
                     "it runs into other molecules. Can speed up simulations.")
 
-    #custom_time_step = PointerProperty(type=MoleculeCustomTimeStep_PropertyGroup)
-    #custom_space_step = PointerProperty(type=MoleculeCustomSpaceStep_PropertyGroup)
     custom_time_step =   PointerProperty ( name="Molecule Custom Time Step",   type=parameter_system.Parameter_Reference )
     custom_space_step =  PointerProperty ( name="Molecule Custom Space Step",  type=parameter_system.Parameter_Reference )
 
@@ -151,27 +128,11 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     status = StringProperty(name="Status")
 
     def init_properties ( self, parameter_system ):
-        # print ( "Inside init_properties for MCellMoleculeProperty" )
         self.name = "Molecule_"+str(self.id)
 
         self.diffusion_constant.init_ref ( parameter_system, "Mol_Diff_Const_Type", user_name="Diffusion Constant", user_expr="0", user_units="cm^2/sec", user_descr="Molecule Diffusion Constant" )
         self.custom_time_step.init_ref   ( parameter_system, "Mol_Time_Step_Type",  user_name="Custom Time Step",   user_expr="",  user_units="seconds",  user_descr="Molecule Custom Time Step" )
         self.custom_space_step.init_ref  ( parameter_system, "Mol_Space_Step_Type", user_name="Custom Space Step",  user_expr="",  user_units="microns",  user_descr="Molecule Custom Space Step" )
-
-        # self.diffusion_constant.set_label ( "Diffusion Constant" )
-        #self.custom_time_step.set_label ( "Custom Time Step" )
-        #self.custom_space_step.set_label ( "Custom Space Step" )
-
-
-    def set_defaults(self):
-        pass
-        #self.name = "Molecule_"+str(self.id)
-
-        #self.diffusion_constant.init_ref ( parameter_system, "Diff_Const_Type", user_name="Diffusion Constant", user_expr="0", user_units="cm^2/sec", user_descr="Molecule Diffusion Constant" )
-
-        # self.diffusion_constant.set_label ( "Diffusion Constant" )
-        #self.custom_time_step.set_label ( "Custom Time Step" )
-        #self.custom_space_step.set_label ( "Custom Space Step" )
 
 
     # Exporting to an MDL file could be done just like this
@@ -196,8 +157,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             row.prop(self, "target_only")
             self.custom_time_step.draw(box,parameter_system)
             self.custom_space_step.draw(box,parameter_system)
-            #self.custom_time_step.draw_in_new_row(box)
-            #self.custom_space_step.draw_in_new_row(box)
 
     def check_callback(self, context):
         """Allow the parent molecule list (MCellMoleculesListProperty) to do the checking"""
@@ -233,15 +192,6 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
     next_id = IntProperty(name="Counter for Unique Molecule IDs", default=1)  # Start ID's at 1 to confirm initialization
     show_advanced = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
 
-    def set_defaults(self):
-        # It's not clear if setting the defaults for the molecule list should
-        #    set defaults for each molecule in the list or
-        #    delete all the molecules to create an empty list
-        # Since it's more interesting to set the molecules back to their defaults ... do that.
-        if self.molecule_list:
-            for mol in self.molecule_list:
-                mol.set_defaults()
-
     def init_properties ( self, parameter_system ):
         if self.molecule_list:
             for mol in self.molecule_list:
@@ -252,7 +202,6 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         new_mol = self.molecule_list.add()
         new_mol.id = self.allocate_available_id()
         new_mol.init_properties(context.scene.mcell.parameter_system)
-        #new_mol.set_defaults()
         self.active_mol_index = len(self.molecule_list)-1
 
     def remove_active_molecule ( self, context ):

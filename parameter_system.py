@@ -125,6 +125,8 @@ class MCELL_PT_parameter_system(bpy.types.Panel):
                 row.prop(ps, "param_display_format", text="Parameter Display Format")
                 row = box.row()
                 row.prop(ps, "param_label_fraction", text="Parameter Label Fraction")
+                row = box.row()
+                row.prop(ps, "export_as_expressions", text="Export Parameters as Expressions (doesn't work yet)")
 
 
 
@@ -594,6 +596,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
 
     show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
+
     panel_path = StringProperty ( name="Panel Path", default="" )
     ispanel = BoolProperty ( default=False )  # Boolean flag to signify panel parameter
     isint = BoolProperty ( default=False )    # Boolean flag to signify an integer parameter
@@ -1036,6 +1039,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     param_display_format = StringProperty ( default='%.6g', description="Formatting string for each parameter" )
     param_label_fraction = FloatProperty(precision=4, min=0.0, max=1.0, default=0.35, description="Width (0 to 1) of parameter's label")
     
+    export_as_expressions = BoolProperty ( default=False, description="Export Parameters as Expressions rather than Numbers" )
     
     show_panel = BoolProperty(name="Show Panel", default=False)
     show_all_details = BoolProperty(name="Show All Details", default=False)

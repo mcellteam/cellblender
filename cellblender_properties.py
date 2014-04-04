@@ -140,11 +140,8 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         name="Location", precision=4,
         description="The center of the release site specified by XYZ "
                     "coordinates")
-    diameter = FloatProperty(
-        name="Site Diameter", precision=4, min=0.0,
-        description="Release molecules uniformly within the specified "
-                    "diameter.")
 
+    diameter = PointerProperty ( name="Site Diameter", type=parameter_system.Parameter_Reference )
     probability = PointerProperty ( name="Release Probability", type=parameter_system.Parameter_Reference )
 
     quantity_type_enum = [
@@ -155,7 +152,6 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
                                  name="Quantity Type")
 
     quantity = PointerProperty ( name="Quantity to Release", type=parameter_system.Parameter_Reference )
-
     stddev = PointerProperty ( name="Standard Deviation", type=parameter_system.Parameter_Reference )
 
     pattern = StringProperty(
@@ -165,9 +161,11 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     status = StringProperty(name="Status")
 
     def init_properties ( self, parameter_system ):
-        self.probability.init_ref ( parameter_system, "Rel_Prob", user_name="Release Probability",  user_expr="1", user_units="", user_descr="Release does not occur every time,\nbut rather with specified probability." )
-        self.quantity.init_ref    ( parameter_system, "Rel_Quant", user_name="Quantity to Release", user_expr="",  user_units="", user_descr="Concentration units: molar. Density units: molecules per square micron" )
-        self.stddev.init_ref      ( parameter_system, "Rel_StdDev", user_name="Standard Deviation", user_expr="0", user_units="", user_descr="Standard Deviation" )
+        self.diameter.init_ref    ( parameter_system, "Diam_Type",       user_name="Site Diameter",       user_expr="0", user_units="", user_descr="Release molecules uniformly within the specified diameter." )
+        self.probability.init_ref ( parameter_system, "Rel_Prob_Type",   user_name="Release Probability", user_expr="1", user_units="", user_descr="Release does not occur every time,\nbut rather with specified probability." )
+        self.quantity.init_ref    ( parameter_system, "Rel_Quant_Type",  user_name="Quantity to Release", user_expr="",  user_units="", user_descr="Concentration units: molar. Density units: molecules per square micron" )
+        self.stddev.init_ref      ( parameter_system, "Rel_StdDev_Type", user_name="Standard Deviation",  user_expr="0", user_units="", user_descr="Standard Deviation" )
+
 
 
 class MCellReleasePatternProperty(bpy.types.PropertyGroup):
