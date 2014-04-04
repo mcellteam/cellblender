@@ -80,13 +80,17 @@ def save_wrapper(context, out_file, filedir):
     settings = mcell.project_settings
     export_project = mcell.export_project
     project_settings = mcell.project_settings
+    parameter_system = mcell.parameter_system
 
     # Export model initialization:
-    # out_file.write("ITERATIONS = %d\n" % (mcell.initialization.iterations))
     out_file.write("ITERATIONS = %d\n" % (mcell.initialization.iterations.get_value()))
     
     out_file.write("TIME_STEP = %g\n" % (mcell.initialization.time_step.get_value()))
-    out_file.write("VACANCY_SEARCH_DISTANCE = 10\n\n") # DB: added to avoid error (I think it should have a default value to avoid error in most of the reaction networks)
+
+    if mcell.initialization.vacancy_search_distance.get_expr(parameter_system.panel_parameter_list) != '':
+        out_file.write("VACANCY_SEARCH_DISTANCE = %g\n" % (mcell.initialization.vacancy_search_distance.get_value()))
+    else:
+        out_file.write("VACANCY_SEARCH_DISTANCE = 10\n\n") # DB: added to avoid error (I think it should have a default value to avoid error in most of the reaction networks)
 
     # Export optional initialization commands:
     if export_project.export_format == 'mcell_mdl_modular':
@@ -310,27 +314,27 @@ def save_initialization_commands(context, out_file):
 
     """
 
-    init = context.scene.mcell.initialization
+    mcell = context.scene.mcell
+    init = mcell.initialization
+    parameter_system = mcell.parameter_system
     # Maximum Time Step
-    if init.time_step_max.get_expression() != '':
+    if init.time_step_max.get_expr(parameter_system.panel_parameter_list) != '':
         out_file.write("TIME_STEP_MAX = %g\n" % (init.time_step_max.get_value()))
     # Space Step
-    if init.space_step.get_expression() != '':
+    if init.space_step.get_expr(parameter_system.panel_parameter_list) != '':
         out_file.write("SPACE_STEP = %g\n" % (init.space_step.get_value()))
     # Interaction Radius
-    if init.interaction_radius.get_expression() != '':
+    if init.interaction_radius.get_expr(parameter_system.panel_parameter_list) != '':
         out_file.write("INTERACTION_RADIUS = %g\n" % (init.interaction_radius.get_value()))
     # Radial Directions
-    if init.radial_directions.get_expression() != '':
+    if init.radial_directions.get_expr(parameter_system.panel_parameter_list) != '':
         out_file.write("RADIAL_DIRECTIONS = %d\n" % (init.radial_directions.get_value()))
     # Radial Subdivisions
-    if init.radial_subdivisions.get_expression() != '':
-        out_file.write(
-            "RADIAL_SUBDIVISIONS = %d\n" % (init.radial_subdivisions.get_value()))
+    if init.radial_subdivisions.get_expr(parameter_system.panel_parameter_list) != '':
+        out_file.write("RADIAL_SUBDIVISIONS = %d\n" % (init.radial_subdivisions.get_value()))
     # Vacancy Search Distance
-    if init.vacancy_search_distance.get_expression() != '':
-        out_file.write(
-            "VACANCY_SEARCH_DISTANCE = %g\n" % (init.vacancy_search_distance.get_value()))
+    if init.vacancy_search_distance.get_expr(parameter_system.panel_parameter_list) != '':
+        out_file.write("VACANCY_SEARCH_DISTANCE = %g\n" % (init.vacancy_search_distance.get_value()))
     # Surface Grid Density
     ##### TODO: If surface_grid_density is an integer (as it is) why output it as %g format?
     out_file.write("SURFACE_GRID_DENSITY = %g\n" % (init.surface_grid_density.get_value()))
@@ -490,38 +494,26 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
                 out_file.write("   MOLECULE = %s\n" % (release_site.molecule))
 
         if release_site.quantity_type == 'NUMBER_TO_RELEASE':
-            if release_site.quantity_expr != "0":
-                out_file.write("   NUMBER_TO_RELEASE = %s\n" %  ###### DB: included to include expression for imported release quantities
-                           (release_site.quantity_expr))
-            else:
-                out_file.write("   NUMBER_TO_RELEASE = %d\n" %
-                           (int(release_site.quantity.get_value())))
+            out_file.write("   NUMBER_TO_RELEASE = %d\n" %
+                       (int(release_site.quantity.get_value())))
 
         elif release_site.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
             out_file.write("   GAUSSIAN_RELEASE_NUMBER\n")
             out_file.write("   {\n")
             out_file.write("        MEAN_NUMBER = %g\n" %
-                           (release_site.quantity))
+                           (release_site.quantity.get_value()))
             out_file.write("        STANDARD_DEVIATION = %g\n" %
-                           (release_site.stddev))
+                           (release_site.stddev.get_value()))
             out_file.write("      }\n")
 
         elif release_site.quantity_type == 'DENSITY':
             if release_site.molecule in mol_list:
-                if release_site.quantity_expr != "0":
-                    if mol_list[release_site.molecule].type == '2D':
-                        out_file.write("   DENSITY = %s\n" %
-                                   (release_site.quantity_expr))
-                    else:
-                        out_file.write("   CONCENTRATION = %s\n" %
-                                   (release_site.quantity_expr))
+                if mol_list[release_site.molecule].type == '2D':
+                    out_file.write("   DENSITY = %g\n" %
+                               (release_site.quantity.get_value()))
                 else:
-                    if mol_list[release_site.molecule].type == '2D':
-                        out_file.write("   DENSITY = %g\n" %
-                                   (release_site.quantity.get_value()))
-                    else:
-                        out_file.write("   CONCENTRATION = %g\n" %
-                                   (release_site.quantity.get_value()))
+                    out_file.write("   CONCENTRATION = %g\n" %
+                               (release_site.quantity.get_value()))
 
         out_file.write("   RELEASE_PROBABILITY = %g\n" %
                        (release_site.probability.get_value()))
@@ -569,10 +561,10 @@ def save_molecules(context, out_file, mol_list):
 
             if mol_item.type == '2D':
                 out_file.write("    DIFFUSION_CONSTANT_2D = %g\n" %
-                               (mol_item.diffusion_constant.get_value()))  # Could use .get_expression() to export the expression
+                               (mol_item.diffusion_constant.get_value()))  # Could use .get_expr() to export the expression
             else:
                 out_file.write("    DIFFUSION_CONSTANT_3D = %g\n" %
-                               (mol_item.diffusion_constant.get_value()))  # Could use .get_expression() to export the expression
+                               (mol_item.diffusion_constant.get_value()))  # Could use .get_expr() to export the expression
 
             if mol_item.custom_time_step.get_value() > 0:
                 out_file.write("    CUSTOM_TIME_STEP = %g\n" % (mol_item.custom_time_step.get_value()))

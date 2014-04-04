@@ -35,6 +35,7 @@ import re
 
 import cellblender
 from . import cellblender_parameters
+from . import parameter_system
 
 
 # We use per module class registration/unregistration
@@ -130,38 +131,57 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         description="Surface molecules are constrained to surfaces/meshes. "
                     "Volume molecules exist in space.")
 
-    diffusion_constant = PointerProperty(type=MoleculeDiffusionConstant_PropertyGroup)
+    # diffusion_constant = PointerProperty(type=MoleculeDiffusionConstant_PropertyGroup)
+    diffusion_constant = PointerProperty ( name="Molecule Diffusion Constant", type=parameter_system.Parameter_Reference )
 
     target_only = BoolProperty(
         name="Target Only",
         description="If selected, molecule will not initiate reactions when "
                     "it runs into other molecules. Can speed up simulations.")
 
-    custom_time_step = PointerProperty(type=MoleculeCustomTimeStep_PropertyGroup)
-    custom_space_step = PointerProperty(type=MoleculeCustomSpaceStep_PropertyGroup)
+    #custom_time_step = PointerProperty(type=MoleculeCustomTimeStep_PropertyGroup)
+    #custom_space_step = PointerProperty(type=MoleculeCustomSpaceStep_PropertyGroup)
+    custom_time_step =   PointerProperty ( name="Molecule Custom Time Step",   type=parameter_system.Parameter_Reference )
+    custom_space_step =  PointerProperty ( name="Molecule Custom Space Step",  type=parameter_system.Parameter_Reference )
 
     export_viz = bpy.props.BoolProperty(
         default=False, description="If selected, the molecule will be "
                                    "included in the visualization data.")
     status = StringProperty(name="Status")
 
+    def init_properties ( self, parameter_system ):
+        # print ( "Inside init_properties for MCellMoleculeProperty" )
+        self.name = "Molecule_"+str(self.id)
+
+        self.diffusion_constant.init_ref ( parameter_system, "Mol_Diff_Const_Type", user_name="Diffusion Constant", user_expr="0", user_units="cm^2/sec", user_descr="Molecule Diffusion Constant" )
+        self.custom_time_step.init_ref   ( parameter_system, "Mol_Time_Step_Type",  user_name="Custom Time Step",   user_expr="",  user_units="seconds",  user_descr="Molecule Custom Time Step" )
+        self.custom_space_step.init_ref  ( parameter_system, "Mol_Space_Step_Type", user_name="Custom Space Step",  user_expr="",  user_units="microns",  user_descr="Molecule Custom Space Step" )
+
+        # self.diffusion_constant.set_label ( "Diffusion Constant" )
+        #self.custom_time_step.set_label ( "Custom Time Step" )
+        #self.custom_space_step.set_label ( "Custom Space Step" )
+
 
     def set_defaults(self):
-        self.name = "Molecule_"+str(self.id)
-        self.diffusion_constant.set_label ( "Diffusion Constant" )
-        self.custom_time_step.set_label ( "Custom Time Step" )
-        self.custom_space_step.set_label ( "Custom Space Step" )
+        pass
+        #self.name = "Molecule_"+str(self.id)
+
+        #self.diffusion_constant.init_ref ( parameter_system, "Diff_Const_Type", user_name="Diffusion Constant", user_expr="0", user_units="cm^2/sec", user_descr="Molecule Diffusion Constant" )
+
+        # self.diffusion_constant.set_label ( "Diffusion Constant" )
+        #self.custom_time_step.set_label ( "Custom Time Step" )
+        #self.custom_space_step.set_label ( "Custom Space Step" )
 
 
     # Exporting to an MDL file could be done just like this
     def print_details( self ):
         print ( "Name = " + self.name )
 
-    def draw_props ( self, layout, molecules ):
+    def draw_props ( self, layout, molecules, parameter_system ):
         layout.prop ( self, "name" )
         layout.prop ( self, "type" )
-        self.diffusion_constant.draw_in_new_row(layout)
-
+        self.diffusion_constant.draw(layout,parameter_system)
+            
         box = layout.box()
         row = box.row(align=True)
         row.alignment = 'LEFT'
@@ -173,8 +193,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                      text="Advanced Options", emboss=False)
             row = box.row()
             row.prop(self, "target_only")
-            self.custom_time_step.draw_in_new_row(box)
-            self.custom_space_step.draw_in_new_row(box)
+            self.custom_time_step.draw(box,parameter_system)
+            self.custom_space_step.draw(box,parameter_system)
+            #self.custom_time_step.draw_in_new_row(box)
+            #self.custom_space_step.draw_in_new_row(box)
 
     def check_callback(self, context):
         """Allow the parent molecule list (MCellMoleculesListProperty) to do the checking"""
@@ -218,12 +240,18 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         if self.molecule_list:
             for mol in self.molecule_list:
                 mol.set_defaults()
+
+    def init_properties ( self, parameter_system ):
+        if self.molecule_list:
+            for mol in self.molecule_list:
+                mol.init_properties(parameter_system)
     
     def add_molecule ( self, context ):
         """ Add a new molecule to the list of molecules and set as the active molecule """
         new_mol = self.molecule_list.add()
         new_mol.id = self.allocate_available_id()
-        new_mol.set_defaults()
+        new_mol.init_properties(context.scene.mcell.parameter_system)
+        #new_mol.set_defaults()
         self.active_mol_index = len(self.molecule_list)-1
 
     def remove_active_molecule ( self, context ):
@@ -270,20 +298,24 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         return ( self.next_id - 1 )
 
     def draw_panel ( self, context, panel ):
-        layout = panel.layout
-        row = layout.row()
-        row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
-        row = layout.row()
-        col = row.column()
-        col.template_list("MCell_UL_check_molecule", "define_molecules",
-                          self, "molecule_list",
-                          self, "active_mol_index",
-                          rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
-        col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
-        if self.molecule_list:
-            mol = self.molecule_list[self.active_mol_index]
-            # The self is needed to pass the "advanced" flag to the molecule
-            mol.draw_props ( layout, self )
+        mcell = context.scene.mcell
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( panel.layout )
+        else:
+            layout = panel.layout
+            row = layout.row()
+            row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
+            row = layout.row()
+            col = row.column()
+            col.template_list("MCell_UL_check_molecule", "define_molecules",
+                              self, "molecule_list",
+                              self, "active_mol_index",
+                              rows=2)
+            col = row.column(align=True)
+            col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
+            col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
+            if self.molecule_list:
+                mol = self.molecule_list[self.active_mol_index]
+                # The self is needed to pass the "advanced" flag to the molecule
+                mol.draw_props ( layout, self, mcell.parameter_system )
 
