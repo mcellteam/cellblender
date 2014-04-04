@@ -231,14 +231,6 @@ def register():
         type=object_surface_regions.MCellObjectPropertyGroup)
 
 
-    # BK: Added for newer parameters ....
-    #bpy.utils.register_module(parameter_system)
-    #print ( "Adding app to Scene" )
-    #bpy.types.Scene.app = bpy.props.PointerProperty(type=parameter_system.AppPropertyGroup)
-    #bpy.types.Scene.pspg = bpy.props.PointerProperty(type=parameter_system.ParameterSystemPropertyGroup)
-    #print ( "Done adding app to Scene" )
-
-
     print("CellBlender registered")
     if (bpy.app.version not in cellblender_info['supported_version_list']):
         print("Warning, current Blender version", bpy.app.version,
@@ -302,8 +294,10 @@ if len(bpy.app.handlers.load_post) == 0:
         object_surface_regions.object_regions_format_update)
     bpy.app.handlers.load_post.append(
         cellblender_operators.mcell_valid_update)
+    #bpy.app.handlers.load_post.append(
+    #    cellblender_operators.set_defaults)
     bpy.app.handlers.load_post.append(
-        cellblender_operators.set_defaults)
+        cellblender_operators.init_properties)
     bpy.app.handlers.load_post.append(
         cellblender_operators.load_preferences)
 

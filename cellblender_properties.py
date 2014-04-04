@@ -209,12 +209,12 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
                     "If blank, release molecules at start of simulation.")
     status = StringProperty(name="Status")
 
-    def set_defaults(self):
-        print ( "MCellMoleculeReleaseProperty is setting defaults." )
-        pass
-        # Panel Parameter                         Name                    Default    Min  Max
-        #self.probability.set_fields             ( "Probability",              "1",   0.0, 1.0 )
-        #self.quantity.set_fields                ( "Quantity to Release",      "0",   0.0      )
+    #def set_defaults(self):
+    #    print ( "MCellMoleculeReleaseProperty is setting defaults." )
+    #    pass
+    #    # Panel Parameter                         Name                    Default    Min  Max
+    #    #self.probability.set_fields             ( "Probability",              "1",   0.0, 1.0 )
+    #    #self.quantity.set_fields                ( "Quantity to Release",      "0",   0.0      )
 
     def init_properties ( self, parameter_system ):
         # print ( "Inside init_properties for MCellMoleculeReleaseProperty" )
@@ -527,10 +527,10 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     vacancy_search_distance = PointerProperty ( name="Radial Subdivisions", type=parameter_system.Parameter_Reference )
     surface_grid_density = PointerProperty ( name="Surface Grid Density", type=parameter_system.Parameter_Reference )
 
-    def set_defaults(self):
-        print ( "##############################################################################" )
-        print ( "MCellInitializationPanelProperty called set_defaults ... not used any more!!!!" )
-        print ( "##############################################################################" )
+    #def set_defaults(self):
+    #    print ( "##############################################################################" )
+    #    print ( "MCellInitializationPanelProperty called set_defaults ... not used any more!!!!" )
+    #    print ( "##############################################################################" )
 
 
     # @profile('MCellInitializationGroup.init_properties')
@@ -1030,8 +1030,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         name="Contains CellBlender Parameters", default=True)
     initialized = BoolProperty(
         name="Initialized", default=False)
-    is_initialized = BoolProperty(
-        name="Is Initialized", default=False)
+    #is_initialized = BoolProperty(
+    #    name="Is Initialized", default=False)
     cellblender_version = StringProperty(
         name="CellBlender Version", default="0.1.54")
     cellblender_source_hash = StringProperty(
@@ -1090,13 +1090,13 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellScratchPanelProperty, name="CellBlender Scratch Settings")
 
 
-    def set_defaults(self):
-        print ( "##############################################################################" )
-        print ( "      MCellPropertyGroup.set_defaults called ... not used any more!!!!" )
-        print ( "               Should be calling init_properties instead." )
-        print ( "##############################################################################" )
-        print ( "MCellPropertyGroup is setting defaults." )
-        #self.initialization.set_defaults()
+    #def set_defaults(self):
+    #    print ( "##############################################################################" )
+    #    print ( "      MCellPropertyGroup.set_defaults called ... not used any more!!!!" )
+    #    print ( "               Should be calling init_properties instead." )
+    #    print ( "##############################################################################" )
+    #    print ( "MCellPropertyGroup is setting defaults." )
+    #    #self.initialization.set_defaults()
 
 
     def init_properties ( self ):
