@@ -795,8 +795,10 @@ class MCELL_OT_release_pattern_add(bpy.types.Operator):
         mcell.release_patterns.release_pattern_list.add()
         mcell.release_patterns.active_release_pattern_index = len(
             mcell.release_patterns.release_pattern_list)-1
-        mcell.release_patterns.release_pattern_list[
-            mcell.release_patterns.active_release_pattern_index].name = "Release_Pattern"
+        rel_pattern = mcell.release_patterns.release_pattern_list[
+            mcell.release_patterns.active_release_pattern_index]
+        rel_pattern.name = "Release_Pattern"
+        rel_pattern.init_properties(mcell.parameter_system)
         check_release_pattern_name(self, context)
 
         return {'FINISHED'}

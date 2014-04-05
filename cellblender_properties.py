@@ -116,7 +116,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     shape_enum = [
         ('CUBIC', 'Cubic', ''),
         ('SPHERICAL', 'Spherical', ''),
-        ('SPHERICAL SHELL', 'Spherical Shell', ''),
+        ('SPHERICAL_SHELL', 'Spherical Shell', ''),
         #('LIST', 'List', ''),
         ('OBJECT', 'Object/Region', '')]
     shape = EnumProperty(
@@ -174,13 +174,13 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         self.location_z.init_ref  ( parameter_system, "Rel_Loc_Type_Z",  user_name="Release Location Z",  user_expr="0", user_units="", user_descr="The center of the release site's Z coordinate" )
 
 
-
 class MCellReleasePatternProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Site Name", default="Release_Site",
         description="The name of the release site",
         update=cellblender_operators.check_release_pattern_name)
 
+    """
     delay = FloatProperty(name="Delay")
     delay_str = StringProperty(
         name="Delay",
@@ -217,8 +217,23 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
         name="Number of Trains", min=0,
         description="Repeat the release process this number of times. "
                     "Default is one train.")
+    """
+
+    delay            = PointerProperty ( name="Release Pattern Delay", type=parameter_system.Parameter_Reference )
+    release_interval = PointerProperty ( name="Relese Interval",       type=parameter_system.Parameter_Reference )
+    train_duration   = PointerProperty ( name="Train Duration",        type=parameter_system.Parameter_Reference )
+    train_interval   = PointerProperty ( name="Train Interval",        type=parameter_system.Parameter_Reference )
+    number_of_trains = PointerProperty ( name="Number of Trains",      type=parameter_system.Parameter_Reference )
 
     status = StringProperty(name="Status")
+
+    def init_properties ( self, parameter_system ):
+        self.delay.init_ref            ( parameter_system, "Rel_Delay_Type", user_name="Release Pattern Delay", user_expr="0",     user_units="s", user_descr="The time at which the release pattern will start." )
+        self.release_interval.init_ref ( parameter_system, "Rel_Int_Type",   user_name="Relese Interval",       user_expr="1e-12", user_units="s", user_descr="During a train, release molecules after every interval.\nDefault is once." )
+        self.train_duration.init_ref   ( parameter_system, "Tr_Dur_Type",    user_name="Train Duration",        user_expr="1e-12", user_units="s", user_descr="The duration of the train before turning off.\nDefault is to never turn off." )
+        self.train_interval.init_ref   ( parameter_system, "Tr_Int_Type",    user_name="Train Interval",        user_expr="1e-12", user_units="s", user_descr="A new train happens every interval.\nDefault is no new trains." )
+        self.number_of_trains.init_ref ( parameter_system, "NTrains_Type",   user_name="Number of Trains",      user_expr="0",     user_units="",  user_descr="Repeat the release process this number of times.\nDefault is one train.", user_int=True )
+
 
 
 class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
@@ -505,7 +520,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         self.radial_directions.init_ref   ( parameter_system, "Rad_Dir_Type", 
                                             user_name="Radial Directions",   
                                             user_expr="", user_units="microns", 
-                                            user_descr="Number of different directions to put in lookup table\n  Leave alone unless you know what you are doing" )
+                                            user_descr="Number of different directions to put in lookup table\nLeave alone unless you know what you are doing" )
         self.radial_subdivisions.init_ref ( parameter_system, "Rad_Sub_Type", 
                                             user_name="Radial Subdivisions", 
                                             user_expr="", 
@@ -751,7 +766,7 @@ class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.check_z_partition_step)
 
 
-######################## DB: added for imported parameters from BNG, SBML or other models###############################
+####################### DB: added for imported parameters from BNG, SBML or other models###############################
 class MCellParameterProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Parameter Name", default="Parameter")
     value = StringProperty(name="Parameter Value", default="0")
@@ -766,7 +781,7 @@ class MCellParametersPanelProperty(bpy.types.PropertyGroup):
         type=MCellParameterProperty, name="Parameter List")
     active_par_index = IntProperty(name="Active Parameter Index", default=0)
     plot_command = StringProperty(name="", default="")
-###########################################################################################################################
+##########################################################################################################################
 
 
 class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
@@ -987,13 +1002,11 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellInitializationPanelProperty, name="Model Initialization")
     partitions = bpy.props.PointerProperty(
         type=MCellPartitionsPanelProperty, name="Partitions")
-############## DB: added for parameter import from BNG, SBML models####
+############# DB: added for parameter import from BNG, SBML models####
     parameters = PointerProperty(
         type=MCellParametersPanelProperty, name="Defined Parameters")
-############## BK: Duplicating some of Dipak's code to experiment with general-purpose (non-imported) parameters ####
     parameter_system = PointerProperty(
         type=parameter_system.ParameterSystemPropertyGroup, name="Parameter System")
-########################################################################
     molecules = PointerProperty(
         type=cellblender_molecules.MCellMoleculesListProperty, name="Defined Molecules")
     reactions = PointerProperty(

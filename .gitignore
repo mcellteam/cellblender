@@ -10,3 +10,4 @@ io_mesh_mcell_mdl/mdlmesh_parser_wrap.c
 io_mesh_mcell_mdl/mdlparse.bison.c
 io_mesh_mcell_mdl/mdlparse.bison.h
 io_mesh_mcell_mdl/mdlparse.bison.output
+unused/

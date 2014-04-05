@@ -126,7 +126,7 @@ class MCELL_PT_parameter_system(bpy.types.Panel):
                 row = box.row()
                 row.prop(ps, "param_label_fraction", text="Parameter Label Fraction")
                 row = box.row()
-                row.prop(ps, "export_as_expressions", text="Export Parameters as Expressions (doesn't work yet)")
+                row.prop(ps, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
 
 
 
@@ -198,6 +198,21 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
             return int(p.get_numeric_value())
         else:
             return p.get_numeric_value()
+
+    def get_as_string ( self, plist=None, as_expr=False ):
+        if plist == None:
+            # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
+            mcell = bpy.context.scene.mcell
+            plist = mcell.parameter_system.panel_parameter_list
+        p = self.get_param(plist)
+        if as_expr:
+            return p.expr
+        else:
+            if p.isint:
+                return "%g"%(int(p.get_numeric_value()))
+            else:
+                return "%g"%(p.get_numeric_value())
+
 
     def get_label ( self, plist ):
         return self.get_param(plist).par_name
