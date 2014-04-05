@@ -800,6 +800,7 @@ class MCELL_OT_release_pattern_add(bpy.types.Operator):
         rel_pattern.name = "Release_Pattern"
         rel_pattern.init_properties(mcell.parameter_system)
         check_release_pattern_name(self, context)
+        update_release_pattern_rxn_name_list(self, context)
 
         return {'FINISHED'}
 
@@ -820,6 +821,8 @@ class MCELL_OT_release_pattern_remove(bpy.types.Operator):
 
         if mcell.release_patterns.release_pattern_list:
             check_release_pattern_name(self, context)
+
+        update_release_pattern_rxn_name_list(self, context)
 
         return {'FINISHED'}
 
@@ -846,6 +849,8 @@ def check_release_pattern_name(self, context):
         status = "Release Pattern name error: %s" % (rel_pattern.name)
 
     rel_pattern.status = status
+
+    update_release_pattern_rxn_name_list(self, context)
 
 
 class MCELL_OT_release_site_add(bpy.types.Operator):
@@ -2622,19 +2627,29 @@ class MCELL_OT_rxn_output_remove(bpy.types.Operator):
         return {'FINISHED'}
 
 
-def update_reaction_name_list(self, context):
-    """ Format reaction data output. """
+def update_release_pattern_rxn_name_list(self, context):
+    """ Update lists needed to count rxns and use rel patterns. """
 
     mcell = bpy.context.scene.mcell
     mcell.reactions.reaction_name_list.clear()
+    mcell.release_patterns.release_pattern_rxn_name_list.clear()
     rxns = mcell.reactions.reaction_list
+    rel_patterns_rxns = mcell.release_patterns.release_pattern_rxn_name_list
     # If a reaction has a reaction name, save it in reaction_name_list for
-    # counting in the reaction output.
-    if rxns:
-        for rxn in rxns:
-            if rxn.rxn_name:
-                new_item = mcell.reactions.reaction_name_list.add()
-                new_item.name = rxn.rxn_name
+    # counting in the reaction output. Also, save it in
+    # release_pattern_rxn_name_list for use as a release pattern, which is set
+    # in molecule release/placement
+    for rxn in rxns:
+        if rxn.rxn_name and not rxn.status:
+            new_rxn_item = mcell.reactions.reaction_name_list.add()
+            new_rxn_item.name = rxn.rxn_name
+            new_rel_pattern_item = rel_patterns_rxns.add()
+            new_rel_pattern_item.name = rxn.rxn_name
+    rel_patterns = mcell.release_patterns.release_pattern_list
+    for rp in rel_patterns:
+        if not rp.status:
+            new_rel_pattern_item = rel_patterns_rxns.add()
+            new_rel_pattern_item.name = rp.name
 
 
 def check_rxn_output(self, context):

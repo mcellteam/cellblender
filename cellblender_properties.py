@@ -61,7 +61,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         name="Reaction Name",
         description="The name of the reaction. "
                     "Can be used in Reaction Output.",
-        update=cellblender_operators.update_reaction_name_list)
+        update=cellblender_operators.update_release_pattern_rxn_name_list)
     reactants = StringProperty(
         name="Reactants", 
         description="Specify 1-3 reactants separated by a + symbol. "
@@ -811,6 +811,9 @@ class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
 class MCellReleasePatternPanelProperty(bpy.types.PropertyGroup):
     release_pattern_list = CollectionProperty(
         type=MCellReleasePatternProperty, name="Release Pattern List")
+    release_pattern_rxn_name_list = CollectionProperty(
+        type=MCellStringProperty,
+        name="Release Pattern and Reaction Name List")
     active_release_pattern_index = IntProperty(
         name="Active Release Pattern Index", default=0)
 

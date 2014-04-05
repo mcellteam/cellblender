@@ -1000,9 +1000,10 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
 
                     if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
                         rel.stddev.draw(layout,ps)
-
+                 
+                     
                     layout.prop_search(rel, "pattern", mcell.release_patterns,
-                                       "release_pattern_list",
+                                       "release_pattern_rxn_name_list",
                                        icon='FORCE_LENNARDJONES')
 
 
