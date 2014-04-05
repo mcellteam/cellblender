@@ -141,6 +141,10 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         description="The center of the release site specified by XYZ "
                     "coordinates")
 
+    location_x = PointerProperty ( name="Relese Loc X", type=parameter_system.Parameter_Reference )
+    location_y = PointerProperty ( name="Relese Loc Y", type=parameter_system.Parameter_Reference )
+    location_z = PointerProperty ( name="Relese Loc Z", type=parameter_system.Parameter_Reference )
+
     diameter = PointerProperty ( name="Site Diameter", type=parameter_system.Parameter_Reference )
     probability = PointerProperty ( name="Release Probability", type=parameter_system.Parameter_Reference )
 
@@ -165,6 +169,9 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         self.probability.init_ref ( parameter_system, "Rel_Prob_Type",   user_name="Release Probability", user_expr="1", user_units="", user_descr="Release does not occur every time,\nbut rather with specified probability." )
         self.quantity.init_ref    ( parameter_system, "Rel_Quant_Type",  user_name="Quantity to Release", user_expr="",  user_units="", user_descr="Concentration units: molar. Density units: molecules per square micron" )
         self.stddev.init_ref      ( parameter_system, "Rel_StdDev_Type", user_name="Standard Deviation",  user_expr="0", user_units="", user_descr="Standard Deviation" )
+        self.location_x.init_ref  ( parameter_system, "Rel_Loc_Type_X",  user_name="Release Location X",  user_expr="0", user_units="", user_descr="The center of the release site's X coordinate" )
+        self.location_y.init_ref  ( parameter_system, "Rel_Loc_Type_Y",  user_name="Release Location Y",  user_expr="0", user_units="", user_descr="The center of the release site's Y coordinate" )
+        self.location_z.init_ref  ( parameter_system, "Rel_Loc_Type_Z",  user_name="Release Location Z",  user_expr="0", user_units="", user_descr="The center of the release site's Z coordinate" )
 
 
 

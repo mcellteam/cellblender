@@ -462,6 +462,7 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
     """ Save the list of release site to mdl output file. """
 
     mol_list = mcell.molecules.molecule_list
+    ps = mcell.parameter_system
 
     for release_site in release_site_list:
         out_file.write("  %s RELEASE_SITE\n" % (release_site.name))
@@ -474,11 +475,11 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
 
             out_file.write("   SHAPE = %s\n" % (release_site.shape))
             out_file.write("   LOCATION = [%g, %g, %g]\n" %
-                           (release_site.location[0],
-                            release_site.location[1],
-                           release_site.location[2]))
+                           (release_site.location_x.get_value(ps.panel_parameter_list),
+                            release_site.location_y.get_value(ps.panel_parameter_list),
+                           release_site.location_z.get_value(ps.panel_parameter_list)))
             out_file.write("   SITE_DIAMETER = %g\n" %
-                           (release_site.diameter))
+                           (release_site.diameter.get_value(ps.panel_parameter_list)))
 
         # user defined shapes
         if (release_site.shape == 'OBJECT'):
@@ -495,28 +496,28 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
 
         if release_site.quantity_type == 'NUMBER_TO_RELEASE':
             out_file.write("   NUMBER_TO_RELEASE = %d\n" %
-                       (int(release_site.quantity.get_value())))
+                       (int(release_site.quantity.get_value(ps.panel_parameter_list))))
 
         elif release_site.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
             out_file.write("   GAUSSIAN_RELEASE_NUMBER\n")
             out_file.write("   {\n")
             out_file.write("        MEAN_NUMBER = %g\n" %
-                           (release_site.quantity.get_value()))
+                           (release_site.quantity.get_value(ps.panel_parameter_list)))
             out_file.write("        STANDARD_DEVIATION = %g\n" %
-                           (release_site.stddev.get_value()))
+                           (release_site.stddev.get_value(ps.panel_parameter_list)))
             out_file.write("      }\n")
 
         elif release_site.quantity_type == 'DENSITY':
             if release_site.molecule in mol_list:
                 if mol_list[release_site.molecule].type == '2D':
                     out_file.write("   DENSITY = %g\n" %
-                               (release_site.quantity.get_value()))
+                               (release_site.quantity.get_value(ps.panel_parameter_list)))
                 else:
                     out_file.write("   CONCENTRATION = %g\n" %
-                               (release_site.quantity.get_value()))
+                               (release_site.quantity.get_value(ps.panel_parameter_list)))
 
         out_file.write("   RELEASE_PROBABILITY = %g\n" %
-                       (release_site.probability.get_value()))
+                       (release_site.probability.get_value(ps.panel_parameter_list)))
 
         if release_site.pattern:
             out_file.write("   RELEASE_PATTERN = %s\n" %
@@ -555,21 +556,23 @@ def save_molecules(context, out_file, mol_list):
         out_file.write("DEFINE_MOLECULES\n")
         out_file.write("{\n")
 
+        ps = context.scene.mcell.parameter_system
+
         for mol_item in mol_list:
             out_file.write("  %s\n" % (mol_item.name))
             out_file.write("  {\n")
 
             if mol_item.type == '2D':
                 out_file.write("    DIFFUSION_CONSTANT_2D = %g\n" %
-                               (mol_item.diffusion_constant.get_value()))  # Could use .get_expr() to export the expression
+                               (mol_item.diffusion_constant.get_value(ps.panel_parameter_list)))  # Could use .get_expr() to export the expression
             else:
                 out_file.write("    DIFFUSION_CONSTANT_3D = %g\n" %
-                               (mol_item.diffusion_constant.get_value()))  # Could use .get_expr() to export the expression
+                               (mol_item.diffusion_constant.get_value(ps.panel_parameter_list)))  # Could use .get_expr() to export the expression
 
-            if mol_item.custom_time_step.get_value() > 0:
-                out_file.write("    CUSTOM_TIME_STEP = %g\n" % (mol_item.custom_time_step.get_value()))
-            elif mol_item.custom_space_step.get_value() > 0:
-                out_file.write("    CUSTOM_SPACE_STEP = %g\n" % (mol_item.custom_space_step.get_value()))
+            if mol_item.custom_time_step.get_value(ps.panel_parameter_list) > 0:
+                out_file.write("    CUSTOM_TIME_STEP = %g\n" % (mol_item.custom_time_step.get_value(ps.panel_parameter_list)))
+            elif mol_item.custom_space_step.get_value(ps.panel_parameter_list) > 0:
+                out_file.write("    CUSTOM_SPACE_STEP = %g\n" % (mol_item.custom_space_step.get_value(ps.panel_parameter_list)))
 
             if mol_item.target_only:
                 out_file.write("    TARGET_ONLY\n")
@@ -646,6 +649,8 @@ def save_reactions(context, out_file, rxn_list, filedir):
         out_file.write("DEFINE_REACTIONS\n")
         out_file.write("{\n")
 
+        ps = context.scene.mcell.parameter_system
+
         for rxn_item in rxn_list:
             out_file.write("  %s " % (rxn_item.name))
 
@@ -662,10 +667,10 @@ def save_reactions(context, out_file, rxn_list, filedir):
                         variable_out_file.write(variable_rate_text.as_string())
                 # Use a single-value rate constant
                 else:
-                    out_file.write("[%s]" % (rxn_item.fwd_rate.get_value()))    
+                    out_file.write("[%s]" % (rxn_item.fwd_rate.get_value(ps.panel_parameter_list)))    
             else:
                 out_file.write("[>%g, <%g]" %
-                               (rxn_item.fwd_rate.get_value(), rxn_item.bkwd_rate.get_value()))
+                               (rxn_item.fwd_rate.get_value(ps.panel_parameter_list), rxn_item.bkwd_rate.get_value(ps.panel_parameter_list)))
 
             if rxn_item.rxn_name:
                 out_file.write(" : %s\n" % (rxn_item.rxn_name))
@@ -785,10 +790,11 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
     """ Saves reaction output info to mdl output file. """
     
     mcell = context.scene.mcell
+    ps = mcell.parameter_system
 
     if rxn_output_list:
         out_file.write("REACTION_DATA_OUTPUT\n{\n")
-        rxn_step = mcell.initialization.time_step.get_value()
+        rxn_step = mcell.initialization.time_step.get_value(ps.panel_parameter_list)
         out_file.write("  STEP=%g\n" % rxn_step)
 
         for rxn_output in rxn_output_list:

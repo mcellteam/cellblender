@@ -974,7 +974,10 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
 
                     if ((rel.shape == 'CUBIC') | (rel.shape == 'SPHERICAL') |
                             (rel.shape == 'SPHERICAL SHELL')):
-                        layout.prop(rel, "location")
+                        #layout.prop(rel, "location")
+                        rel.location_x.draw(layout,ps)
+                        rel.location_y.draw(layout,ps)
+                        rel.location_z.draw(layout,ps)
                         rel.diameter.draw(layout,ps)
 
                     if rel.shape == 'OBJECT':
