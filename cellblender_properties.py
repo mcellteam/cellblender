@@ -331,11 +331,13 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
     bionetgen_location_valid = BoolProperty(name="BioNetGen Location Valid",
         default=False)
 
-    filter_invalid = BoolProperty(
-        name="Filter Invalid Entries", default=True,
-        description="If selected, entries with a warning(!) icon will not be "
-                    "included in simulation.",
-        update=cellblender_operators.save_preferences)
+    invalid_policy_enum = [
+        ('dont_run', "Do not run with errors", ""),
+        ('filter', "Filter errors and run", ""),
+        ('ignore', "Ignore errors and attempt run", "")]
+    invalid_policy = EnumProperty(items=invalid_policy_enum,
+                                  name="Invalid Policy",
+                                  default='dont_run')
     decouple_export_run = BoolProperty(
         name="Decouple Export and Run", default=False,
         description="Allow the project to be exported without also running"
@@ -419,6 +421,11 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
     active_process_index = IntProperty(
         name="Active Simulation Runner Process Index", default=0)
     status = StringProperty(name="Status")
+    error_list = CollectionProperty(
+        type=MCellStringProperty,
+        name="Error List")
+    active_err_index = IntProperty(
+        name="Active Error Index", default=0)
 
 
 class MCellMolVizPanelProperty(bpy.types.PropertyGroup):

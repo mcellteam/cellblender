@@ -31,6 +31,7 @@ CellBlender.
 # python imports
 import os
 import re
+import shutil
 
 # blender imports
 import bpy
@@ -38,6 +39,7 @@ import bpy
 # from cellblender import cellblender_operators  # Shouldn't need this anymore!!
 
 from cellblender import object_surface_regions
+from cellblender.utils import project_files_path
 
 
 def get_regions(obj):
@@ -69,6 +71,110 @@ def save(context, filepath=""):
         save_wrapper(context, out_file, filedir)
 
 
+def dontrun_filter_ignore(unfiltered_item_list):
+    """ Apply selected filter/ignore policy.
+    
+    This function helps reduce boilerplate code.
+    """
+    
+    mcell = bpy.context.scene.mcell
+
+    item_list = []
+    error_list = []
+
+    if unfiltered_item_list:
+        # Only export and run if everything is valid
+        if mcell.cellblender_preferences.invalid_policy == 'dont_run':
+            # Populate the list of errors to be shown in the Run Sim panel
+            error_list = [entry for entry in unfiltered_item_list if entry.status]
+            for error in error_list:
+                mcell.run_simulation.error_list.add()
+                mcell.run_simulation.error_list[
+                    mcell.run_simulation.active_err_index].name = error.status
+                mcell.run_simulation.active_err_index += 1
+            #item_list = unfiltered_item_list
+            item_list = [entry for entry in unfiltered_item_list if not entry.status]
+        # Filter out invalid/illegal entries.
+        elif mcell.cellblender_preferences.invalid_policy == 'filter':
+            item_list = [entry for entry in unfiltered_item_list if not entry.status]
+        # The user thinks they know better than CellBlender. Let them try to
+        # export and run.
+        elif mcell.cellblender_preferences.invalid_policy == 'ignore':
+            item_list = unfiltered_item_list
+
+    return item_list, error_list
+
+
+def save_modular_or_allinone(filedir, main_mdl_file, mdl_filename,
+                             save_function, args):
+    """ Save output (either in main mdl or included mdl).
+
+    This function helps reduce boilerplate code.
+
+    args should contain everything the function will need except for the actual
+    file to be written to, which will be inserted in this function.
+    """
+
+    mcell = bpy.context.scene.mcell
+    settings = mcell.project_settings
+
+    # Save modular (e.g. Scene.molecules.mdl, Scene.reactions.mdl)
+    if mcell.export_project.export_format == 'mcell_mdl_modular':
+        main_mdl_file.write("INCLUDE_FILE = \"%s.%s.mdl\"\n\n" %
+                       (settings.base_name, mdl_filename))
+        filepath = ("%s/%s.%s.mdl" %
+                    (filedir, settings.base_name, mdl_filename))
+        with open(filepath, "w", encoding="utf8", newline="\n") as mdl_file:
+            # Maybe find a cleaner way to handle args list. Looks kind of ugly.
+            args.insert(1, mdl_file)
+            save_function(*args)
+    # Or save everything in main mdl (e.g. Scene.main.mdl)
+    else:
+        args.insert(1, main_mdl_file)
+        save_function(*args)
+
+
+def save_general(mdl_filename, save_function, save_state, unfiltered_item_list):
+    """ Set the filter/ignore policy and write to mdl.
+   
+    This function helps reduce boilerplate code.
+    """
+
+    context = bpy.context    
+    filedir = save_state['filedir']
+    main_mdl_file = save_state['main_mdl_file']
+
+    item_list, error_list = dontrun_filter_ignore(unfiltered_item_list)
+    if item_list and not error_list:
+        args = [context, item_list]
+
+        # Add additional parameters here. Only save_reactions for now.
+        if save_function.__name__ == 'save_reactions':
+            args.append(filedir)
+
+        save_modular_or_allinone(filedir, main_mdl_file, mdl_filename,
+                                 save_function, args)
+
+    return item_list
+
+
+def save_partitions(context, out_file):
+    """Export partitions"""
+
+    mcell = context.scene.mcell
+
+    if mcell.partitions.include:
+        out_file.write("PARTITION_X = [[%g TO %g STEP %g]]\n" % (
+            mcell.partitions.x_start, mcell.partitions.x_end,
+            mcell.partitions.x_step))
+        out_file.write("PARTITION_Y = [[%g TO %g STEP %g]]\n" % (
+            mcell.partitions.y_start, mcell.partitions.y_end,
+            mcell.partitions.y_step))
+        out_file.write("PARTITION_Z = [[%g TO %g STEP %g]]\n\n" % (
+            mcell.partitions.z_start, mcell.partitions.z_end,
+            mcell.partitions.z_step))
+
+
 def save_wrapper(context, out_file, filedir):
     """ This function saves the current model to MDL.
 
@@ -81,6 +187,11 @@ def save_wrapper(context, out_file, filedir):
     export_project = mcell.export_project
     project_settings = mcell.project_settings
     ps = mcell.parameter_system
+    error_list = mcell.run_simulation.error_list
+    error_list.clear()
+    mcell.run_simulation.active_err_index = 0
+    invalid_policy = mcell.cellblender_preferences.invalid_policy
+    save_state = {'main_mdl_file': out_file, 'filedir': filedir}
 
 
     # Export parameters: 
@@ -98,15 +209,18 @@ def save_wrapper(context, out_file, filedir):
     
     # Export parameters: 
     if ps and ps.general_parameter_list:
-        if export_project.export_format == 'mcell_mdl_modular':
-            out_file.write("INCLUDE_FILE = \"%s.parameters.mdl\"\n\n" %
-                           (settings.base_name))
-            filepath = ("%s/%s.parameters.mdl" %
-                        (filedir, settings.base_name))
-            with open(filepath, "w", encoding="utf8", newline="\n") as par_file:
-                save_general_parameters(ps, par_file)
-        else:
-            save_general_parameters(ps, out_file)
+        args = [ps]
+        save_modular_or_allinone(
+            filedir, out_file, 'parameters', save_general_parameters, args)
+        #if export_project.export_format == 'mcell_mdl_modular':
+        #    out_file.write("INCLUDE_FILE = \"%s.parameters.mdl\"\n\n" %
+        #                   (settings.base_name))
+        #    filepath = ("%s/%s.parameters.mdl" %
+        #                (filedir, settings.base_name))
+        #    with open(filepath, "w", encoding="utf8", newline="\n") as par_file:
+        #        save_general_parameters(ps, par_file)
+        #else:
+        #    save_general_parameters(ps, out_file)
     
 
 
@@ -121,148 +235,165 @@ def save_wrapper(context, out_file, filedir):
         out_file.write("VACANCY_SEARCH_DISTANCE = 10\n\n") # DB: added to avoid error (I think it should have a default value to avoid error in most of the reaction networks)
 
     # Export optional initialization commands:
-    if export_project.export_format == 'mcell_mdl_modular':
-        out_file.write("INCLUDE_FILE = \"%s.initialization.mdl\"\n\n" %
-                       (settings.base_name))
-        filepath = ("%s/%s.initialization.mdl" %
-                    (filedir, settings.base_name))
-        with open(filepath, "w", encoding="utf8", newline="\n") as init_file:
-            save_initialization_commands(context, init_file)
-    else:
-        save_initialization_commands(context, out_file)
+    args = [context]
+    save_modular_or_allinone(filedir, out_file, 'initialization', save_initialization_commands, args)
+    #if export_project.export_format == 'mcell_mdl_modular':
+    #    out_file.write("INCLUDE_FILE = \"%s.initialization.mdl\"\n\n" %
+    #                   (settings.base_name))
+    #    filepath = ("%s/%s.initialization.mdl" %
+    #                (filedir, settings.base_name))
+    #    with open(filepath, "w", encoding="utf8", newline="\n") as init_file:
+    #        save_initialization_commands(context, init_file)
+    #else:
+    #    save_initialization_commands(context, out_file)
+    
+    save_partitions(context, out_file)
 
-    # Export partitions:
-    if mcell.partitions.include:
-        out_file.write("PARTITION_X = [[%g TO %g STEP %g]]\n" % (
-            mcell.partitions.x_start, mcell.partitions.x_end,
-            mcell.partitions.x_step))
-        out_file.write("PARTITION_Y = [[%g TO %g STEP %g]]\n" % (
-            mcell.partitions.y_start, mcell.partitions.y_end,
-            mcell.partitions.y_step))
-        out_file.write("PARTITION_Z = [[%g TO %g STEP %g]]\n\n" % (
-            mcell.partitions.z_start, mcell.partitions.z_end,
-            mcell.partitions.z_step))
+    ## Export partitions:
+    #if mcell.partitions.include:
+    #    out_file.write("PARTITION_X = [[%g TO %g STEP %g]]\n" % (
+    #        mcell.partitions.x_start, mcell.partitions.x_end,
+    #        mcell.partitions.x_step))
+    #    out_file.write("PARTITION_Y = [[%g TO %g STEP %g]]\n" % (
+    #        mcell.partitions.y_start, mcell.partitions.y_end,
+    #        mcell.partitions.y_step))
+    #    out_file.write("PARTITION_Z = [[%g TO %g STEP %g]]\n\n" % (
+    #        mcell.partitions.z_start, mcell.partitions.z_end,
+    #        mcell.partitions.z_step))
 	    
     # Export molecules:
     unfiltered_mol_list = mcell.molecules.molecule_list
-    if mcell.cellblender_preferences.filter_invalid:
-        mol_list = [mol for mol in unfiltered_mol_list if not mol.status]
-    else:
-        mol_list = unfiltered_mol_list
+    save_general('molecules', save_molecules, save_state, unfiltered_mol_list)
+    #if mcell.cellblender_preferences.filter_invalid:
+    #    mol_list = [mol for mol in unfiltered_mol_list if not mol.status]
+    #else:
+    #    mol_list = unfiltered_mol_list
 
-    if export_project.export_format == 'mcell_mdl_modular':
-        out_file.write("INCLUDE_FILE = \"%s.molecules.mdl\"\n\n" %
-                       (settings.base_name))
-        filepath = ("%s/%s.molecules.mdl" %
-                    (filedir, settings.base_name))
-        with open(filepath, "w", encoding="utf8", newline="\n") as mol_file:
-            save_molecules(context, mol_file, mol_list)
-    else:
-        save_molecules(context, out_file, mol_list)
+    #if export_project.export_format == 'mcell_mdl_modular':
+    #    out_file.write("INCLUDE_FILE = \"%s.molecules.mdl\"\n\n" %
+    #                   (settings.base_name))
+    #    filepath = ("%s/%s.molecules.mdl" %
+    #                (filedir, settings.base_name))
+    #    with open(filepath, "w", encoding="utf8", newline="\n") as mol_file:
+    #        save_molecules(context, mol_file, mol_list)
+    #else:
+    #    save_molecules(context, out_file, mol_list)
 
     # Export surface classes:
     unfiltered_surf_class_list = mcell.surface_classes.surf_class_list
-    if mcell.cellblender_preferences.filter_invalid:
-        surf_class_list = [
-            sc for sc in unfiltered_surf_class_list if not sc.status]
-    else:
-        surf_class_list = unfiltered_surf_class_list
+    surf_class_list = save_general(
+        'surface_classes', save_surface_classes, save_state,
+        unfiltered_surf_class_list)
+    #if mcell.cellblender_preferences.filter_invalid:
+    #    surf_class_list = [
+    #        sc for sc in unfiltered_surf_class_list if not sc.status]
+    #else:
+    #    surf_class_list = unfiltered_surf_class_list
 
-    if surf_class_list and export_project.export_format == 'mcell_mdl_modular':
-        out_file.write("INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n" %
-                       (settings.base_name))
-        filepath = ("%s/%s.surface_classes.mdl" %
-                    (filedir, settings.base_name))
-        with open(filepath, "w", encoding="utf8", newline="\n") as sc_file:
-            save_surface_classes(context, sc_file, surf_class_list)
-    else:
-        save_surface_classes(context, out_file, surf_class_list)
+    #if surf_class_list and export_project.export_format == 'mcell_mdl_modular':
+    #    out_file.write("INCLUDE_FILE = \"%s.surface_classes.mdl\"\n\n" %
+    #                   (settings.base_name))
+    #    filepath = ("%s/%s.surface_classes.mdl" %
+    #                (filedir, settings.base_name))
+    #    with open(filepath, "w", encoding="utf8", newline="\n") as sc_file:
+    #        save_surface_classes(context, sc_file, surf_class_list)
+    #else:
+    #    save_surface_classes(context, out_file, surf_class_list)
 
     # Export reactions:
     unfiltered_rxn_list = mcell.reactions.reaction_list
-    if mcell.cellblender_preferences.filter_invalid:
-        rxn_list = [rxn for rxn in unfiltered_rxn_list if not rxn.status]
-    else:
-        rxn_list = unfiltered_rxn_list
+    save_general('reactions', save_reactions, save_state, unfiltered_rxn_list)
+    #if mcell.cellblender_preferences.filter_invalid:
+    #    rxn_list = [rxn for rxn in unfiltered_rxn_list if not rxn.status]
+    #else:
+    #    rxn_list = unfiltered_rxn_list
 
-    if rxn_list and export_project.export_format == 'mcell_mdl_modular':
-        out_file.write("INCLUDE_FILE = \"%s.reactions.mdl\"\n\n" %
-                       (settings.base_name))
-        filepath = ("%s/%s.reactions.mdl" %
-                   (filedir, settings.base_name))
-        with open(filepath, "w", encoding="utf8", newline="\n") as react_file:
-            save_reactions(context, react_file, rxn_list, filedir)
-    else:
-        save_reactions(context, out_file, rxn_list, filedir)
+    #if rxn_list and export_project.export_format == 'mcell_mdl_modular':
+    #    out_file.write("INCLUDE_FILE = \"%s.reactions.mdl\"\n\n" %
+    #                   (settings.base_name))
+    #    filepath = ("%s/%s.reactions.mdl" %
+    #               (filedir, settings.base_name))
+    #    with open(filepath, "w", encoding="utf8", newline="\n") as react_file:
+    #        save_reactions(context, react_file, rxn_list, filedir)
+    #else:
+    #    save_reactions(context, out_file, rxn_list, filedir)
 
     # Export model geometry:
     unfiltered_object_list = context.scene.mcell.model_objects.object_list
-    if mcell.cellblender_preferences.filter_invalid:
-        object_list = [obj for obj in unfiltered_object_list if not obj.status]
-    else:
-        object_list = unfiltered_object_list
+    object_list = save_general(
+        'geometry', save_geometry, save_state, unfiltered_object_list)
+    #if mcell.cellblender_preferences.filter_invalid:
+    #    object_list = [obj for obj in unfiltered_object_list if not obj.status]
+    #else:
+    #    object_list = unfiltered_object_list
 
-    if object_list and export_project.export_format == 'mcell_mdl_modular':
-        out_file.write("INCLUDE_FILE = \"%s.geometry.mdl\"\n\n" %
-                       (settings.base_name))
-        filepath = ("%s/%s.geometry.mdl" %
-                    (filedir, settings.base_name))
-        with open(filepath, "w", encoding="utf8", newline="\n") as geom_file:
-            save_geometry(context, geom_file, object_list)
-    else:
-        save_geometry(context, out_file, object_list)
+    #if object_list and export_project.export_format == 'mcell_mdl_modular':
+    #    out_file.write("INCLUDE_FILE = \"%s.geometry.mdl\"\n\n" %
+    #                   (settings.base_name))
+    #    filepath = ("%s/%s.geometry.mdl" %
+    #                (filedir, settings.base_name))
+    #    with open(filepath, "w", encoding="utf8", newline="\n") as geom_file:
+    #        save_geometry(context, geom_file, object_list)
+    #else:
+    #    save_geometry(context, out_file, object_list)
 
     # Export modify surface regions:
     if surf_class_list:
         unfiltered_msr_list = mcell.mod_surf_regions.mod_surf_regions_list
-        if mcell.cellblender_preferences.filter_invalid:
-            mod_surf_regions_list = [
-                msr for msr in unfiltered_msr_list if not msr.status]
-        else:
-            mod_surf_regions_list = unfiltered_msr_list
+        save_general('mod_surf_regions', save_mod_surf_regions, save_state,
+                     unfiltered_msr_list)
+        #if mcell.cellblender_preferences.filter_invalid:
+        #    mod_surf_regions_list = [
+        #        msr for msr in unfiltered_msr_list if not msr.status]
+        #else:
+        #    mod_surf_regions_list = unfiltered_msr_list
 
-        if (mod_surf_regions_list and
-                export_project.export_format == 'mcell_mdl_modular'):
-            out_file.write("INCLUDE_FILE = \"%s.mod_surf_regions.mdl\"\n\n" %
-                           (settings.base_name))
-            filepath = ("%s/%s.mod_surf_regions.mdl" %
-                        (filedir, settings.base_name))
-            with open(filepath, "w", encoding="utf8",
-                      newline="\n") as mod_sr_file:
-                save_mod_surf_regions(
-                    context, mod_sr_file, mod_surf_regions_list)
-        else:
-            save_mod_surf_regions(context, out_file, mod_surf_regions_list)
+        #if (mod_surf_regions_list and
+        #        export_project.export_format == 'mcell_mdl_modular'):
+        #    out_file.write("INCLUDE_FILE = \"%s.mod_surf_regions.mdl\"\n\n" %
+        #                   (settings.base_name))
+        #    filepath = ("%s/%s.mod_surf_regions.mdl" %
+        #                (filedir, settings.base_name))
+        #    with open(filepath, "w", encoding="utf8",
+        #              newline="\n") as mod_sr_file:
+        #        save_mod_surf_regions(
+        #            context, mod_sr_file, mod_surf_regions_list)
+        #else:
+        #    save_mod_surf_regions(context, out_file, mod_surf_regions_list)
 
     # Export release patterns:
-    if mcell.release_patterns.release_pattern_list:
-        unfiltered_rel_pattern_list = mcell.release_patterns.release_pattern_list
-        if mcell.cellblender_preferences.filter_invalid:
-            rel_patterns_list = [
-                rel_pattern for rel_pattern in unfiltered_rel_pattern_list if not rel_pattern.status]
-        else:
-            rel_patterns_list = unfiltered_rel_pattern_list
+    unfiltered_rel_pattern_list = mcell.release_patterns.release_pattern_list
+    save_general('release_patterns', save_rel_patterns, save_state,
+                 unfiltered_rel_pattern_list)
+    #if mcell.release_patterns.release_pattern_list:
+    #    unfiltered_rel_pattern_list = mcell.release_patterns.release_pattern_list
+    #    if mcell.cellblender_preferences.filter_invalid:
+    #        rel_patterns_list = [
+    #            rel_pattern for rel_pattern in unfiltered_rel_pattern_list if not rel_pattern.status]
+    #    else:
+    #        rel_patterns_list = unfiltered_rel_pattern_list
 
-        if (rel_patterns_list and
-                export_project.export_format == 'mcell_mdl_modular'):
-            out_file.write("INCLUDE_FILE = \"%s.release_patterns.mdl\"\n\n" %
-                           (settings.base_name))
-            filepath = ("%s/%s.release_patterns.mdl" %
-                        (filedir, settings.base_name))
-            with open(filepath, "w", encoding="utf8",
-                      newline="\n") as rel_pattern_file:
-                save_rel_patterns(
-                    context, rel_pattern_file, rel_patterns_list)
-        else:
-            save_rel_patterns(context, out_file, rel_patterns_list)
+    #    if (rel_patterns_list and
+    #            export_project.export_format == 'mcell_mdl_modular'):
+    #        out_file.write("INCLUDE_FILE = \"%s.release_patterns.mdl\"\n\n" %
+    #                       (settings.base_name))
+    #        filepath = ("%s/%s.release_patterns.mdl" %
+    #                    (filedir, settings.base_name))
+    #        with open(filepath, "w", encoding="utf8",
+    #                  newline="\n") as rel_pattern_file:
+    #            save_rel_patterns(
+    #                context, rel_pattern_file, rel_patterns_list)
+    #    else:
+    #        save_rel_patterns(context, out_file, rel_patterns_list)
 
     # Instantiate Model Geometry and Release sites:
     unfiltered_release_site_list = mcell.release_sites.mol_release_list
-    if mcell.cellblender_preferences.filter_invalid:
-        release_site_list = [
-            rel for rel in unfiltered_release_site_list if not rel.status]
-    else:
-        release_site_list = unfiltered_release_site_list
+    release_site_list, _ = dontrun_filter_ignore(unfiltered_release_site_list)
+    #if mcell.cellblender_preferences.filter_invalid:
+    #    release_site_list = [
+    #        rel for rel in unfiltered_release_site_list if not rel.status]
+    #else:
+    #    release_site_list = unfiltered_release_site_list
 
     if object_list or release_site_list:
         out_file.write("INSTANTIATE %s OBJECT\n" % (context.scene.name))
@@ -282,44 +413,63 @@ def save_wrapper(context, out_file, filedir):
     # Export viz output:
 
     unfiltered_mol_list = mcell.molecules.molecule_list
-    if mcell.cellblender_preferences.filter_invalid:
-        molecule_viz_list = [
-            mol.name for mol in unfiltered_mol_list if mol.export_viz and not
-            mol.status]
-    else:
-        molecule_viz_list = [
-            mol.name for mol in unfiltered_mol_list if mol.export_viz]
+    unfiltered_mol_viz_list = [
+        mol for mol in unfiltered_mol_list if mol.export_viz]
+    molecule_viz_list, _ = dontrun_filter_ignore(unfiltered_mol_viz_list)
+    molecule_viz_str_list = [mol.name for mol in molecule_viz_list]
 
     export_all = mcell.viz_output.export_all
-    #if (export_all or (molecule_viz_list and
-    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-    if ((molecule_viz_list or export_all) and export_project.export_format == 'mcell_mdl_modular'):
-        out_file.write("INCLUDE_FILE = \"%s.viz_output.mdl\"\n\n" %
-                       (settings.base_name))
-        filepath = ("%s/%s.viz_output.mdl" % (filedir, settings.base_name))
-        with open(filepath, "w", encoding="utf8", newline="\n") as viz_file:
-            save_viz_output_mdl(context, viz_file, molecule_viz_list, export_all)
-    else:
-        save_viz_output_mdl(context, out_file, molecule_viz_list, export_all)
+    if export_all or molecule_viz_list:
+        args = [context, molecule_viz_str_list, export_all]
+        save_modular_or_allinone(
+            filedir, out_file, 'viz_output', save_viz_output_mdl, args)
+
+    #if mcell.cellblender_preferences.filter_invalid:
+    #    molecule_viz_list = [
+    #        mol.name for mol in unfiltered_mol_list if mol.export_viz and not
+    #        mol.status]
+    #else:
+    #    molecule_viz_list = [
+    #        mol.name for mol in unfiltered_mol_list if mol.export_viz]
+
+    #export_all = mcell.viz_output.export_all
+    ##if (export_all or (molecule_viz_list and
+    ##__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    #if ((molecule_viz_list or export_all) and export_project.export_format == 'mcell_mdl_modular'):
+    #    out_file.write("INCLUDE_FILE = \"%s.viz_output.mdl\"\n\n" %
+    #                   (settings.base_name))
+    #    filepath = ("%s/%s.viz_output.mdl" % (filedir, settings.base_name))
+    #    with open(filepath, "w", encoding="utf8", newline="\n") as viz_file:
+    #        save_viz_output_mdl(context, viz_file, molecule_viz_list, export_all)
+    #else:
+    #    save_viz_output_mdl(context, out_file, molecule_viz_list, export_all)
 
     # Export reaction output:
     settings = mcell.project_settings
     unfiltered_rxn_output_list = mcell.rxn_output.rxn_output_list
-    if mcell.cellblender_preferences.filter_invalid:
-        rxn_output_list = [
-            rxn for rxn in unfiltered_rxn_output_list if not rxn.status]
-    else:
-        rxn_output_list = unfiltered_rxn_output_list
+    save_general('rxn_output', save_rxn_output_mdl, save_state,
+                 unfiltered_rxn_output_list)
 
-    if (rxn_output_list and export_project.export_format == 'mcell_mdl_modular'):
-        out_file.write("INCLUDE_FILE = \"%s.rxn_output.mdl\"\n\n" %
-                       (settings.base_name))
-        filepath = ("%s/%s.rxn_output.mdl" % (filedir, settings.base_name))
-        with open(
-                filepath, "w", encoding="utf8", newline="\n") as mod_rxn_file:
-            save_rxn_output_mdl(context, mod_rxn_file, rxn_output_list)
-    else:
-        save_rxn_output_mdl(context, out_file, rxn_output_list)
+    if error_list and invalid_policy == 'dont_run':
+        # If anything is invalid, blow away all the MDLs.
+        project_dir = project_files_path()
+        shutil.rmtree(project_dir)
+
+    #if mcell.cellblender_preferences.filter_invalid:
+    #    rxn_output_list = [
+    #        rxn for rxn in unfiltered_rxn_output_list if not rxn.status]
+    #else:
+    #    rxn_output_list = unfiltered_rxn_output_list
+
+    #if (rxn_output_list and export_project.export_format == 'mcell_mdl_modular'):
+    #    out_file.write("INCLUDE_FILE = \"%s.rxn_output.mdl\"\n\n" %
+    #                   (settings.base_name))
+    #    filepath = ("%s/%s.rxn_output.mdl" % (filedir, settings.base_name))
+    #    with open(
+    #            filepath, "w", encoding="utf8", newline="\n") as mod_rxn_file:
+    #        save_rxn_output_mdl(context, mod_rxn_file, rxn_output_list)
+    #else:
+    #    save_rxn_output_mdl(context, out_file, rxn_output_list)
 
 
 def save_initialization_commands(context, out_file):
@@ -596,33 +746,38 @@ def save_molecules(context, out_file, mol_list):
     """ Saves molecule info to mdl output file. """
 
     # Export Molecules:
-    if mol_list:
-        out_file.write("DEFINE_MOLECULES\n")
-        out_file.write("{\n")
+    out_file.write("DEFINE_MOLECULES\n")
+    out_file.write("{\n")
 
-        ps = context.scene.mcell.parameter_system
+    ps = context.scene.mcell.parameter_system
 
-        for mol_item in mol_list:
-            out_file.write("  %s\n" % (mol_item.name))
-            out_file.write("  {\n")
+    for mol_item in mol_list:
+        out_file.write("  %s\n" % (mol_item.name))
+        out_file.write("  {\n")
 
-            if mol_item.type == '2D':
-                out_file.write("    DIFFUSION_CONSTANT_2D = %s\n" %
-                               (mol_item.diffusion_constant.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
-            else:
-                out_file.write("    DIFFUSION_CONSTANT_3D = %s\n" %
-                               (mol_item.diffusion_constant.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+        if mol_item.type == '2D':
+            out_file.write("    DIFFUSION_CONSTANT_2D = %s\n" %
+                           (mol_item.diffusion_constant.get_as_string(
+                            ps.panel_parameter_list, ps.export_as_expressions)))
+        else:
+            out_file.write("    DIFFUSION_CONSTANT_3D = %s\n" %
+                           (mol_item.diffusion_constant.get_as_string(
+                            ps.panel_parameter_list, ps.export_as_expressions)))
 
-            if mol_item.custom_time_step.get_value(ps.panel_parameter_list) > 0:
-                out_file.write("    CUSTOM_TIME_STEP = %s\n" % (mol_item.custom_time_step.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
-            elif mol_item.custom_space_step.get_value(ps.panel_parameter_list) > 0:
-                out_file.write("    CUSTOM_SPACE_STEP = %s\n" % (mol_item.custom_space_step.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+        if mol_item.custom_time_step.get_value(ps.panel_parameter_list) > 0:
+            out_file.write("    CUSTOM_TIME_STEP = %s\n" % 
+                           (mol_item.custom_time_step.get_as_string(
+                            ps.panel_parameter_list, ps.export_as_expressions)))
+        elif mol_item.custom_space_step.get_value(ps.panel_parameter_list) > 0:
+            out_file.write("    CUSTOM_SPACE_STEP = %s\n" %
+                           (mol_item.custom_space_step.get_as_string(
+                            ps.panel_parameter_list, ps.export_as_expressions)))
 
-            if mol_item.target_only:
-                out_file.write("    TARGET_ONLY\n")
+        if mol_item.target_only:
+            out_file.write("    TARGET_ONLY\n")
 
-            out_file.write("  }\n")
-        out_file.write("}\n\n")
+        out_file.write("  }\n")
+    out_file.write("}\n\n")
 
 
 def save_surface_classes(context, out_file, surf_class_list):
@@ -630,35 +785,30 @@ def save_surface_classes(context, out_file, surf_class_list):
 
     mcell = context.scene.mcell
 
-    if surf_class_list:
-        out_file.write("DEFINE_SURFACE_CLASSES\n")
-        out_file.write("{\n")
-        for active_surf_class in surf_class_list:
-            out_file.write("  %s\n" % (active_surf_class.name))
-            out_file.write("  {\n")
-            unfiltered_surf_class_props_list = \
-                active_surf_class.surf_class_props_list
-            if mcell.cellblender_preferences.filter_invalid:
-                surf_class_props_list = [
-                    scp for scp in unfiltered_surf_class_props_list if not
-                    scp.status]
+    out_file.write("DEFINE_SURFACE_CLASSES\n")
+    out_file.write("{\n")
+    for active_surf_class in surf_class_list:
+        out_file.write("  %s\n" % (active_surf_class.name))
+        out_file.write("  {\n")
+        unfiltered_surf_class_props_list = \
+            active_surf_class.surf_class_props_list
+        surf_class_props_list, _ = dontrun_filter_ignore(
+            unfiltered_surf_class_props_list)
+        for surf_class_props in surf_class_props_list:
+            molecule = surf_class_props.molecule
+            orient = surf_class_props.surf_class_orient
+            surf_class_type = surf_class_props.surf_class_type
+            if surf_class_type == 'CLAMP_CONCENTRATION':
+                clamp_value = surf_class_props.clamp_value
+                out_file.write("    %s\n" % surf_class_type)
+                out_file.write("    %s%s = %g\n" % (molecule,
+                                                    orient,
+                                                    clamp_value))
             else:
-                surf_class_props_list = unfiltered_surf_class_props_list
-            for surf_class_props in surf_class_props_list:
-                molecule = surf_class_props.molecule
-                orient = surf_class_props.surf_class_orient
-                surf_class_type = surf_class_props.surf_class_type
-                if surf_class_type == 'CLAMP_CONCENTRATION':
-                    clamp_value = surf_class_props.clamp_value
-                    out_file.write("    %s\n" % surf_class_type)
-                    out_file.write("    %s%s = %g\n" % (molecule,
-                                                        orient,
-                                                        clamp_value))
-                else:
-                    out_file.write("    %s = %s%s\n" % (surf_class_type,
-                                                        molecule, orient))
-            out_file.write("  }\n")
-        out_file.write("}\n\n")
+                out_file.write("    %s = %s%s\n" % (surf_class_type,
+                                                    molecule, orient))
+        out_file.write("  }\n")
+    out_file.write("}\n\n")
 
 
 def save_rel_patterns(context, out_file, release_pattern_list):
@@ -666,138 +816,145 @@ def save_rel_patterns(context, out_file, release_pattern_list):
 
     mcell = context.scene.mcell
 
-    if release_pattern_list:
-        ps = mcell.parameter_system
-        for active_release_pattern in release_pattern_list:
-            out_file.write("DEFINE_RELEASE_PATTERN %s\n" % (active_release_pattern.name))
-            out_file.write("{\n")
-            out_file.write("  DELAY = %s\n" % active_release_pattern.delay.get_as_string(ps.panel_parameter_list,ps.export_as_expressions) )
-            out_file.write(
-                "  RELEASE_INTERVAL = %s\n" %
-                active_release_pattern.release_interval.get_as_string(ps.panel_parameter_list,ps.export_as_expressions))
-            out_file.write(
-                "  TRAIN_DURATION = %s\n" %
-                active_release_pattern.train_duration.get_as_string(ps.panel_parameter_list,ps.export_as_expressions))
-            out_file.write(
-                "  TRAIN_INTERVAL = %s\n" %
-                active_release_pattern.train_interval.get_as_string(ps.panel_parameter_list,ps.export_as_expressions))
-            out_file.write(
-                "  NUMBER_OF_TRAINS = %s\n" %
-                active_release_pattern.number_of_trains.get_as_string(ps.panel_parameter_list,ps.export_as_expressions))
-            out_file.write("}\n\n")
+    ps = mcell.parameter_system
+    for active_release_pattern in release_pattern_list:
+        out_file.write("DEFINE_RELEASE_PATTERN %s\n" %
+                       (active_release_pattern.name))
+        out_file.write("{\n")
+        out_file.write(
+            "  DELAY = %s\n" % active_release_pattern.delay.get_as_string(
+            ps.panel_parameter_list, ps.export_as_expressions))
+        out_file.write(
+            "  RELEASE_INTERVAL = %s\n" %
+            active_release_pattern.release_interval.get_as_string(
+            ps.panel_parameter_list,ps.export_as_expressions))
+        out_file.write(
+            "  TRAIN_DURATION = %s\n" %
+            active_release_pattern.train_duration.get_as_string(
+            ps.panel_parameter_list,ps.export_as_expressions))
+        out_file.write(
+            "  TRAIN_INTERVAL = %s\n" %
+            active_release_pattern.train_interval.get_as_string(
+            ps.panel_parameter_list,ps.export_as_expressions))
+        out_file.write(
+            "  NUMBER_OF_TRAINS = %s\n" %
+            active_release_pattern.number_of_trains.get_as_string(
+            ps.panel_parameter_list,ps.export_as_expressions))
+        out_file.write("}\n\n")
 
 
 def save_reactions(context, out_file, rxn_list, filedir):
     """ Saves reaction info to mdl output file. """
 
-    if rxn_list:
-        out_file.write("DEFINE_REACTIONS\n")
-        out_file.write("{\n")
+    out_file.write("DEFINE_REACTIONS\n")
+    out_file.write("{\n")
 
-        ps = context.scene.mcell.parameter_system
+    ps = context.scene.mcell.parameter_system
 
-        for rxn_item in rxn_list:
-            out_file.write("  %s " % (rxn_item.name))
+    for rxn_item in rxn_list:
+        out_file.write("  %s " % (rxn_item.name))
 
-            if rxn_item.type == 'irreversible':
-                # Use a variable rate constant file if specified
-                if rxn_item.variable_rate_switch and rxn_item.variable_rate_valid:
-                    variable_rate_name = rxn_item.variable_rate
-                    out_file.write('["%s"]' % (variable_rate_name))
-                    variable_rate_text = bpy.data.texts[variable_rate_name]
-                    variable_out_filename = os.path.join(
-                        filedir, variable_rate_name)
-                    with open(variable_out_filename, "w", encoding="utf8",
-                              newline="\n") as variable_out_file:
-                        variable_out_file.write(variable_rate_text.as_string())
-                # Use a single-value rate constant
-                else:
-                    out_file.write("[%s]" % (rxn_item.fwd_rate.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))    
+        if rxn_item.type == 'irreversible':
+            # Use a variable rate constant file if specified
+            if rxn_item.variable_rate_switch and rxn_item.variable_rate_valid:
+                variable_rate_name = rxn_item.variable_rate
+                out_file.write('["%s"]' % (variable_rate_name))
+                variable_rate_text = bpy.data.texts[variable_rate_name]
+                variable_out_filename = os.path.join(
+                    filedir, variable_rate_name)
+                with open(variable_out_filename, "w", encoding="utf8",
+                          newline="\n") as variable_out_file:
+                    variable_out_file.write(variable_rate_text.as_string())
+            # Use a single-value rate constant
             else:
-                out_file.write("[>%s, <%s]" %
-                               (rxn_item.fwd_rate.get_as_string(ps.panel_parameter_list,ps.export_as_expressions), rxn_item.bkwd_rate.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+                out_file.write("[%s]" % (rxn_item.fwd_rate.get_as_string(
+                               ps.panel_parameter_list,ps.export_as_expressions)))    
+        else:
+            out_file.write(
+                "[>%s, <%s]" % (rxn_item.fwd_rate.get_as_string(
+                ps.panel_parameter_list, ps.export_as_expressions),
+                rxn_item.bkwd_rate.get_as_string(ps.panel_parameter_list,
+                ps.export_as_expressions)))
 
-            if rxn_item.rxn_name:
-                out_file.write(" : %s\n" % (rxn_item.rxn_name))
-            else:
-                out_file.write("\n")
+        if rxn_item.rxn_name:
+            out_file.write(" : %s\n" % (rxn_item.rxn_name))
+        else:
+            out_file.write("\n")
 
-        out_file.write("}\n\n")
+    out_file.write("}\n\n")
 
 
 def save_geometry(context, out_file, object_list):
     """ Saves geometry info to mdl output file. """
 
     # Export Model Geometry:
-    if object_list:
+    for object_item in object_list:
 
-        for object_item in object_list:
+        data_object = context.scene.objects[object_item.name]
 
-            data_object = context.scene.objects[object_item.name]
+        if data_object.type == 'MESH':
 
-            if data_object.type == 'MESH':
+            # NOTE (Markus): I assume this is what is happening
+            # here. We need to unhide objects (if hidden) during
+            # writing and then restore the state in the end.
+            saved_hide_status = data_object.hide
+            data_object.hide = False
 
-                # NOTE (Markus): I assume this is what is happening
-                # here. We need to unhide objects (if hidden) during
-                # writing and then restore the state in the end.
-                saved_hide_status = data_object.hide
-                data_object.hide = False
+            context.scene.objects.active = data_object
+            bpy.ops.object.mode_set(mode='OBJECT')
 
-                context.scene.objects.active = data_object
-                bpy.ops.object.mode_set(mode='OBJECT')
+            out_file.write("%s POLYGON_LIST\n" % (data_object.name))
+            out_file.write("{\n")
 
-                out_file.write("%s POLYGON_LIST\n" % (data_object.name))
-                out_file.write("{\n")
+            # write vertex list
+            out_file.write("  VERTEX_LIST\n")
+            out_file.write("  {\n")
+            mesh = data_object.data
+            matrix = data_object.matrix_world
+            vertices = mesh.vertices
+            for v in vertices:
+                t_vec = matrix * v.co
+                out_file.write("    [ %.15g, %.15g, %.15g ]\n" %
+                               (t_vec.x, t_vec.y, t_vec.z))
 
-                # write vertex list
-                out_file.write("  VERTEX_LIST\n")
+            # close VERTEX_LIST block
+            out_file.write("  }\n")
+
+            # write element connection
+            out_file.write("  ELEMENT_CONNECTIONS\n")
+            out_file.write("  {\n")
+
+            faces = mesh.polygons
+            for f in faces:
+                out_file.write("    [ %d, %d, %d ]\n" %
+                               (f.vertices[0], f.vertices[1],
+                                f.vertices[2]))
+
+            # close ELEMENT_CONNECTIONS block
+            out_file.write("  }\n")
+
+            # write regions
+            regions = get_regions(data_object)
+            if regions:
+                out_file.write("  DEFINE_SURFACE_REGIONS\n")
                 out_file.write("  {\n")
-                mesh = data_object.data
-                matrix = data_object.matrix_world
-                vertices = mesh.vertices
-                for v in vertices:
-                    t_vec = matrix * v.co
-                    out_file.write("    [ %.15g, %.15g, %.15g ]\n" %
-                                   (t_vec.x, t_vec.y, t_vec.z))
 
-                # close VERTEX_LIST block
+                region_names = [k for k in regions.keys()]
+                region_names.sort()
+                for region_name in region_names:
+                    out_file.write("    %s\n" % (region_name))
+                    out_file.write("    {\n")
+                    out_file.write("      ELEMENT_LIST = " +
+                                   str(regions[region_name])+'\n')
+                    out_file.write("    }\n")
+
                 out_file.write("  }\n")
 
-                # write element connection
-                out_file.write("  ELEMENT_CONNECTIONS\n")
-                out_file.write("  {\n")
+            # close SURFACE_REGIONS block
+            out_file.write("}\n\n")
 
-                faces = mesh.polygons
-                for f in faces:
-                    out_file.write("    [ %d, %d, %d ]\n" %
-                                   (f.vertices[0], f.vertices[1],
-                                    f.vertices[2]))
-
-                # close ELEMENT_CONNECTIONS block
-                out_file.write("  }\n")
-
-                # write regions
-                regions = get_regions(data_object)
-                if regions:
-                    out_file.write("  DEFINE_SURFACE_REGIONS\n")
-                    out_file.write("  {\n")
-
-                    region_names = [k for k in regions.keys()]
-                    region_names.sort()
-                    for region_name in region_names:
-                        out_file.write("    %s\n" % (region_name))
-                        out_file.write("    {\n")
-                        out_file.write("      ELEMENT_LIST = " +
-                                       str(regions[region_name])+'\n')
-                        out_file.write("    }\n")
-
-                    out_file.write("  }\n")
-
-                # close SURFACE_REGIONS block
-                out_file.write("}\n\n")
-
-                # restore proper object visibility state
-                data_object.hide = saved_hide_status
+            # restore proper object visibility state
+            data_object.hide = saved_hide_status
 
 
 def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all):
@@ -837,48 +994,49 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
     mcell = context.scene.mcell
     ps = mcell.parameter_system
 
-    if rxn_output_list:
-        out_file.write("REACTION_DATA_OUTPUT\n{\n")
-        #rxn_step = mcell.initialization.time_step.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)
-        out_file.write("  STEP=%g\n" % mcell.initialization.time_step.get_as_string(ps.panel_parameter_list,ps.export_as_expressions))
+    out_file.write("REACTION_DATA_OUTPUT\n{\n")
+    #rxn_step = mcell.initialization.time_step.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)
+    out_file.write("  STEP=%s\n" % mcell.initialization.time_step.get_as_string(
+                   ps.panel_parameter_list, ps.export_as_expressions))
 
-        for rxn_output in rxn_output_list:
-            if rxn_output.rxn_or_mol == 'Reaction':
-                count_name = rxn_output.reaction_name
-            else:
-                count_name = rxn_output.molecule_name
-            object_name = rxn_output.object_name
-            region_name = rxn_output.region_name
-            if rxn_output.count_location == 'World':
-                out_file.write("  {COUNT[%s,WORLD]}=> \"./react_data/seed_\" & seed & \"/%s.World.dat\"\n" %
-                               (count_name, count_name,))
-            elif rxn_output.count_location == 'Object':
-                out_file.write("  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & \"/%s.%s.dat\"\n" %
-                               (count_name, context.scene.name, object_name,
-                                count_name, object_name))
-            elif rxn_output.count_location == 'Region':
-                out_file.write("  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & \"/%s.%s.%s.dat\"\n" %
-                               (count_name, context.scene.name, object_name,
-                                region_name, count_name, object_name,
-                                region_name))
+    for rxn_output in rxn_output_list:
+        if rxn_output.rxn_or_mol == 'Reaction':
+            count_name = rxn_output.reaction_name
+        else:
+            count_name = rxn_output.molecule_name
+        object_name = rxn_output.object_name
+        region_name = rxn_output.region_name
+        if rxn_output.count_location == 'World':
+            out_file.write(
+                "  {COUNT[%s,WORLD]}=> \"./react_data/seed_\" & seed & "
+                "\"/%s.World.dat\"\n" % (count_name, count_name,))
+        elif rxn_output.count_location == 'Object':
+            out_file.write(
+                "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
+                "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,
+                object_name, count_name, object_name))
+        elif rxn_output.count_location == 'Region':
+            out_file.write(
+                "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
+                "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,
+                object_name, region_name, count_name, object_name, region_name))
 
-        out_file.write("}\n\n")
+    out_file.write("}\n\n")
 
 
 def save_mod_surf_regions(context, out_file, mod_surf_regions_list):
     """ Saves modify surface region info to mdl output file. """
 
-    if mod_surf_regions_list:
-        out_file.write("MODIFY_SURFACE_REGIONS\n")
-        out_file.write("{\n")
-        for active_mod_surf_regions in mod_surf_regions_list:
-            surf_class_name = active_mod_surf_regions.surf_class_name
-            out_file.write("  %s[%s]\n" %
-                           (active_mod_surf_regions.object_name,
-                            active_mod_surf_regions.region_name))
-            out_file.write("  {\n    SURFACE_CLASS = %s\n  }\n" %
-                           (surf_class_name))
-        out_file.write("}\n\n")
+    out_file.write("MODIFY_SURFACE_REGIONS\n")
+    out_file.write("{\n")
+    for active_mod_surf_regions in mod_surf_regions_list:
+        surf_class_name = active_mod_surf_regions.surf_class_name
+        out_file.write("  %s[%s]\n" %
+                       (active_mod_surf_regions.object_name,
+                        active_mod_surf_regions.region_name))
+        out_file.write("  {\n    SURFACE_CLASS = %s\n  }\n" %
+                       (surf_class_name))
+    out_file.write("}\n\n")
 
 
 def instance_object_expr(context, expression):

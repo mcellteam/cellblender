@@ -119,7 +119,7 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "decouple_export_run")
             row = layout.row()
-            row.prop(mcell.cellblender_preferences, "filter_invalid")
+            row.prop(mcell.cellblender_preferences, "invalid_policy")
             #row = layout.row()
             #row.prop(mcell.cellblender_preferences, "debug_level")
 
@@ -156,6 +156,12 @@ class MCELL_PT_project_settings(bpy.types.Panel):
 
             row = layout.row()
             layout.prop(context.scene, "name", text="Project Base Name")
+
+
+class MCELL_UL_error_list(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        layout.label(item.name, icon='ERROR')
 
 
 class MCELL_UL_run_simulation(bpy.types.UIList):
@@ -260,6 +266,16 @@ class MCELL_PT_run_simulation(bpy.types.Panel):
             if mcell.run_simulation.status:
                 row = layout.row()
                 row.label(text=mcell.run_simulation.status, icon='ERROR')
+            
+            if mcell.run_simulation.error_list: 
+                row = layout.row() 
+                row.label(text="Errors:", icon='ERROR')
+                row = layout.row()
+                col = row.column()
+                col.template_list("MCELL_UL_error_list", "run_simulation",
+                                  mcell.run_simulation, "error_list",
+                                  mcell.run_simulation, "active_err_index", rows=2)
+
 
 
 class MCELL_PT_viz_results(bpy.types.Panel):
