@@ -54,7 +54,8 @@ class SBML_OT_parameter_add(bpy.types.Operator):
                 mcell.parameters.active_par_index]
 
             parameter.name = str(key['name'])
-            parameter.value = str(key['value'])
+            if key['value'] not in ['0','0.0']:
+                parameter.value = str(key['value'])
             parameter.unit = str(key['unit'])
             parameter.type = str(key['type'])
             mcell.general_parameters.add_parameter_with_values ( parameter.name, parameter.value, parameter.unit, parameter.type )
@@ -116,9 +117,11 @@ class SBML_OT_reaction_add(bpy.types.Operator):
 		
             reaction.reactants = str(key['reactants'])
             reaction.products = str(key['products'])
-            reaction.fwd_rate_expr = str(key['fwd_rate'])
+            reaction.fwd_rate.expression = str(key['fwd_rate'])
+            if 'rxn_name' in key:
+                reaction.rxn_name = str(key['rxn_name'])                
             reaction.fwd_rate.param_data.label = "Forward Rate"
-            print ( "Adding reaction  " + str(reaction.reactants) + "  ->  " + str(reaction.products) )
+            print ( "Adding reaction  " + str(reaction.reactants) + "  ->  " + str(reaction.products) + " " + str(reaction.fwd_rate.expression) )
 
         return {'FINISHED'}
 
@@ -149,7 +152,9 @@ class SBML_OT_release_site_add(bpy.types.Operator):
             release_site.orient = str(key['orient'])
             release_site.object_expr = str(key['object_expr'])
             release_site.quantity_type = str(key['quantity_type'])
-            release_site.quantity_expr = str(key['quantity_expr'])
+            release_site.quantity.expression = str(key['quantity_expr'])
+            if 'release_pattern' in key:
+                release_site.pattern = str(key['release_pattern'])
             cellblender_operators.check_release_molecule(self, context)
             print ( "Adding release site " + str(release_site.name) )
 

@@ -10,7 +10,7 @@ try:
     from .libsbml3.linux.lib.python3.dist_packages import libsbml
 except ImportError:
     libsbml = None
-#import libsbml
+#import libsbml3.linux.lib.python3.dist_packages.libsbml as libsbml
 import json
 from optparse import OptionParser
 
@@ -129,7 +129,6 @@ class SBML2JSON:
             outside = compartment.getOutside()
             dimensions = compartment.getSpatialDimensions()
             compartmentList[name] = [dimensions,size,outside]
-        print compartmentList
         return compartmentList
     
     def getOutsideInsideCompartment(self,compartmentList,compartment):
@@ -154,9 +153,9 @@ class SBML2JSON:
         release = []
         for idx,species in enumerate(self.model.getListOfSpecies()):
             compartment = species.getCompartment()
+            outside,inside = self.getOutsideInsideCompartment(compartmentList, compartment)
             if compartmentList[compartment][0] == 3:
                 typeD = '3D'
-                outside,inside = self.getOutsideInsideCompartment(compartmentList, compartment)
                 diffusion = 'KB*T/(6*PI*mu_{0}*Rs)'.format(compartment)
             else:
                 typeD = '2D'
@@ -184,7 +183,7 @@ class SBML2JSON:
                 else:
                     objectExpr = '{0}'.format(compartment)                    
                 releaseSpecs = {'name': 'Release_Site_s{0}'.format(idx+1),'molecule':species.getId(),'shape':'OBJECT'
-            ,'quantity_type':"NUMBER_TO_RELEASE",'quantity_expr':initialConcentration,'object_expr':objectExpr,'orient':"'"}
+            ,'quantity_type':"DENSITY",'quantity_expr':initialConcentration,'object_expr':objectExpr,'orient':"'"}
                 release.append(releaseSpecs)
             #self.speciesDictionary[identifier] = standardizeName(name)
             #returnID = identifier if self.useID else \
@@ -282,7 +281,15 @@ class SBML2JSON:
                 
             
     def getReactions(self,sparameters):
+        def isOutside(compartmentList,inside,outsideCandidate):
+            tmp = compartmentList[inside][1]
+            while tmp not in  ['',None]:
+                tmp = compartmentList[tmp][1]
+                if tmp == outsideCandidate:
+                    return True
+            return False
         reactionSpecs = []
+        releaseSpecs = []
         from copy import deepcopy
         for index, reaction in enumerate(self.model.getListOfReactions()):
             kineticLaw = reaction.getKineticLaw()
@@ -293,11 +300,12 @@ class SBML2JSON:
             parameters = [(parameter.getId(), parameter.getValue()) for parameter in kineticLaw.getListOfParameters()]
             math = kineticLaw.getMath()
             reversible = reaction.getReversible()
-            compartmentList  = []
+            compartmentList  = {}
             for compartment in (self.model.getListOfCompartments()):
-                compartmentList.append(compartment.getId())
+                compartmentList[compartment.getId()] = (compartment.getSpatialDimensions(),
+                                                    compartment.getOutside())
                 
-            rateL, rateR = self.getInstanceRate(math,compartmentList,reversible,rReactant,rProduct)
+            rateL, rateR = self.getInstanceRate(math,compartmentList.keys(),reversible,rReactant,rProduct)
             #finalReactant = [x[0]]    
             #testing whether we have volume-surface interactions
             rcList = []
@@ -310,25 +318,66 @@ class SBML2JSON:
                 orientation = "," if len(set(self.moleculeData[x[0]][0] for x in reactant)) \
                 > 1 and self.moleculeData[element[0]] == '3' else "'"
                 prdList.append("{0}{1}".format(element[0],orientation))
-            if len(reactant) == 1 and len(product) ==1 and reactant[0][2] != product[0][2]:
-                print reactant,product
+            tmpL = {}
+            tmpR = {}
+            flagL=flagR=False
+            if len(reactant) == 1 and len(product) ==1 and reactant[0][2] != product[0][2] \
+            and compartmentList[product[0][2]][0] == compartmentList[reactant[0][2]][0]:
+                tmpL['rxn_name'] = 'rec_{0}'.format(index+1)
+                tmpR['rxn_name'] = 'rec_m{0}'.format(index+1)
+                if compartmentList[product[0][2]][0] == 3:
+                    object_expr = product[0][2].upper()
+                    object_exprm = reactant[0][2].upper()
+                else:
+                    if isOutside(compartmentList,reactant[0][2],product[0][2]):
+                        sourceGeometry = compartmentList[reactant[0][2]][1]
+                    elif isOutside(compartmentList,product[0][2],reactant[0][2]):
+                        sourceGeometry = compartmentList[product[0][2]][1]
+                    else:
+                        sourceGeometry = compartmentList[product[0][2]][1]
+                        
+                        
+                    object_expr = '{0}[{1}]'.format(sourceGeometry,product[0][2])
+                    object_exprm = '{0}[{1}]'.format(sourceGeometry,reactant[0][2])
+
+                releaseSpecs.append({'name': 'Release_Site_pattern_s{0}'.format(index+1),
+                'molecule':product[0][0],'shape':'OBJECT',
+                'orient':"'",'quantity_type':'NUMBER_TO_RELEASE',
+                'release_pattern':'rec_{0}'.format(index+1),
+                'quantity_expr':"1",'object_expr':object_expr
+                })
+                flagL= True
+                
+                if rateR != '0':
+                    releaseSpecs.append({'name': 'Release_Site_pattern_sm{0}'.format(index+1),
+                    'molecule':reactant[0][0],'shape':'OBJECT',
+                    'release_pattern':'rec_m{0}'.format(index+1),
+                    'quantity_expr':"1",'object_expr':object_exprm
+                    })
+                    flagR = True
+                    
+                
             if rateL != '0':
-                tmp = {}
-                tmp['reactants'] = ' + '.join(rcList)
-                tmp['products'] = ' + '.join(prdList)
-                tmp['fwd_rate'] = rateL
-                reactionSpecs.append(tmp)
+                
+                tmpL['reactants'] = ' + '.join(rcList)
+                if flagL:
+                    tmpL['products'] = 'NULL'
+                else:
+                    tmpL['products'] = ' + '.join(prdList)
+                tmpL['fwd_rate'] = rateL
+                reactionSpecs.append(tmpL)
             if rateR != '0':
-                tmp ={}
-                tmp['reactants'] = ' + '.join(prdList)
-                tmp['products'] = ' + '.join(rcList)
-                tmp['fwd_rate'] = rateR
-                reactionSpecs.append(tmp)
-            
+                tmpR['reactants'] = ' + '.join(prdList)
+                if flagR:
+                    tmpR['products'] = 'NULL'
+                else:                    
+                    tmpR['products'] = ' + '.join(rcList)
+                tmpR['fwd_rate'] = rateR
+                reactionSpecs.append(tmpR)
             self.adjustParameters(len(reactant),rateL,sparameters)
             self.adjustParameters(len(product),rateR,sparameters)
         #reactionDict = {idx+1:x for idx,x in enumerate(reactionSpecs)}
-        return reactionSpecs
+        return reactionSpecs,releaseSpecs
             #SBML USE INSTANCE RATE 
             #HOW TO GET THE DIFFUSION CONSTANT
 
@@ -345,7 +394,8 @@ def transform(filePath):
     parser = SBML2JSON(document.getModel())
     parameters =  parser.getParameters()
     molecules,release = parser.getMolecules()      
-    reactions =  parser.getReactions(parameters)
+    reactions,release2 =  parser.getReactions(parameters)
+    release.extend(release2)
     definition = {}
     definition['par_list'] = parameters
     definition['mol_list'] = molecules
@@ -379,7 +429,8 @@ def main():
     parser = SBML2JSON(document.getModel())
     parameters =  parser.getParameters()
     molecules,release = parser.getMolecules()
-    reactions =  parser.getReactions(parameters)
+    reactions,release2 =  parser.getReactions(parameters)
+    #release.extend(release2)
     definition = {}
     definition['par_list'] = parameters
     definition['mol_list'] = molecules
