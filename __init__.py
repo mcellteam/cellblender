@@ -34,13 +34,13 @@ bl_info = {
 }
 
 cellblender_info = {
-    "supported_version_list": [(2, 66, 1), (2, 67, 0), (2, 68, 0), (2, 69, 0)],
+    "supported_version_list": [(2, 66, 1), (2, 67, 0), (2, 68, 0), (2, 69, 0), (2, 70, 0)],
     "cellblender_source_list": [
         "__init__.py",
+        "parameter_system.py",
         "cellblender_properties.py",
         "cellblender_panels.py",
         "cellblender_operators.py",
-        "cellblender_parameters.py",
         "cellblender_molecules.py",
         "object_surface_regions.py",
         "run_simulations.py",
@@ -106,13 +106,14 @@ if "bpy" in locals():
     imp.reload(cellblender_properties)
     imp.reload(cellblender_panels)
     imp.reload(cellblender_operators)
-    imp.reload(cellblender_parameters)
+    #imp.reload(cellblender_parameters)
+    imp.reload(parameter_system)
     imp.reload(cellblender_molecules)
     imp.reload(object_surface_regions)
     imp.reload(io_mesh_mcell_mdl)
     imp.reload(mdl)         # BK: Added for MDL
     imp.reload(bng)         # DB: Adde for BNG
-#    imp.reload(sbml)        #JJT: Added for SBML
+    #    imp.reload(sbml)        #JJT: Added for SBML
 
     # Use "try" for optional modules
     try:
@@ -125,7 +126,8 @@ else:
         cellblender_properties, \
         cellblender_panels, \
         cellblender_operators, \
-        cellblender_parameters, \
+        #cellblender_parameters, \
+        parameter_system, \
         cellblender_molecules, \
         object_surface_regions, \
         io_mesh_mcell_mdl, \
@@ -137,13 +139,14 @@ else:
     from . import cellblender_properties
     from . import cellblender_panels
     from . import cellblender_operators
-    from . import cellblender_parameters
+    #from . import cellblender_parameters
+    from . import parameter_system
     from . import cellblender_molecules
     from . import object_surface_regions
     from . import io_mesh_mcell_mdl
     from . import mdl  # BK: Added for MDL
     from . import bng  # DB: Added for BNG
-#    from . import sbml #JJT: Added for SBML
+    #    from . import sbml #JJT: Added for SBML
 
     # Use "try" for optional modules
     try:
@@ -160,16 +163,24 @@ import sys
 def register():
     bpy.utils.register_module(__name__)
 
+    # BK: Added for newer parameters ....
+    #print ( "Registering parameter_system" )
+    #bpy.utils.register_module(parameter_system)
+
+
     # Unregister and re-register panels to display them in order
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_cellblender_preferences)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_viz_results)
-    bpy.utils.unregister_class(cellblender_parameters.MCELL_PT_general_parameters)
+    #bpy.utils.unregister_class(cellblender_parameters.MCELL_PT_general_parameters)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_partitions)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_initialization)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_parameters)
+
+    bpy.utils.unregister_class(parameter_system.MCELL_PT_parameter_system)
+
     bpy.utils.unregister_class(cellblender_molecules.MCELL_PT_define_molecules)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_reactions)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_surface_classes)
@@ -183,7 +194,11 @@ def register():
     bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
     bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
     bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
-    bpy.utils.register_class(cellblender_parameters.MCELL_PT_general_parameters)
+
+    #bpy.utils.register_class(cellblender_parameters.MCELL_PT_general_parameters)
+
+    bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)
+
     bpy.utils.register_class(cellblender_panels.MCELL_PT_model_objects)
     bpy.utils.register_class(cellblender_panels.MCELL_PT_partitions)
     bpy.utils.register_class(cellblender_panels.MCELL_PT_initialization)
@@ -205,13 +220,16 @@ def register():
 
     # DB: Added for BioNetGen import
     bpy.types.INFO_MT_file_import.append(bng.menu_func_import)
-   #JJT: And SBML import
+
+    #JJT: And SBML import
     #bpy.types.INFO_MT_file_import.append(sbml.menu_func_import)
 
     bpy.types.Scene.mcell = bpy.props.PointerProperty(
         type=cellblender_properties.MCellPropertyGroup)
     bpy.types.Object.mcell = bpy.props.PointerProperty(
         type=object_surface_regions.MCellObjectPropertyGroup)
+
+
     print("CellBlender registered")
     if (bpy.app.version not in cellblender_info['supported_version_list']):
         print("Warning, current Blender version", bpy.app.version,
@@ -275,8 +293,10 @@ if len(bpy.app.handlers.load_post) == 0:
         object_surface_regions.object_regions_format_update)
     bpy.app.handlers.load_post.append(
         cellblender_operators.mcell_valid_update)
+    #bpy.app.handlers.load_post.append(
+    #    cellblender_operators.set_defaults)
     bpy.app.handlers.load_post.append(
-        cellblender_operators.set_defaults)
+        cellblender_operators.init_properties)
     bpy.app.handlers.load_post.append(
         cellblender_operators.load_preferences)
 
