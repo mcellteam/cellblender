@@ -335,9 +335,11 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
         ('dont_run', "Do not run with errors", ""),
         ('filter', "Filter errors and run", ""),
         ('ignore', "Ignore errors and attempt run", "")]
-    invalid_policy = EnumProperty(items=invalid_policy_enum,
-                                  name="Invalid Policy",
-                                  default='dont_run')
+    invalid_policy = EnumProperty(
+        items=invalid_policy_enum,
+        name="Invalid Policy",
+        default='dont_run',
+        update=cellblender_operators.save_preferences)
     decouple_export_run = BoolProperty(
         name="Decouple Export and Run", default=False,
         description="Allow the project to be exported without also running"
