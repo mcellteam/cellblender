@@ -249,7 +249,7 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
 
     name = StringProperty(name="Molecule", default="Molecule")
     molecule = StringProperty(
-        name="Molecule Name:",
+        name="Molecule Name",
         description="The molecule that is affected by the surface class",
         update=cellblender_operators.check_surf_class_props)
     surf_class_orient_enum = [
@@ -297,17 +297,17 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 
     name = StringProperty(name="Modify Surface Region")
     surf_class_name = StringProperty(
-        name="Surface Class Name:",
+        name="Surface Class Name",
         description="This surface class will be assigned to the surface "
                     "region listed below.",
         update=cellblender_operators.check_mod_surf_regions)
     object_name = StringProperty(
-        name="Object Name:",
+        name="Object Name",
         description="A region on this object will have the above surface "
                     "class assigned to it.",
         update=cellblender_operators.check_mod_surf_regions)
     region_name = StringProperty(
-        name="Region Name:",
+        name="Region Name",
         description="This surface region will have the above surface class "
                     "assigned to it.",
         update=cellblender_operators.check_mod_surf_regions)

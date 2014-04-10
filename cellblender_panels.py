@@ -990,7 +990,7 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                         mcell.release_sites.active_release_index]
                     layout.prop(rel, "name")
                     layout.prop_search(rel, "molecule", mcell.molecules,
-                                       "molecule_list", text="Molecule:",
+                                       "molecule_list", text="Molecule",
                                        icon='FORCE_LENNARDJONES')
                     if rel.molecule in mcell.molecules.molecule_list:
                         if mcell.molecules.molecule_list[rel.molecule].type == '2D':
