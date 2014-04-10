@@ -48,18 +48,24 @@ class SBML_OT_parameter_add(bpy.types.Operator):
         index = -1
         for key in par_list:
             index += 1
-            mcell.parameters.parameter_list.add()
-            mcell.parameters.active_par_index = index
-            parameter = mcell.parameters.parameter_list[
-                mcell.parameters.active_par_index]
+            #mcell.parameters.parameter_list.add()
+            #mcell.parameters.active_par_index = index
+            #parameter = mcell.parameters.parameter_list[
+            #    mcell.parameters.active_par_index]
 
-            parameter.name = str(key['name'])
-            if key['value'] not in ['0','0.0']:
-                parameter.value = str(key['value'])
-            parameter.unit = str(key['unit'])
-            parameter.type = str(key['type'])
-            mcell.general_parameters.add_parameter_with_values ( parameter.name, parameter.value, parameter.unit, parameter.type )
-            print ( "Adding parameter \"" + str(parameter.name) + "\"  =  \"" + str(parameter.value) + "\"  (" + str(parameter.unit) + ")" )
+            #parameter.name = str(key['name'])
+            #if key['value'] not in ['0','0.0']:
+            #    parameter.value = str(key['value'])
+            #parameter.unit = str(key['unit'])
+            #parameter.type = str(key['type'])
+
+            par_name = str(key['name'])
+            par_value = str(key['value'])
+            par_unit = str(key['unit'])
+            par_type = str(key['type'])
+
+            mcell.parameter_system.add_general_parameter_with_values( par_name, par_value, par_unit, par_type )
+            print ( "Adding parameter \"" + str(par_name) + "\"  =  \"" + str(par_value) + "\"  (" + str(par_unit) + ")" )
  
         return {'FINISHED'}
 
@@ -72,6 +78,7 @@ class SBML_OT_molecule_add(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
+        ps = mcell.parameter_system
         #filePointer= open(filePath + '.json','r')
         #json.load(filePointer)        
 
@@ -84,12 +91,15 @@ class SBML_OT_molecule_add(bpy.types.Operator):
             mcell.molecules.active_mol_index = index
             molecule = mcell.molecules.molecule_list[
                 mcell.molecules.active_mol_index]
-            molecule.set_defaults()
+            #molecule.set_defaults()
+            molecule.init_properties(ps)
 
             molecule.name = str(key['name'])
             molecule.type = str(key['type'])
-            molecule.diffusion_constant.expression = str(key['dif'])
-            molecule.diffusion_constant.param_data.label = "Diffusion Constant"
+            #molecule.diffusion_constant.expression = str(key['dif'])
+            #molecule.diffusion_constant.param_data.label = "Diffusion Constant"
+            molecule.diffusion_constant.set_expr ( key['dif'], ps.panel_parameter_list )
+            
             print ( "Adding molecule " + str(molecule.name) )
 
         return {'FINISHED'}
@@ -102,8 +112,10 @@ class SBML_OT_reaction_add(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
+
         #filePointer= open(filePath + '.json','r')
         #jfile = json.load(filePointer) 
+        ps = mcell.parameter_system
         jfile = accessFile(filePath)       
         rxn_list = jfile['rxn_list']        
         index = -1
@@ -113,15 +125,18 @@ class SBML_OT_reaction_add(bpy.types.Operator):
             mcell.reactions.active_rxn_index = index
             reaction = mcell.reactions.reaction_list[
                 mcell.reactions.active_rxn_index]
-            reaction.set_defaults()
-		
+            #reaction.set_defaults()
+            reaction.init_properties(ps)
+
             reaction.reactants = str(key['reactants'])
             reaction.products = str(key['products'])
-            reaction.fwd_rate.expression = str(key['fwd_rate'])
+            #reaction.fwd_rate.expression = str(key['fwd_rate'])
             if 'rxn_name' in key:
                 reaction.rxn_name = str(key['rxn_name'])                
-            reaction.fwd_rate.param_data.label = "Forward Rate"
-            print ( "Adding reaction  " + str(reaction.reactants) + "  ->  " + str(reaction.products) + " " + str(reaction.fwd_rate.expression) )
+            #reaction.fwd_rate.param_data.label = "Forward Rate"
+            reaction.fwd_rate.set_expr ( key['fwd_rate'], ps.panel_parameter_list )
+
+            print ( "Adding reaction  " + str(reaction.reactants) + "  ->  " + str(reaction.products))
 
         return {'FINISHED'}
 
@@ -136,6 +151,7 @@ class SBML_OT_release_site_add(bpy.types.Operator):
         #filePointer= open(filePath + '.json','r')
         #jfile = json.load(filePointer) 
         jfile = accessFile(filePath)        
+        ps = mcell.parameter_system
         rel_list = jfile['rel_list']     
         index = -1
         for key in rel_list:
@@ -144,7 +160,8 @@ class SBML_OT_release_site_add(bpy.types.Operator):
             mcell.release_sites.active_release_index = index
             release_site = mcell.release_sites.mol_release_list[
                 mcell.release_sites.active_release_index]
-            release_site.set_defaults()
+            #release_site.set_defaults()
+            release_site.init_properties(ps)
             
             release_site.name = str(key['name'])
             release_site.molecule = str(key['molecule'])

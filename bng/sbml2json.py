@@ -310,6 +310,7 @@ class SBML2JSON:
             #testing whether we have volume-surface interactions
             rcList = []
             prdList = []
+            orientationSet = set()
             for element in reactant:
                 orientation = "," if len(set(self.moleculeData[x[0]][0] for x in reactant)) \
                 > 1 and self.moleculeData[element[0]] == '3' else "'"
