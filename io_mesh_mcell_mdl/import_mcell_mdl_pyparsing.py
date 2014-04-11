@@ -155,7 +155,7 @@ def mdl_format_bnf():
     return bnf
 
 
-def load(operator, context, filepath=""):
+def load(operator, context, filepath="", add_to_model_objects=True):
     global my_objects
     my_objects = {}
 
@@ -166,6 +166,6 @@ def load(operator, context, filepath=""):
         bnf.parseString(file.read())
 
     for _, mdlobj in my_objects.items():
-        import_shared.import_obj(mdlobj, obj_mat, reg_mat)
+        import_shared.import_obj(mdlobj, obj_mat, reg_mat, add_to_model_objects)
 
     return {'FINISHED'}

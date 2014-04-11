@@ -63,6 +63,11 @@ class ImportMCellMDL(bpy.types.Operator, ImportHelper):
     filename_ext = ".mdl"
     filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
 
+    add_to_model_objects = BoolProperty(
+        name="Add to Model Objects",
+        description="Automatically add all meshes to the Model Objects list",
+        default=True,)
+
     def execute(self, context):
         paths = [os.path.join(self.directory, name.name) for name in self.files]
         if not paths:
@@ -74,14 +79,16 @@ class ImportMCellMDL(bpy.types.Operator, ImportHelper):
             from . import mdlmesh_parser
 
             for path in paths:
-                import_mcell_mdl.load(self, context, path)
+                import_mcell_mdl.load(
+                    self, context, path, self.add_to_model_objects)
 
         # Fall back on slow pure python parser (pyparsing)
         except ImportError:
             from . import import_mcell_mdl_pyparsing
         
             for path in paths:
-                import_mcell_mdl_pyparsing.load(self, context, path)
+                import_mcell_mdl_pyparsing.load(
+                    self, context, path, self.add_to_model_objects)
 
 
         return {'FINISHED'}

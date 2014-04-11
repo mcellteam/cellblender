@@ -21,8 +21,10 @@
 
 import bpy
 
+from cellblender.utils import preserve_selection_use_operator
 
-def import_obj(mdlobj, obj_mat, reg_mat):
+
+def import_obj(mdlobj, obj_mat, reg_mat, add_to_model_objects=True):
     """ Create a new Blender mesh object.
 
     Currently, this is used by both the swig and pyparsing based importers. In
@@ -57,6 +59,9 @@ def import_obj(mdlobj, obj_mat, reg_mat):
     # Object needs to be active to add a region to it because of how
     # init_region (called by add_region_by_name) works.
     scn.objects.active = obj
+    
+    if add_to_model_objects:
+        preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
 
     all_regions = []
     for reg_name, regions in mdlobj.regions.items():
