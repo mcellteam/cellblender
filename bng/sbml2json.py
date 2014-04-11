@@ -11,6 +11,7 @@ try:
 except ImportError:
     libsbml = None
 #import libsbml3.linux.lib.python3.dist_packages.libsbml as libsbml
+#import libsbml
 import json
 from optparse import OptionParser
 
@@ -76,8 +77,21 @@ class SBML2JSON:
                 
     def getParameters(self):
         parameters = []
-        prx = {'name':"Nav",'value':"6.022e8",'unit':"",'type':"Avogadro number for 1 um^3"}
-        parameters.append(prx)
+        prx = [{'name':"Nav",'value':"6.022e8",'unit':"",'type':"Avogadro number for 1 um^3"},
+               {'name':"KB",'value':"1.3806488e-19",'unit':"cm^2.kg/K.s^2",'type':"Boltzmann constant"},
+               {'name':"gamma",'value':"0.5722",'unit':"",'type':"Euler's constant"},
+               {'name':"T",'value':"298.25",'unit':"K",'type':""},
+               {'name':"rxn_layer_t",'value':"0.01",'unit':"um",'type':""},
+               {'name':"h",'value':"0.01",'unit':"um",'type':""},
+               {'name':"Rs",'value':"0.002564",'unit':"um",'type':""},
+               {'name':"Rc",'value':"0.0015",'unit':"um",'type':""}
+              ]
+        parameters.extend(prx)
+        
+        for compartment in self.model.getListOfCompartments():
+            name = compartment.getId()
+            parameters.append({'name':"mu_{0}".format(name),'value':"1e-9",'unit':"kg/um.s",'type':"viscosity"})
+
         for parameter in self.model.getListOfParameters():
             parameterSpecs = {'name':parameter.getId(),'value':parameter.getValue(),
                               'unit':parameter.getUnits(),'type' : ""}
@@ -313,12 +327,22 @@ class SBML2JSON:
             orientationSet = set()
             for element in reactant:
                 orientation = "," if len(set(self.moleculeData[x[0]][0] for x in reactant)) \
-                > 1 and self.moleculeData[element[0]] == '3' else "'"
+                > 1 and self.moleculeData[element[0]][0] == 3 else "'"
                 rcList.append("{0}{1}".format(element[0],orientation))
+                orientationSet.add((orientation,self.moleculeData[element[0]][0]))
             for element in product:
                 orientation = "," if len(set(self.moleculeData[x[0]][0] for x in reactant)) \
-                > 1 and self.moleculeData[element[0]] == '3' else "'"
+                > 1 and self.moleculeData[element[0]][0] == 3 else "'"
                 prdList.append("{0}{1}".format(element[0],orientation))
+                orientationSet.add((orientation,self.moleculeData[element[0]][0]))
+            #if everything is the same orientation delete orientation
+            '''
+            if len(orientationSet) == 1:
+                for index,element in enumerate(rcList):
+                    rcList[index] = element[:-1]
+                for index,element in enumerate(prdList):
+                    prdList[index] = element[:-1]
+            '''
             tmpL = {}
             tmpR = {}
             flagL=flagR=False
