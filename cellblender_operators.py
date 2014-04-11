@@ -976,6 +976,7 @@ def check_release_object_expr(self, context):
     mcell = context.scene.mcell
     rel_list = mcell.release_sites.mol_release_list
     rel = rel_list[mcell.release_sites.active_release_index]
+    obj_list = mcell.model_objects.object_list
     obj_expr = rel.object_expr
 
     status = ""
@@ -1002,8 +1003,8 @@ def check_release_object_expr(self, context):
             if m.group("obj_reg") is not None:
                 obj_name = m.group("obj_name")
                 reg_name = m.group("reg_name")
-                if not obj_name in scn.objects:
-                    status = "Undefined object: %s" % (obj_name)
+                if not obj_name in obj_list or obj_list[obj_name].status:
+                    status = "Undefined/illegal object: %s" % (obj_name)
                     break
                 obj = scn.objects[obj_name]
                 if reg_name != "ALL":
@@ -1013,8 +1014,8 @@ def check_release_object_expr(self, context):
                         break
             else:
                 obj_name = m.group("obj_name_only")
-                if not obj_name in scn.objects:
-                    status = "Undefined object: %s" % (obj_name)
+                if not obj_name in obj_list or obj_list[obj_name].status:
+                    status = "Undefined/illegal object: %s" % (obj_name)
                     break
 
     return status
