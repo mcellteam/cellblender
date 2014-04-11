@@ -169,7 +169,9 @@ class SBML_OT_release_site_add(bpy.types.Operator):
             release_site.orient = str(key['orient'])
             release_site.object_expr = str(key['object_expr'])
             release_site.quantity_type = str(key['quantity_type'])
-            release_site.quantity.expression = str(key['quantity_expr'])
+            release_site.quantity.set_expr ( str(key['quantity_expr']), ps.panel_parameter_list )
+
+            #release_site.quantity.expression = str(key['quantity_expr'])
             if 'release_pattern' in key:
                 release_site.pattern = str(key['release_pattern'])
             cellblender_operators.check_release_molecule(self, context)
