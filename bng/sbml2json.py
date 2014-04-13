@@ -5,9 +5,13 @@ Created on Mon Jun 17 11:19:37 2013
 @author: proto
 """
 
+import platform
 
 try:
-    from .libsbml3.linux import libsbml
+    if platform.system() == 'Linux':
+        from .libsbml3.linux import libsbml
+    elif platform.system == 'Darwin':
+        from .libsbml3.macosx import libsbml
 except ImportError:
     libsbml = None
 #import libsbml3.linux.lib.python3.dist_packages.libsbml as libsbml
