@@ -186,7 +186,7 @@ def execute_sbml2mcell(filepath,context):
     #TODO: If isTransformed is false a window should be shown that the model failed to load
     return{'FINISHED'}
    
-def execute_sbml2blender(filepath,context):
+def execute_sbml2blender(filepath,context,addObjects=True):
     mcell = context.scene.mcell
-    sbml2blender.sbml2blender(filepath)
+    sbml2blender.sbml2blender(filepath,addObjects)
 

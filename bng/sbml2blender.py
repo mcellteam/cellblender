@@ -1,9 +1,11 @@
 '''
 Spatial SBML importer
 Rohan Arepally
+Jose Juan Tapia
 '''
 
-
+from cellblender.utils import preserve_selection_use_operator
+ 
 import sys
 import bpy
 import os
@@ -141,7 +143,7 @@ def generateSphere(name, size, loc, rot):
     bpy.ops.mesh.quads_convert_to_tris()
     bpy.ops.object.mode_set(mode='OBJECT')
     obj.name = name
-    return mesh_vol(obj.data, obj.matrix_world)
+    return obj
 
 # generates a cube in blender scene with dimensions x,y,z
 def generateCube(x,y,z):
@@ -157,7 +159,7 @@ def generateCube(x,y,z):
     bpy.ops.mesh.quads_convert_to_tris()
     bpy.ops.object.mode_set(mode='OBJECT')
     obj.name = name
-    return mesh_vol(obj.data, obj.matrix_world)
+    return obj
 
 # Approximation of the surface area of a sphere (Knud Thomsen's formula)
 # dimensions x,y,z are in microns
@@ -199,6 +201,8 @@ def generateMesh(objectData):
     obj.select = True
     obj.rotation_euler = (0,0,0)
     obj.scale = (0.05, 0.05, 0.04)
+    
+    return obj
 
 # saves filename.blend to the directory specified
 def saveBlendFile(directory,filename):
@@ -206,7 +210,7 @@ def saveBlendFile(directory,filename):
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(directory, filename + ".blend"))
 
 # given SBML file create blender file of geometries described in SBML file
-def sbml2blender(inputFilePath):
+def sbml2blender(inputFilePath,addObjects):
     print("loading .xml file... " + inputFilePath)
     #extrapolate object data from smbl file
     csgObjects  = readSMBLFileCSGObject(inputFilePath)
@@ -229,20 +233,23 @@ def sbml2blender(inputFilePath):
             size      = [float(object[2]), float(object[3]), float(object[4])]
             location  = [float(object[8]), float(object[9]), float(object[10])]
             rotation  = [float(object[5]), float(object[6]), float(object[7])]
-            generateSphere(name,size,location,rotation)
+            obj = generateSphere(name,size,location,rotation)
             sum_size += (4.0/3.0)*(3.14)*(size[0])*(size[1])*(size[2])
             n_size   += 1
             sum_surf += surface_area_sphere(size[0],size[1],size[2])
             n_surf += 1
         else:
-            generateCube(float(object[2]), float(object[3]), float(object[4]))
-
+            obj = generateCube(float(object[2]), float(object[3]), float(object[4]))
+        if addObjects:
+            preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
+    
     print("The average endosome size is: " + str((sum_size/(n_size*1.0))))
     print("The average endosome surface area is " + str((sum_surf/(n_surf*1.0))))
     
     for object in paramObject:
-        generateMesh(object)
-
+        obj = generateMesh(object)
+        if addObjects:
+            preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
 
 # main function, reads arguments and runs sbml2blender
 if __name__ == '__main__':
