@@ -10,8 +10,10 @@ import platform
 try:
     if platform.system() == 'Linux':
         from .libsbml3.linux import libsbml
-    elif platform.system == 'Darwin':
+    elif platform.system() == 'Darwin':
         from .libsbml3.macosx import libsbml
+    else:
+        libsbml = None
 except ImportError:
     libsbml = None
 #import libsbml3.linux.lib.python3.dist_packages.libsbml as libsbml
