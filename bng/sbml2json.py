@@ -1,8 +1,8 @@
-6# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Created on Mon Jun 17 11:19:37 2013
 
-@author: proto
+@author: Jose Juan Tapia
 """
 
 import platform
@@ -39,7 +39,7 @@ def comb(x,y):
 
 
 class SBML2JSON:
-    
+        
     def __init__(self, model):
         self.model = model
         self.getUnits()
@@ -166,6 +166,11 @@ class SBML2JSON:
         return outside,-1
 
     def getCompartmentHierarchy(self,compartmentList):
+        '''
+        constructs a tree structure containing the 
+        compartment hierarchy excluding 2D compartments
+        @param:compartmentList
+        '''
         def removeMembranes(tree,nodeID):
             node = tree.get_node(nodeID)
             if node.data == 2:
@@ -254,6 +259,9 @@ class SBML2JSON:
         return molecules,release
     
     def getPrunnedTree(self,math,remainderPatterns):
+        '''
+        removes the remainderPatterns leafs from the math tree
+        '''
         while (math.getCharacter() == '*' or math.getCharacter() == '/') and len(remainderPatterns) > 0:
             if libsbml.formulaToString(math.getLeftChild()) in remainderPatterns:
                 remainderPatterns.remove(libsbml.formulaToString(math.getLeftChild()))
@@ -298,8 +306,6 @@ class SBML2JSON:
 
 
     def removeFactorFromMath(self, math, reactants, products):
-        
-            
         remainderPatterns = []
         highStoichoiMetryFactor = 1
         for x in reactants:
@@ -342,6 +348,7 @@ class SBML2JSON:
         if math.isnan(parameter) or parameter == None:
             return 1
         return parameter
+        
     def getReactions(self,sparameters):
         def isOutside(compartmentList,inside,outsideCandidate):
             tmp = compartmentList[inside][1]
