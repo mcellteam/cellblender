@@ -7,6 +7,8 @@ Created on Mon Jun 17 11:19:37 2013
 
 import platform
 
+from . import treelib3
+
 try:
     if platform.system() == 'Linux':
         from .libsbml3.linux import libsbml
@@ -16,8 +18,9 @@ try:
         libsbml = None
 except ImportError:
     libsbml = None
-#import libsbml3.linux.lib.python3.dist_packages.libsbml as libsbml
-#import libsbml
+
+#import treelib3
+#from  libsbml3.linux import libsbml
 import json
 from optparse import OptionParser
 
@@ -152,12 +155,42 @@ class SBML2JSON:
         return compartmentList
     
     def getOutsideInsideCompartment(self,compartmentList,compartment):
+        inside = []
         outside = compartmentList[compartment][2]
         for comp in compartmentList:
             if compartmentList[comp][2] == compartment:
                 return outside, comp
+                
         return outside,-1
-    
+
+    def getCompartmentHierarchy(self,compartmentList):
+        def removeMembranes(tree,nodeID):
+            node = tree.get_node(nodeID)
+            if node.data == 2:
+                parent = tree.get_node(nodeID).bpointer
+                tree.link_past_node(nodeID)
+                nodeID = parent
+                node = tree.get_node(nodeID)
+            for element in node.fpointer:
+                removeMembranes(tree,element)
+            
+        from copy import deepcopy
+        tree = treelib3.Tree()
+        c2 = deepcopy(compartmentList)
+        while len(c2) > 0:
+            removeList = []
+            for element in c2:
+                if c2[element][2] == '':
+                    tree.create_node(element,element,data=c2[element][0])
+                    removeList.append(element)
+                elif tree.contains(c2[element][2]):
+                    tree.create_node(element,element,parent=c2[element][2],data=c2[element][0])
+                    removeList.append(element)
+            for element in removeList:
+                c2.pop(element)
+        removeMembranes(tree,tree.root)
+        return tree
+        
     def getMolecules(self):
         '''
         *species* is the element whose SBML information we will extract
@@ -168,7 +201,7 @@ class SBML2JSON:
         '''
         
         compartmentList = self.__getRawCompartments()
-        
+        tree = self.getCompartmentHierarchy(compartmentList)
         molecules = []
         release = []
         for idx,species in enumerate(self.model.getListOfSpecies()):
@@ -192,18 +225,22 @@ class SBML2JSON:
                     initialConcentration *= 10 ** (factor[1] * factor[2])
                 if 'mole' in species.getSubstanceUnits():
                     initialConcentration /= float(6.022e8)
-            if species.getSubstanceUnits() == '':
-                initialConcentration /= float(6.022e8)
+            #if species.getSubstanceUnits() == '':
+            #    initialConcentration /= float(6.022e8)
                 
             isConstant = species.getConstant()
             #isBoundary = species.getBoundaryCondition()
             if initialConcentration != 0:
                 if compartmentList[compartment][0] == 2:
                     objectExpr = '{0}[{1}]'.format(inside.upper(),compartment.upper())
+                    #objectExpr = '{0}[ALL]'.format(inside.upper(),compartment.upper())
                 else:
                     objectExpr = '{0}'.format(compartment)                    
+                    children = tree.get_node(compartment).fpointer
+                    for element in children:
+                        objectExpr = '{0}[wall] - {1}[wall]'.format(objectExpr,element)
                 releaseSpecs = {'name': 'Release_Site_s{0}'.format(idx+1),'molecule':species.getId(),'shape':'OBJECT'
-            ,'quantity_type':"DENSITY",'quantity_expr':initialConcentration,'object_expr':objectExpr,'orient':"'"}
+            ,'quantity_type':"NUMBER_TO_RELEASE",'quantity_expr':initialConcentration,'object_expr':objectExpr,'orient':"'"}
                 release.append(releaseSpecs)
             #self.speciesDictionary[identifier] = standardizeName(name)
             #returnID = identifier if self.useID else \
@@ -300,8 +337,9 @@ class SBML2JSON:
                 
     def normalize(self,parameter):
         import math
-        if math.isnan(parameter):
+        if math.isnan(parameter) or parameter == None:
             return 1
+        return parameter
     def getReactions(self,sparameters):
         def isOutside(compartmentList,inside,outsideCandidate):
             tmp = compartmentList[inside][1]
@@ -338,20 +376,20 @@ class SBML2JSON:
                 orientation = "," if len(set(self.moleculeData[x[0]][0] for x in reactant)) \
                 > 1 and self.moleculeData[element[0]][0] == 3 else "'"
                 rcList.append("{0}{1}".format(element[0],orientation))
-                orientationSet.add((orientation,self.moleculeData[element[0]][0]))
+                orientationSet.add(self.moleculeData[element[0]][0])
             for element in product:
                 orientation = "," if len(set(self.moleculeData[x[0]][0] for x in reactant)) \
                 > 1 and self.moleculeData[element[0]][0] == 3 else "'"
                 prdList.append("{0}{1}".format(element[0],orientation))
-                orientationSet.add((orientation,self.moleculeData[element[0]][0]))
+                orientationSet.add(self.moleculeData[element[0]][0])
             #if everything is the same orientation delete orientation
-            '''
-            if len(orientationSet) == 1:
-                for index,element in enumerate(rcList):
-                    rcList[index] = element[:-1]
-                for index,element in enumerate(prdList):
-                    prdList[index] = element[:-1]
-            '''
+            
+            if len(orientationSet) == 1 and 3 in orientationSet:
+                for index2,element in enumerate(rcList):
+                    rcList[index2] = element[:-1]
+                for index2,element in enumerate(prdList):
+                    prdList[index2] = element[:-1]
+            
             tmpL = {}
             tmpR = {}
             flagL=flagR=False
@@ -385,6 +423,7 @@ class SBML2JSON:
                 if rateR != '0':
                     releaseSpecs.append({'name': 'Release_Site_pattern_sm{0}'.format(index+1),
                     'molecule':reactant[0][0],'shape':'OBJECT',
+                    'orient':"'",'quantity_type':'NUMBER_TO_RELEASE',                    
                     'release_pattern':'rec_m{0}'.format(index+1),
                     'quantity_expr':"1",'object_expr':object_exprm
                     })
@@ -444,8 +483,8 @@ def main():
 	
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
-		#default='/home/proto/workspace/bionetgen/bng2/Validate/Motivating_example_cBNGL_sbml.xml',type="string",
-		default='/home/proto/Downloads/cell1test3.xml',type="string",
+		default='/home/proto/workspace/bionetgen/bng2/Validate/comp/Motivating_example_cBNGL_13_sbml.xml',type="string",
+		#default='/home/proto/Downloads/cell1test3.xml',type="string",
         help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
     parser.add_option("-o","--output",dest="output",
 		type="string",
@@ -463,9 +502,9 @@ def main():
         return
     parser = SBML2JSON(document.getModel())
     parameters =  parser.getParameters()
-    #print parameters
     molecules,release = parser.getMolecules()
     reactions,release2 =  parser.getReactions(parameters)
+    release.extend(release2)
     #release.extend(release2)
     definition = {}
     definition['par_list'] = parameters
