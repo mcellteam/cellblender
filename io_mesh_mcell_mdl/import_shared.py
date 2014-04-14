@@ -60,9 +60,6 @@ def import_obj(mdlobj, obj_mat, reg_mat, add_to_model_objects=True):
     # init_region (called by add_region_by_name) works.
     scn.objects.active = obj
     
-    if add_to_model_objects:
-        preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
-
     all_regions = []
     for reg_name, regions in mdlobj.regions.items():
         obj.mcell.regions.add_region_by_name(bpy.context, reg_name)
@@ -81,6 +78,9 @@ def import_obj(mdlobj, obj_mat, reg_mat, add_to_model_objects=True):
 
     # Faces that belong to a region are colored red
     mesh.polygons.foreach_set("material_index", material_list)
+
+    if add_to_model_objects:
+        preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
 
     mesh.validate(verbose=True)
     mesh.update()

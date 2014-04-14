@@ -871,7 +871,7 @@ class MCELL_OT_release_site_add(bpy.types.Operator):
 
         relsite.init_properties(mcell.parameter_system)
             
-        check_release_molecule(self, context)
+        check_release_molecule(context)
 
         return {'FINISHED'}
 
@@ -897,14 +897,21 @@ class MCELL_OT_release_site_remove(bpy.types.Operator):
 
 
 def check_release_site(self, context):
+    """ Thin wrapper for check_release_site. """
+
+    check_release_site_wrapped(context)
+
+
+def check_release_site_wrapped(context):
+    """ Make sure that the release site is valid. """
 
     mcell = context.scene.mcell
     rel_list = mcell.release_sites.mol_release_list
     rel = rel_list[mcell.release_sites.active_release_index]
 
-    name_status = check_release_site_name(self, context)
-    molecule_status = check_release_molecule(self, context)
-    object_status = check_release_object_expr(self, context)
+    name_status = check_release_site_name(context)
+    molecule_status = check_release_molecule(context)
+    object_status = check_release_object_expr(context)
 
     if name_status:
         rel.status = name_status
@@ -918,7 +925,7 @@ def check_release_site(self, context):
     return
 
 
-def check_release_site_name(self, context):
+def check_release_site_name(context):
     """Checks for duplicate or illegal release site name."""
 
     mcell = context.scene.mcell
@@ -941,7 +948,7 @@ def check_release_site_name(self, context):
     return status
 
 
-def check_release_molecule(self, context):
+def check_release_molecule(context):
     """Checks for illegal release site molecule name."""
 
     mcell = context.scene.mcell
@@ -969,7 +976,7 @@ def check_release_molecule(self, context):
     return status
 
 
-def check_release_object_expr(self, context):
+def check_release_object_expr(context):
     """Checks for illegal release object name."""
 
     scn = context.scene
@@ -2479,6 +2486,19 @@ def model_objects_update(context):
 
         mobjs.active_obj_index = active_index
 
+        # We check release sites are valid here in case a user adds an object
+        # referenced in a release site after adding the release site itself.
+        # (e.g. Add Cube shaped release site. Then add Cube.)
+        release_list = mcell.release_sites.mol_release_list
+        save_release_idx = mcell.release_sites.active_release_index
+        # check_release_site_wrapped acts on the active release site, so we
+        # need to increment it and then check
+        for rel_idx, _ in enumerate(release_list):
+            mcell.release_sites.active_release_index = rel_idx
+            check_release_site_wrapped(context)
+        # Restore the active index
+        mcell.release_sites.active_release_index = save_release_idx
+
     return
 
 
@@ -2532,6 +2552,8 @@ class MCELL_OT_model_objects_remove(bpy.types.Operator):
                 mobjs.active_obj_index -= 1
                 if (mobjs.active_obj_index < 0):
                     mobjs.active_obj_index = 0
+        
+        model_objects_update(context)
 
         return {'FINISHED'}
 

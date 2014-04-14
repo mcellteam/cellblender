@@ -174,7 +174,8 @@ class SBML_OT_release_site_add(bpy.types.Operator):
             #release_site.quantity.expression = str(key['quantity_expr'])
             if 'release_pattern' in key:
                 release_site.pattern = str(key['release_pattern'])
-            cellblender_operators.check_release_molecule(self, context)
+            # Is this check even needed?
+            #cellblender_operators.check_release_molecule(context)
             print ( "Adding release site " + str(release_site.name) )
 
         return {'FINISHED'}
