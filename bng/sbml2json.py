@@ -7,9 +7,10 @@ Created on Mon Jun 17 11:19:37 2013
 
 import platform
 
-from . import treelib3
+
 
 try:
+    from . import treelib3
     if platform.system() == 'Linux':
         from .libsbml3.linux import libsbml
     elif platform.system() == 'Darwin':
@@ -17,6 +18,7 @@ try:
     else:
         libsbml = None
 except ImportError:
+    treelib3 = None
     libsbml = None
 
 #import treelib3
@@ -235,10 +237,10 @@ class SBML2JSON:
                     objectExpr = '{0}[{1}]'.format(inside.upper(),compartment.upper())
                     #objectExpr = '{0}[ALL]'.format(inside.upper(),compartment.upper())
                 else:
-                    objectExpr = '{0}'.format(compartment)                    
+                    objectExpr = '{0}[wall]'.format(compartment)                    
                     children = tree.get_node(compartment).fpointer
                     for element in children:
-                        objectExpr = '{0}[wall] - {1}[wall]'.format(objectExpr,element)
+                        objectExpr = '{0} - {1}[wall]'.format(objectExpr,element)
                 releaseSpecs = {'name': 'Release_Site_s{0}'.format(idx+1),'molecule':species.getId(),'shape':'OBJECT'
             ,'quantity_type':"NUMBER_TO_RELEASE",'quantity_expr':initialConcentration,'object_expr':objectExpr,'orient':"'"}
                 release.append(releaseSpecs)
@@ -348,6 +350,10 @@ class SBML2JSON:
                 if tmp == outsideCandidate:
                     return True
             return False
+        def getContained(compartmentList,container):
+            for element in compartmentList:
+                if compartmentList[element][1] == container:
+                    return element
         reactionSpecs = []
         releaseSpecs = []
         from copy import deepcopy
@@ -401,16 +407,18 @@ class SBML2JSON:
                     object_expr = product[0][2].upper()
                     object_exprm = reactant[0][2].upper()
                 else:
-                    if isOutside(compartmentList,reactant[0][2],product[0][2]):
-                        sourceGeometry = compartmentList[reactant[0][2]][1]
-                    elif isOutside(compartmentList,product[0][2],reactant[0][2]):
-                        sourceGeometry = compartmentList[product[0][2]][1]
-                    else:
-                        sourceGeometry = compartmentList[product[0][2]][1]
+                    sourceGeometry = getContained(compartmentList,product[0][2])
+                    sourceGeometryM = getContained(compartmentList,reactant[0][2])
+                    #if isOutside(compartmentList,reactant[0][2],product[0][2]):
+                    #    sourceGeometry = compartmentList[p[0][2]][1]
+                    #elif isOutside(compartmentList,product[0][2],reactant[0][2]):
+                    #    sourceGeometry = compartmentList[product[0][2]][1]
+                    #else:
+                    #    sourceGeometry = compartmentList[product[0][2]][1]
                         
                         
                     object_expr = '{0}[{1}]'.format(sourceGeometry,product[0][2])
-                    object_exprm = '{0}[{1}]'.format(sourceGeometry,reactant[0][2])
+                    object_exprm = '{0}[{1}]'.format(sourceGeometryM,reactant[0][2])
 
                 releaseSpecs.append({'name': 'Release_Site_pattern_s{0}'.format(index+1),
                 'molecule':product[0][0],'shape':'OBJECT',
