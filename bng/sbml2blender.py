@@ -138,11 +138,11 @@ def generateSphere(name, size, loc, rot):
     scn = bpy.context.scene
     me = obj.data
     obj.scale = (float(size[0])*0.25,float(size[1])*0.25,float(size[2])*0.2)
+    obj.name = name    
     bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.mesh.select_all()
+    bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.quads_convert_to_tris()
     bpy.ops.object.mode_set(mode='OBJECT')
-    obj.name = name
     return obj
 
 # generates a cube in blender scene with dimensions x,y,z
@@ -153,7 +153,7 @@ def generateCube(x,y,z):
     obj = bpy.data.objects[bpy.context.active_object.name]
     scn = bpy.context.scene
     me = obj.data
-    obj.scale = (float(size[0])*0.05,float(size[1])*0.05,float(size[2])*0.04)
+    obj.scale = (float(size[0]),float(size[1]),float(size[2]))
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all()
     bpy.ops.mesh.quads_convert_to_tris()
@@ -201,6 +201,10 @@ def generateMesh(objectData):
     obj.select = True
     obj.rotation_euler = (0,0,0)
     obj.scale = (0.05, 0.05, 0.04)
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.quads_convert_to_tris()
+    bpy.ops.object.mode_set(mode='OBJECT')
     
     return obj
 
