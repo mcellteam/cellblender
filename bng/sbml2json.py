@@ -22,7 +22,8 @@ except ImportError:
     libsbml = None
 
 #import treelib3
-#from  libsbml3.linux import libsbml
+#import libsbml3.linux.libsbml as libsbml
+#import libsbml
 import json
 from optparse import OptionParser
 
@@ -103,8 +104,18 @@ class SBML2JSON:
             name = compartment.getId()
             parameters.append({'name':"mu_{0}".format(name),'value':"1e-9",'unit':"kg/um.s",'type':"viscosity"})
 
+        ruleDict = {}
+        for rule in self.model.getListOfRules():
+            ruleDict[rule.getVariable()] = libsbml.formulaToString(rule.getMath())
         for parameter in self.model.getListOfParameters():
-            parameterSpecs = {'name':parameter.getId(),'value':parameter.getValue(),
+            
+            if parameter.isSetValue():
+                value = parameter.getValue()
+            elif parameter.getConstant():
+                value = ruleDict[parameter.getId()]
+            else:
+                continue
+            parameterSpecs = {'name':parameter.getId(),'value':value,
                               'unit':parameter.getUnits(),'type' : ""}
             '''                             
             if parameterSpecs[0] == 'e':
@@ -157,7 +168,6 @@ class SBML2JSON:
         return compartmentList
     
     def getOutsideInsideCompartment(self,compartmentList,compartment):
-        inside = []
         outside = compartmentList[compartment][2]
         for comp in compartmentList:
             if compartmentList[comp][2] == compartment:
@@ -239,13 +249,13 @@ class SBML2JSON:
             #isBoundary = species.getBoundaryCondition()
             if initialConcentration != 0:
                 if compartmentList[compartment][0] == 2:
-                    objectExpr = '{0}[{1}]'.format(inside.upper(),compartment.upper())
+                    objectExpr = '{0}[ALL]'.format(inside.upper(),compartment.upper())
                     #objectExpr = '{0}[ALL]'.format(inside.upper(),compartment.upper())
                 else:
-                    objectExpr = '{0}[wall]'.format(compartment)                    
+                    objectExpr = '{0}[ALL]'.format(compartment)                    
                     children = tree.get_node(compartment).fpointer
                     for element in children:
-                        objectExpr = '{0} - {1}[wall]'.format(objectExpr,element)
+                        objectExpr = '{0} - {1}[ALL]'.format(objectExpr,element)
                 releaseSpecs = {'name': 'Release_Site_s{0}'.format(idx+1),'molecule':species.getId(),'shape':'OBJECT'
             ,'quantity_type':"NUMBER_TO_RELEASE",'quantity_expr':initialConcentration,'object_expr':objectExpr,'orient':"'"}
                 release.append(releaseSpecs)
@@ -424,8 +434,8 @@ class SBML2JSON:
                     #    sourceGeometry = compartmentList[product[0][2]][1]
                         
                         
-                    object_expr = '{0}[{1}]'.format(sourceGeometry,product[0][2])
-                    object_exprm = '{0}[{1}]'.format(sourceGeometryM,reactant[0][2])
+                    object_expr = '{0}[ALL]'.format(sourceGeometry,product[0][2])
+                    object_exprm = '{0}[ALL]'.format(sourceGeometryM,reactant[0][2])
 
                 releaseSpecs.append({'name': 'Release_Site_pattern_s{0}'.format(index+1),
                 'molecule':product[0][0],'shape':'OBJECT',
@@ -498,8 +508,8 @@ def main():
 	
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
-		default='/home/proto/workspace/bionetgen/bng2/Validate/comp/Motivating_example_cBNGL_13_sbml.xml',type="string",
-		#default='/home/proto/Downloads/cell1test3.xml',type="string",
+		default='/home/proto/workspace/bionetgen/bng2/Validate/comp/Motivating_example_cBNGL2_13_sbml.xml',type="string",
+		#default='/home/proto/Downloads/cell_sn2_oneEndo.xml',type="string",
         help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
     parser.add_option("-o","--output",dest="output",
 		type="string",
@@ -514,7 +524,9 @@ def main():
     print(outputFile)
     document = reader.readSBMLFromFile(nameStr)
     if document.getModel() == None:
+        print('no model')
         return
+    
     parser = SBML2JSON(document.getModel())
     parameters =  parser.getParameters()
     molecules,release = parser.getMolecules()
