@@ -274,6 +274,8 @@ def unregister():
         object_surface_regions.object_regions_format_update)
     bpy.app.handlers.load_post.remove(
         cellblender_operators.mcell_valid_update)
+    bpy.app.handlers.load_post.remove(
+        cellblender_operators.load_preferences)
     bpy.app.handlers.save_pre.remove(
         cellblender_operators.model_objects_update)
 
