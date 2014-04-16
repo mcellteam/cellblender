@@ -139,7 +139,7 @@ class BNG_OT_release_site_add(bpy.types.Operator):
             #release_site.quantity.expression = rel_list[key]['quantity_expr']
             release_site.quantity.set_expr ( rel_list[key]['quantity_expr'], ps.panel_parameter_list )
 
-            cellblender_operators.check_release_molecule(self, context)
+            #cellblender_operators.check_release_molecule(context)
             #print ( "Adding release site " + str(release_site.name) )
             count += 1
         print ( "Added " + str(count) + " release sites" )
