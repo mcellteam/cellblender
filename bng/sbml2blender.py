@@ -146,19 +146,17 @@ def generateSphere(name, size, loc, rot):
     return obj
 
 # generates a cube in blender scene with dimensions x,y,z
-def generateCube(x,y,z):
-    pi = 3.1415
-    bpy.ops.mesh.primitive_cube_add(location=(float(loc[0]),float(loc[1]),float(loc[2])), \
-                                    rotation=(float(rot[0])*(pi/180),float(rot[1])*(pi/180),float(rot[2])*(pi/180) ))
+def generateCube(name, size, loc):
+    bpy.ops.mesh.primitive_cube_add(location=(float(loc[0]),float(loc[1]),float(loc[2])))
     obj = bpy.data.objects[bpy.context.active_object.name]
     scn = bpy.context.scene
-    me = obj.data
-    obj.scale = (float(size[0]),float(size[1]),float(size[2]))
+    obj.select = True
+    obj.scale = (float(size[0])*0.25,float(size[1])*0.25,float(size[2])*0.2)
     bpy.ops.object.mode_set(mode='EDIT')
-    bpy.ops.mesh.select_all()
+    bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.quads_convert_to_tris()
     bpy.ops.object.mode_set(mode='OBJECT')
-    obj.name = name
+    obj.select = False
     return obj
 
 # Approximation of the surface area of a sphere (Knud Thomsen's formula)
@@ -242,10 +240,20 @@ def sbml2blender(inputFilePath,addObjects):
             n_size   += 1
             sum_surf += surface_area_sphere(size[0],size[1],size[2])
             n_surf += 1
-        else:
-            obj = generateCube(float(object[2]), float(object[3]), float(object[4]))
-        if addObjects:
-            preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
+
+    bpy.ops.object.select_by_type(type='MESH', extend=False)
+    bpy.ops.object.join()
+    obj = bpy.data.objects[bpy.context.active_object.name]
+    obj.name = "endosomes"
+                
+    for object in csgObjects:
+        if( object[1] == 'SOLID_CUBE' or object[1] == 'cube'):
+            name      = object[0]
+            size      = [float(object[2]), float(object[3]), float(object[4])]
+            location  = [float(object[8]), float(object[9]), float(object[10])]
+            obj = generateCube(name,size,location)
+            if addObjects:
+                preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
     
     print("The average endosome size is: " + str((sum_size/(n_size*1.0))))
     print("The average endosome surface area is " + str((sum_surf/(n_surf*1.0))))
