@@ -2,8 +2,9 @@
 Spatial SBML importer
 Rohan Arepally
 Jose Juan Tapia
+Devin Sullivan
 '''
-
+from collections import defaultdict
 from cellblender.utils import preserve_selection_use_operator
  
 import sys
@@ -211,6 +212,38 @@ def saveBlendFile(directory,filename):
     print(filename)
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(directory, filename + ".blend"))
 
+#distance between two strings
+def levenshtein(s1, s2):
+        l1 = len(s1)
+        l2 = len(s2)
+    
+        matrix = [list(range(l1 + 1))] * (l2 + 1)
+        for zz in range(l2 + 1):
+          matrix[zz] = list(range(zz,zz + l1 + 1))
+        for zz in list(range(0,l2)):
+          for sz in list(range(0,l1)):
+            if s1[sz] == s2[zz]:
+              matrix[zz+1][sz+1] = min(matrix[zz+1][sz] + 1, matrix[zz][sz+1] + 1, matrix[zz][sz])
+            else:
+              matrix[zz+1][sz+1] = min(matrix[zz+1][sz] + 1, matrix[zz][sz+1] + 1, matrix[zz][sz] + 1)
+        return matrix[l2][l1]
+def common_prefix(strings):
+    """ Find the longest string that is a prefix of all the strings.
+    """
+    if not strings:
+        return ''
+    prefix = strings[0]
+    for s in strings:
+        if len(s) < len(prefix):
+            prefix = prefix[:len(s)]
+        if not prefix:
+            return ''
+        for i in range(len(prefix)):
+            if prefix[i] != s[i]:
+                prefix = prefix[:i]
+                break
+    return prefix
+
 # given SBML file create blender file of geometries described in SBML file
 def sbml2blender(inputFilePath,addObjects):
     print("loading .xml file... " + inputFilePath)
@@ -229,28 +262,50 @@ def sbml2blender(inputFilePath,addObjects):
     sum_surf = 0.0
     n_surf   = 0.0
     
-    for object in csgObjects:
-        if( object[1] == 'SOLID_SPHERE' or object[1] == 'sphere'):
-            name      = object[0]
-            size      = [float(object[2]), float(object[3]), float(object[4])]
-            location  = [float(object[8]), float(object[9]), float(object[10])]
-            rotation  = [float(object[5]), float(object[6]), float(object[7])]
+    
+    
+    csgObjectNames = []
+    for csgobject in csgObjects:
+        if( csgobject[1] == 'SOLID_SPHERE' or csgobject[1] == 'sphere'):
+            name      = csgobject[0]
+            size      = [float(csgobject[2]), float(csgobject[3]), float(csgobject[4])]
+            location  = [float(csgobject[8]), float(csgobject[9]), float(csgobject[10])]
+            rotation  = [float(csgobject[5]), float(csgobject[6]), float(csgobject[7])]
             obj = generateSphere(name,size,location,rotation)
+            csgObjectNames.append(name)
             sum_size += (4.0/3.0)*(3.14)*(size[0])*(size[1])*(size[2])
             n_size   += 1
             sum_surf += surface_area_sphere(size[0],size[1],size[2])
             n_surf += 1
+          
+          
+    #extract groups of strings with a lvenshtein distance less than 4
+    csgObjectNames.sort()
+    namingPatterns = []
+    while len(csgObjectNames) > 0:
+        namingPatterns.append([x for x in csgObjectNames if levenshtein(csgObjectNames[0],x) <= 4])
+        csgObjectNames = [x for x in csgObjectNames if levenshtein(csgObjectNames[0],x) > 4]
+    
+    #extract common prefix for groups of strings
+    namingPatterns = [common_prefix(x) for x in namingPatterns]
 
-    bpy.ops.object.select_by_type(type='MESH', extend=False)
-    bpy.ops.object.join()
-    obj = bpy.data.objects[bpy.context.active_object.name]
-    obj.name = "endosomes"
-                
-    for object in csgObjects:
-        if( object[1] == 'SOLID_CUBE' or object[1] == 'cube'):
-            name      = object[0]
-            size      = [float(object[2]), float(object[3]), float(object[4])]
-            location  = [float(object[8]), float(object[9]), float(object[10])]
+    #group objects by pattern    
+    for namingPattern in namingPatterns:
+        bpy.ops.object.select_pattern(pattern='{0}*'.format(namingPattern), extend=False)
+        bpy.ops.object.join()
+        obj = bpy.data.objects[bpy.context.active_object.name]
+        obj.name = namingPattern
+    
+    #for name in csgObjectNames:
+        #bpy.ops.object.select_by_type(type='MESH', extend=False)
+        #bpy.ops.object.join()
+
+           
+    for csgobject in csgObjects:
+        if( csgobject[1] == 'SOLID_CUBE' or csgobject[1] == 'cube'):
+            name      = csgobject[0]
+            size      = [float(csgobject[2]), float(csgobject[3]), float(csgobject[4])]
+            location  = [float(csgobject[8]), float(csgobject[9]), float(csgobject[10])]
             obj = generateCube(name,size,location)
             if addObjects:
                 preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
@@ -258,8 +313,8 @@ def sbml2blender(inputFilePath,addObjects):
     print("The average endosome size is: " + str((sum_size/(n_size*1.0))))
     print("The average endosome surface area is " + str((sum_surf/(n_surf*1.0))))
     
-    for object in paramObject:
-        obj = generateMesh(object)
+    for csgobject in paramObject:
+        obj = generateMesh(csgobject)
         if addObjects:
             preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
 
@@ -276,7 +331,7 @@ if __name__ == '__main__':
         importMesh('nuc', os.path.join(os.getcwd(),filenames[1]))
     except:
         print('No meshes imported')
-    sbml2blender(os.path.join(os.getcwd(), xml))
+    sbml2blender(os.path.join(os.getcwd(), xml),False)
 
     outputFilePath = 'demo_sbml2blender'
     shutil.copyfile("test.blend", outputFilePath + ".blend")
