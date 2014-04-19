@@ -25,6 +25,7 @@ except ImportError:
 #import libsbml3.linux.libsbml as libsbml
 #import libsbml
 import json
+import math
 from optparse import OptionParser
 
 def factorial(x):
@@ -89,6 +90,7 @@ class SBML2JSON:
                 
     def getParameters(self):
         parameters = []
+        observables = []
         prx = [{'name':"Nav",'value':"6.022e8",'unit':"",'type':"Avogadro number for 1 um^3"},
                {'name':"KB",'value':"1.3806488e-19",'unit':"cm^2.kg/K.s^2",'type':"Boltzmann constant"},
                {'name':"gamma",'value':"0.5722",'unit':"",'type':"Euler's constant"},
@@ -105,14 +107,22 @@ class SBML2JSON:
             parameters.append({'name':"mu_{0}".format(name),'value':"1e-9",'unit':"kg/um.s",'type':"viscosity"})
 
         ruleDict = {}
+        
+        
+        #get assignment rules
         for rule in self.model.getListOfRules():
             ruleDict[rule.getVariable()] = libsbml.formulaToString(rule.getMath())
+            
         for parameter in self.model.getListOfParameters():
             
             if parameter.isSetValue():
                 value = parameter.getValue()
-            elif parameter.getConstant():
-                value = ruleDict[parameter.getId()]
+            elif parameter.isSetConstant():
+                if parameter.getConstant():
+                    value = ruleDict[parameter.getId()]
+                else:
+                    observableSpecs = {'name':parameter.getId(),'value':ruleDict[parameter.getId()]}
+                    continue
             else:
                 continue
             parameterSpecs = {'name':parameter.getId(),'value':value,
@@ -234,8 +244,7 @@ class SBML2JSON:
             self.compartmentMapping[species.getId()] = compartment
             moleculeSpecs={'name':species.getId(),'type':typeD,'extendedName':species.getName(),'dif':diffusion}
             initialConcentration = species.getInitialConcentration()
-
-            if initialConcentration == 0:
+            if initialConcentration == 0 or math.isnan(initialConcentration):
                 initialConcentration = species.getInitialAmount()
             if species.getSubstanceUnits() in self.unitDictionary:
                 for factor in self.unitDictionary[species.getSubstanceUnits()]:
@@ -247,7 +256,7 @@ class SBML2JSON:
                 
             isConstant = species.getConstant()
             #isBoundary = species.getBoundaryCondition()
-            if initialConcentration != 0:
+            if initialConcentration != 0 and not math.isnan(initialConcentration):
                 if compartmentList[compartment][0] == 2:
                     objectExpr = '{0}[ALL]'.format(inside.upper(),compartment.upper())
                     #objectExpr = '{0}[ALL]'.format(inside.upper(),compartment.upper())
@@ -354,11 +363,13 @@ class SBML2JSON:
                     parameter['unit'] ='Unimolecular'
                 
     def normalize(self,parameter):
-        import math
+        
         if math.isnan(parameter) or parameter == None:
             return 1
         return parameter
-        
+      
+
+    
     def getReactions(self,sparameters):
         def isOutside(compartmentList,inside,outsideCandidate):
             tmp = compartmentList[inside][1]
@@ -373,7 +384,14 @@ class SBML2JSON:
                     return element
         reactionSpecs = []
         releaseSpecs = []
+        moleculeSpecs = []
         from copy import deepcopy
+
+        compartmentList  = {}
+        for compartment in (self.model.getListOfCompartments()):
+            compartmentList[compartment.getId()] = (compartment.getSpatialDimensions(),
+                                                compartment.getOutside())
+
         for index, reaction in enumerate(self.model.getListOfReactions()):
             kineticLaw = reaction.getKineticLaw()
             
@@ -384,10 +402,6 @@ class SBML2JSON:
             parameters = [(parameter.getId(), parameter.getValue()) for parameter in kineticLaw.getListOfParameters()]
             math = kineticLaw.getMath()
             reversible = reaction.getReversible()
-            compartmentList  = {}
-            for compartment in (self.model.getListOfCompartments()):
-                compartmentList[compartment.getId()] = (compartment.getSpatialDimensions(),
-                                                    compartment.getOutside())
                 
             rateL, rateR = self.getInstanceRate(math,compartmentList.keys(),reversible,rReactant,rProduct)
             #finalReactant = [x[0]]    
@@ -395,14 +409,30 @@ class SBML2JSON:
             rcList = []
             prdList = []
             orientationSet = set()
+            reactionCompartmentSet = set()
             for element in reactant:
-                orientation = "," if len(set(self.moleculeData[x[0]][0] for x in reactant)) \
-                > 1 and self.moleculeData[element[0]][0] == 3 else "'"
+                reactionCompartmentSet.add(element[2])
+            for element in reactant:
+                if self.moleculeData[element[0]][0] == 2:
+                    orientation = "'"
+                else:
+                    outside = compartmentList[element[2]][1]
+                    if outside != '' and compartmentList[outside][0] == 2 and outside in reactionCompartmentSet:
+                        orientation = ','
+                    else:
+                        orientation = "'"
                 rcList.append("{0}{1}".format(element[0],orientation))
                 orientationSet.add(self.moleculeData[element[0]][0])
+
             for element in product:
-                orientation = "," if len(set(self.moleculeData[x[0]][0] for x in reactant)) \
-                > 1 and self.moleculeData[element[0]][0] == 3 else "'"
+                if self.moleculeData[element[0]][0] == 2:
+                    orientation = "'"
+                else:
+                    outside = compartmentList[element[2]][1]
+                    if outside != '' and compartmentList[outside][0] == 2 and outside in reactionCompartmentSet:
+                        orientation = ','
+                    else:
+                        orientation = "'"
                 prdList.append("{0}{1}".format(element[0],orientation))
                 orientationSet.add(self.moleculeData[element[0]][0])
             #if everything is the same orientation delete orientation
@@ -475,7 +505,7 @@ class SBML2JSON:
             self.adjustParameters(len(reactant),rateL,sparameters)
             self.adjustParameters(len(product),rateR,sparameters)
         #reactionDict = {idx+1:x for idx,x in enumerate(reactionSpecs)}
-        return reactionSpecs,releaseSpecs
+        return reactionSpecs,releaseSpecs,moleculeSpecs
             #SBML USE INSTANCE RATE 
             #HOW TO GET THE DIFFUSION CONSTANT
 
@@ -492,8 +522,9 @@ def transform(filePath):
     parser = SBML2JSON(document.getModel())
     parameters =  parser.getParameters()
     molecules,release = parser.getMolecules()      
-    reactions,release2 =  parser.getReactions(parameters)
+    reactions,release2,molecules2 =  parser.getReactions(parameters)
     release.extend(release2)
+    molecules.extend(molecules2)
     definition = {}
     definition['par_list'] = parameters
     definition['mol_list'] = molecules
@@ -508,8 +539,8 @@ def main():
 	
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
-		default='/home/proto/workspace/bionetgen/bng2/Validate/comp/Motivating_example_cBNGL2_13_sbml.xml',type="string",
-		#default='/home/proto/Downloads/cell_sn2_oneEndo.xml',type="string",
+		#default='/home/proto/workspace/bionetgen/bng2/Validate/comp/Motivating_example_cBNGL2_13_sbml.xml',type="string",
+		default='/home/proto/Downloads/cell_onendo_final (1).xml',type="string",
         help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
     parser.add_option("-o","--output",dest="output",
 		type="string",
@@ -530,7 +561,7 @@ def main():
     parser = SBML2JSON(document.getModel())
     parameters =  parser.getParameters()
     molecules,release = parser.getMolecules()
-    reactions,release2 =  parser.getReactions(parameters)
+    reactions,release2,molecules2 =  parser.getReactions(parameters)
     release.extend(release2)
     #release.extend(release2)
     definition = {}

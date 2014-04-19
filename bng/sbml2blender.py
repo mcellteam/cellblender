@@ -133,16 +133,16 @@ def mesh_vol(mesh, t_mat):
 # a sphere with dimensions x,y,z is added to the blender scene
 def generateSphere(name, size, loc, rot):
     pi = 3.1415
-    bpy.ops.mesh.primitive_uv_sphere_add(location=(float(loc[0]),float(loc[1]),float(loc[2])), \
+    bpy.ops.mesh.primitive_ico_sphere_add(location=(float(loc[0]),float(loc[1]),float(loc[2])), \
                                          rotation=(float(rot[0]),float(rot[1]),float(rot[2]) ))
     obj = bpy.data.objects[bpy.context.active_object.name]
     scn = bpy.context.scene
     me = obj.data
     obj.scale = (float(size[0])*0.25,float(size[1])*0.25,float(size[2])*0.2)
-    obj.name = name    
+    obj.name = name
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.mesh.quads_convert_to_tris()
+    #bpy.ops.mesh.quads_convert_to_tris()
     bpy.ops.object.mode_set(mode='OBJECT')
     return obj
 
@@ -155,7 +155,7 @@ def generateCube(name, size, loc):
     obj.scale = (float(size[0])*0.25,float(size[1])*0.25,float(size[2])*0.2)
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.mesh.quads_convert_to_tris()
+    #bpy.ops.mesh.quads_convert_to_tris()
     bpy.ops.object.mode_set(mode='OBJECT')
     obj.select = False
     return obj
@@ -203,6 +203,8 @@ def generateMesh(objectData):
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.quads_convert_to_tris()
+    bpy.ops.mesh.dissolve_degenerate()
+    bpy.ops.mesh.normals_make_consistent(inside=False)
     bpy.ops.object.mode_set(mode='OBJECT')
     
     return obj
@@ -300,16 +302,34 @@ def sbml2blender(inputFilePath,addObjects):
         #bpy.ops.object.select_by_type(type='MESH', extend=False)
         #bpy.ops.object.join()
 
-           
+    csgObjectNames = []
     for csgobject in csgObjects:
         if( csgobject[1] == 'SOLID_CUBE' or csgobject[1] == 'cube'):
             name      = csgobject[0]
             size      = [float(csgobject[2]), float(csgobject[3]), float(csgobject[4])]
             location  = [float(csgobject[8]), float(csgobject[9]), float(csgobject[10])]
             obj = generateCube(name,size,location)
-            if addObjects:
-                preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
-    
+            csgObjectNames.append(name)
+
+#            if addObjects:
+#                preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
+    #extract groups of strings with a lvenshtein distance less than 4
+    csgObjectNames.sort()
+    namingPatterns = []
+    while len(csgObjectNames) > 0:
+        namingPatterns.append([x for x in csgObjectNames if levenshtein(csgObjectNames[0],x) <= 4])
+        csgObjectNames = [x for x in csgObjectNames if levenshtein(csgObjectNames[0],x) > 4]
+
+    #extract common prefix for groups of strings
+    namingPatterns = [common_prefix(x) for x in namingPatterns]
+
+    #group objects by pattern
+    for namingPattern in namingPatterns:
+        bpy.ops.object.select_pattern(pattern='{0}*'.format(namingPattern), extend=False)
+        bpy.ops.object.join()
+        obj = bpy.data.objects[bpy.context.active_object.name]
+        obj.name = namingPattern
+
     print("The average endosome size is: " + str((sum_size/(n_size*1.0))))
     print("The average endosome surface area is " + str((sum_surf/(n_surf*1.0))))
     
@@ -338,3 +358,4 @@ if __name__ == '__main__':
     print('saving blend file to {0}'.format(outputFilePath))
     saveBlendFile(os.getcwd(), outputFilePath)
 
+    
