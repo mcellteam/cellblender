@@ -44,7 +44,7 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
         sbml_operators.filePath = sbmlfilepath
         # sbml file path
         try:
-                sbml_operators.execute_sbml2blender(sbmlfilepath,context,self.add_to_model_objects)
+            sbml_operators.execute_sbml2blender(sbmlfilepath,context,self.add_to_model_objects)
         except:
             print('There is no spatial information')
         sbml_operators.execute_sbml2mcell(sbmlfilepath,context)
@@ -57,6 +57,9 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
         bpy.ops.sbml.molecule_add()
         print ( "Loading reactions from SBML model..." )
         bpy.ops.sbml.reaction_add()
+        print ("Loading reaction output information from SBML model...")
+        bpy.ops.sbml.reaction_output_add()
+
         print ( "Done Loading SBML model" )
         bpy.ops.sbml.release_site_add()
         

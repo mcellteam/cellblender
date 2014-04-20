@@ -902,8 +902,22 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
 
 import cellblender
 
+#JJT:temporary class
+class MCellReactionOutputPropertyTemp(bpy.types.PropertyGroup):
+    name = StringProperty(
+        name="Reaction Output")
+    molecule_name = StringProperty(
+        name="Molecule",
+        description="Count the selected molecules.")
+
 
 class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
+    #JJT: temporary list made to hold complex expressions from imported files
+    temp_index = IntProperty(
+        name="Temp Output Index", default=0)
+    complex_rxn_output_list = CollectionProperty(
+        type=MCellReactionOutputPropertyTemp,name="Temporary output list")
+    
     active_rxn_output_index = IntProperty(
         name="Active Reaction Output Index", default=0)
     rxn_output_list = CollectionProperty(

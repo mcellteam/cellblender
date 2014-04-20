@@ -8,7 +8,7 @@ Created on Mon Jun 17 11:19:37 2013
 import platform
 
 
-'''
+
 try:
     from . import treelib3
     if platform.system() == 'Linux':
@@ -20,10 +20,10 @@ try:
 except ImportError:
     treelib3 = None
     libsbml = None
-'''
-import treelib3
+
 #import libsbml3.linux.libsbml as libsbml
-import libsbml
+#import treelib3
+#import libsbml
 import json
 import math
 from optparse import OptionParser

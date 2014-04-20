@@ -143,7 +143,7 @@ class SBML_OT_reaction_add(bpy.types.Operator):
 class SBML_OT_release_site_add(bpy.types.Operator):
     bl_idname = "sbml.release_site_add"
     bl_label = "Add Release Site"
-    bl_description = "Add imported release sites from SBML-generated networxn_listrk"
+    bl_description = "Add imported release sites from SBML-generated networxn_list"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -180,7 +180,52 @@ class SBML_OT_release_site_add(bpy.types.Operator):
 
         return {'FINISHED'}
 
-    
+class SBML_OT_reaction_output_add(bpy.types.Operator):
+    bl_idname = "sbml.reaction_output_add"
+    bl_label = "Add Reaction Output"
+    bl_description = "Add MCell observables based on assigmnent rule information"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        #filePointer= open(filePath + '.json','r')
+        #jfile = json.load(filePointer) 
+        jfile = accessFile(filePath)        
+        ps = mcell.parameter_system
+        obs_list = jfile['obs_list']     
+        index = -1
+        import copy
+        for index,key in enumerate(obs_list):
+            strBuffer = []
+            #mcell.rxn_output.complex_rxn_output_list.append({'name':key['name'],'value':key['value']})
+            
+            for element in key['value']:
+                tmp = copy.copy(element)
+                tmp[-1] = 'COUNT[{0},WORLD]'.format(element[-1])
+                strBuffer.append(' * '.join(tmp))
+
+
+            mcell.rxn_output.complex_rxn_output_list.add()
+            mcell.rxn_output.temp_index = index
+            rxn_output_instance = mcell.rxn_output.complex_rxn_output_list[
+                mcell.rxn_output.temp_index]
+            rxn_output_instance.molecule_name = '+'.join(strBuffer)
+            rxn_output_instance.name = key['name']
+
+            '''    
+            index += 1
+            mcell.rxn_output.rxn_output_list.add()
+            mcell.rxn_output.active_rxn_output_index = index
+            rxn_output = mcell.rxn_output.rxn_output_list[
+                mcell.rxn_output.active_rxn_output_index]
+            #release_site.set_defaults()
+            rxn_output.init_properties(ps)
+            '''
+
+            print ( "Adding reaction output " + str(key['name']))
+
+        return {'FINISHED'}
+ 
 def execute_sbml2mcell(filepath,context):
     mcell = context.scene.mcell
     isTransfomed = sbml2json.transform(filePath)
