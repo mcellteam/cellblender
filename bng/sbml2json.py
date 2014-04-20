@@ -8,7 +8,7 @@ Created on Mon Jun 17 11:19:37 2013
 import platform
 
 
-
+'''
 try:
     from . import treelib3
     if platform.system() == 'Linux':
@@ -20,10 +20,10 @@ try:
 except ImportError:
     treelib3 = None
     libsbml = None
-
-#import treelib3
+'''
+import treelib3
 #import libsbml3.linux.libsbml as libsbml
-#import libsbml
+import libsbml
 import json
 import math
 from optparse import OptionParser
@@ -111,22 +111,29 @@ class SBML2JSON:
         
         #get assignment rules
         for rule in self.model.getListOfRules():
-            ruleDict[rule.getVariable()] = libsbml.formulaToString(rule.getMath())
+            ruleDict[rule.getVariable()] = rule.getMath()
             
+        #get initialAssignments
+        for assignment in self.model.getListOfInitialAssignments():
+            ruleDict[assignment.getSymbol()] = assignment.getMath()
         for parameter in self.model.getListOfParameters():
-            
             if parameter.isSetValue():
                 value = parameter.getValue()
             elif parameter.isSetConstant():
                 if parameter.getConstant():
-                    value = ruleDict[parameter.getId()]
+                    value = libsbml.formulaToString(ruleDict[parameter.getId()])
                 else:
-                    observableSpecs = {'name':parameter.getId(),'value':ruleDict[parameter.getId()]}
+                    parsedValue = libsbml.formulaToString(ruleDict[parameter.getId()]).split('+')
+                
+                    parsedValue = [[y.strip() for y in x.strip().split('*')] for x in parsedValue]
+                    observableSpecs = {'name':parameter.getId(),'value':parsedValue}
+                    observables.append(observableSpecs)
                     continue
             else:
                 continue
             parameterSpecs = {'name':parameter.getId(),'value':value,
                               'unit':parameter.getUnits(),'type' : ""}
+                              
             '''                             
             if parameterSpecs[0] == 'e':
                 parameterSpecs = ('are',parameterSpecs[1])
@@ -151,16 +158,8 @@ class SBML2JSON:
             #    parameterSpecs['unit'] = '{0}*{1}'.format(parameterSpecs['unit'],'avo.num*1000')
             
             parameters.append(parameterSpecs)
-        prx = {'name':"rxn_layer_t",'value':"0.01",'unit':"um",'type':""}
-        ph = {'name':"h",'value':"rxn_layer_t",'unit':"um",'type':""}
-        pRs = {'name':"Rs",'value':"0.002564",'unit':"um",'type':""}
-        pRc = {'name':"Rc",'value':"0.0015",'unit':"um",'type':""}
-        parameters.append(prx)        
-        parameters.append(ph)
-        parameters.append(pRs)
-        parameters.append(pRc)
         #parameterDict = {idx+1:x for idx,x in enumerate(parameters)}
-        return parameters
+        return parameters,observables
         
     
     def __getRawCompartments(self):
@@ -520,7 +519,7 @@ def transform(filePath):
     if document.getModel() == None:
         return False
     parser = SBML2JSON(document.getModel())
-    parameters =  parser.getParameters()
+    parameters,observables =  parser.getParameters()
     molecules,release = parser.getMolecules()      
     reactions,release2,molecules2 =  parser.getReactions(parameters)
     release.extend(release2)
@@ -530,6 +529,8 @@ def transform(filePath):
     definition['mol_list'] = molecules
     definition['rxn_list'] = reactions
     definition['rel_list'] = release
+    definition['obs_list'] = observables
+
     with open(filePath + '.json','w') as f:
         json.dump(definition,f,sort_keys=True,indent=1, separators=(',', ': '))
     return True
@@ -539,8 +540,8 @@ def main():
 	
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
-		#default='/home/proto/workspace/bionetgen/bng2/Validate/comp/Motivating_example_cBNGL2_13_sbml.xml',type="string",
-		default='/home/proto/Downloads/cell_onendo_final (1).xml',type="string",
+		default='/home/proto/workspace/bionetgen/bng2/Validate/comp/Motivating_example_cBNGL2_13_sbml.xml',type="string",
+		#default='/home/proto/Downloads/cell_onendo_final (1).xml',type="string",
         help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
     parser.add_option("-o","--output",dest="output",
 		type="string",
@@ -559,7 +560,7 @@ def main():
         return
     
     parser = SBML2JSON(document.getModel())
-    parameters =  parser.getParameters()
+    parameters,observables =  parser.getParameters()
     molecules,release = parser.getMolecules()
     reactions,release2,molecules2 =  parser.getReactions(parameters)
     release.extend(release2)
@@ -569,6 +570,7 @@ def main():
     definition['mol_list'] = molecules
     definition['rxn_list'] = reactions
     definition['rel_list'] = release
+    definition['obs_list'] = observables
     with open(outputFile,'w') as f:
         json.dump(definition,f,sort_keys=True,indent=1, separators=(',', ': '))
         
