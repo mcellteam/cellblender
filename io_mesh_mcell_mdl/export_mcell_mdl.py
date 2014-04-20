@@ -447,8 +447,19 @@ def save_wrapper(context, out_file, filedir):
     # Export reaction output:
     settings = mcell.project_settings
     unfiltered_rxn_output_list = mcell.rxn_output.rxn_output_list
+    
+        
+    
     save_general('rxn_output', save_rxn_output_mdl, save_state,
                  unfiltered_rxn_output_list)
+                 
+    
+    #JJT:temporary solution for complex output expressions
+    complex_rxn_output_list = mcell.rxn_output.complex_rxn_output_list
+    if len(complex_rxn_output_list) > 0:
+        save_modular_or_allinone(filedir, out_file, 'rxn_output',
+                                 save_rxn_output_temp_mdl,[context, complex_rxn_output_list])
+
 
     if error_list and invalid_policy == 'dont_run':
         # If anything is invalid, blow away all the MDLs.
@@ -987,7 +998,6 @@ def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all):
         out_file.write("  }\n")
         out_file.write("}\n\n")
 
-
 def save_rxn_output_mdl(context, out_file, rxn_output_list):
     """ Saves reaction output info to mdl output file. """
     
@@ -1020,7 +1030,27 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
                 "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
                 "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,
                 object_name, region_name, count_name, object_name, region_name))
+                
 
+    out_file.write("}\n\n")
+
+def save_rxn_output_temp_mdl(context, out_file, rxn_output_list):
+    #JJT:temporary code that outsputs imported rxn output expressions
+    #remove when we figure out how to add this directly to the interface
+    
+    mcell = context.scene.mcell
+    ps = mcell.parameter_system
+
+    out_file.write("REACTION_DATA_OUTPUT\n{\n")
+    #rxn_step = mcell.initialization.time_step.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)
+    out_file.write("  STEP=%s\n" % mcell.initialization.time_step.get_as_string(
+                   ps.panel_parameter_list, ps.export_as_expressions))
+
+    
+    for rxn_output in rxn_output_list:
+        outputStr = rxn_output.molecule_name
+        outputStr = '{%s} =>  "./react_data/seed_" & seed & \"/%s.World.dat\"\n' % (outputStr,rxn_output.name)
+        out_file.write(outputStr)
     out_file.write("}\n\n")
 
 
