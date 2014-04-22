@@ -250,10 +250,14 @@ class SBML2JSON:
                     initialConcentration *= 10 ** (factor[1] * factor[2])
                 if 'mole' in species.getSubstanceUnits():
                     initialConcentration /= float(6.022e8)
-            #if species.getSubstanceUnits() == '':
-            #    initialConcentration /= float(6.022e8)
+            sinitialConcentration = str(initialConcentration) if not math.isnan(initialConcentration) else '0'
+            
+            if species.getSubstanceUnits() == '' and compartmentList[compartment][0] ==3:
+                sinitialConcentration = ' ({0})/Nav'.format(sinitialConcentration)
+            sinitialConcentration = '({0})/vol_{1}'.format(sinitialConcentration,compartment)
+            
                 
-            isConstant = species.getConstant()
+            #isConstant = species.getConstant()
             #isBoundary = species.getBoundaryCondition()
             if initialConcentration != 0 and not math.isnan(initialConcentration):
                 if compartmentList[compartment][0] == 2:
@@ -265,7 +269,7 @@ class SBML2JSON:
                     for element in children:
                         objectExpr = '{0} - {1}[ALL]'.format(objectExpr,element)
                 releaseSpecs = {'name': 'Release_Site_s{0}'.format(idx+1),'molecule':species.getId(),'shape':'OBJECT'
-            ,'quantity_type':"NUMBER_TO_RELEASE",'quantity_expr':initialConcentration,'object_expr':objectExpr,'orient':"'"}
+            ,'quantity_type':"DENSITY",'quantity_expr':sinitialConcentration,'object_expr':objectExpr,'orient':"'"}
                 release.append(releaseSpecs)
             #self.speciesDictionary[identifier] = standardizeName(name)
             #returnID = identifier if self.useID else \
@@ -383,7 +387,7 @@ class SBML2JSON:
                     return element
         reactionSpecs = []
         releaseSpecs = []
-        moleculeSpecs = []
+        moleculeSpecs = set()
         from copy import deepcopy
 
         compartmentList  = {}
@@ -485,10 +489,27 @@ class SBML2JSON:
                     
                 
             if rateL != '0':
-                
                 tmpL['reactants'] = ' + '.join(rcList)
                 if flagL:
-                    tmpL['products'] = 'NULL'
+                    #teleporting molecules
+                    #adding a virtual molecule to account for the case where a single
+                    #molecule can teleport to different places
+                    virtualReaction= {}
+                    virtualReaction['rxn_name'] =  tmpL['rxn_name']
+                    tmpL.pop('rxn_name')
+                    tmpL['products'] = '{0}_{1}_{2}'.format(reactant[0][0],product[0][2],product[0][0])
+                    virtualReaction['reactants'] = tmpL['products']
+                    virtualReaction['products']= 'NULL'
+                    virtualReaction['fwd_rate'] = '1e30'
+                    #molecule={'name':tmpL['products'],'type':'3D',
+                    #'extendedName':tmpL['products'],'dif':0}
+                    
+                    moleculeSpecs.add(tmpL['products'])
+                    #adding directionality if necessary
+                    if not(len(orientationSet) == 1 and 3 in orientationSet):
+                        tmpL['products'] += ';'
+                    reactionSpecs.append(virtualReaction)
+                    #tmpL['products'] = 'NULL'
                 else:
                     tmpL['products'] = ' + '.join(prdList)
                 tmpL['fwd_rate'] = rateL
@@ -496,7 +517,20 @@ class SBML2JSON:
             if rateR != '0':
                 tmpR['reactants'] = ' + '.join(prdList)
                 if flagR:
-                    tmpR['products'] = 'NULL'
+                    virtualReaction= {}
+                    virtualReaction['rxn_name'] =  tmpL['rxn_name']
+                    tmpR.pop('rxn_name')
+                    tmpR['products'] = '{0}_{1}_{2}'.format(product[0][0],reactant[0][2],reactant[0][0])
+                    virtualReaction['reactants'] = tmpR['products']
+                    virtualReaction['products']= 'NULL'
+                    virtualReaction['fwd_rate'] = '1e30'
+                    #molecule={'name':tmpR['products'],'type':'3D',
+                    #'extendedName':tmpR['products'],'dif':0}
+                    moleculeSpecs.add(tmpR['products'])
+                    if not(len(orientationSet) == 1 and 3 in orientationSet):
+                        tmpR['products'] += ';'
+                    reactionSpecs.append(virtualReaction)
+                    #tmpR['products'] = 'NULL'
                 else:                    
                     tmpR['products'] = ' + '.join(rcList)
                 tmpR['fwd_rate'] = rateR
@@ -504,6 +538,7 @@ class SBML2JSON:
             self.adjustParameters(len(reactant),rateL,sparameters)
             self.adjustParameters(len(product),rateR,sparameters)
         #reactionDict = {idx+1:x for idx,x in enumerate(reactionSpecs)}
+        moleculeSpecs = [{'name':x,'type':'3D','extendedName':x,'dif':'0'} for x in moleculeSpecs]
         return reactionSpecs,releaseSpecs,moleculeSpecs
             #SBML USE INSTANCE RATE 
             #HOW TO GET THE DIFFUSION CONSTANT
@@ -540,7 +575,7 @@ def main():
 	
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
-		default='/home/proto/workspace/bionetgen/bng2/Validate/comp/Motivating_example_cBNGL2_13_sbml.xml',type="string",
+		default='/home/proto/workspace/bionetgen/bng2/Validate/Motivating_example_cBNGL2_sbml.xml',type="string",
 		#default='/home/proto/Downloads/cell_onendo_final (1).xml',type="string",
         help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
     parser.add_option("-o","--output",dest="output",
@@ -563,6 +598,7 @@ def main():
     parameters,observables =  parser.getParameters()
     molecules,release = parser.getMolecules()
     reactions,release2,molecules2 =  parser.getReactions(parameters)
+    molecules.extend(molecules2)
     release.extend(release2)
     #release.extend(release2)
     definition = {}

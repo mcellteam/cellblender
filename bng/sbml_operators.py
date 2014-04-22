@@ -200,6 +200,8 @@ class SBML_OT_reaction_output_add(bpy.types.Operator):
             #mcell.rxn_output.complex_rxn_output_list.append({'name':key['name'],'value':key['value']})
             
             for element in key['value']:
+                if element == ['0']:
+                    continue
                 tmp = copy.copy(element)
                 tmp[-1] = 'COUNT[{0},WORLD]'.format(element[-1])
                 strBuffer.append(' * '.join(tmp))
