@@ -194,9 +194,15 @@ class SBML2JSON:
             node = tree.get_node(nodeID)
             if node.data == 2:
                 parent = tree.get_node(nodeID).bpointer
-                tree.link_past_node(nodeID)
-                nodeID = parent
-                node = tree.get_node(nodeID)
+                if parent == None:
+                    #accounting for the case where the topmost node is a membrane
+                    newRoot = tree.get_node(nodeID).fpointer[0]
+                    tree.root = newRoot
+                    node = tree.get_node(newRoot)
+                else:
+                    tree.link_past_node(nodeID)
+                    nodeID = parent
+                    node = tree.get_node(nodeID)
             for element in node.fpointer:
                 removeMembranes(tree,element)
             
