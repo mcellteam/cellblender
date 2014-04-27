@@ -261,15 +261,17 @@ class SBML2JSON:
             #isBoundary = species.getBoundaryCondition()
             if initialConcentration != 0 and not math.isnan(initialConcentration):
                 if compartmentList[compartment][0] == 2:
+                    relOrientation = "'"
                     objectExpr = '{0}[ALL]'.format(inside.upper(),compartment.upper())
                     #objectExpr = '{0}[ALL]'.format(inside.upper(),compartment.upper())
                 else:
+                    relOrientation = ','
                     objectExpr = '{0}[ALL]'.format(compartment)                    
                     children = tree.get_node(compartment).fpointer
                     for element in children:
                         objectExpr = '{0} - {1}[ALL]'.format(objectExpr,element)
                 releaseSpecs = {'name': 'Release_Site_s{0}'.format(idx+1),'molecule':species.getId(),'shape':'OBJECT'
-            ,'quantity_type':"DENSITY",'quantity_expr':sinitialConcentration,'object_expr':objectExpr,'orient':"'"}
+            ,'quantity_type':"DENSITY",'quantity_expr':sinitialConcentration,'object_expr':objectExpr,'orient':relOrientation}
                 release.append(releaseSpecs)
             #self.speciesDictionary[identifier] = standardizeName(name)
             #returnID = identifier if self.useID else \
@@ -357,10 +359,10 @@ class SBML2JSON:
         for parameter in parameters:
             if parameter['name'] in rate and parameter['unit'] == '':
                 if stoichoimetry == 2:
-                    parameter['value'] *= float(6.022e8)
+                    parameter['value'] = '{0}*Nav'.format(parameter['value'])
                     parameter['unit'] ='Bimolecular * NaV'
                 elif stoichoimetry == 0:
-                    parameter['value'] /= float(6.022e8)
+                    parameter['value'] = '{0}/Nav'.format(parameter['value'])
                     parameter['unit'] ='0-order / NaV'
                 elif stoichoimetry == 1:
                     parameter['unit'] ='Unimolecular'
@@ -575,7 +577,7 @@ def main():
 	
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
-		default='/home/proto/workspace/bionetgen/bng2/Validate/Motivating_example_cBNGL2_sbml.xml',type="string",
+		default='/home/proto/workspace/bionetgen/bng2/Models2/MCell/rec_dim_comp_sbml.xml',type="string",
 		#default='/home/proto/Downloads/cell_onendo_final (1).xml',type="string",
         help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
     parser.add_option("-o","--output",dest="output",
