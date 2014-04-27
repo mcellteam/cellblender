@@ -138,7 +138,8 @@ def generateSphere(name, size, loc, rot):
     obj = bpy.data.objects[bpy.context.active_object.name]
     scn = bpy.context.scene
     me = obj.data
-    obj.scale = (float(size[0])*0.25,float(size[1])*0.25,float(size[2])*0.2)
+    #obj.scale = (float(size[0])*0.25,float(size[1])*0.25,float(size[2])*0.2)
+    obj.scale = (float(size[0]),float(size[1]),float(size[2]))
     obj.name = name
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
@@ -152,7 +153,10 @@ def generateCube(name, size, loc):
     obj = bpy.data.objects[bpy.context.active_object.name]
     scn = bpy.context.scene
     obj.select = True
-    obj.scale = (float(size[0])*0.25,float(size[1])*0.25,float(size[2])*0.2)
+    print(name)
+    obj.name = name
+    #obj.scale = (float(size[0])*0.25,float(size[1])*0.25,float(size[2])*0.2)
+    obj.scale = (float(size[0]),float(size[1]),float(size[2]))
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
     #bpy.ops.mesh.quads_convert_to_tris()
@@ -179,7 +183,8 @@ def importMesh(name,directory):
     bpy.ops.import_scene.obj(filepath=directory)
     imported = bpy.context.selected_objects[0]
     imported.name = name
-    imported.scale = (0.2, 0.2, 0.25)
+    #imported.scale = (0.2, 0.2, 0.25)
+    imported.scale = (1, 1, 1)
     imported.rotation_euler = (0,0,0)
     return mesh_vol(imported.data, imported.matrix_world)
 
@@ -199,7 +204,8 @@ def generateMesh(objectData):
     scene.objects.link(obj)
     obj.select = True
     obj.rotation_euler = (0,0,0)
-    obj.scale = (0.05, 0.05, 0.04)
+    #obj.scale = (0.05, 0.05, 0.04)
+    obj.scale = (1, 1, 1)
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.quads_convert_to_tris()
@@ -330,8 +336,8 @@ def sbml2blender(inputFilePath,addObjects):
         obj = bpy.data.objects[bpy.context.active_object.name]
         obj.name = namingPattern
 
-    print("The average endosome size is: " + str((sum_size/(n_size*1.0))))
-    print("The average endosome surface area is " + str((sum_surf/(n_surf*1.0))))
+   # print("The average endosome size is: " + str((sum_size/(n_size*1.0))))
+   # print("The average endosome surface area is " + str((sum_surf/(n_surf*1.0))))
     
     for csgobject in paramObject:
         obj = generateMesh(csgobject)
