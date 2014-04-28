@@ -2,6 +2,7 @@ import bpy
 import os
 import sys
 import io
+import subprocess
 
 import cellblender
 from cellblender import cellblender_properties, cellblender_operators
@@ -155,7 +156,8 @@ def execute_bionetgen(filepath,context):
       exe_bng = "  ".join([bngpath, "--outdir", destpath, filepath])    # create command string for BNG execution
       print("*** Starting BioNetGen execution ***")
       print("    Command: " + exe_bng )
-      os.system(exe_bng)    # execute BNG
+      #os.system(exe_bng)    # execute BNG
+      subprocess.call([bngpath,"--outdir",destpath,filepath])
     
     else:
       # Perform the search as done before
@@ -181,7 +183,8 @@ def execute_bionetgen(filepath,context):
                   destpath = os.path.dirname(__file__)
                   exe_bng = "    ".join([bngpath, "--outdir", destpath, filepath])    # create command string for BNG execution
                   print("*** Started BioNetGen execution ***")
-                  os.system(exe_bng)    # execute BNG
+                  #os.system(exe_bng)    # execute BNG
+                  subprocess.call([bngpath,"--outdir",destpath,filepath])
                   return{'FINISHED'}
               checked.update({dirpath:True})    # store checked directory in the list
           n +=1  
