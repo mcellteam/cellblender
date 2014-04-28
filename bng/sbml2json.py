@@ -8,7 +8,6 @@ Created on Mon Jun 17 11:19:37 2013
 import platform
 
 
-
 try:
     from . import treelib3
     if platform.system() == 'Linux':
@@ -20,7 +19,9 @@ try:
 except ImportError:
     treelib3 = None
     libsbml = None
-
+except ValueError:
+    import treelib3
+    import libsbml
 #import libsbml3.linux.libsbml as libsbml
 #import treelib3
 #import libsbml
@@ -580,7 +581,10 @@ def transform(filePath):
     
 
 def main():
-	
+    if libsbml == None:
+        print ('Could not find local libsbml installation. Cannot import')
+        return
+    print('found local libsbml. Starting')
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
 		default='/home/proto/workspace/bionetgen/bng2/Models2/MCell/rec_dim_comp_sbml.xml',type="string",
