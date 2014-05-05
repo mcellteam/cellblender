@@ -8,7 +8,23 @@ Created on Mon Jun 17 11:19:37 2013
 import platform
 
 
+def uuid_workaround():
+    # uuid module causes an error messagebox on windows.
+    #
+    # using a dirty workaround to preload uuid without ctypes,
+    # until blender gets compiled with vs2013
+    #
+    # http://blender.stackexchange.com/questions/7665/pythons-uuid-module-cause-c-runtime-error-in-ms-windows
+    if platform.system() == "Windows":
+        import ctypes
+        CDLL = ctypes.CDLL
+        ctypes.CDLL = None
+        import uuid
+        ctypes.CDLL = CDLL
+
+
 try:
+    uuid_workaround()
     from . import treelib3
     if platform.system() == 'Linux':
         from .libsbml3.linux import libsbml
