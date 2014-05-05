@@ -385,10 +385,12 @@ class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
 class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
     start_seed = IntProperty(
         name="Start Seed", default=1, min=1,
-        description="The starting value of the random number generator seed")
+        description="The starting value of the random number generator seed",
+        update=cellblender_operators.check_start_seed)
     end_seed = IntProperty(
         name="End Seed", default=1, min=1,
-        description="The ending value of the random number generator seed")
+        description="The ending value of the random number generator seed",
+        update=cellblender_operators.check_end_seed)
     mcell_processes = IntProperty(
         name="Number of Processes",
         default=cpu_count(),

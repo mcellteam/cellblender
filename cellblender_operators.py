@@ -2877,3 +2877,23 @@ def update_clamp_value(self, context):
     return
 
 
+def check_start_seed(self, context):
+    """ Ensure start seed is always lte to end seed. """
+
+    run_sim = context.scene.mcell.run_simulation
+    start_seed = run_sim.start_seed
+    end_seed = run_sim.end_seed
+
+    if start_seed > end_seed:
+        run_sim.start_seed = end_seed
+
+
+def check_end_seed(self, context):
+    """ Ensure end seed is always gte to start seed. """
+    
+    run_sim = context.scene.mcell.run_simulation
+    start_seed = run_sim.start_seed
+    end_seed = run_sim.end_seed
+
+    if end_seed < start_seed:
+        run_sim.end_seed = start_seed
