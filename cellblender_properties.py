@@ -176,7 +176,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
 
 class MCellReleasePatternProperty(bpy.types.PropertyGroup):
     name = StringProperty(
-        name="Site Name", default="Release_Site",
+        name="Pattern Name", default="Release_Pattern",
         description="The name of the release site",
         update=cellblender_operators.check_release_pattern_name)
 
