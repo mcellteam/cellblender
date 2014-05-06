@@ -61,7 +61,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         name="Reaction Name",
         description="The name of the reaction. "
                     "Can be used in Reaction Output.",
-        update=cellblender_operators.update_release_pattern_rxn_name_list)
+        update=cellblender_operators.check_reaction)
     reactants = StringProperty(
         name="Reactants", 
         description="Specify 1-3 reactants separated by a + symbol. "
@@ -176,7 +176,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
 
 class MCellReleasePatternProperty(bpy.types.PropertyGroup):
     name = StringProperty(
-        name="Site Name", default="Release_Site",
+        name="Pattern Name", default="Release_Pattern",
         description="The name of the release site",
         update=cellblender_operators.check_release_pattern_name)
 
@@ -229,10 +229,10 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
 
     def init_properties ( self, parameter_system ):
         self.delay.init_ref            ( parameter_system, "Rel_Delay_Type", user_name="Release Pattern Delay", user_expr="0",     user_units="s", user_descr="The time at which the release pattern will start." )
-        self.release_interval.init_ref ( parameter_system, "Rel_Int_Type",   user_name="Relese Interval",       user_expr="1e-12", user_units="s", user_descr="During a train, release molecules after every interval.\nDefault is once." )
-        self.train_duration.init_ref   ( parameter_system, "Tr_Dur_Type",    user_name="Train Duration",        user_expr="1e-12", user_units="s", user_descr="The duration of the train before turning off.\nDefault is to never turn off." )
-        self.train_interval.init_ref   ( parameter_system, "Tr_Int_Type",    user_name="Train Interval",        user_expr="1e-12", user_units="s", user_descr="A new train happens every interval.\nDefault is no new trains." )
-        self.number_of_trains.init_ref ( parameter_system, "NTrains_Type",   user_name="Number of Trains",      user_expr="0",     user_units="",  user_descr="Repeat the release process this number of times.\nDefault is one train.", user_int=True )
+        self.release_interval.init_ref ( parameter_system, "Rel_Int_Type",   user_name="Relese Interval",       user_expr="",      user_units="s", user_descr="During a train, release molecules after every interval.\nDefault is once." )
+        self.train_duration.init_ref   ( parameter_system, "Tr_Dur_Type",    user_name="Train Duration",        user_expr="",      user_units="s", user_descr="The duration of the train before turning off.\nDefault is to never turn off." )
+        self.train_interval.init_ref   ( parameter_system, "Tr_Int_Type",    user_name="Train Interval",        user_expr="",      user_units="s", user_descr="A new train happens every interval.\nDefault is no new trains." )
+        self.number_of_trains.init_ref ( parameter_system, "NTrains_Type",   user_name="Number of Trains",      user_expr="1",     user_units="",  user_descr="Repeat the release process this number of times.\nDefault is one train.", user_int=True )
 
 
 
@@ -385,10 +385,12 @@ class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
 class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
     start_seed = IntProperty(
         name="Start Seed", default=1, min=1,
-        description="The starting value of the random number generator seed")
+        description="The starting value of the random number generator seed",
+        update=cellblender_operators.check_start_seed)
     end_seed = IntProperty(
         name="End Seed", default=1, min=1,
-        description="The ending value of the random number generator seed")
+        description="The ending value of the random number generator seed",
+        update=cellblender_operators.check_end_seed)
     mcell_processes = IntProperty(
         name="Number of Processes",
         default=cpu_count(),

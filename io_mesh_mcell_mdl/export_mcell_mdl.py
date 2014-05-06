@@ -832,25 +832,34 @@ def save_rel_patterns(context, out_file, release_pattern_list):
         out_file.write("DEFINE_RELEASE_PATTERN %s\n" %
                        (active_release_pattern.name))
         out_file.write("{\n")
+
         out_file.write(
             "  DELAY = %s\n" % active_release_pattern.delay.get_as_string(
             ps.panel_parameter_list, ps.export_as_expressions))
-        out_file.write(
-            "  RELEASE_INTERVAL = %s\n" %
-            active_release_pattern.release_interval.get_as_string(
-            ps.panel_parameter_list,ps.export_as_expressions))
-        out_file.write(
-            "  TRAIN_DURATION = %s\n" %
-            active_release_pattern.train_duration.get_as_string(
-            ps.panel_parameter_list,ps.export_as_expressions))
-        out_file.write(
-            "  TRAIN_INTERVAL = %s\n" %
-            active_release_pattern.train_interval.get_as_string(
-            ps.panel_parameter_list,ps.export_as_expressions))
+
+        if active_release_pattern.release_interval.get_expr(ps.panel_parameter_list) != '':
+            out_file.write(
+                "  RELEASE_INTERVAL = %s\n" %
+                active_release_pattern.release_interval.get_as_string(
+                ps.panel_parameter_list,ps.export_as_expressions))
+
+        if active_release_pattern.train_duration.get_expr(ps.panel_parameter_list) != '':
+            out_file.write(
+                "  TRAIN_DURATION = %s\n" %
+                active_release_pattern.train_duration.get_as_string(
+                ps.panel_parameter_list,ps.export_as_expressions))
+
+        if active_release_pattern.train_interval.get_expr(ps.panel_parameter_list) != '':
+            out_file.write(
+                "  TRAIN_INTERVAL = %s\n" %
+                active_release_pattern.train_interval.get_as_string(
+                ps.panel_parameter_list,ps.export_as_expressions))
+
         out_file.write(
             "  NUMBER_OF_TRAINS = %s\n" %
             active_release_pattern.number_of_trains.get_as_string(
             ps.panel_parameter_list,ps.export_as_expressions))
+
         out_file.write("}\n\n")
 
 
