@@ -61,7 +61,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         name="Reaction Name",
         description="The name of the reaction. "
                     "Can be used in Reaction Output.",
-        update=cellblender_operators.update_release_pattern_rxn_name_list)
+        update=cellblender_operators.check_reaction)
     reactants = StringProperty(
         name="Reactants", 
         description="Specify 1-3 reactants separated by a + symbol. "

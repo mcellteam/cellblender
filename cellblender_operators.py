@@ -356,6 +356,8 @@ class MCELL_OT_reaction_remove(bpy.types.Operator):
 
         if mcell.reactions.reaction_list:
             check_reaction(self, context)
+        else:
+            update_release_pattern_rxn_name_list()
 
         return {'FINISHED'}
 
@@ -408,7 +410,7 @@ class MCELL_OT_add_variable_rate_constant(bpy.types.Operator):
 
 
 def check_reaction(self, context):
-    """Checks for duplicate or illegal reaction name. Cleans up formatting."""
+    """Checks for duplicate or illegal reaction. Cleans up formatting."""
 
     mcell = context.scene.mcell
 
@@ -537,8 +539,34 @@ def check_reaction(self, context):
         elif rxn.variable_rate_valid and rxn.type == 'reversible':
             rxn.type = 'irreversible'
 
+    rxn_name_status = check_reaction_name()
+    if rxn_name_status:
+        status = rxn_name_status
+
     rxn.status = status
-    return
+    update_release_pattern_rxn_name_list()
+
+
+def check_reaction_name():
+    """ Make sure the reaction name is legal.
+
+    Also make sure that it is available for counting and as a release pattern.
+
+    """
+
+    mcell = bpy.context.scene.mcell
+    rxn = mcell.reactions.reaction_list[mcell.reactions.active_rxn_index]
+    rxn_name = rxn.rxn_name
+    status = ""
+
+    # Check for illegal names
+    # (Starts with a letter. No special characters. Can be blank.)
+    reaction_name_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)|(^$)"
+    m = re.match(reaction_name_filter, rxn_name)
+    if m is None:
+        status = "Reaction name error: %s" % (rxn_name)
+
+    return status
 
 
 class MCELL_OT_surf_class_props_add(bpy.types.Operator):
@@ -800,7 +828,6 @@ class MCELL_OT_release_pattern_add(bpy.types.Operator):
         rel_pattern.name = "Release_Pattern"
         rel_pattern.init_properties(mcell.parameter_system)
         check_release_pattern_name(self, context)
-        update_release_pattern_rxn_name_list(self, context)
 
         return {'FINISHED'}
 
@@ -821,8 +848,8 @@ class MCELL_OT_release_pattern_remove(bpy.types.Operator):
 
         if mcell.release_patterns.release_pattern_list:
             check_release_pattern_name(self, context)
-
-        update_release_pattern_rxn_name_list(self, context)
+        else:
+            update_release_pattern_rxn_name_list()
 
         return {'FINISHED'}
 
@@ -849,8 +876,7 @@ def check_release_pattern_name(self, context):
         status = "Release Pattern name error: %s" % (rel_pattern.name)
 
     rel_pattern.status = status
-
-    update_release_pattern_rxn_name_list(self, context)
+    update_release_pattern_rxn_name_list()
 
 
 class MCELL_OT_release_site_add(bpy.types.Operator):
@@ -2654,7 +2680,7 @@ class MCELL_OT_rxn_output_remove(bpy.types.Operator):
         return {'FINISHED'}
 
 
-def update_release_pattern_rxn_name_list(self, context):
+def update_release_pattern_rxn_name_list():
     """ Update lists needed to count rxns and use rel patterns. """
 
     mcell = bpy.context.scene.mcell
@@ -2663,15 +2689,16 @@ def update_release_pattern_rxn_name_list(self, context):
     rxns = mcell.reactions.reaction_list
     rel_patterns_rxns = mcell.release_patterns.release_pattern_rxn_name_list
     # If a reaction has a reaction name, save it in reaction_name_list for
-    # counting in the reaction output. Also, save it in
-    # release_pattern_rxn_name_list for use as a release pattern, which is set
-    # in molecule release/placement
+    # counting in "Reaction Output Settings." Also, save reaction names in
+    # release_pattern_rxn_name_list for use as a release pattern, which is
+    # assigned in "Molecule Release/Placement"
     for rxn in rxns:
         if rxn.rxn_name and not rxn.status:
             new_rxn_item = mcell.reactions.reaction_name_list.add()
             new_rxn_item.name = rxn.rxn_name
             new_rel_pattern_item = rel_patterns_rxns.add()
             new_rel_pattern_item.name = rxn.rxn_name
+
     rel_patterns = mcell.release_patterns.release_pattern_list
     for rp in rel_patterns:
         if not rp.status:
