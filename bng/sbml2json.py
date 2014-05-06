@@ -48,6 +48,8 @@ class SBML2JSON:
         self.getUnits()
         self.moleculeData = {}
         self.compartmentMapping = {}
+        self.speciesNameDict = {}
+
     def getUnits(self):
         self.unitDictionary = {}
         self.mcellUnitDictionary = {}
@@ -163,7 +165,7 @@ class SBML2JSON:
         return parameters,observables
         
     
-    def __getRawCompartments(self):
+    def getRawCompartments(self):
         '''
         extracts information about the compartments in a model
         *returns* name,dimensions,size
@@ -224,6 +226,31 @@ class SBML2JSON:
         removeMembranes(tree,tree.root)
         return tree
         
+    def standardizeName(self,name):
+        '''
+        Remove stuff not used by bngl
+        '''
+        
+        sbml2BnglTranslationDict = {"^":"",
+                                    "'":"",
+                                    "*":"m"," ":"_",
+                                    "#":"sh",
+                                    ":":"_",'α':'a',
+                                    'β':'b',
+                                    'γ':'g',"(":"__",
+                                    ")":"__",
+                                    " ":"","+":"pl",
+                                    "/":"_",":":"_",
+                                    "-":"_",
+                                    '?':"unkn",
+                                    ',':'_',
+                                    '!':'.',
+                                    '@':'_'}
+                                    
+        for element in sbml2BnglTranslationDict:
+            name = name.replace(element,sbml2BnglTranslationDict[element])
+        return name
+        
     def getMolecules(self):
         '''
         *species* is the element whose SBML information we will extract
@@ -232,8 +259,10 @@ class SBML2JSON:
         It returns id,initialConcentration,(bool)isconstant and isboundary,
         and the compartment
         '''
+        from collections import Counter
+        nameSet = Counter()
         
-        compartmentList = self.__getRawCompartments()
+        compartmentList = self.getRawCompartments()
         tree = self.getCompartmentHierarchy(compartmentList)
         molecules = []
         release = []
@@ -248,6 +277,14 @@ class SBML2JSON:
                 diffusion = 'KB*T*LOG((mu_{0}*h/(SQRT(4)*Rc*(mu_{1}+mu_{2})/2))-gamma)/(4*PI*mu_{0}*h)'.format(compartment,outside,inside)
             self.moleculeData[species.getId()] = [compartmentList[compartment][0]]
             self.compartmentMapping[species.getId()] = compartment
+            
+            speciesName = species.getName()
+            speciesName = self.standardizeName(speciesName)
+            if speciesName not in nameSet:
+                nameSet.update(speciesName)
+            else:
+                speciesName = '{0}_{1}'.format(speciesName,nameSet[speciesName])
+            self.speciesNameDict[species.getId()] = speciesName
             moleculeSpecs={'name':species.getId(),'type':typeD,'extendedName':species.getName(),'dif':diffusion}
             initialConcentration = species.getInitialConcentration()
             if initialConcentration == 0 or math.isnan(initialConcentration):
@@ -608,6 +645,7 @@ def main():
     
     parser = SBML2JSON(document.getModel())
     parameters,observables =  parser.getParameters()
+    #compartments = parser.getRawCompartments()
     molecules,release = parser.getMolecules()
     reactions,release2,molecules2 =  parser.getReactions(parameters)
     molecules.extend(molecules2)
@@ -619,6 +657,7 @@ def main():
     definition['rxn_list'] = reactions
     definition['rel_list'] = release
     definition['obs_list'] = observables
+    #definition['comp_list'] = compartments
     with open(outputFile,'w') as f:
         json.dump(definition,f,sort_keys=True,indent=1, separators=(',', ': '))
         
