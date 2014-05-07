@@ -232,7 +232,15 @@ class SBML2JSON:
             removeList = []
             for element in c2:
                 if c2[element][2] == '':
-                    tree.create_node(element,element,data=c2[element][0])
+                    try:
+                        tree.create_node(element,element,data=c2[element][0])
+                    except treelib3.tree.MultipleRootError:
+                        #there's more than one top level element
+                        tree2 = treelib3.Tree()
+                        tree2.create_node('dummyRoot','dummyRoot',data=3)
+                        tree2.paste('dummyRoot',tree)
+                        tree2.create_node(element,element,parent='dummyRoot',data=c2[element][0])
+                        tree = tree2
                     removeList.append(element)
                 elif tree.contains(c2[element][2]):
                     tree.create_node(element,element,parent=c2[element][2],data=c2[element][0])
@@ -640,8 +648,8 @@ def main():
     print('found local libsbml. Starting')
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
-		default='/home/proto/workspace/bionetgen/bng2/Models2/MCell/rec_dim_comp_sbml.xml',type="string",
-		#default='/home/proto/Downloads/cell_onendo_final (1).xml',type="string",
+		#default='/home/proto/workspace/bionetgen/bng2/Models2/MCell/rec_dim_comp_sbml.xml',type="string",
+		default='/home/proto/Downloads/model.xml',type="string",
         help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
     parser.add_option("-o","--output",dest="output",
 		type="string",
