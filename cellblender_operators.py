@@ -1784,21 +1784,11 @@ def frame_change_handler(scn):
     if (not curr_frame == scn.frame_current):
         mcell.mol_viz.mol_file_index = scn.frame_current
         bpy.ops.mcell.mol_viz_set_index()
-        #scn.update()
         # Is the following code necessary?
-        if mcell.mol_viz.render_and_save:
-            scn.render.filepath = "//stores_on/frames/frame_%05d.png" % (
-                scn.frame_current)
-            bpy.ops.render.render(write_still=True)
-
-
-#def render_handler(scn):
-#    mcell = scn.mcell
-#    curr_frame = mcell.mol_viz.mol_file_index
-#    if (not curr_frame == scn.frame_current):
-#        mcell.mol_viz.mol_file_index = scn.frame_current
-#        bpy.ops.mcell.mol_viz_set_index()
-#    scn.update()
+        #if mcell.mol_viz.render_and_save:
+        #    scn.render.filepath = "//stores_on/frames/frame_%05d.png" % (
+        #        scn.frame_current)
+        #    bpy.ops.render.render(write_still=True)
 
 
 def mol_viz_toggle_manual_select(self, context):
@@ -1876,7 +1866,6 @@ def mol_viz_clear(mcell_prop):
     objs = bpy.data.objects
     for mol_item in mcell.mol_viz.mol_viz_list:
         mol_name = mol_item.name
-#        mol_obj = scn_objs[mol_name]
         mol_obj = scn_objs.get(mol_name)
         if mol_obj:
             hide = mol_obj.hide
@@ -1905,8 +1894,6 @@ def mol_viz_clear(mcell_prop):
             mol_obj.parent = mols_obj
 
             mol_obj.hide = hide
-
-#    scn.update()
 
     # Reset mol_viz_list to empty
     for i in range(len(mcell.mol_viz.mol_viz_list)-1, -1, -1):
@@ -2065,17 +2052,26 @@ def mol_viz_file_read(mcell_prop, filepath):
                 mol_pos_mesh.vertices.foreach_set("co", mol_pos)
                 mol_pos_mesh.vertices.foreach_set("normal", mol_orient)
 
-                # Create object to contain the mol_pos_mesh data
                 mol_obj = objs.get(mol_name)
-                if not mol_obj:
-                    mol_obj = objs.new(mol_name, mol_pos_mesh)
-                    scn_objs.link(mol_obj)
-                    mol_shape_obj.parent = mol_obj
-                    mol_obj.dupli_type = 'VERTS'
-                    mol_obj.use_dupli_vertices_rotation = True
-                    mol_obj.parent = mols_obj
+                if mol_obj:
+                    # Save the molecule's visibility state, so it can be
+                    # restored later
+                    hide = mol_obj.hide
+                    scn_objs.unlink(mol_obj)
+                    objs.remove(mol_obj)
+                else:
+                    hide = False
 
-#        scn.update()
+                # Create object to contain the mol_pos_mesh data
+                mol_obj = objs.new(mol_name, mol_pos_mesh)
+                scn_objs.link(mol_obj)
+                mol_shape_obj.parent = mol_obj
+                mol_obj.dupli_type = 'VERTS'
+                mol_obj.use_dupli_vertices_rotation = True
+                mol_obj.parent = mols_obj
+            
+                # Restore the visibility state
+                mol_obj.hide = hide
 
 #        utime = resource.getrusage(resource.RUSAGE_SELF)[0]-begin
 #        print ("     Processed %d molecules in %g seconds\n" % (
