@@ -103,6 +103,7 @@ if __name__ == '__main__':
 if "bpy" in locals():
     print("Reloading CellBlender")
     import imp
+    imp.reload(data_model)
     imp.reload(cellblender_properties)
     imp.reload(cellblender_panels)
     imp.reload(cellblender_operators)
@@ -136,6 +137,7 @@ else:
 	      sbml #JJT:SBML"""
 
 
+    from . import data_model
     from . import cellblender_properties
     from . import cellblender_panels
     from . import cellblender_operators
@@ -288,6 +290,8 @@ if len(bpy.app.handlers.frame_change_pre) == 0:
 
 if len(bpy.app.handlers.load_post) == 0:
     bpy.app.handlers.load_post.append(
+        data_model.load_post)
+    bpy.app.handlers.load_post.append(
         cellblender_operators.clear_run_list)
     bpy.app.handlers.load_post.append(
         cellblender_operators.model_objects_update)
@@ -303,6 +307,8 @@ if len(bpy.app.handlers.load_post) == 0:
         cellblender_operators.load_preferences)
 
 if len(bpy.app.handlers.save_pre) == 0:
+    bpy.app.handlers.save_pre.append(
+        data_model.save_pre)
     bpy.app.handlers.save_pre.append(
         cellblender_operators.model_objects_update)
 
