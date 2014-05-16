@@ -86,13 +86,16 @@ def load_post(context):
         mcell = context.scene['mcell']
         if 'api_version' in mcell:
             api_version = mcell['api_version']
-    print ( "Code API = " + str(code_api_version()) + ", File API = " + str(api_version) )
-    
-    if (api_version <= 0) or (api_version != code_api_version()):
-    
-        build_properties_from_data_model ( context )
+
+        print ( "Code API = " + str(code_api_version()) + ", File API = " + str(api_version) )
         
-        context.scene['mcell']['api_version'] = code_api_version()
+        if (api_version <= 0) or (api_version != code_api_version()):
+        
+            build_properties_from_data_model ( context )
+            
+            context.scene['mcell']['api_version'] = code_api_version()
+    else:
+        print ( "context.scene does not have an 'mcell' key ... no data model to import" )
 
     return
 
