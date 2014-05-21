@@ -955,6 +955,18 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         # print (" Panel Path = " + self.path_from_id())   # This really really slows down the interface!!
 
 
+    @profile('Parameter_Data.build_data_model_from_properties')
+    def build_data_model_from_properties ( self ):
+        p = self
+        par_dict = {}
+        par_dict.update ( { "par_name": p.par_name } )
+        par_dict.update ( { "par_id_name": p.name } )
+        par_dict.update ( { "par_expression": p.expr } )
+        par_dict.update ( { "par_value": p.value } )
+        par_dict.update ( { "par_valid": p.isvalid } )
+        return par_dict
+
+
     @profile('Parameter_Data.draw')
     def draw ( self, layout ):
         # This is generally not called, so show a banner if it is
@@ -1572,6 +1584,19 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         print ( "Panel Parameters:" )
         for p in self.panel_parameter_list:
             p.print_parameter()
+
+
+    @profile('ParameterSystem.build_data_model_from_properties')
+    def build_data_model_from_properties ( self, context ):
+        print ( "Parameter System building Data Model" )
+        par_sys_dm = {}
+        gen_par_list = []
+        for p in self.general_parameter_list:
+            gen_par_list = gen_par_list + [ p.build_data_model_from_properties() ]
+        par_sys_dm.update ( { "general_parameters": gen_par_list } )
+        return par_sys_dm
+
+
 
     @profile('ParameterSystem.print_name_id_map')
     def print_name_id_map ( self ):

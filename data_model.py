@@ -18,8 +18,9 @@
 # <pep8 compliant>
 
 """
-This file contains the classes defining and handling the CellBlender data model.
-
+This file contains the classes defining and handling the CellBlender Data Model.
+The CellBlender Data Model is intended to be a fairly stable representation of
+a CellBlender project which should be compatible across CellBlender versions.
 """
 
 # blender imports
@@ -32,28 +33,83 @@ from bpy.app.handlers import persistent
 # python imports
 import pickle
 
+from bpy_extras.io_utils import ExportHelper
 import cellblender
-
-
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-
-
-def unregister():
-    bpy.utils.unregister_module(__name__)
 
 
 def code_api_version():
     return 1
 
 
-def build_data_model_from_properties ( context ):
-    print ( "Constructing a data_model dictionary and storing in an ID property" )
+data_model_depth = 0
+def dump_data_model ( dm ):
+    global data_model_depth
+    data_model_depth += 1
+    if type(dm) == type({'a':1}): # dm is a dictionary
+        for k,v in dm.items():
+            print ( str(data_model_depth*"  ") + "Key = " + str(k) )
+            dump_data_model ( v )
+    elif type(dm) == type(['a',1]): # dm is a list
+        i = 0
+        for v in dm:
+            print ( str(data_model_depth*"  ") + "Entry["+str(i)+"]" )
+            dump_data_model ( v )
+            i += 1
+    elif type(dm) == type("a1"): # dm is a string
+        print ( str(data_model_depth*"  ") + "\"" + str(dm) + "\"" )
+    else: # dm is anything else
+        print ( str(data_model_depth*"  ") + str(dm) )
+    data_model_depth += -1
 
 
-def build_properties_from_data_model ( context ):
-    print ( "Overwriting properites based on data in the data model" )
+def pickle_data_model ( dm ):
+    return ( pickle.dumps(dm,protocol=0).decode('latin1') )
+
+def unpickle_data_model ( dmp ):
+    return ( pickle.loads ( dmp.encode('latin1') ) )
+
+
+
+class ExportDataModel(bpy.types.Operator, ExportHelper):
+    '''Export the CellBlender model as a Python Pickle in a text file'''
+    bl_idname = "cb.export_data_model" 
+    bl_label = "Export Data Model"
+    bl_description = "Export CellBlender Data Model to a Python Pickle in a file"
+ 
+    filename_ext = ".txt"
+    filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
+
+    def execute(self, context):
+        print ( "Saving CellBlender model to file: " + self.filepath )
+        dm = context.scene.mcell.build_data_model_from_properties ( context )
+        f = open ( self.filepath, 'w' )
+        f.write ( pickle_data_model(dm) )
+        f.close()
+        print ( "Done saving CellBlender model." )
+        return {'FINISHED'}
+
+
+class ImportDataModel(bpy.types.Operator, ExportHelper):
+    '''Import a CellBlender model from a Python Pickle in a text file'''
+    bl_idname = "cb.import_data_model" 
+    bl_label = "Import Data Model"
+    bl_description = "Import CellBlender Data Model from a Python Pickle in a file"
+ 
+    filename_ext = ".txt"
+    filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
+
+    def execute(self, context):
+        print ( "Loading CellBlender model from file: " + self.filepath )
+        f = open ( self.filepath, 'r' )
+        pickle_string = f.read()
+        f.close()
+
+        dm = unpickle_data_model ( pickle_string )
+        dump_data_model ( dm )
+
+        print ( "Done loading CellBlender model." )
+        return {'FINISHED'}
+
 
 
 # Construct the data model property
@@ -65,11 +121,17 @@ def save_pre(context):
     if not context:
         context = bpy.context
     
-    build_data_model_from_properties ( context )
+    if 'mcell' in context.scene:
+        dm = context.scene.mcell.build_data_model_from_properties ( context )
+        print ( "=================== Begin Data Model ===================" )
+        print ( str(dm) )
+        print ( "================== Decoded Data Model ==================" )
+        dump_data_model ( dm )
+        print ( "=================== End Data Model ===================" )
+        #self['data_model'] = dm
+        context.scene.mcell['data_model'] = pickle_data_model(dm)
     
     return
-
-
 
 
 # Check for a data model in the properties
@@ -89,9 +151,24 @@ def load_post(context):
 
         print ( "Code API = " + str(code_api_version()) + ", File API = " + str(api_version) )
         
-        if (api_version <= 0) or (api_version != code_api_version()):
+        if (api_version <= 0):
+            # There is no data model so build it from the properties
+
+            dm = context.scene.mcell.build_data_model_from_properties ( context )
+            print ( "=================== Begin Data Model ===================" )
+            print ( str(dm) )
+            print ( "================== Decoded Data Model ==================" )
+            dump_data_model ( dm )
+            print ( "=================== End Data Model ===================" )
+            #context.scene.mcell['data_model'] = dm
+            context.scene.mcell['data_model'] = pickle_data_model(dm)
         
-            build_properties_from_data_model ( context )
+        elif (api_version != code_api_version()):
+            # There is a data model in the file so convert it to match current properties
+
+            dm = unpickle_data_model ( context.scene.mcell['data_model'] )
+        
+            context.scene.mcell.build_properties_from_data_model ( context, dm )
             
             context.scene['mcell']['api_version'] = code_api_version()
     else:
@@ -100,4 +177,26 @@ def load_post(context):
     return
 
 
+def menu_func_import(self, context):
+    print ( "=== Called menu_func_import ===" )
+    self.layout.operator("cb.import_data_model", text="Import CellBlender Model (pickle.txt)")
+
+def menu_func_export(self, context):
+    print ( "=== Called menu_func_export ===" )
+    self.layout.operator("cb.export_data_model", text="Export CellBlender Model (pickle.txt)")
+
+
+# We use per module class registration/unregistration
+def register():
+    bpy.utils.register_module(__name__)
+    #print ( "=== Appending menu_func_export ===" )
+    #bpy.types.INFO_MT_file_export.append(menu_func_export_dm)
+
+def unregister():
+    bpy.utils.unregister_module(__name__)
+    #bpy.types.INFO_MT_file_import.remove(menu_func_export_dm)
+
+
+if __name__ == "__main__": 
+    register()
 
