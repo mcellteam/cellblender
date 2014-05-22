@@ -355,15 +355,27 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
 
     @profile('Parameter_Reference.get_param')
-    def get_param ( self, plist ):
+    def get_param ( self, plist=None ):
+        if plist == None:
+            # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
+            mcell = bpy.context.scene.mcell
+            plist = mcell.parameter_system.panel_parameter_list
         return plist[self.unique_static_name]
 
     @profile('Parameter_Reference.get_expr')
-    def get_expr ( self, plist ):
+    def get_expr ( self, plist=None ):
+        if plist == None:
+            # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
+            mcell = bpy.context.scene.mcell
+            plist = mcell.parameter_system.panel_parameter_list
         return self.get_param(plist).expr
 
     @profile('Parameter_Reference.set_expr')
-    def set_expr ( self, expr, plist ):
+    def set_expr ( self, expr, plist=None ):
+        if plist == None:
+            # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
+            mcell = bpy.context.scene.mcell
+            plist = mcell.parameter_system.panel_parameter_list
         p = self.get_param(plist)
         p.expr = expr
 
@@ -396,8 +408,13 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
 
     @profile('Parameter_Reference.get_label')
-    def get_label ( self, plist ):
+    def get_label ( self, plist=None ):
+        if plist == None:
+            # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
+            mcell = bpy.context.scene.mcell
+            plist = mcell.parameter_system.panel_parameter_list
         return self.get_param(plist).par_name
+
 
     @profile('Parameter_Reference.draw')
     def draw ( self, layout, parameter_system ):
@@ -953,6 +970,26 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         print (" Is Integer = " + str(p.isint))
         print (" Initialized = " + str(p.initialized))
         # print (" Panel Path = " + self.path_from_id())   # This really really slows down the interface!!
+
+
+    @profile('Parameter_Data.build_data_model_from_properties')
+    def build_data_model_from_properties ( self ):
+        p = self
+
+        par_dict = {}
+        par_dict.update ( { "par_name": p.par_name } )
+        par_dict.update ( { "par_expression": p.expr } )
+        par_dict.update ( { "par_units": p.units } )
+        par_dict.update ( { "par_description": p.descr } )
+
+        extras_dict = {}
+        extras_dict.update ( { "par_id_name": p.name } )
+        extras_dict.update ( { "par_value": p.value } )
+        extras_dict.update ( { "par_valid": p.isvalid } )
+
+        par_dict.update ( { "extras": extras_dict } )
+
+        return par_dict
 
 
     @profile('Parameter_Data.draw')
@@ -1572,6 +1609,19 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         print ( "Panel Parameters:" )
         for p in self.panel_parameter_list:
             p.print_parameter()
+
+
+    @profile('ParameterSystem.build_data_model_from_properties')
+    def build_data_model_from_properties ( self, context ):
+        print ( "Parameter System building Data Model" )
+        par_sys_dm = {}
+        gen_par_list = []
+        for p in self.general_parameter_list:
+            gen_par_list = gen_par_list + [ p.build_data_model_from_properties() ]
+        par_sys_dm.update ( { "general_parameters": gen_par_list } )
+        return par_sys_dm
+
+
 
     @profile('ParameterSystem.print_name_id_map')
     def print_name_id_map ( self ):

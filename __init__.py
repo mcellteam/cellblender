@@ -37,6 +37,7 @@ cellblender_info = {
     "supported_version_list": [(2, 66, 1), (2, 67, 0), (2, 68, 0), (2, 69, 0), (2, 70, 0)],
     "cellblender_source_list": [
         "__init__.py",
+        "data_model.py",
         "parameter_system.py",
         "cellblender_properties.py",
         "cellblender_panels.py",
@@ -103,10 +104,10 @@ if __name__ == '__main__':
 if "bpy" in locals():
     print("Reloading CellBlender")
     import imp
+    imp.reload(data_model)
     imp.reload(cellblender_properties)
     imp.reload(cellblender_panels)
     imp.reload(cellblender_operators)
-    #imp.reload(cellblender_parameters)
     imp.reload(parameter_system)
     imp.reload(cellblender_molecules)
     imp.reload(object_surface_regions)
@@ -123,6 +124,7 @@ if "bpy" in locals():
 else:
     print("Importing CellBlender")
     """from . import \
+        data_model, \
         cellblender_properties, \
         cellblender_panels, \
         cellblender_operators, \
@@ -135,11 +137,10 @@ else:
         bng, \  # DB: Added for BNG
 	      sbml #JJT:SBML"""
 
-
+    from . import data_model
     from . import cellblender_properties
     from . import cellblender_panels
     from . import cellblender_operators
-    #from . import cellblender_parameters
     from . import parameter_system
     from . import cellblender_molecules
     from . import object_surface_regions
@@ -224,6 +225,12 @@ def register():
     #JJT: And SBML import
     #bpy.types.INFO_MT_file_import.append(sbml.menu_func_import)
 
+    # BK: Added for Data Model import and export
+    bpy.types.INFO_MT_file_import.append(data_model.menu_func_import)
+    bpy.types.INFO_MT_file_export.append(data_model.menu_func_export)
+
+
+
     bpy.types.Scene.mcell = bpy.props.PointerProperty(
         type=cellblender_properties.MCellPropertyGroup)
     bpy.types.Object.mcell = bpy.props.PointerProperty(
@@ -288,6 +295,8 @@ if len(bpy.app.handlers.frame_change_pre) == 0:
 
 if len(bpy.app.handlers.load_post) == 0:
     bpy.app.handlers.load_post.append(
+        data_model.load_post)
+    bpy.app.handlers.load_post.append(
         cellblender_operators.clear_run_list)
     bpy.app.handlers.load_post.append(
         cellblender_operators.model_objects_update)
@@ -303,6 +312,8 @@ if len(bpy.app.handlers.load_post) == 0:
         cellblender_operators.load_preferences)
 
 if len(bpy.app.handlers.save_pre) == 0:
+    bpy.app.handlers.save_pre.append(
+        data_model.save_pre)
     bpy.app.handlers.save_pre.append(
         cellblender_operators.model_objects_update)
 

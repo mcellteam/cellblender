@@ -549,6 +549,22 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
                                              user_descr="Number of molecules that can be stored per square micron" )
 
 
+    def build_data_model_from_properties ( self, context ):
+        dm_dict = {}
+        dm_dict.update ( { "iterations": self.iterations.get_expr() } )
+        dm_dict.update ( { "time_step": self.time_step.get_expr() } )
+        dm_dict.update ( { "time_step_max": self.time_step_max.get_expr() } )
+        dm_dict.update ( { "space_step": self.space_step.get_expr() } )
+        dm_dict.update ( { "interaction_radius": self.interaction_radius.get_expr() } )
+        dm_dict.update ( { "radial_directions": self.radial_directions.get_expr() } )
+        dm_dict.update ( { "radial_subdivisions": self.radial_subdivisions.get_expr() } )
+        dm_dict.update ( { "vacancy_search_distance": self.vacancy_search_distance.get_expr() } )
+        dm_dict.update ( { "surface_grid_density": self.surface_grid_density.get_expr() } )
+
+        dm_dict.update ( { "microscopic_reversibility": str(self.microscopic_reversibility) } )
+        return dm_dict
+
+
     accurate_3d_reactions = BoolProperty(
         name="Accurate 3D Reaction",
         description="If selected, molecules will look through partitions to "
@@ -778,20 +794,20 @@ class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
 
 
 ####################### DB: added for imported parameters from BNG, SBML or other models###############################
-class MCellParameterProperty(bpy.types.PropertyGroup):
-    name = StringProperty(name="Parameter Name", default="Parameter")
-    value = StringProperty(name="Parameter Value", default="0")
-    unit = StringProperty(name="Parameter Unit", default="",
-        description="Forward Rate Units: sec^-1 (unimolecular),"
-                    " M^-1*sec^-1 (bimolecular)")
-    type = StringProperty(name="Parameter type", default="", description="")		    
-    status = StringProperty(name="Status")
-
-class MCellParametersPanelProperty(bpy.types.PropertyGroup):
-    parameter_list = CollectionProperty(
-        type=MCellParameterProperty, name="Parameter List")
-    active_par_index = IntProperty(name="Active Parameter Index", default=0)
-    plot_command = StringProperty(name="", default="")
+#class MCellParameterProperty(bpy.types.PropertyGroup):
+#    name = StringProperty(name="Parameter Name", default="Parameter")
+#    value = StringProperty(name="Parameter Value", default="0")
+#    unit = StringProperty(name="Parameter Unit", default="",
+#        description="Forward Rate Units: sec^-1 (unimolecular),"
+#                    " M^-1*sec^-1 (bimolecular)")
+#    type = StringProperty(name="Parameter type", default="", description="")		    
+#    status = StringProperty(name="Status")
+#
+#class MCellParametersPanelProperty(bpy.types.PropertyGroup):
+#    parameter_list = CollectionProperty(
+#        type=MCellParameterProperty, name="Parameter List")
+#    active_par_index = IntProperty(name="Active Parameter Index", default=0)
+#    plot_command = StringProperty(name="", default="")
 ##########################################################################################################################
 
 
@@ -1005,6 +1021,7 @@ class PP_OT_init_mcell(bpy.types.Operator):
         return {'FINISHED'}
 
 
+import pickle
 
 # Main MCell (CellBlender) Properties Class:
 
@@ -1030,9 +1047,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellInitializationPanelProperty, name="Model Initialization")
     partitions = bpy.props.PointerProperty(
         type=MCellPartitionsPanelProperty, name="Partitions")
-############# DB: added for parameter import from BNG, SBML models####
-    parameters = PointerProperty(
-        type=MCellParametersPanelProperty, name="Defined Parameters")
+    ############# DB: added for parameter import from BNG, SBML models####
+    #parameters = PointerProperty(
+    #    type=MCellParametersPanelProperty, name="Defined Parameters")
     parameter_system = PointerProperty(
         type=parameter_system.ParameterSystemPropertyGroup, name="Parameter System")
     molecules = PointerProperty(
@@ -1062,6 +1079,23 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellMoleculeGlyphsPanelProperty, name="Molecule Shapes")
     scratch_settings = PointerProperty(
         type=MCellScratchPanelProperty, name="CellBlender Scratch Settings")
+    
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Constructing a data_model dictionary from current properties" )
+        dm = {}
+        if 'api_version' in self:
+            dm.update ( { "api_version": self['api_version'] } )
+        else:
+            dm.update ( { "api_version": 0 } )
+        dm.update ( { "parameter_system": self.parameter_system.build_data_model_from_properties(context) } )
+        dm.update ( { "initialization": self.initialization.build_data_model_from_properties(context) } )
+        dm.update ( { "molecules": self.molecules.build_data_model_from_properties(context) } )
+        return dm
+
+    def build_properties_from_data_model ( self, context, dm ):
+        print ( "Overwriting properites based on data in the data model dictionary" )
+        print ( "Not implemented yet!!!!" )
 
 
     def init_properties ( self ):
