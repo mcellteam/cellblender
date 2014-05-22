@@ -106,6 +106,7 @@ class ImportDataModel(bpy.types.Operator, ExportHelper):
 
         dm = unpickle_data_model ( pickle_string )
         dump_data_model ( dm )
+        context.scene.mcell.build_properties_from_data_model ( context, dm )
 
         print ( "Done loading CellBlender model." )
         return {'FINISHED'}

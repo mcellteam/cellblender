@@ -355,15 +355,27 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
 
     @profile('Parameter_Reference.get_param')
-    def get_param ( self, plist ):
+    def get_param ( self, plist=None ):
+        if plist == None:
+            # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
+            mcell = bpy.context.scene.mcell
+            plist = mcell.parameter_system.panel_parameter_list
         return plist[self.unique_static_name]
 
     @profile('Parameter_Reference.get_expr')
-    def get_expr ( self, plist ):
+    def get_expr ( self, plist=None ):
+        if plist == None:
+            # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
+            mcell = bpy.context.scene.mcell
+            plist = mcell.parameter_system.panel_parameter_list
         return self.get_param(plist).expr
 
     @profile('Parameter_Reference.set_expr')
-    def set_expr ( self, expr, plist ):
+    def set_expr ( self, expr, plist=None ):
+        if plist == None:
+            # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
+            mcell = bpy.context.scene.mcell
+            plist = mcell.parameter_system.panel_parameter_list
         p = self.get_param(plist)
         p.expr = expr
 
@@ -396,8 +408,13 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
 
     @profile('Parameter_Reference.get_label')
-    def get_label ( self, plist ):
+    def get_label ( self, plist=None ):
+        if plist == None:
+            # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
+            mcell = bpy.context.scene.mcell
+            plist = mcell.parameter_system.panel_parameter_list
         return self.get_param(plist).par_name
+
 
     @profile('Parameter_Reference.draw')
     def draw ( self, layout, parameter_system ):
@@ -958,12 +975,20 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
     @profile('Parameter_Data.build_data_model_from_properties')
     def build_data_model_from_properties ( self ):
         p = self
+
         par_dict = {}
         par_dict.update ( { "par_name": p.par_name } )
-        par_dict.update ( { "par_id_name": p.name } )
         par_dict.update ( { "par_expression": p.expr } )
-        par_dict.update ( { "par_value": p.value } )
-        par_dict.update ( { "par_valid": p.isvalid } )
+        par_dict.update ( { "par_units": p.units } )
+        par_dict.update ( { "par_description": p.descr } )
+
+        extras_dict = {}
+        extras_dict.update ( { "par_id_name": p.name } )
+        extras_dict.update ( { "par_value": p.value } )
+        extras_dict.update ( { "par_valid": p.isvalid } )
+
+        par_dict.update ( { "extras": extras_dict } )
+
         return par_dict
 
 

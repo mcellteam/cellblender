@@ -136,6 +136,20 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         self.custom_space_step.init_ref  ( parameter_system, "Mol_Space_Step_Type", user_name="Custom Space Step",  user_expr="",  user_units="microns",  user_descr="Molecule Custom Space Step" )
 
 
+    def build_data_model_from_properties ( self ):
+        m = self
+
+        m_dict = {}
+        m_dict.update ( { "mol_name": m.name } )
+        m_dict.update ( { "mol_type": str(m.type) } )
+        m_dict.update ( { "diffusion_constant": m.diffusion_constant.get_expr() } )
+        m_dict.update ( { "target_only": m.target_only } )
+        m_dict.update ( { "custom_time_step": m.custom_time_step.get_expr() } )
+        m_dict.update ( { "custom_space_step": m.custom_space_step.get_expr() } )
+        m_dict.update ( { "export_viz": m.export_viz } )
+
+        return m_dict
+
     # Exporting to an MDL file could be done just like this
     def print_details( self ):
         print ( "Name = " + self.name )
@@ -213,6 +227,16 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             self.active_mol_index = 0
         if self.molecule_list:
             self.check(context)
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Molecule List building Data Model" )
+        mol_dm = {}
+        mol_list = []
+        for m in self.molecule_list:
+            mol_list = mol_list + [ m.build_data_model_from_properties() ]
+        mol_dm.update ( { "molecule_list": mol_list } )
+        return mol_dm
+
 
     def check ( self, context ):
         """Checks for duplicate or illegal molecule name"""

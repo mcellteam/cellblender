@@ -1072,8 +1072,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             dm.update ( { "api_version": self['api_version'] } )
         else:
             dm.update ( { "api_version": 0 } )
-        par_sys_dm = self.parameter_system.build_data_model_from_properties(context)
-        dm.update ( { "parameter_system": par_sys_dm } )
+        dm.update ( { "parameter_system": self.parameter_system.build_data_model_from_properties(context) } )
+        dm.update ( { "molecules": self.molecules.build_data_model_from_properties(context) } )
         return dm
 
     def build_properties_from_data_model ( self, context, dm ):
