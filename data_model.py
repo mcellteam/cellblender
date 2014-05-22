@@ -55,7 +55,7 @@ def dump_data_model ( dm ):
             print ( str(data_model_depth*"  ") + "Entry["+str(i)+"]" )
             dump_data_model ( v )
             i += 1
-    elif type(dm) == type("a1"): # dm is a string
+    elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')): # dm is a string
         print ( str(data_model_depth*"  ") + "\"" + str(dm) + "\"" )
     else: # dm is anything else
         print ( str(data_model_depth*"  ") + str(dm) )
@@ -180,11 +180,11 @@ def load_post(context):
 
 def menu_func_import(self, context):
     print ( "=== Called menu_func_import ===" )
-    self.layout.operator("cb.import_data_model", text="Import CellBlender Model (pickle.txt)")
+    self.layout.operator("cb.import_data_model", text="Import CellBlender Model (text/pickle)")
 
 def menu_func_export(self, context):
     print ( "=== Called menu_func_export ===" )
-    self.layout.operator("cb.export_data_model", text="Export CellBlender Model (pickle.txt)")
+    self.layout.operator("cb.export_data_model", text="Export CellBlender Model (text/pickle)")
 
 
 # We use per module class registration/unregistration

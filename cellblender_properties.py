@@ -549,6 +549,22 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
                                              user_descr="Number of molecules that can be stored per square micron" )
 
 
+    def build_data_model_from_properties ( self, context ):
+        dm_dict = {}
+        dm_dict.update ( { "iterations": self.iterations.get_expr() } )
+        dm_dict.update ( { "time_step": self.time_step.get_expr() } )
+        dm_dict.update ( { "time_step_max": self.time_step_max.get_expr() } )
+        dm_dict.update ( { "space_step": self.space_step.get_expr() } )
+        dm_dict.update ( { "interaction_radius": self.interaction_radius.get_expr() } )
+        dm_dict.update ( { "radial_directions": self.radial_directions.get_expr() } )
+        dm_dict.update ( { "radial_subdivisions": self.radial_subdivisions.get_expr() } )
+        dm_dict.update ( { "vacancy_search_distance": self.vacancy_search_distance.get_expr() } )
+        dm_dict.update ( { "surface_grid_density": self.surface_grid_density.get_expr() } )
+
+        dm_dict.update ( { "microscopic_reversibility": str(self.microscopic_reversibility) } )
+        return dm_dict
+
+
     accurate_3d_reactions = BoolProperty(
         name="Accurate 3D Reaction",
         description="If selected, molecules will look through partitions to "
@@ -1073,11 +1089,13 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         else:
             dm.update ( { "api_version": 0 } )
         dm.update ( { "parameter_system": self.parameter_system.build_data_model_from_properties(context) } )
+        dm.update ( { "initialization": self.initialization.build_data_model_from_properties(context) } )
         dm.update ( { "molecules": self.molecules.build_data_model_from_properties(context) } )
         return dm
 
     def build_properties_from_data_model ( self, context, dm ):
         print ( "Overwriting properites based on data in the data model dictionary" )
+        print ( "Not implemented yet!!!!" )
 
 
     def init_properties ( self ):
