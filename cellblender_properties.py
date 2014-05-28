@@ -564,6 +564,19 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         dm_dict.update ( { "microscopic_reversibility": str(self.microscopic_reversibility) } )
         return dm_dict
 
+    def build_properties_from_data_model ( self, context, dm_dict ):
+        self.iterations.set_expr ( dm_dict["iterations"] )
+        self.time_step.set_expr ( dm_dict["time_step"] )
+        self.time_step_max.set_expr ( dm_dict["time_step_max"] )
+        self.space_step.set_expr ( dm_dict["space_step"] )
+        self.interaction_radius.set_expr ( dm_dict["interaction_radius"] )
+        self.radial_directions.set_expr ( dm_dict["radial_directions"] )
+        self.radial_subdivisions.set_expr ( dm_dict["radial_subdivisions"] )
+        self.vacancy_search_distance.set_expr ( dm_dict["vacancy_search_distance"] )
+        self.surface_grid_density.set_expr ( dm_dict["surface_grid_density"] )
+
+        self.microscopic_reversibility = dm_dict["microscopic_reversibility"]
+
 
     accurate_3d_reactions = BoolProperty(
         name="Accurate 3D Reaction",
@@ -1091,11 +1104,13 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm.update ( { "parameter_system": self.parameter_system.build_data_model_from_properties(context) } )
         dm.update ( { "initialization": self.initialization.build_data_model_from_properties(context) } )
         dm.update ( { "molecules": self.molecules.build_data_model_from_properties(context) } )
+        print ( "Not fully implemented yet!!!!" )
         return dm
 
     def build_properties_from_data_model ( self, context, dm ):
         print ( "Overwriting properites based on data in the data model dictionary" )
-        print ( "Not implemented yet!!!!" )
+        self.initialization.build_properties_from_data_model ( context, dm["initialization"] )
+        print ( "Not fully implemented yet!!!!" )
 
 
     def init_properties ( self ):
