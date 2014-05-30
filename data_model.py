@@ -99,13 +99,13 @@ class ImportDataModel(bpy.types.Operator, ExportHelper):
     filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
 
     def execute(self, context):
-        print ( "Loading CellBlender model from file: " + self.filepath )
+        print ( "Loading CellBlender model from file: " + self.filepath + " ..." )
         f = open ( self.filepath, 'r' )
         pickle_string = f.read()
         f.close()
 
         dm = unpickle_data_model ( pickle_string )
-        dump_data_model ( dm )
+        # dump_data_model ( dm )
         context.scene.mcell.build_properties_from_data_model ( context, dm )
 
         print ( "Done loading CellBlender model." )
@@ -124,11 +124,11 @@ def save_pre(context):
     
     if 'mcell' in context.scene:
         dm = context.scene.mcell.build_data_model_from_properties ( context )
-        print ( "=================== Begin Data Model ===================" )
-        print ( str(dm) )
-        print ( "================== Decoded Data Model ==================" )
-        dump_data_model ( dm )
-        print ( "=================== End Data Model ===================" )
+        #print ( "=================== Begin Data Model ===================" )
+        #print ( str(dm) )
+        #print ( "================== Decoded Data Model ==================" )
+        #dump_data_model ( dm )
+        #print ( "=================== End Data Model ===================" )
         #self['data_model'] = dm
         context.scene.mcell['data_model'] = pickle_data_model(dm)
     
@@ -156,11 +156,11 @@ def load_post(context):
             # There is no data model so build it from the properties
 
             dm = context.scene.mcell.build_data_model_from_properties ( context )
-            print ( "=================== Begin Data Model ===================" )
-            print ( str(dm) )
-            print ( "================== Decoded Data Model ==================" )
-            dump_data_model ( dm )
-            print ( "=================== End Data Model ===================" )
+            #print ( "=================== Begin Data Model ===================" )
+            #print ( str(dm) )
+            #print ( "================== Decoded Data Model ==================" )
+            #dump_data_model ( dm )
+            #print ( "=================== End Data Model ===================" )
             #context.scene.mcell['data_model'] = dm
             context.scene.mcell['data_model'] = pickle_data_model(dm)
         
