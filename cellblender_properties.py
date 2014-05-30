@@ -92,7 +92,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
 
     fwd_rate = PointerProperty ( name="Forward Rate", type=parameter_system.Parameter_Reference )
-    bkwd_rate = PointerProperty ( name="Forward Rate", type=parameter_system.Parameter_Reference )
+    bkwd_rate = PointerProperty ( name="Backward Rate", type=parameter_system.Parameter_Reference )
 
 
     def init_properties ( self, parameter_system ):
@@ -101,6 +101,22 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
     status = StringProperty(name="Status")
 
+    def build_data_model_from_properties ( self ):
+        r = self
+
+        r_dict = {}
+        r_dict.update ( { "name": r.name } )
+        r_dict.update ( { "rxn_name": r.rxn_name } )
+        r_dict.update ( { "reactants": r.reactants } )
+        r_dict.update ( { "products": r.products } )
+        r_dict.update ( { "rxn_type": str(r.type) } )
+        r_dict.update ( { "variable_rate_switch": r.variable_rate_switch } )
+        r_dict.update ( { "variable_rate": r.variable_rate } )
+        r_dict.update ( { "variable_rate_valid": r.variable_rate_valid } )
+        r_dict.update ( { "fwd_rate": r.fwd_rate.get_expr() } )
+        r_dict.update ( { "bkwd_rate": r.bkwd_rate.get_expr() } )
+
+        return r_dict
 
 
 
@@ -830,7 +846,16 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
     active_rxn_index = IntProperty(name="Active Reaction Index", default=0)
     reaction_name_list = CollectionProperty(
         type=MCellStringProperty, name="Reaction Name List")
-    plot_command = StringProperty(name="", default="")
+    plot_command = StringProperty(name="", default="")      # TODO: This may not be needed ... check on it
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Reaction List building Data Model" )
+        react_dm = {}
+        react_list = []
+        for r in self.reaction_list:
+            react_list = react_list + [ r.build_data_model_from_properties() ]
+        react_dm.update ( { "reaction_list": react_list } )
+        return react_dm
 
 
 class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
@@ -1104,6 +1129,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm.update ( { "parameter_system": self.parameter_system.build_data_model_from_properties(context) } )
         dm.update ( { "initialization": self.initialization.build_data_model_from_properties(context) } )
         dm.update ( { "molecules": self.molecules.build_data_model_from_properties(context) } )
+        dm.update ( { "reactions": self.reactions.build_data_model_from_properties(context) } )
         print ( "Not fully implemented yet!!!!" )
         return dm
 

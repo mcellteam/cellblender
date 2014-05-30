@@ -23,6 +23,17 @@ The CellBlender Data Model is intended to be a fairly stable representation of
 a CellBlender project which should be compatible across CellBlender versions.
 """
 
+
+"""
+  CONVERSION NOTES:
+    Does the "MCellReactionsPanelProperty" need a "plot_command" field?
+    How do our CellBlender reaction fields/controls handle catalytic reactions?
+    Would it be better to allow a full reaction expression rather than reactants/products?
+    Should we have an option for using full reaction syntax?
+    What is the MCellReactionsPanelProperty.reaction_name_list? Is it needed any more?
+"""
+
+
 # blender imports
 import bpy
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
