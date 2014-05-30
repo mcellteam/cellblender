@@ -150,6 +150,16 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
         return m_dict
 
+    def build_properties_from_data_model ( self, context, dm_dict ):
+        self.name = dm_dict["mol_name"]
+        self.type = dm_dict["mol_type"]
+        self.diffusion_constant.set_expr ( dm_dict["diffusion_constant"] )
+        self.target_only = dm_dict["target_only"]
+        self.custom_time_step.set_expr ( dm_dict["custom_time_step"] )
+        self.custom_space_step.set_expr ( dm_dict["custom_space_step"] )
+        self.export_viz = dm_dict["export_viz"]
+
+
     # Exporting to an MDL file could be done just like this
     def print_details( self ):
         print ( "Name = " + self.name )
@@ -236,6 +246,15 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             mol_list = mol_list + [ m.build_data_model_from_properties() ]
         mol_dm.update ( { "molecule_list": mol_list } )
         return mol_dm
+
+    def build_properties_from_data_model ( self, context, dm ):
+        while len(self.molecule_list) > 0:
+            self.remove_active_molecule ( context )
+        
+        for m in dm["molecule_list"]:
+            self.add_molecule(context)
+            self.molecule_list[self.active_mol_index].build_properties_from_data_model(context,m)
+
 
 
     def check ( self, context ):

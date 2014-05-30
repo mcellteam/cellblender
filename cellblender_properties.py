@@ -1110,6 +1110,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     def build_properties_from_data_model ( self, context, dm ):
         print ( "Overwriting properites based on data in the data model dictionary" )
         self.initialization.build_properties_from_data_model ( context, dm["initialization"] )
+        self.molecules.build_properties_from_data_model ( context, dm["molecules"] )
         print ( "Not fully implemented yet!!!!" )
 
 
