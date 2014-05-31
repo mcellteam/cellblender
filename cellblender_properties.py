@@ -103,7 +103,6 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
     def build_data_model_from_properties ( self ):
         r = self
-
         r_dict = {}
         r_dict.update ( { "name": r.name } )
         r_dict.update ( { "rxn_name": r.rxn_name } )
@@ -115,7 +114,6 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         r_dict.update ( { "variable_rate_valid": r.variable_rate_valid } )
         r_dict.update ( { "fwd_rate": r.fwd_rate.get_expr() } )
         r_dict.update ( { "bkwd_rate": r.bkwd_rate.get_expr() } )
-
         return r_dict
 
 
@@ -189,6 +187,26 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         self.location_y.init_ref  ( parameter_system, "Rel_Loc_Type_Y",  user_name="Release Location Y",  user_expr="0", user_units="", user_descr="The center of the release site's Y coordinate" )
         self.location_z.init_ref  ( parameter_system, "Rel_Loc_Type_Z",  user_name="Release Location Z",  user_expr="0", user_units="", user_descr="The center of the release site's Z coordinate" )
 
+    def build_data_model_from_properties ( self ):
+        r = self
+        r_dict = {}
+        r_dict.update ( { "name": r.name } )
+        r_dict.update ( { "molecule": r.molecule } )
+        r_dict.update ( { "shape": str(r.shape) } )
+        r_dict.update ( { "orient": str(r.orient) } )
+        r_dict.update ( { "object_expr": str(r.object_expr) } )
+        r_dict.update ( { "location_x": r.location_x.get_expr() } )
+        r_dict.update ( { "location_y": r.location_y.get_expr() } )
+        r_dict.update ( { "location_z": r.location_z.get_expr() } )
+        r_dict.update ( { "diameter": r.diameter.get_expr() } )
+        r_dict.update ( { "probability": r.probability.get_expr() } )
+        r_dict.update ( { "quantity_type": str(r.quantity_type) } )
+        r_dict.update ( { "quantity": r.quantity.get_expr() } )
+        r_dict.update ( { "stddev": r.stddev.get_expr() } )
+        r_dict.update ( { "pattern": str(r.pattern) } )
+        return r_dict
+
+
 
 class MCellReleasePatternProperty(bpy.types.PropertyGroup):
     name = StringProperty(
@@ -250,6 +268,16 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
         self.train_interval.init_ref   ( parameter_system, "Tr_Int_Type",    user_name="Train Interval",        user_expr="",      user_units="s", user_descr="A new train happens every interval.\nDefault is no new trains." )
         self.number_of_trains.init_ref ( parameter_system, "NTrains_Type",   user_name="Number of Trains",      user_expr="1",     user_units="",  user_descr="Repeat the release process this number of times.\nDefault is one train.", user_int=True )
 
+    def build_data_model_from_properties ( self ):
+        r = self
+        r_dict = {}
+        r_dict.update ( { "name": r.name } )
+        r_dict.update ( { "delay": r.delay.get_expr() } )
+        r_dict.update ( { "release_interval": r.release_interval.get_expr() } )
+        r_dict.update ( { "train_duration": r.train_duration.get_expr() } )
+        r_dict.update ( { "train_interval": r.train_interval.get_expr() } )
+        r_dict.update ( { "number_of_trains": r.number_of_trains.get_expr() } )
+        return r_dict
 
 
 class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
@@ -576,7 +604,6 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         dm_dict.update ( { "radial_subdivisions": self.radial_subdivisions.get_expr() } )
         dm_dict.update ( { "vacancy_search_distance": self.vacancy_search_distance.get_expr() } )
         dm_dict.update ( { "surface_grid_density": self.surface_grid_density.get_expr() } )
-
         dm_dict.update ( { "microscopic_reversibility": str(self.microscopic_reversibility) } )
         return dm_dict
 
@@ -590,8 +617,8 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         self.radial_subdivisions.set_expr ( dm_dict["radial_subdivisions"] )
         self.vacancy_search_distance.set_expr ( dm_dict["vacancy_search_distance"] )
         self.surface_grid_density.set_expr ( dm_dict["surface_grid_density"] )
-
         self.microscopic_reversibility = dm_dict["microscopic_reversibility"]
+
 
 
     accurate_3d_reactions = BoolProperty(
@@ -882,11 +909,32 @@ class MCellReleasePatternPanelProperty(bpy.types.PropertyGroup):
     active_release_pattern_index = IntProperty(
         name="Active Release Pattern Index", default=0)
 
+    def build_data_model_from_properties ( self, context ):
+        print ( "Release Pattern List building Data Model" )
+        rel_pat_dm = {}
+        rel_pat_list = []
+        for r in self.release_pattern_list:
+            rel_pat_list = rel_pat_list + [ r.build_data_model_from_properties() ]
+        rel_pat_dm.update ( { "release_pattern_list": rel_pat_list } )
+        return rel_pat_dm
+
+
+
 
 class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
     mol_release_list = CollectionProperty(
         type=MCellMoleculeReleaseProperty, name="Molecule Release List")
     active_release_index = IntProperty(name="Active Release Index", default=0)
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Release Site List building Data Model" )
+        rel_site_dm = {}
+        rel_site_list = []
+        for r in self.mol_release_list:
+            rel_site_list = rel_site_list + [ r.build_data_model_from_properties() ]
+        rel_site_dm.update ( { "release_site_list": rel_site_list } )
+        return rel_site_dm
+
 
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
@@ -1130,6 +1178,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm.update ( { "initialization": self.initialization.build_data_model_from_properties(context) } )
         dm.update ( { "molecules": self.molecules.build_data_model_from_properties(context) } )
         dm.update ( { "reactions": self.reactions.build_data_model_from_properties(context) } )
+        dm.update ( { "release_sites": self.release_sites.build_data_model_from_properties(context) } )
+        dm.update ( { "release_patterns": self.release_patterns.build_data_model_from_properties(context) } )
         print ( "Not fully implemented yet!!!!" )
         return dm
 

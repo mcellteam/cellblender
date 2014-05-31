@@ -1019,7 +1019,8 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
                  
                      
                     layout.prop_search(rel, "pattern", mcell.release_patterns,
-                                       "release_pattern_rxn_name_list",
+                                       # "release_pattern_rxn_name_list",  # TODO: was this correct?
+                                       "release_pattern_list",  # <-- Bob changed to this ... is this correct?
                                        icon='FORCE_LENNARDJONES')
 
 

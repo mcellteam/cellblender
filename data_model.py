@@ -31,6 +31,31 @@ a CellBlender project which should be compatible across CellBlender versions.
     Would it be better to allow a full reaction expression rather than reactants/products?
     Should we have an option for using full reaction syntax?
     What is the MCellReactionsPanelProperty.reaction_name_list? Is it needed any more?
+    
+    MCellMoleculeReleaseProperty:
+       Do we still need location, or is it handled by location_x,y,z?
+
+    Release Patterns:
+
+      class MCELL_PT_molecule_release(bpy.types.Panel):
+
+            layout.prop_search(rel, "pattern", mcell.release_patterns,
+                               "release_pattern_rxn_name_list",
+                               icon='FORCE_LENNARDJONES')
+
+        changed to:
+
+            layout.prop_search(rel, "pattern", mcell.release_patterns,
+                               "release_pattern_list",
+                               icon='FORCE_LENNARDJONES')
+
+      Should "release pattern" be called "release timing" or "release train"?
+
+      Why does MCellReleasePatternPanelProperty contain:
+         release_pattern_rxn_name_list?
+
+
+       
 """
 
 
