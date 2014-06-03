@@ -214,45 +214,6 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
         description="The name of the release site",
         update=cellblender_operators.check_release_pattern_name)
 
-    """
-    delay = FloatProperty(name="Delay")
-    delay_str = StringProperty(
-        name="Delay",
-        default="0",
-        description="The time at which the release pattern will start "
-                    "(units: seconds).",
-        update=cellblender_operators.update_delay)
-
-    release_interval = FloatProperty(name="Release Interval", default=1e-12)
-    release_interval_str = StringProperty(
-        name="Release Interval",
-        default="1e-12",
-        description="During a train, release molecules after every interval "
-                    "(units: seconds). Default is once.",
-        update=cellblender_operators.update_release_interval)
-
-    train_duration = FloatProperty(name="Train Duration", default=1e-12)
-    train_duration_str = StringProperty(
-        name="Train Duration",
-        default="1e-12",
-        description="The duration of the train before turning off "
-                    "(units: seconds). Default is to never turn off.",
-        update=cellblender_operators.update_train_duration)
-
-    train_interval = FloatProperty(name="Train Interval", default=1e-12)
-    train_interval_str = StringProperty(
-        name="Train Interval",
-        default="1e-12",
-        description="A new train happens every interval (units: seconds). "
-                    "Default is no new trains.",
-        update=cellblender_operators.update_train_interval)
-
-    number_of_trains = IntProperty(
-        name="Number of Trains", min=0,
-        description="Repeat the release process this number of times. "
-                    "Default is one train.")
-    """
-
     delay            = PointerProperty ( name="Release Pattern Delay", type=parameter_system.Parameter_Reference )
     release_interval = PointerProperty ( name="Relese Interval",       type=parameter_system.Parameter_Reference )
     train_duration   = PointerProperty ( name="Train Duration",        type=parameter_system.Parameter_Reference )
@@ -278,6 +239,7 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
         r_dict.update ( { "train_interval": r.train_interval.get_expr() } )
         r_dict.update ( { "number_of_trains": r.number_of_trains.get_expr() } )
         return r_dict
+
 
 
 class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
@@ -321,6 +283,16 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.update_clamp_value)
     status = StringProperty(name="Status")
 
+    def build_data_model_from_properties ( self ):
+        sc = self
+        sc_dict = {}
+        sc_dict.update ( { "name": sc.name } )
+        sc_dict.update ( { "molecule": sc.molecule } )
+        sc_dict.update ( { "surf_class_orient": str(sc.surf_class_orient) } )
+        sc_dict.update ( { "surf_class_type": str(sc.surf_class_type) } )
+        sc_dict.update ( { "clamp_value": str(sc.clamp_value_str) } )
+        return sc_dict
+
 
 class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
     """ Stores the surface class name and a list of its properties. """
@@ -334,6 +306,18 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
     active_surf_class_props_index = IntProperty(
         name="Active Surface Class Index", default=0)
     status = StringProperty(name="Status")
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Surface Classes building Data Model" )
+        sc_dm = {}
+        sc_dm.update ( { "name": self.name } )
+        sc_list = []
+        for sc in self.surf_class_props_list:
+            sc_list = sc_list + [ sc.build_data_model_from_properties() ]
+        sc_dm.update ( { "surface_class_list": sc_list } )
+        return sc_dm
+
+
 
 
 class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
@@ -605,6 +589,8 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         dm_dict.update ( { "vacancy_search_distance": self.vacancy_search_distance.get_expr() } )
         dm_dict.update ( { "surface_grid_density": self.surface_grid_density.get_expr() } )
         dm_dict.update ( { "microscopic_reversibility": str(self.microscopic_reversibility) } )
+        dm_dict.update ( { "accurate_3d_reactions": self.accurate_3d_reactions } )
+        dm_dict.update ( { "center_molecules_on_grid": self.center_molecules_grid } )
         return dm_dict
 
     def build_properties_from_data_model ( self, context, dm_dict ):
@@ -618,6 +604,8 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         self.vacancy_search_distance.set_expr ( dm_dict["vacancy_search_distance"] )
         self.surface_grid_density.set_expr ( dm_dict["surface_grid_density"] )
         self.microscopic_reversibility = dm_dict["microscopic_reversibility"]
+        self.accurate_3d_reactions = dm_dict["accurate_3d_reactions"]
+        self.center_molecules_grid = dm_dict["center_molecules_on_grid"]
 
 
 
@@ -642,6 +630,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         items=microscopic_reversibility_enum, name="Microscopic Reversibility",
         description="If false, more efficient but less accurate reactions",
         default='OFF')
+
 
     # Notifications
     all_notifications_enum = [
@@ -709,6 +698,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         description="If selected, MCell will print the number of "
                     "bi/trimolecular collisions that occured.",
         default=False)
+
 
     # Warnings
     all_warnings_enum = [
@@ -891,6 +881,15 @@ class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
     active_surf_class_index = IntProperty(
         name="Active Surface Class Index", default=0)
     #surf_class_props_status = StringProperty(name="Status")
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Surface Classes Panel building Data Model" )
+        sc_dm = {}
+        sc_list = []
+        for sc in self.surf_class_list:
+            sc_list = sc_list + [ sc.build_data_model_from_properties(context) ]
+        sc_dm.update ( { "surface_classes_list": sc_list } )
+        return sc_dm
 
 
 class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
@@ -1180,6 +1179,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm.update ( { "reactions": self.reactions.build_data_model_from_properties(context) } )
         dm.update ( { "release_sites": self.release_sites.build_data_model_from_properties(context) } )
         dm.update ( { "release_patterns": self.release_patterns.build_data_model_from_properties(context) } )
+        dm.update ( { "surface_classes": self.surface_classes.build_data_model_from_properties(context) } )
         print ( "Not fully implemented yet!!!!" )
         return dm
 
