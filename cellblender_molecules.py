@@ -122,6 +122,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     custom_time_step =   PointerProperty ( name="Molecule Custom Time Step",   type=parameter_system.Parameter_Reference )
     custom_space_step =  PointerProperty ( name="Molecule Custom Space Step",  type=parameter_system.Parameter_Reference )
+    # TODO: Add after data model release:  maximum_step_length =  PointerProperty ( name="Maximum Step Length",  type=parameter_system.Parameter_Reference )
 
     export_viz = bpy.props.BoolProperty(
         default=False, description="If selected, the molecule will be "
@@ -131,9 +132,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     def init_properties ( self, parameter_system ):
         self.name = "Molecule_"+str(self.id)
 
-        self.diffusion_constant.init_ref ( parameter_system, "Mol_Diff_Const_Type", user_name="Diffusion Constant", user_expr="0", user_units="cm^2/sec", user_descr="Molecule Diffusion Constant" )
-        self.custom_time_step.init_ref   ( parameter_system, "Mol_Time_Step_Type",  user_name="Custom Time Step",   user_expr="",  user_units="seconds",  user_descr="Molecule Custom Time Step" )
-        self.custom_space_step.init_ref  ( parameter_system, "Mol_Space_Step_Type", user_name="Custom Space Step",  user_expr="",  user_units="microns",  user_descr="Molecule Custom Space Step" )
+        self.diffusion_constant.init_ref   ( parameter_system, "Mol_Diff_Const_Type", user_name="Diffusion Constant",   user_expr="0", user_units="cm^2/sec", user_descr="Molecule Diffusion Constant" )
+        self.custom_time_step.init_ref     ( parameter_system, "Mol_Time_Step_Type",  user_name="Custom Time Step",     user_expr="",  user_units="seconds",  user_descr="Molecule Custom Time Step" )
+        self.custom_space_step.init_ref    ( parameter_system, "Mol_Space_Step_Type", user_name="Custom Space Step",    user_expr="",  user_units="microns",  user_descr="Molecule Custom Space Step" )
+        # TODO: Add after data model release:  self.maximum_step_length.init_ref  ( parameter_system, "Max_Step_Len_Type",   user_name="Maximum Step Length",  user_expr="",  user_units="microns",  user_descr="Molecule should never step farther than this length during a single timestep. Use with caution (see documentation)." )
 
 
     def build_data_model_from_properties ( self ):
@@ -146,6 +148,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         m_dict.update ( { "target_only": m.target_only } )
         m_dict.update ( { "custom_time_step": m.custom_time_step.get_expr() } )
         m_dict.update ( { "custom_space_step": m.custom_space_step.get_expr() } )
+        m_dict.update ( { "custom_space_step": m.custom_space_step.get_expr() } )
+        # TODO: Add after data model release:   m_dict.update ( { "maximum_step_length": m.maximum_step_length.get_expr() } )
+        m_dict.update ( { "maximum_step_length": "" } )  # TODO: Remove this line after data model release
         m_dict.update ( { "export_viz": m.export_viz } )
 
         return m_dict
@@ -157,6 +162,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         self.target_only = dm_dict["target_only"]
         self.custom_time_step.set_expr ( dm_dict["custom_time_step"] )
         self.custom_space_step.set_expr ( dm_dict["custom_space_step"] )
+        # TODO: Add after data model release:   self.maximum_step_length.set_expr ( dm_dict["maximum_step_length"] )
         self.export_viz = dm_dict["export_viz"]
 
 

@@ -589,8 +589,40 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         dm_dict.update ( { "vacancy_search_distance": self.vacancy_search_distance.get_expr() } )
         dm_dict.update ( { "surface_grid_density": self.surface_grid_density.get_expr() } )
         dm_dict.update ( { "microscopic_reversibility": str(self.microscopic_reversibility) } )
-        dm_dict.update ( { "accurate_3d_reactions": self.accurate_3d_reactions } )
-        dm_dict.update ( { "center_molecules_on_grid": self.center_molecules_grid } )
+        dm_dict.update ( { "accurate_3d_reactions": self.accurate_3d_reactions==True } )
+        dm_dict.update ( { "center_molecules_on_grid": self.center_molecules_grid==True } )
+
+        notify_dict = {}
+        notify_dict.update ( { "all_notifications": str(self.all_notifications) } )
+        notify_dict.update ( { "diffusion_constant_report": str(self.diffusion_constant_report) } )
+        notify_dict.update ( { "file_output_report": self.file_output_report==True } )
+        notify_dict.update ( { "final_summary": self.final_summary==True } )
+        notify_dict.update ( { "iteration_report": self.iteration_report==True } )
+        notify_dict.update ( { "partition_location_report": self.partition_location_report==True } )
+        notify_dict.update ( { "probability_report": str(self.probability_report) } )
+        notify_dict.update ( { "probability_report_threshold": str(self.probability_report_threshold) } )
+        notify_dict.update ( { "varying_probability_report": self.varying_probability_report==True } )
+        notify_dict.update ( { "progress_report": self.progress_report==True } )
+        notify_dict.update ( { "release_event_report": self.release_event_report==True } )
+        notify_dict.update ( { "molecule_collision_report": self.molecule_collision_report==True } )
+        notify_dict.update ( { "box_triangulation_report": False } )
+        dm_dict.update ( { "notifications": notify_dict } )
+        
+        warn_dict = {}
+        warn_dict.update ( { "all_warnings": str(self.all_warnings) } )
+        warn_dict.update ( { "degenerate_polygons": str(self.degenerate_polygons) } )
+        warn_dict.update ( { "high_reaction_probability": str(self.high_reaction_probability) } )
+        warn_dict.update ( { "high_probability_threshold": str(self.high_probability_threshold) } )
+        warn_dict.update ( { "lifetime_too_short": str(self.lifetime_too_short) } )
+        warn_dict.update ( { "lifetime_threshold": str(self.lifetime_threshold) } )
+        warn_dict.update ( { "missed_reactions": str(self.missed_reactions) } )
+        warn_dict.update ( { "missed_reaction_threshold": str(self.missed_reaction_threshold) } )
+        warn_dict.update ( { "negative_diffusion_constant": str(self.negative_diffusion_constant) } )
+        warn_dict.update ( { "missing_surface_orientation": str(self.missing_surface_orientation) } )
+        warn_dict.update ( { "negative_reaction_rate": str(self.negative_reaction_rate) } )
+        warn_dict.update ( { "useless_volume_orientation": str(self.useless_volume_orientation) } )
+        dm_dict.update ( { "warnings": warn_dict } )
+
         return dm_dict
 
     def build_properties_from_data_model ( self, context, dm_dict ):
@@ -607,6 +639,20 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         self.accurate_3d_reactions = dm_dict["accurate_3d_reactions"]
         self.center_molecules_grid = dm_dict["center_molecules_on_grid"]
 
+        self.all_notifications = dm_dict['notifications']['all_notifications']
+        self.diffusion_constant_report = dm_dict['notifications']['diffusion_constant_report']
+        self.file_output_report = dm_dict['notifications']['file_output_report']
+        self.final_summary = dm_dict['notifications']['final_summary']
+        self.iteration_report = dm_dict['notifications']['iteration_report']
+        self.partition_location_report = dm_dict['notifications']['partition_location_report']
+        self.probability_report = dm_dict['notifications']['probability_report']
+        self.probability_report_threshold = float(dm_dict['notifications']['probability_report_threshold'])
+        self.varying_probability_report = dm_dict['notifications']['varying_probability_report']
+        self.progress_report = dm_dict['notifications']['progress_report']
+        self.release_event_report = dm_dict['notifications']['release_event_report']
+        self.molecule_collision_report = dm_dict['notifications']['molecule_collision_report']
+
+        ##notify_dict.update ( { "box_triangulation_report": False } )
 
 
     accurate_3d_reactions = BoolProperty(
@@ -837,6 +883,22 @@ class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
         name="Z Step", default=0.02, precision=3,
         description="The distance between partitions on the z-axis",
         update=cellblender_operators.check_z_partition_step)
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Partitions building Data Model" )
+        dm_dict = {}
+        dm_dict.update ( { "include": self.include==True } )
+        dm_dict.update ( { "recursion_flag": self.recursion_flag==True } )
+        dm_dict.update ( { "x_start": str(self.x_start) } )
+        dm_dict.update ( { "x_end":   str(self.x_end) } )
+        dm_dict.update ( { "x_step":  str(self.x_step) } )
+        dm_dict.update ( { "y_start": str(self.y_start) } )
+        dm_dict.update ( { "y_end":   str(self.y_end) } )
+        dm_dict.update ( { "y_step":  str(self.y_step) } )
+        dm_dict.update ( { "x_start": str(self.z_start) } )
+        dm_dict.update ( { "z_end":   str(self.z_end) } )
+        dm_dict.update ( { "z_step":  str(self.z_step) } )
+        return dm_dict
 
 
 ####################### DB: added for imported parameters from BNG, SBML or other models###############################
@@ -1164,7 +1226,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellMoleculeGlyphsPanelProperty, name="Molecule Shapes")
     scratch_settings = PointerProperty(
         type=MCellScratchPanelProperty, name="CellBlender Scratch Settings")
-    
+
 
     def build_data_model_from_properties ( self, context ):
         print ( "Constructing a data_model dictionary from current properties" )
@@ -1175,6 +1237,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             dm.update ( { "api_version": 0 } )
         dm.update ( { "parameter_system": self.parameter_system.build_data_model_from_properties(context) } )
         dm.update ( { "initialization": self.initialization.build_data_model_from_properties(context) } )
+        dm['initialization'].update ( { "partitions": self.partitions.build_data_model_from_properties(context) } )
         dm.update ( { "molecules": self.molecules.build_data_model_from_properties(context) } )
         dm.update ( { "reactions": self.reactions.build_data_model_from_properties(context) } )
         dm.update ( { "release_sites": self.release_sites.build_data_model_from_properties(context) } )
@@ -1200,4 +1263,4 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     def draw_uninitialized ( self, layout ):
         row = layout.row()
         row.operator("mcell.init_cellblender", text="Initialize CellBlender")
-        
+

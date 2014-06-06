@@ -117,7 +117,8 @@ class ExportDataModel(bpy.types.Operator, ExportHelper):
 
     def execute(self, context):
         print ( "Saving CellBlender model to file: " + self.filepath )
-        dm = context.scene.mcell.build_data_model_from_properties ( context )
+        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context )
+        dm = { 'mcell': mcell_dm }
         f = open ( self.filepath, 'w' )
         f.write ( pickle_data_model(dm) )
         f.close()
@@ -142,7 +143,7 @@ class ImportDataModel(bpy.types.Operator, ExportHelper):
 
         dm = unpickle_data_model ( pickle_string )
         # dump_data_model ( dm )
-        context.scene.mcell.build_properties_from_data_model ( context, dm )
+        context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'] )
 
         print ( "Done loading CellBlender model." )
         return {'FINISHED'}
