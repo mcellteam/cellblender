@@ -101,7 +101,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
     status = StringProperty(name="Status")
 
-    def build_data_model_from_properties ( self ):
+    def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
         r_dict.update ( { "name": r.name } )
@@ -187,7 +187,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         self.location_y.init_ref  ( parameter_system, "Rel_Loc_Type_Y",  user_name="Release Location Y",  user_expr="0", user_units="", user_descr="The center of the release site's Y coordinate" )
         self.location_z.init_ref  ( parameter_system, "Rel_Loc_Type_Z",  user_name="Release Location Z",  user_expr="0", user_units="", user_descr="The center of the release site's Z coordinate" )
 
-    def build_data_model_from_properties ( self ):
+    def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
         r_dict.update ( { "name": r.name } )
@@ -229,7 +229,7 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
         self.train_interval.init_ref   ( parameter_system, "Tr_Int_Type",    user_name="Train Interval",        user_expr="",      user_units="s", user_descr="A new train happens every interval.\nDefault is no new trains." )
         self.number_of_trains.init_ref ( parameter_system, "NTrains_Type",   user_name="Number of Trains",      user_expr="1",     user_units="",  user_descr="Repeat the release process this number of times.\nDefault is one train.", user_int=True )
 
-    def build_data_model_from_properties ( self ):
+    def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
         r_dict.update ( { "name": r.name } )
@@ -283,7 +283,7 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.update_clamp_value)
     status = StringProperty(name="Status")
 
-    def build_data_model_from_properties ( self ):
+    def build_data_model_from_properties ( self, context ):
         sc = self
         sc_dict = {}
         sc_dict.update ( { "name": sc.name } )
@@ -313,7 +313,7 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
         sc_dm.update ( { "name": self.name } )
         sc_list = []
         for sc in self.surf_class_props_list:
-            sc_list = sc_list + [ sc.build_data_model_from_properties() ]
+            sc_list = sc_list + [ sc.build_data_model_from_properties(context) ]
         sc_dm.update ( { "surface_class_list": sc_list } )
         return sc_dm
 
@@ -340,6 +340,15 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
                     "assigned to it.",
         update=cellblender_operators.check_mod_surf_regions)
     status = StringProperty(name="Status")
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Surface Region building Data Model" )
+        sr_dm = {}
+        sr_dm.update ( { "name": self.name } )
+        sr_dm.update ( { "surf_class_name": self.surf_class_name } )
+        sr_dm.update ( { "object_name": self.object_name } )
+        sr_dm.update ( { "region_name": self.region_name } )
+        return sr_dm
 
 
 #Panel Properties:
@@ -654,6 +663,19 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
         ##notify_dict.update ( { "box_triangulation_report": False } )
 
+        self.all_warnings = dm_dict['warnings']['all_warnings']
+        self.degenerate_polygons = dm_dict['warnings']['degenerate_polygons']
+        self.high_reaction_probability = dm_dict['warnings']['high_reaction_probability']
+        self.high_probability_threshold = float(dm_dict['warnings']['high_probability_threshold'])
+        self.lifetime_too_short = dm_dict['warnings']['lifetime_too_short']
+        self.lifetime_threshold = float(dm_dict['warnings']['lifetime_threshold'])
+        self.missed_reactions = dm_dict['warnings']['missed_reactions']
+        self.missed_reaction_threshold = float(dm_dict['warnings']['missed_reaction_threshold'])
+        self.negative_diffusion_constant = dm_dict['warnings']['negative_diffusion_constant']
+        self.missing_surface_orientation = dm_dict['warnings']['missing_surface_orientation']
+        self.negative_reaction_rate = dm_dict['warnings']['negative_reaction_rate']
+        self.useless_volume_orientation = dm_dict['warnings']['useless_volume_orientation']
+
 
     accurate_3d_reactions = BoolProperty(
         name="Accurate 3D Reaction",
@@ -932,7 +954,7 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
         react_dm = {}
         react_list = []
         for r in self.reaction_list:
-            react_list = react_list + [ r.build_data_model_from_properties() ]
+            react_list = react_list + [ r.build_data_model_from_properties(context) ]
         react_dm.update ( { "reaction_list": react_list } )
         return react_dm
 
@@ -960,6 +982,15 @@ class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
     active_mod_surf_regions_index = IntProperty(
         name="Active Modify Surface Region Index", default=0)
 
+    def build_data_model_from_properties ( self, context ):
+        print ( "Mod Surface Regions List building Data Model" )
+        sr_dm = {}
+        sr_list = []
+        for sr in self.mod_surf_regions_list:
+            sr_list = sr_list + [ sr.build_data_model_from_properties(context) ]
+        sr_dm.update ( { "modify_surface_regions_list": sr_list } )
+        return sr_dm
+
 
 class MCellReleasePatternPanelProperty(bpy.types.PropertyGroup):
     release_pattern_list = CollectionProperty(
@@ -975,7 +1006,7 @@ class MCellReleasePatternPanelProperty(bpy.types.PropertyGroup):
         rel_pat_dm = {}
         rel_pat_list = []
         for r in self.release_pattern_list:
-            rel_pat_list = rel_pat_list + [ r.build_data_model_from_properties() ]
+            rel_pat_list = rel_pat_list + [ r.build_data_model_from_properties(context) ]
         rel_pat_dm.update ( { "release_pattern_list": rel_pat_list } )
         return rel_pat_dm
 
@@ -992,7 +1023,7 @@ class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
         rel_site_dm = {}
         rel_site_list = []
         for r in self.mol_release_list:
-            rel_site_list = rel_site_list + [ r.build_data_model_from_properties() ]
+            rel_site_list = rel_site_list + [ r.build_data_model_from_properties(context) ]
         rel_site_dm.update ( { "release_site_list": rel_site_list } )
         return rel_site_dm
 
@@ -1003,11 +1034,26 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
         name="Object Name", update=cellblender_operators.check_model_object)
     status = StringProperty(name="Status")
 
+    def build_data_model_from_properties ( self, context ):
+        print ( "Model Object building Data Model" )
+        mo_dm = {}
+        mo_dm.update ( { "name": self.name } )
+        return mo_dm
+
 
 class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
     object_list = CollectionProperty(
         type=MCellModelObjectsProperty, name="Object List")
     active_obj_index = IntProperty(name="Active Object Index", default=0)
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Model Objects List building Data Model" )
+        mo_dm = {}
+        mo_list = []
+        for mo in self.object_list:
+            mo_list = mo_list + [ mo.build_data_model_from_properties(context) ]
+        mo_dm.update ( { "model_object_list": mo_list } )
+        return mo_dm
 
 
 class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
@@ -1243,6 +1289,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm.update ( { "release_sites": self.release_sites.build_data_model_from_properties(context) } )
         dm.update ( { "release_patterns": self.release_patterns.build_data_model_from_properties(context) } )
         dm.update ( { "surface_classes": self.surface_classes.build_data_model_from_properties(context) } )
+        dm.update ( { "modify_surface_regions": self.mod_surf_regions.build_data_model_from_properties(context) } )
+        dm.update ( { "model_objects": self.model_objects.build_data_model_from_properties(context) } )
         print ( "Not fully implemented yet!!!!" )
         return dm
 
