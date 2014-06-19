@@ -1601,9 +1601,9 @@ class MCELL_OT_select_viz_data(bpy.types.Operator):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
-
+"""
 def plot_rxns(plot_command):
-    """ Plot a file """
+    # Plot a file
     mcell = bpy.context.scene.mcell
     # Force the project directory to be where the .blend file lives
     project_dir = os.path.dirname(bpy.data.filepath)
@@ -1624,7 +1624,7 @@ class MCELL_OT_plot_rxn_output_command(bpy.types.Operator):
         print("Plotting with cmd=", mcell.reactions.plot_command)
         plot_rxns(mcell.reactions.plot_command)
         return {'FINISHED'}
-
+"""
 
 class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
     bl_idname = "mcell.plot_rxn_output_generic"

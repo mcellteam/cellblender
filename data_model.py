@@ -78,24 +78,27 @@ def code_api_version():
 
 
 data_model_depth = 0
-def dump_data_model ( dm ):
+def dump_data_model ( name, dm ):
     global data_model_depth
-    data_model_depth += 1
-    if type(dm) == type({'a':1}): # dm is a dictionary
-        for k,v in dm.items():
-            print ( str(data_model_depth*"  ") + "Key = " + str(k) )
-            dump_data_model ( v )
-    elif type(dm) == type(['a',1]): # dm is a list
+    if type(dm) == type({'a':1}):  #dm is a dictionary
+        print ( str(data_model_depth*"  ") + name + " {}" )
+        data_model_depth += 1
+        for k,v in sorted(dm.items()):
+            dump_data_model ( k, v )
+        data_model_depth += -1
+    elif type(dm) == type(['a',1]):  #dm is a list
+        print ( str(data_model_depth*"  ") + name + " []" )
+        data_model_depth += 1
         i = 0
         for v in dm:
-            print ( str(data_model_depth*"  ") + "Entry["+str(i)+"]" )
-            dump_data_model ( v )
+            k = name + "["+str(i)+"]"
+            dump_data_model ( k, v )
             i += 1
-    elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')): # dm is a string
-        print ( str(data_model_depth*"  ") + "\"" + str(dm) + "\"" )
-    else: # dm is anything else
-        print ( str(data_model_depth*"  ") + str(dm) )
-    data_model_depth += -1
+        data_model_depth += -1
+    elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
+        print ( str(data_model_depth*"  ") + name + " = " + "\"" + str(dm) + "\"" )
+    else:
+        print ( str(data_model_depth*"  ") + name + " = " + str(dm) )
 
 
 def pickle_data_model ( dm ):
@@ -104,6 +107,18 @@ def pickle_data_model ( dm ):
 def unpickle_data_model ( dmp ):
     return ( pickle.loads ( dmp.encode('latin1') ) )
 
+
+class PrintDataModel(bpy.types.Operator):
+    '''Print the CellBlender data model to the console'''
+    bl_idname = "cb.print_data_model" 
+    bl_label = "Print Data Model"
+    bl_description = "Print the CellBlender Data Model to the console"
+ 
+    def execute(self, context):
+        print ( "Printing CellBlender Data Model:" )
+        dm = context.scene.mcell.build_data_model_from_properties ( context )
+        dump_data_model("Data Model", dm)
+        return {'FINISHED'}
 
 
 class ExportDataModel(bpy.types.Operator, ExportHelper):
@@ -216,12 +231,16 @@ def load_post(context):
 
 
 def menu_func_import(self, context):
-    print ( "=== Called menu_func_import ===" )
+    #print ( "=== Called menu_func_import ===" )
     self.layout.operator("cb.import_data_model", text="Import CellBlender Model (text/pickle)")
 
 def menu_func_export(self, context):
-    print ( "=== Called menu_func_export ===" )
+    #print ( "=== Called menu_func_export ===" )
     self.layout.operator("cb.export_data_model", text="Export CellBlender Model (text/pickle)")
+
+def menu_func_print(self, context):
+    #print ( "=== Called menu_func_print ===" )
+    self.layout.operator("cb.print_data_model", text="Print CellBlender Model (text)")
 
 
 # We use per module class registration/unregistration

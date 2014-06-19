@@ -237,10 +237,10 @@ class MCELL_PT_run_simulation(bpy.types.Panel):
                 row.prop(mcell.run_simulation, "log_file")
                 row = layout.row()
                 row.prop(mcell.run_simulation, "error_file")
+                row = layout.row()
+                row.prop(mcell.export_project, "export_format")
 
                 if mcell.cellblender_preferences.decouple_export_run:
-                    row = layout.row()
-                    row.prop(mcell.export_project, "export_format")
                     row = layout.row()
                     row.operator(
                         "mcell.export_project", text="Export CellBlender Project",

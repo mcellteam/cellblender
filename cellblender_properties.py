@@ -198,8 +198,8 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         r_dict.update ( { "location_x": r.location_x.get_expr() } )
         r_dict.update ( { "location_y": r.location_y.get_expr() } )
         r_dict.update ( { "location_z": r.location_z.get_expr() } )
-        r_dict.update ( { "diameter": r.diameter.get_expr() } )
-        r_dict.update ( { "probability": r.probability.get_expr() } )
+        r_dict.update ( { "site_diameter": r.diameter.get_expr() } )
+        r_dict.update ( { "release_probability": r.probability.get_expr() } )
         r_dict.update ( { "quantity_type": str(r.quantity_type) } )
         r_dict.update ( { "quantity": r.quantity.get_expr() } )
         r_dict.update ( { "stddev": r.stddev.get_expr() } )
@@ -947,7 +947,7 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
     active_rxn_index = IntProperty(name="Active Reaction Index", default=0)
     reaction_name_list = CollectionProperty(
         type=MCellStringProperty, name="Reaction Name List")
-    plot_command = StringProperty(name="", default="")      # TODO: This may not be needed ... check on it
+    # plot_command = StringProperty(name="", default="")      # TODO: This may not be needed ... check on it
 
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction List building Data Model" )
@@ -1074,6 +1074,16 @@ class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
         description="Visualize all molecules",
         default=False)
 
+    def build_data_model_from_properties ( self, context ):
+        print ( "Viz Output building Data Model" )
+        vo_dm = {}
+        vo_dm.update ( { "all_iterations":  self.all_iterations } )
+        vo_dm.update ( { "start":  str(self.start) } )
+        vo_dm.update ( { "end":  str(self.end) } )
+        vo_dm.update ( { "step":  str(self.step) } )
+        vo_dm.update ( { "export_all":  self.export_all } )
+        return vo_dm
+
 
 class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     name = StringProperty(
@@ -1106,9 +1116,20 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         default='Molecule',
         description="Select between counting a reaction or molecule.",
         update=cellblender_operators.check_rxn_output)
-    plot_command = StringProperty(
-        name="Command")  # , update=cellblender_operators.check_rxn_output)
+    # plot_command = StringProperty(name="Command")  # , update=cellblender_operators.check_rxn_output)
     status = StringProperty(name="Status")
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Reaction Output building Data Model" )
+        ro_dm = {}
+        ro_dm.update ( { "name":  self.name } )
+        ro_dm.update ( { "molecule_name":  self.molecule_name } )
+        ro_dm.update ( { "reaction_name":  self.reaction_name } )
+        ro_dm.update ( { "object_name":  self.object_name } )
+        ro_dm.update ( { "region_name":  self.region_name } )
+        ro_dm.update ( { "count_location":  self.count_location } )
+        ro_dm.update ( { "rxn_or_mol":  self.rxn_or_mol } )
+        return ro_dm
 
 
 import cellblender
@@ -1160,6 +1181,19 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
         name="Molecule Colors",
         description="Use Molecule Colors for line colors.",
         default=False)
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Reaction Output Panel building Data Model" )
+        ro_dm = {}
+        ro_dm.update ( { "plot_layout": self.plot_layout } )
+        ro_dm.update ( { "plot_legend": self.plot_legend } )
+        ro_dm.update ( { "combine_seeds": self.combine_seeds } )
+        ro_dm.update ( { "mol_colors": self.mol_colors } )
+        ro_list = []
+        for ro in self.rxn_output_list:
+            ro_list = ro_list + [ ro.build_data_model_from_properties(context) ]
+        ro_dm.update ( { "reaction_output_list": ro_list } )
+        return ro_dm
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
@@ -1284,14 +1318,15 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm.update ( { "parameter_system": self.parameter_system.build_data_model_from_properties(context) } )
         dm.update ( { "initialization": self.initialization.build_data_model_from_properties(context) } )
         dm['initialization'].update ( { "partitions": self.partitions.build_data_model_from_properties(context) } )
-        dm.update ( { "molecules": self.molecules.build_data_model_from_properties(context) } )
-        dm.update ( { "reactions": self.reactions.build_data_model_from_properties(context) } )
+        dm.update ( { "define_molecules": self.molecules.build_data_model_from_properties(context) } )
+        dm.update ( { "define_reactions": self.reactions.build_data_model_from_properties(context) } )
         dm.update ( { "release_sites": self.release_sites.build_data_model_from_properties(context) } )
-        dm.update ( { "release_patterns": self.release_patterns.build_data_model_from_properties(context) } )
-        dm.update ( { "surface_classes": self.surface_classes.build_data_model_from_properties(context) } )
+        dm.update ( { "define_release_patterns": self.release_patterns.build_data_model_from_properties(context) } )
+        dm.update ( { "define_surface_classes": self.surface_classes.build_data_model_from_properties(context) } )
         dm.update ( { "modify_surface_regions": self.mod_surf_regions.build_data_model_from_properties(context) } )
         dm.update ( { "model_objects": self.model_objects.build_data_model_from_properties(context) } )
-        print ( "Not fully implemented yet!!!!" )
+        dm.update ( { "viz_output": self.viz_output.build_data_model_from_properties(context) } )
+        dm.update ( { "reaction_data_output": self.rxn_output.build_data_model_from_properties(context) } )
         return dm
 
     def build_properties_from_data_model ( self, context, dm ):
