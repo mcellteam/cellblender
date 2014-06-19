@@ -1058,8 +1058,11 @@ def save_rxn_output_temp_mdl(context, out_file, rxn_output_list):
     
     for rxn_output in rxn_output_list:
         outputStr = rxn_output.molecule_name
-        outputStr = '{%s} =>  "./react_data/seed_" & seed & \"/%s.World.dat\"\n' % (outputStr,rxn_output.name)
-        out_file.write(outputStr)
+        if outputStr not in ['',None]:
+            outputStr = '{%s} =>  "./react_data/seed_" & seed & \"/%s.World.dat\"\n' % (outputStr,rxn_output.name)
+            out_file.write(outputStr)
+        else:
+            print('Found invalid reaction output {0}'.format(outputStr))
     out_file.write("}\n\n")
 
 
