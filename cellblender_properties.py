@@ -1488,6 +1488,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
         print ( "Overwriting properites based on data in the data model dictionary" )
+        self.init_properties()
         self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"] )
         self.initialization.build_properties_from_data_model ( context, dm["initialization"] )
         self.partitions.build_properties_from_data_model ( context, dm["initialization"]["partitions"] )
