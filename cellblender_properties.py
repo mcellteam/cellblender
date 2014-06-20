@@ -116,6 +116,17 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         r_dict.update ( { "bkwd_rate": r.bkwd_rate.get_expr() } )
         return r_dict
 
+    def build_properties_from_data_model ( self, context, dm_dict ):
+        self.name = dm_dict["name"]
+        self.rxn_name = dm_dict["rxn_name"]
+        self.reactants = dm_dict["reactants"]
+        self.products = dm_dict["products"]
+        self.rxn_type = dm_dict["rxn_type"]
+        self.variable_rate_switch = dm_dict["variable_rate_switch"]
+        self.variable_rate = dm_dict["variable_rate"]
+        self.variable_rate_valid = dm_dict["variable_rate_valid"]
+        self.fwd_rate.set_expr ( dm_dict["fwd_rate"] )
+        self.bkwd_rate.set_expr ( dm_dict["bkwd_rate"] )
 
 
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
@@ -206,6 +217,22 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         r_dict.update ( { "pattern": str(r.pattern) } )
         return r_dict
 
+    def build_properties_from_data_model ( self, context, dm_dict ):
+        self.name = dm_dict["name"]
+        self.molecule = dm_dict["molecule"]
+        self.shape = dm_dict["shape"]
+        self.orient = dm_dict["orient"]
+        self.object_expr = dm_dict["object_expr"]
+        self.location_x.set_expr ( dm_dict["location_x"] )
+        self.location_y.set_expr ( dm_dict["location_y"] )
+        self.location_z.set_expr ( dm_dict["location_z"] )
+        self.diameter.set_expr ( dm_dict["site_diameter"] )
+        self.probability.set_expr ( dm_dict["release_probability"] )
+        self.quantity_type = dm_dict["quantity_type"]
+        self.quantity.set_expr ( dm_dict["quantity"] )
+        self.stddev.set_expr ( dm_dict["stddev"] )
+        self.pattern = dm_dict["pattern"]
+
 
 
 class MCellReleasePatternProperty(bpy.types.PropertyGroup):
@@ -239,6 +266,14 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
         r_dict.update ( { "train_interval": r.train_interval.get_expr() } )
         r_dict.update ( { "number_of_trains": r.number_of_trains.get_expr() } )
         return r_dict
+
+    def build_properties_from_data_model ( self, context, dm_dict ):
+        self.name = dm_dict["name"]
+        self.delay.set_expr ( dm_dict["delay"] )
+        self.release_interval.set_expr ( dm_dict["release_interval"] )
+        self.train_duration.set_expr ( dm_dict["train_duration"] )
+        self.train_interval.set_expr ( dm_dict["train_interval"] )
+        self.number_of_trains.set_expr ( dm_dict["number_of_trains"] )
 
 
 
@@ -293,6 +328,16 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         sc_dict.update ( { "clamp_value": str(sc.clamp_value_str) } )
         return sc_dict
 
+    def build_properties_from_data_model ( self, context, dm ):
+        self.name = dm["name"]
+        self.molecule = dm["molecule"]
+        self.surf_class_orient = dm["surf_class_orient"]
+        self.surf_class_type = dm["surf_class_type"]
+        self.clamp_value_str = dm["clamp_value"]
+        self.clamp_value = float(self.clamp_value_str)
+
+
+
 
 class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
     """ Stores the surface class name and a list of its properties. """
@@ -314,9 +359,19 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
         sc_list = []
         for sc in self.surf_class_props_list:
             sc_list = sc_list + [ sc.build_data_model_from_properties(context) ]
-        sc_dm.update ( { "surface_class_list": sc_list } )
+        sc_dm.update ( { "surface_class_prop_list": sc_list } )
         return sc_dm
 
+    def build_properties_from_data_model ( self, context, dm ):
+        self.name = dm["name"]
+        while len(self.surf_class_props_list) > 0:
+            self.surf_class_props_list.remove(0)
+        for sc in dm["surface_class_prop_list"]:
+            self.surf_class_props_list.add()
+            self.active_surf_class_props_index = len(self.surf_class_props_list)-1
+            scp = self.surf_class_props_list[self.active_surf_class_props_index]
+            # scp.init_properties(context.scene.mcell.parameter_system)
+            scp.build_properties_from_data_model ( context, sc )
 
 
 
@@ -349,6 +404,13 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
         sr_dm.update ( { "object_name": self.object_name } )
         sr_dm.update ( { "region_name": self.region_name } )
         return sr_dm
+
+    def build_properties_from_data_model ( self, context, dm ):
+        self.name = dm["name"]
+        self.surf_class_name = dm["surf_class_name"]
+        self.object_name = dm["object_name"]
+        self.region_name = dm["region_name"]
+
 
 
 #Panel Properties:
@@ -922,23 +984,18 @@ class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
         dm_dict.update ( { "z_step":  str(self.z_step) } )
         return dm_dict
 
-
-####################### DB: added for imported parameters from BNG, SBML or other models###############################
-#class MCellParameterProperty(bpy.types.PropertyGroup):
-#    name = StringProperty(name="Parameter Name", default="Parameter")
-#    value = StringProperty(name="Parameter Value", default="0")
-#    unit = StringProperty(name="Parameter Unit", default="",
-#        description="Forward Rate Units: sec^-1 (unimolecular),"
-#                    " M^-1*sec^-1 (bimolecular)")
-#    type = StringProperty(name="Parameter type", default="", description="")		    
-#    status = StringProperty(name="Status")
-#
-#class MCellParametersPanelProperty(bpy.types.PropertyGroup):
-#    parameter_list = CollectionProperty(
-#        type=MCellParameterProperty, name="Parameter List")
-#    active_par_index = IntProperty(name="Active Parameter Index", default=0)
-#    plot_command = StringProperty(name="", default="")
-##########################################################################################################################
+    def build_properties_from_data_model ( self, context, dm ):
+        self.include = dm["include"]
+        self.recursion_flag = dm["recursion_flag"]
+        self.x_start = float(dm["x_start"])
+        self.x_end = float(dm["x_end"])
+        self.x_step = float(dm["x_step"])
+        self.y_start = float(dm["y_start"])
+        self.y_end = float(dm["y_end"])
+        self.y_step = float(dm["y_step"])
+        self.z_start = float(dm["x_start"])
+        self.z_end = float(dm["z_end"])
+        self.z_step = float(dm["z_step"])
 
 
 class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
@@ -958,6 +1015,16 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
         react_dm.update ( { "reaction_list": react_list } )
         return react_dm
 
+    def build_properties_from_data_model ( self, context, dm ):
+        while len(self.reaction_list) > 0:
+            self.reaction_list.remove(0)
+        for r in dm["reaction_list"]:
+            self.reaction_list.add()
+            self.active_rxn_index = len(self.reaction_list)-1
+            rxn = self.reaction_list[self.active_rxn_index]
+            rxn.init_properties(context.scene.mcell.parameter_system)
+            rxn.build_properties_from_data_model ( context, r )
+
 
 class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
     surf_class_list = CollectionProperty(
@@ -972,8 +1039,18 @@ class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
         sc_list = []
         for sc in self.surf_class_list:
             sc_list = sc_list + [ sc.build_data_model_from_properties(context) ]
-        sc_dm.update ( { "surface_classes_list": sc_list } )
+        sc_dm.update ( { "surface_class_list": sc_list } )
         return sc_dm
+
+    def build_properties_from_data_model ( self, context, dm ):
+        while len(self.surf_class_list) > 0:
+            self.surf_class_list.remove(0)
+        for s in dm["surface_class_list"]:
+            self.surf_class_list.add()
+            self.active_surf_class_index = len(self.surf_class_list)-1
+            sc = self.surf_class_list[self.active_surf_class_index]
+            # sc.init_properties(context.scene.mcell.parameter_system)
+            sc.build_properties_from_data_model ( context, s )
 
 
 class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
@@ -990,6 +1067,17 @@ class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
             sr_list = sr_list + [ sr.build_data_model_from_properties(context) ]
         sr_dm.update ( { "modify_surface_regions_list": sr_list } )
         return sr_dm
+
+    def build_properties_from_data_model ( self, context, dm ):
+        while len(self.mod_surf_regions_list) > 0:
+            self.mod_surf_regions_list.remove(0)
+        for s in dm["modify_surface_regions_list"]:
+            self.mod_surf_regions_list.add()
+            self.active_mod_surf_regions_index = len(self.mod_surf_regions_list)-1
+            sr = self.mod_surf_regions_list[self.active_mod_surf_regions_index]
+            # sr.init_properties(context.scene.mcell.parameter_system)
+            sr.build_properties_from_data_model ( context, s )
+
 
 
 class MCellReleasePatternPanelProperty(bpy.types.PropertyGroup):
@@ -1010,6 +1098,16 @@ class MCellReleasePatternPanelProperty(bpy.types.PropertyGroup):
         rel_pat_dm.update ( { "release_pattern_list": rel_pat_list } )
         return rel_pat_dm
 
+    def build_properties_from_data_model ( self, context, dm ):
+        while len(self.release_pattern_list) > 0:
+            self.release_pattern_list.remove(0)
+        for r in dm["release_pattern_list"]:
+            self.release_pattern_list.add()
+            self.active_release_pattern_index = len(self.release_pattern_list)-1
+            rp = self.release_pattern_list[self.active_release_pattern_index]
+            rp.init_properties(context.scene.mcell.parameter_system)
+            rp.build_properties_from_data_model ( context, r )
+
 
 
 
@@ -1027,6 +1125,16 @@ class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
         rel_site_dm.update ( { "release_site_list": rel_site_list } )
         return rel_site_dm
 
+    def build_properties_from_data_model ( self, context, dm ):
+        while len(self.mol_release_list) > 0:
+            self.mol_release_list.remove(0)
+        for r in dm["release_site_list"]:
+            self.mol_release_list.add()
+            self.active_release_index = len(self.mol_release_list)-1
+            rs = self.mol_release_list[self.active_release_index]
+            rs.init_properties(context.scene.mcell.parameter_system)
+            rs.build_properties_from_data_model ( context, r )
+
 
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
@@ -1039,6 +1147,10 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
         mo_dm = {}
         mo_dm.update ( { "name": self.name } )
         return mo_dm
+
+    def build_properties_from_data_model ( self, context, dm ):
+        print ( "Assigning Model Object " + dm['name'] )
+        self.name = dm["name"]
 
 
 class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
@@ -1054,6 +1166,16 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
             mo_list = mo_list + [ mo.build_data_model_from_properties(context) ]
         mo_dm.update ( { "model_object_list": mo_list } )
         return mo_dm
+
+    def build_properties_from_data_model ( self, context, dm ):
+        while len(self.object_list) > 0:
+            self.object_list.remove(0)
+        for m in dm["model_object_list"]:
+            self.object_list.add()
+            self.active_obj_index = len(self.object_list)-1
+            mo = self.object_list[self.active_obj_index]
+            #mo.init_properties(context.scene.mcell.parameter_system)
+            mo.build_properties_from_data_model ( context, m )
 
 
 class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
@@ -1083,6 +1205,13 @@ class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
         vo_dm.update ( { "step":  str(self.step) } )
         vo_dm.update ( { "export_all":  self.export_all } )
         return vo_dm
+
+    def build_properties_from_data_model ( self, context, dm ):
+        self.all_iterations = dm["all_iterations"]
+        self.start = int(dm["start"])
+        self.end = int(dm["end"])
+        self.step = int(dm["step"])
+        self.export_all = dm["export_all"]
 
 
 class MCellReactionOutputProperty(bpy.types.PropertyGroup):
@@ -1131,6 +1260,16 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         ro_dm.update ( { "rxn_or_mol":  self.rxn_or_mol } )
         return ro_dm
 
+    def build_properties_from_data_model ( self, context, dm ):
+        self.name = dm["name"]
+        self.molecule_name = dm["molecule_name"]
+        self.reaction_name = dm["reaction_name"]
+        self.object_name = dm["object_name"]
+        self.region_name = dm["region_name"]
+        self.count_location = dm["count_location"]
+        self.rxn_or_mol = dm["rxn_or_mol"]
+
+
 
 import cellblender
 
@@ -1166,7 +1305,7 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
         ('2', "Legend in Upper Left", ""),
         ('3', "Legend in Lower Left", ""),
         ('4', "Legend in Lower Right", ""),
-        # ('5', "Legend on Right", ""), This appears to duplicate option 7
+        # ('5', "Legend on Right", ""), # This appears to duplicate option 7
         ('6', "Legend in Center Left", ""),
         ('7', "Legend in Center Right", ""),
         ('8', "Legend in Lower Center", ""),
@@ -1194,6 +1333,21 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
             ro_list = ro_list + [ ro.build_data_model_from_properties(context) ]
         ro_dm.update ( { "reaction_output_list": ro_list } )
         return ro_dm
+
+    def build_properties_from_data_model ( self, context, dm ):
+        self.plot_layout = dm["plot_layout"]
+        self.plot_legend = dm["plot_legend"]
+        self.combine_seeds = dm["combine_seeds"]
+        self.mol_colors = dm["mol_colors"]
+        while len(self.rxn_output_list) > 0:
+            self.rxn_output_list.remove(0)
+        for r in dm["reaction_output_list"]:
+            self.rxn_output_list.add()
+            self.active_rxn_output_index = len(self.rxn_output_list)-1
+            ro = self.rxn_output_list[self.active_rxn_output_index]
+            # ro.init_properties(context.scene.mcell.parameter_system)
+            ro.build_properties_from_data_model ( context, r )
+
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
@@ -1257,8 +1411,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         name="Initialized", default=False)
     cellblender_version = StringProperty(
         name="CellBlender Version", default="0.1.54")
-    cellblender_source_hash = StringProperty(
-        name="CellBlender Source Hash", default="unknown")
+    #cellblender_source_hash = StringProperty(
+    #    name="CellBlender Source Hash", default="unknown")
     cellblender_preferences = PointerProperty(
         type=CellBlenderPreferencesPanelProperty,
         name="CellBlender Preferences")
@@ -1311,6 +1465,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Constructing a data_model dictionary from current properties" )
         dm = {}
+        dm.update ( { "cellblender_version": self.cellblender_version } )
+        #dm.update ( { "cellblender_source_hash": self.cellblender_source_hash } )
+        dm.update ( { "cellblender_source_sha1": cellblender.cellblender_info["cellblender_source_sha1"] } )
         if 'api_version' in self:
             dm.update ( { "api_version": self['api_version'] } )
         else:
@@ -1331,8 +1488,18 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
         print ( "Overwriting properites based on data in the data model dictionary" )
+        self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"] )
         self.initialization.build_properties_from_data_model ( context, dm["initialization"] )
-        self.molecules.build_properties_from_data_model ( context, dm["molecules"] )
+        self.partitions.build_properties_from_data_model ( context, dm["initialization"]["partitions"] )
+        self.molecules.build_properties_from_data_model ( context, dm["define_molecules"] )
+        self.reactions.build_properties_from_data_model ( context, dm["define_reactions"] )
+        self.release_sites.build_properties_from_data_model ( context, dm["release_sites"] )
+        self.release_patterns.build_properties_from_data_model ( context, dm["define_release_patterns"] )
+        self.surface_classes.build_properties_from_data_model ( context, dm["define_surface_classes"] )
+        self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
+        self.model_objects.build_properties_from_data_model ( context, dm["model_objects"] )
+        self.viz_output.build_properties_from_data_model ( context, dm["viz_output"] )
+        self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
         print ( "Not fully implemented yet!!!!" )
 
 

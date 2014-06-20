@@ -26,7 +26,6 @@ a CellBlender project which should be compatible across CellBlender versions.
 
 """
   CONVERSION NOTES:
-    Does the "MCellReactionsPanelProperty" need a "plot_command" field?
     How do our CellBlender reaction fields/controls handle catalytic reactions?
     Would it be better to allow a full reaction expression rather than reactants/products?
     Should we have an option for using full reaction syntax?
@@ -53,8 +52,6 @@ a CellBlender project which should be compatible across CellBlender versions.
 
       Why does MCellReleasePatternPanelProperty contain:
          release_pattern_rxn_name_list?
-
-
        
 """
 
@@ -116,8 +113,8 @@ class PrintDataModel(bpy.types.Operator):
  
     def execute(self, context):
         print ( "Printing CellBlender Data Model:" )
-        dm = context.scene.mcell.build_data_model_from_properties ( context )
-        dump_data_model("Data Model", dm)
+        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context )
+        dump_data_model ( "Data Model", {"mcell": mcell_dm} )
         return {'FINISHED'}
 
 
@@ -157,7 +154,6 @@ class ImportDataModel(bpy.types.Operator, ExportHelper):
         f.close()
 
         dm = unpickle_data_model ( pickle_string )
-        # dump_data_model ( dm )
         context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'] )
 
         print ( "Done loading CellBlender model." )
@@ -176,12 +172,6 @@ def save_pre(context):
     
     if 'mcell' in context.scene:
         dm = context.scene.mcell.build_data_model_from_properties ( context )
-        #print ( "=================== Begin Data Model ===================" )
-        #print ( str(dm) )
-        #print ( "================== Decoded Data Model ==================" )
-        #dump_data_model ( dm )
-        #print ( "=================== End Data Model ===================" )
-        #self['data_model'] = dm
         context.scene.mcell['data_model'] = pickle_data_model(dm)
     
     return
@@ -205,25 +195,18 @@ def load_post(context):
         print ( "Code API = " + str(code_api_version()) + ", File API = " + str(api_version) )
         
         if (api_version <= 0):
+
             # There is no data model so build it from the properties
-
             dm = context.scene.mcell.build_data_model_from_properties ( context )
-            #print ( "=================== Begin Data Model ===================" )
-            #print ( str(dm) )
-            #print ( "================== Decoded Data Model ==================" )
-            #dump_data_model ( dm )
-            #print ( "=================== End Data Model ===================" )
-            #context.scene.mcell['data_model'] = dm
             context.scene.mcell['data_model'] = pickle_data_model(dm)
-        
-        elif (api_version != code_api_version()):
-            # There is a data model in the file so convert it to match current properties
 
+        elif (api_version != code_api_version()):
+
+            # There is a data model in the file so convert it to match current properties
             dm = unpickle_data_model ( context.scene.mcell['data_model'] )
-        
             context.scene.mcell.build_properties_from_data_model ( context, dm )
-            
             context.scene['mcell']['api_version'] = code_api_version()
+
     else:
         print ( "context.scene does not have an 'mcell' key ... no data model to import" )
 

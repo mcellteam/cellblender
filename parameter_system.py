@@ -1774,6 +1774,11 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         if not pp:
             self.update_name_ID_dictionary(new_par)
 
+        if new_units != None:
+            new_par.units = new_units
+        if new_desc != None:
+            new_par.descr = new_desc
+
         new_par.disable_parse = False
 
         return new_par
@@ -1903,6 +1908,18 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             gen_par_list = gen_par_list + [ p.build_data_model_from_properties() ]
         par_sys_dm.update ( { "general_parameters": gen_par_list } )
         return par_sys_dm
+
+
+    @profile('ParameterSystem.build_data_model_from_properties')
+    def build_properties_from_data_model ( self, context, par_sys_dm ):
+        print ( "Parameter System building Properties from Data Model ..." )
+        while len(self.general_parameter_list) > 0:
+            self.general_parameter_list.remove(0)
+        self['gname_to_id_dict'] = {}
+        self.next_gid = 1
+        for p in par_sys_dm['general_parameters']:
+            print ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + p['par_units'] + ") ... " + p['par_description'] )
+            self.add_general_parameter_with_values ( p['par_name'], p['par_expression'], p['par_units'], p['par_description'] )
 
 
 
