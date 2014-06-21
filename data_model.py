@@ -138,6 +138,26 @@ class ExportDataModel(bpy.types.Operator, ExportHelper):
         return {'FINISHED'}
 
 
+class ExportDataModelAll(bpy.types.Operator, ExportHelper):
+    '''Export the CellBlender model including geometry as a Python Pickle in a text file'''
+    bl_idname = "cb.export_data_model_all" 
+    bl_label = "Export Data Model with Geometry"
+    bl_description = "Export CellBlender Data Model and Geometry to a Python Pickle in a file"
+ 
+    filename_ext = ".txt"
+    filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
+
+    def execute(self, context):
+        print ( "Saving CellBlender model and geometry to file: " + self.filepath )
+        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
+        dm = { 'mcell': mcell_dm }
+        f = open ( self.filepath, 'w' )
+        f.write ( pickle_data_model(dm) )
+        f.close()
+        print ( "Done saving CellBlender model." )
+        return {'FINISHED'}
+
+
 class ImportDataModel(bpy.types.Operator, ExportHelper):
     '''Import a CellBlender model from a Python Pickle in a text file'''
     bl_idname = "cb.import_data_model" 
@@ -214,22 +234,21 @@ def load_post(context):
 
 
 def menu_func_import(self, context):
-    #print ( "=== Called menu_func_import ===" )
     self.layout.operator("cb.import_data_model", text="Import CellBlender Model (text/pickle)")
 
 def menu_func_export(self, context):
-    #print ( "=== Called menu_func_export ===" )
     self.layout.operator("cb.export_data_model", text="Export CellBlender Model (text/pickle)")
 
+def menu_func_export_all(self, context):
+    self.layout.operator("cb.export_data_model_all", text="Export CellBlender Model and Geometry (text/pickle)")
+
 def menu_func_print(self, context):
-    #print ( "=== Called menu_func_print ===" )
     self.layout.operator("cb.print_data_model", text="Print CellBlender Model (text)")
 
 
 # We use per module class registration/unregistration
 def register():
     bpy.utils.register_module(__name__)
-    #print ( "=== Appending menu_func_export ===" )
     #bpy.types.INFO_MT_file_export.append(menu_func_export_dm)
 
 def unregister():

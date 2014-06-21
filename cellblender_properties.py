@@ -1167,15 +1167,86 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
         mo_dm.update ( { "model_object_list": mo_list } )
         return mo_dm
 
+    def build_geometry_from_properties ( self, context ):
+        print ( "Model Objects List building Geometry for Data Model" )
+        g_dm = {}
+        g_list = []
+        for object_item in self.object_list:
+        
+            data_object = context.scene.objects[object_item.name]
+
+            if data_object.type == 'MESH':
+            
+                g_obj = {}
+
+                saved_hide_status = data_object.hide
+                data_object.hide = False
+
+                context.scene.objects.active = data_object
+                bpy.ops.object.mode_set(mode='OBJECT')
+
+                g_obj.update ( { "name": data_object.name } )
+                
+                v_list = []
+                mesh = data_object.data
+                matrix = data_object.matrix_world
+                vertices = mesh.vertices
+                for v in vertices:
+                    t_vec = matrix * v.co
+                    v_list = v_list + [ [t_vec.x, t_vec.y, t_vec.z] ]
+                g_obj.update ( { "vertex_list": v_list } )
+
+
+                f_list = []
+                faces = mesh.polygons
+                for f in faces:
+                    f_list = f_list + [ [f.vertices[0], f.vertices[1], f.vertices[2]] ]
+                g_obj.update ( { "element_connections": f_list } )
+
+                regions = data_object.mcell.get_regions_dictionary(data_object)
+                if regions:
+                    r_list = []
+
+                    region_names = [k for k in regions.keys()]
+                    region_names.sort()
+                    for region_name in region_names:
+                        rgn = {}
+                        rgn.update ( { "name": region_name } )
+                        rgn.update ( { "include_elements": regions[region_name] } )
+                        r_list = r_list + [ rgn ]
+                    g_obj.update ( { "define_surface_regions": r_list } )
+
+                # restore proper object visibility state
+                data_object.hide = saved_hide_status
+
+                g_list = g_list + [ g_obj ]
+
+        g_dm.update ( { "object_list": g_list } )
+        return g_dm
+
+
     def build_properties_from_data_model ( self, context, dm ):
+        # Note that model object list is represented in two places:
+        #   context.scene.mcell.model_objects.object_list[] - stores the name
+        #   context.scene.objects[].mcell.include - boolean is true for model objects
+        # This code updates both locations based on the data model
         while len(self.object_list) > 0:
             self.object_list.remove(0)
+        mo_list = []
         for m in dm["model_object_list"]:
+            print ( "Data model contains " + m["name"] )
             self.object_list.add()
             self.active_obj_index = len(self.object_list)-1
             mo = self.object_list[self.active_obj_index]
             #mo.init_properties(context.scene.mcell.parameter_system)
             mo.build_properties_from_data_model ( context, m )
+            mo_list = mo_list + [ m["name"] ]
+        for k,o in context.scene.objects.items():
+            if k in mo_list:
+                o.mcell.include = True
+            else:
+                o.mcell.include = False
+
 
 
 class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
@@ -1462,7 +1533,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellScratchPanelProperty, name="CellBlender Scratch Settings")
 
 
-    def build_data_model_from_properties ( self, context ):
+    def build_data_model_from_properties ( self, context, geometry=False ):
         print ( "Constructing a data_model dictionary from current properties" )
         dm = {}
         dm.update ( { "cellblender_version": self.cellblender_version } )
@@ -1484,6 +1555,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm.update ( { "model_objects": self.model_objects.build_data_model_from_properties(context) } )
         dm.update ( { "viz_output": self.viz_output.build_data_model_from_properties(context) } )
         dm.update ( { "reaction_data_output": self.rxn_output.build_data_model_from_properties(context) } )
+        if geometry:
+            print ( "Adding Geometry to Data Model" )
+            dm.update ( { "geometrical_objects": self.model_objects.build_geometry_from_properties(context) } )
         return dm
 
     def build_properties_from_data_model ( self, context, dm ):

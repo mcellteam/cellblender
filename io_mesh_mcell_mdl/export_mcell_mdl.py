@@ -41,23 +41,24 @@ import bpy
 from cellblender import object_surface_regions
 from cellblender.utils import project_files_path
 
-
-def get_regions(obj):
-    """ Return a dictionary with region names """
-
-    reg_dict = {}
-
-    obj_regs = obj.mcell.regions.region_list
-    for reg in obj_regs:
-        id = str(reg.id)
-        mesh = obj.data
-        #reg_faces = list(cellblender_operators.get_region_faces(mesh,id))
-        reg_faces = list(reg.get_region_faces(mesh))
-
-        reg_faces.sort()
-        reg_dict[reg.name] = reg_faces
-
-    return reg_dict
+# This function was moved to MCellObjectPropertyGroup in object_surface_regions.py by Bob
+# TODO: Delete this commented code ... eventually
+#def get_regions(obj):
+#    """ Return a dictionary with region names """
+#
+#    reg_dict = {}
+#
+#    obj_regs = obj.mcell.regions.region_list
+#    for reg in obj_regs:
+#        id = str(reg.id)
+#        mesh = obj.data
+#        #reg_faces = list(cellblender_operators.get_region_faces(mesh,id))
+#        reg_faces = list(reg.get_region_faces(mesh))
+#
+#        reg_faces.sort()
+#        reg_dict[reg.name] = reg_faces
+#
+#    return reg_dict
 
 
 def save(context, filepath=""):
@@ -811,8 +812,8 @@ def save_surface_classes(context, out_file, surf_class_list):
             surf_class_type = surf_class_props.surf_class_type
             if surf_class_type == 'CLAMP_CONCENTRATION':
                 clamp_value = surf_class_props.clamp_value
-                out_file.write("    %s\n" % surf_class_type)
-                out_file.write("    %s%s = %g\n" % (molecule,
+                out_file.write("    %s" % surf_class_type)
+                out_file.write(   " %s%s = %g\n" % (molecule,
                                                     orient,
                                                     clamp_value))
             else:
@@ -954,7 +955,8 @@ def save_geometry(context, out_file, object_list):
             out_file.write("  }\n")
 
             # write regions
-            regions = get_regions(data_object)
+            # regions = get_regions(data_object)
+            regions = data_object.mcell.get_regions_dictionary(data_object)
             if regions:
                 out_file.write("  DEFINE_SURFACE_REGIONS\n")
                 out_file.write("  {\n")
