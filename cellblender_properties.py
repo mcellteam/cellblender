@@ -1536,6 +1536,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context, geometry=False ):
         print ( "Constructing a data_model dictionary from current properties" )
         dm = {}
+        dm.update ( { "blender_version": [v for v in bpy.app.version] } )
         dm.update ( { "cellblender_version": self.cellblender_version } )
         #dm.update ( { "cellblender_source_hash": self.cellblender_source_hash } )
         dm.update ( { "cellblender_source_sha1": cellblender.cellblender_info["cellblender_source_sha1"] } )
