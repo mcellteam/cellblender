@@ -6,7 +6,7 @@ Created on Mon Jun 17 11:19:37 2013
 """
 
 import platform
-
+import logging
 
 def uuid_workaround():
     # uuid module causes an error messagebox on windows.
@@ -35,7 +35,7 @@ try:
 except ImportError:
     treelib3 = None
     libsbml = None
-except ValueError:
+except (ValueError,SystemError):
     import treelib3
     import libsbml
 #import libsbml3.linux.libsbml as libsbml
@@ -141,6 +141,8 @@ class SBML2JSON:
             elif parameter.isSetConstant():
                 if parameter.getConstant():
                     value = libsbml.formulaToString(ruleDict[parameter.getId()])
+                    while 'exp(' in value:
+                        value = value.replace('exp(','EXP(')
                 else:
                     parsedValue = libsbml.formulaToString(ruleDict[parameter.getId()]).split('+')
                 
@@ -642,14 +644,16 @@ def transform(filePath):
     
 
 def main():
+
+    logging.basicConfig(filename='cellblender.log',level=logging.DEBUG,format='%(asctime)s - %(levelname)s:%(message)s')
     if libsbml == None:
-        print ('Could not find local libsbml installation. Cannot import')
+        logging.error('Could not find local libsbml installation. Cannot import')
         return
-    print('found local libsbml. Starting')
+    logging.info('found local libsbml. Starting')        
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
-		#default='/home/proto/workspace/bionetgen/bng2/Models2/MCell/rec_dim_comp_sbml.xml',type="string",
-		default='/home/proto/Downloads/model.xml',type="string",
+		default='',type="string",
+		#default='/home/proto/Downloads/model.xml',type="string",
         help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
     parser.add_option("-o","--output",dest="output",
 		type="string",
@@ -661,12 +665,12 @@ def main():
         outputFile = nameStr + '.json'
     else:
         outputFile = options.output
-    print(outputFile)
+
     document = reader.readSBMLFromFile(nameStr)
     if document.getModel() == None:
-        print('no model')
+        logging.error('A model with path "{0}" could not be found'.format(nameStr))
         return
-    
+    logging.info('An SBML file was found at {0}.Attempting import'.format(nameStr))
     parser = SBML2JSON(document.getModel())
     parameters,observables =  parser.getParameters()
     #compartments = parser.getRawCompartments()
@@ -682,8 +686,10 @@ def main():
     definition['rel_list'] = release
     definition['obs_list'] = observables
     #definition['comp_list'] = compartments
+
     with open(outputFile,'w') as f:
         json.dump(definition,f,sort_keys=True,indent=1, separators=(',', ': '))
+    logging.info('SBML import intermediate file written to {0}'.format(outputFile))
         
 
 if __name__ == "__main__":
