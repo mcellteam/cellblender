@@ -870,9 +870,12 @@ def save_reactions(context, out_file, rxn_list, filedir):
     out_file.write("DEFINE_REACTIONS\n")
     out_file.write("{\n")
 
-    ps = context.scene.mcell.parameter_system
+    # ps = context.scene.mcell.parameter_system
 
     for rxn_item in rxn_list:
+        rxn_item.write_to_mdl_file ( context, out_file, filedir )
+        
+        """
         out_file.write("  %s " % (rxn_item.name))
 
         if rxn_item.type == 'irreversible':
@@ -901,6 +904,7 @@ def save_reactions(context, out_file, rxn_list, filedir):
             out_file.write(" : %s\n" % (rxn_item.rxn_name))
         else:
             out_file.write("\n")
+        """
 
     out_file.write("}\n\n")
 

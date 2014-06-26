@@ -31,6 +31,7 @@ from . import cellblender_molecules
 from . import parameter_system
 
 # python imports
+import os
 from multiprocessing import cpu_count
 
 
@@ -127,6 +128,59 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         self.variable_rate_valid = dm_dict["variable_rate_valid"]
         self.fwd_rate.set_expr ( dm_dict["fwd_rate"] )
         self.bkwd_rate.set_expr ( dm_dict["bkwd_rate"] )
+
+    def load_variable_rate_file ( self, context, filepath ):
+        self.variable_rate = os.path.basename(filepath)
+        texts = bpy.data.texts
+
+        # Overwrite existing text objects.
+        # XXX: Add warning.
+        if self.variable_rate in texts:
+            texts.remove(texts[self.variable_rate])
+
+        # Create the text object from the text file
+        try:
+            with open(filepath, "r") as rate_file:
+                rate_string = rate_file.read()
+            text_object = texts.new(self.variable_rate)
+            # Should add in some simple error checking
+            text_object.write(rate_string)
+            self.variable_rate_valid = True
+        except (UnicodeDecodeError, IsADirectoryError, FileNotFoundError):
+            self.variable_rate_valid = False
+
+
+    def write_to_mdl_file ( self, context, out_file, filedir ):
+        out_file.write("  %s " % (self.name))
+
+        ps = context.scene.mcell.parameter_system
+
+        if self.type == 'irreversible':
+            # Use a variable rate constant file if specified
+            if self.variable_rate_switch and self.variable_rate_valid:
+                variable_rate_name = self.variable_rate
+                out_file.write('["%s"]' % (variable_rate_name))
+                variable_rate_text = bpy.data.texts[variable_rate_name]
+                variable_out_filename = os.path.join(
+                    filedir, variable_rate_name)
+                with open(variable_out_filename, "w", encoding="utf8",
+                          newline="\n") as variable_out_file:
+                    variable_out_file.write(variable_rate_text.as_string())
+            # Use a single-value rate constant
+            else:
+                out_file.write("[%s]" % (self.fwd_rate.get_as_string(
+                               ps.panel_parameter_list,ps.export_as_expressions)))    
+        else:
+            out_file.write(
+                "[>%s, <%s]" % (self.fwd_rate.get_as_string(
+                ps.panel_parameter_list, ps.export_as_expressions),
+                self.bkwd_rate.get_as_string(ps.panel_parameter_list,
+                ps.export_as_expressions)))
+
+        if self.rxn_name:
+            out_file.write(" : %s\n" % (self.rxn_name))
+        else:
+            out_file.write("\n")
 
 
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):

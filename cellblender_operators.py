@@ -383,6 +383,10 @@ class MCELL_OT_add_variable_rate_constant(bpy.types.Operator):
         mcell = context.scene.mcell
         rxn = mcell.reactions.reaction_list[
             mcell.reactions.active_rxn_index]
+        
+        rxn.load_variable_rate_file ( context, self.filepath )
+        
+        """
         rxn.variable_rate = os.path.basename(self.filepath)
         texts = bpy.data.texts
 
@@ -401,6 +405,7 @@ class MCELL_OT_add_variable_rate_constant(bpy.types.Operator):
             rxn.variable_rate_valid = True
         except (UnicodeDecodeError, IsADirectoryError, FileNotFoundError):
             rxn.variable_rate_valid = False
+        """
 
         return {'FINISHED'}
 
