@@ -387,6 +387,7 @@ class MCELL_OT_add_variable_rate_constant(bpy.types.Operator):
         rxn.load_variable_rate_file ( context, self.filepath )
         
         """
+        # Moved to cellblender_properties.py / MCellReactionProperty
         rxn.variable_rate = os.path.basename(self.filepath)
         texts = bpy.data.texts
 

@@ -876,6 +876,7 @@ def save_reactions(context, out_file, rxn_list, filedir):
         rxn_item.write_to_mdl_file ( context, out_file, filedir )
         
         """
+        # Moved to cellblender_properties.py / MCellReactionProperty
         out_file.write("  %s " % (rxn_item.name))
 
         if rxn_item.type == 'irreversible':

@@ -115,6 +115,12 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         r_dict.update ( { "variable_rate_valid": r.variable_rate_valid } )
         r_dict.update ( { "fwd_rate": r.fwd_rate.get_expr() } )
         r_dict.update ( { "bkwd_rate": r.bkwd_rate.get_expr() } )
+        variable_rate_text = ""
+        if r.type == 'irreversible':
+            # Check if a variable rate constant file is specified
+            if r.variable_rate_switch and r.variable_rate_valid:
+                variable_rate_text = bpy.data.texts[r.variable_rate].as_string()
+        r_dict.update ( { "variable_rate_text": variable_rate_text } )
         return r_dict
 
     def build_properties_from_data_model ( self, context, dm_dict ):
@@ -122,30 +128,52 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         self.rxn_name = dm_dict["rxn_name"]
         self.reactants = dm_dict["reactants"]
         self.products = dm_dict["products"]
-        self.rxn_type = dm_dict["rxn_type"]
+        self.type = dm_dict["rxn_type"]
         self.variable_rate_switch = dm_dict["variable_rate_switch"]
         self.variable_rate = dm_dict["variable_rate"]
         self.variable_rate_valid = dm_dict["variable_rate_valid"]
         self.fwd_rate.set_expr ( dm_dict["fwd_rate"] )
         self.bkwd_rate.set_expr ( dm_dict["bkwd_rate"] )
+        if self.type == 'irreversible':
+            # Check if a variable rate constant file is specified
+            if self.variable_rate_switch and self.variable_rate_valid:
+                variable_rate_text = bpy.data.texts[self.variable_rate].as_string()
+                self.store_variable_rate_text ( context, self.variable_rate, dm_dict["variable_rate_text"] )
 
-    def load_variable_rate_file ( self, context, filepath ):
-        self.variable_rate = os.path.basename(filepath)
+
+    def store_variable_rate_text ( self, context, text_name, rate_string ):
+        """ Create variable rate constant text object from text string.
+
+        Create a text object from an existing text string that represents the
+        variable rate constant. This ensures that the variable rate constant is
+        actually stored in the blend. Although, ultimately, this text object will
+        be exported as another text file in the project directory when the MDLs are
+        exported so it can be used by MCell."""
+        print ( "store_variable_rate_text ( " + text_name + ", " + rate_string + " )" )
         texts = bpy.data.texts
-
         # Overwrite existing text objects.
         # XXX: Add warning.
-        if self.variable_rate in texts:
-            texts.remove(texts[self.variable_rate])
+        if text_name in texts:
+            texts.remove(texts[text_name])
+            print ( "Found " + text_name + ", and removed from texts" )
 
-        # Create the text object from the text file
+        # Create the text object from the text string
         try:
-            with open(filepath, "r") as rate_file:
-                rate_string = rate_file.read()
-            text_object = texts.new(self.variable_rate)
+            text_object = texts.new(text_name)
             # Should add in some simple error checking
             text_object.write(rate_string)
             self.variable_rate_valid = True
+        except (UnicodeDecodeError, IsADirectoryError, FileNotFoundError):
+            self.variable_rate_valid = False
+        
+
+    def load_variable_rate_file ( self, context, filepath ):
+        # Create the text object from the text file
+        self.variable_rate = os.path.basename(filepath)
+        try:
+            with open(filepath, "r") as rate_file:
+                rate_string = rate_file.read()
+                self.store_variable_rate_text ( context, self.variable_rate, rate_string )
         except (UnicodeDecodeError, IsADirectoryError, FileNotFoundError):
             self.variable_rate_valid = False
 
