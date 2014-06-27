@@ -80,7 +80,7 @@ def identify_source_version(addon_path):
         source_file_name = os.path.join(addon_path, source_file_basename)
         if os.path.isfile(source_file_name):
             hashobject.update(open(source_file_name, 'r').read().encode("utf-8"))
-            print("  Cumulative SHA1 = " + str(hashobject.hexdigest()) + " after adding " + source_file_name )
+            # print("  Cumulative SHA1 = " + str(hashobject.hexdigest()) + " after adding " + source_file_name )
         else:
             # This is mainly needed in case the make file wasn't run. 
             # (i.e. missing mdlmesh_parser.py)
@@ -88,17 +88,21 @@ def identify_source_version(addon_path):
             pass
 
     cellblender_info['cellblender_source_sha1'] = hashobject.hexdigest()
-    print("CellBlender Source ID = %s" % (cellblender_info['cellblender_source_sha1']))
+    # print("CellBlender Source ID = %s" % (cellblender_info['cellblender_source_sha1']))
     #sha_file = os.path.join(addon_path, "cellblender_source_sha1.txt")
     #open(sha_file, 'w').write(hashobject.hexdigest())
-    return cellblender_info['cellblender_source_sha1']
+    # return cellblender_info['cellblender_source_sha1']
 
 
 if __name__ == '__main__':
+
+    """Use this from the command line to update the cellblender_id.py file ... must be run with Python3 """
+
     id_file_name = "cellblender_id.py"
     print("CellBlender is running as __main__ ... will generate " + id_file_name )
-    
-    cb_id_statement = "cellblender_id = '" + identify_source_version(os.path.dirname(__file__)) + "'\n"
+    print("  NOTE: Python 3 must be used to get same results as CellBlender!!!!" )
+    identify_source_version(os.path.dirname(__file__))
+    cb_id_statement = "cellblender_id = '" + cellblender_info['cellblender_source_sha1'] + "'\n"
     sha_file = os.path.join(os.path.dirname(__file__), id_file_name)
     open(sha_file, 'w').write(cb_id_statement)
     print ( cb_id_statement )
