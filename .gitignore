@@ -2,6 +2,8 @@ __pycache__
 tags
 cellblender.zip
 cellblender/
+unused/
+data_plotters/unused/
 io_mesh_mcell_mdl/_mdlmesh_parser.so
 io_mesh_mcell_mdl/build/
 io_mesh_mcell_mdl/mdllex.flex.c
@@ -11,4 +13,4 @@ io_mesh_mcell_mdl/mdlparse.bison.c
 io_mesh_mcell_mdl/mdlparse.bison.h
 io_mesh_mcell_mdl/mdlparse.bison.output
 bng/net.py
-unused/
+

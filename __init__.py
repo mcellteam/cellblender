@@ -33,8 +33,13 @@ bl_info = {
     "category": "Cell Modeling"
 }
 
+
+"""
+"""
+
 cellblender_info = {
     "supported_version_list": [(2, 66, 1), (2, 67, 0), (2, 68, 0), (2, 69, 0), (2, 70, 0)],
+
     "cellblender_source_list": [
         "__init__.py",
         "data_model.py",
@@ -68,21 +73,22 @@ import hashlib
 # cellblender_info["cellblender_source_list"]
 
 def identify_source_version(addon_path):
+    ####  N O T E :   This must be run with Python3 to get same result as in Blender!!!!
     cbsl = cellblender_info["cellblender_source_list"]
     hashobject = hashlib.sha1()
     for source_file_basename in cbsl:
         source_file_name = os.path.join(addon_path, source_file_basename)
         if os.path.isfile(source_file_name):
             hashobject.update(open(source_file_name, 'r').read().encode("utf-8"))
-            #print("  Cumulative SHA1: ", hashobject.hexdigest(), "=", source_file_name)
+            print("  Cumulative SHA1 = " + str(hashobject.hexdigest()) + " after adding " + source_file_name )
         else:
             # This is mainly needed in case the make file wasn't run. 
             # (i.e. missing mdlmesh_parser.py)
-            #print('  File "%s" does not exist' % source_file_name)
+            print('  File "%s" does not exist' % source_file_name)
             pass
 
     cellblender_info['cellblender_source_sha1'] = hashobject.hexdigest()
-    #print("CellBlender Source ID = %s" % (cellblender_info['cellblender_source_sha1']))
+    print("CellBlender Source ID = %s" % (cellblender_info['cellblender_source_sha1']))
     #sha_file = os.path.join(addon_path, "cellblender_source_sha1.txt")
     #open(sha_file, 'w').write(hashobject.hexdigest())
     return cellblender_info['cellblender_source_sha1']
@@ -92,7 +98,7 @@ if __name__ == '__main__':
     id_file_name = "cellblender_id.py"
     print("CellBlender is running as __main__ ... will generate " + id_file_name )
     
-    cb_id_statement = "cellblender_id = '" + identify_source_version("") + "'\n"
+    cb_id_statement = "cellblender_id = '" + identify_source_version(os.path.dirname(__file__)) + "'\n"
     sha_file = os.path.join(os.path.dirname(__file__), id_file_name)
     open(sha_file, 'w').write(cb_id_statement)
     print ( cb_id_statement )
@@ -253,10 +259,10 @@ def register():
 
     print("CellBlender Addon found: ", __file__)
     cellblender_info["cellblender_addon_path"] = os.path.dirname(__file__)
-    print("CellBlender Addon Path is ",
-          cellblender_info["cellblender_addon_path"])
+    print("CellBlender Addon Path is " + cellblender_info["cellblender_addon_path"])
     addon_path = os.path.dirname(__file__)
     identify_source_version(addon_path)
+    print ( "CellBlender Source SHA1 = " + cellblender_info['cellblender_source_sha1'] )
 
     # Use "try" for optional modules
     try:

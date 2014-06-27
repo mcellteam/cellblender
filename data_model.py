@@ -68,6 +68,7 @@ import pickle
 
 from bpy_extras.io_utils import ExportHelper
 import cellblender
+# import cellblender/cellblender_id
 
 
 def code_api_version():
