@@ -1562,8 +1562,9 @@ import pickle
 class MCellPropertyGroup(bpy.types.PropertyGroup):
     initialized = BoolProperty(
         name="Initialized", default=False)
-    cellblender_version = StringProperty(
-        name="CellBlender Version", default="0.1.54")
+    cellblender_version = StringProperty(name="CellBlender Version", default="0")
+    cellblender_addon_id = StringProperty(name="CellBlender Addon ID", default="0")
+    cellblender_data_model_version = StringProperty(name="CellBlender Data Model Version", default="0")
     #cellblender_source_hash = StringProperty(
     #    name="CellBlender Source Hash", default="unknown")
     cellblender_preferences = PointerProperty(
@@ -1662,6 +1663,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
 
     def init_properties ( self ):
+        self.cellblender_version = "0.1.54"
+        self.cellblender_addon_id = "0"
+        self.cellblender_data_model_version = "0"
         self.parameter_system.init_properties()
         self.initialization.init_properties ( self.parameter_system )
         self.molecules.init_properties ( self.parameter_system )

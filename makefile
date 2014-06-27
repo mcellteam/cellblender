@@ -10,7 +10,18 @@ SHELL = /bin/sh
 
 cellblender.zip: io_mesh_mcell_mdl/_mdlmesh_parser.so
 	mkdir -p cellblender/io_mesh_mcell_mdl/
-	cp *.py cellblender/
+	python __init__.py
+	cp cellblender_id.py cellblender/
+	cp __init__.py cellblender/
+	cp cellblender_molecules.py cellblender/
+	cp cellblender_operators.py cellblender/
+	cp cellblender_panels.py cellblender/
+	cp cellblender_properties.py cellblender/
+	cp data_model.py cellblender/
+	cp object_surface_regions.py cellblender/
+	cp parameter_system.py cellblender/
+	cp run_simulations.py cellblender/
+	cp utils.py cellblender/
 	cp io_mesh_mcell_mdl/__init__.py cellblender/io_mesh_mcell_mdl/
 	cp io_mesh_mcell_mdl/_mdlmesh_parser.so cellblender/io_mesh_mcell_mdl/
 	cp io_mesh_mcell_mdl/mdlobj.py cellblender/io_mesh_mcell_mdl/
@@ -24,7 +35,9 @@ cellblender.zip: io_mesh_mcell_mdl/_mdlmesh_parser.so
 	cp -r data_plotters cellblender/
 	cp -r mdl cellblender/
 	cp glyph_library.blend cellblender/
-	zip -rv cellblender.zip cellblender
+	zip -rv cellblender.zip cellblender -x cellblender/cellblender_addon_id.txt
+	sha1sum cellblender.zip > cellblender/cellblender_addon_id.txt
+	zip -u cellblender.zip cellblender/cellblender_addon_id.txt
 
 io_mesh_mcell_mdl/_mdlmesh_parser.so: 
 	(cd io_mesh_mcell_mdl ; make)

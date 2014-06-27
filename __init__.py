@@ -74,29 +74,35 @@ def identify_source_version(addon_path):
         source_file_name = os.path.join(addon_path, source_file_basename)
         if os.path.isfile(source_file_name):
             hashobject.update(open(source_file_name, 'r').read().encode("utf-8"))
-            print("  Cumulative SHA1: ", hashobject.hexdigest(), "=",
-                  source_file_name)
+            #print("  Cumulative SHA1: ", hashobject.hexdigest(), "=", source_file_name)
         else:
             # This is mainly needed in case the make file wasn't run. 
             # (i.e. missing mdlmesh_parser.py)
-            print('  File "%s" does not exist' % source_file_name)
+            #print('  File "%s" does not exist' % source_file_name)
+            pass
 
     cellblender_info['cellblender_source_sha1'] = hashobject.hexdigest()
-    print("CellBlender Source ID = %s" % (cellblender_info[
-        'cellblender_source_sha1']))
-    sha_file = os.path.join(addon_path, "cellblender_source_sha1.txt")
-    open(sha_file, 'w').write(hashobject.hexdigest())
+    #print("CellBlender Source ID = %s" % (cellblender_info['cellblender_source_sha1']))
+    #sha_file = os.path.join(addon_path, "cellblender_source_sha1.txt")
+    #open(sha_file, 'w').write(hashobject.hexdigest())
+    return cellblender_info['cellblender_source_sha1']
 
 
 if __name__ == '__main__':
-    print("CellBlender is running as __main__")
-    identify_source_version("")
+    id_file_name = "cellblender_id.py"
+    print("CellBlender is running as __main__ ... will generate " + id_file_name )
+    
+    cb_id_statement = "cellblender_id = '" + identify_source_version("") + "'\n"
+    sha_file = os.path.join(os.path.dirname(__file__), id_file_name)
+    open(sha_file, 'w').write(cb_id_statement)
+    print ( cb_id_statement )
+    #print ( "cellblender_id = '" + identify_source_version("") + "'" )
     # This might be a good place to exit since this version seems to
     #  crash later if run from the comand line.
     # This is NOT being done in this release in case there was some
     #  other reason to continue, but future releases might uncomment:
-    #import sys
-    #sys.exit(0)
+    import sys
+    sys.exit(0)
 
 
 # To support reload properly, try to access a package var.
