@@ -10,7 +10,7 @@ SHELL = /bin/sh
 
 cellblender.zip: io_mesh_mcell_mdl/_mdlmesh_parser.so
 	mkdir -p cellblender/io_mesh_mcell_mdl/
-	python3 __init__.py
+	python __init__.py
 	cp cellblender_id.py                               cellblender/
 	cp __init__.py                                     cellblender/
 	cp cellblender_molecules.py                        cellblender/

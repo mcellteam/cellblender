@@ -79,7 +79,7 @@ def identify_source_version(addon_path):
     for source_file_basename in cbsl:
         source_file_name = os.path.join(addon_path, source_file_basename)
         if os.path.isfile(source_file_name):
-            hashobject.update(open(source_file_name, 'r').read().encode("utf-8"))
+            hashobject.update(open(source_file_name, 'rb').read())  # .encode("utf-8"))
             # print("  Cumulative SHA1 = " + str(hashobject.hexdigest()) + " after adding " + source_file_name )
         else:
             # This is mainly needed in case the make file wasn't run. 
