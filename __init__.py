@@ -35,6 +35,20 @@ bl_info = {
 
 
 """
+bng
+cellblender
+cellblender.io_mesh_mcell_mdl
+utils.py
+data_plotters
+external_operators
+libsbml
+mdl
+mpl
+
+sbml_operators
+treelib3
+warnings
+
 """
 
 cellblender_info = {
@@ -56,7 +70,20 @@ cellblender_info = {
         "io_mesh_mcell_mdl/import_mcell_mdl_pyparsing.py",
         "io_mesh_mcell_mdl/import_shared.py",
         "io_mesh_mcell_mdl/pyparsing.py",
-        "io_mesh_mcell_mdl/mdlmesh_parser.py"],
+        "io_mesh_mcell_mdl/mdlmesh_parser.py",
+        "mdl/__init__.py",
+        "bng/__init__.py",
+        "bng/sbml2blender.py",
+        "bng/sbml2json.py",
+        "bng/external_operators.py",
+        "bng/sbml_operators.py",
+        "bng/sbml_properties.py",
+        "bng/bng_operators.py",
+        "bng/treelib3/__init__.py",
+        "bng/treelib3/node.py",
+        "bng/treelib3/tree.py",
+        "bng/libsbml3/__init__.py",
+        ],
 
     "cellblender_source_sha1": "",
     "cellblender_addon_path": "",
@@ -80,7 +107,7 @@ def identify_source_version(addon_path):
         source_file_name = os.path.join(addon_path, source_file_basename)
         if os.path.isfile(source_file_name):
             hashobject.update(open(source_file_name, 'rb').read())  # .encode("utf-8"))
-            # print("  Cumulative SHA1 = " + str(hashobject.hexdigest()) + " after adding " + source_file_name )
+            print("  Cumulative SHA1 = " + str(hashobject.hexdigest()) + " after adding " + source_file_name )
         else:
             # This is mainly needed in case the make file wasn't run. 
             # (i.e. missing mdlmesh_parser.py)
