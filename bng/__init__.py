@@ -4,13 +4,14 @@ from . import sbml_operators
 from . import external_operators
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty,BoolProperty
+import logging
+import os
 
 def findCellBlenderDirectory():
-    import os
     for directory in os.path.sys.path:
         cellblenderDir = [x for x in os.listdir(directory) if 'cellblender' in x]
         if len(cellblenderDir) > 0:
-            return directory + '/cellblender/'
+            return directory + '{0}cellblender{0}'.format(os.sep)
    
     
 class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
@@ -22,7 +23,7 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
 
     filter_glob = StringProperty(
             default="*.bngl;*.xml",
-            options={'HIDDEN'},
+            options={'HIDDEN'}
             )
             
     add_to_model_objects = BoolProperty(
@@ -34,7 +35,7 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
     def execute(self, context):
         if('.bngl') in self.filepath:
             bngfilepath = self.filepath         # bngl file path
-            external_operators.filePath=findCellBlenderDirectory()+'bng/' + self.filepath.split('/')[-1]
+            external_operators.filePath=findCellBlenderDirectory()+'bng{0}'.format(os.sep) + self.filepath.split(os.sep)[-1]
             print ( "Calling bng_operators.execute_bionetgen("+bngfilepath+")" )
             bng_operators.execute_bionetgen(self.filepath,context)
             print ( "Back from bng_operators.execute_bionetgen("+bngfilepath+")" )
@@ -43,10 +44,10 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
             sbmlfilepath = self.filepath
             external_operators.filePath = sbmlfilepath
             # sbml file path
-            try:
-                sbml_operators.execute_sbml2blender(sbmlfilepath,context,self.add_to_model_objects)
-            except:
-                print('There is no spatial information')
+            #try:
+            sbml_operators.execute_sbml2blender(sbmlfilepath,context,self.add_to_model_objects)
+            #except:
+             #   print('There is no spatial information')
             sbml_operators.execute_sbml2mcell(sbmlfilepath,context)
             print('Proceeding to import SBML file')
  
