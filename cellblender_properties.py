@@ -1558,13 +1558,18 @@ class PP_OT_init_mcell(bpy.types.Operator):
 import pickle
 
 # Main MCell (CellBlender) Properties Class:
+def refresh_source_id_callback ( self, context ):
+    if self.refresh_source_id:
+        print ("Updating ID")
+        cellblender.identify_source_version(os.path.dirname(__file__),verbose=True)
+        self.refresh_source_id = False
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
-    initialized = BoolProperty(
-        name="Initialized", default=False)
+    initialized = BoolProperty(name="Initialized", default=False)
     cellblender_version = StringProperty(name="CellBlender Version", default="0")
     cellblender_addon_id = StringProperty(name="CellBlender Addon ID", default="0")
     cellblender_data_model_version = StringProperty(name="CellBlender Data Model Version", default="0")
+    refresh_source_id = BoolProperty ( default=False, description="Recompute the Source ID from actual files", update=refresh_source_id_callback )
     #cellblender_source_hash = StringProperty(
     #    name="CellBlender Source Hash", default="unknown")
     cellblender_preferences = PointerProperty(

@@ -242,7 +242,10 @@ def register():
     cellblender_info["cellblender_addon_path"] = os.path.dirname(__file__)
     print("CellBlender Addon Path is " + cellblender_info["cellblender_addon_path"])
     addon_path = os.path.dirname(__file__)
-    identify_source_version(addon_path,verbose=True)
+    # To compute the ID on load, uncomment this and comment the two following...
+    # identify_source_version(addon_path,verbose=True)
+    from . import cellblender_id
+    cellblender_info['cellblender_source_sha1'] = cellblender_id.cellblender_id
     print ( "CellBlender Source SHA1 = " + cellblender_info['cellblender_source_sha1'] )
 
     # Use "try" for optional modules

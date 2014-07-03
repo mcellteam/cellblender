@@ -140,8 +140,12 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         else:
 
             row = layout.row()
-            row.label(text="CellBlender ID: "+cellblender.cellblender_info[
+            split = row.split(0.96)
+            col = split.column()
+            col.label(text="CellBlender ID: "+cellblender.cellblender_info[
                 'cellblender_source_sha1'])
+            col = split.column()
+            col.prop ( mcell, "refresh_source_id", icon='FILE_REFRESH', text="" )
 
 
             row = layout.row()
