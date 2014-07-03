@@ -34,23 +34,6 @@ bl_info = {
 }
 
 
-"""
-bng
-cellblender
-cellblender.io_mesh_mcell_mdl
-utils.py
-data_plotters
-external_operators
-libsbml
-mdl
-mpl
-
-sbml_operators
-treelib3
-warnings
-
-"""
-
 cellblender_info = {
     "supported_version_list": [(2, 66, 1), (2, 67, 0), (2, 68, 0), (2, 69, 0), (2, 70, 0)],
 
@@ -96,18 +79,16 @@ simulation_popen_list = []
 import hashlib
 
 
-# Compute, print, and save the SHA1 of all source files in
-# cellblender_info["cellblender_source_list"]
-
-def identify_source_version(addon_path):
-    ####  N O T E :   This must be run with Python3 to get same result as in Blender!!!!
+def identify_source_version(addon_path,verbose=False):
+    """ Compute the SHA1 of all source files in cellblender_info["cellblender_source_list"]"""
     cbsl = cellblender_info["cellblender_source_list"]
     hashobject = hashlib.sha1()
     for source_file_basename in cbsl:
         source_file_name = os.path.join(addon_path, source_file_basename)
         if os.path.isfile(source_file_name):
             hashobject.update(open(source_file_name, 'rb').read())  # .encode("utf-8"))
-            print("  Cumulative SHA1 = " + str(hashobject.hexdigest()) + " after adding " + source_file_name )
+            if verbose:
+                print("  Cumulative SHA1 = " + str(hashobject.hexdigest()) + " after adding " + source_file_name )
         else:
             # This is mainly needed in case the make file wasn't run. 
             # (i.e. missing mdlmesh_parser.py)
@@ -115,29 +96,19 @@ def identify_source_version(addon_path):
             pass
 
     cellblender_info['cellblender_source_sha1'] = hashobject.hexdigest()
-    # print("CellBlender Source ID = %s" % (cellblender_info['cellblender_source_sha1']))
-    #sha_file = os.path.join(addon_path, "cellblender_source_sha1.txt")
-    #open(sha_file, 'w').write(hashobject.hexdigest())
-    # return cellblender_info['cellblender_source_sha1']
 
 
 if __name__ == '__main__':
 
-    """Use this from the command line to update the cellblender_id.py file ... must be run with Python3 """
+    """Run this file from the command line to update the cellblender_id.py file """
 
     id_file_name = "cellblender_id.py"
     print("CellBlender is running as __main__ ... will generate " + id_file_name )
-    print("  NOTE: Python 3 must be used to get same results as CellBlender!!!!" )
-    identify_source_version(os.path.dirname(__file__))
+    identify_source_version(os.path.dirname(__file__),verbose=True)
     cb_id_statement = "cellblender_id = '" + cellblender_info['cellblender_source_sha1'] + "'\n"
     sha_file = os.path.join(os.path.dirname(__file__), id_file_name)
     open(sha_file, 'w').write(cb_id_statement)
     print ( cb_id_statement )
-    #print ( "cellblender_id = '" + identify_source_version("") + "'" )
-    # This might be a good place to exit since this version seems to
-    #  crash later if run from the comand line.
-    # This is NOT being done in this release in case there was some
-    #  other reason to continue, but future releases might uncomment:
     import sys
     sys.exit(0)
 
@@ -166,20 +137,6 @@ if "bpy" in locals():
         print("cellblender.data_plotters was not reloaded")
 else:
     print("Importing CellBlender")
-    """from . import \
-        data_model, \
-        cellblender_properties, \
-        cellblender_panels, \
-        cellblender_operators, \
-        #cellblender_parameters, \
-        parameter_system, \
-        cellblender_molecules, \
-        object_surface_regions, \
-        io_mesh_mcell_mdl, \
-	      mdl, \ #BK: Added for MDL
-        bng, \  # DB: Added for BNG
-	      sbml #JJT:SBML"""
-
     from . import data_model
     from . import cellblender_properties
     from . import cellblender_panels
@@ -207,11 +164,6 @@ import sys
 def register():
     bpy.utils.register_module(__name__)
 
-    # BK: Added for newer parameters ....
-    #print ( "Registering parameter_system" )
-    #bpy.utils.register_module(parameter_system)
-
-
     # Unregister and re-register panels to display them in order
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_cellblender_preferences)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
@@ -238,8 +190,6 @@ def register():
     bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
     bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
     bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
-
-    #bpy.utils.register_class(cellblender_parameters.MCELL_PT_general_parameters)
 
     bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)
 
@@ -292,7 +242,7 @@ def register():
     cellblender_info["cellblender_addon_path"] = os.path.dirname(__file__)
     print("CellBlender Addon Path is " + cellblender_info["cellblender_addon_path"])
     addon_path = os.path.dirname(__file__)
-    identify_source_version(addon_path)
+    identify_source_version(addon_path,verbose=True)
     print ( "CellBlender Source SHA1 = " + cellblender_info['cellblender_source_sha1'] )
 
     # Use "try" for optional modules
