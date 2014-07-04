@@ -142,10 +142,14 @@ class MCELL_PT_project_settings(bpy.types.Panel):
             row = layout.row()
             split = row.split(0.96)
             col = split.column()
-            col.label(text="CellBlender ID: "+cellblender.cellblender_info[
-                'cellblender_source_sha1'])
+            col.label(text="CellBlender ID: "+cellblender.cellblender_info['cellblender_source_sha1'])
             col = split.column()
             col.prop ( mcell, "refresh_source_id", icon='FILE_REFRESH', text="" )
+            if 'cellblender_source_id_from_file' in cellblender.cellblender_info:
+                # This means that the source ID didn't match the refreshed version
+                # Draw a second line showing the original file ID as an error
+                row = layout.row()
+                row.label("File ID: " + cellblender.cellblender_info['cellblender_source_id_from_file'], icon='ERROR')
 
 
             row = layout.row()

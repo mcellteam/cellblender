@@ -63,15 +63,22 @@ def plot ( data_path, plot_spec ):
     
     for page in plot_spec:
     
-        # The java program only understands fxy=filename parameters so translate:
-        
-        java_plot_spec = ""
+        # The java program only understands fxy=filename parameters so find "f=":
+
+        found = False
         for generic_param in page:
             if generic_param[0:2] == "f=":
-                java_plot_spec = java_plot_spec + " fxy=" + generic_param[2:]
-        
-        plot_cmd = find_in_path("java")
-        plot_cmd = plot_cmd + ' -jar ' + os.path.join ( program_path, 'PlotData.jar' ) + " "
-        plot_cmd = plot_cmd + java_plot_spec
-        pid = subprocess.Popen ( plot_cmd.split(), cwd=data_path )
+                found = True
+                break
+
+        if found:
+            java_plot_spec = ""
+            for generic_param in page:
+                if generic_param[0:2] == "f=":
+                    java_plot_spec = java_plot_spec + " fxy=" + generic_param[2:]
+
+            plot_cmd = find_in_path("java")
+            plot_cmd = plot_cmd + ' -jar ' + os.path.join ( program_path, 'PlotData.jar' ) + " "
+            plot_cmd = plot_cmd + java_plot_spec
+            pid = subprocess.Popen ( plot_cmd.split(), cwd=data_path )
 

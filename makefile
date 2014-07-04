@@ -6,44 +6,22 @@ INSTALL_DIR = ~/.config/blender/2.70/scripts/addons/
 #INSTALL_DIR = ~/Library/Application\ Support/Blender/2.70/scripts/addons/
 
 SHELL = /bin/sh
-SOURCES = `python cellblender_source_info.py`
+# This version worked as a shell command but not as a dependency:
+#SOURCES = `python cellblender_source_info.py`
 
-cellblender.zip: io_mesh_mcell_mdl/_mdlmesh_parser.so
-	#	mkdir -p cellblender/io_mesh_mcell_mdl/
-	#	python __init__.py
-	#	cp cellblender_id.py                               cellblender/
-	#	cp __init__.py                                     cellblender/
-	#	cp cellblender_molecules.py                        cellblender/
-	#	cp cellblender_operators.py                        cellblender/
-	#	cp cellblender_panels.py                           cellblender/
-	#	cp cellblender_properties.py                       cellblender/
-	#	cp data_model.py                                   cellblender/
-	#	cp object_surface_regions.py                       cellblender/
-	#	cp parameter_system.py                             cellblender/
-	#	cp run_simulations.py                              cellblender/
-	#	cp utils.py                                        cellblender/
-	#	cp io_mesh_mcell_mdl/__init__.py                   cellblender/io_mesh_mcell_mdl/
-	#	cp io_mesh_mcell_mdl/_mdlmesh_parser.so            cellblender/io_mesh_mcell_mdl/
-	#	cp io_mesh_mcell_mdl/mdlobj.py                     cellblender/io_mesh_mcell_mdl/
-	#	cp io_mesh_mcell_mdl/mdlmesh_parser.py             cellblender/io_mesh_mcell_mdl/
-	#	cp io_mesh_mcell_mdl/import_mcell_mdl.py           cellblender/io_mesh_mcell_mdl/
-	#	cp io_mesh_mcell_mdl/import_mcell_mdl_pyparsing.py cellblender/io_mesh_mcell_mdl/
-	#	cp io_mesh_mcell_mdl/import_shared.py              cellblender/io_mesh_mcell_mdl/
-	#	cp io_mesh_mcell_mdl/pyparsing.py                  cellblender/io_mesh_mcell_mdl/
-	#	cp io_mesh_mcell_mdl/export_mcell_mdl.py           cellblender/io_mesh_mcell_mdl/
-	#	cp -r bng                                          cellblender/
-	#	cp -r data_plotters                                cellblender/
-	#	cp -r mdl                                          cellblender/
-	#	cp glyph_library.blend                             cellblender/
-	echo $(SOURCES)
-	zip -v cellblender.zip $(SOURCES)
+# This versoion seems to work as a dependency and a shell command:
+SOURCES = $(shell python cellblender_source_info.py)
 
-io_mesh_mcell_mdl/_mdlmesh_parser.so: 
+cellblender.zip: io_mesh_mcell_mdl/_mdlmesh_parser.so $(SOURCES)
+	@echo Updating cellblender.zip
+	@zip -q cellblender.zip $(SOURCES)
+
+io_mesh_mcell_mdl/_mdlmesh_parser.so: io_mesh_mcell_mdl/makefile io_mesh_mcell_mdl/*.py io_mesh_mcell_mdl/*.c io_mesh_mcell_mdl/*.h io_mesh_mcell_mdl/*.l io_mesh_mcell_mdl/*.y io_mesh_mcell_mdl/*.i
 	(cd io_mesh_mcell_mdl ; make)
 
 clean:
 	rm -rf cellblender.zip
-	#rm -rf cellblender
+	#rm -rf cellblender ### No longer needed because make only adds selected files to zip file
 	(cd io_mesh_mcell_mdl ; make clean)
 
 install: cellblender.zip

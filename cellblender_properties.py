@@ -1450,7 +1450,7 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
         (' page ', "Separate Page for each Plot", ""),
         (' plot ', "One Page, Multiple Plots", ""),
         (' ',      "One Page, One Plot", "")]
-    plot_layout = bpy.props.EnumProperty ( items=plot_layout_enum, name="" )
+    plot_layout = bpy.props.EnumProperty ( items=plot_layout_enum, name="", default=' plot ' )
     plot_legend_enum = [
         ('x', "No Legend", ""),
         ('0', "Legend with Automatic Placement", ""),
@@ -1561,7 +1561,16 @@ import pickle
 def refresh_source_id_callback ( self, context ):
     if self.refresh_source_id:
         print ("Updating ID")
-        cellblender.identify_source_version(os.path.dirname(__file__),verbose=True)
+        if not ('cellblender_source_id_from_file' in cellblender.cellblender_info):
+            # Save the version that was read from the file
+            cellblender.cellblender_info.update ( { "cellblender_source_id_from_file": cellblender.cellblender_info['cellblender_source_sha1'] } )
+        # Compute the new version
+        cellblender.cellblender_source_info.identify_source_version(os.path.dirname(__file__),verbose=True)
+        # Check to see if they match
+        if cellblender.cellblender_info['cellblender_source_sha1'] == cellblender.cellblender_info['cellblender_source_id_from_file']:
+            # They still match, so remove the "from file" version from the info to let the panel know that there's no longer a mismatch:
+            cellblender.cellblender_info.pop('cellblender_source_id_from_file')
+        # Setting this to false will redraw the panel
         self.refresh_source_id = False
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
