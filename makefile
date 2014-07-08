@@ -15,7 +15,7 @@ all: subdirs cellblender.zip
 
 
 .PHONY: subdirs $(SUBDIRS)
-subdirs: $(SUBDIRS)
+subdirs: makefile $(SUBDIRS)
 
 $(SUBDIRS):
 	$(MAKE) -C $@
@@ -28,7 +28,7 @@ $(SUBDIRS):
 # target recipe will be executed only when the phony target is a specified goal
 #  (see Arguments to Specify the Goals). 
 
-cellblender.zip: $(SOURCES) subdirs
+cellblender.zip: makefile $(SOURCES)
 	@echo Updating cellblender.zip
 	@zip -q cellblender.zip $(SOURCES)
 
