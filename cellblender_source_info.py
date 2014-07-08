@@ -89,7 +89,7 @@ def print_source_list (addon_path,verbose=False):
 
 if __name__ == '__main__':
 
-    """Run this file from the command line to print the file list and updata the cellblender_id.py file """
+    """Run this file from the command line to print the file list and updata the cellblender_id.py file."""
 
     id_file_name = "cellblender_id.py"
     identify_source_version(os.path.dirname(__file__),verbose=False)
@@ -98,9 +98,9 @@ if __name__ == '__main__':
     rebuild = True
     if os.path.exists(sha_file_name):
         sha_file = open(sha_file_name, 'r')
-        current_statement = sha_file.read().strip()
+        current_statement = sha_file.read()
         sha_file.close()
-        if current_statement == cb_id_statement.strip():
+        if current_statement.strip() == cb_id_statement.strip():
             rebuild = False
     
     if rebuild:
