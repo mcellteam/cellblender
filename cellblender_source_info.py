@@ -94,8 +94,18 @@ if __name__ == '__main__':
     id_file_name = "cellblender_id.py"
     identify_source_version(os.path.dirname(__file__),verbose=False)
     cb_id_statement = "cellblender_id = '" + cellblender_info['cellblender_source_sha1'] + "'\n"
-    sha_file = os.path.join(os.path.dirname(__file__), id_file_name)
-    open(sha_file, 'w').write(cb_id_statement)
+    sha_file_name = os.path.join(os.path.dirname(__file__), id_file_name)
+    rebuild = True
+    if os.path.exists(sha_file_name):
+        sha_file = open(sha_file_name, 'r')
+        current_statement = sha_file.read().strip()
+        sha_file.close()
+        if current_statement == cb_id_statement.strip():
+            rebuild = False
+    
+    if rebuild:
+        open(sha_file_name, 'w').write(cb_id_statement)
+
     print_source_list(os.path.dirname(__file__))
     import sys
     sys.exit(0)
