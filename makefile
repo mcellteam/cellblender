@@ -38,6 +38,7 @@ cellblender.zip: makefile $(SOURCES)
 clean:
 	rm -rf cellblender.zip
 	(cd io_mesh_mcell_mdl ; make clean)
+	(cd data_plotters ; make clean)
 
 
 
