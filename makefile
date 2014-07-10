@@ -8,7 +8,8 @@ INSTALL_DIR = ~/.config/blender/2.70/scripts/addons/
 SHELL = /bin/sh
 
 SOURCES = $(shell python cellblender_source_info.py)
-SUBDIRS = data_plotters io_mesh_mcell_mdl
+#SUBDIRS = data_plotters io_mesh_mcell_mdl
+SUBDIRS = io_mesh_mcell_mdl
 
 .PHONY: all
 all: subdirs cellblender.zip

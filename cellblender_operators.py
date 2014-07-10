@@ -2615,9 +2615,8 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
+        meshes = bpy.data.meshes
         mcell.molecule_glyphs.status = ""
-        #new_glyph_name = "receptor_glyph"
-        #mol_shape_name = "mol_Ca_shape"
         select_objs = context.selected_objects
         if (len(select_objs) != 1):
             mcell.molecule_glyphs.status = "Select One Molecule"
@@ -2629,16 +2628,38 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
         mol_obj = select_objs[0]
         mol_shape_name = mol_obj.name
 
-        new_glyph_name = mcell.molecule_glyphs.glyph
+        glyph_name = mcell.molecule_glyphs.glyph
+
+        # There may be objects in the scene with the same name as the glyphs in
+        # the glyph library, so we need to deal with this possibility
+        new_glyph_name = glyph_name
+        if glyph_name in meshes:
+            # pattern: glyph name, period, numbers. (example match: "Cube.001")
+            pattern = re.compile(r'%s(\.\d+)' % glyph_name)
+            competing_names = [m.name for m in meshes if pattern.match(m.name)]
+            # example: given this: ["Cube.001", "Cube.3"], make this: [1, 3]
+            trailing_nums = [int(n.split('.')[1]) for n in competing_names]
+            # remove dups & sort... better way than list->set->list?
+            trailing_nums = list(set(trailing_nums))
+            trailing_nums.sort()
+            i = 0
+            gap = False
+            for i in range(0, len(trailing_nums)):
+                if trailing_nums[i] != i+1:
+                    gap = True
+                    break
+            if not gap and trailing_nums:
+                i+=1
+            new_glyph_name = "%s.%03d" % (glyph_name, i + 1)
 
         bpy.ops.wm.link_append(
             directory=mcell.molecule_glyphs.glyph_lib,
-            files=[{"name": new_glyph_name}], link=False, autoselect=False)
+            files=[{"name": glyph_name}], link=False, autoselect=False)
 
         mol_mat = mol_obj.material_slots[0].material
-        new_mol_mesh = bpy.data.meshes[new_glyph_name]
+        new_mol_mesh = meshes[new_glyph_name]
         mol_obj.data = new_mol_mesh
-        bpy.data.meshes.remove(bpy.data.meshes[mol_shape_name])
+        meshes.remove(meshes[mol_shape_name])
 
         new_mol_mesh.name = mol_shape_name
         new_mol_mesh.materials.append(mol_mat)

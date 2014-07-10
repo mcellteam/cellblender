@@ -1504,8 +1504,8 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
-    glyph_lib = __file__.replace(__file__.split('/')[len(
-        __file__.split("/"))-1], "")+"glyph_library.blend/Mesh/"
+    glyph_lib = os.path.join(
+        os.path.dirname(__file__), "glyph_library.blend/Mesh/")
     glyph_enum = [
         ('Cone', "Cone", ""),
         ('Cube', "Cube", ""),
