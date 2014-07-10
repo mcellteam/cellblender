@@ -31,7 +31,7 @@ if (__name__ == '__main__'):
     for i in range(1, len(sys.argv)):
         filename = sys.argv[i]
         print('Plotting %s' % (filename))
-        data = numpy.loadtxt(sys.argv[i])
+        data = numpy.array([[float(x) for x in s.split()] for s in open(sys.argv[i],'r').read().split('\n') if s != ''])
         x = data[:, 0]
         y = data[:, 1]
         ax.plot(x, y, label=filename)

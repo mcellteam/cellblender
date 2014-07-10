@@ -180,7 +180,7 @@ for page in plot_cmds:
                 # print "File command: " + cmd
                 fn = cmd[2:]
                 # print "    File name = " + fn
-                data = loadtxt(fn)
+                data = array([[float(x) for x in s.split()] for s in open(fn,'r').read().split('\n') if s != ''])
                 x = data[:, 0]
                 y = data[:, 1]
                 if name is None:
