@@ -6,11 +6,64 @@ import java.awt.image.*;
 import javax.swing.*;
 
 
+class FieldReader {
+  // next_field Returns:
+  //   Non-Empty String: trimmed next field string if it exists in this line
+  //   Empty String: "" is returned for each end of line
+  //   null: end of file or error
+  
+  BufferedReader r = null;
+  String line = null;
+  
+  FieldReader ( BufferedReader f ) {
+    r = f;
+  }
+
+	String next_field () {
+	  String field = null;
+	  if (line == null) {
+	    // The line buffer needs to be refreshed
+	    try {
+	    	// Read in a line and replace tabs with spaces and trim spaces afterward
+  	    line = r.readLine().replace('\t',' ').trim();
+	    } catch ( Exception e ) {
+	      return ( null );
+	    }
+	  }
+	  if (line.equals("")) {
+	    // The trim function returned an empty string so report this as an end of line
+	    line = null;
+	    return ( "" );
+	  }
+	  
+	  // The String is not null so separate off the first non-blank field
+	  // Check for a blank or tab
+	  int blank = line.indexOf ( ' ' );
+	    
+	  if (blank >= 0) {
+	    // Found a blank (or tab converted to blank)
+	    field = line.substring(0,blank).trim();
+	    line = line.substring(blank).trim();
+	  } else {
+	    // No blank found at all
+	    field = line.trim();
+	    line = "";
+	  }
+	  return ( field );
+	}	
+}
+
+
+
 abstract class data_file {
 
 	public abstract double f ( double x );
 	public abstract void find_x_range();
 	public abstract void find_y_range();
+	
+	public static int buffer_size = 1000000000;
+	
+	public boolean valid_data = false;
 
 	String name = "Identity";
 	Color color = Color.red;
@@ -60,7 +113,13 @@ class file_x extends data_file {
     for (int pass=0; pass<=1; pass++) {
       num_values = 0;
 		  try {
-			  FieldReader fr = new FieldReader ( new BufferedReader(new InputStreamReader(new FileInputStream(file_name))) );
+		    BufferedReader br;
+		    if (buffer_size > 0) {
+  			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)),buffer_size);
+  			} else {
+  			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)));
+  			}
+			  FieldReader fr = new FieldReader ( br );
 			  String xfield = null;
 			  do {
 				  xfield = fr.next_field();
@@ -107,7 +166,13 @@ class file_y extends data_file {
     for (int pass=0; pass<=1; pass++) {
       num_values = 0;
 		  try {
-			  FieldReader fr = new FieldReader ( new BufferedReader(new InputStreamReader(new FileInputStream(file_name))) );
+		    BufferedReader br;
+		    if (buffer_size > 0) {
+  			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)),buffer_size);
+  			} else {
+  			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)));
+  			}
+			  FieldReader fr = new FieldReader ( br );
 			  String yfield = null;
 			  do {
 				  yfield = fr.next_field();
@@ -189,7 +254,13 @@ class file_xy extends data_file {
     for (int pass=0; pass<=1; pass++) {
       num_values = 0;
 		  try {
-			  FieldReader fr = new FieldReader ( new BufferedReader(new InputStreamReader(new FileInputStream(file_name))) );
+		    BufferedReader br;
+		    if (buffer_size > 0) {
+  			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)),buffer_size);
+  			} else {
+  			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)));
+  			}
+			  FieldReader fr = new FieldReader ( br );
 			  String xfield = null;
 			  String yfield = null;
 			  do {
@@ -209,6 +280,9 @@ class file_xy extends data_file {
 				  }
 			  } while ( (xfield != null) && (yfield != null) );
 		  } catch (Exception e) {
+		    System.out.println ( "Error reading from file: " + file_name );
+		    valid_data = false;
+		    return;
 		  }
 		  if ( (pass == 0) && (num_values > 0) ) {
 		    x_values = new double[num_values];
@@ -317,6 +391,7 @@ class file_xy extends data_file {
 		//for (int i=0; i<x_values.length; i++) {
 		//  System.out.println ( "x=" + x_values[i] + ", y=" + y_values[i] );
 		//}
+    valid_data = true;
 
 	}
 
@@ -446,59 +521,13 @@ class data_file_set {
 }
 
 
-class FieldReader {
-  // next_field Returns:
-  //   Non-Empty String: trimmed next field string if it exists in this line
-  //   Empty String: "" is returned for each end of line
-  //   null: end of file or error
-  
-  BufferedReader r = null;
-  String line = null;
-  
-  FieldReader ( BufferedReader f ) {
-    r = f;
-  }
-
-	String next_field () {
-	  String field = null;
-	  if (line == null) {
-	    // The line buffer needs to be refreshed
-	    try {
-	    	// Read in a line and replace tabs with spaces and trim spaces afterward
-  	    line = r.readLine().replace('\t',' ').trim();
-	    } catch ( Exception e ) {
-	      return ( null );
-	    }
-	  }
-	  if (line.equals("")) {
-	    // The trim function returned an empty string so report this as an end of line
-	    line = null;
-	    return ( "" );
-	  }
-	  
-	  // The String is not null so separate off the first non-blank field
-	  // Check for a blank or tab
-	  int blank = line.indexOf ( ' ' );
-	    
-	  if (blank >= 0) {
-	    // Found a blank (or tab converted to blank)
-	    field = line.substring(0,blank).trim();
-	    line = line.substring(blank).trim();
-	  } else {
-	    // No blank found at all
-	    field = line.trim();
-	    line = "";
-	  }
-	  return ( field );
-	}	
-}
-
-
 
 class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseWheelListener,MouseMotionListener,KeyListener, FilenameFilter {
 
 	static final String S = File.separator;
 	
+	public boolean loading = false;
+
 	String settings_file_name = "PlotData_settings.txt";
 	String input_dir = "input";
 	String output_dir = "output2";
@@ -526,10 +555,15 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 	}
 	
 	public void add_file ( data_file df ) {
+	  boolean old_loading = loading;
+	  loading = true;
+	  repaint();
 	  if (func_set == null) {
 	    func_set = new data_file_set();
 	  }
 	  func_set.add ( df );
+	  loading = old_loading;
+	  repaint();
 	}
 
 	public void set_files ( String file_names[] ) {
@@ -750,6 +784,7 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 			//}
 			//fd.show();
 			fd.setVisible(true);
+			fd.toFront();
 			
 			if (fd.getFile() != null) {
 				String file_name = null;
@@ -851,6 +886,14 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		int win_w, win_h, w, h, time_h;
 		win_w = getSize().width;
 		win_h = getSize().height;
+		
+		if (loading) {
+		  Font cur_font = g.getFont();
+		  g.setFont ( new Font("SansSerif", Font.BOLD, 50) );
+      g.setColor ( Color.white );
+	  	g.drawString ( "Loading...", 70, 100 );
+	  	g.setFont ( cur_font );
+    }		
 
 	  // Draw the normal spike pattern showing all channels
 	  if (func_set == null) {
@@ -998,6 +1041,10 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 
     for (int p=0; p<num_panels; p++) {
 		
+			if (f[p].valid_data == false) {
+			  continue;
+			}
+
 		  // Clip the subplot window
 		  if (combined) {
   		  g.setClip (0,0,w,win_h);
@@ -1330,10 +1377,31 @@ public class PlotData extends JFrame implements WindowListener {
 		System.out.println ( "Data Plotting Program ..." );
 		
 		dp = new DisplayPanel();
+    dp.loading = true;
 
 		String file_names[] = new String[0];
 		double x0 = 0.0;
 		double dx = 1.0;
+
+    System.out.println ( "Creating the frame early..." );
+    PlotData frame = new PlotData("Plot Data");
+
+    dp.set_frame ( frame );
+    frame.setSize(400, 150);
+    frame.setJMenuBar ( dp.build_menu_bar() );
+
+    Container content = frame.getContentPane();
+    content.setBackground(Color.white);
+    content.setLayout(new BorderLayout()); 
+
+		frame.add(dp);
+		dp.addMouseWheelListener ( dp );
+		dp.addMouseMotionListener ( dp );
+		dp.addMouseListener ( dp );
+		frame.addKeyListener ( dp );
+    frame.pack();
+    frame.addWindowListener(frame);
+    frame.setVisible(true);
 
     if (args.length > 0) {
       for (int arg=0; arg<args.length; arg++) {
@@ -1475,6 +1543,7 @@ public class PlotData extends JFrame implements WindowListener {
            System.out.println ( "Error Parsing Argument: " + args[arg] + ", Error = " + e );
            System.exit(0);
         }
+        content.repaint();
       }
     } else {
       file_xy fxy;
@@ -1497,11 +1566,13 @@ public class PlotData extends JFrame implements WindowListener {
 
     }
 
-    PlotData frame = new PlotData("Plot Data");
+    dp.loading = false;
+    content.repaint();
 
-    dp.set_frame ( frame );
+
+    //dp.set_frame ( frame );
 		// dp.set_files ( file_names );
-		
+		/* 
     frame.setSize(400, 150);
     frame.setJMenuBar ( dp.build_menu_bar() );
 
@@ -1517,6 +1588,7 @@ public class PlotData extends JFrame implements WindowListener {
     frame.pack();
     frame.addWindowListener(frame);
     frame.setVisible(true);
+    */
   }
 
   public void windowActivated(WindowEvent event) { }
