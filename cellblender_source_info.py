@@ -36,7 +36,8 @@ cellblender_info = {
         "data_plotters"+os.sep+"mpl_plot"+os.sep+"mpl_defaults.py",
         "data_plotters"+os.sep+"xmgrace"+os.sep+"__init__.py",
         "data_plotters"+os.sep+"java_plot"+os.sep+"__init__.py",
-        "data_plotters"+os.sep+"java_plot"+os.sep+"PlotData.jar",
+        "data_plotters"+os.sep+"java_plot"+os.sep+"PlotData.java",
+        #"data_plotters"+os.sep+"java_plot"+os.sep+"PlotData.jar",  # Note that this file changes when rebuilt ... may contain a date stamp.
         "mdl"+os.sep+"__init__.py",
         "bng"+os.sep+"__init__.py",
         "bng"+os.sep+"sbml2blender.py",
@@ -81,7 +82,7 @@ def print_source_list (addon_path,verbose=False):
     """ Compute the SHA1 of all source files in cellblender_info["cellblender_source_list"]"""
     cbsl = cellblender_info["cellblender_source_list"]
     ### Note that cellblender_id.py is NOT in the normal source list and must be added manually!!!!
-    print( "cellblender" + os.sep + "cellblender_id.py" )
+    ### print( "cellblender" + os.sep + "cellblender_id.py" )
     for source_file in cbsl:
         if os.path.isfile(source_file):
             print( "cellblender" + os.sep + source_file )
@@ -89,7 +90,7 @@ def print_source_list (addon_path,verbose=False):
 
 if __name__ == '__main__':
 
-    """Run this file from the command line to print the file list and updata the cellblender_id.py file."""
+    """Run this file from the command line to print the file list and update the cellblender_id.py file."""
 
     id_file_name = "cellblender_id.py"
     identify_source_version(os.path.dirname(__file__),verbose=False)

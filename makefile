@@ -29,15 +29,17 @@ $(SUBDIRS):
 # target recipe will be executed only when the phony target is a specified goal
 #  (see Arguments to Specify the Goals). 
 
+# Note that files which auto-change but are included in the zip file are not part of the source list
 cellblender.zip: makefile $(SOURCES)
 	@echo Updating cellblender.zip
-	@zip -q cellblender.zip $(SOURCES)
+	@echo Sources = $(SOURCES)
+	@zip -q cellblender.zip $(SOURCES) cellblender_id.py data_plotters/java_plot/PlotData.jar
 
 
 
 .PHONY: clean
 clean:
-	rm -rf cellblender.zip
+	rm -f cellblender.zip
 	(cd io_mesh_mcell_mdl ; make clean)
 	(cd data_plotters ; make clean)
 
