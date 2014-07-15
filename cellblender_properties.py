@@ -1561,6 +1561,8 @@ import pickle
 def refresh_source_id_callback ( self, context ):
     if self.refresh_source_id:
         print ("Updating ID")
+        if 'cellblender_source_id_from_file' in cellblender.cellblender_info:
+            cellblender.cellblender_info.pop('cellblender_source_id_from_file')
         if not ('cellblender_source_id_from_file' in cellblender.cellblender_info):
             # Save the version that was read from the file
             cellblender.cellblender_info.update ( { "cellblender_source_id_from_file": cellblender.cellblender_info['cellblender_source_sha1'] } )
