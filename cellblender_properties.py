@@ -1559,10 +1559,9 @@ import pickle
 
 # Main MCell (CellBlender) Properties Class:
 def refresh_source_id_callback ( self, context ):
+    # This is a boolean which defaults to false. So clicking it should change it to true which triggers this callback:
     if self.refresh_source_id:
         print ("Updating ID")
-        if 'cellblender_source_id_from_file' in cellblender.cellblender_info:
-            cellblender.cellblender_info.pop('cellblender_source_id_from_file')
         if not ('cellblender_source_id_from_file' in cellblender.cellblender_info):
             # Save the version that was read from the file
             cellblender.cellblender_info.update ( { "cellblender_source_id_from_file": cellblender.cellblender_info['cellblender_source_sha1'] } )
