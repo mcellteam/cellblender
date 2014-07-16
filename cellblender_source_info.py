@@ -37,6 +37,7 @@ cellblender_info = {
         "data_plotters"+os.sep+"xmgrace"+os.sep+"__init__.py",
         "data_plotters"+os.sep+"java_plot"+os.sep+"__init__.py",
         "data_plotters"+os.sep+"java_plot"+os.sep+"PlotData.java",
+        "data_plotters"+os.sep+"java_plot"+os.sep+"META-INF"+os.sep+"MANIFEST.MF",
         "data_plotters"+os.sep+"java_plot"+os.sep+"PlotData.jar",
         "mdl"+os.sep+"__init__.py",
         "bng"+os.sep+"__init__.py",
