@@ -1404,6 +1404,7 @@ public class PlotData extends JFrame implements WindowListener {
     frame.setVisible(true);
 
     if (args.length > 0) {
+      Color next_color = null;
       for (int arg=0; arg<args.length; arg++) {
         try {
           if ( (args[arg].equals("?")) || (args[arg].equals("/?")) ) {
@@ -1525,8 +1526,19 @@ public class PlotData extends JFrame implements WindowListener {
             System.out.println ( "Reading file " + args[arg].substring(4) + " ..." );
             file_xy fxy = new file_xy ( args[arg].substring(4) );
             System.out.println ( "   ... done reading file " + args[arg].substring(4) );
-            fxy.setColor ( data_file.get_next_color() );
+            if (next_color == null) {
+              fxy.setColor ( data_file.get_next_color() );
+            } else {
+              fxy.setColor ( next_color );
+            }
             dp.add_file ( fxy );
+          } else if ( (args[arg].length() > 6) && (args[arg].substring(0,6).equalsIgnoreCase("color=")) ) {
+            System.out.println ( "Setting Color to " + args[arg].substring(6) );
+            try {
+              next_color = Color.decode("0x" + args[arg].substring(6));
+            } catch (NumberFormatException e) {
+              System.out.println ( "Error decoding \"" + args[arg].substring(6) + "\" as a color" );
+            }
           } else if ( (args[arg].length() > 3) && (args[arg].substring(0,3).equalsIgnoreCase("x0=")) ) {
             x0 = Double.parseDouble ( args[arg].substring(3) );
           } else if ( (args[arg].length() > 3) && (args[arg].substring(0,3).equalsIgnoreCase("dx=")) ) {
