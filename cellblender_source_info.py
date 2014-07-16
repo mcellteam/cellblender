@@ -37,7 +37,7 @@ cellblender_info = {
         "data_plotters"+os.sep+"xmgrace"+os.sep+"__init__.py",
         "data_plotters"+os.sep+"java_plot"+os.sep+"__init__.py",
         "data_plotters"+os.sep+"java_plot"+os.sep+"PlotData.java",
-        #"data_plotters"+os.sep+"java_plot"+os.sep+"PlotData.jar",  # Note that this file changes when rebuilt ... may contain a date stamp.
+        "data_plotters"+os.sep+"java_plot"+os.sep+"PlotData.jar",
         "mdl"+os.sep+"__init__.py",
         "bng"+os.sep+"__init__.py",
         "bng"+os.sep+"sbml2blender.py",

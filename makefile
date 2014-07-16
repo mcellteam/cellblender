@@ -33,7 +33,7 @@ $(SUBDIRS):
 cellblender.zip: makefile $(SOURCES)
 	@echo Updating cellblender.zip
 	@echo Sources = $(SOURCES)
-	@zip -q cellblender.zip $(SOURCES) cellblender/cellblender_id.py cellblender/data_plotters/java_plot/PlotData.jar
+	@zip -q cellblender.zip $(SOURCES) cellblender/cellblender_id.py
 
 
 
