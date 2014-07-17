@@ -19,6 +19,11 @@ cellblender_info = {
         "cellblender_molecules.py",
         "object_surface_regions.py",
         "run_simulations.py",
+
+        "SimControl.java",
+        "META-INF"+os.sep+"MANIFEST.MF",
+        "SimControl.jar",
+
         "utils.py",
         "glyph_library.blend",
         "io_mesh_mcell_mdl"+os.sep+"__init__.py",

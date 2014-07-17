@@ -1336,6 +1336,123 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_run_simulation_control(bpy.types.Operator):
+    bl_idname = "mcell.run_simulation_control"
+    bl_label = "Run MCell Simulation Control"
+    bl_description = "Run MCell Simulation Control"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+
+        mcell = context.scene.mcell
+
+        binary_path = mcell.cellblender_preferences.mcell_binary
+        mcell.cellblender_preferences.mcell_binary_valid = is_executable ( binary_path )
+
+        start = mcell.run_simulation.start_seed
+        end = mcell.run_simulation.end_seed
+        mcell_processes_str = str(mcell.run_simulation.mcell_processes)
+        mcell_binary = mcell.cellblender_preferences.mcell_binary
+        # Force the project directory to be where the .blend file lives
+        project_dir = project_files_path()
+        status = ""
+        # If python path was set by user, use that one. Otherwise, try to
+        # automatically find it. This will probably fail on Windows unless it's
+        # set in the PATH.
+        if mcell.cellblender_preferences.python_binary_valid:
+            python_path = mcell.cellblender_preferences.python_binary
+        else:
+            python_path = shutil.which("python", mode=os.X_OK)
+
+        if python_path:
+            if not mcell.cellblender_preferences.decouple_export_run:
+                bpy.ops.mcell.export_project()
+
+            if (mcell.run_simulation.error_list and
+                    mcell.cellblender_preferences.invalid_policy == 'dont_run'):
+                pass
+            else:
+                react_dir = os.path.join(project_dir, "react_data")
+                if (os.path.exists(react_dir) and
+                        mcell.run_simulation.remove_append == 'remove'):
+                    shutil.rmtree(react_dir)
+                if not os.path.exists(react_dir):
+                    os.makedirs(react_dir)
+
+                viz_dir = os.path.join(project_dir, "viz_data")
+                if (os.path.exists(viz_dir) and
+                        mcell.run_simulation.remove_append == 'remove'):
+                    shutil.rmtree(viz_dir)
+                if not os.path.exists(viz_dir):
+                    os.makedirs(viz_dir)
+
+                base_name = mcell.project_settings.base_name
+
+                error_file_option = mcell.run_simulation.error_file
+                log_file_option = mcell.run_simulation.log_file
+                script_dir_path = os.path.dirname(os.path.realpath(__file__))
+                script_file_path = os.path.join(
+                    script_dir_path, "SimControl.jar")
+
+                processes_list = mcell.run_simulation.processes_list
+                processes_list.add()
+                mcell.run_simulation.active_process_index = len(
+                    mcell.run_simulation.processes_list) - 1
+                simulation_process = processes_list[
+                    mcell.run_simulation.active_process_index]
+
+                print("Starting MCell ... create start_time.txt file:")
+                with open(os.path.join(os.path.dirname(bpy.data.filepath),
+                          "start_time.txt"), "w") as start_time_file:
+                    start_time_file.write(
+                        "Started MCell at: " + (str(time.ctime())) + "\n")
+
+                # We have to create a new subprocess that in turn creates a
+                # multiprocessing pool, instead of directly creating it here,
+                # because the multiprocessing package requires that the __main__
+                # module be importable by the children.
+                
+                print ( "java -jar " + script_file_path + " " + mcell_binary + " " + os.path.join(project_dir, ("%s.main.mdl" % base_name))  )
+                
+                sp = subprocess.Popen(['java', '-jar', script_file_path, mcell_binary, os.path.join(project_dir, ("%s.main.mdl" % base_name))], stdout=None,
+                    stderr=None)
+                
+                """
+                print ( "Running with: Calling Popen with " + str([ python_path, script_file_path, mcell_binary, 
+                                                  str(start), str(end + 1),
+                                                  project_dir, base_name, 
+                                                  error_file_option, log_file_option, mcell_processes_str]) );
+
+                sp = subprocess.Popen([
+                    python_path, script_file_path, mcell_binary, str(start),
+                    str(end + 1), project_dir, base_name, error_file_option,
+                    log_file_option, mcell_processes_str], stdout=None,
+                    stderr=None)
+                self.report({'INFO'}, "Simulation Running")
+                """
+
+                # This is a hackish workaround since we can't return arbitrary
+                # objects from operators or store arbitrary objects in collection
+                # properties, and we need to keep track of the progress of the
+                # subprocess objects in cellblender_panels.
+                cellblender.simulation_popen_list.append(sp)
+
+                if ((end - start) == 0):
+                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
+                                               "Seed: %d" % (sp.pid, base_name,
+                                                             start))
+                else:
+                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
+                                               "Seeds: %d-%d" % (sp.pid, base_name,
+                                                                 start, end))
+        else:
+            status = "Python not found. Set it in Project Settings."
+
+        mcell.run_simulation.status = status
+
+        return {'FINISHED'}
+
+
 class MCELL_OT_clear_run_list(bpy.types.Operator):
     bl_idname = "mcell.clear_run_list"
     bl_label = "Clear Completed MCell Runs"
