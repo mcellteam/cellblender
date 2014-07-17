@@ -1412,30 +1412,33 @@ class MCELL_OT_run_simulation_control(bpy.types.Operator):
                 # because the multiprocessing package requires that the __main__
                 # module be importable by the children.
                 
-                print ( "java -jar " + script_file_path + " " + mcell_binary + " " + os.path.join(project_dir, ("%s.main.mdl" % base_name))  )
+                for sim_seed in range(start,end+1):
+                    print ("Running with seed " + str(sim_seed) )
                 
-                sp = subprocess.Popen(['java', '-jar', script_file_path, mcell_binary, os.path.join(project_dir, ("%s.main.mdl" % base_name))], stdout=None,
-                    stderr=None)
-                
-                """
-                print ( "Running with: Calling Popen with " + str([ python_path, script_file_path, mcell_binary, 
-                                                  str(start), str(end + 1),
-                                                  project_dir, base_name, 
-                                                  error_file_option, log_file_option, mcell_processes_str]) );
+                    print ( "java -jar " + script_file_path + " " + mcell_binary + " " + os.path.join(project_dir, ("%s.main.mdl" % base_name))  )
+                    
+                    sp = subprocess.Popen(['java', '-jar', script_file_path, mcell_binary, ("-seed %s" % str(sim_seed)), os.path.join(project_dir, ("%s.main.mdl" % base_name))], cwd=project_dir, stdout=None,
+                        stderr=None)
+                    
+                    """
+                    print ( "Running with: Calling Popen with " + str([ python_path, script_file_path, mcell_binary, 
+                                                      str(start), str(end + 1),
+                                                      project_dir, base_name, 
+                                                      error_file_option, log_file_option, mcell_processes_str]) );
 
-                sp = subprocess.Popen([
-                    python_path, script_file_path, mcell_binary, str(start),
-                    str(end + 1), project_dir, base_name, error_file_option,
-                    log_file_option, mcell_processes_str], stdout=None,
-                    stderr=None)
-                self.report({'INFO'}, "Simulation Running")
-                """
+                    sp = subprocess.Popen([
+                        python_path, script_file_path, mcell_binary, str(start),
+                        str(end + 1), project_dir, base_name, error_file_option,
+                        log_file_option, mcell_processes_str], stdout=None,
+                        stderr=None)
+                    self.report({'INFO'}, "Simulation Running")
+                    """
 
-                # This is a hackish workaround since we can't return arbitrary
-                # objects from operators or store arbitrary objects in collection
-                # properties, and we need to keep track of the progress of the
-                # subprocess objects in cellblender_panels.
-                cellblender.simulation_popen_list.append(sp)
+                    # This is a hackish workaround since we can't return arbitrary
+                    # objects from operators or store arbitrary objects in collection
+                    # properties, and we need to keep track of the progress of the
+                    # subprocess objects in cellblender_panels.
+                    cellblender.simulation_popen_list.append(sp)
 
                 if ((end - start) == 0):
                     simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "

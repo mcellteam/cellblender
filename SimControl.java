@@ -62,7 +62,7 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
   }
 
   public void set_background_done () {
-		setBackground ( new Color ( 100, 0, 0 ) );
+		setBackground ( new Color ( 0, 100, 0 ) );
 		repaint();
   }
 
@@ -126,7 +126,7 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		frame = f;
 	}
 	
-  int pref_w=1200, pref_h=600;
+  int pref_w=600, pref_h=600;
 	public Dimension getPreferredSize() {
 		return new Dimension(pref_w,pref_h);
 	}
