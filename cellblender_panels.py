@@ -258,8 +258,8 @@ class MCELL_PT_run_simulation(bpy.types.Panel):
                 row = layout.row()
                 row.operator("mcell.run_simulation", text="Run Simulation",
                              icon='COLOR_RED')
-                row.operator("mcell.run_simulation_control", text="Run Simulation Control",
-                             icon='COLOR_RED')
+                #row.operator("mcell.run_simulation_control", text="Run Simulation Control",
+                #             icon='COLOR_RED')
 
                 if (mcell.run_simulation.processes_list and
                         cellblender.simulation_popen_list):
