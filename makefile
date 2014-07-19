@@ -12,7 +12,7 @@ SOURCES = $(shell python cellblender_source_info.py)
 SUBDIRS = io_mesh_mcell_mdl data_plotters
 
 .PHONY: all
-all: subdirs cellblender.zip SimControl.jar
+all: subdirs cellblender.zip SimControl.jar SimControl
 
 
 .PHONY: subdirs $(SUBDIRS)
@@ -42,6 +42,13 @@ SimControl.jar: SimControl.java makefile
 	touch -t 201407160000 *.class
 	zip -X SimControl.jar META-INF/MANIFEST.MF SimControl.java *.class
 	rm -f *.class
+
+
+SimControl: SimControl.o makefile
+	gcc -lGL -lglut -lGLU -o SimControl SimControl.o
+
+SimControl.o: SimControl.c makefile
+	gcc -c -I/usr/include/GL SimControl.c
 
 
 .PHONY: clean
