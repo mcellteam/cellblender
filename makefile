@@ -48,7 +48,7 @@ SimControl: SimControl.o makefile
 	gcc -lGL -lglut -lGLU -o SimControl SimControl.o
 
 SimControl.o: SimControl.c makefile
-	gcc -c -I/usr/include/GL SimControl.c
+	gcc -c -std=c99 -I/usr/include/GL SimControl.c
 
 
 .PHONY: clean

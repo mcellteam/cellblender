@@ -312,7 +312,6 @@ public class SimControl extends JFrame implements WindowListener {
     String command_string = "";
 
     if (args.length > 0) {
-      Color next_color = null;
       for (int arg=0; arg<args.length; arg++) {
         try {
           if ( (args[arg].equals("?")) || (args[arg].equals("/?")) ) {
