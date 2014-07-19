@@ -1,4 +1,3 @@
-//#include <windows.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
@@ -9,10 +8,6 @@
 int w, h;
 //const
 int font; // = (int)GLUT_BITMAP_9_BY_15;
-
-char s[30];
-
-double t;
 
 FILE *subprocess_pipe;
 
@@ -67,12 +62,28 @@ static void display(void){
   setOrthographicProjection();
   glPushMatrix();
   glLoadIdentity();
-  renderBitmapString(200,200,(void *)font,"Font Rendering - Programming Techniques");
-  renderBitmapString(300,220, (void*)font, s);
-  renderBitmapString(300,240,(void *)font,"Esc - Quit");
+  
+  GLint vp_params[4];
+  glGetIntegerv ( GL_VIEWPORT, vp_params );
+  int vp_height = vp_params[3];
+
+  a_line *next = line_list;
+  int y = vp_height - 20;
+  while (next != NULL) {
+    renderBitmapString(10,y,(void *)font,next->line);
+    next = next->next;
+    y = y - 20;
+  }
   glPopMatrix();
   resetPerspectiveProjection();
   glutSwapBuffers();
+}
+
+void replace_crs ( char *s ) {
+  for (int i=0; i<strlen(s); i++) {
+    if (s[i] == '\n') s[i] = ' ';
+    if (s[i] == '\r') s[i] = ' ';
+  }
 }
 
 void update(int value){
@@ -81,24 +92,16 @@ void update(int value){
   if (subprocess_pipe != NULL) {
     char *buf = fgets ( buffer, 1000, subprocess_pipe );
     if (buf != NULL) {
-      printf ( "Input: %s", buf );
+      replace_crs(buf);
+      printf ( "Input: %s\n", buf );
       new_line = (a_line *) malloc ( sizeof(a_line) );
       new_line->next = NULL;
       new_line->line = (char *) malloc ( 1+strlen(buf) );
       strcpy ( new_line->line, buf );
-      if (line_list == NULL) {
-        line_list = new_line;
-        last_line = new_line;
-      } else {
-        last_line->next = new_line;
-        last_line = last_line->next;
-      }
-      
+      new_line->next = line_list;
+      line_list = new_line;
     }
   }
-  t = glutGet(GLUT_ELAPSED_TIME) / 10.0;
-  int time = (int)t;
-  sprintf(s, "TIME : %2d Sec", time);
   glutTimerFunc(10, update, 0);
   glutPostRedisplay();
 }
@@ -125,14 +128,13 @@ int main(int argc, char *argv[])
   subprocess_pipe = popen ( cmd, "r" );
   
   free(cmd);
-  
-  
+
   font=(int)GLUT_BITMAP_9_BY_15;
   glutInit(&argc, argv);
   glutInitWindowSize(640,480);
   glutInitWindowPosition(10,10);
   glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-  glutCreateWindow("Font Rendering Using Bitmap Font - Programming Techniques0");
+  glutCreateWindow("Simulation Control");
   glutReshapeFunc(resize);
   glutDisplayFunc(display);
   glutTimerFunc(25, update, 0);
