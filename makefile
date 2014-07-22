@@ -55,6 +55,8 @@ SimControl.o: SimControl.c makefile
 clean:
 	rm -f cellblender.zip
 	rm -f SimControl.jar
+	rm -f SimControl.o
+	rm -f SimControl
 	(cd io_mesh_mcell_mdl ; make clean)
 	(cd data_plotters ; make clean)
 
