@@ -111,7 +111,7 @@ class PrintDataModel(bpy.types.Operator):
     bl_idname = "cb.print_data_model" 
     bl_label = "Print Data Model"
     bl_description = "Print the CellBlender Data Model to the console"
- 
+
     def execute(self, context):
         print ( "Printing CellBlender Data Model:" )
         mcell_dm = context.scene.mcell.build_data_model_from_properties ( context )
@@ -124,7 +124,7 @@ class ExportDataModel(bpy.types.Operator, ExportHelper):
     bl_idname = "cb.export_data_model" 
     bl_label = "Export Data Model"
     bl_description = "Export CellBlender Data Model to a Python Pickle in a file"
- 
+
     filename_ext = ".txt"
     filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
 
@@ -144,7 +144,7 @@ class ExportDataModelAll(bpy.types.Operator, ExportHelper):
     bl_idname = "cb.export_data_model_all" 
     bl_label = "Export Data Model with Geometry"
     bl_description = "Export CellBlender Data Model and Geometry to a Python Pickle in a file"
- 
+
     filename_ext = ".txt"
     filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
 

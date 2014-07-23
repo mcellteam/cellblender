@@ -310,28 +310,58 @@ public class SimControl extends JFrame implements WindowListener {
     frame.setVisible(true);
     
     String command_string = "";
+    int command_arg_sep_index = -1;  // The value of -1 is needed because it will default to 0 (-1 + 1)
+    
+    int window_x=0;
+    int window_y=0;
 
     if (args.length > 0) {
+      // Search for the first command argument separator
       for (int arg=0; arg<args.length; arg++) {
-        try {
-          if ( (args[arg].equals("?")) || (args[arg].equals("/?")) ) {
-            System.out.println ( "Args: [?] [cmd]" );
-            System.out.println ( "  ? - Print this help" );
-            System.out.println ( "  cmd - Execute the command showing output" );
-            System.exit(0);
-          } else {
-            if (command_string.length() > 0) {
-              command_string += " ";
-            }
-            command_string += args[arg];
-          }
-        } catch (Exception e) {
-           System.out.println ( "Error Parsing Argument: " + args[arg] + ", Error = " + e );
-           System.exit(0);
+        if ( args[arg].equals(":") ) {
+          command_arg_sep_index = arg;
+          break;
         }
+      }
+      
+      if (command_arg_sep_index >= 0) {
+        // Process the application commands before the command argument separator
+
+        for (int arg=0; arg<command_arg_sep_index; arg++) {
+          try {
+            if ( (args[arg].equals("?")) || (args[arg].equals("/?")) ) {
+              System.out.println ( "Args: [?] [x=#] [y=#] [:] [cmd]" );
+              System.out.println ( "  x=# - Set the x location of the window" );
+              System.out.println ( "  y=# - Set the y location of the window" );
+              System.out.println ( "  : - Separates options from command line (needed when both are present)" );
+              System.out.println ( "  cmd - Execute the command showing output" );
+              System.exit(0);
+            } else if ( args[arg].startsWith("x=") ) {
+              window_x = Integer.parseInt(args[arg].substring(2));
+            } else if ( args[arg].startsWith("y=") ) {
+              window_y = Integer.parseInt(args[arg].substring(2));
+            } else {
+              System.out.println ( "Unrecognized argument: " + args[arg] );
+            }
+          } catch (Exception e) {
+             System.out.println ( "Error Parsing Argument: " + args[arg] + ", Error = " + e );
+             System.exit(0);
+          }
+        }
+      }
+        
+      // Process the remaining arguments as if they are all parts of the command string
+
+      for (int arg=command_arg_sep_index+1; arg<args.length; arg++) {
+        if (command_string.length() > 0) {
+          command_string += " ";
+        }
+        command_string += args[arg];
         content.repaint();
       }
     }
+
+    frame.setLocation ( window_x, window_y );
 
     System.out.println ( "Command = " + command_string );
     dp.command_to_run = command_string;

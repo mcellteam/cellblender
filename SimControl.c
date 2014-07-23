@@ -109,20 +109,64 @@ void update(int value){
 int main(int argc, char *argv[])
 {
   printf ( "Simulation Control Program ...\n" );
-  int command_length = 1; // Allow for the null terminator
-  for (int i=1; i<argc; i++) {
-    printf ( "Arg %d = %s\n", i, argv[i] );
-    command_length += 1 + strlen(argv[i]); // Allow for spaces between arguments
-  }
-  char *cmd;
-  cmd = (char *) malloc ( command_length + 1 );  // Allow for mistakes!!
-  cmd[0] = '\0';
-  for (int i=1; i<argc; i++) {
-    strcat ( cmd, argv[i] );
-    if (i < (argc-1) ) {
-      strcat ( cmd, " " );
+
+  int command_arg_sep_index = 0;
+
+  int window_x=0;
+  int window_y=0;
+  
+  char *cmd = NULL;
+
+  if (argc > 1) {
+    // Search for the first command argument separator
+    for (int arg=1; arg<argc; arg++) {
+      if ( strcmp ( argv[arg], ":" ) == 0 ) {
+        command_arg_sep_index = arg;
+        printf ( "Command_arg_sep_index = %d\n", command_arg_sep_index );
+        break;
+      }
     }
+    
+    if (command_arg_sep_index >= 1) {
+      // Process the application commands before the command argument separator
+
+      for (int arg=1; arg<command_arg_sep_index; arg++) {
+        if ( ( strcmp (argv[arg],("?")) == 0 ) || ( strcmp (argv[arg],("/?")) == 0 ) ) {
+          printf ( "Args: [?] [x=#] [y=#] [:] [cmd]" );
+          printf ( "  x=# - Set the x location of the window" );
+          printf ( "  y=# - Set the y location of the window" );
+          printf ( "  : - Separates options from command line (needed when both are present)" );
+          printf ( "  cmd - Execute the command showing output" );
+          exit(0);
+        } else if ( strncmp(argv[arg],"x=",2) == 0 ) {
+          sscanf ( argv[arg], "x=%d", &window_x );
+        } else if ( strncmp(argv[arg],"y=",2) == 0 ) {
+          sscanf ( argv[arg], "y=%d", &window_y );
+        } else {
+          printf ( "Unrecognized argument: %s", argv[arg] );
+        }
+      }
+    }
+      
+    // Process the remaining arguments as if they are all parts of the command string
+
+    int command_length = 1; // Allow for the null terminator
+    for (int i=command_arg_sep_index+1; i<argc; i++) {
+      printf ( "Arg %d = %s\n", i, argv[i] );
+      command_length += 1 + strlen(argv[i]); // Allow for spaces between arguments
+    }
+
+    cmd = (char *) malloc ( command_length + 1 );  // Allow for mistakes!!
+    cmd[0] = '\0';
+    for (int i=command_arg_sep_index+1; i<argc; i++) {
+      strcat ( cmd, argv[i] );
+      if (i < (argc-1) ) {
+        strcat ( cmd, " " );
+      }
+    }
+    printf ( "Command: %s\n", cmd );
   }
+
   printf ( "Command: %s\n", cmd );
   
   subprocess_pipe = popen ( cmd, "r" );
@@ -132,7 +176,7 @@ int main(int argc, char *argv[])
   font=(int)GLUT_BITMAP_9_BY_15;
   glutInit(&argc, argv);
   glutInitWindowSize(640,480);
-  glutInitWindowPosition(10,10);
+  glutInitWindowPosition(window_x,window_y);
   glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
   glutCreateWindow("Simulation Control");
   glutReshapeFunc(resize);
