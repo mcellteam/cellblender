@@ -1235,6 +1235,8 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
         self.name = dm["name"]
 
 
+import mathutils
+
 class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
     object_list = CollectionProperty(
         type=MCellModelObjectsProperty, name="Object List")
@@ -1249,7 +1251,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
         mo_dm.update ( { "model_object_list": mo_list } )
         return mo_dm
 
-    def build_geometry_from_properties ( self, context ):
+    def build_data_model_geometry_from_mesh ( self, context ):
         print ( "Model Objects List building Geometry for Data Model" )
         g_dm = {}
         g_list = []
@@ -1305,6 +1307,42 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
 
         g_dm.update ( { "object_list": g_list } )
         return g_dm
+
+    def build_mesh_from_data_model_geometry ( self, context, dm ):
+        # Delete any objects with conflicting names and then rebuild all
+        print ( "Model Objects List building Mesh Objects from Data Model Geometry" )
+        
+        # Start by creating a list of named objects in the data model
+        model_names = [ o['name'] for o in dm['object_list'] ]
+        print ( "Model names = " + str(model_names) )
+        
+        # Delete all objects with identical names to model objects in the data model
+        bpy.ops.object.select_all(action='DESELECT')
+        for scene_object in context.scene.objects:
+            if scene_object.type == 'MESH':
+                print ( "Mesh object: " + scene_object.name )
+                if scene_object.name in model_names:
+                    print ( "  will be recreated from the data model ... deleting." )
+                    scene_object.select = True
+                    bpy.ops.object.delete()
+
+        # Now create all the object meshes from the data model
+        for model_object in dm['object_list']:
+            verticies = []
+            for vertex in model_object['vertex_list']:
+                verticies.append ( mathutils.Vector((vertex[0],vertex[1],vertex[2])) )
+            faces = []
+            for face_element in model_object['element_connections']:
+                faces.append ( face_element )
+            new_mesh = bpy.data.meshes.new ( model_object['name'] + '_mesh' )
+            new_mesh.from_pydata ( verticies, [], faces )
+            new_mesh.update()
+            new_obj = bpy.data.objects.new ( model_object['name'], new_mesh )
+            context.scene.objects.link ( new_obj )
+            bpy.ops.object.select_all ( action = "DESELECT" )
+            new_obj.select = True
+            context.scene.objects.active = new_obj
+                
 
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -1450,7 +1488,7 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
         (' page ', "Separate Page for each Plot", ""),
         (' plot ', "One Page, Multiple Plots", ""),
         (' ',      "One Page, One Plot", "")]
-    plot_layout = bpy.props.EnumProperty ( items=plot_layout_enum, name="" )
+    plot_layout = bpy.props.EnumProperty ( items=plot_layout_enum, name="", default=' plot ' )
     plot_legend_enum = [
         ('x', "No Legend", ""),
         ('0', "Legend with Automatic Placement", ""),
@@ -1504,8 +1542,8 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
 
 
 class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
-    glyph_lib = __file__.replace(__file__.split('/')[len(
-        __file__.split("/"))-1], "")+"glyph_library.blend/Mesh/"
+    glyph_lib = os.path.join(
+        os.path.dirname(__file__), "glyph_library.blend/Mesh/")
     glyph_enum = [
         ('Cone', "Cone", ""),
         ('Cube', "Cube", ""),
@@ -1558,13 +1596,28 @@ class PP_OT_init_mcell(bpy.types.Operator):
 import pickle
 
 # Main MCell (CellBlender) Properties Class:
+def refresh_source_id_callback ( self, context ):
+    # This is a boolean which defaults to false. So clicking it should change it to true which triggers this callback:
+    if self.refresh_source_id:
+        print ("Updating ID")
+        if not ('cellblender_source_id_from_file' in cellblender.cellblender_info):
+            # Save the version that was read from the file
+            cellblender.cellblender_info.update ( { "cellblender_source_id_from_file": cellblender.cellblender_info['cellblender_source_sha1'] } )
+        # Compute the new version
+        cellblender.cellblender_source_info.identify_source_version(os.path.dirname(__file__),verbose=True)
+        # Check to see if they match
+        if cellblender.cellblender_info['cellblender_source_sha1'] == cellblender.cellblender_info['cellblender_source_id_from_file']:
+            # They still match, so remove the "from file" version from the info to let the panel know that there's no longer a mismatch:
+            cellblender.cellblender_info.pop('cellblender_source_id_from_file')
+        # Setting this to false will redraw the panel
+        self.refresh_source_id = False
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
-    initialized = BoolProperty(
-        name="Initialized", default=False)
+    initialized = BoolProperty(name="Initialized", default=False)
     cellblender_version = StringProperty(name="CellBlender Version", default="0")
     cellblender_addon_id = StringProperty(name="CellBlender Addon ID", default="0")
     cellblender_data_model_version = StringProperty(name="CellBlender Data Model Version", default="0")
+    refresh_source_id = BoolProperty ( default=False, description="Recompute the Source ID from actual files", update=refresh_source_id_callback )
     #cellblender_source_hash = StringProperty(
     #    name="CellBlender Source Hash", default="unknown")
     cellblender_preferences = PointerProperty(
@@ -1641,10 +1694,10 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm.update ( { "reaction_data_output": self.rxn_output.build_data_model_from_properties(context) } )
         if geometry:
             print ( "Adding Geometry to Data Model" )
-            dm.update ( { "geometrical_objects": self.model_objects.build_geometry_from_properties(context) } )
+            dm.update ( { "geometrical_objects": self.model_objects.build_data_model_geometry_from_mesh(context) } )
         return dm
 
-    def build_properties_from_data_model ( self, context, dm ):
+    def build_properties_from_data_model ( self, context, dm, geometry=False ):
         print ( "Overwriting properites based on data in the data model dictionary" )
         self.init_properties()
         self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"] )
@@ -1659,6 +1712,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         self.model_objects.build_properties_from_data_model ( context, dm["model_objects"] )
         self.viz_output.build_properties_from_data_model ( context, dm["viz_output"] )
         self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
+        if geometry:
+            print ( "Building Mesh Geometry from Data Model Geometry" )
+            self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"] )
         print ( "Not fully implemented yet!!!!" )
 
 

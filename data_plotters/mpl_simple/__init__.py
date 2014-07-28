@@ -24,23 +24,26 @@ def requirements_met():
         print("  Python is needed for \"%s\"" % (get_name()))
         ok = False
     else:
+        import_test_program = ''
         for plot_mod in required_modules:
-            import_test_program = 'import %s\nprint("Found=OK")' % (plot_mod)
-            process = subprocess.Popen(
-                [python_command, '-c', import_test_program],
-                shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
-            process.poll()
-            output = process.stdout.readline()
-            strout = str(output)
-            if (strout is not None) & (strout.find("Found=OK") >= 0):
-                # print("  ", plot_mod,
-                #       "is available through external python interpreter")
-                pass
-            else:
-                print("  ", plot_mod,
-                      "is not available through external python interpreter")
-                ok = False
+            import_test_program = import_test_program + 'import %s\n' % (plot_mod)
+        
+        import_test_program = import_test_program + 'print("Found=OK")\n'
+        process = subprocess.Popen(
+            [python_command, '-c', import_test_program],
+            shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        process.poll()
+        output = process.stdout.readline()
+        strout = str(output)
+        if (strout is not None) & (strout.find("Found=OK") >= 0):
+            # print("  ", plot_mod,
+            #       "is available through external python interpreter")
+            pass
+        else:
+            print("  One or more equired modules " + required_modules + 
+                  " are not available through the external python interpreter")
+            ok = False
     return ok
 
 

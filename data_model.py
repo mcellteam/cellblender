@@ -111,7 +111,7 @@ class PrintDataModel(bpy.types.Operator):
     bl_idname = "cb.print_data_model" 
     bl_label = "Print Data Model"
     bl_description = "Print the CellBlender Data Model to the console"
- 
+
     def execute(self, context):
         print ( "Printing CellBlender Data Model:" )
         mcell_dm = context.scene.mcell.build_data_model_from_properties ( context )
@@ -124,7 +124,7 @@ class ExportDataModel(bpy.types.Operator, ExportHelper):
     bl_idname = "cb.export_data_model" 
     bl_label = "Export Data Model"
     bl_description = "Export CellBlender Data Model to a Python Pickle in a file"
- 
+
     filename_ext = ".txt"
     filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
 
@@ -144,7 +144,7 @@ class ExportDataModelAll(bpy.types.Operator, ExportHelper):
     bl_idname = "cb.export_data_model_all" 
     bl_label = "Export Data Model with Geometry"
     bl_description = "Export CellBlender Data Model and Geometry to a Python Pickle in a file"
- 
+
     filename_ext = ".txt"
     filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
 
@@ -164,7 +164,7 @@ class ImportDataModel(bpy.types.Operator, ExportHelper):
     bl_idname = "cb.import_data_model" 
     bl_label = "Import Data Model"
     bl_description = "Import CellBlender Data Model from a Python Pickle in a file"
- 
+
     filename_ext = ".txt"
     filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
 
@@ -181,6 +181,28 @@ class ImportDataModel(bpy.types.Operator, ExportHelper):
         return {'FINISHED'}
 
 
+class ImportDataModelAll(bpy.types.Operator, ExportHelper):
+    '''Import a CellBlender model from a Python Pickle in a text file'''
+    bl_idname = "cb.import_data_model_all" 
+    bl_label = "Import Data Model with Geometry"
+    bl_description = "Import CellBlender Data Model and Geometry from a Python Pickle in a file"
+
+    filename_ext = ".txt"
+    filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
+
+    def execute(self, context):
+        print ( "Loading CellBlender model from file: " + self.filepath + " ..." )
+        f = open ( self.filepath, 'r' )
+        pickle_string = f.read()
+        f.close()
+
+        dm = unpickle_data_model ( pickle_string )
+        context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
+
+        print ( "Done loading CellBlender model." )
+        return {'FINISHED'}
+
+
 
 # Construct the data model property
 @persistent
@@ -190,11 +212,11 @@ def save_pre(context):
 
     if not context:
         context = bpy.context
-    
+
     if 'mcell' in context.scene:
         dm = context.scene.mcell.build_data_model_from_properties ( context )
         context.scene.mcell['data_model'] = pickle_data_model(dm)
-    
+
     return
 
 
@@ -207,26 +229,36 @@ def load_post(context):
     if not context:
         context = bpy.context
 
-    api_version = -1
+    api_version_in_blend_file = -1
     if 'mcell' in context.scene:
         mcell = context.scene['mcell']
         if 'api_version' in mcell:
-            api_version = mcell['api_version']
+            api_version_in_blend_file = mcell['api_version']
 
-        print ( "Code API = " + str(code_api_version()) + ", File API = " + str(api_version) )
-        
-        if (api_version <= 0):
+        print ( "Code API = " + str(code_api_version()) + ", File API = " + str(api_version_in_blend_file) )
 
-            # There is no data model so build it from the properties
+        if (api_version_in_blend_file <= 0):
+
+            # There is no data model (or it's experimental) so build one from the properties
+            print ( "Building a data model from existing properties..." )
             dm = context.scene.mcell.build_data_model_from_properties ( context )
             context.scene.mcell['data_model'] = pickle_data_model(dm)
 
-        elif (api_version != code_api_version()):
+        elif (api_version_in_blend_file != code_api_version()):
 
             # There is a data model in the file so convert it to match current properties
+            print ( "Building properties from the data model in the .blend file..." )
             dm = unpickle_data_model ( context.scene.mcell['data_model'] )
             context.scene.mcell.build_properties_from_data_model ( context, dm )
             context.scene['mcell']['api_version'] = code_api_version()
+
+        else:
+
+            # There is a data model in the file and it matches this version so just report it:
+            print ( "API version in .blend file matches code ... no action needed." )
+
+        # Uncomment this when we're ready to start producing public .blend files with API>0
+        # context.scene['mcell']['api_version'] = code_api_version()
 
     else:
         print ( "context.scene does not have an 'mcell' key ... no data model to import" )
@@ -239,6 +271,9 @@ def menu_func_import(self, context):
 
 def menu_func_export(self, context):
     self.layout.operator("cb.export_data_model", text="Export CellBlender Model (text/pickle)")
+
+def menu_func_import_all(self, context):
+    self.layout.operator("cb.import_data_model_all", text="Import CellBlender Model and Geometry (text/pickle)")
 
 def menu_func_export_all(self, context):
     self.layout.operator("cb.export_data_model_all", text="Export CellBlender Model and Geometry (text/pickle)")

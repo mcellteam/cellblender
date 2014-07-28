@@ -12,8 +12,16 @@ import bpy
 import os
 import xml.etree.ElementTree as ET
 import shutil
+<<<<<<< HEAD
 #import logging
 #logging.basicConfig(filename='cellblender.log',level=logging.DEBUG,format='%(levelname)s:%(message)s')
+=======
+import logging
+import tempfile
+
+fname = tempfile.mkstemp(prefix="cellblender.log.", text=True)[1]
+logging.basicConfig(filename=fname, level=logging.DEBUG,format='%(levelname)s:%(message)s')
+>>>>>>> 8564dcab6fa673978a96de535625769655ac78ae
 
 # Read all of the CSG Object types in a SBML file 
 def readSMBLFileCSGObject(filePath):

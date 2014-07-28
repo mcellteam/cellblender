@@ -1906,7 +1906,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         gen_par_list = []
         for p in self.general_parameter_list:
             gen_par_list = gen_par_list + [ p.build_data_model_from_properties() ]
-        par_sys_dm.update ( { "general_parameters": gen_par_list } )
+        par_sys_dm.update ( { "model_parameters": gen_par_list } )
         return par_sys_dm
 
 
@@ -1917,7 +1917,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             self.general_parameter_list.remove(0)
         self['gname_to_id_dict'] = {}
         self.next_gid = 1
-        for p in par_sys_dm['general_parameters']:
+        for p in par_sys_dm['model_parameters']:
             print ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + p['par_units'] + ") ... " + p['par_description'] )
             self.add_general_parameter_with_values ( p['par_name'], p['par_expression'], p['par_units'], p['par_description'] )
 

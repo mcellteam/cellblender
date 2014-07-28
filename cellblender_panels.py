@@ -140,8 +140,16 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         else:
 
             row = layout.row()
-            row.label(text="CellBlender ID: "+cellblender.cellblender_info[
-                'cellblender_source_sha1'])
+            split = row.split(0.96)
+            col = split.column()
+            col.label(text="CellBlender ID: "+cellblender.cellblender_info['cellblender_source_sha1'])
+            col = split.column()
+            col.prop ( mcell, "refresh_source_id", icon='FILE_REFRESH', text="" )
+            if 'cellblender_source_id_from_file' in cellblender.cellblender_info:
+                # This means that the source ID didn't match the refreshed version
+                # Draw a second line showing the original file ID as an error
+                row = layout.row()
+                row.label("File ID: " + cellblender.cellblender_info['cellblender_source_id_from_file'], icon='ERROR')
 
 
             row = layout.row()
@@ -250,6 +258,10 @@ class MCELL_PT_run_simulation(bpy.types.Panel):
                 row = layout.row()
                 row.operator("mcell.run_simulation", text="Run Simulation",
                              icon='COLOR_RED')
+                row.operator("mcell.run_simulation_control_java", text="Run Java Sim Control",
+                             icon='COLOR_BLUE')
+                row.operator("mcell.run_simulation_control_opengl", text="Run OpenGL Sim Control",
+                             icon='COLOR_BLUE')
 
                 if (mcell.run_simulation.processes_list and
                         cellblender.simulation_popen_list):
@@ -1130,15 +1142,6 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
                         col.operator("mcell.plot_rxn_output_generic",
                                      text=mod_name).plotter_button_label = mod_name
                         button_num = button_num + 1
-
-                    #layout.separator()
-                    #layout.separator()
-
-                    #row = layout.row()
-                    #col = row.column()
-                    #col.operator("mcell.plot_rxn_output_command",
-                    #             text="Execute Custom Plot Command:")
-                    #layout.prop(mcell.reactions, "plot_command")
 
             else:
                 row.label(text="Define at least one molecule", icon='ERROR')

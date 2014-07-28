@@ -60,18 +60,30 @@ def plot ( data_path, plot_spec ):
     # Subdivide the plot spec by "page"
     
     plot_spec = subdivide ( plot_spec.split(), "page" )
+    color_spec = ""
     
     for page in plot_spec:
     
-        # The java program only understands fxy=filename parameters so translate:
+        # The java program only understands color=#rrggbb and fxy=filename parameters so find "f=":
+
+        found = False
+        for generic_param in page:
+            if generic_param[0:2] == "f=":
+                found = True
+                break
         
+        # Go through the entire plot command (whether found or not) to set other settings
+
         java_plot_spec = ""
         for generic_param in page:
             if generic_param[0:2] == "f=":
                 java_plot_spec = java_plot_spec + " fxy=" + generic_param[2:]
-        
-        plot_cmd = find_in_path("java")
-        plot_cmd = plot_cmd + ' -jar ' + os.path.join ( program_path, 'PlotData.jar' ) + " "
-        plot_cmd = plot_cmd + java_plot_spec
-        pid = subprocess.Popen ( plot_cmd.split(), cwd=data_path )
+            elif generic_param[0:7] == "color=#":
+                java_plot_spec = java_plot_spec + " color=" + generic_param[7:]
+
+        if found:
+            plot_cmd = find_in_path("java")
+            plot_cmd = plot_cmd + ' -jar ' + os.path.join ( program_path, 'PlotData.jar' ) + " "
+            plot_cmd = plot_cmd + java_plot_spec
+            pid = subprocess.Popen ( plot_cmd.split(), cwd=data_path )
 

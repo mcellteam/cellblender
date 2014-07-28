@@ -7,44 +7,62 @@ INSTALL_DIR = ~/.config/blender/2.70/scripts/addons/
 
 SHELL = /bin/sh
 
+SOURCES = $(shell python cellblender_source_info.py)
+#SUBDIRS = data_plotters io_mesh_mcell_mdl
+SUBDIRS = io_mesh_mcell_mdl data_plotters
 
-cellblender.zip: io_mesh_mcell_mdl/_mdlmesh_parser.so
-	mkdir -p cellblender/io_mesh_mcell_mdl/
-	python __init__.py
-	cp cellblender_id.py                               cellblender/
-	cp __init__.py                                     cellblender/
-	cp cellblender_molecules.py                        cellblender/
-	cp cellblender_operators.py                        cellblender/
-	cp cellblender_panels.py                           cellblender/
-	cp cellblender_properties.py                       cellblender/
-	cp data_model.py                                   cellblender/
-	cp object_surface_regions.py                       cellblender/
-	cp parameter_system.py                             cellblender/
-	cp run_simulations.py                              cellblender/
-	cp utils.py                                        cellblender/
-	cp io_mesh_mcell_mdl/__init__.py                   cellblender/io_mesh_mcell_mdl/
-	cp io_mesh_mcell_mdl/_mdlmesh_parser.so            cellblender/io_mesh_mcell_mdl/
-	cp io_mesh_mcell_mdl/mdlobj.py                     cellblender/io_mesh_mcell_mdl/
-	cp io_mesh_mcell_mdl/mdlmesh_parser.py             cellblender/io_mesh_mcell_mdl/
-	cp io_mesh_mcell_mdl/import_mcell_mdl.py           cellblender/io_mesh_mcell_mdl/
-	cp io_mesh_mcell_mdl/import_mcell_mdl_pyparsing.py cellblender/io_mesh_mcell_mdl/
-	cp io_mesh_mcell_mdl/import_shared.py              cellblender/io_mesh_mcell_mdl/
-	cp io_mesh_mcell_mdl/pyparsing.py                  cellblender/io_mesh_mcell_mdl/
-	cp io_mesh_mcell_mdl/export_mcell_mdl.py           cellblender/io_mesh_mcell_mdl/
-	cp -r bng                                          cellblender/
-	cp -r data_plotters                                cellblender/
-	cp -r mdl                                          cellblender/
-	cp glyph_library.blend                             cellblender/
-	zip -rv cellblender.zip                            cellblender
+.PHONY: all
+all: subdirs cellblender.zip SimControl.jar SimControl
 
-io_mesh_mcell_mdl/_mdlmesh_parser.so: 
-	(cd io_mesh_mcell_mdl ; make)
 
+.PHONY: subdirs $(SUBDIRS)
+subdirs: makefile $(SUBDIRS)
+
+$(SUBDIRS):
+	$(MAKE) -C $@
+
+
+# https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html
+# A phony target should not be a prerequisite of a real target file;
+# if it is, its recipe will be run every time make goes to update that file.
+# As long as a phony target is never a prerequisite of a real target, the phony
+# target recipe will be executed only when the phony target is a specified goal
+#  (see Arguments to Specify the Goals). 
+
+# Note that files which auto-change but are included in the zip file are not part of the source list
+cellblender.zip: makefile $(SOURCES)
+	@echo Updating cellblender.zip
+	@echo Sources = $(SOURCES)
+	@zip -q cellblender.zip $(SOURCES) cellblender/cellblender_id.py
+
+
+SimControl.jar: SimControl.java makefile
+	rm -f *.class
+	javac SimControl.java
+	touch -t 201407160000 *.class
+	zip -X SimControl.jar META-INF/MANIFEST.MF SimControl.java *.class
+	rm -f *.class
+
+
+SimControl: SimControl.o makefile
+	gcc -lGL -lglut -lGLU -o SimControl SimControl.o
+
+SimControl.o: SimControl.c makefile
+	gcc -c -std=c99 -I/usr/include/GL SimControl.c
+
+
+.PHONY: clean
 clean:
-	rm -rf cellblender.zip
-	rm -rf cellblender
+	rm -f cellblender.zip
+	rm -f SimControl.jar
+	rm -f SimControl.o
+	rm -f SimControl
 	(cd io_mesh_mcell_mdl ; make clean)
+	(cd data_plotters ; make clean)
 
+
+
+.PHONY: install
 install: cellblender.zip
 	@if [ "$(INSTALL_DIR)" ]; then \
 	  unzip -o cellblender.zip -d $(INSTALL_DIR); \
