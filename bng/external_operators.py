@@ -47,7 +47,7 @@ class EXTERNAL_OT_parameter_add(bpy.types.Operator):
             par_type = str(key['type'])
 
             mcell.parameter_system.add_general_parameter_with_values( par_name, par_value, par_unit, par_type )
-            print ( "Adding parameter \"" + str(par_name) + "\"  =  \"" + str(par_value) + "\"  (" + str(par_unit) + ")" )
+            #print ( "Adding parameter \"" + str(par_name) + "\"  =  \"" + str(par_value) + "\"  (" + str(par_unit) + ")" )
  
         return {'FINISHED'}
 
@@ -82,7 +82,7 @@ class EXTERNAL_OT_molecule_add(bpy.types.Operator):
             #molecule.diffusion_constant.param_data.label = "Diffusion Constant"
             molecule.diffusion_constant.set_expr ( key['dif'], ps.panel_parameter_list )
             
-            print ( "Adding molecule " + str(molecule.name) )
+            #print ( "Adding molecule " + str(molecule.name) )
 
         return {'FINISHED'}
 
@@ -119,7 +119,7 @@ class EXTERNAL_OT_reaction_add(bpy.types.Operator):
             #reaction.fwd_rate.param_data.label = "Forward Rate"
             reaction.fwd_rate.set_expr ( key['fwd_rate'], ps.panel_parameter_list )
 
-            print ( "Adding reaction  " + str(reaction.reactants) + "  ->  " + str(reaction.products))
+            #print ( "Adding reaction  " + str(reaction.reactants) + "  ->  " + str(reaction.products))
 
         return {'FINISHED'}
 
@@ -160,7 +160,7 @@ class EXTERNAL_OT_release_site_add(bpy.types.Operator):
                 release_site.pattern = str(key['release_pattern'])
             # Is this check even needed?
             #cellblender_operators.check_release_molecule(context)
-            print ( "Adding release site " + str(release_site.name) )
+            #print ( "Adding release site " + str(release_site.name) )
 
         return {'FINISHED'}
 
@@ -209,6 +209,6 @@ class EXTERNAL_OT_reaction_output_add(bpy.types.Operator):
             rxn_output.init_properties(ps)
             '''
 
-            print ( "Adding reaction output " + str(key['name']))
+            #print ( "Adding reaction output " + str(key['name']))
 
         return {'FINISHED'}

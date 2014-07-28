@@ -153,7 +153,7 @@ class SBML2JSON:
             else:
                 continue
             parameterSpecs = {'name':parameter.getId(),'value':value,
-                              'unit':parameter.getUnits(),'type' : ""}
+                              'unit':parameter.getUnits() if parameter.isSetUnits() else "unknown",'type' : ""}
                               
             '''                             
             if parameterSpecs[0] == 'e':
@@ -645,11 +645,11 @@ def transform(filePath):
 
 def main():
 
-    logging.basicConfig(filename='cellblender.log',level=logging.DEBUG,format='%(asctime)s - %(levelname)s:%(message)s')
+    #logging.basicConfig(filename='cellblender.log',level=logging.DEBUG,format='%(asctime)s - %(levelname)s:%(message)s')
     if libsbml == None:
-        logging.error('Could not find local libsbml installation. Cannot import')
+        #logging.error('Could not find local libsbml installation. Cannot import')
         return
-    logging.info('found local libsbml. Starting')        
+    #logging.info('found local libsbml. Starting')        
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
 		default='',type="string",
@@ -668,9 +668,9 @@ def main():
 
     document = reader.readSBMLFromFile(nameStr)
     if document.getModel() == None:
-        logging.error('A model with path "{0}" could not be found'.format(nameStr))
+        #logging.error('A model with path "{0}" could not be found'.format(nameStr))
         return
-    logging.info('An SBML file was found at {0}.Attempting import'.format(nameStr))
+    #logging.info('An SBML file was found at {0}.Attempting import'.format(nameStr))
     parser = SBML2JSON(document.getModel())
     parameters,observables =  parser.getParameters()
     #compartments = parser.getRawCompartments()
@@ -689,7 +689,7 @@ def main():
 
     with open(outputFile,'w') as f:
         json.dump(definition,f,sort_keys=True,indent=1, separators=(',', ': '))
-    logging.info('SBML import intermediate file written to {0}'.format(outputFile))
+    #logging.info('SBML import intermediate file written to {0}'.format(outputFile))
         
 
 if __name__ == "__main__":
