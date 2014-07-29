@@ -1242,7 +1242,11 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
         type=MCellModelObjectsProperty, name="Object List")
     active_obj_index = IntProperty(name="Active Object Index", default=0)
 
+
     def build_data_model_from_properties ( self, context ):
+    
+        ############### Do with include flag on scene objects and use object's name not the model object list name
+        
         print ( "Model Objects List building Data Model" )
         mo_dm = {}
         mo_list = []
@@ -1251,10 +1255,14 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
         mo_dm.update ( { "model_object_list": mo_list } )
         return mo_dm
 
+
     def build_data_model_geometry_from_mesh ( self, context ):
         print ( "Model Objects List building Geometry for Data Model" )
         g_dm = {}
         g_list = []
+
+        ############### Do with include flag on scene objects and use object's name not the model object list name
+
         for object_item in self.object_list:
         
             data_object = context.scene.objects[object_item.name]
@@ -1308,7 +1316,9 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
         g_dm.update ( { "object_list": g_list } )
         return g_dm
 
+
     def build_mesh_from_data_model_geometry ( self, context, dm ):
+            
         # Delete any objects with conflicting names and then rebuild all
         print ( "Model Objects List building Mesh Objects from Data Model Geometry" )
         
@@ -1323,26 +1333,37 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                 print ( "Mesh object: " + scene_object.name )
                 if scene_object.name in model_names:
                     print ( "  will be recreated from the data model ... deleting." )
+                    # TODO preserve hidden/shown status
+                    scene_object.hide = False
                     scene_object.select = True
                     bpy.ops.object.delete()
+                    # TODO Need to delete the mesh for this object as well!!!
+
 
         # Now create all the object meshes from the data model
         for model_object in dm['object_list']:
-            verticies = []
+            vertices = []
             for vertex in model_object['vertex_list']:
-                verticies.append ( mathutils.Vector((vertex[0],vertex[1],vertex[2])) )
+                vertices.append ( mathutils.Vector((vertex[0],vertex[1],vertex[2])) )
             faces = []
             for face_element in model_object['element_connections']:
                 faces.append ( face_element )
-            new_mesh = bpy.data.meshes.new ( model_object['name'] + '_mesh' )
-            new_mesh.from_pydata ( verticies, [], faces )
+            new_mesh = bpy.data.meshes.new ( model_object['name'] )
+            new_mesh.from_pydata ( vertices, [], faces )
             new_mesh.update()
             new_obj = bpy.data.objects.new ( model_object['name'], new_mesh )
             context.scene.objects.link ( new_obj )
             bpy.ops.object.select_all ( action = "DESELECT" )
             new_obj.select = True
             context.scene.objects.active = new_obj
-                
+
+            # Add the surface regions to new_obj.mcell
+            
+            for rgn in model_object['define_surface_regions']:
+              print ( "  Building region[" + rgn['name'] + "]" )
+              new_obj.mcell.regions.add_region_by_name ( context, rgn['name'] )
+              reg = new_obj.mcell.regions.region_list[rgn['name']]
+              reg.set_region_faces ( new_mesh, set(rgn['include_elements']) )
 
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -1709,13 +1730,13 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         self.release_patterns.build_properties_from_data_model ( context, dm["define_release_patterns"] )
         self.surface_classes.build_properties_from_data_model ( context, dm["define_surface_classes"] )
         self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
-        self.model_objects.build_properties_from_data_model ( context, dm["model_objects"] )
-        self.viz_output.build_properties_from_data_model ( context, dm["viz_output"] )
-        self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
         if geometry:
             print ( "Building Mesh Geometry from Data Model Geometry" )
             self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"] )
         print ( "Not fully implemented yet!!!!" )
+        self.model_objects.build_properties_from_data_model ( context, dm["model_objects"] )
+        self.viz_output.build_properties_from_data_model ( context, dm["viz_output"] )
+        self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
 
 
     def init_properties ( self ):
