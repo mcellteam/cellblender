@@ -1223,12 +1223,13 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Object Name", update=cellblender_operators.check_model_object)
     status = StringProperty(name="Status")
-
+    """
     def build_data_model_from_properties ( self, context ):
         print ( "Model Object building Data Model" )
         mo_dm = {}
         mo_dm.update ( { "name": self.name } )
         return mo_dm
+    """
 
     def build_properties_from_data_model ( self, context, dm ):
         print ( "Assigning Model Object " + dm['name'] )
@@ -1245,7 +1246,20 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
 
     def build_data_model_from_properties ( self, context ):
     
-        ############### Do with include flag on scene objects and use object's name not the model object list name
+        print ( "Model Objects List building Data Model" )
+        mo_dm = {}
+        mo_list = []
+        for scene_object in context.scene.objects:
+            if scene_object.type == 'MESH':
+                print ( "Mesh object: " + scene_object.name )
+                if scene_object.mcell.include:
+                    mo_list = mo_list + [ { "name": scene_object.name } ]
+        mo_dm.update ( { "model_object_list": mo_list } )
+        return mo_dm
+
+
+        """
+        ############### TODO Do with include flag on scene objects and use object's name not the model object list name
         
         print ( "Model Objects List building Data Model" )
         mo_dm = {}
@@ -1254,6 +1268,38 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
             mo_list = mo_list + [ mo.build_data_model_from_properties(context) ]
         mo_dm.update ( { "model_object_list": mo_list } )
         return mo_dm
+        """
+
+
+    def build_properties_from_data_model ( self, context, dm ):
+        # Note that model object list is represented in two places:
+        #   context.scene.mcell.model_objects.object_list[] - stores the name
+        #   context.scene.objects[].mcell.include - boolean is true for model objects
+        # This code updates both locations based on the data model
+        
+        # Remove all model objects in the list
+        while len(self.object_list) > 0:
+            self.object_list.remove(0)
+            
+        # Create a list of model object names from the Data Model
+        mo_list = []
+        for m in dm["model_object_list"]:
+            print ( "Data model contains " + m["name"] )
+            self.object_list.add()
+            self.active_obj_index = len(self.object_list)-1
+            mo = self.object_list[self.active_obj_index]
+            #mo.init_properties(context.scene.mcell.parameter_system)
+            #mo.build_properties_from_data_model ( context, m )
+            mo.name = m['name']
+            mo_list = mo_list + [ m["name"] ]
+
+        # Use the list of Data Model names to set flags of all objects
+        for k,o in context.scene.objects.items():
+            if k in mo_list:
+                o.mcell.include = True
+            else:
+                o.mcell.include = False
+
 
 
     def build_data_model_geometry_from_mesh ( self, context ):
@@ -1261,7 +1307,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
         g_dm = {}
         g_list = []
 
-        ############### Do with include flag on scene objects and use object's name not the model object list name
+        ############### TODO Do with include flag on scene objects and use object's name not the model object list name
 
         for object_item in self.object_list:
         
@@ -1364,29 +1410,6 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
               new_obj.mcell.regions.add_region_by_name ( context, rgn['name'] )
               reg = new_obj.mcell.regions.region_list[rgn['name']]
               reg.set_region_faces ( new_mesh, set(rgn['include_elements']) )
-
-
-    def build_properties_from_data_model ( self, context, dm ):
-        # Note that model object list is represented in two places:
-        #   context.scene.mcell.model_objects.object_list[] - stores the name
-        #   context.scene.objects[].mcell.include - boolean is true for model objects
-        # This code updates both locations based on the data model
-        while len(self.object_list) > 0:
-            self.object_list.remove(0)
-        mo_list = []
-        for m in dm["model_object_list"]:
-            print ( "Data model contains " + m["name"] )
-            self.object_list.add()
-            self.active_obj_index = len(self.object_list)-1
-            mo = self.object_list[self.active_obj_index]
-            #mo.init_properties(context.scene.mcell.parameter_system)
-            mo.build_properties_from_data_model ( context, m )
-            mo_list = mo_list + [ m["name"] ]
-        for k,o in context.scene.objects.items():
-            if k in mo_list:
-                o.mcell.include = True
-            else:
-                o.mcell.include = False
 
 
 
