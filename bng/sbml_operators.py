@@ -7,8 +7,10 @@ from . import sbml2json
 
 import cellblender
 from cellblender import cellblender_operators
+import logging
 
-
+logging.basicConfig(filename='cellblender2.log',level=logging.DEBUG,format='%(asctime)s - %(levelname)s:%(message)s')
+    
 #from . import sbml2json
 #from . import sbml2json
 # We use per module class registration/unregistration
@@ -43,7 +45,8 @@ def execute_externally(filepath,context):
     else:
         python_path = shutil.which("python", mode=os.X_OK)
     destpath = os.path.dirname(__file__)
-    subprocess.call([python_path,destpath + '/sbml2json.py','-i',filepath])
+    logging.info('Execution {0} with arguments {1},{2}'.format(python_path,destpath+ '{0}sbml2json.py'.format(os.sep),filepath))
+    subprocess.call([python_path,destpath + '{0}sbml2json.py'.format(os.sep),'-i',filepath])
    
 def execute_sbml2blender(filepath,context,addObjects=True):
     mcell = context.scene.mcell

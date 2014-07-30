@@ -12,18 +12,14 @@ import bpy
 import os
 import xml.etree.ElementTree as ET
 import shutil
-import logging
-import tempfile
 
-fname = tempfile.mkstemp(prefix="cellblender.log.", text=True)[1]
-logging.basicConfig(filename=fname, level=logging.DEBUG,format='%(levelname)s:%(message)s')
 
 # Read all of the CSG Object types in a SBML file 
 def readSMBLFileCSGObject(filePath):
     try:
         tree = ET.parse(filePath)
     except IOError:
-        logging.error('File not found during geometry loading')
+        #logging.error('File not found during geometry loading')
         return
         
     root = tree.getroot()
