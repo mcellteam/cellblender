@@ -1229,11 +1229,11 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
         mo_dm = {}
         mo_dm.update ( { "name": self.name } )
         return mo_dm
-    """
 
     def build_properties_from_data_model ( self, context, dm ):
         print ( "Assigning Model Object " + dm['name'] )
         self.name = dm["name"]
+    """
 
 
 import mathutils
@@ -1251,24 +1251,11 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
         mo_list = []
         for scene_object in context.scene.objects:
             if scene_object.type == 'MESH':
-                print ( "Mesh object: " + scene_object.name )
                 if scene_object.mcell.include:
+                    print ( "MCell object: " + scene_object.name )
                     mo_list = mo_list + [ { "name": scene_object.name } ]
         mo_dm.update ( { "model_object_list": mo_list } )
         return mo_dm
-
-
-        """
-        ############### TODO Do with include flag on scene objects and use object's name not the model object list name
-        
-        print ( "Model Objects List building Data Model" )
-        mo_dm = {}
-        mo_list = []
-        for mo in self.object_list:
-            mo_list = mo_list + [ mo.build_data_model_from_properties(context) ]
-        mo_dm.update ( { "model_object_list": mo_list } )
-        return mo_dm
-        """
 
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -1307,57 +1294,54 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
         g_dm = {}
         g_list = []
 
-        ############### TODO Do with include flag on scene objects and use object's name not the model object list name
-
-        for object_item in self.object_list:
-        
-            data_object = context.scene.objects[object_item.name]
-
+        for data_object in context.scene.objects:
             if data_object.type == 'MESH':
-            
-                g_obj = {}
+                if data_object.mcell.include:
+                    print ( "MCell object: " + data_object.name )
 
-                saved_hide_status = data_object.hide
-                data_object.hide = False
+                    g_obj = {}
 
-                context.scene.objects.active = data_object
-                bpy.ops.object.mode_set(mode='OBJECT')
+                    saved_hide_status = data_object.hide
+                    data_object.hide = False
 
-                g_obj.update ( { "name": data_object.name } )
-                
-                v_list = []
-                mesh = data_object.data
-                matrix = data_object.matrix_world
-                vertices = mesh.vertices
-                for v in vertices:
-                    t_vec = matrix * v.co
-                    v_list = v_list + [ [t_vec.x, t_vec.y, t_vec.z] ]
-                g_obj.update ( { "vertex_list": v_list } )
+                    context.scene.objects.active = data_object
+                    bpy.ops.object.mode_set(mode='OBJECT')
+
+                    g_obj.update ( { "name": data_object.name } )
+                    
+                    v_list = []
+                    mesh = data_object.data
+                    matrix = data_object.matrix_world
+                    vertices = mesh.vertices
+                    for v in vertices:
+                        t_vec = matrix * v.co
+                        v_list = v_list + [ [t_vec.x, t_vec.y, t_vec.z] ]
+                    g_obj.update ( { "vertex_list": v_list } )
 
 
-                f_list = []
-                faces = mesh.polygons
-                for f in faces:
-                    f_list = f_list + [ [f.vertices[0], f.vertices[1], f.vertices[2]] ]
-                g_obj.update ( { "element_connections": f_list } )
+                    f_list = []
+                    faces = mesh.polygons
+                    for f in faces:
+                        f_list = f_list + [ [f.vertices[0], f.vertices[1], f.vertices[2]] ]
+                    g_obj.update ( { "element_connections": f_list } )
 
-                regions = data_object.mcell.get_regions_dictionary(data_object)
-                if regions:
-                    r_list = []
+                    regions = data_object.mcell.get_regions_dictionary(data_object)
+                    if regions:
+                        r_list = []
 
-                    region_names = [k for k in regions.keys()]
-                    region_names.sort()
-                    for region_name in region_names:
-                        rgn = {}
-                        rgn.update ( { "name": region_name } )
-                        rgn.update ( { "include_elements": regions[region_name] } )
-                        r_list = r_list + [ rgn ]
-                    g_obj.update ( { "define_surface_regions": r_list } )
+                        region_names = [k for k in regions.keys()]
+                        region_names.sort()
+                        for region_name in region_names:
+                            rgn = {}
+                            rgn.update ( { "name": region_name } )
+                            rgn.update ( { "include_elements": regions[region_name] } )
+                            r_list = r_list + [ rgn ]
+                        g_obj.update ( { "define_surface_regions": r_list } )
 
-                # restore proper object visibility state
-                data_object.hide = saved_hide_status
+                    # restore proper object visibility state
+                    data_object.hide = saved_hide_status
 
-                g_list = g_list + [ g_obj ]
+                    g_list = g_list + [ g_obj ]
 
         g_dm.update ( { "object_list": g_list } )
         return g_dm
