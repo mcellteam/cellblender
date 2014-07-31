@@ -142,16 +142,16 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         m = self
 
         m_dict = {}
-        m_dict.update ( { "mol_name": m.name } )
-        m_dict.update ( { "mol_type": str(m.type) } )
-        m_dict.update ( { "diffusion_constant": m.diffusion_constant.get_expr() } )
-        m_dict.update ( { "target_only": m.target_only } )
-        m_dict.update ( { "custom_time_step": m.custom_time_step.get_expr() } )
-        m_dict.update ( { "custom_space_step": m.custom_space_step.get_expr() } )
-        m_dict.update ( { "custom_space_step": m.custom_space_step.get_expr() } )
-        # TODO: Add after data model release:   m_dict.update ( { "maximum_step_length": m.maximum_step_length.get_expr() } )
-        m_dict.update ( { "maximum_step_length": "" } )  # TODO: Remove this line after data model release
-        m_dict.update ( { "export_viz": m.export_viz } )
+        m_dict['mol_name'] = m.name
+        m_dict['mol_type'] = str(m.type)
+        m_dict['diffusion_constant'] = m.diffusion_constant.get_expr()
+        m_dict['target_only'] = m.target_only
+        m_dict['custom_time_step'] = m.custom_time_step.get_expr()
+        m_dict['custom_space_step'] = m.custom_space_step.get_expr()
+        m_dict['custom_space_step'] = m.custom_space_step.get_expr()
+        # TODO: Add after data model release:   m_dict['maximum_step_length'] = m.maximum_step_length.get_expr()
+        m_dict['maximum_step_length'] = ""  # TODO: Remove this line after data model release
+        m_dict['export_viz'] = m.export_viz
 
         return m_dict
 
@@ -250,7 +250,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         mol_list = []
         for m in self.molecule_list:
             mol_list = mol_list + [ m.build_data_model_from_properties() ]
-        mol_dm.update ( { "molecule_list": mol_list } )
+        mol_dm['molecule_list'] = mol_list
         return mol_dm
 
     def build_properties_from_data_model ( self, context, dm ):

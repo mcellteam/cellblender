@@ -105,22 +105,22 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
-        r_dict.update ( { "name": r.name } )
-        r_dict.update ( { "rxn_name": r.rxn_name } )
-        r_dict.update ( { "reactants": r.reactants } )
-        r_dict.update ( { "products": r.products } )
-        r_dict.update ( { "rxn_type": str(r.type) } )
-        r_dict.update ( { "variable_rate_switch": r.variable_rate_switch } )
-        r_dict.update ( { "variable_rate": r.variable_rate } )
-        r_dict.update ( { "variable_rate_valid": r.variable_rate_valid } )
-        r_dict.update ( { "fwd_rate": r.fwd_rate.get_expr() } )
-        r_dict.update ( { "bkwd_rate": r.bkwd_rate.get_expr() } )
+        r_dict['name'] = r.name
+        r_dict['rxn_name'] = r.rxn_name
+        r_dict['reactants'] = r.reactants
+        r_dict['products'] = r.products
+        r_dict['rxn_type'] = r.type
+        r_dict['variable_rate_switch'] = r.variable_rate_switch
+        r_dict['variable_rate'] = r.variable_rate
+        r_dict['variable_rate_valid'] = r.variable_rate_valid
+        r_dict['fwd_rate'] = r.fwd_rate.get_expr()
+        r_dict['bkwd_rate'] = r.bkwd_rate.get_expr()
         variable_rate_text = ""
         if r.type == 'irreversible':
             # Check if a variable rate constant file is specified
             if r.variable_rate_switch and r.variable_rate_valid:
                 variable_rate_text = bpy.data.texts[r.variable_rate].as_string()
-        r_dict.update ( { "variable_rate_text": variable_rate_text } )
+        r_dict['variable_rate_text'] = variable_rate_text
         return r_dict
 
     def build_properties_from_data_model ( self, context, dm_dict ):
@@ -283,20 +283,20 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
-        r_dict.update ( { "name": r.name } )
-        r_dict.update ( { "molecule": r.molecule } )
-        r_dict.update ( { "shape": str(r.shape) } )
-        r_dict.update ( { "orient": str(r.orient) } )
-        r_dict.update ( { "object_expr": str(r.object_expr) } )
-        r_dict.update ( { "location_x": r.location_x.get_expr() } )
-        r_dict.update ( { "location_y": r.location_y.get_expr() } )
-        r_dict.update ( { "location_z": r.location_z.get_expr() } )
-        r_dict.update ( { "site_diameter": r.diameter.get_expr() } )
-        r_dict.update ( { "release_probability": r.probability.get_expr() } )
-        r_dict.update ( { "quantity_type": str(r.quantity_type) } )
-        r_dict.update ( { "quantity": r.quantity.get_expr() } )
-        r_dict.update ( { "stddev": r.stddev.get_expr() } )
-        r_dict.update ( { "pattern": str(r.pattern) } )
+        r_dict['name'] = r.name
+        r_dict['molecule'] = r.molecule
+        r_dict['shape'] = r.shape
+        r_dict['orient'] = r.orient
+        r_dict['object_expr'] = r.object_expr
+        r_dict['location_x'] = r.location_x.get_expr()
+        r_dict['location_y'] = r.location_y.get_expr()
+        r_dict['location_z'] = r.location_z.get_expr()
+        r_dict['site_diameter'] = r.diameter.get_expr()
+        r_dict['release_probability'] = r.probability.get_expr()
+        r_dict['quantity_type'] = str(r.quantity_type)
+        r_dict['quantity'] = r.quantity.get_expr()
+        r_dict['stddev'] = r.stddev.get_expr()
+        r_dict['pattern'] = str(r.pattern)
         return r_dict
 
     def build_properties_from_data_model ( self, context, dm_dict ):
@@ -341,12 +341,12 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
-        r_dict.update ( { "name": r.name } )
-        r_dict.update ( { "delay": r.delay.get_expr() } )
-        r_dict.update ( { "release_interval": r.release_interval.get_expr() } )
-        r_dict.update ( { "train_duration": r.train_duration.get_expr() } )
-        r_dict.update ( { "train_interval": r.train_interval.get_expr() } )
-        r_dict.update ( { "number_of_trains": r.number_of_trains.get_expr() } )
+        r_dict['name'] = r.name
+        r_dict['delay'] = r.delay.get_expr()
+        r_dict['release_interval'] = r.release_interval.get_expr()
+        r_dict['train_duration'] = r.train_duration.get_expr()
+        r_dict['train_interval'] = r.train_interval.get_expr()
+        r_dict['number_of_trains'] = r.number_of_trains.get_expr()
         return r_dict
 
     def build_properties_from_data_model ( self, context, dm_dict ):
@@ -403,11 +403,11 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         sc = self
         sc_dict = {}
-        sc_dict.update ( { "name": sc.name } )
-        sc_dict.update ( { "molecule": sc.molecule } )
-        sc_dict.update ( { "surf_class_orient": str(sc.surf_class_orient) } )
-        sc_dict.update ( { "surf_class_type": str(sc.surf_class_type) } )
-        sc_dict.update ( { "clamp_value": str(sc.clamp_value_str) } )
+        sc_dict['name'] = sc.name
+        sc_dict['molecule'] = sc.molecule
+        sc_dict['surf_class_orient'] = str(sc.surf_class_orient)
+        sc_dict['surf_class_type'] = str(sc.surf_class_type)
+        sc_dict['clamp_value'] = str(sc.clamp_value_str)
         return sc_dict
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -437,11 +437,11 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Surface Classes building Data Model" )
         sc_dm = {}
-        sc_dm.update ( { "name": self.name } )
+        sc_dm['name'] = self.name
         sc_list = []
         for sc in self.surf_class_props_list:
             sc_list = sc_list + [ sc.build_data_model_from_properties(context) ]
-        sc_dm.update ( { "surface_class_prop_list": sc_list } )
+        sc_dm['surface_class_prop_list'] = sc_list
         return sc_dm
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -481,10 +481,10 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Surface Region building Data Model" )
         sr_dm = {}
-        sr_dm.update ( { "name": self.name } )
-        sr_dm.update ( { "surf_class_name": self.surf_class_name } )
-        sr_dm.update ( { "object_name": self.object_name } )
-        sr_dm.update ( { "region_name": self.region_name } )
+        sr_dm['name'] = self.name
+        sr_dm['surf_class_name'] = self.surf_class_name
+        sr_dm['object_name'] = self.object_name
+        sr_dm['region_name'] = self.region_name
         return sr_dm
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -732,49 +732,50 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
 
     def build_data_model_from_properties ( self, context ):
         dm_dict = {}
-        dm_dict.update ( { "iterations": self.iterations.get_expr() } )
-        dm_dict.update ( { "time_step": self.time_step.get_expr() } )
-        dm_dict.update ( { "time_step_max": self.time_step_max.get_expr() } )
-        dm_dict.update ( { "space_step": self.space_step.get_expr() } )
-        dm_dict.update ( { "interaction_radius": self.interaction_radius.get_expr() } )
-        dm_dict.update ( { "radial_directions": self.radial_directions.get_expr() } )
-        dm_dict.update ( { "radial_subdivisions": self.radial_subdivisions.get_expr() } )
-        dm_dict.update ( { "vacancy_search_distance": self.vacancy_search_distance.get_expr() } )
-        dm_dict.update ( { "surface_grid_density": self.surface_grid_density.get_expr() } )
-        dm_dict.update ( { "microscopic_reversibility": str(self.microscopic_reversibility) } )
-        dm_dict.update ( { "accurate_3d_reactions": self.accurate_3d_reactions==True } )
-        dm_dict.update ( { "center_molecules_on_grid": self.center_molecules_grid==True } )
+
+        dm_dict['iterations'] = self.iterations.get_expr()
+        dm_dict['time_step'] = self.time_step.get_expr()
+        dm_dict['time_step_max'] = self.time_step_max.get_expr()
+        dm_dict['space_step'] = self.space_step.get_expr()
+        dm_dict['interaction_radius'] = self.interaction_radius.get_expr()
+        dm_dict['radial_directions'] = self.radial_directions.get_expr()
+        dm_dict['radial_subdivisions'] = self.radial_subdivisions.get_expr()
+        dm_dict['vacancy_search_distance'] = self.vacancy_search_distance.get_expr()
+        dm_dict['surface_grid_density'] = self.surface_grid_density.get_expr()
+        dm_dict['microscopic_reversibility'] = str(self.microscopic_reversibility)
+        dm_dict['accurate_3d_reactions'] = self.accurate_3d_reactions==True
+        dm_dict['center_molecules_on_grid'] = self.center_molecules_grid==True
 
         notify_dict = {}
-        notify_dict.update ( { "all_notifications": str(self.all_notifications) } )
-        notify_dict.update ( { "diffusion_constant_report": str(self.diffusion_constant_report) } )
-        notify_dict.update ( { "file_output_report": self.file_output_report==True } )
-        notify_dict.update ( { "final_summary": self.final_summary==True } )
-        notify_dict.update ( { "iteration_report": self.iteration_report==True } )
-        notify_dict.update ( { "partition_location_report": self.partition_location_report==True } )
-        notify_dict.update ( { "probability_report": str(self.probability_report) } )
-        notify_dict.update ( { "probability_report_threshold": str(self.probability_report_threshold) } )
-        notify_dict.update ( { "varying_probability_report": self.varying_probability_report==True } )
-        notify_dict.update ( { "progress_report": self.progress_report==True } )
-        notify_dict.update ( { "release_event_report": self.release_event_report==True } )
-        notify_dict.update ( { "molecule_collision_report": self.molecule_collision_report==True } )
-        notify_dict.update ( { "box_triangulation_report": False } )
-        dm_dict.update ( { "notifications": notify_dict } )
+        notify_dict['all_notifications'] = str(self.all_notifications)
+        notify_dict['diffusion_constant_report'] = str(self.diffusion_constant_report)
+        notify_dict['file_output_report'] = self.file_output_report==True
+        notify_dict['final_summary'] = self.final_summary==True
+        notify_dict['iteration_report'] = self.iteration_report==True
+        notify_dict['partition_location_report'] = self.partition_location_report==True
+        notify_dict['probability_report'] = str(self.probability_report)
+        notify_dict['probability_report_threshold'] = str(self.probability_report_threshold)
+        notify_dict['varying_probability_report'] = self.varying_probability_report==True
+        notify_dict['progress_report'] = self.progress_report==True
+        notify_dict['release_event_report'] = self.release_event_report==True
+        notify_dict['molecule_collision_report'] = self.molecule_collision_report==True
+        notify_dict['box_triangulation_report'] = False
+        dm_dict['notifications'] = notify_dict
         
         warn_dict = {}
-        warn_dict.update ( { "all_warnings": str(self.all_warnings) } )
-        warn_dict.update ( { "degenerate_polygons": str(self.degenerate_polygons) } )
-        warn_dict.update ( { "high_reaction_probability": str(self.high_reaction_probability) } )
-        warn_dict.update ( { "high_probability_threshold": str(self.high_probability_threshold) } )
-        warn_dict.update ( { "lifetime_too_short": str(self.lifetime_too_short) } )
-        warn_dict.update ( { "lifetime_threshold": str(self.lifetime_threshold) } )
-        warn_dict.update ( { "missed_reactions": str(self.missed_reactions) } )
-        warn_dict.update ( { "missed_reaction_threshold": str(self.missed_reaction_threshold) } )
-        warn_dict.update ( { "negative_diffusion_constant": str(self.negative_diffusion_constant) } )
-        warn_dict.update ( { "missing_surface_orientation": str(self.missing_surface_orientation) } )
-        warn_dict.update ( { "negative_reaction_rate": str(self.negative_reaction_rate) } )
-        warn_dict.update ( { "useless_volume_orientation": str(self.useless_volume_orientation) } )
-        dm_dict.update ( { "warnings": warn_dict } )
+        warn_dict['all_warnings'] = str(self.all_warnings)
+        warn_dict['degenerate_polygons'] = str(self.degenerate_polygons)
+        warn_dict['high_reaction_probability'] = str(self.high_reaction_probability)
+        warn_dict['high_probability_threshold'] = str(self.high_probability_threshold)
+        warn_dict['lifetime_too_short'] = str(self.lifetime_too_short)
+        warn_dict['lifetime_threshold'] = str(self.lifetime_threshold)
+        warn_dict['missed_reactions'] = str(self.missed_reactions)
+        warn_dict['missed_reaction_threshold'] = str(self.missed_reaction_threshold)
+        warn_dict['negative_diffusion_constant'] = str(self.negative_diffusion_constant)
+        warn_dict['missing_surface_orientation'] = str(self.missing_surface_orientation)
+        warn_dict['negative_reaction_rate'] = str(self.negative_reaction_rate)
+        warn_dict['useless_volume_orientation'] = str(self.useless_volume_orientation)
+        dm_dict['warnings'] = warn_dict
 
         return dm_dict
 
@@ -805,7 +806,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         self.release_event_report = dm_dict['notifications']['release_event_report']
         self.molecule_collision_report = dm_dict['notifications']['molecule_collision_report']
 
-        ##notify_dict.update ( { "box_triangulation_report": False } )
+        ##notify_dict[box_triangulation_report'] = False
 
         self.all_warnings = dm_dict['warnings']['all_warnings']
         self.degenerate_polygons = dm_dict['warnings']['degenerate_polygons']
@@ -1053,17 +1054,17 @@ class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Partitions building Data Model" )
         dm_dict = {}
-        dm_dict.update ( { "include": self.include==True } )
-        dm_dict.update ( { "recursion_flag": self.recursion_flag==True } )
-        dm_dict.update ( { "x_start": str(self.x_start) } )
-        dm_dict.update ( { "x_end":   str(self.x_end) } )
-        dm_dict.update ( { "x_step":  str(self.x_step) } )
-        dm_dict.update ( { "y_start": str(self.y_start) } )
-        dm_dict.update ( { "y_end":   str(self.y_end) } )
-        dm_dict.update ( { "y_step":  str(self.y_step) } )
-        dm_dict.update ( { "x_start": str(self.z_start) } )
-        dm_dict.update ( { "z_end":   str(self.z_end) } )
-        dm_dict.update ( { "z_step":  str(self.z_step) } )
+        dm_dict['include'] = self.include==True
+        dm_dict['recursion_flag'] = self.recursion_flag==True
+        dm_dict['x_start'] = str(self.x_start)
+        dm_dict['x_end'] =   str(self.x_end)
+        dm_dict['x_step'] =  str(self.x_step)
+        dm_dict['y_start'] = str(self.y_start)
+        dm_dict['y_end'] =   str(self.y_end)
+        dm_dict['y_step'] =  str(self.y_step)
+        dm_dict['x_start'] = str(self.z_start)
+        dm_dict['z_end'] =   str(self.z_end)
+        dm_dict['z_step'] =  str(self.z_step)
         return dm_dict
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -1094,7 +1095,7 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
         react_list = []
         for r in self.reaction_list:
             react_list = react_list + [ r.build_data_model_from_properties(context) ]
-        react_dm.update ( { "reaction_list": react_list } )
+        react_dm['reaction_list'] = react_list
         return react_dm
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -1121,7 +1122,7 @@ class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
         sc_list = []
         for sc in self.surf_class_list:
             sc_list = sc_list + [ sc.build_data_model_from_properties(context) ]
-        sc_dm.update ( { "surface_class_list": sc_list } )
+        sc_dm['surface_class_list'] = sc_list
         return sc_dm
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -1147,7 +1148,7 @@ class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
         sr_list = []
         for sr in self.mod_surf_regions_list:
             sr_list = sr_list + [ sr.build_data_model_from_properties(context) ]
-        sr_dm.update ( { "modify_surface_regions_list": sr_list } )
+        sr_dm['modify_surface_regions_list'] = sr_list
         return sr_dm
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -1177,7 +1178,7 @@ class MCellReleasePatternPanelProperty(bpy.types.PropertyGroup):
         rel_pat_list = []
         for r in self.release_pattern_list:
             rel_pat_list = rel_pat_list + [ r.build_data_model_from_properties(context) ]
-        rel_pat_dm.update ( { "release_pattern_list": rel_pat_list } )
+        rel_pat_dm['release_pattern_list'] = rel_pat_list
         return rel_pat_dm
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -1204,7 +1205,7 @@ class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
         rel_site_list = []
         for r in self.mol_release_list:
             rel_site_list = rel_site_list + [ r.build_data_model_from_properties(context) ]
-        rel_site_dm.update ( { "release_site_list": rel_site_list } )
+        rel_site_dm['release_site_list'] = rel_site_list
         return rel_site_dm
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -1227,7 +1228,7 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Model Object building Data Model" )
         mo_dm = {}
-        mo_dm.update ( { "name": self.name } )
+        mo_dm['name'] = self.name
         return mo_dm
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -1254,7 +1255,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                 if scene_object.mcell.include:
                     print ( "MCell object: " + scene_object.name )
                     mo_list = mo_list + [ { "name": scene_object.name } ]
-        mo_dm.update ( { "model_object_list": mo_list } )
+        mo_dm['model_object_list'] = mo_list
         return mo_dm
 
 
@@ -1307,7 +1308,6 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                     context.scene.objects.active = data_object
                     bpy.ops.object.mode_set(mode='OBJECT')
 
-                    # g_obj.update ( { "name": data_object.name } )
                     g_obj['name'] = data_object.name
                     
                     v_list = []
@@ -1316,18 +1316,14 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                     vertices = mesh.vertices
                     for v in vertices:
                         t_vec = matrix * v.co
-                        # v_list = v_list + [ [t_vec.x, t_vec.y, t_vec.z] ]
                         v_list.append ( [t_vec.x, t_vec.y, t_vec.z] )
-                    # g_obj.update ( { "vertex_list": v_list } )
                     g_obj['vertex_list'] = v_list
 
 
                     f_list = []
                     faces = mesh.polygons
                     for f in faces:
-                        # f_list = f_list + [ [f.vertices[0], f.vertices[1], f.vertices[2]] ]
                         f_list.append ( [f.vertices[0], f.vertices[1], f.vertices[2]] )
-                    # g_obj.update ( { "element_connections": f_list } )
                     g_obj['element_connections'] = f_list
 
                     regions = data_object.mcell.get_regions_dictionary(data_object)
@@ -1338,8 +1334,6 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                         region_names.sort()
                         for region_name in region_names:
                             rgn = {}
-                            # rgn.update ( { "name": region_name } )
-                            # rgn.update ( { "include_elements": regions[region_name] } )
                             rgn['name'] = region_name
                             rgn['include_elements'] = regions[region_name]
                             r_list.append ( rgn )
@@ -1350,7 +1344,6 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
 
                     g_list.append ( g_obj )
 
-        # g_dm.update ( { "object_list": g_list } )
         g_dm['object_list'] = g_list
         return g_dm
 
@@ -1426,11 +1419,11 @@ class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Viz Output building Data Model" )
         vo_dm = {}
-        vo_dm.update ( { "all_iterations":  self.all_iterations } )
-        vo_dm.update ( { "start":  str(self.start) } )
-        vo_dm.update ( { "end":  str(self.end) } )
-        vo_dm.update ( { "step":  str(self.step) } )
-        vo_dm.update ( { "export_all":  self.export_all } )
+        vo_dm['all_iterations'] = self.all_iterations
+        vo_dm['start'] = str(self.start)
+        vo_dm['end'] = str(self.end)
+        vo_dm['step'] = str(self.step)
+        vo_dm['export_all'] = self.export_all
         return vo_dm
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -1478,13 +1471,13 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output building Data Model" )
         ro_dm = {}
-        ro_dm.update ( { "name":  self.name } )
-        ro_dm.update ( { "molecule_name":  self.molecule_name } )
-        ro_dm.update ( { "reaction_name":  self.reaction_name } )
-        ro_dm.update ( { "object_name":  self.object_name } )
-        ro_dm.update ( { "region_name":  self.region_name } )
-        ro_dm.update ( { "count_location":  self.count_location } )
-        ro_dm.update ( { "rxn_or_mol":  self.rxn_or_mol } )
+        ro_dm['name'] = self.name
+        ro_dm['molecule_name'] = self.molecule_name
+        ro_dm['reaction_name'] = self.reaction_name
+        ro_dm['object_name'] = self.object_name
+        ro_dm['region_name'] = self.region_name
+        ro_dm['count_location'] = self.count_location
+        ro_dm['rxn_or_mol'] = self.rxn_or_mol
         return ro_dm
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -1551,14 +1544,14 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output Panel building Data Model" )
         ro_dm = {}
-        ro_dm.update ( { "plot_layout": self.plot_layout } )
-        ro_dm.update ( { "plot_legend": self.plot_legend } )
-        ro_dm.update ( { "combine_seeds": self.combine_seeds } )
-        ro_dm.update ( { "mol_colors": self.mol_colors } )
+        ro_dm['plot_layout'] = self.plot_layout
+        ro_dm['plot_legend'] = self.plot_legend
+        ro_dm['combine_seeds'] = self.combine_seeds
+        ro_dm['mol_colors'] = self.mol_colors
         ro_list = []
         for ro in self.rxn_output_list:
             ro_list = ro_list + [ ro.build_data_model_from_properties(context) ]
-        ro_dm.update ( { "reaction_output_list": ro_list } )
+        ro_dm['reaction_output_list'] = ro_list
         return ro_dm
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -1708,29 +1701,29 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context, geometry=False ):
         print ( "Constructing a data_model dictionary from current properties" )
         dm = {}
-        dm.update ( { "blender_version": [v for v in bpy.app.version] } )
-        dm.update ( { "cellblender_version": self.cellblender_version } )
-        #dm.update ( { "cellblender_source_hash": self.cellblender_source_hash } )
-        dm.update ( { "cellblender_source_sha1": cellblender.cellblender_info["cellblender_source_sha1"] } )
+        dm['blender_version'] = [v for v in bpy.app.version]
+        dm['cellblender_version'] = self.cellblender_version
+        #dm['cellblender_source_hash'] = self.cellblender_source_hash
+        dm['cellblender_source_sha1'] = cellblender.cellblender_info["cellblender_source_sha1"]
         if 'api_version' in self:
-            dm.update ( { "api_version": self['api_version'] } )
+            dm['api_version'] = self['api_version']
         else:
-            dm.update ( { "api_version": 0 } )
-        dm.update ( { "parameter_system": self.parameter_system.build_data_model_from_properties(context) } )
-        dm.update ( { "initialization": self.initialization.build_data_model_from_properties(context) } )
-        dm['initialization'].update ( { "partitions": self.partitions.build_data_model_from_properties(context) } )
-        dm.update ( { "define_molecules": self.molecules.build_data_model_from_properties(context) } )
-        dm.update ( { "define_reactions": self.reactions.build_data_model_from_properties(context) } )
-        dm.update ( { "release_sites": self.release_sites.build_data_model_from_properties(context) } )
-        dm.update ( { "define_release_patterns": self.release_patterns.build_data_model_from_properties(context) } )
-        dm.update ( { "define_surface_classes": self.surface_classes.build_data_model_from_properties(context) } )
-        dm.update ( { "modify_surface_regions": self.mod_surf_regions.build_data_model_from_properties(context) } )
-        dm.update ( { "model_objects": self.model_objects.build_data_model_from_properties(context) } )
-        dm.update ( { "viz_output": self.viz_output.build_data_model_from_properties(context) } )
-        dm.update ( { "reaction_data_output": self.rxn_output.build_data_model_from_properties(context) } )
+            dm['api_version'] = 0
+        dm['parameter_system'] = self.parameter_system.build_data_model_from_properties(context)
+        dm['initialization'] = self.initialization.build_data_model_from_properties(context)
+        dm['initialization']['partitions'] = self.partitions.build_data_model_from_properties(context)
+        dm['define_molecules'] = self.molecules.build_data_model_from_properties(context)
+        dm['define_reactions'] = self.reactions.build_data_model_from_properties(context)
+        dm['release_sites'] = self.release_sites.build_data_model_from_properties(context)
+        dm['define_release_patterns'] = self.release_patterns.build_data_model_from_properties(context)
+        dm['define_surface_classes'] = self.surface_classes.build_data_model_from_properties(context)
+        dm['modify_surface_regions'] = self.mod_surf_regions.build_data_model_from_properties(context)
+        dm['model_objects'] = self.model_objects.build_data_model_from_properties(context)
+        dm['viz_output'] = self.viz_output.build_data_model_from_properties(context)
+        dm['reaction_data_output'] = self.rxn_output.build_data_model_from_properties(context)
         if geometry:
             print ( "Adding Geometry to Data Model" )
-            dm.update ( { "geometrical_objects": self.model_objects.build_data_model_geometry_from_mesh(context) } )
+            dm['geometrical_objects'] = self.model_objects.build_data_model_geometry_from_mesh(context)
         return dm
 
     def build_properties_from_data_model ( self, context, dm, geometry=False ):

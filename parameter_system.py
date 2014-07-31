@@ -1260,17 +1260,17 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         p = self
 
         par_dict = {}
-        par_dict.update ( { "par_name": p.par_name } )
-        par_dict.update ( { "par_expression": p.expr } )
-        par_dict.update ( { "par_units": p.units } )
-        par_dict.update ( { "par_description": p.descr } )
+        par_dict['par_name'] = p.par_name
+        par_dict['par_expression'] = p.expr
+        par_dict['par_units'] = p.units
+        par_dict['par_description'] = p.descr
 
         extras_dict = {}
-        extras_dict.update ( { "par_id_name": p.name } )
-        extras_dict.update ( { "par_value": p.value } )
-        extras_dict.update ( { "par_valid": p.isvalid } )
+        extras_dict['par_id_name'] = p.name
+        extras_dict['par_value'] = p.value
+        extras_dict['par_valid'] = p.isvalid
 
-        par_dict.update ( { "extras": extras_dict } )
+        par_dict['extras'] = extras_dict
 
         return par_dict
 
@@ -1906,7 +1906,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         gen_par_list = []
         for p in self.general_parameter_list:
             gen_par_list = gen_par_list + [ p.build_data_model_from_properties() ]
-        par_sys_dm.update ( { "model_parameters": gen_par_list } )
+        par_sys_dm['model_parameters'] = gen_par_list
         return par_sys_dm
 
 
@@ -1946,7 +1946,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 gname_dict.pop(param.old_par_name)
 
         # Perform the update
-        gname_dict.update ( { param.par_name : param.name } )
+        gname_dict[param.par_name] = param.name
 
         # Remove all entries that match the new name (if any)
         #while param.par_name in gname_dict:
