@@ -1307,7 +1307,8 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                     context.scene.objects.active = data_object
                     bpy.ops.object.mode_set(mode='OBJECT')
 
-                    g_obj.update ( { "name": data_object.name } )
+                    # g_obj.update ( { "name": data_object.name } )
+                    g_obj['name'] = data_object.name
                     
                     v_list = []
                     mesh = data_object.data
@@ -1315,15 +1316,19 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                     vertices = mesh.vertices
                     for v in vertices:
                         t_vec = matrix * v.co
-                        v_list = v_list + [ [t_vec.x, t_vec.y, t_vec.z] ]
-                    g_obj.update ( { "vertex_list": v_list } )
+                        # v_list = v_list + [ [t_vec.x, t_vec.y, t_vec.z] ]
+                        v_list.append ( [t_vec.x, t_vec.y, t_vec.z] )
+                    # g_obj.update ( { "vertex_list": v_list } )
+                    g_obj['vertex_list'] = v_list
 
 
                     f_list = []
                     faces = mesh.polygons
                     for f in faces:
-                        f_list = f_list + [ [f.vertices[0], f.vertices[1], f.vertices[2]] ]
-                    g_obj.update ( { "element_connections": f_list } )
+                        # f_list = f_list + [ [f.vertices[0], f.vertices[1], f.vertices[2]] ]
+                        f_list.append ( [f.vertices[0], f.vertices[1], f.vertices[2]] )
+                    # g_obj.update ( { "element_connections": f_list } )
+                    g_obj['element_connections'] = f_list
 
                     regions = data_object.mcell.get_regions_dictionary(data_object)
                     if regions:
@@ -1333,17 +1338,20 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                         region_names.sort()
                         for region_name in region_names:
                             rgn = {}
-                            rgn.update ( { "name": region_name } )
-                            rgn.update ( { "include_elements": regions[region_name] } )
-                            r_list = r_list + [ rgn ]
-                        g_obj.update ( { "define_surface_regions": r_list } )
+                            # rgn.update ( { "name": region_name } )
+                            # rgn.update ( { "include_elements": regions[region_name] } )
+                            rgn['name'] = region_name
+                            rgn['include_elements'] = regions[region_name]
+                            r_list.append ( rgn )
+                        g_obj['define_surface_regions'] = r_list
 
                     # restore proper object visibility state
                     data_object.hide = saved_hide_status
 
-                    g_list = g_list + [ g_obj ]
+                    g_list.append ( g_obj )
 
-        g_dm.update ( { "object_list": g_list } )
+        # g_dm.update ( { "object_list": g_list } )
+        g_dm['object_list'] = g_list
         return g_dm
 
 
