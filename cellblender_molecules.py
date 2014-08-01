@@ -249,7 +249,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         mol_dm = {}
         mol_list = []
         for m in self.molecule_list:
-            mol_list = mol_list + [ m.build_data_model_from_properties() ]
+            mol_list.append ( m.build_data_model_from_properties() )
         mol_dm['molecule_list'] = mol_list
         return mol_dm
 

@@ -440,7 +440,7 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
         sc_dm['name'] = self.name
         sc_list = []
         for sc in self.surf_class_props_list:
-            sc_list = sc_list + [ sc.build_data_model_from_properties(context) ]
+            sc_list.append ( sc.build_data_model_from_properties(context) )
         sc_dm['surface_class_prop_list'] = sc_list
         return sc_dm
 
@@ -1094,7 +1094,7 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
         react_dm = {}
         react_list = []
         for r in self.reaction_list:
-            react_list = react_list + [ r.build_data_model_from_properties(context) ]
+            react_list.append ( r.build_data_model_from_properties(context) )
         react_dm['reaction_list'] = react_list
         return react_dm
 
@@ -1121,7 +1121,7 @@ class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
         sc_dm = {}
         sc_list = []
         for sc in self.surf_class_list:
-            sc_list = sc_list + [ sc.build_data_model_from_properties(context) ]
+            sc_list.append ( sc.build_data_model_from_properties(context) )
         sc_dm['surface_class_list'] = sc_list
         return sc_dm
 
@@ -1147,7 +1147,7 @@ class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
         sr_dm = {}
         sr_list = []
         for sr in self.mod_surf_regions_list:
-            sr_list = sr_list + [ sr.build_data_model_from_properties(context) ]
+            sr_list.append ( sr.build_data_model_from_properties(context) )
         sr_dm['modify_surface_regions_list'] = sr_list
         return sr_dm
 
@@ -1177,7 +1177,7 @@ class MCellReleasePatternPanelProperty(bpy.types.PropertyGroup):
         rel_pat_dm = {}
         rel_pat_list = []
         for r in self.release_pattern_list:
-            rel_pat_list = rel_pat_list + [ r.build_data_model_from_properties(context) ]
+            rel_pat_list.append ( r.build_data_model_from_properties(context) )
         rel_pat_dm['release_pattern_list'] = rel_pat_list
         return rel_pat_dm
 
@@ -1204,7 +1204,7 @@ class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
         rel_site_dm = {}
         rel_site_list = []
         for r in self.mol_release_list:
-            rel_site_list = rel_site_list + [ r.build_data_model_from_properties(context) ]
+            rel_site_list.append ( r.build_data_model_from_properties(context) )
         rel_site_dm['release_site_list'] = rel_site_list
         return rel_site_dm
 
@@ -1254,7 +1254,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
             if scene_object.type == 'MESH':
                 if scene_object.mcell.include:
                     print ( "MCell object: " + scene_object.name )
-                    mo_list = mo_list + [ { "name": scene_object.name } ]
+                    mo_list.append ( { "name": scene_object.name } )
         mo_dm['model_object_list'] = mo_list
         return mo_dm
 
@@ -1279,7 +1279,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
             #mo.init_properties(context.scene.mcell.parameter_system)
             #mo.build_properties_from_data_model ( context, m )
             mo.name = m['name']
-            mo_list = mo_list + [ m["name"] ]
+            mo_list.append ( m["name"] )
 
         # Use the list of Data Model names to set flags of all objects
         for k,o in context.scene.objects.items():
@@ -1390,11 +1390,12 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
 
             # Add the surface regions to new_obj.mcell
             
-            for rgn in model_object['define_surface_regions']:
-              print ( "  Building region[" + rgn['name'] + "]" )
-              new_obj.mcell.regions.add_region_by_name ( context, rgn['name'] )
-              reg = new_obj.mcell.regions.region_list[rgn['name']]
-              reg.set_region_faces ( new_mesh, set(rgn['include_elements']) )
+            if model_object.get('define_surface_regions'):
+              for rgn in model_object['define_surface_regions']:
+                print ( "  Building region[" + rgn['name'] + "]" )
+                new_obj.mcell.regions.add_region_by_name ( context, rgn['name'] )
+                reg = new_obj.mcell.regions.region_list[rgn['name']]
+                reg.set_region_faces ( new_mesh, set(rgn['include_elements']) )
 
 
 
@@ -1550,7 +1551,7 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
         ro_dm['mol_colors'] = self.mol_colors
         ro_list = []
         for ro in self.rxn_output_list:
-            ro_list = ro_list + [ ro.build_data_model_from_properties(context) ]
+            ro_list.append ( ro.build_data_model_from_properties(context) )
         ro_dm['reaction_output_list'] = ro_list
         return ro_dm
 

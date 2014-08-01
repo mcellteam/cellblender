@@ -851,11 +851,12 @@ class Expression_Handler:
             if len(e) > 0:
                 if e[0] == '#':
                     if (len(e) > 1) and (e[1] == '?'):
-                        expr_list = expr_list + [None] + [e[2:]]
+                        expr_list.append ( None )
+                        expr_list.append ( e[2:] )
                     else:
-                        expr_list = expr_list + [int(e[1:])]
+                        expr_list.append ( int(e[1:]) )
                 else:
-                    expr_list = expr_list + [e]
+                    expr_list.append ( e )
         return expr_list
 
 
@@ -1905,7 +1906,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         par_sys_dm = {}
         gen_par_list = []
         for p in self.general_parameter_list:
-            gen_par_list = gen_par_list + [ p.build_data_model_from_properties() ]
+            gen_par_list.append ( p.build_data_model_from_properties() )
         par_sys_dm['model_parameters'] = gen_par_list
         return par_sys_dm
 
