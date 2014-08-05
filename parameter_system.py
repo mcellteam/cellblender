@@ -78,7 +78,9 @@ def stop_timer(fun):
 
 
 def print_statistics(app):
-    '''Prints profiling results to the console. Run from a Python controller.'''
+    '''Prints profiling results to the console,
+       appends to plot files,
+       and generates plotting and deleting scripts.'''
     
     print ( "=== Execution Statistics with " + str(len(app.parameter_system.general_parameter_list)) + " general parameters and " + str(len(app.parameter_system.panel_parameter_list)) + " panel parameters ===" )
 
@@ -97,7 +99,7 @@ def print_statistics(app):
         f.close()
 
     f = io.open("plot_command.bat",'w')
-    f.write ( "java -jar ~/proj/java/Graphing/PlotData/Plot.jar" )
+    f.write ( "java -jar data_plotters/java_plot/PlotData.jar" )
     for stat in stats:
         f.write ( " fxy=" + stat[0]+"_plot.txt" )
     f.flush()
@@ -978,9 +980,9 @@ class Expression_Handler:
         parameterized_expr = None  # param_expr
         if pt != None:
 
-            start_timer("All Expression_Handler.recurse_tree_symbols" )
+            start_timer("All_Expression_Handler.recurse_tree_symbols" )
             parameterized_expr = self.recurse_tree_symbols ( lcl_name_ID_dict, pt, [] )
-            stop_timer("All Expression_Handler.recurse_tree_symbols" )
+            stop_timer("All_Expression_Handler.recurse_tree_symbols" )
             
             if parameterized_expr != None:
             
@@ -1843,7 +1845,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                             rp.who_depends_on_me = spaced_strings_from_list ( [x for x in rpset] )
 
                     # Remove this name from the gname to id dictionary
-                    print ( "Testing if " + p.par_name + " is in " + str(self['gname_to_id_dict'].keys()) )
+                    # print ( "Testing if " + p.par_name + " is in " + str(self['gname_to_id_dict'].keys()) )
                     if p.par_name in self['gname_to_id_dict'].keys():
                         self['gname_to_id_dict'].pop(p.par_name)
                     
