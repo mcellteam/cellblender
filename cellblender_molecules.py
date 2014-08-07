@@ -28,6 +28,7 @@ from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
                       FloatProperty, FloatVectorProperty, IntProperty, \
                       IntVectorProperty, PointerProperty, StringProperty
 from bpy.app.handlers import persistent
+import math
 import mathutils
 
 # python imports
@@ -175,11 +176,22 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         layout.prop ( self, "type" )
         self.diffusion_constant.draw(layout,parameter_system)
         #self.lr_bar_trigger = False
+        
+        lr_bar_display = 0
+        if len(self.custom_space_step.get_expr().strip()) > 0:
+            # Set lr_bar_display directly
+            lr_bar_display = self.custom_space_step.get_value()
+        else:
+            # Calculate lr_bar_display from diffusion constant and time step
+            dc = self.diffusion_constant.get_value()
+            ts = bpy.context.scene.mcell.initialization.time_step.get_value()
+            if len(self.custom_time_step.get_expr().strip()) > 0:
+                ts = self.custom_time_step.get_value()
+            lr_bar_display = 2 * math.sqrt ( 4 * dc * ts / math.pi )
 
-        local_lr_bar = self.diffusion_constant.get_value() + bpy.context.scene.mcell.initialization.time_step.get_value()
         row = layout.row()
-        row.label(text="lr_bar: " + str(local_lr_bar), icon='DOT')
-        #layout.prop ( self, "lr_bar_trigger", icon='NONE', text="lr_bar: " + str(local_lr_bar) )
+        row.label(text="lr_bar: %g"%(lr_bar_display), icon='BLANK1')  # BLANK1 RIGHTARROW_THIN SMALL_TRI_RIGHT_VEC DISCLOSURE_TRI_RIGHT_VEC DRIVER DOT FORWARD LINKED
+        #layout.prop ( self, "lr_bar_trigger", icon='NONE', text="lr_bar: " + str(lr_bar_display) )
         
         box = layout.box()
         row = box.row(align=True)
@@ -194,6 +206,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             row.prop(self, "target_only")
             self.custom_time_step.draw(box,parameter_system)
             self.custom_space_step.draw(box,parameter_system)
+
 
     def check_callback(self, context):
         """Allow the parent molecule list (MCellMoleculesListProperty) to do the checking"""

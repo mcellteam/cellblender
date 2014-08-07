@@ -197,6 +197,7 @@ class MCELL_PT_parameter_system(bpy.types.Panel):
             row = layout.row()
             if ps.param_error_list == "":
                 row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
+                # Possible Alternative Icons: SETTINGS OOPS IPO
             else:
                 row.label(text="Error with: " + ps.translated_param_name_list(ps.param_error_list), icon='ERROR')
 
