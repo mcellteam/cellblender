@@ -114,7 +114,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                     "Volume molecules exist in space.")
 
     diffusion_constant = PointerProperty ( name="Molecule Diffusion Constant", type=parameter_system.Parameter_Reference )
-
+    lr_bar_trigger = BoolProperty("lr_bar_trigger", default=False)
     target_only = BoolProperty(
         name="Target Only",
         description="If selected, molecule will not initiate reactions when "
@@ -174,7 +174,13 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         layout.prop ( self, "name" )
         layout.prop ( self, "type" )
         self.diffusion_constant.draw(layout,parameter_system)
-            
+        #self.lr_bar_trigger = False
+
+        local_lr_bar = self.diffusion_constant.get_value() + bpy.context.scene.mcell.initialization.time_step.get_value()
+        row = layout.row()
+        row.label(text="lr_bar: " + str(local_lr_bar), icon='DOT')
+        #layout.prop ( self, "lr_bar_trigger", icon='NONE', text="lr_bar: " + str(local_lr_bar) )
+        
         box = layout.box()
         row = box.row(align=True)
         row.alignment = 'LEFT'
