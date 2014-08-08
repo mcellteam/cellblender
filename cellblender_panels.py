@@ -377,6 +377,28 @@ class MCELL_PT_model_objects(bpy.types.Panel):
 #           sub.operator("mcell.model_objects_select", text="Select")
 #           sub.operator("mcell.model_objects_deselect", text="Deselect")
 
+            row = layout.row()
+            row.label(text="Object Color:", icon='COLOR')
+            
+            active = None
+            for o in mcell.model_objects.object_list.keys():
+                # print ( "Object: " + o )
+                row = layout.row()
+                if bpy.context.scene.objects[o] == bpy.context.scene.objects.active:
+                    active = bpy.context.scene.objects[o]
+                    row.label(text=o, icon='TRIA_RIGHT')
+                else:
+                    row.label(text=o, icon='DOT')
+
+            if active == None:
+                row = layout.row()
+                row.label(text="No CellBlender object is active", icon='DOT')
+            else:
+                row = layout.row()
+                row.label ( icon='DOT', text="  Object " + active.name + " is active and has " +
+                    str(len(active.material_slots)) + " material slots" )
+
+
 
 
 class MCELL_PT_object_selector(bpy.types.Panel):

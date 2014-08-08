@@ -1289,6 +1289,34 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                 o.mcell.include = False
 
 
+    def build_data_model_materials ( self, context ):
+        print ( "Model Objects List building Materials for Data Model" )
+        mat_dm = {}
+        mat_dict = {}
+
+        # First build the list of materials from all objects
+        for data_object in context.scene.objects:
+            if data_object.type == 'MESH':
+                if data_object.mcell.include:
+                    print ( "Saving Materials for: " + data_object.name )
+                    for mat_slot in data_object.material_slots:
+                        if not mat_slot.name in mat_dict:
+                            # This is a new material, so add it
+                            mat = bpy.data.materials[mat_slot.name]
+                            print ( "  Adding " + mat_slot.name )
+                            mat_obj = {}
+                            mat_obj['diffuse_color'] = {
+                                'r': mat.diffuse_color.r,
+                                'g': mat.diffuse_color.g,
+                                'b': mat.diffuse_color.b,
+                                'a': mat.alpha }
+                            # Need to set:
+                            #  mat.use_transparency
+                            #  obj.show_transparent
+                            mat_dict[mat_slot.name] = mat_obj;
+        mat_dm['material_dict'] = mat_dict
+        return mat_dm
+
 
     def build_data_model_geometry_from_mesh ( self, context ):
         print ( "Model Objects List building Geometry for Data Model" )
@@ -1301,7 +1329,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                     print ( "MCell object: " + data_object.name )
 
                     g_obj = {}
-
+                    
                     saved_hide_status = data_object.hide
                     data_object.hide = False
 
@@ -1309,6 +1337,12 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                     bpy.ops.object.mode_set(mode='OBJECT')
 
                     g_obj['name'] = data_object.name
+                    
+                    if len(data_object.data.materials) > 0:
+                        g_obj['material_names'] = []
+                        for mat in data_object.data.materials:
+                            g_obj['material_names'].append ( mat.name )
+                            # g_obj['material_name'] = data_object.data.materials[0].name
                     
                     v_list = []
                     mesh = data_object.data
@@ -1319,12 +1353,18 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                         v_list.append ( [t_vec.x, t_vec.y, t_vec.z] )
                     g_obj['vertex_list'] = v_list
 
-
                     f_list = []
                     faces = mesh.polygons
                     for f in faces:
                         f_list.append ( [f.vertices[0], f.vertices[1], f.vertices[2]] )
                     g_obj['element_connections'] = f_list
+                    
+                    if len(data_object.data.materials) > 1:
+                        # This object has multiple materials, so store the material index for each face
+                        mi_list = []
+                        for f in faces:
+                            mi_list.append ( f.material_index )
+                        g_obj['element_material_indices'] = mi_list
 
                     regions = data_object.mcell.get_regions_dictionary(data_object)
                     if regions:
@@ -1725,6 +1765,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if geometry:
             print ( "Adding Geometry to Data Model" )
             dm['geometrical_objects'] = self.model_objects.build_data_model_geometry_from_mesh(context)
+            dm['materials'] = self.model_objects.build_data_model_materials(context)
         return dm
 
     def build_properties_from_data_model ( self, context, dm, geometry=False ):
