@@ -1289,7 +1289,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                 o.mcell.include = False
 
 
-    def build_data_model_materials ( self, context ):
+    def build_data_model_materials_from_materials ( self, context ):
         print ( "Model Objects List building Materials for Data Model" )
         mat_dm = {}
         mat_dict = {}
@@ -1318,6 +1318,30 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
         return mat_dm
 
 
+    def build_materials_from_data_model_materials ( self, context, dm ):
+
+        # Delete any materials with conflicting names and then rebuild all
+
+        # Start by creating a list of named materials in the data model
+        mat_names = dm['material_dict'].keys()
+        print ( "Material names = " + str(mat_names) )
+        
+        # Delete all materials with identical names
+        for mat_name in mat_names:
+            if mat_name in bpy.data.materials:
+                bpy.data.materials.remove ( bpy.data.materials[mat_name] )
+        
+        # Now add all the new materials
+        
+        for mat_name in mat_names:
+            new_mat = bpy.data.materials.new(mat_name)
+            c = dm['material_dict'][mat_name]['diffuse_color']
+            new_mat.diffuse_color = ( c['r'], c['g'], c['b'] )
+            new_mat.alpha = c['a']
+            if new_mat.alpha < 1.0:
+                new_mat.use_transparency = True
+
+
     def build_data_model_geometry_from_mesh ( self, context ):
         print ( "Model Objects List building Geometry for Data Model" )
         g_dm = {}
@@ -1338,6 +1362,12 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
 
                     g_obj['name'] = data_object.name
                     
+                    loc_x = data_object.location.x
+                    loc_y = data_object.location.y
+                    loc_z = data_object.location.z
+
+                    g_obj['location'] = [loc_x, loc_y, loc_z]
+                    
                     if len(data_object.data.materials) > 0:
                         g_obj['material_names'] = []
                         for mat in data_object.data.materials:
@@ -1350,7 +1380,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                     vertices = mesh.vertices
                     for v in vertices:
                         t_vec = matrix * v.co
-                        v_list.append ( [t_vec.x, t_vec.y, t_vec.z] )
+                        v_list.append ( [t_vec.x-loc_x, t_vec.y-loc_y, t_vec.z-loc_z] )
                     g_obj['vertex_list'] = v_list
 
                     f_list = []
@@ -1391,6 +1421,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
     def build_mesh_from_data_model_geometry ( self, context, dm ):
             
         # Delete any objects with conflicting names and then rebuild all
+
         print ( "Model Objects List building Mesh Objects from Data Model Geometry" )
         
         # Start by creating a list of named objects in the data model
@@ -1413,6 +1444,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
 
         # Now create all the object meshes from the data model
         for model_object in dm['object_list']:
+
             vertices = []
             for vertex in model_object['vertex_list']:
                 vertices.append ( mathutils.Vector((vertex[0],vertex[1],vertex[2])) )
@@ -1423,6 +1455,8 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
             new_mesh.from_pydata ( vertices, [], faces )
             new_mesh.update()
             new_obj = bpy.data.objects.new ( model_object['name'], new_mesh )
+            if 'location' in model_object:
+                new_obj.location = mathutils.Vector((model_object['location'][0],model_object['location'][1],model_object['location'][2]))
             context.scene.objects.link ( new_obj )
             bpy.ops.object.select_all ( action = "DESELECT" )
             new_obj.select = True
@@ -1765,7 +1799,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if geometry:
             print ( "Adding Geometry to Data Model" )
             dm['geometrical_objects'] = self.model_objects.build_data_model_geometry_from_mesh(context)
-            dm['materials'] = self.model_objects.build_data_model_materials(context)
+            dm['materials'] = self.model_objects.build_data_model_materials_from_materials(context)
         return dm
 
     def build_properties_from_data_model ( self, context, dm, geometry=False ):
@@ -1781,6 +1815,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         self.surface_classes.build_properties_from_data_model ( context, dm["define_surface_classes"] )
         self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
         if geometry:
+            print ( "Building Materials from Data Model Materials" )
+            self.model_objects.build_materials_from_data_model_materials ( context, dm['materials'] )
             print ( "Building Mesh Geometry from Data Model Geometry" )
             self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"] )
         print ( "Not fully implemented yet!!!!" )
