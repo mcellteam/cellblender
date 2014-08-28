@@ -135,7 +135,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         ('Sphere_1', "Sphere_1", ""),
         ('Sphere_2', "Sphere_2", ""),
         ('Torus', "Torus", "")]
-    glyph = EnumProperty(items=glyph_enum, name="Molecule Shapes")
+    glyph = EnumProperty(items=glyph_enum, name="")
 
 
     export_viz = bpy.props.BoolProperty(
@@ -185,13 +185,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         print ( "Name = " + self.name )
 
     def draw_props ( self, layout, molecules, parameter_system ):
-        row = layout.row()
-        left = row.split(percentage=0.96)
-        left.prop ( self, "name" )
-        right = left.split(percentage=1.0)
-        right.prop ( self, "color" )
-        
-        # layout.prop ( self, "name" )
+        layout.prop ( self, "name" )
         layout.prop ( self, "type" )
         self.diffusion_constant.draw(layout,parameter_system)
         #self.lr_bar_trigger = False
@@ -211,6 +205,13 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         row = layout.row()
         row.label(text="lr_bar: %g"%(lr_bar_display), icon='BLANK1')  # BLANK1 RIGHTARROW_THIN SMALL_TRI_RIGHT_VEC DISCLOSURE_TRI_RIGHT_VEC DRIVER DOT FORWARD LINKED
         #layout.prop ( self, "lr_bar_trigger", icon='NONE', text="lr_bar: " + str(lr_bar_display) )
+
+        row = layout.row()
+        col = row.column()
+        col.prop ( self, "glyph" )
+        col = row.column()
+        col.prop ( self, "color" )
+        
         
         box = layout.box()
         row = box.row(align=True)
