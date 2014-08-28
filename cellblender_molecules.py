@@ -113,7 +113,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         default='3D',
         description="Surface molecules are constrained to surfaces/meshes. "
                     "Volume molecules exist in space.")
-
     diffusion_constant = PointerProperty ( name="Molecule Diffusion Constant", type=parameter_system.Parameter_Reference )
     lr_bar_trigger = BoolProperty("lr_bar_trigger", default=False)
     target_only = BoolProperty(
@@ -124,6 +123,20 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     custom_time_step =   PointerProperty ( name="Molecule Custom Time Step",   type=parameter_system.Parameter_Reference )
     custom_space_step =  PointerProperty ( name="Molecule Custom Space Step",  type=parameter_system.Parameter_Reference )
     # TODO: Add after data model release:  maximum_step_length =  PointerProperty ( name="Maximum Step Length",  type=parameter_system.Parameter_Reference )
+
+    color = FloatVectorProperty ( name="", min=0.0, max=1.0, default=(0.5,0.5,0.5), subtype='COLOR', description='Molecule Color' )
+    glyph_enum = [
+        ('Cone', "Cone", ""),
+        ('Cube', "Cube", ""),
+        ('Cylinder', "Cylinder", ""),
+        ('Icosahedron', "Icosahedron", ""),
+        ('Octahedron', "Octahedron", ""),
+        ('Receptor', "Receptor", ""),
+        ('Sphere_1', "Sphere_1", ""),
+        ('Sphere_2', "Sphere_2", ""),
+        ('Torus', "Torus", "")]
+    glyph = EnumProperty(items=glyph_enum, name="Molecule Shapes")
+
 
     export_viz = bpy.props.BoolProperty(
         default=False, description="If selected, the molecule will be "
@@ -172,7 +185,13 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         print ( "Name = " + self.name )
 
     def draw_props ( self, layout, molecules, parameter_system ):
-        layout.prop ( self, "name" )
+        row = layout.row()
+        left = row.split(percentage=0.96)
+        left.prop ( self, "name" )
+        right = left.split(percentage=1.0)
+        right.prop ( self, "color" )
+        
+        # layout.prop ( self, "name" )
         layout.prop ( self, "type" )
         self.diffusion_constant.draw(layout,parameter_system)
         #self.lr_bar_trigger = False
