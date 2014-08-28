@@ -1457,19 +1457,37 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
             new_obj = bpy.data.objects.new ( model_object['name'], new_mesh )
             if 'location' in model_object:
                 new_obj.location = mathutils.Vector((model_object['location'][0],model_object['location'][1],model_object['location'][2]))
+
+            # Add the materials to the object
+            if 'material_names' in model_object:
+                print ( "Object " + model_object['name'] + " has material names" )
+                for mat_name in model_object['material_names']:
+                    new_obj.data.materials.append ( bpy.data.materials[mat_name] )
+                    if bpy.data.materials[mat_name].alpha < 1:
+                        new_obj.show_transparent = True
+                if 'element_material_indices' in model_object:
+                    print ( "Object " + model_object['name'] + " has material indices" )
+                    faces = new_obj.data.polygons
+                    dm_count = len(model_object['element_material_indices'])
+                    index = 0
+                    for f in faces:
+                        f.material_index = model_object['element_material_indices'][index % dm_count]
+                        index += 1
+
             context.scene.objects.link ( new_obj )
             bpy.ops.object.select_all ( action = "DESELECT" )
             new_obj.select = True
             context.scene.objects.active = new_obj
+            
 
             # Add the surface regions to new_obj.mcell
             
             if model_object.get('define_surface_regions'):
-              for rgn in model_object['define_surface_regions']:
-                print ( "  Building region[" + rgn['name'] + "]" )
-                new_obj.mcell.regions.add_region_by_name ( context, rgn['name'] )
-                reg = new_obj.mcell.regions.region_list[rgn['name']]
-                reg.set_region_faces ( new_mesh, set(rgn['include_elements']) )
+                for rgn in model_object['define_surface_regions']:
+                    print ( "  Building region[" + rgn['name'] + "]" )
+                    new_obj.mcell.regions.add_region_by_name ( context, rgn['name'] )
+                    reg = new_obj.mcell.regions.region_list[rgn['name']]
+                    reg.set_region_faces ( new_mesh, set(rgn['include_elements']) )
 
 
 
