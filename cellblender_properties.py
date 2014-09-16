@@ -533,6 +533,75 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
         description="Amount of debug information to print: 0 to 100")
 
 
+    def draw_layout(self, context, layout):
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+            row = layout.row(align=True)
+            row.operator("mcell.preferences_reset")
+            layout.separator()
+
+            row = layout.row()
+            row.operator("mcell.set_mcell_binary",
+                         text="Set Path to MCell Binary", icon='FILESEL')
+            row = layout.row()
+            mcell_binary = mcell.cellblender_preferences.mcell_binary
+            if not mcell_binary:
+                row.label("MCell Binary not set", icon='UNPINNED')
+            elif not mcell.cellblender_preferences.mcell_binary_valid:
+                row.label("MCell File/Permissions Error: " +
+                    mcell.cellblender_preferences.mcell_binary, icon='ERROR')
+            else:
+                row.label(
+                    text="MCell Binary: "+mcell.cellblender_preferences.mcell_binary,
+                    icon='FILE_TICK')
+
+            row = layout.row()
+            row.operator("mcell.set_bionetgen_location",
+                         text="Set Path to BioNetGen File", icon='FILESEL')
+            row = layout.row()
+            bionetgen_location = mcell.cellblender_preferences.bionetgen_location
+            if not bionetgen_location:
+                row.label("BioNetGen location not set", icon='UNPINNED')
+            elif not mcell.cellblender_preferences.bionetgen_location_valid:
+                row.label("BioNetGen File/Permissions Error: " +
+                    mcell.cellblender_preferences.bionetgen_location, icon='ERROR')
+            else:
+                row.label(
+                    text="BioNetGen Location: " + mcell.cellblender_preferences.bionetgen_location,
+                    icon='FILE_TICK')
+
+            row = layout.row()
+            row.operator("mcell.set_python_binary",
+                         text="Set Path to Python Binary", icon='FILESEL')
+            row = layout.row()
+            python_path = mcell.cellblender_preferences.python_binary
+            if not python_path:
+                row.label("Python Binary not set", icon='UNPINNED')
+            elif not mcell.cellblender_preferences.python_binary_valid:
+                row.label("Python File/Permissions Error: " +
+                    mcell.cellblender_preferences.python_binary, icon='ERROR')
+            else:
+                row.label(
+                    text="Python Binary: " + mcell.cellblender_preferences.python_binary,
+                    icon='FILE_TICK')
+
+            row = layout.row()
+            row.prop(mcell.cellblender_preferences, "decouple_export_run")
+            row = layout.row()
+            row.prop(mcell.cellblender_preferences, "invalid_policy")
+            #row = layout.row()
+            #row.prop(mcell.cellblender_preferences, "debug_level")
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
+
+
+
 class MCellScratchPanelProperty(bpy.types.PropertyGroup):
     show_all_icons = BoolProperty(
         name="Show All Icons",
@@ -1937,23 +2006,14 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             row.prop ( self, "reaction_select", icon_value=reaction_u )
 
         row.prop ( self, "placement_select", icon='GROUP_VERTEX' )
-
         row.prop ( self, "rel_patterns_select", icon='TIME' )
-        
         row.prop ( self, "objects_select", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
-
         row.prop ( self, "surf_classes_select", icon='FACESEL_HLT' )
-
         row.prop ( self, "surf_regions_select", icon='SNAP_FACE' )
-
         row.prop ( self, "partitions_select", icon='GRID' )
-
         row.prop ( self, "graph_select", icon='FCURVE' )
-
         row.prop ( self, "viz_select", icon='SEQUENCE' )
-
         row.prop ( self, "run_select", icon='COLOR_RED' )
-        
         # Use an operator rather than a property to make it an action button
         # row.prop ( self, "reload_viz", icon='FILE_REFRESH' )
         row.operator ( "cbmu.refresh_operator",text="",icon='FILE_REFRESH')
@@ -1970,6 +2030,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
         if self.preferences_select:
             box.box() # Use as a separator
             box.label ( "Preferences", icon='PREFERENCES' )
+            context.scene.mcell.cellblender_preferences.draw_layout ( context, layout )
+            """
             row = box.row()
             row.operator("cbmu.dummy_operator",text="Reset Preferences")
             row = box.row()
@@ -1978,6 +2040,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             row.operator("cbmu.dummy_operator",text="Set Path to BioNetGen File")
             row = box.row()
             row.operator("cbmu.dummy_operator",text="Set Path to Python Binary")
+            """
 
         if self.settings_select:
             box.box() # Use as a separator

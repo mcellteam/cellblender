@@ -52,6 +52,7 @@ class MCELL_MT_presets(Menu):
     draw = Menu.draw_preset
 
 
+
 #CellBlendereGUI Panels:
 class MCELL_PT_cellblender_preferences(bpy.types.Panel):
     bl_label = "CellBlender - Preferences"
@@ -60,6 +61,12 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
     bl_context = "scene"
     bl_options = {'DEFAULT_CLOSED'}
 
+
+    def draw ( self, context ):
+        # Call the draw function for the instance being drawn in this panel
+        context.scene.mcell.cellblender_preferences.draw_panel ( context, self )
+
+    """
     def draw(self, context):
         layout = self.layout
         mcell = context.scene.mcell
@@ -122,6 +129,7 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
             row.prop(mcell.cellblender_preferences, "invalid_policy")
             #row = layout.row()
             #row.prop(mcell.cellblender_preferences, "debug_level")
+    """
 
 
 class MCELL_PT_project_settings(bpy.types.Panel):
