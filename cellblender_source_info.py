@@ -26,6 +26,10 @@ cellblender_info = {
         "icons"+os.sep+"reactions_sel.png",
         "icons"+os.sep+"reactions_unsel.png",
 
+        "developer_utilities"+os.sep+"data_model_print.py",
+        "developer_utilities"+os.sep+"data_model_pyedit.py",
+        "developer_utilities"+os.sep+"data_model_tree.py",
+
         "SimControl.java",
         "META-INF"+os.sep+"MANIFEST.MF",
         "SimControl.jar",
