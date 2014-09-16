@@ -336,30 +336,32 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         self.next_id += 1
         return ( self.next_id - 1 )
 
+
     def draw_layout ( self, context, layout ):
-        mcell = context.scene.mcell
-        row = layout.row()
-        row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
-        row = layout.row()
-        col = row.column()
-        col.template_list("MCell_UL_check_molecule", "define_molecules",
-                          self, "molecule_list",
-                          self, "active_mol_index",
-                          rows=2)
-        col = row.column(align=True)
-        col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
-        col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
-        if self.molecule_list:
-            mol = self.molecule_list[self.active_mol_index]
-            # The self is needed to pass the "advanced" flag to the molecule
-            mol.draw_props ( layout, self, mcell.parameter_system )
-
-
-    def draw_panel ( self, context, panel ):
+        """ Draw the molecule "panel" within the layout """
         mcell = context.scene.mcell
         if not mcell.initialized:
             mcell.draw_uninitialized ( panel.layout )
         else:
-            layout = panel.layout
-            self.draw_layout ( context, layout )
+            row = layout.row()
+            row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
+            row = layout.row()
+            col = row.column()
+            col.template_list("MCell_UL_check_molecule", "define_molecules",
+                              self, "molecule_list",
+                              self, "active_mol_index",
+                              rows=2)
+            col = row.column(align=True)
+            col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
+            col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
+            if self.molecule_list:
+                mol = self.molecule_list[self.active_mol_index]
+                # The self is needed to pass the "advanced" flag to the molecule
+                mol.draw_props ( layout, self, mcell.parameter_system )
+
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
 
