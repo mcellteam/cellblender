@@ -2008,18 +2008,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
         if self.molecule_select:
             box.box() # Use as a separator
-            
-            row = box.row()
-            row.label ( "Molecules", icon='FORCE_LENNARDJONES' )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Molecule Name" )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Molecule Type" )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Diffusion Constant" )
-            row = box.row()
-            row.prop(self, 'dummy_bool', icon='TRIA_RIGHT',
-                     text="Advanced Options", emboss=True)
+            context.scene.mcell.molecules.draw_layout ( context, layout )
 
         if self.reaction_select:
             box.box() # Use as a separator
