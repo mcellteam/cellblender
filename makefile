@@ -9,7 +9,7 @@ SHELL = /bin/sh
 
 SOURCES = $(shell python cellblender_source_info.py)
 #SUBDIRS = data_plotters io_mesh_mcell_mdl
-SUBDIRS = icons io_mesh_mcell_mdl data_plotters
+SUBDIRS = icons io_mesh_mcell_mdl data_plotters developer_utilities
 
 .PHONY: all
 all: subdirs cellblender.zip SimControl.jar SimControl
