@@ -1743,12 +1743,8 @@ class MCELL_PT_main_panel(bpy.types.Panel):
             icon = self.layout.icon(img)
             self.layout.label(text="", icon_value=icon)
 
-
     def draw(self, context):
-        layout = self.layout
-        # Panel body goes here
-        context.scene.mcell.cellblender_main_panel.draw_self(self.layout)
-        
+        context.scene.mcell.cellblender_main_panel.draw_self(context,self.layout)
 
 
 
@@ -1860,11 +1856,11 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             pass
         old_pin_state = (self.last_state[prop_keys.index('select_multiple')] != 0)
         
-        print ( "Select Called with pin state:" + str(pin_state) + ", and old pin state = " + str(old_pin_state) )
+        # print ( "Select Called with pin state:" + str(pin_state) + ", and old pin state = " + str(old_pin_state) )
 
         if (old_pin_state and (not pin_state)):
             # Pin has been removed, so hide all panels ... always
-            print ("Hiding all")
+            # print ("Hiding all")
             for k in prop_keys:
                 try:
                     self.last_state[prop_keys.index(k)] = False
@@ -1886,7 +1882,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                         pass
             # Check for case where no panels are showing
             if num_panels_shown == 0:
-                print ("Showing all")
+                # print ("Showing all")
                 # Show all panels
                 for k in prop_keys:
                     try:
@@ -1902,7 +1898,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
             # Go through and find which one has changed to positive, setting all others to 0 if not pin_state
             for k in prop_keys:
-                #print ( "Key " + k + " is " + str(self[k]) + ", Last state = " + str(self.last_state[index]) )
+                # print ( "Key " + k + " is " + str(self[k]) + ", Last state = " + str(self.last_state[index]) )
                 try:
                     if (self[k] != 0) and (self.last_state[prop_keys.index(k)] == False):
                         self.last_state[prop_keys.index(k)] = True
@@ -1915,7 +1911,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
         
 
 
-    def draw_self (self, layout):
+    def draw_self (self, context, layout):
         row = layout.row(align=True)
         row.prop ( self, "preferences_select", icon='PREFERENCES' )
         row.prop ( self, "settings_select", icon='SETTINGS' )
@@ -2012,6 +2008,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
         if self.molecule_select:
             box.box() # Use as a separator
+            
             row = box.row()
             row.label ( "Molecules", icon='FORCE_LENNARDJONES' )
             row = box.row()
