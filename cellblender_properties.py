@@ -1217,6 +1217,58 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
             rxn.init_properties(context.scene.mcell.parameter_system)
             rxn.build_properties_from_data_model ( context, r )
 
+    def draw_layout(self, context, layout):
+        # layout = self.layout
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+            ps = mcell.parameter_system
+            row = layout.row()
+            if mcell.molecules.molecule_list:
+                col = row.column()
+                col.template_list("MCELL_UL_check_reaction", "define_reactions",
+                                  mcell.reactions, "reaction_list",
+                                  mcell.reactions, "active_rxn_index", rows=2)
+                col = row.column(align=True)
+                col.operator("mcell.reaction_add", icon='ZOOMIN', text="")
+                col.operator("mcell.reaction_remove", icon='ZOOMOUT', text="")
+                if len(mcell.reactions.reaction_list) > 0:
+                    rxn = mcell.reactions.reaction_list[
+                        mcell.reactions.active_rxn_index]
+                    layout.prop(rxn, "reactants")
+                    layout.prop(rxn, "type")
+                    layout.prop(rxn, "products")
+                    layout.prop(rxn, "variable_rate_switch")
+                    if rxn.variable_rate_switch:
+                        layout.operator("mcell.variable_rate_add", icon='FILESEL')
+                        # Do we need these messages in addition to the status
+                        # message that appears in the list? I'll leave it for now.
+                        if not rxn.variable_rate:
+                            layout.label("Rate file not set", icon='UNPINNED')
+                        elif not rxn.variable_rate_valid:
+                            layout.label("File/Permissions Error: " +
+                                rxn.variable_rate, icon='ERROR')
+                        else:
+                            layout.label(
+                                text="Rate File: " + rxn.variable_rate,
+                                icon='FILE_TICK')
+                    else:
+                        #rxn.fwd_rate.draw_in_new_row(layout)
+                        rxn.fwd_rate.draw(layout,ps)
+                        if rxn.type == "reversible":
+                            #rxn.bkwd_rate.draw_in_new_row(layout)
+                            rxn.bkwd_rate.draw(layout,ps)
+                    layout.prop(rxn, "rxn_name")
+            else:
+                row.label(text="Define at least one molecule", icon='ERROR')
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
+
 
 class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
     surf_class_list = CollectionProperty(
@@ -1327,6 +1379,71 @@ class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
             rs.init_properties(context.scene.mcell.parameter_system)
             rs.build_properties_from_data_model ( context, r )
 
+    def draw_layout ( self, context, layout ):
+        """ Draw the molecule "panel" within the layout """
+        mcell = context.scene.mcell
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+            ps = mcell.parameter_system
+            row = layout.row()
+            if not mcell.molecules.molecule_list:
+                row.label(text="Define at least one molecule", icon='ERROR')
+            else:
+                row.label(text="Release/Placement Sites:",
+                          icon='FORCE_LENNARDJONES')
+                row = layout.row()
+                col = row.column()
+                col.template_list("MCELL_UL_check_molecule_release",
+                                  "molecule_release", mcell.release_sites,
+                                  "mol_release_list", mcell.release_sites,
+                                  "active_release_index", rows=2)
+                col = row.column(align=True)
+                col.operator("mcell.release_site_add", icon='ZOOMIN', text="")
+                col.operator("mcell.release_site_remove", icon='ZOOMOUT', text="")
+                if len(mcell.release_sites.mol_release_list) > 0:
+                    rel = mcell.release_sites.mol_release_list[
+                        mcell.release_sites.active_release_index]
+                    layout.prop(rel, "name")
+                    layout.prop_search(rel, "molecule", mcell.molecules,
+                                       "molecule_list", text="Molecule",
+                                       icon='FORCE_LENNARDJONES')
+                    if rel.molecule in mcell.molecules.molecule_list:
+                        if mcell.molecules.molecule_list[rel.molecule].type == '2D':
+                            layout.prop(rel, "orient")
+
+                    layout.prop(rel, "shape")
+
+                    if ((rel.shape == 'CUBIC') | (rel.shape == 'SPHERICAL') |
+                            (rel.shape == 'SPHERICAL_SHELL')):
+                        #layout.prop(rel, "location")
+                        rel.location_x.draw(layout,ps)
+                        rel.location_y.draw(layout,ps)
+                        rel.location_z.draw(layout,ps)
+                        rel.diameter.draw(layout,ps)
+
+                    if rel.shape == 'OBJECT':
+                        layout.prop(rel, "object_expr")
+
+                    rel.probability.draw(layout,ps)
+            
+                    layout.prop(rel, "quantity_type")
+                    rel.quantity.draw(layout,ps)
+
+                    if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
+                        rel.stddev.draw(layout,ps)
+                 
+                     
+                    layout.prop_search(rel, "pattern", mcell.release_patterns,
+                                       # "release_pattern_rxn_name_list",  # TODO: was this correct?
+                                       "release_pattern_list",  # <-- Bob changed to this ... is this correct?
+                                       icon='FORCE_LENNARDJONES')
+
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
 
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
@@ -2066,105 +2183,57 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
         box = layout
         
         if self.preferences_select:
-            box.box() # Use as a separator
-            box.label ( "Preferences", icon='PREFERENCES' )
+            layout.box() # Use as a separator
+            layout.label ( "Preferences", icon='PREFERENCES' )
             context.scene.mcell.cellblender_preferences.draw_layout ( context, layout )
 
         if self.settings_select:
-            box.box() # Use as a separator
-            box.label ( "Project Settings", icon='SETTINGS' )
+            layout.box() # Use as a separator
+            layout.label ( "Project Settings", icon='SETTINGS' )
             context.scene.mcell.project_settings.draw_layout ( context, layout )
 
         if self.parameters_select:
-            box.box() # Use as a separator
-            box.label ( "Model Parameters", icon='SEQ_SEQUENCER' )
+            layout.box() # Use as a separator
+            layout.label ( "Model Parameters", icon='SEQ_SEQUENCER' )
             context.scene.mcell.parameter_system.draw_layout ( context, layout )
 
-            """
-            row = box.row()
-            row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
-
-            row = box.row()
-            subbox = row.box()
-            subbox.label ( text="a = 1e-6", icon='FILE_TICK' )
-            subbox.label ( text="b = 2.5e-5", icon='FILE_TICK' )
-            subbox.label ( text="c = 3e7", icon='FILE_TICK' )
-            subbox.label ( text="d = 2.75", icon='FILE_TICK' )
-            subbox.label ( text="e = 2.85", icon='FILE_TICK' )
-
-            pbox = layout.box()
-            row = pbox.row(align=True)
-            row.alignment = 'LEFT'
-            row.label(text="Parameter Options")
-            """
-
         if self.molecule_select:
-            box.box() # Use as a separator
+            layout.box() # Use as a separator
+            layout.label(text="Defined Molecules", icon='FORCE_LENNARDJONES')
             context.scene.mcell.molecules.draw_layout ( context, layout )
 
         if self.reaction_select:
-            box.box() # Use as a separator
+            layout.box() # Use as a separator
             react_img_sel = bpy.data.images.get('reaction_s')
             reaction_s = layout.icon(react_img_sel)
-            box.label ( "Reactions", icon_value=reaction_s )
-            row = box.row()
-            row.label(text="Defined Reactions:")
-            row = box.row()
-            subbox = row.box()
-            subbox.label ( text="a -> b", icon='FILE_TICK' )
-            subbox.label ( text="b -> c", icon='FILE_TICK' )
-            subbox.label ( text="c <-> a", icon='FILE_TICK' )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Reactants" )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Products" )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Forward Rate" )
+            layout.label ( "Defined Reactions", icon_value=reaction_s )
+            context.scene.mcell.reactions.draw_layout ( context, layout )
 
         if self.placement_select:
-            box.box() # Use as a separator
-            row = box.row()
-            box.label ( "Molecule Placement", icon='GROUP_VERTEX' )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Site Name:" )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Molecule", icon='FORCE_LENNARDJONES' )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Release Location X" )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Release Location Y" )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Release Location Z" )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Site Diameter" )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Release Probability" )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Quantity Type" )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Quantity to Release" )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Release Pattern:", icon='FORCE_LENNARDJONES' )
+            layout.box() # Use as a separator
+            layout.label ( "Molecule Release/Placement", icon='GROUP_VERTEX' )
+            context.scene.mcell.release_sites.draw_layout ( context, layout )
+
         if self.rel_patterns_select:
-            box.box() # Use as a separator
-            box.label ( "Release Patterns", icon='TIME' )
-            row = box.row()
+            layout.box() # Use as a separator
+            layout.label ( "Release Patterns", icon='TIME' )
+            row = layout.row()
             row.prop ( self, 'dummy_string', text="Pattern Name:" )
-            row = box.row()
+            row = layout.row()
             row.prop ( self, 'dummy_string', text="Release Pattern Delay" )
-            row = box.row()
+            row = layout.row()
             row.prop ( self, 'dummy_string', text="Release Interval" )
-            row = box.row()
+            row = layout.row()
             row.prop ( self, 'dummy_string', text="Train Duration" )
-            row = box.row()
+            row = layout.row()
             row.prop ( self, 'dummy_string', text="Train Interval" )
-            row = box.row()
+            row = layout.row()
             row.prop ( self, 'dummy_string', text="Number of Trains" )
 
         if self.objects_select:
-            box.box() # Use as a separator
-            box.label ( "Model Objects", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
-            row = box.row()
+            layout.box() # Use as a separator
+            layout.label ( "Model Objects", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
+            row = layout.row()
             subbox = row.box()
             subbox.label ( text="Cell", icon='FILE_TICK' )
             subbox.label ( text="Organelle_1", icon='FILE_TICK' )
@@ -2172,27 +2241,27 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             subbox.label ( text="Organelle_3", icon='FILE_TICK' )
 
         if self.surf_classes_select:
-            box.box() # Use as a separator
-            box.label ( "Surface Classes", icon='FACESEL_HLT' )
-            row = box.row()
+            layout.box() # Use as a separator
+            layout.label ( "Surface Classes", icon='FACESEL_HLT' )
+            row = layout.row()
             row.prop ( self, 'dummy_string', text="Surface Class Name:" )
-            row = box.row()
+            row = layout.row()
             row.label ( "Surface Class Properties", icon='FACESEL_HLT' )
-            row = box.row()
+            row = layout.row()
             row.prop ( self, 'dummy_string', text="Molecule Name", icon='FORCE_LENNARDJONES' )
-            row = box.row()
+            row = layout.row()
             row.prop ( self, 'dummy_string', text="Orientation:" )
-            row = box.row()
+            row = layout.row()
             row.prop ( self, 'dummy_string', text="Type" )
 
         if self.surf_regions_select:
-            box.box() # Use as a separator
-            box.label ( "Surface Regions", icon='SNAP_FACE' )
-            row = box.row()
+            layout.box() # Use as a separator
+            layout.label ( "Surface Regions", icon='SNAP_FACE' )
+            row = layout.row()
             row.prop ( self, 'dummy_string', text="Surface Class Name:", icon='FACESEL_HLT' )
-            row = box.row()
+            row = layout.row()
             row.prop ( self, 'dummy_string', text="Object Name", icon='MESH_ICOSPHERE' )
-            row = box.row()
+            row = layout.row()
             row.prop ( self, 'dummy_string', text="Region Name:", icon='FACESEL_HLT' )
 
         if self.partitions_select:

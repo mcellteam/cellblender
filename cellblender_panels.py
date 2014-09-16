@@ -637,53 +637,7 @@ class MCELL_PT_define_reactions(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
-        else:
-            ps = mcell.parameter_system
-            row = layout.row()
-            if mcell.molecules.molecule_list:
-                row.label(text="Defined Reactions:", icon='FORCE_LENNARDJONES')
-                row = layout.row()
-                col = row.column()
-                col.template_list("MCELL_UL_check_reaction", "define_reactions",
-                                  mcell.reactions, "reaction_list",
-                                  mcell.reactions, "active_rxn_index", rows=2)
-                col = row.column(align=True)
-                col.operator("mcell.reaction_add", icon='ZOOMIN', text="")
-                col.operator("mcell.reaction_remove", icon='ZOOMOUT', text="")
-                if len(mcell.reactions.reaction_list) > 0:
-                    rxn = mcell.reactions.reaction_list[
-                        mcell.reactions.active_rxn_index]
-                    layout.prop(rxn, "reactants")
-                    layout.prop(rxn, "type")
-                    layout.prop(rxn, "products")
-                    layout.prop(rxn, "variable_rate_switch")
-                    if rxn.variable_rate_switch:
-                        layout.operator("mcell.variable_rate_add", icon='FILESEL')
-                        # Do we need these messages in addition to the status
-                        # message that appears in the list? I'll leave it for now.
-                        if not rxn.variable_rate:
-                            layout.label("Rate file not set", icon='UNPINNED')
-                        elif not rxn.variable_rate_valid:
-                            layout.label("File/Permissions Error: " +
-                                rxn.variable_rate, icon='ERROR')
-                        else:
-                            layout.label(
-                                text="Rate File: " + rxn.variable_rate,
-                                icon='FILE_TICK')
-                    else:
-                        #rxn.fwd_rate.draw_in_new_row(layout)
-                        rxn.fwd_rate.draw(layout,ps)
-                        if rxn.type == "reversible":
-                            #rxn.bkwd_rate.draw_in_new_row(layout)
-                            rxn.bkwd_rate.draw(layout,ps)
-                    layout.prop(rxn, "rxn_name")
-            else:
-                row.label(text="Define at least one molecule", icon='ERROR')
+        context.scene.mcell.reactions.draw_panel ( context, self )
 
 
 class MCELL_UL_check_surface_class(bpy.types.UIList):
@@ -909,65 +863,8 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
+        context.scene.mcell.release_sites.draw_panel ( context, self )
 
-        if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
-        else:
-            ps = mcell.parameter_system
-            row = layout.row()
-            if not mcell.molecules.molecule_list:
-                row.label(text="Define at least one molecule", icon='ERROR')
-            else:
-                row.label(text="Release/Placement Sites:",
-                          icon='FORCE_LENNARDJONES')
-                row = layout.row()
-                col = row.column()
-                col.template_list("MCELL_UL_check_molecule_release",
-                                  "molecule_release", mcell.release_sites,
-                                  "mol_release_list", mcell.release_sites,
-                                  "active_release_index", rows=2)
-                col = row.column(align=True)
-                col.operator("mcell.release_site_add", icon='ZOOMIN', text="")
-                col.operator("mcell.release_site_remove", icon='ZOOMOUT', text="")
-                if len(mcell.release_sites.mol_release_list) > 0:
-                    rel = mcell.release_sites.mol_release_list[
-                        mcell.release_sites.active_release_index]
-                    layout.prop(rel, "name")
-                    layout.prop_search(rel, "molecule", mcell.molecules,
-                                       "molecule_list", text="Molecule",
-                                       icon='FORCE_LENNARDJONES')
-                    if rel.molecule in mcell.molecules.molecule_list:
-                        if mcell.molecules.molecule_list[rel.molecule].type == '2D':
-                            layout.prop(rel, "orient")
-
-                    layout.prop(rel, "shape")
-
-                    if ((rel.shape == 'CUBIC') | (rel.shape == 'SPHERICAL') |
-                            (rel.shape == 'SPHERICAL_SHELL')):
-                        #layout.prop(rel, "location")
-                        rel.location_x.draw(layout,ps)
-                        rel.location_y.draw(layout,ps)
-                        rel.location_z.draw(layout,ps)
-                        rel.diameter.draw(layout,ps)
-
-                    if rel.shape == 'OBJECT':
-                        layout.prop(rel, "object_expr")
-
-                    rel.probability.draw(layout,ps)
-            
-                    layout.prop(rel, "quantity_type")
-                    rel.quantity.draw(layout,ps)
-
-                    if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
-                        rel.stddev.draw(layout,ps)
-                 
-                     
-                    layout.prop_search(rel, "pattern", mcell.release_patterns,
-                                       # "release_pattern_rxn_name_list",  # TODO: was this correct?
-                                       "release_pattern_list",  # <-- Bob changed to this ... is this correct?
-                                       icon='FORCE_LENNARDJONES')
 
 
 class MCELL_UL_check_reaction_output_settings(bpy.types.UIList):

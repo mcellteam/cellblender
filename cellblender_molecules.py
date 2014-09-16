@@ -344,8 +344,6 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( panel.layout )
         else:
             row = layout.row()
-            row.label(text="Defined Molecules:", icon='FORCE_LENNARDJONES')
-            row = layout.row()
             col = row.column()
             col.template_list("MCell_UL_check_molecule", "define_molecules",
                               self, "molecule_list",
