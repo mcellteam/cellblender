@@ -1352,6 +1352,49 @@ class MCellReleasePatternPanelProperty(bpy.types.PropertyGroup):
             rp.init_properties(context.scene.mcell.parameter_system)
             rp.build_properties_from_data_model ( context, r )
 
+    def draw_layout ( self, context, layout ):
+        """ Draw the release "panel" within the layout """
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+          ps = mcell.parameter_system
+
+          row = layout.row()
+          row.label(text="Release Patterns:",
+                      icon='FORCE_LENNARDJONES')
+          row = layout.row()
+          col = row.column()
+          col.template_list("MCELL_UL_check_release_pattern",
+                              "release_pattern", mcell.release_patterns,
+                              "release_pattern_list", mcell.release_patterns,
+                              "active_release_pattern_index", rows=2)
+          col = row.column(align=True)
+          col.operator("mcell.release_pattern_add", icon='ZOOMIN', text="")
+          col.operator("mcell.release_pattern_remove", icon='ZOOMOUT', text="")
+          if mcell.release_patterns.release_pattern_list:
+              rel_pattern = mcell.release_patterns.release_pattern_list[
+                  mcell.release_patterns.active_release_pattern_index]
+              layout.prop(rel_pattern, "name")
+
+              rel_pattern.delay.draw(layout,ps)
+              rel_pattern.release_interval.draw(layout,ps)
+              rel_pattern.train_duration.draw(layout,ps)
+              rel_pattern.train_interval.draw(layout,ps)
+              rel_pattern.number_of_trains.draw(layout,ps)
+              """
+              layout.prop(rel_pattern, "delay_str")
+              layout.prop(rel_pattern, "release_interval_str")
+              layout.prop(rel_pattern, "train_duration_str")
+              layout.prop(rel_pattern, "train_interval_str")
+              layout.prop(rel_pattern, "number_of_trains")
+              """
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
 
 
 
@@ -1380,7 +1423,7 @@ class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
             rs.build_properties_from_data_model ( context, r )
 
     def draw_layout ( self, context, layout ):
-        """ Draw the molecule "panel" within the layout """
+        """ Draw the release "panel" within the layout """
         mcell = context.scene.mcell
         if not mcell.initialized:
             mcell.draw_uninitialized ( self.layout )
@@ -2217,6 +2260,9 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
         if self.rel_patterns_select:
             layout.box() # Use as a separator
             layout.label ( "Release Patterns", icon='TIME' )
+            context.scene.mcell.release_patterns.draw_layout ( context, layout )
+            """
+
             row = layout.row()
             row.prop ( self, 'dummy_string', text="Pattern Name:" )
             row = layout.row()
@@ -2229,6 +2275,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             row.prop ( self, 'dummy_string', text="Train Interval" )
             row = layout.row()
             row.prop ( self, 'dummy_string', text="Number of Trains" )
+            """
 
         if self.objects_select:
             layout.box() # Use as a separator

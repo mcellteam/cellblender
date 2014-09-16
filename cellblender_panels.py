@@ -807,43 +807,7 @@ class MCELL_PT_release_pattern(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
-        else:
-          ps = mcell.parameter_system
-
-          row = layout.row()
-          row.label(text="Release Patterns:",
-                      icon='FORCE_LENNARDJONES')
-          row = layout.row()
-          col = row.column()
-          col.template_list("MCELL_UL_check_release_pattern",
-                              "release_pattern", mcell.release_patterns,
-                              "release_pattern_list", mcell.release_patterns,
-                              "active_release_pattern_index", rows=2)
-          col = row.column(align=True)
-          col.operator("mcell.release_pattern_add", icon='ZOOMIN', text="")
-          col.operator("mcell.release_pattern_remove", icon='ZOOMOUT', text="")
-          if mcell.release_patterns.release_pattern_list:
-              rel_pattern = mcell.release_patterns.release_pattern_list[
-                  mcell.release_patterns.active_release_pattern_index]
-              layout.prop(rel_pattern, "name")
-
-              rel_pattern.delay.draw(layout,ps)
-              rel_pattern.release_interval.draw(layout,ps)
-              rel_pattern.train_duration.draw(layout,ps)
-              rel_pattern.train_interval.draw(layout,ps)
-              rel_pattern.number_of_trains.draw(layout,ps)
-              """
-              layout.prop(rel_pattern, "delay_str")
-              layout.prop(rel_pattern, "release_interval_str")
-              layout.prop(rel_pattern, "train_duration_str")
-              layout.prop(rel_pattern, "train_interval_str")
-              layout.prop(rel_pattern, "number_of_trains")
-              """
+        context.scene.mcell.release_patterns.draw_panel ( context, self )
 
 
 class MCELL_UL_check_molecule_release(bpy.types.UIList):
