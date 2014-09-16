@@ -213,6 +213,8 @@ def unregister():
         cellblender_operators.load_preferences)
     bpy.app.handlers.save_pre.remove(
         cellblender_operators.model_objects_update)
+    bpy.app.handlers.scene_update_pre.remove(cellblender_properties.scene_loaded)
+    bpy.app.handlers.load_post.remove(cellblender_properties.scene_loaded)
 
     print("CellBlender unregistered")
 
@@ -238,6 +240,11 @@ if len(bpy.app.handlers.load_post) == 0:
         cellblender_operators.init_properties)
     bpy.app.handlers.load_post.append(
         cellblender_operators.load_preferences)
+
+    bpy.app.handlers.load_post.append(cellblender_properties.scene_loaded)
+
+if len(bpy.app.handlers.scene_update_pre) == 0:
+    bpy.app.handlers.scene_update_pre.append(cellblender_properties.scene_loaded)
 
 if len(bpy.app.handlers.save_pre) == 0:
     bpy.app.handlers.save_pre.append(

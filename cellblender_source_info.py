@@ -20,6 +20,12 @@ cellblender_info = {
         "object_surface_regions.py",
         "run_simulations.py",
 
+        "icons"+os.sep+"cellblender_icon.png",
+        "icons"+os.sep+"mol_sel.png",
+        "icons"+os.sep+"mol_unsel.png",
+        "icons"+os.sep+"reactions_sel.png",
+        "icons"+os.sep+"reactions_unsel.png",
+
         "SimControl.java",
         "META-INF"+os.sep+"MANIFEST.MF",
         "SimControl.jar",

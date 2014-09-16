@@ -25,7 +25,9 @@ This script contains the custom properties used in CellBlender.
 import bpy
 from . import cellblender_operators
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
-    FloatProperty, FloatVectorProperty, IntProperty, IntVectorProperty, PointerProperty, StringProperty
+    FloatProperty, FloatVectorProperty, IntProperty, IntVectorProperty, PointerProperty, StringProperty, BoolVectorProperty
+
+from bpy.app.handlers import persistent
 
 from . import cellblender_molecules
 from . import parameter_system
@@ -1715,6 +1717,495 @@ class PP_OT_init_mcell(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# My panel class (which happens to augment 'Scene' properties)
+class MCELL_PT_main_panel(bpy.types.Panel):
+    # bl_idname = "SCENE_PT_CB_MU_APP"
+    bl_label = "  CellBlender Main Panel"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+    
+    @classmethod
+    def poll(cls, context):
+        return (context.scene is not None)
+
+
+    def draw_header(self, context):
+        # LOOK HERE!! This is where the icon is actually included in the panel layout!
+        # The icon() method takes the image data-block in and returns an integer that
+        # gets passed to the 'icon_value' argument of your label/prop constructor or 
+        # within a UIList subclass
+        img = bpy.data.images.get('cellblender_icon')
+        #could load multiple images and animate the icon too.
+        #icons = [img for img in bpy.data.images if hasattr(img, "icon")]
+        if img is not None:
+            icon = self.layout.icon(img)
+            self.layout.label(text="", icon_value=icon)
+
+
+    def draw(self, context):
+        layout = self.layout
+        # Panel body goes here
+        context.scene.mcell.cellblender_main_panel.draw_self(self.layout)
+        
+
+
+
+
+class CBMU_OT_dummy_operator(bpy.types.Operator):
+    """Dummy Operator"""
+
+    bl_idname = "cbmu.dummy_operator"
+    bl_label = "Dummy"
+    bl_description = ("This is a simulated operator")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+
+class CBMU_OT_refresh_operator(bpy.types.Operator):
+    """Refresh Operator"""
+
+    bl_idname = "cbmu.refresh_operator"
+    bl_label = "Refresh"
+    bl_description = ("Simulate Refresh")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        print ( "Refreshing/Reloading the Molecules" )
+        return {'FINISHED'}
+
+
+
+
+# Load scene callback
+@persistent
+def scene_loaded(dummy):
+    # Icon
+    #print("ADDON_ICON")
+    icon_files = { 'cellblender_icon': 'cellblender_icon.png', 'mol_u': 'mol_unsel.png', 'mol_s': 'mol_sel.png', 'reaction_u': 'reactions_unsel.png', 'reaction_s': 'reactions_sel.png' }
+    for icon_name in icon_files:
+        fname = icon_files[icon_name]
+        dirname = os.path.dirname(__file__)
+        dirname = os.path.join(dirname,'icons')
+        icon = bpy.data.images.get(icon_name)
+        if icon is None:
+            img = bpy.data.images.load(os.path.join(dirname, fname))
+            img.name = icon_name
+            img.use_alpha = True
+            img.user_clear() # Won't get saved into .blend files
+        # remove scene_update handler
+        elif "icon" not in icon.keys():
+            icon["icon"] = True
+            for f in bpy.app.handlers.scene_update_pre:
+                if f.__name__ == "scene_loaded":
+                    print("REMOVE SCENE HANDLER")
+                    bpy.app.handlers.scene_update_pre.remove(f)
+
+
+
+
+def select_callback ( self, context ):
+    self.select_callback(context)
+
+
+class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
+
+    preferences_select = BoolProperty ( name="", description="Preferences", default=False, subtype='NONE', update=select_callback)
+    settings_select = BoolProperty ( name="", description="Project Settings", default=False, subtype='NONE', update=select_callback)
+    parameters_select = BoolProperty ( name="", description="Model Parameters", default=False, subtype='NONE', update=select_callback)
+    reaction_select = BoolProperty ( name="", description="Reactions", default=False, subtype='NONE', update=select_callback)
+    molecule_select = BoolProperty ( name="", description="Molecules", default=False, subtype='NONE', update=select_callback)
+    placement_select = BoolProperty ( name="", description="Molecule Placement", default=False, subtype='NONE', update=select_callback)
+    objects_select = BoolProperty ( name="", description="Model Objects", default=False, subtype='NONE', update=select_callback)
+    surf_classes_select = BoolProperty ( name="", description="Surface Classes", default=False, subtype='NONE', update=select_callback)
+    surf_regions_select = BoolProperty ( name="", description="Surface Regions", default=False, subtype='NONE', update=select_callback)
+    rel_patterns_select = BoolProperty ( name="", description="Release Patterns", default=False, subtype='NONE', update=select_callback)
+    partitions_select = BoolProperty ( name="", description="Partitions", default=False, subtype='NONE', update=select_callback)
+    run_select = BoolProperty ( name="", description="Run Simulation", default=False, subtype='NONE', update=select_callback)
+    graph_select = BoolProperty ( name="", description="Plot Output Settings", default=False, subtype='NONE', update=select_callback)
+    viz_select = BoolProperty ( name="", description="Visual Output Settings", default=False, subtype='NONE', update=select_callback)
+    reload_viz = BoolProperty ( name="", description="Reload Simulation Data", default=False, subtype='NONE', update=select_callback)
+    
+    select_multiple = BoolProperty ( name="", description="Show Multiple Panels", default=False, subtype='NONE', update=select_callback)
+    
+    last_state = BoolVectorProperty ( size=20 ) # Keeps track of previous button state to detect transitions
+    
+    dummy_bool = BoolProperty( name="DummyBool", default=True )
+    dummy_string = StringProperty( name="DummyString", default=" " )
+    dummy_float = FloatProperty ( name="DummyFloat", default=12.34 )
+    
+    def select_callback ( self, context ):
+        """
+        Desired Logic:
+          pin_state 0->1 with no others selected:
+            Show All
+          pin_state 0->1 with just 1 selected:
+            No Change (continue showing the currently selected, and allow more)
+          pin_state 0->1 with more than 1 selected ... should NOT happen because only one panel should show when pin_state is 0
+            Illegal state
+          pin_state 1->0 :
+            Hide all panels ... always
+            
+        """
+        # prop_keys = [ 'preferences_select', 'settings_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'run_select', 'graph_select', 'viz_select', 'reload_viz', 'select_multiple' ]
+        prop_keys = [ 'preferences_select', 'settings_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'run_select', 'graph_select', 'viz_select', 'select_multiple' ]
+        
+        pin_state = False
+        try:
+            pin_state = (self['select_multiple'] != 0)
+        except:
+            pass
+        old_pin_state = (self.last_state[prop_keys.index('select_multiple')] != 0)
+        
+        print ( "Select Called with pin state:" + str(pin_state) + ", and old pin state = " + str(old_pin_state) )
+
+        if (old_pin_state and (not pin_state)):
+            # Pin has been removed, so hide all panels ... always
+            print ("Hiding all")
+            for k in prop_keys:
+                try:
+                    self.last_state[prop_keys.index(k)] = False
+                    self[k] = 0
+                except:
+                    pass
+            self.last_state[prop_keys.index('select_multiple')] = False
+            
+        elif ((not old_pin_state) and pin_state):
+            # Pin has been pushed
+            # Find out how many panels are currently shown
+            num_panels_shown = 0
+            for k in prop_keys:
+                if k != 'select_multiple':
+                    try:
+                        if self[k] != 0:
+                            num_panels_shown += 1
+                    except:
+                        pass
+            # Check for case where no panels are showing
+            if num_panels_shown == 0:
+                print ("Showing all")
+                # Show all panels
+                for k in prop_keys:
+                    try:
+                        self[k] = 1
+                        self.last_state[prop_keys.index(k)] = False
+                    except:
+                        pass
+        
+            self.last_state[prop_keys.index('select_multiple')] = True
+        
+        else:
+            # Pin state has not changed, so assume some other button has been toggled
+
+            # Go through and find which one has changed to positive, setting all others to 0 if not pin_state
+            for k in prop_keys:
+                #print ( "Key " + k + " is " + str(self[k]) + ", Last state = " + str(self.last_state[index]) )
+                try:
+                    if (self[k] != 0) and (self.last_state[prop_keys.index(k)] == False):
+                        self.last_state[prop_keys.index(k)] = True
+                    else:
+                        if not pin_state:
+                            self.last_state[prop_keys.index(k)] = False
+                            self[k] = 0
+                except:
+                    pass
+        
+
+
+    def draw_self (self, layout):
+        row = layout.row(align=True)
+        row.prop ( self, "preferences_select", icon='PREFERENCES' )
+        row.prop ( self, "settings_select", icon='SETTINGS' )
+        row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER' )
+
+        #row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES' )
+        if self.molecule_select:
+            molecule_img_sel = bpy.data.images.get('mol_s')
+            mol_s = layout.icon(molecule_img_sel)
+            row.prop ( self, "molecule_select", icon_value=mol_s )
+        else:
+            molecule_img_unsel = bpy.data.images.get('mol_u')
+            mol_u = layout.icon(molecule_img_unsel)
+            row.prop ( self, "molecule_select", icon_value=mol_u )
+
+        if self.reaction_select:
+            react_img_sel = bpy.data.images.get('reaction_s')
+            reaction_s = layout.icon(react_img_sel)
+            row.prop ( self, "reaction_select", icon_value=reaction_s )
+        else:
+            react_img_unsel = bpy.data.images.get('reaction_u')
+            reaction_u = layout.icon(react_img_unsel)
+            row.prop ( self, "reaction_select", icon_value=reaction_u )
+
+        row.prop ( self, "placement_select", icon='GROUP_VERTEX' )
+
+        row.prop ( self, "rel_patterns_select", icon='TIME' )
+        
+        row.prop ( self, "objects_select", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
+
+        row.prop ( self, "surf_classes_select", icon='FACESEL_HLT' )
+
+        row.prop ( self, "surf_regions_select", icon='SNAP_FACE' )
+
+        row.prop ( self, "partitions_select", icon='GRID' )
+
+        row.prop ( self, "graph_select", icon='FCURVE' )
+
+        row.prop ( self, "viz_select", icon='SEQUENCE' )
+
+        row.prop ( self, "run_select", icon='COLOR_RED' )
+        
+        # Use an operator rather than a property to make it an action button
+        # row.prop ( self, "reload_viz", icon='FILE_REFRESH' )
+        row.operator ( "cbmu.refresh_operator",text="",icon='FILE_REFRESH')
+            
+        if self.select_multiple:
+            row.prop ( self, "select_multiple", icon='PINNED' )
+        else:
+            row.prop ( self, "select_multiple", icon='UNPINNED' )
+
+        # sep = layout.box()
+        
+        box = layout
+        
+        if self.preferences_select:
+            box.box() # Use as a separator
+            box.label ( "Preferences", icon='PREFERENCES' )
+            row = box.row()
+            row.operator("cbmu.dummy_operator",text="Reset Preferences")
+            row = box.row()
+            row.operator("cbmu.dummy_operator",text="Set Path to MCell Binary")
+            row = box.row()
+            row.operator("cbmu.dummy_operator",text="Set Path to BioNetGen File")
+            row = box.row()
+            row.operator("cbmu.dummy_operator",text="Set Path to Python Binary")
+
+        if self.settings_select:
+            box.box() # Use as a separator
+            box.label ( "Project Settings", icon='SETTINGS' )
+            row = box.row()
+            row.label( "CellBlender ID: a71b3c0e7f370d50s19e8bf610a71b3c0e7f370d" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Project Base Name:" )
+
+        if self.parameters_select:
+            box.box() # Use as a separator
+            box.label ( "Model Parameters", icon='SEQ_SEQUENCER' )
+            row = box.row()
+            row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
+
+            row = box.row()
+            subbox = row.box()
+            subbox.label ( text="a = 1e-6", icon='FILE_TICK' )
+            subbox.label ( text="b = 2.5e-5", icon='FILE_TICK' )
+            subbox.label ( text="c = 3e7", icon='FILE_TICK' )
+            subbox.label ( text="d = 2.75", icon='FILE_TICK' )
+            subbox.label ( text="e = 2.85", icon='FILE_TICK' )
+
+            pbox = layout.box()
+            row = pbox.row(align=True)
+            row.alignment = 'LEFT'
+            row.label(text="Parameter Options")
+
+        if self.molecule_select:
+            box.box() # Use as a separator
+            row = box.row()
+            row.label ( "Molecules", icon='FORCE_LENNARDJONES' )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Molecule Name" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Molecule Type" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Diffusion Constant" )
+            row = box.row()
+            row.prop(self, 'dummy_bool', icon='TRIA_RIGHT',
+                     text="Advanced Options", emboss=True)
+
+        if self.reaction_select:
+            box.box() # Use as a separator
+            react_img_sel = bpy.data.images.get('reaction_s')
+            reaction_s = layout.icon(react_img_sel)
+            box.label ( "Reactions", icon_value=reaction_s )
+            row = box.row()
+            row.label(text="Defined Reactions:")
+            row = box.row()
+            subbox = row.box()
+            subbox.label ( text="a -> b", icon='FILE_TICK' )
+            subbox.label ( text="b -> c", icon='FILE_TICK' )
+            subbox.label ( text="c <-> a", icon='FILE_TICK' )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Reactants" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Products" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Forward Rate" )
+
+        if self.placement_select:
+            box.box() # Use as a separator
+            row = box.row()
+            box.label ( "Molecule Placement", icon='GROUP_VERTEX' )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Site Name:" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Molecule", icon='FORCE_LENNARDJONES' )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Release Location X" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Release Location Y" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Release Location Z" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Site Diameter" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Release Probability" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Quantity Type" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Quantity to Release" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Release Pattern:", icon='FORCE_LENNARDJONES' )
+        if self.rel_patterns_select:
+            box.box() # Use as a separator
+            box.label ( "Release Patterns", icon='TIME' )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Pattern Name:" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Release Pattern Delay" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Release Interval" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Train Duration" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Train Interval" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Number of Trains" )
+
+        if self.objects_select:
+            box.box() # Use as a separator
+            box.label ( "Model Objects", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
+            row = box.row()
+            subbox = row.box()
+            subbox.label ( text="Cell", icon='FILE_TICK' )
+            subbox.label ( text="Organelle_1", icon='FILE_TICK' )
+            subbox.label ( text="Organelle_2", icon='FILE_TICK' )
+            subbox.label ( text="Organelle_3", icon='FILE_TICK' )
+
+        if self.surf_classes_select:
+            box.box() # Use as a separator
+            box.label ( "Surface Classes", icon='FACESEL_HLT' )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Surface Class Name:" )
+            row = box.row()
+            row.label ( "Surface Class Properties", icon='FACESEL_HLT' )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Molecule Name", icon='FORCE_LENNARDJONES' )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Orientation:" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Type" )
+
+        if self.surf_regions_select:
+            box.box() # Use as a separator
+            box.label ( "Surface Regions", icon='SNAP_FACE' )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Surface Class Name:", icon='FACESEL_HLT' )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Object Name", icon='MESH_ICOSPHERE' )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Region Name:", icon='FACESEL_HLT' )
+
+        if self.partitions_select:
+            box.box() # Use as a separator
+            box.label ( "Partitions", icon='GRID' )
+            row = box.row()
+            col = row.column()
+            col.prop ( self, 'dummy_float', text="X Start" )
+            col = row.column()
+            col.prop ( self, 'dummy_float', text="Y Start" )
+            col = row.column()
+            col.prop ( self, 'dummy_float', text="Z Start" )
+            row = box.row()
+            col = row.column()
+            col.prop ( self, 'dummy_float', text="X Start" )
+            col = row.column()
+            col.prop ( self, 'dummy_float', text="Y Start" )
+            col = row.column()
+            col.prop ( self, 'dummy_float', text="Z Start" )
+            row = box.row()
+            col = row.column()
+            col.prop ( self, 'dummy_float', text="X Start" )
+            col = row.column()
+            col.prop ( self, 'dummy_float', text="Y Start" )
+            col = row.column()
+            col.prop ( self, 'dummy_float', text="Z Start" )
+
+        if self.graph_select:
+            box.box() # Use as a separator
+            box.label ( "Plot Output Settings", icon='FCURVE' )
+            row = box.row()
+            col = row.column()
+            col.operator("cbmu.dummy_operator",text="Reaction")
+            col = row.column()
+            col.operator("cbmu.dummy_operator",text="Molecule")
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Molecule:", icon='FORCE_LENNARDJONES' )
+            row = box.row()
+            col = row.column()
+            col.operator("cbmu.dummy_operator",text="World")
+            col = row.column()
+            col.operator("cbmu.dummy_operator",text="Object")
+            col = row.column()
+            col.operator("cbmu.dummy_operator",text="Region")
+            box.label ( "Plot Reaction Data:", icon='FORCE_LENNARDJONES' )
+            row = box.row()
+            col = row.column()
+            col.operator("cbmu.dummy_operator",text="Simple Plotter")
+            col = row.column()
+            col.operator("cbmu.dummy_operator",text="MatPlotLib Plotter")
+            row = box.row()
+            col = row.column()
+            col.operator("cbmu.dummy_operator",text="XmGrace Plotter")
+            col = row.column()
+            col.operator("cbmu.dummy_operator",text="Java Plotter")
+
+        if self.run_select:
+            box.box() # Use as a separator
+            box.label ( "Run Simulation", icon='COLOR_RED' )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Iterations" )
+            row = box.row()
+            row.prop ( self, 'dummy_string', text="Time Step" )
+            row = box.row()
+            split = row.split(0.33)
+            col = split.column()
+            col.operator("cbmu.dummy_operator",text="Run Console",icon='COLOR_RED')
+            col = split.column()
+            col.operator("cbmu.dummy_operator",text="Run Java",icon='COLOR_BLUE')
+            col = split.column()
+            col.operator("cbmu.dummy_operator",text="Run OpenGL",icon='COLOR_BLUE')
+            
+        if self.viz_select:
+            box.box()
+            box.label ( "Visual Output Settings", icon='SEQUENCE' )
+            row = box.row()
+            row.label(text="Molecules To Visualize:", icon='FORCE_LENNARDJONES')
+            row.prop(self, "dummy_bool", text="Export All")
+            row = box.row()
+            subbox = row.box()
+            subbox.label ( text="a", icon='FILE_TICK' )
+            subbox.label ( text="b", icon='FILE_TICK' )
+            subbox.label ( text="c", icon='FILE_TICK' )
+            
+        # The reload_viz button refreshes rather than brings up a panel
+        #if self.reload_viz:
+        #    box.box()
+        #    box.label ( "Reload Simulation Data", icon='FILE_REFRESH' )
+
+
+
 import pickle
 
 # Main MCell (CellBlender) Properties Class:
@@ -1742,6 +2233,13 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     refresh_source_id = BoolProperty ( default=False, description="Recompute the Source ID from actual files", update=refresh_source_id_callback )
     #cellblender_source_hash = StringProperty(
     #    name="CellBlender Source Hash", default="unknown")
+
+
+    cellblender_main_panel = PointerProperty(
+        type=CellBlenderMainPanelPropertyGroup,
+        name="CellBlender Main Panel")
+
+
     cellblender_preferences = PointerProperty(
         type=CellBlenderPreferencesPanelProperty,
         name="CellBlender Preferences")
