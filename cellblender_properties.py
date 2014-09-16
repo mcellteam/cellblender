@@ -1720,7 +1720,7 @@ class PP_OT_init_mcell(bpy.types.Operator):
 # My panel class (which happens to augment 'Scene' properties)
 class MCELL_PT_main_panel(bpy.types.Panel):
     # bl_idname = "SCENE_PT_CB_MU_APP"
-    bl_label = "  CellBlender Main Panel"
+    bl_label = "  CellBlender Main - Experimental - DO NOT USE!!!"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "scene"
