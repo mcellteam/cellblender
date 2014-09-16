@@ -185,8 +185,14 @@ class MCELL_PT_parameter_system(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     #@profile('MCELL_PT_parameter_system.draw')
+
+    def draw ( self, context ):
+        # Call the draw function of the object itself
+        start_timer('MCELL_PT_parameter_system.draw_panel')
+        context.scene.mcell.parameter_system.draw_panel ( context, self )
+        stop_timer('MCELL_PT_parameter_system.draw_panel')
+    """
     def draw(self, context):
-        start_timer('MCELL_UL_draw_parameter.draw')
 
         mcell = context.scene.mcell
         if not mcell.initialized:
@@ -283,6 +289,7 @@ class MCELL_PT_parameter_system(bpy.types.Panel):
                 row.operator("mcell.print_profiling", text="Print Profiling")
                 row.operator("mcell.clear_profiling", text="Clear Profiling")
         stop_timer('MCELL_UL_draw_parameter.draw')
+    """
                 
 
 class MCELL_OT_add_parameter(bpy.types.Operator):
@@ -1959,6 +1966,106 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         # Add the new entry
         #gname_dict[param.par_name] = param.name
 
+
+    #@profile('MCELL_PT_parameter_system.draw_layout')
+    def draw_layout (self, context, layout):
+        mcell = context.scene.mcell
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+            ps = mcell.parameter_system
+            # layout = self.layout
+            
+            if ps.param_error_list != "":
+                row = layout.row()
+                row.label(text="Error with: " + ps.translated_param_name_list(ps.param_error_list), icon='ERROR')
+
+            row = layout.row()
+
+            col = row.column()
+            col.template_list("MCELL_UL_draw_parameter", "parameter_system",
+                              ps, "general_parameter_list",
+                              ps, "active_par_index", rows=5)
+
+            col = row.column(align=True)
+
+            subcol = col.column(align=True)
+            subcol.operator("mcell.add_parameter", icon='ZOOMIN', text="")
+            subcol.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
+
+            if len(ps.general_parameter_list) > 0:
+
+                if str(ps.param_display_mode) != "none":
+                    par = ps.general_parameter_list[ps.active_par_index]
+
+                    row = layout.row()
+                    if par.name_status == "":
+                        layout.prop(par, "par_name")
+                    else:
+                        #layout.prop(par, "par_name", icon='ERROR')
+                        layout.prop(par, "par_name")
+                        row = layout.row()
+                        row.label(text=str(par.name_status), icon='ERROR')
+                    if len(par.pending_expr) > 0:
+                        layout.prop(par, "expr")
+                        row = layout.row()
+                        row.label(text="Undefined Expression: " + str(par.pending_expr), icon='ERROR')
+                    elif not par.isvalid:
+                        layout.prop(par, "expr", icon='ERROR')
+                        row = layout.row()
+                        row.label(text="Invalid Expression: " + str(par.pending_expr), icon='ERROR')
+                    else:
+                        layout.prop(par, "expr")
+                    layout.prop(par, "units")
+                    layout.prop(par, "descr")
+
+
+            box = layout.box()
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
+            if not ps.show_panel:
+                row.prop(ps, "show_panel", text="Parameter Options", icon='TRIA_RIGHT', emboss=False)
+            else:
+                col = row.column()
+                col.alignment = 'LEFT'
+                col.prop(ps, "show_panel", text="Parameter Options", icon='TRIA_DOWN', emboss=False)
+                col = row.column()
+                col.prop(ps, "show_all_details", text="Show Internal Details for All")
+
+                if ps.show_all_details:
+                    col = row.column()
+                    #detail_box = None
+                    if len(ps.general_parameter_list) > 0:
+                        par = ps.general_parameter_list[ps.active_par_index]
+                        col.prop(par,"print_info", text="Print to Console", icon='LONGDISPLAY' )
+                        detail_box = box.box()
+                        par.draw_details(detail_box)
+                    else:
+                        detail_box = box.box()
+                        detail_box.label(text="No General Parameters Defined")
+                    if len(ps.param_error_list) > 0:
+                        error_names_box = box.box()
+                        param_error_names = ps.param_error_list.split()
+                        for name in param_error_names:
+                            error_names_box.label(text="Parameter Error for: " + name, icon='ERROR')
+
+                row = box.row()
+                row.prop(ps, "param_display_mode", text="Parameter Display Mode")
+                row = box.row()
+                row.prop(ps, "param_display_format", text="Parameter Display Format")
+                row = box.row()
+                row.prop(ps, "param_label_fraction", text="Parameter Label Fraction")
+                row = box.row()
+                row.prop(ps, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
+
+                row = box.row()
+                row.operator("mcell.print_profiling", text="Print Profiling")
+                row.operator("mcell.clear_profiling", text="Clear Profiling")
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
 
 
 def register():

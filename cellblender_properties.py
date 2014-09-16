@@ -2078,6 +2078,9 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
         if self.parameters_select:
             box.box() # Use as a separator
             box.label ( "Model Parameters", icon='SEQ_SEQUENCER' )
+            context.scene.mcell.parameter_system.draw_layout ( context, layout )
+
+            """
             row = box.row()
             row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
 
@@ -2093,6 +2096,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             row = pbox.row(align=True)
             row.alignment = 'LEFT'
             row.label(text="Parameter Options")
+            """
 
         if self.molecule_select:
             box.box() # Use as a separator
