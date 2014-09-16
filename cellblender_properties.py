@@ -619,6 +619,44 @@ class MCellProjectPanelProperty(bpy.types.PropertyGroup):
 
     status = StringProperty(name="Status")
 
+    def draw_layout (self, context, layout):
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+
+            row = layout.row()
+            split = row.split(0.96)
+            col = split.column()
+            col.label(text="CellBlender ID: "+cellblender.cellblender_info['cellblender_source_sha1'])
+            col = split.column()
+            col.prop ( mcell, "refresh_source_id", icon='FILE_REFRESH', text="" )
+            if 'cellblender_source_id_from_file' in cellblender.cellblender_info:
+                # This means that the source ID didn't match the refreshed version
+                # Draw a second line showing the original file ID as an error
+                row = layout.row()
+                row.label("File ID: " + cellblender.cellblender_info['cellblender_source_id_from_file'], icon='ERROR')
+
+
+            row = layout.row()
+            if not bpy.data.filepath:
+                row.label(
+                    text="No Project Directory: Use File/Save or File/SaveAs",
+                    icon='UNPINNED')
+            else:
+                row.label(
+                    text="Project Directory: " + os.path.dirname(bpy.data.filepath),
+                    icon='FILE_TICK')
+
+            row = layout.row()
+            layout.prop(context.scene, "name", text="Project Base Name")
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
+
 
 class MCellExportProjectPanelProperty(bpy.types.PropertyGroup):
     export_format_enum = [
@@ -2031,24 +2069,11 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             box.box() # Use as a separator
             box.label ( "Preferences", icon='PREFERENCES' )
             context.scene.mcell.cellblender_preferences.draw_layout ( context, layout )
-            """
-            row = box.row()
-            row.operator("cbmu.dummy_operator",text="Reset Preferences")
-            row = box.row()
-            row.operator("cbmu.dummy_operator",text="Set Path to MCell Binary")
-            row = box.row()
-            row.operator("cbmu.dummy_operator",text="Set Path to BioNetGen File")
-            row = box.row()
-            row.operator("cbmu.dummy_operator",text="Set Path to Python Binary")
-            """
 
         if self.settings_select:
             box.box() # Use as a separator
             box.label ( "Project Settings", icon='SETTINGS' )
-            row = box.row()
-            row.label( "CellBlender ID: a71b3c0e7f370d50s19e8bf610a71b3c0e7f370d" )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Project Base Name:" )
+            context.scene.mcell.project_settings.draw_layout ( context, layout )
 
         if self.parameters_select:
             box.box() # Use as a separator

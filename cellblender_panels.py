@@ -61,75 +61,9 @@ class MCELL_PT_cellblender_preferences(bpy.types.Panel):
     bl_context = "scene"
     bl_options = {'DEFAULT_CLOSED'}
 
-
     def draw ( self, context ):
-        # Call the draw function for the instance being drawn in this panel
+        # Call the draw function of the object itself
         context.scene.mcell.cellblender_preferences.draw_panel ( context, self )
-
-    """
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
-        else:
-            row = layout.row(align=True)
-            row.operator("mcell.preferences_reset")
-            layout.separator()
-
-            row = layout.row()
-            row.operator("mcell.set_mcell_binary",
-                         text="Set Path to MCell Binary", icon='FILESEL')
-            row = layout.row()
-            mcell_binary = mcell.cellblender_preferences.mcell_binary
-            if not mcell_binary:
-                row.label("MCell Binary not set", icon='UNPINNED')
-            elif not mcell.cellblender_preferences.mcell_binary_valid:
-                row.label("MCell File/Permissions Error: " +
-                    mcell.cellblender_preferences.mcell_binary, icon='ERROR')
-            else:
-                row.label(
-                    text="MCell Binary: "+mcell.cellblender_preferences.mcell_binary,
-                    icon='FILE_TICK')
-
-            row = layout.row()
-            row.operator("mcell.set_bionetgen_location",
-                         text="Set Path to BioNetGen File", icon='FILESEL')
-            row = layout.row()
-            bionetgen_location = mcell.cellblender_preferences.bionetgen_location
-            if not bionetgen_location:
-                row.label("BioNetGen location not set", icon='UNPINNED')
-            elif not mcell.cellblender_preferences.bionetgen_location_valid:
-                row.label("BioNetGen File/Permissions Error: " +
-                    mcell.cellblender_preferences.bionetgen_location, icon='ERROR')
-            else:
-                row.label(
-                    text="BioNetGen Location: " + mcell.cellblender_preferences.bionetgen_location,
-                    icon='FILE_TICK')
-
-            row = layout.row()
-            row.operator("mcell.set_python_binary",
-                         text="Set Path to Python Binary", icon='FILESEL')
-            row = layout.row()
-            python_path = mcell.cellblender_preferences.python_binary
-            if not python_path:
-                row.label("Python Binary not set", icon='UNPINNED')
-            elif not mcell.cellblender_preferences.python_binary_valid:
-                row.label("Python File/Permissions Error: " +
-                    mcell.cellblender_preferences.python_binary, icon='ERROR')
-            else:
-                row.label(
-                    text="Python Binary: " + mcell.cellblender_preferences.python_binary,
-                    icon='FILE_TICK')
-
-            row = layout.row()
-            row.prop(mcell.cellblender_preferences, "decouple_export_run")
-            row = layout.row()
-            row.prop(mcell.cellblender_preferences, "invalid_policy")
-            #row = layout.row()
-            #row.prop(mcell.cellblender_preferences, "debug_level")
-    """
 
 
 class MCELL_PT_project_settings(bpy.types.Panel):
@@ -139,39 +73,9 @@ class MCELL_PT_project_settings(bpy.types.Panel):
     bl_context = "scene"
     bl_options = {'DEFAULT_CLOSED'}
 
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
-        else:
-
-            row = layout.row()
-            split = row.split(0.96)
-            col = split.column()
-            col.label(text="CellBlender ID: "+cellblender.cellblender_info['cellblender_source_sha1'])
-            col = split.column()
-            col.prop ( mcell, "refresh_source_id", icon='FILE_REFRESH', text="" )
-            if 'cellblender_source_id_from_file' in cellblender.cellblender_info:
-                # This means that the source ID didn't match the refreshed version
-                # Draw a second line showing the original file ID as an error
-                row = layout.row()
-                row.label("File ID: " + cellblender.cellblender_info['cellblender_source_id_from_file'], icon='ERROR')
-
-
-            row = layout.row()
-            if not bpy.data.filepath:
-                row.label(
-                    text="No Project Directory: Use File/Save or File/SaveAs",
-                    icon='UNPINNED')
-            else:
-                row.label(
-                    text="Project Directory: " + os.path.dirname(bpy.data.filepath),
-                    icon='FILE_TICK')
-
-            row = layout.row()
-            layout.prop(context.scene, "name", text="Project Base Name")
+    def draw ( self, context ):
+        # Call the draw function of the object itself
+        context.scene.mcell.project_settings.draw_panel ( context, self )
 
 
 class MCELL_UL_error_list(bpy.types.UIList):
