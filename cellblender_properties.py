@@ -538,7 +538,7 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
         mcell = context.scene.mcell
 
         if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
+            mcell.draw_uninitialized ( layout )
         else:
             row = layout.row(align=True)
             row.operator("mcell.preferences_reset")
@@ -596,6 +596,13 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
             #row = layout.row()
             #row.prop(mcell.cellblender_preferences, "debug_level")
 
+
+            row = layout.row()
+            row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='ZOOMOUT')
+            row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')
+
+
+
     def draw_panel ( self, context, panel ):
         """ Create a layout from the panel and draw into it """
         layout = panel.layout
@@ -624,7 +631,7 @@ class MCellProjectPanelProperty(bpy.types.PropertyGroup):
         mcell = context.scene.mcell
 
         if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
+            mcell.draw_uninitialized ( layout )
         else:
 
             row = layout.row()
@@ -727,7 +734,7 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
         mcell = context.scene.mcell
 
         if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
+            mcell.draw_uninitialized ( layout )
         else:
 
             #main_mdl = ("%s.main.mdl" %
@@ -871,7 +878,7 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
         mcell = context.scene.mcell
 
         if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
+            mcell.draw_uninitialized ( layout )
         else:
 
             row = layout.row()
@@ -1259,7 +1266,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         mcell = context.scene.mcell
 
         if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
+            mcell.draw_uninitialized ( layout )
         else:
             ps = mcell.parameter_system
             mcell.initialization.iterations.draw(layout,ps)
@@ -1458,7 +1465,7 @@ class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
         mcell = context.scene.mcell
 
         if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
+            mcell.draw_uninitialized ( layout )
         else:
             layout.prop(mcell.partitions, "include")
             if mcell.partitions.include:
@@ -1526,7 +1533,7 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
         mcell = context.scene.mcell
 
         if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
+            mcell.draw_uninitialized ( layout )
         else:
             ps = mcell.parameter_system
             row = layout.row()
@@ -1605,7 +1612,7 @@ class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
         mcell = context.scene.mcell
 
         if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
+            mcell.draw_uninitialized ( layout )
         else:
             surf_class = mcell.surface_classes
 
@@ -1692,7 +1699,7 @@ class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
         mcell = context.scene.mcell
 
         if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
+            mcell.draw_uninitialized ( layout )
         else:
 
             mod_surf_regions = context.scene.mcell.mod_surf_regions
@@ -1777,7 +1784,7 @@ class MCellReleasePatternPanelProperty(bpy.types.PropertyGroup):
         mcell = context.scene.mcell
 
         if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
+            mcell.draw_uninitialized ( layout )
         else:
           ps = mcell.parameter_system
 
@@ -1843,7 +1850,7 @@ class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
         """ Draw the release "panel" within the layout """
         mcell = context.scene.mcell
         if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
+            mcell.draw_uninitialized ( layout )
         else:
             ps = mcell.parameter_system
             row = layout.row()
@@ -1934,7 +1941,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
         mcell = context.scene.mcell
 
         if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
+            mcell.draw_uninitialized ( layout )
         else:
 
             row = layout.row()
@@ -2269,7 +2276,7 @@ class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
         mcell = context.scene.mcell
 
         if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
+            mcell.draw_uninitialized ( layout )
         else:
             row = layout.row()
             if mcell.molecules.molecule_list:
@@ -2438,7 +2445,7 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
         mcell = context.scene.mcell
 
         if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
+            mcell.draw_uninitialized ( layout )
         else:
             row = layout.row()
             if mcell.molecules.molecule_list:
@@ -2589,7 +2596,7 @@ class PP_OT_init_mcell(bpy.types.Operator):
 # My panel class (which happens to augment 'Scene' properties)
 class MCELL_PT_main_panel(bpy.types.Panel):
     # bl_idname = "SCENE_PT_CB_MU_APP"
-    bl_label = "  CellBlender Main - Experimental - DO NOT USE!!!"
+    bl_label = "  CellBlender"
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "scene"
@@ -2616,32 +2623,67 @@ class MCELL_PT_main_panel(bpy.types.Panel):
         context.scene.mcell.cellblender_main_panel.draw_self(context,self.layout)
 
 
+from . import cellblender_panels
 
-
-class CBMU_OT_dummy_operator(bpy.types.Operator):
-    """Dummy Operator"""
-
-    bl_idname = "cbmu.dummy_operator"
-    bl_label = "Dummy"
-    bl_description = ("This is a simulated operator")
+class CB_OT_unregister_cellblender_panels(bpy.types.Operator):
+    bl_idname = "mcell.unregister_panels"
+    bl_label = "HidePanels"
+    bl_description = ("Hide Panels")
     bl_options = {'REGISTER'}
 
     def execute(self, context):
+        print ( "Hiding all the panels" )
+        try:
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_cellblender_preferences)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_viz_results)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_partitions)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_initialization)
+            bpy.utils.unregister_class(parameter_system.MCELL_PT_parameter_system)
+            bpy.utils.unregister_class(cellblender_molecules.MCELL_PT_define_molecules)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_reactions)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_surface_classes)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_mod_surface_regions)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_release_pattern)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_molecule_release)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_reaction_output_settings)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_visualization_output_settings)
+        except:
+            pass
+
         return {'FINISHED'}
 
-
-class CBMU_OT_refresh_operator(bpy.types.Operator):
-    """Refresh Operator"""
-
-    bl_idname = "cbmu.refresh_operator"
-    bl_label = "Refresh"
-    bl_description = ("Simulate Refresh")
+class CB_OT_reregister_cellblender_panels(bpy.types.Operator):
+    bl_idname = "mcell.reregister_panels"
+    bl_label = "ShowPanels"
+    bl_description = ("Show Panels")
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        print ( "Refreshing/Reloading the Molecules" )
-        return {'FINISHED'}
+        print ( "Showing all the panels" )
+        try:
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_cellblender_preferences)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
+            bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_model_objects)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_partitions)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_initialization)
+            bpy.utils.register_class(cellblender_molecules.MCELL_PT_define_molecules)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_define_reactions)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_define_surface_classes)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_mod_surface_regions)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_release_pattern)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_molecule_release)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_reaction_output_settings)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_visualization_output_settings)
+        except:
+            pass
 
+        return {'FINISHED'}
 
 
 
@@ -2669,6 +2711,31 @@ def scene_loaded(dummy):
                     print("REMOVE SCENE HANDLER")
                     bpy.app.handlers.scene_update_pre.remove(f)
 
+
+
+"""
+class CBMU_OT_dummy_operator(bpy.types.Operator):
+    bl_idname = "cbmu.dummy_operator"
+    bl_label = "Dummy"
+    bl_description = ("This is a simulated operator")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        return {'FINISHED'}
+"""
+
+
+class CBMU_OT_refresh_operator(bpy.types.Operator):
+    bl_idname = "cbmu.refresh_operator"
+    bl_label = "Refresh"
+    bl_description = ("Simulate Refresh")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        print ( "Refreshing/Reloading the Molecules" )
+        bpy.ops.mcell.read_viz_data()
+        # bpy.ops.time.view_all()   # This fails with:  RuntimeError: Operator bpy.ops.time.view_all.poll() failed, context is incorrect
+        return {'FINISHED'}
 
 
 
@@ -2815,16 +2882,18 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
         row.prop ( self, "graph_select", icon='FCURVE' )
         row.prop ( self, "viz_select", icon='SEQUENCE' )
         #row.prop ( self, "mol_viz_select", icon='SEQUENCE' )
-        row.prop ( self, "init_select", icon='COLOR_BLUE' )
+        row.prop ( self, "init_select", icon='FILE_TEXT' )
         row.prop ( self, "run_select", icon='COLOR_RED' )
         # Use an operator rather than a property to make it an action button
         # row.prop ( self, "reload_viz", icon='FILE_REFRESH' )
         row.operator ( "cbmu.refresh_operator",text="",icon='FILE_REFRESH')
+        #row.operator ( "mcell.read_viz_data", text="",icon='FILE_REFRESH')
             
         if self.select_multiple:
             row.prop ( self, "select_multiple", icon='PINNED' )
         else:
             row.prop ( self, "select_multiple", icon='UNPINNED' )
+
 
         # sep = layout.box()
         
@@ -2905,7 +2974,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             
         if self.init_select:
             layout.box() # Use as a separator
-            layout.label ( "Model Initialization", icon='COLOR_BLUE' )
+            layout.label ( "Model Initialization", icon='FILE_TEXT' )
             context.scene.mcell.initialization.draw_layout ( context, layout )
             
         if self.run_select:
@@ -2917,7 +2986,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
         #if self.reload_viz:
         #    box.box()
         #    box.label ( "Reload Simulation Data", icon='FILE_REFRESH' )
-
 
 
 import pickle

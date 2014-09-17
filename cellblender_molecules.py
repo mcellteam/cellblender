@@ -341,7 +341,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         """ Draw the molecule "panel" within the layout """
         mcell = context.scene.mcell
         if not mcell.initialized:
-            mcell.draw_uninitialized ( panel.layout )
+            mcell.draw_uninitialized ( layout )
         else:
             row = layout.row()
             col = row.column()

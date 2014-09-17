@@ -1872,10 +1872,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     def draw_layout (self, context, layout):
         mcell = context.scene.mcell
         if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
+            mcell.draw_uninitialized ( layout )
         else:
             ps = mcell.parameter_system
-            # layout = self.layout
             
             if ps.param_error_list != "":
                 row = layout.row()
