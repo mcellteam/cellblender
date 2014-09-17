@@ -548,45 +548,45 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
             row.operator("mcell.set_mcell_binary",
                          text="Set Path to MCell Binary", icon='FILESEL')
             row = layout.row()
-            mcell_binary = mcell.cellblender_preferences.mcell_binary
+            mcell_binary = self.mcell_binary
             if not mcell_binary:
                 row.label("MCell Binary not set", icon='UNPINNED')
-            elif not mcell.cellblender_preferences.mcell_binary_valid:
+            elif not self.mcell_binary_valid:
                 row.label("MCell File/Permissions Error: " +
-                    mcell.cellblender_preferences.mcell_binary, icon='ERROR')
+                    self.mcell_binary, icon='ERROR')
             else:
                 row.label(
-                    text="MCell Binary: "+mcell.cellblender_preferences.mcell_binary,
+                    text="MCell Binary: "+self.mcell_binary,
                     icon='FILE_TICK')
 
             row = layout.row()
             row.operator("mcell.set_bionetgen_location",
                          text="Set Path to BioNetGen File", icon='FILESEL')
             row = layout.row()
-            bionetgen_location = mcell.cellblender_preferences.bionetgen_location
+            bionetgen_location = self.bionetgen_location
             if not bionetgen_location:
                 row.label("BioNetGen location not set", icon='UNPINNED')
-            elif not mcell.cellblender_preferences.bionetgen_location_valid:
+            elif not self.bionetgen_location_valid:
                 row.label("BioNetGen File/Permissions Error: " +
-                    mcell.cellblender_preferences.bionetgen_location, icon='ERROR')
+                    self.bionetgen_location, icon='ERROR')
             else:
                 row.label(
-                    text="BioNetGen Location: " + mcell.cellblender_preferences.bionetgen_location,
+                    text="BioNetGen Location: " + self.bionetgen_location,
                     icon='FILE_TICK')
 
             row = layout.row()
             row.operator("mcell.set_python_binary",
                          text="Set Path to Python Binary", icon='FILESEL')
             row = layout.row()
-            python_path = mcell.cellblender_preferences.python_binary
+            python_path = self.python_binary
             if not python_path:
                 row.label("Python Binary not set", icon='UNPINNED')
-            elif not mcell.cellblender_preferences.python_binary_valid:
+            elif not self.python_binary_valid:
                 row.label("Python File/Permissions Error: " +
-                    mcell.cellblender_preferences.python_binary, icon='ERROR')
+                    self.python_binary, icon='ERROR')
             else:
                 row.label(
-                    text="Python Binary: " + mcell.cellblender_preferences.python_binary,
+                    text="Python Binary: " + self.python_binary,
                     icon='FILE_TICK')
 
             row = layout.row()
@@ -2600,7 +2600,7 @@ class MCELL_PT_main_panel(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
+    # bl_options = {'DEFAULT_CLOSED'}
     
     @classmethod
     def poll(cls, context):
@@ -2849,143 +2849,150 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
 
     def draw_self (self, context, layout):
-        row = layout.row(align=True)
-        row.prop ( self, "preferences_select", icon='PREFERENCES' )
-        row.prop ( self, "settings_select", icon='SETTINGS' )
-        row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER' )
 
-        #row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES' )
-        if self.molecule_select:
-            molecule_img_sel = bpy.data.images.get('mol_s')
-            mol_s = layout.icon(molecule_img_sel)
-            row.prop ( self, "molecule_select", icon_value=mol_s )
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( layout )
         else:
-            molecule_img_unsel = bpy.data.images.get('mol_u')
-            mol_u = layout.icon(molecule_img_unsel)
-            row.prop ( self, "molecule_select", icon_value=mol_u )
+    
+            row = layout.row(align=True)
+            row.prop ( self, "preferences_select", icon='PREFERENCES' )
+            row.prop ( self, "settings_select", icon='SETTINGS' )
+            row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER' )
 
-        if self.reaction_select:
-            react_img_sel = bpy.data.images.get('reaction_s')
-            reaction_s = layout.icon(react_img_sel)
-            row.prop ( self, "reaction_select", icon_value=reaction_s )
-        else:
-            react_img_unsel = bpy.data.images.get('reaction_u')
-            reaction_u = layout.icon(react_img_unsel)
-            row.prop ( self, "reaction_select", icon_value=reaction_u )
+            #row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES' )
+            if self.molecule_select:
+                molecule_img_sel = bpy.data.images.get('mol_s')
+                mol_s = layout.icon(molecule_img_sel)
+                row.prop ( self, "molecule_select", icon_value=mol_s )
+            else:
+                molecule_img_unsel = bpy.data.images.get('mol_u')
+                mol_u = layout.icon(molecule_img_unsel)
+                row.prop ( self, "molecule_select", icon_value=mol_u )
 
-        row.prop ( self, "placement_select", icon='GROUP_VERTEX' )
-        row.prop ( self, "rel_patterns_select", icon='TIME' )
-        row.prop ( self, "objects_select", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
-        row.prop ( self, "surf_classes_select", icon='FACESEL_HLT' )
-        row.prop ( self, "surf_regions_select", icon='SNAP_FACE' )
-        row.prop ( self, "partitions_select", icon='GRID' )
-        row.prop ( self, "graph_select", icon='FCURVE' )
-        row.prop ( self, "viz_select", icon='SEQUENCE' )
-        #row.prop ( self, "mol_viz_select", icon='SEQUENCE' )
-        row.prop ( self, "init_select", icon='FILE_TEXT' )
-        row.prop ( self, "run_select", icon='COLOR_RED' )
-        # Use an operator rather than a property to make it an action button
-        # row.prop ( self, "reload_viz", icon='FILE_REFRESH' )
-        row.operator ( "cbmu.refresh_operator",text="",icon='FILE_REFRESH')
-        #row.operator ( "mcell.read_viz_data", text="",icon='FILE_REFRESH')
+            if self.reaction_select:
+                react_img_sel = bpy.data.images.get('reaction_s')
+                reaction_s = layout.icon(react_img_sel)
+                row.prop ( self, "reaction_select", icon_value=reaction_s )
+            else:
+                react_img_unsel = bpy.data.images.get('reaction_u')
+                reaction_u = layout.icon(react_img_unsel)
+                row.prop ( self, "reaction_select", icon_value=reaction_u )
+
+            row.prop ( self, "placement_select", icon='GROUP_VERTEX' )
+            row.prop ( self, "rel_patterns_select", icon='TIME' )
+            row.prop ( self, "objects_select", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
+            row.prop ( self, "surf_classes_select", icon='FACESEL_HLT' )
+            row.prop ( self, "surf_regions_select", icon='SNAP_FACE' )
+            row.prop ( self, "partitions_select", icon='GRID' )
+            row.prop ( self, "graph_select", icon='FCURVE' )
+            row.prop ( self, "viz_select", icon='SEQUENCE' )
+            #row.prop ( self, "mol_viz_select", icon='SEQUENCE' )
+            row.prop ( self, "init_select", icon='FILE_TEXT' )
+            row.prop ( self, "run_select", icon='COLOR_RED' )
+            # Use an operator rather than a property to make it an action button
+            # row.prop ( self, "reload_viz", icon='FILE_REFRESH' )
+            row.operator ( "cbmu.refresh_operator",text="",icon='FILE_REFRESH')
+            #row.operator ( "mcell.read_viz_data", text="",icon='FILE_REFRESH')
+                
+            if self.select_multiple:
+                row.prop ( self, "select_multiple", icon='PINNED' )
+            else:
+                row.prop ( self, "select_multiple", icon='UNPINNED' )
+
+
+            # sep = layout.box()
             
-        if self.select_multiple:
-            row.prop ( self, "select_multiple", icon='PINNED' )
-        else:
-            row.prop ( self, "select_multiple", icon='UNPINNED' )
-
-
-        # sep = layout.box()
-        
-        box = layout
-        
-        if self.preferences_select:
-            layout.box() # Use as a separator
-            layout.label ( "Preferences", icon='PREFERENCES' )
-            context.scene.mcell.cellblender_preferences.draw_layout ( context, layout )
-
-        if self.settings_select:
-            layout.box() # Use as a separator
-            layout.label ( "Project Settings", icon='SETTINGS' )
-            context.scene.mcell.project_settings.draw_layout ( context, layout )
-
-        if self.parameters_select:
-            layout.box() # Use as a separator
-            layout.label ( "Model Parameters", icon='SEQ_SEQUENCER' )
-            context.scene.mcell.parameter_system.draw_layout ( context, layout )
-
-        if self.molecule_select:
-            layout.box() # Use as a separator
-            layout.label(text="Defined Molecules", icon='FORCE_LENNARDJONES')
-            context.scene.mcell.molecules.draw_layout ( context, layout )
-
-        if self.reaction_select:
-            layout.box() # Use as a separator
-            react_img_sel = bpy.data.images.get('reaction_s')
-            reaction_s = layout.icon(react_img_sel)
-            layout.label ( "Defined Reactions", icon_value=reaction_s )
-            context.scene.mcell.reactions.draw_layout ( context, layout )
-
-        if self.placement_select:
-            layout.box() # Use as a separator
-            layout.label ( "Molecule Release/Placement", icon='GROUP_VERTEX' )
-            context.scene.mcell.release_sites.draw_layout ( context, layout )
-
-        if self.rel_patterns_select:
-            layout.box() # Use as a separator
-            layout.label ( "Release Patterns", icon='TIME' )
-            context.scene.mcell.release_patterns.draw_layout ( context, layout )
-
-        if self.objects_select:
-            layout.box() # Use as a separator
-            layout.label ( "Model Objects", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
-            context.scene.mcell.model_objects.draw_layout ( context, layout )
-
-        if self.surf_classes_select:
-            layout.box() # Use as a separator
-            layout.label ( "Defined Surface Classes", icon='FACESEL_HLT' )
-            context.scene.mcell.surface_classes.draw_layout ( context, layout )
-
-        if self.surf_regions_select:
-            layout.box() # Use as a separator
-            layout.label ( "Modified Surface Regions", icon='SNAP_FACE' )
-            context.scene.mcell.mod_surf_regions.draw_layout ( context, layout )
-
-        if self.partitions_select:
-            layout.box() # Use as a separator
-            layout.label ( "Partitions", icon='GRID' )
-            context.scene.mcell.partitions.draw_layout ( context, layout )
-
-        if self.graph_select:
-            layout.box() # Use as a separator
-            layout.label ( "Reaction Data Output", icon='FCURVE' )
-            context.scene.mcell.rxn_output.draw_layout ( context, layout )
-
-        #if self.mol_viz_select:
-        #    layout.box()
-        #    layout.label ( "Visualization Output Settings", icon='SEQUENCE' )
-        #    context.scene.mcell.mol_viz.draw_layout ( context, layout )
+            box = layout
             
-        if self.viz_select:
-            layout.box()
-            layout.label ( "Visualization", icon='SEQUENCE' )
-            context.scene.mcell.viz_output.draw_layout ( context, layout )
-            context.scene.mcell.mol_viz.draw_layout ( context, layout )
-            
-        if self.init_select:
-            layout.box() # Use as a separator
-            layout.label ( "Model Initialization", icon='FILE_TEXT' )
-            context.scene.mcell.initialization.draw_layout ( context, layout )
-            
-        if self.run_select:
-            layout.box() # Use as a separator
-            layout.label ( "Run Simulation", icon='COLOR_RED' )
-            context.scene.mcell.run_simulation.draw_layout ( context, layout )
-            
-        # The reload_viz button refreshes rather than brings up a panel
-        #if self.reload_viz:
-        #    box.box()
-        #    box.label ( "Reload Simulation Data", icon='FILE_REFRESH' )
+            if self.preferences_select:
+                layout.box() # Use as a separator
+                layout.label ( "Preferences", icon='PREFERENCES' )
+                context.scene.mcell.cellblender_preferences.draw_layout ( context, layout )
+
+            if self.settings_select:
+                layout.box() # Use as a separator
+                layout.label ( "Project Settings", icon='SETTINGS' )
+                context.scene.mcell.project_settings.draw_layout ( context, layout )
+
+            if self.parameters_select:
+                layout.box() # Use as a separator
+                layout.label ( "Model Parameters", icon='SEQ_SEQUENCER' )
+                context.scene.mcell.parameter_system.draw_layout ( context, layout )
+
+            if self.molecule_select:
+                layout.box() # Use as a separator
+                layout.label(text="Defined Molecules", icon='FORCE_LENNARDJONES')
+                context.scene.mcell.molecules.draw_layout ( context, layout )
+
+            if self.reaction_select:
+                layout.box() # Use as a separator
+                react_img_sel = bpy.data.images.get('reaction_s')
+                reaction_s = layout.icon(react_img_sel)
+                layout.label ( "Defined Reactions", icon_value=reaction_s )
+                context.scene.mcell.reactions.draw_layout ( context, layout )
+
+            if self.placement_select:
+                layout.box() # Use as a separator
+                layout.label ( "Molecule Release/Placement", icon='GROUP_VERTEX' )
+                context.scene.mcell.release_sites.draw_layout ( context, layout )
+
+            if self.rel_patterns_select:
+                layout.box() # Use as a separator
+                layout.label ( "Release Patterns", icon='TIME' )
+                context.scene.mcell.release_patterns.draw_layout ( context, layout )
+
+            if self.objects_select:
+                layout.box() # Use as a separator
+                layout.label ( "Model Objects", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
+                context.scene.mcell.model_objects.draw_layout ( context, layout )
+
+            if self.surf_classes_select:
+                layout.box() # Use as a separator
+                layout.label ( "Defined Surface Classes", icon='FACESEL_HLT' )
+                context.scene.mcell.surface_classes.draw_layout ( context, layout )
+
+            if self.surf_regions_select:
+                layout.box() # Use as a separator
+                layout.label ( "Modified Surface Regions", icon='SNAP_FACE' )
+                context.scene.mcell.mod_surf_regions.draw_layout ( context, layout )
+
+            if self.partitions_select:
+                layout.box() # Use as a separator
+                layout.label ( "Partitions", icon='GRID' )
+                context.scene.mcell.partitions.draw_layout ( context, layout )
+
+            if self.graph_select:
+                layout.box() # Use as a separator
+                layout.label ( "Reaction Data Output", icon='FCURVE' )
+                context.scene.mcell.rxn_output.draw_layout ( context, layout )
+
+            #if self.mol_viz_select:
+            #    layout.box()
+            #    layout.label ( "Visualization Output Settings", icon='SEQUENCE' )
+            #    context.scene.mcell.mol_viz.draw_layout ( context, layout )
+                
+            if self.viz_select:
+                layout.box()
+                layout.label ( "Visualization", icon='SEQUENCE' )
+                context.scene.mcell.viz_output.draw_layout ( context, layout )
+                context.scene.mcell.mol_viz.draw_layout ( context, layout )
+                
+            if self.init_select:
+                layout.box() # Use as a separator
+                layout.label ( "Model Initialization", icon='FILE_TEXT' )
+                context.scene.mcell.initialization.draw_layout ( context, layout )
+                
+            if self.run_select:
+                layout.box() # Use as a separator
+                layout.label ( "Run Simulation", icon='COLOR_RED' )
+                context.scene.mcell.run_simulation.draw_layout ( context, layout )
+                
+            # The reload_viz button refreshes rather than brings up a panel
+            #if self.reload_viz:
+            #    box.box()
+            #    box.label ( "Reload Simulation Data", icon='FILE_REFRESH' )
 
 
 import pickle
