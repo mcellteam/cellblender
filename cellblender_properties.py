@@ -797,7 +797,7 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
                 row.operator("mcell.run_simulation_control_opengl", text="Run OpenGL Sim Control",
                              icon='COLOR_BLUE')
 
-                if (mcell.run_simulation.processes_list and
+                if (self.processes_list and
                         cellblender.simulation_popen_list):
                     row = layout.row()
                     row.label(text="Sets of MCell Processes:",
@@ -809,11 +809,11 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
                                       rows=2)
                     row = layout.row()
                     row.operator("mcell.clear_run_list")
-            if mcell.run_simulation.status:
+            if self.status:
                 row = layout.row()
-                row.label(text=mcell.run_simulation.status, icon='ERROR')
+                row.label(text=self.status, icon='ERROR')
             
-            if mcell.run_simulation.error_list: 
+            if self.error_list: 
                 row = layout.row() 
                 row.label(text="Errors:", icon='ERROR')
                 row = layout.row()
@@ -884,21 +884,21 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
             row = layout.row()
             row.prop(mcell.mol_viz, "manual_select_viz_dir")
             row = layout.row()
-            if mcell.mol_viz.manual_select_viz_dir:
+            if self.manual_select_viz_dir:
                 row.operator("mcell.select_viz_data", icon='IMPORT')
             else:
                 row.operator("mcell.read_viz_data", icon='IMPORT')
             row = layout.row()
-            row.label(text="Molecule Viz Directory: " + mcell.mol_viz.mol_file_dir,
+            row.label(text="Molecule Viz Directory: " + self.mol_file_dir,
                       icon='FILE_FOLDER')
             row = layout.row()
-            if not mcell.mol_viz.manual_select_viz_dir:
+            if not self.manual_select_viz_dir:
                 row.template_list("UI_UL_list", "viz_seed", mcell.mol_viz,
                                 "mol_viz_seed_list", mcell.mol_viz,
                                 "active_mol_viz_seed_index", rows=2)
             row = layout.row()
             row = layout.row()
-            row.label(text="Current Molecule File: "+mcell.mol_viz.mol_file_name,
+            row.label(text="Current Molecule File: "+self.mol_file_name,
                       icon='FILE')
             row = layout.row()
             row.template_list("UI_UL_list", "viz_results", mcell.mol_viz,
