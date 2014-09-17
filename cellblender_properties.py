@@ -36,6 +36,7 @@ from . import parameter_system
 import os
 from multiprocessing import cpu_count
 
+from cellblender.utils import project_files_path
 
 # we use per module class registration/unregistration
 def register():
@@ -722,6 +723,106 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
         name="Active Error Index", default=0)
 
 
+    def draw_layout(self, context, layout):
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+
+            #main_mdl = ("%s.main.mdl" %
+            #            os.path.join(os.path.dirname(bpy.data.filepath),
+            #            mcell.project_settings.base_name))
+
+            # Filter or replace problem characters (like space, ...)
+            scene_name = context.scene.name.replace(" ", "_")
+
+            # Set this for now to have it hopefully propagate until base_name can
+            # be removed
+            #mcell.project_settings.base_name = scene_name
+
+            main_mdl = project_files_path()
+            main_mdl = os.path.join(main_mdl, scene_name + ".main.mdl")
+
+            row = layout.row()
+
+            # Only allow the simulation to be run if both an MCell binary and a
+            # project dir have been selected. There also needs to be a main mdl
+            # file present.
+            if not mcell.cellblender_preferences.mcell_binary:
+                row.label(text="Set an MCell binary in CellBlender - Preferences Panel", icon='ERROR')
+            elif not os.path.dirname(bpy.data.filepath):
+                row.label(
+                    text="Open or save a .blend file to set the project directory",
+                    icon='ERROR')
+            elif (not os.path.isfile(main_mdl) and
+                    mcell.cellblender_preferences.decouple_export_run):
+                row.label(text="Export the project", icon='ERROR')
+                row = layout.row()
+                row.operator(
+                    "mcell.export_project",
+                    text="Export CellBlender Project", icon='EXPORT')
+            else:
+                row = layout.row(align=True)
+                row.prop(mcell.run_simulation, "start_seed")
+                row.prop(mcell.run_simulation, "end_seed")
+                row = layout.row()
+                row.prop(mcell.run_simulation, "mcell_processes")
+                row = layout.row()
+                row.prop(mcell.run_simulation, "log_file")
+                row = layout.row()
+                row.prop(mcell.run_simulation, "error_file")
+                row = layout.row()
+                row.prop(mcell.export_project, "export_format")
+
+                if mcell.cellblender_preferences.decouple_export_run:
+                    row = layout.row()
+                    row.operator(
+                        "mcell.export_project", text="Export CellBlender Project",
+                        icon='EXPORT')
+                row = layout.row()
+                row.prop(mcell.run_simulation, "remove_append", expand=True)
+                row = layout.row()
+                row.operator("mcell.run_simulation", text="Run Simulation",
+                             icon='COLOR_RED')
+                row.operator("mcell.run_simulation_control_java", text="Run Java Sim Control",
+                             icon='COLOR_BLUE')
+                row.operator("mcell.run_simulation_control_opengl", text="Run OpenGL Sim Control",
+                             icon='COLOR_BLUE')
+
+                if (mcell.run_simulation.processes_list and
+                        cellblender.simulation_popen_list):
+                    row = layout.row()
+                    row.label(text="Sets of MCell Processes:",
+                              icon='FORCE_LENNARDJONES')
+                    row = layout.row()
+                    row.template_list("MCELL_UL_run_simulation", "run_simulation",
+                                      mcell.run_simulation, "processes_list",
+                                      mcell.run_simulation, "active_process_index",
+                                      rows=2)
+                    row = layout.row()
+                    row.operator("mcell.clear_run_list")
+            if mcell.run_simulation.status:
+                row = layout.row()
+                row.label(text=mcell.run_simulation.status, icon='ERROR')
+            
+            if mcell.run_simulation.error_list: 
+                row = layout.row() 
+                row.label(text="Errors:", icon='ERROR')
+                row = layout.row()
+                col = row.column()
+                col.template_list("MCELL_UL_error_list", "run_simulation",
+                                  mcell.run_simulation, "error_list",
+                                  mcell.run_simulation, "active_err_index", rows=2)
+
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
+
+
+
 class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
     """ Property group for for molecule visualization.
 
@@ -764,6 +865,47 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
         name="Manually Select Viz Directory", default=False,
         description="Toggle the option to manually load viz data.",
         update=cellblender_operators.mol_viz_toggle_manual_select)
+
+
+    def draw_layout(self, context, layout):
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+
+            row = layout.row()
+            row.prop(mcell.mol_viz, "manual_select_viz_dir")
+            row = layout.row()
+            if mcell.mol_viz.manual_select_viz_dir:
+                row.operator("mcell.select_viz_data", icon='IMPORT')
+            else:
+                row.operator("mcell.read_viz_data", icon='IMPORT')
+            row = layout.row()
+            row.label(text="Molecule Viz Directory: " + mcell.mol_viz.mol_file_dir,
+                      icon='FILE_FOLDER')
+            row = layout.row()
+            if not mcell.mol_viz.manual_select_viz_dir:
+                row.template_list("UI_UL_list", "viz_seed", mcell.mol_viz,
+                                "mol_viz_seed_list", mcell.mol_viz,
+                                "active_mol_viz_seed_index", rows=2)
+            row = layout.row()
+            row = layout.row()
+            row.label(text="Current Molecule File: "+mcell.mol_viz.mol_file_name,
+                      icon='FILE')
+            row = layout.row()
+            row.template_list("UI_UL_list", "viz_results", mcell.mol_viz,
+                              "mol_file_list", mcell.mol_viz, "mol_file_index",
+                              rows=2)
+            row = layout.row()
+            layout.prop(mcell.mol_viz, "mol_viz_enable")
+
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
+
 
 
 from . import parameter_system
@@ -1113,6 +1255,129 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         name="Useless Volume Orientation", default='WARNING')
 
 
+    def draw_layout(self, context, layout):
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+            ps = mcell.parameter_system
+            mcell.initialization.iterations.draw(layout,ps)
+            mcell.initialization.time_step.draw(layout,ps)
+
+            # Advanced Options
+            box = layout.box()
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
+            if mcell.initialization.advanced:
+                row.prop(mcell.initialization, "advanced", icon='TRIA_DOWN',
+                         text="Advanced Options", emboss=False)
+
+                mcell.initialization.time_step_max.draw(box,ps)
+                mcell.initialization.space_step.draw(box,ps)
+                mcell.initialization.interaction_radius.draw(box,ps)
+                mcell.initialization.radial_directions.draw(box,ps)
+                mcell.initialization.radial_subdivisions.draw(box,ps)
+                mcell.initialization.vacancy_search_distance.draw(box,ps)
+                mcell.initialization.surface_grid_density.draw(box,ps)
+
+                row = box.row()
+                row.prop(mcell.initialization, "accurate_3d_reactions")
+                row = box.row()
+                row.prop(mcell.initialization, "center_molecules_grid")
+                row = box.row()
+                row.prop(mcell.initialization, "microscopic_reversibility")
+            else:
+                row.prop(mcell.initialization, "advanced", icon='TRIA_RIGHT',
+                         text="Advanced Options", emboss=False)
+
+            # Notifications
+            #box = layout.box(align=True)
+            box = layout.box()
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
+            if mcell.initialization.notifications:
+                row.prop(mcell.initialization, "notifications", icon='TRIA_DOWN',
+                         text="Notifications", emboss=False)
+                row = box.row()
+                row.prop(mcell.initialization, "all_notifications")
+                if mcell.initialization.all_notifications == 'INDIVIDUAL':
+                    row = box.row(align=True)
+                    row.prop(mcell.initialization, "probability_report")
+                    if mcell.initialization.probability_report == 'THRESHOLD':
+                        row.prop(
+                            mcell.initialization, "probability_report_threshold",
+                            slider=True)
+                    row = box.row()
+                    row.prop(mcell.initialization, "diffusion_constant_report")
+                    row = box.row()
+                    row.prop(mcell.initialization, "file_output_report")
+                    row = box.row()
+                    row.prop(mcell.initialization, "final_summary")
+                    row = box.row()
+                    row.prop(mcell.initialization, "iteration_report")
+                    row = box.row()
+                    row.prop(mcell.initialization, "partition_location_report")
+                    row = box.row()
+                    row.prop(mcell.initialization, "varying_probability_report")
+                    row = box.row()
+                    row.prop(mcell.initialization, "progress_report")
+                    row = box.row()
+                    row.prop(mcell.initialization, "release_event_report")
+                    row = box.row()
+                    row.prop(mcell.initialization, "molecule_collision_report")
+            else:
+                row.prop(mcell.initialization, "notifications", icon='TRIA_RIGHT',
+                         text="Notifications", emboss=False)
+
+            # Warnings
+            box = layout.box()
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
+            if mcell.initialization.warnings:
+                row.prop(mcell.initialization, "warnings", icon='TRIA_DOWN',
+                         text="Warnings", emboss=False)
+                row = box.row()
+                row.prop(mcell.initialization, "all_warnings")
+                if mcell.initialization.all_warnings == 'INDIVIDUAL':
+                    row = box.row()
+                    row.prop(mcell.initialization, "degenerate_polygons")
+                    row = box.row()
+                    row.prop(mcell.initialization, "missing_surface_orientation")
+                    row = box.row()
+                    row.prop(mcell.initialization, "negative_diffusion_constant")
+                    row = box.row()
+                    row.prop(mcell.initialization, "negative_reaction_rate")
+                    row = box.row()
+                    row.prop(mcell.initialization, "useless_volume_orientation")
+                    row = box.row(align=True)
+                    row.prop(mcell.initialization, "high_reaction_probability")
+                    if mcell.initialization.high_reaction_probability != 'IGNORED':
+                        row.prop(mcell.initialization,
+                                 "high_probability_threshold", slider=True)
+                    row = box.row(align=True)
+                    row.prop(mcell.initialization, "lifetime_too_short")
+                    if mcell.initialization.lifetime_too_short == 'WARNING':
+                        row.prop(mcell.initialization, "lifetime_threshold")
+                    row = box.row(align=True)
+                    row.prop(mcell.initialization, "missed_reactions")
+                    if mcell.initialization.missed_reactions == 'WARNING':
+                        row.prop(mcell.initialization, "missed_reaction_threshold")
+            else:
+                row.prop(mcell.initialization, "warnings", icon='TRIA_RIGHT',
+                         text="Warnings", emboss=False)
+
+            if (mcell.initialization.status != ""):
+                row = layout.row()
+                row.label(text=mcell.initialization.status, icon='ERROR')
+
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
+
+
 class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
     include = BoolProperty(
         name="Include Partitions",
@@ -1188,6 +1453,45 @@ class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
         self.z_start = float(dm["x_start"])
         self.z_end = float(dm["z_end"])
         self.z_step = float(dm["z_step"])
+
+    def draw_layout(self, context, layout):
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+            layout.prop(mcell.partitions, "include")
+            if mcell.partitions.include:
+                row = layout.row(align=True)
+                row.prop(mcell.partitions, "x_start")
+                row.prop(mcell.partitions, "x_end")
+                row.prop(mcell.partitions, "x_step")
+
+                row = layout.row(align=True)
+                row.prop(mcell.partitions, "y_start")
+                row.prop(mcell.partitions, "y_end")
+                row.prop(mcell.partitions, "y_step")
+
+                row = layout.row(align=True)
+                row.prop(mcell.partitions, "z_start")
+                row.prop(mcell.partitions, "z_end")
+                row.prop(mcell.partitions, "z_step")
+
+                if mcell.model_objects.object_list:
+                    layout.operator("mcell.auto_generate_boundaries",
+                                    icon='OUTLINER_OB_LATTICE')
+                if not "partitions" in bpy.data.objects:
+                    layout.operator("mcell.create_partitions_object",
+                                    icon='OUTLINER_OB_LATTICE')
+                else:
+                    layout.operator("mcell.remove_partitions_object",
+                                    icon='OUTLINER_OB_LATTICE')
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
+
 
 
 class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
@@ -1296,6 +1600,68 @@ class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
             # sc.init_properties(context.scene.mcell.parameter_system)
             sc.build_properties_from_data_model ( context, s )
 
+    def draw_layout(self, context, layout):
+        # layout = self.layout
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+            surf_class = mcell.surface_classes
+
+            row = layout.row()
+            col = row.column()
+            # The template_list for the surface classes themselves
+            col.template_list("MCELL_UL_check_surface_class", "define_surf_class",
+                              surf_class, "surf_class_list", surf_class,
+                              "active_surf_class_index", rows=2)
+            col = row.column(align=True)
+            col.operator("mcell.surface_class_add", icon='ZOOMIN', text="")
+            col.operator("mcell.surface_class_remove", icon='ZOOMOUT', text="")
+            row = layout.row()
+            # Show the surface class properties template_list if there is at least
+            # a single surface class.
+            if surf_class.surf_class_list:
+                active_surf_class = surf_class.surf_class_list[
+                    surf_class.active_surf_class_index]
+                row = layout.row()
+                row.prop(active_surf_class, "name")
+                row = layout.row()
+                row.label(text="%s Properties:" % active_surf_class.name,
+                          icon='FACESEL_HLT')
+                row = layout.row()
+                col = row.column()
+                # The template_list for the properties of a surface class.
+                # Properties include molecule, orientation, and type of surf class.
+                # There can be multiple properties for a single surface class
+                col.template_list("MCELL_UL_check_surface_class_props",
+                                  "define_surf_class_props", active_surf_class,
+                                  "surf_class_props_list", active_surf_class,
+                                  "active_surf_class_props_index", rows=2)
+                col = row.column(align=True)
+                col.operator("mcell.surf_class_props_add", icon='ZOOMIN', text="")
+                col.operator("mcell.surf_class_props_remove", icon='ZOOMOUT',
+                             text="")
+                # Show the surface class property fields (molecule, orientation,
+                # type) if there is at least a single surface class property.
+                if active_surf_class.surf_class_props_list:
+                    surf_class_props = active_surf_class.surf_class_props_list[
+                        active_surf_class.active_surf_class_props_index]
+                    layout.prop_search(surf_class_props, "molecule",
+                                       mcell.molecules, "molecule_list",
+                                       icon='FORCE_LENNARDJONES')
+                    layout.prop(surf_class_props, "surf_class_orient")
+                    layout.prop(surf_class_props, "surf_class_type")
+                    if (surf_class_props.surf_class_type == 'CLAMP_CONCENTRATION'):
+                        layout.prop(surf_class_props, "clamp_value_str")
+
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
+
+
 
 class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
     mod_surf_regions_list = CollectionProperty(
@@ -1321,6 +1687,60 @@ class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
             sr = self.mod_surf_regions_list[self.active_mod_surf_regions_index]
             # sr.init_properties(context.scene.mcell.parameter_system)
             sr.build_properties_from_data_model ( context, s )
+
+    def draw_layout(self, context, layout):
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+
+            mod_surf_regions = context.scene.mcell.mod_surf_regions
+
+            row = layout.row()
+            if not mcell.surface_classes.surf_class_list:
+                row.label(text="Define at least one surface class", icon='ERROR')
+            elif not mcell.model_objects.object_list:
+                row.label(text="Add a mesh to the Model Objects list",
+                          icon='ERROR')
+            else:
+                col = row.column()
+                col.template_list("MCELL_UL_check_mod_surface_regions",
+                                  "mod_surf_regions", mod_surf_regions,
+                                  "mod_surf_regions_list", mod_surf_regions,
+                                  "active_mod_surf_regions_index", rows=2)
+                col = row.column(align=True)
+                col.operator("mcell.mod_surf_regions_add", icon='ZOOMIN', text="")
+                col.operator("mcell.mod_surf_regions_remove", icon='ZOOMOUT',
+                             text="")
+                if mod_surf_regions.mod_surf_regions_list:
+                    active_mod_surf_regions = \
+                        mod_surf_regions.mod_surf_regions_list[
+                            mod_surf_regions.active_mod_surf_regions_index]
+                    row = layout.row()
+                    row.prop_search(active_mod_surf_regions, "surf_class_name",
+                                    mcell.surface_classes, "surf_class_list",
+                                    icon='FACESEL_HLT')
+                    row = layout.row()
+                    row.prop_search(active_mod_surf_regions, "object_name",
+                                    mcell.model_objects, "object_list",
+                                    icon='MESH_ICOSPHERE')
+                    if active_mod_surf_regions.object_name:
+                        try:
+                            regions = bpy.data.objects[
+                                active_mod_surf_regions.object_name].mcell.regions
+                            layout.prop_search(active_mod_surf_regions,
+                                               "region_name", regions,
+                                               "region_list", icon='FACESEL_HLT')
+                        except KeyError:
+                            pass
+
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
+
 
 
 
@@ -1361,9 +1781,6 @@ class MCellReleasePatternPanelProperty(bpy.types.PropertyGroup):
         else:
           ps = mcell.parameter_system
 
-          row = layout.row()
-          row.label(text="Release Patterns:",
-                      icon='FORCE_LENNARDJONES')
           row = layout.row()
           col = row.column()
           col.template_list("MCELL_UL_check_release_pattern",
@@ -1512,6 +1929,58 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
     object_list = CollectionProperty(
         type=MCellModelObjectsProperty, name="Object List")
     active_obj_index = IntProperty(name="Active Object Index", default=0)
+
+    def draw_layout ( self, context, layout ):
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+
+            row = layout.row()
+            col = row.column()
+            col.template_list("MCELL_UL_model_objects", "model_objects",
+                              mcell.model_objects, "object_list",
+                              mcell.model_objects, "active_obj_index", rows=2)
+            col = row.column(align=True)
+#           col.active = (len(context.selected_objects) == 1)
+            col.operator("mcell.model_objects_add", icon='ZOOMIN', text="")
+            col.operator("mcell.model_objects_remove", icon='ZOOMOUT', text="")
+#           row = layout.row()
+#           sub = row.row(align=True)
+#           sub.operator("mcell.model_objects_include", text="Include")
+#           sub = row.row(align=True)
+#           sub.operator("mcell.model_objects_select", text="Select")
+#           sub.operator("mcell.model_objects_deselect", text="Deselect")
+
+            """
+            row = layout.row()
+            row.label(text="Object Color:", icon='COLOR')
+            
+            active = None
+            for o in mcell.model_objects.object_list.keys():
+                # print ( "Object: " + o )
+                row = layout.row()
+                if bpy.context.scene.objects[o] == bpy.context.scene.objects.active:
+                    active = bpy.context.scene.objects[o]
+                    row.label(text=o, icon='TRIA_RIGHT')
+                else:
+                    row.label(text=o, icon='DOT')
+
+            if active == None:
+                row = layout.row()
+                row.label(text="No CellBlender object is active", icon='DOT')
+            else:
+                row = layout.row()
+                row.label ( icon='DOT', text="  Object " + active.name + " is active and has " +
+                    str(len(active.material_slots)) + " material slots" )
+            """
+
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
 
 
     def build_data_model_from_properties ( self, context ):
@@ -1795,6 +2264,39 @@ class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
         self.step = int(dm["step"])
         self.export_all = dm["export_all"]
 
+    def draw_layout ( self, context, layout ):
+        """ Draw the reaction output "panel" within the layout """
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+            row = layout.row()
+            if mcell.molecules.molecule_list:
+                row.label(text="Molecules To Visualize:",
+                          icon='FORCE_LENNARDJONES')
+                row.prop(mcell.viz_output, "export_all")
+                layout.template_list("MCELL_UL_visualization_export_list",
+                                     "viz_export", mcell.molecules,
+                                     "molecule_list", mcell.viz_output,
+                                     "active_mol_viz_index", rows=2)
+                layout.prop(mcell.viz_output, "all_iterations")
+                if mcell.viz_output.all_iterations is False:
+                    row = layout.row(align=True)
+                    row.prop(mcell.viz_output, "start")
+                    row.prop(mcell.viz_output, "end")
+                    row.prop(mcell.viz_output, "step")
+            else:
+                row.label(text="Define at least one molecule", icon='ERROR')
+
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
+
+
+
 
 class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     name = StringProperty(
@@ -1929,6 +2431,106 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
             ro = self.rxn_output_list[self.active_rxn_output_index]
             # ro.init_properties(context.scene.mcell.parameter_system)
             ro.build_properties_from_data_model ( context, r )
+
+
+    def draw_layout ( self, context, layout ):
+        """ Draw the reaction output "panel" within the layout """
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+            row = layout.row()
+            if mcell.molecules.molecule_list:
+                col = row.column()
+                col.template_list("MCELL_UL_check_reaction_output_settings",
+                                  "reaction_output", mcell.rxn_output,
+                                  "rxn_output_list", mcell.rxn_output,
+                                  "active_rxn_output_index", rows=2)
+                col = row.column(align=True)
+                col.operator("mcell.rxn_output_add", icon='ZOOMIN', text="")
+                col.operator("mcell.rxn_output_remove", icon='ZOOMOUT', text="")
+                # Show molecule, object, and region options only if there is at
+                # least one count statement.
+                if mcell.rxn_output.rxn_output_list:
+                    rxn_output = mcell.rxn_output.rxn_output_list[
+                        mcell.rxn_output.active_rxn_output_index]
+                    layout.prop(rxn_output, "rxn_or_mol", expand=True)
+                    if rxn_output.rxn_or_mol == 'Molecule':
+                        layout.prop_search(
+                            rxn_output, "molecule_name", mcell.molecules,
+                            "molecule_list", icon='FORCE_LENNARDJONES')
+                    else:
+                        layout.prop_search(
+                            rxn_output, "reaction_name", mcell.reactions,
+                            "reaction_name_list", icon='FORCE_LENNARDJONES')
+                    layout.prop(rxn_output, "count_location", expand=True)
+                    # Show the object selector if Object or Region is selected
+                    if rxn_output.count_location != "World":
+                        layout.prop_search(
+                            rxn_output, "object_name", mcell.model_objects,
+                            "object_list", icon='MESH_ICOSPHERE')
+                        if (rxn_output.object_name and
+                                (rxn_output.count_location == "Region")):
+                            try:
+                                regions = bpy.data.objects[
+                                    rxn_output.object_name].mcell.regions
+                                layout.prop_search(rxn_output, "region_name",
+                                                   regions, "region_list",
+                                                   icon='FACESEL_HLT')
+                            except KeyError:
+                                pass
+
+                    layout.separator()
+                    layout.separator()
+
+                    row = layout.row()
+                    row.label(text="Plot Reaction Data:",
+                              icon='FORCE_LENNARDJONES')
+
+                    row = layout.row()
+
+                    col = row.column()
+                    col.prop(mcell.rxn_output, "plot_layout")
+
+                    col = row.column()
+                    col.prop(mcell.rxn_output, "combine_seeds")
+
+                    row = layout.row()
+
+                    col = row.column()
+                    col.prop(mcell.rxn_output, "plot_legend")
+
+                    col = row.column()
+                    col.prop(mcell.rxn_output, "mol_colors")
+
+
+                    row = layout.row()
+                    button_num = 0
+                    num_columns = len(cellblender.cellblender_info[
+                        'cellblender_plotting_modules'])
+                    if num_columns > 3:
+                        num_columns = 2
+                    for plot_module in cellblender.cellblender_info[
+                            'cellblender_plotting_modules']:
+                        mod_name = plot_module.get_name()
+                        if (button_num % num_columns) == 0:
+                            button_num = 0
+                            row = layout.row()
+                        col = row.column()
+                        col.operator("mcell.plot_rxn_output_generic",
+                                     text=mod_name).plotter_button_label = mod_name
+                        button_num = button_num + 1
+
+            else:
+                row.label(text="Define at least one molecule", icon='ERROR')
+
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
+
 
 
 
@@ -2087,14 +2689,16 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
     surf_regions_select = BoolProperty ( name="", description="Surface Regions", default=False, subtype='NONE', update=select_callback)
     rel_patterns_select = BoolProperty ( name="", description="Release Patterns", default=False, subtype='NONE', update=select_callback)
     partitions_select = BoolProperty ( name="", description="Partitions", default=False, subtype='NONE', update=select_callback)
+    init_select = BoolProperty ( name="", description="Model Initialization", default=False, subtype='NONE', update=select_callback)
     run_select = BoolProperty ( name="", description="Run Simulation", default=False, subtype='NONE', update=select_callback)
     graph_select = BoolProperty ( name="", description="Plot Output Settings", default=False, subtype='NONE', update=select_callback)
+    mol_viz_select = BoolProperty ( name="", description="Visual Output Settings", default=False, subtype='NONE', update=select_callback)
     viz_select = BoolProperty ( name="", description="Visual Output Settings", default=False, subtype='NONE', update=select_callback)
     reload_viz = BoolProperty ( name="", description="Reload Simulation Data", default=False, subtype='NONE', update=select_callback)
     
     select_multiple = BoolProperty ( name="", description="Show Multiple Panels", default=False, subtype='NONE', update=select_callback)
     
-    last_state = BoolVectorProperty ( size=20 ) # Keeps track of previous button state to detect transitions
+    last_state = BoolVectorProperty ( size=22 ) # Keeps track of previous button state to detect transitions
     
     dummy_bool = BoolProperty( name="DummyBool", default=True )
     dummy_string = StringProperty( name="DummyString", default=" " )
@@ -2113,8 +2717,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             Hide all panels ... always
             
         """
-        # prop_keys = [ 'preferences_select', 'settings_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'run_select', 'graph_select', 'viz_select', 'reload_viz', 'select_multiple' ]
-        prop_keys = [ 'preferences_select', 'settings_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'run_select', 'graph_select', 'viz_select', 'select_multiple' ]
+        prop_keys = [ 'preferences_select', 'settings_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'init_select', 'run_select', 'graph_select', 'viz_select', 'select_multiple' ]
         
         pin_state = False
         try:
@@ -2211,6 +2814,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
         row.prop ( self, "partitions_select", icon='GRID' )
         row.prop ( self, "graph_select", icon='FCURVE' )
         row.prop ( self, "viz_select", icon='SEQUENCE' )
+        #row.prop ( self, "mol_viz_select", icon='SEQUENCE' )
+        row.prop ( self, "init_select", icon='COLOR_BLUE' )
         row.prop ( self, "run_select", icon='COLOR_RED' )
         # Use an operator rather than a property to make it an action button
         # row.prop ( self, "reload_viz", icon='FILE_REFRESH' )
@@ -2261,137 +2866,52 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             layout.box() # Use as a separator
             layout.label ( "Release Patterns", icon='TIME' )
             context.scene.mcell.release_patterns.draw_layout ( context, layout )
-            """
-
-            row = layout.row()
-            row.prop ( self, 'dummy_string', text="Pattern Name:" )
-            row = layout.row()
-            row.prop ( self, 'dummy_string', text="Release Pattern Delay" )
-            row = layout.row()
-            row.prop ( self, 'dummy_string', text="Release Interval" )
-            row = layout.row()
-            row.prop ( self, 'dummy_string', text="Train Duration" )
-            row = layout.row()
-            row.prop ( self, 'dummy_string', text="Train Interval" )
-            row = layout.row()
-            row.prop ( self, 'dummy_string', text="Number of Trains" )
-            """
 
         if self.objects_select:
             layout.box() # Use as a separator
             layout.label ( "Model Objects", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
-            row = layout.row()
-            subbox = row.box()
-            subbox.label ( text="Cell", icon='FILE_TICK' )
-            subbox.label ( text="Organelle_1", icon='FILE_TICK' )
-            subbox.label ( text="Organelle_2", icon='FILE_TICK' )
-            subbox.label ( text="Organelle_3", icon='FILE_TICK' )
+            context.scene.mcell.model_objects.draw_layout ( context, layout )
 
         if self.surf_classes_select:
             layout.box() # Use as a separator
-            layout.label ( "Surface Classes", icon='FACESEL_HLT' )
-            row = layout.row()
-            row.prop ( self, 'dummy_string', text="Surface Class Name:" )
-            row = layout.row()
-            row.label ( "Surface Class Properties", icon='FACESEL_HLT' )
-            row = layout.row()
-            row.prop ( self, 'dummy_string', text="Molecule Name", icon='FORCE_LENNARDJONES' )
-            row = layout.row()
-            row.prop ( self, 'dummy_string', text="Orientation:" )
-            row = layout.row()
-            row.prop ( self, 'dummy_string', text="Type" )
+            layout.label ( "Defined Surface Classes", icon='FACESEL_HLT' )
+            context.scene.mcell.surface_classes.draw_layout ( context, layout )
 
         if self.surf_regions_select:
             layout.box() # Use as a separator
-            layout.label ( "Surface Regions", icon='SNAP_FACE' )
-            row = layout.row()
-            row.prop ( self, 'dummy_string', text="Surface Class Name:", icon='FACESEL_HLT' )
-            row = layout.row()
-            row.prop ( self, 'dummy_string', text="Object Name", icon='MESH_ICOSPHERE' )
-            row = layout.row()
-            row.prop ( self, 'dummy_string', text="Region Name:", icon='FACESEL_HLT' )
+            layout.label ( "Modified Surface Regions", icon='SNAP_FACE' )
+            context.scene.mcell.mod_surf_regions.draw_layout ( context, layout )
 
         if self.partitions_select:
-            box.box() # Use as a separator
-            box.label ( "Partitions", icon='GRID' )
-            row = box.row()
-            col = row.column()
-            col.prop ( self, 'dummy_float', text="X Start" )
-            col = row.column()
-            col.prop ( self, 'dummy_float', text="Y Start" )
-            col = row.column()
-            col.prop ( self, 'dummy_float', text="Z Start" )
-            row = box.row()
-            col = row.column()
-            col.prop ( self, 'dummy_float', text="X Start" )
-            col = row.column()
-            col.prop ( self, 'dummy_float', text="Y Start" )
-            col = row.column()
-            col.prop ( self, 'dummy_float', text="Z Start" )
-            row = box.row()
-            col = row.column()
-            col.prop ( self, 'dummy_float', text="X Start" )
-            col = row.column()
-            col.prop ( self, 'dummy_float', text="Y Start" )
-            col = row.column()
-            col.prop ( self, 'dummy_float', text="Z Start" )
+            layout.box() # Use as a separator
+            layout.label ( "Partitions", icon='GRID' )
+            context.scene.mcell.partitions.draw_layout ( context, layout )
 
         if self.graph_select:
-            box.box() # Use as a separator
-            box.label ( "Plot Output Settings", icon='FCURVE' )
-            row = box.row()
-            col = row.column()
-            col.operator("cbmu.dummy_operator",text="Reaction")
-            col = row.column()
-            col.operator("cbmu.dummy_operator",text="Molecule")
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Molecule:", icon='FORCE_LENNARDJONES' )
-            row = box.row()
-            col = row.column()
-            col.operator("cbmu.dummy_operator",text="World")
-            col = row.column()
-            col.operator("cbmu.dummy_operator",text="Object")
-            col = row.column()
-            col.operator("cbmu.dummy_operator",text="Region")
-            box.label ( "Plot Reaction Data:", icon='FORCE_LENNARDJONES' )
-            row = box.row()
-            col = row.column()
-            col.operator("cbmu.dummy_operator",text="Simple Plotter")
-            col = row.column()
-            col.operator("cbmu.dummy_operator",text="MatPlotLib Plotter")
-            row = box.row()
-            col = row.column()
-            col.operator("cbmu.dummy_operator",text="XmGrace Plotter")
-            col = row.column()
-            col.operator("cbmu.dummy_operator",text="Java Plotter")
+            layout.box() # Use as a separator
+            layout.label ( "Reaction Data Output", icon='FCURVE' )
+            context.scene.mcell.rxn_output.draw_layout ( context, layout )
 
-        if self.run_select:
-            box.box() # Use as a separator
-            box.label ( "Run Simulation", icon='COLOR_RED' )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Iterations" )
-            row = box.row()
-            row.prop ( self, 'dummy_string', text="Time Step" )
-            row = box.row()
-            split = row.split(0.33)
-            col = split.column()
-            col.operator("cbmu.dummy_operator",text="Run Console",icon='COLOR_RED')
-            col = split.column()
-            col.operator("cbmu.dummy_operator",text="Run Java",icon='COLOR_BLUE')
-            col = split.column()
-            col.operator("cbmu.dummy_operator",text="Run OpenGL",icon='COLOR_BLUE')
+        #if self.mol_viz_select:
+        #    layout.box()
+        #    layout.label ( "Visualization Output Settings", icon='SEQUENCE' )
+        #    context.scene.mcell.mol_viz.draw_layout ( context, layout )
             
         if self.viz_select:
-            box.box()
-            box.label ( "Visual Output Settings", icon='SEQUENCE' )
-            row = box.row()
-            row.label(text="Molecules To Visualize:", icon='FORCE_LENNARDJONES')
-            row.prop(self, "dummy_bool", text="Export All")
-            row = box.row()
-            subbox = row.box()
-            subbox.label ( text="a", icon='FILE_TICK' )
-            subbox.label ( text="b", icon='FILE_TICK' )
-            subbox.label ( text="c", icon='FILE_TICK' )
+            layout.box()
+            layout.label ( "Visualization", icon='SEQUENCE' )
+            context.scene.mcell.viz_output.draw_layout ( context, layout )
+            context.scene.mcell.mol_viz.draw_layout ( context, layout )
+            
+        if self.init_select:
+            layout.box() # Use as a separator
+            layout.label ( "Model Initialization", icon='COLOR_BLUE' )
+            context.scene.mcell.initialization.draw_layout ( context, layout )
+            
+        if self.run_select:
+            layout.box() # Use as a separator
+            layout.label ( "Run Simulation", icon='COLOR_RED' )
+            context.scene.mcell.run_simulation.draw_layout ( context, layout )
             
         # The reload_viz button refreshes rather than brings up a panel
         #if self.reload_viz:
@@ -2479,6 +2999,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         name="CellBlender Project Settings")
     molecule_glyphs = PointerProperty(
         type=MCellMoleculeGlyphsPanelProperty, name="Molecule Shapes")
+
     scratch_settings = PointerProperty(
         type=MCellScratchPanelProperty, name="CellBlender Scratch Settings")
 
