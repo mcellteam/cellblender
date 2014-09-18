@@ -2264,6 +2264,9 @@ def mol_viz_file_read(mcell_prop, filepath):
                     #print ( "Mol " + mname + " has color " + str(mol.color) )
 
                 # Look-up mesh shape (glyph) template and create if needed
+                if mol != None:
+                    #print ( "Molecule  glyph: " + str (mol.glyph) )
+                    pass
                 mol_shape_mesh_name = "%s_shape" % (mol_name)
                 mol_shape_obj_name = mol_shape_mesh_name
                 mol_shape_mesh = meshes.get(mol_shape_mesh_name)
@@ -2295,6 +2298,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                 if (mol != None) and (mol.usecolor):
                     # Over-ride the default colors
                     mol_mat.diffuse_color = mol.color
+                    mol_mat.emit = mol.emit
 
                 # Create a "mesh" to hold instances of molecule positions
                 mol_pos_mesh_name = "%s_pos" % (mol_name)
