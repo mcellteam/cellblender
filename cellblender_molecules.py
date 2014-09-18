@@ -37,6 +37,7 @@ import re
 import cellblender
 # from . import cellblender_parameters
 from . import parameter_system
+from . import cellblender_operators
 
 
 # We use per module class registration/unregistration
@@ -130,6 +131,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     # TODO: Add after data model release:  maximum_step_length =  PointerProperty ( name="Maximum Step Length",  type=parameter_system.Parameter_Reference )
 
     color = FloatVectorProperty ( name="", min=0.0, max=1.0, default=(0.5,0.5,0.5), subtype='COLOR', description='Molecule Color', update=display_callback )
+    usecolor = BoolProperty ( name="Use this Color", default=True, description='Use Molecule Color instead of Material Color', update=display_callback )
     alpha = FloatProperty ( name="Alpha", min=0.0, max=1.0, default=1.0, description="Alpha (inverse of transparency)", update=display_callback )
     scale = FloatProperty ( name="Scale", min=0.0, default=1.0, description="Relative size (scale) for this molecule", update=display_callback )
     glyph_enum = [
@@ -223,17 +225,17 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             row.prop(molecules, "show_display", icon='TRIA_DOWN',
                      text="Display Options", emboss=False)
             row = box.row()
-            row.label ( "These don't work yet. Use other panels for now.", icon='ERROR' )
+            row.label ( "These don't all work yet. Use other panels as needed.", icon='ERROR' )
             row = box.row()
             col = row.column()
             col.prop ( self, "glyph" )
             col = row.column()
-            col.prop ( self, "color" )
+            col.prop ( self, "scale" )
             row = box.row()
             col = row.column()
-            col.prop ( self, "scale" )
+            col.prop ( self, "color" )
             col = row.column()
-            col.prop ( self, "alpha" )
+            col.prop ( self, "usecolor" )
         
         box = layout.box()
         row = box.row(align=True)
@@ -258,7 +260,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def display_callback(self, context):
         """One of the display items has changed for this molecule"""
-        print ( "Display for molecule \"" + self.name + "\" changed to: " + str(self.glyph) + ", " + str(self.color) + ", " + str(self.alpha) + ", " + str(self.scale) )
+        # print ( "Display for molecule \"" + self.name + "\" changed to: " + str(self.glyph) + ", " + str(self.color) + ", " + str(self.alpha) + ", " + str(self.scale) )
+        # Refresh the scene
+        cellblender_operators.mol_viz_update(self,context)  # It's not clear why mol_viz_update needs a self. It's not in a class.
+        context.scene.update()  # It's also not clear if this is needed ... but it doesn't seem to hurt!!
         return
 
 

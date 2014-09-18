@@ -2248,10 +2248,20 @@ def mol_viz_file_read(mcell_prop, filepath):
                 mol_pos = mol_dict[mol_name][1]
                 mol_orient = mol_dict[mol_name][2]
 
+                # print ( "in mol_viz_file_read with mol_name = " + mol_name + ", mol_mat_name = " + mol_mat_name )
+
                 # Randomly orient volume molecules
                 if mol_type == 0:
                     mol_orient.extend([random.uniform(
                         -1.0, 1.0) for i in range(len(mol_pos))])
+
+                # Look up the color, glyph, and other attributes from the molecules list
+
+                mname = mol_name[4:]   # Trim off the "mol_" portion to use as an index into the molecules list
+                mol = None
+                if (len(mname) > 0) and (mname in mcell.molecules.molecule_list):
+                    mol = mcell.molecules.molecule_list[mname]
+                    #print ( "Mol " + mname + " has color " + str(mol.color) )
 
                 # Look-up mesh shape (glyph) template and create if needed
                 mol_shape_mesh_name = "%s_shape" % (mol_name)
@@ -2281,6 +2291,10 @@ def mol_viz_file_read(mcell_prop, filepath):
                         mcell.mol_viz.color_index = 0
                 if not mol_shape_mesh.materials.get(mol_mat_name):
                     mol_shape_mesh.materials.append(mol_mat)
+
+                if (mol != None) and (mol.usecolor):
+                    # Over-ride the default colors
+                    mol_mat.diffuse_color = mol.color
 
                 # Create a "mesh" to hold instances of molecule positions
                 mol_pos_mesh_name = "%s_pos" % (mol_name)
