@@ -1239,6 +1239,25 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
+        mcell = context.scene.mcell
+
+        print ( "Need to run " + str(mcell.run_simulation.simulation_run_control) )
+        if str(mcell.run_simulation.simulation_run_control) == 'JAVA':
+            bpy.ops.mcell.run_simulation_control_java()
+        elif str(mcell.run_simulation.simulation_run_control) == 'OPENGL':
+            bpy.ops.mcell.run_simulation_control_opengl()
+        else:
+            bpy.ops.mcell.run_simulation_normal()
+        return {'FINISHED'}
+
+
+class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
+    bl_idname = "mcell.run_simulation_normal"
+    bl_label = "Run MCell Simulation Command"
+    bl_description = "Run MCell Simulation Command Line"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
 
         mcell = context.scene.mcell
 

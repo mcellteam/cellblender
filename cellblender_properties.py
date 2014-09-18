@@ -733,6 +733,17 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
     show_output_options = BoolProperty ( name='Output Options', default=False )
 
 
+    simulation_run_control_enum = [
+        ('COMMAND', "Command Line", ""),
+        ('JAVA', "Java Control", ""),
+        ('OPENGL', "OpenGL Control", "")]
+    simulation_run_control = EnumProperty(
+        items=simulation_run_control_enum, name="",
+        description="Mechanism for running and controlling the simulation",
+        default='COMMAND')
+
+
+
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
 
@@ -776,12 +787,17 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
             else:
 
                 row = layout.row()
-                row.operator("mcell.run_simulation", text="Run Simulation",
+                row.operator("mcell.run_simulation", text="Run",
                              icon='COLOR_RED')
-                row.operator("mcell.run_simulation_control_java", text="Run Java Sim Control",
-                             icon='COLOR_BLUE')
-                row.operator("mcell.run_simulation_control_opengl", text="Run OpenGL Sim Control",
-                             icon='COLOR_BLUE')
+                
+                #row.operator("mcell.run_simulation_control_java", text="Run Java Sim Control",
+                #             icon='COLOR_BLUE')
+                #row.operator("mcell.run_simulation_control_opengl", text="Run OpenGL Sim Control",
+                #             icon='COLOR_BLUE')
+
+                row.prop(self, "simulation_run_control")
+
+
 
                 if (self.processes_list and
                         cellblender.simulation_popen_list):
@@ -790,8 +806,8 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
                               icon='FORCE_LENNARDJONES')
                     row = layout.row()
                     row.template_list("MCELL_UL_run_simulation", "run_simulation",
-                                      mcell.run_simulation, "processes_list",
-                                      mcell.run_simulation, "active_process_index",
+                                      self, "processes_list",
+                                      self, "active_process_index",
                                       rows=2)
                     row = layout.row()
                     row.operator("mcell.clear_run_list")
@@ -806,14 +822,14 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
                              text="Output / Control Options", emboss=False)
 
                     row = box.row(align=True)
-                    row.prop(mcell.run_simulation, "start_seed")
-                    row.prop(mcell.run_simulation, "end_seed")
+                    row.prop(self, "start_seed")
+                    row.prop(self, "end_seed")
                     row = box.row()
-                    row.prop(mcell.run_simulation, "mcell_processes")
+                    row.prop(self, "mcell_processes")
                     row = box.row()
-                    row.prop(mcell.run_simulation, "log_file")
+                    row.prop(self, "log_file")
                     row = box.row()
-                    row.prop(mcell.run_simulation, "error_file")
+                    row.prop(self, "error_file")
                     row = box.row()
                     row.prop(mcell.export_project, "export_format")
 
@@ -823,7 +839,7 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
                             "mcell.export_project", text="Export CellBlender Project",
                             icon='EXPORT')
                     row = box.row()
-                    row.prop(mcell.run_simulation, "remove_append", expand=True)
+                    row.prop(self, "remove_append", expand=True)
 
                 else:
                     row = box.row(align=True)
@@ -842,8 +858,8 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
                 row = layout.row()
                 col = row.column()
                 col.template_list("MCELL_UL_error_list", "run_simulation",
-                                  mcell.run_simulation, "error_list",
-                                  mcell.run_simulation, "active_err_index", rows=2)
+                                  self, "error_list",
+                                  self, "active_err_index", rows=2)
 
 
     def draw_panel ( self, context, panel ):
@@ -1296,6 +1312,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
             self.time_step.draw(layout,ps)
 
 
+            # Note that the run_simulation panel is effectively being drawn in the middle of this model_initialization panel!!!
             mcell.run_simulation.draw_layout(context,layout)
 
 
