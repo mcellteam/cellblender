@@ -597,9 +597,9 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
             #row.prop(mcell.cellblender_preferences, "debug_level")
 
 
-            row = layout.row()
-            row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='ZOOMOUT')
-            row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')
+            #row = layout.row()
+            #row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='ZOOMOUT')
+            #row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')
 
 
 
@@ -1269,24 +1269,24 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( layout )
         else:
             ps = mcell.parameter_system
-            mcell.initialization.iterations.draw(layout,ps)
-            mcell.initialization.time_step.draw(layout,ps)
+            self.iterations.draw(layout,ps)
+            self.time_step.draw(layout,ps)
 
             # Advanced Options
             box = layout.box()
             row = box.row(align=True)
             row.alignment = 'LEFT'
-            if mcell.initialization.advanced:
+            if self.advanced:
                 row.prop(mcell.initialization, "advanced", icon='TRIA_DOWN',
                          text="Advanced Options", emboss=False)
 
-                mcell.initialization.time_step_max.draw(box,ps)
-                mcell.initialization.space_step.draw(box,ps)
-                mcell.initialization.interaction_radius.draw(box,ps)
-                mcell.initialization.radial_directions.draw(box,ps)
-                mcell.initialization.radial_subdivisions.draw(box,ps)
-                mcell.initialization.vacancy_search_distance.draw(box,ps)
-                mcell.initialization.surface_grid_density.draw(box,ps)
+                self.time_step_max.draw(box,ps)
+                self.space_step.draw(box,ps)
+                self.interaction_radius.draw(box,ps)
+                self.radial_directions.draw(box,ps)
+                self.radial_subdivisions.draw(box,ps)
+                self.vacancy_search_distance.draw(box,ps)
+                self.surface_grid_density.draw(box,ps)
 
                 row = box.row()
                 row.prop(mcell.initialization, "accurate_3d_reactions")
@@ -1303,15 +1303,15 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
             box = layout.box()
             row = box.row(align=True)
             row.alignment = 'LEFT'
-            if mcell.initialization.notifications:
+            if self.notifications:
                 row.prop(mcell.initialization, "notifications", icon='TRIA_DOWN',
                          text="Notifications", emboss=False)
                 row = box.row()
                 row.prop(mcell.initialization, "all_notifications")
-                if mcell.initialization.all_notifications == 'INDIVIDUAL':
+                if self.all_notifications == 'INDIVIDUAL':
                     row = box.row(align=True)
                     row.prop(mcell.initialization, "probability_report")
-                    if mcell.initialization.probability_report == 'THRESHOLD':
+                    if self.probability_report == 'THRESHOLD':
                         row.prop(
                             mcell.initialization, "probability_report_threshold",
                             slider=True)
@@ -1341,12 +1341,12 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
             box = layout.box()
             row = box.row(align=True)
             row.alignment = 'LEFT'
-            if mcell.initialization.warnings:
+            if self.warnings:
                 row.prop(mcell.initialization, "warnings", icon='TRIA_DOWN',
                          text="Warnings", emboss=False)
                 row = box.row()
                 row.prop(mcell.initialization, "all_warnings")
-                if mcell.initialization.all_warnings == 'INDIVIDUAL':
+                if self.all_warnings == 'INDIVIDUAL':
                     row = box.row()
                     row.prop(mcell.initialization, "degenerate_polygons")
                     row = box.row()
@@ -1359,24 +1359,24 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
                     row.prop(mcell.initialization, "useless_volume_orientation")
                     row = box.row(align=True)
                     row.prop(mcell.initialization, "high_reaction_probability")
-                    if mcell.initialization.high_reaction_probability != 'IGNORED':
+                    if self.high_reaction_probability != 'IGNORED':
                         row.prop(mcell.initialization,
                                  "high_probability_threshold", slider=True)
                     row = box.row(align=True)
                     row.prop(mcell.initialization, "lifetime_too_short")
-                    if mcell.initialization.lifetime_too_short == 'WARNING':
+                    if self.lifetime_too_short == 'WARNING':
                         row.prop(mcell.initialization, "lifetime_threshold")
                     row = box.row(align=True)
                     row.prop(mcell.initialization, "missed_reactions")
-                    if mcell.initialization.missed_reactions == 'WARNING':
+                    if self.missed_reactions == 'WARNING':
                         row.prop(mcell.initialization, "missed_reaction_threshold")
             else:
                 row.prop(mcell.initialization, "warnings", icon='TRIA_RIGHT',
                          text="Warnings", emboss=False)
 
-            if (mcell.initialization.status != ""):
+            if (self.status != ""):
                 row = layout.row()
-                row.label(text=mcell.initialization.status, icon='ERROR')
+                row.label(text=self.status, icon='ERROR')
 
 
     def draw_panel ( self, context, panel ):
@@ -1467,22 +1467,22 @@ class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
         else:
-            layout.prop(mcell.partitions, "include")
-            if mcell.partitions.include:
+            layout.prop(self, "include")
+            if self.include:
                 row = layout.row(align=True)
-                row.prop(mcell.partitions, "x_start")
-                row.prop(mcell.partitions, "x_end")
-                row.prop(mcell.partitions, "x_step")
+                row.prop(self, "x_start")
+                row.prop(self, "x_end")
+                row.prop(self, "x_step")
 
                 row = layout.row(align=True)
-                row.prop(mcell.partitions, "y_start")
-                row.prop(mcell.partitions, "y_end")
-                row.prop(mcell.partitions, "y_step")
+                row.prop(self, "y_start")
+                row.prop(self, "y_end")
+                row.prop(self, "y_step")
 
                 row = layout.row(align=True)
-                row.prop(mcell.partitions, "z_start")
-                row.prop(mcell.partitions, "z_end")
-                row.prop(mcell.partitions, "z_step")
+                row.prop(self, "z_start")
+                row.prop(self, "z_end")
+                row.prop(self, "z_step")
 
                 if mcell.model_objects.object_list:
                     layout.operator("mcell.auto_generate_boundaries",
@@ -1540,14 +1540,14 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
             if mcell.molecules.molecule_list:
                 col = row.column()
                 col.template_list("MCELL_UL_check_reaction", "define_reactions",
-                                  mcell.reactions, "reaction_list",
-                                  mcell.reactions, "active_rxn_index", rows=2)
+                                  self, "reaction_list",
+                                  self, "active_rxn_index", rows=2)
                 col = row.column(align=True)
                 col.operator("mcell.reaction_add", icon='ZOOMIN', text="")
                 col.operator("mcell.reaction_remove", icon='ZOOMOUT', text="")
-                if len(mcell.reactions.reaction_list) > 0:
-                    rxn = mcell.reactions.reaction_list[
-                        mcell.reactions.active_rxn_index]
+                if len(self.reaction_list) > 0:
+                    rxn = self.reaction_list[
+                        self.active_rxn_index]
                     layout.prop(rxn, "reactants")
                     layout.prop(rxn, "type")
                     layout.prop(rxn, "products")
@@ -1614,13 +1614,13 @@ class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
         else:
-            surf_class = mcell.surface_classes
+            # surf_class = mcell.surface_classes
 
             row = layout.row()
             col = row.column()
             # The template_list for the surface classes themselves
             col.template_list("MCELL_UL_check_surface_class", "define_surf_class",
-                              surf_class, "surf_class_list", surf_class,
+                              self, "surf_class_list", self,
                               "active_surf_class_index", rows=2)
             col = row.column(align=True)
             col.operator("mcell.surface_class_add", icon='ZOOMIN', text="")
@@ -1628,9 +1628,9 @@ class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
             row = layout.row()
             # Show the surface class properties template_list if there is at least
             # a single surface class.
-            if surf_class.surf_class_list:
-                active_surf_class = surf_class.surf_class_list[
-                    surf_class.active_surf_class_index]
+            if self.surf_class_list:
+                active_surf_class = self.surf_class_list[
+                    self.active_surf_class_index]
                 row = layout.row()
                 row.prop(active_surf_class, "name")
                 row = layout.row()
@@ -1702,7 +1702,7 @@ class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( layout )
         else:
 
-            mod_surf_regions = context.scene.mcell.mod_surf_regions
+            # mod_surf_regions = context.scene.mcell.mod_surf_regions
 
             row = layout.row()
             if not mcell.surface_classes.surf_class_list:
@@ -1713,17 +1713,17 @@ class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
             else:
                 col = row.column()
                 col.template_list("MCELL_UL_check_mod_surface_regions",
-                                  "mod_surf_regions", mod_surf_regions,
-                                  "mod_surf_regions_list", mod_surf_regions,
+                                  "mod_surf_regions", self,
+                                  "mod_surf_regions_list", self,
                                   "active_mod_surf_regions_index", rows=2)
                 col = row.column(align=True)
                 col.operator("mcell.mod_surf_regions_add", icon='ZOOMIN', text="")
                 col.operator("mcell.mod_surf_regions_remove", icon='ZOOMOUT',
                              text="")
-                if mod_surf_regions.mod_surf_regions_list:
+                if self.mod_surf_regions_list:
                     active_mod_surf_regions = \
-                        mod_surf_regions.mod_surf_regions_list[
-                            mod_surf_regions.active_mod_surf_regions_index]
+                        self.mod_surf_regions_list[
+                            self.active_mod_surf_regions_index]
                     row = layout.row()
                     row.prop_search(active_mod_surf_regions, "surf_class_name",
                                     mcell.surface_classes, "surf_class_list",
@@ -1862,15 +1862,15 @@ class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
                 row = layout.row()
                 col = row.column()
                 col.template_list("MCELL_UL_check_molecule_release",
-                                  "molecule_release", mcell.release_sites,
-                                  "mol_release_list", mcell.release_sites,
+                                  "molecule_release", self,
+                                  "mol_release_list", self,
                                   "active_release_index", rows=2)
                 col = row.column(align=True)
                 col.operator("mcell.release_site_add", icon='ZOOMIN', text="")
                 col.operator("mcell.release_site_remove", icon='ZOOMOUT', text="")
-                if len(mcell.release_sites.mol_release_list) > 0:
-                    rel = mcell.release_sites.mol_release_list[
-                        mcell.release_sites.active_release_index]
+                if len(self.mol_release_list) > 0:
+                    rel = self.mol_release_list[
+                        self.active_release_index]
                     layout.prop(rel, "name")
                     layout.prop_search(rel, "molecule", mcell.molecules,
                                        "molecule_list", text="Molecule",
@@ -1900,8 +1900,7 @@ class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
                     if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
                         rel.stddev.draw(layout,ps)
                  
-                     
-                    layout.prop_search(rel, "pattern", mcell.release_patterns,
+                    layout.prop_search(rel, "pattern", mcell.release_patterns,  # mcell.release_patterns is of type MCellReleasePatternPanelProperty
                                        # "release_pattern_rxn_name_list",  # TODO: was this correct?
                                        "release_pattern_list",  # <-- Bob changed to this ... is this correct?
                                        icon='FORCE_LENNARDJONES')
@@ -1947,8 +1946,8 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
             row = layout.row()
             col = row.column()
             col.template_list("MCELL_UL_model_objects", "model_objects",
-                              mcell.model_objects, "object_list",
-                              mcell.model_objects, "active_obj_index", rows=2)
+                              self, "object_list",
+                              self, "active_obj_index", rows=2)
             col = row.column(align=True)
 #           col.active = (len(context.selected_objects) == 1)
             col.operator("mcell.model_objects_add", icon='ZOOMIN', text="")
@@ -1965,7 +1964,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
             row.label(text="Object Color:", icon='COLOR')
             
             active = None
-            for o in mcell.model_objects.object_list.keys():
+            for o in self.object_list.keys():
                 # print ( "Object: " + o )
                 row = layout.row()
                 if bpy.context.scene.objects[o] == bpy.context.scene.objects.active:
@@ -2282,17 +2281,17 @@ class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
             if mcell.molecules.molecule_list:
                 row.label(text="Molecules To Visualize:",
                           icon='FORCE_LENNARDJONES')
-                row.prop(mcell.viz_output, "export_all")
+                row.prop(self, "export_all")
                 layout.template_list("MCELL_UL_visualization_export_list",
                                      "viz_export", mcell.molecules,
-                                     "molecule_list", mcell.viz_output,
+                                     "molecule_list", self,
                                      "active_mol_viz_index", rows=2)
-                layout.prop(mcell.viz_output, "all_iterations")
-                if mcell.viz_output.all_iterations is False:
+                layout.prop(self, "all_iterations")
+                if self.all_iterations is False:
                     row = layout.row(align=True)
-                    row.prop(mcell.viz_output, "start")
-                    row.prop(mcell.viz_output, "end")
-                    row.prop(mcell.viz_output, "step")
+                    row.prop(self, "start")
+                    row.prop(self, "end")
+                    row.prop(self, "step")
             else:
                 row.label(text="Define at least one molecule", icon='ERROR')
 
@@ -2451,17 +2450,17 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
             if mcell.molecules.molecule_list:
                 col = row.column()
                 col.template_list("MCELL_UL_check_reaction_output_settings",
-                                  "reaction_output", mcell.rxn_output,
-                                  "rxn_output_list", mcell.rxn_output,
+                                  "reaction_output", self,
+                                  "rxn_output_list", self,
                                   "active_rxn_output_index", rows=2)
                 col = row.column(align=True)
                 col.operator("mcell.rxn_output_add", icon='ZOOMIN', text="")
                 col.operator("mcell.rxn_output_remove", icon='ZOOMOUT', text="")
                 # Show molecule, object, and region options only if there is at
                 # least one count statement.
-                if mcell.rxn_output.rxn_output_list:
-                    rxn_output = mcell.rxn_output.rxn_output_list[
-                        mcell.rxn_output.active_rxn_output_index]
+                if self.rxn_output_list:
+                    rxn_output = self.rxn_output_list[
+                        self.active_rxn_output_index]
                     layout.prop(rxn_output, "rxn_or_mol", expand=True)
                     if rxn_output.rxn_or_mol == 'Molecule':
                         layout.prop_search(
@@ -2498,18 +2497,18 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
                     row = layout.row()
 
                     col = row.column()
-                    col.prop(mcell.rxn_output, "plot_layout")
+                    col.prop(self, "plot_layout")
 
                     col = row.column()
-                    col.prop(mcell.rxn_output, "combine_seeds")
+                    col.prop(self, "combine_seeds")
 
                     row = layout.row()
 
                     col = row.column()
-                    col.prop(mcell.rxn_output, "plot_legend")
+                    col.prop(self, "plot_legend")
 
                     col = row.column()
-                    col.prop(mcell.rxn_output, "mol_colors")
+                    col.prop(self, "mol_colors")
 
 
                     row = layout.row()
@@ -2628,11 +2627,11 @@ from . import cellblender_panels
 class CB_OT_unregister_cellblender_panels(bpy.types.Operator):
     bl_idname = "mcell.unregister_panels"
     bl_label = "HidePanels"
-    bl_description = ("Hide Panels")
+    bl_description = ("Hide Old Panels")
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        print ( "Hiding all the panels" )
+        print ( "Hiding all the old CellBlender panels" )
         try:
             bpy.utils.unregister_class(cellblender_panels.MCELL_PT_cellblender_preferences)
             bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
@@ -2658,11 +2657,11 @@ class CB_OT_unregister_cellblender_panels(bpy.types.Operator):
 class CB_OT_reregister_cellblender_panels(bpy.types.Operator):
     bl_idname = "mcell.reregister_panels"
     bl_label = "ShowPanels"
-    bl_description = ("Show Panels")
+    bl_description = ("Show Old Panels")
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        print ( "Showing all the panels" )
+        print ( "Showing all the old CellBlender panels" )
         try:
             bpy.utils.register_class(cellblender_panels.MCELL_PT_cellblender_preferences)
             bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
@@ -2855,8 +2854,13 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
         else:
-    
-            row = layout.row(align=True)
+
+            real_row = layout.row()
+            split = real_row.split(0.9)
+            col = split.column()
+
+            #row = layout.row(align=True)
+            row = col.row(align=True)
             row.prop ( self, "preferences_select", icon='PREFERENCES' )
             row.prop ( self, "settings_select", icon='SETTINGS' )
             row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER' )
@@ -2902,9 +2906,11 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                 row.prop ( self, "select_multiple", icon='UNPINNED' )
 
 
-            # sep = layout.box()
-            
-            box = layout
+            col = split.column()
+            row = col.row(align=True)
+            row.operator ( "mcell.unregister_panels", text="",icon='ZOOMOUT')
+            row.operator ( "mcell.reregister_panels", text="",icon='ZOOMIN')
+
             
             if self.preferences_select:
                 layout.box() # Use as a separator
@@ -2991,8 +2997,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                 
             # The reload_viz button refreshes rather than brings up a panel
             #if self.reload_viz:
-            #    box.box()
-            #    box.label ( "Reload Simulation Data", icon='FILE_REFRESH' )
+            #    layout.box()
+            #    layout.label ( "Reload Simulation Data", icon='FILE_REFRESH' )
 
 
 import pickle

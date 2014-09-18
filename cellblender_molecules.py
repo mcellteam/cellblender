@@ -98,6 +98,11 @@ def check_callback(self, context):
     return
 
 
+def display_callback(self, context):
+    self.display_callback(context)
+    return
+
+
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     name = StringProperty(
@@ -124,7 +129,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     custom_space_step =  PointerProperty ( name="Molecule Custom Space Step",  type=parameter_system.Parameter_Reference )
     # TODO: Add after data model release:  maximum_step_length =  PointerProperty ( name="Maximum Step Length",  type=parameter_system.Parameter_Reference )
 
-    color = FloatVectorProperty ( name="", min=0.0, max=1.0, default=(0.5,0.5,0.5), subtype='COLOR', description='Molecule Color' )
+    color = FloatVectorProperty ( name="", min=0.0, max=1.0, default=(0.5,0.5,0.5), subtype='COLOR', description='Molecule Color', update=display_callback )
+    alpha = FloatProperty ( name="Alpha", min=0.0, max=1.0, default=1.0, description="Alpha (inverse of transparency)", update=display_callback )
+    scale = FloatProperty ( name="Scale", min=0.0, default=1.0, description="Relative size (scale) for this molecule", update=display_callback )
     glyph_enum = [
         ('Cone', "Cone", ""),
         ('Cube', "Cube", ""),
@@ -135,7 +142,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         ('Sphere_1', "Sphere_1", ""),
         ('Sphere_2', "Sphere_2", ""),
         ('Torus', "Torus", "")]
-    glyph = EnumProperty(items=glyph_enum, name="")
+    glyph = EnumProperty ( items=glyph_enum, name="", update=display_callback )
 
 
     export_viz = bpy.props.BoolProperty(
@@ -206,12 +213,27 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         row.label(text="lr_bar: %g"%(lr_bar_display), icon='BLANK1')  # BLANK1 RIGHTARROW_THIN SMALL_TRI_RIGHT_VEC DISCLOSURE_TRI_RIGHT_VEC DRIVER DOT FORWARD LINKED
         #layout.prop ( self, "lr_bar_trigger", icon='NONE', text="lr_bar: " + str(lr_bar_display) )
 
-        row = layout.row()
-        col = row.column()
-        col.prop ( self, "glyph" )
-        col = row.column()
-        col.prop ( self, "color" )
-        
+        box = layout.box()
+        row = box.row(align=True)
+        row.alignment = 'LEFT'
+        if not molecules.show_display:
+            row.prop(molecules, "show_display", icon='TRIA_RIGHT',
+                     text="Display Options", emboss=False)
+        else:
+            row.prop(molecules, "show_display", icon='TRIA_DOWN',
+                     text="Display Options", emboss=False)
+            row = box.row()
+            row.label ( "These don't work yet. Use other panels for now.", icon='ERROR' )
+            row = box.row()
+            col = row.column()
+            col.prop ( self, "glyph" )
+            col = row.column()
+            col.prop ( self, "color" )
+            row = box.row()
+            col = row.column()
+            col.prop ( self, "scale" )
+            col = row.column()
+            col.prop ( self, "alpha" )
         
         box = layout.box()
         row = box.row(align=True)
@@ -231,6 +253,12 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     def check_callback(self, context):
         """Allow the parent molecule list (MCellMoleculesListProperty) to do the checking"""
         get_parent(self).check(context)
+        return
+
+
+    def display_callback(self, context):
+        """One of the display items has changed for this molecule"""
+        print ( "Display for molecule \"" + self.name + "\" changed to: " + str(self.glyph) + ", " + str(self.color) + ", " + str(self.alpha) + ", " + str(self.scale) )
         return
 
 
@@ -260,6 +288,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
     molecule_list = CollectionProperty(type=MCellMoleculeProperty, name="Molecule List")
     active_mol_index = IntProperty(name="Active Molecule Index", default=0)
     next_id = IntProperty(name="Counter for Unique Molecule IDs", default=1)  # Start ID's at 1 to confirm initialization
+    show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_advanced = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
 
     def init_properties ( self, parameter_system ):
