@@ -597,11 +597,11 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
             #row.prop(mcell.cellblender_preferences, "debug_level")
 
 
-            #row = layout.row()
-            #row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='ZOOMOUT')
-            #row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')
+            row = layout.row()
+            row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')
+            row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='ZOOMOUT')
 
-
+            
 
     def draw_panel ( self, context, panel ):
         """ Create a layout from the panel and draw into it """
@@ -730,12 +730,16 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
         name="Active Error Index", default=0)
 
 
+    show_output_options = BoolProperty ( name='Output Options', default=False )
+
+
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
 
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
         else:
+            ps = mcell.parameter_system
 
             #main_mdl = ("%s.main.mdl" %
             #            os.path.join(os.path.dirname(bpy.data.filepath),
@@ -770,25 +774,7 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
                     "mcell.export_project",
                     text="Export CellBlender Project", icon='EXPORT')
             else:
-                row = layout.row(align=True)
-                row.prop(mcell.run_simulation, "start_seed")
-                row.prop(mcell.run_simulation, "end_seed")
-                row = layout.row()
-                row.prop(mcell.run_simulation, "mcell_processes")
-                row = layout.row()
-                row.prop(mcell.run_simulation, "log_file")
-                row = layout.row()
-                row.prop(mcell.run_simulation, "error_file")
-                row = layout.row()
-                row.prop(mcell.export_project, "export_format")
 
-                if mcell.cellblender_preferences.decouple_export_run:
-                    row = layout.row()
-                    row.operator(
-                        "mcell.export_project", text="Export CellBlender Project",
-                        icon='EXPORT')
-                row = layout.row()
-                row.prop(mcell.run_simulation, "remove_append", expand=True)
                 row = layout.row()
                 row.operator("mcell.run_simulation", text="Run Simulation",
                              icon='COLOR_RED')
@@ -809,6 +795,43 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
                                       rows=2)
                     row = layout.row()
                     row.operator("mcell.clear_run_list")
+
+
+                box = layout.box()
+
+                if self.show_output_options:
+                    row = box.row(align=True)
+                    row.alignment = 'LEFT'
+                    row.prop(self, "show_output_options", icon='TRIA_DOWN',
+                             text="Output / Control Options", emboss=False)
+
+                    row = box.row(align=True)
+                    row.prop(mcell.run_simulation, "start_seed")
+                    row.prop(mcell.run_simulation, "end_seed")
+                    row = box.row()
+                    row.prop(mcell.run_simulation, "mcell_processes")
+                    row = box.row()
+                    row.prop(mcell.run_simulation, "log_file")
+                    row = box.row()
+                    row.prop(mcell.run_simulation, "error_file")
+                    row = box.row()
+                    row.prop(mcell.export_project, "export_format")
+
+                    if mcell.cellblender_preferences.decouple_export_run:
+                        row = box.row()
+                        row.operator(
+                            "mcell.export_project", text="Export CellBlender Project",
+                            icon='EXPORT')
+                    row = box.row()
+                    row.prop(mcell.run_simulation, "remove_append", expand=True)
+
+                else:
+                    row = box.row(align=True)
+                    row.alignment = 'LEFT'
+                    row.prop(self, "show_output_options", icon='TRIA_RIGHT',
+                             text="Output / Control Options", emboss=False)
+
+                
             if self.status:
                 row = layout.row()
                 row.label(text=self.status, icon='ERROR')
@@ -944,7 +967,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
     def init_properties ( self, parameter_system ):
         self.iterations.init_ref    ( parameter_system, "Iteration_Type", 
                                       user_name="Iterations", 
-                                      user_expr="1",    
+                                      user_expr="1000",    
                                       user_units="",  
                                       user_descr="Number of iterations to run",  
                                       user_int=True )
@@ -1271,6 +1294,10 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
             ps = mcell.parameter_system
             self.iterations.draw(layout,ps)
             self.time_step.draw(layout,ps)
+
+
+            mcell.run_simulation.draw_layout(context,layout)
+
 
             # Advanced Options
             box = layout.box()
@@ -2251,7 +2278,7 @@ class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
     export_all = BoolProperty(
         name="Export All",
         description="Visualize all molecules",
-        default=False)
+        default=True)
 
     def build_data_model_from_properties ( self, context ):
         print ( "Viz Output building Data Model" )
@@ -2713,8 +2740,8 @@ def scene_loaded(dummy):
 
 
 """
-class CBMU_OT_dummy_operator(bpy.types.Operator):
-    bl_idname = "cbmu.dummy_operator"
+class CBM_OT_dummy_operator(bpy.types.Operator):
+    bl_idname = "cbm.dummy_operator"
     bl_label = "Dummy"
     bl_description = ("This is a simulated operator")
     bl_options = {'REGISTER'}
@@ -2724,8 +2751,8 @@ class CBMU_OT_dummy_operator(bpy.types.Operator):
 """
 
 
-class CBMU_OT_refresh_operator(bpy.types.Operator):
-    bl_idname = "cbmu.refresh_operator"
+class CBM_OT_refresh_operator(bpy.types.Operator):
+    bl_idname = "cbm.refresh_operator"
     bl_label = "Refresh"
     bl_description = ("Simulate Refresh")
     bl_options = {'REGISTER'}
@@ -2755,8 +2782,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
     surf_regions_select = BoolProperty ( name="", description="Surface Regions", default=False, subtype='NONE', update=select_callback)
     rel_patterns_select = BoolProperty ( name="", description="Release Patterns", default=False, subtype='NONE', update=select_callback)
     partitions_select = BoolProperty ( name="", description="Partitions", default=False, subtype='NONE', update=select_callback)
-    init_select = BoolProperty ( name="", description="Model Initialization", default=False, subtype='NONE', update=select_callback)
-    run_select = BoolProperty ( name="", description="Run Simulation", default=False, subtype='NONE', update=select_callback)
+    init_select = BoolProperty ( name="", description="Run Simulation", default=False, subtype='NONE', update=select_callback)
+    run_select = BoolProperty ( name="", description="Old Run Simulation", default=False, subtype='NONE', update=select_callback)
     graph_select = BoolProperty ( name="", description="Plot Output Settings", default=False, subtype='NONE', update=select_callback)
     mol_viz_select = BoolProperty ( name="", description="Visual Output Settings", default=False, subtype='NONE', update=select_callback)
     viz_select = BoolProperty ( name="", description="Visual Output Settings", default=False, subtype='NONE', update=select_callback)
@@ -2783,7 +2810,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             Hide all panels ... always
             
         """
-        prop_keys = [ 'preferences_select', 'settings_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'init_select', 'run_select', 'graph_select', 'viz_select', 'select_multiple' ]
+        prop_keys = [ 'preferences_select', 'settings_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'init_select', 'graph_select', 'viz_select', 'select_multiple' ]
         
         pin_state = False
         try:
@@ -2893,11 +2920,11 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             row.prop ( self, "graph_select", icon='FCURVE' )
             row.prop ( self, "viz_select", icon='SEQUENCE' )
             #row.prop ( self, "mol_viz_select", icon='SEQUENCE' )
-            row.prop ( self, "init_select", icon='FILE_TEXT' )
-            row.prop ( self, "run_select", icon='COLOR_RED' )
+            row.prop ( self, "init_select", icon='COLOR_RED' )
+            # row.prop ( self, "run_select", icon='COLOR_RED' )
             # Use an operator rather than a property to make it an action button
             # row.prop ( self, "reload_viz", icon='FILE_REFRESH' )
-            row.operator ( "cbmu.refresh_operator",text="",icon='FILE_REFRESH')
+            row.operator ( "cbm.refresh_operator",text="",icon='FILE_REFRESH')
             #row.operator ( "mcell.read_viz_data", text="",icon='FILE_REFRESH')
                 
             if self.select_multiple:
@@ -2906,10 +2933,10 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                 row.prop ( self, "select_multiple", icon='UNPINNED' )
 
 
-            col = split.column()
-            row = col.row(align=True)
-            row.operator ( "mcell.unregister_panels", text="",icon='ZOOMOUT')
-            row.operator ( "mcell.reregister_panels", text="",icon='ZOOMIN')
+            #col = split.column()
+            #row = col.row(align=True)
+            #row.operator ( "mcell.unregister_panels", text="",icon='ZOOMOUT')
+            #row.operator ( "mcell.reregister_panels", text="",icon='ZOOMIN')
 
             
             if self.preferences_select:
@@ -2987,13 +3014,13 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                 
             if self.init_select:
                 layout.box() # Use as a separator
-                layout.label ( "Model Initialization", icon='FILE_TEXT' )
+                layout.label ( "Run Simulation", icon='COLOR_RED' )
                 context.scene.mcell.initialization.draw_layout ( context, layout )
                 
-            if self.run_select:
-                layout.box() # Use as a separator
-                layout.label ( "Run Simulation", icon='COLOR_RED' )
-                context.scene.mcell.run_simulation.draw_layout ( context, layout )
+            #if self.run_select:
+            #    layout.box() # Use as a separator
+            #    layout.label ( "Run Simulation", icon='COLOR_RED' )
+            #    context.scene.mcell.run_simulation.draw_layout ( context, layout )
                 
             # The reload_viz button refreshes rather than brings up a panel
             #if self.reload_viz:

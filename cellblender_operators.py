@@ -2073,27 +2073,28 @@ def mol_viz_update(self, context):
 
     mcell = context.scene.mcell
 
-    filename = mcell.mol_viz.mol_file_list[mcell.mol_viz.mol_file_index].name
-    mcell.mol_viz.mol_file_name = filename
-    # filepath is relative to blend file location under default scenarios (i.e.
-    # when we can expect to find the standard CellBlender directory layout).
-    if not mcell.mol_viz.manual_select_viz_dir:
-        filepath = os.path.join(get_mol_file_dir(), filename)
-    # filepath is absolute in case of manually selecting viz data, since it may
-    # have nothing to do with the particular blend file in question.
-    else:
-        filepath = os.path.join(mcell.mol_viz.mol_file_dir, filename)
+    if len(mcell.mol_viz.mol_file_list) > 0:
+        filename = mcell.mol_viz.mol_file_list[mcell.mol_viz.mol_file_index].name
+        mcell.mol_viz.mol_file_name = filename
+        # filepath is relative to blend file location under default scenarios (i.e.
+        # when we can expect to find the standard CellBlender directory layout).
+        if not mcell.mol_viz.manual_select_viz_dir:
+            filepath = os.path.join(get_mol_file_dir(), filename)
+        # filepath is absolute in case of manually selecting viz data, since it may
+        # have nothing to do with the particular blend file in question.
+        else:
+            filepath = os.path.join(mcell.mol_viz.mol_file_dir, filename)
 
-    # Save current global_undo setting. Turn undo off to save memory
-    global_undo = bpy.context.user_preferences.edit.use_global_undo
-    bpy.context.user_preferences.edit.use_global_undo = False
+        # Save current global_undo setting. Turn undo off to save memory
+        global_undo = bpy.context.user_preferences.edit.use_global_undo
+        bpy.context.user_preferences.edit.use_global_undo = False
 
-    mol_viz_clear(mcell)
-    if mcell.mol_viz.mol_viz_enable:
-        mol_viz_file_read(mcell, filepath)
+        mol_viz_clear(mcell)
+        if mcell.mol_viz.mol_viz_enable:
+            mol_viz_file_read(mcell, filepath)
 
-    # Reset undo back to its original state
-    bpy.context.user_preferences.edit.use_global_undo = global_undo
+        # Reset undo back to its original state
+        bpy.context.user_preferences.edit.use_global_undo = global_undo
     return
 
 
