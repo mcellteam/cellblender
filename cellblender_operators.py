@@ -2027,6 +2027,7 @@ class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
             if (i < mcell.mol_viz.mol_file_start_index):
                 i = mcell.mol_viz.mol_file_start_index
             mcell.mol_viz.mol_file_index = i
+            # print ( "Set index calling update" )
             mol_viz_update(self, context)
         return{'FINISHED'}
 
@@ -2160,6 +2161,7 @@ def mol_viz_clear(mcell_prop):
     for i in range(len(mcell.mol_viz.mol_viz_list)-1, -1, -1):
         mcell.mol_viz.mol_viz_list.remove(i)
 
+import sys
 
 def mol_viz_file_read(mcell_prop, filepath):
     """ Draw the viz data for the current frame. """
@@ -2209,7 +2211,13 @@ def mol_viz_file_read(mcell_prop, filepath):
                     mol_dict[mol_name] = [mt[0], mol_pos, mol_orient]
                     new_item = mcell.mol_viz.mol_viz_list.add()
                     new_item.name = mol_name
+                except EOFError:
+#                    print("Molecules read: %d" % (int(tot)))
+                    mol_file.close()
+                    break
+
                 except:
+                    print( "Unexpected Exception: " + str(sys.exc_info()) )
 #                    print("Molecules read: %d" % (int(tot)))
                     mol_file.close()
                     break
@@ -2315,10 +2323,10 @@ def mol_viz_file_read(mcell_prop, filepath):
                 if not mol_shape_mesh.materials.get(mol_mat_name):
                     mol_shape_mesh.materials.append(mol_mat)
 
-                if (mol != None) and (mol.usecolor):
-                    # Over-ride the default colors
-                    mol_mat.diffuse_color = mol.color
-                    mol_mat.emit = mol.emit
+                #if (mol != None) and (mol.usecolor):
+                #    # Over-ride the default colors
+                #    mol_mat.diffuse_color = mol.color
+                #    mol_mat.emit = mol.emit
 
                 # Create a "mesh" to hold instances of molecule positions
                 mol_pos_mesh_name = "%s_pos" % (mol_name)

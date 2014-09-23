@@ -234,11 +234,17 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             col.prop ( self, "scale" )
             row = box.row()
             col = row.column()
-            col.prop ( self, "color" )
-            col = row.column()
-            col.prop ( self, "emit" )
-            col = row.column()
-            col.prop ( self, "usecolor" )
+            mol_mat_name = 'mol_' + self.name + '_mat'
+            if mol_mat_name in bpy.data.materials.keys():
+                col.prop ( bpy.data.materials[mol_mat_name], "diffuse_color" )
+                col = row.column()
+                col.prop ( bpy.data.materials[mol_mat_name], "emit" )
+            else:
+                col.prop ( self, "color" )
+                col = row.column()
+                col.prop ( self, "emit" )
+            #col = row.column()
+            #col.prop ( self, "usecolor" )
         
         box = layout.box()
         row = box.row(align=True)

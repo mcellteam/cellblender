@@ -500,6 +500,18 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 
 #Panel Properties:
 
+def set_tab_autocomplete_callback ( self, context ):
+    # print ( "Called with self.tab_autocomplete = " + str(self.tab_autocomplete) )
+    if self.tab_autocomplete:
+        bpy.data.window_managers['WinMan'].keyconfigs['Blender'].keymaps['Console'].keymap_items['console.indent'].active = False
+        bpy.data.window_managers['WinMan'].keyconfigs['Blender'].keymaps['Console'].keymap_items['console.autocomplete'].type = 'TAB'
+        bpy.data.window_managers['WinMan'].keyconfigs['Blender'].keymaps['Console'].keymap_items['console.autocomplete'].ctrl = False
+    else:
+        bpy.data.window_managers['WinMan'].keyconfigs['Blender'].keymaps['Console'].keymap_items['console.autocomplete'].type = 'SPACE'
+        bpy.data.window_managers['WinMan'].keyconfigs['Blender'].keymaps['Console'].keymap_items['console.autocomplete'].ctrl = True
+        bpy.data.window_managers['WinMan'].keyconfigs['Blender'].keymaps['Console'].keymap_items['console.indent'].active = True
+
+
 class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
 
     mcell_binary = StringProperty(name="MCell Binary",
@@ -536,6 +548,9 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
     use_long_menus = BoolProperty(
         name="Show Long Menu Buttons", default=False,
         description="Show Menu Buttons with Text Labels")
+
+
+    tab_autocomplete = BoolProperty(name="Use tab for console autocomplete", default=False, update=set_tab_autocomplete_callback)
 
 
     def draw_layout(self, context, layout):
@@ -607,6 +622,8 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
             row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')
             row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='ZOOMOUT')
 
+            row = layout.row()
+            row.prop(mcell.cellblender_preferences, "tab_autocomplete")
             
 
     def draw_panel ( self, context, panel ):
@@ -3143,6 +3160,7 @@ def refresh_source_id_callback ( self, context ):
             cellblender.cellblender_info.pop('cellblender_source_id_from_file')
         # Setting this to false will redraw the panel
         self.refresh_source_id = False
+
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
     initialized = BoolProperty(name="Initialized", default=False)
