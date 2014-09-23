@@ -2323,7 +2323,8 @@ def mol_viz_file_read(mcell_prop, filepath):
                 if not mol_shape_mesh.materials.get(mol_mat_name):
                     mol_shape_mesh.materials.append(mol_mat)
 
-                #if (mol != None) and (mol.usecolor):
+                #if (mol != None):
+                #    # and (mol.usecolor):
                 #    # Over-ride the default colors
                 #    mol_mat.diffuse_color = mol.color
                 #    mol_mat.emit = mol.emit

@@ -270,6 +270,12 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     def display_callback(self, context):
         """One of the display items has changed for this molecule"""
         # print ( "Display for molecule \"" + self.name + "\" changed to: " + str(self.glyph) + ", " + str(self.color) + ", " + str(self.alpha) + ", " + str(self.scale) )
+        mol_mat_name = 'mol_' + self.name + '_mat'
+        if mol_mat_name in bpy.data.materials.keys():
+            self.color = bpy.data.materials[mol_mat_name].diffuse_color
+            self.emit = bpy.data.materials[mol_mat_name].emit
+
+
         # Refresh the scene
         # self.set_mol_glyph ( context )
         cellblender_operators.mol_viz_update(self,context)  # It's not clear why mol_viz_update needs a self. It's not in a class.
