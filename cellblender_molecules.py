@@ -103,6 +103,7 @@ def display_callback(self, context):
     self.display_callback(context)
     return
 
+import os
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
@@ -135,6 +136,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     alpha = FloatProperty ( name="Alpha", min=0.0, max=1.0, default=1.0, description="Alpha (inverse of transparency)", update=display_callback )
     emit = FloatProperty ( name="Emit", min=0.0, default=1.0, description="Emits Light (brightness)", update=display_callback )
     scale = FloatProperty ( name="Scale", min=0.0, default=1.0, description="Relative size (scale) for this molecule", update=display_callback )
+
+    glyph_lib = os.path.join(os.path.dirname(__file__), "glyph_library.blend/Mesh/")
     glyph_enum = [
         ('Cone', "Cone", ""),
         ('Cube', "Cube", ""),
@@ -272,8 +275,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         # print ( "Display for molecule \"" + self.name + "\" changed to: " + str(self.glyph) + ", " + str(self.color) + ", " + str(self.alpha) + ", " + str(self.scale) )
         mol_mat_name = 'mol_' + self.name + '_mat'
         if mol_mat_name in bpy.data.materials.keys():
-            self.color = bpy.data.materials[mol_mat_name].diffuse_color
-            self.emit = bpy.data.materials[mol_mat_name].emit
+            if self.color != bpy.data.materials[mol_mat_name].diffuse_color:
+                self.color = bpy.data.materials[mol_mat_name].diffuse_color
+            if self.emit != bpy.data.materials[mol_mat_name].emit:
+                self.emit = bpy.data.materials[mol_mat_name].emit
 
 
         # Refresh the scene

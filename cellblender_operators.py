@@ -2192,25 +2192,25 @@ def mol_viz_file_read(mcell_prop, filepath):
                     # ns = Array of ascii character codes for molecule name.
                     # s = String of molecule name.
                     # mt = Surface molecule flag.
-                    ni = array.array("B")
-                    ni.fromfile(mol_file, 1)
-                    ns = array.array("B")
-                    ns.fromfile(mol_file, ni[0])
-                    s = ns.tostring().decode()
-                    mol_name = "mol_%s" % (s)
-                    mt = array.array("B")
-                    mt.fromfile(mol_file, 1)
-                    ni = array.array("I")
-                    ni.fromfile(mol_file, 1)
-                    mol_pos = array.array("f")
-                    mol_orient = array.array("f")
-                    mol_pos.fromfile(mol_file, ni[0])
-#                    tot += ni[0]/3
-                    if mt[0] == 1:
-                        mol_orient.fromfile(mol_file, ni[0])
-                    mol_dict[mol_name] = [mt[0], mol_pos, mol_orient]
-                    new_item = mcell.mol_viz.mol_viz_list.add()
-                    new_item.name = mol_name
+                    ni = array.array("B")          # Create a binary byte ("B") array
+                    ni.fromfile(mol_file, 1)       # Read one byte which is the number of characters in the molecule name
+                    ns = array.array("B")          # Create another byte array to hold the molecule name
+                    ns.fromfile(mol_file, ni[0])   # Read ni bytes from the file
+                    s = ns.tostring().decode()     # Decode bytes as ASCII into a string (s)
+                    mol_name = "mol_%s" % (s)      # Construct the blender molecule viz object name
+                    mt = array.array("B")          # Create a byte array for the molecule type
+                    mt.fromfile(mol_file, 1)       # Read one byte for the molecule type
+                    ni = array.array("I")          # Re-use ni as an integer array to hold the number of molecules of this name in this frame
+                    ni.fromfile(mol_file, 1)       # Read the 4 byte integer value which is 3 times the number of molecules
+                    mol_pos = array.array("f")     # Create a floating point array to hold the positions
+                    mol_orient = array.array("f")  # Create a floating point array to hold the orientations
+                    mol_pos.fromfile(mol_file, ni[0])  # Read the positions which should be 3 floats per molecule
+#                    tot += ni[0]/3  
+                    if mt[0] == 1:                                        # If mt==1, it's a surface molecule
+                        mol_orient.fromfile(mol_file, ni[0])              # Read the surface molecule orientations
+                    mol_dict[mol_name] = [mt[0], mol_pos, mol_orient]     # Create a dictionary entry for this molecule containing a list of relevant data
+                    new_item = mcell.mol_viz.mol_viz_list.add()           # Create a new collection item to hold the name for this molecule
+                    new_item.name = mol_name                              # Assign the name to the new item
                 except EOFError:
 #                    print("Molecules read: %d" % (int(tot)))
                     mol_file.close()
@@ -2256,9 +2256,9 @@ def mol_viz_file_read(mcell_prop, filepath):
         # Otherwise, create it.
         mols_obj = bpy.data.objects.get("molecules")
         if not mols_obj:
-            bpy.ops.object.add(location=[0, 0, 0])
-            mols_obj = bpy.context.selected_objects[0]
-            mols_obj.name = "molecules"
+            bpy.ops.object.add(location=[0, 0, 0])      # Create an "Empty" object in the Blender scene
+            mols_obj = bpy.context.selected_objects[0]  # The newly added object will be selected
+            mols_obj.name = "molecules"                 # Name this empty object "molecules" 
 
         if mol_dict:
             meshes = bpy.data.meshes
@@ -2284,6 +2284,8 @@ def mol_viz_file_read(mcell_prop, filepath):
                         -1.0, 1.0) for i in range(len(mol_pos))])
 
                 # Look up the color, glyph, and other attributes from the molecules list
+                
+                #### If the molecule found in the viz file doesn't exist in the molecules list, create it as the interface for changing color, etc.
 
                 mname = mol_name[4:]   # Trim off the "mol_" portion to use as an index into the molecules list
                 mol = None
@@ -2292,13 +2294,16 @@ def mol_viz_file_read(mcell_prop, filepath):
                     #print ( "Mol " + mname + " has color " + str(mol.color) )
 
                 # Look-up mesh shape (glyph) template and create if needed
+                
+                # This may end up calling a member function of the molecule class to create a new default molecule (including glyph)
                 if mol != None:
                     #print ( "Molecule  glyph: " + str (mol.glyph) )
                     pass
                 mol_shape_mesh_name = "%s_shape" % (mol_name)
                 mol_shape_obj_name = mol_shape_mesh_name
-                mol_shape_mesh = meshes.get(mol_shape_mesh_name)
+                mol_shape_mesh = meshes.get(mol_shape_mesh_name)  # This will return None if not found by that name
                 if not mol_shape_mesh:
+                    # Make the glyph right here
                     bpy.ops.mesh.primitive_ico_sphere_add(
                         subdivisions=0, size=0.005, location=[0, 0, 0])
                     mol_shape_obj = bpy.context.active_object
