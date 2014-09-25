@@ -3259,24 +3259,37 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     def build_properties_from_data_model ( self, context, dm, geometry=False ):
         print ( "Overwriting properites based on data in the data model dictionary" )
         self.init_properties()
-        self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"] )
-        self.initialization.build_properties_from_data_model ( context, dm["initialization"] )
-        self.partitions.build_properties_from_data_model ( context, dm["initialization"]["partitions"] )
-        self.molecules.build_properties_from_data_model ( context, dm["define_molecules"] )
-        self.reactions.build_properties_from_data_model ( context, dm["define_reactions"] )
-        self.release_sites.build_properties_from_data_model ( context, dm["release_sites"] )
-        self.release_patterns.build_properties_from_data_model ( context, dm["define_release_patterns"] )
-        self.surface_classes.build_properties_from_data_model ( context, dm["define_surface_classes"] )
-        self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
+        if "parameter_system" in dm:
+            self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"] )
+        if "initialization" in dm:
+            self.initialization.build_properties_from_data_model ( context, dm["initialization"] )
+            self.partitions.build_properties_from_data_model ( context, dm["initialization"]["partitions"] )
+        if "define_molecules" in dm:
+            self.molecules.build_properties_from_data_model ( context, dm["define_molecules"] )
+        if "define_reactions" in dm:
+            self.reactions.build_properties_from_data_model ( context, dm["define_reactions"] )
+        if "release_sites" in dm:
+            self.release_sites.build_properties_from_data_model ( context, dm["release_sites"] )
+        if "define_release_patterns" in dm:
+            self.release_patterns.build_properties_from_data_model ( context, dm["define_release_patterns"] )
+        if "define_surface_classes" in dm:
+            self.surface_classes.build_properties_from_data_model ( context, dm["define_surface_classes"] )
+        if "modify_surface_regions" in dm:
+            self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
         if geometry:
-            print ( "Building Materials from Data Model Materials" )
-            self.model_objects.build_materials_from_data_model_materials ( context, dm['materials'] )
-            print ( "Building Mesh Geometry from Data Model Geometry" )
-            self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"] )
-        print ( "Not fully implemented yet!!!!" )
-        self.model_objects.build_properties_from_data_model ( context, dm["model_objects"] )
-        self.viz_output.build_properties_from_data_model ( context, dm["viz_output"] )
-        self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
+            if "materials" in dm:
+                print ( "Building Materials from Data Model Materials" )
+                self.model_objects.build_materials_from_data_model_materials ( context, dm['materials'] )
+            if "geometrical_objects" in dm:
+                print ( "Building Mesh Geometry from Data Model Geometry" )
+                self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"] )
+            print ( "Not fully implemented yet!!!!" )
+        if "model_objects" in dm:
+            self.model_objects.build_properties_from_data_model ( context, dm["model_objects"] )
+        if "viz_output" in dm:
+            self.viz_output.build_properties_from_data_model ( context, dm["viz_output"] )
+        if "reaction_data_output" in dm:
+            self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
 
 
     def init_properties ( self ):
