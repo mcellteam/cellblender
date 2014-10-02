@@ -184,6 +184,7 @@ class MCELL_PT_object_selector(bpy.types.Panel):
     bl_label = "CellBlender - Object Selector"
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
+    bl_category = "CellBlender"
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
@@ -207,6 +208,7 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
     bl_label = "CellBlender - Mesh Analysis"
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
+    bl_category = "CellBlender"
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):

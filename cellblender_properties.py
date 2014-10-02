@@ -2663,10 +2663,9 @@ class PP_OT_init_mcell(bpy.types.Operator):
 class MCELL_PT_main_panel(bpy.types.Panel):
     # bl_idname = "SCENE_PT_CB_MU_APP"
     bl_label = "  CellBlender"
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = "scene"
-    # bl_options = {'DEFAULT_CLOSED'}
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "TOOLS"
+    bl_category = "CellBlender"
     
     @classmethod
     def poll(cls, context):
