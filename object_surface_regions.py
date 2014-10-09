@@ -583,12 +583,15 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
 
     def draw_panel(self, context, panel):
         layout = panel.layout
+        self.draw_layout ( context, layout )
 
+    def draw_layout(self, context, layout):
         active_obj = context.active_object
 
         if active_obj.type == 'MESH':
             row = layout.row()
-            row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
+            # row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
+            row.label(text="Defined Surface Regions:", icon='SNAP_FACE')
             row = layout.row()
             col = row.column()
             col.template_list("MCELL_UL_check_region", "define_surf_regions",
