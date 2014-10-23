@@ -3093,6 +3093,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                 layout.box() # Use as a separator
                 layout.label ( "Model Objects", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
                 context.scene.mcell.model_objects.draw_layout ( context, layout )
+                # layout.box() # Use as a separator
+                context.object.mcell.regions.draw_layout(context, layout)
 
             if self.surf_classes_select:
                 layout.box() # Use as a separator
