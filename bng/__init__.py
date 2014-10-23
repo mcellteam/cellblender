@@ -4,7 +4,7 @@ from . import sbml_operators
 from . import external_operators
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty,BoolProperty
-import logging
+#import logging
 import os
 
 def findCellBlenderDirectory():
