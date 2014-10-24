@@ -335,9 +335,14 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
         print ( "New Glyph Name = " + new_glyph_name )
 
-        bpy.ops.wm.link_append(
-            directory=mcell.molecule_glyphs.glyph_lib,
-            files=[{"name": glyph_name}], link=False, autoselect=False)
+        if (bpy.app.version[0] > 2) or ( (bpy.app.version[0]==2) and (bpy.app.version[1] > 71) ):
+          bpy.ops.wm.link(
+              directory=mcell.molecule_glyphs.glyph_lib,
+              files=[{"name": glyph_name}], link=False, autoselect=False)
+        else:
+          bpy.ops.wm.link_append(
+              directory=mcell.molecule_glyphs.glyph_lib,
+              files=[{"name": glyph_name}], link=False, autoselect=False)
 
         mol_mat = None
         if len(mol_obj.material_slots) > 0:

@@ -2939,9 +2939,14 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
                 i+=1
             new_glyph_name = "%s.%03d" % (glyph_name, i + 1)
 
-        bpy.ops.wm.link_append(
-            directory=mcell.molecule_glyphs.glyph_lib,
-            files=[{"name": glyph_name}], link=False, autoselect=False)
+        if (bpy.app.version[0] > 2) or ( (bpy.app.version[0]==2) and (bpy.app.version[1] > 71) ):
+          bpy.ops.wm.link(
+              directory=mcell.molecule_glyphs.glyph_lib,
+              files=[{"name": glyph_name}], link=False, autoselect=False)
+        else:
+          bpy.ops.wm.link_append(
+              directory=mcell.molecule_glyphs.glyph_lib,
+              files=[{"name": glyph_name}], link=False, autoselect=False)
 
         mol_mat = mol_obj.material_slots[0].material
         new_mol_mesh = meshes[new_glyph_name]
