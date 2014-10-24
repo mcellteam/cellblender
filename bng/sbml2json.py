@@ -6,7 +6,7 @@ Created on Mon Jun 17 11:19:37 2013
 """
 
 import platform
-import logging
+
 
 def uuid_workaround():
     # uuid module causes an error messagebox on windows.
@@ -645,11 +645,11 @@ def transform(filePath):
 
 def main():
 
-    #logging.basicConfig(filename='cellblender.log',level=logging.DEBUG,format='%(asctime)s - %(levelname)s:%(message)s')
+
     if libsbml == None:
-        #logging.error('Could not find local libsbml installation. Cannot import')
+
         return
-    #logging.info('found local libsbml. Starting')        
+
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
 		default='',type="string",
