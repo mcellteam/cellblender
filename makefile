@@ -12,8 +12,10 @@ SOURCES = $(shell python cellblender_source_info.py)
 SUBDIRS = icons io_mesh_mcell_mdl data_plotters developer_utilities
 
 .PHONY: all
-all: subdirs cellblender.zip SimControl.jar SimControl
+all: cellblender subdirs cellblender.zip SimControl.jar SimControl
 
+cellblender:
+	ln -s . cellblender
 
 .PHONY: subdirs $(SUBDIRS)
 subdirs: makefile $(SUBDIRS)
