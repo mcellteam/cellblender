@@ -546,7 +546,7 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
         description="Amount of debug information to print: 0 to 100")
     
     use_long_menus = BoolProperty(
-        name="Show Long Menu Buttons", default=False,
+        name="Show Long Menu Buttons", default=True,
         description="Show Menu Buttons with Text Labels")
 
 
