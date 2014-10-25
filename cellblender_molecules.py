@@ -169,6 +169,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         m = self
 
         m_dict = {}
+        m_dict['data_model_version'] = "DM_2014_10_24_1638"
         m_dict['mol_name'] = m.name
         m_dict['mol_type'] = str(m.type)
         m_dict['diffusion_constant'] = m.diffusion_constant.get_expr()
@@ -183,6 +184,15 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         return m_dict
 
     def build_properties_from_data_model ( self, context, dm_dict ):
+        # First upgrade the data model as needed
+        if not ('data_model_version' in dm_dict):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm_dict['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
+
+        # Now convert the updated Data Model into CellBlender Properties
         self.name = dm_dict["mol_name"]
         self.type = dm_dict["mol_type"]
         self.diffusion_constant.set_expr ( dm_dict["diffusion_constant"] )
@@ -413,6 +423,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Molecule List building Data Model" )
         mol_dm = {}
+        mol_dm['data_model_version'] = "DM_2014_10_24_1638"
         mol_list = []
         for m in self.molecule_list:
             mol_list.append ( m.build_data_model_from_properties() )
@@ -420,14 +431,23 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         return mol_dm
 
     def build_properties_from_data_model ( self, context, dm ):
+        # First upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellMoleculesListProperty data model to current version." )
+
+        # Now convert the Data Model into CellBlender Properties
+        
+        # Start by removing all molecules from the list
         while len(self.molecule_list) > 0:
             self.remove_active_molecule ( context )
         
+        # Add molecules from the data model
         for m in dm["molecule_list"]:
             self.add_molecule(context)
             self.molecule_list[self.active_mol_index].build_properties_from_data_model(context,m)
-
-
 
     def check ( self, context ):
         """Checks for duplicate or illegal molecule name"""
