@@ -3231,6 +3231,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context, geometry=False ):
         print ( "Constructing a data_model dictionary from current properties" )
         dm = {}
+        dm['data_model_version'] = "DM_2014_10_24_1638"
         dm['blender_version'] = [v for v in bpy.app.version]
         dm['cellblender_version'] = self.cellblender_version
         #dm['cellblender_source_hash'] = self.cellblender_source_hash
@@ -3258,6 +3259,15 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         return dm
 
     def build_properties_from_data_model ( self, context, dm, geometry=False ):
+        # First upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellPropertyGroup data model to current version." )
+
+        # Now convert the updated Data Model into CellBlender Properties
         print ( "Overwriting properites based on data in the data model dictionary" )
         self.init_properties()
         if "parameter_system" in dm:
