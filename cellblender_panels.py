@@ -404,7 +404,7 @@ class MCELL_UL_check_mod_surface_regions(bpy.types.UIList):
 
 
 class MCELL_PT_mod_surface_regions(bpy.types.Panel):
-    bl_label = "CellBlender - Modify Surface Regions"
+    bl_label = "CellBlender - Assign Surface Classes"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
