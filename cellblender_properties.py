@@ -3034,7 +3034,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                 brow = layout.row()
                 bcol = brow.column()
-                bcol.prop ( self, "viz_select", icon='SEQUENCE', text="Visual Output Settings" )
+                bcol.prop ( self, "viz_select", icon='SEQUENCE', text="Visualization Settings" )
                 bcol = brow.column()
                 bcol.prop ( self, "init_select", icon='COLOR_RED', text="Run Simulation" )
 
