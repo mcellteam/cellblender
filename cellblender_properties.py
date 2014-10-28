@@ -429,7 +429,7 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
 
     name = StringProperty(
         name="Surface Class Name", default="Surface_Class",
-        description="This name can be selected in Modify Surface Regions.",
+        description="This name can be selected in Assign Surface Classes.",
         update=cellblender_operators.check_surface_class)
     surf_class_props_list = CollectionProperty(
         type=MCellSurfaceClassPropertiesProperty, name="Surface Classes List")
@@ -463,7 +463,7 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
 class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
     """ Assign a surface class to a surface region. """
 
-    name = StringProperty(name="Modify Surface Region")
+    name = StringProperty(name="Assign Surface Class")
     surf_class_name = StringProperty(
         name="Surface Class Name",
         description="This surface class will be assigned to the surface "
@@ -1739,12 +1739,12 @@ class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
 
 class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
     mod_surf_regions_list = CollectionProperty(
-        type=MCellModSurfRegionsProperty, name="Modify Surface Region List")
+        type=MCellModSurfRegionsProperty, name="Assign Surface Class List")
     active_mod_surf_regions_index = IntProperty(
-        name="Active Modify Surface Region Index", default=0)
+        name="Active Assign Surface Class Index", default=0)
 
     def build_data_model_from_properties ( self, context ):
-        print ( "Mod Surface Regions List building Data Model" )
+        print ( "Assign Surface Class List building Data Model" )
         sr_dm = {}
         sr_list = []
         for sr in self.mod_surf_regions_list:
@@ -2818,7 +2818,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
     placement_select = BoolProperty ( name="", description="Molecule Placement", default=False, subtype='NONE', update=select_callback)
     objects_select = BoolProperty ( name="", description="Model Objects", default=False, subtype='NONE', update=select_callback)
     surf_classes_select = BoolProperty ( name="", description="Surface Classes", default=False, subtype='NONE', update=select_callback)
-    surf_regions_select = BoolProperty ( name="", description="Surface Regions", default=False, subtype='NONE', update=select_callback)
+    surf_regions_select = BoolProperty ( name="", description="Assign Surface Classes", default=False, subtype='NONE', update=select_callback)
     rel_patterns_select = BoolProperty ( name="", description="Release Patterns", default=False, subtype='NONE', update=select_callback)
     partitions_select = BoolProperty ( name="", description="Partitions", default=False, subtype='NONE', update=select_callback)
     init_select = BoolProperty ( name="", description="Run Simulation", default=False, subtype='NONE', update=select_callback)
@@ -3024,7 +3024,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                 bcol = brow.column()
                 bcol.prop ( self, "surf_classes_select", icon='FACESEL_HLT', text="Surface Classes" )
                 bcol = brow.column()
-                bcol.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="Surface Regions" )
+                bcol.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="Assign Surface Classes" )
 
                 brow = layout.row()
                 bcol = brow.column()
@@ -3034,7 +3034,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                 brow = layout.row()
                 bcol = brow.column()
-                bcol.prop ( self, "viz_select", icon='SEQUENCE', text="Visual Output Settings" )
+                bcol.prop ( self, "viz_select", icon='SEQUENCE', text="Visualization Settings" )
                 bcol = brow.column()
                 bcol.prop ( self, "init_select", icon='COLOR_RED', text="Run Simulation" )
 
@@ -3103,7 +3103,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
             if self.surf_regions_select:
                 layout.box() # Use as a separator
-                layout.label ( "Modified Surface Regions", icon='SNAP_FACE' )
+                layout.label ( "Assigned Surface Classes", icon='SNAP_FACE' )
                 context.scene.mcell.mod_surf_regions.draw_layout ( context, layout )
 
             if self.partitions_select:
@@ -3205,7 +3205,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     surface_classes = PointerProperty(
         type=MCellSurfaceClassesPanelProperty, name="Defined Surface Classes")
     mod_surf_regions = PointerProperty(
-        type=MCellModSurfRegionsPanelProperty, name="Modify Surface Regions")
+        type=MCellModSurfRegionsPanelProperty, name="Assign Surface Classes")
     release_patterns = PointerProperty(
         type=MCellReleasePatternPanelProperty, name="Defined Release Patterns")
     release_sites = PointerProperty(

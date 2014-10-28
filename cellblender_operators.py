@@ -743,8 +743,8 @@ def check_surf_class_props(self, context):
 
 class MCELL_OT_mod_surf_regions_add(bpy.types.Operator):
     bl_idname = "mcell.mod_surf_regions_add"
-    bl_label = "Add Surface Region Modification"
-    bl_description = "Add a surface region modification to an MCell model"
+    bl_label = "Assign Surface Class"
+    bl_description = "Assign a surface class to a surface region"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -759,8 +759,8 @@ class MCELL_OT_mod_surf_regions_add(bpy.types.Operator):
 
 class MCELL_OT_mod_surf_regions_remove(bpy.types.Operator):
     bl_idname = "mcell.mod_surf_regions_remove"
-    bl_label = "Remove Surface Region Modification"
-    bl_description = "Remove selected surface region modification"
+    bl_label = "Remove Surface Class Assignment"
+    bl_description = "Remove a surface class assignment from a surface region"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
