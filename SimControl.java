@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
 import javax.swing.*;
+import java.awt.datatransfer.*;
 
 
 
@@ -157,8 +158,31 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 	    	set_menu.add ( mi = new JMenuItem(scroll_prefix+"500") );  mi.addActionListener(this);
 	    	set_menu.add ( mi = new JMenuItem(scroll_prefix+"1000") ); mi.addActionListener(this);
 	    	menu_bar.add ( set_menu );
+	    JMenu copy_menu = new JMenu("Copy");
+	    	copy_menu.add ( mi = new JMenuItem("Copy Normal Output") );  mi.addActionListener(this);
+	    	copy_menu.add ( mi = new JMenuItem("Copy Error Output") );  mi.addActionListener(this);
+	    	copy_menu.add ( mi = new JMenuItem("Copy All Output") );  mi.addActionListener(this);
+	    	menu_bar.add ( copy_menu );
 	   return (menu_bar);
 	}
+
+  public void copy_to_clipboard ( char output_type ) {
+	  try {
+	    String data = "";
+	    for (int i=0; i<lines.size(); i++) {
+        TaggedLine tl = (TaggedLine)(lines.elementAt(i));
+        if ( (output_type == 'a') || (output_type == tl.tag) ) {
+          data = data + tl.line + "\n";
+        }
+      }
+		  StringSelection ss = new StringSelection(data);
+
+		  Clipboard cb = Toolkit.getDefaultToolkit().getSystemClipboard();
+		  
+		  cb.setContents ( ss, ss );
+		} catch ( Exception e ) {
+		}
+  }
 
 	public void actionPerformed(ActionEvent e) {
 		String cmd = e.getActionCommand();
@@ -170,6 +194,15 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		  System.out.println ( "Killing the subprocess..." );
 		  sub_process.destroy();
   		set_background_done();
+		} else if (cmd.equalsIgnoreCase("Copy Normal Output")) {
+		  copy_to_clipboard ( 'o' );
+		  System.out.println ( "Copied Normal Output to the System Clipboard" );
+		} else if (cmd.equalsIgnoreCase("Copy Error Output")) {
+      copy_to_clipboard ( 'e' );
+		  System.out.println ( "Copied Error Output to the System Clipboard" );
+		} else if (cmd.equalsIgnoreCase("Copy All Output")) {
+      copy_to_clipboard ( 'a' );
+		  System.out.println ( "Copied All Output to the System Clipboard" );
 		} else if (cmd.startsWith(scroll_prefix)) {
 		  try {
 		    int new_scroll = Integer.parseInt(cmd.substring(scroll_prefix.length()));
