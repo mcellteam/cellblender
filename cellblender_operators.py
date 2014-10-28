@@ -1814,6 +1814,26 @@ def set_viz_boundaries():
         bpy.context.scene.frame_start = 0
         bpy.context.scene.frame_end = len(mcell.mol_viz.mol_file_list)-1
 
+        # Attempts to get the time line to resize when reloaded
+        # The pop-up help for View/ViewAll shows bpy.ops.time.view_all()
+        # However, that does not work unless the context is correct
+        # This code was an attempt to do that, but hasn't worked yet
+        
+        #area = bpy.context.area
+        #old_type = area.type
+        #area.type = 'TIMELINE'
+        #print ( "Calling view_all()" )
+        #bpy.ops.time.view_all()
+        #area.type = old_type
+
+        #for area in bpy.context.screen.areas:
+        #    if area.type == 'TIMELINE':
+        #        print ( "Found a Time Line area " + str(area) )
+        #        #space_data = area.spaces.active
+        #        #space_data.view_all()
+        #        #bpy.context.area = area
+        #        bpy.ops.time.view_all()
+
 
 class MCELL_OT_select_viz_data(bpy.types.Operator):
     bl_idname = "mcell.select_viz_data"
