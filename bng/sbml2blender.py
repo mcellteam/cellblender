@@ -15,7 +15,7 @@ import shutil
 
 
 # Read all of the CSG Object types in a SBML file 
-def readSMBLFileCSGObject(filePath):
+def readSBMLFileCSGObject(filePath):
     try:
         tree = ET.parse(filePath)
     except IOError:
@@ -27,7 +27,7 @@ def readSMBLFileCSGObject(filePath):
     ns = {'spatial': 'http://www.sbml.org/sbml/level3/version1/spatial/version1'}
     
     for object in root.iter('{http://www.sbml.org/sbml/level3/version1/spatial/version1}csgObject'):
-        id = object.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}spatialId')
+        id = object.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}id')
         
         for csgPrimitive in object.iter('{http://www.sbml.org/sbml/level3/version1/spatial/version1}csgPrimitive'):
             type        = csgPrimitive.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}primitiveType')
@@ -63,7 +63,7 @@ def readSMBLFileCSGObject(filePath):
     return objects
 
 # read parametric object data
-def readSMBLFileParametricObject(filepath):
+def readSBMLFileParametricObject(filepath):
     print("\n")
     print("reading parametric SBML\n")
     tree = ET.parse(filepath)
@@ -71,17 +71,21 @@ def readSMBLFileParametricObject(filepath):
     objects = []
     ns = {'spatial': 'http://www.sbml.org/sbml/level3/version1/spatial/version1'}
     
-    for object in root.iter('{http://www.sbml.org/sbml/level3/version1/spatial/version1}ParaObject'):
-        id = object.get('spatialID')
-        
+    for object in root.iter('{http://www.sbml.org/sbml/level3/version1/spatial/version1}ParametricObject'):
+        #id = object.get('spatialId') - old version D. Sullivan 10/25/14
+        id = object.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}id')
+        print("spid: "       + id)
+
         for polygonObject in object.iter('{http://www.sbml.org/sbml/level3/version1/spatial/version1}PolygonObject'):
-            faces        = polygonObject.get('faces')
-            vertices     = polygonObject.get('pointIndex')
+            faces        = polygonObject.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}faces')
+            vertices     = polygonObject.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}pointIndex')
         
+        '''
         print("id: "       + id)
         
-        #print("faces: "    + faces)
-        #print("vertices: " + vertices)
+        print("faces: "    + faces)
+        print("vertices: " + vertices)
+            '''
         faces = faces[1:-1]
         faces = faces.split(";")
         temp = []
@@ -138,8 +142,8 @@ def mesh_vol(mesh, t_mat):
 
 # a sphere with dimensions x,y,z is added to the blender scene
 def generateSphere(name, size, loc, rot):
-    pi = 3.1415
-    bpy.ops.mesh.primitive_ico_sphere_add(location=(float(loc[0]),float(loc[1]),float(loc[2])), \
+    #pi = 3.1415
+    bpy.ops.mesh.primitive_uv_sphere_add(location=(float(loc[0]),float(loc[1]),float(loc[2])), \
                                          rotation=(float(rot[0]),float(rot[1]),float(rot[2]) ))
     obj = bpy.data.objects[bpy.context.active_object.name]
     scn = bpy.context.scene
@@ -261,9 +265,9 @@ def common_prefix(strings):
 # given SBML file create blender file of geometries described in SBML file
 def sbml2blender(inputFilePath,addObjects):
     print("loading .xml file... " + inputFilePath)
-    #extrapolate object data from smbl file
-    csgObjects  = readSMBLFileCSGObject(inputFilePath)
-    paramObject = readSMBLFileParametricObject(inputFilePath)
+    #extrapolate object data from SBML file
+    csgObjects  = readSBMLFileCSGObject(inputFilePath)
+    paramObject = readSBMLFileParametricObject(inputFilePath)
     
     print("length of objects: " + str(len(csgObjects)))
     #generates sphere or bounding box in Blender
@@ -318,6 +322,7 @@ def sbml2blender(inputFilePath,addObjects):
     for csgobject in csgObjects:
         if( csgobject[1] == 'SOLID_CUBE' or csgobject[1] == 'cube'):
             name      = csgobject[0]
+            location  = [float(csgobject[2]), float(csgobject[3]), float(csgobject[4])]
             size      = [float(csgobject[2]), float(csgobject[3]), float(csgobject[4])]
             location  = [float(csgobject[8]), float(csgobject[9]), float(csgobject[10])]
             obj = generateCube(name,size,location)
