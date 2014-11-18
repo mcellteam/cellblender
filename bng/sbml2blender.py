@@ -143,7 +143,7 @@ def mesh_vol(mesh, t_mat):
 # a sphere with dimensions x,y,z is added to the blender scene
 def generateSphere(name, size, loc, rot):
     #pi = 3.1415
-    bpy.ops.mesh.primitive_uv_sphere_add(location=(float(loc[0]),float(loc[1]),float(loc[2])), \
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, location=(float(loc[0]),float(loc[1]),float(loc[2])), \
                                          rotation=(float(rot[0]),float(rot[1]),float(rot[2]) ))
     obj = bpy.data.objects[bpy.context.active_object.name]
     scn = bpy.context.scene
@@ -153,7 +153,6 @@ def generateSphere(name, size, loc, rot):
     obj.name = name
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
-    #bpy.ops.mesh.quads_convert_to_tris()
     bpy.ops.object.mode_set(mode='OBJECT')
     return obj
 
@@ -313,6 +312,9 @@ def sbml2blender(inputFilePath,addObjects):
         bpy.ops.object.join()
         obj = bpy.data.objects[bpy.context.active_object.name]
         obj.name = namingPattern
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.faces_shade_smooth()
+        bpy.ops.object.mode_set(mode='OBJECT')
         if addObjects:
             preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
     
