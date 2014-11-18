@@ -2830,6 +2830,11 @@ class MCELL_OT_model_objects_add(bpy.types.Operator):
         # From the list of selected objects, only add MESH objects.
         objs = [obj for obj in context.selected_objects if obj.type == 'MESH']
         for obj in objs:
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_all(action='SELECT')
+            bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY',
+                                               ngon_method='BEAUTY')
+            bpy.ops.object.mode_set(mode='OBJECT')
             obj.mcell.include = True
 
         model_objects_update(context)
