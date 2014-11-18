@@ -313,6 +313,8 @@ def sbml2blender(inputFilePath,addObjects):
         bpy.ops.object.join()
         obj = bpy.data.objects[bpy.context.active_object.name]
         obj.name = namingPattern
+        if addObjects:
+            preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
     
     #for name in csgObjectNames:
         #bpy.ops.object.select_by_type(type='MESH', extend=False)
@@ -346,6 +348,8 @@ def sbml2blender(inputFilePath,addObjects):
         bpy.ops.object.join()
         obj = bpy.data.objects[bpy.context.active_object.name]
         obj.name = namingPattern
+        if addObjects:
+            preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
 
    # print("The average endosome size is: " + str((sum_size/(n_size*1.0))))
    # print("The average endosome surface area is " + str((sum_surf/(n_surf*1.0))))
