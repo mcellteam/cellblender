@@ -26,21 +26,18 @@ def uuid_workaround():
 try:
     uuid_workaround()
     from . import treelib3
-    if platform.system() == 'Linux':
-        from .libsbml3.linux import libsbml
-    elif platform.system() == 'Darwin':
-        from .libsbml3.macosx import libsbml
-    else:
-        libsbml = None
+    import libsbml
 except ImportError:
     treelib3 = None
     libsbml = None
 except (ValueError,SystemError):
-    import treelib3
+    import treelib as treelib3
     import libsbml
+
 #import libsbml3.linux.libsbml as libsbml
 #import treelib3
 #import libsbml
+
 import json
 import math
 from optparse import OptionParser
