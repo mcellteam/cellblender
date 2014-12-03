@@ -29,10 +29,7 @@ def unregister():
 
 def execute_sbml2mcell(filepath,context):
     mcell = context.scene.mcell
-    isTransformed = sbml2json.transform(filePath)
-    if not isTransformed:
-        print('Bundled libsbml does not support your platform. Using local python and libsbml installations')
-        execute_externally(filepath,context)
+    execute_externally(filepath,context)
     #TODO: If isTransformed is false a window should be shown that the model failed to load
     return{'FINISHED'}
 

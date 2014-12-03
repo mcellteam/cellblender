@@ -22,17 +22,13 @@ def uuid_workaround():
         import uuid
         ctypes.CDLL = CDLL
 
-
 try:
     uuid_workaround()
-    from . import treelib3
+    import treelib3
     import libsbml
 except ImportError:
     treelib3 = None
     libsbml = None
-except (ValueError,SystemError):
-    import treelib as treelib3
-    import libsbml
 
 #import libsbml3.linux.libsbml as libsbml
 #import treelib3
