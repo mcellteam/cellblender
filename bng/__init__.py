@@ -33,6 +33,9 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
 
 
     def execute(self, context):
+        if hasattr(external_operators.accessFile,"info"):
+            del external_operators.accessFile.info
+            
         if('.bngl') in self.filepath:
             bngfilepath = self.filepath         # bngl file path
             external_operators.filePath=findCellBlenderDirectory()+'bng{0}'.format(os.sep) + self.filepath.split(os.sep)[-1]
@@ -51,7 +54,7 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
             sbml_operators.execute_sbml2mcell(sbmlfilepath,context)
             print('Proceeding to import SBML file')
  
-            
+        
         print ( "Loading parameters from external model..." )
         bpy.ops.external.parameter_add()         # This processes all entries in the par_list parameter list
         print ( "Loading molecules from external model..." )
