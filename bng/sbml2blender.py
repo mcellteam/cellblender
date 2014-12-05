@@ -28,7 +28,7 @@ def readSBMLFileCSGObject(filePath):
     
     for object in root.iter('{http://www.sbml.org/sbml/level3/version1/spatial/version1}csgObject'):
         id = object.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}id')
-        
+        domainType = object.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}domainType')
         for csgPrimitive in object.iter('{http://www.sbml.org/sbml/level3/version1/spatial/version1}csgPrimitive'):
             type        = csgPrimitive.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}primitiveType')
         
@@ -46,6 +46,8 @@ def readSBMLFileCSGObject(filePath):
             translateX  = csgTranslation.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}translateX')
             translateY  = csgTranslation.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}translateY')
             translateZ  = csgTranslation.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}translateZ')
+
+        print("domainType: "  + domainType)
         '''
         print("id: "          + id)
         print("type: "        + type)
@@ -59,7 +61,7 @@ def readSBMLFileCSGObject(filePath):
         print("translateY: "  + translateY)
         print("translateZ: "  + translateZ)
 	'''
-        objects += [[id, type, scaleX, scaleY, scaleZ, rotateAxisX, rotateAxisY, rotateAxisZ,translateX, translateY, translateZ]]
+        objects += [[id, type, scaleX, scaleY, scaleZ, rotateAxisX, rotateAxisY, rotateAxisZ,translateX, translateY, translateZ, domainType]]
     return objects
 
 # read parametric object data
@@ -282,35 +284,75 @@ def sbml2blender(inputFilePath,addObjects):
     
     
     csgObjectNames = []
+    domainTypes = []
+    name = []
+    size = []
+    location = []
+    rotation = []
+    domain = []
+    ind = 0
     for csgobject in csgObjects:
         if( csgobject[1] == 'SOLID_SPHERE' or csgobject[1] == 'sphere'):
-            name      = csgobject[0]
-            size      = [float(csgobject[2]), float(csgobject[3]), float(csgobject[4])]
-            location  = [float(csgobject[8]), float(csgobject[9]), float(csgobject[10])]
-            rotation  = [float(csgobject[5]), float(csgobject[6]), float(csgobject[7])]
-            obj = generateSphere(name,size,location,rotation)
-            csgObjectNames.append(name)
-            sum_size += (4.0/3.0)*(3.14)*(size[0])*(size[1])*(size[2])
+            name.append(csgobject[0])
+            size.append([float(csgobject[2]), float(csgobject[3]), float(csgobject[4])])
+            location.append([float(csgobject[8]), float(csgobject[9]), float(csgobject[10])])
+            rotation.append([float(csgobject[5]), float(csgobject[6]), float(csgobject[7])])
+            domain.append(csgobject[11])
+            if domain[ind] not in domainTypes:
+                domainTypes.append(domain[ind])
+            csgObjectNames.append(domain[ind])
+            sum_size += (4.0/3.0)*(3.14)*(size[ind][0])*(size[ind][1])*(size[ind][2])
             n_size   += 1
-            sum_surf += surface_area_sphere(size[0],size[1],size[2])
+            sum_surf += surface_area_sphere(size[ind][0],size[ind][1],size[ind][2])
             n_surf += 1
-          
-          
-    #extract groups of strings with a lvenshtein distance less than 4
+            ind = ind + 1
+    for domainType in domainTypes:
+        ind = 0
+        print(domainType)
+        for csgObjectName in csgObjectNames:
+            print(csgObjectName)
+            if domain[ind]==domainType:
+                print("match")
+                obj = generateSphere(domainType+str(ind),size[ind],location[ind],rotation[ind])
+            ind = ind + 1
+        bpy.ops.object.select_pattern(pattern=domainType+'*')
+        bpy.ops.object.join()
+        obj.name = domainType
+        bpy.ops.object.select_all(action='DESELECT')
+
+    '''
+    #bpy.ops.object.join()
+    print("Here are the domains: ")
+    print(csgObjectNames)
+    #extract groups of strings with a lvenshtein distance less than 4   
     csgObjectNames.sort()
     namingPatterns = []
-    while len(csgObjectNames) > 0:
-        namingPatterns.append([x for x in csgObjectNames if levenshtein(csgObjectNames[0],x) <= 4])
-        csgObjectNames = [x for x in csgObjectNames if levenshtein(csgObjectNames[0],x) > 4]
+        #   while len(csgObjectNames) > 0:
+    for domainType in domainTypes:
+        print(domainType)
+
+
+    #namingPatterns.append([x for x in csgObjectNames if domainType==x])
+    #csgObjectNames = [x for x in csgObjectNames if domainType==x]
     
     #extract common prefix for groups of strings
-    namingPatterns = [common_prefix(x) for x in namingPatterns]
+    namingPatterns = domainTypes
+    print(namingPatterns)
+    #namingPatterns = [common_prefix(x) for x in namingPatterns]
 
-    #group objects by pattern    
+    #group objects by pattern - now domainType
+    print(namingPatterns)
     for namingPattern in namingPatterns:
-        bpy.ops.object.select_pattern(pattern='{0}*'.format(namingPattern), extend=False)
+    #for domainType in domainTypes:
+        print("Current domain: ")
+        print(namingPattern)
+        bpy.ops.object.select_name(name=format(namingPattern), extend=False)
+        #bpy.ops.object.select_pattern(pattern='{0}*'.format(namingPattern), extend=False)
+        #bpy.ops.object.select_pattern(pattern="devin2", extend=False)
+        #bpy.ops.object.select_pattern(pattern="ivan1", extend=False)
         bpy.ops.object.join()
         obj = bpy.data.objects[bpy.context.active_object.name]
+        #obj.name = namingPattern
         obj.name = namingPattern
         bpy.ops.object.mode_set(mode='EDIT')
         bpy.ops.mesh.faces_shade_smooth()
@@ -321,7 +363,7 @@ def sbml2blender(inputFilePath,addObjects):
     #for name in csgObjectNames:
         #bpy.ops.object.select_by_type(type='MESH', extend=False)
         #bpy.ops.object.join()
-
+    '''
     csgObjectNames = []
     for csgobject in csgObjects:
         if( csgobject[1] == 'SOLID_CUBE' or csgobject[1] == 'cube'):
