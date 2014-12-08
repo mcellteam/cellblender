@@ -420,7 +420,7 @@ class SBML2JSON:
 
     def adjustParameters(self,stoichoimetry,rate,parameters):
         for parameter in parameters:
-            if parameter['name'] in rate and parameter['unit'] == '':
+            if parameter['name'] in rate and parameter['unit'] in ['','unknown']:
                 if stoichoimetry == 2:
                     parameter['value'] = '{0}*Nav'.format(parameter['value'])
                     parameter['unit'] ='Bimolecular * NaV'
@@ -642,7 +642,6 @@ def main():
     if libsbml == None:
 
         return
-
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
 		default='',type="string",
@@ -658,14 +657,15 @@ def main():
         outputFile = nameStr + '.json'
     else:
         outputFile = options.output
-
     document = reader.readSBMLFromFile(nameStr)
     if document.getModel() == None:
         #logging.error('A model with path "{0}" could not be found'.format(nameStr))
         return
     #logging.info('An SBML file was found at {0}.Attempting import'.format(nameStr))
     parser = SBML2JSON(document.getModel())
+
     parameters,observables =  parser.getParameters()
+
     #compartments = parser.getRawCompartments()
     molecules,release = parser.getMolecules()
     reactions,release2,molecules2 =  parser.getReactions(parameters)
