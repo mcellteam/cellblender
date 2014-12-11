@@ -306,7 +306,9 @@ class SBML2JSON:
             self.speciesNameDict[species.getId()] = speciesName
             moleculeSpecs={'name':species.getId(),'type':typeD,'extendedName':species.getName(),'dif':diffusion}
             initialConcentration = species.getInitialConcentration()
+            initialAmountFlag = False
             if initialConcentration == 0 or math.isnan(initialConcentration):
+                initialAmountFlag = True
                 initialConcentration = species.getInitialAmount()
             if species.getSubstanceUnits() in self.unitDictionary:
                 for factor in self.unitDictionary[species.getSubstanceUnits()]:
@@ -315,9 +317,10 @@ class SBML2JSON:
                     initialConcentration /= float(6.022e8)
             sinitialConcentration = str(initialConcentration) if not math.isnan(initialConcentration) else '0'
             
-            if species.getSubstanceUnits() == '' and compartmentList[compartment][0] ==3:
-                sinitialConcentration = ' ({0})/Nav'.format(sinitialConcentration)
-            sinitialConcentration = '({0})/vol_{1}'.format(sinitialConcentration,compartment)
+            if not initialAmountFlag:
+                if species.getSubstanceUnits() == '' and compartmentList[compartment][0] ==3:
+                    sinitialConcentration = ' ({0})/Nav'.format(sinitialConcentration)
+                sinitialConcentration = '({0})/vol_{1}'.format(sinitialConcentration,compartment)
             
                 
             #isConstant = species.getConstant()
@@ -335,6 +338,8 @@ class SBML2JSON:
                         objectExpr = '{0} - {1}[ALL]'.format(objectExpr,element)
                 releaseSpecs = {'name': 'Release_Site_s{0}'.format(idx+1),'molecule':species.getId(),'shape':'OBJECT'
             ,'quantity_type':"DENSITY",'quantity_expr':sinitialConcentration,'object_expr':objectExpr,'orient':relOrientation}
+                if initialAmountFlag:
+                    releaseSpecs['quantity_type'] = 'NUMBER_TO_RELEASE'
                 release.append(releaseSpecs)
             #self.speciesDictionary[identifier] = standardizeName(name)
             #returnID = identifier if self.useID else \
