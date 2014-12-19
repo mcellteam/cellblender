@@ -22,25 +22,18 @@ def uuid_workaround():
         import uuid
         ctypes.CDLL = CDLL
 
-
 try:
     uuid_workaround()
-    from . import treelib3
-    if platform.system() == 'Linux':
-        from .libsbml3.linux import libsbml
-    elif platform.system() == 'Darwin':
-        from .libsbml3.macosx import libsbml
-    else:
-        libsbml = None
+    import treelib3
+    import libsbml
 except ImportError:
     treelib3 = None
     libsbml = None
-except (ValueError,SystemError):
-    import treelib3
-    import libsbml
+
 #import libsbml3.linux.libsbml as libsbml
 #import treelib3
 #import libsbml
+
 import json
 import math
 from optparse import OptionParser
@@ -313,7 +306,9 @@ class SBML2JSON:
             self.speciesNameDict[species.getId()] = speciesName
             moleculeSpecs={'name':species.getId(),'type':typeD,'extendedName':species.getName(),'dif':diffusion}
             initialConcentration = species.getInitialConcentration()
+            initialAmountFlag = False
             if initialConcentration == 0 or math.isnan(initialConcentration):
+                initialAmountFlag = True
                 initialConcentration = species.getInitialAmount()
             if species.getSubstanceUnits() in self.unitDictionary:
                 for factor in self.unitDictionary[species.getSubstanceUnits()]:
@@ -322,9 +317,10 @@ class SBML2JSON:
                     initialConcentration /= float(6.022e8)
             sinitialConcentration = str(initialConcentration) if not math.isnan(initialConcentration) else '0'
             
-            if species.getSubstanceUnits() == '' and compartmentList[compartment][0] ==3:
-                sinitialConcentration = ' ({0})/Nav'.format(sinitialConcentration)
-            sinitialConcentration = '({0})/vol_{1}'.format(sinitialConcentration,compartment)
+            if not initialAmountFlag:
+                if species.getSubstanceUnits() == '' and compartmentList[compartment][0] ==3:
+                    sinitialConcentration = ' ({0})/Nav'.format(sinitialConcentration)
+                sinitialConcentration = '({0})/vol_{1}'.format(sinitialConcentration,compartment)
             
                 
             #isConstant = species.getConstant()
@@ -342,6 +338,8 @@ class SBML2JSON:
                         objectExpr = '{0} - {1}[ALL]'.format(objectExpr,element)
                 releaseSpecs = {'name': 'Release_Site_s{0}'.format(idx+1),'molecule':species.getId(),'shape':'OBJECT'
             ,'quantity_type':"DENSITY",'quantity_expr':sinitialConcentration,'object_expr':objectExpr,'orient':relOrientation}
+                if initialAmountFlag:
+                    releaseSpecs['quantity_type'] = 'NUMBER_TO_RELEASE'
                 release.append(releaseSpecs)
             #self.speciesDictionary[identifier] = standardizeName(name)
             #returnID = identifier if self.useID else \
@@ -427,7 +425,7 @@ class SBML2JSON:
 
     def adjustParameters(self,stoichoimetry,rate,parameters):
         for parameter in parameters:
-            if parameter['name'] in rate and parameter['unit'] == '':
+            if parameter['name'] in rate and parameter['unit'] in ['','unknown']:
                 if stoichoimetry == 2:
                     parameter['value'] = '{0}*Nav'.format(parameter['value'])
                     parameter['unit'] ='Bimolecular * NaV'
@@ -649,7 +647,6 @@ def main():
     if libsbml == None:
 
         return
-
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
 		default='',type="string",
@@ -665,14 +662,15 @@ def main():
         outputFile = nameStr + '.json'
     else:
         outputFile = options.output
-
     document = reader.readSBMLFromFile(nameStr)
     if document.getModel() == None:
         #logging.error('A model with path "{0}" could not be found'.format(nameStr))
         return
     #logging.info('An SBML file was found at {0}.Attempting import'.format(nameStr))
     parser = SBML2JSON(document.getModel())
+
     parameters,observables =  parser.getParameters()
+
     #compartments = parser.getRawCompartments()
     molecules,release = parser.getMolecules()
     reactions,release2,molecules2 =  parser.getReactions(parameters)
