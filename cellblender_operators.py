@@ -57,6 +57,31 @@ def unregister():
 
 #CellBlender Operators:
 
+class MCELL_OT_upgrade(bpy.types.Operator):
+    """This is the Upgrade operator called when the user presses the "Upgrade" button"""
+    bl_idname = "mcell.upgrade"
+    bl_label = "Upgrade Blend File"
+    bl_description = "Upgrade the data from a previous version of CellBlender"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        print ( "Upgrading Properties from Data Model" )
+        mcell = context.scene.mcell
+
+        if 'data_model' in mcell:
+            print ( "Found a data model to upgrade." )
+            dm = cellblender.data_model.unpickle_data_model ( mcell['data_model'] )
+
+            # Do the actual updating of properties from data model right here
+            mcell.build_properties_from_data_model ( context, dm )
+        else:
+            print ( "No data model to upgrade." )
+
+        # Update the source_id
+        mcell['saved_by_source_id'] = cellblender.cellblender_info['cellblender_source_sha1']
+        mcell.versions_match = True
+        return {'FINISHED'}
+
 
 class MCELL_OT_create_partitions_object(bpy.types.Operator):
     bl_idname = "mcell.create_partitions_object"
@@ -1194,6 +1219,7 @@ class MCELL_OT_reset_preferences(bpy.types.Operator):
 @persistent
 def load_preferences(context):
     """ Load CB preferences using preset on startup. """
+    print ( "load post handler: cellblender_operators.load_preferences() called" )
 
     #active_preset = bpy.types.MCELL_MT_presets.bl_label
     #bpy.ops.script.execute_preset(
@@ -1634,6 +1660,7 @@ def clear_run_list(context):
     to clear the processes_list upon reload so the two aren't out of sync.
 
     """
+    print ( "load post handler: cellblender_operators.clear_run_list() called" )
 
     if not context:
         context = bpy.context
@@ -1648,6 +1675,7 @@ def clear_run_list(context):
 @persistent
 def mcell_valid_update(context):
     """ Check whether the mcell executable in the .blend file is valid """
+    print ( "load post handler: cellblender_operators.mcell_valid_update() called" )
     if not context:
         context = bpy.context
     mcell = context.scene.mcell
@@ -1659,6 +1687,7 @@ def mcell_valid_update(context):
 @persistent
 def init_properties(context):
     """ Initialize MCell properties if not already initialized """
+    print ( "load post handler: cellblender_operators.init_properties() called" )
     if not context:
         context = bpy.context
     mcell = context.scene.mcell
@@ -2779,6 +2808,7 @@ class MCELL_OT_toggle_renderability_filtered(bpy.types.Operator):
 #   Note: This function is registered as a load_post and save_pre handler
 @persistent
 def model_objects_update(context):
+    print ( "load post handler: cellblender_operators.model_objects_update() called" )
     if not context:
         context = bpy.context
 

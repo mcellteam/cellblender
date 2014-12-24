@@ -207,7 +207,24 @@ class ImportDataModelAll(bpy.types.Operator, ExportHelper):
 # Construct the data model property
 @persistent
 def save_pre(context):
+    """Set the "saved_by_source_id" value and store a data model based on the current property settings in this application"""
+    # The context appears to always be "None"
+    print ( "========================================" )
+    source_id = cellblender.cellblender_info['cellblender_source_sha1']
+    print ( "save_pre() has been called ... source_id = " + source_id )
+    if not context:
+        # The context appears to always be "None", so use bpy.context
+        context = bpy.context
+    if hasattr ( context.scene, 'mcell' ):
+        print ( "Updating source ID of mcell before saving" )
+        mcell = context.scene.mcell
+        mcell['saved_by_source_id'] = source_id
+        dm = mcell.build_data_model_from_properties ( context )
+        context.scene.mcell['data_model'] = pickle_data_model(dm)
+    print ( "========================================" )
 
+
+    """
     print ( "data_model.save_pre called" )
 
     if not context:
@@ -218,20 +235,44 @@ def save_pre(context):
         context.scene.mcell['data_model'] = pickle_data_model(dm)
 
     return
+    """
 
 
 # Check for a data model in the properties
 @persistent
 def load_post(context):
+    """Detect whether the loaded .blend file matches the current addon and set a flag to be used by other code"""
 
-    print ( "data_model.load_post called" )
+    print ( "load post handler: data_model.load_post() called" )
+
+    source_id = cellblender.cellblender_info['cellblender_source_sha1']
+    print ( "cellblender source id = " + source_id )
 
     if not context:
+        # The context appears to always be "None", so use bpy.context
         context = bpy.context
 
-    api_version_in_blend_file = -1
-    if 'mcell' in context.scene:
-        mcell = context.scene['mcell']
+    api_version_in_blend_file = -1  # TODO May not be used
+
+    #if 'mcell' in context.scene:
+    if hasattr ( context.scene, 'mcell' ):
+        mcell = context.scene.mcell
+
+        mcell.versions_match = False
+        if 'saved_by_source_id' in mcell:
+            saved_by_id = mcell['saved_by_source_id']
+            print ( "load_post() opened a blend file with source_id = " + saved_by_id )
+            if source_id == saved_by_id:
+                mcell.versions_match = True
+            else:
+                # Don't update the properties here. Just flag to display the "Upgrade" button for user to choose.
+                mcell.versions_match = False
+    print ( "End of load_post(): mcell.versions_match = " + str(mcell.versions_match) )
+    print ( "========================================" )
+
+    """
+    # OLD Code before December 23rd, 2014:
+    
         if 'api_version' in mcell:
             api_version_in_blend_file = mcell['api_version']
 
@@ -264,6 +305,7 @@ def load_post(context):
         print ( "context.scene does not have an 'mcell' key ... no data model to import" )
 
     return
+    """
 
 
 def menu_func_import(self, context):

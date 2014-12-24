@@ -2773,7 +2773,7 @@ def scene_loaded(dummy):
             icon["icon"] = True
             for f in bpy.app.handlers.scene_update_pre:
                 if f.__name__ == "scene_loaded":
-                    print("REMOVE SCENE HANDLER")
+                    print("Removing scene_loaded handler now that icons are loaded")
                     bpy.app.handlers.scene_update_pre.remove(f)
 
 
@@ -2917,230 +2917,237 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
         mcell = context.scene.mcell
 
-        if not mcell.initialized:
-            mcell.draw_uninitialized ( layout )
+        if not mcell.versions_match:
+            # Verion in Blend file does not match Addon, so give user a button to upgrade if desired
+            row = layout.row()
+            row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
+            row = layout.row()
+            row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
         else:
-
-            if not mcell.cellblender_preferences.use_long_menus:
-
-                # Draw the selection buttons
-
-                real_row = layout.row()
-                split = real_row.split(0.9)
-                col = split.column()
-
-                #row = layout.row(align=True)
-                row = col.row(align=True)
-                row.prop ( self, "preferences_select", icon='PREFERENCES' )
-                row.prop ( self, "settings_select", icon='SETTINGS' )
-                row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER' )
-
-                #row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES' )
-                if self.molecule_select:
-                    molecule_img_sel = bpy.data.images.get('mol_s')
-                    mol_s = layout.icon(molecule_img_sel)
-                    row.prop ( self, "molecule_select", icon_value=mol_s )
-                else:
-                    molecule_img_unsel = bpy.data.images.get('mol_u')
-                    mol_u = layout.icon(molecule_img_unsel)
-                    row.prop ( self, "molecule_select", icon_value=mol_u )
-
-                if self.reaction_select:
-                    react_img_sel = bpy.data.images.get('reaction_s')
-                    reaction_s = layout.icon(react_img_sel)
-                    row.prop ( self, "reaction_select", icon_value=reaction_s )
-                else:
-                    react_img_unsel = bpy.data.images.get('reaction_u')
-                    reaction_u = layout.icon(react_img_unsel)
-                    row.prop ( self, "reaction_select", icon_value=reaction_u )
-
-                row.prop ( self, "placement_select", icon='GROUP_VERTEX' )
-                row.prop ( self, "rel_patterns_select", icon='TIME' )
-                row.prop ( self, "objects_select", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
-                row.prop ( self, "surf_classes_select", icon='FACESEL_HLT' )
-                row.prop ( self, "surf_regions_select", icon='SNAP_FACE' )
-                row.prop ( self, "partitions_select", icon='GRID' )
-                row.prop ( self, "graph_select", icon='FCURVE' )
-                row.prop ( self, "viz_select", icon='SEQUENCE' )
-                #row.prop ( self, "mol_viz_select", icon='SEQUENCE' )
-                row.prop ( self, "init_select", icon='COLOR_RED' )
-                # row.prop ( self, "run_select", icon='COLOR_RED' )
-
-                col = split.column()
-                row = col.row()
-
-                if self.select_multiple:
-                    row.prop ( self, "select_multiple", icon='PINNED' )
-                else:
-                    row.prop ( self, "select_multiple", icon='UNPINNED' )
-
-                # Use an operator rather than a property to make it an action button
-                # row.prop ( self, "reload_viz", icon='FILE_REFRESH' )
-                row.operator ( "cbm.refresh_operator",text="",icon='FILE_REFRESH')
-                #row.operator ( "mcell.read_viz_data", text="",icon='FILE_REFRESH')
-                    
+            if not mcell.initialized:
+                mcell.draw_uninitialized ( layout )
             else:
-                # Draw the selection buttons with labels:
 
-                brow = layout.row()
-                bcol = brow.column()
-                bcol.prop ( self, "preferences_select", icon='PREFERENCES', text="Preferences" )
-                bcol = brow.column()
-                bcol.prop ( self, "settings_select", icon='SETTINGS', text="Settings" )
+                if not mcell.cellblender_preferences.use_long_menus:
 
-                brow = layout.row()
-                bcol = brow.column()
-                bcol.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="Parameters" )
-                bcol = brow.column()
-                if self.molecule_select:
-                    molecule_img_sel = bpy.data.images.get('mol_s')
-                    mol_s = layout.icon(molecule_img_sel)
-                    bcol.prop ( self, "molecule_select", icon_value=mol_s, text="Molecules" )
+                    # Draw the selection buttons
+
+                    real_row = layout.row()
+                    split = real_row.split(0.9)
+                    col = split.column()
+
+                    #row = layout.row(align=True)
+                    row = col.row(align=True)
+                    row.prop ( self, "preferences_select", icon='PREFERENCES' )
+                    row.prop ( self, "settings_select", icon='SETTINGS' )
+                    row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER' )
+
+                    #row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES' )
+                    if self.molecule_select:
+                        molecule_img_sel = bpy.data.images.get('mol_s')
+                        mol_s = layout.icon(molecule_img_sel)
+                        row.prop ( self, "molecule_select", icon_value=mol_s )
+                    else:
+                        molecule_img_unsel = bpy.data.images.get('mol_u')
+                        mol_u = layout.icon(molecule_img_unsel)
+                        row.prop ( self, "molecule_select", icon_value=mol_u )
+
+                    if self.reaction_select:
+                        react_img_sel = bpy.data.images.get('reaction_s')
+                        reaction_s = layout.icon(react_img_sel)
+                        row.prop ( self, "reaction_select", icon_value=reaction_s )
+                    else:
+                        react_img_unsel = bpy.data.images.get('reaction_u')
+                        reaction_u = layout.icon(react_img_unsel)
+                        row.prop ( self, "reaction_select", icon_value=reaction_u )
+
+                    row.prop ( self, "placement_select", icon='GROUP_VERTEX' )
+                    row.prop ( self, "rel_patterns_select", icon='TIME' )
+                    row.prop ( self, "objects_select", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
+                    row.prop ( self, "surf_classes_select", icon='FACESEL_HLT' )
+                    row.prop ( self, "surf_regions_select", icon='SNAP_FACE' )
+                    row.prop ( self, "partitions_select", icon='GRID' )
+                    row.prop ( self, "graph_select", icon='FCURVE' )
+                    row.prop ( self, "viz_select", icon='SEQUENCE' )
+                    #row.prop ( self, "mol_viz_select", icon='SEQUENCE' )
+                    row.prop ( self, "init_select", icon='COLOR_RED' )
+                    # row.prop ( self, "run_select", icon='COLOR_RED' )
+
+                    col = split.column()
+                    row = col.row()
+
+                    if self.select_multiple:
+                        row.prop ( self, "select_multiple", icon='PINNED' )
+                    else:
+                        row.prop ( self, "select_multiple", icon='UNPINNED' )
+
+                    # Use an operator rather than a property to make it an action button
+                    # row.prop ( self, "reload_viz", icon='FILE_REFRESH' )
+                    row.operator ( "cbm.refresh_operator",text="",icon='FILE_REFRESH')
+                    #row.operator ( "mcell.read_viz_data", text="",icon='FILE_REFRESH')
+                        
                 else:
-                    molecule_img_unsel = bpy.data.images.get('mol_u')
-                    mol_u = layout.icon(molecule_img_unsel)
-                    bcol.prop ( self, "molecule_select", icon_value=mol_u, text="Molecules" )
+                    # Draw the selection buttons with labels:
 
-                brow = layout.row()
-                bcol = brow.column()
+                    brow = layout.row()
+                    bcol = brow.column()
+                    bcol.prop ( self, "preferences_select", icon='PREFERENCES', text="Preferences" )
+                    bcol = brow.column()
+                    bcol.prop ( self, "settings_select", icon='SETTINGS', text="Settings" )
+
+                    brow = layout.row()
+                    bcol = brow.column()
+                    bcol.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="Parameters" )
+                    bcol = brow.column()
+                    if self.molecule_select:
+                        molecule_img_sel = bpy.data.images.get('mol_s')
+                        mol_s = layout.icon(molecule_img_sel)
+                        bcol.prop ( self, "molecule_select", icon_value=mol_s, text="Molecules" )
+                    else:
+                        molecule_img_unsel = bpy.data.images.get('mol_u')
+                        mol_u = layout.icon(molecule_img_unsel)
+                        bcol.prop ( self, "molecule_select", icon_value=mol_u, text="Molecules" )
+
+                    brow = layout.row()
+                    bcol = brow.column()
+                    if self.reaction_select:
+                        react_img_sel = bpy.data.images.get('reaction_s')
+                        reaction_s = layout.icon(react_img_sel)
+                        bcol.prop ( self, "reaction_select", icon_value=reaction_s, text="Reactions" )
+                    else:
+                        react_img_unsel = bpy.data.images.get('reaction_u')
+                        reaction_u = layout.icon(react_img_unsel)
+                        bcol.prop ( self, "reaction_select", icon_value=reaction_u, text="Reactions" )
+                    bcol = brow.column()
+                    bcol.prop ( self, "placement_select", icon='GROUP_VERTEX', text=" Molecule Placement" )
+
+                    brow = layout.row()
+                    bcol = brow.column()
+                    bcol.prop ( self, "rel_patterns_select", icon='TIME', text="Release Patterns" )
+                    bcol = brow.column()
+                    bcol.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="Model Objects" )
+
+                    brow = layout.row()
+                    bcol = brow.column()
+                    bcol.prop ( self, "surf_classes_select", icon='FACESEL_HLT', text="Surface Classes" )
+                    bcol = brow.column()
+                    bcol.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="Assign Surface Classes" )
+
+                    brow = layout.row()
+                    bcol = brow.column()
+                    bcol.prop ( self, "partitions_select", icon='GRID', text="Partitions" )
+                    bcol = brow.column()
+                    bcol.prop ( self, "graph_select", icon='FCURVE', text="Plot Output Settings" )
+
+                    brow = layout.row()
+                    bcol = brow.column()
+                    bcol.prop ( self, "viz_select", icon='SEQUENCE', text="Visualization Settings" )
+                    bcol = brow.column()
+                    bcol.prop ( self, "init_select", icon='COLOR_RED', text="Run Simulation" )
+
+
+                    brow = layout.row()
+                    bcol = brow.column()
+                    if self.select_multiple:
+                        bcol.prop ( self, "select_multiple", icon='PINNED', text="Show All / Multiple" )
+                    else:
+                        bcol.prop ( self, "select_multiple", icon='UNPINNED', text="Show All / Multiple" )
+                    bcol = brow.column()
+                    bcol.operator ( "cbm.refresh_operator",icon='FILE_REFRESH', text="Reload Visualization Data")
+
+
+
+                # Draw each panel if it is selected
+
+                if self.preferences_select:
+                    layout.box() # Use as a separator
+                    layout.label ( "Preferences", icon='PREFERENCES' )
+                    context.scene.mcell.cellblender_preferences.draw_layout ( context, layout )
+
+                if self.settings_select:
+                    layout.box() # Use as a separator
+                    layout.label ( "Project Settings", icon='SETTINGS' )
+                    context.scene.mcell.project_settings.draw_layout ( context, layout )
+
+                if self.parameters_select:
+                    layout.box() # Use as a separator
+                    layout.label ( "Model Parameters", icon='SEQ_SEQUENCER' )
+                    context.scene.mcell.parameter_system.draw_layout ( context, layout )
+
+                if self.molecule_select:
+                    layout.box() # Use as a separator
+                    layout.label(text="Defined Molecules", icon='FORCE_LENNARDJONES')
+                    context.scene.mcell.molecules.draw_layout ( context, layout )
+
                 if self.reaction_select:
+                    layout.box() # Use as a separator
                     react_img_sel = bpy.data.images.get('reaction_s')
                     reaction_s = layout.icon(react_img_sel)
-                    bcol.prop ( self, "reaction_select", icon_value=reaction_s, text="Reactions" )
-                else:
-                    react_img_unsel = bpy.data.images.get('reaction_u')
-                    reaction_u = layout.icon(react_img_unsel)
-                    bcol.prop ( self, "reaction_select", icon_value=reaction_u, text="Reactions" )
-                bcol = brow.column()
-                bcol.prop ( self, "placement_select", icon='GROUP_VERTEX', text=" Molecule Placement" )
+                    layout.label ( "Defined Reactions", icon_value=reaction_s )
+                    context.scene.mcell.reactions.draw_layout ( context, layout )
 
-                brow = layout.row()
-                bcol = brow.column()
-                bcol.prop ( self, "rel_patterns_select", icon='TIME', text="Release Patterns" )
-                bcol = brow.column()
-                bcol.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="Model Objects" )
+                if self.placement_select:
+                    layout.box() # Use as a separator
+                    layout.label ( "Molecule Release/Placement", icon='GROUP_VERTEX' )
+                    context.scene.mcell.release_sites.draw_layout ( context, layout )
 
-                brow = layout.row()
-                bcol = brow.column()
-                bcol.prop ( self, "surf_classes_select", icon='FACESEL_HLT', text="Surface Classes" )
-                bcol = brow.column()
-                bcol.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="Assign Surface Classes" )
+                if self.rel_patterns_select:
+                    layout.box() # Use as a separator
+                    layout.label ( "Release Patterns", icon='TIME' )
+                    context.scene.mcell.release_patterns.draw_layout ( context, layout )
 
-                brow = layout.row()
-                bcol = brow.column()
-                bcol.prop ( self, "partitions_select", icon='GRID', text="Partitions" )
-                bcol = brow.column()
-                bcol.prop ( self, "graph_select", icon='FCURVE', text="Plot Output Settings" )
+                if self.objects_select:
+                    layout.box() # Use as a separator
+                    layout.label ( "Model Objects", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
+                    context.scene.mcell.model_objects.draw_layout ( context, layout )
+                    # layout.box() # Use as a separator
+                    context.object.mcell.regions.draw_layout(context, layout)
 
-                brow = layout.row()
-                bcol = brow.column()
-                bcol.prop ( self, "viz_select", icon='SEQUENCE', text="Visualization Settings" )
-                bcol = brow.column()
-                bcol.prop ( self, "init_select", icon='COLOR_RED', text="Run Simulation" )
+                if self.surf_classes_select:
+                    layout.box() # Use as a separator
+                    layout.label ( "Defined Surface Classes", icon='FACESEL_HLT' )
+                    context.scene.mcell.surface_classes.draw_layout ( context, layout )
 
+                if self.surf_regions_select:
+                    layout.box() # Use as a separator
+                    layout.label ( "Assigned Surface Classes", icon='SNAP_FACE' )
+                    context.scene.mcell.mod_surf_regions.draw_layout ( context, layout )
 
-                brow = layout.row()
-                bcol = brow.column()
-                if self.select_multiple:
-                    bcol.prop ( self, "select_multiple", icon='PINNED', text="Show All / Multiple" )
-                else:
-                    bcol.prop ( self, "select_multiple", icon='UNPINNED', text="Show All / Multiple" )
-                bcol = brow.column()
-                bcol.operator ( "cbm.refresh_operator",icon='FILE_REFRESH', text="Reload Visualization Data")
+                if self.partitions_select:
+                    layout.box() # Use as a separator
+                    layout.label ( "Partitions", icon='GRID' )
+                    context.scene.mcell.partitions.draw_layout ( context, layout )
 
+                if self.graph_select:
+                    layout.box() # Use as a separator
+                    layout.label ( "Reaction Data Output", icon='FCURVE' )
+                    context.scene.mcell.rxn_output.draw_layout ( context, layout )
 
-
-            # Draw each panel if it is selected
-
-            if self.preferences_select:
-                layout.box() # Use as a separator
-                layout.label ( "Preferences", icon='PREFERENCES' )
-                context.scene.mcell.cellblender_preferences.draw_layout ( context, layout )
-
-            if self.settings_select:
-                layout.box() # Use as a separator
-                layout.label ( "Project Settings", icon='SETTINGS' )
-                context.scene.mcell.project_settings.draw_layout ( context, layout )
-
-            if self.parameters_select:
-                layout.box() # Use as a separator
-                layout.label ( "Model Parameters", icon='SEQ_SEQUENCER' )
-                context.scene.mcell.parameter_system.draw_layout ( context, layout )
-
-            if self.molecule_select:
-                layout.box() # Use as a separator
-                layout.label(text="Defined Molecules", icon='FORCE_LENNARDJONES')
-                context.scene.mcell.molecules.draw_layout ( context, layout )
-
-            if self.reaction_select:
-                layout.box() # Use as a separator
-                react_img_sel = bpy.data.images.get('reaction_s')
-                reaction_s = layout.icon(react_img_sel)
-                layout.label ( "Defined Reactions", icon_value=reaction_s )
-                context.scene.mcell.reactions.draw_layout ( context, layout )
-
-            if self.placement_select:
-                layout.box() # Use as a separator
-                layout.label ( "Molecule Release/Placement", icon='GROUP_VERTEX' )
-                context.scene.mcell.release_sites.draw_layout ( context, layout )
-
-            if self.rel_patterns_select:
-                layout.box() # Use as a separator
-                layout.label ( "Release Patterns", icon='TIME' )
-                context.scene.mcell.release_patterns.draw_layout ( context, layout )
-
-            if self.objects_select:
-                layout.box() # Use as a separator
-                layout.label ( "Model Objects", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
-                context.scene.mcell.model_objects.draw_layout ( context, layout )
-                # layout.box() # Use as a separator
-                context.object.mcell.regions.draw_layout(context, layout)
-
-            if self.surf_classes_select:
-                layout.box() # Use as a separator
-                layout.label ( "Defined Surface Classes", icon='FACESEL_HLT' )
-                context.scene.mcell.surface_classes.draw_layout ( context, layout )
-
-            if self.surf_regions_select:
-                layout.box() # Use as a separator
-                layout.label ( "Assigned Surface Classes", icon='SNAP_FACE' )
-                context.scene.mcell.mod_surf_regions.draw_layout ( context, layout )
-
-            if self.partitions_select:
-                layout.box() # Use as a separator
-                layout.label ( "Partitions", icon='GRID' )
-                context.scene.mcell.partitions.draw_layout ( context, layout )
-
-            if self.graph_select:
-                layout.box() # Use as a separator
-                layout.label ( "Reaction Data Output", icon='FCURVE' )
-                context.scene.mcell.rxn_output.draw_layout ( context, layout )
-
-            #if self.mol_viz_select:
-            #    layout.box()
-            #    layout.label ( "Visualization Output Settings", icon='SEQUENCE' )
-            #    context.scene.mcell.mol_viz.draw_layout ( context, layout )
-                
-            if self.viz_select:
-                layout.box()
-                layout.label ( "Visualization", icon='SEQUENCE' )
-                context.scene.mcell.viz_output.draw_layout ( context, layout )
-                context.scene.mcell.mol_viz.draw_layout ( context, layout )
-                
-            if self.init_select:
-                layout.box() # Use as a separator
-                layout.label ( "Run Simulation", icon='COLOR_RED' )
-                context.scene.mcell.initialization.draw_layout ( context, layout )
-                
-            #if self.run_select:
-            #    layout.box() # Use as a separator
-            #    layout.label ( "Run Simulation", icon='COLOR_RED' )
-            #    context.scene.mcell.run_simulation.draw_layout ( context, layout )
-                
-            # The reload_viz button refreshes rather than brings up a panel
-            #if self.reload_viz:
-            #    layout.box()
-            #    layout.label ( "Reload Simulation Data", icon='FILE_REFRESH' )
+                #if self.mol_viz_select:
+                #    layout.box()
+                #    layout.label ( "Visualization Output Settings", icon='SEQUENCE' )
+                #    context.scene.mcell.mol_viz.draw_layout ( context, layout )
+                    
+                if self.viz_select:
+                    layout.box()
+                    layout.label ( "Visualization", icon='SEQUENCE' )
+                    context.scene.mcell.viz_output.draw_layout ( context, layout )
+                    context.scene.mcell.mol_viz.draw_layout ( context, layout )
+                    
+                if self.init_select:
+                    layout.box() # Use as a separator
+                    layout.label ( "Run Simulation", icon='COLOR_RED' )
+                    context.scene.mcell.initialization.draw_layout ( context, layout )
+                    
+                #if self.run_select:
+                #    layout.box() # Use as a separator
+                #    layout.label ( "Run Simulation", icon='COLOR_RED' )
+                #    context.scene.mcell.run_simulation.draw_layout ( context, layout )
+                    
+                # The reload_viz button refreshes rather than brings up a panel
+                #if self.reload_viz:
+                #    layout.box()
+                #    layout.label ( "Reload Simulation Data", icon='FILE_REFRESH' )
 
 
 import pickle
@@ -3165,6 +3172,8 @@ def refresh_source_id_callback ( self, context ):
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
     initialized = BoolProperty(name="Initialized", default=False)
+    versions_match = BoolProperty ( default=True )
+
     cellblender_version = StringProperty(name="CellBlender Version", default="0")
     cellblender_addon_id = StringProperty(name="CellBlender Addon ID", default="0")
     cellblender_data_model_version = StringProperty(name="CellBlender Data Model Version", default="0")
@@ -3271,35 +3280,48 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         print ( "Overwriting properites based on data in the data model dictionary" )
         self.init_properties()
         if "parameter_system" in dm:
+            print ( "Overwriting the parameter_system properties" )
             self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"] )
         if "initialization" in dm:
+            print ( "Overwriting the initialization and partitions properties" )
             self.initialization.build_properties_from_data_model ( context, dm["initialization"] )
             self.partitions.build_properties_from_data_model ( context, dm["initialization"]["partitions"] )
         if "define_molecules" in dm:
+            print ( "Overwriting the define_molecules properties" )
             self.molecules.build_properties_from_data_model ( context, dm["define_molecules"] )
         if "define_reactions" in dm:
+            print ( "Overwriting the define_reactions properties" )
             self.reactions.build_properties_from_data_model ( context, dm["define_reactions"] )
         if "release_sites" in dm:
+            print ( "Overwriting the release_sites properties" )
             self.release_sites.build_properties_from_data_model ( context, dm["release_sites"] )
         if "define_release_patterns" in dm:
+            print ( "Overwriting the define_release_patterns properties" )
             self.release_patterns.build_properties_from_data_model ( context, dm["define_release_patterns"] )
         if "define_surface_classes" in dm:
+            print ( "Overwriting the define_surface_classes properties" )
             self.surface_classes.build_properties_from_data_model ( context, dm["define_surface_classes"] )
         if "modify_surface_regions" in dm:
+            print ( "Overwriting the modify_surface_regions properties" )
             self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
         if geometry:
             if "materials" in dm:
+                print ( "Overwriting the materials properties" )
                 print ( "Building Materials from Data Model Materials" )
                 self.model_objects.build_materials_from_data_model_materials ( context, dm['materials'] )
             if "geometrical_objects" in dm:
+                print ( "Overwriting the geometrical_objects properties" )
                 print ( "Building Mesh Geometry from Data Model Geometry" )
                 self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"] )
             print ( "Not fully implemented yet!!!!" )
         if "model_objects" in dm:
+            print ( "Overwriting the model_objects properties" )
             self.model_objects.build_properties_from_data_model ( context, dm["model_objects"] )
         if "viz_output" in dm:
+            print ( "Overwriting the viz_output properties" )
             self.viz_output.build_properties_from_data_model ( context, dm["viz_output"] )
         if "reaction_data_output" in dm:
+            print ( "Overwriting the reaction_data_output properties" )
             self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
 
 

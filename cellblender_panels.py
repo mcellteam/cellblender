@@ -88,16 +88,20 @@ class MCELL_UL_run_simulation(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
 
-        sp = cellblender.simulation_popen_list[index]
-        # Simulations are still running
-        if sp.poll() is None:
-            layout.label(item.name, icon='POSE_DATA')
-        # Simulations have failed or were killed
-        elif sp.returncode != 0:
-            layout.label(item.name, icon='ERROR')
-        # Simulations have finished
+        if len(cellblender.simulation_popen_list) > index:
+            sp = cellblender.simulation_popen_list[index]
+            # Simulations are still running
+            if sp.poll() is None:
+                layout.label(item.name, icon='POSE_DATA')
+            # Simulations have failed or were killed
+            elif sp.returncode != 0:
+                layout.label(item.name, icon='ERROR')
+            # Simulations have finished
+            else:
+                layout.label(item.name, icon='FILE_TICK')
         else:
-            layout.label(item.name, icon='FILE_TICK')
+            # Indexing error may be caused by stale data in the simulation_popen_list?? Maybe??
+            layout.label(item.name, icon='ERROR')
 
 
 class MCELL_PT_run_simulation(bpy.types.Panel):

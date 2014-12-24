@@ -89,10 +89,20 @@ import bpy
 import sys
 
 
+cellblender_added_handlers = []
+
 def add_handler ( handler_list, handler_function ):
     """ Only add a handler if it's not already in the list """
     if not (handler_function in handler_list):
         handler_list.append ( handler_function )
+        
+        cellblender_added_handlers
+
+
+def remove_handler ( handler_list, handler_function ):
+    """ Only remove a handler if it's in the list """
+    if handler_function in handler_list:
+        handler_list.remove ( handler_function )
 
 
 # We use per module class registration/unregistration
@@ -200,7 +210,9 @@ def register():
         print("Error installing some plotting packages" + sys.exc_value)
 
 
-
+    print ( "Adding handlers to bpy.app.handlers" )
+    # Note that handlers appear to be called in the order listed here (first listed are called first)
+    
     # Add the frame change pre handler
     add_handler ( bpy.app.handlers.frame_change_pre, cellblender_operators.frame_change_handler )
 
@@ -222,47 +234,28 @@ def register():
     add_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
     add_handler ( bpy.app.handlers.save_pre, cellblender_operators.model_objects_update )
 
+    print("CellBlender Registered")
+
 
 
 def unregister():
+    remove_handler ( bpy.app.handlers.frame_change_pre, cellblender_operators.frame_change_handler )
+    remove_handler ( bpy.app.handlers.load_post, data_model.load_post )
+    remove_handler ( bpy.app.handlers.load_post, cellblender_operators.clear_run_list )
+    remove_handler ( bpy.app.handlers.load_post, cellblender_operators.model_objects_update )
+    remove_handler ( bpy.app.handlers.load_post, object_surface_regions.object_regions_format_update )
+    remove_handler ( bpy.app.handlers.load_post, cellblender_operators.mcell_valid_update )
+    remove_handler ( bpy.app.handlers.load_post, cellblender_operators.init_properties )
+    remove_handler ( bpy.app.handlers.load_post, cellblender_operators.load_preferences )
+    remove_handler ( bpy.app.handlers.load_post, cellblender_properties.scene_loaded )
+    remove_handler ( bpy.app.handlers.scene_update_pre, cellblender_properties.scene_loaded )
+    remove_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
+    remove_handler ( bpy.app.handlers.save_pre, cellblender_operators.model_objects_update )
+
     bpy.utils.unregister_module(__name__)
-    bpy.app.handlers.frame_change_pre.remove(cellblender_operators.frame_change_handler)
-    bpy.app.handlers.load_post.remove(cellblender_operators.clear_run_list)
-    bpy.app.handlers.load_post.remove(cellblender_operators.model_objects_update)
-    bpy.app.handlers.load_post.remove(object_surface_regions.object_regions_format_update)
-    bpy.app.handlers.load_post.remove(cellblender_operators.mcell_valid_update)
-    bpy.app.handlers.load_post.remove(cellblender_operators.load_preferences)
-    bpy.app.handlers.save_pre.remove(cellblender_operators.model_objects_update)
-    bpy.app.handlers.scene_update_pre.remove(cellblender_properties.scene_loaded)
-    bpy.app.handlers.load_post.remove(cellblender_properties.scene_loaded)
 
     print("CellBlender unregistered")
 
-"""
-if len(bpy.app.handlers.frame_change_pre) == 0:
-    bpy.app.handlers.frame_change_pre.append(cellblender_operators.frame_change_handler)
-
-
-if len(bpy.app.handlers.load_post) == 0:
-    add_handler ( bpy.app.handlers.load_post, data_model.load_post )
-    # bpy.app.handlers.load_post.append(data_model.load_post)
-    bpy.app.handlers.load_post.append(cellblender_operators.clear_run_list)
-    bpy.app.handlers.load_post.append(cellblender_operators.model_objects_update)
-    bpy.app.handlers.load_post.append(object_surface_regions.object_regions_format_update)
-    bpy.app.handlers.load_post.append(cellblender_operators.mcell_valid_update)
-    #bpy.app.handlers.load_post.append(cellblender_operators.set_defaults)
-    bpy.app.handlers.load_post.append(cellblender_operators.init_properties)
-    bpy.app.handlers.load_post.append(cellblender_operators.load_preferences)
-
-    bpy.app.handlers.load_post.append(cellblender_properties.scene_loaded)
-
-if len(bpy.app.handlers.scene_update_pre) == 0:
-    bpy.app.handlers.scene_update_pre.append(cellblender_properties.scene_loaded)
-
-if len(bpy.app.handlers.save_pre) == 0:
-    bpy.app.handlers.save_pre.append(data_model.save_pre)
-    bpy.app.handlers.save_pre.append(cellblender_operators.model_objects_update)
-"""
 
 # for testing
 if __name__ == '__main__':
