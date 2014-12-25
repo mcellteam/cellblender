@@ -463,9 +463,12 @@ def save_wrapper(context, out_file, filedir):
 
 
     if error_list and invalid_policy == 'dont_run':
-        # If anything is invalid, blow away all the MDLs.
+        # If anything is invalid, delete all the MDLs.
         project_dir = project_files_path()
-        shutil.rmtree(project_dir)
+        try:
+            shutil.rmtree(project_dir)
+        except:
+            pass
 
     #if mcell.cellblender_preferences.filter_invalid:
     #    rxn_output_list = [
