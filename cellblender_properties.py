@@ -512,6 +512,62 @@ def set_tab_autocomplete_callback ( self, context ):
         bpy.data.window_managers['WinMan'].keyconfigs['Blender'].keymaps['Console'].keymap_items['console.indent'].active = True
 
 
+from . import cellblender_panels
+
+def show_scene_panels ( show=True ):
+    if show:
+        print ( "Showing CellBlender panels in Scene tab" )
+        try:
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_cellblender_preferences)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
+            bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_model_objects)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_partitions)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_initialization)
+            bpy.utils.register_class(cellblender_molecules.MCELL_PT_define_molecules)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_define_reactions)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_define_surface_classes)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_mod_surface_regions)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_release_pattern)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_molecule_release)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_reaction_output_settings)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_visualization_output_settings)
+        except:
+            pass
+    else:
+        print ( "Hiding the CellBlender panels in the Scene tab" )
+        try:
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_cellblender_preferences)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_viz_results)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_partitions)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_initialization)
+            bpy.utils.unregister_class(parameter_system.MCELL_PT_parameter_system)
+            bpy.utils.unregister_class(cellblender_molecules.MCELL_PT_define_molecules)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_reactions)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_surface_classes)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_mod_surface_regions)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_release_pattern)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_molecule_release)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_reaction_output_settings)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_visualization_output_settings)
+        except:
+            pass
+
+    
+
+def set_scene_panels_callback(self, context):
+    """ Show or hide the scene panels based on the show_scene_panels boolean property. """
+    print ( "Toggling the scene panels" )
+    mcell = context.scene.mcell
+    show_scene_panels ( mcell.cellblender_preferences.show_scene_panels )
+
+
+
 class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
 
     mcell_binary = StringProperty(name="MCell Binary",
@@ -548,6 +604,10 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
     use_long_menus = BoolProperty(
         name="Show Long Menu Buttons", default=True,
         description="Show Menu Buttons with Text Labels")
+
+    show_scene_panels = BoolProperty(
+        name="CellBlender in Scene Tab", default=True,
+        description="Show CellBlender Panels in Scene Tab", update=set_scene_panels_callback)
 
 
     tab_autocomplete = BoolProperty(name="Use tab for console autocomplete", default=False, update=set_tab_autocomplete_callback)
@@ -619,8 +679,11 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
             layout.separator()
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "use_long_menus")
-            row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')
-            row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='ZOOMOUT')
+            row = layout.row()
+            row.prop(mcell.cellblender_preferences, "show_scene_panels")
+
+            #row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')
+            #row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='ZOOMOUT')
 
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "tab_autocomplete")
@@ -630,7 +693,6 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
         """ Create a layout from the panel and draw into it """
         layout = panel.layout
         self.draw_layout ( context, layout )
-
 
 
 class MCellScratchPanelProperty(bpy.types.PropertyGroup):
@@ -2229,6 +2291,17 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
         return g_dm
 
 
+    def delete_all_mesh_objects ( self, context ):
+        bpy.ops.object.select_all(action='DESELECT')
+        for scene_object in context.scene.objects:
+            if scene_object.type == 'MESH':
+                print ( "Deleting Mesh object: " + scene_object.name )
+                scene_object.hide = False
+                scene_object.select = True
+                bpy.ops.object.delete()
+                # TODO Need to delete the mesh for this object as well!!!
+
+
     def build_mesh_from_data_model_geometry ( self, context, dm ):
             
         # Delete any objects with conflicting names and then rebuild all
@@ -2238,7 +2311,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
         # Start by creating a list of named objects in the data model
         model_names = [ o['name'] for o in dm['object_list'] ]
         print ( "Model names = " + str(model_names) )
-        
+
         # Delete all objects with identical names to model objects in the data model
         bpy.ops.object.select_all(action='DESELECT')
         for scene_object in context.scene.objects:
@@ -2251,7 +2324,6 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                     scene_object.select = True
                     bpy.ops.object.delete()
                     # TODO Need to delete the mesh for this object as well!!!
-
 
         # Now create all the object meshes from the data model
         for model_object in dm['object_list']:
@@ -2688,6 +2760,7 @@ class MCELL_PT_main_panel(bpy.types.Panel):
         context.scene.mcell.cellblender_main_panel.draw_self(context,self.layout)
 
 
+"""
 from . import cellblender_panels
 
 class CB_OT_unregister_cellblender_panels(bpy.types.Operator):
@@ -2749,7 +2822,7 @@ class CB_OT_reregister_cellblender_panels(bpy.types.Operator):
             pass
 
         return {'FINISHED'}
-
+"""
 
 
 # Load scene callback
@@ -3268,6 +3341,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         return dm
 
     def build_properties_from_data_model ( self, context, dm, geometry=False ):
+        print ( "Data Model Keys = " + str(dm.keys()) )
         # First upgrade the data model as needed
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
@@ -3305,6 +3379,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Overwriting the modify_surface_regions properties" )
             self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
         if geometry:
+            print ( "Deleting all mesh objects" )
+            self.model_objects.delete_all_mesh_objects(context)
             if "materials" in dm:
                 print ( "Overwriting the materials properties" )
                 print ( "Building Materials from Data Model Materials" )
@@ -3323,6 +3399,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "reaction_data_output" in dm:
             print ( "Overwriting the reaction_data_output properties" )
             self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
+        print ( "Done building properties from the data model." )
 
 
     def init_properties ( self ):

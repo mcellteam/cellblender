@@ -1059,6 +1059,7 @@ def check_release_object_expr(context):
         status = "Object name error"
 
     for var in expr_vars:
+        print ( "Checking " + str(var) )
         m = re.match(obj_reg_filter, var)
         if m is None:
             status = "Object name error: %s" % (var)
