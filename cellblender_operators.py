@@ -778,7 +778,7 @@ class MCELL_OT_mod_surf_regions_add(bpy.types.Operator):
         mod_surf_regions.mod_surf_regions_list.add()
         mod_surf_regions.active_mod_surf_regions_index = len(
             mod_surf_regions.mod_surf_regions_list) - 1
-        check_mod_surf_regions(self, context)
+        check_active_mod_surf_regions(self, context)
 
         return {'FINISHED'}
 
@@ -802,13 +802,13 @@ class MCELL_OT_mod_surf_regions_remove(bpy.types.Operator):
 
 def check_mod_surf_regions(self, context):
     """Make sure the surface class name is valid and format the list entry"""
+    print ( "  Checking the mod_surf_region for " + str(self) )
 
     mcell = context.scene.mcell
     obj_list = mcell.model_objects.object_list
     surf_class_list = mcell.surface_classes.surf_class_list
     mod_surf_regions = mcell.mod_surf_regions
-    active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
-        mod_surf_regions.active_mod_surf_regions_index]
+    active_mod_surf_regions = self
     surf_class_name = active_mod_surf_regions.surf_class_name
     object_name = active_mod_surf_regions.object_name
     region_name = active_mod_surf_regions.region_name
@@ -818,6 +818,7 @@ def check_mod_surf_regions(self, context):
             active_mod_surf_regions.object_name].mcell.regions.region_list
     except KeyError:
         # The object name in mod_surf_regions isn't a blender object
+        print ( "The object name " + object_name + " isn't a blender object" )
         pass
 
     # Format the entry as it will appear in the Modify Surface Regions
@@ -841,6 +842,18 @@ def check_mod_surf_regions(self, context):
 
     active_mod_surf_regions.status = status
 
+    return
+
+
+def check_active_mod_surf_regions(self, context):
+    """This calls check_mod_surf_regions on the active mod_surf_regions"""
+
+    mcell = context.scene.mcell
+    mod_surf_regions = mcell.mod_surf_regions
+    active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
+        mod_surf_regions.active_mod_surf_regions_index]
+        
+    active_mod_surf_regions.check_mod_surf_regions(context)
     return
 
 

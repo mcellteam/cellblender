@@ -202,6 +202,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         # TODO: Add after data model release:   self.maximum_step_length.set_expr ( dm_dict["maximum_step_length"] )
         self.export_viz = dm_dict["export_viz"]
 
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
 
     # Exporting to an MDL file could be done just like this
     def print_details( self ):
@@ -448,6 +450,10 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         for m in dm["molecule_list"]:
             self.add_molecule(context)
             self.molecule_list[self.active_mol_index].build_properties_from_data_model(context,m)
+
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
 
     def check ( self, context ):
         """Checks for duplicate or illegal molecule name"""

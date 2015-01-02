@@ -143,6 +143,9 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
                 variable_rate_text = bpy.data.texts[self.variable_rate].as_string()
                 self.store_variable_rate_text ( context, self.variable_rate, dm_dict["variable_rate_text"] )
 
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
 
     def store_variable_rate_text ( self, context, text_name, rate_string ):
         """ Create variable rate constant text object from text string.
@@ -318,6 +321,9 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         self.stddev.set_expr ( dm_dict["stddev"] )
         self.pattern = dm_dict["pattern"]
 
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
 
 
 class MCellReleasePatternProperty(bpy.types.PropertyGroup):
@@ -359,6 +365,9 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
         self.train_duration.set_expr ( dm_dict["train_duration"] )
         self.train_interval.set_expr ( dm_dict["train_interval"] )
         self.number_of_trains.set_expr ( dm_dict["number_of_trains"] )
+
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
 
 
 
@@ -421,6 +430,9 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         self.clamp_value_str = dm["clamp_value"]
         self.clamp_value = float(self.clamp_value_str)
 
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
 
 
 
@@ -457,6 +469,10 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
             scp = self.surf_class_props_list[self.active_surf_class_props_index]
             # scp.init_properties(context.scene.mcell.parameter_system)
             scp.build_properties_from_data_model ( context, sc )
+
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+        
 
 
 
@@ -495,6 +511,11 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
         self.surf_class_name = dm["surf_class_name"]
         self.object_name = dm["object_name"]
         self.region_name = dm["region_name"]
+
+    def check_properties_after_building ( self, context ):
+        print ( "Implementing check_properties_after_building for " + str(self) )
+        cellblender_operators.check_mod_surf_regions(self, context)
+        
 
 
 
@@ -1186,6 +1207,9 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         self.negative_reaction_rate = dm_dict['warnings']['negative_reaction_rate']
         self.useless_volume_orientation = dm_dict['warnings']['useless_volume_orientation']
 
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
 
     accurate_3d_reactions = BoolProperty(
         name="Accurate 3D Reaction",
@@ -1573,6 +1597,10 @@ class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
         self.z_end = float(dm["z_end"])
         self.z_step = float(dm["z_step"])
 
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
+
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
 
@@ -1639,6 +1667,10 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
             rxn = self.reaction_list[self.active_rxn_index]
             rxn.init_properties(context.scene.mcell.parameter_system)
             rxn.build_properties_from_data_model ( context, r )
+
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
 
     def draw_layout(self, context, layout):
         # layout = self.layout
@@ -1718,6 +1750,10 @@ class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
             sc = self.surf_class_list[self.active_surf_class_index]
             # sc.init_properties(context.scene.mcell.parameter_system)
             sc.build_properties_from_data_model ( context, s )
+
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
 
     def draw_layout(self, context, layout):
         # layout = self.layout
@@ -1807,6 +1843,12 @@ class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
             # sr.init_properties(context.scene.mcell.parameter_system)
             sr.build_properties_from_data_model ( context, s )
 
+    def check_properties_after_building ( self, context ):
+        print ( "Implementing check_properties_after_building for " + str(self) )
+        for sr in self.mod_surf_regions_list:
+            sr.check_properties_after_building(context)
+
+
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
 
@@ -1891,6 +1933,10 @@ class MCellReleasePatternPanelProperty(bpy.types.PropertyGroup):
             rp.init_properties(context.scene.mcell.parameter_system)
             rp.build_properties_from_data_model ( context, r )
 
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
+
     def draw_layout ( self, context, layout ):
         """ Draw the release "panel" within the layout """
         mcell = context.scene.mcell
@@ -1957,6 +2003,10 @@ class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
             rs = self.mol_release_list[self.active_release_index]
             rs.init_properties(context.scene.mcell.parameter_system)
             rs.build_properties_from_data_model ( context, r )
+
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
 
     def draw_layout ( self, context, layout ):
         """ Draw the release "panel" within the layout """
@@ -2038,6 +2088,10 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     def build_properties_from_data_model ( self, context, dm ):
         print ( "Assigning Model Object " + dm['name'] )
         self.name = dm["name"]
+
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
     """
 
 
@@ -2143,6 +2197,10 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
                 o.mcell.include = True
             else:
                 o.mcell.include = False
+
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
 
 
     def build_data_model_materials_from_materials ( self, context ):
@@ -2392,6 +2450,10 @@ class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
         self.step = int(dm["step"])
         self.export_all = dm["export_all"]
 
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
+
     def draw_layout ( self, context, layout ):
         """ Draw the reaction output "panel" within the layout """
         mcell = context.scene.mcell
@@ -2481,6 +2543,9 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         self.count_location = dm["count_location"]
         self.rxn_or_mol = dm["rxn_or_mol"]
 
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
 
 
 import cellblender
@@ -2559,6 +2624,9 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
             ro = self.rxn_output_list[self.active_rxn_output_index]
             # ro.init_properties(context.scene.mcell.parameter_system)
             ro.build_properties_from_data_model ( context, r )
+
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
 
 
     def draw_layout ( self, context, layout ):
@@ -2849,72 +2917,6 @@ class MCELL_PT_main_scene_panel(bpy.types.Panel):
     def draw(self, context):
         context.scene.mcell.cellblender_main_panel.draw_self(context,self.layout)
 
-
-
-
-"""
-from . import cellblender_panels
-
-class CB_OT_unregister_cellblender_panels(bpy.types.Operator):
-    bl_idname = "mcell.unregister_panels"
-    bl_label = "HidePanels"
-    bl_description = ("Hide Old Panels")
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-        print ( "Hiding all the old CellBlender panels" )
-        try:
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_cellblender_preferences)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_viz_results)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_partitions)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_initialization)
-            bpy.utils.unregister_class(parameter_system.MCELL_PT_parameter_system)
-            bpy.utils.unregister_class(cellblender_molecules.MCELL_PT_define_molecules)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_reactions)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_surface_classes)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_mod_surface_regions)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_release_pattern)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_molecule_release)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_reaction_output_settings)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_visualization_output_settings)
-        except:
-            pass
-
-        return {'FINISHED'}
-
-class CB_OT_reregister_cellblender_panels(bpy.types.Operator):
-    bl_idname = "mcell.reregister_panels"
-    bl_label = "ShowPanels"
-    bl_description = ("Show Old Panels")
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-        print ( "Showing all the old CellBlender panels" )
-        try:
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_cellblender_preferences)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
-            bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_model_objects)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_partitions)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_initialization)
-            bpy.utils.register_class(cellblender_molecules.MCELL_PT_define_molecules)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_define_reactions)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_define_surface_classes)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_mod_surface_regions)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_release_pattern)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_molecule_release)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_reaction_output_settings)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_visualization_output_settings)
-        except:
-            pass
-
-        return {'FINISHED'}
-"""
 
 
 # Load scene callback
@@ -3450,6 +3452,22 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "parameter_system" in dm:
             print ( "Overwriting the parameter_system properties" )
             self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"] )
+
+        """ Considered moving geometry here because it might be referenced by other things, but didn't want to change too many things at once!!!
+        if geometry:
+            print ( "Deleting all mesh objects" )
+            self.model_objects.delete_all_mesh_objects(context)
+            if "materials" in dm:
+                print ( "Overwriting the materials properties" )
+                print ( "Building Materials from Data Model Materials" )
+                self.model_objects.build_materials_from_data_model_materials ( context, dm['materials'] )
+            if "geometrical_objects" in dm:
+                print ( "Overwriting the geometrical_objects properties" )
+                print ( "Building Mesh Geometry from Data Model Geometry" )
+                self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"] )
+            print ( "Not fully implemented yet!!!!" )
+        """
+
         if "initialization" in dm:
             print ( "Overwriting the initialization and partitions properties" )
             self.initialization.build_properties_from_data_model ( context, dm["initialization"] )
@@ -3493,6 +3511,33 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "reaction_data_output" in dm:
             print ( "Overwriting the reaction_data_output properties" )
             self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
+
+
+        # Now call the various "check" routines to clean up any unresolved references
+        print ( "Checking the initialization and partitions properties" )
+        self.initialization.check_properties_after_building ( context )
+        self.partitions.check_properties_after_building ( context )
+        print ( "Checking the define_molecules properties" )
+        self.molecules.check_properties_after_building ( context )
+        print ( "Checking the define_reactions properties" )
+        self.reactions.check_properties_after_building ( context )
+        print ( "Checking the release_sites properties" )
+        self.release_sites.check_properties_after_building ( context )
+        print ( "Checking the define_release_patterns properties" )
+        self.release_patterns.check_properties_after_building ( context )
+        print ( "Checking the define_surface_classes properties" )
+        self.surface_classes.check_properties_after_building ( context )
+        print ( "Checking the modify_surface_regions properties" )
+        self.mod_surf_regions.check_properties_after_building ( context )
+        print ( "Checking all mesh objects" )
+        self.model_objects.check_properties_after_building ( context )
+        print ( "Checking the viz_output properties" )
+        self.viz_output.check_properties_after_building ( context )
+        print ( "Checking the reaction_data_output properties" )
+        self.rxn_output.check_properties_after_building ( context )
+
+
+
         print ( "Done building properties from the data model." )
 
 
