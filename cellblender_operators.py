@@ -853,7 +853,7 @@ def check_active_mod_surf_regions(self, context):
     active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
         mod_surf_regions.active_mod_surf_regions_index]
         
-    active_mod_surf_regions.check_mod_surf_regions(context)
+    active_mod_surf_regions.check_properties_after_building(context)
     return
 
 

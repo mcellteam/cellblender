@@ -737,6 +737,9 @@ class MCellProjectPanelProperty(bpy.types.PropertyGroup):
 
 
             row = layout.row()
+            row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
+
+            row = layout.row()
             if not bpy.data.filepath:
                 row.label(
                     text="No Project Directory: Use File/Save or File/SaveAs",
@@ -2917,6 +2920,14 @@ class MCELL_PT_main_scene_panel(bpy.types.Panel):
     def draw(self, context):
         context.scene.mcell.cellblender_main_panel.draw_self(context,self.layout)
 
+
+# load_pre callback
+@persistent
+def report_load_pre(dummy):
+    # Note that load_pre may not be called when the startup file is loaded for some reason
+    print ( "===================================================================================" )
+    print ( "================================= Load Pre called =================================" )
+    print ( "===================================================================================" )
 
 
 # Load scene callback
