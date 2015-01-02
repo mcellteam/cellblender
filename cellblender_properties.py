@@ -484,17 +484,17 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
         name="Surface Class Name",
         description="This surface class will be assigned to the surface "
                     "region listed below.",
-        update=cellblender_operators.check_mod_surf_regions)
+        update=cellblender_operators.check_active_mod_surf_regions)
     object_name = StringProperty(
         name="Object Name",
         description="A region on this object will have the above surface "
                     "class assigned to it.",
-        update=cellblender_operators.check_mod_surf_regions)
+        update=cellblender_operators.check_active_mod_surf_regions)
     region_name = StringProperty(
         name="Region Name",
         description="This surface region will have the above surface class "
                     "assigned to it.",
-        update=cellblender_operators.check_mod_surf_regions)
+        update=cellblender_operators.check_active_mod_surf_regions)
     status = StringProperty(name="Status")
 
     def build_data_model_from_properties ( self, context ):
