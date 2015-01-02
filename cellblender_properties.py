@@ -498,7 +498,7 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 
 
 
-#Panel Properties:
+# Callback Functions must be defined before being used:
 
 def set_tab_autocomplete_callback ( self, context ):
     # print ( "Called with self.tab_autocomplete = " + str(self.tab_autocomplete) )
@@ -512,59 +512,30 @@ def set_tab_autocomplete_callback ( self, context ):
         bpy.data.window_managers['WinMan'].keyconfigs['Blender'].keymaps['Console'].keymap_items['console.indent'].active = True
 
 
+
 from . import cellblender_panels
 
-def show_scene_panels ( show=True ):
-    if show:
-        print ( "Showing CellBlender panels in Scene tab" )
-        try:
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_cellblender_preferences)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
-            bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_model_objects)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_partitions)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_initialization)
-            bpy.utils.register_class(cellblender_molecules.MCELL_PT_define_molecules)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_define_reactions)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_define_surface_classes)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_mod_surface_regions)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_release_pattern)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_molecule_release)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_reaction_output_settings)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_visualization_output_settings)
-        except:
-            pass
-    else:
-        print ( "Hiding the CellBlender panels in the Scene tab" )
-        try:
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_cellblender_preferences)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_viz_results)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_partitions)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_initialization)
-            bpy.utils.unregister_class(parameter_system.MCELL_PT_parameter_system)
-            bpy.utils.unregister_class(cellblender_molecules.MCELL_PT_define_molecules)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_reactions)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_surface_classes)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_mod_surface_regions)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_release_pattern)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_molecule_release)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_reaction_output_settings)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_visualization_output_settings)
-        except:
-            pass
+def set_old_scene_panels_callback(self, context):
+    """ Show or hide the old scene panels based on the show_old_scene_panels boolean property. """
+    print ( "Toggling the old scene panels" )
+    mcell = context.scene.mcell
+    show_old_scene_panels ( mcell.cellblender_preferences.show_old_scene_panels )
+
+
+def set_scene_panel_callback(self, context):
+    """ Show or hide the scene panel based on the show_scene_panel boolean property. """
+    print ( "Toggling the scene panel" )
+    mcell = context.scene.mcell
+    show_scene_panel ( mcell.cellblender_preferences.show_scene_panel )
+
+
+def set_tool_panel_callback(self, context):
+    """ Show or hide the tool panel based on the show_tool_panel boolean property. """
+    print ( "Toggling the tool panels" )
+    mcell = context.scene.mcell
+    show_tool_panel ( mcell.cellblender_preferences.show_tool_panel )
 
     
-
-def set_scene_panels_callback(self, context):
-    """ Show or hide the scene panels based on the show_scene_panels boolean property. """
-    print ( "Toggling the scene panels" )
-    mcell = context.scene.mcell
-    show_scene_panels ( mcell.cellblender_preferences.show_scene_panels )
 
 
 
@@ -605,9 +576,17 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
         name="Show Long Menu Buttons", default=True,
         description="Show Menu Buttons with Text Labels")
 
-    show_scene_panels = BoolProperty(
+    show_old_scene_panels = BoolProperty(
+        name="Old CellBlender in Scene Tab", default=True,
+        description="Show Old CellBlender Panels in Scene Tab", update=set_old_scene_panels_callback)
+
+    show_scene_panel = BoolProperty(
         name="CellBlender in Scene Tab", default=True,
-        description="Show CellBlender Panels in Scene Tab", update=set_scene_panels_callback)
+        description="Show CellBlender Panel in Scene Tab", update=set_scene_panel_callback)
+
+    show_tool_panel = BoolProperty(
+        name="CellBlender in Tool Tab", default=False,
+        description="Show CellBlender Panel in Tool Tab", update=set_tool_panel_callback)
 
 
     tab_autocomplete = BoolProperty(name="Use tab for console autocomplete", default=False, update=set_tab_autocomplete_callback)
@@ -680,7 +659,11 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "use_long_menus")
             row = layout.row()
-            row.prop(mcell.cellblender_preferences, "show_scene_panels")
+            row.prop(mcell.cellblender_preferences, "show_old_scene_panels")
+            row = layout.row()
+            row.prop(mcell.cellblender_preferences, "show_scene_panel")
+            row = layout.row()
+            row.prop(mcell.cellblender_preferences, "show_tool_panel")
 
             #row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')
             #row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='ZOOMOUT')
@@ -2731,6 +2714,90 @@ class PP_OT_init_mcell(bpy.types.Operator):
         return {'FINISHED'}
 
 
+
+
+def show_old_scene_panels ( show=True ):
+    if show:
+        print ( "Showing the Old CellBlender panels in the Scene tab" )
+        try:
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_cellblender_preferences)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
+            bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_model_objects)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_partitions)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_initialization)
+            bpy.utils.register_class(cellblender_molecules.MCELL_PT_define_molecules)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_define_reactions)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_define_surface_classes)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_mod_surface_regions)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_release_pattern)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_molecule_release)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_reaction_output_settings)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_visualization_output_settings)
+        except:
+            pass
+    else:
+        print ( "Hiding the Old CellBlender panels in the Scene tab" )
+        try:
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_cellblender_preferences)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_viz_results)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_partitions)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_initialization)
+            bpy.utils.unregister_class(parameter_system.MCELL_PT_parameter_system)
+            bpy.utils.unregister_class(cellblender_molecules.MCELL_PT_define_molecules)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_reactions)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_surface_classes)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_mod_surface_regions)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_release_pattern)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_molecule_release)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_reaction_output_settings)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_visualization_output_settings)
+        except:
+            pass
+
+
+
+def show_tool_panel ( show=True ):
+    if show:
+        print ( "Showing CellBlender panel in the Tool tab" )
+        try:
+            bpy.utils.register_class(MCELL_PT_main_panel)
+        except:
+            pass
+    else:
+        print ( "Hiding the CellBlender panel in the Tool tab" )
+        try:
+            bpy.utils.unregister_class(MCELL_PT_main_panel)
+        except:
+            pass
+
+
+def show_scene_panel ( show=True ):
+    if show:
+        print ( "Showing the CellBlender panel in the Scene tab" )
+        try:
+            bpy.utils.register_class(MCELL_PT_main_scene_panel)
+        except:
+            pass
+    else:
+        print ( "Hiding the CellBlender panel in the Scene tab" )
+        try:
+            bpy.utils.unregister_class(MCELL_PT_main_scene_panel)
+        except:
+            pass
+
+
+
+
+
+
+    
+
 # My panel class (which happens to augment 'Scene' properties)
 class MCELL_PT_main_panel(bpy.types.Panel):
     # bl_idname = "SCENE_PT_CB_MU_APP"
@@ -2758,6 +2825,31 @@ class MCELL_PT_main_panel(bpy.types.Panel):
 
     def draw(self, context):
         context.scene.mcell.cellblender_main_panel.draw_self(context,self.layout)
+
+
+class MCELL_PT_main_scene_panel(bpy.types.Panel):
+    bl_label = "CellBlender Scene"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw_header(self, context):
+        # LOOK HERE!! This is where the icon is actually included in the panel layout!
+        # The icon() method takes the image data-block in and returns an integer that
+        # gets passed to the 'icon_value' argument of your label/prop constructor or 
+        # within a UIList subclass
+        img = bpy.data.images.get('cellblender_icon')
+        #could load multiple images and animate the icon too.
+        #icons = [img for img in bpy.data.images if hasattr(img, "icon")]
+        if img is not None:
+            icon = self.layout.icon(img)
+            self.layout.label(text="", icon_value=icon)
+
+    def draw(self, context):
+        context.scene.mcell.cellblender_main_panel.draw_self(context,self.layout)
+
+
 
 
 """
@@ -2987,6 +3079,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
 
     def draw_self (self, context, layout):
+        # print ( "Top of CellBlenderMainPanelPropertyGroup.draw_self" )
 
         mcell = context.scene.mcell
 
@@ -3221,6 +3314,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                 #if self.reload_viz:
                 #    layout.box()
                 #    layout.label ( "Reload Simulation Data", icon='FILE_REFRESH' )
+        # print ( "Bottom of CellBlenderMainPanelPropertyGroup.draw_self" )
 
 
 import pickle
@@ -3311,7 +3405,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
 
     def build_data_model_from_properties ( self, context, geometry=False ):
-        print ( "Constructing a data_model dictionary from current properties" )
+        print ( "build_data_model_from_properties: Constructing a data_model dictionary from current properties" )
         dm = {}
         dm['data_model_version'] = "DM_2014_10_24_1638"
         dm['blender_version'] = [v for v in bpy.app.version]
@@ -3341,7 +3435,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         return dm
 
     def build_properties_from_data_model ( self, context, dm, geometry=False ):
-        print ( "Data Model Keys = " + str(dm.keys()) )
+        print ( "build_properties_from_data_model: Data Model Keys = " + str(dm.keys()) )
         # First upgrade the data model as needed
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638

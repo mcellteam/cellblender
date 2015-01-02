@@ -80,6 +80,7 @@ class MCELL_OT_upgrade(bpy.types.Operator):
         # Update the source_id
         mcell['saved_by_source_id'] = cellblender.cellblender_info['cellblender_source_sha1']
         mcell.versions_match = True
+        print ( "Finished Upgrading Properties from Data Model" )
         return {'FINISHED'}
 
 
