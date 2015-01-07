@@ -465,6 +465,8 @@ class SBML2JSON:
             compartmentList[compartment.getId()] = (compartment.getSpatialDimensions(),
                                                 compartment.getOutside())
 
+        compartmentTree = self.getCompartmentHierarchy(self.getRawCompartments())
+
         for index, reaction in enumerate(self.model.getListOfReactions()):
             kineticLaw = reaction.getKineticLaw()
             
@@ -521,11 +523,25 @@ class SBML2JSON:
             flagL=flagR=False
             if len(reactant) == 1 and len(product) ==1 and reactant[0][2] != product[0][2] \
             and compartmentList[product[0][2]][0] == compartmentList[reactant[0][2]][0]:
+                #teleporting molecules (reactant and product compartments are different) 
+            
                 tmpL['rxn_name'] = 'rec_{0}'.format(index+1)
                 tmpR['rxn_name'] = 'rec_m{0}'.format(index+1)
+                #if its a volume molecule
                 if compartmentList[product[0][2]][0] == 3:
-                    object_expr = product[0][2].upper()
-                    object_exprm = reactant[0][2].upper()
+                    object_expr = '{0}[ALL]'.format(product[0][2].upper())
+                    object_exprm = '{0}[ALL]'.format(reactant[0][2].upper())
+                    
+                    #substracting inner compartments                    
+                    children = compartmentTree.get_node(product[0][2]).fpointer
+                    for element in children:
+                        object_expr = '{0} - {1}[ALL]'.format(object_expr,element)
+
+                    children = compartmentTree.get_node(reactant[0][2]).fpointer
+                    for element in children:
+                        object_exprm = '{0} - {1}[ALL]'.format(object_exprm,element)
+
+                #surface molecules
                 else:
                     sourceGeometry = getContained(compartmentList,product[0][2])
                     sourceGeometryM = getContained(compartmentList,reactant[0][2])
