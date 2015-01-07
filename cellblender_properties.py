@@ -735,6 +735,10 @@ class MCellProjectPanelProperty(bpy.types.PropertyGroup):
                 row = layout.row()
                 row.label("File ID: " + cellblender.cellblender_info['cellblender_source_id_from_file'], icon='ERROR')
 
+            if not mcell.versions_match:
+                # Verion in Blend file does not match Addon, so give user a button to upgrade if desired
+                row = layout.row()
+                row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
 
             row = layout.row()
             row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
@@ -2747,6 +2751,7 @@ class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
         ('Sphere_2', "Sphere_2", ""),
         ('Torus', "Torus", "")]
     glyph = EnumProperty(items=glyph_enum, name="Molecule Shapes")
+    show_glyph = BoolProperty(name="Show Glyphs",description="Show Glyphs ... can cause slowness!!",default=True)
     status = StringProperty(name="Status")
 
 
@@ -3280,7 +3285,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     layout.label ( "Model Objects", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
                     context.scene.mcell.model_objects.draw_layout ( context, layout )
                     # layout.box() # Use as a separator
-                    context.object.mcell.regions.draw_layout(context, layout)
+                    if context.object != None:
+                        context.object.mcell.regions.draw_layout(context, layout)
 
                 if self.surf_classes_select:
                     layout.box() # Use as a separator

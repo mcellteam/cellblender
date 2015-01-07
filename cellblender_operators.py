@@ -852,7 +852,9 @@ def check_active_mod_surf_regions(self, context):
     mod_surf_regions = mcell.mod_surf_regions
     active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
         mod_surf_regions.active_mod_surf_regions_index]
-        
+    # This is a round-about way to call "check_mod_surf_regions" above
+    # Maybe these functions belong in the MCellModSurfRegionsProperty class
+    # Leave them here for now to not disturb too much code at once
     active_mod_surf_regions.check_properties_after_building(context)
     return
 
@@ -2820,10 +2822,10 @@ class MCELL_OT_toggle_renderability_filtered(bpy.types.Operator):
 
 # Rebuild Model Objects List from Scratch
 #   This is required to catch changes in names of objects.
-#   Note: This function is registered as a load_post and save_pre handler
+#   Note: This function is also registered as a load_post and save_pre handler
 @persistent
 def model_objects_update(context):
-    print ( "load post handler: cellblender_operators.model_objects_update() called" )
+    print ( "cellblender_operators.model_objects_update() called" )
     if not context:
         context = bpy.context
 

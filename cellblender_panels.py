@@ -504,6 +504,7 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
     def draw(self, context):
         context.scene.mcell.viz_output.draw_panel ( context, self )
 
+import time
 
 class MCELL_PT_molecule_glyphs(bpy.types.Panel):
     bl_label = "CellBlender - Molecule Shape"
@@ -519,6 +520,8 @@ class MCELL_PT_molecule_glyphs(bpy.types.Panel):
 #                (context.selected_objects[0].type == 'MESH'))
 
     def draw(self, context):
+        print ( "Top of draw for molecule_glyphs at " + time.asctime() )
+
         layout = self.layout
         scn = context.scene
         mcell = context.scene.mcell
@@ -538,8 +541,26 @@ class MCELL_PT_molecule_glyphs(bpy.types.Panel):
 
             layout.active = active
 
-            row = layout.row()
-            layout.prop(mcell.molecule_glyphs, "glyph")
+            # layout.prop(mcell.molecule_glyphs, "glyph")
+
+            #row = layout.row()
+            #row.prop(mcell.molecule_glyphs, "show_glyph")
+
+
+
+
+            # COMMENTING THIS SECTION ELIMINATES THE SLOW DOWN PROBLEM
+            if mcell.molecule_glyphs.show_glyph:
+              row = layout.row()
+              row.prop(mcell.molecule_glyphs, "glyph")
+            else:
+              row = layout.row()
+              row.label(text="Molecule Glyph seems to cause problems!!!" )
+
+
+
+
+
 
             if (mcell.molecule_glyphs.status != ""):
                 row = layout.row()
@@ -555,4 +576,6 @@ class MCELL_PT_molecule_glyphs(bpy.types.Panel):
             row = layout.row()
             row.operator("mcell.set_molecule_glyph", text="Set Molecule Shape",
                          icon='MESH_ICOSPHERE')
+
+        print ( "  Bottom of draw for molecule_glyphs at " + time.asctime() )
 
