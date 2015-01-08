@@ -2342,7 +2342,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                 mol_pos = mol_dict[mol_name][1]
                 mol_orient = mol_dict[mol_name][2]
 
-                # print ( "in mol_viz_file_read with mol_name = " + mol_name + ", mol_mat_name = " + mol_mat_name )
+                print ( "in mol_viz_file_read with mol_name = " + mol_name + ", mol_mat_name = " + mol_mat_name )
 
                 # Randomly orient volume molecules
                 if mol_type == 0:
@@ -2357,19 +2357,22 @@ def mol_viz_file_read(mcell_prop, filepath):
                 mol = None
                 if (len(mname) > 0) and (mname in mcell.molecules.molecule_list):
                     mol = mcell.molecules.molecule_list[mname]
-                    #print ( "Mol " + mname + " has color " + str(mol.color) )
+                    # The color below doesn't seem to be used ... the color comes from a material
+                    # print ( "Mol " + mname + " has color " + str(mol.color) )
 
                 # Look-up mesh shape (glyph) template and create if needed
                 
                 # This may end up calling a member function of the molecule class to create a new default molecule (including glyph)
                 if mol != None:
-                    #print ( "Molecule  glyph: " + str (mol.glyph) )
+                    print ( "Molecule  glyph: " + str (mol.glyph) )
                     pass
                 mol_shape_mesh_name = "%s_shape" % (mol_name)
                 mol_shape_obj_name = mol_shape_mesh_name
                 mol_shape_mesh = meshes.get(mol_shape_mesh_name)  # This will return None if not found by that name
+                print ( "Getting or Making the glyph for " + mol_shape_obj_name )
                 if not mol_shape_mesh:
                     # Make the glyph right here
+                    print ( "Making a " + str(mol.glyph) + " molecule glyph" )
                     bpy.ops.mesh.primitive_ico_sphere_add(
                         subdivisions=0, size=0.005, location=[0, 0, 0])
                     mol_shape_obj = bpy.context.active_object
@@ -2378,6 +2381,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                     mol_shape_mesh = mol_shape_obj.data
                     mol_shape_mesh.name = mol_shape_mesh_name
                 else:
+                    print ( "Using a " + str(mol.glyph) + " molecule glyph" )
                     mol_shape_obj = objs.get(mol_shape_obj_name)
 
                 # Look-up material, create if needed.
