@@ -318,13 +318,22 @@ def sbml2blender(inputFilePath,addObjects):
         bpy.ops.object.select_pattern(pattern=domainType+'*')
         bpy.ops.object.join()
         obj.name = domainType
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.faces_shade_smooth()
+        bpy.ops.object.mode_set(mode='OBJECT')
+        if addObjects:
+            preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
         bpy.ops.object.select_all(action='DESELECT')
 
+
+    namingPatterns = domainTypes
+
+    print(namingPatterns)
     '''
     #bpy.ops.object.join()
     print("Here are the domains: ")
     print(csgObjectNames)
-    #extract groups of strings with a lvenshtein distance less than 4   
+    #extract groups of strings with a lvenshtein distance less than 4
     csgObjectNames.sort()
     namingPatterns = []
         #   while len(csgObjectNames) > 0:

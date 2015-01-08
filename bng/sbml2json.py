@@ -423,17 +423,22 @@ class SBML2JSON:
 
         return rateR,math.getNumChildren()
 
-    def adjustParameters(self,stoichoimetry,rate,parameters):
-        for parameter in parameters:
-            if parameter['name'] in rate and parameter['unit'] in ['','unknown']:
+    def adjustParameters(self,stoichoimetry,reactionDefinition,compartmentList):
+        
                 if stoichoimetry == 2:
-                    parameter['value'] = '{0}*Nav'.format(parameter['value'])
-                    parameter['unit'] ='Bimolecular * NaV'
+                    #adjusting units for bimolecular reactions
+                    firstcompartment = compartmentList[chemicals[0][2]][0]
+                    secondcompartment = compartmentList[chemicals[1][2]][0]
+                    #if its a volume-volume or volume-surface reaction
+                    if firstcompartment in ['3',3] or secondcompartment in ['3',3]:
+                        reactionDefinition['fwd_rate'] = '{0}*Nav'.format(reactionDefinition['fwd_rate'])
+                    #if its a surface-surface reaction
+                    else:
+                        reactionDefinition['fwd_rate'] = '{0}/rxn_layer_t'.format(reactionDefinition['fwd_rate'])
                 elif stoichoimetry == 0:
-                    parameter['value'] = '{0}/Nav'.format(parameter['value'])
-                    parameter['unit'] ='0-order / NaV'
+                    reactionDefinition['fwd_rate'] = '{0}/Nav'.format(reactionDefinition['fwd_rate'])
                 elif stoichoimetry == 1:
-                    parameter['unit'] ='Unimolecular'
+                    pass
                 
     def normalize(self,parameter):
         
@@ -621,8 +626,9 @@ class SBML2JSON:
                     tmpR['products'] = ' + '.join(rcList)
                 tmpR['fwd_rate'] = rateR
                 reactionSpecs.append(tmpR)
-            self.adjustParameters(len(reactant),rateL,sparameters)
-            self.adjustParameters(len(product),rateR,sparameters)
+            self.adjustParameters(len(reactant),tmpL,compartmentList)
+            if rateR != '0':
+                self.adjustParameters(len(product),tmpR,compartmentList)
         #reactionDict = {idx+1:x for idx,x in enumerate(reactionSpecs)}
         moleculeSpecs = [{'name':x,'type':'3D','extendedName':x,'dif':'0'} for x in moleculeSpecs]
         return reactionSpecs,releaseSpecs,moleculeSpecs
