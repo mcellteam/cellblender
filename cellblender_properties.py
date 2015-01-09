@@ -15,6 +15,25 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+
+# ############
+#
+#  Property Groups
+#   CellBlender consists primarily of Property Groups which are the
+#   classes which are templates for objects.
+#
+#   Each Property Group must implement the following functions:
+#
+#     init_properties - Deletes old and Creates a new object including children
+#     build_data_model_from_properties - Builds a Data Model Dictionary
+#     build_properties_from_data_model - Calls init_properties and builds
+#     check_properties_after_building - Used to resolve dependencies
+#     
+#
+# ############
+
+
+
 # <pep8 compliant>
 
 """
@@ -100,6 +119,14 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
 
     def init_properties ( self, parameter_system ):
+        self.name = "The_Reaction"
+        self.rxn_name = "Reaction_Name"
+        self.reactants = ""
+        self.products = ""
+        self.type = 'irreversible'
+        self.variable_rate_switch = False
+        self.variable_rate = ""
+        self.variable_rate_valid = False
         self.fwd_rate.init_ref   ( parameter_system, "FW_Rate_Type", user_name="Forward Rate",  user_expr="0", user_units="",  user_descr="Forward Rate" )
         self.bkwd_rate.init_ref  ( parameter_system, "BW_Rate_Type", user_name="Backward Rate", user_expr="",  user_units="s", user_descr="Backward Rate" )
 
@@ -249,10 +276,11 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         name="Object/Region",
         description="Release in/on the specified object/region.",
         update=cellblender_operators.check_release_site)
-    location = bpy.props.FloatVectorProperty(
-        name="Location", precision=4,
-        description="The center of the release site specified by XYZ "
-                    "coordinates")
+        
+    #location = bpy.props.FloatVectorProperty(
+    #    name="Location", precision=4,
+    #    description="The center of the release site specified by XYZ "
+    #                "coordinates")
 
     location_x = PointerProperty ( name="Relese Loc X", type=parameter_system.Parameter_Reference )
     location_y = PointerProperty ( name="Relese Loc Y", type=parameter_system.Parameter_Reference )
@@ -278,13 +306,18 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     status = StringProperty(name="Status")
 
     def init_properties ( self, parameter_system ):
+        self.name = "Release_Site"
+        self.molecule = ""
+        self.shape = 'CUBIC'
+        self.orient = '\''
+        self.object_expr = ""
+        self.location_x.init_ref  ( parameter_system, "Rel_Loc_Type_X",  user_name="Release Location X",  user_expr="0", user_units="", user_descr="The center of the release site's X coordinate" )
+        self.location_y.init_ref  ( parameter_system, "Rel_Loc_Type_Y",  user_name="Release Location Y",  user_expr="0", user_units="", user_descr="The center of the release site's Y coordinate" )
+        self.location_z.init_ref  ( parameter_system, "Rel_Loc_Type_Z",  user_name="Release Location Z",  user_expr="0", user_units="", user_descr="The center of the release site's Z coordinate" )
         self.diameter.init_ref    ( parameter_system, "Diam_Type",       user_name="Site Diameter",       user_expr="0", user_units="", user_descr="Release molecules uniformly within the specified diameter." )
         self.probability.init_ref ( parameter_system, "Rel_Prob_Type",   user_name="Release Probability", user_expr="1", user_units="", user_descr="Release does not occur every time,\nbut rather with specified probability." )
         self.quantity.init_ref    ( parameter_system, "Rel_Quant_Type",  user_name="Quantity to Release", user_expr="",  user_units="", user_descr="Concentration units: molar. Density units: molecules per square micron" )
         self.stddev.init_ref      ( parameter_system, "Rel_StdDev_Type", user_name="Standard Deviation",  user_expr="0", user_units="", user_descr="Standard Deviation" )
-        self.location_x.init_ref  ( parameter_system, "Rel_Loc_Type_X",  user_name="Release Location X",  user_expr="0", user_units="", user_descr="The center of the release site's X coordinate" )
-        self.location_y.init_ref  ( parameter_system, "Rel_Loc_Type_Y",  user_name="Release Location Y",  user_expr="0", user_units="", user_descr="The center of the release site's Y coordinate" )
-        self.location_z.init_ref  ( parameter_system, "Rel_Loc_Type_Z",  user_name="Release Location Z",  user_expr="0", user_units="", user_descr="The center of the release site's Z coordinate" )
 
     def build_data_model_from_properties ( self, context ):
         r = self
@@ -341,6 +374,7 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
     status = StringProperty(name="Status")
 
     def init_properties ( self, parameter_system ):
+        self.name = "Release_Pattern"
         self.delay.init_ref            ( parameter_system, "Rel_Delay_Type", user_name="Release Pattern Delay", user_expr="0",     user_units="s", user_descr="The time at which the release pattern will start." )
         self.release_interval.init_ref ( parameter_system, "Rel_Int_Type",   user_name="Relese Interval",       user_expr="",      user_units="s", user_descr="During a train, release molecules after every interval.\nDefault is once." )
         self.train_duration.init_ref   ( parameter_system, "Tr_Dur_Type",    user_name="Train Duration",        user_expr="",      user_units="s", user_descr="The duration of the train before turning off.\nDefault is to never turn off." )
@@ -428,6 +462,14 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         self.surf_class_orient = dm["surf_class_orient"]
         self.surf_class_type = dm["surf_class_type"]
         self.clamp_value_str = dm["clamp_value"]
+        self.clamp_value = float(self.clamp_value_str)
+
+    def init_properties ( self, parameter_system ):
+        self.name = "Molecule"
+        self.molecule = ""
+        self.surf_class_orient = '\''
+        self.surf_class_type = 'REFLECTIVE'
+        self.clamp_value_str = "0.0"
         self.clamp_value = float(self.clamp_value_str)
 
     def check_properties_after_building ( self, context ):
