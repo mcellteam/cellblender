@@ -478,7 +478,6 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
             if not selface_set.isdisjoint(reg_faces):
               reg_info.append(reg.name)
 
-
         return(reg_info)
 
 

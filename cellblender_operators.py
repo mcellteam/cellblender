@@ -852,8 +852,10 @@ def check_active_mod_surf_regions(self, context):
     mod_surf_regions = mcell.mod_surf_regions
     active_mod_surf_regions = mod_surf_regions.mod_surf_regions_list[
         mod_surf_regions.active_mod_surf_regions_index]
-        
-    active_mod_surf_regions.check_mod_surf_regions(context)
+    # This is a round-about way to call "check_mod_surf_regions" above
+    # Maybe these functions belong in the MCellModSurfRegionsProperty class
+    # Leave them here for now to not disturb too much code at once
+    active_mod_surf_regions.check_properties_after_building(context)
     return
 
 
@@ -2355,19 +2357,22 @@ def mol_viz_file_read(mcell_prop, filepath):
                 mol = None
                 if (len(mname) > 0) and (mname in mcell.molecules.molecule_list):
                     mol = mcell.molecules.molecule_list[mname]
-                    #print ( "Mol " + mname + " has color " + str(mol.color) )
+                    # The color below doesn't seem to be used ... the color comes from a material
+                    # print ( "Mol " + mname + " has color " + str(mol.color) )
 
                 # Look-up mesh shape (glyph) template and create if needed
                 
                 # This may end up calling a member function of the molecule class to create a new default molecule (including glyph)
                 if mol != None:
-                    #print ( "Molecule  glyph: " + str (mol.glyph) )
+                    # print ( "Molecule  glyph: " + str (mol.glyph) )
                     pass
                 mol_shape_mesh_name = "%s_shape" % (mol_name)
                 mol_shape_obj_name = mol_shape_mesh_name
                 mol_shape_mesh = meshes.get(mol_shape_mesh_name)  # This will return None if not found by that name
+                # print ( "Getting or Making the glyph for " + mol_shape_obj_name )
                 if not mol_shape_mesh:
                     # Make the glyph right here
+                    # print ( "Making a " + str(mol.glyph) + " molecule glyph" )
                     bpy.ops.mesh.primitive_ico_sphere_add(
                         subdivisions=0, size=0.005, location=[0, 0, 0])
                     mol_shape_obj = bpy.context.active_object
@@ -2376,6 +2381,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                     mol_shape_mesh = mol_shape_obj.data
                     mol_shape_mesh.name = mol_shape_mesh_name
                 else:
+                    # print ( "Using a " + str(mol.glyph) + " molecule glyph" )
                     mol_shape_obj = objs.get(mol_shape_obj_name)
 
                 # Look-up material, create if needed.
@@ -2820,10 +2826,10 @@ class MCELL_OT_toggle_renderability_filtered(bpy.types.Operator):
 
 # Rebuild Model Objects List from Scratch
 #   This is required to catch changes in names of objects.
-#   Note: This function is registered as a load_post and save_pre handler
+#   Note: This function is also registered as a load_post and save_pre handler
 @persistent
 def model_objects_update(context):
-    print ( "load post handler: cellblender_operators.model_objects_update() called" )
+    print ( "cellblender_operators.model_objects_update() called" )
     if not context:
         context = bpy.context
 

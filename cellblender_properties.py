@@ -15,6 +15,25 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+
+# ############
+#
+#  Property Groups
+#   CellBlender consists primarily of Property Groups which are the
+#   classes which are templates for objects.
+#
+#   Each Property Group must implement the following functions:
+#
+#     init_properties - Deletes old and Creates a new object including children
+#     build_data_model_from_properties - Builds a Data Model Dictionary
+#     build_properties_from_data_model - Calls init_properties and builds
+#     check_properties_after_building - Used to resolve dependencies
+#     
+#
+# ############
+
+
+
 # <pep8 compliant>
 
 """
@@ -100,6 +119,14 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
 
     def init_properties ( self, parameter_system ):
+        self.name = "The_Reaction"
+        self.rxn_name = "Reaction_Name"
+        self.reactants = ""
+        self.products = ""
+        self.type = 'irreversible'
+        self.variable_rate_switch = False
+        self.variable_rate = ""
+        self.variable_rate_valid = False
         self.fwd_rate.init_ref   ( parameter_system, "FW_Rate_Type", user_name="Forward Rate",  user_expr="0", user_units="",  user_descr="Forward Rate" )
         self.bkwd_rate.init_ref  ( parameter_system, "BW_Rate_Type", user_name="Backward Rate", user_expr="",  user_units="s", user_descr="Backward Rate" )
 
@@ -249,10 +276,11 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         name="Object/Region",
         description="Release in/on the specified object/region.",
         update=cellblender_operators.check_release_site)
-    location = bpy.props.FloatVectorProperty(
-        name="Location", precision=4,
-        description="The center of the release site specified by XYZ "
-                    "coordinates")
+        
+    #location = bpy.props.FloatVectorProperty(
+    #    name="Location", precision=4,
+    #    description="The center of the release site specified by XYZ "
+    #                "coordinates")
 
     location_x = PointerProperty ( name="Relese Loc X", type=parameter_system.Parameter_Reference )
     location_y = PointerProperty ( name="Relese Loc Y", type=parameter_system.Parameter_Reference )
@@ -278,13 +306,18 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     status = StringProperty(name="Status")
 
     def init_properties ( self, parameter_system ):
+        self.name = "Release_Site"
+        self.molecule = ""
+        self.shape = 'CUBIC'
+        self.orient = '\''
+        self.object_expr = ""
+        self.location_x.init_ref  ( parameter_system, "Rel_Loc_Type_X",  user_name="Release Location X",  user_expr="0", user_units="", user_descr="The center of the release site's X coordinate" )
+        self.location_y.init_ref  ( parameter_system, "Rel_Loc_Type_Y",  user_name="Release Location Y",  user_expr="0", user_units="", user_descr="The center of the release site's Y coordinate" )
+        self.location_z.init_ref  ( parameter_system, "Rel_Loc_Type_Z",  user_name="Release Location Z",  user_expr="0", user_units="", user_descr="The center of the release site's Z coordinate" )
         self.diameter.init_ref    ( parameter_system, "Diam_Type",       user_name="Site Diameter",       user_expr="0", user_units="", user_descr="Release molecules uniformly within the specified diameter." )
         self.probability.init_ref ( parameter_system, "Rel_Prob_Type",   user_name="Release Probability", user_expr="1", user_units="", user_descr="Release does not occur every time,\nbut rather with specified probability." )
         self.quantity.init_ref    ( parameter_system, "Rel_Quant_Type",  user_name="Quantity to Release", user_expr="",  user_units="", user_descr="Concentration units: molar. Density units: molecules per square micron" )
         self.stddev.init_ref      ( parameter_system, "Rel_StdDev_Type", user_name="Standard Deviation",  user_expr="0", user_units="", user_descr="Standard Deviation" )
-        self.location_x.init_ref  ( parameter_system, "Rel_Loc_Type_X",  user_name="Release Location X",  user_expr="0", user_units="", user_descr="The center of the release site's X coordinate" )
-        self.location_y.init_ref  ( parameter_system, "Rel_Loc_Type_Y",  user_name="Release Location Y",  user_expr="0", user_units="", user_descr="The center of the release site's Y coordinate" )
-        self.location_z.init_ref  ( parameter_system, "Rel_Loc_Type_Z",  user_name="Release Location Z",  user_expr="0", user_units="", user_descr="The center of the release site's Z coordinate" )
 
     def build_data_model_from_properties ( self, context ):
         r = self
@@ -341,6 +374,7 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
     status = StringProperty(name="Status")
 
     def init_properties ( self, parameter_system ):
+        self.name = "Release_Pattern"
         self.delay.init_ref            ( parameter_system, "Rel_Delay_Type", user_name="Release Pattern Delay", user_expr="0",     user_units="s", user_descr="The time at which the release pattern will start." )
         self.release_interval.init_ref ( parameter_system, "Rel_Int_Type",   user_name="Relese Interval",       user_expr="",      user_units="s", user_descr="During a train, release molecules after every interval.\nDefault is once." )
         self.train_duration.init_ref   ( parameter_system, "Tr_Dur_Type",    user_name="Train Duration",        user_expr="",      user_units="s", user_descr="The duration of the train before turning off.\nDefault is to never turn off." )
@@ -428,6 +462,14 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         self.surf_class_orient = dm["surf_class_orient"]
         self.surf_class_type = dm["surf_class_type"]
         self.clamp_value_str = dm["clamp_value"]
+        self.clamp_value = float(self.clamp_value_str)
+
+    def init_properties ( self, parameter_system ):
+        self.name = "Molecule"
+        self.molecule = ""
+        self.surf_class_orient = '\''
+        self.surf_class_type = 'REFLECTIVE'
+        self.clamp_value_str = "0.0"
         self.clamp_value = float(self.clamp_value_str)
 
     def check_properties_after_building ( self, context ):
@@ -560,7 +602,7 @@ def set_tool_panel_callback(self, context):
 
 
 
-class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
+class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
     mcell_binary = StringProperty(name="MCell Binary",
         update=cellblender_operators.check_mcell_binary)
@@ -699,7 +741,7 @@ class CellBlenderPreferencesPanelProperty(bpy.types.PropertyGroup):
         self.draw_layout ( context, layout )
 
 
-class MCellScratchPanelProperty(bpy.types.PropertyGroup):
+class MCellScratchPropertyGroup(bpy.types.PropertyGroup):
     show_all_icons = BoolProperty(
         name="Show All Icons",
         description="Show all Blender icons and their names",
@@ -710,7 +752,7 @@ class MCellScratchPanelProperty(bpy.types.PropertyGroup):
         default=False)
 
 
-class MCellProjectPanelProperty(bpy.types.PropertyGroup):
+class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
     base_name = StringProperty(
         name="Project Base Name", default="cellblender_project")
 
@@ -735,6 +777,13 @@ class MCellProjectPanelProperty(bpy.types.PropertyGroup):
                 row = layout.row()
                 row.label("File ID: " + cellblender.cellblender_info['cellblender_source_id_from_file'], icon='ERROR')
 
+            if not mcell.versions_match:
+                # Verion in Blend file does not match Addon, so give user a button to upgrade if desired
+                row = layout.row()
+                row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
+
+            row = layout.row()
+            row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
 
             row = layout.row()
             if not bpy.data.filepath:
@@ -755,7 +804,7 @@ class MCellProjectPanelProperty(bpy.types.PropertyGroup):
         self.draw_layout ( context, layout )
 
 
-class MCellExportProjectPanelProperty(bpy.types.PropertyGroup):
+class MCellExportProjectPropertyGroup(bpy.types.PropertyGroup):
     export_format_enum = [
         ('mcell_mdl_unified', "Single Unified MCell MDL File", ""),
         ('mcell_mdl_modular', "Modular MCell MDL Files", "")]
@@ -769,7 +818,7 @@ class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
     #pid = IntProperty(name="PID")
 
 
-class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
+class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     start_seed = IntProperty(
         name="Start Seed", default=1, min=1,
         description="The starting value of the random number generator seed",
@@ -958,7 +1007,7 @@ class MCellRunSimulationPanelProperty(bpy.types.PropertyGroup):
 
 
 
-class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
+class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
     """ Property group for for molecule visualization.
 
     This is the "Visualize Simulation Results Panel".
@@ -1046,10 +1095,10 @@ class MCellMolVizPanelProperty(bpy.types.PropertyGroup):
 from . import parameter_system
 
 
-class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
+class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
 
     def __init__(self):
-        print ( "\n\nMCellInitializationPanelProperty.__init__() called\n\n" )
+        print ( "\n\nMCellInitializationPropertyGroup.__init__() called\n\n" )
 
     iterations = PointerProperty ( name="iterations", type=parameter_system.Parameter_Reference )
     time_step =  PointerProperty ( name="Time Step", type=parameter_system.Parameter_Reference )
@@ -1521,7 +1570,7 @@ class MCellInitializationPanelProperty(bpy.types.PropertyGroup):
         self.draw_layout ( context, layout )
 
 
-class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
+class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
     include = BoolProperty(
         name="Include Partitions",
         description="Partitions are a way of speeding up a simulation if used "
@@ -1641,7 +1690,7 @@ class MCellPartitionsPanelProperty(bpy.types.PropertyGroup):
 
 
 
-class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
+class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
     reaction_list = CollectionProperty(
         type=MCellReactionProperty, name="Reaction List")
     active_rxn_index = IntProperty(name="Active Reaction Index", default=0)
@@ -1725,7 +1774,7 @@ class MCellReactionsPanelProperty(bpy.types.PropertyGroup):
         self.draw_layout ( context, layout )
 
 
-class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
+class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
     surf_class_list = CollectionProperty(
         type=MCellSurfaceClassesProperty, name="Surface Classes List")
     active_surf_class_index = IntProperty(
@@ -1818,7 +1867,7 @@ class MCellSurfaceClassesPanelProperty(bpy.types.PropertyGroup):
 
 
 
-class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
+class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
     mod_surf_regions_list = CollectionProperty(
         type=MCellModSurfRegionsProperty, name="Assign Surface Class List")
     active_mod_surf_regions_index = IntProperty(
@@ -1905,7 +1954,7 @@ class MCellModSurfRegionsPanelProperty(bpy.types.PropertyGroup):
 
 
 
-class MCellReleasePatternPanelProperty(bpy.types.PropertyGroup):
+class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
     release_pattern_list = CollectionProperty(
         type=MCellReleasePatternProperty, name="Release Pattern List")
     release_pattern_rxn_name_list = CollectionProperty(
@@ -1980,7 +2029,7 @@ class MCellReleasePatternPanelProperty(bpy.types.PropertyGroup):
 
 
 
-class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
+class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
     mol_release_list = CollectionProperty(
         type=MCellMoleculeReleaseProperty, name="Molecule Release List")
     active_release_index = IntProperty(name="Active Release Index", default=0)
@@ -2062,7 +2111,7 @@ class MCellMoleculeReleasePanelProperty(bpy.types.PropertyGroup):
                     if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
                         rel.stddev.draw(layout,ps)
                  
-                    layout.prop_search(rel, "pattern", mcell.release_patterns,  # mcell.release_patterns is of type MCellReleasePatternPanelProperty
+                    layout.prop_search(rel, "pattern", mcell.release_patterns,  # mcell.release_patterns is of type MCellReleasePatternPropertyGroup
                                        # "release_pattern_rxn_name_list",  # TODO: was this correct?
                                        "release_pattern_list",  # <-- Bob changed to this ... is this correct?
                                        icon='FORCE_LENNARDJONES')
@@ -2097,7 +2146,7 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
 
 import mathutils
 
-class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
+class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     object_list = CollectionProperty(
         type=MCellModelObjectsProperty, name="Object List")
     active_obj_index = IntProperty(name="Active Object Index", default=0)
@@ -2415,7 +2464,7 @@ class MCellModelObjectsPanelProperty(bpy.types.PropertyGroup):
 
 
 
-class MCellVizOutputPanelProperty(bpy.types.PropertyGroup):
+class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
     active_mol_viz_index = IntProperty(
         name="Active Molecule Viz Index", default=0)
     all_iterations = bpy.props.BoolProperty(
@@ -2559,7 +2608,7 @@ class MCellReactionOutputPropertyTemp(bpy.types.PropertyGroup):
         description="Count the selected molecules.")
 
 
-class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
+class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
     #JJT: temporary list made to hold complex expressions from imported files
     temp_index = IntProperty(
         name="Temp Output Index", default=0)
@@ -2730,7 +2779,7 @@ class MCellReactionOutputPanelProperty(bpy.types.PropertyGroup):
 
 
 
-class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
+class MCellMoleculeGlyphsPropertyGroup(bpy.types.PropertyGroup):
     glyph_lib = os.path.join(
         os.path.dirname(__file__), "glyph_library.blend/Mesh/")
     glyph_enum = [
@@ -2744,10 +2793,11 @@ class MCellMoleculeGlyphsPanelProperty(bpy.types.PropertyGroup):
         ('Sphere_2', "Sphere_2", ""),
         ('Torus', "Torus", "")]
     glyph = EnumProperty(items=glyph_enum, name="Molecule Shapes")
+    show_glyph = BoolProperty(name="Show Glyphs",description="Show Glyphs ... can cause slowness!!",default=True)
     status = StringProperty(name="Status")
 
 
-class MCellMeshalyzerPanelProperty(bpy.types.PropertyGroup):
+class MCellMeshalyzerPropertyGroup(bpy.types.PropertyGroup):
     object_name = StringProperty(name="Object Name")
     vertices = IntProperty(name="Vertices", default=0)
     edges = IntProperty(name="Edges", default=0)
@@ -2761,7 +2811,7 @@ class MCellMeshalyzerPanelProperty(bpy.types.PropertyGroup):
     status = StringProperty(name="Status")
 
 
-class MCellObjectSelectorPanelProperty(bpy.types.PropertyGroup):
+class MCellObjectSelectorPropertyGroup(bpy.types.PropertyGroup):
     filter = StringProperty(
         name="Object Name Filter",
         description="Enter a regular expression for object names.")
@@ -2917,6 +2967,14 @@ class MCELL_PT_main_scene_panel(bpy.types.Panel):
     def draw(self, context):
         context.scene.mcell.cellblender_main_panel.draw_self(context,self.layout)
 
+
+# load_pre callback
+@persistent
+def report_load_pre(dummy):
+    # Note that load_pre may not be called when the startup file is loaded for some reason
+    print ( "===================================================================================" )
+    print ( "================================= Load Pre called =================================" )
+    print ( "===================================================================================" )
 
 
 # Load scene callback
@@ -3269,7 +3327,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     layout.label ( "Model Objects", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
                     context.scene.mcell.model_objects.draw_layout ( context, layout )
                     # layout.box() # Use as a separator
-                    context.object.mcell.regions.draw_layout(context, layout)
+                    if context.object != None:
+                        context.object.mcell.regions.draw_layout(context, layout)
 
                 if self.surf_classes_select:
                     layout.box() # Use as a separator
@@ -3357,53 +3416,53 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
 
     cellblender_preferences = PointerProperty(
-        type=CellBlenderPreferencesPanelProperty,
+        type=CellBlenderPreferencesPropertyGroup,
         name="CellBlender Preferences")
     project_settings = PointerProperty(
-        type=MCellProjectPanelProperty, name="CellBlender Project Settings")
+        type=MCellProjectPropertyGroup, name="CellBlender Project Settings")
     export_project = PointerProperty(
-        type=MCellExportProjectPanelProperty, name="Export Simulation")
+        type=MCellExportProjectPropertyGroup, name="Export Simulation")
     run_simulation = PointerProperty(
-        type=MCellRunSimulationPanelProperty, name="Run Simulation")
+        type=MCellRunSimulationPropertyGroup, name="Run Simulation")
     mol_viz = PointerProperty(
-        type=MCellMolVizPanelProperty, name="Mol Viz Settings")
+        type=MCellMolVizPropertyGroup, name="Mol Viz Settings")
     initialization = PointerProperty(
-        type=MCellInitializationPanelProperty, name="Model Initialization")
+        type=MCellInitializationPropertyGroup, name="Model Initialization")
     partitions = bpy.props.PointerProperty(
-        type=MCellPartitionsPanelProperty, name="Partitions")
+        type=MCellPartitionsPropertyGroup, name="Partitions")
     ############# DB: added for parameter import from BNG, SBML models####
     #parameters = PointerProperty(
-    #    type=MCellParametersPanelProperty, name="Defined Parameters")
+    #    type=MCellParametersPropertyGroup, name="Defined Parameters")
     parameter_system = PointerProperty(
         type=parameter_system.ParameterSystemPropertyGroup, name="Parameter System")
     molecules = PointerProperty(
         type=cellblender_molecules.MCellMoleculesListProperty, name="Defined Molecules")
     reactions = PointerProperty(
-        type=MCellReactionsPanelProperty, name="Defined Reactions")
+        type=MCellReactionsPropertyGroup, name="Defined Reactions")
     surface_classes = PointerProperty(
-        type=MCellSurfaceClassesPanelProperty, name="Defined Surface Classes")
+        type=MCellSurfaceClassesPropertyGroup, name="Defined Surface Classes")
     mod_surf_regions = PointerProperty(
-        type=MCellModSurfRegionsPanelProperty, name="Assign Surface Classes")
+        type=MCellModSurfRegionsPropertyGroup, name="Assign Surface Classes")
     release_patterns = PointerProperty(
-        type=MCellReleasePatternPanelProperty, name="Defined Release Patterns")
+        type=MCellReleasePatternPropertyGroup, name="Defined Release Patterns")
     release_sites = PointerProperty(
-        type=MCellMoleculeReleasePanelProperty, name="Defined Release Sites")
+        type=MCellMoleculeReleasePropertyGroup, name="Defined Release Sites")
     model_objects = PointerProperty(
-        type=MCellModelObjectsPanelProperty, name="Instantiated Objects")
+        type=MCellModelObjectsPropertyGroup, name="Instantiated Objects")
     viz_output = PointerProperty(
-        type=MCellVizOutputPanelProperty, name="Viz Output")
+        type=MCellVizOutputPropertyGroup, name="Viz Output")
     rxn_output = PointerProperty(
-        type=MCellReactionOutputPanelProperty, name="Reaction Output")
+        type=MCellReactionOutputPropertyGroup, name="Reaction Output")
     meshalyzer = PointerProperty(
-        type=MCellMeshalyzerPanelProperty, name="CellBlender Project Settings")
+        type=MCellMeshalyzerPropertyGroup, name="CellBlender Project Settings")
     object_selector = PointerProperty(
-        type=MCellObjectSelectorPanelProperty,
+        type=MCellObjectSelectorPropertyGroup,
         name="CellBlender Project Settings")
     molecule_glyphs = PointerProperty(
-        type=MCellMoleculeGlyphsPanelProperty, name="Molecule Shapes")
+        type=MCellMoleculeGlyphsPropertyGroup, name="Molecule Shapes")
 
     scratch_settings = PointerProperty(
-        type=MCellScratchPanelProperty, name="CellBlender Scratch Settings")
+        type=MCellScratchPropertyGroup, name="CellBlender Scratch Settings")
 
 
     def build_data_model_from_properties ( self, context, geometry=False ):
