@@ -423,7 +423,7 @@ class SBML2JSON:
 
         return rateR,math.getNumChildren()
 
-    def adjustParameters(self,stoichoimetry,reactionDefinition,compartmentList):
+    def adjustParameters(self,stoichoimetry,reactionDefinition,compartmentList,chemicals):
         
                 if stoichoimetry == 2:
                     #adjusting units for bimolecular reactions
@@ -626,9 +626,9 @@ class SBML2JSON:
                     tmpR['products'] = ' + '.join(rcList)
                 tmpR['fwd_rate'] = rateR
                 reactionSpecs.append(tmpR)
-            self.adjustParameters(len(reactant),tmpL,compartmentList)
+            self.adjustParameters(len(reactant),tmpL,compartmentList,reactant)
             if rateR != '0':
-                self.adjustParameters(len(product),tmpR,compartmentList)
+                self.adjustParameters(len(product),tmpR,compartmentList,product)
         #reactionDict = {idx+1:x for idx,x in enumerate(reactionSpecs)}
         moleculeSpecs = [{'name':x,'type':'3D','extendedName':x,'dif':'0'} for x in moleculeSpecs]
         return reactionSpecs,releaseSpecs,moleculeSpecs
