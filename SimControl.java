@@ -32,6 +32,12 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 	String command_to_run = null;
 	Process sub_process = null;
 
+  public void end_job() {
+    System.out.println ( "Terminating the supprocess..." );
+    sub_process.destroy();
+    System.out.println ( "Subprocess terminated" );
+  }
+
   public String read_stream_with_tag ( String remaining, BufferedInputStream stream, char tag ) {
     try {
       int available = stream.available();
@@ -407,7 +413,10 @@ public class SimControl extends JFrame implements WindowListener {
 
   public void windowActivated(WindowEvent event) { }
   public void windowClosed(WindowEvent event) { }
-  public void windowClosing(WindowEvent event) { System.exit(0); }
+  public void windowClosing(WindowEvent event) { 
+    dp.end_job();
+    System.exit(0);
+  }
   public void windowDeactivated(WindowEvent event) { }
   public void windowDeiconified(WindowEvent event) { }
   public void windowIconified(WindowEvent event) { }

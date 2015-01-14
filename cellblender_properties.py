@@ -3464,6 +3464,23 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     scratch_settings = PointerProperty(
         type=MCellScratchPropertyGroup, name="CellBlender Scratch Settings")
 
+    def init_properties ( self ):
+        self.cellblender_version = "0.1.54"
+        self.cellblender_addon_id = "0"
+        self.cellblender_data_model_version = "0"
+        self.parameter_system.init_properties()
+        self.initialization.init_properties ( self.parameter_system )
+        self.molecules.init_properties ( self.parameter_system )
+        self.initialized = True
+
+
+    def remove_properties ( self, context ):
+        #self.parameter_system.remove_properties()
+        #self.initialization.remove_properties ( self.parameter_system )
+        #self.molecules.remove_properties ( self.parameter_system )
+        context.scene.remove ( 'mcell' );
+
+
 
     def build_data_model_from_properties ( self, context, geometry=False ):
         print ( "build_data_model_from_properties: Constructing a data_model dictionary from current properties" )
@@ -3598,16 +3615,6 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
 
         print ( "Done building properties from the data model." )
-
-
-    def init_properties ( self ):
-        self.cellblender_version = "0.1.54"
-        self.cellblender_addon_id = "0"
-        self.cellblender_data_model_version = "0"
-        self.parameter_system.init_properties()
-        self.initialization.init_properties ( self.parameter_system )
-        self.molecules.init_properties ( self.parameter_system )
-        self.initialized = True
 
 
     def draw_uninitialized ( self, layout ):
