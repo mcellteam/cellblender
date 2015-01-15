@@ -164,6 +164,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         self.custom_space_step.init_ref    ( parameter_system, "Mol_Space_Step_Type", user_name="Custom Space Step",    user_expr="",  user_units="microns",  user_descr="Molecule Custom Space Step" )
         # TODO: Add after data model release:  self.maximum_step_length.init_ref  ( parameter_system, "Max_Step_Len_Type",   user_name="Maximum Step Length",  user_expr="",  user_units="microns",  user_descr="Molecule should never step farther than this length during a single timestep. Use with caution (see documentation)." )
 
+    def remove_properties ( self, context ):
+        print ( "Removing all Molecule Properties ... not implemented yet!" )
+
 
     def build_data_model_from_properties ( self ):
         m = self
@@ -406,6 +409,16 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         if self.molecule_list:
             for mol in self.molecule_list:
                 mol.init_properties(parameter_system)
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Molecule List Properties..." )
+        for item in self.molecule_list:
+            item.remove_properties(context)
+        self.molecule_list.clear()
+        self.active_mol_index = 0
+        self.next_id = 1
+        print ( "Done removing all Molecule List Properties." )
+        
     
     def add_molecule ( self, context ):
         """ Add a new molecule to the list of molecules and set as the active molecule """

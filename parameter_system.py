@@ -258,6 +258,9 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         new_par.isint = user_int
     
         self.set_unique_static_name ( new_par.name )
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Parameter Reference Properties ... not implemented yet!" )
         
 
     @profile('Parameter_Reference.del_ref')
@@ -1090,6 +1093,10 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
     updating = BoolProperty(default=False)    # Set to true when changing a value to suppress infinite recursion
     disable_parse = BoolProperty ( default=True )   # Boolean flag to signify that this parameter should not be parsed at this time, start with True for speed!!
     
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Parameter Data Properties ... not implemented yet!" )
+
     
     @profile('Parameter_Data.__init__')
     def __init__ ( self ):
@@ -1594,6 +1601,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     def init_properties ( self ):
         if not ('gname_to_id_dict' in self):
             self['gname_to_id_dict'] = {}
+
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Parameter System Properties ... not implemented yet!" )
 
 
     @profile('ParameterSystem.allocate_available_gid')
