@@ -75,12 +75,29 @@ class MCELL_OT_upgrade(bpy.types.Operator):
             # Do the actual updating of properties from data model right here
             mcell.build_properties_from_data_model ( context, dm )
         else:
-            print ( "No data model to upgrade." )
+            print ( "No data model to upgrade ... building a data model and then recreating properties." )
+            dm = mcell.build_data_model_from_properties ( context )
+            mcell.build_properties_from_data_model ( context, dm )
 
         # Update the source_id
         mcell['saved_by_source_id'] = cellblender.cellblender_info['cellblender_source_sha1']
         mcell.versions_match = True
         print ( "Finished Upgrading Properties from Data Model" )
+        return {'FINISHED'}
+
+
+class MCELL_OT_delete(bpy.types.Operator):
+    """This is the Delete operator called when the user presses the "Delete Properties" button"""
+    bl_idname = "mcell.delete"
+    bl_label = "Delete CellBlender Collection Properties"
+    bl_description = "Delete CellBlender Collection Properties"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        print ( "Deleting CellBlender Collection Properties" )
+        mcell = context.scene.mcell
+        mcell.remove_properties(context)
+        print ( "Finished Deleting CellBlender Collection Properties" )
         return {'FINISHED'}
 
 

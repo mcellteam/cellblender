@@ -817,6 +817,8 @@ class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
             row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
+            row = layout.row()
+            row.operator ( "mcell.delete", text="Delete CellBlender Collection Properties", icon='RADIO' )
 
             row = layout.row()
             if not bpy.data.filepath:
@@ -3714,7 +3716,11 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm, geometry=False ):
         print ( "build_properties_from_data_model: Data Model Keys = " + str(dm.keys()) )
-        # First upgrade the data model as needed
+
+        # Remove the existing MCell Property Tree
+        self.remove_properties(context)
+
+        # Upgrade the data model as needed
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
@@ -3729,9 +3735,6 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Overwriting the parameter_system properties" )
             self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"] )
         
-        # Remove the existing MCell Property Tree
-        self.remove_properties(context)
-
         """ Considered moving geometry here because it might be referenced by other things, but didn't want to change too many things at once!!!
         if geometry:
             print ( "Deleting all mesh objects" )
