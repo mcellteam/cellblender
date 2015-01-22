@@ -2244,6 +2244,8 @@ def mol_viz_clear(mcell_prop):
     for i in range(len(mcell.mol_viz.mol_viz_list)-1, -1, -1):
         mcell.mol_viz.mol_viz_list.remove(i)
 
+
+
 import sys
 
 def mol_viz_file_read(mcell_prop, filepath):
@@ -2264,6 +2266,7 @@ def mol_viz_file_read(mcell_prop, filepath):
 
         if b[0] == 1:
             # Read Binary format molecule file:
+            print ("Reading binary file " + filepath )
             bin_data = 1
             while True:
                 try:
@@ -2307,6 +2310,7 @@ def mol_viz_file_read(mcell_prop, filepath):
 
         else:
             # Read ASCII format molecule file:
+            print ("Reading ASCII file " + filepath )
             bin_data = 0
             mol_file.close()
             # Create a list of molecule names, positions, and orientations
@@ -2366,7 +2370,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                     mol_orient.extend([random.uniform(
                         -1.0, 1.0) for i in range(len(mol_pos))])
 
-                # Look up the color, glyph, and other attributes from the molecules list
+                # Look up the glyph, color, size, and other attributes from the molecules list
                 
                 #### If the molecule found in the viz file doesn't exist in the molecules list, create it as the interface for changing color, etc.
 

@@ -135,7 +135,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     color = FloatVectorProperty ( name="", min=0.0, max=1.0, default=(0.5,0.5,0.5), subtype='COLOR', description='Molecule Color', update=display_callback )
     alpha = FloatProperty ( name="Alpha", min=0.0, max=1.0, default=1.0, description="Alpha (inverse of transparency)", update=display_callback )
     emit = FloatProperty ( name="Emit", min=0.0, default=1.0, description="Emits Light (brightness)", update=display_callback )
-    scale = FloatProperty ( name="Scale", min=0.0, default=1.0, description="Relative size (scale) for this molecule", update=display_callback )
+    scale = FloatProperty ( name="Scale", min=0.0001, default=1.0, description="Relative size (scale) for this molecule", update=display_callback )
+    previous_scale = FloatProperty ( name="Previous_Scale", min=0.0, default=1.0, description="Previous Scale" )
+    #cumulative_scale = FloatProperty ( name="Cumulative_Scale", min=0.0, default=1.0, description="Cumulative Scale" )
 
     glyph_lib = os.path.join(os.path.dirname(__file__), "glyph_library.blend/Mesh/")
     glyph_enum = [
@@ -253,11 +255,14 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             row = box.row()
             col = row.column()
             mol_mat_name = 'mol_' + self.name + '_mat'
-            if mol_mat_name in bpy.data.materials.keys():
+            if False and mol_mat_name in bpy.data.materials.keys():
+                # This would control the actual Blender material property directly
                 col.prop ( bpy.data.materials[mol_mat_name], "diffuse_color" )
                 col = row.column()
                 col.prop ( bpy.data.materials[mol_mat_name], "emit" )
             else:
+                # This controls the molecule property which changes the Blender property via callback
+                # But changing the color via the Materials interface doesn't change these values
                 col.prop ( self, "color" )
                 col = row.column()
                 col.prop ( self, "emit" )
@@ -287,17 +292,27 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def display_callback(self, context):
         """One of the display items has changed for this molecule"""
-        print ( "Display for molecule \"" + self.name + "\" changed to: " + str(self.glyph) + ", " + str(self.color) + ", " + str(self.alpha) + ", " + str(self.scale) )
+        print ( "Display for molecule \"" + self.name + "\" changed to: " + str(self.glyph) + ", color=" + str(self.color) + ", emit=" + str(self.emit) + ", scale=" + str(self.scale) )
+        mol_name = 'mol_' + self.name
+        mol_shape_name = mol_name + '_shape'
+        if mol_shape_name in bpy.data.objects:
+            if self.scale != self.previous_scale:
+                # Scale by the ratio of current scale to previous scale
+                bpy.data.objects[mol_shape_name].scale *= (self.scale / self.previous_scale)
+                self.previous_scale = self.scale
+                
+            
+
         mol_mat_name = 'mol_' + self.name + '_mat'
         if mol_mat_name in bpy.data.materials.keys():
-            if self.color != bpy.data.materials[mol_mat_name].diffuse_color:
-                self.color = bpy.data.materials[mol_mat_name].diffuse_color
-            if self.emit != bpy.data.materials[mol_mat_name].emit:
-                self.emit = bpy.data.materials[mol_mat_name].emit
+            if bpy.data.materials[mol_mat_name].diffuse_color != self.color:
+                bpy.data.materials[mol_mat_name].diffuse_color = self.color
+            if bpy.data.materials[mol_mat_name].emit != self.emit:
+                bpy.data.materials[mol_mat_name].emit = self.emit
 
 
         # Refresh the scene
-        self.set_mol_glyph ( context )
+        #self.set_mol_glyph ( context )
         cellblender_operators.mol_viz_update(self,context)  # It's not clear why mol_viz_update needs a self. It's not in a class.
         context.scene.update()  # It's also not clear if this is needed ... but it doesn't seem to hurt!!
         return
