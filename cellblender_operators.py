@@ -2432,9 +2432,11 @@ def mol_viz_file_read(mcell_prop, filepath):
                     mol_pos_mesh = meshes.new(mol_pos_mesh_name)
 
                 # Add and place vertices at positions of molecules
+                print ( "Preparing to add vertices" )
                 mol_pos_mesh.vertices.add(len(mol_pos)//3)
                 mol_pos_mesh.vertices.foreach_set("co", mol_pos)
                 mol_pos_mesh.vertices.foreach_set("normal", mol_orient)
+                print ( "Done adding vertices" )
 
                 mol_obj = objs.get(mol_name)
                 if mol_obj:
