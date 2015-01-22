@@ -2266,7 +2266,7 @@ def mol_viz_file_read(mcell_prop, filepath):
 
         if b[0] == 1:
             # Read Binary format molecule file:
-            print ("Reading binary file " + filepath )
+            # print ("Reading binary file " + filepath )
             bin_data = 1
             while True:
                 try:
@@ -2310,7 +2310,7 @@ def mol_viz_file_read(mcell_prop, filepath):
 
         else:
             # Read ASCII format molecule file:
-            print ("Reading ASCII file " + filepath )
+            # print ("Reading ASCII file " + filepath )
             bin_data = 0
             mol_file.close()
             # Create a list of molecule names, positions, and orientations
@@ -2432,11 +2432,11 @@ def mol_viz_file_read(mcell_prop, filepath):
                     mol_pos_mesh = meshes.new(mol_pos_mesh_name)
 
                 # Add and place vertices at positions of molecules
-                print ( "Preparing to add vertices" )
+                # print ( "Preparing to add vertices" )
                 mol_pos_mesh.vertices.add(len(mol_pos)//3)
                 mol_pos_mesh.vertices.foreach_set("co", mol_pos)
                 mol_pos_mesh.vertices.foreach_set("normal", mol_orient)
-                print ( "Done adding vertices" )
+                # print ( "Done adding vertices" )
 
                 mol_obj = objs.get(mol_name)
                 if mol_obj:
