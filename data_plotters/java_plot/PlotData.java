@@ -246,8 +246,49 @@ class file_xy extends data_file {
   }
 
   public file_xy ( String file_name ) {
-  
 
+
+    // New one pass code uses a Vector:
+    Vector values = new Vector();
+    // Read the values
+    name = "File=\"" + file_name + "\"";
+    int num_values = 0;
+	  try {
+	    BufferedReader br;
+	    if (buffer_size > 0) {
+			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)),buffer_size);
+			} else {
+			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)));
+			}
+		  FieldReader fr = new FieldReader ( br );
+		  String xfield = null;
+		  String yfield = null;
+		  do {
+			  xfield = fr.next_field();
+			  if ( (xfield != null) && (xfield.length() > 0) ) {
+  				yfield = fr.next_field();
+  				if ( (yfield != null) && (yfield.length() > 0) ) {
+  				  values.addElement ( new Double(xfield) );
+  				  values.addElement ( new Double(yfield) );
+  				  num_values += 1;
+  				}
+			  }
+		  } while ( (xfield != null) && (yfield != null) );
+	  } catch (Exception e) {
+	    System.out.println ( "Error reading from file: " + file_name );
+	    valid_data = false;
+	    return;
+	  }
+
+    // Allocate and copy from the vector into the array
+    x_values = new double[num_values];
+    y_values = new double[num_values];
+    for (int i=0; i<num_values; i++) {
+      x_values[i] = (Double)(values.elementAt(2*i));
+      y_values[i] = (Double)(values.elementAt((2*i)+1));
+	  }
+    
+    /* Old two pass code reads twice to use an array:
     // Read the values
     name = "File=\"" + file_name + "\"";
     int num_values = 0;
@@ -289,7 +330,10 @@ class file_xy extends data_file {
 		    y_values = new double[num_values];
 		  }
 		}
-		// Check to see if the file is already sorted to save time
+		*/
+
+
+    // Check to see if the file is already sorted to save time
 		boolean sorted = true;
 		for (int i=1; i<x_values.length; i++) {
 		  if (x_values[i-1] > x_values[i]) {
@@ -1409,7 +1453,7 @@ public class PlotData extends JFrame implements WindowListener {
         try {
           if ( (args[arg].equals("?")) || (args[arg].equals("/?")) ) {
             System.out.println ( "Args: [fxy=filename ...] [GenTestFiles] [?]" );
-            System.out.println ( "  f=filename - Add file 'filename' to the plot" );
+            System.out.println ( "  fxy=filename - Add file 'filename' to the plot" );
             System.exit(0);
           } else if ( args[arg].equalsIgnoreCase("GenTestFiles") ) {
             System.out.println ( "Generating Test Data Files" );
@@ -1579,6 +1623,7 @@ public class PlotData extends JFrame implements WindowListener {
     }
 
     dp.loading = false;
+    dp.fit_x = true;
     content.repaint();
 
 
