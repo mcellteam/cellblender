@@ -61,8 +61,6 @@ abstract class data_file {
 	public abstract void find_x_range();
 	public abstract void find_y_range();
 	
-	public static int buffer_size = 1000000000;
-	
 	public boolean valid_data = false;
 
 	String name = "Identity";
@@ -85,6 +83,29 @@ abstract class data_file {
 	}
 	public void setColor ( Color c ) {
 		color = c;
+	}
+
+  public int buffer_size = 2000000000;
+
+	public BufferedReader get_reader ( String file_name ) {
+    BufferedReader br = null;
+    try {
+      if (buffer_size > 0) {
+        try {
+          br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)),buffer_size);
+        } catch ( Error er ) {
+          System.out.println ( "Unable to allocate " + buffer_size + " bytes of memory, attempting smaller allocation" );
+    		  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)));
+        } catch ( Exception e ) {
+          System.out.println ( "Unable to allocate " + buffer_size + " bytes of memory, attempting smaller allocation" );
+    		  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)));
+        }
+		  } else {
+		    br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)));
+		  }
+		} catch ( Exception e ) {
+		}
+		return ( br );
 	}
 
   static int next_color = 0;
@@ -113,12 +134,7 @@ class file_x extends data_file {
     for (int pass=0; pass<=1; pass++) {
       num_values = 0;
 		  try {
-		    BufferedReader br;
-		    if (buffer_size > 0) {
-  			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)),buffer_size);
-  			} else {
-  			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)));
-  			}
+		    BufferedReader br = get_reader ( file_name );
 			  FieldReader fr = new FieldReader ( br );
 			  String xfield = null;
 			  do {
@@ -166,12 +182,7 @@ class file_y extends data_file {
     for (int pass=0; pass<=1; pass++) {
       num_values = 0;
 		  try {
-		    BufferedReader br;
-		    if (buffer_size > 0) {
-  			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)),buffer_size);
-  			} else {
-  			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)));
-  			}
+		    BufferedReader br = get_reader ( file_name );
 			  FieldReader fr = new FieldReader ( br );
 			  String yfield = null;
 			  do {
@@ -254,12 +265,7 @@ class file_xy extends data_file {
     name = "File=\"" + file_name + "\"";
     int num_values = 0;
 	  try {
-	    BufferedReader br;
-	    if (buffer_size > 0) {
-			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)),buffer_size);
-			} else {
-			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)));
-			}
+	    BufferedReader br = get_reader ( file_name );
 		  FieldReader fr = new FieldReader ( br );
 		  String xfield = null;
 		  String yfield = null;
@@ -295,12 +301,7 @@ class file_xy extends data_file {
     for (int pass=0; pass<=1; pass++) {
       num_values = 0;
 		  try {
-		    BufferedReader br;
-		    if (buffer_size > 0) {
-  			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)),buffer_size);
-  			} else {
-  			  br = new BufferedReader(new InputStreamReader(new FileInputStream(file_name)));
-  			}
+		    BufferedReader br = get_reader ( file_name );
 			  FieldReader fr = new FieldReader ( br );
 			  String xfield = null;
 			  String yfield = null;
