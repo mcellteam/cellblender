@@ -358,9 +358,17 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
     def get_param ( self, plist ):
         return plist[self.unique_static_name]
 
+    #def get_expr ( self, plist ):
+    #    return self.get_param(plist).expr
+
     @profile('Parameter_Reference.get_expr')
-    def get_expr ( self, plist ):
+    def get_expr ( self, plist=None ):
+        if plist == None:
+            # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
+            mcell = bpy.context.scene.mcell
+            plist = mcell.parameter_system.panel_parameter_list
         return self.get_param(plist).expr
+
 
     @profile('Parameter_Reference.set_expr')
     def set_expr ( self, expr, plist ):
@@ -883,6 +891,28 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
     def __init__ ( self ):
         print ( "The Parameter_Data.__init__ function has been called." )
 
+
+    @profile('Parameter_Data.build_data_model_from_properties')
+    def build_data_model_from_properties ( self ):
+        p = self
+
+        par_dict = {}
+        par_dict['par_name'] = p.par_name
+        par_dict['par_expression'] = p.expr
+        par_dict['par_units'] = p.units
+        par_dict['par_description'] = p.descr
+
+        extras_dict = {}
+        extras_dict['par_id_name'] = p.name
+        extras_dict['par_value'] = p.value
+        extras_dict['par_valid'] = p.isvalid
+
+        par_dict['extras'] = extras_dict
+
+        return par_dict
+
+
+
     @profile('Parameter_Data.init_par_properties')
     def init_par_properties ( self ):
         #print ( "Setting Defaults for a Parameter" )
@@ -1362,6 +1392,18 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     def init_properties ( self ):
         if not ('gname_to_id_dict' in self):
             self['gname_to_id_dict'] = {}
+
+
+    @profile('ParameterSystem.build_data_model_from_properties')
+    def build_data_model_from_properties ( self, context ):
+        print ( "Parameter System building Data Model" )
+        par_sys_dm = {}
+        gen_par_list = []
+        for p in self.general_parameter_list:
+            gen_par_list.append ( p.build_data_model_from_properties() )
+        par_sys_dm['model_parameters'] = gen_par_list
+        return par_sys_dm
+
 
 
     @profile('ParameterSystem.allocate_available_gid')

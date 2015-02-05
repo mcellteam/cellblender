@@ -134,6 +134,24 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         self.custom_time_step.init_ref   ( parameter_system, "Mol_Time_Step_Type",  user_name="Custom Time Step",   user_expr="",  user_units="seconds",  user_descr="Molecule Custom Time Step" )
         self.custom_space_step.init_ref  ( parameter_system, "Mol_Space_Step_Type", user_name="Custom Space Step",  user_expr="",  user_units="microns",  user_descr="Molecule Custom Space Step" )
 
+    def build_data_model_from_properties ( self ):
+        m = self
+
+        m_dict = {}
+        m_dict['data_model_version'] = "DM_2014_10_24_1638"
+        m_dict['mol_name'] = m.name
+        m_dict['mol_type'] = str(m.type)
+        m_dict['diffusion_constant'] = m.diffusion_constant.get_expr()
+        m_dict['target_only'] = m.target_only
+        m_dict['custom_time_step'] = m.custom_time_step.get_expr()
+        m_dict['custom_space_step'] = m.custom_space_step.get_expr()
+        m_dict['custom_space_step'] = m.custom_space_step.get_expr()
+        # TODO: Add after data model release:   m_dict['maximum_step_length'] = m.maximum_step_length.get_expr()
+        m_dict['maximum_step_length'] = ""  # TODO: Remove this line after data model release
+        m_dict['export_viz'] = m.export_viz
+
+        return m_dict
+
 
     # Exporting to an MDL file could be done just like this
     def print_details( self ):
@@ -196,6 +214,17 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         if self.molecule_list:
             for mol in self.molecule_list:
                 mol.init_properties(parameter_system)
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Molecule List building Data Model" )
+        mol_dm = {}
+        mol_dm['data_model_version'] = "DM_2014_10_24_1638"
+        mol_list = []
+        for m in self.molecule_list:
+            mol_list.append ( m.build_data_model_from_properties() )
+        mol_dm['molecule_list'] = mol_list
+        return mol_dm
+
     
     def add_molecule ( self, context ):
         """ Add a new molecule to the list of molecules and set as the active molecule """

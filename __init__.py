@@ -34,9 +34,10 @@ bl_info = {
 }
 
 cellblender_info = {
-    "supported_version_list": [(2, 66, 1), (2, 67, 0), (2, 68, 0), (2, 69, 0), (2, 70, 0)],
+    "supported_version_list": [(2, 66, 1), (2, 67, 0), (2, 68, 0), (2, 69, 0), (2, 70, 0), (2, 71, 0), (2, 72, 0), (2, 73, 0)],
     "cellblender_source_list": [
         "__init__.py",
+        "data_model.py",
         "parameter_system.py",
         "cellblender_properties.py",
         "cellblender_panels.py",
@@ -103,6 +104,7 @@ if __name__ == '__main__':
 if "bpy" in locals():
     print("Reloading CellBlender")
     import imp
+    imp.reload(data_model)
     imp.reload(cellblender_properties)
     imp.reload(cellblender_panels)
     imp.reload(cellblender_operators)
@@ -135,7 +137,7 @@ else:
         bng, \  # DB: Added for BNG
 	      sbml #JJT:SBML"""
 
-
+    from . import data_model
     from . import cellblender_properties
     from . import cellblender_panels
     from . import cellblender_operators
@@ -223,6 +225,10 @@ def register():
 
     #JJT: And SBML import
     #bpy.types.INFO_MT_file_import.append(sbml.menu_func_import)
+
+    # No Import for RC4: bpy.types.INFO_MT_file_import.append(data_model.menu_func_import_all)
+    bpy.types.INFO_MT_file_export.append(data_model.menu_func_export_all)
+
 
     bpy.types.Scene.mcell = bpy.props.PointerProperty(
         type=cellblender_properties.MCellPropertyGroup)

@@ -703,6 +703,19 @@ class MCellObjectPropertyGroup(bpy.types.PropertyGroup):
         type=MCellSurfaceRegionListProperty, name="Defined Surface Regions")
     include = BoolProperty(name="Include Object in Model", default=False)
 
+    def get_regions_dictionary (self, obj):
+        """ Return a dictionary with region names """
+        reg_dict = {}
+        obj_regs = self.regions.region_list
+        for reg in obj_regs:
+            id = str(reg.id)
+            mesh = obj.data
+            #reg_faces = list(cellblender_operators.get_region_faces(mesh,id))
+            reg_faces = list(reg.get_region_faces(mesh))
+            reg_faces.sort()
+            reg_dict[reg.name] = reg_faces
+        return reg_dict
+
 
 
 # Update format of object regions
