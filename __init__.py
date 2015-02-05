@@ -311,6 +311,7 @@ if len(bpy.app.handlers.load_post) == 0:
 if len(bpy.app.handlers.save_pre) == 0:
     bpy.app.handlers.save_pre.append(
         cellblender_operators.model_objects_update)
+    bpy.app.handlers.save_pre.append ( data_model.save_pre )
 
 # for testing
 if __name__ == '__main__':
