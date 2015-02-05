@@ -35,7 +35,7 @@ $(SUBDIRS):
 cellblender.zip: makefile $(SOURCES)
 	@echo Updating cellblender.zip
 	@echo Sources = $(SOURCES)
-	@zip -q cellblender.zip $(SOURCES) cellblender/cellblender_id.py
+	@zip -X -q cellblender.zip $(SOURCES) cellblender/cellblender_id.py
 
 
 SimControl.jar: SimControl.java makefile
