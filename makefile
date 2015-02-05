@@ -8,7 +8,6 @@ INSTALL_DIR = ~/.config/blender/2.73/scripts/addons/
 SHELL = /bin/sh
 
 SOURCES = $(shell python cellblender_source_info.py)
-#SUBDIRS = data_plotters io_mesh_mcell_mdl
 SUBDIRS = icons io_mesh_mcell_mdl data_plotters developer_utilities
 
 .PHONY: all
@@ -37,6 +36,7 @@ cellblender.zip: makefile $(SOURCES)
 	@echo Sources = $(SOURCES)
 	touch -t 201502050000 cellblender/cellblender_id.py
 	@zip -X -q cellblender.zip $(SOURCES) cellblender/cellblender_id.py
+	touch -t 201502050000 cellblender.zip
 
 
 SimControl.jar: SimControl.java makefile
