@@ -10,6 +10,8 @@ SHELL = /bin/sh
 SOURCES = $(shell python cellblender_source_info.py)
 SUBDIRS = icons io_mesh_mcell_mdl data_plotters developer_utilities
 
+ZIPOPTS = -X -0 -D -o
+
 .PHONY: all
 all: cellblender subdirs cellblender.zip SimControl.jar SimControl
 
@@ -35,14 +37,14 @@ cellblender.zip: makefile $(SOURCES)
 	@echo Updating cellblender.zip
 	@echo Sources = $(SOURCES)
 	touch -t 201502050000 cellblender_id.py
-	@zip -X -q cellblender.zip $(SOURCES) cellblender/cellblender_id.py
+	@zip $(ZIPOPTS) cellblender.zip $(SOURCES) cellblender/cellblender_id.py
 
 
 SimControl.jar: SimControl.java makefile
 	rm -f *.class
 	javac SimControl.java
 	touch -t 201407160000 *.class
-	zip -X SimControl.jar META-INF/MANIFEST.MF SimControl.java *.class
+	zip $(ZIPOPTS) SimControl.jar META-INF/MANIFEST.MF SimControl.java *.class
 	rm -f *.class
 
 
