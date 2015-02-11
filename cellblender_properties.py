@@ -142,6 +142,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
+        r_dict['data_model_version'] = "DM_2014_10_24_1638"
         r_dict['name'] = r.name
         r_dict['rxn_name'] = r.rxn_name
         r_dict['reactants'] = r.reactants
@@ -161,6 +162,15 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         return r_dict
 
     def build_properties_from_data_model ( self, context, dm_dict ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm_dict):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm_dict['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellReactionProperty data model to current version." )
+
         self.name = dm_dict["name"]
         self.rxn_name = dm_dict["rxn_name"]
         self.reactants = dm_dict["reactants"]
@@ -332,6 +342,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
+        r_dict['data_model_version'] = "DM_2014_10_24_1638"
         r_dict['name'] = r.name
         r_dict['molecule'] = r.molecule
         r_dict['shape'] = r.shape
@@ -349,6 +360,15 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         return r_dict
 
     def build_properties_from_data_model ( self, context, dm_dict ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm_dict):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm_dict['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellMoleculeReleaseProperty data model to current version." )
+
         self.name = dm_dict["name"]
         self.molecule = dm_dict["molecule"]
         self.shape = dm_dict["shape"]
@@ -398,6 +418,7 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
+        r_dict['data_model_version'] = "DM_2014_10_24_1638"
         r_dict['name'] = r.name
         r_dict['delay'] = r.delay.get_expr()
         r_dict['release_interval'] = r.release_interval.get_expr()
@@ -407,6 +428,15 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
         return r_dict
 
     def build_properties_from_data_model ( self, context, dm_dict ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm_dict):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm_dict['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellReleasePatternProperty data model to current version." )
+
         self.name = dm_dict["name"]
         self.delay.set_expr ( dm_dict["delay"] )
         self.release_interval.set_expr ( dm_dict["release_interval"] )
@@ -463,6 +493,7 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         sc = self
         sc_dict = {}
+        sc_dict['data_model_version'] = "DM_2014_10_24_1638"
         sc_dict['name'] = sc.name
         sc_dict['molecule'] = sc.molecule
         sc_dict['surf_class_orient'] = str(sc.surf_class_orient)
@@ -471,6 +502,15 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         return sc_dict
 
     def build_properties_from_data_model ( self, context, dm ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellSurfaceClassPropertiesProperty data model to current version." )
+
         self.name = dm["name"]
         self.molecule = dm["molecule"]
         self.surf_class_orient = dm["surf_class_orient"]
@@ -520,6 +560,7 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Surface Classes building Data Model" )
         sc_dm = {}
+        sc_dm['data_model_version'] = "DM_2014_10_24_1638"
         sc_dm['name'] = self.name
         sc_list = []
         for sc in self.surf_class_props_list:
@@ -528,6 +569,15 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
         return sc_dm
 
     def build_properties_from_data_model ( self, context, dm ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellSurfaceClassesProperty data model to current version." )
+
         self.name = dm["name"]
         while len(self.surf_class_props_list) > 0:
             self.surf_class_props_list.remove(0)
@@ -571,6 +621,7 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Surface Region building Data Model" )
         sr_dm = {}
+        sr_dm['data_model_version'] = "DM_2014_10_24_1638"
         sr_dm['name'] = self.name
         sr_dm['surf_class_name'] = self.surf_class_name
         sr_dm['object_name'] = self.object_name
@@ -578,6 +629,15 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
         return sr_dm
 
     def build_properties_from_data_model ( self, context, dm ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellModSurfRegionsProperty data model to current version." )
+
         self.name = dm["name"]
         self.surf_class_name = dm["surf_class_name"]
         self.object_name = dm["object_name"]
@@ -1249,6 +1309,8 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         dm_dict = {}
 
+        dm_dict['data_model_version'] = "DM_2014_10_24_1638"
+
         dm_dict['iterations'] = self.iterations.get_expr()
         dm_dict['time_step'] = self.time_step.get_expr()
         dm_dict['time_step_max'] = self.time_step_max.get_expr()
@@ -1296,6 +1358,15 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         return dm_dict
 
     def build_properties_from_data_model ( self, context, dm_dict ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm_dict):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm_dict['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellInitializationPropertyGroup data model to current version." )
+
         self.iterations.set_expr ( dm_dict["iterations"] )
         self.time_step.set_expr ( dm_dict["time_step"] )
         self.time_step_max.set_expr ( dm_dict["time_step_max"] )
@@ -1701,6 +1772,7 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Partitions building Data Model" )
         dm_dict = {}
+        dm_dict['data_model_version'] = "DM_2014_10_24_1638"
         dm_dict['include'] = self.include==True
         dm_dict['recursion_flag'] = self.recursion_flag==True
         dm_dict['x_start'] = str(self.x_start)
@@ -1715,6 +1787,15 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
         return dm_dict
 
     def build_properties_from_data_model ( self, context, dm ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellPartitionsPropertyGroup data model to current version." )
+
         self.include = dm["include"]
         self.recursion_flag = dm["recursion_flag"]
         self.x_start = float(dm["x_start"])
@@ -1786,6 +1867,7 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction List building Data Model" )
         react_dm = {}
+        react_dm['data_model_version'] = "DM_2014_10_24_1638"
         react_list = []
         for r in self.reaction_list:
             react_list.append ( r.build_data_model_from_properties(context) )
@@ -1793,6 +1875,15 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
         return react_dm
 
     def build_properties_from_data_model ( self, context, dm ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellReactionsPropertyGroup data model to current version." )
+
         while len(self.reaction_list) > 0:
             self.reaction_list.remove(0)
         for r in dm["reaction_list"]:
@@ -1880,6 +1971,7 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Surface Classes Panel building Data Model" )
         sc_dm = {}
+        sc_dm['data_model_version'] = "DM_2014_10_24_1638"
         sc_list = []
         for sc in self.surf_class_list:
             sc_list.append ( sc.build_data_model_from_properties(context) )
@@ -1887,6 +1979,15 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
         return sc_dm
 
     def build_properties_from_data_model ( self, context, dm ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellSurfaceClassesPropertyGroup data model to current version." )
+
         while len(self.surf_class_list) > 0:
             self.surf_class_list.remove(0)
         for s in dm["surface_class_list"]:
@@ -1982,6 +2083,7 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Assign Surface Class List building Data Model" )
         sr_dm = {}
+        sr_dm['data_model_version'] = "DM_2014_10_24_1638"
         sr_list = []
         for sr in self.mod_surf_regions_list:
             sr_list.append ( sr.build_data_model_from_properties(context) )
@@ -1989,6 +2091,15 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
         return sr_dm
 
     def build_properties_from_data_model ( self, context, dm ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellModSurfRegionsPropertyGroup data model to current version." )
+
         while len(self.mod_surf_regions_list) > 0:
             self.mod_surf_regions_list.remove(0)
         for s in dm["modify_surface_regions_list"]:
@@ -2080,6 +2191,7 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Release Pattern List building Data Model" )
         rel_pat_dm = {}
+        rel_pat_dm['data_model_version'] = "DM_2014_10_24_1638"
         rel_pat_list = []
         for r in self.release_pattern_list:
             rel_pat_list.append ( r.build_data_model_from_properties(context) )
@@ -2087,6 +2199,15 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
         return rel_pat_dm
 
     def build_properties_from_data_model ( self, context, dm ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellReleasePatternPropertyGroup data model to current version." )
+
         while len(self.release_pattern_list) > 0:
             self.release_pattern_list.remove(0)
         for r in dm["release_pattern_list"]:
@@ -2163,6 +2284,7 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Release Site List building Data Model" )
         rel_site_dm = {}
+        rel_site_dm['data_model_version'] = "DM_2014_10_24_1638"
         rel_site_list = []
         for r in self.mol_release_list:
             rel_site_list.append ( r.build_data_model_from_properties(context) )
@@ -2170,6 +2292,15 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
         return rel_site_dm
 
     def build_properties_from_data_model ( self, context, dm ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellMoleculeReleasePropertyGroup data model to current version." )
+
         while len(self.mol_release_list) > 0:
             self.mol_release_list.remove(0)
         for r in dm["release_site_list"]:
@@ -2267,10 +2398,20 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Model Object building Data Model" )
         mo_dm = {}
+        mo_dm['data_model_version'] = "DM_2014_10_24_1638"
         mo_dm['name'] = self.name
         return mo_dm
 
     def build_properties_from_data_model ( self, context, dm ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellModelObjectsProperty data model to current version." )
+
         print ( "Assigning Model Object " + dm['name'] )
         self.name = dm["name"]
 
@@ -2357,6 +2498,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     
         print ( "Model Objects List building Data Model" )
         mo_dm = {}
+        mo_dm['data_model_version'] = "DM_2014_10_24_1638"
         mo_list = []
         for scene_object in context.scene.objects:
             if scene_object.type == 'MESH':
@@ -2372,6 +2514,14 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         #   context.scene.mcell.model_objects.object_list[] - stores the name
         #   context.scene.objects[].mcell.include - boolean is true for model objects
         # This code updates both locations based on the data model
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
         
         # Remove all model objects in the list
         while len(self.object_list) > 0:
@@ -2634,6 +2784,7 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Viz Output building Data Model" )
         vo_dm = {}
+        vo_dm['data_model_version'] = "DM_2014_10_24_1638"
         vo_dm['all_iterations'] = self.all_iterations
         vo_dm['start'] = str(self.start)
         vo_dm['end'] = str(self.end)
@@ -2642,6 +2793,15 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
         return vo_dm
 
     def build_properties_from_data_model ( self, context, dm ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellVizOutputPropertyGroup data model to current version." )
+        
         self.all_iterations = dm["all_iterations"]
         self.start = int(dm["start"])
         self.end = int(dm["end"])
@@ -2727,6 +2887,7 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output building Data Model" )
         ro_dm = {}
+        ro_dm['data_model_version'] = "DM_2014_10_24_1638"
         ro_dm['name'] = self.name
         ro_dm['molecule_name'] = self.molecule_name
         ro_dm['reaction_name'] = self.reaction_name
@@ -2737,6 +2898,15 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         return ro_dm
 
     def build_properties_from_data_model ( self, context, dm ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
+        
         self.name = dm["name"]
         self.molecule_name = dm["molecule_name"]
         self.reaction_name = dm["reaction_name"]
@@ -2807,6 +2977,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output Panel building Data Model" )
         ro_dm = {}
+        ro_dm['data_model_version'] = "DM_2014_10_24_1638"
         ro_dm['plot_layout'] = self.plot_layout
         ro_dm['plot_legend'] = self.plot_legend
         ro_dm['combine_seeds'] = self.combine_seeds
@@ -2818,6 +2989,15 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         return ro_dm
 
     def build_properties_from_data_model ( self, context, dm ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade MCellReactionOutputPropertyGroup data model to current version." )
+        
         self.plot_layout = dm["plot_layout"]
         self.plot_legend = dm["plot_legend"]
         self.combine_seeds = dm["combine_seeds"]
@@ -3714,11 +3894,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             dm['materials'] = self.model_objects.build_data_model_materials_from_materials(context)
         return dm
 
+
     def build_properties_from_data_model ( self, context, dm, geometry=False ):
         print ( "build_properties_from_data_model: Data Model Keys = " + str(dm.keys()) )
-
-        # Remove the existing MCell Property Tree
-        self.remove_properties(context)
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
@@ -3727,6 +3905,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
             print ( "Error: Unable to upgrade MCellPropertyGroup data model to current version." )
+
+        # Remove the existing MCell Property Tree
+        self.remove_properties(context)
 
         # Now convert the updated Data Model into CellBlender Properties
         print ( "Overwriting properites based on data in the data model dictionary" )
