@@ -33,12 +33,11 @@
 # ############
 
 
-
 # <pep8 compliant>
+
 
 """
 This script contains the custom properties used in CellBlender.
-
 """
 # blender imports
 import bpy
@@ -870,7 +869,8 @@ class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
                 row = layout.row()
                 row.label("File ID: " + cellblender.cellblender_info['cellblender_source_id_from_file'], icon='ERROR')
 
-            if not mcell.versions_match:
+            # if not mcell.versions_match:
+            if not cellblender.cellblender_info['versions_match']:
                 # Verion in Blend file does not match Addon, so give user a button to upgrade if desired
                 row = layout.row()
                 row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
@@ -3507,7 +3507,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
         mcell = context.scene.mcell
 
-        if not mcell.versions_match:
+        # if not mcell.versions_match:
+        if not cellblender.cellblender_info['versions_match']:
             # Verion in Blend file does not match Addon, so give user a button to upgrade if desired
             row = layout.row()
             row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
@@ -3764,7 +3765,7 @@ def refresh_source_id_callback ( self, context ):
 
 class MCellPropertyGroup(bpy.types.PropertyGroup):
     initialized = BoolProperty(name="Initialized", default=False)
-    versions_match = BoolProperty ( default=True )
+    # versions_match = BoolProperty ( default=True )
 
     cellblender_version = StringProperty(name="CellBlender Version", default="0")
     cellblender_addon_id = StringProperty(name="CellBlender Addon ID", default="0")

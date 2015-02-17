@@ -71,6 +71,7 @@ cellblender_info = {
         ],
 
     "cellblender_source_sha1": "",
+    "versions_match": False,
     "cellblender_addon_path": "",
     "cellblender_plotting_modules": []
 }

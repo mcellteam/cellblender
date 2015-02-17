@@ -40,6 +40,7 @@ import time
 import shutil
 
 import cellblender
+# import cellblender_source_info
 from cellblender.utils import project_files_path
 from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
 
@@ -81,7 +82,8 @@ class MCELL_OT_upgrade(bpy.types.Operator):
 
         # Update the source_id
         mcell['saved_by_source_id'] = cellblender.cellblender_info['cellblender_source_sha1']
-        mcell.versions_match = True
+        #mcell.versions_match = True
+        cellblender.cellblender_info['versions_match'] = True
         print ( "Finished Upgrading Properties from Data Model" )
         return {'FINISHED'}
 

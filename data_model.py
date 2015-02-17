@@ -258,16 +258,20 @@ def load_post(context):
     if hasattr ( context.scene, 'mcell' ):
         mcell = context.scene.mcell
 
-        mcell.versions_match = False
+        # mcell.versions_match = False
+        cellblender.cellblender_info['versions_match'] = False
         if 'saved_by_source_id' in mcell:
             saved_by_id = mcell['saved_by_source_id']
             print ( "load_post() opened a blend file with source_id = " + saved_by_id )
             if source_id == saved_by_id:
-                mcell.versions_match = True
+                #mcell.versions_match = True
+                cellblender.cellblender_info['versions_match'] = True
             else:
                 # Don't update the properties here. Just flag to display the "Upgrade" button for user to choose.
-                mcell.versions_match = False
-    print ( "End of load_post(): mcell.versions_match = " + str(mcell.versions_match) )
+                #mcell.versions_match = False
+                cellblender.cellblender_info['versions_match'] = False
+    #print ( "End of load_post(): mcell.versions_match = " + str(mcell.versions_match) )
+    print ( "End of load_post(): cellblender.cellblender_info['versions_match'] = " + str(cellblender.cellblender_info['versions_match']) )
     print ( "========================================" )
 
     """
