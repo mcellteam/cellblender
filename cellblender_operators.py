@@ -58,6 +58,7 @@ def unregister():
 
 #CellBlender Operators:
 
+
 class MCELL_OT_upgrade(bpy.types.Operator):
     """This is the Upgrade operator called when the user presses the "Upgrade" button"""
     bl_idname = "mcell.upgrade"
@@ -76,6 +77,7 @@ class MCELL_OT_upgrade(bpy.types.Operator):
             # Do the actual updating of properties from data model right here
             mcell.build_properties_from_data_model ( context, dm )
         else:
+            print ( "Warning: This should never happen." )
             print ( "No data model to upgrade ... building a data model and then recreating properties." )
             dm = mcell.build_data_model_from_properties ( context )
             mcell.build_properties_from_data_model ( context, dm )
@@ -86,6 +88,38 @@ class MCELL_OT_upgrade(bpy.types.Operator):
         cellblender.cellblender_info['versions_match'] = True
         print ( "Finished Upgrading Properties from Data Model" )
         return {'FINISHED'}
+
+
+class MCELL_OT_upgradeRC3(bpy.types.Operator):
+    """This is the Upgrade operator called when the user presses the "Upgrade" button"""
+    bl_idname = "mcell.upgraderc3"
+    bl_label = "Upgrade RC3/4 Blend File"
+    bl_description = "Upgrade the data from an RC3/4 version of CellBlender"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        print ( "Upgrading Properties from Data Model" )
+        mcell = context.scene.mcell
+
+        if 'data_model' in mcell:
+            print ( "Warning: This should never happen." )
+            print ( "Found a data model to upgrade." )
+            dm = cellblender.data_model.unpickle_data_model ( mcell['data_model'] )
+
+            # Do the actual updating of properties from data model right here
+            mcell.build_properties_from_data_model ( context, dm )
+        else:
+            print ( "No data model in RC3/4 file ... building a data model and then recreating properties." )
+            dm = mcell.build_data_model_from_RC3_ID_properties ( context )
+            mcell.build_properties_from_data_model ( context, dm )
+
+        # Update the source_id
+        mcell['saved_by_source_id'] = cellblender.cellblender_info['cellblender_source_sha1']
+        #mcell.versions_match = True
+        cellblender.cellblender_info['versions_match'] = True
+        print ( "Finished Upgrading Properties from Data Model" )
+        return {'FINISHED'}
+
 
 
 class MCELL_OT_delete(bpy.types.Operator):

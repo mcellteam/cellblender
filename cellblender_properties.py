@@ -3505,18 +3505,66 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
     def draw_self (self, context, layout):
         # print ( "Top of CellBlenderMainPanelPropertyGroup.draw_self" )
 
-        mcell = context.scene.mcell
+        #######################################################################################
+        """
+        #######################################################################################
+        def draw_panel_code_worked_out_with_Tom_on_Feb_18_2015:
+            if not scn.mcell.get('CB_ID'):
+                # This .blend file has no CellBlender data or was created with CellBlender RC3
+                if not scn.mcell['initialized']:
+                    # This .blend file has no CellBlender data (never saved with CellBlender enabled)
+                    display "Initialize"
+                else:
+                    # This is a CellBlender RC3 or RC4 file
+                    display "Update"
+            else:
+                # This is a CellBlender .blend file >= 1.0
+                CB_ID = scn.mcell['CB_ID']
+                if CB_ID != cb.cellblender_source_info['cb_src_sha1']
+                    display "Update"
+                else:
+                    display normal panel
+        #######################################################################################
+        """
+        #######################################################################################
 
-        # if not mcell.versions_match:
-        if not cellblender.cellblender_info['versions_match']:
-            # Verion in Blend file does not match Addon, so give user a button to upgrade if desired
-            row = layout.row()
-            row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
-            row = layout.row()
-            row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
-        else:
-            if not mcell.initialized:
+
+
+        mcell = context.scene.mcell
+        
+        if not mcell.get ( 'saved_by_source_id' ):
+            # This .blend file has no CellBlender data at all or was created with CellBlender RC3 / RC4
+            if not mcell['initialized']:
+                # This .blend file has no CellBlender data (never saved with CellBlender enabled)
                 mcell.draw_uninitialized ( layout )
+            else:
+                # This is a CellBlender RC3 or RC4 file
+                row = layout.row()
+                row.label ( "Blend File version (RC3/4) doesn't match CellBlender version", icon='ERROR' )
+                row = layout.row()
+                row.operator ( "mcell.upgraderc3", text="Upgrade RC3/4 Blend File to Current Version", icon='RADIO' )
+        else:
+            CB_ID = mcell['saved_by_source_id']
+            source_id = cellblender.cellblender_info['cellblender_source_sha1']
+            if CB_ID != source_id:
+                # This is a CellBlender file >= 1.0
+                row = layout.row()
+                row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
+                row = layout.row()
+                row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
+
+                """
+                      # if not mcell.versions_match:
+                      if not cellblender.cellblender_info['versions_match']:
+                          # Version in Blend file does not match Addon, so give user a button to upgrade if desired
+                          row = layout.row()
+                          row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
+                          row = layout.row()
+                          row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
+                      else:
+                """
+                #if not mcell.initialized:
+                #    mcell.draw_uninitialized ( layout )
             else:
 
                 if not mcell.cellblender_preferences.use_long_menus:
@@ -4003,6 +4051,11 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
 
         print ( "Done building properties from the data model." )
+
+    def build_data_model_from_RC3_ID_properties ( self, context, geometry=False ):
+        print ( "build_data_model_from_RC3_properties: Constructing a data_model dictionary from current properties" )
+        dm = {}
+        return dm
 
 
     def draw_uninitialized ( self, layout ):
