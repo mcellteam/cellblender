@@ -102,14 +102,14 @@ class MCELL_OT_upgradeRC3(bpy.types.Operator):
         mcell = context.scene.mcell
 
         if 'data_model' in mcell:
-            print ( "Warning: This should never happen." )
+            # This must be an RC4 file?
             print ( "Found a data model to upgrade." )
             dm = cellblender.data_model.unpickle_data_model ( mcell['data_model'] )
 
             # Do the actual updating of properties from data model right here
             mcell.build_properties_from_data_model ( context, dm )
         else:
-            print ( "No data model in RC3/4 file ... building a data model and then recreating properties." )
+            print ( "No data model in RC3 file ... building a data model and then recreating properties." )
             dm = mcell.build_data_model_from_RC3_ID_properties ( context )
             mcell.build_properties_from_data_model ( context, dm )
 

@@ -274,43 +274,6 @@ def load_post(context):
     print ( "End of load_post(): cellblender.cellblender_info['versions_match'] = " + str(cellblender.cellblender_info['versions_match']) )
     print ( "========================================" )
 
-    """
-    # OLD Code before December 23rd, 2014:
-    
-        if 'api_version' in mcell:
-            api_version_in_blend_file = mcell['api_version']
-
-        print ( "Code API = " + str(code_api_version()) + ", File API = " + str(api_version_in_blend_file) )
-
-        if (api_version_in_blend_file <= 0):
-
-            # There is no data model (or it's experimental) so build one from the properties
-            print ( "Building a data model from existing properties..." )
-            dm = context.scene.mcell.build_data_model_from_properties ( context )
-            context.scene.mcell['data_model'] = pickle_data_model(dm)
-
-        elif (api_version_in_blend_file != code_api_version()):
-
-            # There is a data model in the file so convert it to match current properties
-            print ( "Building properties from the data model in the .blend file..." )
-            dm = unpickle_data_model ( context.scene.mcell['data_model'] )
-            context.scene.mcell.build_properties_from_data_model ( context, dm )
-            context.scene['mcell']['api_version'] = code_api_version()
-
-        else:
-
-            # There is a data model in the file and it matches this version so just report it:
-            print ( "API version in .blend file matches code ... no action needed." )
-
-        # Uncomment this when we're ready to start producing public .blend files with API>0
-        # context.scene['mcell']['api_version'] = code_api_version()
-
-    else:
-        print ( "context.scene does not have an 'mcell' key ... no data model to import" )
-
-    return
-    """
-
 
 def menu_func_import(self, context):
     self.layout.operator("cb.import_data_model", text="Import CellBlender Model (text/pickle)")

@@ -226,7 +226,11 @@ def register():
     add_handler ( bpy.app.handlers.load_post, object_surface_regions.object_regions_format_update )
     add_handler ( bpy.app.handlers.load_post, cellblender_operators.mcell_valid_update )
     # add_handler ( bpy.app.handlers.load_post, cellblender_operators.set_defaults )
-    add_handler ( bpy.app.handlers.load_post, cellblender_operators.init_properties )
+    
+    
+    ### add_handler ( bpy.app.handlers.load_post, cellblender_operators.init_properties )
+    
+    
     add_handler ( bpy.app.handlers.load_post, cellblender_operators.load_preferences )
     add_handler ( bpy.app.handlers.load_post, cellblender_properties.scene_loaded )
 
@@ -249,7 +253,11 @@ def unregister():
     remove_handler ( bpy.app.handlers.load_post, cellblender_operators.model_objects_update )
     remove_handler ( bpy.app.handlers.load_post, object_surface_regions.object_regions_format_update )
     remove_handler ( bpy.app.handlers.load_post, cellblender_operators.mcell_valid_update )
-    remove_handler ( bpy.app.handlers.load_post, cellblender_operators.init_properties )
+    
+    
+    ### remove_handler ( bpy.app.handlers.load_post, cellblender_operators.init_properties )
+    
+    
     remove_handler ( bpy.app.handlers.load_post, cellblender_operators.load_preferences )
     remove_handler ( bpy.app.handlers.load_post, cellblender_properties.scene_loaded )
     remove_handler ( bpy.app.handlers.scene_update_pre, cellblender_properties.scene_loaded )

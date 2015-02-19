@@ -3534,11 +3534,11 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
         
         if not mcell.get ( 'saved_by_source_id' ):
             # This .blend file has no CellBlender data at all or was created with CellBlender RC3 / RC4
-            if not mcell['initialized']:
+            if not mcell.initialized:  # if not mcell['initialized']:
                 # This .blend file has no CellBlender data (never saved with CellBlender enabled)
                 mcell.draw_uninitialized ( layout )
             else:
-                # This is a CellBlender RC3 or RC4 file
+                # This is a CellBlender RC3 or RC4 file so draw the RC3/4 upgrade button
                 row = layout.row()
                 row.label ( "Blend File version (RC3/4) doesn't match CellBlender version", icon='ERROR' )
                 row = layout.row()
@@ -3547,29 +3547,18 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             CB_ID = mcell['saved_by_source_id']
             source_id = cellblender.cellblender_info['cellblender_source_sha1']
             if CB_ID != source_id:
-                # This is a CellBlender file >= 1.0
+                # This is a CellBlender file >= 1.0, so draw the normal upgrade button
                 row = layout.row()
                 row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
                 row = layout.row()
                 row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
 
-                """
-                      # if not mcell.versions_match:
-                      if not cellblender.cellblender_info['versions_match']:
-                          # Version in Blend file does not match Addon, so give user a button to upgrade if desired
-                          row = layout.row()
-                          row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
-                          row = layout.row()
-                          row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
-                      else:
-                """
-                #if not mcell.initialized:
-                #    mcell.draw_uninitialized ( layout )
             else:
+                # The versions matched, so draw the normal panels
 
                 if not mcell.cellblender_preferences.use_long_menus:
 
-                    # Draw the selection buttons
+                    # Draw all the selection buttons in a single row
 
                     real_row = layout.row()
                     split = real_row.split(0.9)
@@ -3626,7 +3615,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     #row.operator ( "mcell.read_viz_data", text="",icon='FILE_REFRESH')
                         
                 else:
-                    # Draw the selection buttons with labels:
+
+                    # Draw all the selection buttons with labels in 2 columns:
 
                     brow = layout.row()
                     bcol = brow.column()
@@ -3696,7 +3686,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
 
 
-                # Draw each panel if it is selected
+                # Draw each panel only if it is selected
 
                 if self.preferences_select:
                     layout.box() # Use as a separator
@@ -3884,6 +3874,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         self.parameter_system.init_properties()
         self.initialization.init_properties ( self.parameter_system )
         self.molecules.init_properties ( self.parameter_system )
+        # Don't forget to update the "saved_by_source_id" to match the current version of the addon
+        self['saved_by_source_id'] = cellblender.cellblender_info['cellblender_source_sha1']
         self.initialized = True
 
 
@@ -3942,6 +3934,49 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             dm['geometrical_objects'] = self.model_objects.build_data_model_geometry_from_mesh(context)
             dm['materials'] = self.model_objects.build_data_model_materials_from_materials(context)
         return dm
+
+
+    def build_data_model_from_RC3_ID_properties ( self, context, geometry=False ):
+        print ( "build_data_model_from_RC3_ID_properties: Constructing a data_model dictionary from RC3 ID properties" )
+        print ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+        print ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+        print ( "!!!!!!!!!!!!!! THIS DOESN'T WORK YET !!!!!!!!!!!!!!!!" )
+        print ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+        print ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+
+        dm = {}
+
+        # Remove the RNA properties overlaying the ID Property 'mcell'
+        del bpy.types.Scene.mcell
+        
+        self.print_id_property_tree ( context.scene['mcell'], 'mcell', 0 )
+
+        # Restore the RNA properties overlaying the ID Property 'mcell'
+        bpy.types.Scene.mcell = bpy.props.PointerProperty(type=MCellPropertyGroup)
+        return dm
+
+
+    def print_id_property_tree ( self, obj, name, depth ):
+        """ Recursive routine that prints an ID Property Tree """
+        depth = depth + 1
+        indent = "".join([ '  ' for x in range(depth) ])
+        print ( indent + "Depth="+str(depth) )
+        print ( indent + "print_ID_property_tree() called with \"" + name + "\" of type " + str(type(obj)) )
+        if "'IDPropertyGroup'" in str(type(obj)):
+            print ( indent + "This is an ID property group: " + name )
+            for k in obj.keys():
+                self.print_id_property_tree ( obj[k], k, depth )
+        elif "'list'" in str(type(obj)):
+            print ( indent + "This is a list: " + name )
+            i = 0
+            for k in obj:
+                self.print_id_property_tree ( k, name + '['+str(i)+']', depth )
+                i += 1
+        else:
+            print ( indent + "This is NOT an ID property group: " + name + " = " + str(obj) )
+
+        depth = depth - 1
+        return
 
 
     def build_properties_from_data_model ( self, context, dm, geometry=False ):
@@ -4048,14 +4083,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         print ( "Checking the reaction_data_output properties" )
         self.rxn_output.check_properties_after_building ( context )
 
-
-
         print ( "Done building properties from the data model." )
-
-    def build_data_model_from_RC3_ID_properties ( self, context, geometry=False ):
-        print ( "build_data_model_from_RC3_properties: Constructing a data_model dictionary from current properties" )
-        dm = {}
-        return dm
 
 
     def draw_uninitialized ( self, layout ):
