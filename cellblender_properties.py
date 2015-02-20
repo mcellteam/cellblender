@@ -3412,7 +3412,37 @@ class CBM_OT_refresh_operator(bpy.types.Operator):
     def execute(self, context):
         print ( "Refreshing/Reloading the Molecules" )
         bpy.ops.mcell.read_viz_data()
-        # bpy.ops.time.view_all()   # This fails with:  RuntimeError: Operator bpy.ops.time.view_all.poll() failed, context is incorrect
+        
+        for area in bpy.context.screen.areas:
+            if area.type == 'TIMELINE':
+                override = bpy.context.copy()
+                override['area'] = area
+                bpy.ops.time.view_all(override)
+
+        # bpy.data.window_managers[0].windows[0].screen.areas[4].spaces[0].show_backface_culling = True        
+        #for wm in bpy.data.window_managers:
+        #    for w in wm.windows:
+        #        for a in w.screen.areas:
+        #            for s in a.spaces:
+        #                if s.type == 'TIMELINE':
+        #                    print ( "Found a timeline!!" )
+        #                    
+        #                    my_context = bpy.types.Context.copy(bpy.context)
+        #                    
+        #                    
+        #                    
+        #                    #original_area = context.area
+        #                    #context.area = a
+        #                    #bpy.ops.time.view_all()
+        #                    #context.area = original_area
+        #                    
+        #                    # s.type = 'INFO'
+        #                    # s.type = 'TIMELINE'
+        # 
+        #original_area_type = context.area.type
+        #context.area.type = 'TIMELINE'
+        #bpy.ops.time.view_all()   # This fails with:  RuntimeError: Operator bpy.ops.time.view_all.poll() failed, context is incorrect
+        #context.area.type = original_area_type
         return {'FINISHED'}
 
 

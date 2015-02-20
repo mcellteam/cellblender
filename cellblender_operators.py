@@ -1845,7 +1845,7 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
                 mcell.mol_viz.mol_file_index = 0
 
             create_color_list()
-            set_viz_boundaries()
+            set_viz_boundaries(context)
 
             mol_viz_update(self, context)
         return {'FINISHED'}
@@ -1902,8 +1902,8 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
         return {'FINISHED'}
 
-def set_viz_boundaries():
-        mcell = bpy.context.scene.mcell
+def set_viz_boundaries( context ):
+        mcell = context.scene.mcell
 
         mcell.mol_viz.mol_file_num = len(mcell.mol_viz.mol_file_list)
         mcell.mol_viz.mol_file_stop_index = mcell.mol_viz.mol_file_num - 1
@@ -1912,6 +1912,14 @@ def set_viz_boundaries():
         print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list)-1)
         bpy.context.scene.frame_start = 0
         bpy.context.scene.frame_end = len(mcell.mol_viz.mol_file_list)-1
+
+        for area in bpy.context.screen.areas:
+            if area.type == 'TIMELINE':
+                for region in area.regions:
+                    if region.type == 'WINDOW':
+                        override = { 'area': area, 'region': region }
+                        bpy.ops.time.view_all(override)
+                        break
 
         # Attempts to get the time line to resize when reloaded
         # The pop-up help for View/ViewAll shows bpy.ops.time.view_all()
@@ -1967,7 +1975,7 @@ class MCELL_OT_select_viz_data(bpy.types.Operator):
             new_item.name = os.path.basename(mol_file_name)
 
         create_color_list()
-        set_viz_boundaries()
+        set_viz_boundaries(context)
         mcell.mol_viz.mol_file_index = 0
 
         mol_viz_update(self, context)
