@@ -663,6 +663,19 @@ def set_tab_autocomplete_callback ( self, context ):
         bpy.data.window_managers['WinMan'].keyconfigs['Blender'].keymaps['Console'].keymap_items['console.indent'].active = True
 
 
+def set_double_sided_callback ( self, context ):
+    for mesh in bpy.data.meshes:
+        mesh.show_double_sided = self.double_sided
+
+def set_backface_culling_callback ( self, context ):
+    # bpy.data.window_managers[0].windows[0].screen.areas[4].spaces[0].show_backface_culling = True        
+    for wm in bpy.data.window_managers:
+        for w in wm.windows:
+            for a in w.screen.areas:
+                for s in a.spaces:
+                    if s.type == 'VIEW_3D':
+                        s.show_backface_culling = self.backface_culling
+
 
 from . import cellblender_panels
 
@@ -741,6 +754,8 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
 
     tab_autocomplete = BoolProperty(name="Use tab for console autocomplete", default=False, update=set_tab_autocomplete_callback)
+    double_sided = BoolProperty(name="Show Double Sided Mesh Objects", default=False, update=set_double_sided_callback)
+    backface_culling = BoolProperty(name="Backface Culling", default=False, update=set_backface_culling_callback)
 
 
     def remove_properties ( self, context ):
@@ -824,7 +839,20 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
             #row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='ZOOMOUT')
 
             row = layout.row()
-            row.prop(mcell.cellblender_preferences, "tab_autocomplete")
+            row.prop ( context.user_preferences.inputs, "view_rotate_method" )
+            
+            row = layout.row()
+            row.prop ( context.user_preferences.system, "use_vertex_buffer_objects" )
+            
+            row = layout.row()
+            row.prop ( mcell.cellblender_preferences, "backface_culling" )
+
+            row = layout.row()
+            row.prop ( mcell.cellblender_preferences, "double_sided" )
+
+            row = layout.row()
+            row.prop ( mcell.cellblender_preferences, "tab_autocomplete")
+            
             
 
     def draw_panel ( self, context, panel ):
