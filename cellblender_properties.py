@@ -3410,14 +3410,14 @@ class CBM_OT_refresh_operator(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        print ( "Refreshing/Reloading the Molecules" )
+        print ( "Refreshing/Reloading the Molecules..." )
         bpy.ops.mcell.read_viz_data()
         
-        for area in bpy.context.screen.areas:
-            if area.type == 'TIMELINE':
-                override = bpy.context.copy()
-                override['area'] = area
-                bpy.ops.time.view_all(override)
+        #for area in bpy.context.screen.areas:
+        #    if area.type == 'TIMELINE':
+        #        override = bpy.context.copy()
+        #        override['area'] = area
+        #        bpy.ops.time.view_all(override)
 
         # bpy.data.window_managers[0].windows[0].screen.areas[4].spaces[0].show_backface_culling = True        
         #for wm in bpy.data.window_managers:

@@ -1799,7 +1799,8 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
         # Called when the molecule files are actually to be read (when the
         # "Read Molecule Files" button is pushed or a seed value is selected
         # from the list)
-        print("MCELL_OT_read_viz_data.execute() called")
+
+        # print("MCELL_OT_read_viz_data.execute() called")
         # self.report({'INFO'}, "Reading Visualization Data")
 
         mcell = context.scene.mcell
@@ -1908,8 +1909,8 @@ def set_viz_boundaries( context ):
         mcell.mol_viz.mol_file_num = len(mcell.mol_viz.mol_file_list)
         mcell.mol_viz.mol_file_stop_index = mcell.mol_viz.mol_file_num - 1
 
-        print("Setting frame_start to 0")
-        print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list)-1)
+        #print("Setting frame_start to 0")
+        #print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list)-1)
         bpy.context.scene.frame_start = 0
         bpy.context.scene.frame_end = len(mcell.mol_viz.mol_file_list)-1
 
@@ -1917,14 +1918,27 @@ def set_viz_boundaries( context ):
             if area.type == 'TIMELINE':
                 for region in area.regions:
                     if region.type == 'WINDOW':
-                        override = { 'area': area, 'region': region }
-                        bpy.ops.time.view_all(override)
+                        ctx = bpy.context.copy()
+                        ctx['area'] = area
+                        ctx['region'] = region
+                        bpy.ops.time.view_all(ctx)
                         break
+
 
         # Attempts to get the time line to resize when reloaded
         # The pop-up help for View/ViewAll shows bpy.ops.time.view_all()
         # However, that does not work unless the context is correct
         # This code was an attempt to do that, but hasn't worked yet
+
+        """
+        for area in bpy.context.screen.areas:
+            if area.type == 'TIMELINE':
+                for region in area.regions:
+                    if region.type == 'WINDOW':
+                        override = { 'area': area, 'region': region }
+                        bpy.ops.time.view_all(override)
+                        break
+        """
         
         #area = bpy.context.area
         #old_type = area.type
