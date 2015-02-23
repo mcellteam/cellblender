@@ -120,7 +120,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
     def init_properties ( self, parameter_system ):
         self.name = "The_Reaction"
-        self.rxn_name = "Reaction_Name"
+        self.rxn_name = ""
         self.reactants = ""
         self.products = ""
         self.type = 'irreversible'
