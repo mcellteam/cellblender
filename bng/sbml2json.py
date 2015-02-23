@@ -320,9 +320,10 @@ class SBML2JSON:
             if not initialAmountFlag:
                 if species.getSubstanceUnits() == '' and compartmentList[compartment][0] ==3:
                     sinitialConcentration = ' ({0})/Nav'.format(sinitialConcentration)
-                sinitialConcentration = '({0})/vol_{1}'.format(sinitialConcentration,compartment)
+                #sinitialConcentration = '({0})/vol_{1}'.format(sinitialConcentration,compartment)
+                sinitialConcentration = '({0})/{1}'.format(sinitialConcentration,compartmentList[compartment][1])
             
-                
+            
             #isConstant = species.getConstant()
             #isBoundary = species.getBoundaryCondition()
             if initialConcentration != 0 and not math.isnan(initialConcentration):
@@ -424,8 +425,8 @@ class SBML2JSON:
         return rateR,math.getNumChildren()
 
     def adjustParameters(self,stoichoimetry,reactionDefinition,compartmentList,chemicals):
-        
                 if stoichoimetry == 2:
+
                     #adjusting units for bimolecular reactions
                     firstcompartment = compartmentList[chemicals[0][2]][0]
                     secondcompartment = compartmentList[chemicals[1][2]][0]
@@ -435,6 +436,7 @@ class SBML2JSON:
                     #if its a surface-surface reaction
                     else:
                         reactionDefinition['fwd_rate'] = '{0}/rxn_layer_t'.format(reactionDefinition['fwd_rate'])
+
                 elif stoichoimetry == 0:
                     reactionDefinition['fwd_rate'] = '{0}/Nav'.format(reactionDefinition['fwd_rate'])
                 elif stoichoimetry == 1:
