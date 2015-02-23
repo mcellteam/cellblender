@@ -319,11 +319,12 @@ class SBML2JSON:
             
             if not initialAmountFlag:
                 if species.getSubstanceUnits() == '' and compartmentList[compartment][0] ==3:
-                    sinitialConcentration = ' ({0})/Nav'.format(sinitialConcentration)
+                    sinitialConcentration = '({0})/Nav'.format(sinitialConcentration)
                 #sinitialConcentration = '({0})/vol_{1}'.format(sinitialConcentration,compartment)
                 sinitialConcentration = '({0})/{1}'.format(sinitialConcentration,compartmentList[compartment][1])
             
             
+
             #isConstant = species.getConstant()
             #isBoundary = species.getBoundaryCondition()
             if initialConcentration != 0 and not math.isnan(initialConcentration):
