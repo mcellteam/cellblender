@@ -75,12 +75,29 @@ class MCELL_OT_upgrade(bpy.types.Operator):
             # Do the actual updating of properties from data model right here
             mcell.build_properties_from_data_model ( context, dm )
         else:
-            print ( "No data model to upgrade." )
+            print ( "No data model to upgrade ... building a data model and then recreating properties." )
+            dm = mcell.build_data_model_from_properties ( context )
+            mcell.build_properties_from_data_model ( context, dm )
 
         # Update the source_id
         mcell['saved_by_source_id'] = cellblender.cellblender_info['cellblender_source_sha1']
         mcell.versions_match = True
         print ( "Finished Upgrading Properties from Data Model" )
+        return {'FINISHED'}
+
+
+class MCELL_OT_delete(bpy.types.Operator):
+    """This is the Delete operator called when the user presses the "Delete Properties" button"""
+    bl_idname = "mcell.delete"
+    bl_label = "Delete CellBlender Collection Properties"
+    bl_description = "Delete CellBlender Collection Properties"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        print ( "Deleting CellBlender Collection Properties" )
+        mcell = context.scene.mcell
+        mcell.remove_properties(context)
+        print ( "Finished Deleting CellBlender Collection Properties" )
         return {'FINISHED'}
 
 
@@ -2227,6 +2244,8 @@ def mol_viz_clear(mcell_prop):
     for i in range(len(mcell.mol_viz.mol_viz_list)-1, -1, -1):
         mcell.mol_viz.mol_viz_list.remove(i)
 
+
+
 import sys
 
 def mol_viz_file_read(mcell_prop, filepath):
@@ -2247,6 +2266,7 @@ def mol_viz_file_read(mcell_prop, filepath):
 
         if b[0] == 1:
             # Read Binary format molecule file:
+            # print ("Reading binary file " + filepath )
             bin_data = 1
             while True:
                 try:
@@ -2290,6 +2310,7 @@ def mol_viz_file_read(mcell_prop, filepath):
 
         else:
             # Read ASCII format molecule file:
+            # print ("Reading ASCII file " + filepath )
             bin_data = 0
             mol_file.close()
             # Create a list of molecule names, positions, and orientations
@@ -2349,7 +2370,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                     mol_orient.extend([random.uniform(
                         -1.0, 1.0) for i in range(len(mol_pos))])
 
-                # Look up the color, glyph, and other attributes from the molecules list
+                # Look up the glyph, color, size, and other attributes from the molecules list
                 
                 #### If the molecule found in the viz file doesn't exist in the molecules list, create it as the interface for changing color, etc.
 
@@ -2411,9 +2432,11 @@ def mol_viz_file_read(mcell_prop, filepath):
                     mol_pos_mesh = meshes.new(mol_pos_mesh_name)
 
                 # Add and place vertices at positions of molecules
+                # print ( "Preparing to add vertices" )
                 mol_pos_mesh.vertices.add(len(mol_pos)//3)
                 mol_pos_mesh.vertices.foreach_set("co", mol_pos)
                 mol_pos_mesh.vertices.foreach_set("normal", mol_orient)
+                # print ( "Done adding vertices" )
 
                 mol_obj = objs.get(mol_name)
                 if mol_obj:

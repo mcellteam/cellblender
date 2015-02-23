@@ -63,4 +63,6 @@ def plot(data_path, plot_spec):
         for generic_param in plot_spec.split():
             if generic_param[0:2] == "f=":
                 plot_cmd = plot_cmd + " " + generic_param[2:]
+        print ( "Plotting from: " + data_path )
+        print ( "Plot Command:  " + plot_cmd )
         pid = subprocess.Popen(plot_cmd.split(), cwd=data_path)

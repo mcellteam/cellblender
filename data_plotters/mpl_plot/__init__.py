@@ -73,4 +73,6 @@ def plot(data_path, plot_spec):
         for generic_param in plot_spec.split():
             plot_cmd.append(generic_param)
 
+        print ( "Plotting from: " + data_path )
+        print ( "Plotting with: \"" + ' '.join(plot_cmd) + "\"" )
         pid = subprocess.Popen(plot_cmd, cwd=data_path)

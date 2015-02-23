@@ -85,5 +85,7 @@ def plot ( data_path, plot_spec ):
             plot_cmd = find_in_path("java")
             plot_cmd = plot_cmd + ' -jar ' + os.path.join ( program_path, 'PlotData.jar' ) + " "
             plot_cmd = plot_cmd + java_plot_spec
+            print ( "Plotting from: " + data_path )
+            print ( "Plotting with: " + plot_cmd )
             pid = subprocess.Popen ( plot_cmd.split(), cwd=data_path )
 

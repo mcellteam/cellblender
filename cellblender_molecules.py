@@ -135,7 +135,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     color = FloatVectorProperty ( name="", min=0.0, max=1.0, default=(0.5,0.5,0.5), subtype='COLOR', description='Molecule Color', update=display_callback )
     alpha = FloatProperty ( name="Alpha", min=0.0, max=1.0, default=1.0, description="Alpha (inverse of transparency)", update=display_callback )
     emit = FloatProperty ( name="Emit", min=0.0, default=1.0, description="Emits Light (brightness)", update=display_callback )
-    scale = FloatProperty ( name="Scale", min=0.0, default=1.0, description="Relative size (scale) for this molecule", update=display_callback )
+    scale = FloatProperty ( name="Scale", min=0.0001, default=1.0, description="Relative size (scale) for this molecule", update=display_callback )
+    previous_scale = FloatProperty ( name="Previous_Scale", min=0.0, default=1.0, description="Previous Scale" )
+    #cumulative_scale = FloatProperty ( name="Cumulative_Scale", min=0.0, default=1.0, description="Cumulative Scale" )
 
     glyph_lib = os.path.join(os.path.dirname(__file__), "glyph_library.blend/Mesh/")
     glyph_enum = [
@@ -163,6 +165,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         self.custom_time_step.init_ref     ( parameter_system, "Mol_Time_Step_Type",  user_name="Custom Time Step",     user_expr="",  user_units="seconds",  user_descr="Molecule Custom Time Step" )
         self.custom_space_step.init_ref    ( parameter_system, "Mol_Space_Step_Type", user_name="Custom Space Step",    user_expr="",  user_units="microns",  user_descr="Molecule Custom Space Step" )
         # TODO: Add after data model release:  self.maximum_step_length.init_ref  ( parameter_system, "Max_Step_Len_Type",   user_name="Maximum Step Length",  user_expr="",  user_units="microns",  user_descr="Molecule should never step farther than this length during a single timestep. Use with caution (see documentation)." )
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Molecule Properties ... not implemented yet!" )
 
 
     def build_data_model_from_properties ( self ):
@@ -241,7 +246,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             row.prop(molecules, "show_display", icon='TRIA_DOWN',
                      text="Display Options", emboss=False)
             row = box.row()
-            row.label ( "These don't all work yet. Use other panels as needed.", icon='ERROR' )
+            row.label ( "Molecule Display Settings" )
             row = box.row()
             col = row.column()
             col.prop ( self, "glyph" )
@@ -250,11 +255,14 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             row = box.row()
             col = row.column()
             mol_mat_name = 'mol_' + self.name + '_mat'
-            if mol_mat_name in bpy.data.materials.keys():
+            if False and mol_mat_name in bpy.data.materials.keys():
+                # This would control the actual Blender material property directly
                 col.prop ( bpy.data.materials[mol_mat_name], "diffuse_color" )
                 col = row.column()
                 col.prop ( bpy.data.materials[mol_mat_name], "emit" )
             else:
+                # This controls the molecule property which changes the Blender property via callback
+                # But changing the color via the Materials interface doesn't change these values
                 col.prop ( self, "color" )
                 col = row.column()
                 col.prop ( self, "emit" )
@@ -284,13 +292,23 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def display_callback(self, context):
         """One of the display items has changed for this molecule"""
-        print ( "Display for molecule \"" + self.name + "\" changed to: " + str(self.glyph) + ", " + str(self.color) + ", " + str(self.alpha) + ", " + str(self.scale) )
+        print ( "Display for molecule \"" + self.name + "\" changed to: " + str(self.glyph) + ", color=" + str(self.color) + ", emit=" + str(self.emit) + ", scale=" + str(self.scale) )
+        mol_name = 'mol_' + self.name
+        mol_shape_name = mol_name + '_shape'
+        if mol_shape_name in bpy.data.objects:
+            if self.scale != self.previous_scale:
+                # Scale by the ratio of current scale to previous scale
+                bpy.data.objects[mol_shape_name].scale *= (self.scale / self.previous_scale)
+                self.previous_scale = self.scale
+                
+            
+
         mol_mat_name = 'mol_' + self.name + '_mat'
         if mol_mat_name in bpy.data.materials.keys():
-            if self.color != bpy.data.materials[mol_mat_name].diffuse_color:
-                self.color = bpy.data.materials[mol_mat_name].diffuse_color
-            if self.emit != bpy.data.materials[mol_mat_name].emit:
-                self.emit = bpy.data.materials[mol_mat_name].emit
+            if bpy.data.materials[mol_mat_name].diffuse_color != self.color:
+                bpy.data.materials[mol_mat_name].diffuse_color = self.color
+            if bpy.data.materials[mol_mat_name].emit != self.emit:
+                bpy.data.materials[mol_mat_name].emit = self.emit
 
 
         # Refresh the scene
@@ -300,8 +318,91 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         return
 
 
-    def set_mol_glyph (self, context):
 
+    def set_mol_glyph (self, context):
+        # Use exact code from MCELL_OT_set_molecule_glyph(bpy.types.Operator).execute
+        
+        # First set up a the selected and active molecules
+
+        mol_obj = bpy.data.objects['mol_' + self.name]
+        mol_shape_name = 'mol_' + self.name + '_shape'
+        
+        bpy.ops.object.select_all(action='DESELECT')
+        context.scene.objects[mol_shape_name].select = True
+        context.scene.objects.active = bpy.data.objects[mol_shape_name]
+
+
+        # Exact code starts here (allow it to duplicate some previous code for now):
+
+        mcell = context.scene.mcell
+        meshes = bpy.data.meshes
+        mcell.molecule_glyphs.status = ""
+        select_objs = context.selected_objects
+        if (len(select_objs) != 1):
+            mcell.molecule_glyphs.status = "Select One Molecule"
+            return
+        if (select_objs[0].type != 'MESH'):
+            mcell.molecule_glyphs.status = "Selected Object Not a Molecule"
+            return
+
+        mol_obj = select_objs[0]
+        mol_shape_name = mol_obj.name
+
+        # glyph_name = mcell.molecule_glyphs.glyph
+        glyph_name = str(self.glyph)
+
+        # There may be objects in the scene with the same name as the glyphs in
+        # the glyph library, so we need to deal with this possibility
+        new_glyph_name = glyph_name
+        if glyph_name in meshes:
+            # pattern: glyph name, period, numbers. (example match: "Cube.001")
+            pattern = re.compile(r'%s(\.\d+)' % glyph_name)
+            competing_names = [m.name for m in meshes if pattern.match(m.name)]
+            # example: given this: ["Cube.001", "Cube.3"], make this: [1, 3]
+            trailing_nums = [int(n.split('.')[1]) for n in competing_names]
+            # remove dups & sort... better way than list->set->list?
+            trailing_nums = list(set(trailing_nums))
+            trailing_nums.sort()
+            i = 0
+            gap = False
+            for i in range(0, len(trailing_nums)):
+                if trailing_nums[i] != i+1:
+                    gap = True
+                    break
+            if not gap and trailing_nums:
+                i+=1
+            new_glyph_name = "%s.%03d" % (glyph_name, i + 1)
+
+        if (bpy.app.version[0] > 2) or ( (bpy.app.version[0]==2) and (bpy.app.version[1] > 71) ):
+          bpy.ops.wm.link(
+              directory=mcell.molecule_glyphs.glyph_lib,
+              files=[{"name": glyph_name}], link=False, autoselect=False)
+        else:
+          bpy.ops.wm.link_append(
+              directory=mcell.molecule_glyphs.glyph_lib,
+              files=[{"name": glyph_name}], link=False, autoselect=False)
+
+        mol_mat = mol_obj.material_slots[0].material
+        new_mol_mesh = meshes[new_glyph_name]
+        mol_obj.data = new_mol_mesh
+        meshes.remove(meshes[mol_shape_name])
+
+        new_mol_mesh.name = mol_shape_name
+        new_mol_mesh.materials.append(mol_mat)
+
+        return
+
+
+
+
+    def testing_set_mol_glyph (self, context):
+
+        ###########################################
+        ###########################################
+        # return
+        ###########################################
+        ###########################################
+        
         mcell = context.scene.mcell
         meshes = bpy.data.meshes
         mcell.molecule_glyphs.status = ""
@@ -316,10 +417,14 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
         #mol_obj = select_objs[0]
         #mol_shape_name = mol_obj.name
-        
+
+        # Try to deselect everything
+        bpy.ops.object.select_all(action='DESELECT')
+
         mol_obj = bpy.data.objects['mol_' + self.name]
         mol_shape_name = 'mol_' + self.name + '_shape'
         print ( "Try to select " + mol_shape_name + " from bpy.data.objects["+self.name+"]" )
+        context.scene.objects.active = bpy.data.objects[mol_shape_name]
 
         glyph_name = str(self.glyph)
 
@@ -362,7 +467,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
         new_mol_mesh = meshes[new_glyph_name]
         mol_obj.data = new_mol_mesh
-        # May still need to do this???   meshes.remove(meshes[mol_shape_name])
+        ### causes a problem?  meshes.remove(meshes[mol_shape_name])
 
         new_mol_mesh.name = mol_shape_name
         if mol_mat != None:
@@ -406,6 +511,16 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         if self.molecule_list:
             for mol in self.molecule_list:
                 mol.init_properties(parameter_system)
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Molecule List Properties..." )
+        for item in self.molecule_list:
+            item.remove_properties(context)
+        self.molecule_list.clear()
+        self.active_mol_index = 0
+        self.next_id = 1
+        print ( "Done removing all Molecule List Properties." )
+        
     
     def add_molecule ( self, context ):
         """ Add a new molecule to the list of molecules and set as the active molecule """

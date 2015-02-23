@@ -71,11 +71,15 @@ def unregister():
 class MCellStringProperty(bpy.types.PropertyGroup):
     """ Generic PropertyGroup to hold string for a CollectionProperty """
     name = StringProperty(name="Text")
+    def remove_properties ( self, context ):
+        print ( "Removing an MCell String Property with name \"" + self.name + "\" ... no collections to remove." )
 
 
 class MCellFloatVectorProperty(bpy.types.PropertyGroup):
     """ Generic PropertyGroup to hold float vector for a CollectionProperty """
     vec = bpy.props.FloatVectorProperty(name="Float Vector")
+    def remove_properties ( self, context ):
+        print ( "Removing an MCell Float Vector Property... no collections to remove. Is there anything special do to for Vectors?" )
 
 
 class MCellReactionProperty(bpy.types.PropertyGroup):
@@ -129,6 +133,9 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         self.variable_rate_valid = False
         self.fwd_rate.init_ref   ( parameter_system, "FW_Rate_Type", user_name="Forward Rate",  user_expr="0", user_units="",  user_descr="Forward Rate" )
         self.bkwd_rate.init_ref  ( parameter_system, "BW_Rate_Type", user_name="Backward Rate", user_expr="",  user_units="s", user_descr="Backward Rate" )
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Reaction Properties... no collections to remove." )
 
     status = StringProperty(name="Status")
 
@@ -319,6 +326,9 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         self.quantity.init_ref    ( parameter_system, "Rel_Quant_Type",  user_name="Quantity to Release", user_expr="",  user_units="", user_descr="Concentration units: molar. Density units: molecules per square micron" )
         self.stddev.init_ref      ( parameter_system, "Rel_StdDev_Type", user_name="Standard Deviation",  user_expr="0", user_units="", user_descr="Standard Deviation" )
 
+    def remove_properties ( self, context ):
+        print ( "Removing all Molecule Release Properties... no collections to remove." )
+
     def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
@@ -380,6 +390,10 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
         self.train_duration.init_ref   ( parameter_system, "Tr_Dur_Type",    user_name="Train Duration",        user_expr="",      user_units="s", user_descr="The duration of the train before turning off.\nDefault is to never turn off." )
         self.train_interval.init_ref   ( parameter_system, "Tr_Int_Type",    user_name="Train Interval",        user_expr="",      user_units="s", user_descr="A new train happens every interval.\nDefault is no new trains." )
         self.number_of_trains.init_ref ( parameter_system, "NTrains_Type",   user_name="Number of Trains",      user_expr="1",     user_units="",  user_descr="Repeat the release process this number of times.\nDefault is one train.", user_int=True )
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Release Pattern Properties... no collections to remove." )
+
 
     def build_data_model_from_properties ( self, context ):
         r = self
@@ -472,6 +486,10 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         self.clamp_value_str = "0.0"
         self.clamp_value = float(self.clamp_value_str)
 
+    def remove_properties ( self, context ):
+        print ( "Removing all Surface Class Properties... no collections to remove." )
+
+
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
 
@@ -490,6 +508,14 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
     active_surf_class_props_index = IntProperty(
         name="Active Surface Class Index", default=0)
     status = StringProperty(name="Status")
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Surface Class Properties..." )
+        for item in self.surf_class_props_list:
+            item.remove_properties(context)
+        self.surf_class_props_list.clear()
+        self.active_surf_class_props_index = 0
+        print ( "Done removing all Surface Class Properties." )
 
     def build_data_model_from_properties ( self, context ):
         print ( "Surface Classes building Data Model" )
@@ -538,6 +564,9 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
                     "assigned to it.",
         update=cellblender_operators.check_active_mod_surf_regions)
     status = StringProperty(name="Status")
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Surface Regions Properties... no collections to remove." )
 
     def build_data_model_from_properties ( self, context ):
         print ( "Surface Region building Data Model" )
@@ -655,6 +684,10 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
     tab_autocomplete = BoolProperty(name="Use tab for console autocomplete", default=False, update=set_tab_autocomplete_callback)
 
 
+    def remove_properties ( self, context ):
+        print ( "Removing all Preferences Properties... no collections to remove." )
+
+
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
 
@@ -741,15 +774,15 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
         self.draw_layout ( context, layout )
 
 
-class MCellScratchPropertyGroup(bpy.types.PropertyGroup):
-    show_all_icons = BoolProperty(
-        name="Show All Icons",
-        description="Show all Blender icons and their names",
-        default=False)
-    print_all_icons = BoolProperty(
-        name="Print All Icon Names",
-        description="Print all Blender icon names (helpful for searching)",
-        default=False)
+#class MCellScratchPropertyGroup(bpy.types.PropertyGroup):
+#    show_all_icons = BoolProperty(
+#        name="Show All Icons",
+#        description="Show all Blender icons and their names",
+#        default=False)
+#    print_all_icons = BoolProperty(
+#        name="Print All Icon Names",
+#        description="Print all Blender icon names (helpful for searching)",
+#        default=False)
 
 
 class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
@@ -784,6 +817,8 @@ class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
             row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
+            row = layout.row()
+            row.operator ( "mcell.delete", text="Delete CellBlender Collection Properties", icon='RADIO' )
 
             row = layout.row()
             if not bpy.data.filepath:
@@ -797,6 +832,9 @@ class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
             layout.prop(context.scene, "name", text="Project Base Name")
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Preferences Properties... no collections to remove." )
 
     def draw_panel ( self, context, panel ):
         """ Create a layout from the panel and draw into it """
@@ -812,10 +850,17 @@ class MCellExportProjectPropertyGroup(bpy.types.PropertyGroup):
                                  name="Export Format",
                                  default='mcell_mdl_modular')
 
+    def remove_properties ( self, context ):
+        print ( "Removing all Export Project Properties... no collections to remove." )
+
 
 class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Simulation Runner Process")
     #pid = IntProperty(name="PID")
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Run Simulation Process Properties for " + self.name + "... no collections to remove." )
+
 
 
 class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
@@ -879,6 +924,18 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         items=simulation_run_control_enum, name="",
         description="Mechanism for running and controlling the simulation",
         default='COMMAND')
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Run Simulation Properties..." )
+        for item in self.processes_list:
+            item.remove_properties(context)
+        self.processes_list.clear()
+        self.active_process_index = 0
+        for item in self.error_list:
+            item.remove_properties(context)
+        self.error_list.clear()
+        self.active_err_index = 0
+        print ( "Done removing all Run Simulation Properties." )
 
 
 
@@ -1050,6 +1107,27 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         description="Toggle the option to manually load viz data.",
         update=cellblender_operators.mol_viz_toggle_manual_select)
 
+    def remove_properties ( self, context ):
+        print ( "Removing all Molecule Visualization Properties..." )
+        for item in self.mol_viz_seed_list:
+            item.remove_properties(context)
+        self.mol_viz_seed_list.clear()
+        self.active_mol_viz_seed_index = 0
+        for item in self.mol_file_list:
+            item.remove_properties(context)
+        self.mol_file_list.clear()
+        self.mol_file_index = 0
+        self.mol_file_start_index = 0
+        self.mol_file_stop_index = 0
+        for item in self.mol_viz_list:
+            item.remove_properties(context)
+        self.mol_viz_list.clear()
+        for item in self.color_list:
+            item.remove_properties(context)
+        self.color_list.clear()
+        self.color_index = 0
+        print ( "Done removing all Molecule Visualization Properties." )
+
 
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
@@ -1163,6 +1241,9 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
                                              user_expr="10000", 
                                              user_units="count / sq micron", 
                                              user_descr="Number of molecules that can be stored per square micron" )
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Initialization Properties... no collections to remove." )
 
 
     def build_data_model_from_properties ( self, context ):
@@ -1649,6 +1730,10 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
 
+    def remove_properties ( self, context ):
+        print ( "Removing all Partition Properties... no collections to remove." )
+
+
 
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
@@ -1719,6 +1804,17 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Reaction Properties..." )
+        for item in self.reaction_list:
+            item.remove_properties(context)
+        self.reaction_list.clear()
+        for item in self.reaction_name_list:
+            item.remove_properties(context)
+        self.reaction_name_list.clear()
+        self.active_rxn_index = 0
+        print ( "Done removing all Reaction Properties." )
 
 
     def draw_layout(self, context, layout):
@@ -1802,6 +1898,16 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
+
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Surface Classes Properties..." )
+        for item in self.surf_class_list:
+            item.remove_properties(context)
+        self.surf_class_list.clear()
+        self.active_surf_class_index = 0
+        print ( "Done removing all Surface Classes Properties." )
+
 
 
     def draw_layout(self, context, layout):
@@ -1897,6 +2003,14 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
         for sr in self.mod_surf_regions_list:
             sr.check_properties_after_building(context)
 
+    def remove_properties ( self, context ):
+        print ( "Removing all Surface Regions Properties ..." )
+        for item in self.mod_surf_regions_list:
+            item.remove_properties(context)
+        self.mod_surf_regions_list.clear()
+        self.active_mod_surf_regions_index = 0
+        print ( "Done removing all Surface Regions Properties." )
+
 
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
@@ -1986,6 +2100,18 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
         print ( "check_properties_after_building not implemented for " + str(self) )
 
 
+    def remove_properties ( self, context ):
+        print ( "Removing all Release Pattern Properties..." )
+        for item in self.release_pattern_list:
+            item.remove_properties(context)
+        self.release_pattern_list.clear()
+        for item in self.release_pattern_rxn_name_list:
+            item.remove_properties(context)
+        self.release_pattern_rxn_name_list.clear()
+        self.active_release_pattern_index = 0
+        print ( "Done removing all Release Pattern Properties." )
+
+
     def draw_layout ( self, context, layout ):
         """ Draw the release "panel" within the layout """
         mcell = context.scene.mcell
@@ -2055,6 +2181,16 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
+
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Molecule Release Properties..." )
+        for item in self.mol_release_list:
+            item.remove_properties(context)
+        self.mol_release_list.clear()
+        self.active_release_index = 0
+        print ( "Done removing all Molecule Release Properties." )
+
 
 
     def draw_layout ( self, context, layout ):
@@ -2143,6 +2279,10 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
 
     """
 
+    def remove_properties ( self, context ):
+        print ( "Removing all Model Objects Properties... no collections to remove." )
+
+
 
 import mathutils
 
@@ -2150,6 +2290,15 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     object_list = CollectionProperty(
         type=MCellModelObjectsProperty, name="Object List")
     active_obj_index = IntProperty(name="Active Object Index", default=0)
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Model Object List Properties..." )
+        for item in self.object_list:
+            item.remove_properties(context)
+        self.object_list.clear()
+        self.active_obj_index = 0
+        print ( "Done removing all Model Object List Properties." )
+
 
     def draw_layout ( self, context, layout ):
         mcell = context.scene.mcell
@@ -2503,6 +2652,10 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
         print ( "check_properties_after_building not implemented for " + str(self) )
 
 
+    def remove_properties ( self, context ):
+        print ( "Removing all Visualization Output Properties... no collections to remove." )
+
+
     def draw_layout ( self, context, layout ):
         """ Draw the reaction output "panel" within the layout """
         mcell = context.scene.mcell
@@ -2595,6 +2748,10 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
 
+    def remove_properties ( self, context ):
+        print ( "Removing all Reaction Output Properties... no collections to remove." )
+
+
 
 
 import cellblender
@@ -2676,6 +2833,18 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Reaction Output Properties..." )
+        for item in self.complex_rxn_output_list:
+            item.remove_properties(context)
+        self.complex_rxn_output_list.clear()
+        self.active_rxn_output_index = 0
+        for item in self.rxn_output_list:
+            item.remove_properties(context)
+        self.rxn_output_list.clear()
+        print ( "Done removing all Reaction Output Properties." )
+
 
 
     def draw_layout ( self, context, layout ):
@@ -2796,6 +2965,10 @@ class MCellMoleculeGlyphsPropertyGroup(bpy.types.PropertyGroup):
     show_glyph = BoolProperty(name="Show Glyphs",description="Show Glyphs ... can cause slowness!!",default=True)
     status = StringProperty(name="Status")
 
+    def remove_properties ( self, context ):
+        print ( "Removing all Molecule Glyph Properties... no collections to remove." )
+
+
 
 class MCellMeshalyzerPropertyGroup(bpy.types.PropertyGroup):
     object_name = StringProperty(name="Object Name")
@@ -2810,11 +2983,18 @@ class MCellMeshalyzerPropertyGroup(bpy.types.PropertyGroup):
     sav_ratio = FloatProperty(name="SA/V Ratio", default=0)
     status = StringProperty(name="Status")
 
+    def remove_properties ( self, context ):
+        print ( "Removing all Meshalyzer Properties... no collections to remove." )
+
+
 
 class MCellObjectSelectorPropertyGroup(bpy.types.PropertyGroup):
     filter = StringProperty(
         name="Object Name Filter",
         description="Enter a regular expression for object names.")
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Object Selector Properties... no collections to remove." )
 
 
 
@@ -3060,6 +3240,10 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
     dummy_bool = BoolProperty( name="DummyBool", default=True )
     dummy_string = StringProperty( name="DummyString", default=" " )
     dummy_float = FloatProperty ( name="DummyFloat", default=12.34 )
+
+    def remove_properties ( self, context ):
+        print ( "Removing all CellBlender Main Panel Properties... no collections to remove." )
+
     
     def select_callback ( self, context ):
         """
@@ -3461,8 +3645,43 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     molecule_glyphs = PointerProperty(
         type=MCellMoleculeGlyphsPropertyGroup, name="Molecule Shapes")
 
-    scratch_settings = PointerProperty(
-        type=MCellScratchPropertyGroup, name="CellBlender Scratch Settings")
+    #scratch_settings = PointerProperty(
+    #    type=MCellScratchPropertyGroup, name="CellBlender Scratch Settings")
+
+    def init_properties ( self ):
+        self.cellblender_version = "0.1.54"
+        self.cellblender_addon_id = "0"
+        self.cellblender_data_model_version = "0"
+        self.parameter_system.init_properties()
+        self.initialization.init_properties ( self.parameter_system )
+        self.molecules.init_properties ( self.parameter_system )
+        self.initialized = True
+
+
+    def remove_properties ( self, context ):
+        print ( "Removing all MCell Properties..." )
+        self.molecule_glyphs.remove_properties(context)
+        self.object_selector.remove_properties(context)
+        self.meshalyzer.remove_properties(context)
+        self.rxn_output.remove_properties(context)
+        self.viz_output.remove_properties(context)
+        self.model_objects.remove_properties(context)
+        self.release_sites.remove_properties(context)
+        self.release_patterns.remove_properties(context)
+        self.mod_surf_regions.remove_properties(context)
+        self.surface_classes.remove_properties(context)
+        self.reactions.remove_properties(context)
+        self.molecules.remove_properties(context)
+        self.partitions.remove_properties(context)
+        self.initialization.remove_properties(context)
+        self.mol_viz.remove_properties(context)
+        self.run_simulation.remove_properties(context)
+        self.export_project.remove_properties(context)
+        self.project_settings.remove_properties(context)
+        self.cellblender_preferences.remove_properties(context)
+        self.cellblender_main_panel.remove_properties(context)
+        self.parameter_system.remove_properties(context)
+        print ( "Done removing all MCell Properties." )
 
 
     def build_data_model_from_properties ( self, context, geometry=False ):
@@ -3497,7 +3716,11 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm, geometry=False ):
         print ( "build_properties_from_data_model: Data Model Keys = " + str(dm.keys()) )
-        # First upgrade the data model as needed
+
+        # Remove the existing MCell Property Tree
+        self.remove_properties(context)
+
+        # Upgrade the data model as needed
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
@@ -3511,7 +3734,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "parameter_system" in dm:
             print ( "Overwriting the parameter_system properties" )
             self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"] )
-
+        
         """ Considered moving geometry here because it might be referenced by other things, but didn't want to change too many things at once!!!
         if geometry:
             print ( "Deleting all mesh objects" )
@@ -3598,16 +3821,6 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
 
         print ( "Done building properties from the data model." )
-
-
-    def init_properties ( self ):
-        self.cellblender_version = "0.1.54"
-        self.cellblender_addon_id = "0"
-        self.cellblender_data_model_version = "0"
-        self.parameter_system.init_properties()
-        self.initialization.init_properties ( self.parameter_system )
-        self.molecules.init_properties ( self.parameter_system )
-        self.initialized = True
 
 
     def draw_uninitialized ( self, layout ):

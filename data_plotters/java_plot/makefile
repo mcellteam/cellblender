@@ -1,6 +1,6 @@
 PlotData.jar: PlotData.java makefile
 	javac PlotData.java
-	touch -t 201407160000 *.class
+	touch -t 201501260000 *.class
 	zip -X PlotData.jar META-INF/MANIFEST.MF PlotData.java *.class
 	rm -f *.class
 
