@@ -107,7 +107,7 @@ class SBML2JSON:
                {'name':"KB",'value':"1.3806488e-19",'unit':"cm^2.kg/K.s^2",'type':"Boltzmann constant"},
                {'name':"gamma",'value':"0.5722",'unit':"",'type':"Euler's constant"},
                {'name':"T",'value':"298.25",'unit':"K",'type':""},
-               {'name':"rxn_layer_t",'value':"1",'unit':"um",'type':""},
+#               {'name':"rxn_layer_t",'value':"1",'unit':"um",'type':""},
                {'name':"h",'value':"0.01",'unit':"um",'type':""},
                {'name':"Rs",'value':"0.002564",'unit':"um",'type':""},
                {'name':"Rc",'value':"0.0015",'unit':"um",'type':""}
