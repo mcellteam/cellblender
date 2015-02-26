@@ -78,7 +78,8 @@ cellblender_info = {
 
 
 def identify_source_version(addon_path,verbose=False):
-    """ Compute the SHA1 of all source files in cellblender_info["cellblender_source_list"]"""
+    """ Compute the SHA1 of all source files in cellblender_info["cellblender_source_list"] 
+        and save in cellblender_info['cellblender_source_sha1']"""
     cbsl = cellblender_info["cellblender_source_list"]
     hashobject = hashlib.sha1()
     for source_file_basename in cbsl:
@@ -92,9 +93,15 @@ def identify_source_version(addon_path,verbose=False):
             # (i.e. missing mdlmesh_parser.py)
             if verbose:
                 print('  File "%s" does not exist' % source_file_name)
-            pass
 
     cellblender_info['cellblender_source_sha1'] = hashobject.hexdigest()
+
+
+def identify_source_version_from_file():
+    """ Return the SHA1 found in "cellblender_id.py" and save in cellblender_info['cellblender_source_sha1'] """
+    cs = open ( os.path.join(os.path.dirname(__file__), 'cellblender_id.py') ).read()
+    cellblender_info['cellblender_source_sha1'] = cs[1+cs.find("'"):cs.rfind("'")]
+    return ( cellblender_info['cellblender_source_sha1'] )
 
 
 def print_source_list (addon_path,verbose=False):
@@ -113,6 +120,7 @@ if __name__ == '__main__':
 
     id_file_name = "cellblender_id.py"
     identify_source_version(os.path.dirname(__file__),verbose=False)
+    
     cb_id_statement = "cellblender_id = '" + cellblender_info['cellblender_source_sha1'] + "'\n"
     sha_file_name = os.path.join(os.path.dirname(__file__), id_file_name)
     rebuild = True

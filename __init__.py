@@ -107,6 +107,7 @@ def remove_handler ( handler_list, handler_function ):
 
 # We use per module class registration/unregistration
 def register():
+    print ( "Registering CellBlender with Blender version = " + str(bpy.app.version) )
     bpy.utils.register_module(__name__)
 
     # Unregister and re-register panels to display them in order
@@ -187,10 +188,22 @@ def register():
     cellblender_info["cellblender_addon_path"] = os.path.dirname(__file__)
     print("CellBlender Addon Path is " + cellblender_info["cellblender_addon_path"])
     addon_path = os.path.dirname(__file__)
-    # To compute the ID on load, uncomment this and comment the two following...
-    # identify_source_version(addon_path,verbose=True)
-    from . import cellblender_id
-    cellblender_info['cellblender_source_sha1'] = cellblender_id.cellblender_id
+
+    # SELECT ONE OF THE FOLLOWING THREE:
+
+    # To compute the ID on load, uncomment this choice and comment out the other two
+    #cellblender_source_info.identify_source_version(addon_path,verbose=True)
+
+    # To import the ID as python code, uncomment this choice and comment out the other two
+    #from . import cellblender_id
+    #cellblender_info['cellblender_source_sha1'] = cellblender_id.cellblender_id
+
+    # To read the ID from the file as text, uncomment this choice and comment out the other two
+    
+    cs = open ( os.path.join(addon_path, 'cellblender_id.py') ).read()
+    cellblender_info['cellblender_source_sha1'] = cs[1+cs.find("'"):cs.rfind("'")]
+
+
     print ( "CellBlender Source SHA1 = " + cellblender_info['cellblender_source_sha1'] )
 
     # Use "try" for optional modules

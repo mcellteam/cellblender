@@ -1922,38 +1922,7 @@ def set_viz_boundaries( context ):
                         ctx['area'] = area
                         ctx['region'] = region
                         bpy.ops.time.view_all(ctx)
-                        break
-
-
-        # Attempts to get the time line to resize when reloaded
-        # The pop-up help for View/ViewAll shows bpy.ops.time.view_all()
-        # However, that does not work unless the context is correct
-        # This code was an attempt to do that, but hasn't worked yet
-
-        """
-        for area in bpy.context.screen.areas:
-            if area.type == 'TIMELINE':
-                for region in area.regions:
-                    if region.type == 'WINDOW':
-                        override = { 'area': area, 'region': region }
-                        bpy.ops.time.view_all(override)
-                        break
-        """
-        
-        #area = bpy.context.area
-        #old_type = area.type
-        #area.type = 'TIMELINE'
-        #print ( "Calling view_all()" )
-        #bpy.ops.time.view_all()
-        #area.type = old_type
-
-        #for area in bpy.context.screen.areas:
-        #    if area.type == 'TIMELINE':
-        #        print ( "Found a Time Line area " + str(area) )
-        #        #space_data = area.spaces.active
-        #        #space_data.view_all()
-        #        #bpy.context.area = area
-        #        bpy.ops.time.view_all()
+                        break  # It's not clear if this should break or continue ... breaking for now
 
 
 class MCELL_OT_select_viz_data(bpy.types.Operator):

@@ -65,6 +65,7 @@ from bpy.app.handlers import persistent
 
 # python imports
 import pickle
+import os
 
 from bpy_extras.io_utils import ExportHelper
 import cellblender
@@ -244,6 +245,23 @@ def load_post(context):
     """Detect whether the loaded .blend file matches the current addon and set a flag to be used by other code"""
 
     print ( "load post handler: data_model.load_post() called" )
+
+    # SELECT ONE OF THE FOLLOWING THREE:
+
+    # To compute the ID on load, uncomment this choice and comment out the other three
+    #cellblender_source_info.identify_source_version(addon_path,verbose=True)
+
+    # To import the ID as python code, uncomment this choice and comment out the other three
+    #from . import cellblender_id
+    #cellblender.cellblender_info['cellblender_source_sha1'] = cellblender_id.cellblender_id
+
+    # To read the ID from the file as text, uncomment this choice and comment out the other three
+    #cs = open ( os.path.join(os.path.dirname(__file__), 'cellblender_id.py') ).read()
+    #cellblender.cellblender_info['cellblender_source_sha1'] = cs[1+cs.find("'"):cs.rfind("'")]
+
+    # To read the ID from the file as text via a shared call uncomment this choice and comment out the other three
+    cellblender.cellblender_info['cellblender_source_sha1'] = cellblender_source_info.identify_source_version_from_file()
+
 
     source_id = cellblender.cellblender_info['cellblender_source_sha1']
     print ( "cellblender source id = " + source_id )
