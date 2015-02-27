@@ -1835,6 +1835,14 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
     @profile('ParameterSystem.build_data_model_from_properties')
     def build_properties_from_data_model ( self, context, par_sys_dm ):
+        # First upgrade the data model as needed
+        if not ('data_model_version' in par_sys_dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            par_sys_dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if par_sys_dm['data_model_version'] != "DM_2014_10_24_1638":
+            print ( "Error: Unable to upgrade Parameter data model to current version." )
+
         print ( "Parameter System building Properties from Data Model ..." )
         while len(self.general_parameter_list) > 0:
             self.general_parameter_list.remove(0)

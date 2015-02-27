@@ -3825,6 +3825,7 @@ def refresh_source_id_callback ( self, context ):
         self.refresh_source_id = False
 
 
+
 class MCellPropertyGroup(bpy.types.PropertyGroup):
     initialized = BoolProperty(name="Initialized", default=False)
     # versions_match = BoolProperty ( default=True )
@@ -3995,7 +3996,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
                   dm_p = {}
                   dm_p['par_name'] = str(gp['par_name'])
                   dm_p['par_expression'] = str(gp['expr'])
-                  dm_p['par_description'] = str(gp['descr']) + " from RC3!!!"
+                  dm_p['par_description'] = str(gp['descr'])
                   dm_p['par_units'] = str(gp['units'])
                   extras = {}
                   extras['par_id_name'] = str(gp['name'])
@@ -4003,7 +4004,57 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
                   extras['par_value'] = gp['value']
                   dm_p['extras'] = extras
                   dm_mp.append ( dm_p )
-        
+
+          ppl = par_sys.get('panel_parameter_list')
+
+          mols = mcell.get('molecules')
+          if mols != None:
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "There are molecules" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            # There are molecules
+            dm['define_molecules'] = {}
+            dm_mols = dm['define_molecules']
+            ml = mols.get('molecule_list')
+            if ml != None:
+              dm_mols['molecule_list'] = []
+              dm_ml = dm_mols['molecule_list']
+              if len(ml) > 0:
+                for m in ml:
+                  print ( "Mol name = " + str(m['name']) )
+
+                  dm_m = {}
+
+                  dm_m['mol_name'] = str(m['name'])
+
+                  if m.get('type'):
+                    if m['type']:
+                      dm_m['mol_type'] = '3D'
+                    else:
+                      dm_m['mol_type'] = '2D'
+                  else:
+                    dm_m['mol_type'] = "2D"
+
+                  if m.get('target_only'):
+                    dm_m['target_only'] = m['target_only'] != 0
+                  else:
+                    dm_m['target_only'] = False
+
+                  if m.get('export_viz'):
+                    dm_m['export_viz'] = m['export_viz'] != 0
+                  else:
+                    dm_m['export_viz'] = False
+
+                  dm_m['diffusion_constant'] = [ x for x in ppl if x['name'] == m['diffusion_constant']['unique_static_name'] ] [0] ['expr']
+
+                  dm_m['custom_space_step'] = [ x for x in ppl if x['name'] == m['custom_space_step']['unique_static_name'] ] [0] ['expr']
+
+                  dm_m['custom_time_step'] = [ x for x in ppl if x['name'] == m['custom_time_step']['unique_static_name'] ] [0] ['expr']
+
+                  dm_m['maximum_step_length'] = ""
+
+                  dm_ml.append ( dm_m )
+
         #self.print_id_property_tree ( context.scene['mcell'], 'mcell', 0 )
 
         # Restore the RNA properties overlaying the ID Property 'mcell'
