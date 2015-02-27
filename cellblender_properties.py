@@ -71,14 +71,16 @@ class MCellStringProperty(bpy.types.PropertyGroup):
     """ Generic PropertyGroup to hold string for a CollectionProperty """
     name = StringProperty(name="Text")
     def remove_properties ( self, context ):
-        print ( "Removing an MCell String Property with name \"" + self.name + "\" ... no collections to remove." )
+        #print ( "Removing an MCell String Property with name \"" + self.name + "\" ... no collections to remove." )
+        pass
 
 
 class MCellFloatVectorProperty(bpy.types.PropertyGroup):
     """ Generic PropertyGroup to hold float vector for a CollectionProperty """
     vec = bpy.props.FloatVectorProperty(name="Float Vector")
     def remove_properties ( self, context ):
-        print ( "Removing an MCell Float Vector Property... no collections to remove. Is there anything special do to for Vectors?" )
+        #print ( "Removing an MCell Float Vector Property... no collections to remove. Is there anything special do to for Vectors?" )
+        pass
 
 
 class MCellReactionProperty(bpy.types.PropertyGroup):
@@ -3966,12 +3968,43 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         print ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
         print ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
 
-        dm = {}
+        dm = None
 
         # Remove the RNA properties overlaying the ID Property 'mcell'
         del bpy.types.Scene.mcell
         
-        self.print_id_property_tree ( context.scene['mcell'], 'mcell', 0 )
+        mcell = context.scene.get('mcell')
+        if mcell != None:
+          # There's an mcell in the scene
+          dm = {}
+          par_sys = mcell.get('parameter_system')
+          if par_sys != None:
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "There's a parameter system" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            # There's a parameter system
+            dm['parameter_system'] = {}
+            dm_ps = dm['parameter_system']
+            gpl = par_sys.get('general_parameter_list')
+            if gpl != None:
+              dm_ps['model_parameters'] = []
+              dm_mp = dm_ps['model_parameters']
+              if len(gpl) > 0:
+                for gp in gpl:
+                  print ( "Par name = " + str(gp['par_name']) )
+                  dm_p = {}
+                  dm_p['par_name'] = str(gp['par_name'])
+                  dm_p['par_expression'] = str(gp['expr'])
+                  dm_p['par_description'] = str(gp['descr']) + " from RC3!!!"
+                  dm_p['par_units'] = str(gp['units'])
+                  extras = {}
+                  extras['par_id_name'] = str(gp['name'])
+                  extras['par_valid'] = gp['isvalid'] != 0
+                  extras['par_value'] = gp['value']
+                  dm_p['extras'] = extras
+                  dm_mp.append ( dm_p )
+        
+        #self.print_id_property_tree ( context.scene['mcell'], 'mcell', 0 )
 
         # Restore the RNA properties overlaying the ID Property 'mcell'
         bpy.types.Scene.mcell = bpy.props.PointerProperty(type=MCellPropertyGroup)

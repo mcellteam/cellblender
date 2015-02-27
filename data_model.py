@@ -260,7 +260,7 @@ def load_post(context):
     #cellblender.cellblender_info['cellblender_source_sha1'] = cs[1+cs.find("'"):cs.rfind("'")]
 
     # To read the ID from the file as text via a shared call uncomment this choice and comment out the other three
-    cellblender.cellblender_info['cellblender_source_sha1'] = cellblender_source_info.identify_source_version_from_file()
+    cellblender.cellblender_info['cellblender_source_sha1'] = cellblender.cellblender_source_info.identify_source_version_from_file()
 
 
     source_id = cellblender.cellblender_info['cellblender_source_sha1']
