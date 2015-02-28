@@ -2467,6 +2467,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     object_list = CollectionProperty(
         type=MCellModelObjectsProperty, name="Object List")
     active_obj_index = IntProperty(name="Active Object Index", default=0)
+    show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
 
     def remove_properties ( self, context ):
         print ( "Removing all Model Object List Properties..." )
@@ -2495,10 +2496,20 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             col.operator("mcell.model_objects_remove", icon='ZOOMOUT', text="")
             
             if len(self.object_list) > 0:
-                row = layout.row()
-                row.prop ( bpy.data.objects[self.object_list[self.active_obj_index].name], "draw_type" )
-                #row = layout.row()
-                #row.prop ( bpy.data.objects[self.object_list[self.active_obj_index].name], "show_transparent" )
+                box = layout.box()
+                row = box.row()
+                if not self.show_display:
+                    row.prop(self, "show_display", icon='TRIA_RIGHT',
+                             text=str(self.object_list[self.active_obj_index].name)+" Display Options", emboss=False)
+                else:
+                    row.prop(self, "show_display", icon='TRIA_DOWN',
+                             text=str(self.object_list[self.active_obj_index].name)+ " Display Options", emboss=False)
+                    #row = box.row()
+                    #row.label ( str(self.object_list[self.active_obj_index].name) + " Display Settings" )
+                    row = box.row()
+                    row.prop ( bpy.data.objects[self.object_list[self.active_obj_index].name], "draw_type" )
+                    #row = layout.row()
+                    #row.prop ( bpy.data.objects[self.object_list[self.active_obj_index].name], "show_transparent" )
 
 #           row = layout.row()
 #           sub = row.row(align=True)
