@@ -2494,10 +2494,11 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             col.operator("mcell.model_objects_add", icon='ZOOMIN', text="")
             col.operator("mcell.model_objects_remove", icon='ZOOMOUT', text="")
             
-            row = layout.row()
-            row.prop ( bpy.data.objects[self.object_list[self.active_obj_index].name], "draw_type" )
-            #row = layout.row()
-            #row.prop ( bpy.data.objects[self.object_list[self.active_obj_index].name], "show_transparent" )
+            if len(self.object_list) > 0:
+                row = layout.row()
+                row.prop ( bpy.data.objects[self.object_list[self.active_obj_index].name], "draw_type" )
+                #row = layout.row()
+                #row.prop ( bpy.data.objects[self.object_list[self.active_obj_index].name], "show_transparent" )
 
 #           row = layout.row()
 #           sub = row.row(align=True)
