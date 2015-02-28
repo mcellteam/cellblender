@@ -2493,6 +2493,12 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
 #           col.active = (len(context.selected_objects) == 1)
             col.operator("mcell.model_objects_add", icon='ZOOMIN', text="")
             col.operator("mcell.model_objects_remove", icon='ZOOMOUT', text="")
+            
+            row = layout.row()
+            row.prop ( bpy.data.objects[self.object_list[self.active_obj_index].name], "draw_type" )
+            #row = layout.row()
+            #row.prop ( bpy.data.objects[self.object_list[self.active_obj_index].name], "show_transparent" )
+
 #           row = layout.row()
 #           sub = row.row(align=True)
 #           sub.operator("mcell.model_objects_include", text="Include")

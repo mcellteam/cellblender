@@ -117,7 +117,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         ('3D', "Volume Molecule", "")]
     type = EnumProperty(
         items=type_enum, name="Molecule Type",
-        default='2D',
+        default='3D',
         description="Surface molecules are constrained to surfaces/meshes. "
                     "Volume molecules exist in space.")
     diffusion_constant = PointerProperty ( name="Molecule Diffusion Constant", type=parameter_system.Parameter_Reference )
