@@ -2507,7 +2507,9 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     #row = box.row()
                     #row.label ( str(self.object_list[self.active_obj_index].name) + " Display Settings" )
                     row = box.row()
-                    row.prop ( bpy.data.objects[self.object_list[self.active_obj_index].name], "draw_type" )
+                    row.prop ( context.scene.objects[self.object_list[self.active_obj_index].name], "draw_type" )
+                    row = box.row()
+                    row.prop ( context.scene.objects[self.object_list[self.active_obj_index].name], "show_transparent" )
                     #row = layout.row()
                     #row.prop ( bpy.data.objects[self.object_list[self.active_obj_index].name], "show_transparent" )
 
