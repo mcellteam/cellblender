@@ -4282,6 +4282,35 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
 
+          modobjs = mcell.get('model_objects')
+          if modobjs != None:
+            # dm['model_objects'] = self.model_objects.build_data_model_from_properties(context)
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "There are model objects" )
+            # There are model objects
+            dm['model_objects'] = {}
+            dm_mo = dm['model_objects']
+            mol = modobjs.get('object_list')
+            if mol != None:
+              print ( "There is a model_object_list" )
+              dm_mo['model_object_list'] = []
+              dm_ol = dm_mo['model_object_list']
+              if len(mol) > 0:
+                for o in mol:
+                  print ( "Model Object name = " + str(o['name']) )
+                  
+                  dm_o = {}
+                  
+                  if o.get('name'):
+                    dm_o['name'] = str(o['name'])
+                  else:
+                    dm_o['name'] = "Object"
+
+                  dm_ol.append ( dm_o )
+            print ( "Done model objects" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
+
           mols = mcell.get('molecules')
           if mols != None:
             # dm['define_molecules'] = self.molecules.build_data_model_from_properties(context)
@@ -4332,6 +4361,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
             print ( "Done molecules" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
 
           reacts = mcell.get('reactions')
           if reacts != None:
@@ -4400,14 +4430,83 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Done reactions" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
+
           rels = mcell.get('release_sites')
           if rels != None:
             # dm['release_sites'] = self.release_sites.build_data_model_from_properties(context)
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             print ( "There are release sites" )
             # There are release sites
+            dm['release_sites'] = {}
+            dm_rel = dm['release_sites']
+            rsl = rels.get('mol_release_list')
+            if rsl != None:
+              print ( "There is a mol_release_list" )
+              dm_rel['release_site_list'] = []
+              dm_rs = dm_rel['release_site_list']
+              if len(rsl) > 0:
+                for r in rsl:
+                  print ( "Release Site name = " + str(r['name']) )
+                  
+                  dm_r = {}
+                  
+                  if r.get('name'):
+                    dm_r['name'] = str(r['name'])
+                  else:
+                    dm_r['name'] = "Release_Site"
+                  
+                  if r.get('molecule'):
+                    dm_r['molecule'] = str(r['molecule'])
+                  else:
+                    dm_r['molecule'] = ""
+                  
+                  if r.get('shape'):
+                    if r['shape'] == 0:
+                      dm_r['shape'] = "CUBIC"
+                    if r['shape'] == 1:
+                      dm_r['shape'] = "SPHERICAL"
+                    if r['shape'] == 2:
+                      dm_r['shape'] = "SPHERICAL_SHELL"
+                    if r['shape'] == 3:
+                      dm_r['shape'] = "OBJECT"
+                  else:
+                    dm_r['shape'] = "CUBIC"
+                  
+                  if r.get('orient'):
+                    dm_r['orient'] = str(r['orient'])
+                  else:
+                    dm_r['orient'] = "\'"
+                  
+                  if r.get('object_expr'):
+                    dm_r['object_expr'] = str(r['object_expr'])
+                  else:
+                    dm_r['object_expr'] = ""
+                  
+                  dm_r['location_x'] = [ x for x in ppl if x['name'] == r['location_x']['unique_static_name'] ] [0] ['expr']
+                  dm_r['location_y'] = [ x for x in ppl if x['name'] == r['location_y']['unique_static_name'] ] [0] ['expr']
+                  dm_r['location_z'] = [ x for x in ppl if x['name'] == r['location_z']['unique_static_name'] ] [0] ['expr']
+
+                  dm_r['site_diameter'] = [ x for x in ppl if x['name'] == r['diameter']['unique_static_name'] ] [0] ['expr']
+                  dm_r['release_probability'] = [ x for x in ppl if x['name'] == r['probability']['unique_static_name'] ] [0] ['expr']
+
+                  if r.get('quantity_type'):
+                    dm_r['quantity_type'] = str(r['quantity_type'])
+                  else:
+                    dm_r['quantity_type'] = "NUMBER_TO_RELEASE"
+
+                  dm_r['quantity'] = [ x for x in ppl if x['name'] == r['quantity']['unique_static_name'] ] [0] ['expr']
+                  dm_r['stddev'] = [ x for x in ppl if x['name'] == r['stddev']['unique_static_name'] ] [0] ['expr']
+
+                  if r.get('pattern'):
+                    dm_r['pattern'] = str(r['pattern'])
+                  else:
+                    dm_r['pattern'] = ""
+
+                  dm_rs.append ( dm_r )
+
             print ( "Done release sites" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
 
           relps = mcell.get('release_patterns')
           if relps != None:
@@ -4434,15 +4533,6 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "There are surface regions" )
             # There are surface regions
             print ( "Done surface regions" )
-            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
-
-          modobjs = mcell.get('model_objects')
-          if modobjs != None:
-            # dm['model_objects'] = self.model_objects.build_data_model_from_properties(context)
-            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
-            print ( "There are model objects" )
-            # There are model objects
-            print ( "Done model objects" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
           vizout = mcell.get('viz_output')
