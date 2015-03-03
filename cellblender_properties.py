@@ -2427,7 +2427,6 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
-    # old_name = StringProperty ( name="Old Object Name", default="" )  # Transient location to store old name when renaming
     name = StringProperty(
         name="Object Name", update=cellblender_operators.check_model_object)
     status = StringProperty(name="Status")
@@ -2504,41 +2503,16 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                 box = layout.box()
                 row = box.row()
                 if not self.show_display:
-                    col = row.column()
-                    col.prop(self, "show_display", icon='TRIA_RIGHT',
+                    row.prop(self, "show_display", icon='TRIA_RIGHT',
                              text=str(self.object_list[self.active_obj_index].name)+" Display Options", emboss=False)
-                    if context.active_object != None:
-                        #row = box.row()
-                        #row.prop ( context.active_object, "name", text="Active Name:" )
-                        col = row.column()
-                        col.prop ( context.scene.objects[self.object_list[self.active_obj_index].name], "name", text="" )
-                    
                 else:
-                    col = row.column()
-                    col.prop(self, "show_display", icon='TRIA_DOWN',
+                    row.prop(self, "show_display", icon='TRIA_DOWN',
                              text=str(self.object_list[self.active_obj_index].name)+" Display Options", emboss=False)
-                    if context.active_object != None:
-                        #row = box.row()
-                        #row.prop ( context.active_object, "name", text="Active Name:" )
-                        col = row.column()
-                        col.prop ( context.scene.objects[self.object_list[self.active_obj_index].name], "name", text="" )
-                    
 
-                    #row.prop(self, "show_display", icon='TRIA_DOWN',
-                    #         text=str(self.object_list[self.active_obj_index].name)+ " Display Options", emboss=False)
-                    #row = box.row()
-                    #row.label ( str(self.object_list[self.active_obj_index].name) + " Display Settings" )
-                    #if context.active_object != None:
-                    #    #row = box.row()
-                    #    #row.prop ( context.active_object, "name", text="Active Name:" )
-                    #    row = box.row()
-                    #    row.prop ( context.scene.objects[self.object_list[self.active_obj_index].name], "name", text="This Name:" )
                     row = box.row()
                     row.prop ( context.scene.objects[self.object_list[self.active_obj_index].name], "draw_type" )
                     row = box.row()
                     row.prop ( context.scene.objects[self.object_list[self.active_obj_index].name], "show_transparent" )
-                    #row = layout.row()
-                    #row.prop ( bpy.data.objects[self.object_list[self.active_obj_index].name], "show_transparent" )
 
 #           row = layout.row()
 #           sub = row.row(align=True)
@@ -4023,13 +3997,16 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         
         mcell = context.scene.get('mcell')
         if mcell != None:
+
           # There's an mcell in the scene
           dm = {}
+          
+
+          # Build the parameter system first
           par_sys = mcell.get('parameter_system')
           if par_sys != None:
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             print ( "There's a parameter system" )
-            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             # There's a parameter system
             dm['parameter_system'] = {}
             dm_ps = dm['parameter_system']
@@ -4052,13 +4029,264 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
                   dm_p['extras'] = extras
                   dm_mp.append ( dm_p )
 
+            print ( "Done parameter system" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
           ppl = par_sys.get('panel_parameter_list')
+          
+
+          # Build the rest of the data model
+
+          init = mcell.get('initialization')
+          if init != None:
+            # dm['initialization'] = self.initialization.build_data_model_from_properties(context)
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "There is initialization" )
+
+            # There is initialization
+            dm['initialization'] = {}
+            dm_init = dm['initialization']
+            dm_init['iterations'] = [ x for x in ppl if x['name'] == init['iterations']['unique_static_name'] ] [0] ['expr']
+            dm_init['time_step'] = [ x for x in ppl if x['name'] == init['time_step']['unique_static_name'] ] [0] ['expr']
+            dm_init['time_step_max'] = [ x for x in ppl if x['name'] == init['time_step_max']['unique_static_name'] ] [0] ['expr']
+
+            dm_init['space_step'] = [ x for x in ppl if x['name'] == init['space_step']['unique_static_name'] ] [0] ['expr']
+            dm_init['interaction_radius'] = [ x for x in ppl if x['name'] == init['interaction_radius']['unique_static_name'] ] [0] ['expr']
+            dm_init['radial_directions'] = [ x for x in ppl if x['name'] == init['radial_directions']['unique_static_name'] ] [0] ['expr']
+            dm_init['radial_subdivisions'] = [ x for x in ppl if x['name'] == init['radial_subdivisions']['unique_static_name'] ] [0] ['expr']
+            dm_init['vacancy_search_distance'] = [ x for x in ppl if x['name'] == init['vacancy_search_distance']['unique_static_name'] ] [0] ['expr']
+            dm_init['surface_grid_density'] = [ x for x in ppl if x['name'] == init['surface_grid_density']['unique_static_name'] ] [0] ['expr']
+
+            if init.get('accurate_3d_reactions'):
+              dm_init['accurate_3d_reactions'] = init['accurate_3d_reactions'] != 0
+            else:
+              dm_init['accurate_3d_reactions'] = True
+
+            if init.get('center_molecules_grid'):
+              dm_init['center_molecules_on_grid'] = init['center_molecules_grid'] != 0
+            else:
+              dm_init['center_molecules_on_grid'] = False
+
+            if init.get('microscopic_reversibility'):
+              dm_init['microscopic_reversibility'] = init['microscopic_reversibility']
+            else:
+              dm_init['microscopic_reversibility'] = 'OFF'
+
+            # Notifications
+
+            dm_init['notifications'] = {}
+            dm_note = dm_init['notifications']
+            if init.get('all_notifications'):
+              dm_note['all_notifications'] = init['all_notifications']
+            else:
+              dm_note['all_notifications'] = 'INDIVIDUAL'
+
+            if init.get('diffusion_constant_report'):
+              dm_note['diffusion_constant_report'] = init['diffusion_constant_report']
+            else:
+              dm_note['diffusion_constant_report'] = 'BRIEF'
+
+            if init.get('file_output_report'):
+              dm_note['file_output_report'] = init['file_output_report'] != 0
+            else:
+              dm_note['file_output_report'] = False
+
+            if init.get('final_summary'):
+              dm_note['final_summary'] = init['final_summary'] != 0
+            else:
+              dm_note['final_summary'] = True
+
+            if init.get('iteration_report'):
+              dm_note['iteration_report'] = init['iteration_report'] != 0
+            else:
+              dm_note['iteration_report'] = True
+
+            if init.get('partition_location_report'):
+              dm_note['partition_location_report'] = init['partition_location_report'] != 0
+            else:
+              dm_note['partition_location_report'] = False
+
+            if init.get('probability_report'):
+              dm_note['probability_report'] = init['probability_report']
+            else:
+              dm_note['probability_report'] = 'ON'
+
+            if init.get('probability_report_threshold'):
+              dm_note['probability_report_threshold'] = init['probability_report_threshold']
+            else:
+              dm_note['probability_report_threshold'] = 0.0
+
+
+            if init.get('varying_probability_report'):
+              dm_note['varying_probability_report'] = init['varying_probability_report'] != 0
+            else:
+              dm_note['varying_probability_report'] = True
+
+            if init.get('progress_report'):
+              dm_note['progress_report'] = init['progress_report'] != 0
+            else:
+              dm_note['progress_report'] = True
+
+            if init.get('release_event_report'):
+              dm_note['release_event_report'] = init['release_event_report'] != 0
+            else:
+              dm_note['release_event_report'] = True
+
+            if init.get('molecule_collision_report'):
+              dm_note['molecule_collision_report'] = init['molecule_collision_report'] != 0
+            else:
+              dm_note['molecule_collision_report'] = False
+
+
+            # Warnings
+
+            dm_init['warnings'] = {}
+            dm_warn = dm_init['warnings']
+
+            if init.get('all_warnings'):
+              dm_warn['all_warnings'] = init['all_warnings']
+            else:
+              dm_warn['all_warnings'] = 'INDIVIDUAL'
+
+            if init.get('degenerate_polygons'):
+              dm_warn['degenerate_polygons'] = init['degenerate_polygons']
+            else:
+              dm_warn['degenerate_polygons'] = 'WARNING'
+
+            if init.get('high_reaction_probability'):
+              dm_warn['high_reaction_probability'] = init['high_reaction_probability']
+            else:
+              dm_warn['high_reaction_probability'] = 'IGNORED'
+
+            if init.get('high_probability_threshold'):
+              dm_warn['high_probability_threshold'] = init['high_probability_threshold']
+            else:
+              dm_warn['high_probability_threshold'] = 1.0
+
+            if init.get('lifetime_too_short'):
+              dm_warn['lifetime_too_short'] = init['lifetime_too_short']
+            else:
+              dm_warn['lifetime_too_short'] = 'WARNING'
+
+            if init.get('lifetime_threshold'):
+              dm_warn['lifetime_threshold'] = init['lifetime_threshold']
+            else:
+              dm_warn['lifetime_threshold'] = 50
+
+            if init.get('missed_reactions'):
+              dm_warn['missed_reactions'] = init['missed_reactions']
+            else:
+              dm_warn['missed_reactions'] = 'WARNING'
+
+            if init.get('missed_reaction_threshold'):
+              dm_warn['missed_reaction_threshold'] = init['missed_reaction_threshold']
+            else:
+              dm_warn['missed_reaction_threshold'] = 0.001
+
+            if init.get('negative_diffusion_constant'):
+              dm_warn['negative_diffusion_constant'] = init['negative_diffusion_constant']
+            else:
+              dm_warn['negative_diffusion_constant'] = 'WARNING'
+
+            if init.get('missing_surface_orientation'):
+              dm_warn['missing_surface_orientation'] = init['missing_surface_orientation']
+            else:
+              dm_warn['missing_surface_orientation'] = 'ERROR'
+
+            if init.get('negative_reaction_rate'):
+              dm_warn['negative_reaction_rate'] = init['negative_reaction_rate']
+            else:
+              dm_warn['negative_reaction_rate'] = 'WARNING'
+
+            if init.get('useless_volume_orientation'):
+              dm_warn['useless_volume_orientation'] = init['useless_volume_orientation']
+            else:
+              dm_warn['useless_volume_orientation'] = 'WARNING'
+
+            print ( "Done initialization" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
+          parts = mcell.get('partitions')
+          if parts != None:
+
+            # dm['initialization']['partitions'] = self.partitions.build_data_model_from_properties(context)
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "There are partitions" )
+            # There are partitions
+            
+            # Ensure that there is an initialization section in the data model that's being built
+            dm_init = dm.get('initialization')
+            if dm_init == None:
+              dm['initialization'] = {}
+              dm_init = dm['initialization']
+            
+            dm['initialization']['partitions'] = {}
+            dm_parts = dm['initialization']['partitions']
+
+            if parts.get('include'):
+              dm_parts['include'] = ( parts['include'] != 0 )
+            else:
+              dm_parts['include'] = False
+
+            if parts.get('recursion_flag'):
+              dm_parts['recursion_flag'] = ( parts['recursion_flag'] != 0 )
+            else:
+              dm_parts['recursion_flag'] = False
+
+            if parts.get('x_start'):
+              dm_parts['x_start'] = parts['x_start']
+            else:
+              dm_parts['x_start'] = -1
+
+            if parts.get('x_end'):
+              dm_parts['x_end'] = parts['x_end']
+            else:
+              dm_parts['x_end'] = 1
+
+            if parts.get('x_step'):
+              dm_parts['x_step'] = parts['x_step']
+            else:
+              dm_parts['x_step'] = 0.02
+
+            if parts.get('y_start'):
+              dm_parts['y_start'] = parts['y_start']
+            else:
+              dm_parts['y_start'] = -1
+
+            if parts.get('y_end'):
+              dm_parts['y_end'] = parts['y_end']
+            else:
+              dm_parts['y_end'] = 1
+
+            if parts.get('y_step'):
+              dm_parts['y_step'] = parts['y_step']
+            else:
+              dm_parts['y_step'] = 0.02
+
+            if parts.get('z_start'):
+              dm_parts['z_start'] = parts['z_start']
+            else:
+              dm_parts['z_start'] = -1
+
+            if parts.get('z_end'):
+              dm_parts['z_end'] = parts['z_end']
+            else:
+              dm_parts['z_end'] = 1
+
+            if parts.get('z_step'):
+              dm_parts['z_step'] = parts['z_step']
+            else:
+              dm_parts['z_step'] = 0.02
+
+            print ( "Done partitions" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
 
           mols = mcell.get('molecules')
           if mols != None:
+            # dm['define_molecules'] = self.molecules.build_data_model_from_properties(context)
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             print ( "There are molecules" )
-            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             # There are molecules
             dm['define_molecules'] = {}
             dm_mols = dm['define_molecules']
@@ -4101,6 +4329,154 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
                   dm_m['maximum_step_length'] = ""
 
                   dm_ml.append ( dm_m )
+
+            print ( "Done molecules" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
+          reacts = mcell.get('reactions')
+          if reacts != None:
+            # dm['define_reactions'] = self.reactions.build_data_model_from_properties(context)
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "There are reactions" )
+            # There are reactions
+            dm['define_reactions'] = {}
+            dm_reacts = dm['define_reactions']
+            rl = reacts.get('reaction_list')
+            if rl != None:
+              dm_reacts['reaction_list'] = []
+              dm_rl = dm_reacts['reaction_list']
+              if len(rl) > 0:
+                for r in rl:
+                  print ( "React name = " + str(r['name']) )
+                  
+                  dm_r = {}
+                  
+                  if r.get('name'):
+                    dm_r['name'] = str(r['name'])
+                  else:
+                    dm_r['name'] = "The Reaction"
+
+                  if r.get('rxn_name'):
+                    dm_r['rxn_name'] = str(r['rxn_name'])
+                  else:
+                    dm_r['rxn_name'] = ""
+
+                  if r.get('reactants'):
+                    dm_r['reactants'] = str(r['reactants'])
+                  else:
+                    dm_r['reactants'] = ""
+
+                  if r.get('products'):
+                    dm_r['products'] = str(r['products'])
+                  else:
+                    dm_r['products'] = ""
+
+                  if r.get('type'):
+                    dm_r['rxn_type'] = str(r['type'])
+                  else:
+                    dm_r['rxn_type'] = 'irreversible'
+
+                  if r.get('variable_rate_switch'):
+                    dm_r['variable_rate_switch'] = ( r['variable_rate_switch'] != 0 )
+                  else:
+                    dm_r['variable_rate_switch'] = False
+
+                  if r.get('variable_rate'):
+                    dm_r['variable_rate'] = str(r['variable_rate'])
+                  else:
+                    dm_r['variable_rate'] = ""
+
+                  if r.get('variable_rate_valid'):
+                    dm_r['variable_rate_valid'] = ( r['variable_rate_valid'] != 0 )
+                  else:
+                    dm_r['variable_rate_valid'] = False
+
+                  dm_r['fwd_rate'] = [ x for x in ppl if x['name'] == r['fwd_rate']['unique_static_name'] ] [0] ['expr']
+
+                  dm_r['bkwd_rate'] = [ x for x in ppl if x['name'] == r['bkwd_rate']['unique_static_name'] ] [0] ['expr']
+
+                  dm_rl.append ( dm_r )
+
+            print ( "Done reactions" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
+          rels = mcell.get('release_sites')
+          if rels != None:
+            # dm['release_sites'] = self.release_sites.build_data_model_from_properties(context)
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "There are release sites" )
+            # There are release sites
+            print ( "Done release sites" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
+          relps = mcell.get('release_patterns')
+          if relps != None:
+            # dm['define_release_patterns'] = self.release_patterns.build_data_model_from_properties(context)
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "There are release patterns" )
+            # There are release patterns
+            print ( "Done release patterns" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
+          surfcs = mcell.get('surface_classes')
+          if surfcs != None:
+            # dm['define_surface_classes'] = self.surface_classes.build_data_model_from_properties(context)
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "There are surface classes" )
+            # There are surface classes
+            print ( "Done surface classes" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
+          modsrs = mcell.get('mod_surf_regions')
+          if modsrs != None:
+            # dm['modify_surface_regions'] = self.mod_surf_regions.build_data_model_from_properties(context)
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "There are surface regions" )
+            # There are surface regions
+            print ( "Done surface regions" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
+          modobjs = mcell.get('model_objects')
+          if modobjs != None:
+            # dm['model_objects'] = self.model_objects.build_data_model_from_properties(context)
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "There are model objects" )
+            # There are model objects
+            print ( "Done model objects" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
+          vizout = mcell.get('viz_output')
+          if vizout != None:
+            # dm['viz_output'] = self.viz_output.build_data_model_from_properties(context)
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "There is viz output" )
+            # There is viz output
+            print ( "Done viz output" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
+          rxnout = mcell.get('rxn_output')
+          if rxnout != None:
+            # dm['reaction_data_output'] = self.rxn_output.build_data_model_from_properties(context)
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "There is reaction output" )
+            # There is reaction output
+            print ( "Done reaction output" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
+          """
+          geom = mcell.get('geometrical_objects')
+          if geom != None:
+            # dm['geometrical_objects'] = self.model_objects.build_data_model_geometry_from_mesh(context)
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "There is viz output" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            # There is viz output
+          if geometry:
+            print ( "Adding Geometry to Data Model" )
+            
+            dm['materials'] = self.model_objects.build_data_model_materials_from_materials(context)
+          """
+
 
         #self.print_id_property_tree ( context.scene['mcell'], 'mcell', 0 )
 

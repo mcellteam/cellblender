@@ -2969,9 +2969,6 @@ class MCELL_OT_model_objects_add(bpy.types.Operator):
 #                mcell.model_objects.object_list[
 #                    mcell.model_objects.active_obj_index].name = obj.name
 
-        #model_object_list = mcell.model_objects.object_list
-        #model_object = model_object_list[mcell.model_objects.active_obj_index]
-        #model_object.old_name = model_object.name
 
         return {'FINISHED'}
 
@@ -3019,11 +3016,6 @@ def check_model_object(self, context):
     m = re.match(model_object_filter, model_object.name)
     if m is None:
         status = "Object name error: %s" % (model_object.name)
-
-    #else:
-    #    if len(model_object.old_name) > 0:
-    #        bpy.data.objects[model_object.old_name].name = model_object.name
-    #    model_object.old_name = model_object.name
 
     model_object.status = status
 
