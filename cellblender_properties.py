@@ -2427,6 +2427,7 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
+    # old_name = StringProperty ( name="Old Object Name", default="" )  # Transient location to store old name when renaming
     name = StringProperty(
         name="Object Name", update=cellblender_operators.check_model_object)
     status = StringProperty(name="Status")
@@ -2485,6 +2486,10 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( layout )
         else:
 
+            if context.active_object != None:
+                row = layout.row()
+                row.prop ( context.active_object, "name", text="Active:" )
+
             row = layout.row()
             col = row.column()
             col.template_list("MCELL_UL_model_objects", "model_objects",
@@ -2499,13 +2504,35 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                 box = layout.box()
                 row = box.row()
                 if not self.show_display:
-                    row.prop(self, "show_display", icon='TRIA_RIGHT',
+                    col = row.column()
+                    col.prop(self, "show_display", icon='TRIA_RIGHT',
                              text=str(self.object_list[self.active_obj_index].name)+" Display Options", emboss=False)
+                    if context.active_object != None:
+                        #row = box.row()
+                        #row.prop ( context.active_object, "name", text="Active Name:" )
+                        col = row.column()
+                        col.prop ( context.scene.objects[self.object_list[self.active_obj_index].name], "name", text="" )
+                    
                 else:
-                    row.prop(self, "show_display", icon='TRIA_DOWN',
-                             text=str(self.object_list[self.active_obj_index].name)+ " Display Options", emboss=False)
+                    col = row.column()
+                    col.prop(self, "show_display", icon='TRIA_DOWN',
+                             text=str(self.object_list[self.active_obj_index].name)+" Display Options", emboss=False)
+                    if context.active_object != None:
+                        #row = box.row()
+                        #row.prop ( context.active_object, "name", text="Active Name:" )
+                        col = row.column()
+                        col.prop ( context.scene.objects[self.object_list[self.active_obj_index].name], "name", text="" )
+                    
+
+                    #row.prop(self, "show_display", icon='TRIA_DOWN',
+                    #         text=str(self.object_list[self.active_obj_index].name)+ " Display Options", emboss=False)
                     #row = box.row()
                     #row.label ( str(self.object_list[self.active_obj_index].name) + " Display Settings" )
+                    #if context.active_object != None:
+                    #    #row = box.row()
+                    #    #row.prop ( context.active_object, "name", text="Active Name:" )
+                    #    row = box.row()
+                    #    row.prop ( context.scene.objects[self.object_list[self.active_obj_index].name], "name", text="This Name:" )
                     row = box.row()
                     row.prop ( context.scene.objects[self.object_list[self.active_obj_index].name], "draw_type" )
                     row = box.row()

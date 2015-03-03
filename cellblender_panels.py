@@ -168,6 +168,10 @@ class MCELL_UL_model_objects(bpy.types.UIList):
         if item.status:
             layout.label(item.status, icon='ERROR')
         else:
+            # Would like to lay out the actual object name so it can be changed right there.
+            # But this has many "trickle down" effects so it hasn't been done yet.
+            # layout.prop(item, 'name', text="", icon='FILE_TICK')
+            # layout.prop(bpy.data.objects[item.name], 'name', text="", icon='FILE_TICK')
             layout.label(item.name, icon='FILE_TICK')
 
 

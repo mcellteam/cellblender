@@ -2879,7 +2879,7 @@ class MCELL_OT_toggle_renderability_filtered(bpy.types.Operator):
 #   Note: This function is also registered as a load_post and save_pre handler
 @persistent
 def model_objects_update(context):
-    print ( "cellblender_operators.model_objects_update() called" )
+    # print ( "cellblender_operators.model_objects_update() called" )
     if not context:
         context = bpy.context
 
@@ -2969,6 +2969,10 @@ class MCELL_OT_model_objects_add(bpy.types.Operator):
 #                mcell.model_objects.object_list[
 #                    mcell.model_objects.active_obj_index].name = obj.name
 
+        #model_object_list = mcell.model_objects.object_list
+        #model_object = model_object_list[mcell.model_objects.active_obj_index]
+        #model_object.old_name = model_object.name
+
         return {'FINISHED'}
 
 
@@ -3006,6 +3010,8 @@ def check_model_object(self, context):
     model_object_list = mcell.model_objects.object_list
     model_object = model_object_list[mcell.model_objects.active_obj_index]
 
+    # print ("Checking name " + model_object.name )
+
     status = ""
 
     # Check for illegal names (Starts with a letter. No special characters.)
@@ -3013,6 +3019,11 @@ def check_model_object(self, context):
     m = re.match(model_object_filter, model_object.name)
     if m is None:
         status = "Object name error: %s" % (model_object.name)
+
+    #else:
+    #    if len(model_object.old_name) > 0:
+    #        bpy.data.objects[model_object.old_name].name = model_object.name
+    #    model_object.old_name = model_object.name
 
     model_object.status = status
 
