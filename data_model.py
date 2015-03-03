@@ -106,6 +106,15 @@ def pickle_data_model ( dm ):
 def unpickle_data_model ( dmp ):
     return ( pickle.loads ( dmp.encode('latin1') ) )
 
+def save_data_model_to_file ( mcell_dm, file_name ):
+    print ( "Saving CellBlender model to file: " + file_name )
+    dm = { 'mcell': mcell_dm }
+    f = open ( file_name, 'w' )
+    f.write ( pickle_data_model(dm) )
+    f.close()
+    print ( "Done saving CellBlender model." )
+
+
 
 class PrintDataModel(bpy.types.Operator):
     '''Print the CellBlender data model to the console'''
@@ -130,13 +139,16 @@ class ExportDataModel(bpy.types.Operator, ExportHelper):
     filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
 
     def execute(self, context):
-        print ( "Saving CellBlender model to file: " + self.filepath )
-        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context )
+        #print ( "Saving CellBlender model to file: " + self.filepath )
+        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=False )
+        save_data_model_to_file ( mcell_dm, self.filepath )
+        """
         dm = { 'mcell': mcell_dm }
         f = open ( self.filepath, 'w' )
         f.write ( pickle_data_model(dm) )
         f.close()
-        print ( "Done saving CellBlender model." )
+        """
+        #print ( "Done saving CellBlender model." )
         return {'FINISHED'}
 
 
@@ -150,13 +162,17 @@ class ExportDataModelAll(bpy.types.Operator, ExportHelper):
     filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
 
     def execute(self, context):
-        print ( "Saving CellBlender model and geometry to file: " + self.filepath )
+        #print ( "Saving CellBlender model and geometry to file: " + self.filepath )
+        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
+        save_data_model_to_file ( mcell_dm, self.filepath )
+        """
         mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
         dm = { 'mcell': mcell_dm }
         f = open ( self.filepath, 'w' )
         f.write ( pickle_data_model(dm) )
         f.close()
         print ( "Done saving CellBlender model." )
+        """
         return {'FINISHED'}
 
 

@@ -1922,12 +1922,13 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
 
         while len(self.reaction_list) > 0:
             self.reaction_list.remove(0)
-        for r in dm["reaction_list"]:
-            self.reaction_list.add()
-            self.active_rxn_index = len(self.reaction_list)-1
-            rxn = self.reaction_list[self.active_rxn_index]
-            rxn.init_properties(context.scene.mcell.parameter_system)
-            rxn.build_properties_from_data_model ( context, r )
+        if "reaction_list" in dm:
+          for r in dm["reaction_list"]:
+              self.reaction_list.add()
+              self.active_rxn_index = len(self.reaction_list)-1
+              rxn = self.reaction_list[self.active_rxn_index]
+              rxn.init_properties(context.scene.mcell.parameter_system)
+              rxn.build_properties_from_data_model ( context, r )
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -2586,15 +2587,16 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             
         # Create a list of model object names from the Data Model
         mo_list = []
-        for m in dm["model_object_list"]:
-            print ( "Data model contains " + m["name"] )
-            self.object_list.add()
-            self.active_obj_index = len(self.object_list)-1
-            mo = self.object_list[self.active_obj_index]
-            #mo.init_properties(context.scene.mcell.parameter_system)
-            #mo.build_properties_from_data_model ( context, m )
-            mo.name = m['name']
-            mo_list.append ( m["name"] )
+        if "model_object_list" in dm:
+          for m in dm["model_object_list"]:
+              print ( "Data model contains " + m["name"] )
+              self.object_list.add()
+              self.active_obj_index = len(self.object_list)-1
+              mo = self.object_list[self.active_obj_index]
+              #mo.init_properties(context.scene.mcell.parameter_system)
+              #mo.build_properties_from_data_model ( context, m )
+              mo.name = m['name']
+              mo_list.append ( m["name"] )
 
         # Use the list of Data Model names to set flags of all objects
         for k,o in context.scene.objects.items():
@@ -3982,6 +3984,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         return dm
 
 
+    def add_from_panel_parameter ( self, dm_dict, dm_name, prop_dict, prop_name, panel_param_list ):
+            dm_dict[dm_name] = [ x for x in panel_param_list if x['name'] == prop_dict[prop_name]['unique_static_name'] ] [0] ['expr']
+
     def build_data_model_from_RC3_ID_properties ( self, context, geometry=False ):
         print ( "build_data_model_from_RC3_ID_properties: Constructing a data_model dictionary from RC3 ID properties" )
         print ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
@@ -4037,6 +4042,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
           # Build the rest of the data model
 
+          # Initialization
+
           init = mcell.get('initialization')
           if init != None:
             # dm['initialization'] = self.initialization.build_data_model_from_properties(context)
@@ -4046,7 +4053,11 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             # There is initialization
             dm['initialization'] = {}
             dm_init = dm['initialization']
-            dm_init['iterations'] = [ x for x in ppl if x['name'] == init['iterations']['unique_static_name'] ] [0] ['expr']
+
+            self.add_from_panel_parameter ( dm_init, 'iterations', init, 'iterations', ppl )
+
+            #dm_init['iterations'] = [ x for x in ppl if x['name'] == init['iterations']['unique_static_name'] ] [0] ['expr']
+
             dm_init['time_step'] = [ x for x in ppl if x['name'] == init['time_step']['unique_static_name'] ] [0] ['expr']
             dm_init['time_step_max'] = [ x for x in ppl if x['name'] == init['time_step_max']['unique_static_name'] ] [0] ['expr']
 
@@ -4206,6 +4217,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Done initialization" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
+          # Partitions
+
           parts = mcell.get('partitions')
           if parts != None:
 
@@ -4281,6 +4294,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Done partitions" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
+          # Model Objects
 
           modobjs = mcell.get('model_objects')
           if modobjs != None:
@@ -4310,6 +4324,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Done model objects" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
+          # Molecules
 
           mols = mcell.get('molecules')
           if mols != None:
@@ -4362,6 +4377,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Done molecules" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
+          # Reactions
 
           reacts = mcell.get('reactions')
           if reacts != None:
@@ -4430,6 +4446,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Done reactions" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
+          # Release Sites
 
           rels = mcell.get('release_sites')
           if rels != None:
@@ -4507,6 +4524,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Done release sites" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
+          # Release Patterns
 
           relps = mcell.get('release_patterns')
           if relps != None:
@@ -4568,10 +4586,14 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
           """
 
 
+
+        cellblender.data_model.save_data_model_to_file ( dm, "Upgraded_Data_Model.txt" )
+
         #self.print_id_property_tree ( context.scene['mcell'], 'mcell', 0 )
 
         # Restore the RNA properties overlaying the ID Property 'mcell'
         bpy.types.Scene.mcell = bpy.props.PointerProperty(type=MCellPropertyGroup)
+
         return dm
 
 
@@ -4702,7 +4724,11 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         print ( "Checking the reaction_data_output properties" )
         self.rxn_output.check_properties_after_building ( context )
 
+
+        cellblender_operators.model_objects_update(context)
+
         print ( "Done building properties from the data model." )
+        
 
 
     def draw_uninitialized ( self, layout ):

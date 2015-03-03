@@ -1123,33 +1123,41 @@ def check_release_object_expr(context):
     expr_filter = r"[\+\-\*\(\)]"
 
     expr_vars = re.sub(expr_filter, " ", obj_expr).split()
+    
+    #print ( "Checking Release Objects: " + str(expr_vars) + " in " + str([k for k in obj_list]) )
 
     if not obj_expr:
         status = "Object name error"
 
     for var in expr_vars:
-        print ( "Checking " + str(var) )
+        #print ( "Checking " + str(var) )
         m = re.match(obj_reg_filter, var)
         if m is None:
+            #print ( "Match returned None" )
             status = "Object name error: %s" % (var)
+            #print ( status )
             break
         else:
+            #print ( "Match returned " + str(m) )
             if m.group("obj_reg") is not None:
                 obj_name = m.group("obj_name")
                 reg_name = m.group("reg_name")
                 if not obj_name in obj_list or obj_list[obj_name].status:
                     status = "Undefined/illegal object: %s" % (obj_name)
+                    #print ( status )
                     break
                 obj = scn.objects[obj_name]
                 if reg_name != "ALL":
                     if (not obj.mcell.regions.region_list or 
                             reg_name not in obj.mcell.regions.region_list):
                         status = "Undefined region: %s" % (reg_name)
+                        #print ( status )
                         break
             else:
                 obj_name = m.group("obj_name_only")
                 if not obj_name in obj_list or obj_list[obj_name].status:
                     status = "Undefined/illegal object: %s" % (obj_name)
+                    #print ( status )
                     break
 
     return status
