@@ -4512,28 +4512,6 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "There are surface class definitions" )
             # There are surface classes
             print ( "surfcs.keys() = " + str(surfcs.keys()) )
-
-            print ( "+++++++++++++++++++++++++++++++++++++++++++" )
-            dm['define_surface_classes'] = {}
-            dm_scl = dm['define_surface_classes']
-            scl = surfcs.get('surf_class_list')
-            if scl != None:
-              print ( "There is a surf_class_list" )
-              dm_scl['surface_class_list'] = []
-              if len(scl) > 0:
-                print ( "The surf_class_list has " + str(len(scl)) + " surface classes" )
-                for sc in scl:
-                  print ( " Surface Class Name = " + str(sc['name']) )
-                  scpl = sc.get('surf_class_props_list')
-                  print ( " The surf_class_props_list has " + str(len(scpl)) + " surface class properties" )
-                  for scp in scpl:
-                    print ( "   Surface Class Property:" )
-                    print ( "      Name = " + str(scp['name']) )
-                    print ( "      Mol = " + str(scp['molecule']) )
-                    print ( "      Type = " + str(scp['surf_class_type']) )
-
-            print ( "+++++++++++++++++++++++++++++++++++++++++++" )
-
             dm['define_surface_classes'] = {}
             dm_surfcs = dm['define_surface_classes']
             scl = surfcs.get('surf_class_list')
@@ -4570,12 +4548,39 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Done surface class definitions" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
+
+
           modsrs = mcell.get('mod_surf_regions')
           if modsrs != None:
             # dm['modify_surface_regions'] = self.mod_surf_regions.build_data_model_from_properties(context)
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             print ( "There are surface regions" )
             # There are surface regions
+            print ( "modsrs.keys() = " + str(modsrs.keys()) )
+            dm['modify_surface_regions'] = {}
+            dm_modsrs = dm['modify_surface_regions']
+            msrl = modsrs.get('mod_surf_regions_list')
+            if msrl != None:
+              print ( "There is a mod_surf_regions_list" )
+              dm_modsrs['modify_surface_regions_list'] = []
+              dm_msrl = dm_modsrs['modify_surface_regions_list']
+              if len(msrl) > 0:
+                print ( "The mod_surf_regions_list has " + str(len(msrl)) + " regions" )
+                for msr in msrl:
+                  print ( " Modify Region Name = " + str(msr['name']) )
+                  print ( "   Surf Class Name = " + str(msr['surf_class_name']) )
+                  print ( "   Object Name = " + str(msr['object_name']) )
+                  print ( "   Region Name = " + str(msr['region_name']) )
+                  
+                  dm_msr = {}
+
+                  self.RC3_add_from_ID_string ( dm_msr, 'name',     msr, 'name',     "" )
+                  self.RC3_add_from_ID_string ( dm_msr, 'surf_class_name', msr, 'surf_class_name', "" )
+                  self.RC3_add_from_ID_string ( dm_msr, 'object_name', msr, 'object_name', "" )
+                  self.RC3_add_from_ID_string ( dm_msr, 'region_name', msr, 'region_name', "" )
+
+                  dm_msrl.append ( dm_msr )
+
             print ( "Done surface regions" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
