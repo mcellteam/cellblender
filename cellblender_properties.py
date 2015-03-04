@@ -4000,6 +4000,18 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         else:
           dm_dict[dm_name] = default_value
 
+    def RC3_add_from_ID_float ( self, dm_dict, dm_name, prop_dict, prop_name, default_value ):
+        if prop_dict.get(prop_name):
+          dm_dict[dm_name] = prop_dict[prop_name]
+        else:
+          dm_dict[dm_name] = default_value
+
+    def RC3_add_from_ID_floatstr ( self, dm_dict, dm_name, prop_dict, prop_name, default_value ):
+        if prop_dict.get(prop_name):
+          dm_dict[dm_name] = str(prop_dict[prop_name])
+        else:
+          dm_dict[dm_name] = str(default_value)
+
     def RC3_add_from_ID_boolean ( self, dm_dict, dm_name, prop_dict, prop_name, default_value ):
         if prop_dict.get(prop_name):
           dm_dict[dm_name] = ( prop_dict[prop_name] != 0 )
@@ -4474,30 +4486,88 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
               dm_rpl = dm_relps['release_pattern_list']
               if len(rpl) > 0:
                 for r in rpl:
-                  print ( "Release Site name = " + str(r['name']) )
+                  print ( "Release Pattern name = " + str(r['name']) )
                   
                   dm_r = {}
                   
-                  self.RC3_add_from_ID_string  ( dm_r, 'name',     r, 'name',     "Release_Site" )
+                  self.RC3_add_from_ID_string  ( dm_r, 'name',     r, 'name',     "Release_Pattern" )
                   
-                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'delay',  r, 'delay',  ppl )
-                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'release_interval',  r, 'release_interval',  ppl )
-                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'train_duration',  r, 'train_duration',  ppl )
-                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'train_interval', r, 'train_interval',  ppl )
-                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'number_of_trains',   r, 'number_of_trains',  ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'delay',            r, 'delay',            ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'release_interval', r, 'release_interval', ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'train_duration',   r, 'train_duration',   ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'train_interval',   r, 'train_interval',   ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'number_of_trains', r, 'number_of_trains', ppl )
 
                   dm_rpl.append ( dm_r )
 
             print ( "Done release patterns" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
+          # Surface Class Definitions
+
           surfcs = mcell.get('surface_classes')
           if surfcs != None:
             # dm['define_surface_classes'] = self.surface_classes.build_data_model_from_properties(context)
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
-            print ( "There are surface classes" )
+            print ( "There are surface class definitions" )
             # There are surface classes
-            print ( "Done surface classes" )
+            print ( "surfcs.keys() = " + str(surfcs.keys()) )
+
+            print ( "+++++++++++++++++++++++++++++++++++++++++++" )
+            dm['define_surface_classes'] = {}
+            dm_scl = dm['define_surface_classes']
+            scl = surfcs.get('surf_class_list')
+            if scl != None:
+              print ( "There is a surf_class_list" )
+              dm_scl['surface_class_list'] = []
+              if len(scl) > 0:
+                print ( "The surf_class_list has " + str(len(scl)) + " surface classes" )
+                for sc in scl:
+                  print ( " Surface Class Name = " + str(sc['name']) )
+                  scpl = sc.get('surf_class_props_list')
+                  print ( " The surf_class_props_list has " + str(len(scpl)) + " surface class properties" )
+                  for scp in scpl:
+                    print ( "   Surface Class Property:" )
+                    print ( "      Name = " + str(scp['name']) )
+                    print ( "      Mol = " + str(scp['molecule']) )
+                    print ( "      Type = " + str(scp['surf_class_type']) )
+
+            print ( "+++++++++++++++++++++++++++++++++++++++++++" )
+
+            dm['define_surface_classes'] = {}
+            dm_surfcs = dm['define_surface_classes']
+            scl = surfcs.get('surf_class_list')
+            if scl != None:
+              print ( "There is a surf_class_list" )
+              dm_surfcs['surface_class_list'] = []
+              dm_scl = dm_surfcs['surface_class_list']
+              print ( "The surf_class_list has " + str(len(scl)) + " surface classes" )
+              if len(scl) > 0:
+                for sc in scl:
+                  print ( "  Surface Class Name = " + str(sc['name']) )
+                  dm_sc = {}
+                  if 'name' in sc:
+                    dm_sc['name'] = sc['name']
+                  dm_sc['surface_class_prop_list'] = []
+                  dm_scpl = dm_sc['surface_class_prop_list']
+                  if 'surf_class_props_list' in sc:
+                    scpl = sc.get('surf_class_props_list')
+                    for scp in scpl:
+                      print ( "    Surface Class Property Name = " + str(scp['name']) )
+                      dm_scp = {}
+                      self.RC3_add_from_ID_string   ( dm_scp, 'name',     scp, 'name',     "Surf_Class_Property" )
+                      self.RC3_add_from_ID_string   ( dm_scp, 'molecule', scp, 'molecule', "" )
+                      
+                      self.RC3_add_from_ID_enum     ( dm_scp, 'surf_class_orient', scp, 'surf_class_orient', "\'", ['\'', ',', ';'] )
+                      self.RC3_add_from_ID_enum     ( dm_scp, 'surf_class_type',   scp, 'surf_class_type',   "ABSORPTIVE", ['ABSORPTIVE', 'TRANSPARENT', 'REFLECTIVE', 'CLAMP_CONCENTRATION'] )
+                      
+                      self.RC3_add_from_ID_floatstr ( dm_scp, 'clamp_value',       scp, 'clamp_value', "" )
+                      
+                      dm_scpl.append ( dm_scp )
+
+                  dm_scl.append ( dm_sc )
+
+            print ( "Done surface class definitions" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
           modsrs = mcell.get('mod_surf_regions')
@@ -4541,9 +4611,13 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             dm['materials'] = self.model_objects.build_data_model_materials_from_materials(context)
           """
 
-
-
+        print ( "Adding Geometry to Data Model" )
+        dm['geometrical_objects'] = self.model_objects.build_data_model_geometry_from_mesh(context)
+        dm['materials'] = self.model_objects.build_data_model_materials_from_materials(context)
         cellblender.data_model.save_data_model_to_file ( dm, "Upgraded_Data_Model.txt" )
+        print ( "Removing Geometry from Data Model" )
+        dm.pop('geometrical_objects')
+        dm.pop('materials')
 
         #self.print_id_property_tree ( context.scene['mcell'], 'mcell', 0 )
 
