@@ -4330,12 +4330,10 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
                   
                   dm_o = {}
                   
-                  if o.get('name'):
-                    dm_o['name'] = str(o['name'])
-                  else:
-                    dm_o['name'] = "Object"
+                  self.RC3_add_from_ID_string ( dm_o, 'name', o, 'name', "Object" )
 
                   dm_ol.append ( dm_o )
+
             print ( "Done model objects" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
@@ -4359,38 +4357,13 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
                   dm_m = {}
 
-                  # dm_m['mol_name'] = str(m['name'])
-
-                  self.RC3_add_from_ID_string ( dm_m, 'mol_name', m, 'name', "Molecule" )
-
-                  self.RC3_add_from_ID_enum ( dm_m, 'mol_type', m, 'type', "2D", ["2D", "3D"] )
-
-                  """
-                  if m.get('type'):
-                    if m['type']:
-                      dm_m['mol_type'] = '3D'
-                    else:
-                      dm_m['mol_type'] = '2D'
-                  else:
-                    dm_m['mol_type'] = "2D"
-                  """
-
-                  if m.get('target_only'):
-                    dm_m['target_only'] = m['target_only'] != 0
-                  else:
-                    dm_m['target_only'] = False
-
-                  if m.get('export_viz'):
-                    dm_m['export_viz'] = m['export_viz'] != 0
-                  else:
-                    dm_m['export_viz'] = False
-
-                  dm_m['diffusion_constant'] = [ x for x in ppl if x['name'] == m['diffusion_constant']['unique_static_name'] ] [0] ['expr']
-
-                  dm_m['custom_space_step'] = [ x for x in ppl if x['name'] == m['custom_space_step']['unique_static_name'] ] [0] ['expr']
-
-                  dm_m['custom_time_step'] = [ x for x in ppl if x['name'] == m['custom_time_step']['unique_static_name'] ] [0] ['expr']
-
+                  self.RC3_add_from_ID_string          ( dm_m, 'mol_name',           m, 'name',               "Molecule" )
+                  self.RC3_add_from_ID_enum            ( dm_m, 'mol_type',           m, 'type',               "2D",      ["2D", "3D"] )
+                  self.RC3_add_from_ID_boolean         ( dm_m, 'target_only',        m, 'target_only',        False )
+                  self.RC3_add_from_ID_boolean         ( dm_m, 'export_viz',         m, 'export_viz',         False )
+                  self.RC3_add_from_ID_panel_parameter ( dm_m, 'diffusion_constant', m, 'diffusion_constant', ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_m, 'custom_space_step',  m, 'custom_space_step',  ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_m, 'custom_time_step',   m, 'custom_time_step',   ppl )
                   dm_m['maximum_step_length'] = ""
 
                   dm_ml.append ( dm_m )
@@ -4418,49 +4391,19 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
                   
                   dm_r = {}
                   
-                  if r.get('name'):
-                    dm_r['name'] = str(r['name'])
-                  else:
-                    dm_r['name'] = "The Reaction"
+                  self.RC3_add_from_ID_string  ( dm_r, 'name',      r, 'name',      "The Reaction" )
+                  self.RC3_add_from_ID_string  ( dm_r, 'rxn_name',  r, 'rxn_name',  "" )
+                  self.RC3_add_from_ID_string  ( dm_r, 'reactants', r, 'reactants', "" )
+                  self.RC3_add_from_ID_string  ( dm_r, 'products',  r, 'products',  "" )
 
-                  if r.get('rxn_name'):
-                    dm_r['rxn_name'] = str(r['rxn_name'])
-                  else:
-                    dm_r['rxn_name'] = ""
+                  self.RC3_add_from_ID_enum    ( dm_r, 'rxn_type',  r, 'type', "irreversible", ["irreversible", "reversible"] )
 
-                  if r.get('reactants'):
-                    dm_r['reactants'] = str(r['reactants'])
-                  else:
-                    dm_r['reactants'] = ""
+                  self.RC3_add_from_ID_boolean ( dm_r, 'variable_rate_switch', r, 'variable_rate_switch', False )
+                  self.RC3_add_from_ID_string  ( dm_r, 'variable_rate',        r, 'variable_rate',        "" )
+                  self.RC3_add_from_ID_boolean ( dm_r, 'variable_rate_valid',  r, 'variable_rate_valid',  False )
 
-                  if r.get('products'):
-                    dm_r['products'] = str(r['products'])
-                  else:
-                    dm_r['products'] = ""
-
-                  if r.get('type'):
-                    dm_r['rxn_type'] = str(r['type'])
-                  else:
-                    dm_r['rxn_type'] = 'irreversible'
-
-                  if r.get('variable_rate_switch'):
-                    dm_r['variable_rate_switch'] = ( r['variable_rate_switch'] != 0 )
-                  else:
-                    dm_r['variable_rate_switch'] = False
-
-                  if r.get('variable_rate'):
-                    dm_r['variable_rate'] = str(r['variable_rate'])
-                  else:
-                    dm_r['variable_rate'] = ""
-
-                  if r.get('variable_rate_valid'):
-                    dm_r['variable_rate_valid'] = ( r['variable_rate_valid'] != 0 )
-                  else:
-                    dm_r['variable_rate_valid'] = False
-
-                  dm_r['fwd_rate'] = [ x for x in ppl if x['name'] == r['fwd_rate']['unique_static_name'] ] [0] ['expr']
-
-                  dm_r['bkwd_rate'] = [ x for x in ppl if x['name'] == r['bkwd_rate']['unique_static_name'] ] [0] ['expr']
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'fwd_rate',  r, 'fwd_rate',  ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'bkwd_rate', r, 'bkwd_rate', ppl )
 
                   dm_rl.append ( dm_r )
 
@@ -4488,62 +4431,26 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
                   
                   dm_r = {}
                   
-                  if r.get('name'):
-                    dm_r['name'] = str(r['name'])
-                  else:
-                    dm_r['name'] = "Release_Site"
+                  self.RC3_add_from_ID_string  ( dm_r, 'name',     r, 'name',     "Release_Site" )
+                  self.RC3_add_from_ID_string  ( dm_r, 'molecule', r, 'molecule', "" )
+                  self.RC3_add_from_ID_enum    ( dm_r, 'shape',    r, 'shape',    "CUBIC", ["CUBIC", "SPHERICAL", "SPHERICAL_SHELL", "OBJECT"] )
+                  self.RC3_add_from_ID_enum    ( dm_r, 'orient',   r, 'orient',   "\'",    ["\'", ",", ";"] )
                   
-                  if r.get('molecule'):
-                    dm_r['molecule'] = str(r['molecule'])
-                  else:
-                    dm_r['molecule'] = ""
+                  self.RC3_add_from_ID_string  ( dm_r, 'object_expr', r, 'object_expr', "" )
                   
-                  self.RC3_add_from_ID_enum ( dm_r, 'shape', r, 'shape', "CUBIC", ["CUBIC", "SPHERICAL", "SPHERICAL_SHELL", "OBJECT"] )
-                  """
-                  if r.get('shape'):
-                    if r['shape'] == 0:
-                      dm_r['shape'] = "CUBIC"
-                    if r['shape'] == 1:
-                      dm_r['shape'] = "SPHERICAL"
-                    if r['shape'] == 2:
-                      dm_r['shape'] = "SPHERICAL_SHELL"
-                    if r['shape'] == 3:
-                      dm_r['shape'] = "OBJECT"
-                  else:
-                    dm_r['shape'] = "CUBIC"
-                  """
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'location_x',  r, 'location_x',  ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'location_y',  r, 'location_y',  ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'location_z',  r, 'location_z',  ppl )
 
-                  self.RC3_add_from_ID_enum ( dm_r, 'orient', r, 'orient', "\'", ["\'", ",", ";"] )
-                  
-                  #if r.get('orient'):
-                  #  dm_r['orient'] = str(r['orient'])
-                  #else:
-                  #  dm_r['orient'] = "\'"
-                  
-                  if r.get('object_expr'):
-                    dm_r['object_expr'] = str(r['object_expr'])
-                  else:
-                    dm_r['object_expr'] = ""
-                  
-                  dm_r['location_x'] = [ x for x in ppl if x['name'] == r['location_x']['unique_static_name'] ] [0] ['expr']
-                  dm_r['location_y'] = [ x for x in ppl if x['name'] == r['location_y']['unique_static_name'] ] [0] ['expr']
-                  dm_r['location_z'] = [ x for x in ppl if x['name'] == r['location_z']['unique_static_name'] ] [0] ['expr']
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'site_diameter',        r, 'diameter',     ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'release_probability',  r, 'probability',  ppl )
 
-                  dm_r['site_diameter'] = [ x for x in ppl if x['name'] == r['diameter']['unique_static_name'] ] [0] ['expr']
-                  dm_r['release_probability'] = [ x for x in ppl if x['name'] == r['probability']['unique_static_name'] ] [0] ['expr']
+                  self.RC3_add_from_ID_enum    ( dm_r, 'quantity_type', r, 'quantity_type', "NUMBER_TO_RELEASE", ["NUMBER_TO_RELEASE", "GAUSSIAN_RELEASE_NUMBER", "DENSITY"] )
 
-                  if r.get('quantity_type'):
-                    dm_r['quantity_type'] = str(r['quantity_type'])
-                  else:
-                    dm_r['quantity_type'] = "NUMBER_TO_RELEASE"
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'quantity', r, 'quantity',  ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'stddev',   r, 'stddev',  ppl )
 
-                  dm_r['quantity'] = [ x for x in ppl if x['name'] == r['quantity']['unique_static_name'] ] [0] ['expr']
-                  dm_r['stddev'] = [ x for x in ppl if x['name'] == r['stddev']['unique_static_name'] ] [0] ['expr']
-
-                  if r.get('pattern'):
-                    dm_r['pattern'] = str(r['pattern'])
-                  else:
-                    dm_r['pattern'] = ""
+                  self.RC3_add_from_ID_string  ( dm_r, 'pattern', r, 'pattern', "" )
 
                   dm_rs.append ( dm_r )
 
@@ -4558,6 +4465,29 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             print ( "There are release patterns" )
             # There are release patterns
+            dm['define_release_patterns'] = {}
+            dm_relps = dm['define_release_patterns']
+            rpl = relps.get('release_pattern_list')
+            if rpl != None:
+              print ( "There is a release_pattern_list" )
+              dm_relps['release_pattern_list'] = []
+              dm_rpl = dm_relps['release_pattern_list']
+              if len(rpl) > 0:
+                for r in rpl:
+                  print ( "Release Site name = " + str(r['name']) )
+                  
+                  dm_r = {}
+                  
+                  self.RC3_add_from_ID_string  ( dm_r, 'name',     r, 'name',     "Release_Site" )
+                  
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'delay',  r, 'delay',  ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'release_interval',  r, 'release_interval',  ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'train_duration',  r, 'train_duration',  ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'train_interval', r, 'train_interval',  ppl )
+                  self.RC3_add_from_ID_panel_parameter ( dm_r, 'number_of_trains',   r, 'number_of_trains',  ppl )
+
+                  dm_rpl.append ( dm_r )
+
             print ( "Done release patterns" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
@@ -4749,8 +4679,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         self.viz_output.check_properties_after_building ( context )
         print ( "Checking the reaction_data_output properties" )
         self.rxn_output.check_properties_after_building ( context )
-
-
+        print ( "Checking/Updating the model_objects properties" )
         cellblender_operators.model_objects_update(context)
 
         print ( "Done building properties from the data model." )
