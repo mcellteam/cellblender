@@ -1848,9 +1848,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             self.general_parameter_list.remove(0)
         self['gname_to_id_dict'] = {}
         self.next_gid = 1
-        for p in par_sys_dm['model_parameters']:
-            print ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + p['par_units'] + ") ... " + p['par_description'] )
-            self.add_general_parameter_with_values ( p['par_name'], p['par_expression'], p['par_units'], p['par_description'] )
+        if 'model_parameters' in par_sys_dm:
+            for p in par_sys_dm['model_parameters']:
+                print ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + p['par_units'] + ") ... " + p['par_description'] )
+                self.add_general_parameter_with_values ( p['par_name'], p['par_expression'], p['par_units'], p['par_description'] )
 
 
 

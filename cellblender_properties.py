@@ -182,6 +182,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         self.variable_rate_valid = dm_dict["variable_rate_valid"]
         self.fwd_rate.set_expr ( dm_dict["fwd_rate"] )
         self.bkwd_rate.set_expr ( dm_dict["bkwd_rate"] )
+        # TODO: The following logic doesn't seem right ... we might want to check it!!
         if self.type == 'irreversible':
             # Check if a variable rate constant file is specified
             if self.variable_rate_switch and self.variable_rate_valid:
@@ -582,12 +583,13 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
         self.name = dm["name"]
         while len(self.surf_class_props_list) > 0:
             self.surf_class_props_list.remove(0)
-        for sc in dm["surface_class_prop_list"]:
-            self.surf_class_props_list.add()
-            self.active_surf_class_props_index = len(self.surf_class_props_list)-1
-            scp = self.surf_class_props_list[self.active_surf_class_props_index]
-            # scp.init_properties(context.scene.mcell.parameter_system)
-            scp.build_properties_from_data_model ( context, sc )
+        if "surface_class_prop_list" in dm:
+            for sc in dm["surface_class_prop_list"]:
+                self.surf_class_props_list.add()
+                self.active_surf_class_props_index = len(self.surf_class_props_list)-1
+                scp = self.surf_class_props_list[self.active_surf_class_props_index]
+                # scp.init_properties(context.scene.mcell.parameter_system)
+                scp.build_properties_from_data_model ( context, sc )
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -1923,12 +1925,12 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
         while len(self.reaction_list) > 0:
             self.reaction_list.remove(0)
         if "reaction_list" in dm:
-          for r in dm["reaction_list"]:
-              self.reaction_list.add()
-              self.active_rxn_index = len(self.reaction_list)-1
-              rxn = self.reaction_list[self.active_rxn_index]
-              rxn.init_properties(context.scene.mcell.parameter_system)
-              rxn.build_properties_from_data_model ( context, r )
+            for r in dm["reaction_list"]:
+                self.reaction_list.add()
+                self.active_rxn_index = len(self.reaction_list)-1
+                rxn = self.reaction_list[self.active_rxn_index]
+                rxn.init_properties(context.scene.mcell.parameter_system)
+                rxn.build_properties_from_data_model ( context, r )
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -2027,12 +2029,13 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
 
         while len(self.surf_class_list) > 0:
             self.surf_class_list.remove(0)
-        for s in dm["surface_class_list"]:
-            self.surf_class_list.add()
-            self.active_surf_class_index = len(self.surf_class_list)-1
-            sc = self.surf_class_list[self.active_surf_class_index]
-            # sc.init_properties(context.scene.mcell.parameter_system)
-            sc.build_properties_from_data_model ( context, s )
+        if "surface_class_list" in dm:
+            for s in dm["surface_class_list"]:
+                self.surf_class_list.add()
+                self.active_surf_class_index = len(self.surf_class_list)-1
+                sc = self.surf_class_list[self.active_surf_class_index]
+                # sc.init_properties(context.scene.mcell.parameter_system)
+                sc.build_properties_from_data_model ( context, s )
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -2139,12 +2142,13 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
 
         while len(self.mod_surf_regions_list) > 0:
             self.mod_surf_regions_list.remove(0)
-        for s in dm["modify_surface_regions_list"]:
-            self.mod_surf_regions_list.add()
-            self.active_mod_surf_regions_index = len(self.mod_surf_regions_list)-1
-            sr = self.mod_surf_regions_list[self.active_mod_surf_regions_index]
-            # sr.init_properties(context.scene.mcell.parameter_system)
-            sr.build_properties_from_data_model ( context, s )
+        if "modify_surface_regions_list" in dm:
+            for s in dm["modify_surface_regions_list"]:
+                self.mod_surf_regions_list.add()
+                self.active_mod_surf_regions_index = len(self.mod_surf_regions_list)-1
+                sr = self.mod_surf_regions_list[self.active_mod_surf_regions_index]
+                # sr.init_properties(context.scene.mcell.parameter_system)
+                sr.build_properties_from_data_model ( context, s )
 
     def check_properties_after_building ( self, context ):
         print ( "Implementing check_properties_after_building for " + str(self) )
@@ -2247,12 +2251,13 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
 
         while len(self.release_pattern_list) > 0:
             self.release_pattern_list.remove(0)
-        for r in dm["release_pattern_list"]:
-            self.release_pattern_list.add()
-            self.active_release_pattern_index = len(self.release_pattern_list)-1
-            rp = self.release_pattern_list[self.active_release_pattern_index]
-            rp.init_properties(context.scene.mcell.parameter_system)
-            rp.build_properties_from_data_model ( context, r )
+        if "release_pattern_list" in dm:
+            for r in dm["release_pattern_list"]:
+                self.release_pattern_list.add()
+                self.active_release_pattern_index = len(self.release_pattern_list)-1
+                rp = self.release_pattern_list[self.active_release_pattern_index]
+                rp.init_properties(context.scene.mcell.parameter_system)
+                rp.build_properties_from_data_model ( context, r )
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -2340,12 +2345,13 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
         while len(self.mol_release_list) > 0:
             self.mol_release_list.remove(0)
-        for r in dm["release_site_list"]:
-            self.mol_release_list.add()
-            self.active_release_index = len(self.mol_release_list)-1
-            rs = self.mol_release_list[self.active_release_index]
-            rs.init_properties(context.scene.mcell.parameter_system)
-            rs.build_properties_from_data_model ( context, r )
+        if "release_site_list" in dm:
+            for r in dm["release_site_list"]:
+                self.mol_release_list.add()
+                self.active_release_index = len(self.mol_release_list)-1
+                rs = self.mol_release_list[self.active_release_index]
+                rs.init_properties(context.scene.mcell.parameter_system)
+                rs.build_properties_from_data_model ( context, r )
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -3063,12 +3069,13 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         self.mol_colors = dm["mol_colors"]
         while len(self.rxn_output_list) > 0:
             self.rxn_output_list.remove(0)
-        for r in dm["reaction_output_list"]:
-            self.rxn_output_list.add()
-            self.active_rxn_output_index = len(self.rxn_output_list)-1
-            ro = self.rxn_output_list[self.active_rxn_output_index]
-            # ro.init_properties(context.scene.mcell.parameter_system)
-            ro.build_properties_from_data_model ( context, r )
+        if "reaction_output_list" in dm:
+            for r in dm["reaction_output_list"]:
+                self.rxn_output_list.add()
+                self.active_rxn_output_index = len(self.rxn_output_list)-1
+                ro = self.rxn_output_list[self.active_rxn_output_index]
+                # ro.init_properties(context.scene.mcell.parameter_system)
+                ro.build_properties_from_data_model ( context, r )
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -3984,8 +3991,26 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         return dm
 
 
-    def add_from_panel_parameter ( self, dm_dict, dm_name, prop_dict, prop_name, panel_param_list ):
-            dm_dict[dm_name] = [ x for x in panel_param_list if x['name'] == prop_dict[prop_name]['unique_static_name'] ] [0] ['expr']
+    def RC3_add_from_ID_panel_parameter ( self, dm_dict, dm_name, prop_dict, prop_name, panel_param_list ):
+        dm_dict[dm_name] = [ x for x in panel_param_list if x['name'] == prop_dict[prop_name]['unique_static_name'] ] [0] ['expr']
+
+    def RC3_add_from_ID_string ( self, dm_dict, dm_name, prop_dict, prop_name, default_value ):
+        if prop_dict.get(prop_name):
+          dm_dict[dm_name] = prop_dict[prop_name]
+        else:
+          dm_dict[dm_name] = default_value
+
+    def RC3_add_from_ID_boolean ( self, dm_dict, dm_name, prop_dict, prop_name, default_value ):
+        if prop_dict.get(prop_name):
+          dm_dict[dm_name] = ( prop_dict[prop_name] != 0 )
+        else:
+          dm_dict[dm_name] = default_value
+
+    def RC3_add_from_ID_enum ( self, dm_dict, dm_name, prop_dict, prop_name, default_value, enum_list ):
+        if prop_dict.get(prop_name):
+          dm_dict[dm_name] = enum_list[int(prop_dict[prop_name])]
+        else:
+          dm_dict[dm_name] = default_value
 
     def build_data_model_from_RC3_ID_properties ( self, context, geometry=False ):
         print ( "build_data_model_from_RC3_ID_properties: Constructing a data_model dictionary from RC3 ID properties" )
@@ -4054,29 +4079,19 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             dm['initialization'] = {}
             dm_init = dm['initialization']
 
-            self.add_from_panel_parameter ( dm_init, 'iterations', init, 'iterations', ppl )
+            self.RC3_add_from_ID_panel_parameter ( dm_init, 'iterations',              init, 'iterations', ppl )
+            self.RC3_add_from_ID_panel_parameter ( dm_init, 'time_step',               init, 'time_step',  ppl )
+            self.RC3_add_from_ID_panel_parameter ( dm_init, 'time_step_max',           init, 'time_step_max', ppl )
+            self.RC3_add_from_ID_panel_parameter ( dm_init, 'space_step',              init, 'space_step', ppl )
+            self.RC3_add_from_ID_panel_parameter ( dm_init, 'interaction_radius',      init, 'interaction_radius', ppl )
+            self.RC3_add_from_ID_panel_parameter ( dm_init, 'radial_directions',       init, 'radial_directions', ppl )
+            self.RC3_add_from_ID_panel_parameter ( dm_init, 'radial_subdivisions',     init, 'radial_subdivisions', ppl )
+            self.RC3_add_from_ID_panel_parameter ( dm_init, 'vacancy_search_distance', init, 'vacancy_search_distance', ppl )
+            self.RC3_add_from_ID_panel_parameter ( dm_init, 'surface_grid_density',    init, 'surface_grid_density', ppl )
 
-            #dm_init['iterations'] = [ x for x in ppl if x['name'] == init['iterations']['unique_static_name'] ] [0] ['expr']
+            self.RC3_add_from_ID_boolean ( dm_init, 'accurate_3d_reactions',     init, 'accurate_3d_reactions', True )
+            self.RC3_add_from_ID_boolean ( dm_init, 'center_molecules_on_grid',  init, 'center_molecules_grid', False )
 
-            dm_init['time_step'] = [ x for x in ppl if x['name'] == init['time_step']['unique_static_name'] ] [0] ['expr']
-            dm_init['time_step_max'] = [ x for x in ppl if x['name'] == init['time_step_max']['unique_static_name'] ] [0] ['expr']
-
-            dm_init['space_step'] = [ x for x in ppl if x['name'] == init['space_step']['unique_static_name'] ] [0] ['expr']
-            dm_init['interaction_radius'] = [ x for x in ppl if x['name'] == init['interaction_radius']['unique_static_name'] ] [0] ['expr']
-            dm_init['radial_directions'] = [ x for x in ppl if x['name'] == init['radial_directions']['unique_static_name'] ] [0] ['expr']
-            dm_init['radial_subdivisions'] = [ x for x in ppl if x['name'] == init['radial_subdivisions']['unique_static_name'] ] [0] ['expr']
-            dm_init['vacancy_search_distance'] = [ x for x in ppl if x['name'] == init['vacancy_search_distance']['unique_static_name'] ] [0] ['expr']
-            dm_init['surface_grid_density'] = [ x for x in ppl if x['name'] == init['surface_grid_density']['unique_static_name'] ] [0] ['expr']
-
-            if init.get('accurate_3d_reactions'):
-              dm_init['accurate_3d_reactions'] = init['accurate_3d_reactions'] != 0
-            else:
-              dm_init['accurate_3d_reactions'] = True
-
-            if init.get('center_molecules_grid'):
-              dm_init['center_molecules_on_grid'] = init['center_molecules_grid'] != 0
-            else:
-              dm_init['center_molecules_on_grid'] = False
 
             if init.get('microscopic_reversibility'):
               dm_init['microscopic_reversibility'] = init['microscopic_reversibility']
@@ -4344,8 +4359,13 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
                   dm_m = {}
 
-                  dm_m['mol_name'] = str(m['name'])
+                  # dm_m['mol_name'] = str(m['name'])
 
+                  self.RC3_add_from_ID_string ( dm_m, 'mol_name', m, 'name', "Molecule" )
+
+                  self.RC3_add_from_ID_enum ( dm_m, 'mol_type', m, 'type', "2D", ["2D", "3D"] )
+
+                  """
                   if m.get('type'):
                     if m['type']:
                       dm_m['mol_type'] = '3D'
@@ -4353,6 +4373,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
                       dm_m['mol_type'] = '2D'
                   else:
                     dm_m['mol_type'] = "2D"
+                  """
 
                   if m.get('target_only'):
                     dm_m['target_only'] = m['target_only'] != 0
@@ -4477,6 +4498,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
                   else:
                     dm_r['molecule'] = ""
                   
+                  self.RC3_add_from_ID_enum ( dm_r, 'shape', r, 'shape', "CUBIC", ["CUBIC", "SPHERICAL", "SPHERICAL_SHELL", "OBJECT"] )
+                  """
                   if r.get('shape'):
                     if r['shape'] == 0:
                       dm_r['shape'] = "CUBIC"
@@ -4488,11 +4511,14 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
                       dm_r['shape'] = "OBJECT"
                   else:
                     dm_r['shape'] = "CUBIC"
+                  """
+
+                  self.RC3_add_from_ID_enum ( dm_r, 'orient', r, 'orient', "\'", ["\'", ",", ";"] )
                   
-                  if r.get('orient'):
-                    dm_r['orient'] = str(r['orient'])
-                  else:
-                    dm_r['orient'] = "\'"
+                  #if r.get('orient'):
+                  #  dm_r['orient'] = str(r['orient'])
+                  #else:
+                  #  dm_r['orient'] = "\'"
                   
                   if r.get('object_expr'):
                     dm_r['object_expr'] = str(r['object_expr'])
