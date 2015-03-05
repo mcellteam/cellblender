@@ -557,15 +557,16 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             print ( "Error: Unable to upgrade MCellMoleculesListProperty data model to current version." )
 
         # Now convert the Data Model into CellBlender Properties
-        
+
         # Start by removing all molecules from the list
         while len(self.molecule_list) > 0:
             self.remove_active_molecule ( context )
-        
+
         # Add molecules from the data model
-        for m in dm["molecule_list"]:
-            self.add_molecule(context)
-            self.molecule_list[self.active_mol_index].build_properties_from_data_model(context,m)
+        if "molecule_list" in dm:
+            for m in dm["molecule_list"]:
+                self.add_molecule(context)
+                self.molecule_list[self.active_mol_index].build_properties_from_data_model(context,m)
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )

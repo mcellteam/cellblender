@@ -4327,6 +4327,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Done partitions" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
+
           # Model Objects
 
           modobjs = mcell.get('model_objects')
@@ -4354,6 +4355,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
             print ( "Done model objects" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
 
           # Molecules
 
@@ -4388,6 +4390,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
             print ( "Done molecules" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
 
           # Reactions
 
@@ -4427,6 +4430,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
             print ( "Done reactions" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
 
           # Release Sites
 
@@ -4475,6 +4479,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Done release sites" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
+
           # Release Patterns
 
           relps = mcell.get('release_patterns')
@@ -4508,6 +4513,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
             print ( "Done release patterns" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
 
           # Surface Class Definitions
 
@@ -4555,6 +4561,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
 
+          # Surface Region Definitions
 
           modsrs = mcell.get('mod_surf_regions')
           if modsrs != None:
@@ -4591,6 +4598,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
 
+          # Visualization Output
+
           vizout = mcell.get('viz_output')
           if vizout != None:
             # dm['viz_output'] = self.viz_output.build_data_model_from_properties(context)
@@ -4607,6 +4616,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Done viz output" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
+
+          # Reaction Output
 
           rxnout = mcell.get('rxn_output')
           if rxnout != None:
@@ -4737,9 +4748,11 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         """
 
         if "initialization" in dm:
-            print ( "Overwriting the initialization and partitions properties" )
+            print ( "Overwriting the initialization properties" )
             self.initialization.build_properties_from_data_model ( context, dm["initialization"] )
-            self.partitions.build_properties_from_data_model ( context, dm["initialization"]["partitions"] )
+            if "partitions" in dm:
+                print ( "Overwriting the partitions properties" )
+                self.partitions.build_properties_from_data_model ( context, dm["initialization"]["partitions"] )
         if "define_molecules" in dm:
             print ( "Overwriting the define_molecules properties" )
             self.molecules.build_properties_from_data_model ( context, dm["define_molecules"] )
