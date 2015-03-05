@@ -4006,6 +4006,12 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         else:
           dm_dict[dm_name] = default_value
 
+    def RC3_add_from_ID_int ( self, dm_dict, dm_name, prop_dict, prop_name, default_value ):
+        if prop_dict.get(prop_name):
+          dm_dict[dm_name] = prop_dict[prop_name]
+        else:
+          dm_dict[dm_name] = default_value
+
     def RC3_add_from_ID_floatstr ( self, dm_dict, dm_name, prop_dict, prop_name, default_value ):
         if prop_dict.get(prop_name):
           dm_dict[dm_name] = str(prop_dict[prop_name])
@@ -4584,14 +4590,23 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Done surface regions" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
+
           vizout = mcell.get('viz_output')
           if vizout != None:
             # dm['viz_output'] = self.viz_output.build_data_model_from_properties(context)
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             print ( "There is viz output" )
             # There is viz output
+            dm['viz_output'] = {}
+            dm_viz = dm['viz_output']
+            self.RC3_add_from_ID_boolean ( dm_viz, 'all_iterations', vizout, 'all_iterations', True )
+            self.RC3_add_from_ID_int     ( dm_viz, 'start',          vizout, 'start',          0 )
+            self.RC3_add_from_ID_int     ( dm_viz, 'end',            vizout, 'end',            1 )
+            self.RC3_add_from_ID_int     ( dm_viz, 'step',           vizout, 'step',           1 )
+            self.RC3_add_from_ID_boolean ( dm_viz, 'export_all',     vizout, 'export_all',     False )
             print ( "Done viz output" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
 
           rxnout = mcell.get('rxn_output')
           if rxnout != None:
@@ -4599,6 +4614,36 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             print ( "There is reaction output" )
             # There is reaction output
+            dm['reaction_data_output'] = {}
+            dm_rxnout = dm['reaction_data_output']
+
+            self.RC3_add_from_ID_boolean ( dm_rxnout, 'combine_seeds', rxnout, 'combine_seeds', True )
+            self.RC3_add_from_ID_boolean ( dm_rxnout, 'mol_colors',    rxnout, 'mol_colors',    False )
+            self.RC3_add_from_ID_enum    ( dm_rxnout, 'plot_layout',   rxnout, 'plot_layout',   " plot ", [' page ', ' plot ', ' '] )
+            self.RC3_add_from_ID_enum    ( dm_rxnout, 'plot_legend',   rxnout, 'plot_legend',   "0", ['x', '0', '1', '2', '3', '4', '6', '7', '8', '9', '10'] )
+
+
+            print ( "rxnout.keys() = " + str(rxnout.keys()) )
+            rxnl = rxnout.get('rxn_output_list')
+            if rxnl != None:
+              print ( "There is a rxn_output_list" )
+              dm_rxnout['reaction_output_list'] = []
+              dm_rxnl = dm_rxnout['reaction_output_list']
+              if len(rxnl) > 0:
+                print ( "The reaction_output_list has " + str(len(rxnl)) + " entries" )
+                for rxn in rxnl:
+                  dm_rxn = {}
+
+                  self.RC3_add_from_ID_string ( dm_rxn, 'name',            rxn, 'name',            "" )
+                  self.RC3_add_from_ID_string ( dm_rxn, 'molecule_name',   rxn, 'molecule_name',   "" )
+                  self.RC3_add_from_ID_string ( dm_rxn, 'reaction_name',   rxn, 'reaction_name',   "" )
+                  self.RC3_add_from_ID_string ( dm_rxn, 'object_name',     rxn, 'object_name',     "" )
+                  self.RC3_add_from_ID_string ( dm_rxn, 'region_name',     rxn, 'region_name',     "" )
+                  self.RC3_add_from_ID_enum   ( dm_rxn, 'count_location',  rxn, 'count_location',  "World",    ['World', 'Object', 'Region'] )
+                  self.RC3_add_from_ID_enum   ( dm_rxn, 'rxn_or_mol',      rxn, 'rxn_or_mol',      "Molecule", ['Reaction', 'Molecule'] )
+
+                  dm_rxnl.append ( dm_rxn )
+
             print ( "Done reaction output" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
