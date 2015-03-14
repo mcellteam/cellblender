@@ -2398,7 +2398,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                 mol_pos = mol_dict[mol_name][1]
                 mol_orient = mol_dict[mol_name][2]
 
-                # print ( "in mol_viz_file_read with mol_name = " + mol_name + ", mol_mat_name = " + mol_mat_name )
+                print ( "in mol_viz_file_read with mol_name = " + mol_name + ", mol_mat_name = " + mol_mat_name + ", file = " + filepath[filepath.rfind(os.sep)+1:] )
 
                 # Randomly orient volume molecules
                 if mol_type == 0:
@@ -2463,13 +2463,24 @@ def mol_viz_file_read(mcell_prop, filepath):
                 # Create a "mesh" to hold instances of molecule positions
                 mol_pos_mesh_name = "%s_pos" % (mol_name)
                 mol_pos_mesh = meshes.get(mol_pos_mesh_name)
+
+
                 if not mol_pos_mesh:
                     mol_pos_mesh = meshes.new(mol_pos_mesh_name)
 
+                if 3*len(mol_pos_mesh.vertices) != len(mol_pos):
+                    if len(mol_pos_mesh.vertices) != 0:
+                        print ( "Adding " + str(len(mol_pos)//3) + " vertices to array already containing " + str(len(mol_pos_mesh.vertices)) + ", create new mesh" )
+                        mol_pos_mesh = meshes.new(mol_pos_mesh_name)
+                
+
                 # Add and place vertices at positions of molecules
-                # print ( "Preparing to add vertices" )
+
                 mol_pos_mesh.vertices.add(len(mol_pos)//3)
+
+                
                 mol_pos_mesh.vertices.foreach_set("co", mol_pos)
+                #print ( "After seting verticies" )
                 mol_pos_mesh.vertices.foreach_set("normal", mol_orient)
                 # print ( "Done adding vertices" )
 

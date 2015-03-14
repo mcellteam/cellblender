@@ -3609,6 +3609,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
             else:
                 # The versions matched, so draw the normal panels
+                use_stock_icons = True
 
                 if not mcell.cellblender_preferences.use_long_menus:
 
@@ -3624,24 +3625,28 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     row.prop ( self, "settings_select", icon='SETTINGS' )
                     row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER' )
 
-                    #row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES' )
-                    if self.molecule_select:
-                        molecule_img_sel = bpy.data.images.get('mol_s')
-                        mol_s = layout.icon(molecule_img_sel)
-                        row.prop ( self, "molecule_select", icon_value=mol_s )
+                    if use_stock_icons:
+                        # Use "stock" icons to check on drawing speed problem
+                        row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES' )
+                        row.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT' )
                     else:
-                        molecule_img_unsel = bpy.data.images.get('mol_u')
-                        mol_u = layout.icon(molecule_img_unsel)
-                        row.prop ( self, "molecule_select", icon_value=mol_u )
+                        if self.molecule_select:
+                            molecule_img_sel = bpy.data.images.get('mol_s')
+                            mol_s = layout.icon(molecule_img_sel)
+                            row.prop ( self, "molecule_select", icon_value=mol_s )
+                        else:
+                            molecule_img_unsel = bpy.data.images.get('mol_u')
+                            mol_u = layout.icon(molecule_img_unsel)
+                            row.prop ( self, "molecule_select", icon_value=mol_u )
 
-                    if self.reaction_select:
-                        react_img_sel = bpy.data.images.get('reaction_s')
-                        reaction_s = layout.icon(react_img_sel)
-                        row.prop ( self, "reaction_select", icon_value=reaction_s )
-                    else:
-                        react_img_unsel = bpy.data.images.get('reaction_u')
-                        reaction_u = layout.icon(react_img_unsel)
-                        row.prop ( self, "reaction_select", icon_value=reaction_u )
+                        if self.reaction_select:
+                            react_img_sel = bpy.data.images.get('reaction_s')
+                            reaction_s = layout.icon(react_img_sel)
+                            row.prop ( self, "reaction_select", icon_value=reaction_s )
+                        else:
+                            react_img_unsel = bpy.data.images.get('reaction_u')
+                            reaction_u = layout.icon(react_img_unsel)
+                            row.prop ( self, "reaction_select", icon_value=reaction_u )
 
                     row.prop ( self, "placement_select", icon='GROUP_VERTEX' )
                     row.prop ( self, "rel_patterns_select", icon='TIME' )
@@ -3682,25 +3687,35 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol = brow.column()
                     bcol.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="Parameters" )
                     bcol = brow.column()
-                    if self.molecule_select:
-                        molecule_img_sel = bpy.data.images.get('mol_s')
-                        mol_s = layout.icon(molecule_img_sel)
-                        bcol.prop ( self, "molecule_select", icon_value=mol_s, text="Molecules" )
-                    else:
-                        molecule_img_unsel = bpy.data.images.get('mol_u')
-                        mol_u = layout.icon(molecule_img_unsel)
-                        bcol.prop ( self, "molecule_select", icon_value=mol_u, text="Molecules" )
 
-                    brow = layout.row()
-                    bcol = brow.column()
-                    if self.reaction_select:
-                        react_img_sel = bpy.data.images.get('reaction_s')
-                        reaction_s = layout.icon(react_img_sel)
-                        bcol.prop ( self, "reaction_select", icon_value=reaction_s, text="Reactions" )
+
+                    if use_stock_icons:
+                        # Use "stock" icons to check on drawing speed problem
+                        bcol.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES', text="Molecules" )
+                        brow = layout.row()
+                        bcol = brow.column()
+                        bcol.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="Reactions" )
                     else:
-                        react_img_unsel = bpy.data.images.get('reaction_u')
-                        reaction_u = layout.icon(react_img_unsel)
-                        bcol.prop ( self, "reaction_select", icon_value=reaction_u, text="Reactions" )
+                        # Use "stock" icons to check on drawing speed problem
+                        if self.molecule_select:
+                            molecule_img_sel = bpy.data.images.get('mol_s')
+                            mol_s = layout.icon(molecule_img_sel)
+                            bcol.prop ( self, "molecule_select", icon_value=mol_s, text="Molecules" )
+                        else:
+                            molecule_img_unsel = bpy.data.images.get('mol_u')
+                            mol_u = layout.icon(molecule_img_unsel)
+                            bcol.prop ( self, "molecule_select", icon_value=mol_u, text="Molecules" )
+
+                        brow = layout.row()
+                        bcol = brow.column()
+                        if self.reaction_select:
+                            react_img_sel = bpy.data.images.get('reaction_s')
+                            reaction_s = layout.icon(react_img_sel)
+                            bcol.prop ( self, "reaction_select", icon_value=reaction_s, text="Reactions" )
+                        else:
+                            react_img_unsel = bpy.data.images.get('reaction_u')
+                            reaction_u = layout.icon(react_img_unsel)
+                            bcol.prop ( self, "reaction_select", icon_value=reaction_u, text="Reactions" )
                     bcol = brow.column()
                     bcol.prop ( self, "placement_select", icon='GROUP_VERTEX', text=" Molecule Placement" )
 
