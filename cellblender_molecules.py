@@ -328,6 +328,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         mol_shape_name = 'mol_' + self.name + '_shape'
         
         bpy.ops.object.select_all(action='DESELECT')
+        context.scene.objects[mol_shape_name].hide_select = False
         context.scene.objects[mol_shape_name].select = True
         context.scene.objects.active = bpy.data.objects[mol_shape_name]
 
@@ -385,6 +386,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         mol_mat = mol_obj.material_slots[0].material
         new_mol_mesh = meshes[new_glyph_name]
         mol_obj.data = new_mol_mesh
+        mol_obj.hide_select = True
         meshes.remove(meshes[mol_shape_name])
 
         new_mol_mesh.name = mol_shape_name

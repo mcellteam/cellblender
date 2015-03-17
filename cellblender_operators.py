@@ -2381,6 +2381,8 @@ def mol_viz_file_read(mcell_prop, filepath):
             bpy.ops.object.add(location=[0, 0, 0])      # Create an "Empty" object in the Blender scene
             mols_obj = bpy.context.selected_objects[0]  # The newly added object will be selected
             mols_obj.name = "molecules"                 # Name this empty object "molecules" 
+            mols_obj.hide_select = True
+            mols_obj.hide = True
 
         if mol_dict:
             meshes = bpy.data.meshes
@@ -2434,6 +2436,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                     mol_shape_obj = bpy.context.active_object
                     mol_shape_obj.name = mol_shape_obj_name
                     mol_shape_obj.track_axis = "POS_Z"
+                    mol_shape_obj.hide_select = True
                     mol_shape_mesh = mol_shape_obj.data
                     mol_shape_mesh.name = mol_shape_mesh_name
                 else:
@@ -2490,6 +2493,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                 mol_obj.dupli_type = 'VERTS'
                 mol_obj.use_dupli_vertices_rotation = True
                 mol_obj.parent = mols_obj
+                mol_obj.hide_select = True
             
                 # Restore the visibility state
                 mol_obj.hide = hide
