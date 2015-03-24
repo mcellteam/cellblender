@@ -1015,13 +1015,14 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
 
     simulation_run_control_enum = [
+        ('QUEUE', "Queue", ""),
         ('COMMAND', "Command Line", ""),
         ('JAVA', "Java Control", ""),
         ('OPENGL', "OpenGL Control", "")]
     simulation_run_control = EnumProperty(
         items=simulation_run_control_enum, name="",
         description="Mechanism for running and controlling the simulation",
-        default='COMMAND')
+        default='QUEUE')
 
     def remove_properties ( self, context ):
         print ( "Removing all Run Simulation Properties..." )
