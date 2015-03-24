@@ -2,6 +2,9 @@
 
 %{
 #define SWIG_FILE_WITH_INIT
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include "vector.h"
 #include "mdlmesh_parser.h"
 %}
@@ -29,6 +32,7 @@
   // Look up your module and get its "dictionary"
   // MODULE_NAME should be the name of your python file (minus the .py)
   // pModule will be a pointer to the module containing your class
+  
   mdlobjModule = PyImport_ImportModule("cellblender.io_mesh_mcell_mdl.mdlobj");
   mdlobjDict = PyModule_GetDict(mdlobjModule);
 
