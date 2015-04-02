@@ -1037,7 +1037,6 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         print ( "Done removing all Run Simulation Properties." )
 
 
-
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
 
@@ -1156,10 +1155,131 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                                   self, "active_err_index", rows=2)
 
 
+    def draw_layout_queue(self, context, layout):
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( layout )
+        else:
+            ps = mcell.parameter_system
+
+            #main_mdl = ("%s.main.mdl" %
+            #            os.path.join(os.path.dirname(bpy.data.filepath),
+            #            mcell.project_settings.base_name))
+
+            # Filter or replace problem characters (like space, ...)
+            scene_name = context.scene.name.replace(" ", "_")
+
+            # Set this for now to have it hopefully propagate until base_name can
+            # be removed
+            #mcell.project_settings.base_name = scene_name
+
+            main_mdl = project_files_path()
+            main_mdl = os.path.join(main_mdl, scene_name + ".main.mdl")
+
+            row = layout.row()
+
+            # Only allow the simulation to be run if both an MCell binary and a
+            # project dir have been selected. There also needs to be a main mdl
+            # file present.
+            if not mcell.cellblender_preferences.mcell_binary:
+                row.label(text="Set an MCell binary in CellBlender - Preferences Panel", icon='ERROR')
+            elif not os.path.dirname(bpy.data.filepath):
+                row.label(
+                    text="Open or save a .blend file to set the project directory",
+                    icon='ERROR')
+            elif (not os.path.isfile(main_mdl) and
+                    mcell.cellblender_preferences.decouple_export_run):
+                row.label(text="Export the project", icon='ERROR')
+                row = layout.row()
+                row.operator(
+                    "mcell.export_project",
+                    text="Export CellBlender Project", icon='EXPORT')
+            else:
+
+                row = layout.row()
+                row.operator("mcell.run_simulation", text="Run",
+                             icon='COLOR_RED')
+                
+                #row.operator("mcell.run_simulation_control_java", text="Run Java Sim Control",
+                #             icon='COLOR_BLUE')
+                #row.operator("mcell.run_simulation_control_opengl", text="Run OpenGL Sim Control",
+                #             icon='COLOR_BLUE')
+
+                row.prop(self, "simulation_run_control")
+
+
+
+                if (self.processes_list and
+                        cellblender.simulation_queue.task_dict):
+                    row = layout.row()
+                    row.label(text="MCell Processes:",
+                              icon='FORCE_LENNARDJONES')
+                    row = layout.row()
+                    row.template_list("MCELL_UL_run_simulation_queue", "run_simulation_queue",
+                                      self, "processes_list",
+                                      self, "active_process_index",
+                                      rows=2)
+                    row = layout.row()
+                    row.operator("mcell.clear_simulation_queue")
+                    row = layout.row()
+                    row.operator("mcell.kill_simulation")
+                    row.operator("mcell.kill_all_simulations")
+
+
+                box = layout.box()
+
+                if self.show_output_options:
+                    row = box.row(align=True)
+                    row.alignment = 'LEFT'
+                    row.prop(self, "show_output_options", icon='TRIA_DOWN',
+                             text="Output / Control Options", emboss=False)
+
+                    row = box.row(align=True)
+                    row.prop(self, "start_seed")
+                    row.prop(self, "end_seed")
+                    row = box.row()
+                    row.prop(self, "mcell_processes")
+                    row = box.row()
+                    row.prop(self, "log_file")
+                    row = box.row()
+                    row.prop(self, "error_file")
+                    row = box.row()
+                    row.prop(mcell.export_project, "export_format")
+
+                    if mcell.cellblender_preferences.decouple_export_run:
+                        row = box.row()
+                        row.operator(
+                            "mcell.export_project", text="Export CellBlender Project",
+                            icon='EXPORT')
+                    row = box.row()
+                    row.prop(self, "remove_append", expand=True)
+
+                else:
+                    row = box.row(align=True)
+                    row.alignment = 'LEFT'
+                    row.prop(self, "show_output_options", icon='TRIA_RIGHT',
+                             text="Output / Control Options", emboss=False)
+
+                
+            if self.status:
+                row = layout.row()
+                row.label(text=self.status, icon='ERROR')
+            
+            if self.error_list: 
+                row = layout.row() 
+                row.label(text="Errors:", icon='ERROR')
+                row = layout.row()
+                col = row.column()
+                col.template_list("MCELL_UL_error_list_queue", "run_simulation_queue",
+                                  self, "error_list",
+                                  self, "active_err_index", rows=2)
+
+
     def draw_panel ( self, context, panel ):
         """ Create a layout from the panel and draw into it """
         layout = panel.layout
-        self.draw_layout ( context, layout )
+        self.draw_layout_queue ( context, layout )
 
 
 
@@ -1645,7 +1765,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
 
 
             # Note that the run_simulation panel is effectively being drawn in the middle of this model_initialization panel!!!
-            mcell.run_simulation.draw_layout(context,layout)
+            mcell.run_simulation.draw_layout_queue(context,layout)
 
 
             # Advanced Options
@@ -3261,7 +3381,7 @@ class PP_OT_init_mcell(bpy.types.Operator):
 
 
 
-def show_old_scene_panels ( show=True ):
+def show_old_scene_panels ( show=False ):
     if show:
         print ( "Showing the Old CellBlender panels in the Scene tab" )
         try:

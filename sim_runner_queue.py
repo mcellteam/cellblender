@@ -1,78 +1,102 @@
-import os
+#!/usr/bin/env python3
+
+import sys
 from queue import Queue
 from threading import Thread
 import subprocess as sp
-import multiprocessing
-from argparse import ArgumentParser
-import time
 
+class SimQueue:
+  def __init__(self):
+    self.q = Queue(maxsize=0)
+    self.workers = []
+    self.task_dict = {}
+    self.n_threads = 0
+    self.python_exec = 'python'
+    self.run_wrapper = './run_wrapper.py'
+    self.notify = False
 
-def q_start(cpus):
-  q = Queue(maxsize=0)
-  start_thread_workers(cpus,q,notify)
-  return q
+  def start(self,n_threads):
+    if n_threads > self.n_threads:
+      for i in range(n_threads - self.n_threads):
+        worker = Thread(target=self.run_q_item)
+        worker.daemon = True
+        worker.start()
+        self.workers.append(worker)
+      self.n_threads = n_threads
 
-def q_stop(q):
-  
+  def run_q_item(self):
+    while True:
+      task = self.q.get()
+      process = task['process']
+      cmd = task['cmd']
+      res = process.communicate('{0}'.format(cmd).encode())
+      self.task_dict[process.pid]['stdout'] = res[0]
+      self.task_dict[process.pid]['stderr'] = res[1]
+      if self.notify:
+          sys.stdout.write('{0} {1}\n'.format(process.pid, cmd))
+          sys.stdout.write(res[0].decode())
+          sys.stdout.write(res[1].decode())
+      self.q.task_done()
 
-def run_q_item(q,notify):
-  while True:
-    process, cmd_str = q.get()
-    process.communicate('{0}'.format(cmd_str).encode())
-    if notify:
-        print(process.pid, cmd_str)
-    q.task_done()
+  def add_task(self,cmd,wd):
+    process = sp.Popen([self.python_exec, self.run_wrapper, wd], stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+    pid = process.pid
+    self.task_dict[pid] = {}
+    self.task_dict[pid]['process'] = process
+    self.task_dict[pid]['cmd'] = cmd
+    self.task_dict[pid]['stdout'] = b''
+    self.task_dict[pid]['stderr'] = b''
+    self.q.put(self.task_dict[pid])
+    return process
 
+  def clear_task(self,pid):
+    if self.task_dict.get(pid):
+      self.task_dict.pop(pid)
 
-def start_thread_workers(n_threads,q,notify):
-  for i in range(n_threads):
-    worker = Thread(target=run_q_item, args=(q,notify,))
-    worker.setDaemon(True)
-    worker.start()
+#  def stop(self):
 
-
-def q_add_cmd(q,qlist,cmd,wd):
-  task = (sp.Popen(['./run_mcell_job.py',wd], stdin=sp.PIPE), cmd)
-  qlist.append(task)
-  q.put(task)
 
 
 if (__name__ == '__main__'):
+  import multiprocessing
+  from argparse import ArgumentParser
+  import time
 
   parser = ArgumentParser()
   parser.add_argument('--cpus', help='number of CPUs to use.  If omitted, use the number of hyperthreads available.')
   ns=parser.parse_args()
 
-  notify = True
-
-  q = Queue(maxsize=0)
+  my_q = SimQueue()
 
   if ns.cpus:
     cpus = int(ns.cpus)
   else:
     cpus = multiprocessing.cpu_count()
 
-
-  start_thread_workers(cpus,q,notify)
-
-
-  cmds = []
-  cmds.append('mcell3.2.1 -iterations 40000 -seed 1 Scene.main.mdl')
-  cmds.append('mcell3.2.1 -iterations 40000 -seed 2 Scene.main.mdl')
-  cmds.append('mcell3.2.1 -iterations 40000 -seed 3 Scene.main.mdl')
-  cmds.append('mcell3.2.1 -iterations 40000 -seed 4 Scene.main.mdl')
-  wd = './sim_runner_test_files/mcell'
-
-  qlist = [(sp.Popen(['./run_mcell_job.py',wd], stdin=sp.PIPE), cmd) for cmd in cmds ]
+  my_q.start(cpus)
 
   begin = time.time()
 
-  [q.put(item) for item in qlist]
+  wd = './sim_runner_test_files/mcell'
+  my_q.add_task('"mcell3.2.1 -iterations 5000 -seed 1 Scene.main.mdl"',wd)
+  my_q.add_task('"mcell3.2.1 -iterations 5000 -seed 2 Scene.main.mdl"',wd)
+  my_q.add_task('"mcell3.2.1 -iterations 5000 -seed 3 Scene.main.mdl"',wd)
+  my_q.add_task('"mcell3.2.1 -iterations 5000 -seed 4 Scene.main.mdl"',wd)
 
-  time.sleep(10.)
-  qlist[2][0].terminate()
-  q.join()
+  time.sleep(5.)
 
-  print('Took {0:0.2f} seconds.'.format(time.time() - begin))
+  pids = list(my_q.task_dict.keys())
+  pids.sort()
+  a_pid = pids[2]
+  my_q.task_dict[a_pid]['process'].terminate()
+
+  my_q.q.join()
+
+#  time.sleep(0.5)
+
+  sys.stdout.write(my_q.task_dict[a_pid]['stdout'].decode())
+  sys.stdout.write(my_q.task_dict[a_pid]['stderr'].decode())
+
+  sys.stdout.write('\n\nTook {0:0.2f} seconds.\n\n'.format(time.time() - begin))
 
 
