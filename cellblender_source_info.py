@@ -19,6 +19,8 @@ cellblender_info = {
         "cellblender_molecules.py",
         "object_surface_regions.py",
         "run_simulations.py",
+        "sim_runner_queue.py",
+        "run_wrapper.py",
 
         "icons"+os.sep+"cellblender_icon.png",
         "icons"+os.sep+"mol_sel.png",

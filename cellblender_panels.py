@@ -115,6 +115,42 @@ class MCELL_PT_run_simulation(bpy.types.Panel):
         context.scene.mcell.run_simulation.draw_panel ( context, self )
 
 
+class MCELL_UL_run_simulation_queue(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+
+        if len(cellblender.simulation_queue.task_dict) > index:
+            pid = int(item.name.split(',')[0].split(':')[1])
+            q_item = cellblender.simulation_queue.task_dict[pid]
+            proc = q_item['process']
+            if proc.poll() is None:
+                # Simulation is still running
+                layout.label(item.name, icon='POSE_DATA')
+            elif proc.returncode == 1:
+                # Simulation failed due to error detected by MCell
+                layout.label(item.name, icon='ERROR')
+            elif proc.returncode > 1:
+                # Simulation was killed or failed due to some other error
+                layout.label(item.name, icon='CANCEL')
+            else:
+                # Simulation has finished normally
+                layout.label(item.name, icon='FILE_TICK')
+        else:
+            # Indexing error may be caused by stale data in the simulation_popen_list?? Maybe??
+            layout.label(item.name, icon='ERROR')
+
+
+class MCELL_PT_run_simulation_queue(bpy.types.Panel):
+    bl_label = "CellBlender - Run Simulation"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.run_simulation.draw_panel ( context, self )
+
+
 class MCELL_PT_viz_results(bpy.types.Panel):
     bl_label = "CellBlender - Visualize Simulation Results"
     bl_space_type = "PROPERTIES"
