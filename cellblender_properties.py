@@ -3557,7 +3557,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
 
     def draw_self (self, context, layout):
-        print ( "Top of CellBlenderMainPanelPropertyGroup.draw_self" )
+        # print ( "Top of CellBlenderMainPanelPropertyGroup.draw_self" )
 
         #######################################################################################
         """
@@ -3895,7 +3895,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                 #if self.reload_viz:
                 #    layout.box()
                 #    layout.label ( "Reload Simulation Data", icon='FILE_REFRESH' )
-        print ( "Bottom of CellBlenderMainPanelPropertyGroup.draw_self" )
+        # print ( "Bottom of CellBlenderMainPanelPropertyGroup.draw_self" )
 
 
 import pickle

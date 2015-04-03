@@ -2398,7 +2398,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                 mol_pos = mol_dict[mol_name][1]
                 mol_orient = mol_dict[mol_name][2]
 
-                print ( "in mol_viz_file_read with mol_name = " + mol_name + ", mol_mat_name = " + mol_mat_name + ", file = " + filepath[filepath.rfind(os.sep)+1:] )
+                # print ( "in mol_viz_file_read with mol_name = " + mol_name + ", mol_mat_name = " + mol_mat_name + ", file = " + filepath[filepath.rfind(os.sep)+1:] )
 
                 # Randomly orient volume molecules
                 if mol_type == 0:
