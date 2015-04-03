@@ -153,7 +153,7 @@ class MCELL_OT_clear_profiling(bpy.types.Operator):
 ##### vvvvvvvvv   General Parameter Code   vvvvvvvvv
 
 
-@profile('spaced_strings_from_list')
+#@profile('spaced_strings_from_list')
 def spaced_strings_from_list ( list_of_strings ):
     space = " "
     return space.join(list_of_strings)
@@ -242,11 +242,11 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
     # This is the ONLY property in this class ... all others are in the Parameter_Data that this references
     unique_static_name = StringProperty ( name="unique_name", default="" )
 
-    @profile('Parameter_Reference.set_unique_static_name')
+    #@profile('Parameter_Reference.set_unique_static_name')
     def set_unique_static_name ( self, new_name ):
         self.unique_static_name = new_name
     
-    @profile('Parameter_Reference.init_ref')
+    #@profile('Parameter_Reference.init_ref')
     def init_ref ( self, parameter_system, type_name, user_name=None, user_expr="0", user_descr="Panel Parameter", user_units="", user_int=False ):
 
         if user_name == None:
@@ -263,12 +263,12 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         print ( "Removing all Parameter Reference Properties ... not implemented yet!" )
         
 
-    @profile('Parameter_Reference.del_ref')
+    #@profile('Parameter_Reference.del_ref')
     def del_ref ( self, parameter_system ):
         parameter_system.del_panel_parameter ( self.unique_static_name )
 
 
-    @profile('Parameter_Reference.get_param')
+    #@profile('Parameter_Reference.get_param')
     def get_param ( self, plist=None ):
         if plist == None:
             # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
@@ -276,7 +276,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
             plist = mcell.parameter_system.panel_parameter_list
         return plist[self.unique_static_name]
 
-    @profile('Parameter_Reference.get_expr')
+    #@profile('Parameter_Reference.get_expr')
     def get_expr ( self, plist=None ):
         if plist == None:
             # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
@@ -284,7 +284,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
             plist = mcell.parameter_system.panel_parameter_list
         return self.get_param(plist).expr
 
-    @profile('Parameter_Reference.set_expr')
+    #@profile('Parameter_Reference.set_expr')
     def set_expr ( self, expr, plist=None ):
         if plist == None:
             # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
@@ -293,7 +293,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         p = self.get_param(plist)
         p.expr = expr
 
-    @profile('Parameter_Reference.get_value')
+    #@profile('Parameter_Reference.get_value')
     def get_value ( self, plist=None ):
         if plist == None:
             # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
@@ -305,7 +305,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         else:
             return p.get_numeric_value()
 
-    @profile('Parameter_Reference.get_as_string')
+    #@profile('Parameter_Reference.get_as_string')
     def get_as_string ( self, plist=None, as_expr=False ):
         if plist == None:
             # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
@@ -321,7 +321,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
                 return "%g"%(p.get_numeric_value())
 
 
-    @profile('Parameter_Reference.get_label')
+    #@profile('Parameter_Reference.get_label')
     def get_label ( self, plist=None ):
         if plist == None:
             # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
@@ -330,7 +330,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         return self.get_param(plist).par_name
 
 
-    @profile('Parameter_Reference.draw')
+    #@profile('Parameter_Reference.draw')
     def draw ( self, layout, parameter_system ):
         plist = parameter_system.panel_parameter_list
         try:
@@ -435,19 +435,19 @@ class Expression_Handler:
           Panel Parameters cannot be referenced in expressions (they have no name).
     """
     
-    @profile('Expression_Handler.get_term_sep')
+    #@profile('Expression_Handler.get_term_sep')
     def get_term_sep (self):
         return ( "~" )    # This is the string used to separate terms in an expression. It should be illegal in whatever syntax is being parsed.
 
-    @profile('Expression_Handler.UNDEFINED_NAME')
+    #@profile('Expression_Handler.UNDEFINED_NAME')
     def UNDEFINED_NAME(self):
         return ( "   (0*1111111*0)   " )   # This is a string that evaluates to zero, but is easy to spot in expressions
     
-    @profile('Expression_Handler.get_expression_keywords')
+    #@profile('Expression_Handler.get_expression_keywords')
     def get_expression_keywords(self):
         return ( { '^': '**', 'SQRT': 'sqrt', 'EXP': 'exp', 'LOG': 'log', 'LOG10': 'log10', 'SIN': 'sin', 'COS': 'cos', 'TAN': 'tan', 'ASIN': 'asin', 'ACOS':'acos', 'ATAN': 'atan', 'ABS': 'abs', 'CEIL': 'ceil', 'FLOOR': 'floor', 'MAX': 'max', 'MIN': 'min', 'RAND_UNIFORM': 'uniform', 'RAND_GAUSSIAN': 'gauss', 'PI': 'pi', 'SEED': '1' } )
 
-    @profile('Expression_Handler.get_mdl_keywords')
+    #@profile('Expression_Handler.get_mdl_keywords')
     def get_mdl_keywords(self):
         # It's not clear how these will be handled, but they've been added here because they will be needed to avoid naming conflicts
         return ( [  "ABS",
@@ -730,7 +730,7 @@ class Expression_Handler:
                     "fopen",
                     "fclose" ] )
 
-    @profile('encode_expr_list_to_str')
+    #@profile('encode_expr_list_to_str')
     def encode_expr_list_to_str ( self, expr_list ):
         """ Turns an expression list into a string that can be stored as a Blender StringProperty """
         term_sep = self.get_term_sep()
@@ -756,7 +756,7 @@ class Expression_Handler:
         return expr_str
 
 
-    @profile('Expression_Handler.decode_str_to_expr_list')
+    #@profile('Expression_Handler.decode_str_to_expr_list')
     def decode_str_to_expr_list ( self, expr_str ):
         """ Recovers an expression list from a string that has been stored as a Blender StringProperty """
         expr_list = []
@@ -774,7 +774,7 @@ class Expression_Handler:
         return expr_list
 
 
-    @profile('Expression_Handler.build_mdl_expr')
+    #@profile('Expression_Handler.build_mdl_expr')
     def build_mdl_expr ( self, expr_list, gen_param_list ):
         """ Converts an MDL expression list into an MDL expression using user names for parameters"""
         expr = ""
@@ -798,7 +798,7 @@ class Expression_Handler:
                     expr = expr + token
         return expr
 
-    @profile('Expression_Handler.build_py_expr_using_names')
+    #@profile('Expression_Handler.build_py_expr_using_names')
     def build_py_expr_using_names ( self, expr_list, gen_param_list ):
         """ Converts an MDL expression list into a python expression using user names for parameters"""
         expr = ""
@@ -826,7 +826,7 @@ class Expression_Handler:
                         expr = expr + token
         return expr
 
-    @profile('Expression_Handler.build_py_expr_using_ids')
+    #@profile('Expression_Handler.build_py_expr_using_ids')
     def build_py_expr_using_ids ( self, expr_list, gen_param_list ):
         """ Converts an MDL expression list into a python expression using unique names for parameters"""
         expr = ""
@@ -855,7 +855,7 @@ class Expression_Handler:
         return expr
 
 
-    @profile('Expression_Handler.parse_param_expr')
+    #@profile('Expression_Handler.parse_param_expr')
     def parse_param_expr ( self, param_expr, parameter_system ):
         """ Converts a string expression into a list expression with:
                  variable id's as integers,
@@ -932,11 +932,11 @@ class Expression_Handler:
                 compressed_expr = compressed_expr + [next_str]
         return compressed_expr
 
-    @profile('Expression_Handler.count_stub')
+    #@profile('Expression_Handler.count_stub')
     def count_stub ( self ):
         pass
 
-    @profile('Expression_Handler.recurse_tree_symbols')
+    #@profile('Expression_Handler.recurse_tree_symbols')
     def recurse_tree_symbols ( self, local_name_ID_dict, pt, current_expr ):
         """ Recurse through the parse tree looking for "terminal" items which are added to the list """
         self.count_stub()
@@ -979,7 +979,7 @@ class Expression_Handler:
         return None
 
 
-    @profile('Expression_Handler.evaluate_parsed_expr_py')
+    #@profile('Expression_Handler.evaluate_parsed_expr_py')
     def evaluate_parsed_expr_py ( self, param_sys ):
         self.updating = True        # Set flag to check for self-references
         param_sys.recursion_depth += 1
@@ -1098,11 +1098,11 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         print ( "Removing all Parameter Data Properties ... not implemented yet!" )
 
     
-    @profile('Parameter_Data.__init__')
+    #@profile('Parameter_Data.__init__')
     def __init__ ( self ):
         print ( "The Parameter_Data.__init__ function has been called." )
 
-    @profile('Parameter_Data.init_par_properties')
+    #@profile('Parameter_Data.init_par_properties')
     def init_par_properties ( self ):
         #print ( "Setting Defaults for a Parameter" )
 
@@ -1125,7 +1125,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         self.updating = False
         self.disable_parse = False
 
-    @profile('Parameter_Data.draw_details')
+    #@profile('Parameter_Data.draw_details')
     def draw_details ( self, layout ):
         p = self
         layout.label("Internal Information:")
@@ -1149,7 +1149,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         layout.label(" Initialized = " + str(p.initialized))
         # layout.label(" Panel Path = " + self.path_from_id())   # This really really slows down the interface!!
 
-    @profile('Parameter_Data.print_parameter')
+    #@profile('Parameter_Data.print_parameter')
     def print_parameter ( self ):
         p = self
         print ("Internal Information:")
@@ -1174,7 +1174,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         # print (" Panel Path = " + self.path_from_id())   # This really really slows down the interface!!
 
 
-    @profile('Parameter_Data.build_data_model_from_properties')
+    #@profile('Parameter_Data.build_data_model_from_properties')
     def build_data_model_from_properties ( self ):
         p = self
 
@@ -1194,7 +1194,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         return par_dict
 
 
-    @profile('Parameter_Data.draw')
+    #@profile('Parameter_Data.draw')
     def draw ( self, layout ):
         # This is generally not called, so show a banner if it is
         print ( "####################################################" )
@@ -1202,12 +1202,12 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         print ( "####################################################" )
 
 
-    @profile('Parameter_Data.get_numeric_value')
+    #@profile('Parameter_Data.get_numeric_value')
     def get_numeric_value ( self ):
         return self.value
 
 
-    @profile('Parameter_Data.update_parsed_and_dependencies')
+    #@profile('Parameter_Data.update_parsed_and_dependencies')
     def update_parsed_and_dependencies ( self, parameter_system ):
         general_parameter_list = parameter_system.general_parameter_list 
         old_who_I_depend_on_set = set(self.who_I_depend_on.split())
@@ -1256,7 +1256,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
             parameter_system.register_validity ( self.name, True )
 
 
-    @profile('Parameter_Data.par_name_changed')
+    #@profile('Parameter_Data.par_name_changed')
     def par_name_changed ( self, context ):
         """
         This parameter's user name string has been changed.
@@ -1345,7 +1345,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
                     p.expr = p.expr
 
 
-    @profile('Parameter_Data.expression_changed')
+    #@profile('Parameter_Data.expression_changed')
     def expression_changed ( self, context ):
         """
         This parameter's expression string has been changed.
@@ -1394,7 +1394,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
 
 
 
-    @profile('Parameter_Data.parsed_expression_changed')
+    #@profile('Parameter_Data.parsed_expression_changed')
     def parsed_expression_changed ( self, context ):
         """ 
         This parameter's parsed expression string has been changed.
@@ -1494,7 +1494,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
                 params.recursion_depth = 0
 
 
-    @profile('Parameter_Data.value_changed')
+    #@profile('Parameter_Data.value_changed')
     def value_changed ( self, context ):
         """ 
         Update the entire parameter system based on a parameter's value being changed.
@@ -1534,7 +1534,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
 
 
 
-    @profile('Parameter_Data.regenerate_expr_from_parsed_expr')
+    #@profile('Parameter_Data.regenerate_expr_from_parsed_expr')
     def regenerate_expr_from_parsed_expr ( self, general_parameter_list ):
         expr_list = self.decode_str_to_expr_list ( self.parsed_expr )
         regen_expr = self.build_mdl_expr ( expr_list, general_parameter_list )
@@ -1543,7 +1543,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
                 self.expr = regen_expr
 
 
-    @profile('Parameter_Data.build_mdl_expr')
+    #@profile('Parameter_Data.build_mdl_expr')
     def build_mdl_expr ( self, expr_list, gen_param_list ):
         """ Converts an MDL expression list into an MDL expression using user names for parameters"""
         expr = ""
@@ -1597,7 +1597,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     suspend_evaluation = BoolProperty(name="Suspend Evaluation", default=False)
     auto_update = BoolProperty ( name="Auto Update", default=True )
 
-    @profile('ParameterSystem.init_properties')
+    #@profile('ParameterSystem.init_properties')
     def init_properties ( self ):
         if not ('gname_to_id_dict' in self):
             self['gname_to_id_dict'] = {}
@@ -1607,7 +1607,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         print ( "Removing all Parameter System Properties ... not implemented yet!" )
 
 
-    @profile('ParameterSystem.allocate_available_gid')
+    #@profile('ParameterSystem.allocate_available_gid')
     def allocate_available_gid ( self ):
         """ Return a unique parameter ID for a new parameter """
         if (len(self.general_parameter_list) <= 0) and (len(self.panel_parameter_list) <= 0):
@@ -1617,7 +1617,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         return ( self.next_gid - 1 )
 
 
-    @profile('ParameterSystem.allocate_available_pid')
+    #@profile('ParameterSystem.allocate_available_pid')
     def allocate_available_pid ( self ):
         """ Return a unique parameter ID for a new parameter """
         if (len(self.general_parameter_list) <= 0) and (len(self.panel_parameter_list) <= 0):
@@ -1627,7 +1627,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         return ( self.next_pid - 1 )
 
 
-    @profile('ParameterSystem.get_parameter')
+    #@profile('ParameterSystem.get_parameter')
     def get_parameter ( self, unique_name, pp=False ):
         if pp:
             # Look for this name in the list of panel parameter references
@@ -1643,14 +1643,14 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 return None
 
 
-    @profile('ParameterSystem.add_general_parameter_with_values')
+    #@profile('ParameterSystem.add_general_parameter_with_values')
     def add_general_parameter_with_values ( self, name, expression, units, description ):
         """ Add a new parameter to the list of parameters """
         p = self.new_parameter ( new_name=name, pp=False, new_expr=expression, new_units=units, new_desc=description )
         return p
 
 
-    @profile('ParameterSystem.new_parameter')
+    #@profile('ParameterSystem.new_parameter')
     def new_parameter ( self, new_name=None, pp=False, new_expr=None, new_units=None, new_desc=None ):
         """ Add a new parameter to the list of parameters """
         if new_name != None:
@@ -1707,7 +1707,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         return new_par
 
 
-    @profile('ParameterSystem.del_panel_parameter')
+    #@profile('ParameterSystem.del_panel_parameter')
     def del_panel_parameter ( self, unique_name ):
 
         if unique_name[0] == 'p':
@@ -1734,14 +1734,14 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             #    self['gname_to_id_dict'].pop(unique_name)
 
 
-    @profile('ParameterSystem.add_parameter')
+    #@profile('ParameterSystem.add_parameter')
     def add_parameter ( self, context ):
         """ Add a new parameter to the list of general parameters and set as the active parameter """
         p = self.new_parameter()
         self.active_par_index = len(self.general_parameter_list)-1
         return p
 
-    @profile('ParameterSystem.remove_active_parameter')
+    #@profile('ParameterSystem.remove_active_parameter')
     def remove_active_parameter ( self, context ):
         """ Remove the active parameter from the list of parameters if not needed by others """
         status = ""
@@ -1777,7 +1777,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
         return ( status )
 
-    @profile('ParameterSystem.register_validity')
+    #@profile('ParameterSystem.register_validity')
     def register_validity ( self, name, valid ):
         """ Register the global validity or invalidity of a parameter """
         if valid:
@@ -1792,7 +1792,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             if not (name in self.param_error_list):
                 self.param_error_list = self.param_error_list + " " + name
 
-    @profile('ParameterSystem.translated_param_name_list')
+    #@profile('ParameterSystem.translated_param_name_list')
     def translated_param_name_list ( self, param_name_string ):
         param_list = param_name_string.split()
         name_list = ""
@@ -1805,24 +1805,24 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 name_list = name_list + self.panel_parameter_list[name].par_name
         return name_list
 
-    @profile('ParameterSystem.draw')
+    #@profile('ParameterSystem.draw')
     def draw ( self, layout ):
         pass
 
-    @profile('ParameterSystem.print_general_parameter_list')
+    #@profile('ParameterSystem.print_general_parameter_list')
     def print_general_parameter_list ( self ):
         print ( "General Parameters:" )
         for p in self.general_parameter_list:
             p.print_parameter()
 
-    @profile('ParameterSystem.print_panel_parameter_list')
+    #@profile('ParameterSystem.print_panel_parameter_list')
     def print_panel_parameter_list ( self ):
         print ( "Panel Parameters:" )
         for p in self.panel_parameter_list:
             p.print_parameter()
 
 
-    @profile('ParameterSystem.build_data_model_from_properties')
+    #@profile('ParameterSystem.build_data_model_from_properties')
     def build_data_model_from_properties ( self, context ):
         print ( "Parameter System building Data Model" )
         par_sys_dm = {}
@@ -1833,7 +1833,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         return par_sys_dm
 
 
-    @profile('ParameterSystem.build_data_model_from_properties')
+    #@profile('ParameterSystem.build_data_model_from_properties')
     def build_properties_from_data_model ( self, context, par_sys_dm ):
         # First upgrade the data model as needed
         if not ('data_model_version' in par_sys_dm):
@@ -1855,7 +1855,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
 
 
-    @profile('ParameterSystem.print_name_id_map')
+    #@profile('ParameterSystem.print_name_id_map')
     def print_name_id_map ( self ):
         gname_dict = self['gname_to_id_dict']
         print ( "Name to ID Map:" )
@@ -1863,12 +1863,12 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             print ( "  gname: " + str(k) + " = " + str(v) )
 
 
-    @profile('ParameterSystem.par_name_already_in_use')
+    #@profile('ParameterSystem.par_name_already_in_use')
     def par_name_already_in_use ( self, par_name ):
         return par_name in self['gname_to_id_dict']
 
 
-    @profile('ParameterSystem.update_name_ID_dictionary')
+    #@profile('ParameterSystem.update_name_ID_dictionary')
     def update_name_ID_dictionary ( self, param ):
         gname_dict = self['gname_to_id_dict']
 
