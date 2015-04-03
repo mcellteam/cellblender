@@ -913,10 +913,10 @@ class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
                 row = layout.row()
                 row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
 
-            row = layout.row()
-            row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
-            row = layout.row()
-            row.operator ( "mcell.delete", text="Delete CellBlender Collection Properties", icon='RADIO' )
+                row = layout.row()
+                row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
+                #row = layout.row()
+                #row.operator ( "mcell.delete", text="Delete CellBlender Collection Properties", icon='RADIO' )
 
             row = layout.row()
             if not bpy.data.filepath:
@@ -1268,7 +1268,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
 
 
 
-from . import parameter_system
+# from . import parameter_system
 
 
 class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
@@ -3557,7 +3557,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
 
     def draw_self (self, context, layout):
-        # print ( "Top of CellBlenderMainPanelPropertyGroup.draw_self" )
+        print ( "Top of CellBlenderMainPanelPropertyGroup.draw_self" )
 
         #######################################################################################
         """
@@ -3582,8 +3582,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
         """
         #######################################################################################
 
-
-
         mcell = context.scene.mcell
         
         if not mcell.get ( 'saved_by_source_id' ):
@@ -3600,6 +3598,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
         else:
             CB_ID = mcell['saved_by_source_id']
             source_id = cellblender.cellblender_info['cellblender_source_sha1']
+
             if CB_ID != source_id:
                 # This is a CellBlender file >= 1.0, so draw the normal upgrade button
                 row = layout.row()
@@ -3675,6 +3674,9 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                         
                 else:
 
+
+                    current_marker = "Before drawing any buttons"
+
                     # Draw all the selection buttons with labels in 2 columns:
 
                     brow = layout.row()
@@ -3683,10 +3685,14 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol = brow.column()
                     bcol.prop ( self, "settings_select", icon='SETTINGS', text="Settings" )
 
+                    current_marker = "After drawing preferences_select"
+
                     brow = layout.row()
                     bcol = brow.column()
                     bcol.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="Parameters" )
                     bcol = brow.column()
+                    
+                    current_marker = "After drawing parameters_select"
 
 
                     if use_stock_icons:
@@ -3696,7 +3702,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                         bcol = brow.column()
                         bcol.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="Reactions" )
                     else:
-                        # Use "stock" icons to check on drawing speed problem
+                        # Use custom icons for some buttons
                         if self.molecule_select:
                             molecule_img_sel = bpy.data.images.get('mol_s')
                             mol_s = layout.icon(molecule_img_sel)
@@ -3716,8 +3722,19 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                             react_img_unsel = bpy.data.images.get('reaction_u')
                             reaction_u = layout.icon(react_img_unsel)
                             bcol.prop ( self, "reaction_select", icon_value=reaction_u, text="Reactions" )
+
+
+                    current_marker = "After drawing molecules and reactions"
+
+
+                    ## Drawing is fast when exiting here
+
                     bcol = brow.column()
                     bcol.prop ( self, "placement_select", icon='GROUP_VERTEX', text=" Molecule Placement" )
+
+                    current_marker = "After drawing placement_select"
+                    ## Drawing is a little slower when exiting here
+
 
                     brow = layout.row()
                     bcol = brow.column()
@@ -3725,11 +3742,20 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol = brow.column()
                     bcol.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="Model Objects" )
 
+                    current_marker = "After drawing release patterns"
+
                     brow = layout.row()
                     bcol = brow.column()
                     bcol.prop ( self, "surf_classes_select", icon='FACESEL_HLT', text="Surface Classes" )
                     bcol = brow.column()
                     bcol.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="Assign Surface Classes" )
+                    
+
+                    current_marker = "After drawing surface selections"
+
+
+                    ## Drawing is slower when exiting here
+
 
                     brow = layout.row()
                     bcol = brow.column()
@@ -3737,11 +3763,29 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol = brow.column()
                     bcol.prop ( self, "graph_select", icon='FCURVE', text="Plot Output Settings" )
 
+
+                    current_marker = "After drawing partition and graph buttons"
+
+
                     brow = layout.row()
                     bcol = brow.column()
                     bcol.prop ( self, "viz_select", icon='SEQUENCE', text="Visualization Settings" )
                     bcol = brow.column()
                     bcol.prop ( self, "init_select", icon='COLOR_RED', text="Run Simulation" )
+
+
+                    current_marker = "After drawing the viz and run buttons buttons"
+
+
+
+
+                    ############################################
+                    ############################################
+                    #print ( "Exiting ... " + current_marker )
+                    #return
+                    ############################################
+                    ############################################
+
 
 
                     brow = layout.row()
@@ -3752,6 +3796,10 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                         bcol.prop ( self, "select_multiple", icon='UNPINNED', text="Show All / Multiple" )
                     bcol = brow.column()
                     bcol.operator ( "cbm.refresh_operator",icon='FILE_REFRESH', text="Reload Visualization Data")
+
+
+
+                current_marker = "After drawing all buttons"
 
 
 
@@ -3847,7 +3895,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                 #if self.reload_viz:
                 #    layout.box()
                 #    layout.label ( "Reload Simulation Data", icon='FILE_REFRESH' )
-        # print ( "Bottom of CellBlenderMainPanelPropertyGroup.draw_self" )
+        print ( "Bottom of CellBlenderMainPanelPropertyGroup.draw_self" )
 
 
 import pickle
@@ -4049,7 +4097,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         print ( "build_data_model_from_RC3_ID_properties: Constructing a data_model dictionary from RC3 ID properties" )
         print ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
         print ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
-        print ( "!!!!!!!!!!!!!! THIS DOESN'T WORK YET !!!!!!!!!!!!!!!!" )
+        print ( "!!!!!!!!!!!!!! THIS MAY NOT WORK YET !!!!!!!!!!!!!!!!" )
         print ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
         print ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
 
