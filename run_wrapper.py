@@ -8,7 +8,10 @@ import subprocess as sp
 if __name__ == '__main__':
 
   wd = sys.argv[1]
-  cmd = input()
+  if sys.version_info.major == 3:
+    cmd = input()
+  else:
+    cmd = raw_input()
 
   r = (b'', b'')
   try:
