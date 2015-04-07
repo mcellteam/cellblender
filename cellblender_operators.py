@@ -1452,7 +1452,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                       log_file = None
 
                   mdl_filename = '%s.main.mdl' % (base_name)
-                  mcell_task = '"%s -seed %d %s"' % (mcell_binary, seed, mdl_filename)
+                  mcell_task = '%s -seed %d %s' % (mcell_binary, seed, mdl_filename)
                   proc = cellblender.simulation_queue.add_task(mcell_task,project_dir)
 
                   self.report({'INFO'}, "Simulation Running")
