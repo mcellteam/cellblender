@@ -744,6 +744,13 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
         name="Show Long Menu Buttons", default=True,
         description="Show Menu Buttons with Text Labels")
 
+    use_stock_icons = BoolProperty(
+        name="Use only internal Blender Icons", default=True,
+        description="Use only internal Blender Icons")
+
+    show_button_num = BoolVectorProperty ( size=15 )
+
+
     show_old_scene_panels = BoolProperty(
         name="Old CellBlender in Scene Tab", default=True,
         description="Show Old CellBlender Panels in Scene Tab", update=set_old_scene_panels_callback)
@@ -836,6 +843,12 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
             
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "use_long_menus")
+
+            row = layout.row()
+            row.prop(mcell.cellblender_preferences, "use_stock_icons")
+
+            row = layout.row()
+            row.prop(mcell.cellblender_preferences, "show_button_num", text="")
 
             row = layout.row()
             row.prop ( context.user_preferences.system, "use_vertex_buffer_objects" )
@@ -3495,23 +3508,34 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
         prop_keys = [ 'preferences_select', 'settings_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'init_select', 'graph_select', 'viz_select', 'select_multiple' ]
         
         pin_state = False
+        
+        """
         try:
             pin_state = (self['select_multiple'] != 0)
         except:
             pass
         old_pin_state = (self.last_state[prop_keys.index('select_multiple')] != 0)
+        """
+
+        if self.get('select_multiple'):
+            pin_state = (self['select_multiple'] != 0)
+        old_pin_state = (self.last_state[prop_keys.index('select_multiple')] != 0)
         
-        # print ( "Select Called with pin state:" + str(pin_state) + ", and old pin state = " + str(old_pin_state) )
+        print ( "Select Called without try/except with pin state:" + str(pin_state) + ", and old pin state = " + str(old_pin_state) )
 
         if (old_pin_state and (not pin_state)):
             # Pin has been removed, so hide all panels ... always
             # print ("Hiding all")
             for k in prop_keys:
+                self.last_state[prop_keys.index(k)] = False
+                self[k] = 0
+                """
                 try:
                     self.last_state[prop_keys.index(k)] = False
                     self[k] = 0
                 except:
                     pass
+                """
             self.last_state[prop_keys.index('select_multiple')] = False
             
         elif ((not old_pin_state) and pin_state):
@@ -3520,21 +3544,31 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             num_panels_shown = 0
             for k in prop_keys:
                 if k != 'select_multiple':
+                    if self.get(k):
+                        if self[k] != 0:
+                            num_panels_shown += 1
+                    """
                     try:
                         if self[k] != 0:
                             num_panels_shown += 1
                     except:
                         pass
+                    """
             # Check for case where no panels are showing
             if num_panels_shown == 0:
                 # print ("Showing all")
                 # Show all panels
                 for k in prop_keys:
+                    if self.get(k):
+                        self[k] = 1
+                        self.last_state[prop_keys.index(k)] = False
+                    """
                     try:
                         self[k] = 1
                         self.last_state[prop_keys.index(k)] = False
                     except:
                         pass
+                    """
         
             self.last_state[prop_keys.index('select_multiple')] = True
         
@@ -3543,7 +3577,15 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
             # Go through and find which one has changed to positive, setting all others to 0 if not pin_state
             for k in prop_keys:
-                # print ( "Key " + k + " is " + str(self[k]) + ", Last state = " + str(self.last_state[index]) )
+                if self.get(k):
+                    # print ( "Key " + k + " is " + str(self[k]) + ", Last state = " + str(self.last_state[index]) )
+                    if (self[k] != 0) and (self.last_state[prop_keys.index(k)] == False):
+                        self.last_state[prop_keys.index(k)] = True
+                    else:
+                        if not pin_state:
+                            self.last_state[prop_keys.index(k)] = False
+                            self[k] = 0
+                """
                 try:
                     if (self[k] != 0) and (self.last_state[prop_keys.index(k)] == False):
                         self.last_state[prop_keys.index(k)] = True
@@ -3553,7 +3595,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                             self[k] = 0
                 except:
                     pass
-        
+                """
 
 
     def draw_self (self, context, layout):
@@ -3608,7 +3650,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
             else:
                 # The versions matched, so draw the normal panels
-                use_stock_icons = True
 
                 if not mcell.cellblender_preferences.use_long_menus:
 
@@ -3620,57 +3661,55 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                     #row = layout.row(align=True)
                     row = col.row(align=True)
-                    row.prop ( self, "preferences_select", icon='PREFERENCES' )
-                    row.prop ( self, "settings_select", icon='SETTINGS' )
-                    row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER' )
 
-                    if use_stock_icons:
+                    if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "preferences_select", icon='PREFERENCES' )
+                    if mcell.cellblender_preferences.show_button_num[1]: row.prop ( self, "settings_select", icon='SETTINGS' )
+                    if mcell.cellblender_preferences.show_button_num[2]: row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER' )
+
+                    if mcell.cellblender_preferences.use_stock_icons:
                         # Use "stock" icons to check on drawing speed problem
-                        row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES' )
-                        row.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT' )
+                        if mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES' )
+                        if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT' )
                     else:
                         if self.molecule_select:
-                            molecule_img_sel = bpy.data.images.get('mol_s')
-                            mol_s = layout.icon(molecule_img_sel)
-                            row.prop ( self, "molecule_select", icon_value=mol_s )
+                            if mcell.cellblender_preferences.show_button_num[3]: molecule_img_sel = bpy.data.images.get('mol_s')
+                            if mcell.cellblender_preferences.show_button_num[3]: mol_s = layout.icon(molecule_img_sel)
+                            if mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "molecule_select", icon_value=mol_s )
                         else:
-                            molecule_img_unsel = bpy.data.images.get('mol_u')
-                            mol_u = layout.icon(molecule_img_unsel)
-                            row.prop ( self, "molecule_select", icon_value=mol_u )
+                            if mcell.cellblender_preferences.show_button_num[3]: molecule_img_unsel = bpy.data.images.get('mol_u')
+                            if mcell.cellblender_preferences.show_button_num[3]: mol_u = layout.icon(molecule_img_unsel)
+                            if mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "molecule_select", icon_value=mol_u )
 
                         if self.reaction_select:
-                            react_img_sel = bpy.data.images.get('reaction_s')
-                            reaction_s = layout.icon(react_img_sel)
-                            row.prop ( self, "reaction_select", icon_value=reaction_s )
+                            if mcell.cellblender_preferences.show_button_num[4]: react_img_sel = bpy.data.images.get('reaction_s')
+                            if mcell.cellblender_preferences.show_button_num[4]: reaction_s = layout.icon(react_img_sel)
+                            if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "reaction_select", icon_value=reaction_s )
                         else:
-                            react_img_unsel = bpy.data.images.get('reaction_u')
-                            reaction_u = layout.icon(react_img_unsel)
-                            row.prop ( self, "reaction_select", icon_value=reaction_u )
+                            if mcell.cellblender_preferences.show_button_num[4]: react_img_unsel = bpy.data.images.get('reaction_u')
+                            if mcell.cellblender_preferences.show_button_num[4]: reaction_u = layout.icon(react_img_unsel)
+                            if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "reaction_select", icon_value=reaction_u )
 
-                    row.prop ( self, "placement_select", icon='GROUP_VERTEX' )
-                    row.prop ( self, "rel_patterns_select", icon='TIME' )
-                    row.prop ( self, "objects_select", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
-                    row.prop ( self, "surf_classes_select", icon='FACESEL_HLT' )
-                    row.prop ( self, "surf_regions_select", icon='SNAP_FACE' )
-                    row.prop ( self, "partitions_select", icon='GRID' )
-                    row.prop ( self, "graph_select", icon='FCURVE' )
-                    row.prop ( self, "viz_select", icon='SEQUENCE' )
-                    #row.prop ( self, "mol_viz_select", icon='SEQUENCE' )
-                    row.prop ( self, "init_select", icon='COLOR_RED' )
-                    # row.prop ( self, "run_select", icon='COLOR_RED' )
+                    if mcell.cellblender_preferences.show_button_num[5]: row.prop ( self, "placement_select", icon='GROUP_VERTEX' )
+                    if mcell.cellblender_preferences.show_button_num[6]: row.prop ( self, "rel_patterns_select", icon='TIME' )
+                    if mcell.cellblender_preferences.show_button_num[7]: row.prop ( self, "objects_select", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
+                    if mcell.cellblender_preferences.show_button_num[8]: row.prop ( self, "surf_classes_select", icon='FACESEL_HLT' )
+                    if mcell.cellblender_preferences.show_button_num[9]: row.prop ( self, "surf_regions_select", icon='SNAP_FACE' )
+                    if mcell.cellblender_preferences.show_button_num[10]: row.prop ( self, "partitions_select", icon='GRID' )
+                    if mcell.cellblender_preferences.show_button_num[11]: row.prop ( self, "graph_select", icon='FCURVE' )
+                    if mcell.cellblender_preferences.show_button_num[12]: row.prop ( self, "viz_select", icon='SEQUENCE' )
+                    if mcell.cellblender_preferences.show_button_num[13]: row.prop ( self, "init_select", icon='COLOR_RED' )
 
                     col = split.column()
                     row = col.row()
 
                     if self.select_multiple:
-                        row.prop ( self, "select_multiple", icon='PINNED' )
+                        if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "select_multiple", icon='PINNED' )
                     else:
-                        row.prop ( self, "select_multiple", icon='UNPINNED' )
+                        if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "select_multiple", icon='UNPINNED' )
 
                     # Use an operator rather than a property to make it an action button
                     # row.prop ( self, "reload_viz", icon='FILE_REFRESH' )
-                    row.operator ( "cbm.refresh_operator",text="",icon='FILE_REFRESH')
-                    #row.operator ( "mcell.read_viz_data", text="",icon='FILE_REFRESH')
+                    if mcell.cellblender_preferences.show_button_num[0]: row.operator ( "cbm.refresh_operator",text="",icon='FILE_REFRESH')
                         
                 else:
 
@@ -3695,7 +3734,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     current_marker = "After drawing parameters_select"
 
 
-                    if use_stock_icons:
+                    if mcell.cellblender_preferences.use_stock_icons:
                         # Use "stock" icons to check on drawing speed problem
                         bcol.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES', text="Molecules" )
                         brow = layout.row()

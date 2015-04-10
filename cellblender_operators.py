@@ -98,7 +98,7 @@ class MCELL_OT_upgradeRC3(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        print ( "Upgrading Properties from Data Model" )
+        print ( "Upgrading Properties from an RC3 File Data Model" )
         mcell = context.scene.mcell
 
         if 'data_model' in mcell:
@@ -2281,7 +2281,7 @@ def mol_viz_clear(mcell_prop):
 
 
 
-import sys
+import sys, traceback
 
 def mol_viz_file_read(mcell_prop, filepath):
     """ Draw the viz data for the current frame. """
@@ -2515,6 +2515,19 @@ def mol_viz_file_read(mcell_prop, filepath):
     except ValueError:
         print(("\n***** Invalid data in file: %s\n") % (filepath))
 
+    except RuntimeError as rte:
+        print(("\n***** Caught other runtime error in file: %s\n") % (filepath))
+        print("***** Error: \n" + str(rte) + "\n")
+        fail_error = sys.exc_info()
+        print ( "  Error Type: " + str(fail_error[0]) )
+        print ( "  Error Value: " + str(fail_error[1]) )
+        tb = fail_error[2]
+        # tb.print_stack()
+
+    except Exception as uex:
+        # Catch any exception
+        print ( "\n***** Unexpected exception:" + str(uex) + "\n" )
+        raise
 
 # Meshalyzer
 class MCELL_OT_meshalyzer(bpy.types.Operator):
