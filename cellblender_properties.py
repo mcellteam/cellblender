@@ -1105,10 +1105,11 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                 row = layout.row()
 
                 if mcell.cellblender_preferences.decouple_export_run:
-                    row.operator("mcell.export_project", icon='EXPORT')
+                    row.operator("mcell.export_project", text="Export", icon='EXPORT')
+                    row.operator("mcell.run_simulation", text="Run", icon='COLOR_RED')
+                else:
+                    row.operator("mcell.run_simulation", text="Export  &  Run", icon='COLOR_RED')
 
-                row.operator("mcell.run_simulation", text="Run",
-                             icon='COLOR_RED')
                 
                 row.prop(self, "simulation_run_control")
 
