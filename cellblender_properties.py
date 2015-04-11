@@ -828,10 +828,10 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
                     text="Python Binary: " + self.python_binary,
                     icon='FILE_TICK')
 
-            row = layout.row()
-            row.prop(mcell.cellblender_preferences, "decouple_export_run")
-            row = layout.row()
-            row.prop(mcell.cellblender_preferences, "invalid_policy")
+            #row = layout.row()
+            #row.prop(mcell.cellblender_preferences, "decouple_export_run")
+            #row = layout.row()
+            #row.prop(mcell.cellblender_preferences, "invalid_policy")
             #row = layout.row()
             #row.prop(mcell.cellblender_preferences, "debug_level")
 
@@ -1132,6 +1132,19 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row.prop(self, "end_seed")
                     row = box.row()
                     row.prop(self, "mcell_processes")
+
+                    row = box.row()
+                    row.prop(mcell.cellblender_preferences, "decouple_export_run")
+
+                    if mcell.cellblender_preferences.decouple_export_run:
+                        row = box.row()
+                        row.operator(
+                            "mcell.export_project", text="Export CellBlender Project",
+                            icon='EXPORT')
+
+                    row = box.row()
+                    row.prop(mcell.cellblender_preferences, "invalid_policy")
+                    
                     row = box.row()
                     row.prop(self, "log_file")
                     row = box.row()
@@ -1139,11 +1152,6 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row = box.row()
                     row.prop(mcell.export_project, "export_format")
 
-                    if mcell.cellblender_preferences.decouple_export_run:
-                        row = box.row()
-                        row.operator(
-                            "mcell.export_project", text="Export CellBlender Project",
-                            icon='EXPORT')
                     row = box.row()
                     row.prop(self, "remove_append", expand=True)
 
@@ -1220,6 +1228,8 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all Molecule Visualization Properties..." )
+        print ( "Actually leaving them alone for now ..." )
+        """
         for item in self.mol_viz_seed_list:
             item.remove_properties(context)
         self.mol_viz_seed_list.clear()
@@ -1237,6 +1247,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
             item.remove_properties(context)
         self.color_list.clear()
         self.color_index = 0
+        """
         print ( "Done removing all Molecule Visualization Properties." )
 
 
