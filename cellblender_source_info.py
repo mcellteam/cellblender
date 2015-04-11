@@ -45,6 +45,8 @@ cellblender_info = {
         "io_mesh_mcell_mdl"+os.sep+"import_shared.py",
         "io_mesh_mcell_mdl"+os.sep+"pyparsing.py",
         "io_mesh_mcell_mdl"+os.sep+"mdlmesh_parser.py",
+        "io_mesh_mcell_mdl"+os.sep+"mdlobj.py",
+#        "io_mesh_mcell_mdl"+os.sep+"_mdlmesh_parser.so",
         "data_plotters"+os.sep+"__init__.py",
         "data_plotters"+os.sep+"mpl_simple"+os.sep+"__init__.py",
         "data_plotters"+os.sep+"mpl_simple"+os.sep+"mpl_simple.py",
