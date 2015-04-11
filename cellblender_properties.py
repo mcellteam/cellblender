@@ -694,14 +694,14 @@ def set_scene_panel_callback(self, context):
     """ Show or hide the scene panel based on the show_scene_panel boolean property. """
     print ( "Toggling the scene panel" )
     mcell = context.scene.mcell
-    show_scene_panel ( mcell.cellblender_preferences.show_scene_panel )
+    show_hide_scene_panel ( mcell.cellblender_preferences.show_scene_panel )
 
 
 def set_tool_panel_callback(self, context):
     """ Show or hide the tool panel based on the show_tool_panel boolean property. """
     print ( "Toggling the tool panels" )
     mcell = context.scene.mcell
-    show_tool_panel ( mcell.cellblender_preferences.show_tool_panel )
+    show_hide_tool_panel ( mcell.cellblender_preferences.show_tool_panel )
 
     
 
@@ -744,11 +744,16 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
         name="Show Long Menu Buttons", default=True,
         description="Show Menu Buttons with Text Labels")
 
-    use_stock_icons = BoolProperty(
+    use_stock_icons = BoolProperty (
         name="Use only internal Blender Icons", default=True,
         description="Use only internal Blender Icons")
 
-    show_button_num = BoolVectorProperty ( size=15 )
+
+    show_extra_options = BoolProperty (
+        name="Show Extra Options", default=False,
+        description="Show Additional Options (mostly for debugging)" )
+
+    show_button_num = BoolVectorProperty ( size=15, default=[True for i in range(15)] )
 
 
     show_old_scene_panels = BoolProperty(
@@ -760,7 +765,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
         description="Show CellBlender Panel in Scene Tab", update=set_scene_panel_callback)
 
     show_tool_panel = BoolProperty(
-        name="CellBlender in Tool Tab", default=False,
+        name="CellBlender in Tool Tab", default=True,
         description="Show CellBlender Panel in Tool Tab", update=set_tool_panel_callback)
 
 
@@ -828,14 +833,6 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
                     text="Python Binary: " + self.python_binary,
                     icon='FILE_TICK')
 
-            #row = layout.row()
-            #row.prop(mcell.cellblender_preferences, "decouple_export_run")
-            #row = layout.row()
-            #row.prop(mcell.cellblender_preferences, "invalid_policy")
-            #row = layout.row()
-            #row.prop(mcell.cellblender_preferences, "debug_level")
-
-
             layout.separator()
 
             row = layout.row()
@@ -848,31 +845,44 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
             row.prop(mcell.cellblender_preferences, "use_stock_icons")
 
             row = layout.row()
-            row.prop(mcell.cellblender_preferences, "show_button_num", text="")
-
-            row = layout.row()
-            row.prop ( context.user_preferences.system, "use_vertex_buffer_objects" )
+            row.prop ( context.user_preferences.system, "use_vertex_buffer_objects", text="Enable Vertex Buffer Objects" )
             
             row = layout.row()
-            row.prop ( mcell.cellblender_preferences, "backface_culling" )
+            row.prop ( mcell.cellblender_preferences, "backface_culling", text="Enable Backface Culling" )
 
             row = layout.row()
             row.prop ( mcell.cellblender_preferences, "double_sided" )
 
-
-            layout.separator()
-            layout.label ( "=== Extras ===" )
-            layout.separator()
-
             row = layout.row()
             row.prop ( mcell.cellblender_preferences, "tab_autocomplete")
+
+            box = layout.box()
+
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
+            if self.show_extra_options:
+                row.prop(self, "show_extra_options", icon='TRIA_DOWN', emboss=False)
+
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "show_tool_panel")
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "show_scene_panel")
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "show_old_scene_panels")
+
+                row = box.row()
+                row.label ( "Enable/Disable individual short menu buttons:" )
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "show_button_num", text="")
+
+
+            else:
+                row.prop(self, "show_extra_options", icon='TRIA_RIGHT', emboss=False)
+
+                
+
             
-            row = layout.row()
-            row.prop(mcell.cellblender_preferences, "show_old_scene_panels")
-            row = layout.row()
-            row.prop(mcell.cellblender_preferences, "show_scene_panel")
-            row = layout.row()
-            row.prop(mcell.cellblender_preferences, "show_tool_panel")
+
 
             #row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')
             #row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='ZOOMOUT')
@@ -1093,16 +1103,14 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
             else:
 
                 row = layout.row()
+
+                if mcell.cellblender_preferences.decouple_export_run:
+                    row.operator("mcell.export_project", icon='EXPORT')
+
                 row.operator("mcell.run_simulation", text="Run",
                              icon='COLOR_RED')
                 
-                #row.operator("mcell.run_simulation_control_java", text="Run Java Sim Control",
-                #             icon='COLOR_BLUE')
-                #row.operator("mcell.run_simulation_control_opengl", text="Run OpenGL Sim Control",
-                #             icon='COLOR_BLUE')
-
                 row.prop(self, "simulation_run_control")
-
 
 
                 if (self.processes_list and
@@ -1136,11 +1144,11 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row = box.row()
                     row.prop(mcell.cellblender_preferences, "decouple_export_run")
 
-                    if mcell.cellblender_preferences.decouple_export_run:
-                        row = box.row()
-                        row.operator(
-                            "mcell.export_project", text="Export CellBlender Project",
-                            icon='EXPORT')
+                    #if mcell.cellblender_preferences.decouple_export_run:
+                    #    row = box.row()
+                    #    row.operator(
+                    #        "mcell.export_project", text="Export CellBlender Project",
+                    #        icon='EXPORT')
 
                     row = box.row()
                     row.prop(mcell.cellblender_preferences, "invalid_policy")
@@ -3330,7 +3338,7 @@ def show_old_scene_panels ( show=True ):
 
 
 
-def show_tool_panel ( show=True ):
+def show_hide_tool_panel ( show=True ):
     if show:
         print ( "Showing CellBlender panel in the Tool tab" )
         try:
@@ -3345,7 +3353,7 @@ def show_tool_panel ( show=True ):
             pass
 
 
-def show_scene_panel ( show=True ):
+def show_hide_scene_panel ( show=True ):
     if show:
         print ( "Showing the CellBlender panel in the Scene tab" )
         try:
