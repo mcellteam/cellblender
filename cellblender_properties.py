@@ -1015,7 +1015,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
 
     simulation_run_control_enum = [
-        ('QUEUE', "Queue", ""),
+        ('QUEUE', "Queue Control", ""),
         ('COMMAND', "Command Line", ""),
         ('JAVA', "Java Control", ""),
         ('OPENGL', "OpenGL Control", "")]

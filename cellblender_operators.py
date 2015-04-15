@@ -1558,7 +1558,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                       log_file = None
 
                   mdl_filename = '%s.main.mdl' % (base_name)
-                  mcell_task = '"%s -seed %d %s"' % (mcell_binary, seed, mdl_filename)
+                  mcell_task = '%s -seed %d %s' % (mcell_binary, seed, mdl_filename)
                   proc = cellblender.simulation_queue.add_task(mcell_task,project_dir)
 
                   self.report({'INFO'}, "Simulation Running")
@@ -1589,8 +1589,7 @@ class MCELL_OT_kill_simulation(bpy.types.Operator):
         pid = int(ap.name.split(',')[0].split(':')[1])
         q_item = cellblender.simulation_queue.task_dict.get(pid)
         if q_item:
-            proc = q_item['process']
-            if proc.poll() is None:
+            if q_item['status'] == 'running':
                 return True
 
     def execute(self, context):
@@ -1603,8 +1602,8 @@ class MCELL_OT_kill_simulation(bpy.types.Operator):
         pid = int(ap.name.split(',')[0].split(':')[1])
         q_item = cellblender.simulation_queue.task_dict.get(pid)
         if q_item:
-            proc = q_item['process']
-            if proc.poll() is None:
+            if q_item['status'] == 'running':
+                proc = q_item['process']
                 proc.terminate()
 
         return {'FINISHED'}
@@ -1625,9 +1624,9 @@ class MCELL_OT_kill_all_simulations(bpy.types.Operator):
             pid = int(p_item.name.split(',')[0].split(':')[1])
             q_item = cellblender.simulation_queue.task_dict.get(pid)
             if q_item:
-                proc = q_item['process']
-                if proc.poll() is None:
+                if q_item['status'] == 'running':
                     # Simulation is running, so let's kill it
+                    proc = q_item['process']
                     proc.terminate()
 
         return {'FINISHED'}

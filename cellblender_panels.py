@@ -123,13 +123,16 @@ class MCELL_UL_run_simulation_queue(bpy.types.UIList):
             pid = int(item.name.split(',')[0].split(':')[1])
             q_item = cellblender.simulation_queue.task_dict[pid]
             proc = q_item['process']
-            if proc.poll() is None:
+            if q_item['status'] == 'queued':
+                # Simulation is queued, waiting to run
+                layout.label(item.name, icon='TIME')
+            elif q_item['status'] == 'running':
                 # Simulation is still running
                 layout.label(item.name, icon='POSE_DATA')
-            elif proc.returncode == 1:
+            elif q_item['status'] == 'mcell_error':
                 # Simulation failed due to error detected by MCell
                 layout.label(item.name, icon='ERROR')
-            elif proc.returncode > 1:
+            elif q_item['status'] == 'died':
                 # Simulation was killed or failed due to some other error
                 layout.label(item.name, icon='CANCEL')
             else:
