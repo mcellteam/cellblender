@@ -4,6 +4,7 @@ from sim_runner_queue import OutputQueue
 import sys
 import signal
 import subprocess as sp
+import time
 
 
 if __name__ == '__main__':

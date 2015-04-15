@@ -7,6 +7,8 @@ else:
   from Queue import Queue
 from threading import Thread
 import subprocess as sp
+import time
+
 
 
 class OutputQueue:
@@ -21,12 +23,20 @@ class OutputQueue:
         func(line)
     pipe.close()
 
-  def write_output(self, get, pipe):
+  def write_output(self, get, pipe, text=None):
+    if text != None:
+      import bpy
     for line in iter(get, None):
       pipe.write(line)
       pipe.flush()
+      if text != None:
+        text.write(line)
+        text.current_line_index=len(text.lines)-1
 
-  def run_proc(self, proc, arg_in=None, passthrough=True):
+  def run_proc(self, proc, arg_in=None, text=None, passthrough=True):
+
+    if text != None:
+      import bpy
 
     if passthrough:
 
@@ -41,11 +51,11 @@ class OutputQueue:
           )
 
       stdout_writer_thread = Thread(
-          target=self.write_output, args=(self.out_q.get, sys.stdout)
+          target=self.write_output, args=(self.out_q.get, sys.stdout, text)
           )
 
       stderr_writer_thread = Thread(
-          target=self.write_output, args=(self.err_q.get, sys.stderr)
+          target=self.write_output, args=(self.err_q.get, sys.stderr, text)
           )
 
       for t in (stdout_reader_thread, stderr_reader_thread, stdout_writer_thread, stderr_writer_thread):
@@ -62,6 +72,10 @@ class OutputQueue:
       self.err_q.put(None)
       for t in (stdout_reader_thread, stderr_reader_thread, stdout_writer_thread, stderr_writer_thread):
         t.join()
+
+      sys.stdout.flush()
+      sys.stderr.flush()
+#      time.sleep(1)
 
       outs = ' '.join(outs)
       errs = ' '.join(errs)
@@ -100,15 +114,19 @@ class SimQueue:
     while True:
       task = self.work_q.get()
       process = task['process']
+      pid = process.pid
       cmd = task['cmd']
+      t = self.task_dict[pid]['text']
       if self.notify:
-        sys.stdout.write('Starting PID {0} {1}\n'.format(process.pid, cmd))
+        sys.stdout.write('Starting PID {0} {1}\n'.format(pid, cmd))
       out_q = OutputQueue()
 #      sys.stdout.write('sending:  {0}\n'.format(cmd).encode().decode())
       task['status'] = 'running'
-      rc, res = out_q.run_proc(process, arg_in=cmd, passthrough=self.notify)
-      self.task_dict[process.pid]['stdout'] = res[0]
-      self.task_dict[process.pid]['stderr'] = res[1]
+      rc, res = out_q.run_proc(process, arg_in=cmd, text=t, passthrough=self.notify)
+      self.task_dict[pid]['stdout'] = res[0]
+      self.task_dict[pid]['stderr'] = res[1]
+#      self.task_dict[pid]['text'].write(res[0])
+#      self.task_dict[pid]['text'].write(res[1])
       if process.returncode == 0:
         task['status'] = 'completed'
       elif process.returncode == 1:
@@ -116,10 +134,11 @@ class SimQueue:
       else:
         task['status'] = 'died'
       if self.notify:
-        sys.stdout.write('Task PID {0}  status: {1}\n'.format(process.pid, task['status']))
+        sys.stdout.write('Task PID {0}  status: {1}\n'.format(pid, task['status']))
       self.work_q.task_done()
 
   def add_task(self,cmd,wd):
+    import bpy
     process = sp.Popen([self.python_exec, self.run_wrapper, wd], bufsize=1, shell=False, close_fds=True, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
     pid = process.pid
     self.task_dict[pid] = {}
@@ -128,11 +147,18 @@ class SimQueue:
     self.task_dict[pid]['status'] = 'queued'
     self.task_dict[pid]['stdout'] = b''
     self.task_dict[pid]['stderr'] = b''
+    bpy.ops.text.new()
+    t = bpy.data.texts[-1]
+    t.name = 'task_%d_output' % pid
+    self.task_dict[pid]['text'] = t
     self.work_q.put(self.task_dict[pid])
     return process
 
   def clear_task(self,pid):
+    import bpy
     if self.task_dict.get(pid):
+      if bpy.data.texts.get(self.task_dict[pid]['text'].name):
+        bpy.data.texts.remove(self.task_dict[pid]['text'])
       self.task_dict.pop(pid)
 
 #  def stop(self):
