@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from sim_runner_queue import OutputQueue
 import sys
 import signal
 import subprocess as sp
@@ -13,22 +14,18 @@ if __name__ == '__main__':
   else:
     cmd = raw_input()
 
-  r = (b'', b'')
-  try:
-    proc = sp.Popen(cmd.split(), cwd=wd, stdout=sp.PIPE, stderr=sp.PIPE)
+#  sys.stdout.write('Starting cmd: {0}   with wd: {1}\n'.format(cmd, wd))
 
-    def sig_term_handler(signum, frame):
-      sys.stderr.write('Sending termination signal to child PID: {0}\n'.format(proc.pid))
-      proc.send_signal(signum)
+  proc = sp.Popen(cmd.split(), cwd=wd, bufsize=1, shell=False, close_fds=True, stdout=sp.PIPE, stderr=sp.PIPE)
 
-    signal.signal(signal.SIGTERM, sig_term_handler)
+  def sig_handler(signum, frame):
+    sys.stdout.write('Sending signal: {0} to PID: {1}\n'.format(signum, proc.pid))
+    proc.send_signal(signum)
 
-    r = proc.communicate()
-  except Exception as e:
-    err_str = '\nrun_cmd error: {0}  cmd: {1}\n'.format(str(e), cmd)
-    r = (r[0], (r[1].decode() + err_str).encode())
+  signal.signal(signal.SIGTERM, sig_handler)
 
-  sys.stdout.write(r[0].decode())
-  sys.stderr.write(r[1].decode())
-  exit(abs(proc.returncode))
+  output_q = OutputQueue() 
+  rc, res = output_q.run_proc(proc,passthrough=True)
+
+  exit(abs(rc))
 
