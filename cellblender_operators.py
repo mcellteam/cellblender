@@ -1929,7 +1929,7 @@ class MCELL_OT_clear_simulation_queue(bpy.types.Operator):
             q_item = simulation_queue.task_dict.get(pid)
             if q_item:
                 proc = q_item['process']
-                if proc.poll() is None:
+                if (q_item['status'] == 'queued') or (q_item['status'] == 'running'):
                     # Simulation is still running. Leave it in the collection
                     # property and simulation queue
                     idx += 1
@@ -1937,7 +1937,7 @@ class MCELL_OT_clear_simulation_queue(bpy.types.Operator):
                 else:
                     # Simulation has failed or finished. Remove it from
                     # collection property and the simulation queue
-                    simulation_queue.task_dict.pop(pid)
+                    simulation_queue.clear_task(pid)
                     processes_list.remove(idx)
                     if idx <= mcell.run_simulation.active_process_index:
                         mcell.run_simulation.active_process_index -= 1
