@@ -17,22 +17,17 @@ if __name__ == '__main__':
 
 #  sys.stdout.write('Starting cmd: {0}   with wd: {1}\n'.format(cmd, wd))
 
-  term = False
   proc = sp.Popen(cmd.split(), cwd=wd, bufsize=1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
 
   def sig_handler(signum, frame):
-    global term
-    term = True
     sys.stdout.write('Sending signal: {0} to PID: {1}\n'.format(signum, proc.pid))
     sys.stdout.flush()
     proc.send_signal(signum)
 
-  signal.signal(signal.SIGINT, sig_handler)
+  signal.signal(signal.SIGTERM, sig_handler)
 
   output_q = OutputQueue() 
   rc, res = output_q.run_proc(proc,passthrough=True)
-  if term:
-    rc = 2
 
-  exit(rc)
+  exit(abs(rc))
 
