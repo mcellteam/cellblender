@@ -21,9 +21,10 @@ if __name__ == '__main__':
   proc = sp.Popen(cmd.split(), cwd=wd, bufsize=1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
 
   def sig_handler(signum, frame):
+    global term
+    term = True
     sys.stdout.write('Sending signal: {0} to PID: {1}\n'.format(signum, proc.pid))
     sys.stdout.flush()
-    term = True
     proc.send_signal(signum)
 
   signal.signal(signal.SIGTERM, sig_handler)
@@ -33,5 +34,5 @@ if __name__ == '__main__':
   if term:
     rc = 15
 
-  exit(abs(rc))
+  exit(rc)
 
