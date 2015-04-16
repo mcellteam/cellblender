@@ -131,14 +131,14 @@ class SimQueue:
       self.task_dict[pid]['stderr'] = res[1]
 #      self.task_dict[pid]['text'].write(res[0])
 #      self.task_dict[pid]['text'].write(res[1])
-      if process.returncode == 0:
+      if rc == 0:
         task['status'] = 'completed'
-      elif process.returncode == 1:
+      elif rc == 1:
         task['status'] = 'mcell_error'
       else:
         task['status'] = 'died'
       if self.notify:
-        sys.stdout.write('Task PID {0}  status: {1}\n'.format(pid, task['status']))
+        sys.stdout.write('Task PID {0}  status: {1}  return code: {2}\n'.format(pid, task['status'], rc))
       self.work_q.task_done()
 
   def add_task(self,cmd,wd):
