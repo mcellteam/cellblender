@@ -139,7 +139,7 @@ class SimQueue:
 
   def add_task(self,cmd,wd):
     import bpy
-    process = sp.Popen([self.python_exec, self.run_wrapper, wd], bufsize=1, shell=False, close_fds=True, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+    process = sp.Popen([self.python_exec, self.run_wrapper, wd], bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
     pid = process.pid
     self.task_dict[pid] = {}
     self.task_dict[pid]['process'] = process

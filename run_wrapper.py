@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
 #  sys.stdout.write('Starting cmd: {0}   with wd: {1}\n'.format(cmd, wd))
 
-  proc = sp.Popen(cmd.split(), cwd=wd, bufsize=1, shell=False, close_fds=True, stdout=sp.PIPE, stderr=sp.PIPE)
+  proc = sp.Popen(cmd.split(), cwd=wd, bufsize=1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
 
   def sig_handler(signum, frame):
     sys.stdout.write('Sending signal: {0} to PID: {1}\n'.format(signum, proc.pid))
