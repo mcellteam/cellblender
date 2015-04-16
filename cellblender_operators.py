@@ -39,7 +39,6 @@ import subprocess
 import time
 import shutil
 import datetime
-import signal
 
 import cellblender
 # import cellblender_source_info
@@ -1498,8 +1497,9 @@ class MCELL_OT_kill_simulation(bpy.types.Operator):
         q_item = cellblender.simulation_queue.task_dict.get(pid)
         if q_item:
             if q_item['status'] == 'running':
+                q_item['status'] = 'died'
                 proc = q_item['process']
-                proc.send_signal(signal.SIGINT)
+                proc.terminate()
 
         return {'FINISHED'}
 
@@ -1521,8 +1521,9 @@ class MCELL_OT_kill_all_simulations(bpy.types.Operator):
             if q_item:
                 if q_item['status'] == 'running':
                     # Simulation is running, so let's kill it
+                    q_item['status'] = 'died'
                     proc = q_item['process']
-                    proc.send_signal(signal.SIGINT)
+                    proc.terminate()
 
         return {'FINISHED'}
 
