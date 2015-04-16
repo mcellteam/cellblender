@@ -30,8 +30,12 @@ class OutputQueue:
       pipe.write(line)
       pipe.flush()
       if text != None:
-        text.write(line)
-        text.current_line_index=len(text.lines)-1
+        try:
+          text.write(line)
+          text.current_line_index=len(text.lines)-1
+        except:
+          pass
+
 
   def run_proc(self, proc, arg_in=None, text=None, passthrough=True):
 
@@ -68,14 +72,14 @@ class OutputQueue:
         proc.stdin.flush()
       proc.wait()
 
-      self.out_q.put(None)
-      self.err_q.put(None)
-      for t in (stdout_reader_thread, stderr_reader_thread, stdout_writer_thread, stderr_writer_thread):
+      for t in (stdout_reader_thread, stderr_reader_thread):
         t.join()
 
-      sys.stdout.flush()
-      sys.stderr.flush()
-#      time.sleep(1)
+      self.out_q.put(None)
+      self.err_q.put(None)
+
+      for t in (stdout_writer_thread, stderr_writer_thread):
+        t.join()
 
       outs = ' '.join(outs)
       errs = ' '.join(errs)
