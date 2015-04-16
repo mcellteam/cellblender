@@ -27,12 +27,12 @@ if __name__ == '__main__':
     sys.stdout.flush()
     proc.send_signal(signum)
 
-  signal.signal(signal.SIGTERM, sig_handler)
+  signal.signal(signal.SIGINT, sig_handler)
 
   output_q = OutputQueue() 
   rc, res = output_q.run_proc(proc,passthrough=True)
   if term:
-    rc = 15
+    rc = 2
 
   exit(rc)
 
