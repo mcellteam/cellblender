@@ -22,6 +22,7 @@ if __name__ == '__main__':
 
   def sig_handler(signum, frame):
     sys.stdout.write('Sending signal: {0} to PID: {1}\n'.format(signum, proc.pid))
+    sys.stdout.flush()
     term = True
     proc.send_signal(signum)
 
