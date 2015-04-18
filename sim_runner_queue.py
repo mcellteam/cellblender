@@ -159,6 +159,14 @@ class SimQueue:
     self.work_q.put(self.task_dict[pid])
     return process
 
+  def kill_task(self,pid):
+    if self.task_dict.get(pid):
+      task = self.task_dict[pid]
+      if task['status'] == 'running':
+        proc = task['process']
+        proc.terminate()
+        task['status'] = 'died'
+
   def clear_task(self,pid):
     import bpy
     if self.task_dict.get(pid):

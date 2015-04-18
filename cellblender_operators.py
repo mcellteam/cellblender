@@ -1603,9 +1603,7 @@ class MCELL_OT_kill_simulation(bpy.types.Operator):
         q_item = cellblender.simulation_queue.task_dict.get(pid)
         if q_item:
             if q_item['status'] == 'running':
-                q_item['status'] = 'died'
-                proc = q_item['process']
-                proc.terminate()
+                cellblender.simulation_queue.kill_task(pid)
 
         return {'FINISHED'}
 
@@ -1627,9 +1625,7 @@ class MCELL_OT_kill_all_simulations(bpy.types.Operator):
             if q_item:
                 if q_item['status'] == 'running':
                     # Simulation is running, so let's kill it
-                    q_item['status'] = 'died'
-                    proc = q_item['process']
-                    proc.terminate()
+                    cellblender.simulation_queue.kill_task(pid)
 
         return {'FINISHED'}
 
