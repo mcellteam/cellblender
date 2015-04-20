@@ -30,7 +30,6 @@ from bpy.types import Menu
 # python imports
 import re
 import os
-import time
 
 # cellblender imports
 import cellblender
@@ -51,6 +50,32 @@ class MCELL_MT_presets(Menu):
     preset_subdir = "cellblender"
     preset_operator = "script.execute_preset"
     draw = Menu.draw_preset
+
+
+
+#CellBlendereGUI Panels:
+class MCELL_PT_cellblender_preferences(bpy.types.Panel):
+    bl_label = "CellBlender - Preferences"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw ( self, context ):
+        # Call the draw function of the object itself
+        context.scene.mcell.cellblender_preferences.draw_panel ( context, self )
+
+
+class MCELL_PT_project_settings(bpy.types.Panel):
+    bl_label = "CellBlender - Project Settings"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw ( self, context ):
+        # Call the draw function of the object itself
+        context.scene.mcell.project_settings.draw_panel ( context, self )
 
 
 class MCELL_UL_error_list(bpy.types.UIList):
@@ -77,6 +102,17 @@ class MCELL_UL_run_simulation(bpy.types.UIList):
         else:
             # Indexing error may be caused by stale data in the simulation_popen_list?? Maybe??
             layout.label(item.name, icon='ERROR')
+
+
+class MCELL_PT_run_simulation(bpy.types.Panel):
+    bl_label = "CellBlender - Run Simulation"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.run_simulation.draw_panel ( context, self )
 
 
 class MCELL_UL_run_simulation_queue(bpy.types.UIList):
@@ -107,6 +143,63 @@ class MCELL_UL_run_simulation_queue(bpy.types.UIList):
             layout.label(item.name, icon='ERROR')
 
 
+class MCELL_PT_run_simulation_queue(bpy.types.Panel):
+    bl_label = "CellBlender - Run Simulation"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.run_simulation.draw_panel ( context, self )
+
+
+class MCELL_PT_viz_results(bpy.types.Panel):
+    bl_label = "CellBlender - Visualize Simulation Results"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.mol_viz .draw_panel ( context, self )
+    """
+        layout = self.layout
+
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+
+            row = layout.row()
+            row.prop(mcell.mol_viz, "manual_select_viz_dir")
+            row = layout.row()
+            if mcell.mol_viz.manual_select_viz_dir:
+                row.operator("mcell.select_viz_data", icon='IMPORT')
+            else:
+                row.operator("mcell.read_viz_data", icon='IMPORT')
+            row = layout.row()
+            row.label(text="Molecule Viz Directory: " + mcell.mol_viz.mol_file_dir,
+                      icon='FILE_FOLDER')
+            row = layout.row()
+            if not mcell.mol_viz.manual_select_viz_dir:
+                row.template_list("UI_UL_list", "viz_seed", mcell.mol_viz,
+                                "mol_viz_seed_list", mcell.mol_viz,
+                                "active_mol_viz_seed_index", rows=2)
+            row = layout.row()
+            row = layout.row()
+            row.label(text="Current Molecule File: "+mcell.mol_viz.mol_file_name,
+                      icon='FILE')
+            row = layout.row()
+            row.template_list("UI_UL_list", "viz_results", mcell.mol_viz,
+                              "mol_file_list", mcell.mol_viz, "mol_file_index",
+                              rows=2)
+            row = layout.row()
+            layout.prop(mcell.mol_viz, "mol_viz_enable")
+    """
+
+
 class MCELL_UL_model_objects(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -119,6 +212,19 @@ class MCELL_UL_model_objects(bpy.types.UIList):
             # layout.prop(item, 'name', text="", icon='FILE_TICK')
             # layout.prop(bpy.data.objects[item.name], 'name', text="", icon='FILE_TICK')
             layout.label(item.name, icon='FILE_TICK')
+
+
+class MCELL_PT_model_objects(bpy.types.Panel):
+    bl_label = "CellBlender - Model Objects"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.model_objects.draw_panel ( context, self )
+
+
 
 
 class MCELL_PT_object_selector(bpy.types.Panel):
@@ -199,6 +305,44 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
             row.label(text="      %s" % (mcell.meshalyzer.normal_status))
 
 
+'''
+class MCELL_PT_user_model_parameters(bpy.types.Panel):
+    bl_label = "CellBlender - User-Defined Model Parameters"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mcell = context.scene.mcell
+
+        row = layout.row()
+'''
+
+
+class MCELL_PT_initialization(bpy.types.Panel):
+    bl_label = "CellBlender - Model Initialization"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.initialization.draw_panel ( context, self )
+
+
+class MCELL_PT_partitions(bpy.types.Panel):
+    bl_label = "CellBlender - Define and Visualize Partitions"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.partitions.draw_panel ( context, self )
+
+
 ############### DB: The following two classes are included to create a parameter input panel: only relevant for BNG, SBML or other model import #################
 
 class MCELL_UL_check_parameter(bpy.types.UIList):
@@ -210,6 +354,44 @@ class MCELL_UL_check_parameter(bpy.types.UIList):
             layout.label(item.name, icon='FILE_TICK')
 	    
   
+class MCELL_PT_define_parameters(bpy.types.Panel):
+    bl_label = "CellBlender - Imported Parameters"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+            row = layout.row()
+            if mcell.parameters.parameter_list:
+                row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
+                row = layout.row()
+                col = row.column()
+                col.template_list("MCELL_UL_check_parameter", "define_parameters",
+                                  mcell.parameters, "parameter_list",
+                                  mcell.parameters, "active_par_index", rows=2)
+                col = row.column(align=True)
+                col.operator("mcell.parameter_add", icon='ZOOMIN', text="")
+                col.operator("mcell.parameter_remove", icon='ZOOMOUT', text="")
+                if len(mcell.parameters.parameter_list) > 0:
+                    par = mcell.parameters.parameter_list[mcell.parameters.active_par_index]
+                    layout.prop(par, "name")
+                    layout.prop(par, "value")
+                    layout.prop(par, "unit")
+                    layout.prop(par, "type")
+            else:
+                row.label(text="No imported/defined parameter found", icon='ERROR')
+#########################################################################################################################################
+
+
+
+
 class MCELL_UL_check_reaction(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -217,6 +399,17 @@ class MCELL_UL_check_reaction(bpy.types.UIList):
             layout.label(item.status, icon='ERROR')
         else:
             layout.label(item.name, icon='FILE_TICK')
+
+
+class MCELL_PT_define_reactions(bpy.types.Panel):
+    bl_label = "CellBlender - Define Reactions"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.reactions.draw_panel ( context, self )
 
 
 class MCELL_UL_check_surface_class(bpy.types.UIList):
@@ -237,6 +430,17 @@ class MCELL_UL_check_surface_class_props(bpy.types.UIList):
             layout.label(item.name, icon='FILE_TICK')
 
 
+class MCELL_PT_define_surface_classes(bpy.types.Panel):
+    bl_label = "CellBlender - Define Surface Classes"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.surface_classes.draw_panel ( context, self )
+
+
 class MCELL_UL_check_mod_surface_regions(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -244,6 +448,18 @@ class MCELL_UL_check_mod_surface_regions(bpy.types.UIList):
             layout.label(item.status, icon='ERROR')
         else:
             layout.label(item.name, icon='FILE_TICK')
+
+
+class MCELL_PT_mod_surface_regions(bpy.types.Panel):
+    bl_label = "CellBlender - Assign Surface Classes"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.mod_surf_regions.draw_panel ( context, self )
+
 
 
 class MCELL_UL_check_release_pattern(bpy.types.UIList):
@@ -255,6 +471,17 @@ class MCELL_UL_check_release_pattern(bpy.types.UIList):
             layout.label(item.name, icon='FILE_TICK')
 
 
+class MCELL_PT_release_pattern(bpy.types.Panel):
+    bl_label = "CellBlender - Release Pattern"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.release_patterns.draw_panel ( context, self )
+
+
 class MCELL_UL_check_molecule_release(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -264,6 +491,18 @@ class MCELL_UL_check_molecule_release(bpy.types.UIList):
             layout.label(item.name, icon='FILE_TICK')
 
 
+class MCELL_PT_molecule_release(bpy.types.Panel):
+    bl_label = "CellBlender - Molecule Release/Placement"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.release_sites.draw_panel ( context, self )
+
+
+
 class MCELL_UL_check_reaction_output_settings(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -271,6 +510,17 @@ class MCELL_UL_check_reaction_output_settings(bpy.types.UIList):
             layout.label(item.status, icon='ERROR')
         else:
             layout.label(item.name, icon='FILE_TICK')
+
+
+class MCELL_PT_reaction_output_settings(bpy.types.Panel):
+    bl_label = "CellBlender - Reaction Output Settings"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.rxn_output.draw_panel ( context, self )
 
 
 class MCELL_UL_visualization_export_list(bpy.types.UIList):
@@ -285,3 +535,90 @@ class MCELL_UL_visualization_export_list(bpy.types.UIList):
         # asked to export everything
         if not context.scene.mcell.viz_output.export_all:
             layout.prop(item, "export_viz", text="Export")
+
+
+class MCELL_PT_visualization_output_settings(bpy.types.Panel):
+    bl_label = "CellBlender - Visualization Output Settings"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.viz_output.draw_panel ( context, self )
+
+import time
+
+class MCELL_PT_molecule_glyphs(bpy.types.Panel):
+    bl_label = "CellBlender - Molecule Shape"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "material"
+    bl_options = {'DEFAULT_CLOSED'}
+
+#    @classmethod
+#    def poll(cls, context):
+
+#        return ((len(context.selected_objects) == 1) and
+#                (context.selected_objects[0].type == 'MESH'))
+
+    def draw(self, context):
+        print ( "Top of draw for molecule_glyphs at " + time.asctime() )
+
+        layout = self.layout
+        scn = context.scene
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( self.layout )
+        else:
+            active = False
+            if ((len(context.selected_objects) == 1) and
+                    (context.selected_objects[0].type == 'MESH')):
+                filter = "mol_.*_shape"
+                obj = context.selected_objects[0]
+                m = re.match(filter, obj.name)
+                if m is not None:
+                    if m.end() == len(obj.name):
+                        active = True
+
+            layout.active = active
+
+            # layout.prop(mcell.molecule_glyphs, "glyph")
+
+            #row = layout.row()
+            #row.prop(mcell.molecule_glyphs, "show_glyph")
+
+
+
+
+            # COMMENTING THIS SECTION ELIMINATES THE SLOW DOWN PROBLEM
+            if mcell.molecule_glyphs.show_glyph:
+              row = layout.row()
+              row.prop(mcell.molecule_glyphs, "glyph")
+            else:
+              row = layout.row()
+              row.label(text="Molecule Glyph seems to cause problems!!!" )
+
+
+
+
+
+
+            if (mcell.molecule_glyphs.status != ""):
+                row = layout.row()
+                row.label(text=mcell.molecule_glyphs.status, icon="ERROR")
+
+            row = layout.row()
+            if (len(context.selected_objects) == 0):
+                row.label(text="Selected Molecule:  ")
+            else:
+                row.label(text="Selected Molecule:  %s" % (
+                    context.selected_objects[0].name))
+
+            row = layout.row()
+            row.operator("mcell.set_molecule_glyph", text="Set Molecule Shape",
+                         icon='MESH_ICOSPHERE')
+
+        print ( "  Bottom of draw for molecule_glyphs at " + time.asctime() )
+

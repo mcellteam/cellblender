@@ -177,6 +177,22 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
         stop_timer('MCELL_UL_draw_parameter.draw_item')
 
 
+class MCELL_PT_parameter_system(bpy.types.Panel):
+    bl_label = "CellBlender - Model Parameters"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    #@profile('MCELL_PT_parameter_system.draw')
+
+    def draw ( self, context ):
+        # Call the draw function of the object itself
+        start_timer('MCELL_PT_parameter_system.draw_panel')
+        context.scene.mcell.parameter_system.draw_panel ( context, self )
+        stop_timer('MCELL_PT_parameter_system.draw_panel')
+
+
 class MCELL_OT_add_parameter(bpy.types.Operator):
     bl_idname = "mcell.add_parameter"
     bl_label = "Add Parameter"
