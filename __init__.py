@@ -55,6 +55,7 @@ if "bpy" in locals():
     imp.reload(cellblender_molecules)
     imp.reload(object_surface_regions)
     imp.reload(io_mesh_mcell_mdl)
+    imp.reload(sim_runner_queue)
     imp.reload(mdl)         # BK: Added for MDL
     imp.reload(bng)         # DB: Adde for BNG
     #    imp.reload(sbml)        #JJT: Added for SBML
@@ -74,6 +75,7 @@ else:
     from . import cellblender_molecules
     from . import object_surface_regions
     from . import io_mesh_mcell_mdl
+    from . import sim_runner_queue
     from . import mdl  # BK: Added for MDL
     from . import bng  # DB: Added for BNG
     #    from . import sbml #JJT: Added for SBML
@@ -84,6 +86,7 @@ else:
     except:
         print("cellblender.data_plotters was not imported")
 
+simulation_queue = sim_runner_queue.SimQueue()
 
 import bpy
 import sys
@@ -114,6 +117,7 @@ def register():
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_cellblender_preferences)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)
+    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation_queue)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_viz_results)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_partitions)
@@ -134,7 +138,8 @@ def register():
 
     bpy.utils.register_class(cellblender_panels.MCELL_PT_cellblender_preferences)
     bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
-    bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
+#    bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
+    bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation_queue)
     bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
     bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)
     bpy.utils.register_class(cellblender_panels.MCELL_PT_model_objects)

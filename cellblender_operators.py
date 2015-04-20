@@ -38,6 +38,7 @@ import re
 import subprocess
 import time
 import shutil
+import datetime
 
 import cellblender
 # import cellblender_source_info
@@ -1350,8 +1351,10 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
             bpy.ops.mcell.run_simulation_control_java()
         elif str(mcell.run_simulation.simulation_run_control) == 'OPENGL':
             bpy.ops.mcell.run_simulation_control_opengl()
-        else:
+        elif str(mcell.run_simulation.simulation_run_control) == 'COMMAND':
             bpy.ops.mcell.run_simulation_normal()
+        else:
+            bpy.ops.mcell.run_simulation_control_queue()
         return {'FINISHED'}
 
 
@@ -1457,6 +1460,177 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
         mcell.run_simulation.status = status
 
         return {'FINISHED'}
+
+
+class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
+    bl_idname = "mcell.run_simulation_control_queue"
+    bl_label = "Run MCell Simulation Using Command Queue"
+    bl_description = "Run MCell Simulation Using Command Queue"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+
+        mcell = context.scene.mcell
+
+        binary_path = mcell.cellblender_preferences.mcell_binary
+        mcell.cellblender_preferences.mcell_binary_valid = is_executable ( binary_path )
+
+        start_seed = mcell.run_simulation.start_seed
+        end_seed = mcell.run_simulation.end_seed
+        mcell_processes = mcell.run_simulation.mcell_processes
+        mcell_processes_str = str(mcell.run_simulation.mcell_processes)
+        mcell_binary = mcell.cellblender_preferences.mcell_binary
+        # Force the project directory to be where the .blend file lives
+        project_dir = project_files_path()
+        status = ""
+        # If python path was set by user, use that one. Otherwise, try to
+        # automatically find it. This will probably fail on Windows unless it's
+        # set in the PATH.
+        if mcell.cellblender_preferences.python_binary_valid:
+            python_path = mcell.cellblender_preferences.python_binary
+        else:
+            python_path = shutil.which("python", mode=os.X_OK)
+
+        if python_path:
+            if not mcell.cellblender_preferences.decouple_export_run:
+                bpy.ops.mcell.export_project()
+
+            if (mcell.run_simulation.error_list and
+                    mcell.cellblender_preferences.invalid_policy == 'dont_run'):
+                pass
+            else:
+                react_dir = os.path.join(project_dir, "react_data")
+                if (os.path.exists(react_dir) and
+                        mcell.run_simulation.remove_append == 'remove'):
+                    shutil.rmtree(react_dir)
+                if not os.path.exists(react_dir):
+                    os.makedirs(react_dir)
+
+                viz_dir = os.path.join(project_dir, "viz_data")
+                if (os.path.exists(viz_dir) and
+                        mcell.run_simulation.remove_append == 'remove'):
+                    shutil.rmtree(viz_dir)
+                if not os.path.exists(viz_dir):
+                    os.makedirs(viz_dir)
+
+                base_name = mcell.project_settings.base_name
+
+                error_file_option = mcell.run_simulation.error_file
+                log_file_option = mcell.run_simulation.log_file
+                script_dir_path = os.path.dirname(os.path.realpath(__file__))
+                script_file_path = os.path.join(
+                    script_dir_path, "run_wrapper.py")
+                cellblender.simulation_queue.python_exec = python_path
+                cellblender.simulation_queue.run_wrapper = script_file_path
+                cellblender.simulation_queue.start(mcell_processes)
+                cellblender.simulation_queue.notify = True
+
+                processes_list = mcell.run_simulation.processes_list
+                for seed in range(start_seed,end_seed + 1):
+                  processes_list.add()
+                  mcell.run_simulation.active_process_index = len(
+                      mcell.run_simulation.processes_list) - 1
+                  simulation_process = processes_list[
+                      mcell.run_simulation.active_process_index]
+
+                  print("Starting MCell ... create start_time.txt file:")
+                  with open(os.path.join(os.path.dirname(bpy.data.filepath),
+                            "start_time.txt"), "w") as start_time_file:
+                      start_time_file.write(
+                          "Started MCell at: " + (str(time.ctime())) + "\n")
+
+                  # Log filename will be log.year-month-day_hour:minute_seed.txt
+                  # (e.g. log.2013-03-12_11:45_1.txt)
+                  time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
+
+                  if error_file_option == 'file':
+                      error_filename = "error.%s_%d.txt" % (time_now, seed)
+                  elif error_file_option == 'none':
+                      error_file = subprocess.DEVNULL
+                  elif error_file_option == 'console':
+                      error_file = None
+
+                  if log_file_option == 'file':
+                      log_filename = "log.%s_%d.txt" % (time_now, seed)
+                  elif log_file_option == 'none':
+                      log_file = subprocess.DEVNULL
+                  elif log_file_option == 'console':
+                      log_file = None
+
+                  mdl_filename = '%s.main.mdl' % (base_name)
+                  mcell_task = '%s -seed %d %s' % (mcell_binary, seed, mdl_filename)
+                  proc = cellblender.simulation_queue.add_task(mcell_task,project_dir)
+
+                  self.report({'INFO'}, "Simulation Running")
+
+                  simulation_process.name = ("PID: %d, MDL: %s, " "Seed: %d" % (proc.pid, mdl_filename, seed))
+
+        else:
+            status = "Python not found. Set it in Project Settings."
+
+        mcell.run_simulation.status = status
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_kill_simulation(bpy.types.Operator):
+    bl_idname = "mcell.kill_simulation"
+    bl_label = "Kill Selected Simulation"
+    bl_description = "Kill Selected Running MCell Simulation"
+    bl_options = {'REGISTER'}
+
+
+    @classmethod
+    def poll(self,context):
+        mcell = context.scene.mcell
+        processes_list = mcell.run_simulation.processes_list
+        active_index = mcell.run_simulation.active_process_index
+        ap = processes_list[active_index]
+        pid = int(ap.name.split(',')[0].split(':')[1])
+        q_item = cellblender.simulation_queue.task_dict.get(pid)
+        if q_item:
+            if q_item['status'] == 'running':
+                return True
+
+    def execute(self, context):
+
+        mcell = context.scene.mcell
+
+        processes_list = mcell.run_simulation.processes_list
+        active_index = mcell.run_simulation.active_process_index
+        ap = processes_list[active_index]
+        pid = int(ap.name.split(',')[0].split(':')[1])
+        q_item = cellblender.simulation_queue.task_dict.get(pid)
+        if q_item:
+            if q_item['status'] == 'running':
+                cellblender.simulation_queue.kill_task(pid)
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_kill_all_simulations(bpy.types.Operator):
+    bl_idname = "mcell.kill_all_simulations"
+    bl_label = "Kill All Simulations"
+    bl_description = ("Kill All Running MCell Simulations "
+                      "Does not remove rxn/viz data.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        processes_list = mcell.run_simulation.processes_list
+
+        for p_item in processes_list:
+            pid = int(p_item.name.split(',')[0].split(':')[1])
+            q_item = cellblender.simulation_queue.task_dict.get(pid)
+            if q_item:
+                if q_item['status'] == 'running':
+                    # Simulation is running, so let's kill it
+                    cellblender.simulation_queue.kill_task(pid)
+
+        return {'FINISHED'}
+
+
+
 
 
 class MCELL_OT_run_simulation_control_opengl(bpy.types.Operator):
@@ -1730,6 +1904,55 @@ class MCELL_OT_clear_run_list(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_clear_simulation_queue(bpy.types.Operator):
+    bl_idname = "mcell.clear_simulation_queue"
+    bl_label = "Clear Completed MCell Runs"
+    bl_description = ("Clear the list of completed and failed MCell runs. "
+                      "Does not remove rxn/viz data.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        # The collection property of subprocesses
+        processes_list = mcell.run_simulation.processes_list
+        # Class holding actual subprocess objects
+        simulation_queue = cellblender.simulation_queue
+        proc_list_length = len(processes_list)
+        idx = 0
+        ctr = 0
+
+        while ctr < proc_list_length:
+            ctr += 1
+            pid = int(processes_list[idx].name.split(',')[0].split(':')[1])
+            q_item = simulation_queue.task_dict.get(pid)
+            if q_item:
+                proc = q_item['process']
+                if (q_item['status'] == 'queued') or (q_item['status'] == 'running'):
+                    # Simulation is still running. Leave it in the collection
+                    # property and simulation queue
+                    idx += 1
+                    pass
+                else:
+                    # Simulation has failed or finished. Remove it from
+                    # collection property and the simulation queue
+                    simulation_queue.clear_task(pid)
+                    processes_list.remove(idx)
+                    if idx <= mcell.run_simulation.active_process_index:
+                        mcell.run_simulation.active_process_index -= 1
+                        if (mcell.run_simulation.active_process_index < 0):
+                            mcell.run_simulation.active_process_index = 0
+            else:
+                # Process is missing from simulation queue
+                # so remove it from collection property
+                processes_list.remove(idx)
+                if idx <= mcell.run_simulation.active_process_index:
+                    mcell.run_simulation.active_process_index -= 1
+                    if (mcell.run_simulation.active_process_index < 0):
+                        mcell.run_simulation.active_process_index = 0
+
+        return {'FINISHED'}
+
+
 @persistent
 def clear_run_list(context):
     """ Clear processes_list when loading a blend.
@@ -1746,6 +1969,9 @@ def clear_run_list(context):
     processes_list = context.scene.mcell.run_simulation.processes_list
 
     if not cellblender.simulation_popen_list:
+        processes_list.clear()
+
+    if not cellblender.simulation_queue:
         processes_list.clear()
 
 
