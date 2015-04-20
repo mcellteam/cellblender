@@ -477,28 +477,12 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         print ( "Done setting molecule glyph" )
 
 
-
-
-
-
 class MCell_UL_check_molecule(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         if item.status:
             layout.label(item.status, icon='ERROR')
         else:
             layout.label(item.name, icon='FILE_TICK')
-
-
-class MCELL_PT_define_molecules(bpy.types.Panel):
-    bl_label = "CellBlender - Define Molecules"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw ( self, context ):
-        # Call the draw function for the instance being drawn in this panel
-        context.scene.mcell.molecules.draw_panel ( context, self )
 
 
 class MCellMoleculesListProperty(bpy.types.PropertyGroup):

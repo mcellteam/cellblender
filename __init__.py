@@ -113,48 +113,6 @@ def register():
     print ( "Registering CellBlender with Blender version = " + str(bpy.app.version) )
     bpy.utils.register_module(__name__)
 
-    # Unregister and re-register panels to display them in order
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_cellblender_preferences)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation_queue)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_viz_results)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_partitions)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_initialization)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_parameters)
-    bpy.utils.unregister_class(parameter_system.MCELL_PT_parameter_system)
-    bpy.utils.unregister_class(cellblender_molecules.MCELL_PT_define_molecules)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_reactions)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_surface_classes)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_mod_surface_regions)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_release_pattern)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_molecule_release)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_reaction_output_settings)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_visualization_output_settings)
-
-
-    # Don't normally re-register individual panels here with new panel system, but do it for now to test slowdown problem
-
-    bpy.utils.register_class(cellblender_panels.MCELL_PT_cellblender_preferences)
-    bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
-#    bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
-    bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation_queue)
-    bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
-    bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)
-    bpy.utils.register_class(cellblender_panels.MCELL_PT_model_objects)
-    bpy.utils.register_class(cellblender_panels.MCELL_PT_partitions)
-    bpy.utils.register_class(cellblender_panels.MCELL_PT_initialization)
-    bpy.utils.register_class(cellblender_molecules.MCELL_PT_define_molecules)
-    bpy.utils.register_class(cellblender_panels.MCELL_PT_define_reactions)
-    bpy.utils.register_class(cellblender_panels.MCELL_PT_define_surface_classes)
-    bpy.utils.register_class(cellblender_panels.MCELL_PT_mod_surface_regions)
-    bpy.utils.register_class(cellblender_panels.MCELL_PT_release_pattern)
-    bpy.utils.register_class(cellblender_panels.MCELL_PT_molecule_release)
-    bpy.utils.register_class(cellblender_panels.MCELL_PT_reaction_output_settings)
-    bpy.utils.register_class(cellblender_panels.MCELL_PT_visualization_output_settings)
-
-
     bpy.types.INFO_MT_file_import.append(io_mesh_mcell_mdl.menu_func_import)
     bpy.types.INFO_MT_file_export.append(io_mesh_mcell_mdl.menu_func_export)
 
