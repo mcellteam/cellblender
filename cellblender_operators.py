@@ -2511,8 +2511,6 @@ def mol_viz_clear(mcell_prop):
 
 def mol_viz_file_read(mcell_prop, filepath):
     """ Draw the viz data for the current frame. """
-    print ( "NEW NEW" )
-
     mcell = mcell_prop
     try:
 
