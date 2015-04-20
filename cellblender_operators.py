@@ -2600,7 +2600,9 @@ def mol_viz_file_read(mcell_prop, filepath):
             bpy.ops.object.add(location=[0, 0, 0])
             mols_obj = bpy.context.selected_objects[0]
             mols_obj.name = "molecules"
-mol_viz_list
+
+        #mol_viz_list
+
         if mol_dict:
             meshes = bpy.data.meshes
             mats = bpy.data.materials
