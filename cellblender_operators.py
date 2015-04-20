@@ -2281,9 +2281,190 @@ def mol_viz_clear(mcell_prop):
 
 
 
-import sys, traceback
+
 
 def mol_viz_file_read(mcell_prop, filepath):
+    """ Draw the viz data for the current frame. """
+    print ( "NEW NEW" )
+
+    mcell = mcell_prop
+    try:
+
+#        begin = resource.getrusage(resource.RUSAGE_SELF)[0]
+#        print ("Processing molecules from file:    %s" % (filepath))
+
+        # Quick check for Binary or ASCII format of molecule file:
+        mol_file = open(filepath, "rb")
+        b = array.array("I")
+        b.fromfile(mol_file, 1)
+
+        mol_dict = {}
+
+        if b[0] == 1:
+            # Read Binary format molecule file:
+            bin_data = 1
+            while True:
+                try:
+                    # Variable names are a little hard to follow
+                    # Here's what I assume they mean:
+                    # ni = Initially, array of molecule name length.
+                    # Later, array of number of molecule positions in xyz
+                    # (essentially, the number of molecules multiplied by 3).
+                    # ns = Array of ascii character codes for molecule name.
+                    # s = String of molecule name.
+                    # mt = Surface molecule flag.
+                    ni = array.array("B")
+                    ni.fromfile(mol_file, 1)
+                    ns = array.array("B")
+                    ns.fromfile(mol_file, ni[0])
+                    s = ns.tostring().decode()
+                    mol_name = "mol_%s" % (s)
+                    mt = array.array("B")
+                    mt.fromfile(mol_file, 1)
+                    ni = array.array("I")
+                    ni.fromfile(mol_file, 1)
+                    mol_pos = array.array("f")
+                    mol_orient = array.array("f")
+                    mol_pos.fromfile(mol_file, ni[0])
+#                    tot += ni[0]/3
+                    if mt[0] == 1:
+                        mol_orient.fromfile(mol_file, ni[0])
+                    mol_dict[mol_name] = [mt[0], mol_pos, mol_orient]
+                    new_item = mcell.mol_viz.mol_viz_list.add()
+                    new_item.name = mol_name
+                except:
+#                    print("Molecules read: %d" % (int(tot)))
+                    mol_file.close()
+                    break
+
+        else:
+            # Read ASCII format molecule file:
+            bin_data = 0
+            mol_file.close()
+            # Create a list of molecule names, positions, and orientations
+            # Each entry in the list is ordered like this (afaik):
+            # [molec_name, [x_pos, y_pos, z_pos, x_orient, y_orient, z_orient]]
+            # Orientations are zero in the case of volume molecules.
+            mol_data = [[s.split()[0], [
+                float(x) for x in s.split()[2:]]] for s in open(
+                    filepath, "r").read().split("\n") if s != ""]
+
+            for mol in mol_data:
+                mol_name = "mol_%s" % (mol[0])
+                if not mol_name in mol_dict:
+                    mol_orient = mol[1][3:]
+                    mt = 0
+                    # Check to see if it's a surface molecule
+                    if ((mol_orient[0] != 0.0) | (mol_orient[1] != 0.0) |
+                            (mol_orient[2] != 0.0)):
+                        mt = 1
+                    mol_dict[mol_name] = [
+                        mt, array.array("f"), array.array("f")]
+                    new_item = mcell.mol_viz.mol_viz_list.add()
+                    new_item.name = mol_name
+                mt = mol_dict[mol_name][0]
+                mol_dict[mol_name][1].extend(mol[1][:3])
+                if mt == 1:
+                    mol_dict[mol_name][2].extend(mol[1][3:])
+
+        # Get the parent object to all the molecule positions if it exists.
+        # Otherwise, create it.
+        mols_obj = bpy.data.objects.get("molecules")
+        if not mols_obj:
+            bpy.ops.object.add(location=[0, 0, 0])
+            mols_obj = bpy.context.selected_objects[0]
+            mols_obj.name = "molecules"
+mol_viz_list
+        if mol_dict:
+            meshes = bpy.data.meshes
+            mats = bpy.data.materials
+            objs = bpy.data.objects
+            scn = bpy.context.scene
+            scn_objs = scn.objects
+            z_axis = mathutils.Vector((0.0, 0.0, 1.0))
+            #ident_mat = mathutils.Matrix.Translation(
+            #    mathutils.Vector((0.0, 0.0, 0.0)))
+
+            for mol_name in mol_dict.keys():
+                mol_mat_name = "%s_mat" % (mol_name)
+                mol_type = mol_dict[mol_name][0]
+                mol_pos = mol_dict[mol_name][1]
+                mol_orient = mol_dict[mol_name][2]
+
+                # Randomly orient volume molecules
+                if mol_type == 0:
+                    mol_orient.extend([random.uniform(
+                        -1.0, 1.0) for i in range(len(mol_pos))])
+
+                # Look-up mesh shape (glyph) template and create if needed
+                mol_shape_mesh_name = "%s_shape" % (mol_name)
+                mol_shape_obj_name = mol_shape_mesh_name
+                mol_shape_mesh = meshes.get(mol_shape_mesh_name)
+                if not mol_shape_mesh:
+                    bpy.ops.mesh.primitive_ico_sphere_add(
+                        subdivisions=0, size=0.005, location=[0, 0, 0])
+                    mol_shape_obj = bpy.context.active_object
+                    mol_shape_obj.name = mol_shape_obj_name
+                    mol_shape_obj.track_axis = "POS_Z"
+                    mol_shape_mesh = mol_shape_obj.data
+                    mol_shape_mesh.name = mol_shape_mesh_name
+                else:
+                    mol_shape_obj = objs.get(mol_shape_obj_name)
+
+                # Look-up material, create if needed.
+                # Associate material with mesh shape.
+                mol_mat = mats.get(mol_mat_name)
+                if not mol_mat:
+                    mol_mat = mats.new(mol_mat_name)
+                    mol_mat.diffuse_color = mcell.mol_viz.color_list[
+                        mcell.mol_viz.color_index].vec
+                    mcell.mol_viz.color_index = mcell.mol_viz.color_index + 1
+                    if (mcell.mol_viz.color_index >
+                            len(mcell.mol_viz.color_list)-1):
+                        mcell.mol_viz.color_index = 0
+                if not mol_shape_mesh.materials.get(mol_mat_name):
+                    mol_shape_mesh.materials.append(mol_mat)
+
+                # Create a "mesh" to hold instances of molecule positions
+                mol_pos_mesh_name = "%s_pos" % (mol_name)
+                mol_pos_mesh = meshes.get(mol_pos_mesh_name)
+                if not mol_pos_mesh:
+                    mol_pos_mesh = meshes.new(mol_pos_mesh_name)
+
+                # Add and place vertices at positions of molecules
+                mol_pos_mesh.vertices.add(len(mol_pos)//3)
+                mol_pos_mesh.vertices.foreach_set("co", mol_pos)
+                mol_pos_mesh.vertices.foreach_set("normal", mol_orient)
+
+                # Create object to contain the mol_pos_mesh data
+                mol_obj = objs.get(mol_name)
+                if not mol_obj:
+                    mol_obj = objs.new(mol_name, mol_pos_mesh)
+                    scn_objs.link(mol_obj)
+                    mol_shape_obj.parent = mol_obj
+                    mol_obj.dupli_type = 'VERTS'
+                    mol_obj.use_dupli_vertices_rotation = True
+                    mol_obj.parent = mols_obj
+
+#        scn.update()
+
+#        utime = resource.getrusage(resource.RUSAGE_SELF)[0]-begin
+#        print ("     Processed %d molecules in %g seconds\n" % (
+#            len(mol_data), utime))
+
+    except IOError:
+        print(("\n***** File not found: %s\n") % (filepath))
+
+    except ValueError:
+        print(("\n***** Invalid data in file: %s\n") % (filepath))
+
+
+
+
+import sys, traceback
+
+
+def new_mol_viz_file_read(mcell_prop, filepath):
     """ Draw the viz data for the current frame. """
 
     mcell = mcell_prop
@@ -2482,9 +2663,32 @@ def mol_viz_file_read(mcell_prop, filepath):
                 mol_pos_mesh.vertices.add(len(mol_pos)//3)
 
                 
-                mol_pos_mesh.vertices.foreach_set("co", mol_pos)
-                #print ( "After seting verticies" )
-                mol_pos_mesh.vertices.foreach_set("normal", mol_orient)
+                done_setting = False
+                try_setting_count = 0
+                while not done_setting and (try_setting_count < 10):
+                    try_setting_count += 1
+                    #print ( "Before setting verticies with foreach" )
+                    try:
+                      mol_pos_mesh.vertices.foreach_set("co", mol_pos)
+                      done_setting = True
+                    except RuntimeError:
+                      pass
+                    #print ( "After setting verticies with foreach" )
+
+                #print ( "Out of loop" )
+
+                done_setting = False
+                try_setting_count = 0
+                while not done_setting and (try_setting_count < 10):
+                    try_setting_count += 1
+                    #print ( "Before setting verticies with foreach" )
+                    try:
+                      mol_pos_mesh.vertices.foreach_set("normal", mol_orient)
+                      done_setting = True
+                    except RuntimeError:
+                      pass
+                    #print ( "After setting verticies with foreach" )
+
                 # print ( "Done adding vertices" )
 
                 mol_obj = objs.get(mol_name)
@@ -2514,19 +2718,22 @@ def mol_viz_file_read(mcell_prop, filepath):
 #            len(mol_data), utime))
 
     except IOError:
-        print(("\n***** File not found: %s\n") % (filepath))
+        print(("\n***** IOError: File: %s\n") % (filepath))
 
     except ValueError:
-        print(("\n***** Invalid data in file: %s\n") % (filepath))
+        print(("\n***** ValueError: Invalid data in file: %s\n") % (filepath))
 
     except RuntimeError as rte:
-        print(("\n***** Caught other runtime error in file: %s\n") % (filepath))
-        print("***** Error: \n" + str(rte) + "\n")
+        print(("\n***** RuntimeError reading file: %s\n") % (filepath))
+        print("      str(error): \n" + str(rte) + "\n")
         fail_error = sys.exc_info()
-        print ( "  Error Type: " + str(fail_error[0]) )
-        print ( "  Error Value: " + str(fail_error[1]) )
+        print ( "    Error Type: " + str(fail_error[0]) )
+        print ( "    Error Value: " + str(fail_error[1]) )
         tb = fail_error[2]
         # tb.print_stack()
+        print ( "=== Traceback Start ===" )
+        traceback.print_tb(tb)
+        print ( "=== Traceback End ===" )
 
     except Exception as uex:
         # Catch any exception

@@ -1195,7 +1195,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
     """ Property group for for molecule visualization.
 
-    This is the "Visualize Simulation Results Panel".
+      This is the "Visualize Simulation Results Panel".
 
     """
 
@@ -1235,10 +1235,131 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         description="Toggle the option to manually load viz data.",
         update=cellblender_operators.mol_viz_toggle_manual_select)
 
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Building Mol Viz data model from properties" )
+        mv_dm = {}
+        mv_dm['data_model_version'] = "DM_2015_04_13_1700"
+
+        mv_seed_list = []
+        for s in self.mol_viz_seed_list:
+            mv_seed_list.append ( str(s.name) )
+        mv_dm['seed_list'] = mv_seed_list
+
+        mv_dm['active_seed_index'] = self.active_mol_viz_seed_index
+        mv_dm['file_dir'] = self.mol_file_dir
+
+        mv_file_list = []
+        for s in self.mol_file_list:
+            mv_file_list.append ( str(s.name) )
+        mv_dm['file_list'] = mv_file_list
+
+        mv_dm['file_num'] = self.mol_file_num
+        mv_dm['file_name'] = self.mol_file_name
+        mv_dm['file_index'] = self.mol_file_index
+        mv_dm['file_start_index'] = self.mol_file_start_index
+        mv_dm['file_stop_index'] = self.mol_file_stop_index
+        mv_dm['file_step_index'] = self.mol_file_step_index
+
+        mv_viz_list = []
+        for s in self.mol_viz_list:
+            mv_viz_list.append ( str(s.name) )
+        mv_dm['viz_list'] = mv_viz_list
+
+        mv_dm['render_and_save'] = self.render_and_save
+        mv_dm['viz_enable'] = self.mol_viz_enable
+
+        mv_color_list = []
+        for c in self.color_list:
+            mv_color = []
+            for i in c.vec:
+                mv_color.append ( i )
+            mv_color_list.append ( mv_color )
+        mv_dm['color_list'] = mv_color_list
+
+        mv_dm['color_index'] = self.color_index
+        mv_dm['manual_select_viz_dir'] = self.manual_select_viz_dir
+
+        return mv_dm
+
+
+    def build_properties_from_data_model ( self, context, dm ):
+        print ( "Building Mol Viz properties from data model" )
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2015_04_13_1700
+            print ( "######## Warning: It's not currently known how to build viz properties with this data model" )
+            dm['data_model_version'] = "DM_2015_04_13_1700"
+
+        if dm['data_model_version'] != "DM_2015_04_13_1700":
+            print ( "Error: Unable to upgrade MCellMolVizPropertyGroup data model to current version." )
+        
+        # Remove the old properties (includes emptying collections)
+        self.remove_properties ( context )
+
+        # Build the new properties
+        
+        for s in dm["seed_list"]:
+            new_item = self.mol_viz_seed_list.add()
+            new_item.name = s
+            
+        self.active_mol_viz_seed_index = dm['active_seed_index']
+
+        self.mol_file_dir = dm['file_dir']
+
+        for s in dm["file_list"]:
+            new_item = self.mol_file_list.add()
+            new_item.name = s
+
+        self.mol_file_num = dm['file_num']
+        self.mol_file_name = dm['file_name']
+        self.mol_file_index = dm['file_index']
+        self.mol_file_start_index = dm['file_start_index']
+        self.mol_file_stop_index = dm['file_stop_index']
+        self.mol_file_step_index = dm['file_step_index']
+            
+        for s in dm["viz_list"]:
+            new_item = self.mol_viz_list.add()
+            new_item.name = s
+            
+        self.render_and_save = dm['render_and_save']
+        self.mol_viz_enable = dm['viz_enable']
+
+        for c in dm["color_list"]:
+            new_item = self.color_list.add()
+            new_item.vec = c
+            
+        if 'color_index' in dm:
+            self.color_index = dm['color_index']
+        else:
+            self.color_index = 0
+
+        self.manual_select_viz_dir = dm['manual_select_viz_dir']
+
+
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
+
     def remove_properties ( self, context ):
         print ( "Removing all Molecule Visualization Properties..." )
-        print ( "Actually leaving them alone for now ..." )
+
         """
+        while len(self.mol_viz_seed_list) > 0:
+            self.mol_viz_seed_list.remove(0)
+
+        while len(self.mol_file_list) > 0:
+            self.mol_file_list.remove(0)
+
+        while len(self.mol_viz_list) > 0:
+            self.mol_viz_list.remove(0)
+
+        while len(self.color_list) > 0:
+            # It's not clear if anything needs to be done to remove individual color components first
+            self.color_list.remove(0)
+        """
+
         for item in self.mol_viz_seed_list:
             item.remove_properties(context)
         self.mol_viz_seed_list.clear()
@@ -1249,6 +1370,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         self.mol_file_index = 0
         self.mol_file_start_index = 0
         self.mol_file_stop_index = 0
+        self.mol_file_step_index = 1
         for item in self.mol_viz_list:
             item.remove_properties(context)
         self.mol_viz_list.clear()
@@ -1256,8 +1378,10 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
             item.remove_properties(context)
         self.color_list.clear()
         self.color_index = 0
-        """
         print ( "Done removing all Molecule Visualization Properties." )
+
+
+
 
 
     def draw_layout(self, context, layout):
@@ -4105,6 +4229,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm['modify_surface_regions'] = self.mod_surf_regions.build_data_model_from_properties(context)
         dm['model_objects'] = self.model_objects.build_data_model_from_properties(context)
         dm['viz_output'] = self.viz_output.build_data_model_from_properties(context)
+        dm['mol_viz'] = self.mol_viz.build_data_model_from_properties(context)
         dm['reaction_data_output'] = self.rxn_output.build_data_model_from_properties(context)
         if geometry:
             print ( "Adding Geometry to Data Model" )
@@ -4780,6 +4905,63 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Done reaction output" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
+
+          # Viz Data
+
+
+            """ Use this as a template for mol_viz data
+
+            def build_data_model_from_properties ( self, context ):
+                print ( "Building Mol Viz data model from properties" )
+                mv_dm = {}
+                mv_dm['data_model_version'] = "DM_2015_04_13_1700"
+
+                mv_seed_list = []
+                for s in self.mol_viz_seed_list:
+                    mv_seed_list.append ( str(s.name) )
+                mv_dm['seed_list'] = mv_seed_list
+
+                mv_dm['active_seed_index'] = self.active_mol_viz_seed_index
+                mv_dm['file_dir'] = self.mol_file_dir
+
+                mv_file_list = []
+                for s in self.mol_file_list:
+                    mv_file_list.append ( str(s.name) )
+                mv_dm['file_list'] = mv_file_list
+
+                mv_dm['file_num'] = self.mol_file_num
+                mv_dm['file_name'] = self.mol_file_name
+                mv_dm['file_index'] = self.mol_file_index
+                mv_dm['file_start_index'] = self.mol_file_start_index
+                mv_dm['file_stop_index'] = self.mol_file_stop_index
+                mv_dm['file_step_index'] = self.mol_file_step_index
+
+                mv_viz_list = []
+                for s in self.mol_viz_list:
+                    mv_viz_list.append ( str(s.name) )
+                mv_dm['viz_list'] = mv_viz_list
+
+                mv_dm['render_and_save'] = self.render_and_save
+                mv_dm['viz_enable'] = self.mol_viz_enable
+
+                mv_color_list = []
+                for c in self.color_list:
+                    mv_color = []
+                    for i in c.vec:
+                        mv_color.append ( i )
+                    mv_color_list.append ( mv_color )
+                mv_dm['color_list'] = mv_color_list
+
+                mv_dm['color_index'] = self.color_index
+                mv_dm['manual_select_viz_dir'] = self.manual_select_viz_dir
+
+                return mv_dm
+            """
+
+
+
+
+
           """
           geom = mcell.get('geometrical_objects')
           if geom != None:
@@ -4911,6 +5093,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "viz_output" in dm:
             print ( "Overwriting the viz_output properties" )
             self.viz_output.build_properties_from_data_model ( context, dm["viz_output"] )
+        if "mol_viz" in dm:
+            print ( "Overwriting the mol_viz properties" )
+            self.mol_viz.build_properties_from_data_model ( context, dm["mol_viz"] )
         if "reaction_data_output" in dm:
             print ( "Overwriting the reaction_data_output properties" )
             self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
@@ -4936,6 +5121,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         self.model_objects.check_properties_after_building ( context )
         print ( "Checking the viz_output properties" )
         self.viz_output.check_properties_after_building ( context )
+        print ( "Checking the mol_viz properties" )
+        self.mol_viz.check_properties_after_building ( context )
         print ( "Checking the reaction_data_output properties" )
         self.rxn_output.check_properties_after_building ( context )
         print ( "Checking/Updating the model_objects properties" )
