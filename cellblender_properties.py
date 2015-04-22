@@ -2289,6 +2289,7 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
 class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
     release_pattern_list = CollectionProperty(
         type=MCellReleasePatternProperty, name="Release Pattern List")
+    # Contains release patterns AND reaction names. Used in "Release Placement"
     release_pattern_rxn_name_list = CollectionProperty(
         type=MCellStringProperty,
         name="Release Pattern and Reaction Name List")
@@ -2486,10 +2487,13 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
                     if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
                         rel.stddev.draw(layout,ps)
-                 
+
+                    # We use release_pattern_rxn_name_list instead of
+                    # release_pattern_list here, because we want to be able to
+                    # assign either reaction names or release patterns to this
+                    # field. This parallels exactly how it works in MCell.
                     layout.prop_search(rel, "pattern", mcell.release_patterns,  # mcell.release_patterns is of type MCellReleasePatternPropertyGroup
-                                       # "release_pattern_rxn_name_list",  # TODO: was this correct?
-                                       "release_pattern_list",  # <-- Bob changed to this ... is this correct?
+                                       "release_pattern_rxn_name_list",  
                                        icon='FORCE_LENNARDJONES')
 
 
