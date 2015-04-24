@@ -2,9 +2,9 @@
 
 import sys
 if sys.version_info.major == 3:
-  from queue import Queue
+  from queue import Queue, Empty
 else:
-  from Queue import Queue
+  from Queue import Queue, Empty
 from threading import Thread
 import subprocess as sp
 import time
@@ -110,13 +110,19 @@ class SimQueue:
       for i in range(n_threads - self.n_threads):
         worker = Thread(target=self.run_q_item)
         worker.daemon = True
-        worker.start()
         self.workers.append(worker)
-      self.n_threads = n_threads
+        worker.start()
+    elif n_threads < self.n_threads:
+      for i in range(self.n_threads - n_threads):
+        self.work_q.put(None)
+    self.n_threads = n_threads
 
   def run_q_item(self):
     while True:
       task = self.work_q.get()
+      if task == None:
+        break
+
       process = task['process']
       pid = process.pid
       cmd = task['cmd']
@@ -142,6 +148,10 @@ class SimQueue:
         sys.stdout.write('Task PID {0}  status: {1}  return code: {2}\n'.format(pid, task['status'], rc))
       self.work_q.task_done()
 
+  def clear_queue(self):
+    with self.work_q.mutex:
+      self.work_q.queue.clear()
+
   def add_task(self,cmd,wd):
     import bpy
     process = sp.Popen([self.python_exec, self.run_wrapper, wd], bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
@@ -166,6 +176,12 @@ class SimQueue:
         proc = task['process']
         proc.terminate()
         task['status'] = 'died'
+      elif task['status'] == 'queued':
+        with self.work_q.mutex:
+          self.work_q.queue.remove(task)
+        proc = task['process']
+        proc.terminate()
+        task['status'] = 'died'
 
   def clear_task(self,pid):
     import bpy
@@ -174,7 +190,22 @@ class SimQueue:
         bpy.data.texts.remove(self.task_dict[pid]['text'])
       self.task_dict.pop(pid)
 
-#  def stop(self):
+  def shutdown(self):
+    sys.stdout.write("Shutting down simulation queue...\n")
+    pids = list(self.task_dict.keys())
+    for pid in pids:
+      task = self.task_dict[pid]
+      if task['status'] == 'running':
+        proc = task['process']
+        proc.terminate()
+        task['status'] = 'died'
+      elif task['status'] == 'queued':
+        with self.work_q.mutex:
+          self.work_q.queue.remove(task)
+        proc = task['process']
+        proc.terminate()
+        task['status'] = 'died'
+    sys.stdout.write("Done shutting down simulation queue.\n")
 
 
 

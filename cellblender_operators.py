@@ -1576,7 +1576,8 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
 class MCELL_OT_kill_simulation(bpy.types.Operator):
     bl_idname = "mcell.kill_simulation"
     bl_label = "Kill Selected Simulation"
-    bl_description = "Kill Selected Running MCell Simulation"
+    bl_description = ("Kill/Cancel Selected Running/Queued MCell Simulation. "
+                      "Does not remove rxn/viz data.")
     bl_options = {'REGISTER'}
 
 
@@ -1589,7 +1590,7 @@ class MCELL_OT_kill_simulation(bpy.types.Operator):
         pid = int(ap.name.split(',')[0].split(':')[1])
         q_item = cellblender.simulation_queue.task_dict.get(pid)
         if q_item:
-            if q_item['status'] == 'running':
+            if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
                 return True
 
     def execute(self, context):
@@ -1602,7 +1603,8 @@ class MCELL_OT_kill_simulation(bpy.types.Operator):
         pid = int(ap.name.split(',')[0].split(':')[1])
         q_item = cellblender.simulation_queue.task_dict.get(pid)
         if q_item:
-            if q_item['status'] == 'running':
+            if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
+                # Simulation is running or waiting in queue, so let's kill it
                 cellblender.simulation_queue.kill_task(pid)
 
         return {'FINISHED'}
@@ -1611,7 +1613,7 @@ class MCELL_OT_kill_simulation(bpy.types.Operator):
 class MCELL_OT_kill_all_simulations(bpy.types.Operator):
     bl_idname = "mcell.kill_all_simulations"
     bl_label = "Kill All Simulations"
-    bl_description = ("Kill All Running MCell Simulations "
+    bl_description = ("Kill/Cancel All Running/Queued MCell Simulations. "
                       "Does not remove rxn/viz data.")
     bl_options = {'REGISTER'}
 
@@ -1623,8 +1625,8 @@ class MCELL_OT_kill_all_simulations(bpy.types.Operator):
             pid = int(p_item.name.split(',')[0].split(':')[1])
             q_item = cellblender.simulation_queue.task_dict.get(pid)
             if q_item:
-                if q_item['status'] == 'running':
-                    # Simulation is running, so let's kill it
+                if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
+                    # Simulation is running or waiting in queue, so let's kill it
                     cellblender.simulation_queue.kill_task(pid)
 
         return {'FINISHED'}
