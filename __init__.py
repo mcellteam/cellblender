@@ -18,6 +18,7 @@
 # <pep8 compliant>
 
 import os
+import atexit
 
 bl_info = {
     "name": "CellBlender",
@@ -258,6 +259,9 @@ def register():
     # Add the save_pre handlers
     add_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
     add_handler ( bpy.app.handlers.save_pre, cellblender_operators.model_objects_update )
+
+    # Register atexit function to shutdown simulation queue before quitting Blender
+    atexit.register(simulation_queue.shutdown)
 
     print("CellBlender Registered")
 
