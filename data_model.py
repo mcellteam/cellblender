@@ -36,22 +36,12 @@ a CellBlender project which should be compatible across CellBlender versions.
 
     Release Patterns:
 
-      class MCELL_PT_molecule_release(bpy.types.Panel):
-
-            layout.prop_search(rel, "pattern", mcell.release_patterns,
-                               "release_pattern_rxn_name_list",
-                               icon='FORCE_LENNARDJONES')
-
-        changed to:
-
-            layout.prop_search(rel, "pattern", mcell.release_patterns,
-                               "release_pattern_list",
-                               icon='FORCE_LENNARDJONES')
-
       Should "release pattern" be called "release timing" or "release train"?
 
       Why does MCellReleasePatternPanelProperty contain:
          release_pattern_rxn_name_list?
+      JC: There is a "Release Pattern" field in the "Molecule Placement" panel.
+      One can assign either a release pattern or a named reaction to it. 
        
 """
 

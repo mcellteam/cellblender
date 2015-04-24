@@ -982,6 +982,24 @@ class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
     def remove_properties ( self, context ):
         print ( "Removing all Run Simulation Process Properties for " + self.name + "... no collections to remove." )
 
+    def build_data_model_from_properties ( self, context ):
+        print ( "MCellRunSimulationProcesses building Data Model" )
+        dm = {}
+        dm['data_model_version'] = "DM_2015_04_23_1753"
+        dm['name'] = self.name
+        return dm
+
+    def build_properties_from_data_model ( self, context, dm ):
+
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2015_04_23_1753
+            dm['data_model_version'] = "DM_2015_04_23_1753"
+
+        if dm['data_model_version'] != "DM_2015_04_23_1753":
+            print ( "Error: Unable to upgrade MCellRunSimulationProcessesProperty data model to current version." )
+
+        self.name = dm["name"]
 
 
 class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
@@ -1047,6 +1065,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         description="Mechanism for running and controlling the simulation",
         default='QUEUE')
 
+
     def remove_properties ( self, context ):
         print ( "Removing all Run Simulation Properties..." )
         for item in self.processes_list:
@@ -1058,6 +1077,34 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         self.error_list.clear()
         self.active_err_index = 0
         print ( "Done removing all Run Simulation Properties." )
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "MCellRunSimulationPropertyGroup building Data Model" )
+        dm = {}
+        dm['data_model_version'] = "DM_2015_04_23_1753"
+        dm['name'] = self.name
+        p_list = []
+        for p in self.processes_list:
+            p_list.append ( p.build_data_model_from_properties(context) )
+        dm['processes_list'] = p_list
+        return dm
+
+    def build_properties_from_data_model ( self, context, dm ):
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2015_04_23_1753
+            dm['data_model_version'] = "DM_2015_04_23_1753"
+
+        if dm['data_model_version'] != "DM_2015_04_23_1753":
+            print ( "Error: Unable to upgrade MCellRunSimulationPropertyGroup data model to current version." )
+
+        self.name = dm["name"]
+        self.processes_list.clear()
+        for p in dm['processes_list']:
+            self.processes_list.add()
+            self.active_process_index = len(self.processes_list) - 1
+            self.processes_list[self.active_process_index].build_properties_from_data_model(context, p)
+
 
 
     def draw_layout_queue(self, context, layout):
@@ -2363,6 +2410,7 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
 class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
     release_pattern_list = CollectionProperty(
         type=MCellReleasePatternProperty, name="Release Pattern List")
+    # Contains release patterns AND reaction names. Used in "Release Placement"
     release_pattern_rxn_name_list = CollectionProperty(
         type=MCellStringProperty,
         name="Release Pattern and Reaction Name List")
@@ -2560,10 +2608,13 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
                     if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
                         rel.stddev.draw(layout,ps)
-                 
+
+                    # We use release_pattern_rxn_name_list instead of
+                    # release_pattern_list here, because we want to be able to
+                    # assign either reaction names or release patterns to this
+                    # field. This parallels exactly how it works in MCell.
                     layout.prop_search(rel, "pattern", mcell.release_patterns,  # mcell.release_patterns is of type MCellReleasePatternPropertyGroup
-                                       # "release_pattern_rxn_name_list",  # TODO: was this correct?
-                                       "release_pattern_list",  # <-- Bob changed to this ... is this correct?
+                                       "release_pattern_rxn_name_list",  
                                        icon='FORCE_LENNARDJONES')
 
 
@@ -3589,25 +3640,25 @@ def select_callback ( self, context ):
 
 class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
-    preferences_select = BoolProperty ( name="", description="Preferences", default=False, subtype='NONE', update=select_callback)
-    settings_select = BoolProperty ( name="", description="Project Settings", default=False, subtype='NONE', update=select_callback)
-    parameters_select = BoolProperty ( name="", description="Model Parameters", default=False, subtype='NONE', update=select_callback)
-    reaction_select = BoolProperty ( name="", description="Reactions", default=False, subtype='NONE', update=select_callback)
-    molecule_select = BoolProperty ( name="", description="Molecules", default=False, subtype='NONE', update=select_callback)
-    placement_select = BoolProperty ( name="", description="Molecule Placement", default=False, subtype='NONE', update=select_callback)
-    objects_select = BoolProperty ( name="", description="Model Objects", default=False, subtype='NONE', update=select_callback)
-    surf_classes_select = BoolProperty ( name="", description="Surface Classes", default=False, subtype='NONE', update=select_callback)
-    surf_regions_select = BoolProperty ( name="", description="Assign Surface Classes", default=False, subtype='NONE', update=select_callback)
-    rel_patterns_select = BoolProperty ( name="", description="Release Patterns", default=False, subtype='NONE', update=select_callback)
-    partitions_select = BoolProperty ( name="", description="Partitions", default=False, subtype='NONE', update=select_callback)
-    init_select = BoolProperty ( name="", description="Run Simulation", default=False, subtype='NONE', update=select_callback)
-    run_select = BoolProperty ( name="", description="Old Run Simulation", default=False, subtype='NONE', update=select_callback)
-    graph_select = BoolProperty ( name="", description="Plot Output Settings", default=False, subtype='NONE', update=select_callback)
-    mol_viz_select = BoolProperty ( name="", description="Visual Output Settings", default=False, subtype='NONE', update=select_callback)
-    viz_select = BoolProperty ( name="", description="Visual Output Settings", default=False, subtype='NONE', update=select_callback)
-    reload_viz = BoolProperty ( name="", description="Reload Simulation Data", default=False, subtype='NONE', update=select_callback)
+    preferences_select = BoolProperty ( name="pref_sel", description="Preferences", default=False, subtype='NONE', update=select_callback)
+    settings_select = BoolProperty ( name="set_sel", description="Project Settings", default=False, subtype='NONE', update=select_callback)
+    parameters_select = BoolProperty ( name="par_sel", description="Model Parameters", default=False, subtype='NONE', update=select_callback)
+    reaction_select = BoolProperty ( name="react_sel", description="Reactions", default=False, subtype='NONE', update=select_callback)
+    molecule_select = BoolProperty ( name="mol_sel", description="Molecules", default=False, subtype='NONE', update=select_callback)
+    placement_select = BoolProperty ( name="place_sel", description="Molecule Placement", default=False, subtype='NONE', update=select_callback)
+    objects_select = BoolProperty ( name="obj_sel", description="Model Objects", default=False, subtype='NONE', update=select_callback)
+    surf_classes_select = BoolProperty ( name="surfc_sel", description="Surface Classes", default=False, subtype='NONE', update=select_callback)
+    surf_regions_select = BoolProperty ( name="surfr_sel", description="Assign Surface Classes", default=False, subtype='NONE', update=select_callback)
+    rel_patterns_select = BoolProperty ( name="relpat_sel", description="Release Patterns", default=False, subtype='NONE', update=select_callback)
+    partitions_select = BoolProperty ( name="part_sel", description="Partitions", default=False, subtype='NONE', update=select_callback)
+    init_select = BoolProperty ( name="init_sel", description="Run Simulation", default=False, subtype='NONE', update=select_callback)
+    # run_select = BoolProperty ( name="run_sel", description="Old Run Simulation", default=False, subtype='NONE', update=select_callback)
+    graph_select = BoolProperty ( name="graph_sel", description="Plot Output Settings", default=False, subtype='NONE', update=select_callback)
+    mol_viz_select = BoolProperty ( name="mviz_sel", description="Visual Output Settings", default=False, subtype='NONE', update=select_callback)
+    viz_select = BoolProperty ( name="viz_sel", description="Visual Output Settings", default=False, subtype='NONE', update=select_callback)
+    reload_viz = BoolProperty ( name="reload", description="Reload Simulation Data", default=False, subtype='NONE', update=select_callback)
     
-    select_multiple = BoolProperty ( name="", description="Show Multiple Panels", default=False, subtype='NONE', update=select_callback)
+    select_multiple = BoolProperty ( name="multiple", description="Show Multiple Panels", default=False, subtype='NONE', update=select_callback)
     
     last_state = BoolVectorProperty ( size=22 ) # Keeps track of previous button state to detect transitions
     
@@ -4212,6 +4263,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm['modify_surface_regions'] = self.mod_surf_regions.build_data_model_from_properties(context)
         dm['model_objects'] = self.model_objects.build_data_model_from_properties(context)
         dm['viz_output'] = self.viz_output.build_data_model_from_properties(context)
+        dm['simulation_control'] = self.run_simulation.build_data_model_from_properties(context)
         dm['mol_viz'] = self.mol_viz.build_data_model_from_properties(context)
         dm['reaction_data_output'] = self.rxn_output.build_data_model_from_properties(context)
         if geometry:
@@ -5079,6 +5131,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "mol_viz" in dm:
             print ( "Overwriting the mol_viz properties" )
             self.mol_viz.build_properties_from_data_model ( context, dm["mol_viz"] )
+        if "simulation_control" in dm:
+            print ( "Overwriting the simulation_control properties" )
+            self.run_simulation.build_properties_from_data_model ( context, dm["simulation_control"] )
         if "reaction_data_output" in dm:
             print ( "Overwriting the reaction_data_output properties" )
             self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
