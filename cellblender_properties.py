@@ -833,6 +833,11 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
                     text="Python Binary: " + self.python_binary,
                     icon='FILE_TICK')
 
+            row = layout.row()
+            row.prop(mcell.cellblender_preferences, "decouple_export_run")
+            row = layout.row()
+            row.prop(mcell.cellblender_preferences, "invalid_policy")
+
             layout.separator()
 
             row = layout.row()
@@ -1145,7 +1150,11 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     text="Export CellBlender Project", icon='EXPORT')
             else:
 
-                row = layout.row()
+                row = layout.row(align=True)
+                if mcell.cellblender_preferences.decouple_export_run:
+                    row.operator(
+                        "mcell.export_project", text="Export CellBlender Project",
+                        icon='EXPORT')
                 row.operator("mcell.run_simulation", text="Run",
                              icon='COLOR_RED')
                 
@@ -1186,13 +1195,10 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row = box.row()
                     row.prop(mcell.export_project, "export_format")
 
-                    if mcell.cellblender_preferences.decouple_export_run:
-                        row = box.row()
-                        row.operator(
-                            "mcell.export_project", text="Export CellBlender Project",
-                            icon='EXPORT')
                     row = box.row()
                     row.prop(self, "remove_append", expand=True)
+                    row = box.row()
+                    row.prop(mcell.cellblender_preferences, "decouple_export_run")
 
                 else:
                     row = box.row(align=True)
