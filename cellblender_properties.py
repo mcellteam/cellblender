@@ -5131,9 +5131,10 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "mol_viz" in dm:
             print ( "Overwriting the mol_viz properties" )
             self.mol_viz.build_properties_from_data_model ( context, dm["mol_viz"] )
-        if "simulation_control" in dm:
-            print ( "Overwriting the simulation_control properties" )
-            self.run_simulation.build_properties_from_data_model ( context, dm["simulation_control"] )
+        # This is commented out because it's not clear how it should work yet...
+        #if "simulation_control" in dm:
+        #    print ( "Overwriting the simulation_control properties" )
+        #    self.run_simulation.build_properties_from_data_model ( context, dm["simulation_control"] )
         if "reaction_data_output" in dm:
             print ( "Overwriting the reaction_data_output properties" )
             self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
