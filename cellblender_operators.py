@@ -2301,7 +2301,7 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                 # This file is both in the list and newer
                 # than the run time for MCell
                 candidate_file_list = [
-                    ffn for ffn in candidate_file_list if os.stat(ffn).st_mtime > start_time]
+                    ffn for ffn in candidate_file_list if os.stat(ffn).st_mtime >= start_time]
                 for ffn in candidate_file_list:
 
                     # Create f as a relative path containing seed/file
