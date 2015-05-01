@@ -62,7 +62,7 @@ class ImportMDLData(bpy.types.Operator, ImportHelper):
         return {'FINISHED'}
 
 def menu_func_import(self, context):
-    self.layout.operator("mdl.import_parameters", text="MDL Parameters (.mdl)")
+    self.layout.operator("mdl.import_parameters", text="MCell MDL Parameters (.mdl)")
    
 def register():
     bpy.types.INFO_MT_file_import.append(menu_func_import)

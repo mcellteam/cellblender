@@ -122,11 +122,13 @@ class ExportMCellMDL(bpy.types.Operator, ExportHelper):
 
 
 def menu_func_import(self, context):
-    self.layout.operator(ImportMCellMDL.bl_idname, text="MCell MDL (.mdl)")
+    self.layout.operator(
+        ImportMCellMDL.bl_idname, text="MCell MDL Geometry (.mdl)")
 
 
 def menu_func_export(self, context):
-    self.layout.operator(ExportMCellMDL.bl_idname, text="MCell MDL (.mdl)")
+    self.layout.operator(
+        ExportMCellMDL.bl_idname, text="MCell MDL Geometry (.mdl)")
 
 
 #def register():

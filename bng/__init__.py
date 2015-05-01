@@ -72,7 +72,7 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
         return {'FINISHED'}
         
 def menu_func_import(self, context):
-    self.layout.operator("bng.import_data", text="Import External Model (bngl,sbml)")
+    self.layout.operator("bng.import_data", text="BioNetGen/SBML Model (.bngl,.xml)")
     
 def register():
     bpy.types.INFO_MT_file_import.append(menu_func_import)
