@@ -1216,7 +1216,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                 row.label(text="Errors:", icon='ERROR')
                 row = layout.row()
                 col = row.column()
-                col.template_list("MCELL_UL_error_list_queue", "run_simulation_queue",
+                col.template_list("MCELL_UL_error_list", "run_simulation_queue",
                                   self, "error_list",
                                   self, "active_err_index", rows=2)
 
