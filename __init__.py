@@ -22,15 +22,15 @@ import atexit
 
 bl_info = {
     "name": "CellBlender",
-    "author": "Tom Bartol, Jacob Czech, Markus Dittrich, Bob Kuczewski",
-    "version": (1, 0, 0),
-    "blender": (2, 66, 1),
+    "author": "Tom Bartol, Jacob Czech, Markus Dittrich, Bob Kuczewski, Jose Juan Tapia, Dipak Barua, Devin Sullivan",
+    "version": (1, 0),
+    "blender": (2, 72, 0),
     "api": 55057,
-    "location": "Properties > Scene > CellBlender Panel",
+    "location": "View3D -> ToolShelf -> CellBlender",
     "description": "CellBlender Modeling System for MCell",
     "warning": "",
     "wiki_url": "http://www.mcell.org",
-    "tracker_url": "http://code.google.com/p/cellblender/issues/list",
+    "tracker_url": "https://github.com/mcellteam/cellblender/issues",
     "category": "Cell Modeling"
 }
 

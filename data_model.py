@@ -84,7 +84,8 @@ def dump_data_model ( name, dm ):
             dump_data_model ( k, v )
             i += 1
         data_model_depth += -1
-    elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
+#    elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
+    elif (type(dm) == type('a1')):  #dm is a string
         print ( str(data_model_depth*"  ") + name + " = " + "\"" + str(dm) + "\"" )
     else:
         print ( str(data_model_depth*"  ") + name + " = " + str(dm) )
