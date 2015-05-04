@@ -1198,7 +1198,10 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row = box.row()
                     row.prop(self, "remove_append", expand=True)
                     row = box.row()
-                    row.prop(mcell.cellblender_preferences, "decouple_export_run")
+                    col = row.column()
+                    col.prop(mcell.cellblender_preferences, "decouple_export_run")
+                    col = row.column()
+                    col.prop(self, "simulation_run_control")
 
                 else:
                     row = box.row(align=True)
