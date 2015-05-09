@@ -3930,24 +3930,40 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     else:
                         # Use custom icons for some buttons
                         if self.molecule_select:
-                            molecule_img_sel = bpy.data.images.get('mol_s')
-                            mol_s = layout.icon(molecule_img_sel)
-                            bcol.prop ( self, "molecule_select", icon_value=mol_s, text="Molecules" )
+                            if mcell.cellblender_preferences.use_stock_icons:
+                                # Use "stock" icons to check on drawing speed problem
+                                bcol.prop ( self, "reaction_select", icon='FORCE_LENNARDJONES', text="Molecules" )
+                            else:
+                                molecule_img_sel = bpy.data.images.get('mol_s')
+                                mol_s = layout.icon(molecule_img_sel)
+                                bcol.prop ( self, "molecule_select", icon_value=mol_s, text="Molecules" )
                         else:
-                            molecule_img_unsel = bpy.data.images.get('mol_u')
-                            mol_u = layout.icon(molecule_img_unsel)
-                            bcol.prop ( self, "molecule_select", icon_value=mol_u, text="Molecules" )
+                            if mcell.cellblender_preferences.use_stock_icons:
+                                # Use "stock" icons to check on drawing speed problem
+                                bcol.prop ( self, "reaction_select", icon='FORCE_LENNARDJONES', text="Molecules" )
+                            else:
+                                molecule_img_unsel = bpy.data.images.get('mol_u')
+                                mol_u = layout.icon(molecule_img_unsel)
+                                bcol.prop ( self, "molecule_select", icon_value=mol_u, text="Molecules" )
 
                         brow = layout.row()
                         bcol = brow.column()
                         if self.reaction_select:
-                            react_img_sel = bpy.data.images.get('reaction_s')
-                            reaction_s = layout.icon(react_img_sel)
-                            bcol.prop ( self, "reaction_select", icon_value=reaction_s, text="Reactions" )
+                            if mcell.cellblender_preferences.use_stock_icons:
+                                # Use "stock" icons to check on drawing speed problem
+                                bcol.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="Reactions" )
+                            else:
+                                react_img_sel = bpy.data.images.get('reaction_s')
+                                reaction_s = layout.icon(react_img_sel)
+                                bcol.prop ( self, "reaction_select", icon_value=reaction_s, text="Reactions" )
                         else:
-                            react_img_unsel = bpy.data.images.get('reaction_u')
-                            reaction_u = layout.icon(react_img_unsel)
-                            bcol.prop ( self, "reaction_select", icon_value=reaction_u, text="Reactions" )
+                            if mcell.cellblender_preferences.use_stock_icons:
+                                # Use "stock" icons to check on drawing speed problem
+                                bcol.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="Reactions" )
+                            else:
+                                react_img_unsel = bpy.data.images.get('reaction_u')
+                                reaction_u = layout.icon(react_img_unsel)
+                                bcol.prop ( self, "reaction_select", icon_value=reaction_u, text="Reactions" )
 
 
                     current_marker = "After drawing molecules and reactions"
@@ -4053,9 +4069,13 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                 if self.reaction_select:
                     layout.box() # Use as a separator
-                    react_img_sel = bpy.data.images.get('reaction_s')
-                    reaction_s = layout.icon(react_img_sel)
-                    layout.label ( "Defined Reactions", icon_value=reaction_s )
+                    if mcell.cellblender_preferences.use_stock_icons:
+                        # Use "stock" icons to check on drawing speed problem
+                        layout.label ( "Defined Reactions", icon='ARROW_LEFTRIGHT' )
+                    else:
+                        react_img_sel = bpy.data.images.get('reaction_s')
+                        reaction_s = layout.icon(react_img_sel)
+                        layout.label ( "Defined Reactions", icon_value=reaction_s )
                     context.scene.mcell.reactions.draw_layout ( context, layout )
 
                 if self.placement_select:
