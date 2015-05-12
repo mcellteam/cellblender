@@ -195,13 +195,15 @@ class SimQueue:
     pids = list(self.task_dict.keys())
     for pid in pids:
       task = self.task_dict[pid]
-      if task['status'] == 'running':
+      if task['status'] == 'queued':
+        with self.work_q.mutex:
+          self.work_q.queue.remove(task)
         proc = task['process']
         proc.terminate()
         task['status'] = 'died'
-      elif task['status'] == 'queued':
-        with self.work_q.mutex:
-          self.work_q.queue.remove(task)
+    for pid in pids:
+      task = self.task_dict[pid]
+      if task['status'] == 'running':
         proc = task['process']
         proc.terminate()
         task['status'] = 'died'

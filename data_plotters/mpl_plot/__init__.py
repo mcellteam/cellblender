@@ -1,14 +1,7 @@
 import os
 import subprocess
 import sys
-
-
-def find_in_path(program_name):
-    for path in os.environ.get('PATH', '').split(os.pathsep):
-        full_name = os.path.join(path, program_name)
-        if os.path.exists(full_name) and not os.path.isdir(full_name):
-            return full_name
-    return None
+import shutil
 
 
 def get_name():
@@ -19,7 +12,7 @@ def requirements_met():
     ok = True
     required_modules = ['matplotlib', 'matplotlib.pyplot', 'pylab', 'numpy',
                         'scipy']
-    python_command = find_in_path("python")
+    python_command = shutil.which("python", mode=os.X_OK)
     if python_command is None:
         print("  Python is needed for \"%s\"" % (get_name()))
         ok = False
@@ -51,7 +44,7 @@ def plot(data_path, plot_spec):
 
     # mpl_plot.py accepts all generic parameters, so no translation is needed
 
-    python_cmd = find_in_path("python")
+    python_cmd = shutil.which("python", mode=os.X_OK)
 
     if python_cmd is None:
         print("Unable to plot: python not found in path")
