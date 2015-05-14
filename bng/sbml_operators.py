@@ -1,12 +1,8 @@
 import bpy
 import os
-import json
 
 from . import sbml2blender
-from . import sbml2json
 
-import cellblender
-from cellblender import cellblender_operators
 
 
 
