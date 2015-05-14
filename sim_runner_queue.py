@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 if sys.version_info.major == 3:
   from queue import Queue, Empty
 else:
   from Queue import Queue, Empty
-from threading import Thread
+import threading
 import subprocess as sp
 import time
 
@@ -23,43 +24,47 @@ class OutputQueue:
         func(line)
     pipe.close()
 
-  def write_output(self, get, pipe, text=None):
-    if text != None:
+  def write_output(self, get, pipe, bl_text=None, e_bl_text_quit=None):
+    if bl_text != None:
       import bpy
     for line in iter(get, None):
       pipe.write(line)
       pipe.flush()
-      if text != None:
-        try:
-          text.write(line)
-          text.current_line_index=len(text.lines)-1
-        except:
-          pass
+      if bl_text != None:
+        bl_text_quit = False
+        if e_bl_text_quit != None:
+          bl_text_quit = e_bl_text_quit.isSet()
+        if not bl_text_quit:
+          try:
+            bl_text.write(line)
+            bl_text.current_line_index=len(bl_text.lines)-1
+          except:
+            pass
 
 
-  def run_proc(self, proc, arg_in=None, text=None, passthrough=True):
+  def run_proc(self, proc, arg_in=None, passthrough=True, bl_text=None, e_bl_text_quit=None):
 
-    if text != None:
+    if bl_text != None:
       import bpy
 
     if passthrough:
 
       outs, errs = [], []
 
-      stdout_reader_thread = Thread(
+      stdout_reader_thread = threading.Thread(
           target=self.read_output, args=(proc.stdout, [self.out_q.put, outs.append])
           )
 
-      stderr_reader_thread = Thread(
+      stderr_reader_thread = threading.Thread(
           target=self.read_output, args=(proc.stderr, [self.err_q.put, errs.append])
           )
 
-      stdout_writer_thread = Thread(
-          target=self.write_output, args=(self.out_q.get, sys.stdout, text)
+      stdout_writer_thread = threading.Thread(
+          target=self.write_output, args=(self.out_q.get, sys.stdout, bl_text, e_bl_text_quit)
           )
 
-      stderr_writer_thread = Thread(
-          target=self.write_output, args=(self.err_q.get, sys.stderr, text)
+      stderr_writer_thread = threading.Thread(
+          target=self.write_output, args=(self.err_q.get, sys.stderr, bl_text, e_bl_text_quit)
           )
 
       for t in (stdout_reader_thread, stderr_reader_thread, stdout_writer_thread, stderr_writer_thread):
@@ -67,9 +72,10 @@ class OutputQueue:
         t.start()
 
       if arg_in:
-#        sys.stdout.write('run_proc sending: {0}\n'.format(arg_in).encode().decode())
-        proc.stdin.write('{0}\n'.format(arg_in).encode())
-        proc.stdin.flush()
+        for arg in arg_in:
+#          sys.stdout.write('run_proc sending: {0}\n'.format(arg).encode().decode())
+          proc.stdin.write('{0}\n'.format(arg).encode())
+          proc.stdin.flush()
       proc.wait()
 
       for t in (stdout_reader_thread, stderr_reader_thread):
@@ -101,14 +107,17 @@ class SimQueue:
     self.workers = []
     self.task_dict = {}
     self.n_threads = 0
+    self.evnt_bl_text_quit = threading.Event()
     self.python_exec = 'python'
-    self.run_wrapper = './run_wrapper.py'
+    module_dir_path = os.path.dirname(os.path.realpath(__file__))
+    module_file_path = os.path.join(module_dir_path, 'run_wrapper.py')
+    self.run_wrapper = module_file_path
     self.notify = False
 
   def start(self,n_threads):
     if n_threads > self.n_threads:
       for i in range(n_threads - self.n_threads):
-        worker = Thread(target=self.run_q_item)
+        worker = threading.Thread(target=self.run_q_item, name=str(i))
         worker.daemon = True
         self.workers.append(worker)
         worker.start()
@@ -121,18 +130,20 @@ class SimQueue:
     while True:
       task = self.work_q.get()
       if task == None:
+        self.work_q.task_done()
         break
 
       process = task['process']
       pid = process.pid
       cmd = task['cmd']
-      t = self.task_dict[pid]['text']
+      args = task['args']
+      bl_t = task['bl_text']
       if self.notify:
         sys.stdout.write('Starting PID {0} {1}\n'.format(pid, cmd))
       out_q = OutputQueue()
 #      sys.stdout.write('sending:  {0}\n'.format(cmd).encode().decode())
       task['status'] = 'running'
-      rc, res = out_q.run_proc(process, arg_in=cmd, text=t, passthrough=self.notify)
+      rc, res = out_q.run_proc(process, arg_in=[cmd, args], passthrough=self.notify, bl_text=bl_t, e_bl_text_quit=self.evnt_bl_text_quit)
       self.task_dict[pid]['stdout'] = res[0]
       self.task_dict[pid]['stderr'] = res[1]
 #      self.task_dict[pid]['text'].write(res[0])
@@ -147,25 +158,27 @@ class SimQueue:
       if self.notify:
         sys.stdout.write('Task PID {0}  status: {1}  return code: {2}\n'.format(pid, task['status'], rc))
       self.work_q.task_done()
+    sys.stdout.write('Worker thread %s exiting\n' % (threading.currentThread().getName()))
 
   def clear_queue(self):
     with self.work_q.mutex:
       self.work_q.queue.clear()
 
-  def add_task(self,cmd,wd):
+  def add_task(self,cmd,args,wd):
     import bpy
     process = sp.Popen([self.python_exec, self.run_wrapper, wd], bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
     pid = process.pid
     self.task_dict[pid] = {}
     self.task_dict[pid]['process'] = process
     self.task_dict[pid]['cmd'] = cmd
+    self.task_dict[pid]['args'] = args
     self.task_dict[pid]['status'] = 'queued'
     self.task_dict[pid]['stdout'] = b''
     self.task_dict[pid]['stderr'] = b''
     bpy.ops.text.new()
-    t = bpy.data.texts[-1]
-    t.name = 'task_%d_output' % pid
-    self.task_dict[pid]['text'] = t
+    bl_t = bpy.data.texts[-1]
+    bl_t.name = 'task_%d_output' % pid
+    self.task_dict[pid]['bl_text'] = bl_t
     self.work_q.put(self.task_dict[pid])
     return process
 
@@ -182,17 +195,28 @@ class SimQueue:
         proc = task['process']
         proc.terminate()
         task['status'] = 'died'
+        self.work_q.task_done()
 
   def clear_task(self,pid):
     import bpy
     if self.task_dict.get(pid):
-      if bpy.data.texts.get(self.task_dict[pid]['text'].name):
-        bpy.data.texts.remove(self.task_dict[pid]['text'])
+      if bpy.data.texts.get(self.task_dict[pid]['bl_text'].name):
+        bpy.data.texts.remove(self.task_dict[pid]['bl_text'])
       self.task_dict.pop(pid)
 
   def shutdown(self):
+    self.evnt_bl_text_quit.set()
+
     sys.stdout.write("Shutting down simulation queue...\n")
+
+    # Send stop signal to worker threads
+    for i in range(self.n_threads):
+      sys.stdout.write('Stopping thread %s\n' % (self.workers[i].getName()))
+      self.work_q.put(None)
+
     pids = list(self.task_dict.keys())
+
+    # Dequeue waiting tasks
     for pid in pids:
       task = self.task_dict[pid]
       if task['status'] == 'queued':
@@ -201,13 +225,26 @@ class SimQueue:
         proc = task['process']
         proc.terminate()
         task['status'] = 'died'
+        self.work_q.task_done()
+
+    # Terminate running tasks
     for pid in pids:
       task = self.task_dict[pid]
       if task['status'] == 'running':
         proc = task['process']
         proc.terminate()
         task['status'] = 'died'
+
+    # Now wait for workers to finish and exit
+    sys.stdout.write('Waiting for simulation threads to exit...\n')
+    for worker in self.workers:
+      worker.join()
+
+    sys.stdout.write('Waiting for simulation queue to exit...\n')
+    self.work_q.join()
+
     sys.stdout.write("Done shutting down simulation queue.\n")
+    sys.stdout.flush()
 
 
 
