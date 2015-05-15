@@ -330,13 +330,31 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         self.shape = 'CUBIC'
         self.orient = '\''
         self.object_expr = ""
-        self.location_x.init_ref  ( parameter_system, "Rel_Loc_Type_X",  user_name="Release Location X",  user_expr="0", user_units="", user_descr="The center of the release site's X coordinate" )
-        self.location_y.init_ref  ( parameter_system, "Rel_Loc_Type_Y",  user_name="Release Location Y",  user_expr="0", user_units="", user_descr="The center of the release site's Y coordinate" )
-        self.location_z.init_ref  ( parameter_system, "Rel_Loc_Type_Z",  user_name="Release Location Z",  user_expr="0", user_units="", user_descr="The center of the release site's Z coordinate" )
-        self.diameter.init_ref    ( parameter_system, "Diam_Type",       user_name="Site Diameter",       user_expr="0", user_units="", user_descr="Release molecules uniformly within the specified diameter." )
-        self.probability.init_ref ( parameter_system, "Rel_Prob_Type",   user_name="Release Probability", user_expr="1", user_units="", user_descr="Release does not occur every time,\nbut rather with specified probability." )
-        self.quantity.init_ref    ( parameter_system, "Rel_Quant_Type",  user_name="Quantity to Release", user_expr="",  user_units="", user_descr="Concentration units: molar. Density units: molecules per square micron" )
-        self.stddev.init_ref      ( parameter_system, "Rel_StdDev_Type", user_name="Standard Deviation",  user_expr="0", user_units="", user_descr="Standard Deviation" )
+        self.location_x.init_ref  ( parameter_system, "Rel_Loc_Type_X",  user_name="Release Location X",  user_expr="0", user_units="", user_descr="The center of the release site's X coordinate.\nOnly used for geometrical shapes." )
+        self.location_y.init_ref  ( parameter_system, "Rel_Loc_Type_Y",  user_name="Release Location Y",  user_expr="0", user_units="", user_descr="The center of the release site's Y coordinate\nOnly used for geometrical shapes." )
+        self.location_z.init_ref  ( parameter_system, "Rel_Loc_Type_Z",  user_name="Release Location Z",  user_expr="0", user_units="", user_descr="The center of the release site's Z coordinate\nOnly used for geometrical shapes." )
+        self.diameter.init_ref    ( parameter_system, "Diam_Type",       user_name="Site Diameter",       user_expr="0", user_units="", user_descr="Release molecules uniformly within a diameter d.\nNot used for releases on regions." )
+        self.probability.init_ref ( parameter_system, "Rel_Prob_Type",   user_name="Release Probability", user_expr="1", user_units="", user_descr="This release does not occur every time, but rather with probability p.\nEither the whole release occurs or none of it does;\nthe probability does not apply molecule-by-molecule.\np must be in the interval [0;1]." )
+        self.quantity.init_ref    ( parameter_system, "Rel_Quant_Type",  user_name="Quantity to Release", user_expr="",  user_units="", user_descr="Quantity of Molecules to release at this site." +
+              "\n" +
+              "When Quantity Type is Constant Number:\n"+
+              "  Release n molecules. For releases on regions, n can be negative, and\n" +
+              "  the release will then remove molecules of that type from the region. To\n" +
+              "  remove all molecules of a type, just make n large and negative. It is\n" +
+              "  unwise to both add and remove molecules on the same timestep—the\n" +
+              "  order of addition and removal is not defined in that case. This directive\n" +
+              "  is not used for the LIST shape, as every molecule is specified.\n" +
+              "  Concentration units: molar. Density units: molecules per square micron\n" +
+              "\n" +
+              "When Quantity Type is Gaussian Number:\n"+
+              "  Release molecules according to a Gaussian distribution with this\n" +
+              "  quantity specifying the mean for the number to release.\n" +
+              "\n" +
+              "When Quantity Type is Concentration / Density:\n"+
+              "  Release molecules at concentration c molar for volumes and d\n" +
+              "  molecules per square micron for surfaces. Neither can be used\n" +
+              "  for the LIST shape; DENSITY is only valid for regions." )
+        self.stddev.init_ref      ( parameter_system, "Rel_StdDev_Type", user_name="Standard Deviation",  user_expr="0", user_units="", user_descr="Standard Deviation of number to release\nwhen Quantity Type is Gaussian Number" )
 
     def remove_properties ( self, context ):
         print ( "Removing all Molecule Release Properties... no collections to remove." )
