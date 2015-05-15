@@ -3270,7 +3270,10 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         (' page ', "Separate Page for each Plot", ""),
         (' plot ', "One Page, Multiple Plots", ""),
         (' ',      "One Page, One Plot", "")]
-    plot_layout = bpy.props.EnumProperty ( items=plot_layout_enum, name="", default=' plot ' )
+    plot_layout = bpy.props.EnumProperty ( 
+        items=plot_layout_enum, name="", 
+        description="Select the Page and Plot Layout",
+        default=' plot ' )
     plot_legend_enum = [
         ('x', "No Legend", ""),
         ('0', "Legend with Automatic Placement", ""),
@@ -3284,7 +3287,10 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         ('8', "Legend in Lower Center", ""),
         ('9', "Legend in Upper Center", ""),
         ('10', "Legend in Center", "")]
-    plot_legend = bpy.props.EnumProperty ( items=plot_legend_enum, name="", default='0' )
+    plot_legend = bpy.props.EnumProperty ( 
+        items=plot_legend_enum, name="", 
+        description="Select the Legend Display and Placement",
+        default='0' )
     combine_seeds = BoolProperty(
         name="Combine Seeds",
         description="Combine all seeds onto the same plot.",
