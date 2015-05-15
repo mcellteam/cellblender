@@ -123,6 +123,12 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
     bkwd_rate = PointerProperty ( name="Backward Rate", type=parameter_system.Parameter_Reference )
 
 
+    reactants_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    rxn_type_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    products_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    variable_rate_switch_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    rxn_name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+
     def init_properties ( self, parameter_system ):
         self.name = "The_Reaction"
         self.rxn_name = ""
@@ -2239,10 +2245,37 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
                 if len(self.reaction_list) > 0:
                     rxn = self.reaction_list[
                         self.active_rxn_index]
-                    layout.prop(rxn, "reactants")
-                    layout.prop(rxn, "type")
-                    layout.prop(rxn, "products")
-                    layout.prop(rxn, "variable_rate_switch")
+
+                    #layout.prop(rxn, "reactants")
+                    ps.draw_prop_with_help ( layout, "Reactants:", rxn, "reactants", "reactants_show_help", rxn.reactants_show_help, 
+                         "Reactants\nThe reactants may contain one, two, or three molecule names\n" +
+                         "separated with the plus ('+') sign. Molecules in the reactants\n" +
+                         "list may also contain orientation marks (' or , or ;) as needed." )
+
+                    #layout.prop(rxn, "type")
+                    ps.draw_prop_with_help ( layout, "Reaction Type:", rxn, "type", "rxn_type_show_help", rxn.rxn_type_show_help, 
+                         "Reaction Type\n  ->   Unidirectional Reaction\n" +
+                                        "  <->  Bidirectional Reaction" )
+
+                    #layout.prop(rxn, "products")
+                    ps.draw_prop_with_help ( layout, "Products:", rxn, "products", "products_show_help", rxn.products_show_help, 
+                         "Products\nThe products list may contain an arbitrary number of\n" +
+                         "molecule names separated with the plus ('+') sign or NULL.\n" +
+                         "Molecules in the products list may also contain orientation\n" +
+                         "marks  (' or , or ;) as needed." )
+
+                    #layout.prop(rxn, "variable_rate_switch")
+                    ps.draw_prop_with_help ( layout, "Enable Variable Rate", rxn, "variable_rate_switch", "variable_rate_switch_show_help", rxn.variable_rate_switch_show_help, 
+                         "Variable Rate Flag\n" +
+                         "When enabled, the reaction rate is given as a function of time\n" +
+                         "in the form of a 2 column table contained in a text file.\n" +
+                         "The first column in the file contains time, and the second\n" +
+                         "column contains the rate at that time.\n" +
+                         " \n" +
+                         "When enabled, the normal rate constants will be replaced with\n" +
+                         "a file selection control that will allow you to navigate to the\n" +
+                         "file containing the two columns." )
+
                     if rxn.variable_rate_switch:
                         layout.operator("mcell.variable_rate_add", icon='FILESEL')
                         # Do we need these messages in addition to the status
@@ -2262,7 +2295,11 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
                         if rxn.type == "reversible":
                             #rxn.bkwd_rate.draw_in_new_row(layout)
                             rxn.bkwd_rate.draw(layout,ps)
-                    layout.prop(rxn, "rxn_name")
+
+                    #layout.prop(rxn, "rxn_name")
+                    ps.draw_prop_with_help ( layout, "Reaction Name:", rxn, "rxn_name", "rxn_name_show_help", rxn.rxn_name_show_help, 
+                         "Reaction Name\nReactions may be named to be referred to by count statments." )
+
             else:
                 row.label(text="Define at least one molecule", icon='ERROR')
 
