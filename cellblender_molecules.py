@@ -161,9 +161,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     def init_properties ( self, parameter_system ):
         self.name = "Molecule_"+str(self.id)
 
-        self.diffusion_constant.init_ref   ( parameter_system, "Mol_Diff_Const_Type", user_name="Diffusion Constant",   user_expr="0", user_units="cm^2/sec", user_descr="Molecule Diffusion Constant" )
-        self.custom_time_step.init_ref     ( parameter_system, "Mol_Time_Step_Type",  user_name="Custom Time Step",     user_expr="",  user_units="seconds",  user_descr="Molecule Custom Time Step" )
-        self.custom_space_step.init_ref    ( parameter_system, "Mol_Space_Step_Type", user_name="Custom Space Step",    user_expr="",  user_units="microns",  user_descr="Molecule Custom Space Step" )
+        self.diffusion_constant.init_ref   ( parameter_system, "Mol_Diff_Const_Type", user_name="Diffusion Constant",   user_expr="0", user_units="cm^2/sec", user_descr="Molecule Diffusion Constant\nThis molecule diffuses in space with diffusion constant D.\nD can be zero, in which case the molecule doesn’t move." )
+        self.custom_time_step.init_ref     ( parameter_system, "Mol_Time_Step_Type",  user_name="Custom Time Step",     user_expr="",  user_units="seconds",  user_descr="Molecule Custom Time Step\nThis molecule should take timesteps of length t (in seconds).\n Use either this or CUSTOM_SPACE_STEP, not both." )
+        self.custom_space_step.init_ref    ( parameter_system, "Mol_Space_Step_Type", user_name="Custom Space Step",    user_expr="",  user_units="microns",  user_descr="Molecule Custom Space Step\nThis molecule should take steps of average length L (in microns).\nIf you use this directive, do not set CUSTOM_TIME_STEP.\nProviding a CUSTOM_SPACE_STEP for a molecule overrides a potentially\npresent global SPACE_STEP for this particular molecule." )
         # TODO: Add after data model release:  self.maximum_step_length.init_ref  ( parameter_system, "Max_Step_Len_Type",   user_name="Maximum Step Length",  user_expr="",  user_units="microns",  user_descr="Molecule should never step farther than this length during a single timestep. Use with caution (see documentation)." )
 
     def remove_properties ( self, context ):

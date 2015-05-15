@@ -301,16 +301,16 @@ def load_post(context):
 
 
 def menu_func_import(self, context):
-    self.layout.operator("cb.import_data_model", text="Import CellBlender Model (text/pickle)")
+    self.layout.operator("cb.import_data_model", text="CellBlender Model (text/pickle)")
 
 def menu_func_export(self, context):
-    self.layout.operator("cb.export_data_model", text="Export CellBlender Model (text/pickle)")
+    self.layout.operator("cb.export_data_model", text="CellBlender Model (text/pickle)")
 
 def menu_func_import_all(self, context):
-    self.layout.operator("cb.import_data_model_all", text="Import CellBlender Model and Geometry (text/pickle)")
+    self.layout.operator("cb.import_data_model_all", text="CellBlender Model and Geometry (text/pickle)")
 
 def menu_func_export_all(self, context):
-    self.layout.operator("cb.export_data_model_all", text="Export CellBlender Model and Geometry (text/pickle)")
+    self.layout.operator("cb.export_data_model_all", text="CellBlender Model and Geometry (text/pickle)")
 
 def menu_func_print(self, context):
     self.layout.operator("cb.print_data_model", text="Print CellBlender Model (text)")

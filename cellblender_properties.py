@@ -132,8 +132,20 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         self.variable_rate_switch = False
         self.variable_rate = ""
         self.variable_rate_valid = False
-        self.fwd_rate.init_ref   ( parameter_system, "FW_Rate_Type", user_name="Forward Rate",  user_expr="0", user_units="",  user_descr="Forward Rate" )
-        self.bkwd_rate.init_ref  ( parameter_system, "BW_Rate_Type", user_name="Backward Rate", user_expr="",  user_units="s", user_descr="Backward Rate" )
+        self.fwd_rate.init_ref   ( parameter_system, "FW_Rate_Type", user_name="Forward Rate",  user_expr="0", user_units="",  
+                                   user_descr="Forward Rate\n" +
+                                              "The units of the reaction rate for uni- and bimolecular reactions are:\n" + 
+                                              " [1/s] for unimolecular reactions,\n" +
+                                              " [1/(M * s)] for bimolecular reactions between either\n" +
+                                              "     two volume molecules or a volume molecule and a surface (molecule),\n" +
+                                              " [(um * um) / (N * s)] for bimolecular reactions between two surface molecules." )
+        self.bkwd_rate.init_ref  ( parameter_system, "BW_Rate_Type", user_name="Backward Rate", user_expr="",  user_units="s", 
+                                   user_descr="Backward Rate\n" +
+                                              "The units of the reaction rate for uni- and bimolecular reactions are:\n" + 
+                                              " [1/s] for unimolecular reactions,\n" +
+                                              " [1/(M * s)] for bimolecular reactions between either\n" +
+                                              "     two volume molecules or a volume molecule and a surface (molecule),\n" +
+                                              " [(um * um) / (N * s)] for bimolecular reactions between two surface molecules." )
 
     def remove_properties ( self, context ):
         print ( "Removing all Reaction Properties... no collections to remove." )
@@ -330,13 +342,31 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         self.shape = 'CUBIC'
         self.orient = '\''
         self.object_expr = ""
-        self.location_x.init_ref  ( parameter_system, "Rel_Loc_Type_X",  user_name="Release Location X",  user_expr="0", user_units="", user_descr="The center of the release site's X coordinate" )
-        self.location_y.init_ref  ( parameter_system, "Rel_Loc_Type_Y",  user_name="Release Location Y",  user_expr="0", user_units="", user_descr="The center of the release site's Y coordinate" )
-        self.location_z.init_ref  ( parameter_system, "Rel_Loc_Type_Z",  user_name="Release Location Z",  user_expr="0", user_units="", user_descr="The center of the release site's Z coordinate" )
-        self.diameter.init_ref    ( parameter_system, "Diam_Type",       user_name="Site Diameter",       user_expr="0", user_units="", user_descr="Release molecules uniformly within the specified diameter." )
-        self.probability.init_ref ( parameter_system, "Rel_Prob_Type",   user_name="Release Probability", user_expr="1", user_units="", user_descr="Release does not occur every time,\nbut rather with specified probability." )
-        self.quantity.init_ref    ( parameter_system, "Rel_Quant_Type",  user_name="Quantity to Release", user_expr="",  user_units="", user_descr="Concentration units: molar. Density units: molecules per square micron" )
-        self.stddev.init_ref      ( parameter_system, "Rel_StdDev_Type", user_name="Standard Deviation",  user_expr="0", user_units="", user_descr="Standard Deviation" )
+        self.location_x.init_ref  ( parameter_system, "Rel_Loc_Type_X",  user_name="Release Location X",  user_expr="0", user_units="", user_descr="The center of the release site's X coordinate.\nOnly used for geometrical shapes." )
+        self.location_y.init_ref  ( parameter_system, "Rel_Loc_Type_Y",  user_name="Release Location Y",  user_expr="0", user_units="", user_descr="The center of the release site's Y coordinate\nOnly used for geometrical shapes." )
+        self.location_z.init_ref  ( parameter_system, "Rel_Loc_Type_Z",  user_name="Release Location Z",  user_expr="0", user_units="", user_descr="The center of the release site's Z coordinate\nOnly used for geometrical shapes." )
+        self.diameter.init_ref    ( parameter_system, "Diam_Type",       user_name="Site Diameter",       user_expr="0", user_units="", user_descr="Release molecules uniformly within a diameter d.\nNot used for releases on regions." )
+        self.probability.init_ref ( parameter_system, "Rel_Prob_Type",   user_name="Release Probability", user_expr="1", user_units="", user_descr="This release does not occur every time, but rather with probability p.\nEither the whole release occurs or none of it does;\nthe probability does not apply molecule-by-molecule.\np must be in the interval [0;1]." )
+        self.quantity.init_ref    ( parameter_system, "Rel_Quant_Type",  user_name="Quantity to Release", user_expr="",  user_units="", user_descr="Quantity of Molecules to release at this site." +
+              "\n" +
+              "When Quantity Type is Constant Number:\n"+
+              "  Release n molecules. For releases on regions, n can be negative, and\n" +
+              "  the release will then remove molecules of that type from the region. To\n" +
+              "  remove all molecules of a type, just make n large and negative. It is\n" +
+              "  unwise to both add and remove molecules on the same timestep—the\n" +
+              "  order of addition and removal is not defined in that case. This directive\n" +
+              "  is not used for the LIST shape, as every molecule is specified.\n" +
+              "  Concentration units: molar. Density units: molecules per square micron\n" +
+              "\n" +
+              "When Quantity Type is Gaussian Number:\n"+
+              "  Release molecules according to a Gaussian distribution with this\n" +
+              "  quantity specifying the mean for the number to release.\n" +
+              "\n" +
+              "When Quantity Type is Concentration / Density:\n"+
+              "  Release molecules at concentration c molar for volumes and d\n" +
+              "  molecules per square micron for surfaces. Neither can be used\n" +
+              "  for the LIST shape; DENSITY is only valid for regions." )
+        self.stddev.init_ref      ( parameter_system, "Rel_StdDev_Type", user_name="Standard Deviation",  user_expr="0", user_units="", user_descr="Standard Deviation of number to release\nwhen Quantity Type is Gaussian Number" )
 
     def remove_properties ( self, context ):
         print ( "Removing all Molecule Release Properties... no collections to remove." )
@@ -407,11 +437,11 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
 
     def init_properties ( self, parameter_system ):
         self.name = "Release_Pattern"
-        self.delay.init_ref            ( parameter_system, "Rel_Delay_Type", user_name="Release Pattern Delay", user_expr="0",     user_units="s", user_descr="The time at which the release pattern will start." )
-        self.release_interval.init_ref ( parameter_system, "Rel_Int_Type",   user_name="Relese Interval",       user_expr="",      user_units="s", user_descr="During a train, release molecules after every interval.\nDefault is once." )
+        self.delay.init_ref            ( parameter_system, "Rel_Delay_Type", user_name="Release Pattern Delay", user_expr="0",     user_units="s", user_descr="The time at which the release pattern will start.\nDefault is at time zero." )
+        self.release_interval.init_ref ( parameter_system, "Rel_Int_Type",   user_name="Relese Interval",       user_expr="",      user_units="s", user_descr="During a train of releases, release molecules after every t seconds.\nDefault is release only once (t is infinite)." )
         self.train_duration.init_ref   ( parameter_system, "Tr_Dur_Type",    user_name="Train Duration",        user_expr="",      user_units="s", user_descr="The duration of the train before turning off.\nDefault is to never turn off." )
-        self.train_interval.init_ref   ( parameter_system, "Tr_Int_Type",    user_name="Train Interval",        user_expr="",      user_units="s", user_descr="A new train happens every interval.\nDefault is no new trains." )
-        self.number_of_trains.init_ref ( parameter_system, "NTrains_Type",   user_name="Number of Trains",      user_expr="1",     user_units="",  user_descr="Repeat the release process this number of times.\nDefault is one train.", user_int=True )
+        self.train_interval.init_ref   ( parameter_system, "Tr_Int_Type",    user_name="Train Interval",        user_expr="",      user_units="s", user_descr="A new train happens every interval.\nDefault is no new trains.\nThe train interval must not be shorter than the train duration." )
+        self.number_of_trains.init_ref ( parameter_system, "NTrains_Type",   user_name="Number of Trains",      user_expr="1",     user_units="",  user_descr="Repeat the release process for this number of trains of releases.\nDefault is one train.", user_int=True )
 
     def remove_properties ( self, context ):
         print ( "Removing all Release Pattern Properties... no collections to remove." )
@@ -687,21 +717,42 @@ def set_old_scene_panels_callback(self, context):
     """ Show or hide the old scene panels based on the show_old_scene_panels boolean property. """
     print ( "Toggling the old scene panels" )
     mcell = context.scene.mcell
-    show_old_scene_panels ( mcell.cellblender_preferences.show_old_scene_panels )
+    prefs = mcell.cellblender_preferences
+    if (prefs.show_scene_panel or prefs.show_tool_panel):
+        # One of the other panels is showing, so it's OK to toggle
+        show_old_scene_panels ( prefs.show_old_scene_panels )
+    else:
+        # No other panels are showing so DON'T ALLOW THIS ONE TO GO AWAY!
+        prefs.show_old_scene_panels = True
+        show_old_scene_panels ( True )
 
 
 def set_scene_panel_callback(self, context):
     """ Show or hide the scene panel based on the show_scene_panel boolean property. """
     print ( "Toggling the scene panel" )
     mcell = context.scene.mcell
-    show_hide_scene_panel ( mcell.cellblender_preferences.show_scene_panel )
+    prefs = mcell.cellblender_preferences
+    if (prefs.show_old_scene_panels or prefs.show_tool_panel):
+        # One of the other panels is showing, so it's OK to toggle
+        show_hide_scene_panel ( prefs.show_scene_panel )
+    else:
+        # No other panels are showing so DON'T ALLOW THIS ONE TO GO AWAY!
+        prefs.show_scene_panel = True
+        show_hide_scene_panel ( True )
 
 
 def set_tool_panel_callback(self, context):
     """ Show or hide the tool panel based on the show_tool_panel boolean property. """
     print ( "Toggling the tool panels" )
     mcell = context.scene.mcell
-    show_hide_tool_panel ( mcell.cellblender_preferences.show_tool_panel )
+    prefs = mcell.cellblender_preferences
+    if (prefs.show_old_scene_panels or prefs.show_scene_panel):
+        # One of the other panels is showing, so it's OK to toggle
+        show_hide_tool_panel ( prefs.show_tool_panel )
+    else:
+        # No other panels are showing so DON'T ALLOW THIS ONE TO GO AWAY!
+        prefs.show_tool_panel = True
+        show_hide_tool_panel ( True )
 
     
 
@@ -1189,17 +1240,20 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row.prop(self, "end_seed")
                     row = box.row()
                     row.prop(self, "mcell_processes")
-                    row = box.row()
-                    row.prop(self, "log_file")
-                    row = box.row()
-                    row.prop(self, "error_file")
+                    #row = box.row()
+                    #row.prop(self, "log_file")
+                    #row = box.row()
+                    #row.prop(self, "error_file")
                     row = box.row()
                     row.prop(mcell.export_project, "export_format")
 
                     row = box.row()
                     row.prop(self, "remove_append", expand=True)
                     row = box.row()
-                    row.prop(mcell.cellblender_preferences, "decouple_export_run")
+                    col = row.column()
+                    col.prop(mcell.cellblender_preferences, "decouple_export_run")
+                    col = row.column()
+                    col.prop(self, "simulation_run_control")
 
                 else:
                     row = box.row(align=True)
@@ -1217,7 +1271,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                 row.label(text="Errors:", icon='ERROR')
                 row = layout.row()
                 col = row.column()
-                col.template_list("MCELL_UL_error_list_queue", "run_simulation_queue",
+                col.template_list("MCELL_UL_error_list", "run_simulation_queue",
                                   self, "error_list",
                                   self, "active_err_index", rows=2)
 
@@ -1501,40 +1555,65 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
                                       user_name="Time Step",  
                                       user_expr="1e-6", 
                                       user_units="seconds", 
-                                      user_descr="Simulation Time Step" )
+                                      user_descr="Simulation Time Step\n1e-6 is a common value." )
         self.time_step_max.init_ref ( parameter_system, "Time_Step_Max_Type", 
                                       user_name="Maximum Time Step", 
                                       user_expr="", 
                                       user_units="seconds", 
-                                      user_descr="The longest possible time step" )
+                                      user_descr="The longest possible time step.\n" +
+                                                 "MCell3 will move longer than the specified simulation time step\n" +
+                                                 "if it seems safe. This command makes sure that the longest possible\n" +
+                                                 "time step is no longer than this value (in seconds), even if MCell3\n" +
+                                                 "thinks a longer step would be safe. The default is no limit." )
         self.space_step.init_ref    ( parameter_system, "Space_Step_Type",    
                                       user_name="Space Step",    
                                       user_expr="", 
                                       user_units="microns", 
-                                      user_descr="Have molecules take the same mean diffusion distance" )
+                                      user_descr="Have molecules take the same mean diffusion distance.\n" + 
+                                                 "Have all diffusing molecules take time steps of different duration,\n" + 
+                                                 "chosen so that the mean diffusion distance is N microns for each\n" + 
+                                                 "molecule. By default, all molecules move the same time step." )
         self.interaction_radius.init_ref ( parameter_system, "Int_Rad_Type", 
                                            user_name="Interaction Radius", 
                                            user_expr="", user_units="microns", 
-                                           user_descr="Molecules will interact when they get within N microns" )
+                                           user_descr="Diffusing Volume Molecules will interact when they get within\n" +
+                                                      "N microns of each other.\n" +
+                                                      "The default is:  1 / sqrt(Pi * SurfaceGridDensity)" )
         self.radial_directions.init_ref   ( parameter_system, "Rad_Dir_Type", 
                                             user_name="Radial Directions",   
                                             user_expr="", user_units="microns", 
-                                            user_descr="Number of different directions to put in lookup table\nLeave alone unless you know what you are doing" )
+                                            user_descr="Specifies how many different directions to put in the lookup table." +
+                                                       "The default is sensible. Don’t use this unless you know what you’re doing." +
+                                                       "Instead of a number, you can specify FULLY_RANDOM in MDL to generate the" +
+                                                       "directions directly from double precision numbers (but this is slower)." )
         self.radial_subdivisions.init_ref ( parameter_system, "Rad_Sub_Type", 
                                             user_name="Radial Subdivisions", 
                                             user_expr="", 
-                                            user_units="microns", 
-                                            user_descr="Molecules will interact when they get within N microns" )
+                                            user_descr="Specifies how many distances to put in the diffusion look-up table.\n" +
+                                                       "The default is sensible. FULLY_RANDOM is not implemented." )
         self.vacancy_search_distance.init_ref ( parameter_system, "Vac_SD_Type", 
                                                 user_name="Vacancy Search Distance", 
                                                 user_expr="", 
                                                 user_units="microns", 
-                                                user_descr="Surface molecule products can be created at N distance" )
+                                                user_descr="Surface molecule products can be created at r distance.\n" +
+                                                           "Normally, a reaction will not proceed on a surface unless there\n" +
+                                                           "is room to place all products on the single grid element where\n" +
+                                                           "the reaction is initiated. By increasing r from its default value\n" +
+                                                           "of 0, one can specify how far from the reaction’s location, in microns,\n" +
+                                                           "the reaction can place its products. To be useful, r must\n" +
+                                                           "be larger than the longest axis of the grid element on the triangle\n" +
+                                                           "in question. The reaction will then proceed if there is room to\n" +
+                                                           "place its products within a radius r, and will place those products\n" +
+                                                           "as close as possible to the place where the reaction occurs\n" +
+                                                           "(deterministically, so small- scale directional bias is possible)." )
         self.surface_grid_density.init_ref ( parameter_system, "Int_Rad_Type", 
                                              user_name="Surface Grid Density", 
                                              user_expr="10000", 
                                              user_units="count / sq micron", 
-                                             user_descr="Number of molecules that can be stored per square micron" )
+                                             user_descr="Number of molecules that can be stored per square micron.\n" +
+                                                        "Tile all surfaces so that they can hold molecules at N different\n" +
+                                                        "positions per square micron. The default is 10000. For backwards\n" +
+                                                        "compatibility, EFFECTOR_GRID_DENSITY works also in MCell MDL." )
 
     def remove_properties ( self, context ):
         print ( "Removing all Initialization Properties... no collections to remove." )
@@ -3215,7 +3294,10 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         (' page ', "Separate Page for each Plot", ""),
         (' plot ', "One Page, Multiple Plots", ""),
         (' ',      "One Page, One Plot", "")]
-    plot_layout = bpy.props.EnumProperty ( items=plot_layout_enum, name="", default=' plot ' )
+    plot_layout = bpy.props.EnumProperty ( 
+        items=plot_layout_enum, name="", 
+        description="Select the Page and Plot Layout",
+        default=' plot ' )
     plot_legend_enum = [
         ('x', "No Legend", ""),
         ('0', "Legend with Automatic Placement", ""),
@@ -3229,7 +3311,10 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         ('8', "Legend in Lower Center", ""),
         ('9', "Legend in Upper Center", ""),
         ('10', "Legend in Center", "")]
-    plot_legend = bpy.props.EnumProperty ( items=plot_legend_enum, name="", default='0' )
+    plot_legend = bpy.props.EnumProperty ( 
+        items=plot_legend_enum, name="", 
+        description="Select the Legend Display and Placement",
+        default='0' )
     combine_seeds = BoolProperty(
         name="Combine Seeds",
         description="Combine all seeds onto the same plot.",
@@ -3466,7 +3551,8 @@ def show_old_scene_panels ( show=False ):
         try:
             bpy.utils.register_class(cellblender_panels.MCELL_PT_cellblender_preferences)
             bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
+            # bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation_queue)
             bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
             bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)
             bpy.utils.register_class(cellblender_panels.MCELL_PT_model_objects)
@@ -3487,7 +3573,8 @@ def show_old_scene_panels ( show=False ):
         try:
             bpy.utils.unregister_class(cellblender_panels.MCELL_PT_cellblender_preferences)
             bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)
+            # bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation_queue)
             bpy.utils.unregister_class(cellblender_panels.MCELL_PT_viz_results)
             bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
             bpy.utils.unregister_class(cellblender_panels.MCELL_PT_partitions)
@@ -3931,24 +4018,40 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     else:
                         # Use custom icons for some buttons
                         if self.molecule_select:
-                            molecule_img_sel = bpy.data.images.get('mol_s')
-                            mol_s = layout.icon(molecule_img_sel)
-                            bcol.prop ( self, "molecule_select", icon_value=mol_s, text="Molecules" )
+                            if mcell.cellblender_preferences.use_stock_icons:
+                                # Use "stock" icons to check on drawing speed problem
+                                bcol.prop ( self, "reaction_select", icon='FORCE_LENNARDJONES', text="Molecules" )
+                            else:
+                                molecule_img_sel = bpy.data.images.get('mol_s')
+                                mol_s = layout.icon(molecule_img_sel)
+                                bcol.prop ( self, "molecule_select", icon_value=mol_s, text="Molecules" )
                         else:
-                            molecule_img_unsel = bpy.data.images.get('mol_u')
-                            mol_u = layout.icon(molecule_img_unsel)
-                            bcol.prop ( self, "molecule_select", icon_value=mol_u, text="Molecules" )
+                            if mcell.cellblender_preferences.use_stock_icons:
+                                # Use "stock" icons to check on drawing speed problem
+                                bcol.prop ( self, "reaction_select", icon='FORCE_LENNARDJONES', text="Molecules" )
+                            else:
+                                molecule_img_unsel = bpy.data.images.get('mol_u')
+                                mol_u = layout.icon(molecule_img_unsel)
+                                bcol.prop ( self, "molecule_select", icon_value=mol_u, text="Molecules" )
 
                         brow = layout.row()
                         bcol = brow.column()
                         if self.reaction_select:
-                            react_img_sel = bpy.data.images.get('reaction_s')
-                            reaction_s = layout.icon(react_img_sel)
-                            bcol.prop ( self, "reaction_select", icon_value=reaction_s, text="Reactions" )
+                            if mcell.cellblender_preferences.use_stock_icons:
+                                # Use "stock" icons to check on drawing speed problem
+                                bcol.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="Reactions" )
+                            else:
+                                react_img_sel = bpy.data.images.get('reaction_s')
+                                reaction_s = layout.icon(react_img_sel)
+                                bcol.prop ( self, "reaction_select", icon_value=reaction_s, text="Reactions" )
                         else:
-                            react_img_unsel = bpy.data.images.get('reaction_u')
-                            reaction_u = layout.icon(react_img_unsel)
-                            bcol.prop ( self, "reaction_select", icon_value=reaction_u, text="Reactions" )
+                            if mcell.cellblender_preferences.use_stock_icons:
+                                # Use "stock" icons to check on drawing speed problem
+                                bcol.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="Reactions" )
+                            else:
+                                react_img_unsel = bpy.data.images.get('reaction_u')
+                                reaction_u = layout.icon(react_img_unsel)
+                                bcol.prop ( self, "reaction_select", icon_value=reaction_u, text="Reactions" )
 
 
                     current_marker = "After drawing molecules and reactions"
@@ -4054,9 +4157,13 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                 if self.reaction_select:
                     layout.box() # Use as a separator
-                    react_img_sel = bpy.data.images.get('reaction_s')
-                    reaction_s = layout.icon(react_img_sel)
-                    layout.label ( "Defined Reactions", icon_value=reaction_s )
+                    if mcell.cellblender_preferences.use_stock_icons:
+                        # Use "stock" icons to check on drawing speed problem
+                        layout.label ( "Defined Reactions", icon='ARROW_LEFTRIGHT' )
+                    else:
+                        react_img_sel = bpy.data.images.get('reaction_s')
+                        reaction_s = layout.icon(react_img_sel)
+                        layout.label ( "Defined Reactions", icon_value=reaction_s )
                     context.scene.mcell.reactions.draw_layout ( context, layout )
 
                 if self.placement_select:

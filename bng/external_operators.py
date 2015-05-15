@@ -4,9 +4,10 @@ import sys
 import io
 import subprocess
 import json
-
+import sys
 import cellblender
 from cellblender import cellblender_properties, cellblender_operators
+from collections import defaultdict
 #from . import net
 
 # We use per module class registration/unregistration
@@ -18,10 +19,17 @@ def register():
 def unregister():
     bpy.utils.unregister_module(__name__)
 
-def accessFile(filePath):
+def accessFile(filePath,parentOperator):
     if not hasattr(accessFile, 'info'):
-        filePointer = open(filePath + '.json','r')
-        accessFile.info = json.load(filePointer)
+        try:
+            filePointer = open(filePath + '.json','r')
+            accessFile.info = json.load(filePointer)
+        except FileNotFoundError:
+            if filePath.endswith('xml'):
+                parentOperator.report({'ERROR_INVALID_INPUT'},'The file you selected could not be imported. Check if libsbml is correctly installed and whether you selected a valid SBML file')
+            else:
+                parentOperator.report({'ERROR_INVALID_INPUT'},'The file you selected could not be imported.')
+            accessFile.info=defaultdict(list)
     return accessFile.info
 
 
@@ -35,7 +43,7 @@ class EXTERNAL_OT_parameter_add(bpy.types.Operator):
         mcell = context.scene.mcell
         #filePointer= open(filePath + '.json','r')
         #jfile = json.load(filePointer) 
-        jfile = accessFile(filePath)       
+        jfile = accessFile(filePath,self)       
         par_list = jfile['par_list']
         index = -1
         for key in par_list:

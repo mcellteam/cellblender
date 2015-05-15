@@ -1519,11 +1519,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
 
                 error_file_option = mcell.run_simulation.error_file
                 log_file_option = mcell.run_simulation.log_file
-                script_dir_path = os.path.dirname(os.path.realpath(__file__))
-                script_file_path = os.path.join(
-                    script_dir_path, "run_wrapper.py")
                 cellblender.simulation_queue.python_exec = python_path
-                cellblender.simulation_queue.run_wrapper = script_file_path
                 cellblender.simulation_queue.start(mcell_processes)
                 cellblender.simulation_queue.notify = True
 
@@ -1560,8 +1556,8 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                       log_file = None
 
                   mdl_filename = '%s.main.mdl' % (base_name)
-                  mcell_task = '%s -seed %d %s' % (mcell_binary, seed, mdl_filename)
-                  proc = cellblender.simulation_queue.add_task(mcell_task,project_dir)
+                  mcell_args = '-seed %d %s' % (seed, mdl_filename)
+                  proc = cellblender.simulation_queue.add_task(mcell_binary, mcell_args, project_dir)
 
                   self.report({'INFO'}, "Simulation Running")
 

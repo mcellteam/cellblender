@@ -1,11 +1,7 @@
 import bpy
 import os
-import sys
-import io
 import subprocess
-import json
 
-import cellblender
 from cellblender import cellblender_properties, cellblender_operators
 #from . import net
 

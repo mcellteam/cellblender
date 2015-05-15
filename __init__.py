@@ -117,7 +117,7 @@ def register():
     # Unregister and re-register panels to display them in order
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_cellblender_preferences)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)
+    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)         # Need to unregister because it's registered automatically
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation_queue)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_viz_results)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
