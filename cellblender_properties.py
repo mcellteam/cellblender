@@ -861,6 +861,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
             row = layout.row()
             row.prop ( mcell.cellblender_preferences, "tab_autocomplete")
 
+            '''
             box = layout.box()
 
             row = box.row(align=True)
@@ -883,7 +884,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
             else:
                 row.prop(self, "show_extra_options", icon='TRIA_RIGHT', emboss=False)
-
+            '''
                 
 
             
@@ -1443,13 +1444,15 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
                                 "mol_viz_seed_list", mcell.mol_viz,
                                 "active_mol_viz_seed_index", rows=2)
             row = layout.row()
+
             row = layout.row()
             row.label(text="Current Molecule File: "+self.mol_file_name,
                       icon='FILE')
-            row = layout.row()
-            row.template_list("UI_UL_list", "viz_results", mcell.mol_viz,
-                              "mol_file_list", mcell.mol_viz, "mol_file_index",
-                              rows=2)
+# Disabled to explore UI slowdown behavior of Plot Panel and run options subpanel when mol_file_list is large
+#            row = layout.row()
+#            row.template_list("UI_UL_list", "viz_results", mcell.mol_viz,
+#                              "mol_file_list", mcell.mol_viz, "mol_file_index",
+#                              rows=2)
             row = layout.row()
             layout.prop(mcell.mol_viz, "mol_viz_enable")
 
@@ -3567,7 +3570,7 @@ class MCELL_PT_main_panel(bpy.types.Panel):
     def draw(self, context):
         context.scene.mcell.cellblender_main_panel.draw_self(context,self.layout)
 
-
+'''
 class MCELL_PT_main_scene_panel(bpy.types.Panel):
     bl_label = "CellBlender Scene"
     bl_space_type = "PROPERTIES"
@@ -3589,6 +3592,7 @@ class MCELL_PT_main_scene_panel(bpy.types.Panel):
 
     def draw(self, context):
         context.scene.mcell.cellblender_main_panel.draw_self(context,self.layout)
+'''
 
 
 # load_pre callback

@@ -1,9 +1,9 @@
 
 # Linux:
-INSTALL_DIR = ~/.config/blender/2.74/scripts/addons/
+#INSTALL_DIR = ~/.config/blender/2.74/scripts/addons/
 
 # Mac:
-#INSTALL_DIR = ~/Library/Application\ Support/Blender/2.72/scripts/addons/
+INSTALL_DIR = ~/Library/Application\ Support/Blender/2.74/scripts/addons/
 
 SHELL = /bin/sh
 
