@@ -105,6 +105,8 @@ def display_callback(self, context):
 
 import os
 
+
+
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     name = StringProperty(
@@ -157,6 +159,12 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         default=False, description="If selected, the molecule will be "
                                    "included in the visualization data.")
     status = StringProperty(name="Status")
+
+
+    name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    type_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    target_only_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+
 
     def init_properties ( self, parameter_system ):
         self.name = "Molecule_"+str(self.id)
@@ -215,8 +223,11 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         print ( "Name = " + self.name )
 
     def draw_props ( self, layout, molecules, parameter_system ):
-        layout.prop ( self, "name" )
-        layout.prop ( self, "type" )
+
+        parameter_system.draw_prop_with_help ( layout, "Name", self, "name", "name_show_help", self.name_show_help, "Molecule Name\nThis is the name used in Reactions and Display" )
+
+        parameter_system.draw_prop_with_help ( layout, "Molecule Type", self, "type", "type_show_help", self.type_show_help, "Molecule Type\nEither Volume or Surface" )
+
         self.diffusion_constant.draw(layout,parameter_system)
         #self.lr_bar_trigger = False
         
@@ -278,8 +289,15 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         else:
             row.prop(molecules, "show_advanced", icon='TRIA_DOWN',
                      text="Advanced Options", emboss=False)
-            row = box.row()
-            row.prop(self, "target_only")
+            # row = box.row()
+            # row.prop(self, "target_only")
+            parameter_system.draw_prop_with_help ( box, "Target Only", self, "target_only", "target_only_show_help", self.target_only_show_help, 
+                "Target Only - This molecule will not initiate reactions when\n" +
+                "it runs into other molecules. This setting can speed up simulations\n" +
+                "when applied to a molecule at high concentrations that reacts with\n" +
+                "a molecule at low concentrations (it is more efficient for the\n" +
+                "low-concentration molecule to trigger the reactions). This directive\n" +
+                "does not affect unimolecular reactions." )
             self.custom_time_step.draw(box,parameter_system)
             self.custom_space_step.draw(box,parameter_system)
 
