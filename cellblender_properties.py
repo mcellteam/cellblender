@@ -425,11 +425,11 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
 
     def init_properties ( self, parameter_system ):
         self.name = "Release_Pattern"
-        self.delay.init_ref            ( parameter_system, "Rel_Delay_Type", user_name="Release Pattern Delay", user_expr="0",     user_units="s", user_descr="The time at which the release pattern will start." )
-        self.release_interval.init_ref ( parameter_system, "Rel_Int_Type",   user_name="Relese Interval",       user_expr="",      user_units="s", user_descr="During a train, release molecules after every interval.\nDefault is once." )
+        self.delay.init_ref            ( parameter_system, "Rel_Delay_Type", user_name="Release Pattern Delay", user_expr="0",     user_units="s", user_descr="The time at which the release pattern will start.\nDefault is at time zero." )
+        self.release_interval.init_ref ( parameter_system, "Rel_Int_Type",   user_name="Relese Interval",       user_expr="",      user_units="s", user_descr="During a train of releases, release molecules after every t seconds.\nDefault is release only once (t is infinite)." )
         self.train_duration.init_ref   ( parameter_system, "Tr_Dur_Type",    user_name="Train Duration",        user_expr="",      user_units="s", user_descr="The duration of the train before turning off.\nDefault is to never turn off." )
-        self.train_interval.init_ref   ( parameter_system, "Tr_Int_Type",    user_name="Train Interval",        user_expr="",      user_units="s", user_descr="A new train happens every interval.\nDefault is no new trains." )
-        self.number_of_trains.init_ref ( parameter_system, "NTrains_Type",   user_name="Number of Trains",      user_expr="1",     user_units="",  user_descr="Repeat the release process this number of times.\nDefault is one train.", user_int=True )
+        self.train_interval.init_ref   ( parameter_system, "Tr_Int_Type",    user_name="Train Interval",        user_expr="",      user_units="s", user_descr="A new train happens every interval.\nDefault is no new trains.\nThe train interval must not be shorter than the train duration." )
+        self.number_of_trains.init_ref ( parameter_system, "NTrains_Type",   user_name="Number of Trains",      user_expr="1",     user_units="",  user_descr="Repeat the release process for this number of trains of releases.\nDefault is one train.", user_int=True )
 
     def remove_properties ( self, context ):
         print ( "Removing all Release Pattern Properties... no collections to remove." )
