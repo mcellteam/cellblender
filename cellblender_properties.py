@@ -342,6 +342,14 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
                     "If blank, release molecules at start of simulation.")
     status = StringProperty(name="Status")
 
+    name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    shape_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    object_expr_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    orient_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    quantity_type_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+
+
+
     def init_properties ( self, parameter_system ):
         self.name = "Release_Site"
         self.molecule = ""
@@ -2699,18 +2707,44 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                 col = row.column(align=True)
                 col.operator("mcell.release_site_add", icon='ZOOMIN', text="")
                 col.operator("mcell.release_site_remove", icon='ZOOMOUT', text="")
+
                 if len(self.mol_release_list) > 0:
-                    rel = self.mol_release_list[
-                        self.active_release_index]
-                    layout.prop(rel, "name")
+                    rel = self.mol_release_list[self.active_release_index]
+
+                    #layout.prop(rel, "name")
+                    ps.draw_prop_with_help ( layout, "Site Name:", rel, "name", "name_show_help", rel.name_show_help, "Release Site Name" )
+
                     layout.prop_search(rel, "molecule", mcell.molecules,
                                        "molecule_list", text="Molecule",
                                        icon='FORCE_LENNARDJONES')
                     if rel.molecule in mcell.molecules.molecule_list:
                         if mcell.molecules.molecule_list[rel.molecule].type == '2D':
-                            layout.prop(rel, "orient")
+                            #layout.prop(rel, "orient")
+                            ps.draw_prop_with_help ( layout, "Initial Orientation:", rel, "orient", "orient_show_help", rel.orient_show_help,
+                                "Initial Orientation\n" +
+                                "Determines how surface molecules are orginally placed in the surface:\n" +
+                                "  Top Front\n" +
+                                "  Top Back\n" +
+                                "  Mixed\n" )
 
-                    layout.prop(rel, "shape")
+                    #layout.prop(rel, "shape")
+                    ps.draw_prop_with_help ( layout, "Release Shape:", rel, "shape", "shape_show_help", rel.shape_show_help,
+                        "Release Site Shape\n" +
+                        "Defines the shape of the release site. A shape may be:\n" +
+                        "  A geometric cubic region.\n" +
+                        "  A geometric spherical region.\n" +
+                        "  A geometric spherical shell region.\n" +
+                        "  A CellBlender/MCell Object or Region\n" +
+                        " \n" +
+                        "When the release site shape is one of the predefined geometric\n" +
+                        "shapes, CellBlender will provide fields for its location and size.\n" +
+                        " \n" +
+                        "When the release site shape is \"Object/Region\", CellBlender will expect\n" +
+                        "an MCell specification for one of the Objects or Regions defined in\n" +
+                        "your current model (via the \"Model Objects\" panel). For example, if\n" +
+                        "you have an object named \"Cube\", you would enter that name in the\n" +
+                        "Object/Region field. If you've defined a surface region named \"top\"\n" +
+                        "on your Cube, then you would specify that surface as \"Cube[top]\"." )
 
                     if ((rel.shape == 'CUBIC') | (rel.shape == 'SPHERICAL') |
                             (rel.shape == 'SPHERICAL_SHELL')):
@@ -2721,11 +2755,29 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                         rel.diameter.draw(layout,ps)
 
                     if rel.shape == 'OBJECT':
-                        layout.prop(rel, "object_expr")
+                        #layout.prop(rel, "object_expr")
+                        ps.draw_prop_with_help ( layout, "Object/Region:", rel, "object_expr", "object_expr_show_help", rel.object_expr_show_help,
+                            "Release Site Object/Region\n" +
+                            "This field requires an MCell-compatible object expression or region\n" +
+                            "expression for one of the objects or regions defined in your current\n" +
+                            "CellBlender model (via the \"Model Objects\" panel). For example, if\n" +
+                            "you have an object named \"Cube\", you would enter that name in the\n" +
+                            "Object/Region field. If you've defined a surface region named \"top\"\n" +
+                            "on your Cube, then you would specify that surface as \"Cube[top]\"." )
 
                     rel.probability.draw(layout,ps)
             
-                    layout.prop(rel, "quantity_type")
+                    #layout.prop(rel, "quantity_type")
+                    ps.draw_prop_with_help ( layout, "Quantity Type:", rel, "quantity_type", "quantity_type_show_help", rel.quantity_type_show_help,
+                        "Quantity Type\n" +
+                        "Defines the meaning of the Quantity:\n" +
+                        "  Constant Number\n" +
+                        "  Gaussian Number\n" +
+                        "  Concentration / Density\n" +
+                        " \n" +
+                        "The value of this field determines the interpretation of the\n" +
+                        "Quantity to Release field below." )
+
                     rel.quantity.draw(layout,ps)
 
                     if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
