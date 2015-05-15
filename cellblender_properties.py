@@ -717,21 +717,42 @@ def set_old_scene_panels_callback(self, context):
     """ Show or hide the old scene panels based on the show_old_scene_panels boolean property. """
     print ( "Toggling the old scene panels" )
     mcell = context.scene.mcell
-    show_old_scene_panels ( mcell.cellblender_preferences.show_old_scene_panels )
+    prefs = mcell.cellblender_preferences
+    if (prefs.show_scene_panel or prefs.show_tool_panel):
+        # One of the other panels is showing, so it's OK to toggle
+        show_old_scene_panels ( prefs.show_old_scene_panels )
+    else:
+        # No other panels are showing so DON'T ALLOW THIS ONE TO GO AWAY!
+        prefs.show_old_scene_panels = True
+        show_old_scene_panels ( True )
 
 
 def set_scene_panel_callback(self, context):
     """ Show or hide the scene panel based on the show_scene_panel boolean property. """
     print ( "Toggling the scene panel" )
     mcell = context.scene.mcell
-    show_hide_scene_panel ( mcell.cellblender_preferences.show_scene_panel )
+    prefs = mcell.cellblender_preferences
+    if (prefs.show_old_scene_panels or prefs.show_tool_panel):
+        # One of the other panels is showing, so it's OK to toggle
+        show_hide_scene_panel ( prefs.show_scene_panel )
+    else:
+        # No other panels are showing so DON'T ALLOW THIS ONE TO GO AWAY!
+        prefs.show_scene_panel = True
+        show_hide_scene_panel ( True )
 
 
 def set_tool_panel_callback(self, context):
     """ Show or hide the tool panel based on the show_tool_panel boolean property. """
     print ( "Toggling the tool panels" )
     mcell = context.scene.mcell
-    show_hide_tool_panel ( mcell.cellblender_preferences.show_tool_panel )
+    prefs = mcell.cellblender_preferences
+    if (prefs.show_old_scene_panels or prefs.show_scene_panel):
+        # One of the other panels is showing, so it's OK to toggle
+        show_hide_tool_panel ( prefs.show_tool_panel )
+    else:
+        # No other panels are showing so DON'T ALLOW THIS ONE TO GO AWAY!
+        prefs.show_tool_panel = True
+        show_hide_tool_panel ( True )
 
     
 
@@ -3527,7 +3548,8 @@ def show_old_scene_panels ( show=False ):
         try:
             bpy.utils.register_class(cellblender_panels.MCELL_PT_cellblender_preferences)
             bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
+            # bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
+            bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation_queue)
             bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
             bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)
             bpy.utils.register_class(cellblender_panels.MCELL_PT_model_objects)
@@ -3548,7 +3570,8 @@ def show_old_scene_panels ( show=False ):
         try:
             bpy.utils.unregister_class(cellblender_panels.MCELL_PT_cellblender_preferences)
             bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)
+            # bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)
+            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation_queue)
             bpy.utils.unregister_class(cellblender_panels.MCELL_PT_viz_results)
             bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
             bpy.utils.unregister_class(cellblender_panels.MCELL_PT_partitions)
