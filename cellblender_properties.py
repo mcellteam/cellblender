@@ -132,8 +132,20 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         self.variable_rate_switch = False
         self.variable_rate = ""
         self.variable_rate_valid = False
-        self.fwd_rate.init_ref   ( parameter_system, "FW_Rate_Type", user_name="Forward Rate",  user_expr="0", user_units="",  user_descr="Forward Rate" )
-        self.bkwd_rate.init_ref  ( parameter_system, "BW_Rate_Type", user_name="Backward Rate", user_expr="",  user_units="s", user_descr="Backward Rate" )
+        self.fwd_rate.init_ref   ( parameter_system, "FW_Rate_Type", user_name="Forward Rate",  user_expr="0", user_units="",  
+                                   user_descr="Forward Rate\n" +
+                                              "The units of the reaction rate for uni- and bimolecular reactions are:\n" + 
+                                              " [1/s] for unimolecular reactions,\n" +
+                                              " [1/(M * s)] for bimolecular reactions between either\n" +
+                                              "     two volume molecules or a volume molecule and a surface (molecule),\n" +
+                                              " [(um * um) / (N * s)] for bimolecular reactions between two surface molecules." )
+        self.bkwd_rate.init_ref  ( parameter_system, "BW_Rate_Type", user_name="Backward Rate", user_expr="",  user_units="s", 
+                                   user_descr="Backward Rate\n" +
+                                              "The units of the reaction rate for uni- and bimolecular reactions are:\n" + 
+                                              " [1/s] for unimolecular reactions,\n" +
+                                              " [1/(M * s)] for bimolecular reactions between either\n" +
+                                              "     two volume molecules or a volume molecule and a surface (molecule),\n" +
+                                              " [(um * um) / (N * s)] for bimolecular reactions between two surface molecules." )
 
     def remove_properties ( self, context ):
         print ( "Removing all Reaction Properties... no collections to remove." )
@@ -1519,40 +1531,65 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
                                       user_name="Time Step",  
                                       user_expr="1e-6", 
                                       user_units="seconds", 
-                                      user_descr="Simulation Time Step" )
+                                      user_descr="Simulation Time Step\n1e-6 is a common value." )
         self.time_step_max.init_ref ( parameter_system, "Time_Step_Max_Type", 
                                       user_name="Maximum Time Step", 
                                       user_expr="", 
                                       user_units="seconds", 
-                                      user_descr="The longest possible time step" )
+                                      user_descr="The longest possible time step.\n" +
+                                                 "MCell3 will move longer than the specified simulation time step\n" +
+                                                 "if it seems safe. This command makes sure that the longest possible\n" +
+                                                 "time step is no longer than this value (in seconds), even if MCell3\n" +
+                                                 "thinks a longer step would be safe. The default is no limit." )
         self.space_step.init_ref    ( parameter_system, "Space_Step_Type",    
                                       user_name="Space Step",    
                                       user_expr="", 
                                       user_units="microns", 
-                                      user_descr="Have molecules take the same mean diffusion distance" )
+                                      user_descr="Have molecules take the same mean diffusion distance.\n" + 
+                                                 "Have all diffusing molecules take time steps of different duration,\n" + 
+                                                 "chosen so that the mean diffusion distance is N microns for each\n" + 
+                                                 "molecule. By default, all molecules move the same time step." )
         self.interaction_radius.init_ref ( parameter_system, "Int_Rad_Type", 
                                            user_name="Interaction Radius", 
                                            user_expr="", user_units="microns", 
-                                           user_descr="Molecules will interact when they get within N microns" )
+                                           user_descr="Diffusing Volume Molecules will interact when they get within\n" +
+                                                      "N microns of each other.\n" +
+                                                      "The default is:  1 / sqrt(Pi * SurfaceGridDensity)" )
         self.radial_directions.init_ref   ( parameter_system, "Rad_Dir_Type", 
                                             user_name="Radial Directions",   
                                             user_expr="", user_units="microns", 
-                                            user_descr="Number of different directions to put in lookup table\nLeave alone unless you know what you are doing" )
+                                            user_descr="Specifies how many different directions to put in the lookup table." +
+                                                       "The default is sensible. Don’t use this unless you know what you’re doing." +
+                                                       "Instead of a number, you can specify FULLY_RANDOM in MDL to generate the" +
+                                                       "directions directly from double precision numbers (but this is slower)." )
         self.radial_subdivisions.init_ref ( parameter_system, "Rad_Sub_Type", 
                                             user_name="Radial Subdivisions", 
                                             user_expr="", 
-                                            user_units="microns", 
-                                            user_descr="Molecules will interact when they get within N microns" )
+                                            user_descr="Specifies how many distances to put in the diffusion look-up table.\n" +
+                                                       "The default is sensible. FULLY_RANDOM is not implemented." )
         self.vacancy_search_distance.init_ref ( parameter_system, "Vac_SD_Type", 
                                                 user_name="Vacancy Search Distance", 
                                                 user_expr="", 
                                                 user_units="microns", 
-                                                user_descr="Surface molecule products can be created at N distance" )
+                                                user_descr="Surface molecule products can be created at r distance.\n" +
+                                                           "Normally, a reaction will not proceed on a surface unless there\n" +
+                                                           "is room to place all products on the single grid element where\n" +
+                                                           "the reaction is initiated. By increasing r from its default value\n" +
+                                                           "of 0, one can specify how far from the reaction’s location, in microns,\n" +
+                                                           "the reaction can place its products. To be useful, r must\n" +
+                                                           "be larger than the longest axis of the grid element on the triangle\n" +
+                                                           "in question. The reaction will then proceed if there is room to\n" +
+                                                           "place its products within a radius r, and will place those products\n" +
+                                                           "as close as possible to the place where the reaction occurs\n" +
+                                                           "(deterministically, so small- scale directional bias is possible)." )
         self.surface_grid_density.init_ref ( parameter_system, "Int_Rad_Type", 
                                              user_name="Surface Grid Density", 
                                              user_expr="10000", 
                                              user_units="count / sq micron", 
-                                             user_descr="Number of molecules that can be stored per square micron" )
+                                             user_descr="Number of molecules that can be stored per square micron.\n" +
+                                                        "Tile all surfaces so that they can hold molecules at N different\n" +
+                                                        "positions per square micron. The default is 10000. For backwards\n" +
+                                                        "compatibility, EFFECTOR_GRID_DENSITY works also in MCell MDL." )
 
     def remove_properties ( self, context ):
         print ( "Removing all Initialization Properties... no collections to remove." )
