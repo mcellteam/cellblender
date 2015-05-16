@@ -2080,7 +2080,11 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
             create_color_list()
             set_viz_boundaries(context)
 
-            mol_viz_update(self, context)
+            try:
+                mol_viz_update(self, context)
+            except:
+                print( "Unexpected Exception calling mol_viz_update: " + str(sys.exc_info()) )
+
         return {'FINISHED'}
 
 

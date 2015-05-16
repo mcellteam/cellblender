@@ -1556,17 +1556,20 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
     surface_grid_density = PointerProperty ( name="Surface Grid Density", type=parameter_system.Parameter_Reference )
 
     def init_properties ( self, parameter_system ):
+        helptext = "Number of iterations to run"
         self.iterations.init_ref    ( parameter_system, "Iteration_Type", 
                                       user_name="Iterations", 
                                       user_expr="1000",    
                                       user_units="",  
-                                      user_descr="Number of iterations to run",  
+                                      user_descr=helptext,  
                                       user_int=True )
+
+        helptext = "Simulation Time Step\n1e-6 is a common value."
         self.time_step.init_ref     ( parameter_system, "Time_Step_Type", 
                                       user_name="Time Step",  
                                       user_expr="1e-6", 
                                       user_units="seconds", 
-                                      user_descr="Simulation Time Step\n1e-6 is a common value." )
+                                      user_descr=helptext )
         self.time_step_max.init_ref ( parameter_system, "Time_Step_Max_Type", 
                                       user_name="Maximum Time Step", 
                                       user_expr="", 
