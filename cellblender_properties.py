@@ -349,6 +349,8 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     object_expr_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     orient_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     quantity_type_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    mol_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    rel_pattern_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
 
 
@@ -454,6 +456,8 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
     number_of_trains = PointerProperty ( name="Number of Trains",      type=parameter_system.Parameter_Reference )
 
     status = StringProperty(name="Status")
+
+    name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
     def init_properties ( self, parameter_system ):
         self.name = "Release_Pattern"
@@ -2377,6 +2381,9 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
         name="Active Surface Class Index", default=0)
     #surf_class_props_status = StringProperty(name="Status")
 
+    # surf_class_help_title = StringProperty(name="SCT", default="Help on Surface Classes", description="Toggle Showing of Help for Surface Classes." )
+    surf_class_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+
     def build_data_model_from_properties ( self, context ):
         print ( "Surface Classes Panel building Data Model" )
         sc_dm = {}
@@ -2429,6 +2436,76 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( layout )
         else:
             # surf_class = mcell.surface_classes
+            ps = mcell.parameter_system
+
+            helptext = "Surface Classes\n" + \
+                       " \n" + \
+                       "MCell3 allows the user to specify properties of the surfaces\n" + \
+                       "of objects. For example, one may wish to specify that a surface\n" + \
+                       "does not block the diffusion of molecules. Each type of surface\n" + \
+                       "is defined by name, and each surface name must be unique in the\n" + \
+                       "simulation and should not match any molecule names.\n" + \
+                       " \n" + \
+                       "Each Surface Class can associate a number of properties with different molecules:\n" + \
+                       " \n" + \
+                       "     -  REFLECTIVE = name\n" + \
+                       "           If name refers to a volume molecule it is reflected by any surface with\n" + \
+                       "           this surface class. This is the default behavior for volume molecules.\n" + \
+                       "           If name refers to a surface molecule it is reflected by the border of the\n" + \
+                       "           surface with this surface class. Tick marks on the name allow selective\n" + \
+                       "           reflection of volume molecules from only the front or back of a surface\n" + \
+                       "           or selective reflection of surface molecules with only a certain orientation\n" + \
+                       "           from the surface’s border. Using the keyword ALL_MOLECULES\n" + \
+                       "           for name has the effect that all volume molecules are reflected by surfaces\n" + \
+                       "           with this surface class and all surface molecules are reflected by\n" + \
+                       "           the border of the surfaces with this surface class. Using the keyword\n" + \
+                       "           ALL_VOLUME_MOLECULES for the name has the effect that all volume\n" + \
+                       "           molecules are reflected by surfaces with this surface class. Using\n" + \
+                       "           the keyword ALL_SURFACE_MOLECULES has the effect that all\n" + \
+                       "           surface molecules are reflected by the border of the surface with this\n" + \
+                       "           surface class\n" + \
+                       " \n" + \
+                       "     -  TRANSPARENT = name\n" + \
+                       "           If name refers to a volume molecule it passes through all surfaces with\n" + \
+                       "           this surface class. If name refers to a surface molecule it passes through\n" + \
+                       "           the border of the surface with this surface class. This is the default\n" + \
+                       "           behavior for surface molecules. Tick marks onname allow the creation\n" + \
+                       "           of one-way transparent surfaces for volume molecules or oneway\n" + \
+                       "           transparent surface borders for surface molecules. To make a\n" + \
+                       "           surface with this surface class transparent to all volume molecules,\n" + \
+                       "           use ALL_VOLUME_MOLECULES for name. To make a border of the\n" + \
+                       "           surface with this surface class transparent to all surface molecules,\n" + \
+                       "           use ALL_SURFACE_MOLECULES for name. Using the keyword\n" + \
+                       "           ALL_MOLECULES for name has the effect that surfaces with this surface\n" + \
+                       "           class are transparent to all volume molecules and borders of the\n" + \
+                       "           surfaces with this surface class are transparent to all surface molecules.\n" + \
+                       " \n" + \
+                       "     -  ABSORPTIVE = name\n" + \
+                       "           If name refers to a volume molecule it is destroyed if it touches surfaces\n" + \
+                       "           with this surface class. If name refers to a surface molecule it\n" + \
+                       "           is destroyed if it touches the border of the surface with this surface\n" + \
+                       "           class. Tick marks on name allow destruction from only one side of\n" + \
+                       "           the surface for volume molecules or selective destruction for surface\n" + \
+                       "           molecules on the surfaces’s border based on their orientation. To make\n" + \
+                       "           a surface with this surface class absorptive to all volume molecules,\n" + \
+                       "           ALL_VOLUME_MOLECULES can be used for name. To make a border\n" + \
+                       "           of the surface with this surface class absorptive to all surface molecules,\n" + \
+                       "           ALL_SURFACE_MOLECULES can be used for name. Using the keyword\n" + \
+                       "           ALL_MOLECULES has the effect that surfaces with this surface\n" + \
+                       "           class are absorptive for all volume molecules and borders of the surfaces\n" + \
+                       "           with this surface class are absorptive for all surface molecules.\n" + \
+                       " \n" + \
+                       "     -  CLAMP_CONCENTRATION = name = value\n" + \
+                       "           The molecule called name is destroyed if it touches the surface (as if it\n" + \
+                       "           had passed through), and new molecules are created at the surface, as\n" + \
+                       "           if molecules had passed through from the other side at a concentration\n" + \
+                       "           value (units = M). Orientation marks may be used; in this case, the other\n" + \
+                       "           side of the surface is reflective. Note that this command is only used to\n" + \
+                       "           set the effective concentration of a volume molecule at a surface; it is not\n" + \
+                       "           valid to specify a surface molecule. This command can be abbreviated\n" + \
+                       "           as CLAMP_CONC."
+            ps.draw_label_with_help ( layout, "Surface Class Help", self, "surf_class_show_help", self.surf_class_show_help, helptext )
+
 
             row = layout.row()
             col = row.column()
@@ -2667,20 +2744,28 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
           if mcell.release_patterns.release_pattern_list:
               rel_pattern = mcell.release_patterns.release_pattern_list[
                   mcell.release_patterns.active_release_pattern_index]
-              layout.prop(rel_pattern, "name")
+
+
+              helptext = "This field specifies the name for this release pattern\n" + \
+                         " \n" + \
+                         "A Release Pattern is a timing pattern (not a spatial pattern).\n" + \
+                         " \n" + \
+                         "A Release Pattern is generated from these parameters:\n" + \
+                         "     -  Release Pattern Delay\n" + \
+                         "     -  Release Interval\n" + \
+                         "     -  Train Duration\n" + \
+                         "     -  Train Interval\n" + \
+                         "     -  Number of Trains"
+              ps.draw_prop_with_help ( layout, "Pattern Name:", rel_pattern, "name", "name_show_help", rel_pattern.name_show_help, helptext )
+              #layout.prop(rel_pattern, "name")
+
 
               rel_pattern.delay.draw(layout,ps)
               rel_pattern.release_interval.draw(layout,ps)
               rel_pattern.train_duration.draw(layout,ps)
               rel_pattern.train_interval.draw(layout,ps)
               rel_pattern.number_of_trains.draw(layout,ps)
-              """
-              layout.prop(rel_pattern, "delay_str")
-              layout.prop(rel_pattern, "release_interval_str")
-              layout.prop(rel_pattern, "train_duration_str")
-              layout.prop(rel_pattern, "train_interval_str")
-              layout.prop(rel_pattern, "number_of_trains")
-              """
+
 
     def draw_panel ( self, context, panel ):
         """ Create a layout from the panel and draw into it """
@@ -2764,12 +2849,43 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                 if len(self.mol_release_list) > 0:
                     rel = self.mol_release_list[self.active_release_index]
 
+                    helptext = "This field specifies the name for this release site\n" + \
+                               " \n" + \
+                               "A Release Site specifies:\n" + \
+                               "     -  A molecule species to be released\n" + \
+                               "     -  The location/orientation of the release\n" + \
+                               "     -  The probability of the release\n" + \
+                               "     -  The quantity to be released\n" + \
+                               "     -  The timing of the release\n" + \
+                               " \n" + \
+                               "Location/Orientation of Release:\n" + \
+                               "    Location is controlled by the Release Shape field.\n" + \
+                               "    When the shape is a geometric shape, the location is explicit.\n" + \
+                               "    When the shape is an Object or Region, the location is implicit.\n" + \
+                               "    Initial Orientation is available for Surface Molecules only.\n" + \
+                               " \n" + \
+                               "Probability of Release:\n" + \
+                               "    Probability controls the likelihood that the release will actually happen.\n" + \
+                               " \n" + \
+                               "Quantity to Release:\n" + \
+                               "    The quantity to be released can be:\n" + \
+                               "     -  A constant number to be released\n" + \
+                               "     -  A random number chosen from a Gaussian distribution\n" + \
+                               "     -  A concentration / density\n" + \
+                               " \n" + \
+                               "Timing of Release:\n" + \
+                               "    The timing of releases is controlled by the Release Pattern.\n" + \
+                               "    The release pattern field allows selection of:\n" + \
+                               "           -  Explicitly defined timing patterns (Release Patterns Panel)\n" + \
+                               "           -  Named reactions (Reactions Panel)"
+                    ps.draw_prop_with_help ( layout, "Site Name:", rel, "name", "name_show_help", rel.name_show_help, helptext )
                     #layout.prop(rel, "name")
-                    ps.draw_prop_with_help ( layout, "Site Name:", rel, "name", "name_show_help", rel.name_show_help, "Release Site Name" )
 
-                    layout.prop_search(rel, "molecule", mcell.molecules,
-                                       "molecule_list", text="Molecule",
-                                       icon='FORCE_LENNARDJONES')
+                    helptext = "Molecule to Release\n" + \
+                               "Selects the molecule to be released at this site."
+                    #layout.prop_search ( rel, "molecule", mcell.molecules, "molecule_list", text="Molecule", icon='FORCE_LENNARDJONES')
+                    ps.draw_prop_search_with_help ( layout, "Molecule:", rel, "molecule", mcell.molecules, "molecule_list", "mol_show_help", rel.mol_show_help, helptext )
+
                     if rel.molecule in mcell.molecules.molecule_list:
                         if mcell.molecules.molecule_list[rel.molecule].type == '2D':
                             #layout.prop(rel, "orient")
@@ -2837,9 +2953,22 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                     # release_pattern_list here, because we want to be able to
                     # assign either reaction names or release patterns to this
                     # field. This parallels exactly how it works in MCell.
-                    layout.prop_search(rel, "pattern", mcell.release_patterns,  # mcell.release_patterns is of type MCellReleasePatternPropertyGroup
-                                       "release_pattern_rxn_name_list",  
-                                       icon='FORCE_LENNARDJONES')
+                    #
+                    #layout.prop_search(rel, "pattern", mcell.release_patterns,  # mcell.release_patterns is of type MCellReleasePatternPropertyGroup
+                    #                   "release_pattern_rxn_name_list",  
+                    #                   icon='FORCE_LENNARDJONES')
+
+                    helptext = "Release Pattern\n" + \
+                               "Selects a release pattern to follow or a named reaction to trigger releases.\n" + \
+                               " \n" + \
+                               "The Release Pattern generally controls the timing of release events.\n" + \
+                               "This is either done with explicit timing parameters defined in the\n" + \
+                               "Release Patterns panel or implicit timing by specifying reactions that\n" + \
+                               "trigger releases. When reactions are used, the release generally happens\n" + \
+                               "at a location relative to the reaction itself."
+                    #layout.prop_search ( rel, "molecule", mcell.molecules, "molecule_list", text="Molecule", icon='FORCE_LENNARDJONES')
+                    ps.draw_prop_search_with_help ( layout, "Release Pattern:", rel, "pattern", mcell.release_patterns, "release_pattern_rxn_name_list", "rel_pattern_show_help", rel.rel_pattern_show_help, helptext )
+
 
 
     def draw_panel ( self, context, panel ):
