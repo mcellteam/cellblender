@@ -138,20 +138,22 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         self.variable_rate_switch = False
         self.variable_rate = ""
         self.variable_rate_valid = False
-        self.fwd_rate.init_ref   ( parameter_system, "FW_Rate_Type", user_name="Forward Rate",  user_expr="0", user_units="",  
-                                   user_descr="Forward Rate\n" +
-                                              "The units of the reaction rate for uni- and bimolecular reactions are:\n" + 
-                                              " [1/s] for unimolecular reactions,\n" +
-                                              " [1/(M * s)] for bimolecular reactions between either\n" +
-                                              "     two volume molecules or a volume molecule and a surface (molecule),\n" +
-                                              " [(um * um) / (N * s)] for bimolecular reactions between two surface molecules." )
-        self.bkwd_rate.init_ref  ( parameter_system, "BW_Rate_Type", user_name="Backward Rate", user_expr="",  user_units="s", 
-                                   user_descr="Backward Rate\n" +
-                                              "The units of the reaction rate for uni- and bimolecular reactions are:\n" + 
-                                              " [1/s] for unimolecular reactions,\n" +
-                                              " [1/(M * s)] for bimolecular reactions between either\n" +
-                                              "     two volume molecules or a volume molecule and a surface (molecule),\n" +
-                                              " [(um * um) / (N * s)] for bimolecular reactions between two surface molecules." )
+        
+        helptext = "Forward Rate\n" + \
+                   "The units for the reaction rate for uni- and bimolecular reactions is:\n" + \
+                   "  [1/s] for unimolecular reactions,\n" + \
+                   "  [1/(M * s)] for bimolecular reactions between either\n" + \
+                   "      two volume molecules or a volume molecule and a surface molecule,\n" + \
+                   "  [um^2 / (N * s)] for bimolecular reactions between two surface molecules."
+        self.fwd_rate.init_ref   ( parameter_system, "FW_Rate_Type", user_name="Forward Rate",  user_expr="0", user_units="", user_descr=helptext )
+       
+        helptext = "Backward Rate\n" + \
+                  "The units for the reaction rate for uni- and bimolecular reactions is:\n" + \
+                  "  [1/s] for unimolecular reactions,\n" + \
+                  "  [1/(M * s)] for bimolecular reactions between either\n" + \
+                  "      two volume molecules or a volume molecule and a surface molecule,\n" + \
+                  "  [um^2 / (N * s)] for bimolecular reactions between two surface molecules."
+        self.bkwd_rate.init_ref  ( parameter_system, "BW_Rate_Type", user_name="Backward Rate", user_expr="",  user_units="s", user_descr=helptext )
 
     def remove_properties ( self, context ):
         print ( "Removing all Reaction Properties... no collections to remove." )
@@ -356,31 +358,35 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         self.shape = 'CUBIC'
         self.orient = '\''
         self.object_expr = ""
+       
         self.location_x.init_ref  ( parameter_system, "Rel_Loc_Type_X",  user_name="Release Location X",  user_expr="0", user_units="", user_descr="The center of the release site's X coordinate.\nOnly used for geometrical shapes." )
         self.location_y.init_ref  ( parameter_system, "Rel_Loc_Type_Y",  user_name="Release Location Y",  user_expr="0", user_units="", user_descr="The center of the release site's Y coordinate\nOnly used for geometrical shapes." )
         self.location_z.init_ref  ( parameter_system, "Rel_Loc_Type_Z",  user_name="Release Location Z",  user_expr="0", user_units="", user_descr="The center of the release site's Z coordinate\nOnly used for geometrical shapes." )
         self.diameter.init_ref    ( parameter_system, "Diam_Type",       user_name="Site Diameter",       user_expr="0", user_units="", user_descr="Release molecules uniformly within a diameter d.\nNot used for releases on regions." )
-        self.probability.init_ref ( parameter_system, "Rel_Prob_Type",   user_name="Release Probability", user_expr="1", user_units="", user_descr="This release does not occur every time, but rather with probability p.\nEither the whole release occurs or none of it does;\nthe probability does not apply molecule-by-molecule.\np must be in the interval [0;1]." )
-        self.quantity.init_ref    ( parameter_system, "Rel_Quant_Type",  user_name="Quantity to Release", user_expr="",  user_units="", user_descr="Quantity of Molecules to release at this site." +
-              "\n" +
-              "When Quantity Type is Constant Number:\n"+
-              "  Release n molecules. For releases on regions, n can be negative, and\n" +
-              "  the release will then remove molecules of that type from the region. To\n" +
-              "  remove all molecules of a type, just make n large and negative. It is\n" +
-              "  unwise to both add and remove molecules on the same timestep—the\n" +
-              "  order of addition and removal is not defined in that case. This directive\n" +
-              "  is not used for the LIST shape, as every molecule is specified.\n" +
-              "  Concentration units: molar. Density units: molecules per square micron\n" +
-              "\n" +
-              "When Quantity Type is Gaussian Number:\n"+
-              "  Release molecules according to a Gaussian distribution with this\n" +
-              "  quantity specifying the mean for the number to release.\n" +
-              "\n" +
-              "When Quantity Type is Concentration / Density:\n"+
-              "  Release molecules at concentration c molar for volumes and d\n" +
-              "  molecules per square micron for surfaces. Neither can be used\n" +
-              "  for the LIST shape; DENSITY is only valid for regions." )
-        self.stddev.init_ref      ( parameter_system, "Rel_StdDev_Type", user_name="Standard Deviation",  user_expr="0", user_units="", user_descr="Standard Deviation of number to release\nwhen Quantity Type is Gaussian Number" )
+        self.probability.init_ref ( parameter_system, "Rel_Prob_Type",   user_name="Release Probability", user_expr="1", user_units="", user_descr="This release does not have to occur every time, but rather with probability p.\nEither the whole release occurs or none of it does;\nthe probability does not apply molecule-by-molecule.\np must be in the interval [0;1]." )
+
+        helptext = "Quantity of Molecules to release at this site." + \
+                "\n" + \
+                "When Quantity Type is Constant Number:\n" + \
+                "  Release n molecules. For releases on regions, n can be negative, and\n" + \
+                "  the release will then remove molecules of that type from the region. To\n" + \
+                "  remove all molecules of a type, just make n large and negative. It is\n" + \
+                "  unwise to both add and remove molecules on the same timestep—the\n" + \
+                "  order of addition and removal is not defined in that case. This directive\n" + \
+                "  is not used for the LIST shape, as every molecule is specified.\n" + \
+                "  Concentration units: molar. Density units: molecules per square micron\n" + \
+                "\n" + \
+                "When Quantity Type is Gaussian Number:\n" + \
+                "  Defines the mean of the Quantity of molecules to be released.\n" + \
+                "\n" + \
+                "When Quantity Type is Concentration / Density:\n" + \
+                "  Release molecules at concentration c molar for volumes and d\n" + \
+                "  molecules per square micron for surfaces. Neither can be used\n" + \
+                "  for the LIST shape; DENSITY is only valid for regions."
+        self.quantity.init_ref    ( parameter_system, "Rel_Quant_Type",  user_name="Quantity to Release", user_expr="",  user_units="", user_descr=helptext )
+
+        helptext = "Standard Deviation of number to release\nwhen Quantity Type is Gaussian Number"
+        self.stddev.init_ref      ( parameter_system, "Rel_StdDev_Type", user_name="Standard Deviation",  user_expr="0", user_units="", user_descr=helptext )
 
     def remove_properties ( self, context ):
         print ( "Removing all Molecule Release Properties... no collections to remove." )
@@ -451,6 +457,7 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
 
     def init_properties ( self, parameter_system ):
         self.name = "Release_Pattern"
+        helptext = ""
         self.delay.init_ref            ( parameter_system, "Rel_Delay_Type", user_name="Release Pattern Delay", user_expr="0",     user_units="s", user_descr="The time at which the release pattern will start.\nDefault is at time zero." )
         self.release_interval.init_ref ( parameter_system, "Rel_Int_Type",   user_name="Relese Interval",       user_expr="",      user_units="s", user_descr="During a train of releases, release molecules after every t seconds.\nDefault is release only once (t is infinite)." )
         self.train_duration.init_ref   ( parameter_system, "Tr_Dur_Type",    user_name="Train Duration",        user_expr="",      user_units="s", user_descr="The duration of the train before turning off.\nDefault is to never turn off." )
@@ -923,9 +930,6 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
             row = layout.row()
             row.prop ( mcell.cellblender_preferences, "double_sided" )
 
-            row = layout.row()
-            row.prop ( mcell.cellblender_preferences, "tab_autocomplete")
-
             box = layout.box()
 
             row = box.row(align=True)
@@ -933,6 +937,8 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
             if self.show_extra_options:
                 row.prop(self, "show_extra_options", icon='TRIA_DOWN', emboss=False)
 
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "tab_autocomplete")
                 row = box.row()
                 row.prop(mcell.cellblender_preferences, "show_tool_panel")
                 row = box.row()
@@ -1570,64 +1576,78 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
                                       user_expr="1e-6", 
                                       user_units="seconds", 
                                       user_descr=helptext )
+       
+        helptext = "The longest possible time step.\n" + \
+                   "MCell3 will move longer than the specified simulation time step\n" + \
+                   "if it seems safe. This command makes sure that the longest possible\n" + \
+                   "time step is no longer than this value (in seconds), even if MCell3\n" + \
+                   "thinks a longer step would be safe. The default is no limit."
         self.time_step_max.init_ref ( parameter_system, "Time_Step_Max_Type", 
                                       user_name="Maximum Time Step", 
                                       user_expr="", 
                                       user_units="seconds", 
-                                      user_descr="The longest possible time step.\n" +
-                                                 "MCell3 will move longer than the specified simulation time step\n" +
-                                                 "if it seems safe. This command makes sure that the longest possible\n" +
-                                                 "time step is no longer than this value (in seconds), even if MCell3\n" +
-                                                 "thinks a longer step would be safe. The default is no limit." )
+                                      user_descr=helptext )
+       
+        helptext = "Have molecules take the same mean diffusion distance.\n" + \
+                   "Have all diffusing molecules take time steps of different duration,\n" + \
+                   "chosen so that the mean diffusion distance is N microns for each\n" + \
+                   "molecule. By default, all molecules move the same time step."
         self.space_step.init_ref    ( parameter_system, "Space_Step_Type",    
                                       user_name="Space Step",    
                                       user_expr="", 
                                       user_units="microns", 
-                                      user_descr="Have molecules take the same mean diffusion distance.\n" + 
-                                                 "Have all diffusing molecules take time steps of different duration,\n" + 
-                                                 "chosen so that the mean diffusion distance is N microns for each\n" + 
-                                                 "molecule. By default, all molecules move the same time step." )
+                                      user_descr=helptext )
+       
+        helptext = "Diffusing Volume Molecules will interact when they get within\n" + \
+                   "N microns of each other.\n" + \
+                   "The default is:  1 / sqrt(Pi * SurfaceGridDensity)"
         self.interaction_radius.init_ref ( parameter_system, "Int_Rad_Type", 
                                            user_name="Interaction Radius", 
                                            user_expr="", user_units="microns", 
-                                           user_descr="Diffusing Volume Molecules will interact when they get within\n" +
-                                                      "N microns of each other.\n" +
-                                                      "The default is:  1 / sqrt(Pi * SurfaceGridDensity)" )
+                                           user_descr=helptext )
+       
+        helptext = "Specifies how many different directions to put in the lookup table." + \
+                   "The default is sensible. Don’t use this unless you know what you’re doing." + \
+                   "Instead of a number, you can specify FULLY_RANDOM in MDL to generate the" + \
+                   "directions directly from double precision numbers (but this is slower)."
         self.radial_directions.init_ref   ( parameter_system, "Rad_Dir_Type", 
                                             user_name="Radial Directions",   
                                             user_expr="", user_units="microns", 
-                                            user_descr="Specifies how many different directions to put in the lookup table." +
-                                                       "The default is sensible. Don’t use this unless you know what you’re doing." +
-                                                       "Instead of a number, you can specify FULLY_RANDOM in MDL to generate the" +
-                                                       "directions directly from double precision numbers (but this is slower)." )
+                                            user_descr=helptext )
+       
+        helptext = "Specifies how many distances to put in the diffusion look-up table.\n" + \
+                   "The default is sensible. FULLY_RANDOM is not implemented."
         self.radial_subdivisions.init_ref ( parameter_system, "Rad_Sub_Type", 
                                             user_name="Radial Subdivisions", 
                                             user_expr="", 
-                                            user_descr="Specifies how many distances to put in the diffusion look-up table.\n" +
-                                                       "The default is sensible. FULLY_RANDOM is not implemented." )
+                                            user_descr=helptext )
+       
+        helptext = "Surface molecule products can be created at r distance.\n" + \
+                   "Normally, a reaction will not proceed on a surface unless there\n" + \
+                   "is room to place all products on the single grid element where\n" + \
+                   "the reaction is initiated. By increasing r from its default value\n" + \
+                   "of 0, one can specify how far from the reaction’s location, in microns,\n" + \
+                   "the reaction can place its products. To be useful, r must\n" + \
+                   "be larger than the longest axis of the grid element on the triangle\n" + \
+                   "in question. The reaction will then proceed if there is room to\n" + \
+                   "place its products within a radius r, and will place those products\n" + \
+                   "as close as possible to the place where the reaction occurs\n" + \
+                   "(deterministically, so small- scale directional bias is possible)."
         self.vacancy_search_distance.init_ref ( parameter_system, "Vac_SD_Type", 
                                                 user_name="Vacancy Search Distance", 
                                                 user_expr="", 
                                                 user_units="microns", 
-                                                user_descr="Surface molecule products can be created at r distance.\n" +
-                                                           "Normally, a reaction will not proceed on a surface unless there\n" +
-                                                           "is room to place all products on the single grid element where\n" +
-                                                           "the reaction is initiated. By increasing r from its default value\n" +
-                                                           "of 0, one can specify how far from the reaction’s location, in microns,\n" +
-                                                           "the reaction can place its products. To be useful, r must\n" +
-                                                           "be larger than the longest axis of the grid element on the triangle\n" +
-                                                           "in question. The reaction will then proceed if there is room to\n" +
-                                                           "place its products within a radius r, and will place those products\n" +
-                                                           "as close as possible to the place where the reaction occurs\n" +
-                                                           "(deterministically, so small- scale directional bias is possible)." )
+                                                user_descr=helptext )
+       
+        helptext = "Number of molecules that can be stored per square micron.\n" + \
+                   "Tile all surfaces so that they can hold molecules at N different\n" + \
+                   "positions per square micron. The default is 10000. For backwards\n" + \
+                   "compatibility, EFFECTOR_GRID_DENSITY works also in MCell MDL."
         self.surface_grid_density.init_ref ( parameter_system, "Int_Rad_Type", 
                                              user_name="Surface Grid Density", 
                                              user_expr="10000", 
                                              user_units="count / sq micron", 
-                                             user_descr="Number of molecules that can be stored per square micron.\n" +
-                                                        "Tile all surfaces so that they can hold molecules at N different\n" +
-                                                        "positions per square micron. The default is 10000. For backwards\n" +
-                                                        "compatibility, EFFECTOR_GRID_DENSITY works also in MCell MDL." )
+                                             user_descr=helptext )
 
     def remove_properties ( self, context ):
         print ( "Removing all Initialization Properties... no collections to remove." )
@@ -1921,6 +1941,10 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         name="Useless Volume Orientation", default='WARNING')
 
 
+    acc3D_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    center_on_grid_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    micro_rev_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
 
@@ -1952,12 +1976,41 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
                 self.vacancy_search_distance.draw(box,ps)
                 self.surface_grid_density.draw(box,ps)
 
-                row = box.row()
-                row.prop(mcell.initialization, "accurate_3d_reactions")
-                row = box.row()
-                row.prop(mcell.initialization, "center_molecules_grid")
-                row = box.row()
-                row.prop(mcell.initialization, "microscopic_reversibility")
+                #row = box.row()
+                # row.prop(mcell.initialization, "accurate_3d_reactions")
+                helptext = "Accurate 3D Reactions\n" + \
+                           "Specifies which method to use for computing 3D molecule-molecule\n" + \
+                           "interactions. If value is TRUE, then molecules will look\n" + \
+                           "through partition boundaries for potential interacting\n" + \
+                           "partners – this is slower but more accurate. If boolean is\n" + \
+                           "FALSE, then molecule interaction disks will be clipped at partition\n" + \
+                           "boundaries and probabilities adjusted to get the correct rate – \n" + \
+                           "this is faster but can be less accurate. The default is TRUE."
+                ps.draw_prop_with_help ( box, "Accurate 3D Reactions", mcell.initialization, "accurate_3d_reactions", "acc3D_show_help", self.acc3D_show_help, helptext )
+                
+                #row = box.row()
+                #row.prop(mcell.initialization, "center_molecules_grid")
+                helptext = "Center Molecules on Grid\n" + \
+                           "If boolean is set to TRUE, then all molecules on a surface will be\n" + \
+                           "located exactly at the center of their grid element. If FALSE, the\n" + \
+                           "molecules will be randomly located when placed, and reactions\n" + \
+                           "will take place at the location of the target (or the site of impact\n" + \
+                           "in the case of 3D molecule/surface reactions). The default is FALSE."
+                ps.draw_prop_with_help ( box, "Center Molecules on Grid", mcell.initialization, "center_molecules_grid", "center_on_grid_show_help", self.center_on_grid_show_help, helptext )
+
+                #row = box.row()
+                #row.prop(mcell.initialization, "microscopic_reversibility")
+                helptext = "Microscopic Reversibility\n" + \
+                           "If value is set to OFF, then binding- unbinding reactions between\n" + \
+                           "molecules will be somewhat more efficient but may not be accurate\n" + \
+                           "if the probability of binding is high (close to 1).\n" + \
+                           "If ON, a more computationally demanding routine will be used to\n" + \
+                           "make sure binding- unbinding is more similar in both directions.\n" + \
+                           "If value is set to SURFACE_ONLY or VOLUME_ONLY, the more\n" + \
+                           "accurate routines will be used only for reactions at surfaces\n" + \
+                           "or only for those in the volume. OFF is the default."
+                ps.draw_prop_with_help ( box, "Microscopic Reversibility", mcell.initialization, "microscopic_reversibility", "micro_rev_show_help", self.micro_rev_show_help, helptext )
+
             else:
                 row.prop(mcell.initialization, "advanced", icon='TRIA_RIGHT',
                          text="Advanced Options", emboss=False)
@@ -2257,35 +2310,32 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
                     rxn = self.reaction_list[
                         self.active_rxn_index]
 
-                    #layout.prop(rxn, "reactants")
-                    ps.draw_prop_with_help ( layout, "Reactants:", rxn, "reactants", "reactants_show_help", rxn.reactants_show_help, 
-                         "Reactants\nThe reactants may contain one, two, or three molecule names\n" +
-                         "separated with the plus ('+') sign. Molecules in the reactants\n" +
-                         "list may also contain orientation marks (' or , or ;) as needed." )
+                    helptext = "Reactants\nThe reactants may contain one, two, or three molecule names\n" + \
+                               "separated with the plus ('+') sign. Molecules in the reactants\n" + \
+                               "list may also contain orientation marks (' or , or ;) as needed."
+                    ps.draw_prop_with_help ( layout, "Reactants:", rxn, "reactants", "reactants_show_help", rxn.reactants_show_help, helptext )
 
-                    #layout.prop(rxn, "type")
-                    ps.draw_prop_with_help ( layout, "Reaction Type:", rxn, "type", "rxn_type_show_help", rxn.rxn_type_show_help, 
-                         "Reaction Type\n  ->   Unidirectional Reaction\n" +
-                                        "  <->  Bidirectional Reaction" )
+                    helptext = "Reaction Type\n  ->   Unidirectional/Irreversible Reaction\n" + \
+                               "  <->  Bidirectional/Reversible Reaction"
+                    ps.draw_prop_with_help ( layout, "Reaction Type:", rxn, "type", "rxn_type_show_help", rxn.rxn_type_show_help, helptext )
 
-                    #layout.prop(rxn, "products")
-                    ps.draw_prop_with_help ( layout, "Products:", rxn, "products", "products_show_help", rxn.products_show_help, 
-                         "Products\nThe products list may contain an arbitrary number of\n" +
-                         "molecule names separated with the plus ('+') sign or NULL.\n" +
-                         "Molecules in the products list may also contain orientation\n" +
-                         "marks  (' or , or ;) as needed." )
+                    helptext = "Products\nThe products list may contain an arbitrary number of\n" + \
+                               "molecule names separated with the plus ('+') sign.\n" + \
+                               "Molecules may also use NULL to specify no products.\n" + \
+                               "Molecules in the products list may also contain orientation\n" + \
+                               "marks  (' or , or ;) as needed."
+                    ps.draw_prop_with_help ( layout, "Products:", rxn, "products", "products_show_help", rxn.products_show_help, helptext )
 
-                    #layout.prop(rxn, "variable_rate_switch")
-                    ps.draw_prop_with_help ( layout, "Enable Variable Rate", rxn, "variable_rate_switch", "variable_rate_switch_show_help", rxn.variable_rate_switch_show_help, 
-                         "Variable Rate Flag\n" +
-                         "When enabled, the reaction rate is given as a function of time\n" +
-                         "in the form of a 2 column table contained in a text file.\n" +
-                         "The first column in the file contains time, and the second\n" +
-                         "column contains the rate at that time.\n" +
-                         " \n" +
-                         "When enabled, the normal rate constants will be replaced with\n" +
-                         "a file selection control that will allow you to navigate to the\n" +
-                         "file containing the two columns." )
+                    helptext = "Variable Rate Flag\n" + \
+                               "When enabled, the reaction rate is given as a function of time\n" + \
+                               "in the form of a 2 column table contained in a text file.\n" + \
+                               "The first column in the file specifies the time (in seconds),\n" + \
+                               "and the second column contains the rate at that time.\n" + \
+                               " \n" + \
+                               "When enabled, the normal rate constants will be replaced with\n" + \
+                               "a file selection control that will allow you to navigate to the\n" + \
+                               "file containing the two columns."
+                    ps.draw_prop_with_help ( layout, "Enable Variable Rate", rxn, "variable_rate_switch", "variable_rate_switch_show_help", rxn.variable_rate_switch_show_help, helptext )
 
                     if rxn.variable_rate_switch:
                         layout.operator("mcell.variable_rate_add", icon='FILESEL')
@@ -2307,9 +2357,9 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
                             #rxn.bkwd_rate.draw_in_new_row(layout)
                             rxn.bkwd_rate.draw(layout,ps)
 
-                    #layout.prop(rxn, "rxn_name")
-                    ps.draw_prop_with_help ( layout, "Reaction Name:", rxn, "rxn_name", "rxn_name_show_help", rxn.rxn_name_show_help, 
-                         "Reaction Name\nReactions may be named to be referred to by count statments." )
+                    helptext = "Reaction Name\nReactions may be named to be referred to by\n" + \
+                               "count statements or reaction driven molecule release / placement."
+                    ps.draw_prop_with_help ( layout, "Reaction Name:", rxn, "rxn_name", "rxn_name_show_help", rxn.rxn_name_show_help, helptext )
 
             else:
                 row.label(text="Define at least one molecule", icon='ERROR')
@@ -2724,30 +2774,29 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                         if mcell.molecules.molecule_list[rel.molecule].type == '2D':
                             #layout.prop(rel, "orient")
                             ps.draw_prop_with_help ( layout, "Initial Orientation:", rel, "orient", "orient_show_help", rel.orient_show_help,
-                                "Initial Orientation\n" +
-                                "Determines how surface molecules are orginally placed in the surface:\n" +
-                                "  Top Front\n" +
-                                "  Top Back\n" +
+                                "Initial Orientation\n" + \
+                                "Determines how surface molecules are orginally placed in the surface:\n" + \
+                                "  Top Front\n" + \
+                                "  Top Back\n" + \
                                 "  Mixed\n" )
 
-                    #layout.prop(rel, "shape")
-                    ps.draw_prop_with_help ( layout, "Release Shape:", rel, "shape", "shape_show_help", rel.shape_show_help,
-                        "Release Site Shape\n" +
-                        "Defines the shape of the release site. A shape may be:\n" +
-                        "  A geometric cubic region.\n" +
-                        "  A geometric spherical region.\n" +
-                        "  A geometric spherical shell region.\n" +
-                        "  A CellBlender/MCell Object or Region\n" +
-                        " \n" +
-                        "When the release site shape is one of the predefined geometric\n" +
-                        "shapes, CellBlender will provide fields for its location and size.\n" +
-                        " \n" +
-                        "When the release site shape is \"Object/Region\", CellBlender will expect\n" +
-                        "an MCell specification for one of the Objects or Regions defined in\n" +
-                        "your current model (via the \"Model Objects\" panel). For example, if\n" +
-                        "you have an object named \"Cube\", you would enter that name in the\n" +
-                        "Object/Region field. If you've defined a surface region named \"top\"\n" +
-                        "on your Cube, then you would specify that surface as \"Cube[top]\"." )
+                    helptext = "Release Site Shape\n" + \
+                               "Defines the shape of the release site. A shape may be:\n" + \
+                               "  A geometric cubic region.\n" + \
+                               "  A geometric spherical region.\n" + \
+                               "  A geometric spherical shell region.\n" + \
+                               "  A CellBlender/MCell Object or Region\n" + \
+                               " \n" + \
+                               "When the release site shape is one of the predefined geometric\n" + \
+                               "shapes, CellBlender will provide fields for its location and size.\n" + \
+                               " \n" + \
+                               "When the release site shape is \"Object/Region\", CellBlender will expect\n" + \
+                               "an MCell specification for one of the Objects or Regions defined in\n" + \
+                               "your current model (via the \"Model Objects\" panel). For example, if\n" + \
+                               "you have an object named \"Cube\", you would enter that name in the\n" + \
+                               "Object/Region field. If you've defined a surface region named \"top\"\n" + \
+                               "on your Cube, then you would specify that surface as \"Cube[top]\"."
+                    ps.draw_prop_with_help ( layout, "Release Shape:", rel, "shape", "shape_show_help", rel.shape_show_help, helptext )
 
                     if ((rel.shape == 'CUBIC') | (rel.shape == 'SPHERICAL') |
                             (rel.shape == 'SPHERICAL_SHELL')):
@@ -2758,28 +2807,26 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                         rel.diameter.draw(layout,ps)
 
                     if rel.shape == 'OBJECT':
-                        #layout.prop(rel, "object_expr")
-                        ps.draw_prop_with_help ( layout, "Object/Region:", rel, "object_expr", "object_expr_show_help", rel.object_expr_show_help,
-                            "Release Site Object/Region\n" +
-                            "This field requires an MCell-compatible object expression or region\n" +
-                            "expression for one of the objects or regions defined in your current\n" +
-                            "CellBlender model (via the \"Model Objects\" panel). For example, if\n" +
-                            "you have an object named \"Cube\", you would enter that name in the\n" +
-                            "Object/Region field. If you've defined a surface region named \"top\"\n" +
-                            "on your Cube, then you would specify that surface as \"Cube[top]\"." )
+                        helptext = "Release Site Object/Region\n" + \
+                                   "This field requires an MCell-compatible object expression or region\n" + \
+                                   "expression for one of the objects or regions defined in your current\n" + \
+                                   "CellBlender model (via the \"Model Objects\" panel). For example, if\n" + \
+                                   "you have an object named \"Cube\", you would enter that name in the\n" + \
+                                   "Object/Region field. If you've defined a surface region named \"top\"\n" + \
+                                   "on your Cube, then you would specify that surface as \"Cube[top]\"."
+                        ps.draw_prop_with_help ( layout, "Object/Region:", rel, "object_expr", "object_expr_show_help", rel.object_expr_show_help, helptext )
 
                     rel.probability.draw(layout,ps)
             
-                    #layout.prop(rel, "quantity_type")
-                    ps.draw_prop_with_help ( layout, "Quantity Type:", rel, "quantity_type", "quantity_type_show_help", rel.quantity_type_show_help,
-                        "Quantity Type\n" +
-                        "Defines the meaning of the Quantity:\n" +
-                        "  Constant Number\n" +
-                        "  Gaussian Number\n" +
-                        "  Concentration / Density\n" +
-                        " \n" +
-                        "The value of this field determines the interpretation of the\n" +
-                        "Quantity to Release field below." )
+                    helptext = "Quantity Type\n" + \
+                               "Defines the meaning of the Quantity:\n" + \
+                               "  Constant Number\n" + \
+                               "  Gaussian Number\n" + \
+                               "  Concentration / Density\n" + \
+                               " \n" + \
+                               "The value of this field determines the interpretation of the\n" + \
+                               "Quantity to Release field below."
+                    ps.draw_prop_with_help ( layout, "Quantity Type:", rel, "quantity_type", "quantity_type_show_help", rel.quantity_type_show_help, helptext )
 
                     rel.quantity.draw(layout,ps)
 
