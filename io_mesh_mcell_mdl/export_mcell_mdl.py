@@ -1024,9 +1024,9 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
     ps = mcell.parameter_system
 
     out_file.write("REACTION_DATA_OUTPUT\n{\n")
-    #rxn_step = mcell.initialization.time_step.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)
-    out_file.write("  STEP=%s\n" % mcell.initialization.time_step.get_as_string(
-                   ps.panel_parameter_list, ps.export_as_expressions))
+    rxn_step = mcell.rxn_output.rxn_step.get_as_string(
+        ps.panel_parameter_list, ps.export_as_expressions)
+    out_file.write("  STEP=%s\n" % rxn_step)
 
     for rxn_output in rxn_output_list:
         if rxn_output.rxn_or_mol == 'Reaction':
@@ -1061,9 +1061,9 @@ def save_rxn_output_temp_mdl(context, out_file, rxn_output_list):
     ps = mcell.parameter_system
 
     out_file.write("REACTION_DATA_OUTPUT\n{\n")
-    #rxn_step = mcell.initialization.time_step.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)
-    out_file.write("  STEP=%s\n" % mcell.initialization.time_step.get_as_string(
-                   ps.panel_parameter_list, ps.export_as_expressions))
+    rxn_step = mcell.rxn_output.rxn_step.get_as_string(
+        ps.panel_parameter_list, ps.export_as_expressions)
+    out_file.write("  STEP=%s\n" % rxn_step)
 
     
     for rxn_output in rxn_output_list:
