@@ -3551,6 +3551,8 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
     complex_rxn_output_list = CollectionProperty(
         type=MCellReactionOutputPropertyTemp,name="Temporary output list")
     
+    rxn_step = PointerProperty ( name="Step",
+        type=parameter_system.Parameter_Reference )
     active_rxn_output_index = IntProperty(
         name="Active Reaction Output Index", default=0)
     rxn_output_list = CollectionProperty(
@@ -3589,10 +3591,17 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         description="Use Molecule Colors for line colors.",
         default=False)
 
+    def init_properties ( self, parameter_system ):
+        self.rxn_step.init_ref (
+            parameter_system, "Rxn_Output_Step", user_name="Step", 
+            user_expr="", user_units="", user_descr="Step\n"
+            "Output reaction data every t seconds.") 
+
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output Panel building Data Model" )
         ro_dm = {}
         ro_dm['data_model_version'] = "DM_2014_10_24_1638"
+        ro_dm['rxn_step'] = self.rxn_step.get_expr()
         ro_dm['plot_layout'] = self.plot_layout
         ro_dm['plot_legend'] = self.plot_legend
         ro_dm['combine_seeds'] = self.combine_seeds
@@ -3610,11 +3619,18 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] == "DM_2014_10_24_1638":
+            print ( "Adding Reaction Output Step to data model." )
+            dm['rxn_step'] = ""
+            dm['data_model_version'] = "DM_2015_05_15_1214"
+
+        if dm['data_model_version'] != "DM_2015_05_15_1214":
             print ( "Error: Unable to upgrade MCellReactionOutputPropertyGroup data model to current version." )
         
+        self.init_properties(context.scene.mcell.parameter_system)
         self.plot_layout = dm["plot_layout"]
         self.plot_legend = dm["plot_legend"]
+        self.rxn_step.set_expr ( dm["rxn_step"] )
         self.combine_seeds = dm["combine_seeds"]
         self.mol_colors = dm["mol_colors"]
         while len(self.rxn_output_list) > 0:
@@ -3646,10 +3662,12 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
     def draw_layout ( self, context, layout ):
         """ Draw the reaction output "panel" within the layout """
         mcell = context.scene.mcell
+        ps = mcell.parameter_system
 
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
         else:
+            self.rxn_step.draw(layout,ps)
             row = layout.row()
             if mcell.molecules.molecule_list:
                 col = row.column()
