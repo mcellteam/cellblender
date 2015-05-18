@@ -22,7 +22,8 @@ import atexit
 
 bl_info = {
     "name": "CellBlender",
-    "author": "Tom Bartol, Jacob Czech, Markus Dittrich, Bob Kuczewski",
+    "author": "Tom Bartol, Dipak Barua, Jacob Czech, Markus Dittrich, "
+        "James Faeder, Bob Kuczewski, Devin Sullivan, Jose Juan Tapia",
     "version": (1, 0, 0),
     "blender": (2, 66, 1),
     "api": 55057,
