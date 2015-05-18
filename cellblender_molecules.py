@@ -105,6 +105,8 @@ def display_callback(self, context):
 
 import os
 
+
+
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     name = StringProperty(
@@ -158,12 +160,32 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                                    "included in the visualization data.")
     status = StringProperty(name="Status")
 
+
+    name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    type_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    target_only_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+
+
     def init_properties ( self, parameter_system ):
         self.name = "Molecule_"+str(self.id)
 
-        self.diffusion_constant.init_ref   ( parameter_system, "Mol_Diff_Const_Type", user_name="Diffusion Constant",   user_expr="0", user_units="cm^2/sec", user_descr="Molecule Diffusion Constant\nThis molecule diffuses in space with diffusion constant D.\nD can be zero, in which case the molecule doesn’t move." )
-        self.custom_time_step.init_ref     ( parameter_system, "Mol_Time_Step_Type",  user_name="Custom Time Step",     user_expr="",  user_units="seconds",  user_descr="Molecule Custom Time Step\nThis molecule should take timesteps of length t (in seconds).\n Use either this or CUSTOM_SPACE_STEP, not both." )
-        self.custom_space_step.init_ref    ( parameter_system, "Mol_Space_Step_Type", user_name="Custom Space Step",    user_expr="",  user_units="microns",  user_descr="Molecule Custom Space Step\nThis molecule should take steps of average length L (in microns).\nIf you use this directive, do not set CUSTOM_TIME_STEP.\nProviding a CUSTOM_SPACE_STEP for a molecule overrides a potentially\npresent global SPACE_STEP for this particular molecule." )
+        helptext = "Molecule Diffusion Constant\n" + \
+                   "This molecule diffuses in space with 3D diffusion constant for volume molecules.\n" + \
+                   "This molecule diffuses on a surface with 2D diffusion constant for surface molecules.\n" + \
+                   "The Diffusion Constant can be zero, in which case the molecule doesn’t move."
+        self.diffusion_constant.init_ref   ( parameter_system, "Mol_Diff_Const_Type", user_name="Diffusion Constant",   user_expr="0", user_units="cm^2/sec", user_descr=helptext )
+
+        helptext = "Molecule Custom Time Step\n" + \
+                   "This molecule should take timesteps of this length (in seconds).\n" + \
+                   "Use either this or CUSTOM_SPACE_STEP, not both."
+        self.custom_time_step.init_ref     ( parameter_system, "Mol_Time_Step_Type",  user_name="Custom Time Step",     user_expr="",  user_units="seconds",  user_descr=helptext )
+
+        helptext = "Molecule Custom Space Step\n" + \
+                   "This molecule should take steps of this average length (in microns).\n" + \
+                   "If you use this directive, do not set CUSTOM_TIME_STEP.\n" + \
+                   "Providing a CUSTOM_SPACE_STEP for a molecule overrides a potentially\n" + \
+                   "present global SPACE_STEP for this particular molecule."
+        self.custom_space_step.init_ref    ( parameter_system, "Mol_Space_Step_Type", user_name="Custom Space Step",    user_expr="",  user_units="microns",  user_descr=helptext )
         # TODO: Add after data model release:  self.maximum_step_length.init_ref  ( parameter_system, "Max_Step_Len_Type",   user_name="Maximum Step Length",  user_expr="",  user_units="microns",  user_descr="Molecule should never step farther than this length during a single timestep. Use with caution (see documentation)." )
 
     def remove_properties ( self, context ):
@@ -215,8 +237,15 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         print ( "Name = " + self.name )
 
     def draw_props ( self, layout, molecules, parameter_system ):
-        layout.prop ( self, "name" )
-        layout.prop ( self, "type" )
+
+        helptext = "Molecule Name\nThis is the name used in Reactions and Display"
+        parameter_system.draw_prop_with_help ( layout, "Name", self, "name", "name_show_help", self.name_show_help, helptext )
+
+        helptext = "Molecule Type: Either Volume or Surface\n" + \
+                   "Volume molecules are placed in and diffuse in 3D spaces." + \
+                   "Surface molecules are placed on and diffuse on 2D surfaces."
+        parameter_system.draw_prop_with_help ( layout, "Molecule Type", self, "type", "type_show_help", self.type_show_help, helptext )
+
         self.diffusion_constant.draw(layout,parameter_system)
         #self.lr_bar_trigger = False
         
@@ -278,8 +307,15 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         else:
             row.prop(molecules, "show_advanced", icon='TRIA_DOWN',
                      text="Advanced Options", emboss=False)
-            row = box.row()
-            row.prop(self, "target_only")
+            # row = box.row()
+            # row.prop(self, "target_only")
+            parameter_system.draw_prop_with_help ( box, "Target Only", self, "target_only", "target_only_show_help", self.target_only_show_help, 
+                "Target Only - This molecule will not initiate reactions when\n" +
+                "it runs into other molecules. This setting can speed up simulations\n" +
+                "when applied to a molecule at high concentrations that reacts with\n" +
+                "a molecule at low concentrations (it is more efficient for the\n" +
+                "low-concentration molecule to trigger the reactions). This directive\n" +
+                "does not affect unimolecular reactions." )
             self.custom_time_step.draw(box,parameter_system)
             self.custom_space_step.draw(box,parameter_system)
 

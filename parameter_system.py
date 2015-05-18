@@ -153,6 +153,7 @@ class MCELL_OT_clear_profiling(bpy.types.Operator):
 ##### vvvvvvvvv   General Parameter Code   vvvvvvvvv
 
 
+
 #@profile('spaced_strings_from_list')
 def spaced_strings_from_list ( list_of_strings ):
     space = " "
@@ -1986,6 +1987,77 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         """ Create a layout from the panel and draw into it """
         layout = panel.layout
         self.draw_layout ( context, layout )
+
+
+    def draw_label_with_help ( self, layout, label, prop_group, show, show_help, help_string ):
+        """ This function helps draw non-parameter properties with help (info) button functionality """
+        row = layout.row()
+        split = row.split(self.param_label_fraction)
+        col = split.column()
+        col.label ( text=label )
+        col = split.column()
+        col.label ( text="" )
+        col = row.column()
+        col.prop ( prop_group, show, icon='INFO', text="" )
+        if show_help:
+          row = layout.row()
+          # Use a split with two columns to indent the box
+          split = row.split(0.03)
+          col = split.column()
+          col = split.column()
+          box = col.box()
+          desc_list = help_string.split("\n")
+          for desc_line in desc_list:
+              box.label (text=desc_line)
+
+
+    def draw_prop_with_help ( self, layout, prop_label, prop_group, prop, show, show_help, help_string ):
+        """ This function helps draw non-parameter properties with help (info) button functionality """
+        row = layout.row()
+        split = row.split(self.param_label_fraction)
+        col = split.column()
+        col.label ( text=prop_label )
+        col = split.column()
+        col.prop ( prop_group, prop, text="" )
+        col = row.column()
+        col.prop ( prop_group, show, icon='INFO', text="" )
+        if show_help:
+          row = layout.row()
+          # Use a split with two columns to indent the box
+          split = row.split(0.03)
+          col = split.column()
+          col = split.column()
+          box = col.box()
+          desc_list = help_string.split("\n")
+          for desc_line in desc_list:
+              box.label (text=desc_line)
+
+
+    def draw_prop_search_with_help ( self, layout, prop_label, prop_group, prop, prop_parent, prop_list_name, show, show_help, help_string ):
+        """ This function helps draw non-parameter properties with help (info) button functionality """
+        row = layout.row()
+        split = row.split(self.param_label_fraction)
+        col = split.column()
+        col.label ( text=prop_label )
+        col = split.column()
+        #col.prop ( prop_group, prop, text="" )
+
+        #layout.prop_search(rel, "molecule", mcell.molecules, "molecule_list", text="Molecule", icon='FORCE_LENNARDJONES')
+        col.prop_search( prop_group, prop, prop_parent, prop_list_name, text="", icon='FORCE_LENNARDJONES')
+
+        col = row.column()
+        col.prop ( prop_group, show, icon='INFO', text="" )
+        if show_help:
+          row = layout.row()
+          # Use a split with two columns to indent the box
+          split = row.split(0.03)
+          col = split.column()
+          col = split.column()
+          box = col.box()
+          desc_list = help_string.split("\n")
+          for desc_line in desc_list:
+              box.label (text=desc_line)
+
 
 
 def register():
