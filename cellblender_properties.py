@@ -3821,7 +3821,9 @@ class PP_OT_init_mcell(bpy.types.Operator):
 
     def execute(self, context):
         print ( "Initializing CellBlender" )
-        context.scene.mcell.init_properties()
+        mcell = context.scene.mcell
+        mcell.init_properties()
+        mcell.rxn_output.init_properties(mcell.parameter_system)
         print ( "CellBlender has been initialized" )
         return {'FINISHED'}
 
