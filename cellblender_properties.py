@@ -3949,7 +3949,7 @@ class MCELL_PT_main_scene_panel(bpy.types.Panel):
 # load_pre callback
 @persistent
 def report_load_pre(dummy):
-    # Note that load_pre may not be called when the startup file is loaded for some reason
+    # Note that load_pre may not be called when the startup file is loaded for earlier versions of Blender (somewhere before 2.73)
     print ( "===================================================================================" )
     print ( "================================= Load Pre called =================================" )
     print ( "===================================================================================" )

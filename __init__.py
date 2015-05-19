@@ -93,14 +93,14 @@ import bpy
 import sys
 
 
-cellblender_added_handlers = []
+#cellblender_added_handlers = []
 
 def add_handler ( handler_list, handler_function ):
     """ Only add a handler if it's not already in the list """
     if not (handler_function in handler_list):
         handler_list.append ( handler_function )
         
-        cellblender_added_handlers
+        #cellblender_added_handlers
 
 
 def remove_handler ( handler_list, handler_function ):

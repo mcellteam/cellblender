@@ -299,6 +299,26 @@ def load_post(context):
     print ( "========================================" )
 
 
+    """
+    print ( "Delete MCell RNA properties" )
+    del bpy.types.Scene.mcell
+    if context.scene.get ( 'mcell' ):
+      del context.scene['mcell']
+    print ( "Reinstate MCell RNA properties" )
+    bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender.cellblender_properties.MCellPropertyGroup)
+    print ( "Reinstated MCell RNA properties" )
+    """
+
+    #print ( "Unregister, delete all ID properties, and Reregister" )
+    # Unregister, delete all ID properties, and Reregister
+    #bpy.utils.unregister_module('cellblender')
+    #print ( "Unregistered" )
+
+    #bpy.utils.register_module('cellblender')
+    #mcell = context.scene.mcell
+    #print ( "Reregistered" )
+
+
 def menu_func_import(self, context):
     self.layout.operator("cb.import_data_model", text="CellBlender Model (text/pickle)")
 
