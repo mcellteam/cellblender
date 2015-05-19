@@ -59,6 +59,8 @@ def unregister():
 
 #CellBlender Operators:
 
+global_mol_file_list = []
+
 
 class MCELL_OT_upgrade(bpy.types.Operator):
     """This is the Upgrade operator called when the user presses the "Upgrade" button"""
@@ -2088,6 +2090,8 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
+        global global_mol_file_list
+
         # Called when the molecule files are actually to be read (when the
         # "Read Molecule Files" button is pushed or a seed value is selected
         # from the list)
@@ -2108,7 +2112,8 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
         # list of files (e.g. my_project.cellbin.0001.dat,
         # my_project.cellbin.0002.dat)
         mcell.mol_viz.mol_viz_seed_list.clear()
-        mcell.mol_viz.mol_file_list.clear()
+#        mcell.mol_viz.mol_file_list.clear()
+        global_mol_file_list = []
 
         # Add all the seed directories to the mol_viz_seed_list collection
         # (seed_00001, seed_00002, etc)
@@ -2123,16 +2128,20 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
             mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
             mol_file_list.sort()
 
+
             # Add all the viz_data files to mol_file_list collection (e.g.
             # my_project.cellbin.0001.dat, my_project.cellbin.0001.dat, etc)
             for mol_file_name in mol_file_list:
-                new_item = mcell.mol_viz.mol_file_list.add()
-                new_item.name = os.path.basename(mol_file_name)
+#                new_item = mcell.mol_viz.mol_file_list.add()
+#                new_item.name = os.path.basename(mol_file_name)
+                global_mol_file_list.append(os.path.basename(mol_file_name))
 
             # If you previously had some viz data loaded, but reran the
             # simulation with less iterations, you can receive an index error.
             try:
-                mol_file = mcell.mol_viz.mol_file_list[
+#                mol_file = mcell.mol_viz.mol_file_list[
+#                    mcell.mol_viz.mol_file_index]
+                mol_file = global_mol_file_list[
                     mcell.mol_viz.mol_file_index]
             except IndexError:
                 mcell.mol_viz.mol_file_index = 0
@@ -2200,15 +2209,19 @@ class MCELL_OT_export_project(bpy.types.Operator):
         return {'FINISHED'}
 
 def set_viz_boundaries( context ):
+        global global_mol_file_list
+
         mcell = context.scene.mcell
 
-        mcell.mol_viz.mol_file_num = len(mcell.mol_viz.mol_file_list)
+#        mcell.mol_viz.mol_file_num = len(mcell.mol_viz.mol_file_list)
+        mcell.mol_viz.mol_file_num = len(global_mol_file_list)
         mcell.mol_viz.mol_file_stop_index = mcell.mol_viz.mol_file_num - 1
 
         #print("Setting frame_start to 0")
         #print("Setting frame_end to ", len(mcell.mol_viz.mol_file_list)-1)
         bpy.context.scene.frame_start = 0
-        bpy.context.scene.frame_end = len(mcell.mol_viz.mol_file_list)-1
+#        bpy.context.scene.frame_end = len(mcell.mol_viz.mol_file_list)-1
+        bpy.context.scene.frame_end = len(global_mol_file_list)-1
 
         for area in bpy.context.screen.areas:
             if area.type == 'TIMELINE':
@@ -2234,6 +2247,7 @@ class MCELL_OT_select_viz_data(bpy.types.Operator):
         self.directory = bpy.context.scene.mcell.mol_viz.mol_file_dir
 
     def execute(self, context):
+        global global_mol_file_list
 
         mcell = context.scene.mcell
         
@@ -2246,12 +2260,14 @@ class MCELL_OT_select_viz_data(bpy.types.Operator):
         mol_file_list.sort()
 
         # Reset mol_file_list and mol_viz_seed_list to empty
-        mcell.mol_viz.mol_file_list.clear()
+#        mcell.mol_viz.mol_file_list.clear()
+        global_mol_file_list = []
 
         mcell.mol_viz.mol_file_dir = mol_file_dir
         for mol_file_name in mol_file_list:
-            new_item = mcell.mol_viz.mol_file_list.add()
-            new_item.name = os.path.basename(mol_file_name)
+#            new_item = mcell.mol_viz.mol_file_list.add()
+#            new_item.name = os.path.basename(mol_file_name)
+            global_mol_file_list.append(os.path.basename(mol_file_name))
 
         create_color_list()
         set_viz_boundaries(context)
@@ -2425,8 +2441,11 @@ class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
+        global global_mol_file_list
+
         mcell = context.scene.mcell
-        if mcell.mol_viz.mol_file_list:
+#        if mcell.mol_viz.mol_file_list:
+        if global_mol_file_list:
             i = mcell.mol_viz.mol_file_index
             if (i > mcell.mol_viz.mol_file_stop_index):
                 i = mcell.mol_viz.mol_file_stop_index
@@ -2460,12 +2479,14 @@ def frame_change_handler(scn):
 
 def mol_viz_toggle_manual_select(self, context):
     """ Toggle the option to manually load viz data. """
+    global global_mol_file_list
 
     mcell = context.scene.mcell
 
     mcell.mol_viz.mol_file_dir = ""
     mcell.mol_viz.mol_file_name = ""
-    mcell.mol_viz.mol_file_list.clear()
+#    mcell.mol_viz.mol_file_list.clear()
+    global_mol_file_list = []
     mcell.mol_viz.mol_viz_seed_list.clear()
 
     if not mcell.mol_viz.manual_select_viz_dir:
@@ -2496,11 +2517,14 @@ def get_mol_file_dir():
 
 def mol_viz_update(self, context):
     """ Clear the old viz data. Draw the new viz data. """
+    global global_mol_file_list
 
     mcell = context.scene.mcell
 
-    if len(mcell.mol_viz.mol_file_list) > 0:
-        filename = mcell.mol_viz.mol_file_list[mcell.mol_viz.mol_file_index].name
+#    if len(mcell.mol_viz.mol_file_list) > 0:
+    if len(global_mol_file_list) > 0:
+#        filename = mcell.mol_viz.mol_file_list[mcell.mol_viz.mol_file_index].name
+        filename = global_mol_file_list[mcell.mol_viz.mol_file_index]
         mcell.mol_viz.mol_file_name = filename
         # filepath is relative to blend file location under default scenarios (i.e.
         # when we can expect to find the standard CellBlender directory layout).

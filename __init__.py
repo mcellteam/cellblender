@@ -22,15 +22,16 @@ import atexit
 
 bl_info = {
     "name": "CellBlender",
-    "author": "Tom Bartol, Jacob Czech, Markus Dittrich, Bob Kuczewski",
-    "version": (1, 0, 0),
-    "blender": (2, 66, 1),
+    "author": "Tom Bartol, Dipak Barua, Jacob Czech, Markus Dittrich, "
+        "James Faeder, Bob Kuczewski, Devin Sullivan, Jose Juan Tapia",
+    "version": (1, 0),
+    "blender": (2, 72, 0),
     "api": 55057,
-    "location": "Properties > Scene > CellBlender Panel",
+    "location": "View3D -> ToolShelf -> CellBlender",
     "description": "CellBlender Modeling System for MCell",
     "warning": "",
     "wiki_url": "http://www.mcell.org",
-    "tracker_url": "http://code.google.com/p/cellblender/issues/list",
+    "tracker_url": "https://github.com/mcellteam/cellblender/issues",
     "category": "Cell Modeling"
 }
 
@@ -135,7 +136,8 @@ def register():
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_visualization_output_settings)
 
 
-    # Don't normally re-register individual panels here with new panel system, but uncomment to test slowdown problem
+    # Don't normally re-register individual panels here with new panel system, but do it for now to test slowdown problem
+    # TMB: Don't re-register here to disable all individual panels in old panel system
 
 #    bpy.utils.register_class(cellblender_panels.MCELL_PT_cellblender_preferences)
 #    bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
