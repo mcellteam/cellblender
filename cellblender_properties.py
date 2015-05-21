@@ -1135,10 +1135,10 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
 
     simulation_run_control_enum = [
-        ('QUEUE', "Queue Control", ""),
         ('COMMAND', "Command Line", ""),
         ('JAVA', "Java Control", ""),
-        ('OPENGL', "OpenGL Control", "")]
+        ('OPENGL', "OpenGL Control", ""),
+        ('QUEUE', "Queue Control", "")]
     simulation_run_control = EnumProperty(
         items=simulation_run_control_enum, name="",
         description="Mechanism for running and controlling the simulation",
@@ -1274,8 +1274,13 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row = box.row()
                     col = row.column()
                     col.prop(mcell.cellblender_preferences, "decouple_export_run")
-                    col = row.column()
-                    col.prop(self, "simulation_run_control")
+
+# Disable selector for simulation_run_control options
+#  Queue control is the default
+#  Queue control is currently the only option which properly disables the
+#  run_simulation operator while simulations are currenlty running or queued
+#                    col = row.column()
+#                    col.prop(self, "simulation_run_control")
 
                 else:
                     row = box.row(align=True)
