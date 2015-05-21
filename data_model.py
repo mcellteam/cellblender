@@ -211,6 +211,111 @@ class ImportDataModelAll(bpy.types.Operator, ExportHelper):
         return {'FINISHED'}
 
 
+def upgrade_properties_from_data_model ( context ):
+    print ( "Upgrading Properties from Data Model" )
+    mcell = context.scene.mcell
+
+    if 'data_model' in mcell:
+
+        print ( "Found a data model to upgrade." )
+        dm = cellblender.data_model.unpickle_data_model ( mcell['data_model'] )
+
+        print ( "Delete MCell RNA properties" )
+        del bpy.types.Scene.mcell
+        if context.scene.get ( 'mcell' ):
+          del context.scene['mcell']
+
+        # Something like the following code would be needed if the
+        #  internal data model handled the regions. But at this time
+        #  the regions are handled and upgraded separately in:
+        #           object_surface_regions.py
+        #
+        #del bpy.types.Object.mcell
+        #for obj in context.scene.objects:
+        #  if obj.get ( 'mcell' ):
+        #    del obj['mcell']
+        #    if obj.type == 'MESH':
+        #      m = obj.data
+        #      if m.get ( 'mcell' ):
+        #        del m['mcell']
+        #bpy.types.Object.mcell = bpy.props.PointerProperty(type=cellblender.object_surface_regions.MCellObjectPropertyGroup)
+
+        print ( "Reinstate MCell RNA properties" )
+
+        bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender.cellblender_properties.MCellPropertyGroup)
+
+        print ( "Reinstated MCell RNA properties" )
+
+        # Restore the local variable mcell to be consistent with not taking this branch of the if.
+        mcell = context.scene.mcell
+
+        # Do the actual updating of properties from data model right here
+        mcell.build_properties_from_data_model ( context, dm )
+    else:
+        print ( "Warning: This should never happen." )
+        print ( "No data model to upgrade ... building a data model and then recreating properties." )
+        dm = mcell.build_data_model_from_properties ( context )
+        mcell.build_properties_from_data_model ( context, dm )
+
+    # Update the source_id
+    mcell['saved_by_source_id'] = cellblender.cellblender_info['cellblender_source_sha1']
+    #mcell.versions_match = True
+    cellblender.cellblender_info['versions_match'] = True
+    print ( "Finished Upgrading Properties from Data Model" )
+
+
+def upgrade_RC3_properties_from_data_model ( context ):
+      print ( "Upgrading Properties from an RC3 File Data Model" )
+      mcell = context.scene.mcell
+
+      dm = None
+      if 'data_model' in mcell:
+          # This must be an RC4 file?
+          print ( "Found a data model to upgrade." )
+          dm = cellblender.data_model.unpickle_data_model ( mcell['data_model'] )
+      else:
+          print ( "No data model in RC3 file ... building a data model and then recreating properties." )
+          dm = mcell.build_data_model_from_RC3_ID_properties ( context )
+
+      print ( "Delete MCell RNA properties" )
+      del bpy.types.Scene.mcell
+      if context.scene.get ( 'mcell' ):
+        del context.scene['mcell']
+
+      # Something like the following code would be needed if the
+      #  internal data model handled the regions. But at this time
+      #  the regions are handled and upgraded separately in:
+      #           object_surface_regions.py
+      #
+      #del bpy.types.Object.mcell
+      #for obj in context.scene.objects:
+      #  if obj.get ( 'mcell' ):
+      #    del obj['mcell']
+      #    if obj.type == 'MESH':
+      #      m = obj.data
+      #      if m.get ( 'mcell' ):
+      #        del m['mcell']
+      #bpy.types.Object.mcell = bpy.props.PointerProperty(type=cellblender.object_surface_regions.MCellObjectPropertyGroup)
+
+      print ( "Reinstate MCell RNA properties" )
+
+      bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender.cellblender_properties.MCellPropertyGroup)
+
+      print ( "Reinstated MCell RNA properties" )
+
+      # Restore the local variable mcell to be consistent with not taking this branch of the if.
+      mcell = context.scene.mcell
+
+      # Do the actual updating of properties from data model right here
+      mcell.build_properties_from_data_model ( context, dm )
+
+      # Update the source_id
+      mcell['saved_by_source_id'] = cellblender.cellblender_info['cellblender_source_sha1']
+      #mcell.versions_match = True
+      cellblender.cellblender_info['versions_match'] = True
+      print ( "Finished Upgrading Properties from RC3 Data Model" )
+
+
 
 # Construct the data model property
 @persistent
@@ -220,15 +325,19 @@ def save_pre(context):
     print ( "========================================" )
     source_id = cellblender.cellblender_info['cellblender_source_sha1']
     print ( "save_pre() has been called ... source_id = " + source_id )
-    if not context:
-        # The context appears to always be "None", so use bpy.context
-        context = bpy.context
-    if hasattr ( context.scene, 'mcell' ):
-        print ( "Updating source ID of mcell before saving" )
-        mcell = context.scene.mcell
-        mcell['saved_by_source_id'] = source_id
-        dm = mcell.build_data_model_from_properties ( context )
-        context.scene.mcell['data_model'] = pickle_data_model(dm)
+    if cellblender.cellblender_info['versions_match']:
+        print ( "save_pre() called with versions matching ... save Data Model and Source ID" )
+        if not context:
+            # The context appears to always be "None", so use bpy.context
+            context = bpy.context
+        if hasattr ( context.scene, 'mcell' ):
+            print ( "Updating source ID of mcell before saving" )
+            mcell = context.scene.mcell
+            mcell['saved_by_source_id'] = source_id
+            dm = mcell.build_data_model_from_properties ( context )
+            context.scene.mcell['data_model'] = pickle_data_model(dm)
+    else:
+        print ( "save_pre() called with versions not matching ... don't change anything" )
     print ( "========================================" )
 
 

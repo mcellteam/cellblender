@@ -41,6 +41,8 @@ import shutil
 import datetime
 
 import cellblender
+from . import data_model
+# import cellblender.data_model
 # import cellblender_source_info
 from cellblender.utils import project_files_path
 from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
@@ -62,6 +64,7 @@ def unregister():
 global_mol_file_list = []
 
 
+
 class MCELL_OT_upgrade(bpy.types.Operator):
     """This is the Upgrade operator called when the user presses the "Upgrade" button"""
     bl_idname = "mcell.upgrade"
@@ -71,7 +74,10 @@ class MCELL_OT_upgrade(bpy.types.Operator):
 
     def execute(self, context):
 
-        print ( "Upgrading Properties from Data Model" )
+        print ( "Upgrade Operator called" )
+        data_model.upgrade_properties_from_data_model ( context )
+
+        """
         mcell = context.scene.mcell
 
         if 'data_model' in mcell:
@@ -121,6 +127,7 @@ class MCELL_OT_upgrade(bpy.types.Operator):
         #mcell.versions_match = True
         cellblender.cellblender_info['versions_match'] = True
         print ( "Finished Upgrading Properties from Data Model" )
+        """
         return {'FINISHED'}
 
 
@@ -132,6 +139,12 @@ class MCELL_OT_upgradeRC3(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
+
+        print ( "Upgrade RC3 Operator called" )
+        data_model.upgrade_properties_from_data_model ( context )
+
+
+        """
         print ( "Upgrading Properties from an RC3 File Data Model" )
         mcell = context.scene.mcell
 
@@ -181,6 +194,7 @@ class MCELL_OT_upgradeRC3(bpy.types.Operator):
         #mcell.versions_match = True
         cellblender.cellblender_info['versions_match'] = True
         print ( "Finished Upgrading Properties from Data Model" )
+        """
         return {'FINISHED'}
 
 
