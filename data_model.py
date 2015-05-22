@@ -373,7 +373,21 @@ def save_pre(context):
             dm = mcell.build_data_model_from_properties ( context )
             context.scene.mcell['data_model'] = pickle_data_model(dm)
     else:
-        print ( "save_pre() called with versions not matching ... don't change anything" )
+        print ( "save_pre() called with versions not matching ... force an upgrade." )
+        if not context:
+            # The context appears to always be "None", so use bpy.context
+            context = bpy.context
+        if hasattr ( context.scene, 'mcell' ):
+            print ( "Upgrading blend file to current version before saving" )
+            mcell = context.scene.mcell
+            if not mcell.get ( 'saved_by_source_id' ):
+                # This .blend file was created with CellBlender RC3 / RC4
+                upgrade_RC3_properties_from_data_model ( context )
+            else:
+                upgrade_properties_from_data_model ( context )
+            mcell['saved_by_source_id'] = source_id
+            dm = mcell.build_data_model_from_properties ( context )
+            context.scene.mcell['data_model'] = pickle_data_model(dm)
     print ( "========================================" )
 
 
