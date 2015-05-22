@@ -9,7 +9,7 @@ SHELL = /bin/sh
 
 SUBDIRS = icons io_mesh_mcell_mdl data_plotters developer_utilities
 SOURCES = $(shell python cellblender_source_info.py)
-ZIPFILES = $(SOURCES) cellblender/io_mesh_mcell_mdl/_mdlmesh_parser.so cellblender/SimControl.jar cellblender/data_plotters/java_plot/PlotData.jar cellblender/cellblender_id.py
+ZIPFILES = $(SOURCES) cellblender/io_mesh_mcell_mdl/_mdlmesh_parser.so cellblender/SimControl.jar cellblender/SimControl cellblender/data_plotters/java_plot/PlotData.jar cellblender/cellblender_id.py
 
 ZIPOPTS = -X -0 -D -o
 
