@@ -4,6 +4,10 @@ cellblender
 cellblender/
 unused/
 data_plotters/unused/
+SimControl
+SimControl.jar
+SimControl.o
+data_plotters/java_plot/PlotData.jar
 io_mesh_mcell_mdl/_mdlmesh_parser.so
 io_mesh_mcell_mdl/build/
 io_mesh_mcell_mdl/mdllex.flex.c
