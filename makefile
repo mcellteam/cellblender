@@ -7,8 +7,9 @@ INSTALL_DIR = ~/.config/blender/2.74/scripts/addons/
 
 SHELL = /bin/sh
 
-SOURCES = $(shell python cellblender_source_info.py)
 SUBDIRS = icons io_mesh_mcell_mdl data_plotters developer_utilities
+SOURCES = $(shell python cellblender_source_info.py)
+ZIPFILES = $(SOURCES) cellblender/io_mesh_mcell_mdl/_mdlmesh_parser.so cellblender/SimControl.jar cellblender/data_plotters/java_plot/PlotData.jar cellblender/cellblender_id.py
 
 ZIPOPTS = -X -0 -D -o
 
@@ -37,10 +38,10 @@ cellblender.zip: makefile $(SOURCES)
 	@echo Updating cellblender.zip
 	@echo Sources = $(SOURCES)
 	touch -t 201502050000 cellblender_id.py
-	@zip $(ZIPOPTS) cellblender.zip $(SOURCES) cellblender/cellblender_id.py
+	@zip $(ZIPOPTS) cellblender.zip $(ZIPFILES)
 
 
-SimControl.jar: SimControl.java makefile
+SimControl.jar: SimControl.java
 	rm -f *.class
 	javac SimControl.java
 	touch -t 201407160000 *.class
@@ -48,10 +49,10 @@ SimControl.jar: SimControl.java makefile
 	rm -f *.class
 
 
-SimControl: SimControl.o makefile
+SimControl: SimControl.o
 	gcc -lGL -lglut -lGLU -o SimControl SimControl.o
 
-SimControl.o: SimControl.c makefile
+SimControl.o: SimControl.c
 	gcc -c -std=c99 -I/usr/include/GL SimControl.c
 
 

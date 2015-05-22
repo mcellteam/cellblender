@@ -34,7 +34,7 @@ cellblender_info = {
 
         "SimControl.java",
         "META-INF"+os.sep+"MANIFEST.MF",
-        "SimControl.jar",
+#        "SimControl.jar",
         "SimControl.c",
         "SimControl",
 
@@ -48,7 +48,6 @@ cellblender_info = {
         "io_mesh_mcell_mdl"+os.sep+"pyparsing.py",
         "io_mesh_mcell_mdl"+os.sep+"mdlmesh_parser.py",
         "io_mesh_mcell_mdl"+os.sep+"mdlobj.py",
-#        "io_mesh_mcell_mdl"+os.sep+"_mdlmesh_parser.so",
         "data_plotters"+os.sep+"__init__.py",
         "data_plotters"+os.sep+"mpl_simple"+os.sep+"__init__.py",
         "data_plotters"+os.sep+"mpl_simple"+os.sep+"mpl_simple.py",
@@ -59,7 +58,7 @@ cellblender_info = {
         "data_plotters"+os.sep+"java_plot"+os.sep+"__init__.py",
         "data_plotters"+os.sep+"java_plot"+os.sep+"PlotData.java",
         "data_plotters"+os.sep+"java_plot"+os.sep+"META-INF"+os.sep+"MANIFEST.MF",
-        "data_plotters"+os.sep+"java_plot"+os.sep+"PlotData.jar",
+#        "data_plotters"+os.sep+"java_plot"+os.sep+"PlotData.jar",
         "mdl"+os.sep+"__init__.py",
         "bng"+os.sep+"__init__.py",
         "bng"+os.sep+"sbml2blender.py",
