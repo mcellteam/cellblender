@@ -49,6 +49,7 @@ from bpy.app.handlers import persistent
 
 from . import cellblender_molecules
 from . import parameter_system
+from . import data_model
 
 # python imports
 import os
@@ -190,7 +191,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
             dm_dict['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellReactionProperty data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReactionProperty data model to current version." )
 
         self.name = dm_dict["name"]
         self.rxn_name = dm_dict["rxn_name"]
@@ -421,7 +422,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
             dm_dict['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellMoleculeReleaseProperty data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeReleaseProperty data model to current version." )
 
         self.name = dm_dict["name"]
         self.molecule = dm_dict["molecule"]
@@ -492,7 +493,7 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
             dm_dict['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellReleasePatternProperty data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReleasePatternProperty data model to current version." )
 
         self.name = dm_dict["name"]
         self.delay.set_expr ( dm_dict["delay"] )
@@ -566,7 +567,7 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellSurfaceClassPropertiesProperty data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellSurfaceClassPropertiesProperty data model to current version." )
 
         self.name = dm["name"]
         self.molecule = dm["molecule"]
@@ -633,7 +634,7 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellSurfaceClassesProperty data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellSurfaceClassesProperty data model to current version." )
 
         self.name = dm["name"]
         while len(self.surf_class_props_list) > 0:
@@ -694,7 +695,7 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellModSurfRegionsProperty data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsProperty data model to current version." )
 
         self.name = dm["name"]
         self.surf_class_name = dm["surf_class_name"]
@@ -1076,7 +1077,7 @@ class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2015_04_23_1753"
 
         if dm['data_model_version'] != "DM_2015_04_23_1753":
-            print ( "Error: Unable to upgrade MCellRunSimulationProcessesProperty data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationProcessesProperty data model to current version." )
 
         self.name = dm["name"]
 
@@ -1135,10 +1136,10 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
 
     simulation_run_control_enum = [
-        ('QUEUE', "Queue Control", ""),
         ('COMMAND', "Command Line", ""),
         ('JAVA', "Java Control", ""),
-        ('OPENGL', "OpenGL Control", "")]
+        ('OPENGL', "OpenGL Control", ""),
+        ('QUEUE', "Queue Control", "")]
     simulation_run_control = EnumProperty(
         items=simulation_run_control_enum, name="",
         description="Mechanism for running and controlling the simulation",
@@ -1175,7 +1176,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2015_04_23_1753"
 
         if dm['data_model_version'] != "DM_2015_04_23_1753":
-            print ( "Error: Unable to upgrade MCellRunSimulationPropertyGroup data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationPropertyGroup data model to current version." )
 
         self.name = dm["name"]
         self.processes_list.clear()
@@ -1274,8 +1275,13 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row = box.row()
                     col = row.column()
                     col.prop(mcell.cellblender_preferences, "decouple_export_run")
-                    col = row.column()
-                    col.prop(self, "simulation_run_control")
+
+# Disable selector for simulation_run_control options
+#  Queue control is the default
+#  Queue control is currently the only option which properly disables the
+#  run_simulation operator while simulations are currenlty running or queued
+#                    col = row.column()
+#                    col.prop(self, "simulation_run_control")
 
                 else:
                     row = box.row(align=True)
@@ -1406,7 +1412,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2015_04_13_1700"
 
         if dm['data_model_version'] != "DM_2015_04_13_1700":
-            print ( "Error: Unable to upgrade MCellMolVizPropertyGroup data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMolVizPropertyGroup data model to current version." )
         
         # Remove the old properties (includes emptying collections)
         self.remove_properties ( context )
@@ -1717,7 +1723,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
             dm_dict['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellInitializationPropertyGroup data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellInitializationPropertyGroup data model to current version." )
 
         self.iterations.set_expr ( dm_dict["iterations"] )
         self.time_step.set_expr ( dm_dict["time_step"] )
@@ -2179,7 +2185,7 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellPartitionsPropertyGroup data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellPartitionsPropertyGroup data model to current version." )
 
         self.include = dm["include"]
         self.recursion_flag = dm["recursion_flag"]
@@ -2267,7 +2273,7 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellReactionsPropertyGroup data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReactionsPropertyGroup data model to current version." )
 
         while len(self.reaction_list) > 0:
             self.reaction_list.remove(0)
@@ -2403,7 +2409,7 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellSurfaceClassesPropertyGroup data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellSurfaceClassesPropertyGroup data model to current version." )
 
         while len(self.surf_class_list) > 0:
             self.surf_class_list.remove(0)
@@ -2586,7 +2592,7 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellModSurfRegionsPropertyGroup data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsPropertyGroup data model to current version." )
 
         while len(self.mod_surf_regions_list) > 0:
             self.mod_surf_regions_list.remove(0)
@@ -2696,7 +2702,7 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellReleasePatternPropertyGroup data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReleasePatternPropertyGroup data model to current version." )
 
         while len(self.release_pattern_list) > 0:
             self.release_pattern_list.remove(0)
@@ -2798,7 +2804,7 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellMoleculeReleasePropertyGroup data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeReleasePropertyGroup data model to current version." )
 
         while len(self.mol_release_list) > 0:
             self.mol_release_list.remove(0)
@@ -2998,7 +3004,7 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellModelObjectsProperty data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsProperty data model to current version." )
 
         print ( "Assigning Model Object " + dm['name'] )
         self.name = dm["name"]
@@ -3130,7 +3136,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
         
         # Remove all model objects in the list
         while len(self.object_list) > 0:
@@ -3410,7 +3416,7 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellVizOutputPropertyGroup data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellVizOutputPropertyGroup data model to current version." )
         
         self.all_iterations = dm["all_iterations"]
         self.start = int(dm["start"])
@@ -3515,7 +3521,7 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
         
         self.name = dm["name"]
         self.molecule_name = dm["molecule_name"]
@@ -3626,7 +3632,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2015_05_15_1214"
 
         if dm['data_model_version'] != "DM_2015_05_15_1214":
-            print ( "Error: Unable to upgrade MCellReactionOutputPropertyGroup data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReactionOutputPropertyGroup data model to current version." )
         
         self.init_properties(context.scene.mcell.parameter_system)
         self.plot_layout = dm["plot_layout"]
@@ -5462,7 +5468,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade MCellPropertyGroup data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellPropertyGroup data model to current version." )
+
 
         # Remove the existing MCell Property Tree
         self.remove_properties(context)

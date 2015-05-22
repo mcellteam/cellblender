@@ -66,6 +66,12 @@ def code_api_version():
     return 1
 
 
+def handle_incompatible_data_model ( message ):
+    print ( "Quitting Blender due to Incompatible CellBlender Data Model" )
+    print ( message )
+    bpy.ops.wm.quit_blender()
+
+
 data_model_depth = 0
 def dump_data_model ( name, dm ):
     global data_model_depth
@@ -210,6 +216,24 @@ class ImportDataModelAll(bpy.types.Operator, ExportHelper):
         print ( "Done loading CellBlender model." )
         return {'FINISHED'}
 
+def save_mcell_preferences ( mcell ):
+    mp = {}
+    mp['mcell_binary'] = mcell.cellblender_preferences.mcell_binary
+    mp['mcell_binary_valid'] = mcell.cellblender_preferences.mcell_binary_valid
+    mp['python_binary'] = mcell.cellblender_preferences.python_binary
+    mp['python_binary_valid'] = mcell.cellblender_preferences.python_binary_valid
+    mp['bionetgen_location'] = mcell.cellblender_preferences.bionetgen_location
+    mp['bionetgen_location_valid'] = mcell.cellblender_preferences.bionetgen_location_valid
+    return mp
+
+def restore_mcell_preferences ( mp, mcell ):
+    mcell.cellblender_preferences.mcell_binary = mp['mcell_binary']
+    mcell.cellblender_preferences.mcell_binary_valid = mp['mcell_binary_valid']
+    mcell.cellblender_preferences.python_binary = mp['python_binary']
+    mcell.cellblender_preferences.python_binary_valid = mp['python_binary_valid']
+    mcell.cellblender_preferences.bionetgen_location = mp['bionetgen_location']
+    mcell.cellblender_preferences.bionetgen_location_valid = mp['bionetgen_location_valid']
+
 
 def upgrade_properties_from_data_model ( context ):
     print ( "Upgrading Properties from Data Model" )
@@ -219,6 +243,9 @@ def upgrade_properties_from_data_model ( context ):
 
         print ( "Found a data model to upgrade." )
         dm = cellblender.data_model.unpickle_data_model ( mcell['data_model'] )
+
+        # Save any preferences that are stored in properties but not in the Data Model
+        mp = save_mcell_preferences ( mcell )
 
         print ( "Delete MCell RNA properties" )
         del bpy.types.Scene.mcell
@@ -248,6 +275,9 @@ def upgrade_properties_from_data_model ( context ):
 
         # Restore the local variable mcell to be consistent with not taking this branch of the if.
         mcell = context.scene.mcell
+        
+        # Restore the current preferences that had been saved
+        restore_mcell_preferences ( mp, mcell )
 
         # Do the actual updating of properties from data model right here
         mcell.build_properties_from_data_model ( context, dm )
@@ -277,6 +307,9 @@ def upgrade_RC3_properties_from_data_model ( context ):
           print ( "No data model in RC3 file ... building a data model and then recreating properties." )
           dm = mcell.build_data_model_from_RC3_ID_properties ( context )
 
+      # Save any preferences that are stored in properties but not in the Data Model
+      mp = save_mcell_preferences ( mcell )
+
       print ( "Delete MCell RNA properties" )
       del bpy.types.Scene.mcell
       if context.scene.get ( 'mcell' ):
@@ -303,8 +336,11 @@ def upgrade_RC3_properties_from_data_model ( context ):
 
       print ( "Reinstated MCell RNA properties" )
 
-      # Restore the local variable mcell to be consistent with not taking this branch of the if.
+      # Restore the local variable mcell
       mcell = context.scene.mcell
+
+      # Restore the current preferences that had been saved
+      restore_mcell_preferences ( mp, mcell )
 
       # Do the actual updating of properties from data model right here
       mcell.build_properties_from_data_model ( context, dm )

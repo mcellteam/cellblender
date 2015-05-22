@@ -89,7 +89,7 @@ class MCELL_OT_upgradeRC3(bpy.types.Operator):
     def execute(self, context):
 
         print ( "Upgrade RC3 Operator called" )
-        data_model.upgrade_properties_from_data_model ( context )
+        data_model.upgrade_RC3_properties_from_data_model ( context )
         return {'FINISHED'}
 
 
@@ -1313,6 +1313,19 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
     bl_label = "Run MCell Simulation"
     bl_description = "Run MCell Simulation"
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(self,context):
+
+        mcell = context.scene.mcell
+        if str(mcell.run_simulation.simulation_run_control) == 'QUEUE':
+            processes_list = mcell.run_simulation.processes_list
+            for pl_item in processes_list:
+                pid = int(pl_item.name.split(',')[0].split(':')[1])
+                q_item = cellblender.simulation_queue.task_dict[pid]
+                if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
+                    return False
+        return True
 
     def execute(self, context):
         mcell = context.scene.mcell

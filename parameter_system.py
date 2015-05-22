@@ -1842,7 +1842,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             par_sys_dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if par_sys_dm['data_model_version'] != "DM_2014_10_24_1638":
-            print ( "Error: Unable to upgrade Parameter data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade Parameter data model to current version." )
 
         print ( "Parameter System building Properties from Data Model ..." )
         while len(self.general_parameter_list) > 0:
