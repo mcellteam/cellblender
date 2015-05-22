@@ -35,8 +35,8 @@ cellblender_info = {
         "SimControl.java",
         "META-INF"+os.sep+"MANIFEST.MF",
 #        "SimControl.jar",
-        "SimControl.c",
-        "SimControl",
+#        "SimControl.c",
+#        "SimControl",
 
         "utils.py",
         "glyph_library.blend",
