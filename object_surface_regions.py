@@ -168,17 +168,6 @@ class MCELL_UL_check_region(bpy.types.UIList):
             layout.label(item.name, icon='FILE_TICK')
 
 
-class MCELL_PT_DefineSurfaceRegions(bpy.types.Panel):
-    bl_label = "CellBlender - Define Surface Regions"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "object"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.object.mcell.regions.draw_panel(context, panel=self)
-
-
 # Region Callbacks:
 
 def region_update(self, context):
