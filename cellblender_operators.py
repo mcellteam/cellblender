@@ -1999,9 +1999,16 @@ def create_color_list():
         mcell.mol_viz.color_list[6].vec = [1.0, 1.0, 1.0]
         mcell.mol_viz.color_list[7].vec = [0.0, 0.0, 0.0]
 
+
+@persistent
+def read_viz_data_load_post(context):
+    print ( "load post handler: cellblender_operators.read_viz_data_load_post() called" )
+    bpy.ops.mcell.read_viz_data()
+
+
 # Operators can't be callbacks, so we need this function for now.  This is
 # temporary until we make importing viz data automatic.
-def read_viz_data(self, context):
+def read_viz_data_callback(self, context):
     bpy.ops.mcell.read_viz_data()
 
 

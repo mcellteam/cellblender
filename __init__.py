@@ -254,6 +254,7 @@ def register():
     
     add_handler ( bpy.app.handlers.load_post, cellblender_operators.load_preferences )
     add_handler ( bpy.app.handlers.load_post, cellblender_properties.scene_loaded )
+    add_handler ( bpy.app.handlers.load_post, cellblender_operators.read_viz_data_load_post )
 
     # Add the scene update pre handler
     add_handler ( bpy.app.handlers.scene_update_pre, cellblender_properties.scene_loaded )
