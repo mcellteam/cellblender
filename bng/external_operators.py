@@ -72,7 +72,7 @@ class EXTERNAL_OT_molecule_add(bpy.types.Operator):
         #filePointer= open(filePath + '.json','r')
         #json.load(filePointer)        
 
-        jfile = accessFile(filePath)
+        jfile = accessFile(filePath,self)
         mol_list = jfile['mol_list']
         index = -1
         for key in mol_list:
@@ -107,7 +107,7 @@ class EXTERNAL_OT_reaction_add(bpy.types.Operator):
         #filePointer= open(filePath + '.json','r')
         #jfile = json.load(filePointer) 
         ps = mcell.parameter_system
-        jfile = accessFile(filePath)       
+        jfile = accessFile(filePath,self)       
         rxn_list = jfile['rxn_list']        
         index = -1
         for key in rxn_list:
@@ -142,7 +142,7 @@ class EXTERNAL_OT_release_site_add(bpy.types.Operator):
         mcell = context.scene.mcell
         #filePointer= open(filePath + '.json','r')
         #jfile = json.load(filePointer) 
-        jfile = accessFile(filePath)        
+        jfile = accessFile(filePath,self)        
         ps = mcell.parameter_system
         rel_list = jfile['rel_list']     
         index = -1
@@ -183,7 +183,7 @@ class EXTERNAL_OT_reaction_output_add(bpy.types.Operator):
         mcell = context.scene.mcell
         #filePointer= open(filePath + '.json','r')
         #jfile = json.load(filePointer) 
-        jfile = accessFile(filePath)        
+        jfile = accessFile(filePath,self)     
         ps = mcell.parameter_system
         obs_list = jfile['obs_list']     
         index = -1
