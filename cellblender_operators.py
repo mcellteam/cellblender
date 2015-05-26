@@ -2030,58 +2030,65 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
 
         mcell = context.scene.mcell
 
-        # Force the top level mol_viz directory to be where the .blend file
-        # lives plus "viz_data". The seed directories will live underneath it.
-        mol_viz_top_level_dir = os.path.join(project_files_path(), "viz_data/")
-        mol_viz_top_level_dir = os.path.relpath(mol_viz_top_level_dir)
-        mol_viz_seed_list = glob.glob(os.path.join(mol_viz_top_level_dir, "*"))
-        mol_viz_seed_list.sort()
+        #  mol_file_dir comes from directory already chosen manually
+        if mcell.mol_viz.manual_select_viz_dir:
+            mol_file_dir = mcell.mol_viz.mol_file_dir
 
-        # Clear the list of seeds (e.g. seed_00001, seed_00002, etc) and the
-        # list of files (e.g. my_project.cellbin.0001.dat,
-        # my_project.cellbin.0002.dat)
-        mcell.mol_viz.mol_viz_seed_list.clear()
+        #  mol_file_dir comes from directory associated with saved .blend file
+        else:
+          # Force the top level mol_viz directory to be where the .blend file
+          # lives plus "viz_data". The seed directories will live underneath it.
+          mol_viz_top_level_dir = os.path.join(project_files_path(), "viz_data/")
+          mol_viz_top_level_dir = os.path.relpath(mol_viz_top_level_dir)
+          mol_viz_seed_list = glob.glob(os.path.join(mol_viz_top_level_dir, "*"))
+          mol_viz_seed_list.sort()
+
+          # Clear the list of seeds (e.g. seed_00001, seed_00002, etc) and the
+          # list of files (e.g. my_project.cellbin.0001.dat,
+          # my_project.cellbin.0002.dat)
+          mcell.mol_viz.mol_viz_seed_list.clear()
+
+
+          # Add all the seed directories to the mol_viz_seed_list collection
+          # (seed_00001, seed_00002, etc)
+          for mol_viz_seed in mol_viz_seed_list:
+              new_item = mcell.mol_viz.mol_viz_seed_list.add()
+              new_item.name = os.path.basename(mol_viz_seed)
+
+          if mcell.mol_viz.mol_viz_seed_list:
+              mol_file_dir = get_mol_file_dir()
+              mcell.mol_viz.mol_file_dir = mol_file_dir
+
+        mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
+        mol_file_list.sort()
+
 #        mcell.mol_viz.mol_file_list.clear()
         global_mol_file_list = []
 
-        # Add all the seed directories to the mol_viz_seed_list collection
-        # (seed_00001, seed_00002, etc)
-        for mol_viz_seed in mol_viz_seed_list:
-            new_item = mcell.mol_viz.mol_viz_seed_list.add()
-            new_item.name = os.path.basename(mol_viz_seed)
+        # Add all the viz_data files to mol_file_list (e.g.
+        # my_project.cellbin.0001.dat, my_project.cellbin.0001.dat, etc)
+        for mol_file_name in mol_file_list:
+#            new_item = mcell.mol_viz.mol_file_list.add()
+#            new_item.name = os.path.basename(mol_file_name)
+            global_mol_file_list.append(os.path.basename(mol_file_name))
 
-        if mcell.mol_viz.mol_viz_seed_list:
-            mol_file_dir = get_mol_file_dir()
-            mcell.mol_viz.mol_file_dir = mol_file_dir
+        # If you previously had some viz data loaded, but reran the
+        # simulation with less iterations, you can receive an index error.
+        try:
+#            mol_file = mcell.mol_viz.mol_file_list[
+#                mcell.mol_viz.mol_file_index]
+            mol_file = global_mol_file_list[
+                mcell.mol_viz.mol_file_index]
+        except IndexError:
+            mcell.mol_viz.mol_file_index = 0
 
-            mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
-            mol_file_list.sort()
+        create_color_list()
+        set_viz_boundaries(context)
 
-
-            # Add all the viz_data files to mol_file_list collection (e.g.
-            # my_project.cellbin.0001.dat, my_project.cellbin.0001.dat, etc)
-            for mol_file_name in mol_file_list:
-#                new_item = mcell.mol_viz.mol_file_list.add()
-#                new_item.name = os.path.basename(mol_file_name)
-                global_mol_file_list.append(os.path.basename(mol_file_name))
-
-            # If you previously had some viz data loaded, but reran the
-            # simulation with less iterations, you can receive an index error.
-            try:
-#                mol_file = mcell.mol_viz.mol_file_list[
-#                    mcell.mol_viz.mol_file_index]
-                mol_file = global_mol_file_list[
-                    mcell.mol_viz.mol_file_index]
-            except IndexError:
-                mcell.mol_viz.mol_file_index = 0
-
-            create_color_list()
-            set_viz_boundaries(context)
-
-            try:
-                mol_viz_update(self, context)
-            except:
-                print( "Unexpected Exception calling mol_viz_update: " + str(sys.exc_info()) )
+        try:
+            mol_viz_update(self, context)
+        except:
+            print( "Unexpected Exception calling mol_viz_update: " + str(sys.exc_info()) )
 
         return {'FINISHED'}
 
@@ -2185,6 +2192,9 @@ class MCELL_OT_select_viz_data(bpy.types.Operator):
         else:
             # Strip the file name off of the file path.
             mol_file_dir = os.path.dirname(self.filepath)
+
+        mcell.mol_viz.mol_file_dir = mol_file_dir
+
         mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
         mol_file_list.sort()
 
@@ -2192,7 +2202,6 @@ class MCELL_OT_select_viz_data(bpy.types.Operator):
 #        mcell.mol_viz.mol_file_list.clear()
         global_mol_file_list = []
 
-        mcell.mol_viz.mol_file_dir = mol_file_dir
         for mol_file_name in mol_file_list:
 #            new_item = mcell.mol_viz.mol_file_list.add()
 #            new_item.name = os.path.basename(mol_file_name)
@@ -2455,14 +2464,7 @@ def mol_viz_update(self, context):
 #        filename = mcell.mol_viz.mol_file_list[mcell.mol_viz.mol_file_index].name
         filename = global_mol_file_list[mcell.mol_viz.mol_file_index]
         mcell.mol_viz.mol_file_name = filename
-        # filepath is relative to blend file location under default scenarios (i.e.
-        # when we can expect to find the standard CellBlender directory layout).
-        if not mcell.mol_viz.manual_select_viz_dir:
-            filepath = os.path.join(get_mol_file_dir(), filename)
-        # filepath is absolute in case of manually selecting viz data, since it may
-        # have nothing to do with the particular blend file in question.
-        else:
-            filepath = os.path.join(mcell.mol_viz.mol_file_dir, filename)
+        filepath = os.path.join(mcell.mol_viz.mol_file_dir, filename)
 
         # Save current global_undo setting. Turn undo off to save memory
         global_undo = bpy.context.user_preferences.edit.use_global_undo
