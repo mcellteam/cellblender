@@ -316,10 +316,12 @@ class SBML2JSON:
                 if 'mole' in species.getSubstanceUnits():
                     initialConcentration /= float(6.022e8)
             sinitialConcentration = str(initialConcentration) if not math.isnan(initialConcentration) else '0'
-            
             if not initialAmountFlag:
                 if species.getSubstanceUnits() == '' and compartmentList[compartment][0] ==3:
                     sinitialConcentration = '({0})/Nav'.format(sinitialConcentration)
+                #if its a surface molecule obtain the density
+                elif compartmentList[compartment][0] == 2:
+                    sinitialConcentration = '({0})*rxn_layer_t'.format(sinitialConcentration)
                 #sinitialConcentration = '({0})/vol_{1}'.format(sinitialConcentration,compartment)
                 sinitialConcentration = '({0})/{1}'.format(sinitialConcentration,compartmentList[compartment][1])
             
@@ -668,9 +670,7 @@ def transform(filePath):
 
 def main():
 
-
     if libsbml == None:
-
         return
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
@@ -709,11 +709,10 @@ def main():
     definition['rel_list'] = release
     definition['obs_list'] = observables
     #definition['comp_list'] = compartments
-
     with open(outputFile,'w') as f:
         json.dump(definition,f,sort_keys=True,indent=1, separators=(',', ': '))
     #logging.info('SBML import intermediate file written to {0}'.format(outputFile))
         
 
 if __name__ == "__main__":
-	main()
+    main()
