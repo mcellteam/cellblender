@@ -741,7 +741,10 @@ def save_general_parameters(ps, out_file):
         out_file.write("/* DEFINE PARAMETERS */\n")
                 
         for p in ps.general_parameter_list:
-            out_file.write("%s = %s" % (p.par_name, p.expr))
+            if ps.export_as_expressions:
+                out_file.write("%s = %s" % (p.par_name, p.expr))
+            else:
+                out_file.write("%s = %f" % (p.par_name, p.value))
             
             if ((p.descr != "") | (p.units != "")):
                 out_file.write("    /* ")

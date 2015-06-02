@@ -1850,9 +1850,24 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         self['gname_to_id_dict'] = {}
         self.next_gid = 1
         if 'model_parameters' in par_sys_dm:
+            # Add all of the parameters - some will be invalid if they depend on other parameters that haven't been read yet
             for p in par_sys_dm['model_parameters']:
                 print ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + p['par_units'] + ") ... " + p['par_description'] )
                 self.add_general_parameter_with_values ( p['par_name'], p['par_expression'], p['par_units'], p['par_description'] )
+
+            # Update the parameter expressions for any that were invalid after all have been added
+            last_num_invalid = 0
+            keep_checking = True
+            while keep_checking:
+                num_invalid = 0
+                for p in self.general_parameter_list:
+                    if not p.isvalid:
+                        num_invalid +=1
+                        # Assign it again to force an evaluation after all other parameters have been added
+                        p.expr = p.expr
+                if num_invalid == last_num_invalid:
+                    # No parameters have been updated, so exit (even if there are some remaining invalid)
+                    keep_checking = False
 
 
 

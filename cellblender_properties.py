@@ -1012,7 +1012,7 @@ class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
 
             # if not mcell.versions_match:
             if not cellblender.cellblender_info['versions_match']:
-                # Verion in Blend file does not match Addon, so give user a button to upgrade if desired
+                # Version in Blend file does not match Addon, so give user a button to upgrade if desired
                 row = layout.row()
                 row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
 
@@ -1020,6 +1020,9 @@ class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
                 row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
                 #row = layout.row()
                 #row.operator ( "mcell.delete", text="Delete CellBlender Collection Properties", icon='RADIO' )
+
+                row = layout.row()
+                row.label ( "Note: Saving this file will FORCE an upgrade!!!", icon='ERROR' )
 
             row = layout.row()
             if not bpy.data.filepath:

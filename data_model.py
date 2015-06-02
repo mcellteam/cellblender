@@ -16,7 +16,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 # <pep8 compliant>
-
+ 
 """
 This file contains the classes defining and handling the CellBlender Data Model.
 The CellBlender Data Model is intended to be a fairly stable representation of
