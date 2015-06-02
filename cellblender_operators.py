@@ -2030,6 +2030,8 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
 
         mcell = context.scene.mcell
 
+        mol_file_dir = ''
+
         #  mol_file_dir comes from directory already chosen manually
         if mcell.mol_viz.manual_select_viz_dir:
             mol_file_dir = mcell.mol_viz.mol_file_dir
@@ -2059,36 +2061,40 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
               mol_file_dir = get_mol_file_dir()
               mcell.mol_viz.mol_file_dir = mol_file_dir
 
-        mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
-        mol_file_list.sort()
-
 #        mcell.mol_viz.mol_file_list.clear()
+
         global_mol_file_list = []
+        mol_file_list = []
 
-        # Add all the viz_data files to mol_file_list (e.g.
-        # my_project.cellbin.0001.dat, my_project.cellbin.0001.dat, etc)
-        for mol_file_name in mol_file_list:
-#            new_item = mcell.mol_viz.mol_file_list.add()
-#            new_item.name = os.path.basename(mol_file_name)
-            global_mol_file_list.append(os.path.basename(mol_file_name))
+        if mol_file_dir != '':
+          mol_file_list = glob.glob(os.path.join(mol_file_dir, "*"))
+          mol_file_list.sort()
 
-        # If you previously had some viz data loaded, but reran the
-        # simulation with less iterations, you can receive an index error.
-        try:
-#            mol_file = mcell.mol_viz.mol_file_list[
-#                mcell.mol_viz.mol_file_index]
-            mol_file = global_mol_file_list[
-                mcell.mol_viz.mol_file_index]
-        except IndexError:
-            mcell.mol_viz.mol_file_index = 0
+        if mol_file_list:
+          # Add all the viz_data files to global_mol_file_list (e.g.
+          # my_project.cellbin.0001.dat, my_project.cellbin.0001.dat, etc)
+          for mol_file_name in mol_file_list:
+#              new_item = mcell.mol_viz.mol_file_list.add()
+#              new_item.name = os.path.basename(mol_file_name)
+              global_mol_file_list.append(os.path.basename(mol_file_name))
 
-        create_color_list()
-        set_viz_boundaries(context)
+          # If you previously had some viz data loaded, but reran the
+          # simulation with less iterations, you can receive an index error.
+          try:
+#              mol_file = mcell.mol_viz.mol_file_list[
+#                  mcell.mol_viz.mol_file_index]
+              mol_file = global_mol_file_list[
+                  mcell.mol_viz.mol_file_index]
+          except IndexError:
+              mcell.mol_viz.mol_file_index = 0
 
-        try:
-            mol_viz_update(self, context)
-        except:
-            print( "Unexpected Exception calling mol_viz_update: " + str(sys.exc_info()) )
+          create_color_list()
+          set_viz_boundaries(context)
+
+          try:
+              mol_viz_update(self, context)
+          except:
+              print( "Unexpected Exception calling mol_viz_update: " + str(sys.exc_info()) )
 
         return {'FINISHED'}
 
