@@ -1991,8 +1991,11 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 row.prop(ps, "param_display_format", text="Parameter Display Format")
                 row = box.row()
                 row.prop(ps, "param_label_fraction", text="Parameter Label Fraction")
-                row = box.row()
-                row.prop(ps, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
+
+# Note: Disable this option until we can export parameters in 
+#   define-before-reference order.               
+#                row = box.row()
+#                row.prop(ps, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
 
                 row = box.row()
                 row.operator("mcell.print_profiling", text="Print Profiling")
