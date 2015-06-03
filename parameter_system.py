@@ -296,6 +296,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
     #@profile('Parameter_Reference.get_value')
     def get_value ( self, plist=None ):
+        '''Return the numeric value of this parameter'''
         if plist == None:
             # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
             mcell = bpy.context.scene.mcell
@@ -308,12 +309,29 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
     #@profile('Parameter_Reference.get_as_string')
     def get_as_string ( self, plist=None, as_expr=False ):
+        '''Return a string represeting the numeric value or the expression itself'''
         if plist == None:
             # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
             mcell = bpy.context.scene.mcell
             plist = mcell.parameter_system.panel_parameter_list
         p = self.get_param(plist)
         if as_expr:
+            return p.expr
+        else:
+            if p.isint:
+                return "%g"%(int(p.get_numeric_value()))
+            else:
+                return "%g"%(p.get_numeric_value())
+
+    #@profile('Parameter_Reference.get_as_string_or_value')
+    def get_as_string_or_value ( self, plist=None, as_expr=False ):
+        '''Return a string represeting the numeric value or a non-blank expression'''
+        if plist == None:
+            # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
+            mcell = bpy.context.scene.mcell
+            plist = mcell.parameter_system.panel_parameter_list
+        p = self.get_param(plist)
+        if as_expr and (len(p.expr.strip()) > 0):
             return p.expr
         else:
             if p.isint:

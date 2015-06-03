@@ -269,13 +269,13 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
                     variable_out_file.write(variable_rate_text.as_string())
             # Use a single-value rate constant
             else:
-                out_file.write("[%s]" % (self.fwd_rate.get_as_string(
+                out_file.write("[%s]" % (self.fwd_rate.get_as_string_or_value(
                                ps.panel_parameter_list,ps.export_as_expressions)))    
         else:
             out_file.write(
-                "[>%s, <%s]" % (self.fwd_rate.get_as_string(
+                "[>%s, <%s]" % (self.fwd_rate.get_as_string_or_value(
                 ps.panel_parameter_list, ps.export_as_expressions),
-                self.bkwd_rate.get_as_string(ps.panel_parameter_list,
+                self.bkwd_rate.get_as_string_or_value(ps.panel_parameter_list,
                 ps.export_as_expressions)))
 
         if self.rxn_name:
