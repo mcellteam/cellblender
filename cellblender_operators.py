@@ -3669,9 +3669,14 @@ def check_rxn_output(self, context):
     if rxn_output.rxn_or_mol == 'Reaction':
         count_name = reaction_name
         name_list = reaction_list
-    else:
+    elif rxn_output.rxn_or_mol == 'Molecule':
         count_name = molecule_name
         name_list = mol_list
+    else:
+        rxn_output.status = ""
+        rxn_output.name = rxn_output.mdl_string
+
+        return
 
     # Check for illegal names (Starts with a letter. No special characters.)
     count_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)"

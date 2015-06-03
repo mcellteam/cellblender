@@ -85,6 +85,7 @@ class EXTERNAL_OT_molecule_add(bpy.types.Operator):
             molecule.init_properties(ps)
 
             molecule.name = str(key['name'])
+            molecule.bnglLabel = str(key['extendedName'])
             molecule.type = str(key['type'])
             #molecule.diffusion_constant.expression = str(key['dif'])
             #molecule.diffusion_constant.param_data.label = "Diffusion Constant"
