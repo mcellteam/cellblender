@@ -2375,6 +2375,34 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
                                "count statements or reaction driven molecule release / placement."
                     ps.draw_prop_with_help ( layout, "Reaction Name:", rxn, "rxn_name", "rxn_name_show_help", rxn.rxn_name_show_help, helptext )
 
+                    reactants = rxn.reactants.split(" + ")
+                    products = rxn.products.split(" + ")
+                    mol_list = mcell.molecules.molecule_list
+                    bnglreactant = []
+                    bnglproduct = []
+                    for reactant in reactants:
+                        reactantStr = reactant
+                        while reactantStr[-1] in ["'", ",", ";"]:
+                            reactantStr = reactantStr[:-1]
+                        if reactantStr in mol_list:
+                            bnglreactant.append(mol_list[reactantStr].bnglLabel)
+                    for product in products:
+                        productStr = product
+                        while productStr[-1] in ["'", ",", ";"]:
+                            productStr = productStr[:-1]
+
+                        if productStr in mol_list:
+                            bnglproduct.append(mol_list[productStr].bnglLabel)
+                    reactant_string = ' + '.join(bnglreactant) + ' -> '
+                    product_string = ' + '.join(bnglproduct)
+
+                    if len(product_string) > 0:
+                        row = layout.row()
+                        row2 = layout.row()
+
+                        row.label(text="BNGL reaction: {0}".format(reactant_string), icon='BLANK1')
+                        row2.label(text="{0}".format(product_string), icon='BLANK1')
+
             else:
                 row.label(text="Define at least one molecule", icon='ERROR')
 
