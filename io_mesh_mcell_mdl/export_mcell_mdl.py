@@ -708,29 +708,60 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
 
         out_file.write('  }\n')
 
+# This function is not being used except in commented references within save_wrapper
+#
+#def save_parameters(context, out_file, par_list):
+#    """ Saves parameter info to mdl output file. """
+#
+#    # Export Parameter:
+#    if par_list:
+#        out_file.write("/* DEFINE PARAMETERS */\n")
+#
+#        for par_item in par_list:
+#            out_file.write("    %s = %s" % (par_item.name, par_item.value))
+#
+#            if ((par_item.unit != "") | (par_item.type != "")):
+#                out_file.write("    /* ")
+#
+#                if par_item.unit != "":
+#                    out_file.write("%s. " % (par_item.unit))
+#
+#                if par_item.type != "":
+#                    out_file.write("%s. " % (par_item.type))
+#
+#                out_file.write("*/")
+#                out_file.write("\n")
+#        out_file.write("\n")
 
-def save_parameters(context, out_file, par_list):
-    """ Saves parameter info to mdl output file. """
+
+def write_parameter_as_mdl ( p, out_file, as_expr ):
+    """ Writes a single parameter as MDL as either a value or an expression """
 
     # Export Parameter:
-    if par_list:
-        out_file.write("/* DEFINE PARAMETERS */\n")
-                
-        for par_item in par_list:
-            out_file.write("    %s = %s" % (par_item.name, par_item.value))
-            
-            if ((par_item.unit != "") | (par_item.type != "")):
-                out_file.write("    /* ")
-            
-                if par_item.unit != "":
-                    out_file.write("%s. " % (par_item.unit))
-            
-                if par_item.type != "":
-                    out_file.write("%s. " % (par_item.type))
-            
-                out_file.write("*/") 		 
-                out_file.write("\n") 
-        out_file.write("\n")
+    if as_expr:
+        # Note that some expressions are allowed to be blank which indicates use of the default VALUE
+        if len(p.expr.strip()) <= 0:
+            # The expression is blank, so use the value which should be the default
+            out_file.write("%s = %f" % (p.par_name, p.value))
+        else:
+            # The expression is not blank, so use it
+            out_file.write("%s = %s" % (p.par_name, p.expr))
+    else:
+        # Output the value rather than the expression
+        out_file.write("%s = %f" % (p.par_name, p.value))
+
+    if ((p.descr != "") | (p.units != "")):
+        out_file.write("    /* ")
+
+        if p.descr != "":
+            out_file.write("%s " % (p.descr))
+
+        if p.units != "":
+            out_file.write("   units=%s" % (p.units))
+
+        out_file.write(" */")
+    out_file.write("\n")
+
 
 
 def save_general_parameters(ps, out_file):
@@ -738,26 +769,25 @@ def save_general_parameters(ps, out_file):
 
     # Export Parameters:
     if ps and ps.general_parameter_list:
-        out_file.write("/* DEFINE PARAMETERS */\n")
                 
-        for p in ps.general_parameter_list:
-            if ps.export_as_expressions:
-                out_file.write("%s = %s" % (p.par_name, p.expr))
-            else:
-                out_file.write("%s = %f" % (p.par_name, p.value))
-            
-            if ((p.descr != "") | (p.units != "")):
-                out_file.write("    /* ")
-            
-                if p.descr != "":
-                    out_file.write("%s " % (p.descr))
-            
-                if p.units != "":
-                    out_file.write("   units=%s" % (p.units))
-            
-                out_file.write(" */")
-                out_file.write("\n")
-        out_file.write("\n")
+        if not ps.export_as_expressions:
+
+            # Output as values ... order doesn't matter
+            out_file.write("/* DEFINE PARAMETERS */\n")
+            for p in ps.general_parameter_list:
+                write_parameter_as_mdl ( p, out_file, ps.export_as_expressions )
+            out_file.write("\n")
+
+        else:
+
+            ordered_names = ps.build_dependency_ordered_name_list()
+            print ( "Ordered names = " + str(ordered_names) )
+            # Output as expressions where order matters
+            out_file.write("/* DEFINE PARAMETERS */\n")
+            for pn in ordered_names:
+                p = ps.general_parameter_list[pn]
+                write_parameter_as_mdl ( p, out_file, ps.export_as_expressions )
+            out_file.write("\n")
 
 
 def save_molecules(context, out_file, mol_list):
@@ -1029,6 +1059,9 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
     out_file.write("REACTION_DATA_OUTPUT\n{\n")
     rxn_step = mcell.rxn_output.rxn_step.get_as_string(
         ps.panel_parameter_list, ps.export_as_expressions)
+    if len(rxn_step.strip()) <= 0:
+        # If rxn_step is blank, use its value
+        rxn_step = str(mcell.rxn_output.rxn_step.get_value(ps.panel_parameter_list))
     out_file.write("  STEP=%s\n" % rxn_step)
 
     for rxn_output in rxn_output_list:
