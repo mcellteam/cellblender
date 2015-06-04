@@ -3586,6 +3586,7 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
 
 import cellblender
 
+"""
 #JJT:temporary class
 class MCellReactionOutputPropertyTemp(bpy.types.PropertyGroup):
     name = StringProperty(
@@ -3593,15 +3594,17 @@ class MCellReactionOutputPropertyTemp(bpy.types.PropertyGroup):
     molecule_name = StringProperty(
         name="Molecule",
         description="Count the selected molecules.")
-
+"""
 
 class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
+    """
     #JJT: temporary list made to hold complex expressions from imported files
     temp_index = IntProperty(
         name="Temp Output Index", default=0)
     complex_rxn_output_list = CollectionProperty(
         type=MCellReactionOutputPropertyTemp,name="Temporary output list")
-    
+    """
+
     rxn_step = PointerProperty ( name="Step",
         type=parameter_system.Parameter_Reference )
     active_rxn_output_index = IntProperty(
@@ -3699,9 +3702,12 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all Reaction Output Properties..." )
+        """
+        #deprecated
         for item in self.complex_rxn_output_list:
             item.remove_properties(context)
         self.complex_rxn_output_list.clear()
+        """
         self.active_rxn_output_index = 0
         for item in self.rxn_output_list:
             item.remove_properties(context)
@@ -3743,9 +3749,9 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                         layout.prop_search(
                             rxn_output, "reaction_name", mcell.reactions,
                             "reaction_name_list", icon='FORCE_LENNARDJONES')
-                    else:
+                    elif rxn_output.rxn_or_mol == 'MDLString':
                         layout.prop(rxn_output, "mdl_string")
-
+                        layout.prop(rxn_output,"molecule_name")
                         #literal mdl string
 
                     layout.prop(rxn_output, "count_location", expand=True)
