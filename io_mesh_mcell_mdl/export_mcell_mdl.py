@@ -226,12 +226,12 @@ def save_wrapper(context, out_file, filedir):
 
 
     # Export model initialization:
-    out_file.write("ITERATIONS = %s\n" % (mcell.initialization.iterations.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+    out_file.write("ITERATIONS = %s\n" % (mcell.initialization.iterations.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
     
-    out_file.write("TIME_STEP = %s\n" % (mcell.initialization.time_step.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+    out_file.write("TIME_STEP = %s\n" % (mcell.initialization.time_step.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
 
     if mcell.initialization.vacancy_search_distance.get_expr(ps.panel_parameter_list) != '':
-        out_file.write("VACANCY_SEARCH_DISTANCE = %s\n" % (mcell.initialization.vacancy_search_distance.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+        out_file.write("VACANCY_SEARCH_DISTANCE = %s\n" % (mcell.initialization.vacancy_search_distance.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
     else:
         out_file.write("VACANCY_SEARCH_DISTANCE = 10\n\n") # DB: added to avoid error (I think it should have a default value to avoid error in most of the reaction networks)
 
@@ -500,25 +500,25 @@ def save_initialization_commands(context, out_file):
     ps = mcell.parameter_system
     # Maximum Time Step
     if init.time_step_max.get_expr(ps.panel_parameter_list) != '':
-        out_file.write("TIME_STEP_MAX = %s\n" % (init.time_step_max.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+        out_file.write("TIME_STEP_MAX = %s\n" % (init.time_step_max.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
     # Space Step
     if init.space_step.get_expr(ps.panel_parameter_list) != '':
-        out_file.write("SPACE_STEP = %s\n" % (init.space_step.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+        out_file.write("SPACE_STEP = %s\n" % (init.space_step.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
     # Interaction Radius
     if init.interaction_radius.get_expr(ps.panel_parameter_list) != '':
-        out_file.write("INTERACTION_RADIUS = %s\n" % (init.interaction_radius.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+        out_file.write("INTERACTION_RADIUS = %s\n" % (init.interaction_radius.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
     # Radial Directions
     if init.radial_directions.get_expr(ps.panel_parameter_list) != '':
-        out_file.write("RADIAL_DIRECTIONS = %s\n" % (init.radial_directions.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+        out_file.write("RADIAL_DIRECTIONS = %s\n" % (init.radial_directions.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
     # Radial Subdivisions
     if init.radial_subdivisions.get_expr(ps.panel_parameter_list) != '':
-        out_file.write("RADIAL_SUBDIVISIONS = %s\n" % (init.radial_subdivisions.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+        out_file.write("RADIAL_SUBDIVISIONS = %s\n" % (init.radial_subdivisions.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
     # Vacancy Search Distance
     if init.vacancy_search_distance.get_expr(ps.panel_parameter_list) != '':
-        out_file.write("VACANCY_SEARCH_DISTANCE = %s\n" % (init.vacancy_search_distance.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+        out_file.write("VACANCY_SEARCH_DISTANCE = %s\n" % (init.vacancy_search_distance.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
     # Surface Grid Density
     ##### TODO: If surface_grid_density is an integer (as it is) why output it as %g format?
-    out_file.write("SURFACE_GRID_DENSITY = %s\n" % (init.surface_grid_density.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+    out_file.write("SURFACE_GRID_DENSITY = %s\n" % (init.surface_grid_density.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
     # Accurate 3D Reactions
     if init.accurate_3d_reactions:
         out_file.write("ACCURATE_3D_REACTIONS = TRUE\n")
@@ -659,11 +659,11 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
 
             out_file.write("   SHAPE = %s\n" % (release_site.shape))
             out_file.write("   LOCATION = [%s, %s, %s]\n" %
-                           (release_site.location_x.get_as_string(ps.panel_parameter_list,ps.export_as_expressions),
-                            release_site.location_y.get_as_string(ps.panel_parameter_list,ps.export_as_expressions),
-                            release_site.location_z.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+                           (release_site.location_x.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions),
+                            release_site.location_y.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions),
+                            release_site.location_z.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
             out_file.write("   SITE_DIAMETER = %s\n" %
-                           (release_site.diameter.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+                           (release_site.diameter.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
 
         # user defined shapes
         if (release_site.shape == 'OBJECT'):
@@ -680,28 +680,28 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
 
         if release_site.quantity_type == 'NUMBER_TO_RELEASE':
             out_file.write("   NUMBER_TO_RELEASE = %s\n" %
-                       (release_site.quantity.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+                       (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
 
         elif release_site.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
             out_file.write("   GAUSSIAN_RELEASE_NUMBER\n")
             out_file.write("   {\n")
             out_file.write("        MEAN_NUMBER = %s\n" %
-                           (release_site.quantity.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+                           (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
             out_file.write("        STANDARD_DEVIATION = %s\n" %
-                           (release_site.stddev.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+                           (release_site.stddev.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
             out_file.write("      }\n")
 
         elif release_site.quantity_type == 'DENSITY':
             if release_site.molecule in mol_list:
                 if mol_list[release_site.molecule].type == '2D':
                     out_file.write("   DENSITY = %s\n" %
-                               (release_site.quantity.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+                               (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
                 else:
                     out_file.write("   CONCENTRATION = %s\n" %
-                               (release_site.quantity.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+                               (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
 
         out_file.write("   RELEASE_PROBABILITY = %s\n" %
-                       (release_site.probability.get_as_string(ps.panel_parameter_list,ps.export_as_expressions)))
+                       (release_site.probability.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
 
         if release_site.pattern:
             out_file.write("   RELEASE_PATTERN = %s\n" %
@@ -709,29 +709,60 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
 
         out_file.write('  }\n')
 
+# This function is not being used except in commented references within save_wrapper
+#
+#def save_parameters(context, out_file, par_list):
+#    """ Saves parameter info to mdl output file. """
+#
+#    # Export Parameter:
+#    if par_list:
+#        out_file.write("/* DEFINE PARAMETERS */\n")
+#
+#        for par_item in par_list:
+#            out_file.write("    %s = %s" % (par_item.name, par_item.value))
+#
+#            if ((par_item.unit != "") | (par_item.type != "")):
+#                out_file.write("    /* ")
+#
+#                if par_item.unit != "":
+#                    out_file.write("%s. " % (par_item.unit))
+#
+#                if par_item.type != "":
+#                    out_file.write("%s. " % (par_item.type))
+#
+#                out_file.write("*/")
+#                out_file.write("\n")
+#        out_file.write("\n")
 
-def save_parameters(context, out_file, par_list):
-    """ Saves parameter info to mdl output file. """
+
+def write_parameter_as_mdl ( p, out_file, as_expr ):
+    """ Writes a single parameter as MDL as either a value or an expression """
 
     # Export Parameter:
-    if par_list:
-        out_file.write("/* DEFINE PARAMETERS */\n")
-                
-        for par_item in par_list:
-            out_file.write("    %s = %s" % (par_item.name, par_item.value))
-            
-            if ((par_item.unit != "") | (par_item.type != "")):
-                out_file.write("    /* ")
-            
-                if par_item.unit != "":
-                    out_file.write("%s. " % (par_item.unit))
-            
-                if par_item.type != "":
-                    out_file.write("%s. " % (par_item.type))
-            
-                out_file.write("*/") 		 
-                out_file.write("\n") 
-        out_file.write("\n")
+    if as_expr:
+        # Note that some expressions are allowed to be blank which indicates use of the default VALUE
+        if len(p.expr.strip()) <= 0:
+            # The expression is blank, so use the value which should be the default
+            out_file.write("%s = %f" % (p.par_name, p.value))
+        else:
+            # The expression is not blank, so use it
+            out_file.write("%s = %s" % (p.par_name, p.expr))
+    else:
+        # Output the value rather than the expression
+        out_file.write("%s = %f" % (p.par_name, p.value))
+
+    if ((p.descr != "") | (p.units != "")):
+        out_file.write("    /* ")
+
+        if p.descr != "":
+            out_file.write("%s " % (p.descr))
+
+        if p.units != "":
+            out_file.write("   units=%s" % (p.units))
+
+        out_file.write(" */")
+    out_file.write("\n")
+
 
 
 def save_general_parameters(ps, out_file):
@@ -739,26 +770,25 @@ def save_general_parameters(ps, out_file):
 
     # Export Parameters:
     if ps and ps.general_parameter_list:
-        out_file.write("/* DEFINE PARAMETERS */\n")
                 
-        for p in ps.general_parameter_list:
-            if ps.export_as_expressions:
-                out_file.write("%s = %s" % (p.par_name, p.expr))
-            else:
-                out_file.write("%s = %f" % (p.par_name, p.value))
-            
-            if ((p.descr != "") | (p.units != "")):
-                out_file.write("    /* ")
-            
-                if p.descr != "":
-                    out_file.write("%s " % (p.descr))
-            
-                if p.units != "":
-                    out_file.write("   units=%s" % (p.units))
-            
-                out_file.write(" */")
-                out_file.write("\n")
-        out_file.write("\n")
+        if not ps.export_as_expressions:
+
+            # Output as values ... order doesn't matter
+            out_file.write("/* DEFINE PARAMETERS */\n")
+            for p in ps.general_parameter_list:
+                write_parameter_as_mdl ( p, out_file, ps.export_as_expressions )
+            out_file.write("\n")
+
+        else:
+
+            ordered_names = ps.build_dependency_ordered_name_list()
+            print ( "Ordered names = " + str(ordered_names) )
+            # Output as expressions where order matters
+            out_file.write("/* DEFINE PARAMETERS */\n")
+            for pn in ordered_names:
+                p = ps.general_parameter_list[pn]
+                write_parameter_as_mdl ( p, out_file, ps.export_as_expressions )
+            out_file.write("\n")
 
 
 def save_molecules(context, out_file, mol_list):
@@ -776,20 +806,20 @@ def save_molecules(context, out_file, mol_list):
 
         if mol_item.type == '2D':
             out_file.write("    DIFFUSION_CONSTANT_2D = %s\n" %
-                           (mol_item.diffusion_constant.get_as_string(
+                           (mol_item.diffusion_constant.get_as_string_or_value(
                             ps.panel_parameter_list, ps.export_as_expressions)))
         else:
             out_file.write("    DIFFUSION_CONSTANT_3D = %s\n" %
-                           (mol_item.diffusion_constant.get_as_string(
+                           (mol_item.diffusion_constant.get_as_string_or_value(
                             ps.panel_parameter_list, ps.export_as_expressions)))
 
         if mol_item.custom_time_step.get_value(ps.panel_parameter_list) > 0:
             out_file.write("    CUSTOM_TIME_STEP = %s\n" % 
-                           (mol_item.custom_time_step.get_as_string(
+                           (mol_item.custom_time_step.get_as_string_or_value(
                             ps.panel_parameter_list, ps.export_as_expressions)))
         elif mol_item.custom_space_step.get_value(ps.panel_parameter_list) > 0:
             out_file.write("    CUSTOM_SPACE_STEP = %s\n" %
-                           (mol_item.custom_space_step.get_as_string(
+                           (mol_item.custom_space_step.get_as_string_or_value(
                             ps.panel_parameter_list, ps.export_as_expressions)))
 
         if mol_item.target_only:
@@ -842,30 +872,30 @@ def save_rel_patterns(context, out_file, release_pattern_list):
         out_file.write("{\n")
 
         out_file.write(
-            "  DELAY = %s\n" % active_release_pattern.delay.get_as_string(
+            "  DELAY = %s\n" % active_release_pattern.delay.get_as_string_or_value(
             ps.panel_parameter_list, ps.export_as_expressions))
 
         if active_release_pattern.release_interval.get_expr(ps.panel_parameter_list) != '':
             out_file.write(
                 "  RELEASE_INTERVAL = %s\n" %
-                active_release_pattern.release_interval.get_as_string(
+                active_release_pattern.release_interval.get_as_string_or_value(
                 ps.panel_parameter_list,ps.export_as_expressions))
 
         if active_release_pattern.train_duration.get_expr(ps.panel_parameter_list) != '':
             out_file.write(
                 "  TRAIN_DURATION = %s\n" %
-                active_release_pattern.train_duration.get_as_string(
+                active_release_pattern.train_duration.get_as_string_or_value(
                 ps.panel_parameter_list,ps.export_as_expressions))
 
         if active_release_pattern.train_interval.get_expr(ps.panel_parameter_list) != '':
             out_file.write(
                 "  TRAIN_INTERVAL = %s\n" %
-                active_release_pattern.train_interval.get_as_string(
+                active_release_pattern.train_interval.get_as_string_or_value(
                 ps.panel_parameter_list,ps.export_as_expressions))
 
         out_file.write(
             "  NUMBER_OF_TRAINS = %s\n" %
-            active_release_pattern.number_of_trains.get_as_string(
+            active_release_pattern.number_of_trains.get_as_string_or_value(
             ps.panel_parameter_list,ps.export_as_expressions))
 
         out_file.write("}\n\n")
@@ -899,13 +929,13 @@ def save_reactions(context, out_file, rxn_list, filedir):
                     variable_out_file.write(variable_rate_text.as_string())
             # Use a single-value rate constant
             else:
-                out_file.write("[%s]" % (rxn_item.fwd_rate.get_as_string(
+                out_file.write("[%s]" % (rxn_item.fwd_rate.get_as_string_or_value(
                                ps.panel_parameter_list,ps.export_as_expressions)))    
         else:
             out_file.write(
-                "[>%s, <%s]" % (rxn_item.fwd_rate.get_as_string(
+                "[>%s, <%s]" % (rxn_item.fwd_rate.get_as_string_or_value(
                 ps.panel_parameter_list, ps.export_as_expressions),
-                rxn_item.bkwd_rate.get_as_string(ps.panel_parameter_list,
+                rxn_item.bkwd_rate.get_as_string_or_value(ps.panel_parameter_list,
                 ps.export_as_expressions)))
 
         if rxn_item.rxn_name:
@@ -1028,7 +1058,7 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
     ps = mcell.parameter_system
 
     out_file.write("REACTION_DATA_OUTPUT\n{\n")
-    rxn_step = mcell.rxn_output.rxn_step.get_as_string(
+    rxn_step = mcell.rxn_output.rxn_step.get_as_string_or_value(
         ps.panel_parameter_list, ps.export_as_expressions)
     out_file.write("  STEP=%s\n" % rxn_step)
 
@@ -1076,7 +1106,7 @@ def save_rxn_output_temp_mdl(context, out_file, rxn_output_list):
     ps = mcell.parameter_system
 
     out_file.write("REACTION_DATA_OUTPUT\n{\n")
-    rxn_step = mcell.rxn_output.rxn_step.get_as_string(
+    rxn_step = mcell.rxn_output.rxn_step.get_as_string_or_value(
         ps.panel_parameter_list, ps.export_as_expressions)
     out_file.write("  STEP=%s\n" % rxn_step)
 

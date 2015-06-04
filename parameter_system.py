@@ -296,6 +296,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
     #@profile('Parameter_Reference.get_value')
     def get_value ( self, plist=None ):
+        '''Return the numeric value of this parameter'''
         if plist == None:
             # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
             mcell = bpy.context.scene.mcell
@@ -308,12 +309,29 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
     #@profile('Parameter_Reference.get_as_string')
     def get_as_string ( self, plist=None, as_expr=False ):
+        '''Return a string represeting the numeric value or the expression itself'''
         if plist == None:
             # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
             mcell = bpy.context.scene.mcell
             plist = mcell.parameter_system.panel_parameter_list
         p = self.get_param(plist)
         if as_expr:
+            return p.expr
+        else:
+            if p.isint:
+                return "%g"%(int(p.get_numeric_value()))
+            else:
+                return "%g"%(p.get_numeric_value())
+
+    #@profile('Parameter_Reference.get_as_string_or_value')
+    def get_as_string_or_value ( self, plist=None, as_expr=False ):
+        '''Return a string represeting the numeric value or a non-blank expression'''
+        if plist == None:
+            # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
+            mcell = bpy.context.scene.mcell
+            plist = mcell.parameter_system.panel_parameter_list
+        p = self.get_param(plist)
+        if as_expr and (len(p.expr.strip()) > 0):
             return p.expr
         else:
             if p.isint:
@@ -1778,6 +1796,33 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
         return ( status )
 
+
+
+    #@profile('ParameterSystem.build_dependency_ordered_name_list')
+    def build_dependency_ordered_name_list ( self ):
+        print ( "Building Dependency Ordered Name List" )
+        ol = []
+        if len(self.general_parameter_list) > 0:
+            gl = self.general_parameter_list;
+            gs = set(gl.keys())
+            print ( " general parameter set (gs) = " + str(gs) )
+            while len(gs) > len(ol):
+                defined_set = set(ol)
+                print ( "  In while with already defined_set = " + str(defined_set) )
+                for n in gs:
+                    print ( n + " is " + gl[n].par_name + ", depends on (" + gl[n].who_I_depend_on + "), and depended on by (" + gl[n].who_depends_on_me + ")" )
+                    print ( "   Checking for " + n + " in the defined set" )
+                    if not ( n in defined_set):
+                        print ( "     " + n + " is not defined yet, check if it can be" )
+                        dep_set = set(gl[n].who_I_depend_on.split())
+                        if dep_set.issubset(defined_set):
+                            print ( "       " + n + " is now defined since all its dependencies are defined." )
+                            ol.append ( n );
+                            defined_set = set(ol)
+        return ol
+
+
+
     #@profile('ParameterSystem.register_validity')
     def register_validity ( self, name, valid ):
         """ Register the global validity or invalidity of a parameter """
@@ -1992,10 +2037,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 row = box.row()
                 row.prop(ps, "param_label_fraction", text="Parameter Label Fraction")
 
-# Note: Disable this option until we can export parameters in 
-#   define-before-reference order.               
-#                row = box.row()
-#                row.prop(ps, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
+                row = box.row()
+                row.prop(ps, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
 
                 row = box.row()
                 row.operator("mcell.print_profiling", text="Print Profiling")

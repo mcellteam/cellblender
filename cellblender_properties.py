@@ -269,13 +269,13 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
                     variable_out_file.write(variable_rate_text.as_string())
             # Use a single-value rate constant
             else:
-                out_file.write("[%s]" % (self.fwd_rate.get_as_string(
+                out_file.write("[%s]" % (self.fwd_rate.get_as_string_or_value(
                                ps.panel_parameter_list,ps.export_as_expressions)))    
         else:
             out_file.write(
-                "[>%s, <%s]" % (self.fwd_rate.get_as_string(
+                "[>%s, <%s]" % (self.fwd_rate.get_as_string_or_value(
                 ps.panel_parameter_list, ps.export_as_expressions),
-                self.bkwd_rate.get_as_string(ps.panel_parameter_list,
+                self.bkwd_rate.get_as_string_or_value(ps.panel_parameter_list,
                 ps.export_as_expressions)))
 
         if self.rxn_name:
@@ -845,10 +845,12 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
         name="CellBlender in Tool Tab", default=True,
         description="Show CellBlender Panel in Tool Tab", update=set_tool_panel_callback)
 
+    show_sim_runner_options = BoolProperty(name="Show Alternate Simulation Runners", default=False)
 
     tab_autocomplete = BoolProperty(name="Use tab for console autocomplete", default=False, update=set_tab_autocomplete_callback)
     double_sided = BoolProperty(name="Show Double Sided Mesh Objects", default=False, update=set_double_sided_callback)
     backface_culling = BoolProperty(name="Backface Culling", default=False, update=set_backface_culling_callback)
+
 
 
     def remove_properties ( self, context ):
@@ -950,6 +952,10 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
                 row.prop(mcell.cellblender_preferences, "show_scene_panel")
                 row = box.row()
                 row.prop(mcell.cellblender_preferences, "show_old_scene_panels")
+
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "show_sim_runner_options")
+
 
                 row = box.row()
                 row.label ( "Enable/Disable individual short menu buttons:" )
@@ -1283,8 +1289,9 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 #  Queue control is the default
 #  Queue control is currently the only option which properly disables the
 #  run_simulation operator while simulations are currenlty running or queued
-#                    col = row.column()
-#                    col.prop(self, "simulation_run_control")
+                    if mcell.cellblender_preferences.show_sim_runner_options:
+                        col = row.column()
+                        col.prop(self, "simulation_run_control")
 
                 else:
                     row = box.row(align=True)
