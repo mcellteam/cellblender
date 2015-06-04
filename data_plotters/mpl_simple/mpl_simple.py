@@ -31,9 +31,9 @@ if (__name__ == '__main__'):
     for i in range(1, len(sys.argv)):
         filename = sys.argv[i]
         print('Plotting %s' % (filename))
-        data = numpy.loadtxt(sys.argv[i])
-        x = data[:, 0]
-        y = data[:, 1]
+        data = numpy.fromfile(sys.argv[i],sep=' ')
+        x = data[0::2]
+        y = data[1::2]
         ax.plot(x, y, label=filename)
 
     ax.legend()

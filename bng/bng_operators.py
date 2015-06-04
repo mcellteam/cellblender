@@ -1,13 +1,12 @@
 import bpy
 import os
-import sys
-import io
+import subprocess
 
-import cellblender
 from cellblender import cellblender_properties, cellblender_operators
-from . import net
+#from . import net
 
 # We use per module class registration/unregistration
+filePath = ''
 def register():
     bpy.utils.register_module(__name__)
 
@@ -15,116 +14,10 @@ def register():
 def unregister():
     bpy.utils.unregister_module(__name__)
 
-class BNG_OT_parameter_add(bpy.types.Operator):
-    bl_idname = "bng.parameter_add"
-    bl_label = "Add Parameter"
-    bl_description = "Add imported parameters to an MCell model"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        par_list = net.par_list
-        index = -1
-        for key in sorted(par_list.keys()):
-            index += 1
-            mcell.parameters.parameter_list.add()
-            mcell.parameters.active_par_index = index
-            parameter = mcell.parameters.parameter_list[
-                mcell.parameters.active_par_index]
-
-            parameter.name = par_list[key]['name']
-            parameter.value = par_list[key]['value']
-            parameter.unit = par_list[key]['unit']
-            parameter.type = par_list[key]['type']
-            mcell.general_parameters.add_parameter_with_values ( parameter.name, parameter.value, parameter.unit, parameter.type )
-            print ( "Adding parameter \"" + str(parameter.name) + "\"  =  \"" + str(parameter.value) + "\"  (" + str(parameter.unit) + ")" )
-
-        return {'FINISHED'}
 
 
-class BNG_OT_molecule_add(bpy.types.Operator):
-    bl_idname = "bng.molecule_add"
-    bl_label = "Add Molecule"
-    bl_description = "Add imported molecules from BNG-generated network"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        mol_list = net.mol_list
-        index = -1
-        for key in sorted(mol_list.keys()):
-            index += 1
-            mcell.molecules.molecule_list.add()
-            mcell.molecules.active_mol_index = index
-            molecule = mcell.molecules.molecule_list[
-                mcell.molecules.active_mol_index]
-            molecule.set_defaults()
-
-            molecule.name = mol_list[key]['name']
-            molecule.type = mol_list[key]['type']
-            molecule.diffusion_constant.expression = mol_list[key]['dif']
-            molecule.diffusion_constant.param_data.label = "Diffusion Constant"
-            print ( "Adding molecule " + str(molecule.name) )
-
-        return {'FINISHED'}
-    
-class BNG_OT_reaction_add(bpy.types.Operator):
-    bl_idname = "bng.reaction_add"
-    bl_label = "Add Reaction"
-    bl_description = "Add imported reactions from BNG-generated network"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        rxn_list = net.rxn_list
-        index = -1
-        for key in sorted(rxn_list.keys()):
-            index += 1
-            mcell.reactions.reaction_list.add()
-            mcell.reactions.active_rxn_index = index
-            reaction = mcell.reactions.reaction_list[
-                mcell.reactions.active_rxn_index]
-            reaction.set_defaults()
-		
-            reaction.reactants = rxn_list[key]['reactants']
-            reaction.products = rxn_list[key]['products']
-            reaction.fwd_rate.expression = rxn_list[key]['fwd_rate']
-            reaction.fwd_rate.param_data.label = "Forward Rate"
-            print ( "Adding reaction  " + str(reaction.reactants) + "  ->  " + str(reaction.products) )
-
-        return {'FINISHED'}
-
-class BNG_OT_release_site_add(bpy.types.Operator):
-    bl_idname = "bng.release_site_add"
-    bl_label = "Add Release Site"
-    bl_description = "Add imported release sites from BNG-generated network"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        rel_list = net.rel_list
-        index = -1
-        for key in sorted(rel_list.keys()):
-            index += 1
-            mcell.release_sites.mol_release_list.add()
-            mcell.release_sites.active_release_index = index
-            release_site = mcell.release_sites.mol_release_list[
-                mcell.release_sites.active_release_index]
-            release_site.set_defaults()
-            
-            release_site.name = rel_list[key]['name']
-            release_site.molecule = rel_list[key]['molecule']
-            release_site.shape = rel_list[key]['shape']
-            release_site.orient = rel_list[key]['orient']
-            release_site.object_expr = rel_list[key]['object_expr']     # This may not be the best name to use for Release Shape
-            release_site.quantity_type = rel_list[key]['quantity_type']
-            release_site.quantity.expression = rel_list[key]['quantity_expr']
-            cellblender_operators.check_release_molecule(self, context)
-            print ( "Adding release site " + str(release_site.name) )
-	    
-        return {'FINISHED'}
-
-
+def cleanup(filePath):
+    pass
 def execute_bionetgen(filepath,context):
     mcell = context.scene.mcell
     if mcell.cellblender_preferences.bionetgen_location_valid:
@@ -134,7 +27,8 @@ def execute_bionetgen(filepath,context):
       exe_bng = "  ".join([bngpath, "--outdir", destpath, filepath])    # create command string for BNG execution
       print("*** Starting BioNetGen execution ***")
       print("    Command: " + exe_bng )
-      os.system(exe_bng)    # execute BNG
+      #os.system(exe_bng)    # execute BNG
+      subprocess.call([bngpath,"--outdir",destpath,filepath])
     
     else:
       # Perform the search as done before
@@ -160,7 +54,8 @@ def execute_bionetgen(filepath,context):
                   destpath = os.path.dirname(__file__)
                   exe_bng = "    ".join([bngpath, "--outdir", destpath, filepath])    # create command string for BNG execution
                   print("*** Started BioNetGen execution ***")
-                  os.system(exe_bng)    # execute BNG
+                  #os.system(exe_bng)    # execute BNG
+                  subprocess.call([bngpath,"--outdir",destpath,filepath])
                   return{'FINISHED'}
               checked.update({dirpath:True})    # store checked directory in the list
           n +=1  

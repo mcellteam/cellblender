@@ -31,9 +31,9 @@ def run_sim(arglist):
     elif log_file_option == 'console':
         log_file = None
 
-    print("Running", mcell_binary, "with", mdl_filepath)
+    print("Running: " + mcell_binary + " " + mdl_filepath)
     subprocess_cwd = os.path.dirname(mdl_filepath)
-    print("  Should run from cwd =", subprocess_cwd)
+    print("  Should run from cwd = " +  subprocess_cwd)
 
     # Both output and error log file
     if (log_file_option == 'file' and error_file_option == 'file'):

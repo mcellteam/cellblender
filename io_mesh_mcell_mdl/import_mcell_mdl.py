@@ -22,7 +22,7 @@ from . import mdlmesh_parser
 from . import import_shared
 
 
-def load(operator, context, filepath=""):
+def load(operator, context, filepath="", add_to_model_objects=True):
 
     print("Calling mdlmesh_parser.mdl_parser(\'%s\')..." % (filepath))
     root_mdlobj = mdlmesh_parser.mdl_parser(filepath)
@@ -37,7 +37,7 @@ def load(operator, context, filepath=""):
             mdlobj = mdlobj.first_child
         else:
             # POLY_OBJ
-            import_shared.import_obj(mdlobj, obj_mat, reg_mat)
+            import_shared.import_obj(mdlobj, obj_mat, reg_mat, add_to_model_objects)
 
             mdlobj = mdlobj.next
             if mdlobj is None:

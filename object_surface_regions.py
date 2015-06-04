@@ -168,17 +168,6 @@ class MCELL_UL_check_region(bpy.types.UIList):
             layout.label(item.name, icon='FILE_TICK')
 
 
-class MCELL_PT_DefineSurfaceRegions(bpy.types.Panel):
-    bl_label = "CellBlender - Define Surface Regions"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "object"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.object.mcell.regions.draw_panel(context, panel=self)
-
-
 # Region Callbacks:
 
 def region_update(self, context):
@@ -478,7 +467,6 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
             if not selface_set.isdisjoint(reg_faces):
               reg_info.append(reg.name)
 
-
         return(reg_info)
 
 
@@ -583,12 +571,15 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
 
     def draw_panel(self, context, panel):
         layout = panel.layout
+        self.draw_layout ( context, layout )
 
+    def draw_layout(self, context, layout):
         active_obj = context.active_object
 
         if active_obj.type == 'MESH':
             row = layout.row()
-            row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
+            # row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
+            row.label(text="Defined Surface Regions:", icon='SNAP_FACE')
             row = layout.row()
             col = row.column()
             col.template_list("MCELL_UL_check_region", "define_surf_regions",
@@ -702,6 +693,19 @@ class MCellObjectPropertyGroup(bpy.types.PropertyGroup):
     regions = PointerProperty(
         type=MCellSurfaceRegionListProperty, name="Defined Surface Regions")
     include = BoolProperty(name="Include Object in Model", default=False)
+
+    def get_regions_dictionary (self, obj):
+        """ Return a dictionary with region names """
+        reg_dict = {}
+        obj_regs = self.regions.region_list
+        for reg in obj_regs:
+            id = str(reg.id)
+            mesh = obj.data
+            #reg_faces = list(cellblender_operators.get_region_faces(mesh,id))
+            reg_faces = list(reg.get_region_faces(mesh))
+            reg_faces.sort()
+            reg_dict[reg.name] = reg_faces
+        return reg_dict
 
 
 

@@ -1,9 +1,0 @@
-template_list takes a CollectionProperty and active index as input
-"name" member of each item in the collection is shown in the GUI
-the item specified by active index is highlighted
-
-
-Turn off global undo for better performance and atomic operation of sequence of operators:
-  bpy.context.user_preferences.edit.use_global_undo = False
-  ...
-  bpy.context.user_preferences.edit.use_global_undo = True

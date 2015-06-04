@@ -210,7 +210,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
         return m_dict
 
-    def build_properties_from_data_model ( self, context, dm_dict, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm_dict ):
         # First upgrade the data model as needed
         if not ('data_model_version' in dm_dict):
             # Make changes to move from unversioned to DM_2014_10_24_1638
@@ -586,7 +586,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         mol_dm['molecule_list'] = mol_list
         return mol_dm
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
         # First upgrade the data model as needed
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
@@ -604,7 +604,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         if "molecule_list" in dm:
             for m in dm["molecule_list"]:
                 self.add_molecule(context)
-                self.molecule_list[self.active_mol_index].build_properties_from_data_model(context,m,checkonly)
+                self.molecule_list[self.active_mol_index].build_properties_from_data_model(context,m)
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )

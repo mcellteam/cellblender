@@ -180,9 +180,9 @@ for page in plot_cmds:
                 # print "File command: " + cmd
                 fn = cmd[2:]
                 # print "    File name = " + fn
-                data = loadtxt(fn)
-                x = data[:, 0]
-                y = data[:, 1]
+                data = fromfile(fn,sep=' ')
+                x = data[0::2]
+                y = data[1::2]
                 if name is None:
                     name = fn
                 if color is None:

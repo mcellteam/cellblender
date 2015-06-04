@@ -21,8 +21,10 @@
 
 import bpy
 
+from cellblender.utils import preserve_selection_use_operator
 
-def import_obj(mdlobj, obj_mat, reg_mat):
+
+def import_obj(mdlobj, obj_mat, reg_mat, add_to_model_objects=True):
     """ Create a new Blender mesh object.
 
     Currently, this is used by both the swig and pyparsing based importers. In
@@ -37,26 +39,27 @@ def import_obj(mdlobj, obj_mat, reg_mat):
 
     objname = mdlobj.name
     print(objname, len(mdlobj.vertices), len(mdlobj.faces))
-    mesh = meshes.get(objname)
-    if not mesh:
-        mesh = meshes.new(objname)
-        mesh.from_pydata(mdlobj.vertices, [], mdlobj.faces)
-
-    if not mesh.materials.get('obj_mat'):
-        mesh.materials.append(obj_mat)
-
-    if not mesh.materials.get('reg_mat'):
-        mesh.materials.append(reg_mat)
-
     obj = objs.get(objname)
-    if not obj:
-        obj = objs.new(objname, mesh)
-        scn_objs.link(obj)
+
+    # Overwrite existing object if it has the same name as the object we are
+    # trying to import
+    if obj:
+        scn.objects.unlink(obj)
+        objs.remove(obj)
+
+    mesh = meshes.new(objname)
+    mesh.from_pydata(mdlobj.vertices, [], mdlobj.faces)
+
+    mesh.materials.append(obj_mat)
+    mesh.materials.append(reg_mat)
+
+    obj = objs.new(objname, mesh)
+    scn_objs.link(obj)
 
     # Object needs to be active to add a region to it because of how
     # init_region (called by add_region_by_name) works.
     scn.objects.active = obj
-
+    
     all_regions = []
     for reg_name, regions in mdlobj.regions.items():
         obj.mcell.regions.add_region_by_name(bpy.context, reg_name)
@@ -75,6 +78,9 @@ def import_obj(mdlobj, obj_mat, reg_mat):
 
     # Faces that belong to a region are colored red
     mesh.polygons.foreach_set("material_index", material_list)
+
+    if add_to_model_objects:
+        preserve_selection_use_operator(bpy.ops.mcell.model_objects_add, obj)
 
     mesh.validate(verbose=True)
     mesh.update()

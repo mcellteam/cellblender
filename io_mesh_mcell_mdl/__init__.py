@@ -63,6 +63,11 @@ class ImportMCellMDL(bpy.types.Operator, ImportHelper):
     filename_ext = ".mdl"
     filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
 
+    add_to_model_objects = BoolProperty(
+        name="Add to Model Objects",
+        description="Automatically add all meshes to the Model Objects list",
+        default=True,)
+
     def execute(self, context):
         paths = [os.path.join(self.directory, name.name) for name in self.files]
         if not paths:
@@ -74,14 +79,16 @@ class ImportMCellMDL(bpy.types.Operator, ImportHelper):
             from . import mdlmesh_parser
 
             for path in paths:
-                import_mcell_mdl.load(self, context, path)
+                import_mcell_mdl.load(
+                    self, context, path, self.add_to_model_objects)
 
         # Fall back on slow pure python parser (pyparsing)
         except ImportError:
             from . import import_mcell_mdl_pyparsing
         
             for path in paths:
-                import_mcell_mdl_pyparsing.load(self, context, path)
+                import_mcell_mdl_pyparsing.load(
+                    self, context, path, self.add_to_model_objects)
 
 
         return {'FINISHED'}
@@ -92,18 +99,18 @@ class ExportMCellMDL(bpy.types.Operator, ExportHelper):
     bl_idname = "export_mdl_mesh.mdl"
     bl_label = "Export MCell MDL"
 
-    print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL initialization" )
+    #print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL initialization" )
 
     filename_ext = ".mdl"
     filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
 
     @classmethod
     def poll(cls, context):
-        print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL.poll()" )
+        #print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL.poll()" )
         return len([obj for obj in context.selected_objects if obj.type == 'MESH']) != 0
 
     def execute(self, context):
-        print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL.execute()" )
+        #print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL.execute()" )
         filepath = self.filepath
         filepath = bpy.path.ensure_ext(filepath, self.filename_ext)
         from . import export_mcell_mdl
@@ -115,11 +122,13 @@ class ExportMCellMDL(bpy.types.Operator, ExportHelper):
 
 
 def menu_func_import(self, context):
-    self.layout.operator(ImportMCellMDL.bl_idname, text="MCell MDL (.mdl)")
+    self.layout.operator(
+        ImportMCellMDL.bl_idname, text="MCell MDL Geometry (.mdl)")
 
 
 def menu_func_export(self, context):
-    self.layout.operator(ExportMCellMDL.bl_idname, text="MCell MDL (.mdl)")
+    self.layout.operator(
+        ExportMCellMDL.bl_idname, text="MCell MDL Geometry (.mdl)")
 
 
 #def register():

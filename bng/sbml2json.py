@@ -1,17 +1,41 @@
-6# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 Created on Mon Jun 17 11:19:37 2013
 
-@author: proto
+@author: Jose Juan Tapia
 """
 
+import platform
+
+
+def uuid_workaround():
+    # uuid module causes an error messagebox on windows.
+    #
+    # using a dirty workaround to preload uuid without ctypes,
+    # until blender gets compiled with vs2013
+    #
+    # http://blender.stackexchange.com/questions/7665/pythons-uuid-module-cause-c-runtime-error-in-ms-windows
+    if platform.system() == "Windows":
+        import ctypes
+        CDLL = ctypes.CDLL
+        ctypes.CDLL = None
+        import uuid
+        ctypes.CDLL = CDLL
 
 try:
-    from .libsbml3.linux.lib.python3.dist_packages import libsbml
+    uuid_workaround()
+    import treelib3
+    import libsbml
 except ImportError:
+    treelib3 = None
     libsbml = None
-#from . import libsbml
+
+#import libsbml3.linux.libsbml as libsbml
+#import treelib3
+#import libsbml
+
 import json
+import math
 from optparse import OptionParser
 
 def factorial(x):
@@ -27,11 +51,14 @@ def comb(x,y):
 
 
 class SBML2JSON:
-    
+        
     def __init__(self, model):
         self.model = model
         self.getUnits()
         self.moleculeData = {}
+        self.compartmentMapping = {}
+        self.speciesNameDict = {}
+
     def getUnits(self):
         self.unitDictionary = {}
         self.mcellUnitDictionary = {}
@@ -75,11 +102,52 @@ class SBML2JSON:
                 
     def getParameters(self):
         parameters = []
-        prx = {'name':"Nav",'value':"6.022e8",'unit':"",'type':"Avogadro number for 1 um^3"}
-        parameters.append(prx)
+        observables = []
+        prx = [{'name':"Nav",'value':"6.022e8",'unit':"",'type':"Avogadro number for 1 um^3"},
+               {'name':"KB",'value':"1.3806488e-19",'unit':"cm^2.kg/K.s^2",'type':"Boltzmann constant"},
+               {'name':"gamma",'value':"0.5722",'unit':"",'type':"Euler's constant"},
+               {'name':"T",'value':"298.25",'unit':"K",'type':""},
+#               {'name':"rxn_layer_t",'value':"1",'unit':"um",'type':""},
+               {'name':"h",'value':"0.01",'unit':"um",'type':""},
+               {'name':"Rs",'value':"0.002564",'unit':"um",'type':""},
+               {'name':"Rc",'value':"0.0015",'unit':"um",'type':""}
+              ]
+        parameters.extend(prx)
+        
+        for compartment in self.model.getListOfCompartments():
+            name = compartment.getId()
+            parameters.append({'name':"mu_{0}".format(name),'value':"1e-9",'unit':"kg/um.s",'type':"viscosity"})
+
+        ruleDict = {}
+        
+        
+        #get assignment rules
+        for rule in self.model.getListOfRules():
+            ruleDict[rule.getVariable()] = rule.getMath()
+            
+        #get initialAssignments
+        for assignment in self.model.getListOfInitialAssignments():
+            ruleDict[assignment.getSymbol()] = assignment.getMath()
         for parameter in self.model.getListOfParameters():
-            parameterSpecs = {'name':parameter.getId(),'value':parameter.getValue(),
-                              'unit':parameter.getUnits(),'type' : ""}
+            if parameter.isSetValue():
+                value = parameter.getValue()
+            elif parameter.isSetConstant():
+                if parameter.getConstant():
+                    value = libsbml.formulaToString(ruleDict[parameter.getId()])
+                    while 'exp(' in value:
+                        value = value.replace('exp(','EXP(')
+                else:
+                    parsedValue = libsbml.formulaToString(ruleDict[parameter.getId()]).split('+')
+                
+                    parsedValue = [[y.strip() for y in x.strip().split('*')] for x in parsedValue]
+                    observableSpecs = {'name':parameter.getId(),'value':parsedValue}
+                    observables.append(observableSpecs)
+                    continue
+            else:
+                continue
+            parameterSpecs = {'name':parameter.getId(),'value':value,
+                              'unit':parameter.getUnits() if parameter.isSetUnits() else "unknown",'type' : ""}
+                              
             '''                             
             if parameterSpecs[0] == 'e':
                 parameterSpecs = ('are',parameterSpecs[1])
@@ -104,19 +172,11 @@ class SBML2JSON:
             #    parameterSpecs['unit'] = '{0}*{1}'.format(parameterSpecs['unit'],'avo.num*1000')
             
             parameters.append(parameterSpecs)
-        prx = {'name':"rxn_layer_t",'value':"0.01",'unit':"um",'type':""}
-        ph = {'name':"h",'value':"rxn_layer_t",'unit':"um",'type':""}
-        pRs = {'name':"Rs",'value':"0.002564",'unit':"um",'type':""}
-        pRc = {'name':"Rc",'value':"0.0015",'unit':"um",'type':""}
-        parameters.append(prx)        
-        parameters.append(ph)
-        parameters.append(pRs)
-        parameters.append(pRc)
         #parameterDict = {idx+1:x for idx,x in enumerate(parameters)}
-        return parameters
+        return parameters,observables
         
     
-    def __getRawCompartments(self):
+    def getRawCompartments(self):
         '''
         extracts information about the compartments in a model
         *returns* name,dimensions,size
@@ -127,7 +187,7 @@ class SBML2JSON:
             size = compartment.getSize()
             outside = compartment.getOutside()
             dimensions = compartment.getSpatialDimensions()
-            compartmentList[name] = [dimensions,size,outside]
+            compartmentList[name] = [dimensions,self.normalize(size),outside]
         return compartmentList
     
     def getOutsideInsideCompartment(self,compartmentList,compartment):
@@ -135,8 +195,81 @@ class SBML2JSON:
         for comp in compartmentList:
             if compartmentList[comp][2] == compartment:
                 return outside, comp
+                
         return outside,-1
-    
+
+    def getCompartmentHierarchy(self,compartmentList):
+        '''
+        constructs a tree structure containing the 
+        compartment hierarchy excluding 2D compartments
+        @param:compartmentList
+        '''
+        def removeMembranes(tree,nodeID):
+            node = tree.get_node(nodeID)
+            if node.data == 2:
+                parent = tree.get_node(nodeID).bpointer
+                if parent == None:
+                    #accounting for the case where the topmost node is a membrane
+                    newRoot = tree.get_node(nodeID).fpointer[0]
+                    tree.root = newRoot
+                    node = tree.get_node(newRoot)
+                else:
+                    tree.link_past_node(nodeID)
+                    nodeID = parent
+                    node = tree.get_node(nodeID)
+            for element in node.fpointer:
+                removeMembranes(tree,element)
+            
+        from copy import deepcopy
+        tree = treelib3.Tree()
+        c2 = deepcopy(compartmentList)
+        while len(c2) > 0:
+            removeList = []
+            for element in c2:
+                if c2[element][2] == '':
+                    try:
+                        tree.create_node(element,element,data=c2[element][0])
+                    except treelib3.tree.MultipleRootError:
+                        #there's more than one top level element
+                        tree2 = treelib3.Tree()
+                        tree2.create_node('dummyRoot','dummyRoot',data=3)
+                        tree2.paste('dummyRoot',tree)
+                        tree2.create_node(element,element,parent='dummyRoot',data=c2[element][0])
+                        tree = tree2
+                    removeList.append(element)
+                elif tree.contains(c2[element][2]):
+                    tree.create_node(element,element,parent=c2[element][2],data=c2[element][0])
+                    removeList.append(element)
+            for element in removeList:
+                c2.pop(element)
+        removeMembranes(tree,tree.root)
+        return tree
+        
+    def standardizeName(self,name):
+        '''
+        Remove stuff not used by bngl
+        '''
+        
+        sbml2BnglTranslationDict = {"^":"",
+                                    "'":"",
+                                    "*":"m"," ":"_",
+                                    "#":"sh",
+                                    ":":"_",'α':'a',
+                                    'β':'b',
+                                    'γ':'g',"(":"__",
+                                    ")":"__",
+                                    " ":"","+":"pl",
+                                    "/":"_",":":"_",
+                                    "-":"_",
+                                    '?':"unkn",
+                                    ',':'_',
+                                    '!':'.',
+                                    '@':'_'}
+                                    
+        for element in sbml2BnglTranslationDict:
+            name = name.replace(element,sbml2BnglTranslationDict[element])
+        return name
+        
     def getMolecules(self):
         '''
         *species* is the element whose SBML information we will extract
@@ -145,43 +278,72 @@ class SBML2JSON:
         It returns id,initialConcentration,(bool)isconstant and isboundary,
         and the compartment
         '''
+        from collections import Counter
+        nameSet = Counter()
         
-        compartmentList = self.__getRawCompartments()
-        
+        compartmentList = self.getRawCompartments()
+        tree = self.getCompartmentHierarchy(compartmentList)
         molecules = []
         release = []
         for idx,species in enumerate(self.model.getListOfSpecies()):
             compartment = species.getCompartment()
+            outside,inside = self.getOutsideInsideCompartment(compartmentList, compartment)
             if compartmentList[compartment][0] == 3:
                 typeD = '3D'
-                outside,inside = self.getOutsideInsideCompartment(compartmentList, compartment)
                 diffusion = 'KB*T/(6*PI*mu_{0}*Rs)'.format(compartment)
             else:
                 typeD = '2D'
                 diffusion = 'KB*T*LOG((mu_{0}*h/(SQRT(4)*Rc*(mu_{1}+mu_{2})/2))-gamma)/(4*PI*mu_{0}*h)'.format(compartment,outside,inside)
             self.moleculeData[species.getId()] = [compartmentList[compartment][0]]
+            self.compartmentMapping[species.getId()] = compartment
+            
+            speciesName = species.getName()
+            speciesName = self.standardizeName(speciesName)
+            if speciesName not in nameSet:
+                nameSet.update(speciesName)
+            else:
+                speciesName = '{0}_{1}'.format(speciesName,nameSet[speciesName])
+            self.speciesNameDict[species.getId()] = speciesName
             moleculeSpecs={'name':species.getId(),'type':typeD,'extendedName':species.getName(),'dif':diffusion}
             initialConcentration = species.getInitialConcentration()
-
-            if initialConcentration == 0:
+            initialAmountFlag = False
+            if initialConcentration == 0 or math.isnan(initialConcentration):
+                initialAmountFlag = True
                 initialConcentration = species.getInitialAmount()
             if species.getSubstanceUnits() in self.unitDictionary:
                 for factor in self.unitDictionary[species.getSubstanceUnits()]:
                     initialConcentration *= 10 ** (factor[1] * factor[2])
                 if 'mole' in species.getSubstanceUnits():
                     initialConcentration /= float(6.022e8)
-            if species.getSubstanceUnits() == '':
-                initialConcentration /= float(6.022e8)
-                
-            isConstant = species.getConstant()
+            sinitialConcentration = str(initialConcentration) if not math.isnan(initialConcentration) else '0'
+            if not initialAmountFlag:
+                if species.getSubstanceUnits() == '' and compartmentList[compartment][0] ==3:
+                    sinitialConcentration = '({0})/Nav'.format(sinitialConcentration)
+                #if its a surface molecule obtain the density
+                elif compartmentList[compartment][0] == 2:
+                    sinitialConcentration = '({0})*rxn_layer_t'.format(sinitialConcentration)
+                #sinitialConcentration = '({0})/vol_{1}'.format(sinitialConcentration,compartment)
+                sinitialConcentration = '({0})/{1}'.format(sinitialConcentration,compartmentList[compartment][1])
+            
+            
+
+            #isConstant = species.getConstant()
             #isBoundary = species.getBoundaryCondition()
-            if initialConcentration != 0:
+            if initialConcentration != 0 and not math.isnan(initialConcentration):
                 if compartmentList[compartment][0] == 2:
-                    objectExpr = '{0}[{1}]'.format(inside.upper(),compartment.upper())
+                    relOrientation = "'"
+                    objectExpr = '{0}[ALL]'.format(inside.upper(),compartment.upper())
+                    #objectExpr = '{0}[ALL]'.format(inside.upper(),compartment.upper())
                 else:
-                    objectExpr = '{0}'.format(compartment)                    
+                    relOrientation = ','
+                    objectExpr = '{0}[ALL]'.format(compartment)                    
+                    children = tree.get_node(compartment).fpointer
+                    for element in children:
+                        objectExpr = '{0} - {1}[ALL]'.format(objectExpr,element)
                 releaseSpecs = {'name': 'Release_Site_s{0}'.format(idx+1),'molecule':species.getId(),'shape':'OBJECT'
-            ,'quantity_type':"NUMBER_TO_RELEASE",'quantity_expr':initialConcentration,'object_expr':objectExpr,'orient':"'"}
+            ,'quantity_type':"DENSITY",'quantity_expr':sinitialConcentration,'object_expr':objectExpr,'orient':relOrientation}
+                if initialAmountFlag:
+                    releaseSpecs['quantity_type'] = 'NUMBER_TO_RELEASE'
                 release.append(releaseSpecs)
             #self.speciesDictionary[identifier] = standardizeName(name)
             #returnID = identifier if self.useID else \
@@ -193,6 +355,9 @@ class SBML2JSON:
         return molecules,release
     
     def getPrunnedTree(self,math,remainderPatterns):
+        '''
+        removes the remainderPatterns leafs from the math tree
+        '''
         while (math.getCharacter() == '*' or math.getCharacter() == '/') and len(remainderPatterns) > 0:
             if libsbml.formulaToString(math.getLeftChild()) in remainderPatterns:
                 remainderPatterns.remove(libsbml.formulaToString(math.getLeftChild()))
@@ -213,7 +378,6 @@ class SBML2JSON:
         
         #remove compartments from expression
         math = self.getPrunnedTree(math, compartmentList)
-            
         if reversible:
             if math.getCharacter() == '-' and math.getNumChildren() > 1:
                 rateL, nl = (self.removeFactorFromMath(
@@ -238,8 +402,6 @@ class SBML2JSON:
 
 
     def removeFactorFromMath(self, math, reactants, products):
-        
-            
         remainderPatterns = []
         highStoichoiMetryFactor = 1
         for x in reactants:
@@ -265,72 +427,216 @@ class SBML2JSON:
 
         return rateR,math.getNumChildren()
 
-    def adjustParameters(self,stoichoimetry,rate,parameters):
-        for parameter in parameters:
-            if parameter['name'] in rate and parameter['unit'] == '':
+    def adjustParameters(self,stoichoimetry,reactionDefinition,compartmentList,chemicals):
                 if stoichoimetry == 2:
-                    parameter['value'] *= float(6.022e8)
-                    parameter['unit'] ='Bimolecular * NaV'
+
+                    #adjusting units for bimolecular reactions
+                    firstcompartment = compartmentList[chemicals[0][2]][0]
+                    secondcompartment = compartmentList[chemicals[1][2]][0]
+                    #if its a volume-volume or volume-surface reaction
+                    if firstcompartment in ['3',3] or secondcompartment in ['3',3]:
+                        reactionDefinition['fwd_rate'] = '{0}*Nav'.format(reactionDefinition['fwd_rate'])
+                    #if its a surface-surface reaction
+                    else:
+                        reactionDefinition['fwd_rate'] = '{0}/rxn_layer_t'.format(reactionDefinition['fwd_rate'])
+
                 elif stoichoimetry == 0:
-                    parameter['value'] /= float(6.022e8)
-                    parameter['unit'] ='0-order / NaV'
+                    reactionDefinition['fwd_rate'] = '{0}/Nav'.format(reactionDefinition['fwd_rate'])
                 elif stoichoimetry == 1:
-                    parameter['unit'] ='Unimolecular'
+                    pass
                 
-            
+    def normalize(self,parameter):
+        
+        if math.isnan(parameter) or parameter == None:
+            return 1
+        return parameter
+      
+
+    
     def getReactions(self,sparameters):
+        def isOutside(compartmentList,inside,outsideCandidate):
+            tmp = compartmentList[inside][1]
+            while tmp not in  ['',None]:
+                tmp = compartmentList[tmp][1]
+                if tmp == outsideCandidate:
+                    return True
+            return False
+        def getContained(compartmentList,container):
+            for element in compartmentList:
+                if compartmentList[element][1] == container:
+                    return element
         reactionSpecs = []
+        releaseSpecs = []
+        moleculeSpecs = set()
+        from copy import deepcopy
+
+        compartmentList  = {}
+        for compartment in (self.model.getListOfCompartments()):
+            compartmentList[compartment.getId()] = (compartment.getSpatialDimensions(),
+                                                compartment.getOutside())
+
+        compartmentTree = self.getCompartmentHierarchy(self.getRawCompartments())
+
         for index, reaction in enumerate(self.model.getListOfReactions()):
-            reactant = [(reactant.getSpecies(), reactant.getStoichiometry())
-            for reactant in reaction.getListOfReactants() if
-            reactant.getSpecies() != 'EmptySet']
-            product = [(product.getSpecies(), product.getStoichiometry())
-            for product in reaction.getListOfProducts() if product.getSpecies()
-            != 'EmptySet']
-
             kineticLaw = reaction.getKineticLaw()
-            rReactant = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
-            rProduct = [(x.getSpecies(), x.getStoichiometry()) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
-
-            parameters = [(parameter.getId(), parameter.getValue()) for parameter in kineticLaw.getListOfParameters()]
             
+            rReactant = [(x.getSpecies(), self.normalize(x.getStoichiometry()),self.compartmentMapping[x.getSpecies()]) for x in reaction.getListOfReactants() if x.getSpecies() != 'EmptySet']
+            rProduct = [(x.getSpecies(), self.normalize(x.getStoichiometry()),self.compartmentMapping[x.getSpecies()]) for x in reaction.getListOfProducts() if x.getSpecies() != 'EmptySet']
+            reactant = deepcopy(rReactant)
+            product = deepcopy(rProduct)
+            parameters = [(parameter.getId(), parameter.getValue()) for parameter in kineticLaw.getListOfParameters()]
             math = kineticLaw.getMath()
             reversible = reaction.getReversible()
-            compartmentList  = []
-            for compartment in (self.model.getListOfCompartments()):
-                compartmentList.append(compartment.getId())
                 
-            rateL, rateR = self.getInstanceRate(math,compartmentList,reversible,rReactant,rProduct)
+            rateL, rateR = self.getInstanceRate(math,compartmentList.keys(),reversible,rReactant,rProduct)
             #finalReactant = [x[0]]    
             #testing whether we have volume-surface interactions
             rcList = []
             prdList = []
+            orientationSet = set()
+            reactionCompartmentSet = set()
             for element in reactant:
-                orientation = "," if len(set(self.moleculeData[x[0]][0] for x in reactant)) \
-                > 1 and self.moleculeData[element[0]] == '3' else "'"
+                reactionCompartmentSet.add(element[2])
+            for element in reactant:
+                if self.moleculeData[element[0]][0] == 2:
+                    orientation = "'"
+                else:
+                    outside = compartmentList[element[2]][1]
+                    if outside != '' and compartmentList[outside][0] == 2 and outside in reactionCompartmentSet:
+                        orientation = ','
+                    else:
+                        orientation = "'"
                 rcList.append("{0}{1}".format(element[0],orientation))
+                orientationSet.add(self.moleculeData[element[0]][0])
+
             for element in product:
-                orientation = "," if len(set(self.moleculeData[x[0]][0] for x in reactant)) \
-                > 1 and self.moleculeData[element[0]] == '3' else "'"
-                
+                if self.moleculeData[element[0]][0] == 2:
+                    orientation = "'"
+                else:
+                    outside = compartmentList[element[2]][1]
+                    if outside != '' and compartmentList[outside][0] == 2 and outside in reactionCompartmentSet:
+                        orientation = ','
+                    else:
+                        orientation = "'"
                 prdList.append("{0}{1}".format(element[0],orientation))
-            if rateL != '0':
-                tmp = {}
-                tmp['reactants'] = ' + '.join(rcList)
-                tmp['products'] = ' + '.join(prdList)
-                tmp['fwd_rate'] = rateL
-                reactionSpecs.append(tmp)
-            if rateR != '0':
-                tmp ={}
-                tmp['reactants'] = ' + '.join(prdList)
-                tmp['products'] = ' + '.join(rcList)
-                tmp['fwd_rate'] = rateR
-                reactionSpecs.append(tmp)
+                orientationSet.add(self.moleculeData[element[0]][0])
+            #if everything is the same orientation delete orientation
             
-            self.adjustParameters(len(reactant),rateL,sparameters)
-            self.adjustParameters(len(product),rateR,sparameters)
+            if len(orientationSet) == 1 and 3 in orientationSet:
+                for index2,element in enumerate(rcList):
+                    rcList[index2] = element[:-1]
+                for index2,element in enumerate(prdList):
+                    prdList[index2] = element[:-1]
+            
+            tmpL = {}
+            tmpR = {}
+            flagL=flagR=False
+            if len(reactant) == 1 and len(product) ==1 and reactant[0][2] != product[0][2] \
+            and compartmentList[product[0][2]][0] == compartmentList[reactant[0][2]][0]:
+                #teleporting molecules (reactant and product compartments are different) 
+            
+                tmpL['rxn_name'] = 'rec_{0}'.format(index+1)
+                tmpR['rxn_name'] = 'rec_m{0}'.format(index+1)
+                #if its a volume molecule
+                if compartmentList[product[0][2]][0] == 3:
+                    object_expr = '{0}[ALL]'.format(product[0][2].upper())
+                    object_exprm = '{0}[ALL]'.format(reactant[0][2].upper())
+                    
+                    #substracting inner compartments                    
+                    children = compartmentTree.get_node(product[0][2]).fpointer
+                    for element in children:
+                        object_expr = '{0} - {1}[ALL]'.format(object_expr,element)
+
+                    children = compartmentTree.get_node(reactant[0][2]).fpointer
+                    for element in children:
+                        object_exprm = '{0} - {1}[ALL]'.format(object_exprm,element)
+
+                #surface molecules
+                else:
+                    sourceGeometry = getContained(compartmentList,product[0][2])
+                    sourceGeometryM = getContained(compartmentList,reactant[0][2])
+                    #if isOutside(compartmentList,reactant[0][2],product[0][2]):
+                    #    sourceGeometry = compartmentList[p[0][2]][1]
+                    #elif isOutside(compartmentList,product[0][2],reactant[0][2]):
+                    #    sourceGeometry = compartmentList[product[0][2]][1]
+                    #else:
+                    #    sourceGeometry = compartmentList[product[0][2]][1]
+                        
+                        
+                    object_expr = '{0}[ALL]'.format(sourceGeometry,product[0][2])
+                    object_exprm = '{0}[ALL]'.format(sourceGeometryM,reactant[0][2])
+
+                releaseSpecs.append({'name': 'Release_Site_pattern_s{0}'.format(index+1),
+                'molecule':product[0][0],'shape':'OBJECT',
+                'orient':"'",'quantity_type':'NUMBER_TO_RELEASE',
+                'release_pattern':'rec_{0}'.format(index+1),
+                'quantity_expr':"1",'object_expr':object_expr
+                })
+                flagL= True
+                
+                if rateR != '0':
+                    releaseSpecs.append({'name': 'Release_Site_pattern_sm{0}'.format(index+1),
+                    'molecule':reactant[0][0],'shape':'OBJECT',
+                    'orient':"'",'quantity_type':'NUMBER_TO_RELEASE',                    
+                    'release_pattern':'rec_m{0}'.format(index+1),
+                    'quantity_expr':"1",'object_expr':object_exprm
+                    })
+                    flagR = True
+                    
+                
+            if rateL != '0':
+                tmpL['reactants'] = ' + '.join(rcList)
+                if flagL:
+                    #teleporting molecules
+                    #adding a virtual molecule to account for the case where a single
+                    #molecule can teleport to different places
+                    virtualReaction= {}
+                    virtualReaction['rxn_name'] =  tmpL['rxn_name']
+                    tmpL.pop('rxn_name')
+                    tmpL['products'] = '{0}_{1}_{2}'.format(reactant[0][0],product[0][2],product[0][0])
+                    virtualReaction['reactants'] = tmpL['products']
+                    virtualReaction['products']= 'NULL'
+                    virtualReaction['fwd_rate'] = '1e30'
+                    #molecule={'name':tmpL['products'],'type':'3D',
+                    #'extendedName':tmpL['products'],'dif':0}
+                    
+                    moleculeSpecs.add(tmpL['products'])
+                    #adding directionality if necessary
+                    if not(len(orientationSet) == 1 and 3 in orientationSet):
+                        tmpL['products'] += ';'
+                    reactionSpecs.append(virtualReaction)
+                    #tmpL['products'] = 'NULL'
+                else:
+                    tmpL['products'] = ' + '.join(prdList)
+                tmpL['fwd_rate'] = rateL
+                reactionSpecs.append(tmpL)
+            if rateR != '0':
+                tmpR['reactants'] = ' + '.join(prdList)
+                if flagR:
+                    virtualReaction= {}
+                    virtualReaction['rxn_name'] =  tmpL['rxn_name']
+                    tmpR.pop('rxn_name')
+                    tmpR['products'] = '{0}_{1}_{2}'.format(product[0][0],reactant[0][2],reactant[0][0])
+                    virtualReaction['reactants'] = tmpR['products']
+                    virtualReaction['products']= 'NULL'
+                    virtualReaction['fwd_rate'] = '1e30'
+                    #molecule={'name':tmpR['products'],'type':'3D',
+                    #'extendedName':tmpR['products'],'dif':0}
+                    moleculeSpecs.add(tmpR['products'])
+                    if not(len(orientationSet) == 1 and 3 in orientationSet):
+                        tmpR['products'] += ';'
+                    reactionSpecs.append(virtualReaction)
+                    #tmpR['products'] = 'NULL'
+                else:                    
+                    tmpR['products'] = ' + '.join(rcList)
+                tmpR['fwd_rate'] = rateR
+                reactionSpecs.append(tmpR)
+            self.adjustParameters(len(reactant),tmpL,compartmentList,reactant)
+            if rateR != '0':
+                self.adjustParameters(len(product),tmpR,compartmentList,product)
         #reactionDict = {idx+1:x for idx,x in enumerate(reactionSpecs)}
-        return reactionSpecs
+        moleculeSpecs = [{'name':x,'type':'3D','extendedName':x,'dif':'0'} for x in moleculeSpecs]
+        return reactionSpecs,releaseSpecs,moleculeSpecs
             #SBML USE INSTANCE RATE 
             #HOW TO GET THE DIFFUSION CONSTANT
 
@@ -345,25 +651,32 @@ def transform(filePath):
     if document.getModel() == None:
         return False
     parser = SBML2JSON(document.getModel())
-    parameters =  parser.getParameters()
+    parameters,observables =  parser.getParameters()
     molecules,release = parser.getMolecules()      
-    reactions =  parser.getReactions(parameters)
+    reactions,release2,molecules2 =  parser.getReactions(parameters)
+    release.extend(release2)
+    molecules.extend(molecules2)
     definition = {}
     definition['par_list'] = parameters
     definition['mol_list'] = molecules
     definition['rxn_list'] = reactions
     definition['rel_list'] = release
+    definition['obs_list'] = observables
+
     with open(filePath + '.json','w') as f:
         json.dump(definition,f,sort_keys=True,indent=1, separators=(',', ': '))
     return True
     
 
 def main():
-	
+
+    if libsbml == None:
+        return
     parser = OptionParser()
     parser.add_option("-i","--input",dest="input",
-		default='/home/proto/workspace/bionetgen/parsers/SBMLparser/XMLExamples/curated/BIOMD0000000314.xml',type="string",
-		help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
+		default='',type="string",
+		#default='/home/proto/Downloads/model.xml',type="string",
+        help="The input SBML file in xml format. Default = 'input.xml'",metavar="FILE")
     parser.add_option("-o","--output",dest="output",
 		type="string",
 		help="the output JSON file. Default = <input>.py",metavar="FILE")
@@ -374,22 +687,32 @@ def main():
         outputFile = nameStr + '.json'
     else:
         outputFile = options.output
-    print(outputFile)
     document = reader.readSBMLFromFile(nameStr)
     if document.getModel() == None:
+        #logging.error('A model with path "{0}" could not be found'.format(nameStr))
         return
+    #logging.info('An SBML file was found at {0}.Attempting import'.format(nameStr))
     parser = SBML2JSON(document.getModel())
-    parameters =  parser.getParameters()
+
+    parameters,observables =  parser.getParameters()
+
+    #compartments = parser.getRawCompartments()
     molecules,release = parser.getMolecules()
-    reactions =  parser.getReactions(parameters)
+    reactions,release2,molecules2 =  parser.getReactions(parameters)
+    molecules.extend(molecules2)
+    release.extend(release2)
+    #release.extend(release2)
     definition = {}
     definition['par_list'] = parameters
     definition['mol_list'] = molecules
     definition['rxn_list'] = reactions
     definition['rel_list'] = release
+    definition['obs_list'] = observables
+    #definition['comp_list'] = compartments
     with open(outputFile,'w') as f:
         json.dump(definition,f,sort_keys=True,indent=1, separators=(',', ': '))
+    #logging.info('SBML import intermediate file written to {0}'.format(outputFile))
         
 
 if __name__ == "__main__":
-	main()
+    main()

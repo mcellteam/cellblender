@@ -183,7 +183,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         r_dict['variable_rate_text'] = variable_rate_text
         return r_dict
 
-    def build_properties_from_data_model ( self, context, dm_dict, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm_dict ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm_dict):
@@ -414,7 +414,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         r_dict['pattern'] = str(r.pattern)
         return r_dict
 
-    def build_properties_from_data_model ( self, context, dm_dict, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm_dict ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm_dict):
@@ -485,7 +485,7 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
         r_dict['number_of_trains'] = r.number_of_trains.get_expr()
         return r_dict
 
-    def build_properties_from_data_model ( self, context, dm_dict, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm_dict ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm_dict):
@@ -559,7 +559,7 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         sc_dict['clamp_value'] = str(sc.clamp_value_str)
         return sc_dict
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
@@ -626,7 +626,7 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
         sc_dm['surface_class_prop_list'] = sc_list
         return sc_dm
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
@@ -645,7 +645,7 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
                 self.active_surf_class_props_index = len(self.surf_class_props_list)-1
                 scp = self.surf_class_props_list[self.active_surf_class_props_index]
                 # scp.init_properties(context.scene.mcell.parameter_system)
-                scp.build_properties_from_data_model ( context, sc, checkonly )
+                scp.build_properties_from_data_model ( context, sc )
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -687,7 +687,7 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
         sr_dm['region_name'] = self.region_name
         return sr_dm
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
@@ -1078,7 +1078,7 @@ class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
         dm['name'] = self.name
         return dm
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
@@ -1178,7 +1178,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         dm['processes_list'] = p_list
         return dm
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2015_04_23_1753
@@ -1192,7 +1192,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         for p in dm['processes_list']:
             self.processes_list.add()
             self.active_process_index = len(self.processes_list) - 1
-            self.processes_list[self.active_process_index].build_properties_from_data_model(context, p, checkonly)
+            self.processes_list[self.active_process_index].build_properties_from_data_model(context, p)
 
 
 
@@ -1412,7 +1412,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         return mv_dm
 
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
         print ( "Building Mol Viz properties from data model" )
 
         # Upgrade the data model as needed
@@ -1725,7 +1725,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
 
         return dm_dict
 
-    def build_properties_from_data_model ( self, context, dm_dict, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm_dict ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm_dict):
@@ -2187,7 +2187,7 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
         dm_dict['z_step'] =  str(self.z_step)
         return dm_dict
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
@@ -2275,7 +2275,7 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
         react_dm['reaction_list'] = react_list
         return react_dm
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
@@ -2293,7 +2293,7 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
                 self.active_rxn_index = len(self.reaction_list)-1
                 rxn = self.reaction_list[self.active_rxn_index]
                 rxn.init_properties(context.scene.mcell.parameter_system)
-                rxn.build_properties_from_data_model ( context, r, checkonly )
+                rxn.build_properties_from_data_model ( context, r )
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -2411,7 +2411,7 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
         sc_dm['surface_class_list'] = sc_list
         return sc_dm
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
@@ -2429,7 +2429,7 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
                 self.active_surf_class_index = len(self.surf_class_list)-1
                 sc = self.surf_class_list[self.active_surf_class_index]
                 # sc.init_properties(context.scene.mcell.parameter_system)
-                sc.build_properties_from_data_model ( context, s, checkonly )
+                sc.build_properties_from_data_model ( context, s )
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -2594,7 +2594,7 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
         sr_dm['modify_surface_regions_list'] = sr_list
         return sr_dm
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
@@ -2612,7 +2612,7 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
                 self.active_mod_surf_regions_index = len(self.mod_surf_regions_list)-1
                 sr = self.mod_surf_regions_list[self.active_mod_surf_regions_index]
                 # sr.init_properties(context.scene.mcell.parameter_system)
-                sr.build_properties_from_data_model ( context, s, checkonly )
+                sr.build_properties_from_data_model ( context, s )
 
     def check_properties_after_building ( self, context ):
         print ( "Implementing check_properties_after_building for " + str(self) )
@@ -2704,7 +2704,7 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
         rel_pat_dm['release_pattern_list'] = rel_pat_list
         return rel_pat_dm
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
@@ -2722,7 +2722,7 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
                 self.active_release_pattern_index = len(self.release_pattern_list)-1
                 rp = self.release_pattern_list[self.active_release_pattern_index]
                 rp.init_properties(context.scene.mcell.parameter_system)
-                rp.build_properties_from_data_model ( context, r, checkonly )
+                rp.build_properties_from_data_model ( context, r )
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -2806,7 +2806,7 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
         rel_site_dm['release_site_list'] = rel_site_list
         return rel_site_dm
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
@@ -2824,7 +2824,7 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                 self.active_release_index = len(self.mol_release_list)-1
                 rs = self.mol_release_list[self.active_release_index]
                 rs.init_properties(context.scene.mcell.parameter_system)
-                rs.build_properties_from_data_model ( context, r, checkonly )
+                rs.build_properties_from_data_model ( context, r )
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -3006,7 +3006,7 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
         mo_dm['name'] = self.name
         return mo_dm
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
@@ -3134,7 +3134,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         return mo_dm
 
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
         # Note that model object list is represented in two places:
         #   context.scene.mcell.model_objects.object_list[] - stores the name
         #   context.scene.objects[].mcell.include - boolean is true for model objects
@@ -3161,7 +3161,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
               self.active_obj_index = len(self.object_list)-1
               mo = self.object_list[self.active_obj_index]
               #mo.init_properties(context.scene.mcell.parameter_system)
-              #mo.build_properties_from_data_model ( context, m, checkonly )
+              #mo.build_properties_from_data_model ( context, m )
               mo.name = m['name']
               mo_list.append ( m["name"] )
 
@@ -3206,7 +3206,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         return mat_dm
 
 
-    def build_materials_from_data_model_materials ( self, context, dm, checkonly=False ):
+    def build_materials_from_data_model_materials ( self, context, dm ):
 
         # Delete any materials with conflicting names and then rebuild all
 
@@ -3317,7 +3317,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                 # TODO Need to delete the mesh for this object as well!!!
 
 
-    def build_mesh_from_data_model_geometry ( self, context, dm, checkonly=False ):
+    def build_mesh_from_data_model_geometry ( self, context, dm ):
             
         # Delete any objects with conflicting names and then rebuild all
 
@@ -3418,7 +3418,7 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
         vo_dm['export_all'] = self.export_all
         return vo_dm
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
@@ -3523,7 +3523,7 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         ro_dm['rxn_or_mol'] = self.rxn_or_mol
         return ro_dm
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
@@ -3629,7 +3629,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         ro_dm['reaction_output_list'] = ro_list
         return ro_dm
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False ):
+    def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
@@ -3658,7 +3658,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                 self.active_rxn_output_index = len(self.rxn_output_list)-1
                 ro = self.rxn_output_list[self.active_rxn_output_index]
                 # ro.init_properties(context.scene.mcell.parameter_system)
-                ro.build_properties_from_data_model ( context, r, checkonly )
+                ro.build_properties_from_data_model ( context, r )
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -5469,7 +5469,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         return
 
 
-    def build_properties_from_data_model ( self, context, dm, checkonly=False, geometry=False ):
+    def build_properties_from_data_model ( self, context, dm, geometry=False ):
         print ( "build_properties_from_data_model: Data Model Keys = " + str(dm.keys()) )
 
         # Upgrade the data model as needed
@@ -5489,7 +5489,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         self.init_properties()
         if "parameter_system" in dm:
             print ( "Overwriting the parameter_system properties" )
-            self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"], checkonly )
+            self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"] )
         
         """ Considered moving geometry here because it might be referenced by other things, but didn't want to change too many things at once!!!
         if geometry:
@@ -5498,66 +5498,66 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             if "materials" in dm:
                 print ( "Overwriting the materials properties" )
                 print ( "Building Materials from Data Model Materials" )
-                self.model_objects.build_materials_from_data_model_materials ( context, dm['materials'], checkonly )
+                self.model_objects.build_materials_from_data_model_materials ( context, dm['materials'] )
             if "geometrical_objects" in dm:
                 print ( "Overwriting the geometrical_objects properties" )
                 print ( "Building Mesh Geometry from Data Model Geometry" )
-                self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"], checkonly )
+                self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"] )
             print ( "Not fully implemented yet!!!!" )
         """
 
         if "initialization" in dm:
             print ( "Overwriting the initialization properties" )
-            self.initialization.build_properties_from_data_model ( context, dm["initialization"], checkonly )
+            self.initialization.build_properties_from_data_model ( context, dm["initialization"] )
             if "partitions" in dm:
                 print ( "Overwriting the partitions properties" )
-                self.partitions.build_properties_from_data_model ( context, dm["initialization"]["partitions"], checkonly )
+                self.partitions.build_properties_from_data_model ( context, dm["initialization"]["partitions"] )
         if "define_molecules" in dm:
             print ( "Overwriting the define_molecules properties" )
-            self.molecules.build_properties_from_data_model ( context, dm["define_molecules"], checkonly )
+            self.molecules.build_properties_from_data_model ( context, dm["define_molecules"] )
         if "define_reactions" in dm:
             print ( "Overwriting the define_reactions properties" )
-            self.reactions.build_properties_from_data_model ( context, dm["define_reactions"], checkonly )
+            self.reactions.build_properties_from_data_model ( context, dm["define_reactions"] )
         if "release_sites" in dm:
             print ( "Overwriting the release_sites properties" )
-            self.release_sites.build_properties_from_data_model ( context, dm["release_sites"], checkonly )
+            self.release_sites.build_properties_from_data_model ( context, dm["release_sites"] )
         if "define_release_patterns" in dm:
             print ( "Overwriting the define_release_patterns properties" )
-            self.release_patterns.build_properties_from_data_model ( context, dm["define_release_patterns"], checkonly )
+            self.release_patterns.build_properties_from_data_model ( context, dm["define_release_patterns"] )
         if "define_surface_classes" in dm:
             print ( "Overwriting the define_surface_classes properties" )
-            self.surface_classes.build_properties_from_data_model ( context, dm["define_surface_classes"], checkonly )
+            self.surface_classes.build_properties_from_data_model ( context, dm["define_surface_classes"] )
         if "modify_surface_regions" in dm:
             print ( "Overwriting the modify_surface_regions properties" )
-            self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"], checkonly )
+            self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
         if geometry:
             print ( "Deleting all mesh objects" )
             self.model_objects.delete_all_mesh_objects(context)
             if "materials" in dm:
                 print ( "Overwriting the materials properties" )
                 print ( "Building Materials from Data Model Materials" )
-                self.model_objects.build_materials_from_data_model_materials ( context, dm['materials'], checkonly )
+                self.model_objects.build_materials_from_data_model_materials ( context, dm['materials'] )
             if "geometrical_objects" in dm:
                 print ( "Overwriting the geometrical_objects properties" )
                 print ( "Building Mesh Geometry from Data Model Geometry" )
-                self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"], checkonly )
+                self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"] )
             print ( "Not fully implemented yet!!!!" )
         if "model_objects" in dm:
             print ( "Overwriting the model_objects properties" )
-            self.model_objects.build_properties_from_data_model ( context, dm["model_objects"], checkonly )
+            self.model_objects.build_properties_from_data_model ( context, dm["model_objects"] )
         if "viz_output" in dm:
             print ( "Overwriting the viz_output properties" )
-            self.viz_output.build_properties_from_data_model ( context, dm["viz_output"], checkonly )
+            self.viz_output.build_properties_from_data_model ( context, dm["viz_output"] )
         if "mol_viz" in dm:
             print ( "Overwriting the mol_viz properties" )
-            self.mol_viz.build_properties_from_data_model ( context, dm["mol_viz"], checkonly )
+            self.mol_viz.build_properties_from_data_model ( context, dm["mol_viz"] )
         # This is commented out because it's not clear how it should work yet...
         #if "simulation_control" in dm:
         #    print ( "Overwriting the simulation_control properties" )
-        #    self.run_simulation.build_properties_from_data_model ( context, dm["simulation_control"], checkonly )
+        #    self.run_simulation.build_properties_from_data_model ( context, dm["simulation_control"] )
         if "reaction_data_output" in dm:
             print ( "Overwriting the reaction_data_output properties" )
-            self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"], checkonly )
+            self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
 
 
         # Now call the various "check" routines to clean up any unresolved references
