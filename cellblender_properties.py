@@ -2405,8 +2405,6 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
 
                     reactant_string = ' + '.join(bnglreactant) + ' -> '
                     product_string = ' + '.join(bnglproduct)
-                    print(reactant_string)
-                    print(product_string)
 
                     if len(product_string) > 0:
                         row = layout.row()
