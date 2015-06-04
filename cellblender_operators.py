@@ -3658,14 +3658,7 @@ def check_rxn_output(self, context):
     region_name = rxn_output.region_name
     rxn_output_name = ""
 
-    try:
-        region_list = bpy.data.objects[object_name].mcell.regions.region_list
-    except KeyError:
-        # The object name isn't a blender object
-        region_list = []
-
     status = ""
-
     if rxn_output.rxn_or_mol == 'Reaction':
         count_name = reaction_name
         name_list = reaction_list
@@ -3673,10 +3666,18 @@ def check_rxn_output(self, context):
         count_name = molecule_name
         name_list = mol_list
     else:
+        count_name = molecule_name
         rxn_output.status = ""
-        rxn_output.name = rxn_output.mdl_string
+        #rxn_output.name = rxn_output.mdl_string
 
         return
+
+    try:
+        region_list = bpy.data.objects[object_name].mcell.regions.region_list
+    except KeyError:
+        # The object name isn't a blender object
+        region_list = []
+
 
     # Check for illegal names (Starts with a letter. No special characters.)
     count_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)"
