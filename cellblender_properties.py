@@ -2935,6 +2935,10 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                     ps.draw_prop_search_with_help ( layout, "Molecule:", rel, "molecule", mcell.molecules, "molecule_list", "mol_show_help", rel.mol_show_help, helptext )
 
                     if rel.molecule in mcell.molecules.molecule_list:
+                        label = mcell.molecules.molecule_list[rel.molecule].bnglLabel
+                        row = layout.row(align=True)
+                        row.label(text="BNGL label: {0}".format(label), icon='BLANK1')
+
                         if mcell.molecules.molecule_list[rel.molecule].type == '2D':
                             #layout.prop(rel, "orient")
                             ps.draw_prop_with_help ( layout, "Initial Orientation:", rel, "orient", "orient_show_help", rel.orient_show_help,
@@ -2960,6 +2964,8 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                                "you have an object named \"Cube\", you would enter that name in the\n" + \
                                "Object/Region field. If you've defined a surface region named \"top\"\n" + \
                                "on your Cube, then you would specify that surface as \"Cube[top]\"."
+
+
                     ps.draw_prop_with_help ( layout, "Release Shape:", rel, "shape", "shape_show_help", rel.shape_show_help, helptext )
 
                     if ((rel.shape == 'CUBIC') | (rel.shape == 'SPHERICAL') |
