@@ -66,9 +66,21 @@ def code_api_version():
     return 1
 
 
+def flag_incompatible_data_model ( message ):
+    print ( "#########################################################" )
+    print ( "#########################################################" )
+    print ( "Note: an Incompatible CellBlender Data Model was detected" )
+    print ( message )
+    print ( "#########################################################" )
+    print ( "#########################################################" )
+
 def handle_incompatible_data_model ( message ):
+    print ( "###########################################################" )
+    print ( "###########################################################" )
     print ( "Quitting Blender due to Incompatible CellBlender Data Model" )
     print ( message )
+    print ( "###########################################################" )
+    print ( "###########################################################" )
     bpy.ops.wm.quit_blender()
 
 
@@ -189,6 +201,7 @@ class ImportDataModel(bpy.types.Operator, ExportHelper):
         f.close()
 
         dm = unpickle_data_model ( pickle_string )
+        dm['mcell'] = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
         context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'] )
 
         print ( "Done loading CellBlender model." )
@@ -211,6 +224,7 @@ class ImportDataModelAll(bpy.types.Operator, ExportHelper):
         f.close()
 
         dm = unpickle_data_model ( pickle_string )
+        dm['mcell'] = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
         context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
 
         print ( "Done loading CellBlender model." )
@@ -280,11 +294,13 @@ def upgrade_properties_from_data_model ( context ):
         restore_mcell_preferences ( mp, mcell )
 
         # Do the actual updating of properties from data model right here
+        dm = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm)
         mcell.build_properties_from_data_model ( context, dm )
     else:
         print ( "Warning: This should never happen." )
         print ( "No data model to upgrade ... building a data model and then recreating properties." )
         dm = mcell.build_data_model_from_properties ( context )
+        dm = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm)
         mcell.build_properties_from_data_model ( context, dm )
 
     # Update the source_id

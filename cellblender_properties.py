@@ -161,6 +161,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
     status = StringProperty(name="Status")
 
+
     def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
@@ -183,16 +184,27 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         r_dict['variable_rate_text'] = variable_rate_text
         return r_dict
 
-    def build_properties_from_data_model ( self, context, dm_dict ):
 
+    @staticmethod
+    def upgrade_data_model ( dm ):
         # Upgrade the data model as needed
-        if not ('data_model_version' in dm_dict):
+        print ( "------------------------->>> Upgrading MCellReactionProperty Data Model" )
+        if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
-            dm_dict['data_model_version'] = "DM_2014_10_24_1638"
+            dm['data_model_version'] = "DM_2014_10_24_1638"
 
+        # Check that the upgraded data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellReactionProperty data model to current version." )
+            return None
+
+        return dm
+
+
+    def build_properties_from_data_model ( self, context, dm_dict ):
+        # Check that the data model version matches the version for this property group
         if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReactionProperty data model to current version." )
-
         self.name = dm_dict["name"]
         self.rxn_name = dm_dict["rxn_name"]
         self.reactants = dm_dict["reactants"]
@@ -2275,16 +2287,27 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
         react_dm['reaction_list'] = react_list
         return react_dm
 
-    def build_properties_from_data_model ( self, context, dm ):
-
+    @staticmethod
+    def upgrade_data_model ( dm ):
         # Upgrade the data model as needed
+        print ( "------------------------->>> Upgrading MCellReactionsPropertyGroup Data Model" )
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReactionsPropertyGroup data model to current version." )
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellReactionsPropertyGroup data model to current version." )
+            return None
 
+        if "reaction_list" in dm:
+            for r in dm["reaction_list"]:
+                if MCellReactionProperty.upgrade_data_model ( r ) == None:
+                    return None
+        return dm
+
+    def build_properties_from_data_model ( self, context, dm ):
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReactionsPropertyGroup data model to current version." )
         while len(self.reaction_list) > 0:
             self.reaction_list.remove(0)
         if "reaction_list" in dm:
@@ -4659,6 +4682,27 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         print ( "Done removing all MCell Properties." )
 
 
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed
+        print ( "------------------------->>> Upgrading MCellPropertyGroup Data Model" )
+        # cellblender.data_model.dump_data_model ( "Dump of dm passed to MCellPropertyGroup.upgrade_data_model", dm )
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"#
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellPropertyGroup data model to current version." )
+            return None
+
+        if "define_reactions" in dm:
+            dm["define_reactions"] = MCellReactionsPropertyGroup.upgrade_data_model ( dm["define_reactions"] )
+            if dm["define_reactions"] == None:
+                return None
+        return dm
+
+
+
     def build_data_model_from_properties ( self, context, geometry=False ):
         print ( "build_data_model_from_properties: Constructing a data_model dictionary from current properties" )
         dm = {}
@@ -5470,12 +5514,12 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
 
     def build_properties_from_data_model ( self, context, dm, geometry=False ):
-        print ( "build_properties_from_data_model: Data Model Keys = " + str(dm.keys()) )
+        #print ( "build_properties_from_data_model: Data Model Keys = " + str(dm.keys()) )
 
-        # Upgrade the data model as needed
-        if not ('data_model_version' in dm):
-            # Make changes to move from unversioned to DM_2014_10_24_1638
-            dm['data_model_version'] = "DM_2014_10_24_1638"
+        ## Upgrade the data model as needed
+        #if not ('data_model_version' in dm):
+        #    # Make changes to move from unversioned to DM_2014_10_24_1638
+        #    dm['data_model_version'] = "DM_2014_10_24_1638"#
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellPropertyGroup data model to current version." )
