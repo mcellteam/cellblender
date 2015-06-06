@@ -256,7 +256,171 @@ class file_xy extends data_file {
     }
   }
 
+  /*
+  public double[][] append_block ( double[][] blocks, double[] block, int num_blocks ) {
+    double[][] new_blocks = new double[num_blocks+1][];
+    for (int b=0; b<num_blocks; b++) {
+      System.out.println ( "Copying block " + b );
+      new_blocks[b] = blocks[b];
+    }
+    new_blocks[num_blocks] = block;
+    return new_blocks;
+  }
+  */
+
+  public double[][] append_block ( double[][] blocks, double[] block ) {
+    int base_len = 0;
+    if (blocks == null) {
+      base_len = 0;
+    } else {
+      base_len = blocks.length;
+    }
+    double[][] new_blocks = new double[base_len+1][];
+    if (blocks != null) {
+      for (int b=0; b<base_len; b++) {
+        System.out.println ( "Copying block " + b );
+        new_blocks[b] = blocks[b];
+      }
+    }
+    new_blocks[base_len] = block;
+    return new_blocks;
+  }
+
+
+
   public file_xy ( String file_name ) {
+
+    double[][] blocks = null;
+    int blocksize = 300*300; // Must be an EVEN number to save on checking!!!
+    double[] block = null;
+    int num_blocks = 0;
+    int blockindex = 0;
+    int total_values = 0;
+    int num_values = 0;
+
+    name = "File=\"" + file_name + "\"";
+
+    try {
+      BufferedReader in = new BufferedReader(new FileReader(file_name));
+      String s;
+      while ( (s = in.readLine()) != null ) {
+        String ss[] = s.split(" ");
+        for (int i=0; i<ss.length; i++) {
+          if (block == null) {
+            block = new double[blocksize];
+            blockindex = 0;
+          }
+          block[blockindex] = Double.parseDouble(ss[i]);
+          blockindex += 1;
+          if (blockindex >= blocksize) {
+            blocks = append_block ( blocks, block );
+            num_blocks += 1;
+            block = new double[blocksize];
+            blockindex = 0;
+          }
+          total_values += 1;
+        }
+      }
+      System.out.println ( "Read " + total_values + " values into " + num_blocks + " blocks" );
+
+      if (blockindex != 0) {
+        blocks = append_block ( blocks, block );
+      }
+
+
+      // Allocate and copy from the blocks into the arrays
+
+      num_values = total_values / 2;
+
+      x_values = new double[num_values];
+      y_values = new double[num_values];
+
+      int blocknum = 0;
+      blockindex = 0;
+      for (int i=0; i<num_values; i++) {
+        x_values[i] = blocks[blocknum][blockindex++];
+        y_values[i] = blocks[blocknum][blockindex++];
+        // System.out.println ( "Assigned " + x_values[i] + ", " + y_values[i] );
+        if (blockindex > blocksize) {
+          blocknum += 1;
+          blockindex = 0;
+        }
+	    }
+
+
+
+
+	  } catch ( IOException ie ) {
+	    System.out.println ( "Error reading file " + file_name );
+	    ie.printStackTrace();
+	  } catch ( Exception e ) {
+	    System.out.println ( "Exception reading file " + file_name + ": " + e );
+	    e.printStackTrace();
+    }
+
+
+    /* Uncomment for debugging
+    try {
+      PrintStream dumpfile = new PrintStream ( file_name + ".dump.txt" );
+      for (int i=0; i<num_values; i++) {
+        dumpfile.println ( x_values[i] + " " + y_values[i] );
+      }
+      dumpfile.flush();
+      dumpfile.close();
+    } catch ( Exception xx ) {
+    }
+    */
+
+
+    /* Old Vector code ... was slooooow
+
+    Vector blocks = new Vector();
+    int blocksize = 200*200; // Must be an EVEN number to save on checking!!!
+    double block[] = null;
+    int blockindex = 0;
+    int total_values = 0;
+    try {
+      BufferedReader in = new BufferedReader(new FileReader(file_name));
+      String s;
+      while ( (s = in.readLine()) != null ) {
+        String ss[] = s.split(" ");
+        for (int i=0; i<ss.length; i++) {
+          if (block == null) {
+            block = new double[blocksize];
+            blockindex = 0;
+          }
+          block[blockindex++] = Double.parseDouble(ss[i]);
+          if (blockindex >= blocksize) {
+            blocks.addElement ( block );
+            block = new double[blocksize];
+          }
+          total_values += 1;
+        }
+      }
+      System.out.println ( "Read " + total_values + " values" );
+
+      // Allocate and copy from the blocks into the arrays
+
+      int num_values = total_values / 2;
+
+      x_values = new double[num_values];
+      y_values = new double[num_values];
+
+      int blocknum = 0;
+      blockindex = 0;
+      try {
+        System.out.println ( "Try reading from the blocks vector" );
+        block = (double[])blocks.elementAt(blockindex);
+      } catch ( Exception eee ) {
+        System.out.println ( "Error reading block from Vector: " + eee );
+      }
+      for (int i=0; i<num_values; i++) {
+        x_values[i] = (double)(i);
+        y_values[i] = (double)(i*i);
+	    }
+	  } catch ( IOException e ) {
+	    System.out.println ( "Error reading file " + file_name );
+    }
 
 
     // New one pass code uses a Vector:
@@ -293,7 +457,8 @@ class file_xy extends data_file {
       x_values[i] = (Double)(values.elementAt(2*i));
       y_values[i] = (Double)(values.elementAt((2*i)+1));
 	  }
-    
+    */
+
     /* Old two pass code reads twice to use an array:
     // Read the values
     name = "File=\"" + file_name + "\"";
