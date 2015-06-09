@@ -187,7 +187,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
     @staticmethod
     def upgrade_data_model ( dm ):
-        # Upgrade the data model as needed
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
         print ( "------------------------->>> Upgrading MCellReactionProperty Data Model" )
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
@@ -429,7 +429,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
 
     @staticmethod
     def upgrade_data_model ( dm ):
-        # Upgrade the data model as needed
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
         print ( "------------------------->>> Upgrading MCellMoleculeReleaseProperty Data Model" )
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
@@ -441,6 +441,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
             return None
 
         return dm
+
 
 
     def build_properties_from_data_model ( self, context, dm_dict ):
@@ -509,12 +510,25 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
         r_dict['number_of_trains'] = r.number_of_trains.get_expr()
         return r_dict
 
-    def build_properties_from_data_model ( self, context, dm_dict ):
 
-        # Upgrade the data model as needed
-        if not ('data_model_version' in dm_dict):
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellReleasePatternProperty Data Model" )
+
+        if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
-            dm_dict['data_model_version'] = "DM_2014_10_24_1638"
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellReleasePatternProperty data model to current version." )
+            return None
+
+        return dm
+
+
+
+    def build_properties_from_data_model ( self, context, dm_dict ):
 
         if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReleasePatternProperty data model to current version." )
@@ -1202,11 +1216,22 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         dm['processes_list'] = p_list
         return dm
 
-    def build_properties_from_data_model ( self, context, dm ):
-        # Upgrade the data model as needed
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellRunSimulationPropertyGroup Data Model" )
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2015_04_23_1753
             dm['data_model_version'] = "DM_2015_04_23_1753"
+
+        if dm['data_model_version'] != "DM_2015_04_23_1753":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationPropertyGroup data model to current version." )
+            return None
+        return dm
+
+
+    def build_properties_from_data_model ( self, context, dm ):
 
         if dm['data_model_version'] != "DM_2015_04_23_1753":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationPropertyGroup data model to current version." )
@@ -1749,12 +1774,23 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
 
         return dm_dict
 
-    def build_properties_from_data_model ( self, context, dm_dict ):
 
-        # Upgrade the data model as needed
-        if not ('data_model_version' in dm_dict):
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellInitializationPropertyGroup Data Model" )
+        if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
-            dm_dict['data_model_version'] = "DM_2014_10_24_1638"
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellInitializationPropertyGroup data model to current version." )
+            return None
+
+        return dm
+
+
+    def build_properties_from_data_model ( self, context, dm_dict ):
 
         if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellInitializationPropertyGroup data model to current version." )
@@ -2211,14 +2247,29 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
         dm_dict['z_step'] =  str(self.z_step)
         return dm_dict
 
-    def build_properties_from_data_model ( self, context, dm ):
 
-        # Upgrade the data model as needed
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellPartitionsPropertyGroup Data Model" )
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellPartitionsPropertyGroup data model to current version." )
+            return None
+
+        return dm
+
+
+
+
+
+    def build_properties_from_data_model ( self, context, dm ):
+
+
+        if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellPartitionsPropertyGroup data model to current version." )
 
         self.include = dm["include"]
@@ -2299,9 +2350,10 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
         react_dm['reaction_list'] = react_list
         return react_dm
 
+
     @staticmethod
     def upgrade_data_model ( dm ):
-        # Upgrade the data model as needed
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
         print ( "------------------------->>> Upgrading MCellReactionsPropertyGroup Data Model" )
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
@@ -2316,6 +2368,7 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
                 if MCellReactionProperty.upgrade_data_model ( item ) == None:
                     return None
         return dm
+
 
     def build_properties_from_data_model ( self, context, dm ):
         # Check that the data model version matches the version for this property group
@@ -2740,12 +2793,30 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
         rel_pat_dm['release_pattern_list'] = rel_pat_list
         return rel_pat_dm
 
-    def build_properties_from_data_model ( self, context, dm ):
 
-        # Upgrade the data model as needed
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellReleasePatternPropertyGroup Data Model" )
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellReleasePatternPropertyGroup data model to current version." )
+            return None
+
+        group_name = "release_pattern_list"
+        if group_name in dm:
+            l = dm[group_name]
+            for ri in range(len(l)):
+                l[ri] = MCellReleasePatternProperty.upgrade_data_model ( l[ri] )
+                if l[ri] == None:
+                  return None
+        return dm
+
+
+    def build_properties_from_data_model ( self, context, dm ):
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReleasePatternPropertyGroup data model to current version." )
@@ -2845,7 +2916,7 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
     @staticmethod
     def upgrade_data_model ( dm ):
-        # Upgrade the data model as needed
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
         print ( "------------------------->>> Upgrading MCellMoleculeReleasePropertyGroup Data Model" )
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
@@ -4749,10 +4820,10 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         return dm
 
 
+
     @staticmethod
     def upgrade_data_model ( dm ):
-        # Upgrade the data model as needed
-
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
         print ( "------------------------->>> Upgrading MCellPropertyGroup Data Model" )
         # cellblender.data_model.dump_data_model ( "Dump of dm passed to MCellPropertyGroup.upgrade_data_model", dm )
 
@@ -4768,6 +4839,18 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
         # Perform any upgrades to all components within this top level data model
 
+        group_name = "initialization"
+        if group_name in dm:
+            dm[group_name] = MCellInitializationPropertyGroup.upgrade_data_model ( dm[group_name] )
+            if dm[group_name] == None:
+                return None
+
+            subgroup_name = "partitions"
+            if subgroup_name in dm[group_name]:
+                dm[group_name][subgroup_name] = MCellPartitionsPropertyGroup.upgrade_data_model ( dm[group_name] )
+                if dm[group_name][subgroup_name] == None:
+                    return None
+
         group_name = "define_reactions"
         if group_name in dm:
             dm[group_name] = MCellReactionsPropertyGroup.upgrade_data_model ( dm[group_name] )
@@ -4777,6 +4860,12 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         group_name = "release_sites"
         if group_name in dm:
             dm[group_name] = MCellMoleculeReleasePropertyGroup.upgrade_data_model ( dm[group_name] )
+            if dm[group_name] == None:
+                return None
+
+        group_name = "define_release_patterns"
+        if group_name in dm:
+            dm[group_name] = MCellReleasePatternPropertyGroup.upgrade_data_model ( dm[group_name] )
             if dm[group_name] == None:
                 return None
 
