@@ -1879,15 +1879,29 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         return par_sys_dm
 
 
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading ParameterSystemPropertyGroup Data Model" )
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        # Check that the upgraded data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade ParameterSystemPropertyGroup data model to current version." )
+            return None
+
+        return dm
+
+
+
     #@profile('ParameterSystem.build_data_model_from_properties')
     def build_properties_from_data_model ( self, context, par_sys_dm ):
-        # First upgrade the data model as needed
-        if not ('data_model_version' in par_sys_dm):
-            # Make changes to move from unversioned to DM_2014_10_24_1638
-            par_sys_dm['data_model_version'] = "DM_2014_10_24_1638"
-
+        # Check that the data model version matches the version for this property group
         if par_sys_dm['data_model_version'] != "DM_2014_10_24_1638":
-            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade Parameter data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
 
         print ( "Parameter System building Properties from Data Model ..." )
         while len(self.general_parameter_list) > 0:

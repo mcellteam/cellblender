@@ -4840,6 +4840,12 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
         # Perform any upgrades to all components within this top level data model
 
+        group_name = "parameter_system"
+        if group_name in dm:
+            dm[group_name] = parameter_system.ParameterSystemPropertyGroup.upgrade_data_model ( dm[group_name] )
+            if dm[group_name] == None:
+                return None
+
         group_name = "initialization"
         if group_name in dm:
             dm[group_name] = MCellInitializationPropertyGroup.upgrade_data_model ( dm[group_name] )
