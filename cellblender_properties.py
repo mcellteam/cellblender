@@ -4852,6 +4852,12 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
                 if dm[group_name][subgroup_name] == None:
                     return None
 
+        group_name = "define_molecules"
+        if group_name in dm:
+            dm[group_name] = cellblender_molecules.MCellMoleculesListProperty.upgrade_data_model ( dm[group_name] )
+            if dm[group_name] == None:
+                return None
+
         group_name = "define_reactions"
         if group_name in dm:
             dm[group_name] = MCellReactionsPropertyGroup.upgrade_data_model ( dm[group_name] )
