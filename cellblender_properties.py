@@ -3111,7 +3111,8 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                                "trigger releases. When reactions are used, the release generally happens\n" + \
                                "at a location relative to the reaction itself."
                     #layout.prop_search ( rel, "molecule", mcell.molecules, "molecule_list", text="Molecule", icon='FORCE_LENNARDJONES')
-                    ps.draw_prop_search_with_help ( layout, "Release Pattern:", rel, "pattern", mcell.release_patterns, "release_pattern_rxn_name_list", "rel_pattern_show_help", rel.rel_pattern_show_help, helptext )
+                    ps.draw_prop_search_with_help ( layout, "Release Pattern:", rel, "pattern", mcell.release_patterns, "release_pattern_rxn_name_list", "rel_pattern_show_help", rel.rel_pattern_show_help, helptext, 'TIME' )
+
 
 
 

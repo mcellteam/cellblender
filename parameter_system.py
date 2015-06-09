@@ -2094,7 +2094,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
               box.label (text=desc_line)
 
 
-    def draw_prop_search_with_help ( self, layout, prop_label, prop_group, prop, prop_parent, prop_list_name, show, show_help, help_string ):
+    def draw_prop_search_with_help ( self, layout, prop_label, prop_group, prop, prop_parent, prop_list_name, show, show_help, help_string, icon='FORCE_LENNARDJONES' ):
         """ This function helps draw non-parameter properties with help (info) button functionality """
         row = layout.row()
         split = row.split(self.param_label_fraction)
@@ -2104,7 +2104,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         #col.prop ( prop_group, prop, text="" )
 
         #layout.prop_search(rel, "molecule", mcell.molecules, "molecule_list", text="Molecule", icon='FORCE_LENNARDJONES')
-        col.prop_search( prop_group, prop, prop_parent, prop_list_name, text="", icon='FORCE_LENNARDJONES')
+        col.prop_search( prop_group, prop, prop_parent, prop_list_name, text="", icon=icon)
 
         col = row.column()
         col.prop ( prop_group, show, icon='INFO', text="" )
