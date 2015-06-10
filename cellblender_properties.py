@@ -597,6 +597,22 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         sc_dict['clamp_value'] = str(sc.clamp_value_str)
         return sc_dict
 
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellSurfaceClassPropertiesProperty Data Model" )
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellSurfaceClassPropertiesProperty data model to current version." )
+            return None
+
+        return dm
+
+
     def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
@@ -664,15 +680,34 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
         sc_dm['surface_class_prop_list'] = sc_list
         return sc_dm
 
-    def build_properties_from_data_model ( self, context, dm ):
 
-        # Upgrade the data model as needed
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellSurfaceClassesProperty Data Model" )
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellSurfaceClassesProperty data model to current version." )
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellSurfaceClassesProperty data model to current version." )
+            return None
+
+        if "surface_class_prop_list" in dm:
+            for item in dm["surface_class_prop_list"]:
+                if MCellSurfaceClassPropertiesProperty.upgrade_data_model ( item ) == None:
+                    return None
+
+        return dm
+
+
+
+    def build_properties_from_data_model ( self, context, dm ):
+
+        # Check that the data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculesListProperty data model to current version." )
 
         self.name = dm["name"]
         while len(self.surf_class_props_list) > 0:
@@ -742,6 +777,7 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 
     def check_properties_after_building ( self, context ):
         print ( "Implementing check_properties_after_building for " + str(self) )
+        print ( "Calling check_mod_surf_regions on object named: " + self.object_name )
         cellblender_operators.check_mod_surf_regions(self, context)
         
 
@@ -2500,13 +2536,29 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
         sc_dm['surface_class_list'] = sc_list
         return sc_dm
 
-    def build_properties_from_data_model ( self, context, dm ):
 
-        # Upgrade the data model as needed
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellSurfaceClassesPropertyGroup Data Model" )
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellSurfaceClassesPropertyGroup data model to current version." )
+            return None
+
+        if "surface_class_list" in dm:
+            for item in dm["surface_class_list"]:
+                if MCellSurfaceClassesProperty.upgrade_data_model ( item ) == None:
+                    return None
+        return dm
+
+
+    def build_properties_from_data_model ( self, context, dm ):
+
+        # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellSurfaceClassesPropertyGroup data model to current version." )
 
@@ -4882,6 +4934,12 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             if dm[group_name] == None:
                 return None
 
+        group_name = "define_surface_classes"
+        if group_name in dm:
+            dm[group_name] = MCellSurfaceClassesPropertyGroup.upgrade_data_model ( dm[group_name] )
+            if dm[group_name] == None:
+                return None
+
         return dm
 
 
@@ -4924,9 +4982,10 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "define_surface_classes" in dm:
             print ( "Overwriting the define_surface_classes properties" )
             self.surface_classes.build_properties_from_data_model ( context, dm["define_surface_classes"] )
-        if "modify_surface_regions" in dm:
-            print ( "Overwriting the modify_surface_regions properties" )
-            self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
+        # Move below model objects?
+        #if "modify_surface_regions" in dm:
+        #    print ( "Overwriting the modify_surface_regions properties" )
+        #    self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
         if geometry:
             print ( "Deleting all mesh objects" )
             self.model_objects.delete_all_mesh_objects(context)
@@ -4942,6 +5001,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "model_objects" in dm:
             print ( "Overwriting the model_objects properties" )
             self.model_objects.build_properties_from_data_model ( context, dm["model_objects"] )
+        if "modify_surface_regions" in dm:
+            print ( "Overwriting the modify_surface_regions properties" )
+            self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
         if "viz_output" in dm:
             print ( "Overwriting the viz_output properties" )
             self.viz_output.build_properties_from_data_model ( context, dm["viz_output"] )

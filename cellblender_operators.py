@@ -839,12 +839,21 @@ def check_mod_surf_regions(self, context):
     region_name = active_mod_surf_regions.region_name
 
     try:
-        region_list = bpy.data.objects[
-            active_mod_surf_regions.object_name].mcell.regions.region_list
-    except KeyError:
-        # The object name in mod_surf_regions isn't a blender object
-        print ( "The object name " + object_name + " isn't a blender object" )
+        region_list = bpy.data.objects[active_mod_surf_regions.object_name].mcell.regions.region_list
+    except KeyError as kerr:
+        # The object name in mod_surf_regions isn't a blender object - print a stack trace ...
+        print ( "Error: The object name (\"" + object_name + "\") isn't a blender object ... at this time?" )
+        fail_error = sys.exc_info()
+        print ( "    Error Type: " + str(fail_error[0]) )
+        print ( "    Error Value: " + str(fail_error[1]) )
+        tb = fail_error[2]
+        # tb.print_stack()
+        print ( "=== Traceback Start ===" )
+        traceback.print_tb(tb)
+        traceback.print_stack()
+        print ( "=== Traceback End ===" )
         pass
+
 
     # Format the entry as it will appear in the Modify Surface Regions
     active_mod_surf_regions.name = ("Surface Class: %s   Object: %s   "
