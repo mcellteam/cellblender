@@ -707,7 +707,7 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
 
         # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculesListProperty data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellSurfaceClassesProperty data model to current version." )
 
         self.name = dm["name"]
         while len(self.surf_class_props_list) > 0:
@@ -760,13 +760,25 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
         sr_dm['region_name'] = self.region_name
         return sr_dm
 
-    def build_properties_from_data_model ( self, context, dm ):
 
-        # Upgrade the data model as needed
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellModSurfRegionsProperty Data Model" )
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsProperty data model to current version." )
+            return None
+
+        return dm
+
+
+    def build_properties_from_data_model ( self, context, dm ):
+
+        # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsProperty data model to current version." )
 
@@ -1165,6 +1177,14 @@ class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
         self.name = dm["name"]
 
 
+def sim_runner_changed_callback ( self, context ):
+    """ The run lists are somewhat incompatible between sim runners, so just clear them when switching. """
+    # print ( "Sim Runner has been changed!!" )
+    # mcell = context.scene.mcell
+    bpy.ops.mcell.clear_run_list()
+    bpy.ops.mcell.clear_simulation_queue()
+    
+
 class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     start_seed = IntProperty(
         name="Start Seed", default=1, min=1,
@@ -1226,7 +1246,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     simulation_run_control = EnumProperty(
         items=simulation_run_control_enum, name="",
         description="Mechanism for running and controlling the simulation",
-        default='QUEUE')
+        default='QUEUE', update=sim_runner_changed_callback)
 
 
     def remove_properties ( self, context ):
@@ -1327,21 +1347,33 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                 row.operator("mcell.run_simulation", text="Run",
                              icon='COLOR_RED')
                 
-                if (self.processes_list and
-                        cellblender.simulation_queue.task_dict):
-                    row = layout.row()
-                    row.label(text="MCell Processes:",
-                              icon='FORCE_LENNARDJONES')
-                    row = layout.row()
-                    row.template_list("MCELL_UL_run_simulation_queue", "run_simulation_queue",
-                                      self, "processes_list",
-                                      self, "active_process_index",
-                                      rows=2)
-                    row = layout.row()
-                    row.operator("mcell.clear_simulation_queue")
-                    row = layout.row()
-                    row.operator("mcell.kill_simulation")
-                    row.operator("mcell.kill_all_simulations")
+                if self.simulation_run_control != "QUEUE":
+                    if self.processes_list and (len(self.processes_list) > 0):
+                        row = layout.row()
+                        row.template_list("MCELL_UL_run_simulation", "run_simulation",
+                                          self, "processes_list",
+                                          self, "active_process_index",
+                                          rows=2)
+                        row = layout.row()
+                        row.operator("mcell.clear_run_list")
+
+                else:
+
+                    if (self.processes_list and
+                            cellblender.simulation_queue.task_dict):
+                        row = layout.row()
+                        row.label(text="MCell Processes:",
+                                  icon='FORCE_LENNARDJONES')
+                        row = layout.row()
+                        row.template_list("MCELL_UL_run_simulation_queue", "run_simulation_queue",
+                                          self, "processes_list",
+                                          self, "active_process_index",
+                                          rows=2)
+                        row = layout.row()
+                        row.operator("mcell.clear_simulation_queue")
+                        row = layout.row()
+                        row.operator("mcell.kill_simulation")
+                        row.operator("mcell.kill_all_simulations")
 
 
                 box = layout.box()
@@ -2735,13 +2767,30 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
         sr_dm['modify_surface_regions_list'] = sr_list
         return sr_dm
 
-    def build_properties_from_data_model ( self, context, dm ):
 
-        # Upgrade the data model as needed
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellModSurfRegionsPropertyGroup Data Model" )
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsPropertyGroup data model to current version." )
+            return None
+
+        if "modify_surface_regions_list" in dm:
+            for item in dm["modify_surface_regions_list"]:
+                if MCellModSurfRegionsProperty.upgrade_data_model ( item ) == None:
+                    return None
+
+        return dm
+
+
+    def build_properties_from_data_model ( self, context, dm ):
+
+        # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsPropertyGroup data model to current version." )
 
@@ -2754,6 +2803,7 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
                 sr = self.mod_surf_regions_list[self.active_mod_surf_regions_index]
                 # sr.init_properties(context.scene.mcell.parameter_system)
                 sr.build_properties_from_data_model ( context, s )
+
 
     def check_properties_after_building ( self, context ):
         print ( "Implementing check_properties_after_building for " + str(self) )
