@@ -278,7 +278,7 @@ class file_xy extends data_file {
     double[][] new_blocks = new double[base_len+1][];
     if (blocks != null) {
       for (int b=0; b<base_len; b++) {
-        System.out.println ( "Copying block " + b );
+        // System.out.println ( "Copying block " + b );
         new_blocks[b] = blocks[b];
       }
     }
@@ -291,7 +291,7 @@ class file_xy extends data_file {
   public file_xy ( String file_name ) {
 
     double[][] blocks = null;
-    int blocksize = 300*300; // Must be an EVEN number to save on checking!!!
+    int blocksize = 100000*2; // Must be an EVEN number to save on checking!!!
     double[] block = null;
     int num_blocks = 0;
     int blockindex = 0;
@@ -321,12 +321,14 @@ class file_xy extends data_file {
           total_values += 1;
         }
       }
-      System.out.println ( "Read " + total_values + " values into " + num_blocks + " blocks" );
 
       if (blockindex != 0) {
+        // This indicates that there's a partially filled block that needs to be added to the blocks array
         blocks = append_block ( blocks, block );
+        num_blocks += 1;
       }
 
+      System.out.println ( "Read " + total_values + " values into " + num_blocks + " blocks" );
 
       // Allocate and copy from the blocks into the arrays
 
@@ -341,13 +343,11 @@ class file_xy extends data_file {
         x_values[i] = blocks[blocknum][blockindex++];
         y_values[i] = blocks[blocknum][blockindex++];
         // System.out.println ( "Assigned " + x_values[i] + ", " + y_values[i] );
-        if (blockindex > blocksize) {
+        if (blockindex >= blocksize) {
           blocknum += 1;
           blockindex = 0;
         }
 	    }
-
-
 
 
 	  } catch ( IOException ie ) {
