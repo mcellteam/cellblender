@@ -359,6 +359,7 @@ def upgrade_RC3_properties_from_data_model ( context ):
       restore_mcell_preferences ( mp, mcell )
 
       # Do the actual updating of properties from data model right here
+      dm = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm)
       mcell.build_properties_from_data_model ( context, dm )
 
       # Update the source_id
