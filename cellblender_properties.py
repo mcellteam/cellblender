@@ -25,8 +25,9 @@
 #   Each Property Group must implement the following functions:
 #
 #     init_properties - Deletes old and Creates a new object including children
-#     build_data_model_from_properties - Builds a Data Model Dictionary
-#     build_properties_from_data_model - Calls init_properties and builds
+#     build_data_model_from_properties - Builds a Data Model Dictionary from the existing properties
+#     @staticmethod upgrade_data_model - Produces a current data model from an older version
+#     build_properties_from_data_model - Calls init_properties and builds properties from a data model
 #     check_properties_after_building - Used to resolve dependencies
 #     
 #
@@ -1164,6 +1165,15 @@ class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
         dm['name'] = self.name
         return dm
 
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellRunSimulationProcessesProperty Data Model" )
+        print ( "-------------->>>>>>>>>>>>>>>>>>>>> NOT IMPLEMENTED YET!!!" )
+        return dm
+
+
     def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
@@ -1527,6 +1537,15 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         mv_dm['manual_select_viz_dir'] = self.manual_select_viz_dir
 
         return mv_dm
+
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellMolVizPropertyGroup Data Model" )
+        print ( "-------------->>>>>>>>>>>>>>>>>>>>> NOT IMPLEMENTED YET!!!" )
+        return dm
+
 
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -3236,6 +3255,16 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
         mo_dm['name'] = self.name
         return mo_dm
 
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellModelObjectsProperty Data Model" )
+        print ( "-------------->>>>>>>>>>>>>>>>>>>>> NOT IMPLEMENTED YET!!!" )
+        return dm
+
+
+
     def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
@@ -3362,6 +3391,16 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     mo_list.append ( { "name": scene_object.name } )
         mo_dm['model_object_list'] = mo_list
         return mo_dm
+
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellModelObjectsPropertyGroup Data Model" )
+        print ( "-------------->>>>>>>>>>>>>>>>>>>>> NOT IMPLEMENTED YET!!!" )
+        return dm
+
+
 
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -3648,6 +3687,16 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
         vo_dm['export_all'] = self.export_all
         return vo_dm
 
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellVizOutputPropertyGroup Data Model" )
+        print ( "-------------->>>>>>>>>>>>>>>>>>>>> NOT IMPLEMENTED YET!!!" )
+        return dm
+
+
+
     def build_properties_from_data_model ( self, context, dm ):
 
         # Upgrade the data model as needed
@@ -3752,6 +3801,16 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         ro_dm['count_location'] = self.count_location
         ro_dm['rxn_or_mol'] = self.rxn_or_mol
         return ro_dm
+
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellReactionOutputProperty Data Model" )
+        print ( "-------------->>>>>>>>>>>>>>>>>>>>> NOT IMPLEMENTED YET!!!" )
+        return dm
+
+
 
     def build_properties_from_data_model ( self, context, dm ):
 
@@ -3858,6 +3917,16 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             ro_list.append ( ro.build_data_model_from_properties(context) )
         ro_dm['reaction_output_list'] = ro_list
         return ro_dm
+
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellReactionOutputPropertyGroup Data Model" )
+        print ( "-------------->>>>>>>>>>>>>>>>>>>>> NOT IMPLEMENTED YET!!!" )
+        return dm
+
+
 
     def build_properties_from_data_model ( self, context, dm ):
 
@@ -4995,7 +5064,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
 
     def build_properties_from_data_model ( self, context, dm, geometry=False ):
-        #print ( "build_properties_from_data_model: Data Model Keys = " + str(dm.keys()) )
+        print ( "build_properties_from_data_model: Data Model Keys = " + str(dm.keys()) )
 
         # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2014_10_24_1638":
@@ -5174,6 +5243,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
           dm_dict[dm_name] = default_value
 
     def build_data_model_from_RC3_ID_properties ( self, context, geometry=False ):
+        # Build an unversioned data model from RC3 ID properties to match the pre-versioned data models that can be upgraded to versioned data models
+
         print ( "build_data_model_from_RC3_ID_properties: Constructing a data_model dictionary from RC3 ID properties" )
         print ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
         print ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )

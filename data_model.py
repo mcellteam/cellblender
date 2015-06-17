@@ -248,6 +248,7 @@ def restore_mcell_preferences ( mp, mcell ):
     mcell.cellblender_preferences.bionetgen_location = mp['bionetgen_location']
     mcell.cellblender_preferences.bionetgen_location_valid = mp['bionetgen_location_valid']
 
+import traceback
 
 def upgrade_properties_from_data_model ( context ):
     print ( "Upgrading Properties from Data Model" )
@@ -298,6 +299,7 @@ def upgrade_properties_from_data_model ( context ):
         mcell.build_properties_from_data_model ( context, dm )
     else:
         print ( "Warning: This should never happen." )
+        traceback.print_stack()
         print ( "No data model to upgrade ... building a data model and then recreating properties." )
         dm = mcell.build_data_model_from_properties ( context )
         dm = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm)
