@@ -1170,20 +1170,21 @@ class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
     def upgrade_data_model ( dm ):
         # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
         print ( "------------------------->>> Upgrading MCellRunSimulationProcessesProperty Data Model" )
-        print ( "-------------->>>>>>>>>>>>>>>>>>>>> NOT IMPLEMENTED YET!!!" )
-        return dm
-
-
-    def build_properties_from_data_model ( self, context, dm ):
-
-        # Upgrade the data model as needed
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2015_04_23_1753
             dm['data_model_version'] = "DM_2015_04_23_1753"
 
         if dm['data_model_version'] != "DM_2015_04_23_1753":
-            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationProcessesProperty data model to current version." )
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationProcessesProperty data model to current version." )
+            return None
 
+        return dm
+
+
+    def build_properties_from_data_model ( self, context, dm ):
+        # Check that the data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2015_04_23_1753":
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationProcessesProperty data model to current version." )
         self.name = dm["name"]
 
 
@@ -1543,23 +1544,23 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
     def upgrade_data_model ( dm ):
         # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
         print ( "------------------------->>> Upgrading MCellMolVizPropertyGroup Data Model" )
-        print ( "-------------->>>>>>>>>>>>>>>>>>>>> NOT IMPLEMENTED YET!!!" )
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2015_04_13_1700
+            dm['data_model_version'] = "DM_2015_04_13_1700"
+
+        if dm['data_model_version'] != "DM_2015_04_13_1700":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMolVizPropertyGroup data model to current version." )
+            return None
+
         return dm
 
 
 
     def build_properties_from_data_model ( self, context, dm ):
-        print ( "Building Mol Viz properties from data model" )
-
-        # Upgrade the data model as needed
-        if not ('data_model_version' in dm):
-            # Make changes to move from unversioned to DM_2015_04_13_1700
-            print ( "######## Warning: It's not currently known how to build viz properties with this data model" )
-            dm['data_model_version'] = "DM_2015_04_13_1700"
-
+        # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2015_04_13_1700":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMolVizPropertyGroup data model to current version." )
-        
+
         # Remove the old properties (includes emptying collections)
         self.remove_properties ( context )
 
@@ -2355,8 +2356,7 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
 
-
-        if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellPartitionsPropertyGroup data model to current version." )
 
         self.include = dm["include"]
@@ -3397,10 +3397,16 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     def upgrade_data_model ( dm ):
         # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
         print ( "------------------------->>> Upgrading MCellModelObjectsPropertyGroup Data Model" )
-        print ( "-------------->>>>>>>>>>>>>>>>>>>>> NOT IMPLEMENTED YET!!!" )
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        # Check that the upgraded data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
+            return None
+
         return dm
-
-
 
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -3408,11 +3414,6 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         #   context.scene.mcell.model_objects.object_list[] - stores the name
         #   context.scene.objects[].mcell.include - boolean is true for model objects
         # This code updates both locations based on the data model
-
-        # Upgrade the data model as needed
-        if not ('data_model_version' in dm):
-            # Make changes to move from unversioned to DM_2014_10_24_1638
-            dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
@@ -3692,18 +3693,21 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
     def upgrade_data_model ( dm ):
         # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
         print ( "------------------------->>> Upgrading MCellVizOutputPropertyGroup Data Model" )
-        print ( "-------------->>>>>>>>>>>>>>>>>>>>> NOT IMPLEMENTED YET!!!" )
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        # Check that the upgraded data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellVizOutputPropertyGroup data model to current version." )
+            return None
+
         return dm
 
 
 
     def build_properties_from_data_model ( self, context, dm ):
-
-        # Upgrade the data model as needed
-        if not ('data_model_version' in dm):
-            # Make changes to move from unversioned to DM_2014_10_24_1638
-            dm['data_model_version'] = "DM_2014_10_24_1638"
-
+        # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellVizOutputPropertyGroup data model to current version." )
         
@@ -3807,21 +3811,22 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     def upgrade_data_model ( dm ):
         # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
         print ( "------------------------->>> Upgrading MCellReactionOutputProperty Data Model" )
-        print ( "-------------->>>>>>>>>>>>>>>>>>>>> NOT IMPLEMENTED YET!!!" )
-        return dm
-
-
-
-    def build_properties_from_data_model ( self, context, dm ):
-
-        # Upgrade the data model as needed
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
+        # Check that the upgraded data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
+            return None
+
+        return dm
+
+
+    def build_properties_from_data_model ( self, context, dm ):
+        # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
-        
         self.name = dm["name"]
         self.molecule_name = dm["molecule_name"]
         self.reaction_name = dm["reaction_name"]
@@ -3923,13 +3928,6 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
     def upgrade_data_model ( dm ):
         # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
         print ( "------------------------->>> Upgrading MCellReactionOutputPropertyGroup Data Model" )
-        print ( "-------------->>>>>>>>>>>>>>>>>>>>> NOT IMPLEMENTED YET!!!" )
-        return dm
-
-
-
-    def build_properties_from_data_model ( self, context, dm ):
-
         # Upgrade the data model as needed
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
@@ -3940,9 +3938,19 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             dm['rxn_step'] = ""
             dm['data_model_version'] = "DM_2015_05_15_1214"
 
+        # Check that the upgraded data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2015_05_15_1214":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellReactionOutputPropertyGroup data model to current version." )
+            return None
+
+        return dm
+
+
+
+    def build_properties_from_data_model ( self, context, dm ):
+        # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2015_05_15_1214":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReactionOutputPropertyGroup data model to current version." )
-        
         self.init_properties(context.scene.mcell.parameter_system)
         self.plot_layout = dm["plot_layout"]
         self.plot_legend = dm["plot_legend"]
@@ -5056,6 +5064,42 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         group_name = "define_surface_classes"
         if group_name in dm:
             dm[group_name] = MCellSurfaceClassesPropertyGroup.upgrade_data_model ( dm[group_name] )
+            if dm[group_name] == None:
+                return None
+
+        group_name = "modify_surface_regions"
+        if group_name in dm:
+            dm[group_name] = MCellModSurfRegionsPropertyGroup.upgrade_data_model ( dm[group_name] )
+            if dm[group_name] == None:
+                return None
+
+        group_name = "model_objects"
+        if group_name in dm:
+            dm[group_name] = MCellModelObjectsPropertyGroup.upgrade_data_model ( dm[group_name] )
+            if dm[group_name] == None:
+                return None
+
+        group_name = "viz_output"
+        if group_name in dm:
+            dm[group_name] = MCellVizOutputPropertyGroup.upgrade_data_model ( dm[group_name] )
+            if dm[group_name] == None:
+                return None
+
+        group_name = "simulation_control"
+        if group_name in dm:
+            dm[group_name] = MCellRunSimulationPropertyGroup.upgrade_data_model ( dm[group_name] )
+            if dm[group_name] == None:
+                return None
+
+        group_name = "mol_viz"
+        if group_name in dm:
+            dm[group_name] = MCellMolVizPropertyGroup.upgrade_data_model ( dm[group_name] )
+            if dm[group_name] == None:
+                return None
+
+        group_name = "reaction_data_output"
+        if group_name in dm:
+            dm[group_name] = MCellReactionOutputPropertyGroup.upgrade_data_model ( dm[group_name] )
             if dm[group_name] == None:
                 return None
 
