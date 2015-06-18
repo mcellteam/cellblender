@@ -3943,6 +3943,11 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellReactionOutputPropertyGroup data model to current version." )
             return None
 
+        if "reaction_output_list" in dm:
+            for item in dm["reaction_output_list"]:
+                if MCellReactionOutputProperty.upgrade_data_model ( item ) == None:
+                    return None
+
         return dm
 
 
