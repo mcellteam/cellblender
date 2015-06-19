@@ -3934,7 +3934,6 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] == "DM_2014_10_24_1638":
-            print ( "Adding Reaction Output Step to data model." )
             dm['rxn_step'] = ""
             dm['data_model_version'] = "DM_2015_05_15_1214"
 
