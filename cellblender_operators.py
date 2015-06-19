@@ -2097,6 +2097,7 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
         #  mol_file_dir comes from directory already chosen manually
         if mcell.mol_viz.manual_select_viz_dir:
             mol_file_dir = mcell.mol_viz.mol_file_dir
+            print("manual mol_file_dir: %s" % (mol_file_dir))
 
         #  mol_file_dir comes from directory associated with saved .blend file
         else:
@@ -2122,6 +2123,7 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
           if mcell.mol_viz.mol_viz_seed_list:
               mol_file_dir = get_mol_file_dir()
               mcell.mol_viz.mol_file_dir = mol_file_dir
+              print("auto mol_file_dir: %s" % (mol_file_dir))
 
 #        mcell.mol_viz.mol_file_list.clear()
 
@@ -2154,6 +2156,7 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
           set_viz_boundaries(context)
 
           try:
+              mol_viz_clear(mcell, force_clear=True)
               mol_viz_update(self, context)
           except:
               print( "Unexpected Exception calling mol_viz_update: " + str(sys.exc_info()) )
@@ -2547,7 +2550,7 @@ def mol_viz_update(self, context):
     return
 
 
-def mol_viz_clear(mcell_prop):
+def mol_viz_clear(mcell_prop, force_clear=False):
     """ Clear the viz data from the previous frame. """
 
     mcell = mcell_prop
@@ -2555,7 +2558,13 @@ def mol_viz_clear(mcell_prop):
     scn_objs = scn.objects
     meshes = bpy.data.meshes
     objs = bpy.data.objects
-    for mol_item in mcell.mol_viz.mol_viz_list:
+
+    if force_clear:
+      mol_viz_list = [obj for obj in scn_objs if (obj.name[:4] == 'mol_') and (obj.name[-6:] != '_shape')]
+    else:
+      mol_viz_list = mcell.mol_viz.mol_viz_list
+
+    for mol_item in mol_viz_list:
         mol_name = mol_item.name
         mol_obj = scn_objs.get(mol_name)
         if mol_obj:
@@ -2594,7 +2603,7 @@ def mol_viz_clear(mcell_prop):
 
 
 
-def mol_viz_file_read(mcell_prop, filepath):
+def old_mol_viz_file_read(mcell_prop, filepath):
     """ Draw the viz data for the current frame. """
     mcell = mcell_prop
     try:
@@ -2775,7 +2784,7 @@ def mol_viz_file_read(mcell_prop, filepath):
 import sys, traceback
 
 
-def new_mol_viz_file_read(mcell_prop, filepath):
+def mol_viz_file_read(mcell_prop, filepath):
     """ Draw the viz data for the current frame. """
 
     mcell = mcell_prop
@@ -2955,25 +2964,25 @@ def new_mol_viz_file_read(mcell_prop, filepath):
                 #    mol_mat.diffuse_color = mol.color
                 #    mol_mat.emit = mol.emit
 
-                # Create a "mesh" to hold instances of molecule positions
+                # Look-up mesh to hold instances of molecule positions, create if needed
                 mol_pos_mesh_name = "%s_pos" % (mol_name)
                 mol_pos_mesh = meshes.get(mol_pos_mesh_name)
-
-
                 if not mol_pos_mesh:
                     mol_pos_mesh = meshes.new(mol_pos_mesh_name)
 
-                if 3*len(mol_pos_mesh.vertices) != len(mol_pos):
-                    if len(mol_pos_mesh.vertices) != 0:
-                        print ( "Adding " + str(len(mol_pos)//3) + " vertices to array already containing " + str(len(mol_pos_mesh.vertices)) + ", create new mesh" )
-                        mol_pos_mesh = meshes.new(mol_pos_mesh_name)
+#                if 3*len(mol_pos_mesh.vertices) != len(mol_pos):
+#                    if len(mol_pos_mesh.vertices) != 0:
+#                        print ( "Adding " + str(len(mol_pos)//3) + " vertices to array already containing " + str(len(mol_pos_mesh.vertices)) + ", create new mesh" )
+#                        mol_pos_mesh = meshes.new(mol_pos_mesh_name)
                 
 
                 # Add and place vertices at positions of molecules
 
                 mol_pos_mesh.vertices.add(len(mol_pos)//3)
+                mol_pos_mesh.vertices.foreach_set("co", mol_pos)
+                mol_pos_mesh.vertices.foreach_set("normal", mol_orient)
 
-                
+                '''
                 done_setting = False
                 try_setting_count = 0
                 while not done_setting and (try_setting_count < 10):
@@ -3001,6 +3010,7 @@ def new_mol_viz_file_read(mcell_prop, filepath):
                     #print ( "After setting verticies with foreach" )
 
                 # print ( "Done adding vertices" )
+                '''
 
                 mol_obj = objs.get(mol_name)
                 if mol_obj:
