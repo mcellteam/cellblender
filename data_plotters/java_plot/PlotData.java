@@ -109,7 +109,35 @@ abstract class data_file {
 	}
 
   static int next_color = 0;
+  static int color_list[][] = {
+    { 255,   0,   0 },
+    {   0, 255,   0 },
+    {   0,   0, 255 },
+    { 255, 255,   0 },
+    { 255,   0, 255 },
+    {   0, 255, 255 },
+    { 255, 255, 255 },
+    { 150,   0,   0 },
+    {   0, 150,   0 },
+    {   0,   0, 150 },
+    { 150, 150,   0 },
+    { 150,   0, 150 },
+    {   0, 150, 150 },
+    { 150, 150, 150 }
+  };
+
   public static Color get_next_color() {
+		if (next_color >= color_list.length) {
+		  next_color = 0;
+		}
+		int r = color_list[next_color][0];
+		int g = color_list[next_color][1];
+		int b = color_list[next_color][2];
+		next_color += 1;
+		return ( new Color(r,g,b) );
+  }
+
+  public static Color get_next_computed_color() {
   	do {
     	next_color += 1;
    	} while ( (next_color % 8) == 0 );
@@ -861,6 +889,17 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 								combined = true;
 							}
 						}
+					} else if (field.equals("Variable_Y:")) {
+						field = fr.next_field();
+						if ( (field != null) && (field.length() > 0) ) {
+							double var_level = new Double(field);
+							System.out.println ( "Setting Variable Y to : " + var_level );
+							if (var_level < 0.5) {
+								var_y = false;
+							} else {
+								var_y = true;
+							}
+						}
 					} else if (field.equals("WindowWidth:")) {
 						field = fr.next_field();
 						if ( (field != null) && (field.length() > 0) ) {
@@ -903,6 +942,11 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 			} else {
 				o.write ( "Combined: 0.0\n" );
 			}
+			if (var_y) {
+				o.write ( "Variable_Y: 1.0\n" );
+			} else {
+				o.write ( "Variable_Y: 0.0\n" );
+			}
 			Rectangle r = getBounds();
 			o.write ( "WindowWidth: " + r.width + "\n" );
 			o.write ( "WindowHeight: " + r.height + "\n" );
@@ -920,6 +964,7 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 
   int pref_w=1200, pref_h=600;
   boolean combined = true;
+  boolean var_y = false;
 	boolean annotation = true;
 	boolean fit_x = false;
 	boolean antialias = false;
@@ -942,13 +987,15 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 	    	// mi.addActionListener(this);
 	    	menu_bar.add ( file_menu );
 			JMenu set_menu = new JMenu("Show");
+		  	set_menu.add ( mi = new JMenuItem("Full Range") );
+		  	mi.addActionListener(this);
 		  	set_menu.add ( mi = new JCheckBoxMenuItem("Combined",combined) );
+		  	mi.addActionListener(this);
+		  	set_menu.add ( mi = new JCheckBoxMenuItem("Variable Y",var_y) );
 		  	mi.addActionListener(this);
 		  	set_menu.add ( mi = new JCheckBoxMenuItem("Annotation",annotation) );
 		  	mi.addActionListener(this);
 		  	set_menu.add ( mi = new JCheckBoxMenuItem("Antialiasing",antialias) );
-		  	mi.addActionListener(this);
-		  	set_menu.add ( mi = new JMenuItem("Full Range") );
 		  	mi.addActionListener(this);
 		  	menu_bar.add ( set_menu );
 	   return (menu_bar);
@@ -1021,6 +1068,15 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 			} else {
 				System.out.println ( "Separate Plots" );
 				combined = false;
+			}
+		} else if (cmd.equalsIgnoreCase("Variable Y")) {
+			JCheckBoxMenuItem mi = (JCheckBoxMenuItem)(e.getSource());
+			if (mi.isSelected()) {
+				System.out.println ( "Variable Y Scaling" );
+				var_y = true;
+			} else {
+				System.out.println ( "Fixed Y Scaling" );
+				var_y = false;
 			}
 		} else if (cmd.equalsIgnoreCase("Annotation")) {
 			JCheckBoxMenuItem mi = (JCheckBoxMenuItem)(e.getSource());
@@ -1226,24 +1282,42 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		double y_min=Double.NaN, y_max=Double.NaN;
 		if (combined) {
 		  // Need to find the y_min and y_max of combined data
-      for (int p=0; p<num_panels; p++) {
-			  for (int i=0; i<w; i++) {
-				  x = (i / x_scale) + x0;
-				  y = f[p].f ( x );
-				  if (!Double.isNaN(y)) {
-  				  if (Double.isNaN(y_min)) y_min = y;
-  				  if (Double.isNaN(y_max)) y_max = y;
-  				  if (!Double.isNaN(y_min)) {
-  				    if (y < y_min) {
-  				      y_min = y;
-  				    }
-  				  }
-  				  if (!Double.isNaN(y_max)) {
-  				    if (y > y_max) {
-  				      y_max = y;
-  				    }
-  				  }
-  				}
+      if (var_y) {
+        for (int p=0; p<num_panels; p++) {
+			    for (int i=0; i<w; i++) {
+				    x = (i / x_scale) + x0;
+				    y = f[p].f ( x );
+				    if (!Double.isNaN(y)) {
+    				  if (Double.isNaN(y_min)) y_min = y;
+    				  if (Double.isNaN(y_max)) y_max = y;
+    				  if (!Double.isNaN(y_min)) {
+    				    if (y < y_min) {
+    				      y_min = y;
+    				    }
+    				  }
+    				  if (!Double.isNaN(y_max)) {
+    				    if (y > y_max) {
+    				      y_max = y;
+    				    }
+    				  }
+    				}
+			    }
+			  }
+			} else {
+        for (int p=0; p<num_panels; p++) {
+          f[p].find_y_range();
+				  if (Double.isNaN(y_min)) y_min = f[p].min_y;
+				  if (Double.isNaN(y_max)) y_max = f[p].max_y;
+				  if (!Double.isNaN(y_min)) {
+				    if (f[p].min_y < y_min) {
+				      y_min = f[p].min_y;
+				    }
+				  }
+				  if (!Double.isNaN(y_max)) {
+				    if (f[p].max_y > y_max) {
+				      y_max = f[p].max_y;
+				    }
+				  }
 			  }
 			}
 			// System.out.println ( "Combined: y_min = " + y_min + ", y_max = " + y_max );
@@ -1285,43 +1359,61 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		  
 		  // System.out.println ( "Plotting from 0 to " + w );
 
-			for (int i=0; i<w; i++) {
-				x = (i / x_scale) + x0;
-				y = f[p].samples[i] = f[p].f ( x );  // Save the data_file values so the data_file doesn't have to get called twice
-				// y = f[p].samples[i] = Math.sin(x);
+      if (var_y) {
+        // Compute samples and y range based on what's showing in the window
+			  for (int i=0; i<w; i++) {
+				  x = (i / x_scale) + x0;
+				  y = f[p].samples[i] = f[p].f ( x );  // Save the data_file values so the data_file doesn't have to get called twice
+				  // y = f[p].samples[i] = Math.sin(x);
 
-			  if (!Double.isNaN(y)) {
-				  if (Double.isNaN(y_min)) y_min = y;
-				  if (Double.isNaN(y_max)) y_max = y;
-				  if (!Double.isNaN(y_min)) {
-				    if (y < y_min) {
-				      y_min = y;
+			    if (!Double.isNaN(y)) {
+				    if (Double.isNaN(y_min)) y_min = y;
+				    if (Double.isNaN(y_max)) y_max = y;
+				    if (!Double.isNaN(y_min)) {
+				      if (y < y_min) {
+				        y_min = y;
+				      }
+				    }
+				    if (!Double.isNaN(y_max)) {
+				      if (y > y_max) {
+				        y_max = y;
+				      }
 				    }
 				  }
-				  if (!Double.isNaN(y_max)) {
-				    if (y > y_max) {
-				      y_max = y;
-				    }
-				  }
-				}
 
-				if (!combined) {
-				  if (!Double.isNaN(y)) {
-  				  if (Double.isNaN(y_min)) y_min = y;
-  				  if (Double.isNaN(y_max)) y_max = y;
-  				  if (!Double.isNaN(y_min)) {
-  				    if (y < y_min) {
-  				      y_min = y;
-  				    }
-  				  }
-  				  if (!Double.isNaN(y_max)) {
-  				    if (y > y_max) {
-  				      y_max = y;
-  				    }
-  				  }
-  				}
-				}
+				  if (!combined) {
+				    if (!Double.isNaN(y)) {
+    				  if (Double.isNaN(y_min)) y_min = y;
+    				  if (Double.isNaN(y_max)) y_max = y;
+    				  if (!Double.isNaN(y_min)) {
+    				    if (y < y_min) {
+    				      y_min = y;
+    				    }
+    				  }
+    				  if (!Double.isNaN(y_max)) {
+    				    if (y > y_max) {
+    				      y_max = y;
+    				    }
+    				  }
+    				}
+				  }
+			  }
+			} else {
+        // Compute samples and y range based on the entire data set
+  		  if (!combined) {
+          // Compute y range based on the entire data set
+          f[p].find_y_range();
+          y_min = f[p].min_y;
+          y_max = f[p].max_y;
+        }
+
+			  for (int i=0; i<w; i++) {
+				  x = (i / x_scale) + x0;
+				  f[p].samples[i] = f[p].f ( x );  // Save the data_file values so the data_file doesn't have to get called twice
+			  }
+
 			}
+      // System.out.println ( "Set " + p + " range: " + y_min + " to " + y_max );
 			
 			if ((Double.isNaN(y_min)) && (Double.isNaN(y_max))) {
 			  y_min = y_max = 0.0;
@@ -1359,8 +1451,10 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 				  if (!Double.isNaN(old_y)) {
 				    if (combined) {
 				      g.drawLine ( i-1, (int)(old_y*win_h), i, (int)(y*win_h) );
+				      // System.out.println ( "  draw ( " + ((int)(old_y*win_h)) + " to " + ((int)(y*win_h)) + ")" );
 				    } else {
 				      g.drawLine ( i-1, (int)(old_y*h), i, (int)(y*h) );
+				      // System.out.println ( "  draw ( " + ((int)(old_y*h)) + " to " + ((int)(y*h)) + ")" );
 				    }
 				  }
 				}
@@ -1546,6 +1640,8 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
     	drag_button_down = true;
 	  } else {
 		  // System.out.println ( "Alternate button" );
+		  // Disable cursor changing because it's not used in this version
+		  /*
 		  if ( (current_cursor == null) || (current_cursor == b_cursor) ) {
 		    current_cursor = h_cursor;
 		  } else if (current_cursor == h_cursor) {
@@ -1554,6 +1650,7 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		    current_cursor = b_cursor;
 		  }
 		  setCursor ( current_cursor );
+		  */
 	  }
 	}
 	public void mouseReleased(MouseEvent e) {
