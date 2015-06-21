@@ -2785,7 +2785,7 @@ import sys, traceback
 
 
 def mol_viz_file_read(mcell_prop, filepath):
-    """ Draw the viz data for the current frame. """
+    """ Read and Draw the molecule viz data for the current frame. """
 
     mcell = mcell_prop
     try:
@@ -2801,14 +2801,12 @@ def mol_viz_file_read(mcell_prop, filepath):
         mol_dict = {}
 
         if b[0] == 1:
-            # Read Binary format molecule file:
+            # Read MCell/CellBlender Binary Format molecule file, version 1:
             # print ("Reading binary file " + filepath )
             bin_data = 1
             while True:
                 try:
-                    # Variable names are a little hard to follow
-                    # Here's what I assume they mean:
-                    # ni = Initially, array of molecule name length.
+                    # ni = Initially, byte array of molecule name length.
                     # Later, array of number of molecule positions in xyz
                     # (essentially, the number of molecules multiplied by 3).
                     # ns = Array of ascii character codes for molecule name.
@@ -2819,7 +2817,7 @@ def mol_viz_file_read(mcell_prop, filepath):
                     ns = array.array("B")          # Create another byte array to hold the molecule name
                     ns.fromfile(mol_file, ni[0])   # Read ni bytes from the file
                     s = ns.tostring().decode()     # Decode bytes as ASCII into a string (s)
-                    mol_name = "mol_%s" % (s)      # Construct the blender molecule viz object name
+                    mol_name = "mol_%s" % (s)      # Construct name of blender molecule viz object
                     mt = array.array("B")          # Create a byte array for the molecule type
                     mt.fromfile(mol_file, 1)       # Read one byte for the molecule type
                     ni = array.array("I")          # Re-use ni as an integer array to hold the number of molecules of this name in this frame
@@ -2970,52 +2968,14 @@ def mol_viz_file_read(mcell_prop, filepath):
                 if not mol_pos_mesh:
                     mol_pos_mesh = meshes.new(mol_pos_mesh_name)
 
-#                if 3*len(mol_pos_mesh.vertices) != len(mol_pos):
-#                    if len(mol_pos_mesh.vertices) != 0:
-#                        print ( "Adding " + str(len(mol_pos)//3) + " vertices to array already containing " + str(len(mol_pos_mesh.vertices)) + ", create new mesh" )
-#                        mol_pos_mesh = meshes.new(mol_pos_mesh_name)
-                
-
-                # Add and place vertices at positions of molecules
-
+                # Add and set values of vertices at positions of molecules
                 mol_pos_mesh.vertices.add(len(mol_pos)//3)
                 mol_pos_mesh.vertices.foreach_set("co", mol_pos)
                 mol_pos_mesh.vertices.foreach_set("normal", mol_orient)
 
-                '''
-                done_setting = False
-                try_setting_count = 0
-                while not done_setting and (try_setting_count < 10):
-                    try_setting_count += 1
-                    #print ( "Before setting verticies with foreach" )
-                    try:
-                      mol_pos_mesh.vertices.foreach_set("co", mol_pos)
-                      done_setting = True
-                    except RuntimeError:
-                      pass
-                    #print ( "After setting verticies with foreach" )
-
-                #print ( "Out of loop" )
-
-                done_setting = False
-                try_setting_count = 0
-                while not done_setting and (try_setting_count < 10):
-                    try_setting_count += 1
-                    #print ( "Before setting verticies with foreach" )
-                    try:
-                      mol_pos_mesh.vertices.foreach_set("normal", mol_orient)
-                      done_setting = True
-                    except RuntimeError:
-                      pass
-                    #print ( "After setting verticies with foreach" )
-
-                # print ( "Done adding vertices" )
-                '''
-
+                # Save the molecule's visibility state, so it can be restored later
                 mol_obj = objs.get(mol_name)
                 if mol_obj:
-                    # Save the molecule's visibility state, so it can be
-                    # restored later
                     hide = mol_obj.hide
                     scn_objs.unlink(mol_obj)
                     objs.remove(mol_obj)
@@ -3060,6 +3020,7 @@ def mol_viz_file_read(mcell_prop, filepath):
         # Catch any exception
         print ( "\n***** Unexpected exception:" + str(uex) + "\n" )
         raise
+
 
 # Meshalyzer
 class MCELL_OT_meshalyzer(bpy.types.Operator):
