@@ -237,29 +237,29 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
 
     def select_region_faces(self, context):
         mesh = context.active_object.data
-        face_set = self.get_region_faces(mesh) 
+        face_set = self.get_region_faces(mesh)
+        msm = context.scene.tool_settings.mesh_select_mode[0:3]
+        context.scene.tool_settings.mesh_select_mode = (False, False, True)
         bpy.ops.object.mode_set(mode='OBJECT')
-        msm = context.tool_settings.mesh_select_mode[0:]
-        context.tool_settings.mesh_select_mode = [False, False, True]
         for f in face_set:
             mesh.polygons[f].select = True
         bpy.ops.object.mode_set(mode='EDIT')
+        context.scene.tool_settings.mesh_select_mode = msm
 
-        context.tool_settings.mesh_select_mode = msm
         return {'FINISHED'}
 
 
     def deselect_region_faces(self, context):
         mesh = context.active_object.data
-        face_set = self.get_region_faces(mesh) 
+        face_set = self.get_region_faces(mesh)
+        msm = context.scene.tool_settings.mesh_select_mode[0:3]
+        context.scene.tool_settings.mesh_select_mode = (False, False, True)
         bpy.ops.object.mode_set(mode='OBJECT')
-        msm = context.tool_settings.mesh_select_mode[0:]
-        context.tool_settings.mesh_select_mode = [False, False, True]
         for f in face_set:
             mesh.polygons[f].select = False
         bpy.ops.object.mode_set(mode='EDIT')
+        context.scene.tool_settings.mesh_select_mode = msm
 
-        context.tool_settings.mesh_select_mode = msm
         return {'FINISHED'}
 
 
@@ -476,18 +476,25 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
         new_reg=self.region_list.add()
         new_reg.init_region(context, id)
 # FIXME: CHECK FOR NAME COLLISION HERE: FIX BY ALLOCATING NEXT ID...
-        new_reg.name = "Region_%d" % (new_reg.id)
-        self.active_reg_index = len(self.region_list)-1
+        reg_name = "Region_%d" % (new_reg.id)
+        new_reg.name = reg_name
+        idx = self.region_list.find(reg_name)
+        self.active_reg_index = idx
 
 
     def add_region_by_name(self, context, reg_name):
         """ Add a new region to the list of regions and set as the active region """
+        curr_reg = self.get_active_region()
+        curr_reg_name = curr_reg.name
+
         id = self.allocate_id()
         new_reg=self.region_list.add()
         new_reg.init_region(context, id)
 # FIXME: CHECK FOR NAME COLLISION HERE: FIX BY ALLOCATING NEXT ID...
         new_reg.name = reg_name
-        self.active_reg_index = len(self.region_list)-1
+
+        idx = self.region_list.find(curr_reg_name)
+        self.active_reg_index = idx
 
 
     def remove_all_regions(self, context):
