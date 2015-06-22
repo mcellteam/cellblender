@@ -1506,10 +1506,10 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         mv_dm['active_seed_index'] = self.active_mol_viz_seed_index
         mv_dm['file_dir'] = self.mol_file_dir
 
-        mv_file_list = []
-        for s in self.mol_file_list:
-            mv_file_list.append ( str(s.name) )
-        mv_dm['file_list'] = mv_file_list
+        # mv_file_list = []
+        # for s in self.mol_file_list:
+        #     mv_file_list.append ( str(s.name) )
+        # mv_dm['file_list'] = mv_file_list
 
         mv_dm['file_num'] = self.mol_file_num
         mv_dm['file_name'] = self.mol_file_name
@@ -1548,7 +1548,13 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
             # Make changes to move from unversioned to DM_2015_04_13_1700
             dm['data_model_version'] = "DM_2015_04_13_1700"
 
-        if dm['data_model_version'] != "DM_2015_04_13_1700":
+        if dm['data_model_version'] == "DM_2015_04_13_1700":
+            # Change on June 22nd, 2015: The molecule file list will no longer be stored in the data model
+            if 'file_list' in dm:
+                dm.pop ( 'file_list' )
+            dm['data_model_version'] = "DM_2015_06_22_1430"
+
+        if dm['data_model_version'] != "DM_2015_06_22_1430":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMolVizPropertyGroup data model to current version." )
             return None
 
@@ -1558,7 +1564,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
         # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_04_13_1700":
+        if dm['data_model_version'] != "DM_2015_06_22_1430":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMolVizPropertyGroup data model to current version." )
 
         # Remove the old properties (includes emptying collections)
@@ -1574,9 +1580,9 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
 
         self.mol_file_dir = dm['file_dir']
 
-        for s in dm["file_list"]:
-            new_item = self.mol_file_list.add()
-            new_item.name = s
+        #for s in dm["file_list"]:
+        #    new_item = self.mol_file_list.add()
+        #    new_item.name = s
 
         self.mol_file_num = dm['file_num']
         self.mol_file_name = dm['file_name']
