@@ -6000,7 +6000,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         print ( "Adding Geometry to Data Model" )
         dm['geometrical_objects'] = self.model_objects.build_data_model_geometry_from_mesh(context)
         dm['materials'] = self.model_objects.build_data_model_materials_from_materials(context)
-        cellblender.data_model.save_data_model_to_file ( dm, "Upgraded_Data_Model.txt" )
+        # cellblender.data_model.save_data_model_to_file ( dm, "Upgraded_Data_Model.txt" )
         print ( "Removing Geometry from Data Model" )
         dm.pop('geometrical_objects')
         dm.pop('materials')
