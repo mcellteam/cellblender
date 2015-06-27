@@ -35,9 +35,12 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
         row = self.layout.row()
         row.operator ( "cellblender_test.double_sphere" )
         row = self.layout.row()
+        row.operator ( "cellblender_test.reaction" )
+        row = self.layout.row()
         row.operator ( "cellblender_test.release_shape" )
         row = self.layout.row()
         row.operator ( "cellblender_test.cube_test" )
+
 
 
 class CellBlender_Model:
@@ -178,6 +181,21 @@ class CellBlender_Model:
         return self.mcell.release_sites.mol_release_list[rel_index]
 
 
+    def add_reaction_to_model ( self, name="", rin="", rtype="irreversible", rout="", fwd_rate="0", bkwd_rate="" ):
+        """ Add a reaction """
+        print ( "Adding Reaction " + rin + " " + rtype + " " + rout )
+        self.mcell.cellblender_main_panel.reaction_select = True
+        bpy.ops.mcell.reaction_add()
+        rxn_index = self.mcell.reactions.active_rxn_index
+        self.mcell.reactions.reaction_list[rxn_index].reactants = rin
+        self.mcell.reactions.reaction_list[rxn_index].products = rout
+        self.mcell.reactions.reaction_list[rxn_index].type = rtype
+        self.mcell.reactions.reaction_list[rxn_index].fwd_rate.set_expr(fwd_rate)
+        self.mcell.reactions.reaction_list[rxn_index].bkwd_rate.set_expr(bkwd_rate)
+        print ( "Done Adding Reaction " + rin + " " + rtype + " " + rout )
+        return self.mcell.reactions.reaction_list[rxn_index]
+
+
     def wait ( self, wait_time ):
         import time
         time.sleep ( wait_time )
@@ -296,6 +314,59 @@ class DoubleSphereTestOp(bpy.types.Operator):
 
         cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
         cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=2.0, red=0.0, green=1.0, blue=0.0 )
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.1 )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+class ReactionTestOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.reaction"
+    bl_label = "Simple Reaction Test"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+        mol_b = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-6" )
+        mol_c = cb_model.add_molecule_species_to_model ( name="c", diff_const_expr="1e-5" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="400", d="0.5", y="-0.05" )
+        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="400", d="0.5", y="0.05" )
+
+        # Create a single c molecule at the origin so its properties will be changed
+        cb_model.add_molecule_release_site_to_model ( mol="c", q_expr="1", d="0", y="0" )
+
+        cb_model.add_reaction_to_model ( rin="a + b", rtype="irreversible", rout="c", fwd_rate="1e8", bkwd_rate="" )
+
+        cb_model.run_model ( iterations='2000', time_step='1e-6', wait_time=1.0 )
+
+        cb_model.refresh_molecules()
+
+        # Try to advance frame so molecules exist before changing them
+        # scn.frame_current = 1999
+
+        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=2.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_c, glyph='Torus', scale=10.0, red=1.0, green=1.0, blue=0.5 )
+
+        #cb_model.refresh_molecules()
+
+        # Set time back to 0
+        #scn.frame_current = 0
 
         cb_model.set_view_back()
 
