@@ -31,7 +31,14 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
         row = self.layout.row()
         row.prop(app, "path_to_blend")
         row = self.layout.row()
+        row.operator ( "cellblender_test.single_mol" )
+        row = self.layout.row()
+        row.operator ( "cellblender_test.double_sphere" )
+        row = self.layout.row()
+        row.operator ( "cellblender_test.release_shape" )
+        row = self.layout.row()
         row.operator ( "cellblender_test.cube_test" )
+
 
 class CellBlender_Model:
 
@@ -120,11 +127,236 @@ class CellBlender_Model:
         self.scn = scn
         self.mcell = mcell
 
+    def add_cube_to_model ( self, name="Cell", draw_type="WIRE" ):
+        """ draw_type is one of: WIRE, TEXTURED, SOLID, BOUNDS """
+        print ( "Adding " + name )
+        bpy.ops.mesh.primitive_cube_add()
+        self.scn.objects.active.name = name
+        bpy.data.objects['Cell'].draw_type = draw_type
+
+        # Add the newly added object to the model objects list
+
+        self.mcell.cellblender_main_panel.objects_select = True
+        bpy.ops.mcell.model_objects_add()
+        print ( "Done Adding " + name )
+
+
+    def add_molecule_species_to_model ( self, name="A", diff_const_expr="0.0" ):
+        """ Add a molecule species """
+        print ( "Adding Molecule Species " + name )
+        self.mcell.cellblender_main_panel.molecule_select = True
+        bpy.ops.mcell.molecule_add()
+        mol_index = self.mcell.molecules.active_mol_index
+        self.mcell.molecules.molecule_list[mol_index].name = name
+        self.mcell.molecules.molecule_list[mol_index].diffusion_constant.set_expr(diff_const_expr)
+        print ( "Done Adding Molecule " + name )
+        return self.mcell.molecules.molecule_list[mol_index]
+
+
+    def add_molecule_release_site_to_model ( self, name=None, mol="a", shape="SPHERICAL", obj_expr="", q_expr="100", q_type='NUMBER_TO_RELEASE', d="0", x="0", y="0", z="0" ):
+        """ Add a molecule release site """
+        """ shape is one of: 'CUBIC', 'SPHERICAL', 'SPHERICAL_SHELL', 'OBJECT' """
+        """ q_type is one of: 'NUMBER_TO_RELEASE', 'GAUSSIAN_RELEASE_NUMBER', 'DENSITY' """
+        if name == None:
+            name = "rel_" + mol
+
+        print ( "Releasing Molecules at " + name )
+        self.mcell.cellblender_main_panel.placement_select = True
+        bpy.ops.mcell.release_site_add()
+        rel_index = self.mcell.release_sites.active_release_index
+        self.mcell.release_sites.mol_release_list[rel_index].name = name
+        self.mcell.release_sites.mol_release_list[rel_index].molecule = mol
+        self.mcell.release_sites.mol_release_list[rel_index].shape = shape
+        self.mcell.release_sites.mol_release_list[rel_index].object_expr = obj_expr
+        self.mcell.release_sites.mol_release_list[rel_index].quantity_type = q_type
+        self.mcell.release_sites.mol_release_list[rel_index].quantity.set_expr(q_expr)
+        self.mcell.release_sites.mol_release_list[rel_index].diameter.set_expr(d)
+        self.mcell.release_sites.mol_release_list[rel_index].location_x.set_expr(x)
+        self.mcell.release_sites.mol_release_list[rel_index].location_y.set_expr(y)
+        self.mcell.release_sites.mol_release_list[rel_index].location_z.set_expr(z)
+        print ( "Done Releasing Molecule " + name )
+        return self.mcell.release_sites.mol_release_list[rel_index]
+
+
+    def wait ( self, wait_time ):
+        import time
+        time.sleep ( wait_time )
+
+
+    def run_model ( self, iterations="100", time_step="1e-6", export_format="mcell_mdl_unified", wait_time=10.0 ):
+        """ export_format is one of: mcell_mdl_unified, mcell_mdl_modular """
+        print ( "Running Simulation" )
+        self.mcell.cellblender_main_panel.init_select = True
+        self.mcell.initialization.iterations.set_expr(iterations)
+        self.mcell.initialization.time_step.set_expr(time_step)
+        self.mcell.export_project.export_format = export_format
+        bpy.ops.mcell.run_simulation()
+        self.wait ( wait_time )
+
+
+    def refresh_molecules ( self ):
+        """ Refresh the display """
+        bpy.ops.cbm.refresh_operator()
+
+
+    def change_molecule_display ( self, mol, glyph="Cube", scale=1.0, red=-1, green=-1, blue=-1 ):
+        print ( "Changing Display for Molecule " + mol.name )
+        self.mcell.cellblender_main_panel.molecule_select = True
+        self.mcell.molecules.show_display = True
+        mol.glyph = glyph
+        mol.scale = scale
+        if red >= 0: mol.color.r = red
+        if green >= 0: mol.color.g = green
+        if blue >= 0: mol.color.b = blue
+
+        print ( "Done Changing Display for Molecule a" )
+
+
+    def scale_view_distance ( self, scale ):
+        """ Change the view distance for all 3D_VIEW windows """
+        for area in bpy.context.screen.areas:
+          if area.spaces[0].type == 'VIEW_3D':
+            area.spaces[0].region_3d.view_distance *= scale
+
+        #bpy.ops.view3d.zoom(delta=3)
+        #set_view_3d()
+
+
+    def play_animation ( self ):
+        """ Play the animation """
+        bpy.ops.screen.animation_play()
+
+
 
 
 ######################
 #  Individual Tests  #
 ######################
+
+
+class SingleMoleculeTestOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.single_mol"
+    bl_label = "Single Molecule Test"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="1" )
+
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
+
+        cb_model.refresh_molecules()
+
+        cb_model.change_molecule_display ( mol, glyph='Torus', scale=4.0, red=1.0, green=1.0, blue=0.0 )
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.02 )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+class DoubleSphereTestOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.double_sphere"
+    bl_label = "Double Sphere Test"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+        mol_b = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-6" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="400", d="0.5", y="-0.25" )
+        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="400", d="0.5", y="0.25" )
+
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
+
+        cb_model.refresh_molecules()
+
+        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=2.0, red=0.0, green=1.0, blue=0.0 )
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.1 )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+class ReleaseShapeTestOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.release_shape"
+    bl_label = "Release Shape Test"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        cb_model.add_cube_to_model ( name="Cell", draw_type="WIRE" )
+
+        diff_const = "1e-6"
+
+        mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr=diff_const )
+        mol_b = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr=diff_const )
+        mol_c = cb_model.add_molecule_species_to_model ( name="c", diff_const_expr=diff_const )
+        mol_d = cb_model.add_molecule_species_to_model ( name="d", diff_const_expr=diff_const )
+
+        num_rel = "1000"
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr=num_rel, shape="OBJECT", obj_expr="Cell",  )
+        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr=num_rel, shape="SPHERICAL",       d="1.5", y="1" )
+        cb_model.add_molecule_release_site_to_model ( mol="c", q_expr=num_rel, shape="CUBIC",           d="1.5", y="-1" )
+        cb_model.add_molecule_release_site_to_model ( mol="d", q_expr=num_rel, shape="SPHERICAL_SHELL", d="1.5", z="1" )
+
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
+
+        cb_model.refresh_molecules()
+
+        mol_scale = 2.5
+
+        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=mol_scale, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=mol_scale, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_c, glyph='Cube', scale=mol_scale, red=0.0, green=0.0, blue=1.0 )
+        cb_model.change_molecule_display ( mol_d, glyph='Cube', scale=mol_scale, red=1.0, green=1.0, blue=0.0 )
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.25 )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
 
 
 class CubeTestOp(bpy.types.Operator):
@@ -138,75 +370,27 @@ class CubeTestOp(bpy.types.Operator):
     def execute(self, context):
 
         cb_model = CellBlender_Model ( context )
-        
+
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
 
-        print ( "Adding Cell" )
-        bpy.ops.mesh.primitive_cube_add()
-        scn.objects.active.name = 'Cell'
-        bpy.data.objects['Cell'].draw_type = 'WIRE'
-        print ( "Done Adding Cell" )
+        cb_model.add_cube_to_model ( name="Cell", draw_type="WIRE" )
 
-        print ( "Adding Cell to Model Objects" )
-        mcell.cellblender_main_panel.objects_select = True
-        bpy.ops.mcell.model_objects_add()
-        print ( "Done Adding Cell to Model Objects" )
+        mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
 
-        print ( "Adding Molecule a" )
-        mcell.cellblender_main_panel.molecule_select = True
-        bpy.ops.mcell.molecule_add()
-        mcell.molecules.molecule_list[0].name = 'a'
-        mcell.molecules.molecule_list[0].diffusion_constant.set_expr('1e-6')
-        print ( "Done Adding Molecule a" )
+        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
 
-        print ( "Releasing Molecule a" )
-        mcell.cellblender_main_panel.placement_select = True
-        bpy.ops.mcell.release_site_add()
-        mcell.release_sites.mol_release_list[0].name = 'rel_a'
-        mcell.release_sites.mol_release_list[0].molecule = 'a'
-        mcell.release_sites.mol_release_list[0].shape = 'OBJECT'
-        mcell.release_sites.mol_release_list[0].object_expr = 'Cell'
-        mcell.release_sites.mol_release_list[0].quantity.set_expr('1000')
-        print ( "Done Releasing Molecule a" )
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
 
-        print ( "Running Simulation" )
-        mcell.cellblender_main_panel.init_select = True
-        mcell.initialization.iterations.set_expr('200')
-        mcell.export_project.export_format = 'mcell_mdl_unified'
-        bpy.ops.mcell.run_simulation()
+        cb_model.refresh_molecules()
 
-        print ( "Sleep while Simulation Runs ..." )
-
-        import time
-        time.sleep ( 2 )
-
-        print ( "Done Running Simulation" )
-
-        bpy.ops.cbm.refresh_operator()
-
-        print ( "Changing Display for Molecule a" )
-        mcell.cellblender_main_panel.molecule_select = True
-        mcell.molecules.show_display = True
-        mcell.molecules.molecule_list[0].glyph = 'Cube'
-        mcell.molecules.molecule_list[0].scale = 4.0
-        mcell.molecules.molecule_list[0].color.r = 1.0
-        mcell.molecules.molecule_list[0].color.g = 0.0
-        mcell.molecules.molecule_list[0].color.b = 0.0
-
-        print ( "Done Changing Display for Molecule a" )
+        cb_model.change_molecule_display ( mol, glyph='Cube', scale=4.0, red=1.0, green=0.0, blue=0.0 )
 
         cb_model.set_view_back()
 
-        for area in bpy.context.screen.areas:
-          if area.spaces[0].type == 'VIEW_3D':
-            area.spaces[0].region_3d.view_distance *= 0.25
+        cb_model.scale_view_distance ( 0.25 )
 
-        #set_view_3d()
-
-        #bpy.ops.view3d.zoom(delta=3)
-
-        bpy.ops.screen.animation_play()
+        cb_model.play_animation()
 
         return { 'FINISHED' }
 
