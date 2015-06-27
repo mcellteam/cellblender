@@ -33,76 +33,79 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
         row = self.layout.row()
         row.operator ( "cellblender_test.cube_test" )
 
-old_type = None
+class CellBlender_Model:
 
-def set_view_3d():
-    global old_type
-    area = bpy.context.area
-    old_type = area.type
-    area.type = 'VIEW_3D'
-  
-def set_view_back():
-    global old_type
-    area = bpy.context.area
-    area.type = old_type
-
-def save_blend_file( context ):
-    app = context.scene.cellblender_test_suite
-    wm = context.window_manager
-    bpy.ops.wm.save_as_mainfile(filepath=os.path.join ( app.path_to_blend, "SimpleCube.blend"), check_existing=False)
-
-def get_scene():
-    return bpy.data.scenes['Scene']
-
-def delete_all_objects():
-    bpy.ops.object.select_all(action='SELECT')
-    bpy.ops.object.delete(use_global=True)
-
-def reload_cellblender(scn):
-    print ( "Disabling CellBlender Application" )
-    bpy.ops.wm.addon_disable(module='cellblender')
-
-    print ( "Delete MCell RNA properties if needed" )
-    # del bpy.types.Scene.mcell
-    if scn.get ( 'mcell' ):
-      print ( "Deleting MCell RNA properties" )
-      del scn['mcell']
-
-    print ( "Enabling CellBlender Application" )
-    bpy.ops.wm.addon_enable(module='cellblender')
-
-def get_path_to_mcell():
-    app = bpy.context.scene.cellblender_test_suite
-    return app.path_to_mcell
+    old_type = None
     
-def setup_mcell(scn):
-    mcell = scn.mcell
+    def __init__(self):
+        old_type = None
 
-    print ( "Initializing CellBlender Application" )
-    bpy.ops.mcell.init_cellblender()
+    def set_view_3d(self):
+        area = bpy.context.area
+        self.old_type = area.type
+        area.type = 'VIEW_3D'
+      
+    def set_view_back(self):
+        area = bpy.context.area
+        area.type = self.old_type
 
-    print ( "Setting Preferences" )
-    mcell.cellblender_preferences.mcell_binary = get_path_to_mcell()
-    mcell.cellblender_preferences.mcell_binary_valid = True
-    mcell.cellblender_preferences.show_sim_runner_options = True
-    mcell.run_simulation.simulation_run_control = 'COMMAND'
-    
-    return mcell
+    def save_blend_file( self, context ):
+        app = context.scene.cellblender_test_suite
+        wm = context.window_manager
+        bpy.ops.wm.save_as_mainfile(filepath=os.path.join ( app.path_to_blend, "SimpleCube.blend"), check_existing=False)
 
-def setup_cb_defaults ( context ):
+    def get_scene(self):
+        return bpy.data.scenes['Scene']
 
-    save_blend_file( context )
-    scn = get_scene()
-    set_view_3d()
-    delete_all_objects()
-    reload_cellblender(scn)
-    mcell = setup_mcell(scn)
+    def delete_all_objects(self):
+        bpy.ops.object.select_all(action='SELECT')
+        bpy.ops.object.delete(use_global=True)
 
-    print ( "Snapping Cursor to Center" )
-    bpy.ops.view3d.snap_cursor_to_center()
-    print ( "Done Snapping Cursor to Center" )
+    def reload_cellblender(self, scn):
+        print ( "Disabling CellBlender Application" )
+        bpy.ops.wm.addon_disable(module='cellblender')
 
-    return ( (scn,mcell) )
+        print ( "Delete MCell RNA properties if needed" )
+        # del bpy.types.Scene.mcell
+        if scn.get ( 'mcell' ):
+            print ( "Deleting MCell RNA properties" )
+            del scn['mcell']
+
+        print ( "Enabling CellBlender Application" )
+        bpy.ops.wm.addon_enable(module='cellblender')
+
+    def get_path_to_mcell(self):
+        app = bpy.context.scene.cellblender_test_suite
+        return app.path_to_mcell
+        
+    def setup_mcell(self, scn):
+        mcell = scn.mcell
+
+        print ( "Initializing CellBlender Application" )
+        bpy.ops.mcell.init_cellblender()
+
+        print ( "Setting Preferences" )
+        mcell.cellblender_preferences.mcell_binary = self.get_path_to_mcell()
+        mcell.cellblender_preferences.mcell_binary_valid = True
+        mcell.cellblender_preferences.show_sim_runner_options = True
+        mcell.run_simulation.simulation_run_control = 'COMMAND'
+        
+        return mcell
+
+    def setup_cb_defaults ( self, context ):
+
+        self.save_blend_file( context )
+        scn = self.get_scene()
+        self.set_view_3d()
+        self.delete_all_objects()
+        self.reload_cellblender(scn)
+        mcell = self.setup_mcell(scn)
+
+        print ( "Snapping Cursor to Center" )
+        bpy.ops.view3d.snap_cursor_to_center()
+        print ( "Done Snapping Cursor to Center" )
+
+        return ( (scn,mcell) )
 
 
 
@@ -121,7 +124,9 @@ class CubeTestOp(bpy.types.Operator):
 
     def execute(self, context):
 
-        (scn,mcell) = setup_cb_defaults ( context )
+        cb_model = CellBlender_Model()
+        
+        (scn,mcell) = cb_model.setup_cb_defaults ( context )
 
         print ( "Adding Cell" )
         bpy.ops.mesh.primitive_cube_add()
@@ -177,7 +182,7 @@ class CubeTestOp(bpy.types.Operator):
 
         print ( "Done Changing Display for Molecule a" )
 
-        set_view_back()
+        cb_model.set_view_back()
 
         for area in bpy.context.screen.areas:
           if area.spaces[0].type == 'VIEW_3D':
