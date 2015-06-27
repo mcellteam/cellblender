@@ -36,9 +36,21 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
 class CellBlender_Model:
 
     old_type = None
+    context = None
+    scn = None
+    mcell = None
     
-    def __init__(self):
-        old_type = None
+    def __init__(self, cb_context):
+        self.old_type = None
+        self.context = cb_context
+        self.setup_cb_defaults ( self.context )
+        
+    def get_scene(self):
+        return self.scn
+        
+    def get_mcell(self):
+        return self.mcell
+
 
     def set_view_3d(self):
         area = bpy.context.area
@@ -104,8 +116,9 @@ class CellBlender_Model:
         print ( "Snapping Cursor to Center" )
         bpy.ops.view3d.snap_cursor_to_center()
         print ( "Done Snapping Cursor to Center" )
-
-        return ( (scn,mcell) )
+        
+        self.scn = scn
+        self.mcell = mcell
 
 
 
@@ -124,9 +137,10 @@ class CubeTestOp(bpy.types.Operator):
 
     def execute(self, context):
 
-        cb_model = CellBlender_Model()
+        cb_model = CellBlender_Model ( context )
         
-        (scn,mcell) = cb_model.setup_cb_defaults ( context )
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
 
         print ( "Adding Cell" )
         bpy.ops.mesh.primitive_cube_add()
