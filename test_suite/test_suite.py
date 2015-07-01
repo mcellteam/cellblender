@@ -238,6 +238,23 @@ class CellBlender_Model:
         return self.mcell.release_sites.mol_release_list[rel_index]
 
 
+
+    def add_release_pattern_to_model ( self, name="time_pattern", delay="0", release_interval="", train_duration="", train_interval="", num_trains="1" ):
+        """ Add a release time pattern """
+        print ( "Adding a Release Time Pattern " + name + " " + delay + " " + release_interval )
+        bpy.ops.mcell.release_pattern_add()
+        pat_index = self.mcell.release_patterns.active_release_pattern_index
+        self.mcell.release_patterns.release_pattern_list[pat_index].name = name
+        self.mcell.release_patterns.release_pattern_list[pat_index].delay.set_expr ( delay )
+        self.mcell.release_patterns.release_pattern_list[pat_index].release_interval.set_expr ( release_interval )
+        self.mcell.release_patterns.release_pattern_list[pat_index].train_duration.set_expr ( train_duration )
+        self.mcell.release_patterns.release_pattern_list[pat_index].train_interval.set_expr ( train_interval )
+        self.mcell.release_patterns.release_pattern_list[pat_index].number_of_trains.set_expr ( num_trains )
+        print ( "Done Adding Release Time Pattern " + name + " " + delay + " " + release_interval )
+        return self.mcell.release_patterns.release_pattern_list[pat_index]
+
+
+
     def add_reaction_to_model ( self, name="", rin="", rtype="irreversible", rout="", fwd_rate="0", bkwd_rate="" ):
         """ Add a reaction """
         print ( "Adding Reaction " + rin + " " + rtype + " " + rout )
@@ -399,15 +416,15 @@ class ReactionTestOp(bpy.types.Operator):
 
         mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
         mol_b = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-6" )
-        mol_c = cb_model.add_molecule_species_to_model ( name="c", diff_const_expr="1e-5" )
+        mol_c = cb_model.add_molecule_species_to_model ( name="bg", diff_const_expr="1e-5" )
 
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="400", d="0.5", y="-0.05" )
         cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="400", d="0.5", y="0.05" )
 
         # Create a single c molecule at the origin so its properties will be changed
-        cb_model.add_molecule_release_site_to_model ( mol="c", q_expr="1", d="0", y="0" )
+        cb_model.add_molecule_release_site_to_model ( mol="bg", q_expr="1", d="0", y="0" )
 
-        cb_model.add_reaction_to_model ( rin="a + b", rtype="irreversible", rout="c", fwd_rate="1e8", bkwd_rate="" )
+        cb_model.add_reaction_to_model ( rin="a + b", rtype="irreversible", rout="bg", fwd_rate="1e8", bkwd_rate="" )
 
         cb_model.run_model ( iterations='2000', time_step='1e-6', wait_time=5.0 )
 
@@ -455,14 +472,14 @@ class ReleaseShapeTestOp(bpy.types.Operator):
 
         mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr=diff_const )
         mol_b = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr=diff_const )
-        mol_c = cb_model.add_molecule_species_to_model ( name="c", diff_const_expr=diff_const )
+        mol_c = cb_model.add_molecule_species_to_model ( name="bg", diff_const_expr=diff_const )
         mol_d = cb_model.add_molecule_species_to_model ( name="d", diff_const_expr=diff_const )
 
         num_rel = "1000"
 
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr=num_rel, shape="OBJECT", obj_expr="Cell",  )
         cb_model.add_molecule_release_site_to_model ( mol="b", q_expr=num_rel, shape="SPHERICAL",       d="1.5", y="1" )
-        cb_model.add_molecule_release_site_to_model ( mol="c", q_expr=num_rel, shape="CUBIC",           d="1.5", y="-1" )
+        cb_model.add_molecule_release_site_to_model ( mol="bg", q_expr=num_rel, shape="CUBIC",           d="1.5", y="-1" )
         cb_model.add_molecule_release_site_to_model ( mol="d", q_expr=num_rel, shape="SPHERICAL_SHELL", d="1.5", z="1" )
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
@@ -636,35 +653,34 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
 
         diff_const = "0"
 
-        mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr=diff_const )
-        mol_b = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr=diff_const )
+        mol_a = cb_model.add_molecule_species_to_model ( name="a",  diff_const_expr=diff_const )
+        mol_b = cb_model.add_molecule_species_to_model ( name="b",  diff_const_expr=diff_const )
+        mol_c = cb_model.add_molecule_species_to_model ( name="bg", diff_const_expr="0" )
 
 
         decay_rate = "8e6"
-        cb_model.add_reaction_to_model ( rin="a", rtype="irreversible", rout="NULL", fwd_rate=decay_rate, bkwd_rate="" )
-        cb_model.add_reaction_to_model ( rin="b", rtype="irreversible", rout="NULL", fwd_rate=decay_rate+"/5", bkwd_rate="" )
+        cb_model.add_reaction_to_model ( rin="a",  rtype="irreversible", rout="NULL", fwd_rate=decay_rate, bkwd_rate="" )
+        cb_model.add_reaction_to_model ( rin="b",  rtype="irreversible", rout="NULL", fwd_rate=decay_rate+"/5", bkwd_rate="" )
+        cb_model.add_reaction_to_model ( rin="bg", rtype="irreversible", rout="NULL", fwd_rate=decay_rate+"/500", bkwd_rate="" )
 
 
         dt = "1e-6"
-
-        bpy.ops.mcell.release_pattern_add()
-        mcell.release_patterns.release_pattern_list[0].name = "spike_pattern"
-        mcell.release_patterns.release_pattern_list[0].delay.set_expr ( "200 * " + dt )
-        mcell.release_patterns.release_pattern_list[0].release_interval.set_expr ( "10 * " + dt )
-        mcell.release_patterns.release_pattern_list[0].train_duration.set_expr ( "100 * " + dt )
-        mcell.release_patterns.release_pattern_list[0].train_interval.set_expr ( "200 * " + dt )
-        mcell.release_patterns.release_pattern_list[0].number_of_trains.set_expr ( "5" )
+        cb_model.add_release_pattern_to_model ( name="spike_pattern", delay="300 * " + dt, release_interval="10 * " + dt, train_duration="100 * " + dt, train_interval="200 * " + dt, num_trains="5" )
+        cb_model.add_release_pattern_to_model ( name="background", delay="0", release_interval="100 * " + dt, train_duration="1e20", train_interval="2e20", num_trains="1" )
 
 
         num_rel = "10"
 
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr=num_rel, shape="SPHERICAL", d="0.1", z="0.2", pattern="spike_pattern" )
         cb_model.add_molecule_release_site_to_model ( mol="b", q_expr=num_rel, shape="SPHERICAL", d="0.1", z="0.4", pattern="spike_pattern" )
+        cb_model.add_molecule_release_site_to_model ( mol="bg", q_expr="1",    shape="SPHERICAL", d="0.0", z="0.0", pattern="background" )
 
         #### Add a single a molecule so the display values can be set ... otherwise they're not applied properly
-        cb_model.add_molecule_release_site_to_model ( mol="a", name="a_dummy", q_expr="1", shape="SPHERICAL" )
+        cb_model.add_molecule_release_site_to_model ( mol="a",  name="a_dummy",  q_expr="1", shape="SPHERICAL" )
         #### Add a single b molecule so the display values can be set ... otherwise they're not applied properly
-        cb_model.add_molecule_release_site_to_model ( mol="b", name="b_dummy", q_expr="1", shape="SPHERICAL" )
+        cb_model.add_molecule_release_site_to_model ( mol="b",  name="b_dummy",  q_expr="1", shape="SPHERICAL" )
+        #### Add a single b molecule so the display values can be set ... otherwise they're not applied properly
+        cb_model.add_molecule_release_site_to_model ( mol="bg", name="bg_dummy", q_expr="1", shape="SPHERICAL" )
 
 
         bpy.ops.mcell.rxn_output_add()
@@ -673,15 +689,19 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
         bpy.ops.mcell.rxn_output_add()
         mcell.rxn_output.rxn_output_list[1].molecule_name = 'b'
 
+        bpy.ops.mcell.rxn_output_add()
+        mcell.rxn_output.rxn_output_list[2].molecule_name = 'bg'
 
-        cb_model.run_model ( iterations='1500', time_step=dt, wait_time=7.0 )
+
+        cb_model.run_model ( iterations='1500', time_step=dt, wait_time=5.0 )
 
         cb_model.refresh_molecules()
 
-        mol_scale = 1
+        mol_scale = 1.0
 
-        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=mol_scale, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=mol_scale, red=0.5, green=0.5, blue=1.0 )
+        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=mol_scale,   red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=mol_scale,   red=0.5, green=0.5, blue=1.0 )
+        cb_model.change_molecule_display ( mol_c, glyph='Cube', scale=mol_scale/2, red=0.0, green=0.0, blue=0.0 )
 
         cb_model.set_view_back()
 
