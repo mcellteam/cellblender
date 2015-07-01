@@ -62,6 +62,8 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
         row = self.layout.row()
         row.operator ( "cellblender_test.cube_surf_test" )
         row = self.layout.row()
+        row.operator ( "cellblender_test.rel_time_patterns_test" )
+        row = self.layout.row()
         row.operator ( "cellblender_test.lotka_volterra_torus_test_diff_lim" )
         row = self.layout.row()
         row.operator ( "cellblender_test.lotka_volterra_torus_test_phys" )
@@ -208,7 +210,7 @@ class CellBlender_Model:
         return self.mcell.molecules.molecule_list[mol_index]
 
 
-    def add_molecule_release_site_to_model ( self, name=None, mol="a", shape="SPHERICAL", obj_expr="", orient="'", q_expr="100", q_type='NUMBER_TO_RELEASE', d="0", x="0", y="0", z="0" ):
+    def add_molecule_release_site_to_model ( self, name=None, mol="a", shape="SPHERICAL", obj_expr="", orient="'", q_expr="100", q_type='NUMBER_TO_RELEASE', d="0", x="0", y="0", z="0", pattern=None ):
         """ Add a molecule release site """
         """ shape is one of: 'CUBIC', 'SPHERICAL', 'SPHERICAL_SHELL', 'OBJECT' """
         """ q_type is one of: 'NUMBER_TO_RELEASE', 'GAUSSIAN_RELEASE_NUMBER', 'DENSITY' """
@@ -230,6 +232,8 @@ class CellBlender_Model:
         self.mcell.release_sites.mol_release_list[rel_index].location_x.set_expr(x)
         self.mcell.release_sites.mol_release_list[rel_index].location_y.set_expr(y)
         self.mcell.release_sites.mol_release_list[rel_index].location_z.set_expr(z)
+        if pattern != None:
+            self.mcell.release_sites.mol_release_list[rel_index].pattern = pattern
         print ( "Done Releasing Molecule " + name )
         return self.mcell.release_sites.mol_release_list[rel_index]
 
@@ -430,7 +434,6 @@ class ReactionTestOp(bpy.types.Operator):
         return { 'FINISHED' }
 
 
-
 class ReleaseShapeTestOp(bpy.types.Operator):
     bl_idname = "cellblender_test.release_shape"
     bl_label = "Release Shape Test"
@@ -590,7 +593,8 @@ class CubeSurfaceTestOp(bpy.types.Operator):
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
         cb_model.add_molecule_release_site_to_model ( mol="s", shape="OBJECT", obj_expr="Cell[top]", orient="'", q_expr="1000" )
         #### Add a single b molecule so the display values can be set ... otherwise they're not applied properly
-        cb_model.add_molecule_release_site_to_model ( mol="b", shape="OBJECT", obj_expr="Cell", q_expr="1" )
+        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="1", shape="SPHERICAL", d="0", z="1.001" )
+
 
         cb_model.add_reaction_to_model ( rin="a' + s,", rtype="irreversible", rout="b, + s,", fwd_rate="1e8", bkwd_rate="" )
 
@@ -608,6 +612,80 @@ class CubeSurfaceTestOp(bpy.types.Operator):
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.25 )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+class ReleaseTimePatternsTestOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.rel_time_patterns_test"
+    bl_label = "Release Time Patterns Test"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        diff_const = "0"
+
+        mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr=diff_const )
+        mol_b = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr=diff_const )
+
+
+        decay_rate = "8e6"
+        cb_model.add_reaction_to_model ( rin="a", rtype="irreversible", rout="NULL", fwd_rate=decay_rate, bkwd_rate="" )
+        cb_model.add_reaction_to_model ( rin="b", rtype="irreversible", rout="NULL", fwd_rate=decay_rate+"/5", bkwd_rate="" )
+
+
+        dt = "1e-6"
+
+        bpy.ops.mcell.release_pattern_add()
+        mcell.release_patterns.release_pattern_list[0].name = "spike_pattern"
+        mcell.release_patterns.release_pattern_list[0].delay.set_expr ( "200 * " + dt )
+        mcell.release_patterns.release_pattern_list[0].release_interval.set_expr ( "10 * " + dt )
+        mcell.release_patterns.release_pattern_list[0].train_duration.set_expr ( "100 * " + dt )
+        mcell.release_patterns.release_pattern_list[0].train_interval.set_expr ( "200 * " + dt )
+        mcell.release_patterns.release_pattern_list[0].number_of_trains.set_expr ( "5" )
+
+
+        num_rel = "10"
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr=num_rel, shape="SPHERICAL", d="0.1", z="0.2", pattern="spike_pattern" )
+        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr=num_rel, shape="SPHERICAL", d="0.1", z="0.4", pattern="spike_pattern" )
+
+        #### Add a single a molecule so the display values can be set ... otherwise they're not applied properly
+        cb_model.add_molecule_release_site_to_model ( mol="a", name="a_dummy", q_expr="1", shape="SPHERICAL" )
+        #### Add a single b molecule so the display values can be set ... otherwise they're not applied properly
+        cb_model.add_molecule_release_site_to_model ( mol="b", name="b_dummy", q_expr="1", shape="SPHERICAL" )
+
+
+        bpy.ops.mcell.rxn_output_add()
+        mcell.rxn_output.rxn_output_list[0].molecule_name = 'a'
+
+        bpy.ops.mcell.rxn_output_add()
+        mcell.rxn_output.rxn_output_list[1].molecule_name = 'b'
+
+
+        cb_model.run_model ( iterations='1500', time_step=dt, wait_time=7.0 )
+
+        cb_model.refresh_molecules()
+
+        mol_scale = 1
+
+        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=mol_scale, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=mol_scale, red=0.5, green=0.5, blue=1.0 )
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.05 )
 
         cb_model.play_animation()
 
