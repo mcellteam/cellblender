@@ -1,5 +1,5 @@
 relative_path_to_mcell = "/../mcell_git/src/linux/mcell"
-install_to = "2.74"
+install_to = "2.75"
 
 
 # From within Blender: import cellblender.test_suite.test_suite
@@ -653,9 +653,9 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
 
         diff_const = "0"
 
-        mol_a = cb_model.add_molecule_species_to_model ( name="a",  diff_const_expr=diff_const )
-        mol_b = cb_model.add_molecule_species_to_model ( name="b",  diff_const_expr=diff_const )
-        mol_c = cb_model.add_molecule_species_to_model ( name="bg", diff_const_expr="0" )
+        mol_a =  cb_model.add_molecule_species_to_model ( name="a",  diff_const_expr=diff_const )
+        mol_b =  cb_model.add_molecule_species_to_model ( name="b",  diff_const_expr=diff_const )
+        mol_bg = cb_model.add_molecule_species_to_model ( name="bg", diff_const_expr="0" )
 
 
         decay_rate = "8e6"
@@ -673,7 +673,7 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
 
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr=num_rel, shape="SPHERICAL", d="0.1", z="0.2", pattern="spike_pattern" )
         cb_model.add_molecule_release_site_to_model ( mol="b", q_expr=num_rel, shape="SPHERICAL", d="0.1", z="0.4", pattern="spike_pattern" )
-        cb_model.add_molecule_release_site_to_model ( mol="bg", q_expr="1",    shape="SPHERICAL", d="0.0", z="0.0", pattern="background" )
+        cb_model.add_molecule_release_site_to_model ( mol="bg", q_expr="1",    shape="SPHERICAL", d="1.0", z="0.0", pattern="background" )
 
         #### Add a single a molecule so the display values can be set ... otherwise they're not applied properly
         cb_model.add_molecule_release_site_to_model ( mol="a",  name="a_dummy",  q_expr="1", shape="SPHERICAL" )
@@ -699,9 +699,9 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
 
         mol_scale = 1.0
 
-        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=mol_scale,   red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=mol_scale,   red=0.5, green=0.5, blue=1.0 )
-        cb_model.change_molecule_display ( mol_c, glyph='Cube', scale=mol_scale/2, red=0.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_a,  glyph='Cube',  scale=mol_scale, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_b,  glyph='Cube',  scale=mol_scale, red=0.5, green=0.5, blue=1.0 )
+        cb_model.change_molecule_display ( mol_bg, glyph='Torus', scale=mol_scale, red=1.0, green=1.0, blue=1.0 )
 
         cb_model.set_view_back()
 
