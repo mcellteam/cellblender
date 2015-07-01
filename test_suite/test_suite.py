@@ -1,3 +1,15 @@
+# From within Blender: import cellblender.test_suite.test_suite
+if __name__ == "__main__":
+  # Simple method to "install" a new version with "python test_suite/test_suite.py" assuming "test_suite" directory exists in target location.
+  import os
+  print ( "MAIN with __file__ = " + __file__ )
+  install_to = "2.74"
+  print ( " Installing into Blender " + install_to )
+  os.system ( "cp ./" + __file__ + " ~/.config/blender/" + install_to + "/scripts/addons/cellblender/" + __file__ )
+  print ( "Copied files" )
+  exit(0)
+
+
 bl_info = {
   "version": "0.1",
   "name": "CellBlender Test Suite",
@@ -30,6 +42,10 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
         row.prop(app, "path_to_mcell")
         row = self.layout.row()
         row.prop(app, "path_to_blend")
+
+        row = self.layout.row()
+        row.operator ( "cellblender_test.new_file" )
+
         row = self.layout.row()
         row.operator ( "cellblender_test.single_mol" )
         row = self.layout.row()
@@ -40,6 +56,22 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
         row.operator ( "cellblender_test.release_shape" )
         row = self.layout.row()
         row.operator ( "cellblender_test.cube_test" )
+        row = self.layout.row()
+        row.operator ( "cellblender_test.cube_surf_test" )
+
+
+class NewFileOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.new_file"
+    bl_label = "Reset"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+        bpy.ops.wm.read_homefile()
+        return { 'FINISHED' }
+
 
 
 
@@ -51,6 +83,7 @@ class CellBlender_Model:
     mcell = None
     
     def __init__(self, cb_context):
+        # bpy.ops.wm.read_homefile()
         self.old_type = None
         self.context = cb_context
         self.setup_cb_defaults ( self.context )
@@ -64,7 +97,10 @@ class CellBlender_Model:
 
     def set_view_3d(self):
         area = bpy.context.area
-        self.old_type = area.type
+        if area == None:
+            self.old_type = 'VIEW_3D'
+        else:
+            self.old_type = area.type
         area.type = 'VIEW_3D'
       
     def set_view_back(self):
@@ -144,19 +180,20 @@ class CellBlender_Model:
         print ( "Done Adding " + name )
 
 
-    def add_molecule_species_to_model ( self, name="A", diff_const_expr="0.0" ):
+    def add_molecule_species_to_model ( self, name="A", mol_type="3D", diff_const_expr="0.0" ):
         """ Add a molecule species """
         print ( "Adding Molecule Species " + name )
         self.mcell.cellblender_main_panel.molecule_select = True
         bpy.ops.mcell.molecule_add()
         mol_index = self.mcell.molecules.active_mol_index
         self.mcell.molecules.molecule_list[mol_index].name = name
+        self.mcell.molecules.molecule_list[mol_index].type = mol_type
         self.mcell.molecules.molecule_list[mol_index].diffusion_constant.set_expr(diff_const_expr)
         print ( "Done Adding Molecule " + name )
         return self.mcell.molecules.molecule_list[mol_index]
 
 
-    def add_molecule_release_site_to_model ( self, name=None, mol="a", shape="SPHERICAL", obj_expr="", q_expr="100", q_type='NUMBER_TO_RELEASE', d="0", x="0", y="0", z="0" ):
+    def add_molecule_release_site_to_model ( self, name=None, mol="a", shape="SPHERICAL", obj_expr="", orient="'", q_expr="100", q_type='NUMBER_TO_RELEASE', d="0", x="0", y="0", z="0" ):
         """ Add a molecule release site """
         """ shape is one of: 'CUBIC', 'SPHERICAL', 'SPHERICAL_SHELL', 'OBJECT' """
         """ q_type is one of: 'NUMBER_TO_RELEASE', 'GAUSSIAN_RELEASE_NUMBER', 'DENSITY' """
@@ -171,6 +208,7 @@ class CellBlender_Model:
         self.mcell.release_sites.mol_release_list[rel_index].molecule = mol
         self.mcell.release_sites.mol_release_list[rel_index].shape = shape
         self.mcell.release_sites.mol_release_list[rel_index].object_expr = obj_expr
+        self.mcell.release_sites.mol_release_list[rel_index].orient = orient
         self.mcell.release_sites.mol_release_list[rel_index].quantity_type = q_type
         self.mcell.release_sites.mol_release_list[rel_index].quantity.set_expr(q_expr)
         self.mcell.release_sites.mol_release_list[rel_index].diameter.set_expr(d)
@@ -352,7 +390,7 @@ class ReactionTestOp(bpy.types.Operator):
 
         cb_model.add_reaction_to_model ( rin="a + b", rtype="irreversible", rout="c", fwd_rate="1e8", bkwd_rate="" )
 
-        cb_model.run_model ( iterations='2000', time_step='1e-6', wait_time=1.0 )
+        cb_model.run_model ( iterations='2000', time_step='1e-6', wait_time=5.0 )
 
         cb_model.refresh_molecules()
 
@@ -456,6 +494,101 @@ class CubeTestOp(bpy.types.Operator):
         cb_model.refresh_molecules()
 
         cb_model.change_molecule_display ( mol, glyph='Cube', scale=4.0, red=1.0, green=0.0, blue=0.0 )
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.25 )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+class CubeSurfaceTestOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.cube_surf_test"
+    bl_label = "Cube Surface Test"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        cb_model.add_cube_to_model ( name="Cell", draw_type="WIRE" )
+        
+
+        print ("Selected Object = " + str(context.object) )
+        # bpy.ops.object.mode_set ( mode="EDIT" )
+
+        # Start in Object mode for selecting
+        bpy.ops.object.mode_set ( mode="OBJECT" )
+
+        # Face Select Mode:
+        msm = context.scene.tool_settings.mesh_select_mode[0:3]
+        context.scene.tool_settings.mesh_select_mode = (False, False, True)
+
+        # Deselect everything
+        bpy.ops.object.select_all ( action='DESELECT')
+        c = bpy.data.objects['Cell']
+        c.select = False
+        
+        # Select just the top faces (normals up)
+        mesh = c.data
+
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        for p in mesh.polygons:
+          n = p.normal
+          if (n.z > n.x) and (n.z > n.y):
+            # This appears to be a triangle in the top face
+            print ( "Normal Up = " + str (n) )
+            p.select = True
+          else:
+            print ( "Normal Down = " + str (n) )
+            p.select = False
+
+        bpy.ops.object.mode_set(mode='EDIT')
+        
+        # Add a new region
+        
+        bpy.ops.mcell.region_add()
+        bpy.data.objects['Cell'].mcell.regions.region_list[0].name = 'top'
+        
+        # Assign the currently selected faces to this region
+        bpy.ops.mcell.region_faces_assign()
+
+        # Restore the selection settings
+        context.scene.tool_settings.mesh_select_mode = msm
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+
+        mola = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+        mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-6" )
+        molb = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-6" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
+        cb_model.add_molecule_release_site_to_model ( mol="s", shape="OBJECT", obj_expr="Cell[top]", orient="'", q_expr="1000" )
+        #### Add a single b molecule so the display values can be set ... otherwise they're not applied properly
+        cb_model.add_molecule_release_site_to_model ( mol="b", shape="OBJECT", obj_expr="Cell", q_expr="1" )
+
+        cb_model.add_reaction_to_model ( rin="a' + s,", rtype="irreversible", rout="b, + s,", fwd_rate="1e8", bkwd_rate="" )
+
+
+        cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=5.0 )
+
+        cb_model.refresh_molecules()
+        
+        scn.frame_current = 450
+
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mols, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molb, glyph='Cube', scale=6.0, red=1.0, green=1.0, blue=1.0 )
 
         cb_model.set_view_back()
 
