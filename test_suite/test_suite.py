@@ -1,9 +1,12 @@
+relative_path_to_mcell = "/../mcell_git/src/linux/mcell"
+install_to = "2.74"
+
+
 # From within Blender: import cellblender.test_suite.test_suite
 if __name__ == "__main__":
   # Simple method to "install" a new version with "python test_suite/test_suite.py" assuming "test_suite" directory exists in target location.
   import os
   print ( "MAIN with __file__ = " + __file__ )
-  install_to = "2.74"
   print ( " Installing into Blender " + install_to )
   os.system ( "cp ./" + __file__ + " ~/.config/blender/" + install_to + "/scripts/addons/cellblender/" + __file__ )
   print ( "Copied files" )
@@ -28,8 +31,8 @@ import bpy
 from bpy.props import *
 
 class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
-    path_to_mcell = bpy.props.StringProperty(name="PathToMCell", default="/home/bobkuczewski/proj/MCell/mcell_git/src/linux/mcell")
-    path_to_blend = bpy.props.StringProperty(name="PathToBlend", default="/home/bobkuczewski/proj/MCell/tutorials/intro/2015_06_26")
+    path_to_mcell = bpy.props.StringProperty(name="PathToMCell", default="")
+    path_to_blend = bpy.props.StringProperty(name="PathToBlend", default="")
 
 class CellBlenderTestSuitePanel(bpy.types.Panel):
     bl_label = "CellBlender Test Suite"
@@ -58,6 +61,11 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
         row.operator ( "cellblender_test.cube_test" )
         row = self.layout.row()
         row.operator ( "cellblender_test.cube_surf_test" )
+        row = self.layout.row()
+        row.operator ( "cellblender_test.lotka_volterra_torus_test_diff_lim" )
+        row = self.layout.row()
+        row.operator ( "cellblender_test.lotka_volterra_torus_test_phys" )
+
 
 
 class NewFileOp(bpy.types.Operator):
@@ -110,7 +118,12 @@ class CellBlender_Model:
     def save_blend_file( self, context ):
         app = context.scene.cellblender_test_suite
         wm = context.window_manager
-        bpy.ops.wm.save_as_mainfile(filepath=os.path.join ( app.path_to_blend, "SimpleCube.blend"), check_existing=False)
+
+        if len(app.path_to_blend) > 0:
+            bpy.ops.wm.save_as_mainfile(filepath=app.path_to_blend, check_existing=False)
+        else:
+            bpy.ops.wm.save_as_mainfile(filepath=os.getcwd() + "/Test.blend", check_existing=False)
+
 
     def get_scene(self):
         return bpy.data.scenes['Scene']
@@ -132,18 +145,20 @@ class CellBlender_Model:
         print ( "Enabling CellBlender Application" )
         bpy.ops.wm.addon_enable(module='cellblender')
 
-    def get_path_to_mcell(self):
-        app = bpy.context.scene.cellblender_test_suite
-        return app.path_to_mcell
-        
+
     def setup_mcell(self, scn):
         mcell = scn.mcell
+        app = bpy.context.scene.cellblender_test_suite
 
         print ( "Initializing CellBlender Application" )
         bpy.ops.mcell.init_cellblender()
 
         print ( "Setting Preferences" )
-        mcell.cellblender_preferences.mcell_binary = self.get_path_to_mcell()
+        if len(app.path_to_mcell) > 0:
+            mcell.cellblender_preferences.mcell_binary = app.path_to_mcell
+        else:
+            mcell.cellblender_preferences.mcell_binary = os.getcwd() + relative_path_to_mcell
+
         mcell.cellblender_preferences.mcell_binary_valid = True
         mcell.cellblender_preferences.show_sim_runner_options = True
         mcell.run_simulation.simulation_run_control = 'COMMAND'
@@ -594,6 +609,110 @@ class CubeSurfaceTestOp(bpy.types.Operator):
 
         cb_model.scale_view_distance ( 0.25 )
 
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_rate, interaction_radius, time_step, iterations, wait_time ):
+
+    cb_model = CellBlender_Model ( context )
+
+    scn = cb_model.get_scene()
+    mcell = cb_model.get_mcell()
+
+    # Create the Torus
+    bpy.ops.mesh.primitive_torus_add(major_segments=20,minor_segments=10,major_radius=0.1,minor_radius=0.03)
+    scn.objects.active.name = 'arena'
+
+    # Set up the material for the Torus
+    bpy.data.materials[0].name = 'cell'
+    bpy.data.materials['cell'].use_transparency = True
+    bpy.data.materials['cell'].alpha = 0.3
+
+    # Assign the material to the Torus
+    bpy.ops.object.material_slot_add()
+    scn.objects['arena'].material_slots[0].material = bpy.data.materials['cell']
+    scn.objects['arena'].show_transparent = True
+
+    # Add the new Torus to the model objects list
+    mcell.cellblender_main_panel.objects_select = True
+    bpy.ops.mcell.model_objects_add()
+
+    # Add the molecules
+    prey = cb_model.add_molecule_species_to_model ( name="prey", diff_const_expr="6e-6" )
+    pred = cb_model.add_molecule_species_to_model ( name="predator", diff_const_expr="6e-6" )
+
+    cb_model.add_molecule_release_site_to_model ( name="prey_rel", mol="prey", shape="OBJECT", obj_expr="arena", q_expr="1000" )
+    cb_model.add_molecule_release_site_to_model ( name="pred_rel", mol="predator", shape="OBJECT", obj_expr="arena", q_expr="1000" )
+
+    cb_model.add_reaction_to_model ( rin="prey", rtype="irreversible", rout="prey + prey", fwd_rate=prey_birth_rate, bkwd_rate="" )
+    cb_model.add_reaction_to_model ( rin="prey + predator", rtype="irreversible", rout="predator + predator", fwd_rate=predation_rate, bkwd_rate="" )
+    cb_model.add_reaction_to_model ( rin="predator", rtype="irreversible", rout="NULL", fwd_rate=pred_death_rate, bkwd_rate="" )
+
+    bpy.ops.mcell.rxn_output_add()
+    mcell.rxn_output.rxn_output_list[0].molecule_name = 'prey'
+
+    bpy.ops.mcell.rxn_output_add()
+    mcell.rxn_output.rxn_output_list[1].molecule_name = 'predator'
+
+    mcell.rxn_output.plot_layout = ' '
+
+    mcell.partitions.include = True
+    bpy.ops.mcell.auto_generate_boundaries()
+
+    if interaction_radius == None:
+        mcell.initialization.interaction_radius.set_expr ( "" )
+    else:
+        mcell.initialization.interaction_radius.set_expr ( interaction_radius )
+
+    # mcell.run_simulation.simulation_run_control = 'JAVA'
+    cb_model.run_model ( iterations=iterations, time_step=time_step, wait_time=wait_time )
+
+    cb_model.refresh_molecules()
+
+    scn.frame_current = 10
+
+    cb_model.set_view_back()
+
+    mcell.rxn_output.mol_colors = True
+
+    cb_model.change_molecule_display ( prey, glyph='Cube',       scale=0.2, red=0.0, green=1.0, blue=0.0 )
+    cb_model.change_molecule_display ( pred, glyph='Octahedron', scale=0.3, red=1.0, green=0.0, blue=0.0 )
+
+    cb_model.scale_view_distance ( 0.015 )
+
+    return cb_model
+
+
+class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.lotka_volterra_torus_test_diff_lim"
+    bl_label = "Lotka Volterra Torus - Diffusion Limited Reaction"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", wait_time=10.0 )
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.lotka_volterra_torus_test_phys"
+    bl_label = "Lotka Volterra Torus - Physiologic Reaction"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", wait_time=50.0 )
         cb_model.play_animation()
 
         return { 'FINISHED' }
