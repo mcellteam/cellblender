@@ -1,5 +1,5 @@
 relative_path_to_mcell = "/../mcell_git/src/linux/mcell"
-install_to = "2.75"
+install_to = "2.74"
 
 
 # From within Blender: import cellblender.test_suite.test_suite
@@ -67,6 +67,8 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
         row.operator ( "cellblender_test.lotka_volterra_torus_test_diff_lim" )
         row = self.layout.row()
         row.operator ( "cellblender_test.lotka_volterra_torus_test_phys" )
+        row = self.layout.row()
+        row.operator ( "cellblender_test.organelle_test" )
 
 
 
@@ -188,7 +190,21 @@ class CellBlender_Model:
         print ( "Adding " + name )
         bpy.ops.mesh.primitive_cube_add()
         self.scn.objects.active.name = name
-        bpy.data.objects['Cell'].draw_type = draw_type
+        bpy.data.objects[name].draw_type = draw_type
+
+        # Add the newly added object to the model objects list
+
+        self.mcell.cellblender_main_panel.objects_select = True
+        bpy.ops.mcell.model_objects_add()
+        print ( "Done Adding " + name )
+
+
+    def add_icosphere_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, size=1, subdiv=2 ):
+        """ draw_type is one of: WIRE, TEXTURED, SOLID, BOUNDS """
+        print ( "Adding " + name )
+        bpy.ops.mesh.primitive_ico_sphere_add ( subdivisions=subdiv, size=size, location=(x, y, z) )
+        self.scn.objects.active.name = name
+        bpy.data.objects[name].draw_type = draw_type
 
         # Add the newly added object to the model objects list
 
@@ -270,6 +286,17 @@ class CellBlender_Model:
         return self.mcell.reactions.reaction_list[rxn_index]
 
 
+    def add_reaction_output_to_model ( self, mol_name ):
+        """ Add a reaction output """
+        print ( "Adding Reaction Output for Molecule " + mol_name )
+        self.mcell.cellblender_main_panel.graph_select = True
+        bpy.ops.mcell.rxn_output_add()
+        rxn_index = self.mcell.rxn_output.active_rxn_output_index
+        self.mcell.rxn_output.rxn_output_list[rxn_index].molecule_name = mol_name
+        print ( "Done Adding Reaction Output for Molecule " + mol_name )
+        return self.mcell.rxn_output.rxn_output_list[rxn_index]
+
+
     def wait ( self, wait_time ):
         import time
         time.sleep ( wait_time )
@@ -292,7 +319,10 @@ class CellBlender_Model:
 
 
     def change_molecule_display ( self, mol, glyph="Cube", scale=1.0, red=-1, green=-1, blue=-1 ):
-        print ( "Changing Display for Molecule " + mol.name )
+        if mol.name == "Molecule":
+            print ("Name isn't correct")
+            return
+        print ( "Changing Display for Molecule \"" + mol.name + "\" to R="+str(red)+",G="+str(green)+",B="+str(blue) )
         self.mcell.cellblender_main_panel.molecule_select = True
         self.mcell.molecules.show_display = True
         mol.glyph = glyph
@@ -301,7 +331,7 @@ class CellBlender_Model:
         if green >= 0: mol.color.g = green
         if blue >= 0: mol.color.b = blue
 
-        print ( "Done Changing Display for Molecule a" )
+        print ( "Done Changing Display for Molecule \"" + mol.name + "\"" )
 
 
     def scale_view_distance ( self, scale ):
@@ -811,6 +841,212 @@ class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
     def execute(self, context):
 
         cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", wait_time=50.0 )
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+
+
+
+class OrganelleTestOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.organelle_test"
+    bl_label = "Organelle Test"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+
+        # Set some shared parameters
+        subdiv = 4
+
+
+        # Create Organelle 1
+
+        # Create the object and add it to the CellBlender model
+        cb_model.add_icosphere_to_model ( name="Organelle_1", draw_type="WIRE", size=0.3, y=-0.25, subdiv=subdiv )
+
+        # Start in Object mode for selecting
+        bpy.ops.object.mode_set ( mode="OBJECT" )
+
+        # Face Select Mode:
+        msm = context.scene.tool_settings.mesh_select_mode[0:3]
+        context.scene.tool_settings.mesh_select_mode = (False, False, True)
+
+        # Deselect everything
+        bpy.ops.object.select_all ( action='DESELECT')
+        c = bpy.data.objects['Organelle_1']
+        c.select = False
+
+        # Select just the top faces (normals up)
+        mesh = c.data
+
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        for p in mesh.polygons:
+          n = p.normal
+          if (n.z > (1.5*abs(n.x))) and (n.z > (1.5*abs(n.y))):
+            # This appears to be a triangle on the "top" of the object
+            print ( "Normal Up = " + str (n) )
+            p.select = True
+          else:
+            print ( "Normal Down = " + str (n) )
+            p.select = False
+
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        # Add the new region
+
+        bpy.ops.mcell.region_add()
+        bpy.data.objects['Organelle_1'].mcell.regions.region_list[0].name = 'top'
+
+        # Assign the currently selected faces to this region
+        bpy.ops.mcell.region_faces_assign()
+
+        # Restore the selection settings
+        context.scene.tool_settings.mesh_select_mode = msm
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+
+
+        # Create Organelle 2
+
+        # Create the object and add it to the CellBlender model
+        cb_model.add_icosphere_to_model ( name="Organelle_2", draw_type="WIRE", size=0.2, y=0.31, subdiv=subdiv )
+
+        # Start in Object mode for selecting
+        bpy.ops.object.mode_set ( mode="OBJECT" )
+
+        # Face Select Mode:
+        msm = context.scene.tool_settings.mesh_select_mode[0:3]
+        context.scene.tool_settings.mesh_select_mode = (False, False, True)
+
+        # Deselect everything
+        bpy.ops.object.select_all ( action='DESELECT')
+        c = bpy.data.objects['Organelle_2']
+        c.select = False
+
+        # Select just the top faces (normals up)
+        mesh = c.data
+
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        for p in mesh.polygons:
+          n = p.normal
+          if (n.z > (1.5*abs(n.x))) and (n.z > (1.5*abs(n.y))):
+            # This appears to be a triangle on the "top" of the object
+            print ( "Normal Up = " + str (n) )
+            p.select = True
+          else:
+            print ( "Normal Down = " + str (n) )
+            p.select = False
+
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        # Add the new region
+
+        bpy.ops.mcell.region_add()
+        bpy.data.objects['Organelle_2'].mcell.regions.region_list[0].name = 'top'
+
+        # Assign the currently selected faces to this region
+        bpy.ops.mcell.region_faces_assign()
+
+        # Restore the selection settings
+        context.scene.tool_settings.mesh_select_mode = msm
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+
+
+        # Create Cell itself
+
+        cb_model.add_icosphere_to_model ( name="Cell", draw_type="WIRE", size=0.625, subdiv=subdiv )
+
+
+        # Define the molecule species
+
+        mola = cb_model.add_molecule_species_to_model ( name="a", mol_type="3D", diff_const_expr="1e-6" )
+        molb = cb_model.add_molecule_species_to_model ( name="b", mol_type="3D", diff_const_expr="1e-6" )
+        molc = cb_model.add_molecule_species_to_model ( name="c", mol_type="3D", diff_const_expr="1e-6" )
+        mold = cb_model.add_molecule_species_to_model ( name="d", mol_type="3D", diff_const_expr="1e-6" )
+
+        molt1 = cb_model.add_molecule_species_to_model ( name="t1", mol_type="2D", diff_const_expr="1e-6" )
+        molt2 = cb_model.add_molecule_species_to_model ( name="t2", mol_type="2D", diff_const_expr="0" )
+
+
+
+        cb_model.add_molecule_release_site_to_model ( name="rel_a",  mol="a",  shape="OBJECT", obj_expr="Cell[ALL] - (Organelle_1[ALL] + Organelle_2[ALL])", q_expr="1000" )
+        cb_model.add_molecule_release_site_to_model ( name="rel_b",  mol="b",  shape="OBJECT", obj_expr="Organelle_1[ALL]", q_expr="1000" )
+        cb_model.add_molecule_release_site_to_model ( name="rel_t1", mol="t1", shape="OBJECT", obj_expr="Organelle_1[top]", orient="'", q_expr="1000" )
+        cb_model.add_molecule_release_site_to_model ( name="rel_t2", mol="t2", shape="OBJECT", obj_expr="Organelle_2[top]", orient="'", q_expr="1000" )
+        # Add a single c and d molecule so the display values can be set ... otherwise they're not applied properly
+        cb_model.add_molecule_release_site_to_model ( mol="c", shape="OBJECT", obj_expr="Organelle_2", q_expr="1" )
+        cb_model.add_molecule_release_site_to_model ( mol="d", shape="OBJECT", obj_expr="Organelle_2", q_expr="1" )
+
+
+        cb_model.add_reaction_to_model ( rin="a + b",    rtype="irreversible", rout="c",        fwd_rate="1e9", bkwd_rate="" )
+        cb_model.add_reaction_to_model ( rin="a' + t1'", rtype="irreversible", rout="a, + t1'", fwd_rate="3e8", bkwd_rate="" )
+        cb_model.add_reaction_to_model ( rin="c' + t2'", rtype="irreversible", rout="d, + t2'", fwd_rate="3e9", bkwd_rate="" )
+        cb_model.add_reaction_to_model ( rin="c, + t1'", rtype="irreversible", rout="c' + t1'", fwd_rate="3e8", bkwd_rate="" )
+
+
+        """
+        bpy.ops.mcell.rxn_output_add()
+        mcell.rxn_output.rxn_output_list[0].molecule_name = 'a'
+
+        bpy.ops.mcell.rxn_output_add()
+        mcell.rxn_output.rxn_output_list[1].molecule_name = 'b'
+
+        bpy.ops.mcell.rxn_output_add()
+        mcell.rxn_output.rxn_output_list[2].molecule_name = 'c'
+
+        bpy.ops.mcell.rxn_output_add()
+        mcell.rxn_output.rxn_output_list[3].molecule_name = 'd'
+        """
+
+        cb_model.add_reaction_output_to_model ( 'a' )
+        cb_model.add_reaction_output_to_model ( 'b' )
+        cb_model.add_reaction_output_to_model ( 'c' )
+        cb_model.add_reaction_output_to_model ( 'd' )
+        cb_model.add_reaction_output_to_model ( 't1' )
+        cb_model.add_reaction_output_to_model ( 't2' )
+        mcell.rxn_output.plot_layout = ' '
+        mcell.rxn_output.mol_colors = True
+
+
+
+        mcell.partitions.include = True
+        bpy.ops.mcell.auto_generate_boundaries()
+
+
+
+        cb_model.run_model ( iterations='2000', time_step='1e-6', wait_time=4.0 )
+
+        cb_model.refresh_molecules()
+
+        scn.frame_current = 2
+
+        # For some reason, changing some of these molecule display settings crashes Blender (tested for both 2.74 and 2.75)
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
+        #cb_model.change_molecule_display ( molb, glyph='Cube', scale=6.0, red=1.0, green=1.0, blue=1.0 )
+        #cb_model.change_molecule_display ( molc, glyph='Cube', scale=6.0, red=1.0, green=1.0, blue=1.0 )
+
+        #cb_model.change_molecule_display ( molt1, glyph='Cone', scale=2.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( molt2, glyph='Cone', scale=1.5, red=0.7, green=0.7, blue=0.0 )
+
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.07 )
+
         cb_model.play_animation()
 
         return { 'FINISHED' }
