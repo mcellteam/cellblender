@@ -62,6 +62,8 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
         row = self.layout.row()
         row.operator ( "cellblender_test.cube_surf_test" )
         row = self.layout.row()
+        row.operator ( "cellblender_test.sphere_surf_test" )
+        row = self.layout.row()
         row.operator ( "cellblender_test.rel_time_patterns_test" )
         row = self.layout.row()
         row.operator ( "cellblender_test.lotka_volterra_torus_test_diff_lim" )
@@ -295,6 +297,54 @@ class CellBlender_Model:
         self.mcell.rxn_output.rxn_output_list[rxn_index].molecule_name = mol_name
         print ( "Done Adding Reaction Output for Molecule " + mol_name )
         return self.mcell.rxn_output.rxn_output_list[rxn_index]
+
+
+    def add_surface_region_to_model_by_normal ( self, obj_name, surf_name, nx, ny, nz, min_dot_prod ):
+
+        print ("Selected Object = " + str(self.context.object) )
+        # bpy.ops.object.mode_set ( mode="EDIT" )
+
+        # Start in Object mode for selecting
+        bpy.ops.object.mode_set ( mode="OBJECT" )
+
+        # Face Select Mode:
+        msm = self.context.scene.tool_settings.mesh_select_mode[0:3]
+        self.context.scene.tool_settings.mesh_select_mode = (False, False, True)
+
+        # Deselect everything
+        bpy.ops.object.select_all ( action='DESELECT')
+        c = bpy.data.objects[obj_name]
+        c.select = False
+
+        # Select just the top faces (normals up)
+        mesh = c.data
+
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        for p in mesh.polygons:
+          n = p.normal
+          dp = (n.x * nx) + (n.y * ny) + (n.z * nz)
+          if dp > min_dot_prod:
+            # This appears to be a triangle in the top face
+            #print ( "Normal " + str (n) + " matches with " + str(dp) )
+            p.select = True
+          else:
+            #print ( "Normal " + str (n) + " differs with " + str(dp) )
+            p.select = False
+
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        # Add a new region
+
+        bpy.ops.mcell.region_add()
+        bpy.data.objects[obj_name].mcell.regions.region_list[0].name = surf_name
+
+        # Assign the currently selected faces to this region
+        bpy.ops.mcell.region_faces_assign()
+
+        # Restore the selection settings
+        self.context.scene.tool_settings.mesh_select_mode = msm
+        bpy.ops.object.mode_set(mode='OBJECT')
 
 
     def wait ( self, wait_time ):
@@ -586,52 +636,7 @@ class CubeSurfaceTestOp(bpy.types.Operator):
         mcell = cb_model.get_mcell()
 
         cb_model.add_cube_to_model ( name="Cell", draw_type="WIRE" )
-        
-
-        print ("Selected Object = " + str(context.object) )
-        # bpy.ops.object.mode_set ( mode="EDIT" )
-
-        # Start in Object mode for selecting
-        bpy.ops.object.mode_set ( mode="OBJECT" )
-
-        # Face Select Mode:
-        msm = context.scene.tool_settings.mesh_select_mode[0:3]
-        context.scene.tool_settings.mesh_select_mode = (False, False, True)
-
-        # Deselect everything
-        bpy.ops.object.select_all ( action='DESELECT')
-        c = bpy.data.objects['Cell']
-        c.select = False
-        
-        # Select just the top faces (normals up)
-        mesh = c.data
-
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        for p in mesh.polygons:
-          n = p.normal
-          if (n.z > n.x) and (n.z > n.y):
-            # This appears to be a triangle in the top face
-            print ( "Normal Up = " + str (n) )
-            p.select = True
-          else:
-            print ( "Normal Down = " + str (n) )
-            p.select = False
-
-        bpy.ops.object.mode_set(mode='EDIT')
-        
-        # Add a new region
-        
-        bpy.ops.mcell.region_add()
-        bpy.data.objects['Cell'].mcell.regions.region_list[0].name = 'top'
-        
-        # Assign the currently selected faces to this region
-        bpy.ops.mcell.region_faces_assign()
-
-        # Restore the selection settings
-        context.scene.tool_settings.mesh_select_mode = msm
-        bpy.ops.object.mode_set(mode='OBJECT')
-
+        cb_model.add_surface_region_to_model_by_normal ( "Cell", "top", 0, 0, 1, 0.8 )
 
         mola = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
         mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-6" )
@@ -650,7 +655,58 @@ class CubeSurfaceTestOp(bpy.types.Operator):
 
         cb_model.refresh_molecules()
         
-        scn.frame_current = 450
+        scn.frame_current = 1
+
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mols, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molb, glyph='Cube', scale=6.0, red=1.0, green=1.0, blue=1.0 )
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.25 )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+class SphereSurfaceTestOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.sphere_surf_test"
+    bl_label = "Sphere Surface Test"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        cb_model.add_icosphere_to_model ( name="Cell", draw_type="WIRE" )
+        cb_model.add_surface_region_to_model_by_normal ( "Cell", "top", 0, 0, 1, 0.8 )
+
+        mola = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+        mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-6" )
+        molb = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-6" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
+        cb_model.add_molecule_release_site_to_model ( mol="s", shape="OBJECT", obj_expr="Cell[top]", orient="'", q_expr="1000" )
+        #### Add a single b molecule so the display values can be set ... otherwise they're not applied properly
+        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="1", shape="SPHERICAL", d="0", z="1.001" )
+
+
+        cb_model.add_reaction_to_model ( rin="a' + s,", rtype="irreversible", rout="b, + s,", fwd_rate="1e8", bkwd_rate="" )
+
+
+        cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=5.0 )
+
+        cb_model.refresh_molecules()
+        
+        scn.frame_current = 1
 
         cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
         cb_model.change_molecule_display ( mols, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
@@ -847,9 +903,6 @@ class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
 
 
 
-
-
-
 class OrganelleTestOp(bpy.types.Operator):
     bl_idname = "cellblender_test.organelle_test"
     bl_label = "Organelle Test"
@@ -867,103 +920,21 @@ class OrganelleTestOp(bpy.types.Operator):
 
 
         # Set some shared parameters
-        subdiv = 4
+        subdiv = 3
 
 
         # Create Organelle 1
 
         # Create the object and add it to the CellBlender model
-        cb_model.add_icosphere_to_model ( name="Organelle_1", draw_type="WIRE", size=0.3, y=-0.25, subdiv=subdiv )
-
-        # Start in Object mode for selecting
-        bpy.ops.object.mode_set ( mode="OBJECT" )
-
-        # Face Select Mode:
-        msm = context.scene.tool_settings.mesh_select_mode[0:3]
-        context.scene.tool_settings.mesh_select_mode = (False, False, True)
-
-        # Deselect everything
-        bpy.ops.object.select_all ( action='DESELECT')
-        c = bpy.data.objects['Organelle_1']
-        c.select = False
-
-        # Select just the top faces (normals up)
-        mesh = c.data
-
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        for p in mesh.polygons:
-          n = p.normal
-          if (n.z > (1.5*abs(n.x))) and (n.z > (1.5*abs(n.y))):
-            # This appears to be a triangle on the "top" of the object
-            print ( "Normal Up = " + str (n) )
-            p.select = True
-          else:
-            print ( "Normal Down = " + str (n) )
-            p.select = False
-
-        bpy.ops.object.mode_set(mode='EDIT')
-
-        # Add the new region
-
-        bpy.ops.mcell.region_add()
-        bpy.data.objects['Organelle_1'].mcell.regions.region_list[0].name = 'top'
-
-        # Assign the currently selected faces to this region
-        bpy.ops.mcell.region_faces_assign()
-
-        # Restore the selection settings
-        context.scene.tool_settings.mesh_select_mode = msm
-        bpy.ops.object.mode_set(mode='OBJECT')
-
+        cb_model.add_icosphere_to_model ( name="Organelle_1", draw_type="WIRE", size=0.3, y=-0.25, subdiv=subdiv+1 )
+        cb_model.add_surface_region_to_model_by_normal ( "Organelle_1", "top", 0, 1, 0, 0.92 )
 
 
         # Create Organelle 2
 
         # Create the object and add it to the CellBlender model
-        cb_model.add_icosphere_to_model ( name="Organelle_2", draw_type="WIRE", size=0.2, y=0.31, subdiv=subdiv )
-
-        # Start in Object mode for selecting
-        bpy.ops.object.mode_set ( mode="OBJECT" )
-
-        # Face Select Mode:
-        msm = context.scene.tool_settings.mesh_select_mode[0:3]
-        context.scene.tool_settings.mesh_select_mode = (False, False, True)
-
-        # Deselect everything
-        bpy.ops.object.select_all ( action='DESELECT')
-        c = bpy.data.objects['Organelle_2']
-        c.select = False
-
-        # Select just the top faces (normals up)
-        mesh = c.data
-
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        for p in mesh.polygons:
-          n = p.normal
-          if (n.z > (1.5*abs(n.x))) and (n.z > (1.5*abs(n.y))):
-            # This appears to be a triangle on the "top" of the object
-            print ( "Normal Up = " + str (n) )
-            p.select = True
-          else:
-            print ( "Normal Down = " + str (n) )
-            p.select = False
-
-        bpy.ops.object.mode_set(mode='EDIT')
-
-        # Add the new region
-
-        bpy.ops.mcell.region_add()
-        bpy.data.objects['Organelle_2'].mcell.regions.region_list[0].name = 'top'
-
-        # Assign the currently selected faces to this region
-        bpy.ops.mcell.region_faces_assign()
-
-        # Restore the selection settings
-        context.scene.tool_settings.mesh_select_mode = msm
-        bpy.ops.object.mode_set(mode='OBJECT')
-
+        cb_model.add_icosphere_to_model ( name="Organelle_2", draw_type="WIRE", size=0.2, y=0.31, subdiv=subdiv+1 )
+        cb_model.add_surface_region_to_model_by_normal ( "Organelle_2", "top", 0, -1, 0, 0.8 )
 
 
         # Create Cell itself
@@ -998,37 +969,21 @@ class OrganelleTestOp(bpy.types.Operator):
         cb_model.add_reaction_to_model ( rin="c, + t1'", rtype="irreversible", rout="c' + t1'", fwd_rate="3e8", bkwd_rate="" )
 
 
-        """
-        bpy.ops.mcell.rxn_output_add()
-        mcell.rxn_output.rxn_output_list[0].molecule_name = 'a'
-
-        bpy.ops.mcell.rxn_output_add()
-        mcell.rxn_output.rxn_output_list[1].molecule_name = 'b'
-
-        bpy.ops.mcell.rxn_output_add()
-        mcell.rxn_output.rxn_output_list[2].molecule_name = 'c'
-
-        bpy.ops.mcell.rxn_output_add()
-        mcell.rxn_output.rxn_output_list[3].molecule_name = 'd'
-        """
-
         cb_model.add_reaction_output_to_model ( 'a' )
         cb_model.add_reaction_output_to_model ( 'b' )
         cb_model.add_reaction_output_to_model ( 'c' )
         cb_model.add_reaction_output_to_model ( 'd' )
-        cb_model.add_reaction_output_to_model ( 't1' )
-        cb_model.add_reaction_output_to_model ( 't2' )
+        #cb_model.add_reaction_output_to_model ( 't1' )
+        #cb_model.add_reaction_output_to_model ( 't2' )
         mcell.rxn_output.plot_layout = ' '
         mcell.rxn_output.mol_colors = True
-
 
 
         mcell.partitions.include = True
         bpy.ops.mcell.auto_generate_boundaries()
 
 
-
-        cb_model.run_model ( iterations='2000', time_step='1e-6', wait_time=4.0 )
+        cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=4.0 )
 
         cb_model.refresh_molecules()
 
