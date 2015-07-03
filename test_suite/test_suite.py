@@ -26,13 +26,21 @@ bl_info = {
 #  Support Code  #
 ##################
 
+import sys
 import os
+import hashlib
 import bpy
 from bpy.props import *
 
 class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
     path_to_mcell = bpy.props.StringProperty(name="PathToMCell", default="")
     path_to_blend = bpy.props.StringProperty(name="PathToBlend", default="")
+    run_mcell = bpy.props.BoolProperty(name="RunMCell", default=False)
+    
+    show_sim_runner = bpy.props.BoolProperty(name="ShowSimRunner", default=False)
+    show_non_geom = bpy.props.BoolProperty(name="ShowNonGeom", default=False)
+    show_simple_geom = bpy.props.BoolProperty(name="ShowSimpleGeom", default=False)
+    show_complete_model = bpy.props.BoolProperty(name="ShowCompleteModel", default=False)
 
 class CellBlenderTestSuitePanel(bpy.types.Panel):
     bl_label = "CellBlender Test Suite"
@@ -41,6 +49,8 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
     bl_context = "scene"
     def draw(self, context):
         app = context.scene.cellblender_test_suite
+
+
         row = self.layout.row()
         row.prop(app, "path_to_mcell")
         row = self.layout.row()
@@ -48,31 +58,79 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
 
         row = self.layout.row()
         row.operator ( "cellblender_test.new_file" )
+        row.prop(app, "run_mcell")
 
-        row = self.layout.row()
-        row.operator ( "cellblender_test.single_mol" )
-        row = self.layout.row()
-        row.operator ( "cellblender_test.double_sphere" )
-        row = self.layout.row()
-        row.operator ( "cellblender_test.reaction" )
-        row = self.layout.row()
-        row.operator ( "cellblender_test.release_shape" )
-        row = self.layout.row()
-        row.operator ( "cellblender_test.cube_test" )
-        row = self.layout.row()
-        row.operator ( "cellblender_test.cube_surf_test" )
-        row = self.layout.row()
-        row.operator ( "cellblender_test.sphere_surf_test" )
-        row = self.layout.row()
-        row.operator ( "cellblender_test.overlapping_surf_test" )
-        row = self.layout.row()
-        row.operator ( "cellblender_test.rel_time_patterns_test" )
-        row = self.layout.row()
-        row.operator ( "cellblender_test.lotka_volterra_torus_test_diff_lim" )
-        row = self.layout.row()
-        row.operator ( "cellblender_test.lotka_volterra_torus_test_phys" )
-        row = self.layout.row()
-        row.operator ( "cellblender_test.organelle_test" )
+
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.alignment = 'LEFT'
+
+        if not app.show_sim_runner:
+            row.prop(app, "show_sim_runner", icon='TRIA_RIGHT', text="Sim Runner Tests", emboss=False)
+        else:
+            row.prop(app, "show_sim_runner", icon='TRIA_DOWN', text="Sim Runner Tests", emboss=False)
+
+            row = box.row()
+            row.operator ( "cellblender_test.sim_runner_command" )
+            row = box.row()
+            row.operator ( "cellblender_test.sim_runner_queue" )
+            row = box.row()
+            row.operator ( "cellblender_test.sim_runner_java" )
+            row = box.row()
+            row.operator ( "cellblender_test.sim_runner_opengl" )
+
+
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.alignment = 'LEFT'
+
+        if not app.show_non_geom:
+            row.prop(app, "show_non_geom", icon='TRIA_RIGHT', text="Non-Geometry Tests", emboss=False)
+        else:
+            row.prop(app, "show_non_geom", icon='TRIA_DOWN', text="Non-Geometry Tests", emboss=False)
+            row = box.row()
+            row.operator ( "cellblender_test.single_mol" )
+            row = box.row()
+            row.operator ( "cellblender_test.double_sphere" )
+            row = box.row()
+            row.operator ( "cellblender_test.reaction" )
+            row = box.row()
+            row.operator ( "cellblender_test.release_shape" )
+            row = box.row()
+            row.operator ( "cellblender_test.rel_time_patterns_test" )
+
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.alignment = 'LEFT'
+
+        if not app.show_simple_geom:
+            row.prop(app, "show_simple_geom", icon='TRIA_RIGHT', text="Simple Geometry Tests", emboss=False)
+        else:
+            row.prop(app, "show_simple_geom", icon='TRIA_DOWN', text="Simple Geometry Tests", emboss=False)
+            row = box.row()
+            row.operator ( "cellblender_test.cube_test" )
+            row = box.row()
+            row.operator ( "cellblender_test.cube_surf_test" )
+            row = box.row()
+            row.operator ( "cellblender_test.sphere_surf_test" )
+            row = box.row()
+            row.operator ( "cellblender_test.overlapping_surf_test" )
+
+
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.alignment = 'LEFT'
+
+        if not app.show_complete_model:
+            row.prop(app, "show_complete_model", icon='TRIA_RIGHT', text="Complete Model Tests", emboss=False)
+        else:
+            row.prop(app, "show_complete_model", icon='TRIA_DOWN', text="Complete Model Tests", emboss=False)
+            row = box.row()
+            row.operator ( "cellblender_test.organelle_test" )
+            row = box.row()
+            row.operator ( "cellblender_test.lotka_volterra_torus_test_diff_lim" )
+            row = box.row()
+            row.operator ( "cellblender_test.lotka_volterra_torus_test_phys" )
 
 
 
@@ -97,6 +155,7 @@ class CellBlender_Model:
     context = None
     scn = None
     mcell = None
+    path_to_blend = None
     
     def __init__(self, cb_context):
         # bpy.ops.wm.read_homefile()
@@ -128,9 +187,11 @@ class CellBlender_Model:
         wm = context.window_manager
 
         if len(app.path_to_blend) > 0:
-            bpy.ops.wm.save_as_mainfile(filepath=app.path_to_blend, check_existing=False)
+            self.path_to_blend = app.path_to_blend
         else:
-            bpy.ops.wm.save_as_mainfile(filepath=os.getcwd() + "/Test.blend", check_existing=False)
+            self.path_to_blend = os.getcwd() + "/Test.blend"
+
+        bpy.ops.wm.save_as_mainfile(filepath=self.path_to_blend, check_existing=False)
 
 
     def get_scene(self):
@@ -361,29 +422,68 @@ class CellBlender_Model:
         self.mcell.initialization.iterations.set_expr(iterations)
         self.mcell.initialization.time_step.set_expr(time_step)
         self.mcell.export_project.export_format = export_format
-        bpy.ops.mcell.run_simulation()
-        self.wait ( wait_time )
+
+        app = bpy.context.scene.cellblender_test_suite
+        if app.run_mcell:
+            bpy.ops.mcell.run_simulation()
+            self.wait ( wait_time )
+        else:
+            bpy.ops.mcell.export_project()
 
 
     def refresh_molecules ( self ):
         """ Refresh the display """
-        bpy.ops.cbm.refresh_operator()
+        app = bpy.context.scene.cellblender_test_suite
+        if app.run_mcell:
+            bpy.ops.cbm.refresh_operator()
 
 
     def change_molecule_display ( self, mol, glyph="Cube", scale=1.0, red=-1, green=-1, blue=-1 ):
-        if mol.name == "Molecule":
-            print ("Name isn't correct")
-            return
-        print ( "Changing Display for Molecule \"" + mol.name + "\" to R="+str(red)+",G="+str(green)+",B="+str(blue) )
-        self.mcell.cellblender_main_panel.molecule_select = True
-        self.mcell.molecules.show_display = True
-        mol.glyph = glyph
-        mol.scale = scale
-        if red >= 0: mol.color.r = red
-        if green >= 0: mol.color.g = green
-        if blue >= 0: mol.color.b = blue
+        app = bpy.context.scene.cellblender_test_suite
+        if app.run_mcell:
+            if mol.name == "Molecule":
+                print ("Name isn't correct")
+                return
+            print ( "Changing Display for Molecule \"" + mol.name + "\" to R="+str(red)+",G="+str(green)+",B="+str(blue) )
+            self.mcell.cellblender_main_panel.molecule_select = True
+            self.mcell.molecules.show_display = True
+            mol.glyph = glyph
+            mol.scale = scale
+            if red >= 0: mol.color.r = red
+            if green >= 0: mol.color.g = green
+            if blue >= 0: mol.color.b = blue
 
-        print ( "Done Changing Display for Molecule \"" + mol.name + "\"" )
+            print ( "Done Changing Display for Molecule \"" + mol.name + "\"" )
+
+
+    def compare_mdl_with_sha1 ( self, good_hash ):
+        """ Compute the sha1 for file_name and compare with sha1 """
+        app = bpy.context.scene.cellblender_test_suite
+        file_name = self.path_to_blend[:self.path_to_blend.rfind('.')] + "_files/mcell/Scene.main.mdl"
+
+        hashobject = hashlib.sha1()
+        if os.path.isfile(file_name):
+            hashobject.update(open(file_name, 'rb').read())  # .encode("utf-8"))
+            file_hash = str(hashobject.hexdigest())
+            print("  SHA1 = " + file_hash + " for " + file_name )
+            if file_hash == good_hash:
+                print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+                print ( "%%  O K :  Test Expected " + good_hash + ", and got " + file_hash )
+                print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            else:
+                print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+                print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+                print ( "%%  E R R O R :  Test Expected " + good_hash + ", but got " + file_hash )
+                print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+                print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+                bpy.ops.wm.quit_blender() 
+        else:
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "%%  E R R O R :  File '%s' does not exist" % file_name )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            bpy.ops.wm.quit_blender()
 
 
     def scale_view_distance ( self, scale ):
@@ -398,7 +498,10 @@ class CellBlender_Model:
 
     def play_animation ( self ):
         """ Play the animation """
-        bpy.ops.screen.animation_play()
+        app = bpy.context.scene.cellblender_test_suite
+        if app.run_mcell:
+            bpy.ops.screen.animation_play()
+
 
 
 
@@ -406,6 +509,89 @@ class CellBlender_Model:
 ######################
 #  Individual Tests  #
 ######################
+
+def SimRunnerExample ( context, method="COMMAND" ):
+
+    cb_model = CellBlender_Model ( context )
+
+    scn = cb_model.get_scene()
+    mcell = cb_model.get_mcell()
+    mcell.run_simulation.simulation_run_control = method
+
+    mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+
+    cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="200" )
+
+    cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
+
+    cb_model.compare_mdl_with_sha1 ( "a3409b4891f9d5a9be8010afb3923f0a14d5ec4a" )
+
+    cb_model.refresh_molecules()
+
+    cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
+
+    cb_model.set_view_back()
+
+    cb_model.scale_view_distance ( 0.1 )
+
+    cb_model.play_animation()
+
+
+class SimRunnerCommandTestOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.sim_runner_command"
+    bl_label = "Simulation Runner Command Test"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+        SimRunnerExample ( context, method="COMMAND" )
+        return { 'FINISHED' }
+
+
+class SimRunnerQueueTestOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.sim_runner_queue"
+    bl_label = "Simulation Runner Queue Test"
+
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+        SimRunnerExample ( context, method="QUEUE" )
+        return { 'FINISHED' }
+
+
+class SimRunnerJavaTestOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.sim_runner_java"
+    bl_label = "Simulation Runner Java Test"
+
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+        SimRunnerExample ( context, method="JAVA" )
+        return { 'FINISHED' }
+
+
+class SimRunnerOpenGLTestOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.sim_runner_opengl"
+    bl_label = "Simulation Runner Open GL Test"
+
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+        SimRunnerExample ( context, method="OPENGL" )
+        return { 'FINISHED' }
+
+
 
 
 class SingleMoleculeTestOp(bpy.types.Operator):
@@ -428,6 +614,8 @@ class SingleMoleculeTestOp(bpy.types.Operator):
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="1" )
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
+        
+        cb_model.compare_mdl_with_sha1 ( "19fd01beddf82da6026810b52d6955638674f556" )
 
         cb_model.refresh_molecules()
 
@@ -465,6 +653,8 @@ class DoubleSphereTestOp(bpy.types.Operator):
         cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="400", d="0.5", y="0.25" )
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "4410b18c1530f79c07cc2aebec52a7eabc4aded4" )
 
         cb_model.refresh_molecules()
 
@@ -509,6 +699,8 @@ class ReactionTestOp(bpy.types.Operator):
         cb_model.add_reaction_to_model ( rin="a + b", rtype="irreversible", rout="bg", fwd_rate="1e8", bkwd_rate="" )
 
         cb_model.run_model ( iterations='2000', time_step='1e-6', wait_time=5.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "e302a61ecda563a02e8d65ef17c648ff088745d2" )
 
         cb_model.refresh_molecules()
 
@@ -566,6 +758,8 @@ class ReleaseShapeTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
 
+        cb_model.compare_mdl_with_sha1 ( "c622d3e5c9eaf20911b95ae006eb197401d0e982" )
+
         cb_model.refresh_molecules()
 
         mol_scale = 2.5
@@ -607,6 +801,8 @@ class CubeTestOp(bpy.types.Operator):
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "c32241a2f97ace100f1af7a711a6a970c6b9a135" )
 
         cb_model.refresh_molecules()
 
@@ -654,6 +850,8 @@ class CubeSurfaceTestOp(bpy.types.Operator):
 
 
         cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=5.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "32312790f206beaa798ce0a7218f1f712840b0d5" )
 
         cb_model.refresh_molecules()
         
@@ -705,6 +903,8 @@ class SphereSurfaceTestOp(bpy.types.Operator):
 
 
         cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=5.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "90ef79fc7405aff0bbf9a6f6864f11b148c622a4" )
 
         cb_model.refresh_molecules()
         
@@ -763,6 +963,8 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
 
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=3.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "3f0d87d4f5e1ab1ecedde6c0d48fa3d2dc89ab93" )
 
         cb_model.refresh_molecules()
 
@@ -844,6 +1046,8 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1500', time_step=dt, wait_time=5.0 )
 
+        cb_model.compare_mdl_with_sha1 ( "ec68e0720b43755c4f193d65ebaaa55eb2c2cfae" )
+
         cb_model.refresh_molecules()
 
         mol_scale = 1.0
@@ -862,7 +1066,7 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
 
 
 
-def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_rate, interaction_radius, time_step, iterations, wait_time ):
+def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_rate, interaction_radius, time_step, iterations, mdl_hash, wait_time ):
 
     cb_model = CellBlender_Model ( context )
 
@@ -917,6 +1121,8 @@ def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_ra
     # mcell.run_simulation.simulation_run_control = 'JAVA'
     cb_model.run_model ( iterations=iterations, time_step=time_step, wait_time=wait_time )
 
+    cb_model.compare_mdl_with_sha1 ( mdl_hash )
+
     cb_model.refresh_molecules()
 
     scn.frame_current = 10
@@ -943,7 +1149,7 @@ class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
 
     def execute(self, context):
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", wait_time=10.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="be2169e601b5148c9d2da24143aae99367bf7f39", wait_time=10.0 )
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -959,7 +1165,7 @@ class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
 
     def execute(self, context):
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", wait_time=50.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="bd1033a5ec4f6c51c017da4640d5bce7df5cdbd8", wait_time=50.0 )
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -1047,6 +1253,8 @@ class OrganelleTestOp(bpy.types.Operator):
 
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=4.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "8f0782e3d8b8deda85cc2275b6168f02d7d9c117" )
 
         cb_model.refresh_molecules()
 
