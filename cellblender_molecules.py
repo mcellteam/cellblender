@@ -49,20 +49,21 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 
+"""
 # Generic helper functions that should go somewhere else!!!
 
 def get_path_to_parent(self_object):
-    """ Return the Blender class path to the parent object with regard to the Blender Property Tree System """
+    # Return the Blender class path to the parent object with regard to the Blender Property Tree System
     path_to_self = "bpy.context.scene." + self_object.path_from_id()
     path_to_parent = path_to_self[0:path_to_self.rfind(".")]
     return path_to_parent
 
 def get_parent(self_object):
-    """ Return the parent Blender object with regard to the Blender Property Tree System """
+    # Return the parent Blender object with regard to the Blender Property Tree System
     path_to_parent = get_path_to_parent(self_object)
     parent = eval(path_to_parent)
     return parent
-
+"""
 
 
 # Molecule Operators:
