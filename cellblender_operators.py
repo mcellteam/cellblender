@@ -2231,14 +2231,15 @@ def set_viz_boundaries( context ):
         bpy.context.scene.frame_end = len(global_mol_file_list)-1
 
         for area in bpy.context.screen.areas:
-            if area.type == 'TIMELINE':
-                for region in area.regions:
-                    if region.type == 'WINDOW':
-                        ctx = bpy.context.copy()
-                        ctx['area'] = area
-                        ctx['region'] = region
-                        bpy.ops.time.view_all(ctx)
-                        break  # It's not clear if this should break or continue ... breaking for now
+            if area != None:
+                if area.type == 'TIMELINE':
+                    for region in area.regions:
+                        if region.type == 'WINDOW':
+                            ctx = bpy.context.copy()
+                            ctx['area'] = area
+                            ctx['region'] = region
+                            bpy.ops.time.view_all(ctx)
+                            break  # It's not clear if this should break or continue ... breaking for now
 
 
 class MCELL_OT_select_viz_data(bpy.types.Operator):
