@@ -1,16 +1,20 @@
 relative_path_to_mcell = "/../mcell_git/src/linux/mcell"
-install_to = "2.74"
+
+"""
+# This section of code was used (from the command line) to copy this addon to the Blender addons area. Now the makefile performs that task.
+install_to = "2.75"
 
 
-# From within Blender: import cellblender.test_suite.test_suite
+# From within Blender: import cellblender.test_suite.cellblender_test_suite
 if __name__ == "__main__":
-  # Simple method to "install" a new version with "python test_suite/test_suite.py" assuming "test_suite" directory exists in target location.
+  # Simple method to "install" a new version with "python test_suite/cellblender_test_suite.py" assuming "test_suite" directory exists in target location.
   import os
   print ( "MAIN with __file__ = " + __file__ )
   print ( " Installing into Blender " + install_to )
-  os.system ( "cp ./" + __file__ + " ~/.config/blender/" + install_to + "/scripts/addons/cellblender/" + __file__ )
+  os.system ( "cp ./" + __file__ + " ~/.config/blender/" + install_to + "/scripts/addons/" + __file__ )
   print ( "Copied files" )
   exit(0)
+"""
 
 
 bl_info = {
@@ -136,7 +140,7 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
 
 class NewFileOp(bpy.types.Operator):
     bl_idname = "cellblender_test.new_file"
-    bl_label = "Reset"
+    bl_label = "Reset to startup.blend via read_homefile()"
 
     def invoke(self, context, event):
         self.execute ( context )
