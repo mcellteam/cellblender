@@ -97,6 +97,8 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
             row = box.row()
             row.operator ( "cellblender_test.double_sphere" )
             row = box.row()
+            row.operator ( "cellblender_test.vol_diffusion_const" )
+            row = box.row()
             row.operator ( "cellblender_test.reaction" )
             row = box.row()
             row.operator ( "cellblender_test.release_shape" )
@@ -664,6 +666,51 @@ class DoubleSphereTestOp(bpy.types.Operator):
 
         cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
         cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=2.0, red=0.0, green=1.0, blue=0.0 )
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.1 )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+class VolDiffusionConstTestOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.vol_diffusion_const"
+    bl_label = "Volume Diffusion Constant Test"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+        mol_b = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-7" )
+        mol_c = cb_model.add_molecule_species_to_model ( name="c", diff_const_expr="1e-8" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="100", d="0.01", y="-0.25" )
+        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="100", d="0.01", y= "0.0" )
+        cb_model.add_molecule_release_site_to_model ( mol="c", q_expr="100", d="0.01", y= "0.25" )
+
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "59b7e9f0f672791101d6a0061af362688e8caa42" )
+
+        cb_model.refresh_molecules()
+
+        bpy.ops.view3d.viewnumpad(type='FRONT')
+
+        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=2.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_c, glyph='Cube', scale=2.0, red=0.1, green=0.1, blue=1.0 )
 
         cb_model.set_view_back()
 
