@@ -40,6 +40,7 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
     path_to_mcell = bpy.props.StringProperty(name="PathToMCell", default="")
     path_to_blend = bpy.props.StringProperty(name="PathToBlend", default="")
     run_mcell = bpy.props.BoolProperty(name="RunMCell", default=False)
+    test_status = bpy.props.StringProperty(name="TestStatus", default="?")
     
     show_sim_runner = bpy.props.BoolProperty(name="ShowSimRunner", default=False)
     show_non_geom = bpy.props.BoolProperty(name="ShowNonGeom", default=False)
@@ -61,13 +62,22 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
         row.prop(app, "path_to_blend")
 
         row = self.layout.row()
-        row.operator ( "cellblender_test.new_file" )
-        row.prop(app, "run_mcell")
+        row.operator ( "cellblender_test.load_home_file" )
+        row.operator ( "cellblender_test.save_home_file" )
 
+        row = self.layout.row()
+        if app.test_status == "?":
+          row.label( icon='QUESTION',  text="?" )
+        elif app.test_status == "P":
+          row.label( icon='FILE_TICK', text="Pass" )
+        elif app.test_status == "F":
+          row.label( icon='ERROR',     text="Fail" )
+        row.prop(app, "run_mcell")
 
         box = self.layout.box()
         row = box.row(align=True)
         row.alignment = 'LEFT'
+
 
         if not app.show_sim_runner:
             row.prop(app, "show_sim_runner", icon='TRIA_RIGHT', text="Sim Runner Tests", emboss=False)
@@ -140,16 +150,31 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
 
 
 
-class NewFileOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.new_file"
-    bl_label = "Reset to startup.blend via read_homefile()"
+class LoadHomeOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.load_home_file"
+    bl_label = "Load Startup"
 
     def invoke(self, context, event):
         self.execute ( context )
         return {'FINISHED'}
 
     def execute(self, context):
+        context.scene.cellblender_test_suite.test_status == "?"
         bpy.ops.wm.read_homefile()
+        return { 'FINISHED' }
+
+
+class SaveHomeOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.save_home_file"
+    bl_label = "Save Startup"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+        context.scene.cellblender_test_suite.test_status == "?"
+        bpy.ops.wm.save_homefile()
         return { 'FINISHED' }
 
 
@@ -168,12 +193,33 @@ class CellBlender_Model:
         self.old_type = None
         self.context = cb_context
         self.setup_cb_defaults ( self.context )
+        self.context.scene.cellblender_test_suite.test_status == "?"
         
     def get_scene(self):
         return self.scn
         
     def get_mcell(self):
         return self.mcell
+
+
+    """
+    def get_3d_view_areas(self):
+        areas_3d = []
+        for area in self.context.screen.areas:
+            if area.type == 'VIEW_3D':
+                areas_3d = areas_3d + [area]
+                # area.spaces.active.show_manipulator = False
+        return areas_3d
+    """
+
+    def get_3d_view_spaces(self):
+        spaces_3d = []
+        for area in self.context.screen.areas:
+            for space in area.spaces:
+                if space.type == 'VIEW_3D':
+                    spaces_3d = spaces_3d + [space]
+                    # area.spaces.active.show_manipulator = False
+        return spaces_3d
 
 
     def set_view_3d(self):
@@ -476,12 +522,15 @@ class CellBlender_Model:
                 print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                 print ( "%%  O K :  Test Expected " + good_hash + ", and got " + file_hash )
                 print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+                app.test_status = "P"
+
             else:
                 print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                 print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                 print ( "%%  E R R O R :  Test Expected " + good_hash + ", but got " + file_hash )
                 print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                 print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+                app.test_status = "F"
                 bpy.ops.wm.quit_blender() 
         else:
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
@@ -489,24 +538,36 @@ class CellBlender_Model:
             print ( "%%  E R R O R :  File '%s' does not exist" % file_name )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+            app.test_status = "F"
             bpy.ops.wm.quit_blender()
 
 
     def scale_view_distance ( self, scale ):
         """ Change the view distance for all 3D_VIEW windows """
-        for area in bpy.context.screen.areas:
-          if area.spaces[0].type == 'VIEW_3D':
-            area.spaces[0].region_3d.view_distance *= scale
-
+        spaces = self.get_3d_view_spaces()
+        for space in spaces:
+            space.region_3d.view_distance *= scale
         #bpy.ops.view3d.zoom(delta=3)
         #set_view_3d()
 
+    def switch_to_perspective ( self ):
+        """ Change to perspective for all 3D_VIEW windows """
+        spaces = self.get_3d_view_spaces()
+        for space in spaces:
+            space.region_3d.view_perspective = 'PERSP'
+
+    def switch_to_orthographic ( self ):
+        """ Change to orthographic for all 3D_VIEW windows """
+        spaces = self.get_3d_view_spaces()
+        for space in spaces:
+            space.region_3d.view_perspective = 'ORTHO'
 
     def play_animation ( self ):
         """ Play the animation """
         app = bpy.context.scene.cellblender_test_suite
         if app.run_mcell:
             bpy.ops.screen.animation_play()
+
 
 
 
@@ -706,8 +767,6 @@ class VolDiffusionConstTestOp(bpy.types.Operator):
 
         cb_model.refresh_molecules()
 
-        bpy.ops.view3d.viewnumpad(type='FRONT')
-
         cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
         cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=2.0, red=0.0, green=1.0, blue=0.0 )
         cb_model.change_molecule_display ( mol_c, glyph='Cube', scale=2.0, red=0.1, green=0.1, blue=1.0 )
@@ -715,6 +774,7 @@ class VolDiffusionConstTestOp(bpy.types.Operator):
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.1 )
+        cb_model.switch_to_orthographic()
 
         cb_model.play_animation()
 
@@ -1200,7 +1260,7 @@ class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
 
     def execute(self, context):
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="be2169e601b5148c9d2da24143aae99367bf7f39", wait_time=10.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="be2169e601b5148c9d2da24143aae99367bf7f39", wait_time=5.0 )
         cb_model.play_animation()
 
         return { 'FINISHED' }
