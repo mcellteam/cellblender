@@ -34,6 +34,7 @@ import sys
 import os
 import hashlib
 import bpy
+import math
 from bpy.props import *
 
 class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
@@ -131,6 +132,8 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
             row.operator ( "cellblender_test.sphere_surf_test" )
             row = box.row()
             row.operator ( "cellblender_test.overlapping_surf_test" )
+            row = box.row()
+            row.operator ( "cellblender_test.surface_classes_test" )
 
 
         box = self.layout.box()
@@ -302,10 +305,10 @@ class CellBlender_Model:
         self.scn = scn
         self.mcell = mcell
 
-    def add_cube_to_model ( self, name="Cell", draw_type="WIRE" ):
+    def add_cube_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, size=1 ):
         """ draw_type is one of: WIRE, TEXTURED, SOLID, BOUNDS """
         print ( "Adding " + name )
-        bpy.ops.mesh.primitive_cube_add()
+        bpy.ops.mesh.primitive_cube_add ( location=(x,y,z), radius=size)
         self.scn.objects.active.name = name
         bpy.data.objects[name].draw_type = draw_type
 
@@ -328,6 +331,17 @@ class CellBlender_Model:
         self.mcell.cellblender_main_panel.objects_select = True
         bpy.ops.mcell.model_objects_add()
         print ( "Done Adding " + name )
+
+    def add_label_to_model ( self, name="Label", text="Text", x=0, y=0, z=0, size=1, rx=0, ry=0, rz=0 ):
+        print ( "Adding " + text )
+
+        bpy.ops.object.text_add ( location=(x,y,z), rotation=(rx,ry,rz), radius=size )
+        tobj = bpy.context.active_object
+        tobj.data.body = text
+
+        print ( "Done Adding " + text )
+
+
 
 
     def add_molecule_species_to_model ( self, name="A", mol_type="3D", diff_const_expr="0.0" ):
@@ -414,7 +428,46 @@ class CellBlender_Model:
         return self.mcell.rxn_output.rxn_output_list[rxn_index]
 
 
-    def add_surface_region_to_model_by_normal ( self, obj_name, surf_name, nx, ny, nz, min_dot_prod ):
+    def add_surface_class_to_model ( self, surf_class_name ):
+        """ Add a surface class """
+        print ( "Adding Surface class  " + surf_class_name )
+        self.mcell.cellblender_main_panel.surf_classes_select = True
+        bpy.ops.mcell.surface_class_add()
+        surf_index = self.mcell.surface_classes.active_surf_class_index
+        self.mcell.surface_classes.surf_class_list[surf_index].name = surf_class_name
+        print ( "Done Adding Surface Class " + surf_class_name )
+        return self.mcell.surface_classes.surf_class_list[surf_index]
+
+
+    def add_property_to_surface_class ( self, mol_name, sc_orient=";", sc_type="REFLECTIVE", sc_clamp_val_str='' ):
+        """ Add a property to a surface class """
+        print ( "Adding Surface class property " + sc_orient + " " + sc_type + " " + sc_clamp_val_str )
+        self.mcell.cellblender_main_panel.surf_classes_select = True
+        bpy.ops.mcell.surf_class_props_add()
+        surf_index = self.mcell.surface_classes.active_surf_class_index
+        prop_index = self.mcell.surface_classes.surf_class_list[surf_index].active_surf_class_props_index
+        self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].molecule = mol_name
+        self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].surf_class_orient = sc_orient
+        self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].surf_class_type = sc_type
+        self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].clamp_value_str = sc_clamp_val_str
+        print ( "Done Adding Surface Class Property " + sc_orient + " " + sc_type + " " + sc_clamp_val_str )
+        return self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index]
+
+
+    def assign_surface_class_to_region ( self, surf_class_name, obj_name, reg_name="" ):
+        """ Assigning a surface class to a Region """
+        print ( "Assigning a surface class to Region " + surf_class_name )
+        self.mcell.cellblender_main_panel.surf_regions_select = True
+        bpy.ops.mcell.mod_surf_regions_add()
+        surf_index = self.mcell.mod_surf_regions.active_mod_surf_regions_index
+        self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].surf_class_name = surf_class_name
+        self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].object_name = obj_name
+        self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].region_name = reg_name
+        print ( "Done Adding Surface Class to Region " + surf_class_name )
+        return self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index]
+
+
+    def add_surface_region_to_model_by_normal ( self, obj_name, surf_name, nx=0, ny=0, nz=0, min_dot_prod=0.5 ):
 
         print ("Selected Object = " + str(self.context.object) )
         # bpy.ops.object.mode_set ( mode="EDIT" )
@@ -435,17 +488,21 @@ class CellBlender_Model:
         mesh = c.data
 
         bpy.ops.object.mode_set(mode='OBJECT')
-
+        
         for p in mesh.polygons:
-          n = p.normal
-          dp = (n.x * nx) + (n.y * ny) + (n.z * nz)
-          if dp > min_dot_prod:
-            # This appears to be a triangle in the top face
-            #print ( "Normal " + str (n) + " matches with " + str(dp) )
+          if (nx == 0) and (ny == 0) and (nz == 0):
+            # No normal means add all surfaces
             p.select = True
           else:
-            #print ( "Normal " + str (n) + " differs with " + str(dp) )
-            p.select = False
+            n = p.normal
+            dp = (n.x * nx) + (n.y * ny) + (n.z * nz)
+            if dp > min_dot_prod:
+              # This appears to be a triangle in the top face
+              #print ( "Normal " + str (n) + " matches with " + str(dp) )
+              p.select = True
+            else:
+              #print ( "Normal " + str (n) + " differs with " + str(dp) )
+              p.select = False
 
         bpy.ops.object.mode_set(mode='EDIT')
 
@@ -460,6 +517,10 @@ class CellBlender_Model:
         # Restore the selection settings
         self.context.scene.tool_settings.mesh_select_mode = msm
         bpy.ops.object.mode_set(mode='OBJECT')
+
+
+    def add_surface_region_to_model_all_faces ( self, obj_name, surf_name ):
+        self.add_surface_region_to_model_by_normal ( obj_name, surf_name )
 
 
     def wait ( self, wait_time ):
@@ -1095,6 +1156,121 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
         cb_model.play_animation()
 
         return { 'FINISHED' }
+
+
+class SurfaceClassesTestOp(bpy.types.Operator):
+    bl_idname = "cellblender_test.surface_classes_test"
+    bl_label = "Surface Classes Test"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        cb_model.switch_to_orthographic()
+
+        cb_model.add_cube_to_model ( name="ti", draw_type="WIRE", x=0, y=0, z=0, size=0.5 )
+        cb_model.add_surface_region_to_model_all_faces ( "ti", "t_reg" )
+        cb_model.add_cube_to_model ( name="to", draw_type="WIRE", x=0, y=0, z=0, size=1.0 )
+
+        cb_model.add_cube_to_model ( name="ri", draw_type="WIRE", x=0, y=-3, z=0, size=0.5 )
+        cb_model.add_surface_region_to_model_all_faces ( "ri", "r_reg" )
+        cb_model.add_cube_to_model ( name="ro", draw_type="WIRE", x=0, y=-3, z=0, size=1.0 )
+
+        cb_model.add_cube_to_model ( name="ai", draw_type="WIRE", x=0, y=3, z=0, size=0.5 )
+        cb_model.add_surface_region_to_model_all_faces ( "ai", "a_reg" )
+        cb_model.add_cube_to_model ( name="ao", draw_type="WIRE", x=0, y=3, z=0, size=1.0 )
+
+        cb_model.add_cube_to_model ( name="ci", draw_type="WIRE", x=0, y=0, z=3, size=0.5 )
+        cb_model.add_surface_region_to_model_all_faces ( "ci", "c_reg" )
+        cb_model.add_cube_to_model ( name="co", draw_type="WIRE", x=0, y=0, z=3, size=1.0 )
+
+        cb_model.add_label_to_model ( name="t", text="Trans",   x=0, y=-1.13, z=-2,  size=1, rx=math.pi/2, ry=0, rz=math.pi/2 )
+        cb_model.add_label_to_model ( name="c", text="Clamp",   x=0, y=-1.26, z=4.4, size=1, rx=math.pi/2, ry=0, rz=math.pi/2 )
+        cb_model.add_label_to_model ( name="r", text="Reflect", x=0, y=-4.38, z=-2,  size=1, rx=math.pi/2, ry=0, rz=math.pi/2 )
+        cb_model.add_label_to_model ( name="a", text="Absorb",  x=0, y=1.82,  z=-2,  size=1, rx=math.pi/2, ry=0, rz=math.pi/2 )
+
+        mola = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+        molt = cb_model.add_molecule_species_to_model ( name="t", diff_const_expr="1e-6" )
+        molr = cb_model.add_molecule_species_to_model ( name="r", diff_const_expr="1e-6" )
+        molc = cb_model.add_molecule_species_to_model ( name="c", diff_const_expr="1e-6" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="ai", q_expr="100" )
+        cb_model.add_molecule_release_site_to_model ( mol="t", shape="OBJECT", obj_expr="ti", q_expr="100" )
+        cb_model.add_molecule_release_site_to_model ( mol="r", shape="OBJECT", obj_expr="ri", q_expr="100" )
+        cb_model.add_molecule_release_site_to_model ( mol="c", shape="OBJECT", obj_expr="ci", q_expr="100" )
+
+        cb_model.add_surface_class_to_model ( "trans_to_t" )
+        cb_model.add_property_to_surface_class ( "t", sc_orient=";", sc_type="TRANSPARENT" )
+
+        cb_model.add_surface_class_to_model ( "reflect_to_r" )
+        cb_model.add_property_to_surface_class ( "r", sc_orient=";", sc_type="REFLECTIVE" )
+
+        cb_model.add_surface_class_to_model ( "absorb_to_a" )
+        cb_model.add_property_to_surface_class ( "a", sc_orient=";", sc_type="ABSORPTIVE" )
+
+        cb_model.add_surface_class_to_model ( "clamp_to_c" )
+        cb_model.add_property_to_surface_class ( "c", sc_orient=";", sc_type="CLAMP_CONCENTRATION",  sc_clamp_val_str="1.5e-7" )
+
+
+        cb_model.assign_surface_class_to_region ( "trans_to_t", "ti", "t_reg" )
+        cb_model.assign_surface_class_to_region ( "reflect_to_r", "ri", "r_reg" )
+        cb_model.assign_surface_class_to_region ( "absorb_to_a", "ai", "a_reg" )
+        cb_model.assign_surface_class_to_region ( "clamp_to_c", "ci", "c_reg" )
+
+
+        bpy.ops.mcell.rxn_output_add()
+        mcell.rxn_output.rxn_output_list[0].molecule_name = 't'
+        mcell.rxn_output.rxn_output_list[0].count_location = 'Object'
+        mcell.rxn_output.rxn_output_list[0].object_name = 'ti'
+
+        bpy.ops.mcell.rxn_output_add()
+        mcell.rxn_output.rxn_output_list[1].molecule_name = 'r'
+        mcell.rxn_output.rxn_output_list[1].count_location = 'Object'
+        mcell.rxn_output.rxn_output_list[1].object_name = 'ri'
+
+        bpy.ops.mcell.rxn_output_add()
+        mcell.rxn_output.rxn_output_list[2].molecule_name = 'a'
+        mcell.rxn_output.rxn_output_list[2].count_location = 'Object'
+        mcell.rxn_output.rxn_output_list[2].object_name = 'ai'
+
+        bpy.ops.mcell.rxn_output_add()
+        mcell.rxn_output.rxn_output_list[3].molecule_name = 'c'
+        mcell.rxn_output.rxn_output_list[3].count_location = 'Object'
+        mcell.rxn_output.rxn_output_list[3].object_name = 'ci'
+
+        mcell.rxn_output.plot_layout = ' '
+        mcell.rxn_output.mol_colors = True
+
+
+        cb_model.run_model ( iterations='5000', time_step='1e-6', wait_time=15.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "b781cd49d7b9499b87570a4ca920134b701657c5" )
+
+        cb_model.refresh_molecules()
+
+        scn.frame_current = 1
+
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=5.0, red=0.0, green=0.7, blue=1.0 )
+        cb_model.change_molecule_display ( molt, glyph='Cube', scale=5.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molr, glyph='Cube', scale=5.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( molc, glyph='Cube', scale=5.0, red=1.0, green=1.0, blue=0.5 )
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.5 )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
 
 
 
