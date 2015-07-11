@@ -54,7 +54,9 @@ def register_test ( test_groups, group_name, test_name, operator_name, next_test
         found = len(test_groups) - 1
         next_test_group_num += 1
         if next_test_group_num >= max_test_groups:
+            print ( "================================================================================================" )
             print ( "Too many test groups defined. Increase the number of 'show_group_#' entries and max_test_groups." )
+            print ( "================================================================================================" )
             bpy.ops.wm.quit_blender()
 
     test_groups[found]["group_tests"].append ( { "test_name":test_name, "operator_name":operator_name } )
@@ -71,15 +73,6 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
     run_mcell = bpy.props.BoolProperty(name="RunMCell", default=False)
     test_status = bpy.props.StringProperty(name="TestStatus", default="?")
     
-    """
-    show_sim_runner = bpy.props.BoolProperty(name="ShowSimRunner", default=False)
-    show_non_geom = bpy.props.BoolProperty(name="ShowNonGeom", default=False)
-    show_simple_geom = bpy.props.BoolProperty(name="ShowSimpleGeom", default=False)
-    show_count = bpy.props.BoolProperty(name="ShowCount", default=False)
-    
-    show_complete_model = bpy.props.BoolProperty(name="ShowCompleteModel", default=False)
-    """
-
     # New dynamic groups
     show_group = BoolVectorProperty ( size=max_test_groups ) # Used for showing and hiding each panel
 
@@ -131,34 +124,6 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
         self.show_group_19 = False
         self.show_group_20 = False
         self.groups_real = True
-
-
-
-
-"""
-test_groups = []
-max_test_groups = 32  # Needed to define a BoolVectorProperty to show and hide each group
-next_test_group_num = 0    # The index number of the next group to be added
-
-
-class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
-    # New dynamic groups
-    show_group = BoolVectorProperty ( size=max_test_groups ) # Used for showing and hiding each panel
-"""
-
-"""
-[
-  { 'group_index': '0',
-    'group_name': 'Counting Tests',
-    'group_tests': [
-        { "test_name":'cellblender_test.simple_molecule_count_test', "operator_name":'Simple Molecule Count Test' },
-        { "test_name":'cellblender_test.complex_molecule_count_test', "operator_name":'Complex Molecule Count Test' }
-    ]
-  }
-]
-
-
-"""
 
 
 class CellBlenderTestSuitePanel(bpy.types.Panel):
@@ -478,6 +443,7 @@ class CellBlender_Model:
 
     def add_count_output_to_model ( self, name=None, mol_name=None, rxn_name=None, object_name=None, region_name=None, count_location="World" ):
         """ Add a reaction output """
+
         self.mcell.cellblender_main_panel.graph_select = True
         bpy.ops.mcell.rxn_output_add()
         rxn_index = self.mcell.rxn_output.active_rxn_output_index
@@ -492,7 +458,9 @@ class CellBlender_Model:
             print ( "Adding Count Output for Reaction " + rxn_name )
             rxn.rxn_or_mol = "Reaction"
         else:
-            print ( "Warning: Count output should be either Molecule or Reaction." )
+            print ( "Warning: Count output should be either Molecule or Reaction ... returning None." )
+            return None
+
 
         if name == None:
             rxn.name = ""
@@ -749,9 +717,9 @@ class CellBlender_Model:
     def change_molecule_display ( self, mol, glyph="Cube", scale=1.0, red=-1, green=-1, blue=-1 ):
         app = bpy.context.scene.cellblender_test_suite
         if app.run_mcell:
-            if mol.name == "Molecule":
-                print ("Name isn't correct")
-                return
+            #if mol.name == "Molecule":
+            #    print ("Name isn't correct")
+            #    return
             print ( "Changing Display for Molecule \"" + mol.name + "\" to R="+str(red)+",G="+str(green)+",B="+str(blue) )
             self.mcell.cellblender_main_panel.molecule_select = True
             self.mcell.molecules.show_display = True
@@ -1219,6 +1187,7 @@ class ReleaseShapeTestOp(bpy.types.Operator):
         return { 'FINISHED' }
 
 
+
 ###########################################################################################################
 group_name = "Simple Geometry Tests"
 test_name = "Simple Cube Test"
@@ -1450,6 +1419,7 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
         return { 'FINISHED' }
 
 
+
 ###########################################################################################################
 group_name = "Simple Geometry Tests"
 test_name = "Surface Classes Test"
@@ -1618,7 +1588,6 @@ class SimpleMoleculeCountTestOp(bpy.types.Operator):
 
 
 
-
 ###########################################################################################################
 group_name = "Counting Tests"
 test_name = "Release Time Patterns Test"
@@ -1719,6 +1688,8 @@ def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_ra
     scn.objects.active.name = 'arena'
 
     # Set up the material for the Torus
+    if len(bpy.data.materials) <= 0:
+        new_mat = bpy.data.materials.new("cell")
     bpy.data.materials[0].name = 'cell'
     bpy.data.materials['cell'].use_transparency = True
     bpy.data.materials['cell'].alpha = 0.3
@@ -1780,6 +1751,7 @@ def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_ra
     return cb_model
 
 
+
 ###########################################################################################################
 group_name = "Complete Model Tests"
 test_name = "Lotka Volterra Torus - Diffusion Limited Reaction"
@@ -1800,6 +1772,7 @@ class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
         cb_model.play_animation()
 
         return { 'FINISHED' }
+
 
 
 ###########################################################################################################
@@ -1884,8 +1857,8 @@ class OrganelleTestOp(bpy.types.Operator):
 
         cb_model.add_molecule_release_site_to_model ( name="rel_a",  mol="a",  shape="OBJECT", obj_expr="Cell[ALL] - (Organelle_1[ALL] + Organelle_2[ALL])", q_expr="1000" )
         cb_model.add_molecule_release_site_to_model ( name="rel_b",  mol="b",  shape="OBJECT", obj_expr="Organelle_1[ALL]", q_expr="1000" )
-        cb_model.add_molecule_release_site_to_model ( name="rel_t1", mol="t1", shape="OBJECT", obj_expr="Organelle_1[top]", orient="'", q_expr="1000" )
-        cb_model.add_molecule_release_site_to_model ( name="rel_t2", mol="t2", shape="OBJECT", obj_expr="Organelle_2[top]", orient="'", q_expr="1000" )
+        cb_model.add_molecule_release_site_to_model ( name="rel_t1", mol="t1", shape="OBJECT", obj_expr="Organelle_1[top]", orient="'", q_expr="700" )
+        cb_model.add_molecule_release_site_to_model ( name="rel_t2", mol="t2", shape="OBJECT", obj_expr="Organelle_2[top]", orient="'", q_expr="700" )
         # Add a single c and d molecule so the display values can be set ... otherwise they're not applied properly
         cb_model.add_molecule_release_site_to_model ( mol="c", shape="OBJECT", obj_expr="Organelle_2", q_expr="1" )
         cb_model.add_molecule_release_site_to_model ( mol="d", shape="OBJECT", obj_expr="Organelle_2", q_expr="1" )
@@ -1896,13 +1869,14 @@ class OrganelleTestOp(bpy.types.Operator):
         cb_model.add_reaction_to_model ( rin="c' + t2'", rtype="irreversible", rout="d, + t2'", fwd_rate="3e9", bkwd_rate="" )
         cb_model.add_reaction_to_model ( rin="c, + t1'", rtype="irreversible", rout="c' + t1'", fwd_rate="3e8", bkwd_rate="" )
 
+        cb_model.add_count_output_to_model ( mol_name="a" )
+        cb_model.add_count_output_to_model ( mol_name="b" )
+        cb_model.add_count_output_to_model ( mol_name="c" )
+        cb_model.add_count_output_to_model ( mol_name="d" )
 
-        cb_model.add_count_output_to_model ( 'a' )
-        cb_model.add_count_output_to_model ( 'b' )
-        cb_model.add_count_output_to_model ( 'c' )
-        cb_model.add_count_output_to_model ( 'd' )
-        #cb_model.add_count_output_to_model ( 't1' )
-        #cb_model.add_count_output_to_model ( 't2' )
+        #cb_model.add_count_output_to_model ( mol_name="t1" )
+        #cb_model.add_count_output_to_model ( mol_name="t2" )
+
         mcell.rxn_output.plot_layout = ' '
         mcell.rxn_output.mol_colors = True
 
@@ -1911,9 +1885,9 @@ class OrganelleTestOp(bpy.types.Operator):
         bpy.ops.mcell.auto_generate_boundaries()
 
 
-        cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=4.0 )
+        cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "8f0782e3d8b8deda85cc2275b6168f02d7d9c117" )
+        cb_model.compare_mdl_with_sha1 ( "ecd81fc1c5b65777866da16f286b4eb70e362620" )
 
         cb_model.refresh_molecules()
 
@@ -1935,6 +1909,14 @@ class OrganelleTestOp(bpy.types.Operator):
         cb_model.play_animation()
 
         return { 'FINISHED' }
+
+
+
+
+#############################################################
+################## End of Individual Tests ##################
+#############################################################
+
 
 
 from bpy.app.handlers import persistent
