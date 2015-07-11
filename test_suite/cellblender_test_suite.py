@@ -39,7 +39,28 @@ from bpy.props import *
 
 test_groups = []
 max_test_groups = 20   # Needed to define a BoolVectorProperty to show and hide each group (32 is max!?!?!)
-next_test_group = 0    # The index number of the next group to be added
+next_test_group_num = 0    # The index number of the next group to be added
+
+
+def register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num ):
+    found = -1
+    for gnum in range(len(test_groups)):
+        g = test_groups[gnum]
+        if g["group_name"] == group_name:
+            found = gnum
+
+    if found < 0:
+        test_groups.append ( { "group_index":next_test_group_num, "group_name":group_name, "group_tests":[] } )
+        found = len(test_groups) - 1
+        next_test_group_num += 1
+        if next_test_group_num >= max_test_groups:
+            print ( "Too many test groups defined. Increase the number of 'show_group_#' entries and max_test_groups." )
+            bpy.ops.wm.quit_blender()
+
+    test_groups[found]["group_tests"].append ( { "test_name":test_name, "operator_name":operator_name } )
+    
+    return next_test_group_num
+    
 
 
 class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
@@ -50,12 +71,14 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
     run_mcell = bpy.props.BoolProperty(name="RunMCell", default=False)
     test_status = bpy.props.StringProperty(name="TestStatus", default="?")
     
+    """
     show_sim_runner = bpy.props.BoolProperty(name="ShowSimRunner", default=False)
     show_non_geom = bpy.props.BoolProperty(name="ShowNonGeom", default=False)
     show_simple_geom = bpy.props.BoolProperty(name="ShowSimpleGeom", default=False)
     show_count = bpy.props.BoolProperty(name="ShowCount", default=False)
     
     show_complete_model = bpy.props.BoolProperty(name="ShowCompleteModel", default=False)
+    """
 
     # New dynamic groups
     show_group = BoolVectorProperty ( size=max_test_groups ) # Used for showing and hiding each panel
@@ -112,70 +135,10 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
 
 
 
-group_name = "Dynamic Counting Tests"
-test_name = "Simple Molecule Count Test Generic!!!!!"
-operator_name = "cellblender_test.simple_molecule_count_test"
-
-found = -1
-for gnum in range(len(test_groups)):
-    g = test_groups[gnum]
-    if g["group_name"] == group_name:
-        found = gnum
-
-if found < 0:
-    test_groups.append ( { "group_index":next_test_group, "group_name":group_name, "group_tests":[] } )
-    found = len(test_groups) - 1
-    next_test_group += 1
-
-test_groups[found]["group_tests"].append ( { "test_name":test_name, "operator_name":operator_name } )
-
-class SimpleMoleculeCountTestOp(bpy.types.Operator):
-    bl_idname = operator_name   # "cellblender_test.simple_molecule_count_test"
-    bl_label = test_name   #  "Simple Molecule Count Test"
-
-    def invoke(self, context, event):
-        self.execute ( context )
-        return {'FINISHED'}
-
-    def execute(self, context):
-    
-        print ( str(test_groups) )
-
-        cb_model = CellBlender_Model ( context )
-
-        scn = cb_model.get_scene()
-        mcell = cb_model.get_mcell()
-
-        mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
-
-        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="500", d="0.5" )
-        cb_model.add_reaction_to_model ( name="Decay", rin="a",  rtype="irreversible", rout="NULL", fwd_rate="1e5", bkwd_rate="" )
-
-        cb_model.add_count_output_to_model ( mol_name="a", rxn_name=None, object_name=None, region_name=None, count_location="World" )
-        cb_model.add_count_output_to_model ( mol_name=None, rxn_name="Decay", object_name=None, region_name=None, count_location="World" )
-
-
-        cb_model.run_model ( iterations='100', time_step='1e-6', wait_time=3.0 )
-
-        cb_model.compare_mdl_with_sha1 ( "" )
-
-        cb_model.refresh_molecules()
-        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.set_view_back()
-        cb_model.scale_view_distance ( 0.1 )
-
-        cb_model.play_animation()
-
-        return { 'FINISHED' }
-
-
-
-
-
 """
 test_groups = []
 max_test_groups = 32  # Needed to define a BoolVectorProperty to show and hide each group
-next_test_group = 0    # The index number of the next group to be added
+next_test_group_num = 0    # The index number of the next group to be added
 
 
 class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
@@ -225,9 +188,8 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
           row.label( icon='ERROR',     text="Fail" )
         row.prop(app, "run_mcell")
 
-
-        for group_num in range(next_test_group):
-            print ( "Drawing Group " + str(group_num) )
+        for group_num in range(next_test_group_num):
+            # print ( "Drawing Group " + str(group_num) )
             group = test_groups[group_num]
 
             box = self.layout.box()
@@ -236,7 +198,7 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
 
             gi = group['group_index']
 
-            print ( "Group Index = " + str(gi) + ", app[gi] = " + str(app["show_group_"+str(gi)]) )
+            # print ( "Group Index = " + str(gi) + ", app[gi] = " + str(app["show_group_"+str(gi)]) )
             
             if not app["show_group_"+str(gi)]:
                 row.prop(app, "show_group_"+str(gi), icon='TRIA_RIGHT', text=group['group_name'], emboss=False)
@@ -246,98 +208,6 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
                 for test in test_list:
                     row = box.row()
                     row.operator(test['operator_name'], text=test['test_name'])
-
-
-
-
-        box = self.layout.box()
-        row = box.row(align=True)
-        row.alignment = 'LEFT'
-
-
-        if not app.show_sim_runner:
-            row.prop(app, "show_sim_runner", icon='TRIA_RIGHT', text="Sim Runner Tests", emboss=False)
-        else:
-            row.prop(app, "show_sim_runner", icon='TRIA_DOWN', text="Sim Runner Tests", emboss=False)
-
-            row = box.row()
-            row.operator ( "cellblender_test.sim_runner_command" )
-            row = box.row()
-            row.operator ( "cellblender_test.sim_runner_queue" )
-            row = box.row()
-            row.operator ( "cellblender_test.sim_runner_java" )
-            row = box.row()
-            row.operator ( "cellblender_test.sim_runner_opengl" )
-
-
-        box = self.layout.box()
-        row = box.row(align=True)
-        row.alignment = 'LEFT'
-
-        if not app.show_non_geom:
-            row.prop(app, "show_non_geom", icon='TRIA_RIGHT', text="Non-Geometry Tests", emboss=False)
-        else:
-            row.prop(app, "show_non_geom", icon='TRIA_DOWN', text="Non-Geometry Tests", emboss=False)
-            row = box.row()
-            row.operator ( "cellblender_test.single_mol" )
-            row = box.row()
-            row.operator ( "cellblender_test.double_sphere" )
-            row = box.row()
-            row.operator ( "cellblender_test.vol_diffusion_const" )
-            row = box.row()
-            row.operator ( "cellblender_test.reaction" )
-            row = box.row()
-            row.operator ( "cellblender_test.release_shape" )
-            row = box.row()
-            row.operator ( "cellblender_test.rel_time_patterns_test" )
-
-        box = self.layout.box()
-        row = box.row(align=True)
-        row.alignment = 'LEFT'
-
-        if not app.show_simple_geom:
-            row.prop(app, "show_simple_geom", icon='TRIA_RIGHT', text="Simple Geometry Tests", emboss=False)
-        else:
-            row.prop(app, "show_simple_geom", icon='TRIA_DOWN', text="Simple Geometry Tests", emboss=False)
-            row = box.row()
-            row.operator ( "cellblender_test.cube_test" )
-            row = box.row()
-            row.operator ( "cellblender_test.cube_surf_test" )
-            row = box.row()
-            row.operator ( "cellblender_test.sphere_surf_test" )
-            row = box.row()
-            row.operator ( "cellblender_test.overlapping_surf_test" )
-            row = box.row()
-            row.operator ( "cellblender_test.surface_classes_test" )
-
-
-        box = self.layout.box()
-        row = box.row(align=True)
-        row.alignment = 'LEFT'
-
-        if not app.show_count:
-            row.prop(app, "show_count", icon='TRIA_RIGHT', text="Counting Tests", emboss=False)
-        else:
-            row.prop(app, "show_count", icon='TRIA_DOWN', text="Counting Tests", emboss=False)
-            row = box.row()
-            row.operator ( "cellblender_test.simple_molecule_count_test" )
-
-
-        box = self.layout.box()
-        row = box.row(align=True)
-        row.alignment = 'LEFT'
-
-        if not app.show_complete_model:
-            row.prop(app, "show_complete_model", icon='TRIA_RIGHT', text="Complete Model Tests", emboss=False)
-        else:
-            row.prop(app, "show_complete_model", icon='TRIA_DOWN', text="Complete Model Tests", emboss=False)
-            row = box.row()
-            row.operator ( "cellblender_test.organelle_test" )
-            row = box.row()
-            row.operator ( "cellblender_test.lotka_volterra_torus_test_diff_lim" )
-            row = box.row()
-            row.operator ( "cellblender_test.lotka_volterra_torus_test_phys" )
-
 
 
 class LoadHomeOp(bpy.types.Operator):
@@ -350,6 +220,7 @@ class LoadHomeOp(bpy.types.Operator):
 
     def execute(self, context):
         context.scene.cellblender_test_suite.test_status == "?"
+        context.scene.cellblender_test_suite.groups_real = False
         bpy.ops.wm.read_homefile()
         return { 'FINISHED' }
 
@@ -977,6 +848,10 @@ class CellBlender_Model:
 #  Individual Tests  #
 ######################
 
+
+###########################################################################################################
+##   This is an example model used for all the SimRunner tests.
+
 def SimRunnerExample ( context, method="COMMAND" ):
 
     cb_model = CellBlender_Model ( context )
@@ -1004,9 +879,16 @@ def SimRunnerExample ( context, method="COMMAND" ):
     cb_model.play_animation()
 
 
+
+###########################################################################################################
+group_name = "Sim Runner Tests"
+test_name = "Simulation Runner Command Test"
+operator_name = "cellblender_test.sim_runner_command"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
 class SimRunnerCommandTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.sim_runner_command"
-    bl_label = "Simulation Runner Command Test"
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1017,10 +899,16 @@ class SimRunnerCommandTestOp(bpy.types.Operator):
         return { 'FINISHED' }
 
 
-class SimRunnerQueueTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.sim_runner_queue"
-    bl_label = "Simulation Runner Queue Test"
 
+###########################################################################################################
+group_name = "Sim Runner Tests"
+test_name = "Simulation Runner Queue Test"
+operator_name = "cellblender_test.sim_runner_queue"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class SimRunnerQueueTestOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1031,10 +919,16 @@ class SimRunnerQueueTestOp(bpy.types.Operator):
         return { 'FINISHED' }
 
 
-class SimRunnerJavaTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.sim_runner_java"
-    bl_label = "Simulation Runner Java Test"
 
+###########################################################################################################
+group_name = "Sim Runner Tests"
+test_name = "Simulation Runner Java Test"
+operator_name = "cellblender_test.sim_runner_java"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class SimRunnerJavaTestOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1045,10 +939,16 @@ class SimRunnerJavaTestOp(bpy.types.Operator):
         return { 'FINISHED' }
 
 
-class SimRunnerOpenGLTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.sim_runner_opengl"
-    bl_label = "Simulation Runner Open GL Test"
 
+###########################################################################################################
+group_name = "Sim Runner Tests"
+test_name = "Simulation Runner Open GL Test"
+operator_name = "cellblender_test.sim_runner_opengl"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class SimRunnerOpenGLTestOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1060,10 +960,15 @@ class SimRunnerOpenGLTestOp(bpy.types.Operator):
 
 
 
+###########################################################################################################
+group_name = "Non-Geometry Tests"
+test_name = "Single Molecule Test"
+operator_name = "cellblender_test.single_mol"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
 class SingleMoleculeTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.single_mol"
-    bl_label = "Single Molecule Test"
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1098,9 +1003,15 @@ class SingleMoleculeTestOp(bpy.types.Operator):
 
 
 
+###########################################################################################################
+group_name = "Non-Geometry Tests"
+test_name = "Double Sphere Test"
+operator_name = "cellblender_test.double_sphere"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
 class DoubleSphereTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.double_sphere"
-    bl_label = "Double Sphere Test"
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1138,9 +1049,15 @@ class DoubleSphereTestOp(bpy.types.Operator):
 
 
 
+###########################################################################################################
+group_name = "Non-Geometry Tests"
+test_name = "Volume Diffusion Constant Test"
+operator_name = "cellblender_test.vol_diffusion_const"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
 class VolDiffusionConstTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.vol_diffusion_const"
-    bl_label = "Volume Diffusion Constant Test"
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1182,9 +1099,15 @@ class VolDiffusionConstTestOp(bpy.types.Operator):
 
 
 
+###########################################################################################################
+group_name = "Non-Geometry Tests"
+test_name = "Simple Reaction Test"
+operator_name = "cellblender_test.reaction"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
 class ReactionTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.reaction"
-    bl_label = "Simple Reaction Test"
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1236,9 +1159,16 @@ class ReactionTestOp(bpy.types.Operator):
         return { 'FINISHED' }
 
 
+
+###########################################################################################################
+group_name = "Non-Geometry Tests"
+test_name = "Release Shape Test"
+operator_name = "cellblender_test.release_shape"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
 class ReleaseShapeTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.release_shape"
-    bl_label = "Release Shape Test"
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1289,10 +1219,15 @@ class ReleaseShapeTestOp(bpy.types.Operator):
         return { 'FINISHED' }
 
 
+###########################################################################################################
+group_name = "Simple Geometry Tests"
+test_name = "Simple Cube Test"
+operator_name = "cellblender_test.cube_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
 class CubeTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.cube_test"
-    bl_label = "Simple Cube Test"
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1329,9 +1264,15 @@ class CubeTestOp(bpy.types.Operator):
 
 
 
+###########################################################################################################
+group_name = "Simple Geometry Tests"
+test_name = "Cube Surface Test"
+operator_name = "cellblender_test.cube_surf_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
 class CubeSurfaceTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.cube_surf_test"
-    bl_label = "Cube Surface Test"
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1382,9 +1323,15 @@ class CubeSurfaceTestOp(bpy.types.Operator):
 
 
 
+###########################################################################################################
+group_name = "Simple Geometry Tests"
+test_name = "Sphere Surface Test"
+operator_name = "cellblender_test.sphere_surf_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
 class SphereSurfaceTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.sphere_surf_test"
-    bl_label = "Sphere Surface Test"
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1436,9 +1383,15 @@ class SphereSurfaceTestOp(bpy.types.Operator):
 
 
 
+###########################################################################################################
+group_name = "Simple Geometry Tests"
+test_name = "Overlapping Surface Test"
+operator_name = "cellblender_test.overlapping_surf_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
 class OverlappingSurfaceTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.overlapping_surf_test"
-    bl_label = "Overlapping Surface Test"
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1497,9 +1450,15 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
         return { 'FINISHED' }
 
 
+###########################################################################################################
+group_name = "Simple Geometry Tests"
+test_name = "Surface Classes Test"
+operator_name = "cellblender_test.surface_classes_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
 class SurfaceClassesTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.surface_classes_test"
-    bl_label = "Surface Classes Test"
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1611,11 +1570,64 @@ class SurfaceClassesTestOp(bpy.types.Operator):
 
 
 
+###########################################################################################################
+group_name = "Counting Tests"
+test_name = "Simple Molecule Count Test"
+operator_name = "cellblender_test.simple_molecule_count_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
+class SimpleMoleculeCountTestOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+    
+        print ( str(test_groups) )
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="500", d="0.5" )
+        cb_model.add_reaction_to_model ( name="Decay", rin="a",  rtype="irreversible", rout="NULL", fwd_rate="1e5", bkwd_rate="" )
+
+        cb_model.add_count_output_to_model ( mol_name="a", rxn_name=None, object_name=None, region_name=None, count_location="World" )
+        cb_model.add_count_output_to_model ( mol_name=None, rxn_name="Decay", object_name=None, region_name=None, count_location="World" )
+
+
+        cb_model.run_model ( iterations='100', time_step='1e-6', wait_time=3.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "d24da83d3b07bb1f3be2e571fa29f99c054d6478" )
+
+        cb_model.refresh_molecules()
+        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.set_view_back()
+        cb_model.scale_view_distance ( 0.1 )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+
+
+###########################################################################################################
+group_name = "Counting Tests"
+test_name = "Release Time Patterns Test"
+operator_name = "cellblender_test.rel_time_patterns_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
 class ReleaseTimePatternsTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.rel_time_patterns_test"
-    bl_label = "Release Time Patterns Test"
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1691,9 +1703,9 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
         return { 'FINISHED' }
 
 
-""" SimpleMoleculeCountTestOp belongs here!!! """
 
-
+###########################################################################################################
+##   Main Function supporting Lotka Volterra models
 
 def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_rate, interaction_radius, time_step, iterations, mdl_hash, wait_time ):
 
@@ -1768,9 +1780,15 @@ def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_ra
     return cb_model
 
 
+###########################################################################################################
+group_name = "Complete Model Tests"
+test_name = "Lotka Volterra Torus - Diffusion Limited Reaction"
+operator_name = "cellblender_test.lotka_volterra_torus_test_diff_lim"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
 class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.lotka_volterra_torus_test_diff_lim"
-    bl_label = "Lotka Volterra Torus - Diffusion Limited Reaction"
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1784,9 +1802,15 @@ class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
         return { 'FINISHED' }
 
 
+###########################################################################################################
+group_name = "Complete Model Tests"
+test_name = "Lotka Volterra Torus - Physiologic Reaction"
+operator_name = "cellblender_test.lotka_volterra_torus_test_phys"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
 class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.lotka_volterra_torus_test_phys"
-    bl_label = "Lotka Volterra Torus - Physiologic Reaction"
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -1801,9 +1825,15 @@ class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
 
 
 
+###########################################################################################################
+group_name = "Complete Model Tests"
+test_name = "Organelle Test"
+operator_name = "cellblender_test.organelle_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
 class OrganelleTestOp(bpy.types.Operator):
-    bl_idname = "cellblender_test.organelle_test"
-    bl_label = "Organelle Test"
+    bl_idname = operator_name
+    bl_label = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
