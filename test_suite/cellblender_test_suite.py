@@ -37,7 +37,14 @@ import bpy
 import math
 from bpy.props import *
 
+test_groups = []
+max_test_groups = 20   # Needed to define a BoolVectorProperty to show and hide each group (32 is max!?!?!)
+next_test_group = 0    # The index number of the next group to be added
+
+
 class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
+
+    # Older static groups
     path_to_mcell = bpy.props.StringProperty(name="PathToMCell", default="")
     path_to_blend = bpy.props.StringProperty(name="PathToBlend", default="")
     run_mcell = bpy.props.BoolProperty(name="RunMCell", default=False)
@@ -46,7 +53,150 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
     show_sim_runner = bpy.props.BoolProperty(name="ShowSimRunner", default=False)
     show_non_geom = bpy.props.BoolProperty(name="ShowNonGeom", default=False)
     show_simple_geom = bpy.props.BoolProperty(name="ShowSimpleGeom", default=False)
+    show_count = bpy.props.BoolProperty(name="ShowCount", default=False)
+    
     show_complete_model = bpy.props.BoolProperty(name="ShowCompleteModel", default=False)
+
+    # New dynamic groups
+    show_group = BoolVectorProperty ( size=max_test_groups ) # Used for showing and hiding each panel
+
+    groups_real = bpy.props.BoolProperty(default=False)
+    # Start with all defaulted to "True" so they can be changed to "False" making them real ID properties!!!
+    show_group_0 = bpy.props.BoolProperty(default=True)
+    show_group_1 = bpy.props.BoolProperty(default=True)
+    show_group_2 = bpy.props.BoolProperty(default=True)
+    show_group_3 = bpy.props.BoolProperty(default=True)
+    show_group_4 = bpy.props.BoolProperty(default=True)
+    show_group_5 = bpy.props.BoolProperty(default=True)
+    show_group_6 = bpy.props.BoolProperty(default=True)
+    show_group_7 = bpy.props.BoolProperty(default=True)
+    show_group_8 = bpy.props.BoolProperty(default=True)
+    show_group_9 = bpy.props.BoolProperty(default=True)
+    show_group_10 = bpy.props.BoolProperty(default=True)
+    show_group_11 = bpy.props.BoolProperty(default=True)
+    show_group_12 = bpy.props.BoolProperty(default=True)
+    show_group_13 = bpy.props.BoolProperty(default=True)
+    show_group_14 = bpy.props.BoolProperty(default=True)
+    show_group_15 = bpy.props.BoolProperty(default=True)
+    show_group_16 = bpy.props.BoolProperty(default=True)
+    show_group_17 = bpy.props.BoolProperty(default=True)
+    show_group_18 = bpy.props.BoolProperty(default=True)
+    show_group_19 = bpy.props.BoolProperty(default=True)
+    show_group_20 = bpy.props.BoolProperty(default=True)
+
+    def make_real ( self ):
+      if not self.groups_real:
+        self.show_group_0 = False
+        self.show_group_1 = False
+        self.show_group_2 = False
+        self.show_group_3 = False
+        self.show_group_4 = False
+        self.show_group_5 = False
+        self.show_group_6 = False
+        self.show_group_7 = False
+        self.show_group_8 = False
+        self.show_group_9 = False
+        self.show_group_10 = False
+        self.show_group_11 = False
+        self.show_group_12 = False
+        self.show_group_13 = False
+        self.show_group_14 = False
+        self.show_group_15 = False
+        self.show_group_16 = False
+        self.show_group_17 = False
+        self.show_group_18 = False
+        self.show_group_19 = False
+        self.show_group_20 = False
+        self.groups_real = True
+
+
+
+
+group_name = "Dynamic Counting Tests"
+test_name = "Simple Molecule Count Test Generic!!!!!"
+operator_name = "cellblender_test.simple_molecule_count_test"
+
+found = -1
+for gnum in range(len(test_groups)):
+    g = test_groups[gnum]
+    if g["group_name"] == group_name:
+        found = gnum
+
+if found < 0:
+    test_groups.append ( { "group_index":next_test_group, "group_name":group_name, "group_tests":[] } )
+    found = len(test_groups) - 1
+    next_test_group += 1
+
+test_groups[found]["group_tests"].append ( { "test_name":test_name, "operator_name":operator_name } )
+
+class SimpleMoleculeCountTestOp(bpy.types.Operator):
+    bl_idname = operator_name   # "cellblender_test.simple_molecule_count_test"
+    bl_label = test_name   #  "Simple Molecule Count Test"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+    
+        print ( str(test_groups) )
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="500", d="0.5" )
+        cb_model.add_reaction_to_model ( name="Decay", rin="a",  rtype="irreversible", rout="NULL", fwd_rate="1e5", bkwd_rate="" )
+
+        cb_model.add_count_output_to_model ( mol_name="a", rxn_name=None, object_name=None, region_name=None, count_location="World" )
+        cb_model.add_count_output_to_model ( mol_name=None, rxn_name="Decay", object_name=None, region_name=None, count_location="World" )
+
+
+        cb_model.run_model ( iterations='100', time_step='1e-6', wait_time=3.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "" )
+
+        cb_model.refresh_molecules()
+        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.set_view_back()
+        cb_model.scale_view_distance ( 0.1 )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+
+
+"""
+test_groups = []
+max_test_groups = 32  # Needed to define a BoolVectorProperty to show and hide each group
+next_test_group = 0    # The index number of the next group to be added
+
+
+class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
+    # New dynamic groups
+    show_group = BoolVectorProperty ( size=max_test_groups ) # Used for showing and hiding each panel
+"""
+
+"""
+[
+  { 'group_index': '0',
+    'group_name': 'Counting Tests',
+    'group_tests': [
+        { "test_name":'cellblender_test.simple_molecule_count_test', "operator_name":'Simple Molecule Count Test' },
+        { "test_name":'cellblender_test.complex_molecule_count_test', "operator_name":'Complex Molecule Count Test' }
+    ]
+  }
+]
+
+
+"""
+
 
 class CellBlenderTestSuitePanel(bpy.types.Panel):
     bl_label = "CellBlender Test Suite"
@@ -74,6 +224,31 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
         elif app.test_status == "F":
           row.label( icon='ERROR',     text="Fail" )
         row.prop(app, "run_mcell")
+
+
+        for group_num in range(next_test_group):
+            print ( "Drawing Group " + str(group_num) )
+            group = test_groups[group_num]
+
+            box = self.layout.box()
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
+
+            gi = group['group_index']
+
+            print ( "Group Index = " + str(gi) + ", app[gi] = " + str(app["show_group_"+str(gi)]) )
+            
+            if not app["show_group_"+str(gi)]:
+                row.prop(app, "show_group_"+str(gi), icon='TRIA_RIGHT', text=group['group_name'], emboss=False)
+            else:
+                row.prop(app, "show_group_"+str(gi), icon='TRIA_DOWN', text=group['group_name'], emboss=False)
+                test_list = group['group_tests']
+                for test in test_list:
+                    row = box.row()
+                    row.operator(test['operator_name'], text=test['test_name'])
+
+
+
 
         box = self.layout.box()
         row = box.row(align=True)
@@ -134,6 +309,18 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
             row.operator ( "cellblender_test.overlapping_surf_test" )
             row = box.row()
             row.operator ( "cellblender_test.surface_classes_test" )
+
+
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.alignment = 'LEFT'
+
+        if not app.show_count:
+            row.prop(app, "show_count", icon='TRIA_RIGHT', text="Counting Tests", emboss=False)
+        else:
+            row.prop(app, "show_count", icon='TRIA_DOWN', text="Counting Tests", emboss=False)
+            row = box.row()
+            row.operator ( "cellblender_test.simple_molecule_count_test" )
 
 
         box = self.layout.box()
@@ -408,6 +595,7 @@ class CellBlender_Model:
         self.mcell.cellblender_main_panel.reaction_select = True
         bpy.ops.mcell.reaction_add()
         rxn_index = self.mcell.reactions.active_rxn_index
+        self.mcell.reactions.reaction_list[rxn_index].rxn_name = name
         self.mcell.reactions.reaction_list[rxn_index].reactants = rin
         self.mcell.reactions.reaction_list[rxn_index].products = rout
         self.mcell.reactions.reaction_list[rxn_index].type = rtype
@@ -417,15 +605,151 @@ class CellBlender_Model:
         return self.mcell.reactions.reaction_list[rxn_index]
 
 
-    def add_reaction_output_to_model ( self, mol_name ):
+    def add_count_output_to_model ( self, name=None, mol_name=None, rxn_name=None, object_name=None, region_name=None, count_location="World" ):
         """ Add a reaction output """
-        print ( "Adding Reaction Output for Molecule " + mol_name )
         self.mcell.cellblender_main_panel.graph_select = True
         bpy.ops.mcell.rxn_output_add()
         rxn_index = self.mcell.rxn_output.active_rxn_output_index
-        self.mcell.rxn_output.rxn_output_list[rxn_index].molecule_name = mol_name
-        print ( "Done Adding Reaction Output for Molecule " + mol_name )
+        rxn = self.mcell.rxn_output.rxn_output_list[rxn_index]
+
+        if (mol_name != None) and (rxn_name == None):
+            # This is a Molecule Count Output Definition
+            print ( "Adding Count Output for Molecule " + mol_name )
+            rxn.rxn_or_mol = "Molecule"
+        elif (mol_name == None) and (rxn_name != None):
+            # This is a Reaction Count Output Definition
+            print ( "Adding Count Output for Reaction " + rxn_name )
+            rxn.rxn_or_mol = "Reaction"
+        else:
+            print ( "Warning: Count output should be either Molecule or Reaction." )
+
+        if name == None:
+            rxn.name = ""
+        else:
+            rxn.name = name
+
+        if mol_name == None:
+            rxn.molecule_name = ""
+        else:
+            rxn.molecule_name = mol_name
+
+        if rxn_name == None:
+            rxn.reaction_name = ""
+        else:
+            rxn.reaction_name = rxn_name
+
+        if object_name == None:
+            rxn.object_name = ""
+        else:
+            rxn.object_name = object_name
+
+        if region_name == None:
+            rxn.region_name = ""
+        else:
+            rxn.region_name = region_name
+
+        rxn.count_location = count_location
+        print ( "Done Adding Output Count for Molecule/Reaction" )
         return self.mcell.rxn_output.rxn_output_list[rxn_index]
+
+
+        """
+        All names that aren't listed are defaulted to "".
+        All count_locations that don't appear are "World" (same as 0).
+        count_location enum meaning
+          World = 0
+          Object = 1
+          Region = 2
+        rxn_or_mol enum meaning
+          Reaction = 0
+          Molecule = 1
+          
+        
+        >>> rxo = C.scene.mcell.rxn_output
+        >>> rxl = rxo.rxn_output_list
+        >>> ### The following output only shows values that differ from defaults (typical Blender behavior)
+        >>> for rxi in rxl:
+        ...     print (str(rxi.name))
+        ...     for item in rxi.items():
+        ...         print ( "  " + str(item) )
+        ... 
+        Count a in World
+          ('name', 'Count a in World')
+          ('status', '')
+          ('molecule_name', 'a')
+          ('reaction_name', '')
+          ('object_name', '')
+          ('region_name', '')
+          ('count_location', 0)
+          ('rxn_or_mol', 1)
+        Count b in World
+          ('name', 'Count b in World')
+          ('status', '')
+          ('molecule_name', 'b')
+          ('reaction_name', '')
+          ('object_name', '')
+          ('region_name', '')
+          ('count_location', 0)
+          ('rxn_or_mol', 1)
+        Count c in World
+          ('name', 'Count c in World')
+          ('status', '')
+          ('molecule_name', 'c')
+          ('reaction_name', '')
+          ('object_name', '')
+          ('region_name', '')
+          ('count_location', 0)
+          ('rxn_or_mol', 1)
+        Count d in World
+          ('name', 'Count d in World')
+          ('status', '')
+          ('molecule_name', 'd')
+          ('reaction_name', '')
+          ('object_name', '')
+          ('region_name', '')
+          ('count_location', 0)
+          ('rxn_or_mol', 1)
+        Count ab_c in World
+          ('name', 'Count ab_c in World')
+          ('status', '')
+          ('rxn_or_mol', 0)
+          ('reaction_name', 'ab_c')
+        Count at1_at1 in World
+          ('name', 'Count at1_at1 in World')
+          ('status', '')
+          ('rxn_or_mol', 0)
+          ('reaction_name', 'at1_at1')
+        Count ct1_ct1 in World
+          ('name', 'Count ct1_ct1 in World')
+          ('status', '')
+          ('rxn_or_mol', 0)
+          ('reaction_name', 'ct1_ct1')
+        Count t1 in/on Organelle_1[top]
+          ('name', 'Count t1 in/on Organelle_1[top]')
+          ('status', '')
+          ('rxn_or_mol', 1)
+          ('reaction_name', 'ct2_dt2')
+          ('molecule_name', 't1')
+          ('count_location', 2)
+          ('object_name', 'Organelle_1')
+          ('region_name', 'top')
+        Count c in/on Organelle_2
+          ('name', 'Count c in/on Organelle_2')
+          ('status', '')
+          ('molecule_name', 'c')
+          ('count_location', 1)
+          ('object_name', 'Organelle_2')
+
+        >>> 
+        """
+
+
+        """
+        bpy.ops.mcell.rxn_output_add()
+        mcell.rxn_output.rxn_output_list[0].molecule_name = 't'
+        mcell.rxn_output.rxn_output_list[0].count_location = 'Object'
+        mcell.rxn_output.rxn_output_list[0].object_name = 'ti'
+        """
 
 
     def add_surface_class_to_model ( self, surf_class_name ):
@@ -569,9 +893,10 @@ class CellBlender_Model:
             print ( "Done Changing Display for Molecule \"" + mol.name + "\"" )
 
 
-    def compare_mdl_with_sha1 ( self, good_hash ):
+    def compare_mdl_with_sha1 ( self, good_hash="" ):
         """ Compute the sha1 for file_name and compare with sha1 """
         app = bpy.context.scene.cellblender_test_suite
+        
         file_name = self.path_to_blend[:self.path_to_blend.rfind('.')] + "_files/mcell/Scene.main.mdl"
 
         hashobject = hashlib.sha1()
@@ -579,21 +904,35 @@ class CellBlender_Model:
             hashobject.update(open(file_name, 'rb').read())  # .encode("utf-8"))
             file_hash = str(hashobject.hexdigest())
             print("  SHA1 = " + file_hash + " for " + file_name )
-            if file_hash == good_hash:
-                print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
-                print ( "%%  O K :  Test Expected " + good_hash + ", and got " + file_hash )
-                print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
-                app.test_status = "P"
 
-            else:
+            if len(good_hash) <= 0:
+
                 print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                 print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
-                print ( "%%  E R R O R :  Test Expected " + good_hash + ", but got " + file_hash )
+                print ( "%%  W A R N I N G :  No Hash value provided. Hash from '" + file_name + "' is " + file_hash )
                 print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                 print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                 app.test_status = "F"
-                bpy.ops.wm.quit_blender() 
+
+            else:
+
+                if file_hash == good_hash:
+                    print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+                    print ( "%%  O K :  Test Expected " + good_hash + ", and got " + file_hash )
+                    print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+                    app.test_status = "P"
+
+                else:
+                    print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+                    print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+                    print ( "%%  E R R O R :  Test Expected " + good_hash + ", but got " + file_hash )
+                    print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+                    print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+                    app.test_status = "F"
+                    bpy.ops.wm.quit_blender() 
+
         else:
+
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             print ( "%%  E R R O R :  File '%s' does not exist" % file_name )
@@ -1352,6 +1691,9 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
         return { 'FINISHED' }
 
 
+""" SimpleMoleculeCountTestOp belongs here!!! """
+
+
 
 def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_rate, interaction_radius, time_step, iterations, mdl_hash, wait_time ):
 
@@ -1525,12 +1867,12 @@ class OrganelleTestOp(bpy.types.Operator):
         cb_model.add_reaction_to_model ( rin="c, + t1'", rtype="irreversible", rout="c' + t1'", fwd_rate="3e8", bkwd_rate="" )
 
 
-        cb_model.add_reaction_output_to_model ( 'a' )
-        cb_model.add_reaction_output_to_model ( 'b' )
-        cb_model.add_reaction_output_to_model ( 'c' )
-        cb_model.add_reaction_output_to_model ( 'd' )
-        #cb_model.add_reaction_output_to_model ( 't1' )
-        #cb_model.add_reaction_output_to_model ( 't2' )
+        cb_model.add_count_output_to_model ( 'a' )
+        cb_model.add_count_output_to_model ( 'b' )
+        cb_model.add_count_output_to_model ( 'c' )
+        cb_model.add_count_output_to_model ( 'd' )
+        #cb_model.add_count_output_to_model ( 't1' )
+        #cb_model.add_count_output_to_model ( 't2' )
         mcell.rxn_output.plot_layout = ' '
         mcell.rxn_output.mol_colors = True
 
@@ -1565,16 +1907,39 @@ class OrganelleTestOp(bpy.types.Operator):
         return { 'FINISHED' }
 
 
+from bpy.app.handlers import persistent
 
+def add_handler ( handler_list, handler_function ):
+    """ Only add a handler if it's not already in the list """
+    if not (handler_function in handler_list):
+        handler_list.append ( handler_function )
+        
+        #cellblender_added_handlers
+
+
+def remove_handler ( handler_list, handler_function ):
+    """ Only remove a handler if it's in the list """
+    if handler_function in handler_list:
+        handler_list.remove ( handler_function )
+
+
+# Load scene callback
+@persistent
+def scene_loaded(dummy):
+    bpy.context.scene.cellblender_test_suite.make_real()
 
 
 def register():
     print ("Registering ", __name__)
     bpy.utils.register_module(__name__)
     bpy.types.Scene.cellblender_test_suite = bpy.props.PointerProperty(type=CellBlenderTestPropertyGroup)
+    # Add the scene update pre handler
+    add_handler ( bpy.app.handlers.scene_update_pre, scene_loaded )
+
 
 def unregister():
     print ("Unregistering ", __name__)
+    remove_handler ( bpy.app.handlers.scene_update_pre, scene_loaded )
     bpy.utils.unregister_module(__name__)
     del bpy.types.Scene.cellblender_test_suite
 
