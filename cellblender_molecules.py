@@ -49,7 +49,7 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 
-"""
+
 # Generic helper functions that should go somewhere else!!!
 
 def get_path_to_parent(self_object):
@@ -63,7 +63,7 @@ def get_parent(self_object):
     path_to_parent = get_path_to_parent(self_object)
     parent = eval(path_to_parent)
     return parent
-"""
+
 
 
 # Molecule Operators:

@@ -367,6 +367,17 @@ class CellBlender_Model:
 
 
 
+    def add_parameter_to_model ( self, name="a", expr="0.0", units="", desc="" ):
+        """ Add a parameter to the model """
+        print ( "Adding Parameter " + name + " = " + expr )
+        ps = self.mcell.parameter_system
+        ps.new_parameter ( name, pp=False, new_expr=expr, new_units=units, new_desc=desc )
+        print ( "Done Adding Parameter " + name )
+        return ps.general_parameter_list[ps.active_par_index]
+
+
+
+
     def add_molecule_species_to_model ( self, name="A", mol_type="3D", diff_const_expr="0.0" ):
         """ Add a molecule species """
         print ( "Adding Molecule Species " + name )
@@ -1185,6 +1196,56 @@ class ReleaseShapeTestOp(bpy.types.Operator):
         cb_model.play_animation()
 
         return { 'FINISHED' }
+
+
+
+###########################################################################################################
+group_name = "Non-Geometry Tests"
+test_name = "Parameter System Test"
+operator_name = "cellblender_test.par_system"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class ParSystemTestOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        cb_model.add_parameter_to_model ( name="A", expr="1.23", units="A units", desc="" )
+        cb_model.add_parameter_to_model ( name="B", expr="A * 2", units="B units", desc="" )
+        cb_model.add_parameter_to_model ( name="C", expr="A * B", units="", desc="A * B" )
+        cb_model.add_parameter_to_model ( name="dc", expr="1e-8", units="", desc="Diffusion Constant" )
+
+        mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="dc" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="C" )
+
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "f7a25eacc4b0ecfa6619c9428ddd761920aab7dd" )
+
+        cb_model.refresh_molecules()
+
+        cb_model.change_molecule_display ( mol, glyph='Torus', scale=4.0, red=1.0, green=1.0, blue=0.0 )
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.04 )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
 
 
 
