@@ -114,7 +114,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         name="Molecule Name", default="Molecule",
         description="The molecule species name",
         update=check_callback)
-    mol_name = StringProperty(name="Mol Name", default="Molecule")
     id = IntProperty(name="Molecule ID", default=0)
     type_enum = [
         ('2D', "Surface Molecule", ""),
@@ -169,7 +168,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
 
     def init_properties ( self, parameter_system ):
-        self.mol_name = "Molecule_"+str(self.id)
+        self.name = "Molecule_"+str(self.id)
 
         helptext = "Molecule Diffusion Constant\n" + \
                    "This molecule diffuses in space with 3D diffusion constant for volume molecules.\n" + \
@@ -199,7 +198,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
         m_dict = {}
         m_dict['data_model_version'] = "DM_2014_10_24_1638"
-        m_dict['mol_name'] = m.mol_name
+        m_dict['mol_name'] = m.name
         m_dict['mol_type'] = str(m.type)
         m_dict['diffusion_constant'] = m.diffusion_constant.get_expr()
         m_dict['target_only'] = m.target_only
@@ -235,7 +234,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
         # Now convert the updated Data Model into CellBlender Properties
-        self.mol_name = dm_dict["mol_name"]
+        self.name = dm_dict["mol_name"]
         self.type = dm_dict["mol_type"]
         self.diffusion_constant.set_expr ( dm_dict["diffusion_constant"] )
         self.target_only = dm_dict["target_only"]
@@ -249,12 +248,12 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     # Exporting to an MDL file could be done just like this
     def print_details( self ):
-        print ( "Name = " + self.mol_name )
+        print ( "Name = " + self.name )
 
     def draw_props ( self, layout, molecules, parameter_system ):
 
         helptext = "Molecule Name\nThis is the name used in Reactions and Display"
-        parameter_system.draw_prop_with_help ( layout, "Name", self, "mol_name", "name_show_help", self.name_show_help, helptext )
+        parameter_system.draw_prop_with_help ( layout, "Name", self, "name", "name_show_help", self.name_show_help, helptext )
 
         helptext = "Molecule Type: Either Volume or Surface\n" + \
                    "Volume molecules are placed in and diffuse in 3D spaces." + \
@@ -298,7 +297,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             col.prop ( self, "scale" )
             row = box.row()
             col = row.column()
-            mol_mat_name = 'mol_' + self.mol_name + '_mat'
+            mol_mat_name = 'mol_' + self.name + '_mat'
             if False and mol_mat_name in bpy.data.materials.keys():
                 # This would control the actual Blender material property directly
                 col.prop ( bpy.data.materials[mol_mat_name], "diffuse_color" )
@@ -343,8 +342,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def display_callback(self, context):
         """One of the display items has changed for this molecule"""
-        print ( "Display for molecule \"" + self.mol_name + "\" changed to: " + str(self.glyph) + ", color=" + str(self.color) + ", emit=" + str(self.emit) + ", scale=" + str(self.scale) )
-        mol_name = 'mol_' + self.mol_name
+        print ( "Display for molecule \"" + self.name + "\" changed to: " + str(self.glyph) + ", color=" + str(self.color) + ", emit=" + str(self.emit) + ", scale=" + str(self.scale) )
+        mol_name = 'mol_' + self.name
         mol_shape_name = mol_name + '_shape'
         if mol_shape_name in bpy.data.objects:
             if self.scale != self.previous_scale:
@@ -354,7 +353,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 
             
 
-        mol_mat_name = 'mol_' + self.mol_name + '_mat'
+        mol_mat_name = 'mol_' + self.name + '_mat'
         if mol_mat_name in bpy.data.materials.keys():
             if bpy.data.materials[mol_mat_name].diffuse_color != self.color:
                 bpy.data.materials[mol_mat_name].diffuse_color = self.color
@@ -374,13 +373,13 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         # Use exact code from MCELL_OT_set_molecule_glyph(bpy.types.Operator).execute
         # Except added a test to see if the molecule exists first!!
         
-        mol_name = 'mol_' + self.mol_name
+        mol_name = 'mol_' + self.name
         if mol_name in bpy.data.objects:
 
             # First set up the selected and active molecules
 
-            mol_obj = bpy.data.objects['mol_' + self.mol_name]     # Is this used before being resest below?
-            mol_shape_name = 'mol_' + self.mol_name + '_shape'
+            mol_obj = bpy.data.objects['mol_' + self.name]     # Is this used before being resest below?
+            mol_shape_name = 'mol_' + self.name + '_shape'
 
             bpy.ops.object.select_all(action='DESELECT')
             context.scene.objects[mol_shape_name].hide_select = False
@@ -402,7 +401,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 return
 
             mol_obj = select_objs[0]
-            mol_shape_name = mol_obj.mol_name
+            mol_shape_name = mol_obj.name
 
             # glyph_name = mcell.molecule_glyphs.glyph
             glyph_name = str(self.glyph)
@@ -413,7 +412,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             if glyph_name in meshes:
                 # pattern: glyph name, period, numbers. (example match: "Cube.001")
                 pattern = re.compile(r'%s(\.\d+)' % glyph_name)
-                competing_names = [m.mol_name for m in meshes if pattern.match(m.mol_name)]
+                competing_names = [m.name for m in meshes if pattern.match(m.name)]
                 # example: given this: ["Cube.001", "Cube.3"], make this: [1, 3]
                 trailing_nums = [int(n.split('.')[1]) for n in competing_names]
                 # remove dups & sort... better way than list->set->list?
@@ -473,14 +472,14 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         #        return {'FINISHED'}
 
         #mol_obj = select_objs[0]
-        #mol_shape_name = mol_obj.mol_name
+        #mol_shape_name = mol_obj.name
 
         # Try to deselect everything
         bpy.ops.object.select_all(action='DESELECT')
 
-        mol_obj = bpy.data.objects['mol_' + self.mol_name]
-        mol_shape_name = 'mol_' + self.mol_name + '_shape'
-        print ( "Try to select " + mol_shape_name + " from bpy.data.objects["+self.mol_name+"]" )
+        mol_obj = bpy.data.objects['mol_' + self.name]
+        mol_shape_name = 'mol_' + self.name + '_shape'
+        print ( "Try to select " + mol_shape_name + " from bpy.data.objects["+self.name+"]" )
         context.scene.objects.active = bpy.data.objects[mol_shape_name]
 
         glyph_name = str(self.glyph)
@@ -491,7 +490,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         if glyph_name in meshes:
             # pattern: glyph name, period, numbers. (example match: "Cube.001")
             pattern = re.compile(r'%s(\.\d+)' % glyph_name)
-            competing_names = [m.mol_name for m in meshes if pattern.match(m.mol_name)]
+            competing_names = [m.name for m in meshes if pattern.match(m.name)]
             # example: given this: ["Cube.001", "Cube.3"], make this: [1, 3]
             trailing_nums = [int(n.split('.')[1]) for n in competing_names]
             # remove dups & sort... better way than list->set->list?
@@ -541,7 +540,7 @@ class MCell_UL_check_molecule(bpy.types.UIList):
         if item.status:
             layout.label(item.status, icon='ERROR')
         else:
-            layout.label(item.mol_name, icon='FILE_TICK')
+            layout.label(item.name, icon='FILE_TICK')
 
 
 class MCELL_PT_define_molecules(bpy.types.Panel):
@@ -657,14 +656,14 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
 
         # Check for duplicate molecule name
         mol_keys = self.molecule_list.keys()
-        if mol_keys.count(mol.mol_name) > 1:
-            status = "Duplicate molecule: %s" % (mol.mol_name)
+        if mol_keys.count(mol.name) > 1:
+            status = "Duplicate molecule: %s" % (mol.name)
 
         # Check for illegal names (Starts with a letter. No special characters.)
         mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
-        m = re.match(mol_filter, mol.mol_name)
+        m = re.match(mol_filter, mol.name)
         if m is None:
-            status = "Molecule name error: %s" % (mol.mol_name)
+            status = "Molecule name error: %s" % (mol.name)
 
         mol.status = status
 

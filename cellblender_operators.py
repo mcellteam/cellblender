@@ -3578,7 +3578,7 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
         if glyph_name in meshes:
             # pattern: glyph name, period, numbers. (example match: "Cube.001")
             pattern = re.compile(r'%s(\.\d+)' % glyph_name)
-            competing_names = [m.mol_name for m in meshes if pattern.match(m.mol_name)]
+            competing_names = [m.name for m in meshes if pattern.match(m.name)]
             # example: given this: ["Cube.001", "Cube.3"], make this: [1, 3]
             trailing_nums = [int(n.split('.')[1]) for n in competing_names]
             # remove dups & sort... better way than list->set->list?
