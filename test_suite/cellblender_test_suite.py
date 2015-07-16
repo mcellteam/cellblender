@@ -743,23 +743,26 @@ class CellBlender_Model:
             print ( "Done Changing Display for Molecule \"" + mol.name + "\"" )
 
 
-    def compare_mdl_with_sha1 ( self, good_hash="" ):
+    def compare_mdl_with_sha1 ( self, good_hash="", test_name=None ):
         """ Compute the sha1 for file_name and compare with sha1 """
         app = bpy.context.scene.cellblender_test_suite
         
         file_name = self.path_to_blend[:self.path_to_blend.rfind('.')] + "_files/mcell/Scene.main.mdl"
 
+        if test_name == None:
+            test_name = "Test"
+
         hashobject = hashlib.sha1()
         if os.path.isfile(file_name):
             hashobject.update(open(file_name, 'rb').read())  # .encode("utf-8"))
             file_hash = str(hashobject.hexdigest())
-            print("  SHA1 = " + file_hash + " for " + file_name )
+            print("  SHA1 = " + file_hash + " for \n     " + file_name )
 
             if len(good_hash) <= 0:
 
                 print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                 print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
-                print ( "%%  W A R N I N G :  No Hash value provided. Hash from '" + file_name + "' is " + file_hash )
+                print ( "%% " + test_name + "   W A R N I N G :  No Hash value provided. Hash from '" + file_name + "' is " + file_hash )
                 print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                 print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                 app.test_status = "F"
@@ -767,15 +770,18 @@ class CellBlender_Model:
             else:
 
                 if file_hash == good_hash:
-                    print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
-                    print ( "%%  O K :  Test Expected " + good_hash + ", and got " + file_hash )
-                    print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+                    print ( "\n##############################################################################################################" )
+                    print ( "##############################################################################################################" )
+                    print ( "## " + test_name )
+                    print ( "##    O K :  Test Expected " + good_hash + " - confirmed." )
+                    print ( "##############################################################################################################" )
+                    print ( "##############################################################################################################\n" )
                     app.test_status = "P"
 
                 else:
                     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
-                    print ( "%%  E R R O R :  Test Expected " + good_hash + ", but got " + file_hash )
+                    print ( "%% " + test_name + "   E R R O R :  Test Expected " + good_hash + ", but got " + file_hash )
                     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                     app.test_status = "F"
@@ -785,7 +791,7 @@ class CellBlender_Model:
 
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
-            print ( "%%  E R R O R :  File '%s' does not exist" % file_name )
+            print ( "%% " + test_name + "   E R R O R :  File '%s' does not exist" % file_name )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             app.test_status = "F"
@@ -831,7 +837,7 @@ class CellBlender_Model:
 ###########################################################################################################
 ##   This is an example model used for all the SimRunner tests.
 
-def SimRunnerExample ( context, method="COMMAND" ):
+def SimRunnerExample ( context, method="COMMAND", test_name=None ):
 
     cb_model = CellBlender_Model ( context )
 
@@ -845,7 +851,7 @@ def SimRunnerExample ( context, method="COMMAND" ):
 
     cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
 
-    cb_model.compare_mdl_with_sha1 ( "a3409b4891f9d5a9be8010afb3923f0a14d5ec4a" )
+    cb_model.compare_mdl_with_sha1 ( "a3409b4891f9d5a9be8010afb3923f0a14d5ec4a", test_name=test_name )
 
     cb_model.refresh_molecules()
 
@@ -874,7 +880,7 @@ class SimRunnerCommandTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
-        SimRunnerExample ( context, method="COMMAND" )
+        SimRunnerExample ( context, method="COMMAND", test_name="Simulation Runner Command Test" )
         return { 'FINISHED' }
 
 
@@ -894,7 +900,7 @@ class SimRunnerQueueTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
-        SimRunnerExample ( context, method="QUEUE" )
+        SimRunnerExample ( context, method="QUEUE", test_name="Simulation Runner Queue Test" )
         return { 'FINISHED' }
 
 
@@ -914,7 +920,7 @@ class SimRunnerJavaTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
-        SimRunnerExample ( context, method="JAVA" )
+        SimRunnerExample ( context, method="JAVA", test_name="Simulation Runner Java Test" )
         return { 'FINISHED' }
 
 
@@ -934,7 +940,7 @@ class SimRunnerOpenGLTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
-        SimRunnerExample ( context, method="OPENGL" )
+        SimRunnerExample ( context, method="OPENGL", test_name="Simulation Runner Open GL Test" )
         return { 'FINISHED' }
 
 
@@ -964,9 +970,9 @@ class SingleMoleculeTestOp(bpy.types.Operator):
 
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="1" )
 
-        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
         
-        cb_model.compare_mdl_with_sha1 ( "19fd01beddf82da6026810b52d6955638674f556" )
+        cb_model.compare_mdl_with_sha1 ( "19fd01beddf82da6026810b52d6955638674f556", test_name="Single Molecule Test" )
 
         cb_model.refresh_molecules()
 
@@ -1009,9 +1015,9 @@ class DoubleSphereTestOp(bpy.types.Operator):
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="400", d="0.5", y="-0.25" )
         cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="400", d="0.5", y="0.25" )
 
-        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "4410b18c1530f79c07cc2aebec52a7eabc4aded4" )
+        cb_model.compare_mdl_with_sha1 ( "4410b18c1530f79c07cc2aebec52a7eabc4aded4", test_name="Double Sphere Test" )
 
         cb_model.refresh_molecules()
 
@@ -1057,9 +1063,9 @@ class VolDiffusionConstTestOp(bpy.types.Operator):
         cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="100", d="0.01", y= "0.0" )
         cb_model.add_molecule_release_site_to_model ( mol="c", q_expr="100", d="0.01", y= "0.25" )
 
-        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=3.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "59b7e9f0f672791101d6a0061af362688e8caa42" )
+        cb_model.compare_mdl_with_sha1 ( "59b7e9f0f672791101d6a0061af362688e8caa42", test_name="Volume Diffusion Constant Test" )
 
         cb_model.refresh_molecules()
 
@@ -1111,9 +1117,9 @@ class ReactionTestOp(bpy.types.Operator):
 
         cb_model.add_reaction_to_model ( rin="a + b", rtype="irreversible", rout="bg", fwd_rate="1e8", bkwd_rate="" )
 
-        cb_model.run_model ( iterations='2000', time_step='1e-6', wait_time=5.0 )
+        cb_model.run_model ( iterations='2000', time_step='1e-6', wait_time=20.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "e302a61ecda563a02e8d65ef17c648ff088745d2" )
+        cb_model.compare_mdl_with_sha1 ( "e302a61ecda563a02e8d65ef17c648ff088745d2", test_name="Simple Reaction Test" )
 
         cb_model.refresh_molecules()
 
@@ -1176,9 +1182,9 @@ class ReleaseShapeTestOp(bpy.types.Operator):
         cb_model.add_molecule_release_site_to_model ( mol="bg", q_expr=num_rel, shape="CUBIC",           d="1.5", y="-1" )
         cb_model.add_molecule_release_site_to_model ( mol="d", q_expr=num_rel, shape="SPHERICAL_SHELL", d="1.5", z="1" )
 
-        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=5.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "c622d3e5c9eaf20911b95ae006eb197401d0e982" )
+        cb_model.compare_mdl_with_sha1 ( "c622d3e5c9eaf20911b95ae006eb197401d0e982", test_name="Release Shape Test" )
 
         cb_model.refresh_molecules()
 
@@ -1229,9 +1235,9 @@ class ParSystemTestOp(bpy.types.Operator):
 
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="C" )
 
-        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=1.0 )
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "f7a25eacc4b0ecfa6619c9428ddd761920aab7dd" )
+        cb_model.compare_mdl_with_sha1 ( "f7a25eacc4b0ecfa6619c9428ddd761920aab7dd", test_name="Parameter System Test" )
 
         cb_model.refresh_molecules()
 
@@ -1278,7 +1284,7 @@ class CubeTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "c32241a2f97ace100f1af7a711a6a970c6b9a135" )
+        cb_model.compare_mdl_with_sha1 ( "c32241a2f97ace100f1af7a711a6a970c6b9a135", test_name="Simple Cube Test" )
 
         cb_model.refresh_molecules()
 
@@ -1331,9 +1337,9 @@ class CubeSurfaceTestOp(bpy.types.Operator):
         cb_model.add_reaction_to_model ( rin="a' + s,", rtype="irreversible", rout="b, + s,", fwd_rate="1e8", bkwd_rate="" )
 
 
-        cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=5.0 )
+        cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=6.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "32312790f206beaa798ce0a7218f1f712840b0d5" )
+        cb_model.compare_mdl_with_sha1 ( "32312790f206beaa798ce0a7218f1f712840b0d5", test_name="Cube Surface Test" )
 
         cb_model.refresh_molecules()
         
@@ -1390,9 +1396,9 @@ class SphereSurfaceTestOp(bpy.types.Operator):
         cb_model.add_reaction_to_model ( rin="a' + s,", rtype="irreversible", rout="b, + s,", fwd_rate="1e8", bkwd_rate="" )
 
 
-        cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=5.0 )
+        cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=7.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "90ef79fc7405aff0bbf9a6f6864f11b148c622a4" )
+        cb_model.compare_mdl_with_sha1 ( "90ef79fc7405aff0bbf9a6f6864f11b148c622a4", test_name="Sphere Surface Test" )
 
         cb_model.refresh_molecules()
         
@@ -1456,9 +1462,9 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
         cb_model.add_reaction_to_model ( rin="a' + s2,", rtype="irreversible", rout="a' + b2, + s2,", fwd_rate="1e10", bkwd_rate="" )
 
 
-        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=3.0 )
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=5.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "3f0d87d4f5e1ab1ecedde6c0d48fa3d2dc89ab93" )
+        cb_model.compare_mdl_with_sha1 ( "3f0d87d4f5e1ab1ecedde6c0d48fa3d2dc89ab93", test_name="Overlapping Surface Test" )
 
         cb_model.refresh_molecules()
 
@@ -1578,9 +1584,9 @@ class SurfaceClassesTestOp(bpy.types.Operator):
         mcell.rxn_output.mol_colors = True
 
 
-        cb_model.run_model ( iterations='5000', time_step='1e-6', wait_time=15.0 )
+        cb_model.run_model ( iterations='5000', time_step='1e-6', wait_time=40.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "b781cd49d7b9499b87570a4ca920134b701657c5" )
+        cb_model.compare_mdl_with_sha1 ( "b781cd49d7b9499b87570a4ca920134b701657c5", test_name="Surface Classes Test" )
 
         cb_model.refresh_molecules()
 
@@ -1635,7 +1641,7 @@ class SimpleMoleculeCountTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='100', time_step='1e-6', wait_time=3.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "d24da83d3b07bb1f3be2e571fa29f99c054d6478" )
+        cb_model.compare_mdl_with_sha1 ( "d24da83d3b07bb1f3be2e571fa29f99c054d6478", test_name="Simple Molecule Count Test" )
 
         cb_model.refresh_molecules()
         cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
@@ -1712,9 +1718,9 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
         mcell.rxn_output.rxn_output_list[2].molecule_name = 'bg'
 
 
-        cb_model.run_model ( iterations='1500', time_step=dt, wait_time=5.0 )
+        cb_model.run_model ( iterations='1500', time_step=dt, wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "ec68e0720b43755c4f193d65ebaaa55eb2c2cfae" )
+        cb_model.compare_mdl_with_sha1 ( "ec68e0720b43755c4f193d65ebaaa55eb2c2cfae", test_name="Release Time Patterns Test" )
 
         cb_model.refresh_molecules()
 
@@ -1737,7 +1743,7 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
 ###########################################################################################################
 ##   Main Function supporting Lotka Volterra models
 
-def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_rate, interaction_radius, time_step, iterations, mdl_hash, wait_time ):
+def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_rate, interaction_radius, time_step, iterations, mdl_hash, test_name, wait_time ):
 
     cb_model = CellBlender_Model ( context )
 
@@ -1794,7 +1800,7 @@ def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_ra
     # mcell.run_simulation.simulation_run_control = 'JAVA'
     cb_model.run_model ( iterations=iterations, time_step=time_step, wait_time=wait_time )
 
-    cb_model.compare_mdl_with_sha1 ( mdl_hash )
+    cb_model.compare_mdl_with_sha1 ( mdl_hash, test_name=test_name )
 
     cb_model.refresh_molecules()
 
@@ -1829,7 +1835,7 @@ class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
 
     def execute(self, context):
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="be2169e601b5148c9d2da24143aae99367bf7f39", wait_time=5.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="be2169e601b5148c9d2da24143aae99367bf7f39", test_name="Lotka Volterra Torus - Diffusion Limited Reaction", wait_time=15.0 )
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -1852,7 +1858,7 @@ class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
 
     def execute(self, context):
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="bd1033a5ec4f6c51c017da4640d5bce7df5cdbd8", wait_time=50.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="bd1033a5ec4f6c51c017da4640d5bce7df5cdbd8", test_name="Lotka Volterra Torus - Physiologic Reaction", wait_time=60.0 )
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -1946,9 +1952,9 @@ class OrganelleTestOp(bpy.types.Operator):
         bpy.ops.mcell.auto_generate_boundaries()
 
 
-        cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
+        cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=25.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "ecd81fc1c5b65777866da16f286b4eb70e362620" )
+        cb_model.compare_mdl_with_sha1 ( "ecd81fc1c5b65777866da16f286b4eb70e362620", test_name="Organelle Test" )
 
         cb_model.refresh_molecules()
 
