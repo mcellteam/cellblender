@@ -109,7 +109,35 @@ abstract class data_file {
 	}
 
   static int next_color = 0;
+  static int color_list[][] = {
+    { 255,   0,   0 },
+    {   0, 255,   0 },
+    {   0,   0, 255 },
+    { 255, 255,   0 },
+    { 255,   0, 255 },
+    {   0, 255, 255 },
+    { 255, 255, 255 },
+    { 150,   0,   0 },
+    {   0, 150,   0 },
+    {   0,   0, 150 },
+    { 150, 150,   0 },
+    { 150,   0, 150 },
+    {   0, 150, 150 },
+    { 150, 150, 150 }
+  };
+
   public static Color get_next_color() {
+		if (next_color >= color_list.length) {
+		  next_color = 0;
+		}
+		int r = color_list[next_color][0];
+		int g = color_list[next_color][1];
+		int b = color_list[next_color][2];
+		next_color += 1;
+		return ( new Color(r,g,b) );
+  }
+
+  public static Color get_next_computed_color() {
   	do {
     	next_color += 1;
    	} while ( (next_color % 8) == 0 );
@@ -256,7 +284,171 @@ class file_xy extends data_file {
     }
   }
 
+  /*
+  public double[][] append_block ( double[][] blocks, double[] block, int num_blocks ) {
+    double[][] new_blocks = new double[num_blocks+1][];
+    for (int b=0; b<num_blocks; b++) {
+      System.out.println ( "Copying block " + b );
+      new_blocks[b] = blocks[b];
+    }
+    new_blocks[num_blocks] = block;
+    return new_blocks;
+  }
+  */
+
+  public double[][] append_block ( double[][] blocks, double[] block ) {
+    int base_len = 0;
+    if (blocks == null) {
+      base_len = 0;
+    } else {
+      base_len = blocks.length;
+    }
+    double[][] new_blocks = new double[base_len+1][];
+    if (blocks != null) {
+      for (int b=0; b<base_len; b++) {
+        // System.out.println ( "Copying block " + b );
+        new_blocks[b] = blocks[b];
+      }
+    }
+    new_blocks[base_len] = block;
+    return new_blocks;
+  }
+
+
+
   public file_xy ( String file_name ) {
+
+    double[][] blocks = null;
+    int blocksize = 100000*2; // Must be an EVEN number to save on checking!!!
+    double[] block = null;
+    int num_blocks = 0;
+    int blockindex = 0;
+    int total_values = 0;
+    int num_values = 0;
+
+    name = "File=\"" + file_name + "\"";
+
+    try {
+      BufferedReader in = new BufferedReader(new FileReader(file_name));
+      String s;
+      while ( (s = in.readLine()) != null ) {
+        String ss[] = s.split(" ");
+        for (int i=0; i<ss.length; i++) {
+          if (block == null) {
+            block = new double[blocksize];
+            blockindex = 0;
+          }
+          block[blockindex] = Double.parseDouble(ss[i]);
+          blockindex += 1;
+          if (blockindex >= blocksize) {
+            blocks = append_block ( blocks, block );
+            num_blocks += 1;
+            block = new double[blocksize];
+            blockindex = 0;
+          }
+          total_values += 1;
+        }
+      }
+
+      if (blockindex != 0) {
+        // This indicates that there's a partially filled block that needs to be added to the blocks array
+        blocks = append_block ( blocks, block );
+        num_blocks += 1;
+      }
+
+      System.out.println ( "Read " + total_values + " values into " + num_blocks + " blocks" );
+
+      // Allocate and copy from the blocks into the arrays
+
+      num_values = total_values / 2;
+
+      x_values = new double[num_values];
+      y_values = new double[num_values];
+
+      int blocknum = 0;
+      blockindex = 0;
+      for (int i=0; i<num_values; i++) {
+        x_values[i] = blocks[blocknum][blockindex++];
+        y_values[i] = blocks[blocknum][blockindex++];
+        // System.out.println ( "Assigned " + x_values[i] + ", " + y_values[i] );
+        if (blockindex >= blocksize) {
+          blocknum += 1;
+          blockindex = 0;
+        }
+	    }
+
+
+	  } catch ( IOException ie ) {
+	    System.out.println ( "Error reading file " + file_name );
+	    ie.printStackTrace();
+	  } catch ( Exception e ) {
+	    System.out.println ( "Exception reading file " + file_name + ": " + e );
+	    e.printStackTrace();
+    }
+
+
+    /* Uncomment for debugging
+    try {
+      PrintStream dumpfile = new PrintStream ( file_name + ".dump.txt" );
+      for (int i=0; i<num_values; i++) {
+        dumpfile.println ( x_values[i] + " " + y_values[i] );
+      }
+      dumpfile.flush();
+      dumpfile.close();
+    } catch ( Exception xx ) {
+    }
+    */
+
+
+    /* Old Vector code ... was slooooow
+
+    Vector blocks = new Vector();
+    int blocksize = 200*200; // Must be an EVEN number to save on checking!!!
+    double block[] = null;
+    int blockindex = 0;
+    int total_values = 0;
+    try {
+      BufferedReader in = new BufferedReader(new FileReader(file_name));
+      String s;
+      while ( (s = in.readLine()) != null ) {
+        String ss[] = s.split(" ");
+        for (int i=0; i<ss.length; i++) {
+          if (block == null) {
+            block = new double[blocksize];
+            blockindex = 0;
+          }
+          block[blockindex++] = Double.parseDouble(ss[i]);
+          if (blockindex >= blocksize) {
+            blocks.addElement ( block );
+            block = new double[blocksize];
+          }
+          total_values += 1;
+        }
+      }
+      System.out.println ( "Read " + total_values + " values" );
+
+      // Allocate and copy from the blocks into the arrays
+
+      int num_values = total_values / 2;
+
+      x_values = new double[num_values];
+      y_values = new double[num_values];
+
+      int blocknum = 0;
+      blockindex = 0;
+      try {
+        System.out.println ( "Try reading from the blocks vector" );
+        block = (double[])blocks.elementAt(blockindex);
+      } catch ( Exception eee ) {
+        System.out.println ( "Error reading block from Vector: " + eee );
+      }
+      for (int i=0; i<num_values; i++) {
+        x_values[i] = (double)(i);
+        y_values[i] = (double)(i*i);
+	    }
+	  } catch ( IOException e ) {
+	    System.out.println ( "Error reading file " + file_name );
+    }
 
 
     // New one pass code uses a Vector:
@@ -293,7 +485,8 @@ class file_xy extends data_file {
       x_values[i] = (Double)(values.elementAt(2*i));
       y_values[i] = (Double)(values.elementAt((2*i)+1));
 	  }
-    
+    */
+
     /* Old two pass code reads twice to use an array:
     // Read the values
     name = "File=\"" + file_name + "\"";
@@ -696,6 +889,17 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 								combined = true;
 							}
 						}
+					} else if (field.equals("Variable_Y:")) {
+						field = fr.next_field();
+						if ( (field != null) && (field.length() > 0) ) {
+							double var_level = new Double(field);
+							System.out.println ( "Setting Variable Y to : " + var_level );
+							if (var_level < 0.5) {
+								var_y = false;
+							} else {
+								var_y = true;
+							}
+						}
 					} else if (field.equals("WindowWidth:")) {
 						field = fr.next_field();
 						if ( (field != null) && (field.length() > 0) ) {
@@ -738,6 +942,11 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 			} else {
 				o.write ( "Combined: 0.0\n" );
 			}
+			if (var_y) {
+				o.write ( "Variable_Y: 1.0\n" );
+			} else {
+				o.write ( "Variable_Y: 0.0\n" );
+			}
 			Rectangle r = getBounds();
 			o.write ( "WindowWidth: " + r.width + "\n" );
 			o.write ( "WindowHeight: " + r.height + "\n" );
@@ -755,6 +964,7 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 
   int pref_w=1200, pref_h=600;
   boolean combined = true;
+  boolean var_y = false;
 	boolean annotation = true;
 	boolean fit_x = false;
 	boolean antialias = false;
@@ -777,13 +987,15 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 	    	// mi.addActionListener(this);
 	    	menu_bar.add ( file_menu );
 			JMenu set_menu = new JMenu("Show");
+		  	set_menu.add ( mi = new JMenuItem("Full Range") );
+		  	mi.addActionListener(this);
 		  	set_menu.add ( mi = new JCheckBoxMenuItem("Combined",combined) );
+		  	mi.addActionListener(this);
+		  	set_menu.add ( mi = new JCheckBoxMenuItem("Variable Y",var_y) );
 		  	mi.addActionListener(this);
 		  	set_menu.add ( mi = new JCheckBoxMenuItem("Annotation",annotation) );
 		  	mi.addActionListener(this);
 		  	set_menu.add ( mi = new JCheckBoxMenuItem("Antialiasing",antialias) );
-		  	mi.addActionListener(this);
-		  	set_menu.add ( mi = new JMenuItem("Full Range") );
 		  	mi.addActionListener(this);
 		  	menu_bar.add ( set_menu );
 	   return (menu_bar);
@@ -856,6 +1068,15 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 			} else {
 				System.out.println ( "Separate Plots" );
 				combined = false;
+			}
+		} else if (cmd.equalsIgnoreCase("Variable Y")) {
+			JCheckBoxMenuItem mi = (JCheckBoxMenuItem)(e.getSource());
+			if (mi.isSelected()) {
+				System.out.println ( "Variable Y Scaling" );
+				var_y = true;
+			} else {
+				System.out.println ( "Fixed Y Scaling" );
+				var_y = false;
 			}
 		} else if (cmd.equalsIgnoreCase("Annotation")) {
 			JCheckBoxMenuItem mi = (JCheckBoxMenuItem)(e.getSource());
@@ -1061,24 +1282,42 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		double y_min=Double.NaN, y_max=Double.NaN;
 		if (combined) {
 		  // Need to find the y_min and y_max of combined data
-      for (int p=0; p<num_panels; p++) {
-			  for (int i=0; i<w; i++) {
-				  x = (i / x_scale) + x0;
-				  y = f[p].f ( x );
-				  if (!Double.isNaN(y)) {
-  				  if (Double.isNaN(y_min)) y_min = y;
-  				  if (Double.isNaN(y_max)) y_max = y;
-  				  if (!Double.isNaN(y_min)) {
-  				    if (y < y_min) {
-  				      y_min = y;
-  				    }
-  				  }
-  				  if (!Double.isNaN(y_max)) {
-  				    if (y > y_max) {
-  				      y_max = y;
-  				    }
-  				  }
-  				}
+      if (var_y) {
+        for (int p=0; p<num_panels; p++) {
+			    for (int i=0; i<w; i++) {
+				    x = (i / x_scale) + x0;
+				    y = f[p].f ( x );
+				    if (!Double.isNaN(y)) {
+    				  if (Double.isNaN(y_min)) y_min = y;
+    				  if (Double.isNaN(y_max)) y_max = y;
+    				  if (!Double.isNaN(y_min)) {
+    				    if (y < y_min) {
+    				      y_min = y;
+    				    }
+    				  }
+    				  if (!Double.isNaN(y_max)) {
+    				    if (y > y_max) {
+    				      y_max = y;
+    				    }
+    				  }
+    				}
+			    }
+			  }
+			} else {
+        for (int p=0; p<num_panels; p++) {
+          f[p].find_y_range();
+				  if (Double.isNaN(y_min)) y_min = f[p].min_y;
+				  if (Double.isNaN(y_max)) y_max = f[p].max_y;
+				  if (!Double.isNaN(y_min)) {
+				    if (f[p].min_y < y_min) {
+				      y_min = f[p].min_y;
+				    }
+				  }
+				  if (!Double.isNaN(y_max)) {
+				    if (f[p].max_y > y_max) {
+				      y_max = f[p].max_y;
+				    }
+				  }
 			  }
 			}
 			// System.out.println ( "Combined: y_min = " + y_min + ", y_max = " + y_max );
@@ -1120,43 +1359,61 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		  
 		  // System.out.println ( "Plotting from 0 to " + w );
 
-			for (int i=0; i<w; i++) {
-				x = (i / x_scale) + x0;
-				y = f[p].samples[i] = f[p].f ( x );  // Save the data_file values so the data_file doesn't have to get called twice
-				// y = f[p].samples[i] = Math.sin(x);
+      if (var_y) {
+        // Compute samples and y range based on what's showing in the window
+			  for (int i=0; i<w; i++) {
+				  x = (i / x_scale) + x0;
+				  y = f[p].samples[i] = f[p].f ( x );  // Save the data_file values so the data_file doesn't have to get called twice
+				  // y = f[p].samples[i] = Math.sin(x);
 
-			  if (!Double.isNaN(y)) {
-				  if (Double.isNaN(y_min)) y_min = y;
-				  if (Double.isNaN(y_max)) y_max = y;
-				  if (!Double.isNaN(y_min)) {
-				    if (y < y_min) {
-				      y_min = y;
+			    if (!Double.isNaN(y)) {
+				    if (Double.isNaN(y_min)) y_min = y;
+				    if (Double.isNaN(y_max)) y_max = y;
+				    if (!Double.isNaN(y_min)) {
+				      if (y < y_min) {
+				        y_min = y;
+				      }
+				    }
+				    if (!Double.isNaN(y_max)) {
+				      if (y > y_max) {
+				        y_max = y;
+				      }
 				    }
 				  }
-				  if (!Double.isNaN(y_max)) {
-				    if (y > y_max) {
-				      y_max = y;
-				    }
-				  }
-				}
 
-				if (!combined) {
-				  if (!Double.isNaN(y)) {
-  				  if (Double.isNaN(y_min)) y_min = y;
-  				  if (Double.isNaN(y_max)) y_max = y;
-  				  if (!Double.isNaN(y_min)) {
-  				    if (y < y_min) {
-  				      y_min = y;
-  				    }
-  				  }
-  				  if (!Double.isNaN(y_max)) {
-  				    if (y > y_max) {
-  				      y_max = y;
-  				    }
-  				  }
-  				}
-				}
+				  if (!combined) {
+				    if (!Double.isNaN(y)) {
+    				  if (Double.isNaN(y_min)) y_min = y;
+    				  if (Double.isNaN(y_max)) y_max = y;
+    				  if (!Double.isNaN(y_min)) {
+    				    if (y < y_min) {
+    				      y_min = y;
+    				    }
+    				  }
+    				  if (!Double.isNaN(y_max)) {
+    				    if (y > y_max) {
+    				      y_max = y;
+    				    }
+    				  }
+    				}
+				  }
+			  }
+			} else {
+        // Compute samples and y range based on the entire data set
+  		  if (!combined) {
+          // Compute y range based on the entire data set
+          f[p].find_y_range();
+          y_min = f[p].min_y;
+          y_max = f[p].max_y;
+        }
+
+			  for (int i=0; i<w; i++) {
+				  x = (i / x_scale) + x0;
+				  f[p].samples[i] = f[p].f ( x );  // Save the data_file values so the data_file doesn't have to get called twice
+			  }
+
 			}
+      // System.out.println ( "Set " + p + " range: " + y_min + " to " + y_max );
 			
 			if ((Double.isNaN(y_min)) && (Double.isNaN(y_max))) {
 			  y_min = y_max = 0.0;
@@ -1194,8 +1451,10 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 				  if (!Double.isNaN(old_y)) {
 				    if (combined) {
 				      g.drawLine ( i-1, (int)(old_y*win_h), i, (int)(y*win_h) );
+				      // System.out.println ( "  draw ( " + ((int)(old_y*win_h)) + " to " + ((int)(y*win_h)) + ")" );
 				    } else {
 				      g.drawLine ( i-1, (int)(old_y*h), i, (int)(y*h) );
+				      // System.out.println ( "  draw ( " + ((int)(old_y*h)) + " to " + ((int)(y*h)) + ")" );
 				    }
 				  }
 				}
@@ -1381,6 +1640,8 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
     	drag_button_down = true;
 	  } else {
 		  // System.out.println ( "Alternate button" );
+		  // Disable cursor changing because it's not used in this version
+		  /*
 		  if ( (current_cursor == null) || (current_cursor == b_cursor) ) {
 		    current_cursor = h_cursor;
 		  } else if (current_cursor == h_cursor) {
@@ -1389,6 +1650,7 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		    current_cursor = b_cursor;
 		  }
 		  setCursor ( current_cursor );
+		  */
 	  }
 	}
 	public void mouseReleased(MouseEvent e) {

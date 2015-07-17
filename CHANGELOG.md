@@ -1,28 +1,8 @@
-Changes since 0.1.52
-
-* New Features:
-  * Optional initialization commands
-  * Partition generation
-  * Surface classes
-  * Modification of surface regions by surface classes
-  * Hid advanced molecule options
-  * Compatible with Blender 2.66
-    (Not compatible with previous versions of Blender)
-  * Export of reaction and visualization data
-  * Plotting of reaction data
-  * Run MCell simulations from within Blender
-  * Updated status system
-  * Better error checking
-  * New project directory layout
-  * CellBlender preferences
-  * MDL geometry importer implemented in c/flex/bison/swig/python
-
-* Bug Fixes:
-  * Meshes could be exported with the wrong rotation
-  * Molecule positions and shapes (glyphs) could be offset on import
-
+CHANGELOG
+===============================================================================
 
 Changes in 1.0.1 (since 1.0RC3)
+-------------------------------------------------------------------------------
 
 * New Features:
   * New and improved CB UI:
@@ -45,8 +25,28 @@ Changes in 1.0.1 (since 1.0RC3)
       * Streams stdout and stderr in real-time of each process to a separate
         Blender "text" datablock, viewable in a Blender Text window.
     * Running jobs are terminated when quitting from Blender.
-
-
 * Bug Fixes:
   * Many, too numerous to mention!
 
+Changes since 0.1.52
+-------------------------------------------------------------------------------
+
+* New Features:
+  * Optional initialization commands
+  * Partition generation
+  * Surface classes
+  * Modification of surface regions by surface classes
+  * Hid advanced molecule options
+  * Compatible with Blender 2.66
+    (Not compatible with previous versions of Blender)
+  * Export of reaction and visualization data
+  * Plotting of reaction data
+  * Run MCell simulations from within Blender
+  * Updated status system
+  * Better error checking
+  * New project directory layout
+  * CellBlender preferences
+  * MDL geometry importer implemented in c/flex/bison/swig/python
+* Bug Fixes:
+  * Meshes could be exported with the wrong rotation
+  * Molecule positions and shapes (glyphs) could be offset on import

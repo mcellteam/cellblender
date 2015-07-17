@@ -66,9 +66,21 @@ def code_api_version():
     return 1
 
 
+def flag_incompatible_data_model ( message ):
+    print ( "#########################################################" )
+    print ( "#########################################################" )
+    print ( "Note: an Incompatible CellBlender Data Model was detected" )
+    print ( message )
+    print ( "#########################################################" )
+    print ( "#########################################################" )
+
 def handle_incompatible_data_model ( message ):
+    print ( "###########################################################" )
+    print ( "###########################################################" )
     print ( "Quitting Blender due to Incompatible CellBlender Data Model" )
     print ( message )
+    print ( "###########################################################" )
+    print ( "###########################################################" )
     bpy.ops.wm.quit_blender()
 
 
@@ -189,6 +201,7 @@ class ImportDataModel(bpy.types.Operator, ExportHelper):
         f.close()
 
         dm = unpickle_data_model ( pickle_string )
+        dm['mcell'] = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
         context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'] )
 
         print ( "Done loading CellBlender model." )
@@ -211,6 +224,7 @@ class ImportDataModelAll(bpy.types.Operator, ExportHelper):
         f.close()
 
         dm = unpickle_data_model ( pickle_string )
+        dm['mcell'] = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
         context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
 
         print ( "Done loading CellBlender model." )
@@ -234,6 +248,7 @@ def restore_mcell_preferences ( mp, mcell ):
     mcell.cellblender_preferences.bionetgen_location = mp['bionetgen_location']
     mcell.cellblender_preferences.bionetgen_location_valid = mp['bionetgen_location_valid']
 
+import traceback
 
 def upgrade_properties_from_data_model ( context ):
     print ( "Upgrading Properties from Data Model" )
@@ -280,11 +295,14 @@ def upgrade_properties_from_data_model ( context ):
         restore_mcell_preferences ( mp, mcell )
 
         # Do the actual updating of properties from data model right here
+        dm = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm)
         mcell.build_properties_from_data_model ( context, dm )
     else:
         print ( "Warning: This should never happen." )
+        traceback.print_stack()
         print ( "No data model to upgrade ... building a data model and then recreating properties." )
         dm = mcell.build_data_model_from_properties ( context )
+        dm = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm)
         mcell.build_properties_from_data_model ( context, dm )
 
     # Update the source_id
@@ -343,6 +361,7 @@ def upgrade_RC3_properties_from_data_model ( context ):
       restore_mcell_preferences ( mp, mcell )
 
       # Do the actual updating of properties from data model right here
+      dm = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm)
       mcell.build_properties_from_data_model ( context, dm )
 
       # Update the source_id
@@ -378,16 +397,20 @@ def save_pre(context):
             # The context appears to always be "None", so use bpy.context
             context = bpy.context
         if hasattr ( context.scene, 'mcell' ):
-            print ( "Upgrading blend file to current version before saving" )
             mcell = context.scene.mcell
-            if not mcell.get ( 'saved_by_source_id' ):
-                # This .blend file was created with CellBlender RC3 / RC4
-                upgrade_RC3_properties_from_data_model ( context )
-            else:
-                upgrade_properties_from_data_model ( context )
-            mcell['saved_by_source_id'] = source_id
-            dm = mcell.build_data_model_from_properties ( context )
-            context.scene.mcell['data_model'] = pickle_data_model(dm)
+            # Only save the data model if mcell has been initialized
+            if hasattr ( mcell, 'initialized' ):
+                if mcell.initialized:
+                    print ( "Upgrading blend file to current version before saving" )
+                    mcell = context.scene.mcell
+                    if not mcell.get ( 'saved_by_source_id' ):
+                        # This .blend file was created with CellBlender RC3 / RC4
+                        upgrade_RC3_properties_from_data_model ( context )
+                    else:
+                        upgrade_properties_from_data_model ( context )
+                    mcell['saved_by_source_id'] = source_id
+                    dm = mcell.build_data_model_from_properties ( context )
+                    context.scene.mcell['data_model'] = pickle_data_model(dm)
     print ( "========================================" )
 
 

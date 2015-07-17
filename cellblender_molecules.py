@@ -217,15 +217,28 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
         return m_dict
 
-    def build_properties_from_data_model ( self, context, dm_dict ):
-        # First upgrade the data model as needed
-        if not ('data_model_version' in dm_dict):
-            # Make changes to move from unversioned to DM_2014_10_24_1638
-            dm_dict['data_model_version'] = "DM_2014_10_24_1638"
 
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellMoleculeProperty Data Model" )
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        # Check that the upgraded data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
+            return None
+
+        return dm
+
+
+
+    def build_properties_from_data_model ( self, context, dm_dict ):
+        # Check that the data model version matches the version for this property group
         if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
-
         # Now convert the updated Data Model into CellBlender Properties
         self.name = dm_dict["mol_name"]
         self.bnglLabel = dm_dict['mol_bngl_label']
@@ -598,11 +611,27 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         mol_dm['molecule_list'] = mol_list
         return mol_dm
 
-    def build_properties_from_data_model ( self, context, dm ):
-        # First upgrade the data model as needed
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellMoleculesListProperty Data Model" )
         if not ('data_model_version' in dm):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculesListProperty data model to current version." )
+            return None
+
+        if "molecule_list" in dm:
+            for item in dm["molecule_list"]:
+                if MCellMoleculeProperty.upgrade_data_model ( item ) == None:
+                    return None
+        return dm
+
+
+    def build_properties_from_data_model ( self, context, dm ):
+        # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculesListProperty data model to current version." )
 
