@@ -2230,15 +2230,17 @@ def set_viz_boundaries( context ):
 #        bpy.context.scene.frame_end = len(mcell.mol_viz.mol_file_list)-1
         bpy.context.scene.frame_end = len(global_mol_file_list)-1
 
-        for area in bpy.context.screen.areas:
-            if area.type == 'TIMELINE':
-                for region in area.regions:
-                    if region.type == 'WINDOW':
-                        ctx = bpy.context.copy()
-                        ctx['area'] = area
-                        ctx['region'] = region
-                        bpy.ops.time.view_all(ctx)
-                        break  # It's not clear if this should break or continue ... breaking for now
+        if bpy.context.screen != None:
+            for area in bpy.context.screen.areas:
+                if area != None:
+                    if area.type == 'TIMELINE':
+                        for region in area.regions:
+                            if region.type == 'WINDOW':
+                                ctx = bpy.context.copy()
+                                ctx['area'] = area
+                                ctx['region'] = region
+                                bpy.ops.time.view_all(ctx)
+                                break  # It's not clear if this should break or continue ... breaking for now
 
 
 class MCELL_OT_select_viz_data(bpy.types.Operator):
@@ -2878,6 +2880,7 @@ def mol_viz_file_read(mcell_prop, filepath):
         mols_obj = bpy.data.objects.get("molecules")
         if not mols_obj:
             bpy.ops.object.add(location=[0, 0, 0])      # Create an "Empty" object in the Blender scene
+            ### Note, the following line seems to cause an exception in some contexts: 'Context' object has no attribute 'selected_objects'
             mols_obj = bpy.context.selected_objects[0]  # The newly added object will be selected
             mols_obj.name = "molecules"                 # Name this empty object "molecules" 
             mols_obj.hide_select = True

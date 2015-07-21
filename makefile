@@ -1,6 +1,6 @@
 
 # Linux:
-INSTALL_DIR = ~/.config/blender/2.74/scripts/addons/
+INSTALL_DIR = ~/.config/blender/2.75/scripts/addons/
 
 # Mac:
 #INSTALL_DIR = ~/Library/Application\ Support/Blender/2.74/scripts/addons/
@@ -34,7 +34,7 @@ $(SUBDIRS):
 #  (see Arguments to Specify the Goals). 
 
 # Note that files which auto-change but are included in the zip file are not part of the source list
-cellblender.zip: $(SOURCES)
+cellblender.zip: $(SOURCES) SimControl
 	@echo Updating cellblender.zip
 	@echo Sources = $(SOURCES)
 	touch -t 201502050000 cellblender_id.py
@@ -71,6 +71,7 @@ clean:
 install: cellblender.zip
 	@if [ "$(INSTALL_DIR)" ]; then \
 	  unzip -o cellblender.zip -d $(INSTALL_DIR); \
+	  cp test_suite/cellblender_test_suite.py $(INSTALL_DIR); \
 	fi
 	@echo ===========================================================
 	@cat $(INSTALL_DIR)cellblender/cellblender_id.py
