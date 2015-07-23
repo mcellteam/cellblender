@@ -85,6 +85,7 @@ class EXTERNAL_OT_molecule_add(bpy.types.Operator):
             molecule.init_properties(ps)
 
             molecule.name = str(key['name'])
+            molecule.bnglLabel = str(key['extendedName'])
             molecule.type = str(key['type'])
             #molecule.diffusion_constant.expression = str(key['dif'])
             #molecule.diffusion_constant.param_data.label = "Diffusion Constant"
@@ -182,40 +183,39 @@ class EXTERNAL_OT_reaction_output_add(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         #filePointer= open(filePath + '.json','r')
-        #jfile = json.load(filePointer) 
-        jfile = accessFile(filePath,self)     
-        ps = mcell.parameter_system
-        obs_list = jfile['obs_list']     
+        #jfile = json.load(filePointer)
+        jfile = accessFile(filePath, self)
+        #ps = mcell.parameter_system
+        obs_list = jfile['obs_list']
         index = -1
         import copy
-        for index,key in enumerate(obs_list):
+        for index, key in enumerate(obs_list):
             strBuffer = []
             #mcell.rxn_output.complex_rxn_output_list.append({'name':key['name'],'value':key['value']})
-            
             for element in key['value']:
                 if element == ['0']:
                     continue
                 tmp = copy.copy(element)
                 tmp[-1] = 'COUNT[{0},WORLD]'.format(element[-1])
                 strBuffer.append(' * '.join(tmp))
-
-
+            '''
             mcell.rxn_output.complex_rxn_output_list.add()
             mcell.rxn_output.temp_index = index
             rxn_output_instance = mcell.rxn_output.complex_rxn_output_list[
                 mcell.rxn_output.temp_index]
             rxn_output_instance.molecule_name = '+'.join(strBuffer)
             rxn_output_instance.name = key['name']
+            '''
 
-            '''    
-            index += 1
             mcell.rxn_output.rxn_output_list.add()
-            mcell.rxn_output.active_rxn_output_index = index
+            mcell.rxn_output.active_rxn_output_index = len(mcell.rxn_output.rxn_output_list) - 1
             rxn_output = mcell.rxn_output.rxn_output_list[
                 mcell.rxn_output.active_rxn_output_index]
-            #release_site.set_defaults()
-            rxn_output.init_properties(ps)
-            '''
+            rxn_output.mdl_string = '+'.join(strBuffer)
+            rxn_output.molecule_name = key['name']
+            rxn_output.rxn_or_mol = 'MDLString'
+
+            
 
             #print ( "Adding reaction output " + str(key['name']))
 

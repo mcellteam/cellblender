@@ -454,13 +454,14 @@ def save_wrapper(context, out_file, filedir):
     save_general('rxn_output', save_rxn_output_mdl, save_state,
                  unfiltered_rxn_output_list)
                  
-    
+    """
+    #deprecated
     #JJT:temporary solution for complex output expressions
     complex_rxn_output_list = mcell.rxn_output.complex_rxn_output_list
     if len(complex_rxn_output_list) > 0:
         save_modular_or_allinone(filedir, out_file, 'rxn_output',
                                  save_rxn_output_temp_mdl,[context, complex_rxn_output_list])
-
+    """
 
     if error_list and invalid_policy == 'dont_run':
         # If anything is invalid, delete all the MDLs.
@@ -1064,8 +1065,18 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
     for rxn_output in rxn_output_list:
         if rxn_output.rxn_or_mol == 'Reaction':
             count_name = rxn_output.reaction_name
-        else:
+        elif rxn_output.rxn_or_mol == 'Molecule':
             count_name = rxn_output.molecule_name
+        elif rxn_output.rxn_or_mol == 'MDLString':
+            outputStr = rxn_output.mdl_string
+            output_file = rxn_output.molecule_name
+            if outputStr not in ['', None]:
+                outputStr = '{%s} =>  "./react_data/seed_" & seed & \"/%s.World.dat\"\n' % (outputStr, output_file)
+                out_file.write(outputStr)
+            else:
+                print('Found invalid reaction output {0}'.format(rxn_output.name))
+            continue
+
         object_name = rxn_output.object_name
         region_name = rxn_output.region_name
         if rxn_output.count_location == 'World':
@@ -1076,16 +1087,17 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
             out_file.write(
                 "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
                 "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,
-                object_name, count_name, object_name))
+                                      object_name, count_name, object_name))
         elif rxn_output.count_location == 'Region':
             out_file.write(
                 "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
                 "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,
                 object_name, region_name, count_name, object_name, region_name))
                 
-
     out_file.write("}\n\n")
 
+"""
+#deprecated
 def save_rxn_output_temp_mdl(context, out_file, rxn_output_list):
     #JJT:temporary code that outsputs imported rxn output expressions
     #remove when we figure out how to add this directly to the interface
@@ -1107,7 +1119,7 @@ def save_rxn_output_temp_mdl(context, out_file, rxn_output_list):
         else:
             print('Found invalid reaction output {0}'.format(outputStr))
     out_file.write("}\n\n")
-
+"""
 
 def save_mod_surf_regions(context, out_file, mod_surf_regions_list):
     """ Saves modify surface region info to mdl output file. """

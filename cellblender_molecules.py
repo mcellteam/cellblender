@@ -121,10 +121,15 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     type = EnumProperty(
         items=type_enum, name="Molecule Type",
         default='3D',
-        description="Surface molecules are constrained to surfaces/meshes. "
+        description="Surface molecules are constrained to surfaces/meshes. "    
                     "Volume molecules exist in space.")
     diffusion_constant = PointerProperty ( name="Molecule Diffusion Constant", type=parameter_system.Parameter_Reference )
     lr_bar_trigger = BoolProperty("lr_bar_trigger", default=False)
+    bnglLabel = StringProperty(
+        name="BNGL Label", default="",
+        description="The molecule BNGL label",
+        update=check_callback)
+
     target_only = BoolProperty(
         name="Target Only",
         description="If selected, molecule will not initiate reactions when "
@@ -163,6 +168,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
 
     name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    bngl_label_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     type_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     target_only_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
@@ -199,6 +205,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         m_dict = {}
         m_dict['data_model_version'] = "DM_2014_10_24_1638"
         m_dict['mol_name'] = m.name
+        m_dict['mol_bngl_label'] = m.bnglLabel
         m_dict['mol_type'] = str(m.type)
         m_dict['diffusion_constant'] = m.diffusion_constant.get_expr()
         m_dict['target_only'] = m.target_only
@@ -235,6 +242,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
         # Now convert the updated Data Model into CellBlender Properties
         self.name = dm_dict["mol_name"]
+        self.bnglLabel = dm_dict['mol_bngl_label']
         self.type = dm_dict["mol_type"]
         self.diffusion_constant.set_expr ( dm_dict["diffusion_constant"] )
         self.target_only = dm_dict["target_only"]
@@ -254,6 +262,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
         helptext = "Molecule Name\nThis is the name used in Reactions and Display"
         parameter_system.draw_prop_with_help ( layout, "Name", self, "name", "name_show_help", self.name_show_help, helptext )
+
+        helptext = "This is a BNGL label that is used to identify a given species \n \
+                    as a complex molecule."
+        parameter_system.draw_prop_with_help ( layout, "BNGL Label", self, "bnglLabel", "bngl_label_show_help", self.bngl_label_show_help, helptext )
 
         helptext = "Molecule Type: Either Volume or Surface\n" + \
                    "Volume molecules are placed in and diffuse in 3D spaces." + \

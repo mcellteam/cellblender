@@ -2564,6 +2564,37 @@ class MCellReactionsPropertyGroup(bpy.types.PropertyGroup):
                                "count statements or reaction driven molecule release / placement."
                     ps.draw_prop_with_help ( layout, "Reaction Name:", rxn, "rxn_name", "rxn_name_show_help", rxn.rxn_name_show_help, helptext )
 
+                    reactants = rxn.reactants.split(" + ")
+                    products = rxn.products.split(" + ")
+                    mol_list = mcell.molecules.molecule_list
+                    bnglreactant = []
+                    bnglproduct = []
+                    for reactant in reactants:
+                        reactantStr = reactant
+                        while reactantStr[-1] in ["'", ",", ";"]:
+                            reactantStr = reactantStr[:-1]
+                        if reactantStr in mol_list:
+                            tmpStr = mol_list[reactantStr].bnglLabel if mol_list[reactantStr].bnglLabel != '' else mol_list[reactantStr].name
+                            bnglreactant.append(tmpStr)
+                    for product in products:
+                        productStr = product
+                        while productStr[-1] in ["'", ",", ";"]:
+                            productStr = productStr[:-1]
+
+                        if productStr in mol_list:
+                            tmpStr = mol_list[productStr].bnglLabel if mol_list[productStr].bnglLabel != '' else mol_list[productStr].name
+                            bnglproduct.append(tmpStr)
+
+                    reactant_string = ' + '.join(bnglreactant) + ' -> '
+                    product_string = ' + '.join(bnglproduct)
+
+                    if len(product_string) > 0:
+                        row = layout.row()
+                        row2 = layout.row()
+
+                        row.label(text="BNGL reaction: {0}".format(reactant_string), icon='BLANK1')
+                        row2.label(text="{0}".format(product_string), icon='BLANK1')
+
             else:
                 row.label(text="Define at least one molecule", icon='ERROR')
 
@@ -3158,6 +3189,10 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                     ps.draw_prop_search_with_help ( layout, "Molecule:", rel, "molecule", mcell.molecules, "molecule_list", "mol_show_help", rel.mol_show_help, helptext )
 
                     if rel.molecule in mcell.molecules.molecule_list:
+                        label = mcell.molecules.molecule_list[rel.molecule].bnglLabel
+                        row = layout.row(align=True)
+                        row.label(text="BNGL label: {0}".format(label), icon='BLANK1')
+
                         if mcell.molecules.molecule_list[rel.molecule].type == '2D':
                             #layout.prop(rel, "orient")
                             ps.draw_prop_with_help ( layout, "Initial Orientation:", rel, "orient", "orient_show_help", rel.orient_show_help,
@@ -3183,6 +3218,8 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                                "you have an object named \"Cube\", you would enter that name in the\n" + \
                                "Object/Region field. If you've defined a surface region named \"top\"\n" + \
                                "on your Cube, then you would specify that surface as \"Cube[top]\"."
+
+
                     ps.draw_prop_with_help ( layout, "Release Shape:", rel, "shape", "shape_show_help", rel.shape_show_help, helptext )
 
                     if ((rel.shape == 'CUBIC') | (rel.shape == 'SPHERICAL') |
@@ -3776,6 +3813,11 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         name="Reaction",
         description="Count the selected reaction.",
         update=cellblender_operators.check_rxn_output)
+    # allows the user to define a literal mdl string to count using complex expressions. E.g. 2*S1 
+    mdl_string = StringProperty(
+        name="MDL Definition",
+        description="Count using a literal MDL definition.",
+        update=cellblender_operators.check_rxn_output)
     object_name = StringProperty(
         name="Object", update=cellblender_operators.check_rxn_output)
     region_name = StringProperty(
@@ -3790,7 +3832,8 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         update=cellblender_operators.check_rxn_output)
     rxn_or_mol_enum = [
         ('Reaction', "Reaction", ""),
-        ('Molecule', "Molecule", "")]
+        ('Molecule', "Molecule", ""),
+        ('MDLString', "MDLString", "")]
     rxn_or_mol = bpy.props.EnumProperty(
         items=rxn_or_mol_enum, name="Count Reaction or Molecule",
         default='Molecule',
@@ -3806,6 +3849,7 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         ro_dm['name'] = self.name
         ro_dm['molecule_name'] = self.molecule_name
         ro_dm['reaction_name'] = self.reaction_name
+        ro_dm['mdl_string'] = self.mdl_string
         ro_dm['object_name'] = self.object_name
         ro_dm['region_name'] = self.region_name
         ro_dm['count_location'] = self.count_location
@@ -3840,6 +3884,7 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         self.region_name = dm["region_name"]
         self.count_location = dm["count_location"]
         self.rxn_or_mol = dm["rxn_or_mol"]
+        self.mdl_string = dm['mdl_string']
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -3852,6 +3897,7 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
 
 import cellblender
 
+"""
 #JJT:temporary class
 class MCellReactionOutputPropertyTemp(bpy.types.PropertyGroup):
     name = StringProperty(
@@ -3859,15 +3905,17 @@ class MCellReactionOutputPropertyTemp(bpy.types.PropertyGroup):
     molecule_name = StringProperty(
         name="Molecule",
         description="Count the selected molecules.")
-
+"""
 
 class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
+    """
     #JJT: temporary list made to hold complex expressions from imported files
     temp_index = IntProperty(
         name="Temp Output Index", default=0)
     complex_rxn_output_list = CollectionProperty(
         type=MCellReactionOutputPropertyTemp,name="Temporary output list")
-    
+    """
+
     rxn_step = PointerProperty ( name="Step",
         type=parameter_system.Parameter_Reference )
     active_rxn_output_index = IntProperty(
@@ -3982,9 +4030,12 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all Reaction Output Properties..." )
+        """
+        #deprecated
         for item in self.complex_rxn_output_list:
             item.remove_properties(context)
         self.complex_rxn_output_list.clear()
+        """
         self.active_rxn_output_index = 0
         for item in self.rxn_output_list:
             item.remove_properties(context)
@@ -4022,10 +4073,15 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                         layout.prop_search(
                             rxn_output, "molecule_name", mcell.molecules,
                             "molecule_list", icon='FORCE_LENNARDJONES')
-                    else:
+                    elif rxn_output.rxn_or_mol =='Reaction':
                         layout.prop_search(
                             rxn_output, "reaction_name", mcell.reactions,
                             "reaction_name_list", icon='FORCE_LENNARDJONES')
+                    elif rxn_output.rxn_or_mol == 'MDLString':
+                        layout.prop(rxn_output, "mdl_string")
+                        layout.prop(rxn_output,"molecule_name")
+                        #literal mdl string
+
                     layout.prop(rxn_output, "count_location", expand=True)
                     # Show the object selector if Object or Region is selected
                     if rxn_output.count_location != "World":
@@ -5919,7 +5975,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
                   self.RC3_add_from_ID_string ( dm_rxn, 'object_name',     rxn, 'object_name',     "" )
                   self.RC3_add_from_ID_string ( dm_rxn, 'region_name',     rxn, 'region_name',     "" )
                   self.RC3_add_from_ID_enum   ( dm_rxn, 'count_location',  rxn, 'count_location',  "World",    ['World', 'Object', 'Region'] )
-                  self.RC3_add_from_ID_enum   ( dm_rxn, 'rxn_or_mol',      rxn, 'rxn_or_mol',      "Molecule", ['Reaction', 'Molecule'] )
+                  self.RC3_add_from_ID_enum   ( dm_rxn, 'rxn_or_mol',      rxn, 'rxn_or_mol',      "Molecule", ['Reaction', 'Molecule', 'MDLString'] )
 
                   dm_rxnl.append ( dm_rxn )
 
