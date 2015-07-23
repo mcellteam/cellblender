@@ -110,6 +110,10 @@ import os
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
+    display_name = StringProperty(
+        name="Molecule Name", default="Molecule",
+        description="The molecule species name",
+        update=check_callback)
     name = StringProperty(
         name="Molecule Name", default="Molecule",
         description="The molecule species name",
@@ -253,7 +257,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     def draw_props ( self, layout, molecules, parameter_system ):
 
         helptext = "Molecule Name\nThis is the name used in Reactions and Display"
-        parameter_system.draw_prop_with_help ( layout, "Name", self, "name", "name_show_help", self.name_show_help, helptext )
+        parameter_system.draw_prop_with_help ( layout, "Display Name", self, "display_name", "name_show_help", self.name_show_help, helptext )
+
+        helptext = "Molecule Name\nThis is the unique name used internally"
+        parameter_system.draw_prop_with_help ( layout, "Internal Name", self, "name", "name_show_help", self.name_show_help, helptext )
 
         helptext = "Molecule Type: Either Volume or Surface\n" + \
                    "Volume molecules are placed in and diffuse in 3D spaces." + \
