@@ -375,7 +375,7 @@ class MCELL_OT_parameter_remove(bpy.types.Operator):
 	
 #########################################################################################################################################
 
-
+"""
 class MCELL_OT_reaction_add(bpy.types.Operator):
     bl_idname = "mcell.reaction_add"
     bl_label = "Add Reaction"
@@ -411,7 +411,7 @@ class MCELL_OT_reaction_remove(bpy.types.Operator):
             update_release_pattern_rxn_name_list()
 
         return {'FINISHED'}
-
+"""
 
 class MCELL_OT_add_variable_rate_constant(bpy.types.Operator):
     """ Create variable rate constant text object from a file.
@@ -465,9 +465,9 @@ class MCELL_OT_add_variable_rate_constant(bpy.types.Operator):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
+"""
 
 def check_reaction(self, context):
-    """Checks for duplicate or illegal reaction. Cleans up formatting."""
 
     mcell = context.scene.mcell
 
@@ -605,11 +605,6 @@ def check_reaction(self, context):
 
 
 def check_reaction_name():
-    """ Make sure the reaction name is legal.
-
-    Also make sure that it is available for counting and as a release pattern.
-
-    """
 
     mcell = bpy.context.scene.mcell
     rxn = mcell.reactions.reaction_list[mcell.reactions.active_rxn_index]
@@ -624,6 +619,7 @@ def check_reaction_name():
         status = "Reaction name error: %s" % (rxn_name)
 
     return status
+"""
 
 
 class MCELL_OT_surf_class_props_add(bpy.types.Operator):

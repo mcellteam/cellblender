@@ -51,23 +51,227 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 
+# Reaction Operators:
+
+class MCELL_OT_reaction_add(bpy.types.Operator):
+    bl_idname = "mcell.reaction_add"
+    bl_label = "Add Reaction"
+    bl_description = "Add a new reaction to an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.reactions.reaction_list.add()
+        mcell.reactions.active_rxn_index = len(mcell.reactions.reaction_list)-1
+        rxn = mcell.reactions.reaction_list[mcell.reactions.active_rxn_index]
+        rxn.init_properties(mcell.parameter_system)
+        check_reaction(self, context)
+        return {'FINISHED'}
+
+
+class MCELL_OT_reaction_remove(bpy.types.Operator):
+    bl_idname = "mcell.reaction_remove"
+    bl_label = "Remove Reaction"
+    bl_description = "Remove selected reaction from an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.reactions.reaction_list.remove(mcell.reactions.active_rxn_index)
+        mcell.reactions.active_rxn_index = mcell.reactions.active_rxn_index-1
+        if (mcell.reactions.active_rxn_index < 0):
+            mcell.reactions.active_rxn_index = 0
+
+        if mcell.reactions.reaction_list:
+            check_reaction(self, context)
+        else:
+            cellblender_operators.update_release_pattern_rxn_name_list()
+
+        return {'FINISHED'}
+
+
+# Reaction callback functions
+
+
+def check_reaction(self, context):
+    """Checks for duplicate or illegal reaction. Cleans up formatting."""
+
+    mcell = context.scene.mcell
+
+    #Retrieve reaction
+    rxn = mcell.reactions.reaction_list[mcell.reactions.active_rxn_index]
+    for item in rxn.type_enum:
+        if rxn.type == item[0]:
+            rxtype = item[1]
+
+    status = ""
+
+    # Clean up rxn.reactants only if necessary to avoid infinite recursion.
+    reactants = rxn.reactants.replace(" ", "")
+    reactants = reactants.replace("+", " + ")
+    reactants = reactants.replace("@", " @ ")
+    if reactants != rxn.reactants:
+        rxn.reactants = reactants
+
+    # Clean up rxn.products only if necessary to avoid infinite recursion.
+    products = rxn.products.replace(" ", "")
+    products = products.replace("+", " + ")
+    if products != rxn.products:
+        rxn.products = products
+
+    # Check for duplicate reaction
+    rxn.name = ("%s %s %s") % (rxn.reactants, rxtype, rxn.products)
+    rxn_keys = mcell.reactions.reaction_list.keys()
+    if rxn_keys.count(rxn.name) > 1:
+        status = "Duplicate reaction: %s" % (rxn.name)
+
+    # Does the reaction need reaction directionality (i.e. there is at least
+    # one surface molecule or a surface class)
+    need_rxn_direction = False
+    # Are there ever any reactants, products, or surface classes that don't
+    # specify reaction directionality?
+    ever_no_direction = False
+    # Conversely, are there ever any reactants/products/SCs which do?
+    ever_direction = False
+
+    # Check syntax of reactant specification
+    mol_list = mcell.molecules.molecule_list
+    surf_class_list = mcell.surface_classes.surf_class_list
+    mol_surf_class_filter = \
+        r"(^[A-Za-z]+[0-9A-Za-z_.]*)((',)|(,')|(;)|(,*)|('*))$"
+    # Check the syntax of the surface class if one exists
+    if rxn.reactants.count(" @ ") == 1:
+        need_rxn_direction = True
+        reactants_no_surf_class, surf_class = rxn.reactants.split(" @ ")
+        match = re.match(mol_surf_class_filter, surf_class)
+        if match is None:
+            status = "Illegal surface class name: %s" % (surf_class)
+        else:
+            surf_class_name = match.group(1)
+            surf_class_direction = match.group(2)
+            if not surf_class_name in surf_class_list:
+                status = "Undefined surface class: %s" % (surf_class_name)
+            if not surf_class_direction:
+                status = ("No directionality specified for surface class: "
+                          "%s" % (surf_class_name))
+    else:
+        reactants_no_surf_class = rxn.reactants
+        surf_class = None
+
+    reactants = reactants_no_surf_class.split(" + ")
+    for reactant in reactants:
+        match = re.match(mol_surf_class_filter, reactant)
+        if match is None:
+            status = "Illegal reactant name: %s" % (reactant)
+            break
+        else:
+            mol_name = match.group(1)
+            mol_direction = match.group(2)
+            if not mol_name in mol_list:
+                status = "Undefined molecule: %s" % (mol_name)
+            else:
+                if mol_list[mol_name].type == '2D':
+                    need_rxn_direction = True
+                if not mol_direction:
+                    ever_no_direction = True
+                else:
+                    ever_direction = True
+
+    # Check syntax of product specification
+    if rxn.products == "NULL":
+        if rxn.type == 'reversible':
+            rxn.type = 'irreversible'
+    else:
+        products = rxn.products.split(" + ")
+        for product in products:
+            match = re.match(mol_surf_class_filter, product)
+            if match is None:
+                status = "Illegal product name: %s" % (product)
+                break
+            else:
+                mol_name = match.group(1)
+                mol_direction = match.group(2)
+                if not mol_name in mol_list:
+                    status = "Undefined molecule: %s" % (mol_name)
+                else:
+                    if mol_list[mol_name].type == '2D':
+                        need_rxn_direction = True
+                    if not mol_direction:
+                        ever_no_direction = True
+                    else:
+                        ever_direction = True
+
+    # Is directionality required (i.e. any surface molecules or surface class)?
+    # If so, is it missing anywhere in the rxn?
+    if need_rxn_direction and ever_no_direction:
+        status = "Reaction directionality required (e.g. semicolon after name)"
+    # Is reaction directionality specified despite there only being vol. mols?
+    if not surf_class and not need_rxn_direction and ever_direction:
+        status = "Unneeded reaction directionality"
+
+    # Check for a variable rate constant
+    if rxn.variable_rate_switch:
+        # Make sure that the file has not been deleted
+        if rxn.variable_rate not in bpy.data.texts:
+            rxn.variable_rate_valid = False
+
+        # Check if file doesn't exist, isn't UTF8, is a directory, etc
+        if not rxn.variable_rate_valid:
+            status = ("Variable rate constant is not valid: "
+                      "%s" % rxn.variable_rate)
+        # Variable rate constants only support irreversible reactions
+        elif rxn.variable_rate_valid and rxn.type == 'reversible':
+            rxn.type = 'irreversible'
+
+    rxn_name_status = check_reaction_name()
+    if rxn_name_status:
+        status = rxn_name_status
+
+    rxn.status = status
+    cellblender_operators.update_release_pattern_rxn_name_list()
+
+
+def check_reaction_name():
+    """ Make sure the reaction name is legal.
+
+    Also make sure that it is available for counting and as a release pattern.
+
+    """
+
+    mcell = bpy.context.scene.mcell
+    rxn = mcell.reactions.reaction_list[mcell.reactions.active_rxn_index]
+    rxn_name = rxn.rxn_name
+    status = ""
+
+    # Check for illegal names
+    # (Starts with a letter. No special characters. Can be blank.)
+    reaction_name_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)|(^$)"
+    m = re.match(reaction_name_filter, rxn_name)
+    if m is None:
+        status = "Reaction name error: %s" % (rxn_name)
+
+    return status
+
+
+# Reaction Property Groups
+
 class MCellReactionProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="The Reaction")
     rxn_name = StringProperty(
         name="Reaction Name",
         description="The name of the reaction. "
                     "Can be used in Reaction Output.",
-        update=cellblender_operators.check_reaction)
+        update=check_reaction)
     reactants = StringProperty(
         name="Reactants", 
         description="Specify 1-3 reactants separated by a + symbol. "
                     "Optional: end with @ surface class. Ex: a; + b; @ sc;",
-        update=cellblender_operators.check_reaction)
+        update=check_reaction)
     products = StringProperty(
         name="Products",
         description="Specify zero(NULL) or more products separated by a + "
                     "symbol.",
-        update=cellblender_operators.check_reaction)
+        update=check_reaction)
     type_enum = [
         ('irreversible', "->", ""),
         ('reversible', "<->", "")]
@@ -75,16 +279,16 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         items=type_enum, name="Reaction Type",
         description="A unidirectional/irreversible(->) reaction or a "
                     "bidirectional/reversible(<->) reaction.",
-        update=cellblender_operators.check_reaction)
+        update=check_reaction)
     variable_rate_switch = BoolProperty(
         name="Enable Variable Rate Constant",
         description="If set, use a variable rate constant defined by a two "
                     "column file (col1=time, col2=rate).",
-        default=False, update=cellblender_operators.check_reaction)
+        default=False, update=check_reaction)
     variable_rate = StringProperty(
         name="Variable Rate", subtype='FILE_PATH', default="")
     variable_rate_valid = BoolProperty(name="Variable Rate Valid",
-        default=False, update=cellblender_operators.check_reaction)
+        default=False, update=check_reaction)
 
 
     fwd_rate = PointerProperty ( name="Forward Rate", type=parameter_system.Parameter_Reference )
@@ -421,15 +625,17 @@ class MCellReactionsListProperty(bpy.types.PropertyGroup):
                     bnglproduct = []
                     for reactant in reactants:
                         reactantStr = reactant
-                        while reactantStr[-1] in ["'", ",", ";"]:
-                            reactantStr = reactantStr[:-1]
+                        if len(reactantStr) > 0:
+                            while reactantStr[-1] in ["'", ",", ";"]:
+                                reactantStr = reactantStr[:-1]
                         if reactantStr in mol_list:
                             tmpStr = mol_list[reactantStr].bnglLabel if mol_list[reactantStr].bnglLabel != '' else mol_list[reactantStr].name
                             bnglreactant.append(tmpStr)
                     for product in products:
                         productStr = product
-                        while productStr[-1] in ["'", ",", ";"]:
-                            productStr = productStr[:-1]
+                        if len(productStr) > 0:
+                            while productStr[-1] in ["'", ",", ";"]:
+                                productStr = productStr[:-1]
 
                         if productStr in mol_list:
                             tmpStr = mol_list[productStr].bnglLabel if mol_list[productStr].bnglLabel != '' else mol_list[productStr].name
