@@ -4967,6 +4967,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=parameter_system.ParameterSystemPropertyGroup, name="Parameter System")
     molecules = PointerProperty(
         type=cellblender_molecules.MCellMoleculesListProperty, name="Defined Molecules")
+    #reacts = PointerProperty(
+    #    type=cellblender_reactions.MCellReactionsListProperty, name="Defined Reacts")
     reactions = PointerProperty(
         type=MCellReactionsPropertyGroup, name="Defined Reactions")
     surface_classes = PointerProperty(

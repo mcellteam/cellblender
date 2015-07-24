@@ -38,6 +38,7 @@ import cellblender
 # from . import cellblender_parameters
 from . import parameter_system
 from . import cellblender_operators
+from . import utils
 
 
 # We use per module class registration/unregistration
@@ -47,23 +48,6 @@ def register():
 
 def unregister():
     bpy.utils.unregister_module(__name__)
-
-
-
-# Generic helper functions that should go somewhere else!!!
-
-def get_path_to_parent(self_object):
-    # Return the Blender class path to the parent object with regard to the Blender Property Tree System
-    path_to_self = "bpy.context.scene." + self_object.path_from_id()
-    path_to_parent = path_to_self[0:path_to_self.rfind(".")]
-    return path_to_parent
-
-def get_parent(self_object):
-    # Return the parent Blender object with regard to the Blender Property Tree System
-    path_to_parent = get_path_to_parent(self_object)
-    parent = eval(path_to_parent)
-    return parent
-
 
 
 # Molecule Operators:
@@ -129,7 +113,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         name="BNGL Label", default="",
         description="The molecule BNGL label",
         update=check_callback)
-
     target_only = BoolProperty(
         name="Target Only",
         description="If selected, molecule will not initiate reactions when "
@@ -348,7 +331,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def check_callback(self, context):
         """Allow the parent molecule list (MCellMoleculesListProperty) to do the checking"""
-        get_parent(self).check(context)
+        utils.get_parent(self).check(context)
         return
 
 
