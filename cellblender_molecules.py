@@ -186,7 +186,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         m = self
 
         m_dict = {}
-        m_dict['data_model_version'] = "DM_2014_10_24_1638"
+        m_dict['data_model_version'] = "DM_2015_07_24_1330"
         m_dict['mol_name'] = m.name
         m_dict['mol_bngl_label'] = m.bnglLabel
         m_dict['mol_type'] = str(m.type)
@@ -210,8 +210,13 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
+        if dm['data_model_version'] == "DM_2014_10_24_1638":
+            # Change on June 2nd, 2015: the mol_bngl_label field was added, but data model update wasn't done until July 24th, 2015
+            dm['mol_bngl_label'] = ""
+            dm['data_model_version'] = "DM_2015_07_24_1330"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] != "DM_2015_07_24_1330":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
             return None
 
@@ -221,7 +226,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm_dict ):
         # Check that the data model version matches the version for this property group
-        if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
+        if dm_dict['data_model_version'] != "DM_2015_07_24_1330":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
         # Now convert the updated Data Model into CellBlender Properties
         self.name = dm_dict["mol_name"]
