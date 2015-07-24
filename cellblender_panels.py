@@ -390,28 +390,6 @@ class MCELL_PT_define_parameters(bpy.types.Panel):
 #########################################################################################################################################
 
 
-
-
-class MCELL_UL_check_reaction(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data,
-                  active_propname, index):
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            layout.label(item.name, icon='FILE_TICK')
-
-
-class MCELL_PT_define_reactions(bpy.types.Panel):
-    bl_label = "CellBlender - Define Reactions"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.reactions.draw_panel ( context, self )
-
-
 class MCELL_UL_check_surface_class(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):

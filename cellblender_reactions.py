@@ -29,13 +29,15 @@ import bpy
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
                       FloatProperty, FloatVectorProperty, IntProperty, \
                       IntVectorProperty, PointerProperty, StringProperty
-from bpy.app.handlers import persistent
-import math
-import mathutils
+
+#from bpy.app.handlers import persistent
+#import math
+#import mathutils
 
 # python imports
 import re
 
+# CellBlender imports
 import cellblender
 from . import parameter_system
 from . import cellblender_operators
@@ -251,6 +253,31 @@ def check_reaction_name():
         status = "Reaction name error: %s" % (rxn_name)
 
     return status
+
+
+
+# Reactions Panel Classes
+
+class MCELL_UL_check_reaction(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+
+
+class MCELL_PT_define_reactions(bpy.types.Panel):
+    bl_label = "CellBlender - Define Reactions"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.reactions.draw_panel ( context, self )
+
+
 
 
 # Reaction Property Groups
