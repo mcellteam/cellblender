@@ -50,6 +50,7 @@ from bpy.app.handlers import persistent
 
 from . import cellblender_molecules
 from . import cellblender_reactions
+from . import cellblender_release
 from . import parameter_system
 from . import data_model
 
@@ -86,6 +87,7 @@ class MCellFloatVectorProperty(bpy.types.PropertyGroup):
         pass
 
 
+"""
 
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     name = StringProperty(
@@ -334,6 +336,7 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
 
+"""
 
 
 class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
@@ -2541,7 +2544,7 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
 
 
 
-
+"""
 class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
     release_pattern_list = CollectionProperty(
         type=MCellReleasePatternProperty, name="Release Pattern List")
@@ -2617,7 +2620,7 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
 
 
     def draw_layout ( self, context, layout ):
-        """ Draw the release "panel" within the layout """
+        # Draw the release "panel" within the layout
         mcell = context.scene.mcell
 
         if not mcell.initialized:
@@ -2661,12 +2664,12 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
 
 
     def draw_panel ( self, context, panel ):
-        """ Create a layout from the panel and draw into it """
+        # Create a layout from the panel and draw into it
         layout = panel.layout
         self.draw_layout ( context, layout )
+"""
 
-
-
+"""
 class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
     mol_release_list = CollectionProperty(
         type=MCellMoleculeReleaseProperty, name="Molecule Release List")
@@ -2737,7 +2740,7 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
 
     def draw_layout ( self, context, layout ):
-        """ Draw the release "panel" within the layout """
+        # Draw the release "panel" within the layout
         mcell = context.scene.mcell
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
@@ -2892,9 +2895,10 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
 
     def draw_panel ( self, context, panel ):
-        """ Create a layout from the panel and draw into it """
+        #Create a layout from the panel and draw into it
         layout = panel.layout
         self.draw_layout ( context, layout )
+"""
 
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
@@ -4585,9 +4589,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     mod_surf_regions = PointerProperty(
         type=MCellModSurfRegionsPropertyGroup, name="Assign Surface Classes")
     release_patterns = PointerProperty(
-        type=MCellReleasePatternPropertyGroup, name="Defined Release Patterns")
+        type=cellblender_release.MCellReleasePatternPropertyGroup, name="Defined Release Patterns")
     release_sites = PointerProperty(
-        type=MCellMoleculeReleasePropertyGroup, name="Defined Release Sites")
+        type=cellblender_release.MCellMoleculeReleasePropertyGroup, name="Defined Release Sites")
     model_objects = PointerProperty(
         type=MCellModelObjectsPropertyGroup, name="Instantiated Objects")
     viz_output = PointerProperty(
@@ -4728,13 +4732,13 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
         group_name = "release_sites"
         if group_name in dm:
-            dm[group_name] = MCellMoleculeReleasePropertyGroup.upgrade_data_model ( dm[group_name] )
+            dm[group_name] = cellblender_release.MCellMoleculeReleasePropertyGroup.upgrade_data_model ( dm[group_name] )
             if dm[group_name] == None:
                 return None
 
         group_name = "define_release_patterns"
         if group_name in dm:
-            dm[group_name] = MCellReleasePatternPropertyGroup.upgrade_data_model ( dm[group_name] )
+            dm[group_name] = cellblender_release.MCellReleasePatternPropertyGroup.upgrade_data_model ( dm[group_name] )
             if dm[group_name] == None:
                 return None
 
