@@ -2709,7 +2709,7 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output building Data Model" )
         ro_dm = {}
-        ro_dm['data_model_version'] = "DM_2014_10_24_1638"
+        ro_dm['data_model_version'] = "DM_2015_07_24_2311"
         ro_dm['name'] = self.name
         ro_dm['molecule_name'] = self.molecule_name
         ro_dm['reaction_name'] = self.reaction_name
@@ -2729,9 +2729,13 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
+        if dm['data_model_version'] == "DM_2014_10_24_1638":
+            dm['mdl_string'] = ""
+            dm['data_model_version'] = "DM_2015_07_24_2311"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
-            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
+        if dm['data_model_version'] != "DM_2015_07_24_2311":
+            data_model.flag_incompatible_data_model ( "Upgrade Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
             return None
 
         return dm
@@ -2739,8 +2743,8 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
         # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
-            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
+        if dm['data_model_version'] != "DM_2015_07_24_2311":
+            data_model.handle_incompatible_data_model ( "Build Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
         self.name = dm["name"]
         self.molecule_name = dm["molecule_name"]
         self.reaction_name = dm["reaction_name"]
