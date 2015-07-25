@@ -332,16 +332,6 @@ class MCELL_PT_initialization(bpy.types.Panel):
         context.scene.mcell.initialization.draw_panel ( context, self )
 
 
-class MCELL_PT_partitions(bpy.types.Panel):
-    bl_label = "CellBlender - Define and Visualize Partitions"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.partitions.draw_panel ( context, self )
-
 
 ############### DB: The following two classes are included to create a parameter input panel: only relevant for BNG, SBML or other model import #################
 

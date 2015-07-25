@@ -51,6 +51,7 @@ from bpy.app.handlers import persistent
 from . import cellblender_molecules
 from . import cellblender_reactions
 from . import cellblender_release
+from . import cellblender_partitions
 from . import parameter_system
 from . import data_model
 
@@ -1819,152 +1820,6 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         layout = panel.layout
         self.draw_layout ( context, layout )
 
-
-class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
-    include = BoolProperty(
-        name="Include Partitions",
-        description="Partitions are a way of speeding up a simulation if used "
-                    "properly.",
-        default=False)
-    recursion_flag = BoolProperty(
-        name="Recursion Flag",
-        description="Flag to prevent infinite recursion",
-        default=False)
-    x_start = bpy.props.FloatProperty(
-        name="X Start", default=-1, precision=3,
-        description="The start of the partitions on the x-axis",
-        update=cellblender_operators.transform_x_partition_boundary)
-    x_end = bpy.props.FloatProperty(
-        name="X End", default=1, precision=3,
-        description="The end of the partitions on the x-axis",
-        update=cellblender_operators.transform_x_partition_boundary)
-    x_step = bpy.props.FloatProperty(
-        name="X Step", default=0.02, precision=3,
-        description="The distance between partitions on the x-axis",
-        update=cellblender_operators.check_x_partition_step)
-    y_start = bpy.props.FloatProperty(
-        name="Y Start", default=-1, precision=3,
-        description="The start of the partitions on the y-axis",
-        update=cellblender_operators.transform_y_partition_boundary)
-    y_end = bpy.props.FloatProperty(
-        name="Y End", default=1, precision=3,
-        description="The end of the partitions on the y-axis",
-        update=cellblender_operators.transform_y_partition_boundary)
-    y_step = bpy.props.FloatProperty(
-        name="Y Step", default=0.02, precision=3,
-        description="The distance between partitions on the y-axis",
-        update=cellblender_operators.check_y_partition_step)
-    z_start = bpy.props.FloatProperty(
-        name="Z Start", default=-1, precision=3,
-        description="The start of the partitions on the z-axis",
-        update=cellblender_operators.transform_z_partition_boundary)
-    z_end = bpy.props.FloatProperty(
-        name="Z End", default=1, precision=3,
-        description="The end of the partitions on the z-axis",
-        update=cellblender_operators.transform_z_partition_boundary)
-    z_step = bpy.props.FloatProperty(
-        name="Z Step", default=0.02, precision=3,
-        description="The distance between partitions on the z-axis",
-        update=cellblender_operators.check_z_partition_step)
-
-    def build_data_model_from_properties ( self, context ):
-        print ( "Partitions building Data Model" )
-        dm_dict = {}
-        dm_dict['data_model_version'] = "DM_2014_10_24_1638"
-        dm_dict['include'] = self.include==True
-        dm_dict['recursion_flag'] = self.recursion_flag==True
-        dm_dict['x_start'] = str(self.x_start)
-        dm_dict['x_end'] =   str(self.x_end)
-        dm_dict['x_step'] =  str(self.x_step)
-        dm_dict['y_start'] = str(self.y_start)
-        dm_dict['y_end'] =   str(self.y_end)
-        dm_dict['y_step'] =  str(self.y_step)
-        dm_dict['x_start'] = str(self.z_start)
-        dm_dict['z_end'] =   str(self.z_end)
-        dm_dict['z_step'] =  str(self.z_step)
-        return dm_dict
-
-
-    @staticmethod
-    def upgrade_data_model ( dm ):
-        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
-        print ( "------------------------->>> Upgrading MCellPartitionsPropertyGroup Data Model" )
-        if not ('data_model_version' in dm):
-            # Make changes to move from unversioned to DM_2014_10_24_1638
-            dm['data_model_version'] = "DM_2014_10_24_1638"
-
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
-            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellPartitionsPropertyGroup data model to current version." )
-            return None
-
-        return dm
-
-
-
-
-
-    def build_properties_from_data_model ( self, context, dm ):
-
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
-            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellPartitionsPropertyGroup data model to current version." )
-
-        self.include = dm["include"]
-        self.recursion_flag = dm["recursion_flag"]
-        self.x_start = float(dm["x_start"])
-        self.x_end = float(dm["x_end"])
-        self.x_step = float(dm["x_step"])
-        self.y_start = float(dm["y_start"])
-        self.y_end = float(dm["y_end"])
-        self.y_step = float(dm["y_step"])
-        self.z_start = float(dm["x_start"])
-        self.z_end = float(dm["z_end"])
-        self.z_step = float(dm["z_step"])
-
-    def check_properties_after_building ( self, context ):
-        print ( "check_properties_after_building not implemented for " + str(self) )
-
-    def remove_properties ( self, context ):
-        print ( "Removing all Partition Properties... no collections to remove." )
-
-
-
-    def draw_layout(self, context, layout):
-        mcell = context.scene.mcell
-
-        if not mcell.initialized:
-            mcell.draw_uninitialized ( layout )
-        else:
-            layout.prop(self, "include")
-            if self.include:
-                row = layout.row(align=True)
-                row.prop(self, "x_start")
-                row.prop(self, "x_end")
-                row.prop(self, "x_step")
-
-                row = layout.row(align=True)
-                row.prop(self, "y_start")
-                row.prop(self, "y_end")
-                row.prop(self, "y_step")
-
-                row = layout.row(align=True)
-                row.prop(self, "z_start")
-                row.prop(self, "z_end")
-                row.prop(self, "z_step")
-
-                if mcell.model_objects.object_list:
-                    layout.operator("mcell.auto_generate_boundaries",
-                                    icon='OUTLINER_OB_LATTICE')
-                if not "partitions" in bpy.data.objects:
-                    layout.operator("mcell.create_partitions_object",
-                                    icon='OUTLINER_OB_LATTICE')
-                else:
-                    layout.operator("mcell.remove_partitions_object",
-                                    icon='OUTLINER_OB_LATTICE')
-
-    def draw_panel ( self, context, panel ):
-        """ Create a layout from the panel and draw into it """
-        layout = panel.layout
-        self.draw_layout ( context, layout )
 
 
 
@@ -3968,7 +3823,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     initialization = PointerProperty(
         type=MCellInitializationPropertyGroup, name="Model Initialization")
     partitions = bpy.props.PointerProperty(
-        type=MCellPartitionsPropertyGroup, name="Partitions")
+        type=cellblender_partitions.MCellPartitionsPropertyGroup, name="Partitions")
     ############# DB: added for parameter import from BNG, SBML models####
     #parameters = PointerProperty(
     #    type=MCellParametersPropertyGroup, name="Defined Parameters")
@@ -4108,7 +3963,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
             subgroup_name = "partitions"
             if subgroup_name in dm[group_name]:
-                dm[group_name][subgroup_name] = MCellPartitionsPropertyGroup.upgrade_data_model ( dm[group_name] )
+                dm[group_name][subgroup_name] = cellblender_partitions.MCellPartitionsPropertyGroup.upgrade_data_model ( dm[group_name] )
                 if dm[group_name][subgroup_name] == None:
                     return None
 
