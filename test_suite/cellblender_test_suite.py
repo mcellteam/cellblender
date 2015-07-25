@@ -35,6 +35,7 @@ import os
 import hashlib
 import bpy
 import math
+import mathutils
 from bpy.props import *
 
 test_groups = []
@@ -354,6 +355,161 @@ class CellBlender_Model:
         self.mcell.cellblender_main_panel.objects_select = True
         bpy.ops.mcell.model_objects_add()
         print ( "Done Adding " + name )
+
+
+
+    def add_capsule_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, size=1, subdiv=3, cyl_len=2 ):
+        """ draw_type is one of: WIRE, TEXTURED, SOLID, BOUNDS """
+        # Start with an icosphere
+        print ( "Adding " + name )
+        if subdiv < 2:
+            # Need subdiv of at least two or there will be no "equator"
+            subdiv = 2
+        bpy.ops.mesh.primitive_ico_sphere_add ( subdivisions=subdiv, size=size, location=(x, y, z) )
+        self.scn.objects.active.name = name
+        bpy.data.objects[name].draw_type = draw_type
+        
+        # Convert the mesh to lists to make it easier to work with
+
+        caps = bpy.data.objects[name]
+        matrix = caps.matrix_world
+        mesh = caps.data
+        vertices = mesh.vertices
+
+        v_list = []
+        for v in vertices:
+            t_vec = matrix * v.co
+            v_list.append ( [t_vec.x, t_vec.y, t_vec.z] )
+        f_list = []
+        faces = mesh.polygons
+        for f in faces:
+            f_list.append ( [f.vertices[0], f.vertices[1], f.vertices[2]] )
+
+        # Delete the icosphere
+        
+        bpy.ops.object.delete()
+        
+        # Reshape the icosphere into a capsule
+
+        # First stretch it to the proper height
+        
+        for v in v_list:
+            if v[2] > (size/1000.0):
+                v[2] += cyl_len/2.0
+            elif v[2] < (-size/1000.0):
+                v[2] += -cyl_len/2.0
+
+        # Delete the faces attached to the equator while finding the edges
+        
+        new_f_list = []
+        edge_vns = []
+        for f in f_list:
+            local_edge_vns = []
+            touches_equator = False
+            for vn in f:
+                v = v_list[vn]
+                if ( v[2] < (size/1000.0) ) and ( v[2] > (-size/1000.0) ):
+                    touches_equator = True
+                else:
+                    if not (vn in local_edge_vns):
+                        local_edge_vns.append ( vn )
+            if touches_equator:
+                # Save the edges
+                for evn in local_edge_vns:
+                    if not (evn in edge_vns):
+                        edge_vns.append ( evn )
+            else:
+                new_f_list.append ( f )
+        f_list = new_f_list
+
+        # Might want to remove unused points and renumber face vertex indicies as well?
+        
+        # Divide the edge points between top and bottom
+        top_evns = []
+        bot_evns = []
+        for evn in edge_vns:
+            if v_list[evn][2] > 0:
+                top_evns.append ( evn )
+            else:
+                bot_evns.append ( evn )
+                
+        num_points = len(top_evns)
+        print ( "Found " + str(num_points) + " top edge points" )
+        
+        # Sort the top edge points to go around the circle (very inefficient sort ... but easy)
+        
+        for i in range(num_points):
+            for j in range(i+1,num_points):
+                vi = v_list[top_evns[i]]
+                vj = v_list[top_evns[j]]
+                atni = math.atan2(vi[1],vi[0])
+                atnj = math.atan2(vj[1],vj[0])
+                if (i < j) and (atni > atnj):
+                    # Swap
+                    temp = top_evns[i]
+                    top_evns[i] = top_evns[j]
+                    top_evns[j] = temp
+
+
+        for i in range(num_points):
+            print ( "top: (" + str(v_list[top_evns[i]][0]) + "," + str(v_list[top_evns[i]][1]) + ")" )
+        for i in range(num_points):
+            print ( "bot: (" + str(v_list[bot_evns[i]][0]) + "," + str(v_list[bot_evns[i]][1]) + ")" )
+
+        # Make a list of matching bottom edge points
+        bot_match = []
+        for i in range(num_points):
+            vi = v_list[top_evns[i]]
+            best_j = 0
+            vj = v_list[bot_evns[best_j]]
+            best_d = math.sqrt ( math.pow((vi[0]-vj[0]),2) + math.pow((vi[1]-vj[1]),2) )
+            print ( "Starting with i=" + str(i) + ", x=" + str(vi[0]) + ",y=" + str(vi[1]) + ", and best_d = " + str(best_d) )
+            for j in range(num_points):
+                vj = v_list[bot_evns[j]]
+                d = math.sqrt ( math.pow((vi[0]-vj[0]),2) + math.pow((vi[1]-vj[1]),2) )
+                print ( "   j=" + str(j) + ", x=" + str(vj[0]) + ",y=" + str(vj[1]) + ", and d = " + str(d) )
+                if d < best_d:
+                    best_d = d
+                    best_j = j
+                    print ( "   That's best: " + str(best_j) + " and " + str(best_d) )
+            bot_match.append ( best_j )
+        
+        for i in range(num_points):
+            vit = v_list[top_evns[i]]
+            vib = v_list[bot_match[i]]
+            print ( "top x,y = " + str(vit[0]) + "," + str(vit[1]) )
+            print ( "bot x,y = " + str(vib[0]) + "," + str(vib[1]) )
+            print ( " " )
+
+
+        # Recreate the object
+
+        vertices = []
+        for vertex in v_list:
+            vertices.append ( mathutils.Vector((vertex[0],vertex[1],vertex[2])) )
+        faces = []
+        for face_element in f_list:
+            faces.append ( face_element )
+
+        new_mesh = bpy.data.meshes.new ( name )
+        new_mesh.from_pydata ( vertices, [], faces )
+        new_mesh.update()
+        new_obj = bpy.data.objects.new ( name, new_mesh )
+
+        self.scn.objects.link ( new_obj )
+        bpy.ops.object.select_all ( action = "DESELECT" )
+        new_obj.select = True
+        self.scn.objects.active = new_obj
+
+        # Add the newly added object to the model objects list
+
+        self.mcell.cellblender_main_panel.objects_select = True
+        bpy.ops.mcell.model_objects_add()
+        bpy.data.objects[name].draw_type = draw_type
+        print ( "Done Adding " + name )
+
+
+
 
     def add_label_to_model ( self, name="Label", text="Text", x=0, y=0, z=0, size=1, rx=0, ry=0, rz=0 ):
         print ( "Adding " + text )
@@ -1977,6 +2133,40 @@ class OrganelleTestOp(bpy.types.Operator):
 
         return { 'FINISHED' }
 
+
+
+
+###########################################################################################################
+
+# Capsule is 1 BU in diameter (0.5 in radius) and has a total height of 4 (-2 to +2)
+group_name = "Complete Model Tests"
+test_name = "MinD MinE Test (NOT Done Yet!!)"
+operator_name = "cellblender_test.mind_mine_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class MinDMinETestOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+
+        # Create the object and add it to the CellBlender model
+        cb_model.add_capsule_to_model ( name="ecoli", draw_type="WIRE", size=0.5, x=0, y=0, z=0, subdiv=2, cyl_len=0.5 )
+
+        cb_model.set_view_back()
+
+
+        return { 'FINISHED' }
 
 
 
