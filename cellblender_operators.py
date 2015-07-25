@@ -42,6 +42,7 @@ import datetime
 
 import cellblender
 from . import data_model
+from . import cellblender_release
 # import cellblender.data_model
 # import cellblender_source_info
 from cellblender.utils import project_files_path
@@ -728,6 +729,10 @@ def check_active_mod_surf_regions(self, context):
     return
 
 
+
+"""
+
+
 class MCELL_OT_release_pattern_add(bpy.types.Operator):
     bl_idname = "mcell.release_pattern_add"
     bl_label = "Add Release Pattern"
@@ -771,7 +776,7 @@ class MCELL_OT_release_pattern_remove(bpy.types.Operator):
 
 
 def check_release_pattern_name(self, context):
-    """Checks for duplicate or illegal release pattern name."""
+    # Checks for duplicate or illegal release pattern name.
 
     mcell = context.scene.mcell
     rel_pattern_list = mcell.release_patterns.release_pattern_list
@@ -839,13 +844,13 @@ class MCELL_OT_release_site_remove(bpy.types.Operator):
 
 
 def check_release_site(self, context):
-    """ Thin wrapper for check_release_site. """
+    # Thin wrapper for check_release_site.
 
     check_release_site_wrapped(context)
 
 
 def check_release_site_wrapped(context):
-    """ Make sure that the release site is valid. """
+    # Make sure that the release site is valid.
 
     mcell = context.scene.mcell
     rel_list = mcell.release_sites.mol_release_list
@@ -868,7 +873,7 @@ def check_release_site_wrapped(context):
 
 
 def check_release_site_name(context):
-    """Checks for duplicate or illegal release site name."""
+    # Checks for duplicate or illegal release site name.
 
     mcell = context.scene.mcell
     rel_list = mcell.release_sites.mol_release_list
@@ -891,7 +896,7 @@ def check_release_site_name(context):
 
 
 def check_release_molecule(context):
-    """Checks for illegal release site molecule name."""
+    # Checks for illegal release site molecule name.
 
     mcell = context.scene.mcell
     rel_list = mcell.release_sites.mol_release_list
@@ -919,7 +924,7 @@ def check_release_molecule(context):
 
 
 def check_release_object_expr(context):
-    """Checks for illegal release object name."""
+    # Checks for illegal release object name.
 
     scn = context.scene
     mcell = context.scene.mcell
@@ -977,6 +982,11 @@ def check_release_object_expr(context):
                     break
 
     return status
+
+
+"""
+
+
 
 
 def is_executable(binary_path):
@@ -3241,7 +3251,7 @@ def model_objects_update(context):
         # need to increment it and then check
         for rel_idx, _ in enumerate(release_list):
             mcell.release_sites.active_release_index = rel_idx
-            check_release_site_wrapped(context)
+            cellblender_release.check_release_site_wrapped(context)
         # Restore the active index
         mcell.release_sites.active_release_index = save_release_idx
 
@@ -3432,32 +3442,6 @@ class MCELL_OT_rxn_output_remove(bpy.types.Operator):
             check_rxn_output(self, context)
 
         return {'FINISHED'}
-
-
-def update_release_pattern_rxn_name_list():
-    """ Update lists needed to count rxns and use rel patterns. """
-
-    mcell = bpy.context.scene.mcell
-    mcell.reactions.reaction_name_list.clear()
-    mcell.release_patterns.release_pattern_rxn_name_list.clear()
-    rxns = mcell.reactions.reaction_list
-    rel_patterns_rxns = mcell.release_patterns.release_pattern_rxn_name_list
-    # If a reaction has a reaction name, save it in reaction_name_list for
-    # counting in "Reaction Output Settings." Also, save reaction names in
-    # release_pattern_rxn_name_list for use as a release pattern, which is
-    # assigned in "Molecule Release/Placement"
-    for rxn in rxns:
-        if rxn.rxn_name and not rxn.status:
-            new_rxn_item = mcell.reactions.reaction_name_list.add()
-            new_rxn_item.name = rxn.rxn_name
-            new_rel_pattern_item = rel_patterns_rxns.add()
-            new_rel_pattern_item.name = rxn.rxn_name
-
-    rel_patterns = mcell.release_patterns.release_pattern_list
-    for rp in rel_patterns:
-        if not rp.status:
-            new_rel_pattern_item = rel_patterns_rxns.add()
-            new_rel_pattern_item.name = rp.name
 
 
 def check_rxn_output(self, context):

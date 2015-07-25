@@ -40,7 +40,7 @@ import re
 # CellBlender imports
 import cellblender
 from . import parameter_system
-from . import cellblender_operators
+# from . import cellblender_operators
 from . import utils
 
 
@@ -55,15 +55,340 @@ def unregister():
 
 
 
+class MCELL_OT_release_pattern_add(bpy.types.Operator):
+    bl_idname = "mcell.release_pattern_add"
+    bl_label = "Add Release Pattern"
+    bl_description = "Add a new Release Pattern to an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.release_patterns.release_pattern_list.add()
+        mcell.release_patterns.active_release_pattern_index = len(
+            mcell.release_patterns.release_pattern_list)-1
+        rel_pattern = mcell.release_patterns.release_pattern_list[
+            mcell.release_patterns.active_release_pattern_index]
+        rel_pattern.name = "Release_Pattern"
+        rel_pattern.init_properties(mcell.parameter_system)
+        check_release_pattern_name(self, context)
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_release_pattern_remove(bpy.types.Operator):
+    bl_idname = "mcell.release_pattern_remove"
+    bl_label = "Remove Release Pattern"
+    bl_description = "Remove selected Release Pattern from MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.release_patterns.release_pattern_list.remove(
+            mcell.release_patterns.active_release_pattern_index)
+        mcell.release_patterns.active_release_pattern_index -= 1
+        if (mcell.release_patterns.active_release_pattern_index < 0):
+            mcell.release_patterns.active_release_pattern_index = 0
+
+        if mcell.release_patterns.release_pattern_list:
+            check_release_pattern_name(self, context)
+        else:
+            update_release_pattern_rxn_name_list()
+
+        return {'FINISHED'}
+
+
+def check_release_pattern_name(self, context):
+    """Checks for duplicate or illegal release pattern name."""
+
+    mcell = context.scene.mcell
+    rel_pattern_list = mcell.release_patterns.release_pattern_list
+    rel_pattern = rel_pattern_list[
+        mcell.release_patterns.active_release_pattern_index]
+
+    status = ""
+
+    # Check for duplicate release pattern name
+    rel_pattern_keys = rel_pattern_list.keys()
+    if rel_pattern_keys.count(rel_pattern.name) > 1:
+        status = "Duplicate release pattern: %s" % (rel_pattern.name)
+
+    # Check for illegal names (Starts with a letter. No special characters.)
+    rel_pattern_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
+    m = re.match(rel_pattern_filter, rel_pattern.name)
+    if m is None:
+        status = "Release Pattern name error: %s" % (rel_pattern.name)
+
+    rel_pattern.status = status
+    update_release_pattern_rxn_name_list()
+
+
+class MCELL_OT_release_site_add(bpy.types.Operator):
+    bl_idname = "mcell.release_site_add"
+    bl_label = "Add Release Site"
+    bl_description = "Add a new Molecule Release Site to an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.release_sites.mol_release_list.add()
+        mcell.release_sites.active_release_index = len(
+            mcell.release_sites.mol_release_list)-1
+        mcell.release_sites.mol_release_list[
+            mcell.release_sites.active_release_index].name = "Release_Site"
+
+        relsite = mcell.release_sites.mol_release_list[mcell.release_sites.active_release_index]
+
+        relsite.init_properties(mcell.parameter_system)
+            
+        check_release_molecule(context)
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_release_site_remove(bpy.types.Operator):
+    bl_idname = "mcell.release_site_remove"
+    bl_label = "Remove Release Site"
+    bl_description = "Remove selected Molecule Release Site from MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.release_sites.mol_release_list.remove(
+            mcell.release_sites.active_release_index)
+        mcell.release_sites.active_release_index -= 1
+        if (mcell.release_sites.active_release_index < 0):
+            mcell.release_sites.active_release_index = 0
+
+        if mcell.release_sites.mol_release_list:
+            check_release_site(self, context)
+
+        return {'FINISHED'}
+
+
+
+
+def check_release_site(self, context):
+    """ Thin wrapper for check_release_site. """
+
+    check_release_site_wrapped(context)
+
+
+def check_release_site_wrapped(context):
+    """ Make sure that the release site is valid. """
+
+    mcell = context.scene.mcell
+    rel_list = mcell.release_sites.mol_release_list
+    rel = rel_list[mcell.release_sites.active_release_index]
+
+    name_status = check_release_site_name(context)
+    molecule_status = check_release_molecule(context)
+    object_status = check_release_object_expr(context)
+
+    if name_status:
+        rel.status = name_status
+    elif molecule_status:
+        rel.status = molecule_status
+    elif object_status and rel.shape == 'OBJECT':
+        rel.status = object_status
+    else:
+        rel.status = ""
+
+    return
+
+
+def check_release_site_name(context):
+    """Checks for duplicate or illegal release site name."""
+
+    mcell = context.scene.mcell
+    rel_list = mcell.release_sites.mol_release_list
+    rel = rel_list[mcell.release_sites.active_release_index]
+
+    status = ""
+
+    # Check for duplicate release site name
+    rel_keys = rel_list.keys()
+    if rel_keys.count(rel.name) > 1:
+        status = "Duplicate release site: %s" % (rel.name)
+
+    # Check for illegal names (Starts with a letter. No special characters.)
+    rel_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
+    m = re.match(rel_filter, rel.name)
+    if m is None:
+        status = "Release Site name error: %s" % (rel.name)
+
+    return status
+
+
+def check_release_molecule(context):
+    """Checks for illegal release site molecule name."""
+
+    mcell = context.scene.mcell
+    rel_list = mcell.release_sites.mol_release_list
+    rel = rel_list[mcell.release_sites.active_release_index]
+    mol = rel.molecule
+
+    mol_list = mcell.molecules.molecule_list
+
+    status = ""
+
+    # Check for illegal names (Starts with a letter. No special characters.)
+    mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
+    m = re.match(mol_filter, mol)
+    if m is None:
+        status = "Molecule name error: %s" % (mol)
+    else:
+        mol_name = m.group(1)
+        if not mol_name in mol_list:
+            status = "Undefined molecule: %s" % (mol_name)
+        # Only change if necessary to avoid infinite recursion
+        elif (mol_list[mol_name].type == '2D') and (not rel.shape == 'OBJECT'):
+            rel.shape = 'OBJECT'
+
+    return status
+
+
+def check_release_object_expr(context):
+    """Checks for illegal release object name."""
+
+    scn = context.scene
+    mcell = context.scene.mcell
+    rel_list = mcell.release_sites.mol_release_list
+    rel = rel_list[mcell.release_sites.active_release_index]
+    obj_list = mcell.model_objects.object_list
+    obj_expr = rel.object_expr
+
+    status = ""
+
+    # Check for illegal names. (Starts with a letter. No special characters.)
+    # May be only object name or object name and region (e.g. object[reg].)
+    obj_reg_filter = (r"(?P<obj_reg>(?P<obj_name>^[A-Za-z]+[0-9A-Za-z_.]*)(\[)"
+                      "(?P<reg_name>[A-Za-z]+[0-9A-Za-z_.]*)(\])$)|"
+                      "(?P<obj_name_only>^([A-Za-z]+[0-9A-Za-z_.]*)$)")
+
+    expr_filter = r"[\+\-\*\(\)]"
+
+    expr_vars = re.sub(expr_filter, " ", obj_expr).split()
+    
+    #print ( "Checking Release Objects: " + str(expr_vars) + " in " + str([k for k in obj_list]) )
+
+    if not obj_expr:
+        status = "Object name error"
+
+    for var in expr_vars:
+        #print ( "Checking " + str(var) )
+        m = re.match(obj_reg_filter, var)
+        if m is None:
+            #print ( "Match returned None" )
+            status = "Object name error: %s" % (var)
+            #print ( status )
+            break
+        else:
+            #print ( "Match returned " + str(m) )
+            if m.group("obj_reg") is not None:
+                obj_name = m.group("obj_name")
+                reg_name = m.group("reg_name")
+                if not obj_name in obj_list or obj_list[obj_name].status:
+                    status = "Undefined/illegal object: %s" % (obj_name)
+                    #print ( status )
+                    break
+                obj = scn.objects[obj_name]
+                if reg_name != "ALL":
+                    if (not obj.mcell.regions.region_list or 
+                            reg_name not in obj.mcell.regions.region_list):
+                        status = "Undefined region: %s" % (reg_name)
+                        #print ( status )
+                        break
+            else:
+                obj_name = m.group("obj_name_only")
+                if not obj_name in obj_list or obj_list[obj_name].status:
+                    status = "Undefined/illegal object: %s" % (obj_name)
+                    #print ( status )
+                    break
+
+    return status
+
+
+
+def update_release_pattern_rxn_name_list():
+    """ Update lists needed to count rxns and use rel patterns. """
+
+    mcell = bpy.context.scene.mcell
+    mcell.reactions.reaction_name_list.clear()
+    mcell.release_patterns.release_pattern_rxn_name_list.clear()
+    rxns = mcell.reactions.reaction_list
+    rel_patterns_rxns = mcell.release_patterns.release_pattern_rxn_name_list
+    # If a reaction has a reaction name, save it in reaction_name_list for
+    # counting in "Reaction Output Settings." Also, save reaction names in
+    # release_pattern_rxn_name_list for use as a release pattern, which is
+    # assigned in "Molecule Release/Placement"
+    for rxn in rxns:
+        if rxn.rxn_name and not rxn.status:
+            new_rxn_item = mcell.reactions.reaction_name_list.add()
+            new_rxn_item.name = rxn.rxn_name
+            new_rel_pattern_item = rel_patterns_rxns.add()
+            new_rel_pattern_item.name = rxn.rxn_name
+
+    rel_patterns = mcell.release_patterns.release_pattern_list
+    for rp in rel_patterns:
+        if not rp.status:
+            new_rel_pattern_item = rel_patterns_rxns.add()
+            new_rel_pattern_item.name = rp.name
+
+
+
+
+
+class MCELL_UL_check_release_pattern(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+
+
+class MCELL_PT_release_pattern(bpy.types.Panel):
+    bl_label = "CellBlender - Release Pattern"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.release_patterns.draw_panel ( context, self )
+
+
+class MCELL_UL_check_molecule_release(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+
+
+class MCELL_PT_molecule_release(bpy.types.Panel):
+    bl_label = "CellBlender - Molecule Release/Placement"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.release_sites.draw_panel ( context, self )
+
+
+
+
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Site Name", default="Release_Site",
         description="The name of the release site",
-        update=cellblender_operators.check_release_site)
+        update=check_release_site)
     molecule = StringProperty(
         name="Molecule",
         description="The molecule to release",
-        update=cellblender_operators.check_release_site)
+        update=check_release_site)
     shape_enum = [
         ('CUBIC', 'Cubic', ''),
         ('SPHERICAL', 'Spherical', ''),
@@ -74,7 +399,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         items=shape_enum, name="Release Shape",
         description="Release in the specified shape. Surface molecules can "
                     "only use Object/Region.",
-                    update=cellblender_operators.check_release_site)
+                    update=check_release_site)
     orient_enum = [
         ('\'', "Top Front", ""),
         (',', "Top Back", ""),
@@ -86,7 +411,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     object_expr = StringProperty(
         name="Object/Region",
         description="Release in/on the specified object/region.",
-        update=cellblender_operators.check_release_site)
+        update=check_release_site)
         
     #location = bpy.props.FloatVectorProperty(
     #    name="Location", precision=4,
@@ -464,7 +789,7 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Pattern Name", default="Release_Pattern",
         description="The name of the release site",
-        update=cellblender_operators.check_release_pattern_name)
+        update=check_release_pattern_name)
 
     delay            = PointerProperty ( name="Release Pattern Delay", type=parameter_system.Parameter_Reference )
     release_interval = PointerProperty ( name="Relese Interval",       type=parameter_system.Parameter_Reference )

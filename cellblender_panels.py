@@ -439,7 +439,7 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
         context.scene.mcell.mod_surf_regions.draw_panel ( context, self )
 
 
-
+"""
 class MCELL_UL_check_release_pattern(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -479,6 +479,7 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
     def draw(self, context):
         context.scene.mcell.release_sites.draw_panel ( context, self )
 
+"""
 
 
 class MCELL_UL_check_reaction_output_settings(bpy.types.UIList):

@@ -41,6 +41,7 @@ import re
 import cellblender
 from . import parameter_system
 from . import cellblender_operators
+from . import cellblender_release
 from . import utils
 
 
@@ -87,7 +88,7 @@ class MCELL_OT_reaction_remove(bpy.types.Operator):
         if mcell.reactions.reaction_list:
             check_reaction(self, context)
         else:
-            cellblender_operators.update_release_pattern_rxn_name_list()
+            cellblender_release.update_release_pattern_rxn_name_list()
 
         return {'FINISHED'}
 
@@ -230,7 +231,7 @@ def check_reaction(self, context):
         status = rxn_name_status
 
     rxn.status = status
-    cellblender_operators.update_release_pattern_rxn_name_list()
+    cellblender_release.update_release_pattern_rxn_name_list()
 
 
 def check_reaction_name():

@@ -130,8 +130,8 @@ def register():
     bpy.utils.unregister_class(cellblender_reactions.MCELL_PT_define_reactions)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_surface_classes)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_mod_surface_regions)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_release_pattern)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_molecule_release)
+    bpy.utils.unregister_class(cellblender_release.MCELL_PT_release_pattern)
+    bpy.utils.unregister_class(cellblender_release.MCELL_PT_molecule_release)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_reaction_output_settings)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_visualization_output_settings)
 
@@ -152,8 +152,8 @@ def register():
 #    bpy.utils.register_class(cellblender_reactions.MCELL_PT_define_reactions)
 #    bpy.utils.register_class(cellblender_panels.MCELL_PT_define_surface_classes)
 #    bpy.utils.register_class(cellblender_panels.MCELL_PT_mod_surface_regions)
-#    bpy.utils.register_class(cellblender_panels.MCELL_PT_release_pattern)
-#    bpy.utils.register_class(cellblender_panels.MCELL_PT_molecule_release)
+#    bpy.utils.register_class(cellblender_release.MCELL_PT_release_pattern)
+#    bpy.utils.register_class(cellblender_release.MCELL_PT_molecule_release)
 #    bpy.utils.register_class(cellblender_panels.MCELL_PT_reaction_output_settings)
 #    bpy.utils.register_class(cellblender_panels.MCELL_PT_visualization_output_settings)
 
