@@ -39,7 +39,7 @@ import mathutils
 from bpy.props import *
 
 test_groups = []
-max_test_groups = 20   # Needed to define a BoolVectorProperty to show and hide each group (32 is max!?!?!)
+max_test_groups = 30   # Needed to define a BoolVectorProperty to show and hide each group (32 is max!?!?!)
 next_test_group_num = 0    # The index number of the next group to be added
 
 
@@ -100,6 +100,16 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
     show_group_18 = bpy.props.BoolProperty(default=True)
     show_group_19 = bpy.props.BoolProperty(default=True)
     show_group_20 = bpy.props.BoolProperty(default=True)
+    show_group_21 = bpy.props.BoolProperty(default=True)
+    show_group_22 = bpy.props.BoolProperty(default=True)
+    show_group_23 = bpy.props.BoolProperty(default=True)
+    show_group_24 = bpy.props.BoolProperty(default=True)
+    show_group_25 = bpy.props.BoolProperty(default=True)
+    show_group_26 = bpy.props.BoolProperty(default=True)
+    show_group_27 = bpy.props.BoolProperty(default=True)
+    show_group_28 = bpy.props.BoolProperty(default=True)
+    show_group_29 = bpy.props.BoolProperty(default=True)
+    show_group_30 = bpy.props.BoolProperty(default=True)
 
     def make_real ( self ):
       if not self.groups_real:
@@ -124,6 +134,16 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
         self.show_group_18 = False
         self.show_group_19 = False
         self.show_group_20 = False
+        self.show_group_21 = False
+        self.show_group_22 = False
+        self.show_group_23 = False
+        self.show_group_24 = False
+        self.show_group_25 = False
+        self.show_group_26 = False
+        self.show_group_27 = False
+        self.show_group_28 = False
+        self.show_group_29 = False
+        self.show_group_30 = False
         self.groups_real = True
 
 
@@ -309,7 +329,7 @@ class CellBlender_Model:
 
         mcell.cellblender_preferences.mcell_binary_valid = True
         mcell.cellblender_preferences.show_sim_runner_options = True
-        mcell.run_simulation.simulation_run_control = 'COMMAND'
+        mcell.run_simulation.simulation_run_control = 'QUEUE'
         
         return mcell
 
@@ -328,6 +348,35 @@ class CellBlender_Model:
         
         self.scn = scn
         self.mcell = mcell
+
+    def create_object_from_mesh ( self, name="ObjectFromMesh", draw_type="WIRE", x=0, y=0, z=0, vertex_list=None, face_list=None ):
+
+        print ( "===> Creating an object from " + str(len(vertex_list)) + " vertices and " + str(len(face_list)) + " faces." )
+        vertices = []
+        for point in vertex_list:
+            vertices.append ( mathutils.Vector((point.x+x,point.y+y,point.z+z)) )
+        faces = []
+        for face_element in face_list:
+            faces.append ( face_element.verts )
+
+        new_mesh = bpy.data.meshes.new ( name + "_mesh" )
+        new_mesh.from_pydata ( vertices, [], faces )
+        new_mesh.update()
+        new_obj = bpy.data.objects.new ( name, new_mesh )
+
+        self.scn.objects.link ( new_obj )
+        bpy.ops.object.select_all ( action = "DESELECT" )
+        new_obj.select = True
+        self.scn.objects.active = new_obj
+
+        # Add the newly added object to the model objects list
+
+        self.mcell.cellblender_main_panel.objects_select = True
+        bpy.ops.mcell.model_objects_add()
+        bpy.data.objects[name].draw_type = draw_type
+        bpy.ops.object.mode_set ( mode="OBJECT" )
+        print ( "Done Adding " + name )
+
 
     def add_cube_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, size=1 ):
         """ draw_type is one of: WIRE, TEXTURED, SOLID, BOUNDS """
@@ -357,8 +406,20 @@ class CellBlender_Model:
         print ( "Done Adding " + name )
 
 
+    def add_capsule_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, sigma=0, subdiv=2, radius=1, cyl_len=2, subdivide_sides=True ):
+        """ draw_type is one of: WIRE, TEXTURED, SOLID, BOUNDS """
 
-    def add_capsule_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, size=1, subdiv=3, cyl_len=2 ):
+        capsule = Capsule(subdiv,radius,cyl_len,subdivide_sides)
+        
+        capsule.dither_points ( sigma, sigma, sigma )
+
+        #print ( "Writing capsule.plf" )
+        #capsule.dump_as_plf ( "capsule.plf" )
+
+        self.create_object_from_mesh ( name=name, draw_type=draw_type, x=x, y=y, z=z, vertex_list=capsule.points, face_list=capsule.faces )
+    
+
+    def old_add_capsule_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, size=1, subdiv=3, cyl_len=2 ):
         """ draw_type is one of: WIRE, TEXTURED, SOLID, BOUNDS """
         # Start with an icosphere
         print ( "Adding " + name )
@@ -610,6 +671,7 @@ class CellBlender_Model:
 
     def add_count_output_to_model ( self, name=None, mol_name=None, rxn_name=None, object_name=None, region_name=None, count_location="World" ):
         """ Add a reaction output """
+        # count_location may be "World", "Object", or "Region"
 
         self.mcell.cellblender_main_panel.graph_select = True
         bpy.ops.mcell.rxn_output_add()
@@ -756,6 +818,20 @@ class CellBlender_Model:
         mcell.rxn_output.rxn_output_list[0].count_location = 'Object'
         mcell.rxn_output.rxn_output_list[0].object_name = 'ti'
         """
+
+
+    def set_visualization ( self, enable_visualization=True, export_all=True, all_iterations=True, start=0, end=1, step=1 ):
+        """ Setting visualization parameters """
+        print ( "Setting visualization parameters" )
+        self.mcell.cellblender_main_panel.mol_viz_select = True
+        self.mcell.mol_viz.mol_viz_enable = enable_visualization
+        self.mcell.viz_output.export_all = export_all
+        self.mcell.viz_output.all_iterations = all_iterations
+        self.mcell.viz_output.start = start
+        self.mcell.viz_output.end = end
+        self.mcell.viz_output.step = step
+        print ( "Done setting visualization parameters" )
+        return self.mcell.viz_output
 
 
     def add_surface_class_to_model ( self, surf_class_name ):
@@ -982,6 +1058,507 @@ class CellBlender_Model:
 
 
 
+######################
+#   Model  Support   #
+######################
+
+import math
+import random
+
+class point:
+  x=0;
+  y=0;
+  z=0;
+
+  def __init__ ( self, x, y, z ):
+    self.x = x;
+    self.y = y;
+    self.z = z;
+  
+  def equals ( self, p ):
+    if ( (self.x == p.x) and (self.y == p.y) and (self.z == p.z) ):
+      return ( True );
+    else:
+      return ( False );
+
+  def equals ( self, p ):
+    return (self == p )
+
+  def toString ( self ):
+    return ( "(" + str(self.x) + "," + str(self.y) + "," + str(self.z) + ")" );
+
+
+class face:
+  verts = [];
+  
+  def __init__ ( self, v1, v2, v3 ):
+    self.verts = [];
+    self.verts.append ( v1 );
+    self.verts.append ( v2 );
+    self.verts.append ( v3 );
+  
+  def toString( self ):
+    return ( "[" + str(verts[0]) + "," + str(verts[1]) + "," + str(verts[2]) + "]" );
+
+
+class line:
+  p1 = point(0,0,0);
+  p2 = point(0,0,0);
+
+  def __init__ ( self, p1, p2 ):
+    self.p1 = p1;
+    self.p2 = p2;
+  
+  def toString( self ):
+    return ( "["+str(p1.x)+","+str(p1.y)+","+str(p1.z)+"]-["+str(p2.x)+","+str(p2.y)+","+str(p2.z)+"]" );
+
+
+class plf_object:
+  points = []
+  faces = []
+  
+  def __init__ ( self ):
+    self.points = []
+    self.faces = []
+  
+  def add_point ( self, p ):
+    self.points.append ( p );
+
+  def add_face ( self, f ):
+    self.faces.append ( f );
+
+  def offset_points ( self, dx, dy, dz ):
+    for p in self.points:
+      p.x += dx;
+      p.y += dy;
+      p.z += dz;
+
+  def scale_points ( self, sx, sy, sz ):
+    for p in self.points:
+      p.x *= sx;
+      p.y *= sy;
+      p.z *= sz;
+
+  def dither_points ( self, sigma_x, sigma_y, sigma_z ):
+    g = random.gauss
+    for p in self.points:
+      p.x += g(0,sigma_x);
+      p.y += g(0,sigma_y);
+      p.z += g(0,sigma_z);
+
+  def sqr ( self, v ):
+    return ( v * v );
+
+  def dump_as_plf ( self, file_name=None ):
+    if file_name != None:
+      out_file = open ( file_name, "w" )
+
+    for p in self.points:
+      if file_name == None:
+        print ( "P " + str(p.x) + " " + str(p.y) + " " + str(p.z) );
+      else:
+        out_file.write ( "P " + str(p.x) + " " + str(p.y) + " " + str(p.z) + "\n" );
+
+    for f in self.faces:
+      for edge in range(3):
+        p1i = f.verts[edge];
+        p2i = f.verts[(edge+1)%3];
+        if file_name == None:
+          print  ( "L " + str(p1i) + " " + str(p2i) );
+        else:
+          out_file.write  ( "L " + str(p1i) + " " + str(p2i) + "\n" );
+
+    for f in self.faces:
+      s = "F"
+      for edge in f.verts:
+        s += " " + str(edge)
+      if file_name == None:
+        print ( s )
+      else:
+        out_file.write ( s + "\n" )
+
+    if file_name != None:
+      out_file.close()
+
+
+  def get_average_edge_length ( self ):
+    len_sum = 0;
+    num_summed = 0;
+    for f in self.faces:
+      for edge in range(3):
+        p1i = f.verts[edge];
+        p2i = f.verts[(edge+1)%3];
+        p1 = self.points[p1i];
+        p2 = self.points[p2i];
+        len_sum += math.sqrt ( self.sqr(p1.x-p2.x) + self.sqr(p1.y-p2.y) + self.sqr(p1.z-p2.z) );
+        num_summed += 1;
+    return ( len_sum / num_summed );
+
+
+  def merge ( self, obj_to_add ):
+    # Loop through all faces of the new object to be merged
+    for oa_face in obj_to_add.faces:
+      # Find point indexes that match in the target object or add them
+      new_verts = [ -1, -1, -1 ];
+      for new_vert_index in range(3):
+        # Loop through all existing points in the target object looking for a match
+        looking_for = None
+        looking_for = obj_to_add.points[oa_face.verts[new_vert_index]]
+        found = -1
+        for p in self.points:
+          #print ( "  I have: [" + str(p.x) + ","  + str(p.y) + ","  + str(p.z) + "]" )
+          if (p.x == looking_for.x) and (p.y == looking_for.y) and (p.z == looking_for.z):
+            found = self.points.index(p)
+            break
+        if found >= 0:
+          #print ( "Found a point" )
+          new_verts[new_vert_index] = found
+        #else:
+        #  print ( "Didn't find a point" )
+        if (new_verts[new_vert_index] < 0):
+          # The point was not found in the target object, so add it
+          new_p = point ( looking_for.x, looking_for.y, looking_for.z );
+          self.points.append ( new_p );
+          new_verts[new_vert_index] = self.points.index(new_p);
+
+        #for p in self.points:
+        #  print ( "  I now have: [" + str(p.x) + ","  + str(p.y) + ","  + str(p.z) + "]" )
+
+      new_f = face(new_verts[0], new_verts[1], new_verts[2]);
+      self.faces.append ( new_f );
+
+  def remove_point_by_index ( self, index ):
+    # Start by removing all faces using this index
+    n = len(self.faces)-1
+    face_index = n;
+    while face_index >= 0:
+      f = self.faces[face_index]
+      remove = False
+      for point_index in range(3):
+        if (f.verts[point_index] == index):
+          remove = True;
+          break;
+      if (remove):
+        self.faces.pop( face_index );
+      face_index += -1
+
+    # Renumber all point indices greater than the index to be removed
+    for f in self.faces:
+      for point_index in range(3):
+        if (f.verts[point_index] > index):
+          f.verts[point_index] += -1;
+
+    # Now remove the point itself
+    self.points.pop ( index );
+
+
+  def remove_all_with_z_gt ( self, z ):
+    self.remove_all_with_z ( z, True );
+
+  def remove_all_with_z_lt ( self, z ):
+    self.remove_all_with_z ( z, False );
+
+  def remove_all_with_z ( self, z, gt ):
+    n = len(self.points)-1;
+    point_index = n
+    while point_index >= 0:
+      p = self.points[point_index];
+      remove = False;
+      if (gt):
+        if (p.z > z):
+          remove = True;
+      else:
+        if (p.z < z):
+          remove = True;
+      if (remove):
+        self.remove_point_by_index ( point_index ); # This removes faces as well
+      point_index += -1
+
+  def get_all_with_z_at ( self, z, tolerance ):
+    result_list = []
+    for point_index in range(len(self.points)):
+      p = self.points[point_index];
+      if ( (p.z >= z-tolerance) and (p.z <= z+tolerance) ):
+        result_list.append ( point_index );
+    result = None
+    if len(result_list) > 0:
+      result = []
+      for i in range(len(result_list)):
+        result.append ( result_list[i] );
+    return ( result );
+
+
+class IcoSphere ( plf_object ):
+
+  # int index;
+  
+  def add_normalized_vertex ( self, p ):
+    l = math.sqrt ( (p.x * p.x) + (p.y * p.y) + (p.z * p.z) );
+    pnorm = point ( p.x/l, p.y/l, p.z/l );
+
+    # Check if it's already there
+    index = -1;
+    for pt in self.points:
+      if (pt.x == pnorm.x) and (pt.y == pnorm.y) and (pt.z == pnorm.z):
+        index = self.points.index(pt)
+        break;
+
+    if (index < 0):
+      self.points.append ( pnorm );
+      index = self.points.index ( pnorm );
+      #print ( "Added vertex at " + str(index) );
+    #else:
+    #  print ( "Found vertex at " + str(index) );
+    return (index);
+
+
+  def __init__ ( self, recursion_level ):
+
+    self.points = [];
+
+    t = (1.0 + math.sqrt(5.0)) / 2.0;  # Approx 1.618033988749895
+    
+    # Create 12 verticies from the 3 perpendicular planes whose corners define an icosahedron
+
+    self.add_normalized_vertex ( point (-1,  t,  0) );
+    self.add_normalized_vertex ( point ( 1,  t,  0) );
+    self.add_normalized_vertex ( point (-1, -t,  0) );
+    self.add_normalized_vertex ( point ( 1, -t,  0) );
+
+    self.add_normalized_vertex ( point ( 0, -1,  t) );
+    self.add_normalized_vertex ( point ( 0,  1,  t) );
+    self.add_normalized_vertex ( point ( 0, -1, -t) );
+    self.add_normalized_vertex ( point ( 0,  1, -t) );
+
+    self.add_normalized_vertex ( point ( t,  0, -1) );
+    self.add_normalized_vertex ( point ( t,  0,  1) );
+    self.add_normalized_vertex ( point (-t,  0, -1) );
+    self.add_normalized_vertex ( point (-t,  0,  1) );
+    
+    
+    # Rotate all points such that the resulting icosphere will be separable at the equator
+    
+    if (True):
+      # PI/6 about z (transform x and y) gives an approximate equator
+      angle = (math.pi / 2) - math.atan(1/t);
+      print ( "Rotating with angle = " + str(180 * angle / math.pi) );
+      for p in self.points:
+        newx = (math.cos(angle) * p.x) - (math.sin(angle) * p.z);
+        newz = (math.sin(angle) * p.x) + (math.cos(angle) * p.z);
+        p.x = newx;
+        p.z = newz;
+
+    self.faces = []
+
+    # Add 5 faces around point 0 (top)
+    self.faces.append ( face (  0, 11,  5 ) );    
+    self.faces.append ( face (  0,  5,  1 ) );    
+    self.faces.append ( face (  0,  1,  7 ) );    
+    self.faces.append ( face (  0,  7, 10 ) );    
+    self.faces.append ( face (  0, 10, 11 ) );    
+
+    # Add 5 faces adjacent faces
+    self.faces.append ( face (  1,  5,  9 ) );    
+    self.faces.append ( face (  5, 11,  4 ) );    
+    self.faces.append ( face ( 11, 10,  2 ) );    
+    self.faces.append ( face ( 10,  7,  6 ) );    
+    self.faces.append ( face (  7,  1,  8 ) );    
+
+    # Add 5 faces around point 3 (bottom)
+    self.faces.append ( face (  3,  9,  4 ) );    
+    self.faces.append ( face (  3,  4,  2 ) );    
+    self.faces.append ( face (  3,  2,  6 ) );    
+    self.faces.append ( face (  3,  6,  8 ) );    
+    self.faces.append ( face (  3,  8,  9 ) );    
+
+    # Add 5 faces adjacent faces
+    self.faces.append ( face (  4,  9,  5 ) );    
+    self.faces.append ( face (  2,  4, 11 ) );    
+    self.faces.append ( face (  6,  2, 10 ) );    
+    self.faces.append ( face (  8,  6,  7 ) );    
+    self.faces.append ( face (  9,  8,  1 ) );
+    
+
+    # Subdivide the faces as requested by the recursion_level argument
+    old_points = None;
+    old_faces = None;
+    
+    for rlevel in range(recursion_level):
+      # System.out.println ( "\nRecursion Level = " + rlevel );
+      old_points = self.points;
+      old_faces = self.faces;
+      self.points = []
+      self.faces = []
+      for f in old_faces:
+        # Split this face into 4 more faces
+        midpoint = point(0,0,0)
+        potential_new_points = []
+        for i in range(6):
+          potential_new_points.append ( point(0,0,0) )
+        for side in range(3):
+          p1 = old_points[f.verts[side]];
+          p2 = old_points[f.verts[(side+1)%3]];
+          midpoint = point ( ((p1.x+p2.x)/2), ((p1.y+p2.y)/2), ((p1.z+p2.z)/2) );
+          potential_new_points[2*side] = p1;
+          potential_new_points[(2*side)+1] = midpoint;
+        # Add 4 faces
+        # Start with the verticies ... Add them all for now, but this will introduce many duplicates!!!
+        vertex_indicies = []
+        for i in range(6):
+          vertex_indicies.append ( 0 )
+        for i in range(6):
+          vertex_indicies[i] = self.add_normalized_vertex ( potential_new_points[i] );
+        # Now add the 4 new faces
+        self.faces.append ( face ( vertex_indicies[0], vertex_indicies[1], vertex_indicies[5] ) );
+        self.faces.append ( face ( vertex_indicies[1], vertex_indicies[2], vertex_indicies[3] ) );
+        self.faces.append ( face ( vertex_indicies[3], vertex_indicies[4], vertex_indicies[5] ) );
+        self.faces.append ( face ( vertex_indicies[1], vertex_indicies[3], vertex_indicies[5] ) );
+
+
+
+class Capsule (plf_object):
+
+
+  def sort_ring_indicies ( self, ring ):
+    for i in range(len(ring)):
+      for j in range(i+1,len(ring)):
+        pi = self.points[ring[i]];
+        pj = self.points[ring[j]];
+        itheta = math.atan2(pi.x, pi.y);
+        jtheta = math.atan2(pj.x, pj.y);
+        if (jtheta < itheta):
+          temp = ring[i];
+          ring[i] = ring[j];
+          ring[j] = temp;
+
+
+  def __init__ ( self, recursion_level, radius, height, subdivide_sides=True ):
+
+    self.points = [];
+    self.faces = []
+
+    h = height/2; # h is the height of each half
+    tol = 0.0001;
+
+    # Make half of an icosphere for the bottom
+    ico = IcoSphere ( recursion_level );
+    ico.remove_all_with_z_gt ( tol );
+    ico.scale_points ( radius, radius, radius )
+    ico.offset_points ( 0, 0, -h );
+    self.merge ( ico );
+
+    # Make half of an icosphere for the top
+    ico = IcoSphere ( recursion_level );
+    ico.remove_all_with_z_lt ( -tol );
+    ico.scale_points ( radius, radius, radius )
+    ico.offset_points ( 0, 0, h );
+    self.merge ( ico );
+    
+    # Get the bottom and top rings to make the sides
+    bot_ring = self.get_all_with_z_at(-h, tol);
+    top_ring = self.get_all_with_z_at(h, tol);
+
+    # Make the sides
+    if ((bot_ring==None) or (top_ring==None)):
+      print ( "Error: one of the rings is null" );
+    elif (len(bot_ring) != len(top_ring)):
+      print ( "Error: rings are not the same length" );
+    elif (h <= 0):
+      print ( "Note: no height to make the cylinder" );
+    else:
+      self.sort_ring_indicies ( bot_ring );
+      self.sort_ring_indicies ( top_ring );
+      
+      if not subdivide_sides:
+
+        # Create a single face with only two triangles for each face of the cylinder
+
+        n = len(bot_ring)
+
+        for i in range(n):
+
+          # Get the corner points
+          cb1 = self.points[bot_ring[i]];
+          ct1 = self.points[top_ring[i]];
+          cb2 = self.points[bot_ring[(i+1)%n]];
+          ct2 = self.points[top_ring[(i+1)%n]];
+
+          new_face = plf_object();
+          new_face.add_point ( cb1 );
+          new_face.add_point ( ct1 );
+          new_face.add_point ( cb2 );
+          new_face.add_face ( face (0, 1, 2) );
+          self.merge ( new_face );
+
+          new_face = plf_object();
+          new_face.add_point ( ct1 );
+          new_face.add_point ( ct2 );
+          new_face.add_point ( cb2 );
+          new_face.add_face ( face (0, 1, 2) );
+          self.merge ( new_face );
+
+      else:
+
+        # Segment the cylinder along its length to create roughly square (but triangulated) segments
+
+        avg_len = self.get_average_edge_length();
+        num_segs = int(math.floor(((2*h)+(avg_len/2)) / avg_len));
+        if (num_segs <= 0):
+          num_segs = 1;
+        
+        for seg_num in range(num_segs):
+
+          n = len(bot_ring)
+
+          for i in range(n):
+
+            # Get the corner points
+            cb1 = self.points[bot_ring[i]];
+            ct1 = self.points[top_ring[i]];
+            cb2 = self.points[bot_ring[(i+1)%n]];
+            ct2 = self.points[top_ring[(i+1)%n]];
+            
+            # print ( "Corners: " + str(cb1.x) + "," + str(ct1.x) + "," + str(cb2.x) + "," + str(ct2.x) )
+
+            # Start out assuming they fill to all 4 corners
+            pb1 = point (cb1.x, cb1.y, cb1.z);
+            pt1 = point (ct1.x, ct1.y, ct1.z);
+            pb2 = point (cb2.x, cb2.y, cb2.z);
+            pt2 = point (ct2.x, ct2.y, ct2.z);
+
+            if (seg_num > 0):
+              # Need to interpolate the bottom
+              pb1.x = cb1.x + ((ct1.x-cb1.x)*(seg_num * 1.0 / num_segs));
+              pb1.y = cb1.y + ((ct1.y-cb1.y)*(seg_num * 1.0 / num_segs));
+              pb1.z = cb1.z + ((ct1.z-cb1.z)*(seg_num * 1.0 / num_segs));
+
+              pb2.x = cb2.x + ((ct2.x-cb2.x)*(seg_num * 1.0 / num_segs));
+              pb2.y = cb2.y + ((ct2.y-cb2.y)*(seg_num * 1.0 / num_segs));
+              pb2.z = cb2.z + ((ct2.z-cb2.z)*(seg_num * 1.0 / num_segs));
+
+            if (seg_num < (num_segs-1)):
+              # Need to interpolate the top
+              pt1.x = cb1.x + ((ct1.x-cb1.x)*((seg_num+1) * 1.0 / num_segs));
+              pt1.y = cb1.y + ((ct1.y-cb1.y)*((seg_num+1) * 1.0 / num_segs));
+              pt1.z = cb1.z + ((ct1.z-cb1.z)*((seg_num+1) * 1.0 / num_segs));
+
+              pt2.x = cb2.x + ((ct2.x-cb2.x)*((seg_num+1) * 1.0 / num_segs));
+              pt2.y = cb2.y + ((ct2.y-cb2.y)*((seg_num+1) * 1.0 / num_segs));
+              pt2.z = cb2.z + ((ct2.z-cb2.z)*((seg_num+1) * 1.0 / num_segs));
+
+            new_face = plf_object();
+            new_face.add_point ( pb1 );
+            new_face.add_point ( pt1 );
+            new_face.add_point ( pb2 );
+            new_face.add_face ( face (0, 1, 2) );
+            self.merge ( new_face );
+
+            new_face = plf_object();
+            new_face.add_point ( pt1 );
+            new_face.add_point ( pt2 );
+            new_face.add_point ( pb2 );
+            new_face.add_face ( face (0, 1, 2) );
+            self.merge ( new_face );
 
 
 
@@ -2135,16 +2712,15 @@ class OrganelleTestOp(bpy.types.Operator):
 
 
 
-
 ###########################################################################################################
 
 # Capsule is 1 BU in diameter (0.5 in radius) and has a total height of 4 (-2 to +2)
 group_name = "Complete Model Tests"
-test_name = "MinD MinE Test (NOT Done Yet!!)"
-operator_name = "cellblender_test.mind_mine_test"
+test_name = "Capsule in Capsule Test"
+operator_name = "cellblender_test.capsule_tests"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class MinDMinETestOp(bpy.types.Operator):
+class CapsuleTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
 
@@ -2159,12 +2735,57 @@ class MinDMinETestOp(bpy.types.Operator):
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
 
+        # Create the capsule object, and define the surface as a membrane
 
-        # Create the object and add it to the CellBlender model
-        cb_model.add_capsule_to_model ( name="ecoli", draw_type="WIRE", size=0.5, x=0, y=0, z=0, subdiv=2, cyl_len=0.5 )
+        cb_model.add_capsule_to_model ( name="shell",   draw_type="WIRE", x=0, y=0, z=0, sigma=0, subdiv=2, radius=0.501, cyl_len=4.002, subdivide_sides=False )
+        cb_model.add_capsule_to_model ( name="capsule", draw_type="WIRE", x=0, y=0, z=0, sigma=0, subdiv=2, radius=0.500, cyl_len=4,     subdivide_sides=False )
+        cb_model.add_surface_region_to_model_by_normal ( "capsule", "top", nx=0, ny=0, nz=1, min_dot_prod=0.5 )
+        cb_model.add_surface_region_to_model_by_normal ( "capsule", "bot", nx=0, ny=0, nz=-1, min_dot_prod=0.5 )
+
+
+        mola  = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+        molpa = cb_model.add_molecule_species_to_model ( name="pa", mol_type="2D", diff_const_expr="0" )
+        molb  = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-5" )
+        molpb = cb_model.add_molecule_species_to_model ( name="pb", mol_type="2D", diff_const_expr="0" )
+        molc  = cb_model.add_molecule_species_to_model ( name="c", diff_const_expr="1e-7" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="capsule", q_expr="2000" )
+        cb_model.add_molecule_release_site_to_model ( mol="pa", shape="OBJECT", obj_expr="capsule[top]", orient="'", q_expr="1000" )
+        cb_model.add_molecule_release_site_to_model ( mol="pb", shape="OBJECT", obj_expr="capsule[bot]", orient="'", q_expr="1000" )
+        #### Add a single b molecule so the display values can be set ... otherwise they're not applied properly
+        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="1", shape="SPHERICAL", d="0", z="0.000" )
+        cb_model.add_molecule_release_site_to_model ( mol="c", q_expr="1", shape="SPHERICAL", d="0", z="0.000" )
+
+
+        cb_model.add_reaction_to_model ( rin="a' + pa,", rtype="irreversible", rout="b, + pa,", fwd_rate="1e9", bkwd_rate="" )
+        cb_model.add_reaction_to_model ( rin="b, + pb,", rtype="irreversible", rout="c' + pb,", fwd_rate="1e9", bkwd_rate="" )
+
+        cb_model.add_count_output_to_model ( mol_name="a" )
+        cb_model.add_count_output_to_model ( mol_name="b" )
+        cb_model.add_count_output_to_model ( mol_name="c", object_name="capsule", count_location="Object" )
+
+        cb_model.run_model ( iterations='5000', time_step='1e-6', wait_time=0.5 )
+
+        ## cb_model.compare_mdl_with_sha1 ( "32312790f206beaa798ce0a7218f1f712840b0d5", test_name="Cube Surface Test" )
+
+        cb_model.refresh_molecules()
+        
+        scn.frame_current = 1
+
+        cb_model.refresh_molecules()
+        
+        cb_model.change_molecule_display ( mola,  glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( molpa, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molb,  glyph='Cube', scale=6.0, red=1.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molpb, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=1.0 )
 
         cb_model.set_view_back()
 
+        cb_model.scale_view_distance ( 0.25 )
+
+        """
+        cb_model.play_animation()
+        """
 
         return { 'FINISHED' }
 
