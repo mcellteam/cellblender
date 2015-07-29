@@ -329,7 +329,8 @@ class CellBlender_Model:
 
         mcell.cellblender_preferences.mcell_binary_valid = True
         mcell.cellblender_preferences.show_sim_runner_options = True
-        mcell.run_simulation.simulation_run_control = 'QUEUE'
+        #mcell.run_simulation.simulation_run_control = 'QUEUE'
+        mcell.run_simulation.simulation_run_control = 'COMMAND'
         
         return mcell
 
@@ -2764,9 +2765,17 @@ class CapsuleTestOp(bpy.types.Operator):
         cb_model.add_count_output_to_model ( mol_name="b" )
         cb_model.add_count_output_to_model ( mol_name="c", object_name="capsule", count_location="Object" )
 
-        cb_model.run_model ( iterations='5000', time_step='1e-6', wait_time=0.5 )
+        cb_model.set_visualization ( enable_visualization=True, export_all=True, all_iterations=False, start=0, end=100000, step=2 )
 
-        ## cb_model.compare_mdl_with_sha1 ( "32312790f206beaa798ce0a7218f1f712840b0d5", test_name="Cube Surface Test" )
+        mcell.rxn_output.plot_layout = ' '
+        mcell.rxn_output.mol_colors = True
+
+        mcell.partitions.include = True
+        bpy.ops.mcell.auto_generate_boundaries()
+
+        cb_model.run_model ( iterations='10000', time_step='1e-6', wait_time=50.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "3aaca27e86f45a29de7c121bef1a08029ef8ca37", test_name="Capsule in Capsule Test" )
 
         cb_model.refresh_molecules()
         
@@ -2774,18 +2783,21 @@ class CapsuleTestOp(bpy.types.Operator):
 
         cb_model.refresh_molecules()
         
-        cb_model.change_molecule_display ( mola,  glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( molpa, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( molb,  glyph='Cube', scale=6.0, red=1.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( molpb, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=1.0 )
+        """
+        This seems to crash Blender, so leave molecules with default settings for now
+
+        cb_model.change_molecule_display ( mola,  glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( molpa, glyph='Cone', scale=2.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molb,  glyph='Cube', scale=3.0, red=1.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molpb, glyph='Cone', scale=2.0, red=0.0, green=1.0, blue=1.0 )
+        cb_model.change_molecule_display ( molc,  glyph='Cube', scale=4.0, red=1.0, green=1.0, blue=1.0 )
+        """
 
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.25 )
 
-        """
         cb_model.play_animation()
-        """
 
         return { 'FINISHED' }
 
