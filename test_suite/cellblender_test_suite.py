@@ -946,7 +946,10 @@ class CellBlender_Model:
         app = bpy.context.scene.cellblender_test_suite
         if app.run_mcell:
             bpy.ops.mcell.run_simulation()
-            self.wait ( wait_time )
+            for i in range(10):
+                self.wait ( wait_time / 10.0 )
+                print ( "Test Suite is Waiting for MCell to complete ..." )
+            print ( "Test Suite is done waiting!!" )
         else:
             bpy.ops.mcell.export_project()
 
