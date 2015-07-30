@@ -38,7 +38,7 @@ import cellblender
 # from . import cellblender_parameters
 from . import parameter_system
 from . import cellblender_operators
-from . import utils
+from . import cellblender_utils
 
 
 # We use per module class registration/unregistration
@@ -336,7 +336,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def check_callback(self, context):
         """Allow the parent molecule list (MCellMoleculesListProperty) to do the checking"""
-        utils.get_parent(self).check(context)
+        cellblender_utils.get_parent(self).check(context)
         return
 
 

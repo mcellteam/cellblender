@@ -60,7 +60,7 @@ from . import data_model
 import os
 from multiprocessing import cpu_count
 
-from cellblender.utils import project_files_path
+from cellblender.cellblender_utils import project_files_path
 
 # we use per module class registration/unregistration
 def register():

@@ -42,7 +42,7 @@ cellblender_info = {
 #        "SimControl.c",
 #        "SimControl",
 
-        "utils.py",
+        "cellblender_utils.py",
         "glyph_library.blend",
         "io_mesh_mcell_mdl"+os.sep+"__init__.py",
         "io_mesh_mcell_mdl"+os.sep+"export_mcell_mdl.py",

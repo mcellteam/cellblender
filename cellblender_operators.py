@@ -45,7 +45,7 @@ from . import data_model
 from . import cellblender_release
 # import cellblender.data_model
 # import cellblender_source_info
-from cellblender.utils import project_files_path
+from cellblender.cellblender_utils import project_files_path
 from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
 
 # from . import ParameterSpace
@@ -3131,7 +3131,7 @@ def update_delay(self, context):
         mcell.release_patterns.active_release_pattern_index]
     delay_str = release_pattern.delay_str
 
-    (delay, status) = utils.check_val_str(delay_str, 0, None)
+    (delay, status) = cellblender_utils.check_val_str(delay_str, 0, None)
 
     if status == "":
         release_pattern.delay = delay
@@ -3147,7 +3147,7 @@ def update_release_interval(self, context):
         mcell.release_patterns.active_release_pattern_index]
     release_interval_str = release_pattern.release_interval_str
 
-    (release_interval, status) = utils.check_val_str(
+    (release_interval, status) = cellblender_utils.check_val_str(
         release_interval_str, 1e-12, None)
 
     if status == "":
@@ -3165,7 +3165,7 @@ def update_train_duration(self, context):
         mcell.release_patterns.active_release_pattern_index]
     train_duration_str = release_pattern.train_duration_str
 
-    (train_duration, status) = utils.check_val_str(train_duration_str, 1e-12, None)
+    (train_duration, status) = cellblender_utils.check_val_str(train_duration_str, 1e-12, None)
 
     if status == "":
         release_pattern.train_duration = train_duration
@@ -3182,7 +3182,7 @@ def update_train_interval(self, context):
         mcell.release_patterns.active_release_pattern_index]
     train_interval_str = release_pattern.train_interval_str
 
-    (train_interval, status) = utils.check_val_str(train_interval_str, 1e-12, None)
+    (train_interval, status) = cellblender_utils.check_val_str(train_interval_str, 1e-12, None)
 
     if status == "":
         release_pattern.train_interval = train_interval
