@@ -55,6 +55,10 @@ if "bpy" in locals():
     imp.reload(cellblender_operators)
     imp.reload(parameter_system)
     imp.reload(cellblender_molecules)
+    imp.reload(cellblender_reactions)
+    imp.reload(cellblender_release)
+    imp.reload(cellblender_surface_classes)
+    imp.reload(cellblender_partitions)
     imp.reload(object_surface_regions)
     imp.reload(io_mesh_mcell_mdl)
     imp.reload(sim_runner_queue)
@@ -75,6 +79,10 @@ else:
     from . import cellblender_operators
     from . import parameter_system
     from . import cellblender_molecules
+    from . import cellblender_reactions
+    from . import cellblender_release
+    from . import cellblender_surface_classes
+    from . import cellblender_partitions
     from . import object_surface_regions
     from . import io_mesh_mcell_mdl
     from . import sim_runner_queue
@@ -128,7 +136,7 @@ def register():
     bpy.utils.unregister_class(parameter_system.MCELL_PT_parameter_system)
     bpy.utils.unregister_class(cellblender_molecules.MCELL_PT_define_molecules)
     bpy.utils.unregister_class(cellblender_reactions.MCELL_PT_define_reactions)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_surface_classes)
+    bpy.utils.unregister_class(cellblender_surface_classes.MCELL_PT_define_surface_classes)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_mod_surface_regions)
     bpy.utils.unregister_class(cellblender_release.MCELL_PT_release_pattern)
     bpy.utils.unregister_class(cellblender_release.MCELL_PT_molecule_release)
@@ -150,7 +158,7 @@ def register():
 #    bpy.utils.register_class(cellblender_panels.MCELL_PT_initialization)
 #    bpy.utils.register_class(cellblender_molecules.MCELL_PT_define_molecules)
 #    bpy.utils.register_class(cellblender_reactions.MCELL_PT_define_reactions)
-#    bpy.utils.register_class(cellblender_panels.MCELL_PT_define_surface_classes)
+#    bpy.utils.register_class(cellblender_surface_classes.MCELL_PT_define_surface_classes)
 #    bpy.utils.register_class(cellblender_panels.MCELL_PT_mod_surface_regions)
 #    bpy.utils.register_class(cellblender_release.MCELL_PT_release_pattern)
 #    bpy.utils.register_class(cellblender_release.MCELL_PT_molecule_release)
