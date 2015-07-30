@@ -176,96 +176,6 @@ class MCELL_OT_add_variable_rate_constant(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
 
-def check_surface_class(self, context):
-    """Checks for duplicate or illegal surface class name"""
-
-    surf_class = context.scene.mcell.surface_classes
-    active_surf_class = surf_class.surf_class_list[
-        surf_class.active_surf_class_index]
-
-    status = ""
-
-    # Check for duplicate names
-    surf_class_keys = surf_class.surf_class_list.keys()
-    if surf_class_keys.count(active_surf_class.name) > 1:
-        status = "Duplicate Surface Class: %s" % (active_surf_class.name)
-
-    # Check for illegal names (Starts with a letter. No special characters.)
-    surf_class_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
-    m = re.match(surf_class_filter, active_surf_class.name)
-    if m is None:
-        status = "Surface Class name error: %s" % (active_surf_class.name)
-
-    active_surf_class.status = status
-
-    return
-
-
-def convert_surf_class_str(surf_class_type):
-    """Format MDL language (surf class type) for viewing in the UI"""
-
-    if surf_class_type == "ABSORPTIVE":
-        surf_class_type = "Absorptive"
-    elif surf_class_type == "TRANSPARENT":
-        surf_class_type = "Transparent"
-    elif surf_class_type == "REFLECTIVE":
-        surf_class_type = "Reflective"
-    elif surf_class_type == "CLAMP_CONCENTRATION":
-        surf_class_type = "Clamp Concentration"
-
-    return(surf_class_type)
-
-
-def convert_orient_str(orient):
-    """Format MDL language (orientation) for viewing in the UI"""
-
-    if orient == "'":
-        orient = "Top/Front"
-    elif orient == ",":
-        orient = "Bottom/Back"
-    elif orient == ";":
-        orient = "Ignore"
-
-    return(orient)
-
-
-def check_surf_class_props(self, context):
-    """Checks for illegal/undefined molecule names in surf class properties"""
-
-    mcell = context.scene.mcell
-    active_surf_class = mcell.surface_classes.surf_class_list[
-        mcell.surface_classes.active_surf_class_index]
-    surf_class_props = active_surf_class.surf_class_props_list[
-        active_surf_class.active_surf_class_props_index]
-    mol_list = mcell.molecules.molecule_list
-    molecule = surf_class_props.molecule
-    surf_class_type = surf_class_props.surf_class_type
-    orient = surf_class_props.surf_class_orient
-
-    surf_class_type = convert_surf_class_str(surf_class_type)
-    orient = convert_orient_str(orient)
-
-    surf_class_props.name = "Molec.: %s   Orient.: %s   Type: %s" % (
-        molecule, orient, surf_class_type)
-
-    status = ""
-
-    # Check for illegal names (Starts with a letter. No special characters.)
-    mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)"
-    m = re.match(mol_filter, molecule)
-    if m is None:
-        status = "Molecule name error: %s" % (molecule)
-    else:
-        # Check for undefined names
-        mol_name = m.group(1)
-        if not mol_name in mol_list:
-            status = "Undefined molecule: %s" % (mol_name)
-
-    surf_class_props.status = status
-
-    return
-
-
 class MCELL_OT_mod_surf_regions_add(bpy.types.Operator):
     bl_idname = "mcell.mod_surf_regions_add"
     bl_label = "Assign Surface Class"
@@ -3213,26 +3123,6 @@ def check_rxn_output(self, context):
     return
 
 
-def check_val_str(val_str, min_val, max_val):
-    """ Convert val_str to float if possible. Otherwise, generate error. """
-
-    status = ""
-    val = None
-
-    try:
-        val = float(val_str)
-        if min_val is not None:
-            if val < min_val:
-                status = "Invalid value for %s: %s"
-        if max_val is not None:
-            if val > max_val:
-                status = "Invalid value for %s: %s"
-    except ValueError:
-        status = "Invalid value for %s: %s"
-
-    return (val, status)
-
-
 def update_delay(self, context):
     """ Store the release pattern delay as a float if it's legal """
 
@@ -3241,7 +3131,7 @@ def update_delay(self, context):
         mcell.release_patterns.active_release_pattern_index]
     delay_str = release_pattern.delay_str
 
-    (delay, status) = check_val_str(delay_str, 0, None)
+    (delay, status) = utils.check_val_str(delay_str, 0, None)
 
     if status == "":
         release_pattern.delay = delay
@@ -3257,7 +3147,7 @@ def update_release_interval(self, context):
         mcell.release_patterns.active_release_pattern_index]
     release_interval_str = release_pattern.release_interval_str
 
-    (release_interval, status) = check_val_str(
+    (release_interval, status) = utils.check_val_str(
         release_interval_str, 1e-12, None)
 
     if status == "":
@@ -3275,7 +3165,7 @@ def update_train_duration(self, context):
         mcell.release_patterns.active_release_pattern_index]
     train_duration_str = release_pattern.train_duration_str
 
-    (train_duration, status) = check_val_str(train_duration_str, 1e-12, None)
+    (train_duration, status) = utils.check_val_str(train_duration_str, 1e-12, None)
 
     if status == "":
         release_pattern.train_duration = train_duration
@@ -3292,51 +3182,13 @@ def update_train_interval(self, context):
         mcell.release_patterns.active_release_pattern_index]
     train_interval_str = release_pattern.train_interval_str
 
-    (train_interval, status) = check_val_str(train_interval_str, 1e-12, None)
+    (train_interval, status) = utils.check_val_str(train_interval_str, 1e-12, None)
 
     if status == "":
         release_pattern.train_interval = train_interval
     else:
         release_pattern.train_interval_str = "%g" % (
             release_pattern.train_interval)
-
-
-def update_clamp_value(self, context):
-    """ Store the clamp value as a float if it's legal or generate an error """
-
-    mcell = context.scene.mcell
-    surf_class = context.scene.mcell.surface_classes
-    active_surf_class = mcell.surface_classes.surf_class_list[
-        mcell.surface_classes.active_surf_class_index]
-    surf_class_props = active_surf_class.surf_class_props_list[
-        active_surf_class.active_surf_class_props_index]
-    #surf_class_type = surf_class_props.surf_class_type
-    #orient = surf_class_props.surf_class_orient
-    #molecule = surf_class_props.molecule
-    clamp_value_str = surf_class_props.clamp_value_str
-
-    (clamp_value, status) = check_val_str(clamp_value_str, 0, None)
-
-    if status == "":
-        surf_class_props.clamp_value = clamp_value
-    else:
-        #status = status % ("clamp_value", clamp_value_str)
-        surf_class_props.clamp_value_str = "%g" % (
-            surf_class_props.clamp_value)
-
-    #surf_class_type = convert_surf_class_str(surf_class_type)
-    #orient = convert_orient_str(orient)
-
-    #if molecule:
-    #    surf_class_props.name = "Molec.: %s   Orient.: %s   Type: %s" % (
-    #        molecule, orient, surf_class_type)
-    #else:
-    #    surf_class_props.name = "Molec.: NA   Orient.: %s   Type: %s" % (
-    #        orient, surf_class_type)
-
-    #surf_class.surf_class_props_status = status
-
-    return
 
 
 def check_start_seed(self, context):
