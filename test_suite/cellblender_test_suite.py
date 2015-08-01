@@ -1,4 +1,5 @@
-relative_path_to_mcell = "/../mcell_git/src/linux/mcell"
+relative_path_to_mcell = "mcell"
+#relative_path_to_mcell = "/../mcell_git/src/linux/mcell"
 
 """
 # This section of code was used (from the command line) to copy this addon to the Blender addons area. Now the makefile performs that task.
@@ -68,14 +69,17 @@ def register_test ( test_groups, group_name, test_name, operator_name, next_test
 
 class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
 
-    # Older static groups
-    path_to_mcell = bpy.props.StringProperty(name="PathToMCell", default="")
-    path_to_blend = bpy.props.StringProperty(name="PathToBlend", default="")
-    run_mcell = bpy.props.BoolProperty(name="RunMCell", default=False)
+    # Properties needed by the testing application itself
+
+    show_setup = bpy.props.BoolProperty(name="ShowSetUp", default=True)
+    path_to_mcell = bpy.props.StringProperty(name="Path to MCell", default="")
+    path_to_blend = bpy.props.StringProperty(name="Path to Blend", default="")
+    run_mcell = bpy.props.BoolProperty(name="Run MCell", default=False)
     test_status = bpy.props.StringProperty(name="TestStatus", default="?")
     
-    # New dynamic groups
-    show_group = BoolVectorProperty ( size=max_test_groups ) # Used for showing and hiding each panel
+    # Properties needed for the dynamically created test case groups
+
+    show_group = BoolVectorProperty ( size=max_test_groups ) # Used for showing and hiding each panel - can only hold 32 elements!!!!!
 
     groups_real = bpy.props.BoolProperty(default=False)
     # Start with all defaulted to "True" so they can be changed to "False" making them real ID properties!!!
@@ -155,11 +159,25 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
     def draw(self, context):
         app = context.scene.cellblender_test_suite
 
+        box = self.layout.box()
+        row = box.row(align=True)
+        row.alignment = 'LEFT'
+        if not app.show_setup:
+            row.prop(app, "show_setup", icon='TRIA_RIGHT', text="Setup Panel", emboss=False)
+        else:
+            row.prop(app, "show_setup", icon='TRIA_DOWN', text="Setup Panel", emboss=False)
 
-        row = self.layout.row()
-        row.prop(app, "path_to_mcell")
-        row = self.layout.row()
-        row.prop(app, "path_to_blend")
+            row = box.row()
+            row.operator("cellblender_test.set_mcell_path", text="Set Path to MCell Binary", icon='FILESEL')
+            row = box.row()
+            row.prop ( app, "path_to_mcell" )
+
+            # Problems getting this to work ... use current directory for now
+            #row = box.row()
+            #row.operator("cellblender_test.set_blend_path", text="Set Path to Blend files", icon='FILESEL')
+            #row = box.row()
+            #row.prop ( app, "path_to_blend" )
+
 
         row = self.layout.row()
         row.operator ( "cellblender_test.load_home_file" )
@@ -224,6 +242,41 @@ class SaveHomeOp(bpy.types.Operator):
         bpy.ops.wm.save_homefile()
         return { 'FINISHED' }
 
+
+class SetMCellBinary(bpy.types.Operator):
+    bl_idname = "cellblender_test.set_mcell_path"
+    bl_label = "Set MCell Binary"
+    bl_description = ("Set MCell Binary. If needed, download at mcell.org/download.html")
+    bl_options = {'REGISTER'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+
+    def execute(self, context):
+        app = context.scene.cellblender_test_suite
+        app.path_to_mcell = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
+class SetBlendPath(bpy.types.Operator):
+    bl_idname = "cellblender_test.set_blend_path"
+    bl_label = "Set Path to Blend File"
+    bl_description = ("Set Path to the Blend File created for each test.")
+    bl_options = {'REGISTER'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+
+    def execute(self, context):
+        app = context.scene.cellblender_test_suite
+        app.path_to_blend = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
 
 
 
