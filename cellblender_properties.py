@@ -48,6 +48,7 @@ from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
 
 from bpy.app.handlers import persistent
 
+from . import cellblender_initialization
 from . import cellblender_molecules
 from . import cellblender_reactions
 from . import cellblender_release
@@ -1065,7 +1066,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
 
 # from . import parameter_system
 
-
+"""
 class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
 
     def __init__(self):
@@ -1636,10 +1637,11 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
 
 
     def draw_panel ( self, context, panel ):
-        """ Create a layout from the panel and draw into it """
+        # Create a layout from the panel and draw into it
         layout = panel.layout
         self.draw_layout ( context, layout )
 
+"""
 
 
 class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
@@ -3441,7 +3443,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     mol_viz = PointerProperty(
         type=MCellMolVizPropertyGroup, name="Mol Viz Settings")
     initialization = PointerProperty(
-        type=MCellInitializationPropertyGroup, name="Model Initialization")
+        type=cellblender_initialization.MCellInitializationPropertyGroup, name="Model Initialization")
     partitions = bpy.props.PointerProperty(
         type=cellblender_partitions.MCellPartitionsPropertyGroup, name="Partitions")
     ############# DB: added for parameter import from BNG, SBML models####
@@ -3577,7 +3579,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
         group_name = "initialization"
         if group_name in dm:
-            dm[group_name] = MCellInitializationPropertyGroup.upgrade_data_model ( dm[group_name] )
+            dm[group_name] = cellblender_initialization.MCellInitializationPropertyGroup.upgrade_data_model ( dm[group_name] )
             if dm[group_name] == None:
                 return None
 

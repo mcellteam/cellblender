@@ -16,6 +16,7 @@ cellblender_info = {
         "cellblender_properties.py",
         "cellblender_panels.py",
         "cellblender_operators.py",
+        "cellblender_initialization.py",
         "cellblender_molecules.py",
         "cellblender_reactions.py",
         "cellblender_release.py",
