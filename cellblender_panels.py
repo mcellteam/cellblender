@@ -305,32 +305,6 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
             row.label(text="      %s" % (mcell.meshalyzer.normal_status))
 
 
-'''
-class MCELL_PT_user_model_parameters(bpy.types.Panel):
-    bl_label = "CellBlender - User-Defined Model Parameters"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        row = layout.row()
-'''
-
-
-class MCELL_PT_initialization(bpy.types.Panel):
-    bl_label = "CellBlender - Model Initialization"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.initialization.draw_panel ( context, self )
-
 
 
 ############### DB: The following two classes are included to create a parameter input panel: only relevant for BNG, SBML or other model import #################
