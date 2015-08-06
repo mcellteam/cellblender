@@ -927,8 +927,13 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
         # set in the PATH.
         if mcell.cellblender_preferences.python_binary_valid:
             python_path = mcell.cellblender_preferences.python_binary
+            print ( "Using user specified Python: " + python_path )
+        elif (bpy.app.binary_path_python != None) and (len(bpy.app.binary_path_python) > 0):
+            python_path = bpy.app.binary_path_python
+            print ( "Using Blender's Python: " + python_path )
         else:
             python_path = shutil.which("python", mode=os.X_OK)
+            print ( "Using shutil.which Python: " + python_path )
 
         if python_path:
             if not mcell.cellblender_preferences.decouple_export_run:
