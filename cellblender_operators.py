@@ -48,6 +48,7 @@ from . import cellblender_release
 from cellblender.cellblender_utils import project_files_path
 from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
 
+
 # from . import ParameterSpace
 
 
@@ -817,13 +818,8 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
         # Force the project directory to be where the .blend file lives
         project_dir = project_files_path()
         status = ""
-        # If python path was set by user, use that one. Otherwise, try to
-        # automatically find it. This will probably fail on Windows unless it's
-        # set in the PATH.
-        if mcell.cellblender_preferences.python_binary_valid:
-            python_path = mcell.cellblender_preferences.python_binary
-        else:
-            python_path = shutil.which("python", mode=os.X_OK)
+
+        python_path = cellblender.cellblender_utils.get_python_path ( mcell )
 
         if python_path:
             if not mcell.cellblender_preferences.decouple_export_run:
@@ -922,18 +918,8 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
         # Force the project directory to be where the .blend file lives
         project_dir = project_files_path()
         status = ""
-        # If python path was set by user, use that one. Otherwise, try to
-        # automatically find it. This will probably fail on Windows unless it's
-        # set in the PATH.
-        if mcell.cellblender_preferences.python_binary_valid:
-            python_path = mcell.cellblender_preferences.python_binary
-            print ( "Using user specified Python: " + python_path )
-        elif (bpy.app.binary_path_python != None) and (len(bpy.app.binary_path_python) > 0):
-            python_path = bpy.app.binary_path_python
-            print ( "Using Blender's Python: " + python_path )
-        else:
-            python_path = shutil.which("python", mode=os.X_OK)
-            print ( "Using shutil.which Python: " + python_path )
+
+        python_path = cellblender.cellblender_utils.get_python_path ( mcell )
 
         if python_path:
             if not mcell.cellblender_preferences.decouple_export_run:
@@ -1207,103 +1193,93 @@ class MCELL_OT_run_simulation_control_java(bpy.types.Operator):
         # Force the project directory to be where the .blend file lives
         project_dir = project_files_path()
         status = ""
-        # If python path was set by user, use that one. Otherwise, try to
-        # automatically find it. This will probably fail on Windows unless it's
-        # set in the PATH.
-        if mcell.cellblender_preferences.python_binary_valid:
-            python_path = mcell.cellblender_preferences.python_binary
+
+        if not mcell.cellblender_preferences.decouple_export_run:
+            bpy.ops.mcell.export_project()
+
+        if (mcell.run_simulation.error_list and
+                mcell.cellblender_preferences.invalid_policy == 'dont_run'):
+            pass
         else:
-            python_path = shutil.which("python", mode=os.X_OK)
+            react_dir = os.path.join(project_dir, "react_data")
+            if (os.path.exists(react_dir) and
+                    mcell.run_simulation.remove_append == 'remove'):
+                shutil.rmtree(react_dir)
+            if not os.path.exists(react_dir):
+                os.makedirs(react_dir)
 
-        if python_path:
-            if not mcell.cellblender_preferences.decouple_export_run:
-                bpy.ops.mcell.export_project()
+            viz_dir = os.path.join(project_dir, "viz_data")
+            if (os.path.exists(viz_dir) and
+                    mcell.run_simulation.remove_append == 'remove'):
+                shutil.rmtree(viz_dir)
+            if not os.path.exists(viz_dir):
+                os.makedirs(viz_dir)
 
-            if (mcell.run_simulation.error_list and
-                    mcell.cellblender_preferences.invalid_policy == 'dont_run'):
-                pass
-            else:
-                react_dir = os.path.join(project_dir, "react_data")
-                if (os.path.exists(react_dir) and
-                        mcell.run_simulation.remove_append == 'remove'):
-                    shutil.rmtree(react_dir)
-                if not os.path.exists(react_dir):
-                    os.makedirs(react_dir)
+            base_name = mcell.project_settings.base_name
 
-                viz_dir = os.path.join(project_dir, "viz_data")
-                if (os.path.exists(viz_dir) and
-                        mcell.run_simulation.remove_append == 'remove'):
-                    shutil.rmtree(viz_dir)
-                if not os.path.exists(viz_dir):
-                    os.makedirs(viz_dir)
+            error_file_option = mcell.run_simulation.error_file
+            log_file_option = mcell.run_simulation.log_file
+            script_dir_path = os.path.dirname(os.path.realpath(__file__))
+            script_file_path = os.path.join(
+                script_dir_path, "SimControl.jar")
 
-                base_name = mcell.project_settings.base_name
+            processes_list = mcell.run_simulation.processes_list
+            processes_list.add()
+            mcell.run_simulation.active_process_index = len(
+                mcell.run_simulation.processes_list) - 1
+            simulation_process = processes_list[
+                mcell.run_simulation.active_process_index]
 
-                error_file_option = mcell.run_simulation.error_file
-                log_file_option = mcell.run_simulation.log_file
-                script_dir_path = os.path.dirname(os.path.realpath(__file__))
-                script_file_path = os.path.join(
-                    script_dir_path, "SimControl.jar")
+            print("Starting MCell ... create start_time.txt file:")
+            with open(os.path.join(os.path.dirname(bpy.data.filepath),
+                      "start_time.txt"), "w") as start_time_file:
+                start_time_file.write(
+                    "Started MCell at: " + (str(time.ctime())) + "\n")
 
-                processes_list = mcell.run_simulation.processes_list
-                processes_list.add()
-                mcell.run_simulation.active_process_index = len(
-                    mcell.run_simulation.processes_list) - 1
-                simulation_process = processes_list[
-                    mcell.run_simulation.active_process_index]
+            # Create a subprocess for each simulation
 
-                print("Starting MCell ... create start_time.txt file:")
-                with open(os.path.join(os.path.dirname(bpy.data.filepath),
-                          "start_time.txt"), "w") as start_time_file:
-                    start_time_file.write(
-                        "Started MCell at: " + (str(time.ctime())) + "\n")
+            window_num = 0
 
-                # Create a subprocess for each simulation
+            for sim_seed in range(start,end+1):
+                print ("Running with seed " + str(sim_seed) )
                 
-                window_num = 0
+                command_list = [
+                    'java',
+                    '-jar',
+                    script_file_path,
+                    ("x=%d" % ((50*(1+window_num))%500)),
+                    ("y=%d" % ((40*(1+window_num))%400)),
+                    ":",
+                    mcell_binary,
+                    ("-seed %s" % str(sim_seed)),
+                    os.path.join(project_dir, ("%s.main.mdl" % base_name))
+                  ]
 
-                for sim_seed in range(start,end+1):
-                    print ("Running with seed " + str(sim_seed) )
-                    
-                    command_list = [
-                        'java',
-                        '-jar',
-                        script_file_path,
-                        ("x=%d" % ((50*(1+window_num))%500)),
-                        ("y=%d" % ((40*(1+window_num))%400)),
-                        ":",
-                        mcell_binary,
-                        ("-seed %s" % str(sim_seed)),
-                        os.path.join(project_dir, ("%s.main.mdl" % base_name))
-                      ]
-                    
-                    command_string = "Command:";
-                    for s in command_list:
-                      command_string += " " + s
-                    print ( command_string )
-                    
-                    sp = subprocess.Popen ( command_list, cwd=project_dir, stdout=None, stderr=None )
-                    
-                    self.report({'INFO'}, "Simulation Running")
+                command_string = "Command:";
+                for s in command_list:
+                  command_string += " " + s
+                print ( command_string )
 
-                    # This is a hackish workaround since we can't return arbitrary
-                    # objects from operators or store arbitrary objects in collection
-                    # properties, and we need to keep track of the progress of the
-                    # subprocess objects in cellblender_panels.
-                    cellblender.simulation_popen_list.append(sp)
-                    window_num += 1
+                sp = subprocess.Popen ( command_list, cwd=project_dir, stdout=None, stderr=None )
+
+                self.report({'INFO'}, "Simulation Running")
+
+                # This is a hackish workaround since we can't return arbitrary
+                # objects from operators or store arbitrary objects in collection
+                # properties, and we need to keep track of the progress of the
+                # subprocess objects in cellblender_panels.
+                cellblender.simulation_popen_list.append(sp)
+                window_num += 1
 
 
-                if ((end - start) == 0):
-                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                               "Seed: %d" % (sp.pid, base_name,
-                                                             start))
-                else:
-                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                               "Seeds: %d-%d" % (sp.pid, base_name,
-                                                                 start, end))
-        else:
-            status = "Python not found. Set it in Project Settings."
+            if ((end - start) == 0):
+                simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
+                                           "Seed: %d" % (sp.pid, base_name,
+                                                         start))
+            else:
+                simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
+                                           "Seeds: %d-%d" % (sp.pid, base_name,
+                                                             start, end))
 
         mcell.run_simulation.status = status
 

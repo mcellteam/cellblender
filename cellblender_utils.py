@@ -58,6 +58,22 @@ def check_val_str(val_str, min_val, max_val):
     return (val, status)
 
 
+def get_python_path ( mcell ):
+    # If python path was set by user, use that one. Otherwise, try to
+    # automatically find it. This will probably fail on Windows unless it's
+    # set in the PATH.
+    python_path = None
+    if mcell.cellblender_preferences.python_binary_valid:
+        python_path = mcell.cellblender_preferences.python_binary
+        print ( "Using user specified Python: " + python_path )
+    elif (bpy.app.binary_path_python != None) and (len(bpy.app.binary_path_python) > 0):
+        python_path = bpy.app.binary_path_python
+        print ( "Using Blender's Python: " + python_path )
+    else:
+        python_path = shutil.which("python", mode=os.X_OK)
+        print ( "Using shutil.which Python: " + python_path )
+    return python_path
+
 
 def get_path_to_parent(self_object):
     # Return the Blender class path to the parent object with regard to the Blender Property Tree System
