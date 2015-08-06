@@ -33,6 +33,7 @@ bl_info = {
 
 import sys
 import os
+import os.path
 import hashlib
 import bpy
 import math
@@ -1009,7 +1010,28 @@ class CellBlender_Model:
         self.add_surface_region_to_model_by_normal ( obj_name, surf_name )
 
 
+    def all_processes_finished ( self ):
+        print ( "Checking if all processes are done..." )
+        plist = self.mcell.run_simulation.processes_list
+        all_done = False
+        if len(plist) <= 0:
+            all_done = True
+        else:
+            all_done = True
+            for p in plist:
+                # Convert the process list string into a process id
+                pid_str = p.name.split(':')[1].split(',')[0].strip()
+                print ( "Checking if Process " + pid_str + " is done." )
+                if os.path.exists ( "/proc/" + pid_str ):
+                    all_done = False
+        return all_done
+
+
     def wait ( self, wait_time ):
+        if self.all_processes_finished():
+            print ( "============== ALL DONE ==============" )
+        else:
+            print ( "============== WAITING ==============" )
         import time
         time.sleep ( wait_time )
 
