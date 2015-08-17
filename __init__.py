@@ -260,7 +260,7 @@ def register():
     ### add_handler ( bpy.app.handlers.load_post, cellblender_operators.init_properties )
     
     
-    add_handler ( bpy.app.handlers.load_post, cellblender_operators.load_preferences )
+    add_handler ( bpy.app.handlers.load_post, cellblender_preferences.load_preferences )
     add_handler ( bpy.app.handlers.load_post, cellblender_properties.scene_loaded )
     add_handler ( bpy.app.handlers.load_post, cellblender_operators.read_viz_data_load_post )
 
@@ -291,7 +291,7 @@ def unregister():
     ### remove_handler ( bpy.app.handlers.load_post, cellblender_operators.init_properties )
     
     
-    remove_handler ( bpy.app.handlers.load_post, cellblender_operators.load_preferences )
+    remove_handler ( bpy.app.handlers.load_post, cellblender_preferences.load_preferences )
     remove_handler ( bpy.app.handlers.load_post, cellblender_properties.scene_loaded )
     remove_handler ( bpy.app.handlers.scene_update_pre, cellblender_properties.scene_loaded )
     remove_handler ( bpy.app.handlers.save_pre, data_model.save_pre )

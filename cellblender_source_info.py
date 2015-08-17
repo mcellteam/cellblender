@@ -13,6 +13,7 @@ cellblender_info = {
         "cellblender_source_info.py",
         "data_model.py",
         "parameter_system.py",
+        "cellblender_preferences.py",
         "cellblender_properties.py",
         "cellblender_panels.py",
         "cellblender_operators.py",
