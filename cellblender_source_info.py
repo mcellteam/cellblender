@@ -11,17 +11,21 @@ cellblender_info = {
     "cellblender_source_list": [
         "__init__.py",
         "cellblender_source_info.py",
+
         "data_model.py",
-        "parameter_system.py",
-        "cellblender_preferences.py",
+
         "cellblender_properties.py",
         "cellblender_panels.py",
         "cellblender_operators.py",
+
+        "parameter_system.py",
+        "cellblender_preferences.py",
         "cellblender_initialization.py",
         "cellblender_molecules.py",
         "cellblender_reactions.py",
         "cellblender_release.py",
         "cellblender_surface_classes.py",
+        "cellblender_reaction_output.py",
         "cellblender_partitions.py",
         "object_surface_regions.py",
         "run_simulations.py",

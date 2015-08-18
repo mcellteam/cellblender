@@ -50,16 +50,23 @@ if "bpy" in locals():
     print("Reloading CellBlender")
     import imp
     imp.reload(data_model)
+
     imp.reload(cellblender_properties)
     imp.reload(cellblender_panels)
     imp.reload(cellblender_operators)
+
     imp.reload(parameter_system)
+    imp.reload(cellblender_preferences)
+    imp.reload(cellblender_initialization)
+
     imp.reload(cellblender_molecules)
     imp.reload(cellblender_reactions)
     imp.reload(cellblender_release)
     imp.reload(cellblender_surface_classes)
+    imp.reload(cellblender_reaction_output)
     imp.reload(cellblender_partitions)
     imp.reload(object_surface_regions)
+    imp.reload(run_simulations)
     imp.reload(io_mesh_mcell_mdl)
     imp.reload(sim_runner_queue)
     imp.reload(mdl)         # BK: Added for MDL
@@ -74,16 +81,23 @@ if "bpy" in locals():
 else:
     print("Importing CellBlender")
     from . import data_model
+
     from . import cellblender_properties
     from . import cellblender_panels
     from . import cellblender_operators
+
     from . import parameter_system
+    from . import cellblender_preferences
+    from . import cellblender_initialization
+
     from . import cellblender_molecules
     from . import cellblender_reactions
     from . import cellblender_release
     from . import cellblender_surface_classes
+    from . import cellblender_reaction_output
     from . import cellblender_partitions
     from . import object_surface_regions
+    from . import run_simulations
     from . import io_mesh_mcell_mdl
     from . import sim_runner_queue
     from . import mdl  # BK: Added for MDL
@@ -140,7 +154,7 @@ def register():
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_mod_surface_regions)
     bpy.utils.unregister_class(cellblender_release.MCELL_PT_release_pattern)
     bpy.utils.unregister_class(cellblender_release.MCELL_PT_molecule_release)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_reaction_output_settings)
+    bpy.utils.unregister_class(cellblender_reaction_output.MCELL_PT_reaction_output_settings)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_visualization_output_settings)
 
 

@@ -403,7 +403,7 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
 
 """
 
-
+"""
 class MCELL_UL_check_reaction_output_settings(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
@@ -422,7 +422,7 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
 
     def draw(self, context):
         context.scene.mcell.rxn_output.draw_panel ( context, self )
-
+"""
 
 class MCELL_UL_visualization_export_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
