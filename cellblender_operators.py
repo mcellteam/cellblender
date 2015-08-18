@@ -42,9 +42,12 @@ import datetime
 
 import cellblender
 from . import data_model
+from . import cellblender_preferences
 from . import cellblender_release
 # import cellblender.data_model
 # import cellblender_source_info
+from . import cellblender_utils
+#from cellblender.cellblender_utils import project_files_path
 from cellblender.cellblender_utils import project_files_path
 from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
 
@@ -377,7 +380,7 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
         mcell = context.scene.mcell
 
         binary_path = mcell.cellblender_preferences.mcell_binary
-        mcell.cellblender_preferences.mcell_binary_valid = is_executable ( binary_path )
+        mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
         start = mcell.run_simulation.start_seed
         end = mcell.run_simulation.end_seed
@@ -476,7 +479,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
         mcell = context.scene.mcell
 
         binary_path = mcell.cellblender_preferences.mcell_binary
-        mcell.cellblender_preferences.mcell_binary_valid = is_executable ( binary_path )
+        mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
         start_seed = mcell.run_simulation.start_seed
         end_seed = mcell.run_simulation.end_seed
@@ -640,7 +643,7 @@ class MCELL_OT_run_simulation_control_opengl(bpy.types.Operator):
         mcell = context.scene.mcell
 
         binary_path = mcell.cellblender_preferences.mcell_binary
-        mcell.cellblender_preferences.mcell_binary_valid = is_executable ( binary_path )
+        mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
         start = mcell.run_simulation.start_seed
         end = mcell.run_simulation.end_seed
@@ -752,7 +755,7 @@ class MCELL_OT_run_simulation_control_java(bpy.types.Operator):
         mcell = context.scene.mcell
 
         binary_path = mcell.cellblender_preferences.mcell_binary
-        mcell.cellblender_preferences.mcell_binary_valid = is_executable ( binary_path )
+        mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
         start = mcell.run_simulation.start_seed
         end = mcell.run_simulation.end_seed
@@ -970,7 +973,7 @@ def mcell_valid_update(context):
         context = bpy.context
     mcell = context.scene.mcell
     binary_path = mcell.cellblender_preferences.mcell_binary
-    mcell.cellblender_preferences.mcell_binary_valid = is_executable ( binary_path )
+    mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
     # print ( "mcell_binary_valid = ", mcell.cellblender_preferences.mcell_binary_valid )
 
 

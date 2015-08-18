@@ -75,6 +75,19 @@ def get_python_path ( mcell ):
     return python_path
 
 
+def is_executable(binary_path):
+    """Checks for nonexistant or non-executable binary file"""
+    is_exec = False
+    try:
+        st = os.stat(binary_path)
+        if os.path.isfile(binary_path):
+            if os.access(binary_path, os.X_OK):
+                is_exec = True
+    except Exception as err:
+        is_exec = False
+    return is_exec
+
+
 def get_path_to_parent(self_object):
     # Return the Blender class path to the parent object with regard to the Blender Property Tree System
     path_to_self = "bpy.context.scene." + self_object.path_from_id()

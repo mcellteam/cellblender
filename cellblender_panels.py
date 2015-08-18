@@ -53,19 +53,6 @@ class MCELL_MT_presets(Menu):
 
 
 
-#CellBlendereGUI Panels:
-class MCELL_PT_cellblender_preferences(bpy.types.Panel):
-    bl_label = "CellBlender - Preferences"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw ( self, context ):
-        # Call the draw function of the object itself
-        context.scene.mcell.cellblender_preferences.draw_panel ( context, self )
-
-
 class MCELL_PT_project_settings(bpy.types.Panel):
     bl_label = "CellBlender - Project Settings"
     bl_space_type = "PROPERTIES"
