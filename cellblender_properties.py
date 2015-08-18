@@ -1621,29 +1621,6 @@ class MCELL_PT_main_panel(bpy.types.Panel):
     def draw(self, context):
         context.scene.mcell.cellblender_main_panel.draw_self(context,self.layout)
 
-'''
-class MCELL_PT_main_scene_panel(bpy.types.Panel):
-    bl_label = "CellBlender Scene"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw_header(self, context):
-        # LOOK HERE!! This is where the icon is actually included in the panel layout!
-        # The icon() method takes the image data-block in and returns an integer that
-        # gets passed to the 'icon_value' argument of your label/prop constructor or 
-        # within a UIList subclass
-        img = bpy.data.images.get('cellblender_icon')
-        #could load multiple images and animate the icon too.
-        #icons = [img for img in bpy.data.images if hasattr(img, "icon")]
-        if img is not None:
-            icon = self.layout.icon(img)
-            self.layout.label(text="", icon_value=icon)
-
-    def draw(self, context):
-        context.scene.mcell.cellblender_main_panel.draw_self(context,self.layout)
-'''
 
 
 # load_pre callback

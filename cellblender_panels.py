@@ -150,41 +150,6 @@ class MCELL_PT_viz_results(bpy.types.Panel):
 
     def draw(self, context):
         context.scene.mcell.mol_viz .draw_panel ( context, self )
-    """
-        layout = self.layout
-
-        mcell = context.scene.mcell
-
-        if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
-        else:
-
-            row = layout.row()
-            row.prop(mcell.mol_viz, "manual_select_viz_dir")
-            row = layout.row()
-            if mcell.mol_viz.manual_select_viz_dir:
-                row.operator("mcell.select_viz_data", icon='IMPORT')
-            else:
-                row.operator("mcell.read_viz_data", icon='IMPORT')
-            row = layout.row()
-            row.label(text="Molecule Viz Directory: " + mcell.mol_viz.mol_file_dir,
-                      icon='FILE_FOLDER')
-            row = layout.row()
-            if not mcell.mol_viz.manual_select_viz_dir:
-                row.template_list("UI_UL_list", "viz_seed", mcell.mol_viz,
-                                "mol_viz_seed_list", mcell.mol_viz,
-                                "active_mol_viz_seed_index", rows=2)
-            row = layout.row()
-            row = layout.row()
-            row.label(text="Current Molecule File: "+mcell.mol_viz.mol_file_name,
-                      icon='FILE')
-            row = layout.row()
-            row.template_list("UI_UL_list", "viz_results", mcell.mol_viz,
-                              "mol_file_list", mcell.mol_viz, "mol_file_index",
-                              rows=2)
-            row = layout.row()
-            layout.prop(mcell.mol_viz, "mol_viz_enable")
-    """
 
 
 class MCELL_UL_model_objects(bpy.types.UIList):
@@ -360,69 +325,6 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
     def draw(self, context):
         context.scene.mcell.mod_surf_regions.draw_panel ( context, self )
 
-
-"""
-class MCELL_UL_check_release_pattern(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data,
-                  active_propname, index):
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            layout.label(item.name, icon='FILE_TICK')
-
-
-class MCELL_PT_release_pattern(bpy.types.Panel):
-    bl_label = "CellBlender - Release Pattern"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.release_patterns.draw_panel ( context, self )
-
-
-class MCELL_UL_check_molecule_release(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data,
-                  active_propname, index):
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            layout.label(item.name, icon='FILE_TICK')
-
-
-class MCELL_PT_molecule_release(bpy.types.Panel):
-    bl_label = "CellBlender - Molecule Release/Placement"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.release_sites.draw_panel ( context, self )
-
-"""
-
-"""
-class MCELL_UL_check_reaction_output_settings(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data,
-                  active_propname, index):
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            layout.label(item.name, icon='FILE_TICK')
-
-
-class MCELL_PT_reaction_output_settings(bpy.types.Panel):
-    bl_label = "CellBlender - Reaction Output Settings"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.rxn_output.draw_panel ( context, self )
-"""
 
 class MCELL_UL_visualization_export_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
