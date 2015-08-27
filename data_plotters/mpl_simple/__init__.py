@@ -34,7 +34,7 @@ def requirements_met():
             #       "is available through external python interpreter")
             pass
         else:
-            print("  One or more equired modules " + required_modules + 
+            print("  One or more required modules " + required_modules +
                   " are not available through the external python interpreter")
             ok = False
     return ok
