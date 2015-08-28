@@ -39,7 +39,7 @@ import bpy
 # from cellblender import cellblender_operators  # Shouldn't need this anymore!!
 
 from cellblender import object_surface_regions
-from cellblender.utils import project_files_path
+from cellblender.cellblender_utils import project_files_path
 
 # This function was moved to MCellObjectPropertyGroup in object_surface_regions.py by Bob
 # TODO: Delete this commented code ... eventually

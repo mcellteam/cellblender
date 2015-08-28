@@ -42,7 +42,7 @@ import cellblender
 from . import parameter_system
 from . import cellblender_operators
 from . import cellblender_release
-from . import utils
+from . import cellblender_utils
 
 
 # We use per module class registration/unregistration
@@ -163,7 +163,7 @@ def update_clamp_value(self, context):
     #molecule = surf_class_props.molecule
     clamp_value_str = surf_class_props.clamp_value_str
 
-    (clamp_value, status) = utils.check_val_str(clamp_value_str, 0, None)
+    (clamp_value, status) = cellblender_utils.check_val_str(clamp_value_str, 0, None)
 
     if status == "":
         surf_class_props.clamp_value = clamp_value

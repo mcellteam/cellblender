@@ -42,7 +42,7 @@ import cellblender
 from . import parameter_system
 from . import cellblender_operators
 from . import cellblender_release
-from . import utils
+from . import cellblender_utils
 
 
 # We use per module class registration/unregistration

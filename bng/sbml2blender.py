@@ -5,7 +5,7 @@ Jose Juan Tapia
 Devin Sullivan
 '''
 from collections import defaultdict
-from cellblender.utils import preserve_selection_use_operator
+from cellblender.cellblender_utils import preserve_selection_use_operator
  
 import sys
 import bpy
