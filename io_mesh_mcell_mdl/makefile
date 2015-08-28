@@ -1,5 +1,5 @@
 
-INSTALL_DIR = ~/.config/blender/2.68/scripts/addons/io_mesh_import_mcell_mdl/
+INSTALL_DIR = ~/.config/blender/2.75/scripts/addons/io_mesh_import_mcell_mdl/
 
 SHELL = /bin/sh
 OBJS = mdlparse.bison.o mdlmesh_parser.o vector.o mdlmesh_parser_wrap.o
