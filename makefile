@@ -65,7 +65,10 @@ clean:
 	(cd io_mesh_mcell_mdl ; make clean)
 	(cd data_plotters ; make clean)
 
-
+id:
+	@echo ===========================================================
+	@cat cellblender_id.py
+	@echo ===========================================================
 
 .PHONY: install
 install: cellblender.zip
