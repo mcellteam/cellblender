@@ -65,11 +65,14 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         context.scene.mcell.project_settings.draw_panel ( context, self )
 
 
+
+
+
+"""
 class MCELL_UL_error_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
         layout.label(item.name, icon='ERROR')
-
 
 class MCELL_UL_run_simulation(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
@@ -139,6 +142,9 @@ class MCELL_PT_run_simulation_queue(bpy.types.Panel):
 
     def draw(self, context):
         context.scene.mcell.run_simulation.draw_panel ( context, self )
+
+
+"""
 
 
 class MCELL_PT_viz_results(bpy.types.Panel):

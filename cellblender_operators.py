@@ -334,7 +334,8 @@ def check_active_mod_surf_regions(self, context):
     return
 
 
-
+####################
+"""
 class MCELL_OT_run_simulation(bpy.types.Operator):
     bl_idname = "mcell.run_simulation"
     bl_label = "Run MCell Simulation"
@@ -944,12 +945,11 @@ class MCELL_OT_clear_simulation_queue(bpy.types.Operator):
 
 @persistent
 def clear_run_list(context):
-    """ Clear processes_list when loading a blend.
+    #Clear processes_list when loading a blend.
 
-    Data in simulation_popen_list can not be saved with the blend, so we need
-    to clear the processes_list upon reload so the two aren't out of sync.
+    #Data in simulation_popen_list can not be saved with the blend, so we need
+    #to clear the processes_list upon reload so the two aren't out of sync.
 
-    """
     print ( "load post handler: cellblender_operators.clear_run_list() called" )
 
     if not context:
@@ -963,7 +963,8 @@ def clear_run_list(context):
     if not cellblender.simulation_queue:
         processes_list.clear()
 
-
+"""
+####################
 
 @persistent
 def mcell_valid_update(context):
@@ -2591,9 +2592,9 @@ def update_train_interval(self, context):
         release_pattern.train_interval_str = "%g" % (
             release_pattern.train_interval)
 
-
+"""
 def check_start_seed(self, context):
-    """ Ensure start seed is always lte to end seed. """
+    # Ensure start seed is always lte to end seed.
 
     run_sim = context.scene.mcell.run_simulation
     start_seed = run_sim.start_seed
@@ -2602,9 +2603,8 @@ def check_start_seed(self, context):
     if start_seed > end_seed:
         run_sim.start_seed = end_seed
 
-
 def check_end_seed(self, context):
-    """ Ensure end seed is always gte to start seed. """
+    # Ensure end seed is always gte to start seed.
     
     run_sim = context.scene.mcell.run_simulation
     start_seed = run_sim.start_seed
@@ -2612,3 +2612,5 @@ def check_end_seed(self, context):
 
     if end_seed < start_seed:
         run_sim.end_seed = start_seed
+"""
+

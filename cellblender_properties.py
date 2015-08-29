@@ -55,13 +55,14 @@ from . import cellblender_reactions
 from . import cellblender_release
 from . import cellblender_surface_classes
 from . import cellblender_partitions
+from . import cellblender_simulation
 from . import cellblender_reaction_output
 from . import parameter_system
 from . import data_model
 
 # python imports
 import os
-from multiprocessing import cpu_count
+#from multiprocessing import cpu_count
 
 from cellblender.cellblender_utils import project_files_path
 
@@ -248,6 +249,9 @@ class MCellExportProjectPropertyGroup(bpy.types.PropertyGroup):
         print ( "Removing all Export Project Properties... no collections to remove." )
 
 
+
+"""
+
 class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Simulation Runner Process")
     #pid = IntProperty(name="PID")
@@ -286,7 +290,7 @@ class MCellRunSimulationProcessesProperty(bpy.types.PropertyGroup):
 
 
 def sim_runner_changed_callback ( self, context ):
-    """ The run lists are somewhat incompatible between sim runners, so just clear them when switching. """
+    # The run lists are somewhat incompatible between sim runners, so just clear them when switching. 
     # print ( "Sim Runner has been changed!!" )
     # mcell = context.scene.mcell
     bpy.ops.mcell.clear_run_list()
@@ -540,9 +544,12 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
 
     def draw_panel ( self, context, panel ):
-        """ Create a layout from the panel and draw into it """
+        # Create a layout from the panel and draw into it
         layout = panel.layout
         self.draw_layout_queue ( context, layout )
+
+
+"""
 
 
 
@@ -2219,7 +2226,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     export_project = PointerProperty(
         type=MCellExportProjectPropertyGroup, name="Export Simulation")
     run_simulation = PointerProperty(
-        type=MCellRunSimulationPropertyGroup, name="Run Simulation")
+        type=cellblender_simulation.MCellRunSimulationPropertyGroup, name="Run Simulation")
     mol_viz = PointerProperty(
         type=MCellMolVizPropertyGroup, name="Mol Viz Settings")
     initialization = PointerProperty(

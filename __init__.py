@@ -65,6 +65,7 @@ if "bpy" in locals():
     imp.reload(cellblender_surface_classes)
     imp.reload(cellblender_reaction_output)
     imp.reload(cellblender_partitions)
+    imp.reload(cellblender_simulation)
     imp.reload(object_surface_regions)
     imp.reload(run_simulations)
     imp.reload(io_mesh_mcell_mdl)
@@ -96,6 +97,7 @@ else:
     from . import cellblender_surface_classes
     from . import cellblender_reaction_output
     from . import cellblender_partitions
+    from . import cellblender_simulation
     from . import object_surface_regions
     from . import run_simulations
     from . import io_mesh_mcell_mdl
@@ -140,8 +142,8 @@ def register():
     # Unregister and re-register panels to display them in order
     bpy.utils.unregister_class(cellblender_preferences.MCELL_PT_cellblender_preferences)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)         # Need to unregister because it's registered automatically
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation_queue)
+    bpy.utils.unregister_class(cellblender_simulation.MCELL_PT_run_simulation)         # Need to unregister because it's registered automatically
+    bpy.utils.unregister_class(cellblender_simulation.MCELL_PT_run_simulation_queue)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_viz_results)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
     bpy.utils.unregister_class(cellblender_partitions.MCELL_PT_partitions)
@@ -161,10 +163,10 @@ def register():
     # Don't normally re-register individual panels here with new panel system, but do it for now to test slowdown problem
     # TMB: Don't re-register here to disable all individual panels in old panel system
 
-#    bpy.utils.register_class(cellblender_panels.MCELL_PT_cellblender_preferences)
+#    bpy.utils.register_class(cellblender_preferences.MCELL_PT_cellblender_preferences)
 #    bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
-##    bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
-#    bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation_queue)
+##    bpy.utils.register_class(cellblender_simulation.MCELL_PT_run_simulation)
+#    bpy.utils.register_class(cellblender_simulation.MCELL_PT_run_simulation_queue)
 #    bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
 #    bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)
 #    bpy.utils.register_class(cellblender_panels.MCELL_PT_model_objects)
@@ -264,7 +266,7 @@ def register():
 
     # Add the load_post handlers
     add_handler ( bpy.app.handlers.load_post, data_model.load_post )
-    add_handler ( bpy.app.handlers.load_post, cellblender_operators.clear_run_list )
+    add_handler ( bpy.app.handlers.load_post, cellblender_simulation.clear_run_list )
     add_handler ( bpy.app.handlers.load_post, cellblender_operators.model_objects_update )
     add_handler ( bpy.app.handlers.load_post, object_surface_regions.object_regions_format_update )
     add_handler ( bpy.app.handlers.load_post, cellblender_operators.mcell_valid_update )
@@ -296,7 +298,7 @@ def unregister():
     remove_handler ( bpy.app.handlers.frame_change_pre, cellblender_operators.frame_change_handler )
     remove_handler ( bpy.app.handlers.load_pre,         cellblender_properties.report_load_pre )
     remove_handler ( bpy.app.handlers.load_post, data_model.load_post )
-    remove_handler ( bpy.app.handlers.load_post, cellblender_operators.clear_run_list )
+    remove_handler ( bpy.app.handlers.load_post, cellblender_simulation.clear_run_list )
     remove_handler ( bpy.app.handlers.load_post, cellblender_operators.model_objects_update )
     remove_handler ( bpy.app.handlers.load_post, object_surface_regions.object_regions_format_update )
     remove_handler ( bpy.app.handlers.load_post, cellblender_operators.mcell_valid_update )
