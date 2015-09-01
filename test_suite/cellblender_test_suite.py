@@ -472,158 +472,16 @@ class CellBlender_Model:
         #capsule.dump_as_plf ( "capsule.plf" )
 
         self.create_object_from_mesh ( name=name, draw_type=draw_type, x=x, y=y, z=z, vertex_list=capsule.points, face_list=capsule.faces )
-    
 
-    def old_add_capsule_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, size=1, subdiv=3, cyl_len=2 ):
+
+    def add_shaped_cylinder_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, sigma=0, numsect=10, z_profile=[ (-2,0.5), (-1.8,0.1), (0,0.1), (0.2,0.5), (2,0.8) ] ):
         """ draw_type is one of: WIRE, TEXTURED, SOLID, BOUNDS """
-        # Start with an icosphere
-        print ( "Adding " + name )
-        if subdiv < 2:
-            # Need subdiv of at least two or there will be no "equator"
-            subdiv = 2
-        bpy.ops.mesh.primitive_ico_sphere_add ( subdivisions=subdiv, size=size, location=(x, y, z) )
-        self.scn.objects.active.name = name
-        bpy.data.objects[name].draw_type = draw_type
+
+        capsule = ShapedCylinder ( numsect, z_profile )
         
-        # Convert the mesh to lists to make it easier to work with
+        capsule.dither_points ( sigma, sigma, sigma )
 
-        caps = bpy.data.objects[name]
-        matrix = caps.matrix_world
-        mesh = caps.data
-        vertices = mesh.vertices
-
-        v_list = []
-        for v in vertices:
-            t_vec = matrix * v.co
-            v_list.append ( [t_vec.x, t_vec.y, t_vec.z] )
-        f_list = []
-        faces = mesh.polygons
-        for f in faces:
-            f_list.append ( [f.vertices[0], f.vertices[1], f.vertices[2]] )
-
-        # Delete the icosphere
-        
-        bpy.ops.object.delete()
-        
-        # Reshape the icosphere into a capsule
-
-        # First stretch it to the proper height
-        
-        for v in v_list:
-            if v[2] > (size/1000.0):
-                v[2] += cyl_len/2.0
-            elif v[2] < (-size/1000.0):
-                v[2] += -cyl_len/2.0
-
-        # Delete the faces attached to the equator while finding the edges
-        
-        new_f_list = []
-        edge_vns = []
-        for f in f_list:
-            local_edge_vns = []
-            touches_equator = False
-            for vn in f:
-                v = v_list[vn]
-                if ( v[2] < (size/1000.0) ) and ( v[2] > (-size/1000.0) ):
-                    touches_equator = True
-                else:
-                    if not (vn in local_edge_vns):
-                        local_edge_vns.append ( vn )
-            if touches_equator:
-                # Save the edges
-                for evn in local_edge_vns:
-                    if not (evn in edge_vns):
-                        edge_vns.append ( evn )
-            else:
-                new_f_list.append ( f )
-        f_list = new_f_list
-
-        # Might want to remove unused points and renumber face vertex indicies as well?
-        
-        # Divide the edge points between top and bottom
-        top_evns = []
-        bot_evns = []
-        for evn in edge_vns:
-            if v_list[evn][2] > 0:
-                top_evns.append ( evn )
-            else:
-                bot_evns.append ( evn )
-                
-        num_points = len(top_evns)
-        print ( "Found " + str(num_points) + " top edge points" )
-        
-        # Sort the top edge points to go around the circle (very inefficient sort ... but easy)
-        
-        for i in range(num_points):
-            for j in range(i+1,num_points):
-                vi = v_list[top_evns[i]]
-                vj = v_list[top_evns[j]]
-                atni = math.atan2(vi[1],vi[0])
-                atnj = math.atan2(vj[1],vj[0])
-                if (i < j) and (atni > atnj):
-                    # Swap
-                    temp = top_evns[i]
-                    top_evns[i] = top_evns[j]
-                    top_evns[j] = temp
-
-
-        for i in range(num_points):
-            print ( "top: (" + str(v_list[top_evns[i]][0]) + "," + str(v_list[top_evns[i]][1]) + ")" )
-        for i in range(num_points):
-            print ( "bot: (" + str(v_list[bot_evns[i]][0]) + "," + str(v_list[bot_evns[i]][1]) + ")" )
-
-        # Make a list of matching bottom edge points
-        bot_match = []
-        for i in range(num_points):
-            vi = v_list[top_evns[i]]
-            best_j = 0
-            vj = v_list[bot_evns[best_j]]
-            best_d = math.sqrt ( math.pow((vi[0]-vj[0]),2) + math.pow((vi[1]-vj[1]),2) )
-            print ( "Starting with i=" + str(i) + ", x=" + str(vi[0]) + ",y=" + str(vi[1]) + ", and best_d = " + str(best_d) )
-            for j in range(num_points):
-                vj = v_list[bot_evns[j]]
-                d = math.sqrt ( math.pow((vi[0]-vj[0]),2) + math.pow((vi[1]-vj[1]),2) )
-                print ( "   j=" + str(j) + ", x=" + str(vj[0]) + ",y=" + str(vj[1]) + ", and d = " + str(d) )
-                if d < best_d:
-                    best_d = d
-                    best_j = j
-                    print ( "   That's best: " + str(best_j) + " and " + str(best_d) )
-            bot_match.append ( best_j )
-        
-        for i in range(num_points):
-            vit = v_list[top_evns[i]]
-            vib = v_list[bot_match[i]]
-            print ( "top x,y = " + str(vit[0]) + "," + str(vit[1]) )
-            print ( "bot x,y = " + str(vib[0]) + "," + str(vib[1]) )
-            print ( " " )
-
-
-        # Recreate the object
-
-        vertices = []
-        for vertex in v_list:
-            vertices.append ( mathutils.Vector((vertex[0],vertex[1],vertex[2])) )
-        faces = []
-        for face_element in f_list:
-            faces.append ( face_element )
-
-        new_mesh = bpy.data.meshes.new ( name )
-        new_mesh.from_pydata ( vertices, [], faces )
-        new_mesh.update()
-        new_obj = bpy.data.objects.new ( name, new_mesh )
-
-        self.scn.objects.link ( new_obj )
-        bpy.ops.object.select_all ( action = "DESELECT" )
-        new_obj.select = True
-        self.scn.objects.active = new_obj
-
-        # Add the newly added object to the model objects list
-
-        self.mcell.cellblender_main_panel.objects_select = True
-        bpy.ops.mcell.model_objects_add()
-        bpy.data.objects[name].draw_type = draw_type
-        print ( "Done Adding " + name )
-
+        self.create_object_from_mesh ( name=name, draw_type=draw_type, x=x, y=y, z=z, vertex_list=capsule.points, face_list=capsule.faces )
 
 
 
@@ -1300,6 +1158,8 @@ class plf_object:
         p2 = self.points[p2i];
         len_sum += math.sqrt ( self.sqr(p1.x-p2.x) + self.sqr(p1.y-p2.y) + self.sqr(p1.z-p2.z) );
         num_summed += 1;
+    # Handle the case where there are faces
+    if num_summed == 0: num_summed = 1
     return ( len_sum / num_summed );
 
 
@@ -1682,6 +1542,107 @@ class Capsule (plf_object):
             new_face.add_point ( pb2 );
             new_face.add_face ( face (0, 1, 2) );
             self.merge ( new_face );
+
+
+
+
+class ShapedCylinder (plf_object):
+
+  def sort_ring_indicies ( self, ring ):
+    for i in range(len(ring)):
+      for j in range(i+1,len(ring)):
+        pi = self.points[ring[i]];
+        pj = self.points[ring[j]];
+        itheta = math.atan2(pi.x, pi.y);
+        jtheta = math.atan2(pj.x, pj.y);
+        if (jtheta < itheta):
+          temp = ring[i];
+          ring[i] = ring[j];
+          ring[j] = temp;
+
+
+  def __init__ ( self, num_sectors, z_profile ):
+    """ z_profile is a sorted list of tuples where each tuple is (z,r), and the list is sorted with increasing z """
+
+    self.points = [];
+    self.faces = [];
+    
+    # Make the sides
+
+    if ( len(z_profile) < 2 ):
+
+      print ( "Error: z-profile must contain at least 2 entries (bottom and top)" );
+
+    else:
+
+      # Build the cylinder from bottom to top creating faces along the way
+
+      # Loop through each ring segment from bottom to top (start with lowest ring as "upper")
+      lower_z = -1
+      lower_r = -1
+      lower_ring = []
+      upper_ring = []
+
+      for seg_num in range(len(z_profile)):
+
+        # Prepare to build a new upper ring
+        upper_z = z_profile[seg_num][0]
+        upper_r = z_profile[seg_num][1]
+
+        # Loop around the circumference of the cylinder building a new upper ring
+        if upper_r > 0:
+          for i in range(num_sectors):
+            theta = i * 2 * math.pi / num_sectors
+            new_point = point ( upper_r*math.cos(theta), upper_r*math.sin(theta), upper_z )
+            self.points = self.points + [ new_point ]
+            upper_ring = upper_ring + [ new_point ]
+        elif upper_r == 0:
+          new_point = point ( 0.0, 0.0, upper_z )
+          self.points = self.points + [ new_point ]
+          for i in range(num_sectors):
+            upper_ring = upper_ring + [ new_point ]
+
+
+        if seg_num > 0:
+        
+          # Both the upper and lower rings exist and are valid, so build the faces
+
+          for i in range(num_sectors):
+
+            # Make the faces for this rectangle / triangle
+
+            pb1 = lower_ring[i];
+            pt1 = upper_ring[i];
+            pb2 = lower_ring[(i+1)%num_sectors];
+            pt2 = upper_ring[(i+1)%num_sectors];
+
+            if (lower_r >= 0) and (upper_r > 0):
+
+              # We have either a triangle or a rectangle. Make this face.
+
+              new_face = plf_object();
+              new_face.add_point ( pt1 );
+              new_face.add_point ( pt2 );
+              new_face.add_point ( pb2 );
+              new_face.add_face ( face (0, 2, 1) );
+              self.merge ( new_face );
+
+            if (upper_r >= 0) and (lower_r > 0):
+
+              # We have either a triangle or a rectangle. Make this face.
+
+              new_face = plf_object();
+              new_face.add_point ( pb1 );
+              new_face.add_point ( pt1 );
+              new_face.add_point ( pb2 );
+              new_face.add_face ( face (0, 2, 1) );
+              self.merge ( new_face );
+              
+        # Move the upper ring down to the lower ring
+        lower_z = upper_z
+        lower_r = upper_r
+        lower_ring = upper_ring
+        upper_ring = []
 
 
 
@@ -2545,6 +2506,93 @@ class CapsuleTestOp(bpy.types.Operator):
         cb_model.scale_view_distance ( 0.25 )
 
         cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+
+###########################################################################################################
+group_name = "Simple Geometry Tests"
+test_name = "Goblet Test"
+operator_name = "cellblender_test.goblet_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class GobletTestOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        # Create the capsule object, and define the surface as a membrane
+        
+        # Create a goblet
+        thk = 0.02
+        goblet = [ (-2,0.8), (-1.8,0.1), (0,0.1), (0.2,0.5), (2,0.8),
+                   (2,0.8-thk), (0.2,0.5-thk), (0,0.1-thk), (-1.8,0.1-thk), (-2,0.8-thk), (-2,0.8) ]
+
+        cb_model.add_shaped_cylinder_to_model ( name="goblet", draw_type="WIRE", x=0, y=0, z=0, sigma=0, numsect=10, z_profile=goblet )
+
+        mola  = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="goblet", q_expr="1000" )
+
+        cb_model.set_visualization ( enable_visualization=True, export_all=True, all_iterations=False, start=0, end=100000, step=1 )
+
+        cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "", test_name="Goblet Test" )
+
+        cb_model.refresh_molecules()
+        
+        scn.frame_current = 1
+
+        cb_model.refresh_molecules()
+
+        cb_model.set_view_back()
+
+        return { 'FINISHED' }
+
+
+
+###########################################################################################################
+group_name = "Simple Geometry Tests"
+test_name = "Dividing ecoli Test"
+operator_name = "cellblender_test.ecoli_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class EcoliTestOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        # Create the capsule object, and define the surface as a membrane
+        
+        # Create a dividing ecoli
+        ecoli = [ (-2,0), (-1.5,0.5), (-1,0.5), (-0.5,0.5), (0,0.5), (0.5,0.5), (1,0.5), (1.5,0.5), (2,0)]
+
+        cb_model.add_shaped_cylinder_to_model ( name="capsule", draw_type="WIRE", x=0, y=0, z=0, sigma=0, numsect=10, z_profile=ecoli )
+
+        cb_model.set_view_back()
 
         return { 'FINISHED' }
 
