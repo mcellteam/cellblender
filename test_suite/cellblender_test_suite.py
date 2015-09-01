@@ -1602,8 +1602,7 @@ class ShapedCylinder (plf_object):
           for i in range(num_sectors):
             upper_ring = upper_ring + [ new_point ]
 
-
-        if seg_num > 0:
+        if (seg_num > 0) and (len(upper_ring) > 0) and (len(lower_ring) > 0):
         
           # Both the upper and lower rings exist and are valid, so build the faces
 
@@ -1620,7 +1619,7 @@ class ShapedCylinder (plf_object):
 
               # We have either a triangle or a rectangle. Make this face.
 
-              new_face = plf_object();
+              new_face = plf_object();  
               new_face.add_point ( pt1 );
               new_face.add_point ( pt2 );
               new_face.add_point ( pb2 );
@@ -2533,9 +2532,8 @@ class GobletTestOp(bpy.types.Operator):
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
 
-        # Create the capsule object, and define the surface as a membrane
-        
         # Create a goblet
+
         thk = 0.02
         goblet = [ (-2,0.8), (-1.8,0.1), (0,0.1), (0.2,0.5), (2,0.8),
                    (2,0.8-thk), (0.2,0.5-thk), (0,0.1-thk), (-1.8,0.1-thk), (-2,0.8-thk), (-2,0.8) ]
@@ -2550,7 +2548,7 @@ class GobletTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "", test_name="Goblet Test" )
+        cb_model.compare_mdl_with_sha1 ( "a230a284c087c112d6f0ad746a31f91158973253", test_name="Goblet Test" )
 
         cb_model.refresh_molecules()
         
@@ -2585,12 +2583,57 @@ class EcoliTestOp(bpy.types.Operator):
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
 
-        # Create the capsule object, and define the surface as a membrane
-        
         # Create a dividing ecoli
-        ecoli = [ (-2,0), (-1.5,0.5), (-1,0.5), (-0.5,0.5), (0,0.5), (0.5,0.5), (1,0.5), (1.5,0.5), (2,0)]
+        
+        ecoli = []
+        
+        ns = 32       # Number of sections around the circumference of the cylinder
+        ncf = 11      # Number of cap facets from side to tip
+        length = 4.0  # Length of entire object from tip to tip
+        radius = 0.5  # Radius of cylinder
+        
+        
+        # Create the bottom cap
 
-        cb_model.add_shaped_cylinder_to_model ( name="capsule", draw_type="WIRE", x=0, y=0, z=0, sigma=0, numsect=10, z_profile=ecoli )
+        for fn in range(ncf):
+          angle = fn * (math.pi/2) / ncf
+          ecoli = ecoli + [ ( (radius*((1-math.cos(angle))))-(length/2), radius*math.sin(angle) ) ]
+        
+        ecoli = ecoli + [ ( -((length/2)-radius), radius ) ]
+        
+        
+        # Create the cylinder for the main body
+        
+        cylinder_length = length - (2 * radius)
+        nominal_length = math.pi * radius / (2 * ncf)
+        num_segments = round ( (cylinder_length + (nominal_length/2)) / nominal_length )
+
+        for cyl_seg_num in range(num_segments-1):
+          pinch_factor = 1.0
+          dist_from_center = ((cyl_seg_num+1) * cylinder_length / num_segments) - (cylinder_length/2)
+          if abs(dist_from_center) < radius:
+            norm_dist = abs(dist_from_center) / radius
+            pinch_factor = math.sin ( math.acos(1-norm_dist) )
+          ecoli = ecoli + [ ( (cylinder_length*(cyl_seg_num+1)/num_segments)-(cylinder_length/2), radius * pinch_factor ) ]
+
+
+        # Create the top cap
+        
+        ecoli = ecoli + [ ( ((length/2)-radius), radius ) ]
+        
+        for fn in range(ncf):
+          angle = ((ncf-1)-fn) * (math.pi/2) / ncf
+          ecoli = ecoli + [ ( (radius*math.cos(angle))+(length/2)-radius, radius*math.sin(angle) ) ]
+
+
+
+        # ecoli = [ (-2,0), (-1.5,0.5), (-1,0.5), (-0.5,0), (0,-1), (0.5,0), (1,0.5), (1.5,0.5), (2,0)]
+
+        cb_model.add_shaped_cylinder_to_model ( name="capsule", draw_type="WIRE", x=0, y=0, z=0, sigma=0, numsect=ns, z_profile=ecoli )
+
+        cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
+
+        # cb_model.compare_mdl_with_sha1 ( "a0b02d7523bded1a2a6ee4c5acb47ceaf30bc0d6", test_name="Dividing ecoli Test" )
 
         cb_model.set_view_back()
 
