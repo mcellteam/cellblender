@@ -66,6 +66,7 @@ if "bpy" in locals():
     imp.reload(cellblender_reaction_output)
     imp.reload(cellblender_partitions)
     imp.reload(cellblender_simulation)
+    imp.reload(cellblender_mol_viz)
     imp.reload(object_surface_regions)
     imp.reload(run_simulations)
     imp.reload(io_mesh_mcell_mdl)
@@ -98,6 +99,7 @@ else:
     from . import cellblender_reaction_output
     from . import cellblender_partitions
     from . import cellblender_simulation
+    from . import cellblender_mol_viz
     from . import object_surface_regions
     from . import run_simulations
     from . import io_mesh_mcell_mdl
@@ -144,7 +146,7 @@ def register():
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
     bpy.utils.unregister_class(cellblender_simulation.MCELL_PT_run_simulation)         # Need to unregister because it's registered automatically
     bpy.utils.unregister_class(cellblender_simulation.MCELL_PT_run_simulation_queue)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_viz_results)
+    bpy.utils.unregister_class(cellblender_mol_viz.MCELL_PT_viz_results)
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
     bpy.utils.unregister_class(cellblender_partitions.MCELL_PT_partitions)
     bpy.utils.unregister_class(cellblender_initialization.MCELL_PT_initialization)
@@ -157,7 +159,7 @@ def register():
     bpy.utils.unregister_class(cellblender_release.MCELL_PT_release_pattern)
     bpy.utils.unregister_class(cellblender_release.MCELL_PT_molecule_release)
     bpy.utils.unregister_class(cellblender_reaction_output.MCELL_PT_reaction_output_settings)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_visualization_output_settings)
+    bpy.utils.unregister_class(cellblender_mol_viz.MCELL_PT_visualization_output_settings)
 
 
     # Don't normally re-register individual panels here with new panel system, but do it for now to test slowdown problem
@@ -167,7 +169,7 @@ def register():
 #    bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
 ##    bpy.utils.register_class(cellblender_simulation.MCELL_PT_run_simulation)
 #    bpy.utils.register_class(cellblender_simulation.MCELL_PT_run_simulation_queue)
-#    bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
+#    bpy.utils.register_class(cellblender_mol_viz.MCELL_PT_viz_results)
 #    bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)
 #    bpy.utils.register_class(cellblender_panels.MCELL_PT_model_objects)
 #    bpy.utils.register_class(cellblender_partitions.MCELL_PT_partitions)
@@ -178,8 +180,8 @@ def register():
 #    bpy.utils.register_class(cellblender_panels.MCELL_PT_mod_surface_regions)
 #    bpy.utils.register_class(cellblender_release.MCELL_PT_release_pattern)
 #    bpy.utils.register_class(cellblender_release.MCELL_PT_molecule_release)
-#    bpy.utils.register_class(cellblender_panels.MCELL_PT_reaction_output_settings)
-#    bpy.utils.register_class(cellblender_panels.MCELL_PT_visualization_output_settings)
+#    bpy.utils.register_class(cellblender_reaction_output.MCELL_PT_reaction_output_settings)
+#    bpy.utils.register_class(cellblender_mol_viz.MCELL_PT_visualization_output_settings)
 
 
     bpy.types.INFO_MT_file_import.append(io_mesh_mcell_mdl.menu_func_import)
@@ -259,7 +261,7 @@ def register():
     # Note that handlers appear to be called in the order listed here (first listed are called first)
     
     # Add the frame change pre handler
-    add_handler ( bpy.app.handlers.frame_change_pre, cellblender_operators.frame_change_handler )
+    add_handler ( bpy.app.handlers.frame_change_pre, cellblender_mol_viz.frame_change_handler )
 
     # Add the load_pre handlers
     add_handler ( bpy.app.handlers.load_pre, cellblender_properties.report_load_pre )
@@ -278,7 +280,7 @@ def register():
     
     add_handler ( bpy.app.handlers.load_post, cellblender_preferences.load_preferences )
     add_handler ( bpy.app.handlers.load_post, cellblender_properties.scene_loaded )
-    add_handler ( bpy.app.handlers.load_post, cellblender_operators.read_viz_data_load_post )
+    add_handler ( bpy.app.handlers.load_post, cellblender_mol_viz.read_viz_data_load_post )
 
     # Add the scene update pre handler
     add_handler ( bpy.app.handlers.scene_update_pre, cellblender_properties.scene_loaded )
@@ -295,7 +297,7 @@ def register():
 
 
 def unregister():
-    remove_handler ( bpy.app.handlers.frame_change_pre, cellblender_operators.frame_change_handler )
+    remove_handler ( bpy.app.handlers.frame_change_pre, cellblender_mol_viz.frame_change_handler )
     remove_handler ( bpy.app.handlers.load_pre,         cellblender_properties.report_load_pre )
     remove_handler ( bpy.app.handlers.load_post, data_model.load_post )
     remove_handler ( bpy.app.handlers.load_post, cellblender_simulation.clear_run_list )
@@ -309,6 +311,7 @@ def unregister():
     
     remove_handler ( bpy.app.handlers.load_post, cellblender_preferences.load_preferences )
     remove_handler ( bpy.app.handlers.load_post, cellblender_properties.scene_loaded )
+    remove_handler ( bpy.app.handlers.load_post, cellblender_mol_viz.read_viz_data_load_post )
     remove_handler ( bpy.app.handlers.scene_update_pre, cellblender_properties.scene_loaded )
     remove_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
     remove_handler ( bpy.app.handlers.save_pre, cellblender_operators.model_objects_update )

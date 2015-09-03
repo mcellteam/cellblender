@@ -359,8 +359,66 @@ def init_properties(context):
         mcell.initialized = True
 
 
+
+class MCELL_OT_export_project(bpy.types.Operator):
+    bl_idname = "mcell.export_project"
+    bl_label = "Export CellBlender Project"
+    bl_description = "Export CellBlender Project"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        print("MCELL_OT_export_project.execute()")
+        print(" Scene name =", context.scene.name)
+
+        # Filter or replace problem characters (like space, ...)
+        scene_name = context.scene.name.replace(" ", "_")
+
+        # Change the actual scene name to the legal MCell Name
+        context.scene.name = scene_name
+
+        mcell = context.scene.mcell
+
+        # Force the project directory to be where the .blend file lives
+        model_objects_update(context)
+
+        filepath = project_files_path()
+        os.makedirs(filepath, exist_ok=True)
+
+        # Set this for now to have it hopefully propagate until base_name can
+        # be removed
+        mcell.project_settings.base_name = scene_name
+
+        #filepath = os.path.join(
+        #   filepath, mcell.project_settings.base_name + ".main.mdl")
+        filepath = os.path.join(filepath, scene_name + ".main.mdl")
+#        bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+        export_mcell_mdl.save(context, filepath)
+
+        # These two branches of the if statement seem identical ?
+
+        #if mcell.export_project.export_format == 'mcell_mdl_unified':
+        #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
+        #                            (mcell.project_settings.base_name +
+        #                            ".main.mdl"))
+        #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+        #elif mcell.export_project.export_format == 'mcell_mdl_modular':
+        #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
+        #                            (mcell.project_settings.base_name +
+        #                            ".main.mdl"))
+        #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+
+        self.report({'INFO'}, "Project Exported")
+
+        return {'FINISHED'}
+
+
+
+
+
+
+"""
 def create_color_list():
-    """ Create a list of colors to be assigned to the glyphs. """ 
+    # Create a list of colors to be assigned to the glyphs.
 
     mcell = bpy.context.scene.mcell
     mcell.mol_viz.color_index = 0
@@ -479,56 +537,6 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MCELL_OT_export_project(bpy.types.Operator):
-    bl_idname = "mcell.export_project"
-    bl_label = "Export CellBlender Project"
-    bl_description = "Export CellBlender Project"
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-        print("MCELL_OT_export_project.execute()")
-        print(" Scene name =", context.scene.name)
-
-        # Filter or replace problem characters (like space, ...)
-        scene_name = context.scene.name.replace(" ", "_")
-
-        # Change the actual scene name to the legal MCell Name
-        context.scene.name = scene_name
-
-        mcell = context.scene.mcell
-
-        # Force the project directory to be where the .blend file lives
-        model_objects_update(context)
-
-        filepath = project_files_path()
-        os.makedirs(filepath, exist_ok=True)
-
-        # Set this for now to have it hopefully propagate until base_name can
-        # be removed
-        mcell.project_settings.base_name = scene_name
-
-        #filepath = os.path.join(
-        #   filepath, mcell.project_settings.base_name + ".main.mdl")
-        filepath = os.path.join(filepath, scene_name + ".main.mdl")
-#        bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
-        export_mcell_mdl.save(context, filepath)
-
-        # These two branches of the if statement seem identical ?
-
-        #if mcell.export_project.export_format == 'mcell_mdl_unified':
-        #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
-        #                            (mcell.project_settings.base_name +
-        #                            ".main.mdl"))
-        #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
-        #elif mcell.export_project.export_format == 'mcell_mdl_modular':
-        #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
-        #                            (mcell.project_settings.base_name +
-        #                            ".main.mdl"))
-        #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
-
-        self.report({'INFO'}, "Project Exported")
-
-        return {'FINISHED'}
 
 def set_viz_boundaries( context ):
         global global_mol_file_list
@@ -638,7 +646,7 @@ class MCELL_OT_mol_viz_set_index(bpy.types.Operator):
 
 @persistent
 def frame_change_handler(scn):
-    """ Update the viz data every time a frame is changed. """
+    # Update the viz data every time a frame is changed.  
 
     mcell = scn.mcell
     curr_frame = mcell.mol_viz.mol_file_index
@@ -653,7 +661,7 @@ def frame_change_handler(scn):
 
 
 def mol_viz_toggle_manual_select(self, context):
-    """ Toggle the option to manually load viz data. """
+    # Toggle the option to manually load viz data.  
     global global_mol_file_list
 
     mcell = context.scene.mcell
@@ -671,7 +679,7 @@ def mol_viz_toggle_manual_select(self, context):
 
 
 def get_mol_file_dir():
-    """ Get the viz dir """
+    # Get the viz dir  
 
     mcell = bpy.context.scene.mcell
 
@@ -691,7 +699,7 @@ def get_mol_file_dir():
 
 
 def mol_viz_update(self, context):
-    """ Clear the old viz data. Draw the new viz data. """
+    # Clear the old viz data. Draw the new viz data.  
     global global_mol_file_list
 
     mcell = context.scene.mcell
@@ -717,7 +725,7 @@ def mol_viz_update(self, context):
 
 
 def mol_viz_clear(mcell_prop, force_clear=False):
-    """ Clear the viz data from the previous frame. """
+    # Clear the viz data from the previous frame. 
 
     mcell = mcell_prop
     scn = bpy.context.scene
@@ -770,7 +778,7 @@ def mol_viz_clear(mcell_prop, force_clear=False):
 
 
 def old_mol_viz_file_read(mcell_prop, filepath):
-    """ Draw the viz data for the current frame. """
+    # Draw the viz data for the current frame. 
     mcell = mcell_prop
     try:
 
@@ -951,7 +959,7 @@ import sys, traceback
 
 
 def mol_viz_file_read(mcell_prop, filepath):
-    """ Read and Draw the molecule viz data for the current frame. """
+    # Read and Draw the molecule viz data for the current frame.
 
     mcell = mcell_prop
     try:
@@ -1187,6 +1195,11 @@ def mol_viz_file_read(mcell_prop, filepath):
         # Catch any exception
         print ( "\n***** Unexpected exception:" + str(uex) + "\n" )
         raise
+
+"""
+
+import sys, traceback
+
 
 
 # Meshalyzer

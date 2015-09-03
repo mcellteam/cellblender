@@ -28,6 +28,7 @@ cellblender_info = {
         "cellblender_reaction_output.py",
         "cellblender_partitions.py",
         "cellblender_simulation.py",
+        "cellblender_mol_viz.py",
         "object_surface_regions.py",
         "run_simulations.py",
         "sim_runner_queue.py",

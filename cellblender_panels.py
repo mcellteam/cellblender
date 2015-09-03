@@ -65,7 +65,7 @@ class MCELL_PT_project_settings(bpy.types.Panel):
         context.scene.mcell.project_settings.draw_panel ( context, self )
 
 
-
+"""
 
 class MCELL_PT_viz_results(bpy.types.Panel):
     bl_label = "CellBlender - Visualize Simulation Results"
@@ -75,7 +75,9 @@ class MCELL_PT_viz_results(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
-        context.scene.mcell.mol_viz .draw_panel ( context, self )
+        context.scene.mcell.mol_viz.draw_panel ( context, self )
+
+"""
 
 
 class MCELL_UL_model_objects(bpy.types.UIList):
@@ -251,6 +253,7 @@ class MCELL_PT_mod_surface_regions(bpy.types.Panel):
     def draw(self, context):
         context.scene.mcell.mod_surf_regions.draw_panel ( context, self )
 
+"""
 
 class MCELL_UL_visualization_export_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
@@ -275,3 +278,5 @@ class MCELL_PT_visualization_output_settings(bpy.types.Panel):
 
     def draw(self, context):
         context.scene.mcell.viz_output.draw_panel ( context, self )
+
+"""

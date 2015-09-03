@@ -37,6 +37,7 @@ import re
 import cellblender
 # from . import cellblender_parameters
 from . import parameter_system
+from . import cellblender_mol_viz
 from . import cellblender_operators
 from . import cellblender_utils
 
@@ -363,7 +364,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
         # Refresh the scene
         self.set_mol_glyph ( context )
-        cellblender_operators.mol_viz_update(self,context)  # It's not clear why mol_viz_update needs a self. It's not in a class.
+        cellblender_mol_viz.mol_viz_update(self,context)  # It's not clear why mol_viz_update needs a self. It's not in a class.
         context.scene.update()  # It's also not clear if this is needed ... but it doesn't seem to hurt!!
         return
 

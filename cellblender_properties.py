@@ -56,6 +56,7 @@ from . import cellblender_release
 from . import cellblender_surface_classes
 from . import cellblender_partitions
 from . import cellblender_simulation
+from . import cellblender_mol_viz
 from . import cellblender_reaction_output
 from . import parameter_system
 from . import data_model
@@ -247,256 +248,6 @@ class MCellExportProjectPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all Export Project Properties... no collections to remove." )
-
-
-
-class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
-    """ Property group for for molecule visualization.
-
-      This is the "Visualize Simulation Results Panel".
-
-    """
-
-    mol_viz_seed_list = CollectionProperty(
-        type=MCellStringProperty, name="Visualization Seed List")
-    active_mol_viz_seed_index = IntProperty(
-        name="Current Visualization Seed Index", default=0,
-        update=cellblender_operators.read_viz_data_callback)
-        #update= bpy.ops.mcell.read_viz_data)
-    mol_file_dir = StringProperty(
-        name="Molecule File Dir", subtype='NONE')
-    mol_file_list = CollectionProperty(
-        type=MCellStringProperty, name="Molecule File Name List")
-    mol_file_num = IntProperty(
-        name="Number of Molecule Files", default=0)
-    mol_file_name = StringProperty(
-        name="Current Molecule File Name", subtype='NONE')
-    mol_file_index = IntProperty(name="Current Molecule File Index", default=0)
-    mol_file_start_index = IntProperty(
-        name="Molecule File Start Index", default=0)
-    mol_file_stop_index = IntProperty(
-        name="Molecule File Stop Index", default=0)
-    mol_file_step_index = IntProperty(
-        name="Molecule File Step Index", default=1)
-    mol_viz_list = CollectionProperty(
-        type=MCellStringProperty, name="Molecule Viz Name List")
-    render_and_save = BoolProperty(name="Render & Save Images")
-    mol_viz_enable = BoolProperty(
-        name="Enable Molecule Vizualization",
-        description="Disable for faster animation preview",
-        default=True, update=cellblender_operators.mol_viz_update)
-    color_list = CollectionProperty(
-        type=MCellFloatVectorProperty, name="Molecule Color List")
-    color_index = IntProperty(name="Color Index", default=0)
-    manual_select_viz_dir = BoolProperty(
-        name="Manually Select Viz Directory", default=False,
-        description="Toggle the option to manually load viz data.",
-        update=cellblender_operators.mol_viz_toggle_manual_select)
-
-
-    def build_data_model_from_properties ( self, context ):
-        print ( "Building Mol Viz data model from properties" )
-        mv_dm = {}
-        mv_dm['data_model_version'] = "DM_2015_04_13_1700"
-
-        mv_seed_list = []
-        for s in self.mol_viz_seed_list:
-            mv_seed_list.append ( str(s.name) )
-        mv_dm['seed_list'] = mv_seed_list
-
-        mv_dm['active_seed_index'] = self.active_mol_viz_seed_index
-        mv_dm['file_dir'] = self.mol_file_dir
-
-        # mv_file_list = []
-        # for s in self.mol_file_list:
-        #     mv_file_list.append ( str(s.name) )
-        # mv_dm['file_list'] = mv_file_list
-
-        mv_dm['file_num'] = self.mol_file_num
-        mv_dm['file_name'] = self.mol_file_name
-        mv_dm['file_index'] = self.mol_file_index
-        mv_dm['file_start_index'] = self.mol_file_start_index
-        mv_dm['file_stop_index'] = self.mol_file_stop_index
-        mv_dm['file_step_index'] = self.mol_file_step_index
-
-        mv_viz_list = []
-        for s in self.mol_viz_list:
-            mv_viz_list.append ( str(s.name) )
-        mv_dm['viz_list'] = mv_viz_list
-
-        mv_dm['render_and_save'] = self.render_and_save
-        mv_dm['viz_enable'] = self.mol_viz_enable
-
-        mv_color_list = []
-        for c in self.color_list:
-            mv_color = []
-            for i in c.vec:
-                mv_color.append ( i )
-            mv_color_list.append ( mv_color )
-        mv_dm['color_list'] = mv_color_list
-
-        mv_dm['color_index'] = self.color_index
-        mv_dm['manual_select_viz_dir'] = self.manual_select_viz_dir
-
-        return mv_dm
-
-
-    @staticmethod
-    def upgrade_data_model ( dm ):
-        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
-        print ( "------------------------->>> Upgrading MCellMolVizPropertyGroup Data Model" )
-        if not ('data_model_version' in dm):
-            # Make changes to move from unversioned to DM_2015_04_13_1700
-            dm['data_model_version'] = "DM_2015_04_13_1700"
-
-        if dm['data_model_version'] == "DM_2015_04_13_1700":
-            # Change on June 22nd, 2015: The molecule file list will no longer be stored in the data model
-            if 'file_list' in dm:
-                dm.pop ( 'file_list' )
-            dm['data_model_version'] = "DM_2015_06_22_1430"
-
-        if dm['data_model_version'] != "DM_2015_06_22_1430":
-            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMolVizPropertyGroup data model to current version." )
-            return None
-
-        return dm
-
-
-
-    def build_properties_from_data_model ( self, context, dm ):
-        # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_06_22_1430":
-            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMolVizPropertyGroup data model to current version." )
-
-        # Remove the old properties (includes emptying collections)
-        self.remove_properties ( context )
-
-        # Build the new properties
-        
-        for s in dm["seed_list"]:
-            new_item = self.mol_viz_seed_list.add()
-            new_item.name = s
-            
-        self.active_mol_viz_seed_index = dm['active_seed_index']
-
-        self.mol_file_dir = dm['file_dir']
-
-        #for s in dm["file_list"]:
-        #    new_item = self.mol_file_list.add()
-        #    new_item.name = s
-
-        self.mol_file_num = dm['file_num']
-        self.mol_file_name = dm['file_name']
-        self.mol_file_index = dm['file_index']
-        self.mol_file_start_index = dm['file_start_index']
-        self.mol_file_stop_index = dm['file_stop_index']
-        self.mol_file_step_index = dm['file_step_index']
-            
-        for s in dm["viz_list"]:
-            new_item = self.mol_viz_list.add()
-            new_item.name = s
-            
-        self.render_and_save = dm['render_and_save']
-        self.mol_viz_enable = dm['viz_enable']
-
-        for c in dm["color_list"]:
-            new_item = self.color_list.add()
-            new_item.vec = c
-            
-        if 'color_index' in dm:
-            self.color_index = dm['color_index']
-        else:
-            self.color_index = 0
-
-        self.manual_select_viz_dir = dm['manual_select_viz_dir']
-
-
-    def check_properties_after_building ( self, context ):
-        print ( "check_properties_after_building not implemented for " + str(self) )
-
-
-    def remove_properties ( self, context ):
-        print ( "Removing all Molecule Visualization Properties..." )
-
-        """
-        while len(self.mol_viz_seed_list) > 0:
-            self.mol_viz_seed_list.remove(0)
-
-        while len(self.mol_file_list) > 0:
-            self.mol_file_list.remove(0)
-
-        while len(self.mol_viz_list) > 0:
-            self.mol_viz_list.remove(0)
-
-        while len(self.color_list) > 0:
-            # It's not clear if anything needs to be done to remove individual color components first
-            self.color_list.remove(0)
-        """
-
-        for item in self.mol_viz_seed_list:
-            item.remove_properties(context)
-        self.mol_viz_seed_list.clear()
-        self.active_mol_viz_seed_index = 0
-        for item in self.mol_file_list:
-            item.remove_properties(context)
-        self.mol_file_list.clear()
-        self.mol_file_index = 0
-        self.mol_file_start_index = 0
-        self.mol_file_stop_index = 0
-        self.mol_file_step_index = 1
-        for item in self.mol_viz_list:
-            item.remove_properties(context)
-        self.mol_viz_list.clear()
-        for item in self.color_list:
-            item.remove_properties(context)
-        self.color_list.clear()
-        self.color_index = 0
-        print ( "Done removing all Molecule Visualization Properties." )
-
-
-
-
-
-    def draw_layout(self, context, layout):
-        mcell = context.scene.mcell
-
-        if not mcell.initialized:
-            mcell.draw_uninitialized ( layout )
-        else:
-
-            row = layout.row()
-            row.prop(mcell.mol_viz, "manual_select_viz_dir")
-            row = layout.row()
-            if self.manual_select_viz_dir:
-                row.operator("mcell.select_viz_data", icon='IMPORT')
-            else:
-                row.operator("mcell.read_viz_data", icon='IMPORT')
-            row = layout.row()
-            row.label(text="Molecule Viz Directory: " + self.mol_file_dir,
-                      icon='FILE_FOLDER')
-            row = layout.row()
-            if not self.manual_select_viz_dir:
-                row.template_list("UI_UL_list", "viz_seed", mcell.mol_viz,
-                                "mol_viz_seed_list", mcell.mol_viz,
-                                "active_mol_viz_seed_index", rows=2)
-            row = layout.row()
-
-            row = layout.row()
-            row.label(text="Current Molecule File: "+self.mol_file_name,
-                      icon='FILE')
-# Disabled to explore UI slowdown behavior of Plot Panel and run options subpanel when mol_file_list is large
-#            row = layout.row()
-#            row.template_list("UI_UL_list", "viz_results", mcell.mol_viz,
-#                              "mol_file_list", mcell.mol_viz, "mol_file_index",
-#                              rows=2)
-            row = layout.row()
-            layout.prop(mcell.mol_viz, "mol_viz_enable")
-
-
-    def draw_panel ( self, context, panel ):
-        """ Create a layout from the panel and draw into it """
-        layout = panel.layout
-        self.draw_layout ( context, layout )
 
 
 
@@ -1043,6 +794,255 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     reg.set_region_faces ( new_mesh, set(rgn['include_elements']) )
 
 
+"""
+class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
+    # Property group for for molecule visualization.
+
+    #  This is the "Visualize Simulation Results Panel".
+
+    #
+
+    mol_viz_seed_list = CollectionProperty(
+        type=MCellStringProperty, name="Visualization Seed List")
+    active_mol_viz_seed_index = IntProperty(
+        name="Current Visualization Seed Index", default=0,
+        update=cellblender_operators.read_viz_data_callback)
+        #update= bpy.ops.mcell.read_viz_data)
+    mol_file_dir = StringProperty(
+        name="Molecule File Dir", subtype='NONE')
+    mol_file_list = CollectionProperty(
+        type=MCellStringProperty, name="Molecule File Name List")
+    mol_file_num = IntProperty(
+        name="Number of Molecule Files", default=0)
+    mol_file_name = StringProperty(
+        name="Current Molecule File Name", subtype='NONE')
+    mol_file_index = IntProperty(name="Current Molecule File Index", default=0)
+    mol_file_start_index = IntProperty(
+        name="Molecule File Start Index", default=0)
+    mol_file_stop_index = IntProperty(
+        name="Molecule File Stop Index", default=0)
+    mol_file_step_index = IntProperty(
+        name="Molecule File Step Index", default=1)
+    mol_viz_list = CollectionProperty(
+        type=MCellStringProperty, name="Molecule Viz Name List")
+    render_and_save = BoolProperty(name="Render & Save Images")
+    mol_viz_enable = BoolProperty(
+        name="Enable Molecule Vizualization",
+        description="Disable for faster animation preview",
+        default=True, update=cellblender_operators.mol_viz_update)
+    color_list = CollectionProperty(
+        type=MCellFloatVectorProperty, name="Molecule Color List")
+    color_index = IntProperty(name="Color Index", default=0)
+    manual_select_viz_dir = BoolProperty(
+        name="Manually Select Viz Directory", default=False,
+        description="Toggle the option to manually load viz data.",
+        update=cellblender_operators.mol_viz_toggle_manual_select)
+
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Building Mol Viz data model from properties" )
+        mv_dm = {}
+        mv_dm['data_model_version'] = "DM_2015_04_13_1700"
+
+        mv_seed_list = []
+        for s in self.mol_viz_seed_list:
+            mv_seed_list.append ( str(s.name) )
+        mv_dm['seed_list'] = mv_seed_list
+
+        mv_dm['active_seed_index'] = self.active_mol_viz_seed_index
+        mv_dm['file_dir'] = self.mol_file_dir
+
+        # mv_file_list = []
+        # for s in self.mol_file_list:
+        #     mv_file_list.append ( str(s.name) )
+        # mv_dm['file_list'] = mv_file_list
+
+        mv_dm['file_num'] = self.mol_file_num
+        mv_dm['file_name'] = self.mol_file_name
+        mv_dm['file_index'] = self.mol_file_index
+        mv_dm['file_start_index'] = self.mol_file_start_index
+        mv_dm['file_stop_index'] = self.mol_file_stop_index
+        mv_dm['file_step_index'] = self.mol_file_step_index
+
+        mv_viz_list = []
+        for s in self.mol_viz_list:
+            mv_viz_list.append ( str(s.name) )
+        mv_dm['viz_list'] = mv_viz_list
+
+        mv_dm['render_and_save'] = self.render_and_save
+        mv_dm['viz_enable'] = self.mol_viz_enable
+
+        mv_color_list = []
+        for c in self.color_list:
+            mv_color = []
+            for i in c.vec:
+                mv_color.append ( i )
+            mv_color_list.append ( mv_color )
+        mv_dm['color_list'] = mv_color_list
+
+        mv_dm['color_index'] = self.color_index
+        mv_dm['manual_select_viz_dir'] = self.manual_select_viz_dir
+
+        return mv_dm
+
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading MCellMolVizPropertyGroup Data Model" )
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2015_04_13_1700
+            dm['data_model_version'] = "DM_2015_04_13_1700"
+
+        if dm['data_model_version'] == "DM_2015_04_13_1700":
+            # Change on June 22nd, 2015: The molecule file list will no longer be stored in the data model
+            if 'file_list' in dm:
+                dm.pop ( 'file_list' )
+            dm['data_model_version'] = "DM_2015_06_22_1430"
+
+        if dm['data_model_version'] != "DM_2015_06_22_1430":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMolVizPropertyGroup data model to current version." )
+            return None
+
+        return dm
+
+
+
+    def build_properties_from_data_model ( self, context, dm ):
+        # Check that the data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2015_06_22_1430":
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMolVizPropertyGroup data model to current version." )
+
+        # Remove the old properties (includes emptying collections)
+        self.remove_properties ( context )
+
+        # Build the new properties
+        
+        for s in dm["seed_list"]:
+            new_item = self.mol_viz_seed_list.add()
+            new_item.name = s
+            
+        self.active_mol_viz_seed_index = dm['active_seed_index']
+
+        self.mol_file_dir = dm['file_dir']
+
+        #for s in dm["file_list"]:
+        #    new_item = self.mol_file_list.add()
+        #    new_item.name = s
+
+        self.mol_file_num = dm['file_num']
+        self.mol_file_name = dm['file_name']
+        self.mol_file_index = dm['file_index']
+        self.mol_file_start_index = dm['file_start_index']
+        self.mol_file_stop_index = dm['file_stop_index']
+        self.mol_file_step_index = dm['file_step_index']
+            
+        for s in dm["viz_list"]:
+            new_item = self.mol_viz_list.add()
+            new_item.name = s
+            
+        self.render_and_save = dm['render_and_save']
+        self.mol_viz_enable = dm['viz_enable']
+
+        for c in dm["color_list"]:
+            new_item = self.color_list.add()
+            new_item.vec = c
+            
+        if 'color_index' in dm:
+            self.color_index = dm['color_index']
+        else:
+            self.color_index = 0
+
+        self.manual_select_viz_dir = dm['manual_select_viz_dir']
+
+
+    def check_properties_after_building ( self, context ):
+        print ( "check_properties_after_building not implemented for " + str(self) )
+
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Molecule Visualization Properties..." )
+
+        
+        #while len(self.mol_viz_seed_list) > 0:
+        #    self.mol_viz_seed_list.remove(0)
+
+        #while len(self.mol_file_list) > 0:
+        #    self.mol_file_list.remove(0)
+
+        #while len(self.mol_viz_list) > 0:
+        #    self.mol_viz_list.remove(0)
+
+        #while len(self.color_list) > 0:
+        #    # It's not clear if anything needs to be done to remove individual color components first
+        #    self.color_list.remove(0)
+
+        for item in self.mol_viz_seed_list:
+            item.remove_properties(context)
+        self.mol_viz_seed_list.clear()
+        self.active_mol_viz_seed_index = 0
+        for item in self.mol_file_list:
+            item.remove_properties(context)
+        self.mol_file_list.clear()
+        self.mol_file_index = 0
+        self.mol_file_start_index = 0
+        self.mol_file_stop_index = 0
+        self.mol_file_step_index = 1
+        for item in self.mol_viz_list:
+            item.remove_properties(context)
+        self.mol_viz_list.clear()
+        for item in self.color_list:
+            item.remove_properties(context)
+        self.color_list.clear()
+        self.color_index = 0
+        print ( "Done removing all Molecule Visualization Properties." )
+
+
+
+
+
+    def draw_layout(self, context, layout):
+        mcell = context.scene.mcell
+
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( layout )
+        else:
+
+            row = layout.row()
+            row.prop(mcell.mol_viz, "manual_select_viz_dir")
+            row = layout.row()
+            if self.manual_select_viz_dir:
+                row.operator("mcell.select_viz_data", icon='IMPORT')
+            else:
+                row.operator("mcell.read_viz_data", icon='IMPORT')
+            row = layout.row()
+            row.label(text="Molecule Viz Directory: " + self.mol_file_dir,
+                      icon='FILE_FOLDER')
+            row = layout.row()
+            if not self.manual_select_viz_dir:
+                row.template_list("UI_UL_list", "viz_seed", mcell.mol_viz,
+                                "mol_viz_seed_list", mcell.mol_viz,
+                                "active_mol_viz_seed_index", rows=2)
+            row = layout.row()
+
+            row = layout.row()
+            row.label(text="Current Molecule File: "+self.mol_file_name,
+                      icon='FILE')
+# Disabled to explore UI slowdown behavior of Plot Panel and run options subpanel when mol_file_list is large
+#            row = layout.row()
+#            row.template_list("UI_UL_list", "viz_results", mcell.mol_viz,
+#                              "mol_file_list", mcell.mol_viz, "mol_file_index",
+#                              rows=2)
+            row = layout.row()
+            layout.prop(mcell.mol_viz, "mol_viz_enable")
+
+
+    def draw_panel ( self, context, panel ):
+        # Create a layout from the panel and draw into it
+        layout = panel.layout
+        self.draw_layout ( context, layout )
+
+
 
 class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
     active_mol_viz_index = IntProperty(
@@ -1111,7 +1111,7 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
 
 
     def draw_layout ( self, context, layout ):
-        """ Draw the reaction output "panel" within the layout """
+        # Draw the reaction output "panel" within the layout 
         mcell = context.scene.mcell
 
         if not mcell.initialized:
@@ -1137,9 +1137,22 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
 
 
     def draw_panel ( self, context, panel ):
-        """ Create a layout from the panel and draw into it """
+        # Create a layout from the panel and draw into it 
         layout = panel.layout
         self.draw_layout ( context, layout )
+"""
+
+
+
+
+
+####
+##
+##  REFACTORING NOTE: Almost all of the following code is at the "application" level and will probably stay in cellblender_properties.
+##
+####
+
+
 
 
 import cellblender
@@ -1925,7 +1938,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     run_simulation = PointerProperty(
         type=cellblender_simulation.MCellRunSimulationPropertyGroup, name="Run Simulation")
     mol_viz = PointerProperty(
-        type=MCellMolVizPropertyGroup, name="Mol Viz Settings")
+        type=cellblender_mol_viz.MCellMolVizPropertyGroup, name="Mol Viz Settings")
     initialization = PointerProperty(
         type=cellblender_initialization.MCellInitializationPropertyGroup, name="Model Initialization")
     partitions = bpy.props.PointerProperty(
@@ -1950,7 +1963,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     model_objects = PointerProperty(
         type=MCellModelObjectsPropertyGroup, name="Instantiated Objects")
     viz_output = PointerProperty(
-        type=MCellVizOutputPropertyGroup, name="Viz Output")
+        type=cellblender_mol_viz.MCellVizOutputPropertyGroup, name="Viz Output")
     rxn_output = PointerProperty(
         type=cellblender_reaction_output.MCellReactionOutputPropertyGroup, name="Reaction Output")
     meshalyzer = PointerProperty(
@@ -2117,7 +2130,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
         group_name = "viz_output"
         if group_name in dm:
-            dm[group_name] = MCellVizOutputPropertyGroup.upgrade_data_model ( dm[group_name] )
+            dm[group_name] = cellblender_mol_viz.MCellVizOutputPropertyGroup.upgrade_data_model ( dm[group_name] )
             if dm[group_name] == None:
                 return None
 
@@ -2129,7 +2142,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
         group_name = "mol_viz"
         if group_name in dm:
-            dm[group_name] = MCellMolVizPropertyGroup.upgrade_data_model ( dm[group_name] )
+            dm[group_name] = cellblender_mol_viz.MCellMolVizPropertyGroup.upgrade_data_model ( dm[group_name] )
             if dm[group_name] == None:
                 return None
 
