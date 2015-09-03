@@ -65,6 +65,9 @@ def unregister():
 # Mol Viz Operators:
 
 
+global_mol_file_list = []
+
+
 def create_color_list():
     """ Create a list of colors to be assigned to the glyphs. """ 
 
