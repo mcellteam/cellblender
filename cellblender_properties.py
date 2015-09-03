@@ -2123,7 +2123,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
         group_name = "simulation_control"
         if group_name in dm:
-            dm[group_name] = MCellRunSimulationPropertyGroup.upgrade_data_model ( dm[group_name] )
+            dm[group_name] = cellblender_simulation.MCellRunSimulationPropertyGroup.upgrade_data_model ( dm[group_name] )
             if dm[group_name] == None:
                 return None
 
