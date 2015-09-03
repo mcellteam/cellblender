@@ -1001,6 +1001,13 @@ class CellBlender_Model:
         #bpy.ops.view3d.zoom(delta=3)
         #set_view_3d()
 
+    """
+    def hide_manipulator ( self, hide=True ):
+        spaces = self.get_3d_view_spaces()
+        for space in spaces:
+            space.region_3d.show_manipulator = hide
+    """
+
     def switch_to_perspective ( self ):
         """ Change to perspective for all 3D_VIEW windows """
         spaces = self.get_3d_view_spaces()
@@ -2535,8 +2542,14 @@ class GobletTestOp(bpy.types.Operator):
         # Create a goblet
 
         thk = 0.02
-        goblet = [ (-2,0.8), (-1.8,0.1), (0,0.1), (0.2,0.5), (2,0.8),
-                   (2,0.8-thk), (0.2,0.5-thk), (0,0.1-thk), (-1.8,0.1-thk), (-2,0.8-thk), (-2,0.8) ]
+        
+        # This version will be a torus with a hollow shaft:
+        #goblet = [ (-2,0.8), (-1.8,0.1), (0,0.1), (0.2,0.5), (2,0.8),
+        #           (2,0.8-thk), (0.2,0.5-thk), (0,0.1-thk), (-1.8,0.1-thk), (-2,0.8-thk), (-2,0.8) ]
+
+        # This version will be a solid:
+        goblet = [ (-2.1,-1), (-1.9,0), (-2,0.8), (-(2-thk),0.8), (-1.8,0.1), (0,0.1), (0.2,0.5), (2,0.8),
+                   (2,0.8-thk), (0.2,0.5-thk), (0,0.0), (0.1,-1) ]
 
         cb_model.add_shaped_cylinder_to_model ( name="goblet", draw_type="WIRE", x=0, y=0, z=0, sigma=0, numsect=10, z_profile=goblet )
 
@@ -2548,15 +2561,19 @@ class GobletTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "a230a284c087c112d6f0ad746a31f91158973253", test_name="Goblet Test" )
+        cb_model.compare_mdl_with_sha1 ( "bd1d3190e609f84e69fb0651225c2fc5499ffebf", test_name="Goblet Test" )
 
         cb_model.refresh_molecules()
         
         scn.frame_current = 1
 
-        cb_model.refresh_molecules()
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=0.96, green=1.0, blue=0.3 )
 
         cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.25 )
+
+        cb_model.play_animation()
 
         return { 'FINISHED' }
 
@@ -2564,9 +2581,13 @@ class GobletTestOp(bpy.types.Operator):
 
 ###########################################################################################################
 group_name = "Simple Geometry Tests"
-test_name = "Dividing ecoli Test"
+test_name = "Dividing Capsule Test"
 operator_name = "cellblender_test.ecoli_test"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+"""
+NOTE: This algorithm doesn't generate equally spaced slices as expected.
+"""
 
 class EcoliTestOp(bpy.types.Operator):
     bl_idname = operator_name
@@ -2583,59 +2604,133 @@ class EcoliTestOp(bpy.types.Operator):
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
 
-        # Create a dividing ecoli
+        # Create a dividing ecoli according to parameters listed below
         
         ecoli = []
         
-        ns = 32       # Number of sections around the circumference of the cylinder
-        ncf = 11      # Number of cap facets from side to tip
-        length = 4.0  # Length of entire object from tip to tip
-        radius = 0.5  # Radius of cylinder
+        ns  = 19          # Number of sections around the circumference of the cylinder
+        ncf = 5           # Number of cap facets from side to tip
+        ilength = 2.0     # Initial length of entire object from tip to tip
+        flength = 10.0    # Final length of entire object from tip to tip
+        mnclength = 1.0   # Minimum length of a single cell
+        mxclength = 4.0   # Maximum length of a single cell
+        glength = 0.8     # Distance between cells
+        radius = 0.5      # Radius of cylinder
+        num_frames = 250  # Frames from start to finish
+        pinch = True      # Flag to "pinch" the cell for division
         
+        frame_to_show = 225  # Compute this frame of the series (this could be a function of the current frame for scene updating)
+
+        total_length = ilength + ( frame_to_show * (flength-ilength) / num_frames ) # Length of entire object from tip to tip
+
+        # Create the radial profile of the "chain" of ecoli cells
+
+        # As a cell approaches its maximum length, it will start to split by constricting in the middle
+        # At the point of it's maximum length, it will have constricted to zero radius in the middle
+        # The constriction area ranges from 0 to the cell radius
+        # If cell is less than mxclength - radius, then there is no constriction zone
+        # When the cell is between (mxclength - radius) and (mxclength) there will be a constriction
+        #
         
-        # Create the bottom cap
-
-        for fn in range(ncf):
-          angle = fn * (math.pi/2) / ncf
-          ecoli = ecoli + [ ( (radius*((1-math.cos(angle))))-(length/2), radius*math.sin(angle) ) ]
+        # Start with the total length based on the current time frame:
         
-        ecoli = ecoli + [ ( -((length/2)-radius), radius ) ]
+        # Compute the number of cells
         
+        norm_length = total_length / (mxclength + glength)
+        num_cells = int ( math.pow ( 2, int ( math.log2 ( 2 * norm_length ) ) ) )
+        seglength = total_length/num_cells
+        cell_length = seglength - (glength)
         
-        # Create the cylinder for the main body
+        ecoli = []
         
-        cylinder_length = length - (2 * radius)
-        nominal_length = math.pi * radius / (2 * ncf)
-        num_segments = round ( (cylinder_length + (nominal_length/2)) / nominal_length )
+        hg = glength / 2.0
+        z = -total_length / 2.0
+        z = z - (hg/2)
+        ecoli = ecoli + [ (z, 0.0) ]
+        for cnum in range(num_cells):
 
-        for cyl_seg_num in range(num_segments-1):
-          pinch_factor = 1.0
-          dist_from_center = ((cyl_seg_num+1) * cylinder_length / num_segments) - (cylinder_length/2)
-          if abs(dist_from_center) < radius:
-            norm_dist = abs(dist_from_center) / radius
-            pinch_factor = math.sin ( math.acos(1-norm_dist) )
-          ecoli = ecoli + [ ( (cylinder_length*(cyl_seg_num+1)/num_segments)-(cylinder_length/2), radius * pinch_factor ) ]
+          # Create the bottom cap
 
+          for fn in range(ncf):
+            angle = fn * (math.pi/2) / ncf
+            ecoli = ecoli + [ ( z+hg+(radius*((1-math.cos(angle)))), radius*math.sin(angle) ) ]
+          
+          ecoli = ecoli + [ ( z+hg+radius, radius ) ]
 
-        # Create the top cap
+          # Create the cylinder for the main body
+          
+          cylinder_length = cell_length - (2 * radius)
+          nominal_length = math.pi * radius / (2 * ncf)
+          num_segments = round ( (cylinder_length + (nominal_length/2)) / nominal_length )
+          
+          # Force an even number of segments so there's a pinch center
+          if (num_segments % 2) > 0:
+            num_segments += 1
+
+          bot_z = z + hg + radius
+          for cyl_seg_num in range(num_segments-1):
+            pinch_factor = 1.0
+            if pinch and (cell_length > (mxclength - (2*radius))):
+              # Need to start pinching the center
+              pinch_dist = ( cell_length - (mxclength - (2*radius)) ) / 2
+              if pinch_dist > 0:
+                dist_from_center = ((cyl_seg_num+1) * cylinder_length / num_segments) - (cylinder_length/2)
+                if abs(dist_from_center) < pinch_dist:
+                  norm_dist = abs(dist_from_center) / radius
+                  pinch_factor = math.sin ( math.acos((pinch_dist/radius)-norm_dist) )
+            
+            ecoli = ecoli + [ ( bot_z + (cylinder_length*(cyl_seg_num+1)/num_segments), radius * pinch_factor ) ]
+
+          # Create the top cap
+
+          ecoli = ecoli + [ ( z+seglength-(radius), radius ) ]
+
+          for fn in range(ncf):
+            angle = ((ncf-1)-fn) * (math.pi/2) / ncf
+            ecoli = ecoli + [ ( z+seglength+(radius*((0+math.cos(angle))))-radius, radius*math.sin(angle) ) ]
+
+          z += seglength
+
+        # Close the entire capsule
+        ecoli = ecoli + [ (z, 0.0) ]
         
-        ecoli = ecoli + [ ( ((length/2)-radius), radius ) ]
-        
-        for fn in range(ncf):
-          angle = ((ncf-1)-fn) * (math.pi/2) / ncf
-          ecoli = ecoli + [ ( (radius*math.cos(angle))+(length/2)-radius, radius*math.sin(angle) ) ]
+        cb_model.add_shaped_cylinder_to_model ( name="ecoli", draw_type="SOLID", x=0, y=0, z=0, sigma=0, numsect=ns, z_profile=ecoli )
+
+        # Set up the material for the object
+        if len(bpy.data.materials) <= 0:
+            new_mat = bpy.data.materials.new("cell")
+        bpy.data.materials[0].name = 'cell'
+        bpy.data.materials['cell'].use_transparency = True
+        bpy.data.materials['cell'].alpha = 0.3
+
+        # Assign the material to the object
+        bpy.ops.object.material_slot_add()
+        scn.objects['ecoli'].material_slots[0].material = bpy.data.materials['cell']
+        scn.objects['ecoli'].show_transparent = True
 
 
+        mola  = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
 
-        # ecoli = [ (-2,0), (-1.5,0.5), (-1,0.5), (-0.5,0), (0,-1), (0.5,0), (1,0.5), (1.5,0.5), (2,0)]
+        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="ecoli", q_expr="1000" )
 
-        cb_model.add_shaped_cylinder_to_model ( name="capsule", draw_type="WIRE", x=0, y=0, z=0, sigma=0, numsect=ns, z_profile=ecoli )
+        cb_model.set_visualization ( enable_visualization=True, export_all=True, all_iterations=False, start=0, end=100000, step=1 )
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
 
-        # cb_model.compare_mdl_with_sha1 ( "a0b02d7523bded1a2a6ee4c5acb47ceaf30bc0d6", test_name="Dividing ecoli Test" )
+        cb_model.compare_mdl_with_sha1 ( "652c19b96ff7d162c5c92d83113feb588b012f0d", test_name="Dividing Capsule Test" )
+
+        cb_model.refresh_molecules()
+        
+        scn.frame_current = 1
+
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=5.0, red=0.0, green=0.7, blue=1.0 )
 
         cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.45 )
+        # cb_model.hide_manipulator ( hide=True )
+
+        cb_model.play_animation()
 
         return { 'FINISHED' }
 
