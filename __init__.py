@@ -152,7 +152,7 @@ def register():
     bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
     bpy.utils.unregister_class(cellblender_partitions.MCELL_PT_partitions)
     bpy.utils.unregister_class(cellblender_initialization.MCELL_PT_initialization)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_parameters)
+    # bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_parameters)
     bpy.utils.unregister_class(parameter_system.MCELL_PT_parameter_system)
     bpy.utils.unregister_class(cellblender_molecules.MCELL_PT_define_molecules)
     bpy.utils.unregister_class(cellblender_reactions.MCELL_PT_define_reactions)
@@ -169,7 +169,7 @@ def register():
 
 #    bpy.utils.register_class(cellblender_preferences.MCELL_PT_cellblender_preferences)
 #    bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
-##    bpy.utils.register_class(cellblender_simulation.MCELL_PT_run_simulation)
+#    bpy.utils.register_class(cellblender_simulation.MCELL_PT_run_simulation)
 #    bpy.utils.register_class(cellblender_simulation.MCELL_PT_run_simulation_queue)
 #    bpy.utils.register_class(cellblender_mol_viz.MCELL_PT_viz_results)
 #    bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)

@@ -119,53 +119,6 @@ class MCELL_PT_object_selector(bpy.types.Panel):
 
 
 
-############### DB: The following two classes are included to create a parameter input panel: only relevant for BNG, SBML or other model import #################
-
-class MCELL_UL_check_parameter(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data,
-                 active_propname, index):
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            layout.label(item.name, icon='FILE_TICK')
-	    
-  
-class MCELL_PT_define_parameters(bpy.types.Panel):
-    bl_label = "CellBlender - Imported Parameters"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        mcell = context.scene.mcell
-
-        if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
-        else:
-            row = layout.row()
-            if mcell.parameters.parameter_list:
-                row.label(text="Defined Parameters:", icon='FORCE_LENNARDJONES')
-                row = layout.row()
-                col = row.column()
-                col.template_list("MCELL_UL_check_parameter", "define_parameters",
-                                  mcell.parameters, "parameter_list",
-                                  mcell.parameters, "active_par_index", rows=2)
-                col = row.column(align=True)
-                col.operator("mcell.parameter_add", icon='ZOOMIN', text="")
-                col.operator("mcell.parameter_remove", icon='ZOOMOUT', text="")
-                if len(mcell.parameters.parameter_list) > 0:
-                    par = mcell.parameters.parameter_list[mcell.parameters.active_par_index]
-                    layout.prop(par, "name")
-                    layout.prop(par, "value")
-                    layout.prop(par, "unit")
-                    layout.prop(par, "type")
-            else:
-                row.label(text="No imported/defined parameter found", icon='ERROR')
-#########################################################################################################################################
-
-
 class MCELL_UL_check_mod_surface_regions(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):

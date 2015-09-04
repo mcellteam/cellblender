@@ -831,24 +831,6 @@ class MCellMoleculeGlyphsPropertyGroup(bpy.types.PropertyGroup):
         print ( "Removing all Molecule Glyph Properties... no collections to remove." )
 
 
-"""
-class MCellMeshalyzerPropertyGroup(bpy.types.PropertyGroup):
-    object_name = StringProperty(name="Object Name")
-    vertices = IntProperty(name="Vertices", default=0)
-    edges = IntProperty(name="Edges", default=0)
-    faces = IntProperty(name="Faces", default=0)
-    watertight = StringProperty(name="Watertight")
-    manifold = StringProperty(name="Manifold")
-    normal_status = StringProperty(name="Surface Normals")
-    area = FloatProperty(name="Area", default=0)
-    volume = FloatProperty(name="Volume", default=0)
-    sav_ratio = FloatProperty(name="SA/V Ratio", default=0)
-    status = StringProperty(name="Status")
-
-    def remove_properties ( self, context ):
-        print ( "Removing all Meshalyzer Properties... no collections to remove." )
-"""
-
 
 class MCellObjectSelectorPropertyGroup(bpy.types.PropertyGroup):
     filter = StringProperty(
