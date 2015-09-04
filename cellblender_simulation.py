@@ -992,6 +992,10 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
 
+            export_icon = 'EXPORT'
+            if mcell.cellblender_preferences.lockout_export:
+                export_icon = 'CANCEL'
+
             # Only allow the simulation to be run if both an MCell binary and a
             # project dir have been selected. There also needs to be a main mdl
             # file present.
@@ -1007,14 +1011,14 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                 row = layout.row()
                 row.operator(
                     "mcell.export_project",
-                    text="Export CellBlender Project", icon='EXPORT')
+                    text="Export CellBlender Project", icon=export_icon)
             else:
 
                 row = layout.row(align=True)
                 if mcell.cellblender_preferences.decouple_export_run:
                     row.operator(
                         "mcell.export_project", text="Export CellBlender Project",
-                        icon='EXPORT')
+                        icon=export_icon)
                 row.operator("mcell.run_simulation", text="Run",
                              icon='COLOR_RED')
                 

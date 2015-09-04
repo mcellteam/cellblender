@@ -358,6 +358,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
     double_sided = BoolProperty(name="Show Double Sided Mesh Objects", default=False, update=set_double_sided_callback)
     backface_culling = BoolProperty(name="Backface Culling", default=False, update=set_backface_culling_callback)
 
+    lockout_export = BoolProperty(name="Lockout Exporting of MDL", default=False)
 
 
     def remove_properties ( self, context ):
@@ -453,21 +454,25 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
                 row = box.row()
                 row.prop(mcell.cellblender_preferences, "tab_autocomplete")
-                row = box.row()
-                row.prop(mcell.cellblender_preferences, "show_tool_panel")
-                row = box.row()
-                row.prop(mcell.cellblender_preferences, "show_scene_panel")
-                row = box.row()
-                row.prop(mcell.cellblender_preferences, "show_old_scene_panels")
+
+                #row = box.row()
+                #row.prop(mcell.cellblender_preferences, "show_tool_panel")
+                #row = box.row()
+                #row.prop(mcell.cellblender_preferences, "show_scene_panel")
+                #row = box.row()
+                #row.prop(mcell.cellblender_preferences, "show_old_scene_panels")
 
                 row = box.row()
                 row.prop(mcell.cellblender_preferences, "show_sim_runner_options")
 
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "lockout_export")
 
-                row = box.row()
-                row.label ( "Enable/Disable individual short menu buttons:" )
-                row = box.row()
-                row.prop(mcell.cellblender_preferences, "show_button_num", text="")
+
+                #row = box.row()
+                #row.label ( "Enable/Disable individual short menu buttons:" )
+                #row = box.row()
+                #row.prop(mcell.cellblender_preferences, "show_button_num", text="")
 
 
             else:

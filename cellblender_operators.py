@@ -365,46 +365,51 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
     def execute(self, context):
         print("MCELL_OT_export_project.execute()")
-        print(" Scene name =", context.scene.name)
 
-        # Filter or replace problem characters (like space, ...)
-        scene_name = context.scene.name.replace(" ", "_")
+        if context.scene.mcell.cellblender_preferences.lockout_export:
+            print ( "Exporting is currently locked out. See the Preferences/ExtraOptions panel." )
+            self.report({'INFO'}, "Exporting is Locked Out")
+        else:
+            print(" Scene name =", context.scene.name)
 
-        # Change the actual scene name to the legal MCell Name
-        context.scene.name = scene_name
+            # Filter or replace problem characters (like space, ...)
+            scene_name = context.scene.name.replace(" ", "_")
 
-        mcell = context.scene.mcell
+            # Change the actual scene name to the legal MCell Name
+            context.scene.name = scene_name
 
-        # Force the project directory to be where the .blend file lives
-        model_objects_update(context)
+            mcell = context.scene.mcell
 
-        filepath = project_files_path()
-        os.makedirs(filepath, exist_ok=True)
+            # Force the project directory to be where the .blend file lives
+            model_objects_update(context)
 
-        # Set this for now to have it hopefully propagate until base_name can
-        # be removed
-        mcell.project_settings.base_name = scene_name
+            filepath = project_files_path()
+            os.makedirs(filepath, exist_ok=True)
 
-        #filepath = os.path.join(
-        #   filepath, mcell.project_settings.base_name + ".main.mdl")
-        filepath = os.path.join(filepath, scene_name + ".main.mdl")
-#        bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
-        export_mcell_mdl.save(context, filepath)
+            # Set this for now to have it hopefully propagate until base_name can
+            # be removed
+            mcell.project_settings.base_name = scene_name
 
-        # These two branches of the if statement seem identical ?
+            #filepath = os.path.join(
+            #   filepath, mcell.project_settings.base_name + ".main.mdl")
+            filepath = os.path.join(filepath, scene_name + ".main.mdl")
+    #        bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+            export_mcell_mdl.save(context, filepath)
 
-        #if mcell.export_project.export_format == 'mcell_mdl_unified':
-        #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
-        #                            (mcell.project_settings.base_name +
-        #                            ".main.mdl"))
-        #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
-        #elif mcell.export_project.export_format == 'mcell_mdl_modular':
-        #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
-        #                            (mcell.project_settings.base_name +
-        #                            ".main.mdl"))
-        #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+            # These two branches of the if statement seem identical ?
 
-        self.report({'INFO'}, "Project Exported")
+            #if mcell.export_project.export_format == 'mcell_mdl_unified':
+            #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
+            #                            (mcell.project_settings.base_name +
+            #                            ".main.mdl"))
+            #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+            #elif mcell.export_project.export_format == 'mcell_mdl_modular':
+            #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
+            #                            (mcell.project_settings.base_name +
+            #                            ".main.mdl"))
+            #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+
+            self.report({'INFO'}, "Project Exported")
 
         return {'FINISHED'}
 
