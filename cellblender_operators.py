@@ -728,6 +728,7 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
 
         return {'FINISHED'}
 
+"""
 
 class MCELL_OT_rxn_output_add(bpy.types.Operator):
     bl_idname = "mcell.rxn_output_add"
@@ -764,9 +765,8 @@ class MCELL_OT_rxn_output_remove(bpy.types.Operator):
 
         return {'FINISHED'}
 
-
 def check_rxn_output(self, context):
-    """ Format reaction data output. """
+    # Format reaction data output. 
 
     mcell = context.scene.mcell
     rxn_output_list = mcell.rxn_output.rxn_output_list
@@ -841,7 +841,7 @@ def check_rxn_output(self, context):
     rxn_output.status = status
 
     return
-
+"""
 
 def update_delay(self, context):
     """ Store the release pattern delay as a float if it's legal """

@@ -60,6 +60,43 @@ def unregister():
 
 # Reaction Output Operators:
 
+
+class MCELL_OT_rxn_output_add(bpy.types.Operator):
+    bl_idname = "mcell.rxn_output_add"
+    bl_label = "Add Reaction Data Output"
+    bl_description = "Add new reaction data output to an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.rxn_output.rxn_output_list.add()
+        mcell.rxn_output.active_rxn_output_index = len(
+            mcell.rxn_output.rxn_output_list)-1
+        check_rxn_output(self, context)
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_rxn_output_remove(bpy.types.Operator):
+    bl_idname = "mcell.rxn_output_remove"
+    bl_label = "Remove Reaction Data Output"
+    bl_description = "Remove selected reaction data output from an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.rxn_output.rxn_output_list.remove(
+            mcell.rxn_output.active_rxn_output_index)
+        mcell.rxn_output.active_rxn_output_index -= 1
+        if (mcell.rxn_output.active_rxn_output_index < 0):
+            mcell.rxn_output.active_rxn_output_index = 0
+
+        if mcell.rxn_output.rxn_output_list:
+            check_rxn_output(self, context)
+
+        return {'FINISHED'}
+
+
 class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
     bl_idname = "mcell.plot_rxn_output_generic"
     bl_label = "Plot Reactions"
@@ -189,6 +226,84 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
 # Reaction Output callback functions
 
 
+def check_rxn_output(self, context):
+    """ Format reaction data output. """
+
+    mcell = context.scene.mcell
+    rxn_output_list = mcell.rxn_output.rxn_output_list
+    rxn_output = rxn_output_list[
+        mcell.rxn_output.active_rxn_output_index]
+    mol_list = mcell.molecules.molecule_list
+    reaction_list = mcell.reactions.reaction_name_list
+    molecule_name = rxn_output.molecule_name
+    reaction_name = rxn_output.reaction_name
+    obj_list = mcell.model_objects.object_list
+    object_name = rxn_output.object_name
+    region_name = rxn_output.region_name
+    rxn_output_name = ""
+
+    status = ""
+    if rxn_output.rxn_or_mol == 'Reaction':
+        count_name = reaction_name
+        name_list = reaction_list
+    elif rxn_output.rxn_or_mol == 'Molecule':
+        count_name = molecule_name
+        name_list = mol_list
+    else:
+        count_name = molecule_name
+        rxn_output.status = ""
+        #rxn_output.name = rxn_output.mdl_string
+
+        return
+
+    try:
+        region_list = bpy.data.objects[object_name].mcell.regions.region_list
+    except KeyError:
+        # The object name isn't a blender object
+        region_list = []
+
+
+    # Check for illegal names (Starts with a letter. No special characters.)
+    count_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)"
+    c = re.match(count_filter, count_name)
+    if c is None:
+        status = "Name error: %s" % (count_name)
+    else:
+        # Check for undefined molecule or reaction names
+        c_name = c.group(1)
+        if not c_name in name_list:
+            status = "Undefined: %s" % (c_name)
+
+    # Use different formatting depending on where we are counting
+    if rxn_output.count_location == 'World':
+        rxn_output_name = "Count %s in World" % (count_name)
+    elif rxn_output.count_location == 'Object':
+        if not object_name in obj_list:
+            status = "Undefined object: %s" % object_name
+        else:
+            rxn_output_name = "Count %s in/on %s" % (
+                count_name, object_name)
+    elif rxn_output.count_location == 'Region':
+        if not region_name in region_list:
+            status = "Undefined region: %s" % region_name
+        else:
+            rxn_output_name = "Count %s in/on %s[%s]" % (
+                count_name, object_name, region_name)
+
+    # Only update reaction output if necessary to avoid infinite recursion
+    if rxn_output.name != rxn_output_name:
+        rxn_output.name = rxn_output_name
+
+    # Check for duplicate reaction data
+    rxn_output_keys = rxn_output_list.keys()
+    if rxn_output_keys.count(rxn_output.name) > 1 and not status:
+        status = "Duplicate reaction output: %s" % (rxn_output.name)
+
+    rxn_output.status = status
+
+    return
+
+
 # Reaction Output Panel Classes
 
 
@@ -219,24 +334,24 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
 
 class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     name = StringProperty(
-        name="Reaction Output", update=cellblender_operators.check_rxn_output)
+        name="Reaction Output", update=check_rxn_output)
     molecule_name = StringProperty(
         name="Molecule",
         description="Count the selected molecule.",
-        update=cellblender_operators.check_rxn_output)
+        update=check_rxn_output)
     reaction_name = StringProperty(
         name="Reaction",
         description="Count the selected reaction.",
-        update=cellblender_operators.check_rxn_output)
+        update=check_rxn_output)
     # allows the user to define a literal mdl string to count using complex expressions. E.g. 2*S1 
     mdl_string = StringProperty(
         name="MDL Definition",
         description="Count using a literal MDL definition.",
-        update=cellblender_operators.check_rxn_output)
+        update=check_rxn_output)
     object_name = StringProperty(
-        name="Object", update=cellblender_operators.check_rxn_output)
+        name="Object", update=check_rxn_output)
     region_name = StringProperty(
-        name="Region", update=cellblender_operators.check_rxn_output)
+        name="Region", update=check_rxn_output)
     count_location_enum = [
         ('World', "World", ""),
         ('Object', "Object", ""),
@@ -244,7 +359,7 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     count_location = bpy.props.EnumProperty(
         items=count_location_enum, name="Count Location",
         description="Count all molecules in the selected location.",
-        update=cellblender_operators.check_rxn_output)
+        update=check_rxn_output)
     rxn_or_mol_enum = [
         ('Reaction', "Reaction", ""),
         ('Molecule', "Molecule", ""),
@@ -253,8 +368,8 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         items=rxn_or_mol_enum, name="Count Reaction or Molecule",
         default='Molecule',
         description="Select between counting a reaction or molecule.",
-        update=cellblender_operators.check_rxn_output)
-    # plot_command = StringProperty(name="Command")  # , update=cellblender_operators.check_rxn_output)
+        update=check_rxn_output)
+    # plot_command = StringProperty(name="Command")  # , update=check_rxn_output)
     status = StringProperty(name="Status")
 
     def build_data_model_from_properties ( self, context ):
