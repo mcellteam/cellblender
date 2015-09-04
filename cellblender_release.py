@@ -336,6 +336,80 @@ def update_release_pattern_rxn_name_list():
 
 
 
+"""
+These don't seem to be called anywhere...
+
+def update_delay(self, context):
+    # Store the release pattern delay as a float if it's legal
+
+    mcell = context.scene.mcell
+    release_pattern = mcell.release_patterns.release_pattern_list[
+        mcell.release_patterns.active_release_pattern_index]
+    delay_str = release_pattern.delay_str
+
+    (delay, status) = cellblender_utils.check_val_str(delay_str, 0, None)
+
+    if status == "":
+        release_pattern.delay = delay
+    else:
+        release_pattern.delay_str = "%g" % (release_pattern.delay)
+
+
+def update_release_interval(self, context):
+    # Store the release interval as a float if it's legal
+
+    mcell = context.scene.mcell
+    release_pattern = mcell.release_patterns.release_pattern_list[
+        mcell.release_patterns.active_release_pattern_index]
+    release_interval_str = release_pattern.release_interval_str
+
+    (release_interval, status) = cellblender_utils.check_val_str(
+        release_interval_str, 1e-12, None)
+
+    if status == "":
+        release_pattern.release_interval = release_interval
+    else:
+        release_pattern.release_interval_str = "%g" % (
+            release_pattern.release_interval)
+
+
+def update_train_duration(self, context):
+    # Store the train duration as a float if it's legal
+
+    mcell = context.scene.mcell
+    release_pattern = mcell.release_patterns.release_pattern_list[
+        mcell.release_patterns.active_release_pattern_index]
+    train_duration_str = release_pattern.train_duration_str
+
+    (train_duration, status) = cellblender_utils.check_val_str(train_duration_str, 1e-12, None)
+
+    if status == "":
+        release_pattern.train_duration = train_duration
+    else:
+        release_pattern.train_duration_str = "%g" % (
+            release_pattern.train_duration)
+
+
+def update_train_interval(self, context):
+    # Store the train interval as a float if it's legal
+
+    mcell = context.scene.mcell
+    release_pattern = mcell.release_patterns.release_pattern_list[
+        mcell.release_patterns.active_release_pattern_index]
+    train_interval_str = release_pattern.train_interval_str
+
+    (train_interval, status) = cellblender_utils.check_val_str(train_interval_str, 1e-12, None)
+
+    if status == "":
+        release_pattern.train_interval = train_interval
+    else:
+        release_pattern.train_interval_str = "%g" % (
+            release_pattern.train_interval)
+
+
+"""
+
+
 
 
 class MCELL_UL_check_release_pattern(bpy.types.UIList):
