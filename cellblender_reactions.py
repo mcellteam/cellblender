@@ -93,6 +93,38 @@ class MCELL_OT_reaction_remove(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_add_variable_rate_constant(bpy.types.Operator):
+    """ Create variable rate constant text object from a file.
+
+    Create a text object from an existing text file that represents the
+    variable rate constant. This ensures that the variable rate constant is
+    actually stored in the blend. Although, ultimately, this text object will
+    be exported as another text file in the project directory when the MDLs are
+    exported so it can be used by MCell.
+    """
+
+    bl_idname = "mcell.variable_rate_add"
+    bl_label = "Add Variable Rate Constant"
+    bl_description = "Add a variable rate constant to a reaction."
+    bl_options = {'REGISTER', 'UNDO'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        rxn = mcell.reactions.reaction_list[
+            mcell.reactions.active_rxn_index]
+
+        rxn.load_variable_rate_file ( context, self.filepath )
+
+        return {'FINISHED'}
+
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
 # Reaction callback functions
 
 
