@@ -58,6 +58,7 @@ from . import cellblender_partitions
 from . import cellblender_simulation
 from . import cellblender_mol_viz
 from . import cellblender_reaction_output
+from . import cellblender_meshalyzer
 from . import parameter_system
 from . import data_model
 
@@ -830,7 +831,7 @@ class MCellMoleculeGlyphsPropertyGroup(bpy.types.PropertyGroup):
         print ( "Removing all Molecule Glyph Properties... no collections to remove." )
 
 
-
+"""
 class MCellMeshalyzerPropertyGroup(bpy.types.PropertyGroup):
     object_name = StringProperty(name="Object Name")
     vertices = IntProperty(name="Vertices", default=0)
@@ -846,7 +847,7 @@ class MCellMeshalyzerPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all Meshalyzer Properties... no collections to remove." )
-
+"""
 
 
 class MCellObjectSelectorPropertyGroup(bpy.types.PropertyGroup):
@@ -1616,7 +1617,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     rxn_output = PointerProperty(
         type=cellblender_reaction_output.MCellReactionOutputPropertyGroup, name="Reaction Output")
     meshalyzer = PointerProperty(
-        type=MCellMeshalyzerPropertyGroup, name="CellBlender Project Settings")
+        type=cellblender_meshalyzer.MCellMeshalyzerPropertyGroup, name="CellBlender Meshalyzer")
     object_selector = PointerProperty(
         type=MCellObjectSelectorPropertyGroup,
         name="CellBlender Project Settings")

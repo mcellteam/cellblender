@@ -117,60 +117,6 @@ class MCELL_PT_object_selector(bpy.types.Panel):
             row.operator("mcell.toggle_renderability_filtered",text="Renderability Filtered")
 
 
-class MCELL_PT_meshalyzer(bpy.types.Panel):
-    bl_label = "CellBlender - Mesh Analysis"
-    bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
-    bl_category = "CellBlender"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        layout = self.layout
-        scn = context.scene
-        mcell = context.scene.mcell
-
-        if not mcell.initialized:
-            mcell.draw_uninitialized ( self.layout )
-        else:
-
-            row = layout.row()
-            row.operator("mcell.meshalyzer", text="Analyze Mesh",
-                icon='MESH_ICOSPHERE')
-            row = layout.row()
-            row.operator("mcell.gen_meshalyzer_report",
-                text="Generate Analysis Report",icon="MESH_ICOSPHERE")
-
-            if (mcell.meshalyzer.status != ""):
-                row = layout.row()
-                row.label(text=mcell.meshalyzer.status, icon='ERROR')
-            row = layout.row()
-            row.label(text="Object Name: %s" % (mcell.meshalyzer.object_name))
-            row = layout.row()
-            row.label(text="Vertices: %d" % (mcell.meshalyzer.vertices))
-            row = layout.row()
-            row.label(text="Edges: %d" % (mcell.meshalyzer.edges))
-            row = layout.row()
-            row.label(text="Faces: %d" % (mcell.meshalyzer.faces))
-            row = layout.row()
-            row.label(text="Surface Area: %.5g" % (mcell.meshalyzer.area))
-            row = layout.row()
-            if (mcell.meshalyzer.watertight == 'Watertight Mesh'):
-              row.label(text="Volume: %.5g" % (mcell.meshalyzer.volume))
-            else:
-              row.label(text="Volume: approx: %.5g" % (mcell.meshalyzer.volume))
-            row = layout.row()
-            row.label(text="SA/V Ratio: %.5g" % (mcell.meshalyzer.sav_ratio))
-
-            row = layout.row()
-            row.label(text="Mesh Topology:")
-            row = layout.row()
-            row.label(text="      %s" % (mcell.meshalyzer.watertight))
-            row = layout.row()
-            row.label(text="      %s" % (mcell.meshalyzer.manifold))
-            row = layout.row()
-            row.label(text="      %s" % (mcell.meshalyzer.normal_status))
-
-
 
 
 ############### DB: The following two classes are included to create a parameter input panel: only relevant for BNG, SBML or other model import #################
