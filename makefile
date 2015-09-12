@@ -76,6 +76,7 @@ install: cellblender.zip
 	  unzip -o cellblender.zip -d $(INSTALL_DIR); \
 	  cp test_suite/cellblender_test_suite.py $(INSTALL_DIR); \
 	  cp test_suite/capsule_test.py $(INSTALL_DIR); \
+	  cp developer_utilities/NeuronBuilderMeta.py $(INSTALL_DIR); \
 	fi
 	@echo ===========================================================
 	@cat $(INSTALL_DIR)cellblender/cellblender_id.py
