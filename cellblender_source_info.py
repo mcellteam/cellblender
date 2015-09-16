@@ -37,6 +37,8 @@ cellblender_info = {
         "sim_runner_queue.py",
         "run_wrapper.py",
 
+        "cellblender_legacy.py",
+
         "icons"+os.sep+"cellblender_icon.png",
         "icons"+os.sep+"mol_sel.png",
         "icons"+os.sep+"mol_unsel.png",

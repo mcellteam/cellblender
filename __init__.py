@@ -70,6 +70,7 @@ if "bpy" in locals():
     imp.reload(cellblender_simulation)
     imp.reload(cellblender_mol_viz)
     imp.reload(cellblender_meshalyzer)
+    imp.reload(cellblender_legacy)
     imp.reload(object_surface_regions)
     imp.reload(run_simulations)
     imp.reload(io_mesh_mcell_mdl)
@@ -106,6 +107,7 @@ else:
     from . import cellblender_simulation
     from . import cellblender_mol_viz
     from . import cellblender_meshalyzer
+    from . import cellblender_legacy
     from . import object_surface_regions
     from . import run_simulations
     from . import io_mesh_mcell_mdl

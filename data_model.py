@@ -323,7 +323,7 @@ def upgrade_RC3_properties_from_data_model ( context ):
           dm = cellblender.data_model.unpickle_data_model ( mcell['data_model'] )
       else:
           print ( "No data model in RC3 file ... building a data model and then recreating properties." )
-          dm = mcell.build_data_model_from_RC3_ID_properties ( context )
+          dm = mcell.legacy.build_data_model_from_RC3_ID_properties ( context )
 
       # Save any preferences that are stored in properties but not in the Data Model
       mp = save_mcell_preferences ( mcell )
