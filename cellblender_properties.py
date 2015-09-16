@@ -422,6 +422,35 @@ def scene_loaded(dummy):
 
 
 
+class MCELL_OT_upgrade(bpy.types.Operator):
+    """This is the Upgrade operator called when the user presses the "Upgrade" button"""
+    bl_idname = "mcell.upgrade"
+    bl_label = "Upgrade Blend File"
+    bl_description = "Upgrade the data from a previous version of CellBlender"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+
+        print ( "Upgrade Operator called" )
+        data_model.upgrade_properties_from_data_model ( context )
+        return {'FINISHED'}
+
+
+class MCELL_OT_delete(bpy.types.Operator):
+    """This is the Delete operator called when the user presses the "Delete Properties" button"""
+    bl_idname = "mcell.delete"
+    bl_label = "Delete CellBlender Collection Properties"
+    bl_description = "Delete CellBlender Collection Properties"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        print ( "Deleting CellBlender Collection Properties" )
+        mcell = context.scene.mcell
+        mcell.remove_properties(context)
+        print ( "Finished Deleting CellBlender Collection Properties" )
+        return {'FINISHED'}
+
+
 
 class CBM_OT_refresh_operator(bpy.types.Operator):
     bl_idname = "cbm.refresh_operator"

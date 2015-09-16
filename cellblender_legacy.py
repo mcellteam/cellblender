@@ -84,6 +84,21 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 
+class MCELL_OT_upgradeRC3(bpy.types.Operator):
+    """This is the Upgrade operator called when the user presses the "Upgrade" button"""
+    bl_idname = "mcell.upgraderc3"
+    bl_label = "Upgrade RC3/4 Blend File"
+    bl_description = "Upgrade the data from an RC3/4 version of CellBlender"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+
+        print ( "Upgrade RC3 Operator called" )
+        data_model.upgrade_RC3_properties_from_data_model ( context )
+        return {'FINISHED'}
+
+
+
 
 class MCellLegacyGroup(bpy.types.PropertyGroup):
 
