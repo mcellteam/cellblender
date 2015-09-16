@@ -161,6 +161,8 @@ def show_hide_scene_panel ( show=True ):
 
 
 
+# Callback Functions must be defined before being used:
+
 
 from . import cellblender_panels
 
@@ -206,8 +208,6 @@ def set_tool_panel_callback(self, context):
         show_hide_tool_panel ( True )
 
 
-# Callback Functions must be defined before being used:
-
 def set_tab_autocomplete_callback ( self, context ):
     # print ( "Called with self.tab_autocomplete = " + str(self.tab_autocomplete) )
     if self.tab_autocomplete:
@@ -242,6 +242,16 @@ def save_preferences(self, context):
     return None
 
 
+from bpy.types import Menu
+
+class MCELL_MT_presets(Menu):
+    bl_label = "CellBlender Presets"
+    preset_subdir = "cellblender"
+    preset_operator = "script.execute_preset"
+    draw = Menu.draw_preset
+
+
+
 
 @persistent
 def load_preferences(context):
@@ -264,6 +274,7 @@ def load_preferences(context):
             exec(preset_string)
     except TypeError:
         print('No preset file found')
+
 
 
 class MCELL_OT_save_preferences(AddPresetBase, bpy.types.Operator):

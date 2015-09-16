@@ -24,7 +24,7 @@ This script draws the panels and other UI elements for CellBlender.
 
 # blender imports
 import bpy
-from bpy.types import Menu
+#from bpy.types import Menu
 
 
 # python imports
@@ -43,14 +43,6 @@ def register():
 
 def unregister():
     bpy.utils.unregister_module(__name__)
-
-
-class MCELL_MT_presets(Menu):
-    bl_label = "CellBlender Presets"
-    preset_subdir = "cellblender"
-    preset_operator = "script.execute_preset"
-    draw = Menu.draw_preset
-
 
 
 class MCELL_PT_project_settings(bpy.types.Panel):
