@@ -62,7 +62,8 @@ def register_test ( test_groups, group_name, test_name, operator_name, next_test
             print ( "================================================================================================" )
             bpy.ops.wm.quit_blender()
 
-    test_groups[found]["group_tests"].append ( { "test_name":test_name, "operator_name":operator_name } )
+    test_num = 1 + len(test_groups[found]["group_tests"])
+    test_groups[found]["group_tests"].append ( { "test_name":str(test_num)+". "+test_name, "operator_name":operator_name } )
     
     return next_test_group_num
     
