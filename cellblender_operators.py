@@ -292,65 +292,6 @@ def init_properties(context):
         mcell.initialized = True
 
 
-
-class MCELL_OT_export_project(bpy.types.Operator):
-    bl_idname = "mcell.export_project"
-    bl_label = "Export CellBlender Project"
-    bl_description = "Export CellBlender Project"
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-        print("MCELL_OT_export_project.execute()")
-
-        if context.scene.mcell.cellblender_preferences.lockout_export:
-            print ( "Exporting is currently locked out. See the Preferences/ExtraOptions panel." )
-            self.report({'INFO'}, "Exporting is Locked Out")
-        else:
-            print(" Scene name =", context.scene.name)
-
-            # Filter or replace problem characters (like space, ...)
-            scene_name = context.scene.name.replace(" ", "_")
-
-            # Change the actual scene name to the legal MCell Name
-            context.scene.name = scene_name
-
-            mcell = context.scene.mcell
-
-            # Force the project directory to be where the .blend file lives
-            cellblender_objects.model_objects_update(context)
-
-            filepath = project_files_path()
-            os.makedirs(filepath, exist_ok=True)
-
-            # Set this for now to have it hopefully propagate until base_name can
-            # be removed
-            mcell.project_settings.base_name = scene_name
-
-            #filepath = os.path.join(
-            #   filepath, mcell.project_settings.base_name + ".main.mdl")
-            filepath = os.path.join(filepath, scene_name + ".main.mdl")
-    #        bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
-            export_mcell_mdl.save(context, filepath)
-
-            # These two branches of the if statement seem identical ?
-
-            #if mcell.export_project.export_format == 'mcell_mdl_unified':
-            #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
-            #                            (mcell.project_settings.base_name +
-            #                            ".main.mdl"))
-            #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
-            #elif mcell.export_project.export_format == 'mcell_mdl_modular':
-            #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
-            #                            (mcell.project_settings.base_name +
-            #                            ".main.mdl"))
-            #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
-
-            self.report({'INFO'}, "Project Exported")
-
-        return {'FINISHED'}
-
-
-
 import sys, traceback
 
 

@@ -45,19 +45,6 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 
-class MCELL_PT_project_settings(bpy.types.Panel):
-    bl_label = "CellBlender - Project Settings"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw ( self, context ):
-        # Call the draw function of the object itself
-        context.scene.mcell.project_settings.draw_panel ( context, self )
-
-
-
 class MCELL_PT_object_selector(bpy.types.Panel):
     bl_label = "CellBlender - Object Selector"
     bl_space_type = "VIEW_3D"

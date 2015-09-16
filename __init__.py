@@ -57,6 +57,7 @@ if "bpy" in locals():
 
     imp.reload(parameter_system)
     imp.reload(cellblender_preferences)
+    imp.reload(cellblender_project)
     imp.reload(cellblender_initialization)
 
     imp.reload(cellblender_objects)
@@ -92,6 +93,7 @@ else:
 
     from . import parameter_system
     from . import cellblender_preferences
+    from . import cellblender_project
     from . import cellblender_initialization
 
     from . import cellblender_objects
@@ -147,7 +149,7 @@ def register():
 
     # Unregister and re-register panels to display them in order
     bpy.utils.unregister_class(cellblender_preferences.MCELL_PT_cellblender_preferences)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
+    bpy.utils.unregister_class(cellblender_project.MCELL_PT_project_settings)
     bpy.utils.unregister_class(cellblender_simulation.MCELL_PT_run_simulation)         # Need to unregister because it's registered automatically
     bpy.utils.unregister_class(cellblender_simulation.MCELL_PT_run_simulation_queue)
     bpy.utils.unregister_class(cellblender_mol_viz.MCELL_PT_viz_results)
@@ -170,7 +172,7 @@ def register():
     # TMB: Don't re-register here to disable all individual panels in old panel system
 
 #    bpy.utils.register_class(cellblender_preferences.MCELL_PT_cellblender_preferences)
-#    bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
+#    bpy.utils.register_class(cellblender_project.MCELL_PT_project_settings)
 #    bpy.utils.register_class(cellblender_simulation.MCELL_PT_run_simulation)
 #    bpy.utils.register_class(cellblender_simulation.MCELL_PT_run_simulation_queue)
 #    bpy.utils.register_class(cellblender_mol_viz.MCELL_PT_viz_results)

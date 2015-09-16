@@ -49,6 +49,7 @@ from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
 from bpy.app.handlers import persistent
 
 from . import cellblender_preferences
+from . import cellblender_project
 from . import cellblender_initialization
 from . import cellblender_objects
 from . import cellblender_molecules
@@ -65,9 +66,6 @@ from . import data_model
 
 # python imports
 import os
-#from multiprocessing import cpu_count
-
-from cellblender.cellblender_utils import project_files_path
 
 # we use per module class registration/unregistration
 def register():
@@ -164,92 +162,6 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
         print ( "Calling check_mod_surf_regions on object named: " + self.object_name )
         cellblender_operators.check_mod_surf_regions(self, context)
         
-
-
-
-
-#class MCellScratchPropertyGroup(bpy.types.PropertyGroup):
-#    show_all_icons = BoolProperty(
-#        name="Show All Icons",
-#        description="Show all Blender icons and their names",
-#        default=False)
-#    print_all_icons = BoolProperty(
-#        name="Print All Icon Names",
-#        description="Print all Blender icon names (helpful for searching)",
-#        default=False)
-
-
-class MCellProjectPropertyGroup(bpy.types.PropertyGroup):
-    base_name = StringProperty(
-        name="Project Base Name", default="cellblender_project")
-
-    status = StringProperty(name="Status")
-
-    def draw_layout (self, context, layout):
-        mcell = context.scene.mcell
-
-        if not mcell.initialized:
-            mcell.draw_uninitialized ( layout )
-        else:
-
-            row = layout.row()
-            split = row.split(0.96)
-            col = split.column()
-            col.label(text="CellBlender ID: "+cellblender.cellblender_info['cellblender_source_sha1'])
-            col = split.column()
-            col.prop ( mcell, "refresh_source_id", icon='FILE_REFRESH', text="" )
-            if 'cellblender_source_id_from_file' in cellblender.cellblender_info:
-                # This means that the source ID didn't match the refreshed version
-                # Draw a second line showing the original file ID as an error
-                row = layout.row()
-                row.label("File ID: " + cellblender.cellblender_info['cellblender_source_id_from_file'], icon='ERROR')
-
-            # if not mcell.versions_match:
-            if not cellblender.cellblender_info['versions_match']:
-                # Version in Blend file does not match Addon, so give user a button to upgrade if desired
-                row = layout.row()
-                row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
-
-                row = layout.row()
-                row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
-                #row = layout.row()
-                #row.operator ( "mcell.delete", text="Delete CellBlender Collection Properties", icon='RADIO' )
-
-                row = layout.row()
-                row.label ( "Note: Saving this file will FORCE an upgrade!!!", icon='ERROR' )
-
-            row = layout.row()
-            if not bpy.data.filepath:
-                row.label(
-                    text="No Project Directory: Use File/Save or File/SaveAs",
-                    icon='UNPINNED')
-            else:
-                row.label(
-                    text="Project Directory: " + os.path.dirname(bpy.data.filepath),
-                    icon='FILE_TICK')
-
-            row = layout.row()
-            layout.prop(context.scene, "name", text="Project Base Name")
-
-    def remove_properties ( self, context ):
-        print ( "Removing all Preferences Properties... no collections to remove." )
-
-    def draw_panel ( self, context, panel ):
-        """ Create a layout from the panel and draw into it """
-        layout = panel.layout
-        self.draw_layout ( context, layout )
-
-
-class MCellExportProjectPropertyGroup(bpy.types.PropertyGroup):
-    export_format_enum = [
-        ('mcell_mdl_unified', "Single Unified MCell MDL File", ""),
-        ('mcell_mdl_modular', "Modular MCell MDL Files", "")]
-    export_format = EnumProperty(items=export_format_enum,
-                                 name="Export Format",
-                                 default='mcell_mdl_modular')
-
-    def remove_properties ( self, context ):
-        print ( "Removing all Export Project Properties... no collections to remove." )
 
 
 
@@ -1065,9 +977,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=cellblender_preferences.CellBlenderPreferencesPropertyGroup,
         name="CellBlender Preferences")
     project_settings = PointerProperty(
-        type=MCellProjectPropertyGroup, name="CellBlender Project Settings")
+        type=cellblender_project.MCellProjectPropertyGroup, name="CellBlender Project Settings")
     export_project = PointerProperty(
-        type=MCellExportProjectPropertyGroup, name="Export Simulation")
+        type=cellblender_project.MCellExportProjectPropertyGroup, name="Export Simulation")
     run_simulation = PointerProperty(
         type=cellblender_simulation.MCellRunSimulationPropertyGroup, name="Run Simulation")
     mol_viz = PointerProperty(

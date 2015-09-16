@@ -20,6 +20,7 @@ cellblender_info = {
 
         "parameter_system.py",
         "cellblender_preferences.py",
+        "cellblender_project.py",
         "cellblender_initialization.py",
         "cellblender_molecules.py",
         "cellblender_reactions.py",
