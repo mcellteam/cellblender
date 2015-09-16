@@ -54,7 +54,7 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 
-# Reaction Operators:
+# Model Object Operators:
 
 class MCELL_OT_model_objects_add(bpy.types.Operator):
     bl_idname = "mcell.model_objects_add"
@@ -116,6 +116,105 @@ class MCELL_OT_model_objects_remove(bpy.types.Operator):
         model_objects_update(context)
 
         return {'FINISHED'}
+
+
+
+class MCELL_OT_select_filtered(bpy.types.Operator):
+    bl_idname = "mcell.select_filtered"
+    bl_label = "Select Filtered"
+    bl_description = "Select objects matching the filter"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        scn = context.scene
+        mcell = scn.mcell
+        objs = scn.objects
+
+        filter = mcell.object_selector.filter
+
+        for obj in objs:
+            if obj.type == 'MESH':
+                m = re.match(filter, obj.name)
+                if m is not None:
+                    if m.end() == len(obj.name):
+                        obj.select = True
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_deselect_filtered(bpy.types.Operator):
+    bl_idname = "mcell.deselect_filtered"
+    bl_label = "Deselect Filtered"
+    bl_description = "Deselect objects matching the filter"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        scn = context.scene
+        mcell = scn.mcell
+        objs = scn.objects
+
+        filter = mcell.object_selector.filter
+
+        for obj in objs:
+            if obj.type == 'MESH':
+                m = re.match(filter, obj.name)
+                if m is not None:
+                    if m.end() == len(obj.name):
+                        obj.select = False
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_toggle_visibility_filtered(bpy.types.Operator):
+  bl_idname = "mcell.toggle_visibility_filtered"
+  bl_label = "Visibility Filtered"
+  bl_description = "Toggle visibility of objects matching the filter"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self,context):
+
+    scn = context.scene
+    mcell = scn.mcell
+    objs = scn.objects
+
+    filter = mcell.object_selector.filter
+
+    for obj in objs:
+      if obj.type == 'MESH':
+        m = re.match(filter,obj.name)
+        if m != None:
+          if m.end() == len(obj.name):
+            obj.hide = not obj.hide
+
+    return {'FINISHED'}
+
+
+class MCELL_OT_toggle_renderability_filtered(bpy.types.Operator):
+  bl_idname = "mcell.toggle_renderability_filtered"
+  bl_label = "Renderability Filtered"
+  bl_description = "Toggle renderability of objects matching the filter"
+  bl_options = {'REGISTER', 'UNDO'}
+
+  def execute(self,context):
+
+    scn = context.scene
+    mcell = scn.mcell
+    objs = scn.objects
+
+    filter = mcell.object_selector.filter
+
+    for obj in objs:
+      if obj.type == 'MESH':
+        m = re.match(filter,obj.name)
+        if m != None:
+          if m.end() == len(obj.name):
+            obj.hide_render= not obj.hide_render
+
+    return {'FINISHED'}
+
+
 
 
 # Model Objects callback functions
