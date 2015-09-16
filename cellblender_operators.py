@@ -225,28 +225,3 @@ def check_active_mod_surf_regions(self, context):
     return
 
 
-
-@persistent
-def mcell_valid_update(context):
-    """ Check whether the mcell executable in the .blend file is valid """
-    print ( "load post handler: cellblender_operators.mcell_valid_update() called" )
-    if not context:
-        context = bpy.context
-    mcell = context.scene.mcell
-    binary_path = mcell.cellblender_preferences.mcell_binary
-    mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
-    # print ( "mcell_binary_valid = ", mcell.cellblender_preferences.mcell_binary_valid )
-
-
-@persistent
-def init_properties(context):
-    """ Initialize MCell properties if not already initialized """
-    print ( "load post handler: cellblender_operators.init_properties() called" )
-    if not context:
-        context = bpy.context
-    mcell = context.scene.mcell
-    if not mcell.initialized:
-        mcell.init_properties()
-        mcell.initialized = True
-
-

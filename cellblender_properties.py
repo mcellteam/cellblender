@@ -78,6 +78,41 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 
+
+
+# Two callbacks that had been in cellblender_operators:
+
+from . import cellblender_utils
+#from cellblender.cellblender_utils import project_files_path
+from cellblender.cellblender_utils import project_files_path
+from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
+
+@persistent
+def mcell_valid_update(context):
+    """ Check whether the mcell executable in the .blend file is valid """
+    print ( "load post handler: cellblender_operators.mcell_valid_update() called" )
+    if not context:
+        context = bpy.context
+    mcell = context.scene.mcell
+    binary_path = mcell.cellblender_preferences.mcell_binary
+    mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
+    # print ( "mcell_binary_valid = ", mcell.cellblender_preferences.mcell_binary_valid )
+
+
+@persistent
+def init_properties(context):
+    """ Initialize MCell properties if not already initialized """
+    print ( "load post handler: cellblender_operators.init_properties() called" )
+    if not context:
+        context = bpy.context
+    mcell = context.scene.mcell
+    if not mcell.initialized:
+        mcell.init_properties()
+        mcell.initialized = True
+
+
+
+
 #Custom Properties
 
 class MCellStringProperty(bpy.types.PropertyGroup):
