@@ -59,6 +59,7 @@ if "bpy" in locals():
     imp.reload(cellblender_preferences)
     imp.reload(cellblender_initialization)
 
+    imp.reload(cellblender_objects)
     imp.reload(cellblender_molecules)
     imp.reload(cellblender_reactions)
     imp.reload(cellblender_release)
@@ -93,6 +94,7 @@ else:
     from . import cellblender_preferences
     from . import cellblender_initialization
 
+    from . import cellblender_objects
     from . import cellblender_molecules
     from . import cellblender_reactions
     from . import cellblender_release
@@ -149,7 +151,7 @@ def register():
     bpy.utils.unregister_class(cellblender_simulation.MCELL_PT_run_simulation)         # Need to unregister because it's registered automatically
     bpy.utils.unregister_class(cellblender_simulation.MCELL_PT_run_simulation_queue)
     bpy.utils.unregister_class(cellblender_mol_viz.MCELL_PT_viz_results)
-    bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
+    bpy.utils.unregister_class(cellblender_objects.MCELL_PT_model_objects)
     bpy.utils.unregister_class(cellblender_partitions.MCELL_PT_partitions)
     bpy.utils.unregister_class(cellblender_initialization.MCELL_PT_initialization)
     # bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_parameters)
@@ -271,7 +273,7 @@ def register():
     # Add the load_post handlers
     add_handler ( bpy.app.handlers.load_post, data_model.load_post )
     add_handler ( bpy.app.handlers.load_post, cellblender_simulation.clear_run_list )
-    add_handler ( bpy.app.handlers.load_post, cellblender_operators.model_objects_update )
+    add_handler ( bpy.app.handlers.load_post, cellblender_objects.model_objects_update )
     add_handler ( bpy.app.handlers.load_post, object_surface_regions.object_regions_format_update )
     add_handler ( bpy.app.handlers.load_post, cellblender_operators.mcell_valid_update )
     # add_handler ( bpy.app.handlers.load_post, cellblender_operators.set_defaults )
@@ -289,7 +291,7 @@ def register():
 
     # Add the save_pre handlers
     add_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
-    add_handler ( bpy.app.handlers.save_pre, cellblender_operators.model_objects_update )
+    add_handler ( bpy.app.handlers.save_pre, cellblender_objects.model_objects_update )
 
     # Register atexit function to shutdown simulation queue before quitting Blender
     atexit.register(simulation_queue.shutdown)
@@ -303,7 +305,7 @@ def unregister():
     remove_handler ( bpy.app.handlers.load_pre,         cellblender_properties.report_load_pre )
     remove_handler ( bpy.app.handlers.load_post, data_model.load_post )
     remove_handler ( bpy.app.handlers.load_post, cellblender_simulation.clear_run_list )
-    remove_handler ( bpy.app.handlers.load_post, cellblender_operators.model_objects_update )
+    remove_handler ( bpy.app.handlers.load_post, cellblender_objects.model_objects_update )
     remove_handler ( bpy.app.handlers.load_post, object_surface_regions.object_regions_format_update )
     remove_handler ( bpy.app.handlers.load_post, cellblender_operators.mcell_valid_update )
     
@@ -316,7 +318,7 @@ def unregister():
     remove_handler ( bpy.app.handlers.load_post, cellblender_mol_viz.read_viz_data_load_post )
     remove_handler ( bpy.app.handlers.scene_update_pre, cellblender_properties.scene_loaded )
     remove_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
-    remove_handler ( bpy.app.handlers.save_pre, cellblender_operators.model_objects_update )
+    remove_handler ( bpy.app.handlers.save_pre, cellblender_objects.model_objects_update )
 
     bpy.utils.unregister_module(__name__)
 

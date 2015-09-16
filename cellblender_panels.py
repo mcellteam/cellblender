@@ -66,33 +66,6 @@ class MCELL_PT_project_settings(bpy.types.Panel):
 
 
 
-class MCELL_UL_model_objects(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data,
-                  active_propname, index):
-
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            # Would like to lay out the actual object name so it can be changed right there.
-            # But this has many "trickle down" effects so it hasn't been done yet.
-            # layout.prop(item, 'name', text="", icon='FILE_TICK')
-            # layout.prop(bpy.data.objects[item.name], 'name', text="", icon='FILE_TICK')
-            layout.label(item.name, icon='FILE_TICK')
-
-
-class MCELL_PT_model_objects(bpy.types.Panel):
-    bl_label = "CellBlender - Model Objects"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.model_objects.draw_panel ( context, self )
-
-
-
-
 class MCELL_PT_object_selector(bpy.types.Panel):
     bl_label = "CellBlender - Object Selector"
     bl_space_type = "VIEW_3D"

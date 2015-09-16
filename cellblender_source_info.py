@@ -30,6 +30,7 @@ cellblender_info = {
         "cellblender_simulation.py",
         "cellblender_mol_viz.py",
         "cellblender_meshalyzer.py",
+        "cellblender_objects.py",
         "object_surface_regions.py",
         "run_simulations.py",
         "sim_runner_queue.py",

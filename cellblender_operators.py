@@ -44,6 +44,7 @@ import cellblender
 from . import data_model
 from . import cellblender_preferences
 from . import cellblender_release
+from . import cellblender_objects
 # import cellblender.data_model
 # import cellblender_source_info
 from . import cellblender_utils
@@ -316,7 +317,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
             mcell = context.scene.mcell
 
             # Force the project directory to be where the .blend file lives
-            model_objects_update(context)
+            cellblender_objects.model_objects_update(context)
 
             filepath = project_files_path()
             os.makedirs(filepath, exist_ok=True)
@@ -449,153 +450,6 @@ class MCELL_OT_toggle_renderability_filtered(bpy.types.Operator):
 
     return {'FINISHED'}
 
-
-# Rebuild Model Objects List from Scratch
-#   This is required to catch changes in names of objects.
-#   Note: This function is also registered as a load_post and save_pre handler
-@persistent
-def model_objects_update(context):
-    # print ( "cellblender_operators.model_objects_update() called" )
-    if not context:
-        context = bpy.context
-
-    mcell = context.scene.mcell
-    mobjs = mcell.model_objects
-    sobjs = context.scene.objects
-
-    model_obj_names = [obj.name for obj in sobjs if obj.mcell.include]
-
-    # Note: This bit only needed to convert
-    #       old model object list (pre 0.1 rev_55) to new style.
-    #       Old style did not have obj.mcell.include Boolean Property.
-    if ((len(model_obj_names) == 0) & (len(mobjs.object_list) > 0)):
-        for i in range(len(mobjs.object_list)-1):
-            obj = sobjs.get(mobjs.object_list[i].name)
-            if obj:
-                obj.mcell.include = True
-        model_obj_names = [
-            obj.name for obj in sobjs if obj.mcell.include]
-
-    # Update the model object list from objects marked obj.mcell.include = True
-    if (len(model_obj_names) > 0):
-        model_obj_names.sort()
-
-        for i in range(len(mobjs.object_list)-1, -1, -1):
-            mobjs.object_list.remove(i)
-
-        active_index = mobjs.active_obj_index
-        for obj_name in model_obj_names:
-            mobjs.object_list.add()
-            mobjs.active_obj_index = len(mobjs.object_list)-1
-            mobjs.object_list[mobjs.active_obj_index].name = obj_name
-            scene_object = sobjs[obj_name]
-            # Set an error status if object is not triangulated
-            for face in scene_object.data.polygons:
-                if not (len(face.vertices) == 3):
-                    status = "Object is not triangulated: %s" % (obj_name)
-                    mobjs.object_list[mobjs.active_obj_index].status = status
-                    break
-
-        mobjs.active_obj_index = active_index
-
-        # We check release sites are valid here in case a user adds an object
-        # referenced in a release site after adding the release site itself.
-        # (e.g. Add Cube shaped release site. Then add Cube.)
-        release_list = mcell.release_sites.mol_release_list
-        save_release_idx = mcell.release_sites.active_release_index
-        # check_release_site_wrapped acts on the active release site, so we
-        # need to increment it and then check
-        for rel_idx, _ in enumerate(release_list):
-            mcell.release_sites.active_release_index = rel_idx
-            cellblender_release.check_release_site_wrapped(context)
-        # Restore the active index
-        mcell.release_sites.active_release_index = save_release_idx
-
-    return
-
-
-class MCELL_OT_model_objects_add(bpy.types.Operator):
-    bl_idname = "mcell.model_objects_add"
-    bl_label = "Model Objects Include"
-    bl_description = ("Include objects selected in 3D View Window in Model "
-                      "Objects export list")
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-
-        mcell = context.scene.mcell
-        # From the list of selected objects, only add MESH objects.
-        objs = [obj for obj in context.selected_objects if obj.type == 'MESH']
-        for obj in objs:
-            bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.mesh.select_all(action='SELECT')
-            bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY',
-                                               ngon_method='BEAUTY')
-            bpy.ops.object.mode_set(mode='OBJECT')
-            obj.mcell.include = True
-
-        model_objects_update(context)
-
-#        for obj in objs:
-#            # Prevent duplicate entries
-#            if not obj.name in mcell.model_objects.object_list:
-#                mcell.model_objects.object_list.add()
-#                mcell.model_objects.active_obj_index = len(
-#                    mcell.model_objects.object_list)-1
-#                mcell.model_objects.object_list[
-#                    mcell.model_objects.active_obj_index].name = obj.name
-
-
-        return {'FINISHED'}
-
-
-class MCELL_OT_model_objects_remove(bpy.types.Operator):
-    bl_idname = "mcell.model_objects_remove"
-    bl_label = "Model Objects Remove"
-    bl_description = "Remove selected item from Model Objects export list"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-
-        mcell = context.scene.mcell
-        mobjs = mcell.model_objects
-        sobjs = context.scene.objects
-
-        if (len(mobjs.object_list) > 0):
-            obj = sobjs.get(mobjs.object_list[mobjs.active_obj_index].name)
-            if obj:
-                obj.mcell.include = False
-
-                mobjs.object_list.remove(mobjs.active_obj_index)
-                mobjs.active_obj_index -= 1
-                if (mobjs.active_obj_index < 0):
-                    mobjs.active_obj_index = 0
-        
-        model_objects_update(context)
-
-        return {'FINISHED'}
-
-
-def check_model_object(self, context):
-    """Checks for illegal object name"""
-
-    mcell = context.scene.mcell
-    model_object_list = mcell.model_objects.object_list
-    model_object = model_object_list[mcell.model_objects.active_obj_index]
-
-    # print ("Checking name " + model_object.name )
-
-    status = ""
-
-    # Check for illegal names (Starts with a letter. No special characters.)
-    model_object_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
-    m = re.match(model_object_filter, model_object.name)
-    if m is None:
-        status = "Object name error: %s" % (model_object.name)
-
-    model_object.status = status
-
-    return
 
 
 class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
