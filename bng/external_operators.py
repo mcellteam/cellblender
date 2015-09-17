@@ -6,7 +6,8 @@ import subprocess
 import json
 import sys
 import cellblender
-from cellblender import cellblender_properties, cellblender_operators
+from cellblender import cellblender_properties
+#from cellblender import cellblender_operators
 from collections import defaultdict
 #from . import net
 

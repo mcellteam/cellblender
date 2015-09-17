@@ -2,7 +2,8 @@ import bpy
 import os
 import subprocess
 
-from cellblender import cellblender_properties, cellblender_operators
+from cellblender import cellblender_properties
+#from cellblender import cellblender_operators
 #from . import net
 
 # We use per module class registration/unregistration
