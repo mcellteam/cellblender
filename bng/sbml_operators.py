@@ -3,6 +3,8 @@ import os
 
 from . import sbml2blender
 
+import platform
+
 
 
 
@@ -38,9 +40,14 @@ def execute_externally(filepath,context):
     else:
         python_path = shutil.which("python", mode=os.X_OK)
     destpath = os.path.dirname(__file__)
-    subprocess.call([python_path,destpath + '{0}sbml2json.py'.format(os.sep),'-i',filepath])
-   
-def execute_sbml2blender(filepath,context,addObjects=True):
+    #subprocess.call([python_path,destpath + '{0}sbml2json.py'.format(os.sep),'-i',filepath])
+    if platform.system() == "Windows":
+        subprocess.call([os.path.join(destpath, 'bin', 'sbml2json.exe'), '-i', filepath])
+    else:
+        subprocess.call([os.path.join(destpath, 'bin', 'sbml2json'), '-i', filepath])
+
+
+def execute_sbml2blender(filepath, context, addObjects=True):
     mcell = context.scene.mcell
-    sbml2blender.sbml2blender(filepath,addObjects)
+    sbml2blender.sbml2blender(filepath, addObjects)
 
