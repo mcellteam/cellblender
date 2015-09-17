@@ -51,7 +51,7 @@ if "bpy" in locals():
     import imp
     imp.reload(data_model)
 
-    imp.reload(cellblender_properties)
+    imp.reload(cellblender_main)
 
     imp.reload(parameter_system)
     imp.reload(cellblender_preferences)
@@ -87,7 +87,7 @@ else:
     print("Importing CellBlender")
     from . import data_model
 
-    from . import cellblender_properties
+    from . import cellblender_main
 
     from . import parameter_system
     from . import cellblender_preferences
@@ -211,7 +211,7 @@ def register():
 
 
     bpy.types.Scene.mcell = bpy.props.PointerProperty(
-        type=cellblender_properties.MCellPropertyGroup)
+        type=cellblender_main.MCellPropertyGroup)
     bpy.types.Object.mcell = bpy.props.PointerProperty(
         type=object_surface_regions.MCellObjectPropertyGroup)
 
@@ -268,20 +268,20 @@ def register():
     add_handler ( bpy.app.handlers.frame_change_pre, cellblender_mol_viz.frame_change_handler )
 
     # Add the load_pre handlers
-    add_handler ( bpy.app.handlers.load_pre, cellblender_properties.report_load_pre )
+    add_handler ( bpy.app.handlers.load_pre, cellblender_main.report_load_pre )
 
     # Add the load_post handlers
     add_handler ( bpy.app.handlers.load_post, data_model.load_post )
     add_handler ( bpy.app.handlers.load_post, cellblender_simulation.clear_run_list )
     add_handler ( bpy.app.handlers.load_post, cellblender_objects.model_objects_update )
     add_handler ( bpy.app.handlers.load_post, object_surface_regions.object_regions_format_update )
-    add_handler ( bpy.app.handlers.load_post, cellblender_properties.mcell_valid_update )
+    add_handler ( bpy.app.handlers.load_post, cellblender_main.mcell_valid_update )
     add_handler ( bpy.app.handlers.load_post, cellblender_preferences.load_preferences )
-    add_handler ( bpy.app.handlers.load_post, cellblender_properties.scene_loaded )
+    add_handler ( bpy.app.handlers.load_post, cellblender_main.scene_loaded )
     add_handler ( bpy.app.handlers.load_post, cellblender_mol_viz.read_viz_data_load_post )
 
     # Add the scene update pre handler
-    add_handler ( bpy.app.handlers.scene_update_pre, cellblender_properties.scene_loaded )
+    add_handler ( bpy.app.handlers.scene_update_pre, cellblender_main.scene_loaded )
 
     # Add the save_pre handlers
     add_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
@@ -296,16 +296,16 @@ def register():
 
 def unregister():
     remove_handler ( bpy.app.handlers.frame_change_pre, cellblender_mol_viz.frame_change_handler )
-    remove_handler ( bpy.app.handlers.load_pre,         cellblender_properties.report_load_pre )
+    remove_handler ( bpy.app.handlers.load_pre,         cellblender_main.report_load_pre )
     remove_handler ( bpy.app.handlers.load_post, data_model.load_post )
     remove_handler ( bpy.app.handlers.load_post, cellblender_simulation.clear_run_list )
     remove_handler ( bpy.app.handlers.load_post, cellblender_objects.model_objects_update )
     remove_handler ( bpy.app.handlers.load_post, object_surface_regions.object_regions_format_update )
-    remove_handler ( bpy.app.handlers.load_post, cellblender_properties.mcell_valid_update )
+    remove_handler ( bpy.app.handlers.load_post, cellblender_main.mcell_valid_update )
     remove_handler ( bpy.app.handlers.load_post, cellblender_preferences.load_preferences )
-    remove_handler ( bpy.app.handlers.load_post, cellblender_properties.scene_loaded )
+    remove_handler ( bpy.app.handlers.load_post, cellblender_main.scene_loaded )
     remove_handler ( bpy.app.handlers.load_post, cellblender_mol_viz.read_viz_data_load_post )
-    remove_handler ( bpy.app.handlers.scene_update_pre, cellblender_properties.scene_loaded )
+    remove_handler ( bpy.app.handlers.scene_update_pre, cellblender_main.scene_loaded )
     remove_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
     remove_handler ( bpy.app.handlers.save_pre, cellblender_objects.model_objects_update )
 

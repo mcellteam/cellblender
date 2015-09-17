@@ -865,7 +865,7 @@ class MCellLegacyGroup(bpy.types.PropertyGroup):
         #self.print_id_property_tree ( context.scene['mcell'], 'mcell', 0 )
 
         # Restore the RNA properties overlaying the ID Property 'mcell'
-        bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender.cellblender_properties.MCellPropertyGroup)
+        bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender.cellblender_main.MCellPropertyGroup)
 
         return dm
 

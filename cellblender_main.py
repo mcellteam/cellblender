@@ -91,7 +91,7 @@ from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
 @persistent
 def mcell_valid_update(context):
     """ Check whether the mcell executable in the .blend file is valid """
-    print ( "load post handler: cellblender_properties.mcell_valid_update() called" )
+    print ( "load post handler: cellblender_main.mcell_valid_update() called" )
     if not context:
         context = bpy.context
     mcell = context.scene.mcell
@@ -103,7 +103,7 @@ def mcell_valid_update(context):
 @persistent
 def init_properties(context):
     """ Initialize MCell properties if not already initialized """
-    print ( "load post handler: cellblender_properties.init_properties() called" )
+    print ( "load post handler: cellblender_main.init_properties() called" )
     if not context:
         context = bpy.context
     mcell = context.scene.mcell
@@ -141,7 +141,7 @@ import mathutils
 
 ####
 ##
-##  REFACTORING NOTE: Almost all of the following code is at the "application" level and will probably stay in cellblender_properties.
+##  REFACTORING NOTE: Almost all of the following code is at the "application" level and will probably stay in cellblender_main.
 ##
 ####
 

@@ -201,7 +201,7 @@ class ImportDataModel(bpy.types.Operator, ExportHelper):
         f.close()
 
         dm = unpickle_data_model ( pickle_string )
-        dm['mcell'] = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
+        dm['mcell'] = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
         context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'] )
 
         print ( "Done loading CellBlender model." )
@@ -224,7 +224,7 @@ class ImportDataModelAll(bpy.types.Operator, ExportHelper):
         f.close()
 
         dm = unpickle_data_model ( pickle_string )
-        dm['mcell'] = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
+        dm['mcell'] = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
         context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
 
         print ( "Done loading CellBlender model." )
@@ -284,7 +284,7 @@ def upgrade_properties_from_data_model ( context ):
 
         print ( "Reinstate MCell RNA properties" )
 
-        bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender.cellblender_properties.MCellPropertyGroup)
+        bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender.cellblender_main.MCellPropertyGroup)
 
         print ( "Reinstated MCell RNA properties" )
 
@@ -295,14 +295,14 @@ def upgrade_properties_from_data_model ( context ):
         restore_mcell_preferences ( mp, mcell )
 
         # Do the actual updating of properties from data model right here
-        dm = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm)
+        dm = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm)
         mcell.build_properties_from_data_model ( context, dm )
     else:
         print ( "Warning: This should never happen." )
         traceback.print_stack()
         print ( "No data model to upgrade ... building a data model and then recreating properties." )
         dm = mcell.build_data_model_from_properties ( context )
-        dm = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm)
+        dm = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm)
         mcell.build_properties_from_data_model ( context, dm )
 
     # Update the source_id
@@ -350,7 +350,7 @@ def upgrade_RC3_properties_from_data_model ( context ):
 
       print ( "Reinstate MCell RNA properties" )
 
-      bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender.cellblender_properties.MCellPropertyGroup)
+      bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender.cellblender_main.MCellPropertyGroup)
 
       print ( "Reinstated MCell RNA properties" )
 
@@ -361,7 +361,7 @@ def upgrade_RC3_properties_from_data_model ( context ):
       restore_mcell_preferences ( mp, mcell )
 
       # Do the actual updating of properties from data model right here
-      dm = cellblender.cellblender_properties.MCellPropertyGroup.upgrade_data_model(dm)
+      dm = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm)
       mcell.build_properties_from_data_model ( context, dm )
 
       # Update the source_id
@@ -488,7 +488,7 @@ def load_post(context):
     if context.scene.get ( 'mcell' ):
       del context.scene['mcell']
     print ( "Reinstate MCell RNA properties" )
-    bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender.cellblender_properties.MCellPropertyGroup)
+    bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender.cellblender_main.MCellPropertyGroup)
     print ( "Reinstated MCell RNA properties" )
     """
 
