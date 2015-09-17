@@ -26,6 +26,7 @@ cellblender_info = {
         "cellblender_reactions.py",
         "cellblender_release.py",
         "cellblender_surface_classes.py",
+        "cellblender_surface_regions.py",
         "cellblender_reaction_output.py",
         "cellblender_partitions.py",
         "cellblender_simulation.py",

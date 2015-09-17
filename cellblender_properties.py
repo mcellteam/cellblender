@@ -56,6 +56,7 @@ from . import cellblender_molecules
 from . import cellblender_reactions
 from . import cellblender_release
 from . import cellblender_surface_classes
+from . import cellblender_surface_regions
 from . import cellblender_partitions
 from . import cellblender_simulation
 from . import cellblender_mol_viz
@@ -132,200 +133,7 @@ class MCellFloatVectorProperty(bpy.types.PropertyGroup):
 
 
 
-
-class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
-    """ Assign a surface class to a surface region. """
-
-    name = StringProperty(name="Assign Surface Class")
-    surf_class_name = StringProperty(
-        name="Surface Class Name",
-        description="This surface class will be assigned to the surface "
-                    "region listed below.",
-        update=cellblender_operators.check_active_mod_surf_regions)
-    object_name = StringProperty(
-        name="Object Name",
-        description="A region on this object will have the above surface "
-                    "class assigned to it.",
-        update=cellblender_operators.check_active_mod_surf_regions)
-    region_name = StringProperty(
-        name="Region Name",
-        description="This surface region will have the above surface class "
-                    "assigned to it.",
-        update=cellblender_operators.check_active_mod_surf_regions)
-    status = StringProperty(name="Status")
-
-    def remove_properties ( self, context ):
-        print ( "Removing all Surface Regions Properties... no collections to remove." )
-
-    def build_data_model_from_properties ( self, context ):
-        print ( "Surface Region building Data Model" )
-        sr_dm = {}
-        sr_dm['data_model_version'] = "DM_2014_10_24_1638"
-        sr_dm['name'] = self.name
-        sr_dm['surf_class_name'] = self.surf_class_name
-        sr_dm['object_name'] = self.object_name
-        sr_dm['region_name'] = self.region_name
-        return sr_dm
-
-
-    @staticmethod
-    def upgrade_data_model ( dm ):
-        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
-        print ( "------------------------->>> Upgrading MCellModSurfRegionsProperty Data Model" )
-        if not ('data_model_version' in dm):
-            # Make changes to move from unversioned to DM_2014_10_24_1638
-            dm['data_model_version'] = "DM_2014_10_24_1638"
-
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
-            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsProperty data model to current version." )
-            return None
-
-        return dm
-
-
-    def build_properties_from_data_model ( self, context, dm ):
-
-        # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
-            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsProperty data model to current version." )
-
-        self.name = dm["name"]
-        self.surf_class_name = dm["surf_class_name"]
-        self.object_name = dm["object_name"]
-        self.region_name = dm["region_name"]
-
-    def check_properties_after_building ( self, context ):
-        print ( "Implementing check_properties_after_building for " + str(self) )
-        print ( "Calling check_mod_surf_regions on object named: " + self.object_name )
-        cellblender_operators.check_mod_surf_regions(self, context)
-        
-
-
-
 # from . import parameter_system
-
-
-
-class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
-    mod_surf_regions_list = CollectionProperty(
-        type=MCellModSurfRegionsProperty, name="Assign Surface Class List")
-    active_mod_surf_regions_index = IntProperty(
-        name="Active Assign Surface Class Index", default=0)
-
-    def build_data_model_from_properties ( self, context ):
-        print ( "Assign Surface Class List building Data Model" )
-        sr_dm = {}
-        sr_dm['data_model_version'] = "DM_2014_10_24_1638"
-        sr_list = []
-        for sr in self.mod_surf_regions_list:
-            sr_list.append ( sr.build_data_model_from_properties(context) )
-        sr_dm['modify_surface_regions_list'] = sr_list
-        return sr_dm
-
-
-    @staticmethod
-    def upgrade_data_model ( dm ):
-        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
-        print ( "------------------------->>> Upgrading MCellModSurfRegionsPropertyGroup Data Model" )
-        if not ('data_model_version' in dm):
-            # Make changes to move from unversioned to DM_2014_10_24_1638
-            dm['data_model_version'] = "DM_2014_10_24_1638"
-
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
-            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsPropertyGroup data model to current version." )
-            return None
-
-        if "modify_surface_regions_list" in dm:
-            for item in dm["modify_surface_regions_list"]:
-                if MCellModSurfRegionsProperty.upgrade_data_model ( item ) == None:
-                    return None
-
-        return dm
-
-
-    def build_properties_from_data_model ( self, context, dm ):
-
-        # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
-            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsPropertyGroup data model to current version." )
-
-        while len(self.mod_surf_regions_list) > 0:
-            self.mod_surf_regions_list.remove(0)
-        if "modify_surface_regions_list" in dm:
-            for s in dm["modify_surface_regions_list"]:
-                self.mod_surf_regions_list.add()
-                self.active_mod_surf_regions_index = len(self.mod_surf_regions_list)-1
-                sr = self.mod_surf_regions_list[self.active_mod_surf_regions_index]
-                # sr.init_properties(context.scene.mcell.parameter_system)
-                sr.build_properties_from_data_model ( context, s )
-
-
-    def check_properties_after_building ( self, context ):
-        print ( "Implementing check_properties_after_building for " + str(self) )
-        for sr in self.mod_surf_regions_list:
-            sr.check_properties_after_building(context)
-
-    def remove_properties ( self, context ):
-        print ( "Removing all Surface Regions Properties ..." )
-        for item in self.mod_surf_regions_list:
-            item.remove_properties(context)
-        self.mod_surf_regions_list.clear()
-        self.active_mod_surf_regions_index = 0
-        print ( "Done removing all Surface Regions Properties." )
-
-
-    def draw_layout(self, context, layout):
-        mcell = context.scene.mcell
-
-        if not mcell.initialized:
-            mcell.draw_uninitialized ( layout )
-        else:
-
-            # mod_surf_regions = context.scene.mcell.mod_surf_regions
-
-            row = layout.row()
-            if not mcell.surface_classes.surf_class_list:
-                row.label(text="Define at least one surface class", icon='ERROR')
-            elif not mcell.model_objects.object_list:
-                row.label(text="Add a mesh to the Model Objects list",
-                          icon='ERROR')
-            else:
-                col = row.column()
-                col.template_list("MCELL_UL_check_mod_surface_regions",
-                                  "mod_surf_regions", self,
-                                  "mod_surf_regions_list", self,
-                                  "active_mod_surf_regions_index", rows=2)
-                col = row.column(align=True)
-                col.operator("mcell.mod_surf_regions_add", icon='ZOOMIN', text="")
-                col.operator("mcell.mod_surf_regions_remove", icon='ZOOMOUT',
-                             text="")
-                if self.mod_surf_regions_list:
-                    active_mod_surf_regions = \
-                        self.mod_surf_regions_list[
-                            self.active_mod_surf_regions_index]
-                    row = layout.row()
-                    row.prop_search(active_mod_surf_regions, "surf_class_name",
-                                    mcell.surface_classes, "surf_class_list",
-                                    icon='FACESEL_HLT')
-                    row = layout.row()
-                    row.prop_search(active_mod_surf_regions, "object_name",
-                                    mcell.model_objects, "object_list",
-                                    icon='MESH_ICOSPHERE')
-                    if active_mod_surf_regions.object_name:
-                        try:
-                            regions = bpy.data.objects[
-                                active_mod_surf_regions.object_name].mcell.regions
-                            layout.prop_search(active_mod_surf_regions,
-                                               "region_name", regions,
-                                               "region_list", icon='FACESEL_HLT')
-                        except KeyError:
-                            pass
-
-
-    def draw_panel ( self, context, panel ):
-        """ Create a layout from the panel and draw into it """
-        layout = panel.layout
-        self.draw_layout ( context, layout )
 
 
 import mathutils
@@ -1066,7 +874,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     surface_classes = PointerProperty(
         type=cellblender_surface_classes.MCellSurfaceClassesPropertyGroup, name="Defined Surface Classes")
     mod_surf_regions = PointerProperty(
-        type=MCellModSurfRegionsPropertyGroup, name="Assign Surface Classes")
+        type=cellblender_surface_regions.MCellModSurfRegionsPropertyGroup, name="Assign Surface Classes")
     release_patterns = PointerProperty(
         type=cellblender_release.MCellReleasePatternPropertyGroup, name="Defined Release Patterns")
     release_sites = PointerProperty(
@@ -1232,7 +1040,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
         group_name = "modify_surface_regions"
         if group_name in dm:
-            dm[group_name] = MCellModSurfRegionsPropertyGroup.upgrade_data_model ( dm[group_name] )
+            dm[group_name] = cellblender_surface_regions.MCellModSurfRegionsPropertyGroup.upgrade_data_model ( dm[group_name] )
             if dm[group_name] == None:
                 return None
 
