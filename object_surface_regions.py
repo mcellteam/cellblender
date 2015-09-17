@@ -708,7 +708,7 @@ class MCellObjectPropertyGroup(bpy.types.PropertyGroup):
         for reg in obj_regs:
             id = str(reg.id)
             mesh = obj.data
-            #reg_faces = list(cellblender_operators.get_region_faces(mesh,id))
+            #reg_faces = list(object_surface_regions.get_region_faces(mesh,id))
             reg_faces = list(reg.get_region_faces(mesh))
             reg_faces.sort()
             reg_dict[reg.name] = reg_faces

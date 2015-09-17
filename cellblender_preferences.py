@@ -42,7 +42,6 @@ import re
 # CellBlender imports
 import cellblender
 from . import parameter_system
-# from . import cellblender_operators
 from . import cellblender_utils
 
 
@@ -86,45 +85,45 @@ def show_old_scene_panels ( show=False ):
     if show:
         print ( "Showing the Old CellBlender panels in the Scene tab" )
         try:
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_cellblender_preferences)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_project_settings)
-            # bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_run_simulation_queue)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_viz_results)
+            bpy.utils.register_class(cellblender_preferences.MCELL_PT_cellblender_preferences)
+            bpy.utils.register_class(cellblender_project.MCELL_PT_project_settings)
+            # bpy.utils.register_class(cellblender_simulation.MCELL_PT_run_simulation)
+            bpy.utils.register_class(cellblender_simulation.MCELL_PT_run_simulation_queue)
+            bpy.utils.register_class(cellblender_mol_viz.MCELL_PT_viz_results)
             bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_model_objects)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_partitions)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_initialization)
+            bpy.utils.register_class(cellblender_objects.MCELL_PT_model_objects)
+            bpy.utils.register_class(cellblender_partitions.MCELL_PT_partitions)
+            bpy.utils.register_class(cellblender_initialization.MCELL_PT_initialization)
             bpy.utils.register_class(cellblender_molecules.MCELL_PT_define_molecules)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_define_reactions)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_define_surface_classes)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_mod_surface_regions)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_release_pattern)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_molecule_release)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_reaction_output_settings)
-            bpy.utils.register_class(cellblender_panels.MCELL_PT_visualization_output_settings)
+            bpy.utils.register_class(cellblender_reactions.MCELL_PT_define_reactions)
+            bpy.utils.register_class(cellblender_surface_classes.MCELL_PT_define_surface_classes)
+            bpy.utils.register_class(cellblender_surface_regions.MCELL_PT_mod_surface_regions)
+            bpy.utils.register_class(cellblender_release.MCELL_PT_release_pattern)
+            bpy.utils.register_class(cellblender_release.MCELL_PT_molecule_release)
+            bpy.utils.register_class(cellblender_reaction_output.MCELL_PT_reaction_output_settings)
+            bpy.utils.register_class(cellblender_mol_viz.MCELL_PT_visualization_output_settings)
         except:
             pass
     else:
         print ( "Hiding the Old CellBlender panels in the Scene tab" )
         try:
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_cellblender_preferences)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_project_settings)
-            # bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_run_simulation_queue)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_viz_results)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_model_objects)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_partitions)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_initialization)
+            bpy.utils.unregister_class(cellblender_preferences.MCELL_PT_cellblender_preferences)
+            bpy.utils.unregister_class(cellblender_project.MCELL_PT_project_settings)
+            # bpy.utils.unregister_class(cellblender_simulation.MCELL_PT_run_simulation)
+            bpy.utils.unregister_class(cellblender_simulation.MCELL_PT_run_simulation_queue)
+            bpy.utils.unregister_class(cellblender_mol_viz.MCELL_PT_viz_results)
             bpy.utils.unregister_class(parameter_system.MCELL_PT_parameter_system)
+            bpy.utils.unregister_class(cellblender_objects.MCELL_PT_model_objects)
+            bpy.utils.unregister_class(cellblender_partitions.MCELL_PT_partitions)
+            bpy.utils.unregister_class(cellblender_initialization.MCELL_PT_initialization)
             bpy.utils.unregister_class(cellblender_molecules.MCELL_PT_define_molecules)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_reactions)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_surface_classes)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_mod_surface_regions)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_release_pattern)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_molecule_release)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_reaction_output_settings)
-            bpy.utils.unregister_class(cellblender_panels.MCELL_PT_visualization_output_settings)
+            bpy.utils.unregister_class(cellblender_reactions.MCELL_PT_define_reactions)
+            bpy.utils.unregister_class(cellblender_surface_classes.MCELL_PT_define_surface_classes)
+            bpy.utils.unregister_class(cellblender_surface_regions.MCELL_PT_mod_surface_regions)
+            bpy.utils.unregister_class(cellblender_release.MCELL_PT_release_pattern)
+            bpy.utils.unregister_class(cellblender_release.MCELL_PT_molecule_release)
+            bpy.utils.unregister_class(cellblender_reaction_output.MCELL_PT_reaction_output_settings)
+            bpy.utils.unregister_class(cellblender_mol_viz.MCELL_PT_visualization_output_settings)
         except:
             pass
 
@@ -163,8 +162,6 @@ def show_hide_scene_panel ( show=True ):
 
 # Callback Functions must be defined before being used:
 
-
-from . import cellblender_panels
 
 def set_old_scene_panels_callback(self, context):
     """ Show or hide the old scene panels based on the show_old_scene_panels boolean property. """
@@ -256,7 +253,7 @@ class MCELL_MT_presets(Menu):
 @persistent
 def load_preferences(context):
     """ Load CB preferences using preset on startup. """
-    print ( "load post handler: cellblender_operators.load_preferences() called" )
+    print ( "load post handler: cellblender_preferences.load_preferences() called" )
 
     #active_preset = bpy.types.MCELL_MT_presets.bl_label
     #bpy.ops.script.execute_preset(
@@ -282,8 +279,7 @@ class MCELL_OT_save_preferences(AddPresetBase, bpy.types.Operator):
 
     bl_idname = "mcell.preferences_save"
     bl_label = "Save Preferences"
-    # This needs to be the same name as the preset menu class in
-    # cellblender_panels
+    # This needs to be the same name as the preset menu class
     preset_menu = "MCELL_MT_presets" 
 
     preset_defines = [

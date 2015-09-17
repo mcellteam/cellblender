@@ -38,7 +38,6 @@ import cellblender
 # from . import cellblender_parameters
 from . import parameter_system
 from . import cellblender_mol_viz
-from . import cellblender_operators
 from . import cellblender_utils
 
 

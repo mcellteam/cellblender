@@ -50,9 +50,6 @@ from bpy.app.handlers import persistent
 
 import cellblender
 
-from . import cellblender_operators
-#from . import cellblender_properties
-
 
 from . import cellblender_preferences
 from . import cellblender_project

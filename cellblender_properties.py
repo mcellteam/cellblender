@@ -42,7 +42,7 @@ This script contains the custom properties used in CellBlender.
 """
 # blender imports
 import bpy
-from . import cellblender_operators
+
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
     FloatProperty, FloatVectorProperty, IntProperty, IntVectorProperty, PointerProperty, StringProperty, BoolVectorProperty
 
@@ -81,7 +81,7 @@ def unregister():
 
 
 
-# Two callbacks that had been in cellblender_operators:
+# Two callbacks that had been in the cellblender operators file:
 
 from . import cellblender_utils
 #from cellblender.cellblender_utils import project_files_path
@@ -91,7 +91,7 @@ from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
 @persistent
 def mcell_valid_update(context):
     """ Check whether the mcell executable in the .blend file is valid """
-    print ( "load post handler: cellblender_operators.mcell_valid_update() called" )
+    print ( "load post handler: cellblender_properties.mcell_valid_update() called" )
     if not context:
         context = bpy.context
     mcell = context.scene.mcell
@@ -103,7 +103,7 @@ def mcell_valid_update(context):
 @persistent
 def init_properties(context):
     """ Initialize MCell properties if not already initialized """
-    print ( "load post handler: cellblender_operators.init_properties() called" )
+    print ( "load post handler: cellblender_properties.init_properties() called" )
     if not context:
         context = bpy.context
     mcell = context.scene.mcell

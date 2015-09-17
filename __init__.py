@@ -52,8 +52,6 @@ if "bpy" in locals():
     imp.reload(data_model)
 
     imp.reload(cellblender_properties)
-    imp.reload(cellblender_panels)
-    imp.reload(cellblender_operators)
 
     imp.reload(parameter_system)
     imp.reload(cellblender_preferences)
@@ -90,8 +88,6 @@ else:
     from . import data_model
 
     from . import cellblender_properties
-    from . import cellblender_panels
-    from . import cellblender_operators
 
     from . import parameter_system
     from . import cellblender_preferences
@@ -160,7 +156,6 @@ def register():
     bpy.utils.unregister_class(cellblender_objects.MCELL_PT_model_objects)
     bpy.utils.unregister_class(cellblender_partitions.MCELL_PT_partitions)
     bpy.utils.unregister_class(cellblender_initialization.MCELL_PT_initialization)
-    # bpy.utils.unregister_class(cellblender_panels.MCELL_PT_define_parameters)
     bpy.utils.unregister_class(parameter_system.MCELL_PT_parameter_system)
     bpy.utils.unregister_class(cellblender_molecules.MCELL_PT_define_molecules)
     bpy.utils.unregister_class(cellblender_reactions.MCELL_PT_define_reactions)
@@ -181,7 +176,6 @@ def register():
 #    bpy.utils.register_class(cellblender_simulation.MCELL_PT_run_simulation_queue)
 #    bpy.utils.register_class(cellblender_mol_viz.MCELL_PT_viz_results)
 #    bpy.utils.register_class(parameter_system.MCELL_PT_parameter_system)
-#    bpy.utils.register_class(cellblender_panels.MCELL_PT_model_objects)
 #    bpy.utils.register_class(cellblender_partitions.MCELL_PT_partitions)
 #    bpy.utils.register_class(cellblender_initialization.MCELL_PT_initialization)
 #    bpy.utils.register_class(cellblender_molecules.MCELL_PT_define_molecules)
@@ -282,12 +276,6 @@ def register():
     add_handler ( bpy.app.handlers.load_post, cellblender_objects.model_objects_update )
     add_handler ( bpy.app.handlers.load_post, object_surface_regions.object_regions_format_update )
     add_handler ( bpy.app.handlers.load_post, cellblender_properties.mcell_valid_update )
-    # add_handler ( bpy.app.handlers.load_post, cellblender_operators.set_defaults )
-    
-    
-    ### add_handler ( bpy.app.handlers.load_post, cellblender_operators.init_properties )
-    
-    
     add_handler ( bpy.app.handlers.load_post, cellblender_preferences.load_preferences )
     add_handler ( bpy.app.handlers.load_post, cellblender_properties.scene_loaded )
     add_handler ( bpy.app.handlers.load_post, cellblender_mol_viz.read_viz_data_load_post )
@@ -314,11 +302,6 @@ def unregister():
     remove_handler ( bpy.app.handlers.load_post, cellblender_objects.model_objects_update )
     remove_handler ( bpy.app.handlers.load_post, object_surface_regions.object_regions_format_update )
     remove_handler ( bpy.app.handlers.load_post, cellblender_properties.mcell_valid_update )
-    
-    
-    ### remove_handler ( bpy.app.handlers.load_post, cellblender_operators.init_properties )
-    
-    
     remove_handler ( bpy.app.handlers.load_post, cellblender_preferences.load_preferences )
     remove_handler ( bpy.app.handlers.load_post, cellblender_properties.scene_loaded )
     remove_handler ( bpy.app.handlers.load_post, cellblender_mol_viz.read_viz_data_load_post )

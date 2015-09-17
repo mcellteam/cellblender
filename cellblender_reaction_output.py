@@ -43,7 +43,6 @@ import re
 # CellBlender imports
 import cellblender
 from . import parameter_system
-from . import cellblender_operators
 from . import cellblender_release
 from . import cellblender_utils
 from cellblender.cellblender_utils import project_files_path

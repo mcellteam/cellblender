@@ -152,55 +152,7 @@ def check_active_mod_surf_regions(self, context):
     # Maybe these functions belong in the MCellModSurfRegionsProperty class
     # Leave them here for now to not disturb too much code at once
 
-    ######  commented out temporarily (causes names to not be built):
     active_mod_surf_regions.check_properties_after_building(context)
-    # The previous line appears to cause the following problem:
-    """
-        Done removing all MCell Properties.
-        Overwriting properites based on data in the data model dictionary
-        Overwriting the parameter_system properties
-        Parameter System building Properties from Data Model ...
-        Overwriting the initialization properties
-        Overwriting the define_molecules properties
-        Overwriting the define_reactions properties
-        Overwriting the release_sites properties
-        Overwriting the define_release_patterns properties
-        Overwriting the define_surface_classes properties
-        Overwriting the modify_surface_regions properties
-        Implementing check_properties_after_building for <bpy_struct, MCellModSurfRegionsProperty("Surface Class: Surface_Class   Object: Cube   Region: top")>
-          Checking the mod_surf_region for <bpy_struct, MCellModSurfRegionsProperty("Surface Class: Surface_Class   Object: Cube   Region: top")>
-        Error: The object name ("") isn't a blender object
-            Error Type: <class 'KeyError'>
-            Error Value: 'bpy_prop_collection[key]: key "" not found'
-        === Traceback Start ===
-          File "/home/user/.config/blender/2.74/scripts/addons/cellblender/cellblender_operators.py", line 842, in check_mod_surf_regions
-            region_list = bpy.data.objects[active_mod_surf_regions.object_name].mcell.regions.region_list
-          File "/home/user/.config/blender/2.74/scripts/addons/cellblender/cellblender_operators.py", line 78, in execute
-            data_model.upgrade_properties_from_data_model ( context )
-          File "/home/user/.config/blender/2.74/scripts/addons/cellblender/data_model.py", line 298, in upgrade_properties_from_data_model
-            mcell.build_properties_from_data_model ( context, dm )
-          File "/home/user/.config/blender/2.74/scripts/addons/cellblender/cellblender_properties.py", line 4986, in build_properties_from_data_model
-            self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
-          File "/home/user/.config/blender/2.74/scripts/addons/cellblender/cellblender_properties.py", line 2755, in build_properties_from_data_model
-            sr.build_properties_from_data_model ( context, s )
-          File "/home/user/.config/blender/2.74/scripts/addons/cellblender/cellblender_properties.py", line 774, in build_properties_from_data_model
-            self.surf_class_name = dm["surf_class_name"]
-          File "/home/user/.config/blender/2.74/scripts/addons/cellblender/cellblender_operators.py", line 892, in check_active_mod_surf_regions
-            active_mod_surf_regions.check_properties_after_building(context)
-          File "/home/user/.config/blender/2.74/scripts/addons/cellblender/cellblender_properties.py", line 780, in check_properties_after_building
-            check_mod_surf_regions(self, context)
-          File "/home/user/.config/blender/2.74/scripts/addons/cellblender/cellblender_operators.py", line 853, in check_mod_surf_regions
-            traceback.print_stack()
-        === Traceback End ===
-        Implementing check_properties_after_building for <bpy_struct, MCellModSurfRegionsProperty("Surface Class: Surface_Class   Object:    Region: ")>
-          Checking the mod_surf_region for <bpy_struct, MCellModSurfRegionsProperty("Surface Class: Surface_Class   Object:    Region: ")>
-        Implementing check_properties_after_building for <bpy_struct, MCellModSurfRegionsProperty("Surface Class: Surface_Class   Object: Cube   Region: ")>
-          Checking the mod_surf_region for <bpy_struct, MCellModSurfRegionsProperty("Surface Class: Surface_Class   Object: Cube   Region: ")>
-        Overwriting the model_objects properties
-        Data model contains Cube
-        Overwriting the viz_output properties
-        Overwriting the mol_viz properties
-    """
     return
 
 

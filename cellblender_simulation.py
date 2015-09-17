@@ -48,7 +48,6 @@ import datetime
 # CellBlender imports
 import cellblender
 from . import parameter_system
-# from . import cellblender_operators
 from . import cellblender_utils
 
 from cellblender.cellblender_utils import project_files_path
@@ -182,7 +181,7 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
                 # This is a hackish workaround since we can't return arbitrary
                 # objects from operators or store arbitrary objects in collection
                 # properties, and we need to keep track of the progress of the
-                # subprocess objects in cellblender_panels.
+                # subprocess objects for the panels.
                 cellblender.simulation_popen_list.append(sp)
 
                 if ((end - start) == 0):
@@ -457,7 +456,7 @@ class MCELL_OT_run_simulation_control_opengl(bpy.types.Operator):
                 # This is a hackish workaround since we can't return arbitrary
                 # objects from operators or store arbitrary objects in collection
                 # properties, and we need to keep track of the progress of the
-                # subprocess objects in cellblender_panels.
+                # subprocess objects for the panels.
                 cellblender.simulation_popen_list.append(sp)
                 window_num += 1
 
@@ -571,7 +570,7 @@ class MCELL_OT_run_simulation_control_java(bpy.types.Operator):
                 # This is a hackish workaround since we can't return arbitrary
                 # objects from operators or store arbitrary objects in collection
                 # properties, and we need to keep track of the progress of the
-                # subprocess objects in cellblender_panels.
+                # subprocess objects for the panels.
                 cellblender.simulation_popen_list.append(sp)
                 window_num += 1
 
@@ -686,7 +685,7 @@ def clear_run_list(context):
     to clear the processes_list upon reload so the two aren't out of sync.
 
     """
-    print ( "load post handler: cellblender_operators.clear_run_list() called" )
+    print ( "load post handler: cellblender_simulation.clear_run_list() called" )
 
     if not context:
         context = bpy.context
