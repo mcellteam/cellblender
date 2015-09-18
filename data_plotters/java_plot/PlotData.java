@@ -1042,6 +1042,7 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 	boolean fit_x = false;
 	boolean antialias = false;
 	boolean sample_numbers = false;
+	double scrollwheel_zoom_factor = 1.25;
 	
 	JMenu remove_menu = null;
 	
@@ -1060,19 +1061,51 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 	    	// file_menu.add ( mi = remove_menu = new JMenu("Remove") );
 	    	// mi.addActionListener(this);
 	    	menu_bar.add ( file_menu );
-			JMenu set_menu = new JMenu("Show");
-		  	set_menu.add ( mi = new JMenuItem("Full Range") );
+			JMenu show_menu = new JMenu("Show");
+		  	show_menu.add ( mi = new JMenuItem("Full Range") );
 		  	mi.addActionListener(this);
-		  	set_menu.add ( mi = new JCheckBoxMenuItem("Combined",combined) );
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("Combined",combined) );
 		  	mi.addActionListener(this);
-		  	set_menu.add ( mi = new JCheckBoxMenuItem("Variable Y",var_y) );
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("Variable Y",var_y) );
 		  	mi.addActionListener(this);
-		  	set_menu.add ( mi = new JCheckBoxMenuItem("Annotation",annotation) );
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("Annotation",annotation) );
 		  	mi.addActionListener(this);
-		  	set_menu.add ( mi = new JCheckBoxMenuItem("Antialiasing",antialias) );
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("Antialiasing",antialias) );
 		  	mi.addActionListener(this);
-		  	set_menu.add ( mi = new JCheckBoxMenuItem("Sample Numbers",sample_numbers) );
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("Sample Numbers",sample_numbers) );
 		  	mi.addActionListener(this);
+		  	menu_bar.add ( show_menu );
+			JMenu set_menu = new JMenu("Set");
+			  JMenu set_scrollwheel_factor_menu = new JMenu("Scroll Wheel Factor");
+			    bg = new ButtonGroup();
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 2.00") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.50") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.25",true) );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.20") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.10") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.05") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.02") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.01") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.001") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+  		  	set_menu.add ( set_scrollwheel_factor_menu );
 		  	menu_bar.add ( set_menu );
 	   return (menu_bar);
 	}
@@ -1181,6 +1214,16 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 				System.out.println ( "Sample Numbers Off" );
 				sample_numbers = false;
 			}
+		} else if (cmd.startsWith("Scale by ")) {
+			JRadioButtonMenuItem mi = (JRadioButtonMenuItem)(e.getSource());
+		  String valstr = cmd.substring("Scale by ".length());
+		  try {
+		    double v = Double.parseDouble(valstr);
+				System.out.println ( "Setting Scroll Wheel Zoom Factor to " + v );
+		    scrollwheel_zoom_factor = v;
+      } catch (Exception ee) {
+        System.out.println ( "Error parsing double from " + valstr );
+      }
 		} else if (cmd.equalsIgnoreCase("Full Range")) {
 			fit_x = true;
 		}
@@ -1589,9 +1632,9 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 	    // System.out.print ( "MouseWheel: " + e.getWheelRotation() + ", x: " + e.getX() + ", x0: " + x0 + ", pre-x_scale: " + x_scale);
 	    int w = -e.getWheelRotation();
 	    if (w > 0) {
-		    x_scale = 1.25 * w * x_scale;
+		    x_scale = scrollwheel_zoom_factor * w * x_scale;
 	    } else if (w < 0) {
-		    x_scale = x_scale / (1.25 * (-w));
+		    x_scale = x_scale / (scrollwheel_zoom_factor * (-w));
 	    }
 	    // System.out.println ( ", post-x_scale: " + x_scale);
 	    x0 += (x/old_x_scale) - (x/x_scale);
