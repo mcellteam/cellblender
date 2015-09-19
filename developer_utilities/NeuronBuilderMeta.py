@@ -171,9 +171,9 @@ class MakeNeuronMetaPropGroup(bpy.types.PropertyGroup):
   min_z = FloatProperty ( default=-1 )
   max_z = FloatProperty ( default=-1 )
   
-  scale_file_data = FloatProperty ( default=1.0 )
-  mesh_resolution = FloatProperty ( default=0.1 )
-  min_forced_radius = FloatProperty ( default=0.0 )
+  scale_file_data = FloatProperty ( default=1.0, precision=4 )
+  mesh_resolution = FloatProperty ( default=0.1, precision=4 )
+  min_forced_radius = FloatProperty ( default=0.0, precision=4 )
   num_segs_limit = IntProperty ( default=0 )
 
 
