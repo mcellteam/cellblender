@@ -49,6 +49,7 @@ from . import parameter_system
 from . import cellblender_release
 from . import cellblender_utils
 
+from cellblender.cellblender_utils import timeline_view_all
 from cellblender.cellblender_utils import project_files_path
 
 
@@ -208,6 +209,8 @@ def set_viz_boundaries( context ):
 #        bpy.context.scene.frame_end = len(mcell.mol_viz.mol_file_list)-1
         bpy.context.scene.frame_end = len(global_mol_file_list)-1
 
+        timeline_view_all ( context )
+        """
         if bpy.context.screen != None:
             for area in bpy.context.screen.areas:
                 if area != None:
@@ -219,6 +222,7 @@ def set_viz_boundaries( context ):
                                 ctx['region'] = region
                                 bpy.ops.time.view_all(ctx)
                                 break  # It's not clear if this should break or continue ... breaking for now
+        """
 
 
 class MCELL_OT_select_viz_data(bpy.types.Operator):

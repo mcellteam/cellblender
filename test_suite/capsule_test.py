@@ -7,6 +7,69 @@ bl_info = {
   }
 
 
+"""
+Dynamic Geometry Demo:
+
+  Start Blender with Factory Settings (may need to save startup and restart)
+  Delete everything from the Scene (a,a,x,Delete)
+  Enable CellBlender and Capsule Test Addons
+  Open CellBlender tab, Initialize CellBlender, Expand the panel
+
+  Open the "Growing Capsule" Tab (beside CellBlender)
+  Disable "Freeze Geometry" (defaulted to frozen to minimize interference)
+  Check the "Use CellBlender Data" box to get iterations from CellBlender
+  Drag the time line to watch the geometry change
+  Zoom in on object and right click to select it (outlined in orange)
+  When selected, set the Maximum Draw Type to "Wire" (easier to see molecules)
+  You can change Geometry Settings here, but leave as is the first time
+  Save the .blend file somewhere to start a new project (File / SaveAs)
+
+  Begin building your CellBlender project with the Model Objects Panel
+  With the capsule selected, click the "+" button to add it to the model objects
+  Add volume and surface molecules to the model and release them in and on the capsule
+    Add molecules "v" (Volume 1e-5) and "s" (Surface 1e-4)
+    Release 1000 of each on Object/Region "capsule"
+
+  Open the Preferences panel and "Set Path to MCell Binary" to dynamic geometry mcell
+
+  Open the "Run" panel and expand the Output/Control Options subpanel
+  Check the "Decouple Export and Run" button so you can export and run separately
+  Set the time on the timeline to zero (0) so your geometry.mdl file will start there
+  Click the Export CellBlender Project button to export all of your static MDL
+
+  Open the Growing Capsule tab again
+  Click on Generate Dynamic Geometry MDL and wait for the button to return
+    Note that this may take some time while it's generating the MDL for 1000 frames
+  When the button returns, Click on the "Show MDL Geometry" button
+  Drag the cursor in the timeline to see the Dynamic MDL changing (this is reading MDL)
+  Click the "Update MDL Files" button to insert Dynamic Geometry commands in the static MDL
+
+  Return to the CellBlender tab and the Run Simulation panel
+  Click the "Run" button and wait while MCell runs the simulation for 1000 steps
+
+  When done, click the "Reload Visualization Data" button
+  Then drag the cursor through the time line and watch the dynamic geometry simulation
+  Try changing the molecule size, shape, and color in the Molecule Display Options panel
+
+  The procedure for changing the MCell simulation (not geometry) is:
+
+     Change the model (molecules, reactions, plots, etc)
+     Set the time to zero to export the original geometry file
+     "Export CellBlender Project" in the CellBlender Run Simulation Panel
+     "Update MDL Files" in the Growing Capsule tab
+     Run the  simulation and reload the visualization data
+
+  The procedure for changing the geometry is very similar:
+
+     Change values in the Growing Capsule panel and check with timeline
+     Set the time to zero to export the original geometry file
+     "Export CellBlender Project" in the CellBlender Run Simulation Panel
+     "Update MDL Files" in the Growing Capsule tab
+     Run the  simulation and reload the visualization data
+
+"""
+
+
 import sys
 import os
 import os.path
@@ -15,6 +78,38 @@ import bpy
 import math
 import mathutils
 from bpy.props import *
+
+
+
+import cellblender.cellblender_utils
+
+def copy_cellblender_data(self, context):
+    # Copy the values from CellBlender
+    self.path_to_mdl = cellblender.cellblender_utils.project_files_path()
+    self.time_step = context.scene.mcell.initialization.time_step.get_value()
+    self.num_frames = context.scene.mcell.initialization.iterations.get_value()
+    return
+
+def use_cellblender_data_callback(self, context):
+    print ( "Use CBD = " + str(self.use_cellblender_data) )
+    if self.use_cellblender_data:
+        # Save the User's settings
+        self.user_path_to_mdl = self.path_to_mdl
+        self.user_time_step = self.time_step
+        self.user_num_frames = self.num_frames
+        # Copy the values from CellBlender
+        copy_cellblender_data ( self, context )
+        context.scene.frame_end = self.num_frames
+        # Call the view_all operator in the timeline window (not easy!!!)
+        cellblender.cellblender_utils.timeline_view_all ( context )
+
+    else:
+        # Copy the values from the saved settings
+        self.path_to_mdl = self.user_path_to_mdl
+        self.time_step = self.user_time_step
+        self.num_frames = self.user_num_frames
+    return
+
 
 
 def display_callback(self, context):
@@ -34,19 +129,20 @@ def show_mdl_callback(self, context):
         self.display_callback(context)
     return
 
+
 class CapsuleMakerPropertyGroup(bpy.types.PropertyGroup):
 
     # Properties for the Capsule
     
-    ns  = bpy.props.IntProperty(name="Radial Segments", min=3, default=9, update=display_callback)              # Number of sections around the circumference of the cylinder
-    ncf = bpy.props.IntProperty(name="Num Cap Facets", min=1, default=5, update=display_callback)               # Number of cap facets from side to tip
+    ns  = bpy.props.IntProperty(name="Radial Segments", min=3, default=7, update=display_callback)              # Number of sections around the circumference of the cylinder
+    ncf = bpy.props.IntProperty(name="Num Cap Facets", min=1, default=3, update=display_callback)               # Number of cap facets from side to tip
     ilength = bpy.props.FloatProperty(name="Initial Length", min=0.0, default=2.0, update=display_callback)     # Initial length of entire object from tip to tip
     flength = bpy.props.FloatProperty(name="Final Length", min=0.0, default=7.0, update=display_callback)       # Final length of entire object from tip to tip
     mnclength = bpy.props.FloatProperty(name="Min Cell Length", min=0.0, default=2.0, update=display_callback)  # Minimum length of a single cell
     mxclength = bpy.props.FloatProperty(name="Max Cell Length", min=0.0, default=3.2, update=display_callback)  # Maximum length of a single cell
     glength = bpy.props.FloatProperty(name="Gap Length", min=0.0, default=0.05, update=display_callback)        # Distance between cells
     radius = bpy.props.FloatProperty(name="Radius", min=0.0, default=0.5, update=display_callback)              # Radius of cylinder
-    num_frames = bpy.props.IntProperty(name="Num Frames", min=2, default=100, update=display_callback)          # Frames from start to finish
+    num_frames = bpy.props.IntProperty(name="Num Frames", min=2, default=1000, update=display_callback)          # Frames from start to finish
     pinch = bpy.props.BoolProperty(name="Pinch when Dividing", default=True, update=display_callback)
     wire = bpy.props.BoolProperty(name="Wire", default=False, update=display_callback)
     disabled = bpy.props.BoolProperty(name="Freeze Geometry", default=True, update=display_callback)
@@ -55,6 +151,11 @@ class CapsuleMakerPropertyGroup(bpy.types.PropertyGroup):
 
     cell_name = bpy.props.StringProperty(name="CellName", default="capsule")
 
+    use_cellblender_data = bpy.props.BoolProperty(name="Use CellBlender Data", default=False,  update=use_cellblender_data_callback)
+    user_path_to_mdl = bpy.props.StringProperty(name="User_UseCBD", default="")
+    user_time_step = bpy.props.FloatProperty(name="User_TS", default=-1.0)
+    user_num_frames = bpy.props.IntProperty(name="User_NF", default=-1)
+
     path_to_mdl = bpy.props.StringProperty(name="", default="")
 
     show_calc_geometry = bpy.props.BoolProperty(name="Show Calculated Geometry", default=True,  update=show_calc_callback)
@@ -62,6 +163,9 @@ class CapsuleMakerPropertyGroup(bpy.types.PropertyGroup):
 
 
     test_status = bpy.props.StringProperty(name="TestStatus", default="?")
+
+    def get_path_to_mdl ( self, context ):
+        return self.path_to_mdl
 
     def display_callback(self, context):
         # Refresh the scene
@@ -309,6 +413,9 @@ class CapsuleMakerPanel(bpy.types.Panel):
         row = box.row()
         row.prop ( app, "pinch" )
         row.prop ( app, "disabled" )
+        if context.object != None:
+            row = box.row()
+            row.prop ( context.object, "draw_type" )
 
         row = self.layout.row()
         row.prop ( app, "show_calc_geometry" )
@@ -316,14 +423,19 @@ class CapsuleMakerPanel(bpy.types.Panel):
 
         box = self.layout.box()
         row = box.row()
-        row.label ( "MDL Interface" )
+        row.prop ( app, "use_cellblender_data" )
         row = box.row()
-        row.operator ( "capsule_maker.set_blend_path" )
-        row = box.row()
-        row.prop ( app, "path_to_mdl" )
-        row = box.row()
-        row.prop ( app, "time_step" )
-        row.prop ( app, "all_frames" )
+        if app.use_cellblender_data:
+            row.label ( "MDL Interface set by CellBlender" )
+        else:
+            row.label ( "MDL Interface" )
+            row = box.row()
+            row.operator ( "capsule_maker.set_blend_path" )
+            row = box.row()
+            row.prop ( app, "path_to_mdl" )
+            row = box.row()
+            row.prop ( app, "time_step" )
+            row.prop ( app, "all_frames" )
         row = box.row()
         row.operator ( "capsule_maker.gen_mdl_geom" )
         row.operator ( "capsule_maker.update_mdl_files" )
@@ -410,6 +522,10 @@ class Generate_MDL_Geometry(bpy.types.Operator):
         print ( "Generating Dynamic MDL" )
 
         app = context.scene.capsule_maker
+
+        if app.use_cellblender_data:
+            # Force an update of the CellBlender values in case they've changed
+            copy_cellblender_data(app,context)
         
         # This section gets the number of frames from the time line:
         #if context.scene.capsule_maker.all_frames:
@@ -885,6 +1001,9 @@ class plf_object:
 
     # This function makes some assumptions about the format of the geometry in an MDL file
 
+    #old_points = [ p for p in self.points ]
+    #old_faces = [ f for f in self.faces ]
+
     self.points = []
     self.faces = []
 
@@ -930,8 +1049,13 @@ class plf_object:
                 # This is a face
                 self.add_face ( face ( int(v[0]), int(v[1]), int(v[2]) ) )
         f.close()
+      except FileNotFoundError as ioe:
+          # User has probably dragged off the time line, just ignore it
+          #self.points = old_points
+          #self.faces = old_faces
+          pass
       except Exception as e:
-          print ( "Exception = " + str(e) )
+          print ( "Exception reading MDL: " + str(e) )
       except:
           print ( "Unknown Exception" )
 
