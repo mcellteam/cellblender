@@ -326,21 +326,22 @@ class CapsuleMakerPanel(bpy.types.Panel):
         row.prop ( app, "all_frames" )
         row = box.row()
         row.operator ( "capsule_maker.gen_mdl_geom" )
-        row.operator ( "capsule_maker.update_main_mdl" )
+        row.operator ( "capsule_maker.update_mdl_files" )
 
         #row = self.layout.row()
         #row.operator ( "capsule_maker.save_home_file" )
         #row.operator ( "capsule_maker.load_home_file" )
 
 
-def update_main_mdl(app):
+def update_mdl_files(app):
     # Update the main MDL file Scene.main.mdl to insert the DYNAMIC_GEOMETRY directive
     try:
+
         full_fname = os.path.join(app.path_to_mdl,"Scene.main.mdl")
         print ( "Updating Main MDL file: " + full_fname )
-        main_mdl_file = open ( full_fname )
-        mdl_lines = main_mdl_file.readlines()
-        main_mdl_file.close()
+        mdl_file = open ( full_fname )
+        mdl_lines = mdl_file.readlines()
+        mdl_file.close()
 
         # Remove any old dynamic geometry lines
         new_lines = []
@@ -349,15 +350,46 @@ def update_main_mdl(app):
                 new_lines.append(line)
         lines = new_lines
 
-        main_mdl_file = open ( full_fname, "w" )
+        mdl_file = open ( full_fname, "w" )
         line_num = 0
-        for line in mdl_lines:
+        for line in lines:
             line_num += 1
-            main_mdl_file.write ( line )
+            mdl_file.write ( line )
             if line_num == 3:
                 # Insert the dynamic geometry line
-                main_mdl_file.write ( "\nDYNAMIC_GEOMETRY = \"capsule_dyn_geom_list.txt\"\n" )
-        main_mdl_file.close()
+                mdl_file.write ( "DYNAMIC_GEOMETRY = \"capsule_dyn_geom_list.txt\"\n" )
+        mdl_file.close()
+
+        full_fname = os.path.join(app.path_to_mdl,"Scene.initialization.mdl")
+        print ( "Updating Initialization MDL file: " + full_fname )
+        mdl_file = open ( full_fname )
+        mdl_lines = mdl_file.readlines()
+        mdl_file.close()
+
+        # Remove any old LARGE_MOLECULAR_DISPLACEMENT lines
+        new_lines = []
+        for line in mdl_lines:
+            if line.strip()[0:28] != "LARGE_MOLECULAR_DISPLACEMENT":
+                new_lines.append(line)
+        lines = new_lines
+
+        # Find the WARNINGS section
+        warning_line = -10
+        line_num = 0
+        for line in lines:
+            line_num += 1
+            if line.strip() == "WARNINGS":
+                warning_line = line_num
+
+        mdl_file = open ( full_fname, "w" )
+        line_num = 0
+        for line in lines:
+            line_num += 1
+            mdl_file.write ( line )
+            if line_num == warning_line + 1:
+                # Insert the dynamic geometry line
+                mdl_file.write ( "   LARGE_MOLECULAR_DISPLACEMENT = IGNORED\n" )
+        mdl_file.close()
     except Exception as e:
         print ( "Warning: unable to update the existing Scene.main.mdl file, try running the model to generate it first." )
         print ( "   Exception = " + str(e) )
@@ -415,32 +447,32 @@ class Generate_MDL_Geometry(bpy.types.Operator):
                 geom_list_file.write('%.9g %s\n' % (step*context.scene.capsule_maker.time_step, "./" + os.path.join("dynamic_geometry",fname)))
             step += 1
         geom_list_file.close()
-        update_main_mdl(app)
+        update_mdl_files(app)
         """
         # Update the main MDL file Scene.main.mdl to insert the DYNAMIC_GEOMETRY directive
         try:
             full_fname = os.path.join(app.path_to_mdl,"Scene.main.mdl")
-            main_mdl_file = open ( full_fname )
-            mdl_lines = main_mdl_file.readlines()
-            main_mdl_file.close()
-            main_mdl_file = open ( full_fname, "w" )
+            mdl_file = open ( full_fname )
+            mdl_lines = mdl_file.readlines()
+            mdl_file.close()
+            mdl_file = open ( full_fname, "w" )
             line_num = 0
             for line in mdl_lines:
                 line_num += 1
-                main_mdl_file.write ( line )
+                mdl_file.write ( line )
                 if line_num == 3:
                     # Insert the dynamic geometry line
-                    main_mdl_file.write ( "\nDYNAMIC_GEOMETRY = \"capsule_dyn_geom_list.txt\"\n" )
-            main_mdl_file.close()
+                    mdl_file.write ( "\nDYNAMIC_GEOMETRY = \"capsule_dyn_geom_list.txt\"\n" )
+            mdl_file.close()
         except:
             print ( "Warning: unable to update the existing Scene.main.mdl file, try running the model to generate it first." )
         """
         return { 'FINISHED' }
 
 
-class Update_Main_MDL(bpy.types.Operator):
-    bl_idname = "capsule_maker.update_main_mdl"
-    bl_label = "Update Main MDL"
+class Update_MDL_Files(bpy.types.Operator):
+    bl_idname = "capsule_maker.update_mdl_files"
+    bl_label = "Update MDL Files"
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -448,7 +480,7 @@ class Update_Main_MDL(bpy.types.Operator):
 
     def execute(self, context):
         app = context.scene.capsule_maker
-        update_main_mdl(app)
+        update_mdl_files(app)
         return { 'FINISHED' }
 
 
