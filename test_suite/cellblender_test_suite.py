@@ -40,6 +40,9 @@ import math
 import mathutils
 from bpy.props import *
 
+import cellblender
+
+
 test_groups = []
 max_test_groups = 30   # Needed to define a BoolVectorProperty to show and hide each group (32 is max!?!?!)
 next_test_group_num = 0    # The index number of the next group to be added
@@ -78,7 +81,9 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
     path_to_blend = bpy.props.StringProperty(name="Path to Blend", default="")
     run_mcell = bpy.props.BoolProperty(name="Run MCell", default=False)
     exit_on_error = bpy.props.BoolProperty(name="Exit on Error", default=True)
+    run_with_queue = bpy.props.BoolProperty(name="Run with Queue", default=False)
     test_status = bpy.props.StringProperty(name="TestStatus", default="?")
+
     
     # Properties needed for the dynamically created test case groups
 
@@ -194,6 +199,7 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
         elif app.test_status == "F":
           row.label( icon='ERROR',     text="Fail" )
         row.prop(app, "exit_on_error")
+        row.prop(app, "run_with_queue")
         row.prop(app, "run_mcell")
 
         for group_num in range(next_test_group_num):
@@ -386,8 +392,10 @@ class CellBlender_Model:
 
         mcell.cellblender_preferences.mcell_binary_valid = True
         mcell.cellblender_preferences.show_sim_runner_options = True
-        #mcell.run_simulation.simulation_run_control = 'QUEUE'
-        mcell.run_simulation.simulation_run_control = 'COMMAND'
+        if app.run_with_queue:
+            mcell.run_simulation.simulation_run_control = 'QUEUE'
+        else:
+            mcell.run_simulation.simulation_run_control = 'COMMAND'
         
         return mcell
 
@@ -873,8 +881,8 @@ class CellBlender_Model:
         self.add_surface_region_to_model_object_by_normal ( obj_name, surf_name )
 
 
-    def all_processes_finished ( self ):
-        print ( "Checking if all processes are done..." )
+    def all_non_queue_processes_finished ( self ):
+        print ( "Checking if all non-queue processes are done..." )
         plist = self.mcell.run_simulation.processes_list
         all_done = False
         if len(plist) <= 0:
@@ -890,18 +898,39 @@ class CellBlender_Model:
         return all_done
 
 
+    def all_queue_processes_finished ( self ):
+        print ( "Checking if all processes are done..." )
+        mcell = self.mcell
+        processes_list = mcell.run_simulation.processes_list
+        active_index = mcell.run_simulation.active_process_index
+        ap = processes_list[active_index]
+        pid = int(ap.name.split(',')[0].split(':')[1])
+        q_item = cellblender.simulation_queue.task_dict.get(pid)
+        if q_item:
+            if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
+                return False
+        return True
+
+
     def wait ( self, wait_time ):
-        if self.all_processes_finished():
-            print ( "============== ALL DONE ==============" )
-        else:
-            print ( "============== WAITING ==============" )
         import time
-        time.sleep ( wait_time )
+        app = bpy.context.scene.cellblender_test_suite
+        if app.run_with_queue:
+            print ( "============== WAITING for QUEUE ==============" )
+            while not self.all_queue_processes_finished():
+                print ( "============== WAITING for QUEUE to Finish ==============" )
+                time.sleep ( 1.0 )
+        else:
+            if self.all_non_queue_processes_finished():
+                print ( "============== ALL DONE ==============" )
+            else:
+                print ( "============== WAITING for COMMAND ==============" )
+            time.sleep ( wait_time )
 
 
     def run_model ( self, iterations="100", time_step="1e-6", export_format="mcell_mdl_unified", wait_time=10.0 ):
         """ export_format is one of: mcell_mdl_unified, mcell_mdl_modular """
-        print ( "Running Simulation" )
+        print ( "Test Suite is running the simulation ..." )
         self.mcell.cellblender_main_panel.init_select = True
         self.mcell.initialization.iterations.set_expr(iterations)
         self.mcell.initialization.time_step.set_expr(time_step)

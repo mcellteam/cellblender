@@ -309,6 +309,8 @@ def unregister():
     remove_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
     remove_handler ( bpy.app.handlers.save_pre, cellblender_objects.model_objects_update )
 
+    atexit.unregister(simulation_queue.shutdown)
+
     bpy.utils.unregister_module(__name__)
 
     print("CellBlender unregistered")
