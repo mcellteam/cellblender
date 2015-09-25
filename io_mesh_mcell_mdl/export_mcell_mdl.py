@@ -1128,9 +1128,11 @@ def save_mod_surf_regions(context, out_file, mod_surf_regions_list):
     out_file.write("{\n")
     for active_mod_surf_regions in mod_surf_regions_list:
         surf_class_name = active_mod_surf_regions.surf_class_name
-        out_file.write("  %s[%s]\n" %
-                       (active_mod_surf_regions.object_name,
-                        active_mod_surf_regions.region_name))
+        object_name = active_mod_surf_regions.object_name
+        region_name = active_mod_surf_regions.region_name
+        if active_mod_surf_regions.all_faces:
+            region_name = "ALL"
+        out_file.write("  %s[%s]\n" % (object_name, region_name))
         out_file.write("  {\n    SURFACE_CLASS = %s\n  }\n" %
                        (surf_class_name))
     out_file.write("}\n\n")

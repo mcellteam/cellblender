@@ -77,6 +77,7 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
     path_to_mcell = bpy.props.StringProperty(name="Path to MCell", default="")
     path_to_blend = bpy.props.StringProperty(name="Path to Blend", default="")
     run_mcell = bpy.props.BoolProperty(name="Run MCell", default=False)
+    exit_on_error = bpy.props.BoolProperty(name="Exit on Error", default=True)
     test_status = bpy.props.StringProperty(name="TestStatus", default="?")
     
     # Properties needed for the dynamically created test case groups
@@ -192,6 +193,7 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
           row.label( icon='FILE_TICK', text="Pass" )
         elif app.test_status == "F":
           row.label( icon='ERROR',     text="Fail" )
+        row.prop(app, "exit_on_error")
         row.prop(app, "run_mcell")
 
         for group_num in range(next_test_group_num):
@@ -809,11 +811,13 @@ class CellBlender_Model:
         self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].surf_class_name = surf_class_name
         self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].object_name = obj_name
         self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].region_name = reg_name
+        self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].all_faces = False
+
         print ( "Done Adding Surface Class to Region " + surf_class_name )
         return self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index]
 
 
-    def add_surface_region_to_model_by_normal ( self, obj_name, surf_name, nx=0, ny=0, nz=0, min_dot_prod=0.5 ):
+    def add_surface_region_to_model_object_by_normal ( self, obj_name, surf_name, nx=0, ny=0, nz=0, min_dot_prod=0.5 ):
 
         print ("Selected Object = " + str(self.context.object) )
         # bpy.ops.object.mode_set ( mode="EDIT" )
@@ -866,7 +870,7 @@ class CellBlender_Model:
 
 
     def add_surface_region_to_model_all_faces ( self, obj_name, surf_name ):
-        self.add_surface_region_to_model_by_normal ( obj_name, surf_name )
+        self.add_surface_region_to_model_object_by_normal ( obj_name, surf_name )
 
 
     def all_processes_finished ( self ):
@@ -981,7 +985,8 @@ class CellBlender_Model:
                     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                     app.test_status = "F"
-                    bpy.ops.wm.quit_blender() 
+                    if app.exit_on_error:
+                        bpy.ops.wm.quit_blender() 
 
         else:
 
@@ -991,7 +996,8 @@ class CellBlender_Model:
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             app.test_status = "F"
-            bpy.ops.wm.quit_blender()
+            if app.exit_on_error:
+                bpy.ops.wm.quit_blender() 
 
 
     def scale_view_distance ( self, scale ):
@@ -2145,7 +2151,7 @@ class CubeSurfaceTestOp(bpy.types.Operator):
         mcell = cb_model.get_mcell()
 
         cb_model.add_cube_to_model ( name="Cell", draw_type="WIRE" )
-        cb_model.add_surface_region_to_model_by_normal ( "Cell", "top", 0, 0, 1, 0.8 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "top", 0, 0, 1, 0.8 )
 
         mola = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
         mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-6" )
@@ -2204,7 +2210,7 @@ class SphereSurfaceTestOp(bpy.types.Operator):
         mcell = cb_model.get_mcell()
 
         cb_model.add_icosphere_to_model ( name="Cell", draw_type="WIRE" )
-        cb_model.add_surface_region_to_model_by_normal ( "Cell", "top", 0, 0, 1, 0.8 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "top", 0, 0, 1, 0.8 )
 
         mola = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
         mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-6" )
@@ -2264,8 +2270,8 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
         mcell = cb_model.get_mcell()
 
         cb_model.add_icosphere_to_model ( name="Cell", draw_type="WIRE", subdiv=4 )
-        cb_model.add_surface_region_to_model_by_normal ( "Cell", "top", 0, 0, 1, 0.0 )
-        cb_model.add_surface_region_to_model_by_normal ( "Cell", "y",   0, 1, 0, 0.0 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "top", 0, 0, 1, 0.0 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "y",   0, 1, 0, 0.0 )
 
         mola  = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-5" )
         mols1 = cb_model.add_molecule_species_to_model ( name="s1", mol_type="2D", diff_const_expr="0" )
@@ -2455,8 +2461,8 @@ class CapsuleTestOp(bpy.types.Operator):
 
         cb_model.add_capsule_to_model ( name="shell",   draw_type="WIRE", x=0, y=0, z=0, sigma=0, subdiv=2, radius=0.501, cyl_len=4.002, subdivide_sides=False )
         cb_model.add_capsule_to_model ( name="capsule", draw_type="WIRE", x=0, y=0, z=0, sigma=0, subdiv=2, radius=0.500, cyl_len=4,     subdivide_sides=False )
-        cb_model.add_surface_region_to_model_by_normal ( "capsule", "top", nx=0, ny=0, nz=1, min_dot_prod=0.5 )
-        cb_model.add_surface_region_to_model_by_normal ( "capsule", "bot", nx=0, ny=0, nz=-1, min_dot_prod=0.5 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "capsule", "top", nx=0, ny=0, nz=1, min_dot_prod=0.5 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "capsule", "bot", nx=0, ny=0, nz=-1, min_dot_prod=0.5 )
 
 
         mola  = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
@@ -3025,14 +3031,14 @@ class OrganelleTestOp(bpy.types.Operator):
 
         # Create the object and add it to the CellBlender model
         cb_model.add_icosphere_to_model ( name="Organelle_1", draw_type="WIRE", size=0.3, y=-0.25, subdiv=subdiv+1 )
-        cb_model.add_surface_region_to_model_by_normal ( "Organelle_1", "top", 0, 1, 0, 0.92 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Organelle_1", "top", 0, 1, 0, 0.92 )
 
 
         # Create Organelle 2
 
         # Create the object and add it to the CellBlender model
         cb_model.add_icosphere_to_model ( name="Organelle_2", draw_type="WIRE", size=0.2, y=0.31, subdiv=subdiv+1 )
-        cb_model.add_surface_region_to_model_by_normal ( "Organelle_2", "top", 0, -1, 0, 0.8 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Organelle_2", "top", 0, -1, 0, 0.8 )
 
 
         # Create Cell itself
