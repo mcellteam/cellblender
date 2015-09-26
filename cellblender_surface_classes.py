@@ -197,11 +197,10 @@ class MCELL_OT_surf_class_props_add(bpy.types.Operator):
 
     def execute(self, context):
         surf_class = context.scene.mcell.surface_classes
-        active_surf_class = surf_class.surf_class_list[
-            surf_class.active_surf_class_index]
+        active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
         active_surf_class.surf_class_props_list.add()
-        active_surf_class.active_surf_class_props_index = len(
-            active_surf_class.surf_class_props_list) - 1
+        active_surf_class.active_surf_class_props_index = len(active_surf_class.surf_class_props_list) - 1
+        active_surf_class.surf_class_props_list[active_surf_class.active_surf_class_props_index].init_properties(context.scene.mcell.parameter_system)
         check_surf_class_props(self, context)
 
         return {'FINISHED'}
@@ -215,12 +214,9 @@ class MCELL_OT_surf_class_props_remove(bpy.types.Operator):
 
     def execute(self, context):
         surf_class = context.scene.mcell.surface_classes
-        active_surf_class = surf_class.surf_class_list[
-            surf_class.active_surf_class_index]
-        active_surf_class.surf_class_props_list.remove(
-            active_surf_class.active_surf_class_props_index)
-        active_surf_class.active_surf_class_props_index = len(
-            active_surf_class.surf_class_props_list) - 1
+        active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
+        active_surf_class.surf_class_props_list.remove(active_surf_class.active_surf_class_props_index)
+        active_surf_class.active_surf_class_props_index = len(active_surf_class.surf_class_props_list) - 1
         if (active_surf_class.active_surf_class_props_index < 0):
             active_surf_class.active_surf_class_props_index = 0
 
@@ -236,10 +232,9 @@ class MCELL_OT_surface_class_add(bpy.types.Operator):
     def execute(self, context):
         surf_class = context.scene.mcell.surface_classes
         surf_class.surf_class_list.add()
-        surf_class.active_surf_class_index = len(
-            surf_class.surf_class_list) - 1
-        surf_class.surf_class_list[
-            surf_class.active_surf_class_index].name = "Surface_Class"
+        surf_class.active_surf_class_index = len(surf_class.surf_class_list) - 1
+        surf_class.surf_class_list[surf_class.active_surf_class_index].init_properties(context.scene.mcell.parameter_system)
+        surf_class.surf_class_list[surf_class.active_surf_class_index].name = "Surface_Class"
 
         return {'FINISHED'}
 
@@ -336,10 +331,9 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         description="Molecules are destroyed by absorptive surfaces, pass "
                     "through transparent, and \"bounce\" off of reflective.",
         update=check_surf_class_props)
-    clamp_value = FloatProperty(name="Value", precision=4, min=0.0)
-    clamp_value_str = StringProperty(
-        name="Value", description="Concentration Units: Molar",
-        update=update_clamp_value)
+
+    clamp_value = PointerProperty ( name="Value", type=parameter_system.Parameter_Reference )
+
     status = StringProperty(name="Status")
 
     def build_data_model_from_properties ( self, context ):
@@ -350,7 +344,7 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         sc_dict['molecule'] = sc.molecule
         sc_dict['surf_class_orient'] = str(sc.surf_class_orient)
         sc_dict['surf_class_type'] = str(sc.surf_class_type)
-        sc_dict['clamp_value'] = str(sc.clamp_value_str)
+        sc_dict['clamp_value'] = sc.clamp_value.get_expr()
         return sc_dict
 
 
@@ -362,7 +356,13 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] == "DM_2014_10_24_1638":
+            # Need to convert the clamp value from a plain string to a string expression
+            # It turns out that the old clamp_value was already stored as a string so it should be compatible
+            # Just update the data model version
+            dm['data_model_version'] = "DM_2015_09_25_1653"
+
+        if dm['data_model_version'] != "DM_2015_09_25_1653":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellSurfaceClassPropertiesProperty data model to current version." )
             return None
 
@@ -370,29 +370,23 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
 
 
     def build_properties_from_data_model ( self, context, dm ):
-
-        # Upgrade the data model as needed
-        if not ('data_model_version' in dm):
-            # Make changes to move from unversioned to DM_2014_10_24_1638
-            dm['data_model_version'] = "DM_2014_10_24_1638"
-
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        # Check that the data model version matches the current version for this property group
+        if dm['data_model_version'] != "DM_2015_09_25_1653":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellSurfaceClassPropertiesProperty data model to current version." )
-
+        # Now convert the updated Data Model into CellBlender Properties
         self.name = dm["name"]
         self.molecule = dm["molecule"]
         self.surf_class_orient = dm["surf_class_orient"]
         self.surf_class_type = dm["surf_class_type"]
-        self.clamp_value_str = dm["clamp_value"]
-        self.clamp_value = float(self.clamp_value_str)
+        self.clamp_value.set_expr ( dm["clamp_value"] )
 
     def init_properties ( self, parameter_system ):
         self.name = "Molecule"
         self.molecule = ""
         self.surf_class_orient = '\''
         self.surf_class_type = 'REFLECTIVE'
-        self.clamp_value_str = "0.0"
-        self.clamp_value = float(self.clamp_value_str)
+        helptext = "Clamp the Concentration of this molecule to this value on this surface."
+        self.clamp_value.init_ref ( parameter_system, "Surf_Class_Val_Type", user_name="Value", user_expr="0", user_units="Concentration Units: Molar", user_descr=helptext )
 
     def remove_properties ( self, context ):
         print ( "Removing all Surface Class Properties... no collections to remove." )
@@ -416,6 +410,12 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
     active_surf_class_props_index = IntProperty(
         name="Active Surface Class Index", default=0)
     status = StringProperty(name="Status")
+
+    def init_properties ( self, parameter_system ):
+        if self.surf_class_props_list:
+            for sc in self.surf_class_props_list:
+                sc.init_properties(parameter_system)
+
 
     def remove_properties ( self, context ):
         print ( "Removing all Surface Class Properties..." )
@@ -473,7 +473,7 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
                 self.surf_class_props_list.add()
                 self.active_surf_class_props_index = len(self.surf_class_props_list)-1
                 scp = self.surf_class_props_list[self.active_surf_class_props_index]
-                # scp.init_properties(context.scene.mcell.parameter_system)
+                scp.init_properties(context.scene.mcell.parameter_system)
                 scp.build_properties_from_data_model ( context, sc )
 
     def check_properties_after_building ( self, context ):
@@ -536,7 +536,7 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
                 self.surf_class_list.add()
                 self.active_surf_class_index = len(self.surf_class_list)-1
                 sc = self.surf_class_list[self.active_surf_class_index]
-                # sc.init_properties(context.scene.mcell.parameter_system)
+                sc.init_properties(context.scene.mcell.parameter_system)
                 sc.build_properties_from_data_model ( context, s )
 
     def check_properties_after_building ( self, context ):
@@ -676,7 +676,7 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
                     layout.prop(surf_class_props, "surf_class_orient")
                     layout.prop(surf_class_props, "surf_class_type")
                     if (surf_class_props.surf_class_type == 'CLAMP_CONCENTRATION'):
-                        layout.prop(surf_class_props, "clamp_value_str")
+                        surf_class_props.clamp_value.draw(layout,ps)
 
 
     def draw_panel ( self, context, panel ):

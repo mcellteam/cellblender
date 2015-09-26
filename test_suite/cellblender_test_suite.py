@@ -805,7 +805,10 @@ class CellBlender_Model:
         self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].molecule = mol_name
         self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].surf_class_orient = sc_orient
         self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].surf_class_type = sc_type
-        self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].clamp_value_str = sc_clamp_val_str
+        #self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].clamp_value_str = sc_clamp_val_str
+        self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].clamp_value.set_expr ( sc_clamp_val_str )
+
+
         print ( "Done Adding Surface Class Property " + sc_orient + " " + sc_type + " " + sc_clamp_val_str )
         return self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index]
 

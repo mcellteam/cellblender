@@ -834,6 +834,8 @@ def save_surface_classes(context, out_file, surf_class_list):
 
     mcell = context.scene.mcell
 
+    ps = mcell.parameter_system
+
     out_file.write("DEFINE_SURFACE_CLASSES\n")
     out_file.write("{\n")
     for active_surf_class in surf_class_list:
@@ -848,9 +850,10 @@ def save_surface_classes(context, out_file, surf_class_list):
             orient = surf_class_props.surf_class_orient
             surf_class_type = surf_class_props.surf_class_type
             if surf_class_type == 'CLAMP_CONCENTRATION':
-                clamp_value = surf_class_props.clamp_value
+                clamp_value = surf_class_props.clamp_value.get_as_string_or_value(
+                              ps.panel_parameter_list, ps.export_as_expressions)
                 out_file.write("    %s" % surf_class_type)
-                out_file.write(   " %s%s = %g\n" % (molecule,
+                out_file.write(   " %s%s = %s\n" % (molecule,
                                                     orient,
                                                     clamp_value))
             else:
