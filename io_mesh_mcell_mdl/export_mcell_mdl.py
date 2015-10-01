@@ -1061,8 +1061,15 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
     ps = mcell.parameter_system
 
     out_file.write("REACTION_DATA_OUTPUT\n{\n")
-    rxn_step = mcell.rxn_output.rxn_step.get_as_string_or_value(
-        ps.panel_parameter_list, ps.export_as_expressions)
+    rxn_step = mcell.rxn_output.rxn_step.get_expr(ps.panel_parameter_list)
+    if len(rxn_step.strip()) == 0:
+        # When blank, use the system time step set in initialization
+        rxn_step = mcell.initialization.time_step.get_as_string_or_value(
+            ps.panel_parameter_list, ps.export_as_expressions)
+    else:
+        # When not blank, convert it as a normal panel parameter
+        rxn_step = mcell.rxn_output.rxn_step.get_as_string_or_value(
+            ps.panel_parameter_list, ps.export_as_expressions)
     out_file.write("  STEP=%s\n" % rxn_step)
 
     for rxn_output in rxn_output_list:

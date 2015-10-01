@@ -477,7 +477,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         self.rxn_step.init_ref (
             parameter_system, "Rxn_Output_Step", user_name="Step", 
             user_expr="", user_units="", user_descr="Step\n"
-            "Output reaction data every t seconds.") 
+            "Output reaction data every t seconds.\nUses simulation time step when blank.") 
 
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output Panel building Data Model" )
