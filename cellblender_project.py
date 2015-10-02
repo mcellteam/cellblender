@@ -156,6 +156,18 @@ class MCELL_OT_export_project(bpy.types.Operator):
     bl_description = "Export CellBlender Project"
     bl_options = {'REGISTER'}
 
+    @classmethod
+    def poll(self,context):
+
+        mcell = context.scene.mcell
+        if mcell.cellblender_preferences.lockout_export:
+            # print ( "Exporting is currently locked out. See the Preferences/ExtraOptions panel." )
+            # The "self" here doesn't contain or permit the report function.
+            # self.report({'INFO'}, "Exporting is Locked Out")
+            return False
+
+        return True
+
     def execute(self, context):
         print("MCELL_OT_export_project.execute()")
 

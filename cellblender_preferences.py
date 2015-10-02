@@ -508,8 +508,9 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
                     text="Python Binary: " + self.python_binary,
                     icon='FILE_TICK')
 
-            row = layout.row()
-            row.prop(mcell.cellblender_preferences, "decouple_export_run")
+            # This preference is now shown in the run panel where it is more appropriate
+            #row = layout.row()
+            #row.prop(mcell.cellblender_preferences, "decouple_export_run")
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "invalid_policy")
 
