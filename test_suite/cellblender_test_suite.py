@@ -2447,7 +2447,7 @@ class SurfaceClassesTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='5000', time_step='1e-6', wait_time=40.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "b781cd49d7b9499b87570a4ca920134b701657c5", test_name="Surface Classes Test" )
+        cb_model.compare_mdl_with_sha1 ( "1bdb9fbc56851773331dd58f45de418cbaa8315e", test_name="Surface Classes Test" )
 
         cb_model.refresh_molecules()
 
@@ -2528,7 +2528,7 @@ class CapsuleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='10000', time_step='1e-6', wait_time=50.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "3aaca27e86f45a29de7c121bef1a08029ef8ca37", test_name="Capsule in Capsule Test" )
+        cb_model.compare_mdl_with_sha1 ( "c9950d6bad9e7c18af96df94fcc59781b1b7fcc0", test_name="Capsule in Capsule Test" )
 
         cb_model.refresh_molecules()
         
@@ -2809,7 +2809,7 @@ class SimpleMoleculeCountTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='100', time_step='1e-6', wait_time=3.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "d24da83d3b07bb1f3be2e571fa29f99c054d6478", test_name="Simple Molecule Count Test" )
+        cb_model.compare_mdl_with_sha1 ( "7b6af2c8c36dc91eb62c62009c14cf8024f21595", test_name="Simple Molecule Count Test" )
 
         cb_model.refresh_molecules()
         cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
@@ -2888,7 +2888,7 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1500', time_step=dt, wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "ec68e0720b43755c4f193d65ebaaa55eb2c2cfae", test_name="Release Time Patterns Test" )
+        cb_model.compare_mdl_with_sha1 ( "7b9760c0925108f964e316603ea0fbdf9a13a18b", test_name="Release Time Patterns Test" )
 
         cb_model.refresh_molecules()
 
@@ -3003,7 +3003,7 @@ class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
 
     def execute(self, context):
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="be2169e601b5148c9d2da24143aae99367bf7f39", test_name="Lotka Volterra Torus - Diffusion Limited Reaction", wait_time=15.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="5b7ea646b35cc54eb56a36a08a34217e2900c928", test_name="Lotka Volterra Torus - Diffusion Limited Reaction", wait_time=15.0 )
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -3026,7 +3026,7 @@ class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
 
     def execute(self, context):
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="bd1033a5ec4f6c51c017da4640d5bce7df5cdbd8", test_name="Lotka Volterra Torus - Physiologic Reaction", wait_time=60.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="4be2236905c76aa47d1f2b76904ef76bdc025c01", test_name="Lotka Volterra Torus - Physiologic Reaction", wait_time=60.0 )
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -3122,7 +3122,7 @@ class OrganelleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=25.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "ecd81fc1c5b65777866da16f286b4eb70e362620", test_name="Organelle Test" )
+        cb_model.compare_mdl_with_sha1 ( "3003cef2476115267c044801d06486903edef600", test_name="Organelle Test" )
 
         cb_model.refresh_molecules()
 
@@ -3244,7 +3244,7 @@ class MinDMinETestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='0.5 * 200/dt', time_step='dt', wait_time=5.0 )  # Can use to generate MDL, but SHA1 won't be right: export_format="mcell_mdl_modular", 
 
-        cb_model.compare_mdl_with_sha1 ( "cd346130b01966382fd2b6829235e25f13f3dddb", test_name="E. coli MinD/MinE System" )
+        cb_model.compare_mdl_with_sha1 ( "300a55f3238a33a9cc8349b68f1e385d3712ee8f", test_name="E. coli MinD/MinE System" )
 
         cb_model.set_view_back()
 
