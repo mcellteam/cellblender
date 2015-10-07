@@ -1072,6 +1072,7 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
             ps.panel_parameter_list, ps.export_as_expressions)
     out_file.write("  STEP=%s\n" % rxn_step)
 
+    mdl_string_index = 1
     for rxn_output in rxn_output_list:
         if rxn_output.rxn_or_mol == 'Reaction':
             count_name = rxn_output.reaction_name
@@ -1081,7 +1082,8 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
             outputStr = rxn_output.mdl_string
             output_file = rxn_output.molecule_name
             if outputStr not in ['', None]:
-                outputStr = '{%s} =>  "./react_data/seed_" & seed & \"/%s.World.dat\"\n' % (outputStr, output_file)
+                outputStr = '{%s} =>  "./react_data/seed_" & seed & \"/%s.MDLString_%d.dat\"\n' % (outputStr, output_file, mdl_string_index)
+                mdl_string_index += 1
                 out_file.write(outputStr)
             else:
                 print('Found invalid reaction output {0}'.format(rxn_output.name))
