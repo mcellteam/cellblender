@@ -314,8 +314,9 @@ def select_callback ( self, context ):
 
 class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
-    preferences_select = BoolProperty ( name="pref_sel", description="Preferences", default=False, subtype='NONE', update=select_callback)
-    settings_select = BoolProperty ( name="set_sel", description="Project Settings", default=False, subtype='NONE', update=select_callback)
+    preferences_select = BoolProperty ( name="pref_sel", description="Settings & Preferences", default=False, subtype='NONE', update=select_callback)
+    #settings_select = BoolProperty ( name="set_sel", description="Project Settings", default=False, subtype='NONE', update=select_callback)
+    custom_mdl_select = BoolProperty ( name="set_mdl", description="Custom MDL", default=False, subtype='NONE', update=select_callback)
     parameters_select = BoolProperty ( name="par_sel", description="Model Parameters", default=False, subtype='NONE', update=select_callback)
     reaction_select = BoolProperty ( name="react_sel", description="Reactions", default=False, subtype='NONE', update=select_callback)
     molecule_select = BoolProperty ( name="mol_sel", description="Molecules", default=False, subtype='NONE', update=select_callback)
@@ -357,7 +358,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             Hide all panels ... always
             
         """
-        prop_keys = [ 'preferences_select', 'settings_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'init_select', 'graph_select', 'viz_select', 'select_multiple' ]
+        prop_keys = [ 'preferences_select', 'custom_mdl_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'init_select', 'graph_select', 'viz_select', 'select_multiple' ]
         
         pin_state = False
         
@@ -514,54 +515,54 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     #row = layout.row(align=True)
                     row = col.row(align=True)
 
-                    if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "preferences_select", icon='PREFERENCES' )
-                    if mcell.cellblender_preferences.show_button_num[1]: row.prop ( self, "settings_select", icon='SETTINGS' )
-                    if mcell.cellblender_preferences.show_button_num[2]: row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER' )
+                    if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "preferences_select", icon='PREFERENCES', text="" )
+                    if mcell.cellblender_preferences.show_button_num[1]: row.prop ( self, "custom_mdl_select", icon='TEXT', text="" )
+                    if mcell.cellblender_preferences.show_button_num[2]: row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="" )
 
                     if mcell.cellblender_preferences.use_stock_icons:
                         # Use "stock" icons to check on drawing speed problem
-                        if mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES' )
-                        if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT' )
+                        if mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES', text="" )
+                        if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="" )
                     else:
                         if self.molecule_select:
                             if mcell.cellblender_preferences.show_button_num[3]: molecule_img_sel = bpy.data.images.get('mol_s')
                             if mcell.cellblender_preferences.show_button_num[3]: mol_s = layout.icon(molecule_img_sel)
-                            if mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "molecule_select", icon_value=mol_s )
+                            if mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "molecule_select", icon_value=mol_s, text="" )
                         else:
                             if mcell.cellblender_preferences.show_button_num[3]: molecule_img_unsel = bpy.data.images.get('mol_u')
                             if mcell.cellblender_preferences.show_button_num[3]: mol_u = layout.icon(molecule_img_unsel)
-                            if mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "molecule_select", icon_value=mol_u )
+                            if mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "molecule_select", icon_value=mol_u, text="" )
 
                         if self.reaction_select:
                             if mcell.cellblender_preferences.show_button_num[4]: react_img_sel = bpy.data.images.get('reaction_s')
                             if mcell.cellblender_preferences.show_button_num[4]: reaction_s = layout.icon(react_img_sel)
-                            if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "reaction_select", icon_value=reaction_s )
+                            if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "reaction_select", icon_value=reaction_s, text="" )
                         else:
                             if mcell.cellblender_preferences.show_button_num[4]: react_img_unsel = bpy.data.images.get('reaction_u')
                             if mcell.cellblender_preferences.show_button_num[4]: reaction_u = layout.icon(react_img_unsel)
-                            if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "reaction_select", icon_value=reaction_u )
+                            if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "reaction_select", icon_value=reaction_u, text="" )
 
-                    if mcell.cellblender_preferences.show_button_num[5]: row.prop ( self, "placement_select", icon='GROUP_VERTEX' )
-                    if mcell.cellblender_preferences.show_button_num[6]: row.prop ( self, "rel_patterns_select", icon='TIME' )
-                    if mcell.cellblender_preferences.show_button_num[7]: row.prop ( self, "objects_select", icon='MESH_ICOSPHERE' )  # Or 'MESH_CUBE'
-                    if mcell.cellblender_preferences.show_button_num[8]: row.prop ( self, "surf_classes_select", icon='FACESEL_HLT' )
-                    if mcell.cellblender_preferences.show_button_num[9]: row.prop ( self, "surf_regions_select", icon='SNAP_FACE' )
-                    if mcell.cellblender_preferences.show_button_num[10]: row.prop ( self, "partitions_select", icon='GRID' )
-                    if mcell.cellblender_preferences.show_button_num[11]: row.prop ( self, "graph_select", icon='FCURVE' )
-                    if mcell.cellblender_preferences.show_button_num[12]: row.prop ( self, "viz_select", icon='SEQUENCE' )
-                    if mcell.cellblender_preferences.show_button_num[13]: row.prop ( self, "init_select", icon='COLOR_RED' )
+                    if mcell.cellblender_preferences.show_button_num[5]: row.prop ( self, "placement_select", icon='GROUP_VERTEX', text="" )
+                    if mcell.cellblender_preferences.show_button_num[6]: row.prop ( self, "rel_patterns_select", icon='TIME', text="" )
+                    if mcell.cellblender_preferences.show_button_num[7]: row.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="" )  # Or 'MESH_CUBE'
+                    if mcell.cellblender_preferences.show_button_num[8]: row.prop ( self, "surf_classes_select", icon='FACESEL_HLT', text="" )
+                    if mcell.cellblender_preferences.show_button_num[9]: row.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="" )
+                    if mcell.cellblender_preferences.show_button_num[10]: row.prop ( self, "partitions_select", icon='GRID', text="" )
+                    if mcell.cellblender_preferences.show_button_num[11]: row.prop ( self, "graph_select", icon='FCURVE', text="" )
+                    if mcell.cellblender_preferences.show_button_num[12]: row.prop ( self, "viz_select", icon='SEQUENCE', text="" )
+                    if mcell.cellblender_preferences.show_button_num[13]: row.prop ( self, "init_select", icon='COLOR_RED', text="" )
 
                     col = split.column()
                     row = col.row()
 
                     if self.select_multiple:
-                        if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "select_multiple", icon='PINNED' )
+                        if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "select_multiple", icon='PINNED', text="" )
                     else:
-                        if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "select_multiple", icon='UNPINNED' )
+                        if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "select_multiple", icon='UNPINNED', text="" )
 
                     # Use an operator rather than a property to make it an action button
                     # row.prop ( self, "reload_viz", icon='FILE_REFRESH' )
-                    if mcell.cellblender_preferences.show_button_num[0]: row.operator ( "cbm.refresh_operator",text="",icon='FILE_REFRESH')
+                    if mcell.cellblender_preferences.show_button_num[0]: row.operator ( "cbm.refresh_operator", icon='FILE_REFRESH', text="")
                         
                 else:
 
@@ -572,9 +573,9 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                     brow = layout.row()
                     bcol = brow.column()
-                    bcol.prop ( self, "preferences_select", icon='PREFERENCES', text="Preferences" )
+                    bcol.prop ( self, "preferences_select", icon='PREFERENCES', text="Settings & Preferences" )
                     bcol = brow.column()
-                    bcol.prop ( self, "settings_select", icon='SETTINGS', text="Settings" )
+                    bcol.prop ( self, "custom_mdl_select", icon='TEXT', text="Custom MDL" )
 
                     current_marker = "After drawing preferences_select"
 
@@ -714,13 +715,18 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                 if self.preferences_select:
                     layout.box() # Use as a separator
+                    layout.label ( "Project Settings", icon='SETTINGS' )
+                    context.scene.mcell.project_settings.draw_layout ( context, layout )
+
+                    layout.box() # Use as a separator
                     layout.label ( "Preferences", icon='PREFERENCES' )
                     context.scene.mcell.cellblender_preferences.draw_layout ( context, layout )
 
-                if self.settings_select:
-                    layout.box() # Use as a separator
-                    layout.label ( "Project Settings", icon='SETTINGS' )
-                    context.scene.mcell.project_settings.draw_layout ( context, layout )
+                # Combine settings and preferences above
+                # if self.settings_select:
+                #     layout.box() # Use as a separator
+                #     layout.label ( "Project Settings", icon='SETTINGS' )
+                #     context.scene.mcell.project_settings.draw_layout ( context, layout )
 
                 if self.parameters_select:
                     layout.box() # Use as a separator
