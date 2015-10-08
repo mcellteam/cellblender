@@ -915,38 +915,6 @@ def save_reactions(context, out_file, rxn_list, filedir):
     for rxn_item in rxn_list:
         rxn_item.write_to_mdl_file ( context, out_file, filedir )
         
-        """
-        # Moved to cellblender_properties.py / MCellReactionProperty
-        out_file.write("  %s " % (rxn_item.name))
-
-        if rxn_item.type == 'irreversible':
-            # Use a variable rate constant file if specified
-            if rxn_item.variable_rate_switch and rxn_item.variable_rate_valid:
-                variable_rate_name = rxn_item.variable_rate
-                out_file.write('["%s"]' % (variable_rate_name))
-                variable_rate_text = bpy.data.texts[variable_rate_name]
-                variable_out_filename = os.path.join(
-                    filedir, variable_rate_name)
-                with open(variable_out_filename, "w", encoding="utf8",
-                          newline="\n") as variable_out_file:
-                    variable_out_file.write(variable_rate_text.as_string())
-            # Use a single-value rate constant
-            else:
-                out_file.write("[%s]" % (rxn_item.fwd_rate.get_as_string_or_value(
-                               ps.panel_parameter_list,ps.export_as_expressions)))    
-        else:
-            out_file.write(
-                "[>%s, <%s]" % (rxn_item.fwd_rate.get_as_string_or_value(
-                ps.panel_parameter_list, ps.export_as_expressions),
-                rxn_item.bkwd_rate.get_as_string_or_value(ps.panel_parameter_list,
-                ps.export_as_expressions)))
-
-        if rxn_item.rxn_name:
-            out_file.write(" : %s\n" % (rxn_item.rxn_name))
-        else:
-            out_file.write("\n")
-        """
-
     out_file.write("}\n\n")
 
 
@@ -1072,7 +1040,6 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
             ps.panel_parameter_list, ps.export_as_expressions)
     out_file.write("  STEP=%s\n" % rxn_step)
 
-    mdl_string_index = 1
     for rxn_output in rxn_output_list:
         if rxn_output.rxn_or_mol == 'Reaction':
             count_name = rxn_output.reaction_name
@@ -1080,10 +1047,9 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
             count_name = rxn_output.molecule_name
         elif rxn_output.rxn_or_mol == 'MDLString':
             outputStr = rxn_output.mdl_string
-            output_file = rxn_output.molecule_name
+            output_file = rxn_output.mdl_file_prefix
             if outputStr not in ['', None]:
-                outputStr = '{%s} =>  "./react_data/seed_" & seed & \"/%s.MDLString_%d.dat\"\n' % (outputStr, output_file, mdl_string_index)
-                mdl_string_index += 1
+                outputStr = '  {%s} =>  "./react_data/seed_" & seed & \"/%s_MDLString.dat\"\n' % (outputStr, output_file)
                 out_file.write(outputStr)
             else:
                 print('Found invalid reaction output {0}'.format(rxn_output.name))

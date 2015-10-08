@@ -85,7 +85,7 @@ def unregister():
 
 def check_mod_surf_regions(self, context):
     """Make sure the surface class name is valid and format the list entry"""
-    print ( "  Checking the mod_surf_region for " + str(self) )
+    # print ( "  Checking the mod_surf_region for " + str(self) )
 
     mcell = context.scene.mcell
     obj_list = mcell.model_objects.object_list
@@ -324,8 +324,8 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
         self.region_name = dm["region_name"]
 
     def check_properties_after_building ( self, context ):
-        print ( "Implementing check_properties_after_building for " + str(self) )
-        print ( "Calling check_mod_surf_regions on object named: " + self.object_name )
+        # print ( "Implementing check_properties_after_building for " + str(self) )
+        # print ( "Calling check_mod_surf_regions on object named: " + self.object_name )
         check_mod_surf_regions(self, context)
 
 
