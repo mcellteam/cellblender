@@ -55,6 +55,7 @@ from bpy.app.handlers import persistent
 
 # python imports
 import pickle
+import json
 import os
 
 from bpy_extras.io_utils import ExportHelper
@@ -114,6 +115,13 @@ def pickle_data_model ( dm ):
 
 def unpickle_data_model ( dmp ):
     return ( pickle.loads ( dmp.encode('latin1') ) )
+
+def json_from_data_model ( dm ):
+    return ( json.dumps ( dm ) )
+
+def data_model_from_json ( dmp ):
+    return ( json.loads ( dmp ) )
+
 
 def save_data_model_to_file ( mcell_dm, file_name ):
     print ( "Saving CellBlender model to file: " + file_name )
