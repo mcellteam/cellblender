@@ -374,7 +374,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             pin_state = (self['select_multiple'] != 0)
         old_pin_state = (self.last_state[prop_keys.index('select_multiple')] != 0)
         
-        print ( "Select Called without try/except with pin state:" + str(pin_state) + ", and old pin state = " + str(old_pin_state) )
+        # print ( "Select Called without try/except with pin state:" + str(pin_state) + ", and old pin state = " + str(old_pin_state) )
 
         if (old_pin_state and (not pin_state)):
             # Pin has been removed, so hide all panels ... always
