@@ -62,6 +62,7 @@ from . import cellblender_simulation
 from . import cellblender_mol_viz
 from . import cellblender_reaction_output
 from . import cellblender_meshalyzer
+from . import cellblender_scripting
 from . import parameter_system
 from . import data_model
 
@@ -316,7 +317,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
     preferences_select = BoolProperty ( name="pref_sel", description="Settings & Preferences", default=False, subtype='NONE', update=select_callback)
     #settings_select = BoolProperty ( name="set_sel", description="Project Settings", default=False, subtype='NONE', update=select_callback)
-    custom_mdl_select = BoolProperty ( name="set_mdl", description="Custom MDL", default=False, subtype='NONE', update=select_callback)
+    scripting_select = BoolProperty ( name="set_mdl", description="Scripting", default=False, subtype='NONE', update=select_callback)
     parameters_select = BoolProperty ( name="par_sel", description="Model Parameters", default=False, subtype='NONE', update=select_callback)
     reaction_select = BoolProperty ( name="react_sel", description="Reactions", default=False, subtype='NONE', update=select_callback)
     molecule_select = BoolProperty ( name="mol_sel", description="Molecules", default=False, subtype='NONE', update=select_callback)
@@ -358,7 +359,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             Hide all panels ... always
             
         """
-        prop_keys = [ 'preferences_select', 'custom_mdl_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'init_select', 'graph_select', 'viz_select', 'select_multiple' ]
+        prop_keys = [ 'preferences_select', 'scripting_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'init_select', 'graph_select', 'viz_select', 'select_multiple' ]
         
         pin_state = False
         
@@ -516,7 +517,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     row = col.row(align=True)
 
                     if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "preferences_select", icon='PREFERENCES', text="" )
-                    if mcell.cellblender_preferences.show_button_num[1]: row.prop ( self, "custom_mdl_select", icon='TEXT', text="" )
+                    if mcell.cellblender_preferences.show_button_num[1]: row.prop ( self, "scripting_select", icon='TEXT', text="" )
                     if mcell.cellblender_preferences.show_button_num[2]: row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="" )
 
                     if mcell.cellblender_preferences.use_stock_icons:
@@ -575,7 +576,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol = brow.column()
                     bcol.prop ( self, "preferences_select", icon='PREFERENCES', text="Settings & Preferences" )
                     bcol = brow.column()
-                    bcol.prop ( self, "custom_mdl_select", icon='TEXT', text="Custom MDL" )
+                    bcol.prop ( self, "scripting_select", icon='TEXT', text="Scripting" )
 
                     current_marker = "After drawing preferences_select"
 
@@ -728,6 +729,11 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                 #     layout.label ( "Project Settings", icon='SETTINGS' )
                 #     context.scene.mcell.project_settings.draw_layout ( context, layout )
 
+                if self.scripting_select:
+                    layout.box() # Use as a separator
+                    layout.label ( "Scripting", icon='TEXT' )
+                    context.scene.mcell.scripting.draw_layout ( context, layout )
+
                 if self.parameters_select:
                     layout.box() # Use as a separator
                     layout.label ( "Model Parameters", icon='SEQ_SEQUENCER' )
@@ -856,6 +862,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     cellblender_preferences = PointerProperty(
         type=cellblender_preferences.CellBlenderPreferencesPropertyGroup,
         name="CellBlender Preferences")
+    scripting = PointerProperty(
+        type=cellblender_scripting.CellBlenderScriptingPropertyGroup,
+        name="CellBlender Scripting")
     project_settings = PointerProperty(
         type=cellblender_project.MCellProjectPropertyGroup, name="CellBlender Project Settings")
     export_project = PointerProperty(
