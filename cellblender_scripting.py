@@ -343,3 +343,8 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         self.draw_layout ( context, layout )
 
 
+    def write_scripting_output ( self, before_after, section, context, out_file, filedir ):
+        print ( "################### Write Scripting Ouptut " + before_after + " " + section )
+        out_file.write("\n/* Begin Custom MDL Inserted %s %s */\n" % (before_after, section))
+        out_file.write("/* End Custom MDL Inserted %s %s */\n\n" % (before_after, section))
+        pass
