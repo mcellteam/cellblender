@@ -165,6 +165,35 @@ class MCELL_PT_scripting_settings(bpy.types.Panel):
 
 # Scripting Property Groups
 
+################### Write Scripting Ouptut before everything
+################### Write Scripting Ouptut before parameters
+################### Write Scripting Ouptut after parameters
+################### Write Scripting Ouptut before initialization
+################### Write Scripting Ouptut after initialization
+################### Write Scripting Ouptut before partitions
+################### Write Scripting Ouptut after partitions
+################### Write Scripting Ouptut before molecules
+################### Write Scripting Ouptut after molecules
+################### Write Scripting Ouptut before surface_classes
+################### Write Scripting Ouptut after surface_classes
+################### Write Scripting Ouptut before reactions
+################### Write Scripting Ouptut after reactions
+################### Write Scripting Ouptut before geometry
+################### Write Scripting Ouptut after geometry
+################### Write Scripting Ouptut before mod_surf_regions
+################### Write Scripting Ouptut after mod_surf_regions
+################### Write Scripting Ouptut before release_patterns
+################### Write Scripting Ouptut after release_patterns
+################### Write Scripting Ouptut before instantiate
+################### Write Scripting Ouptut after instantiate
+################### Write Scripting Ouptut before seed
+################### Write Scripting Ouptut after seed
+################### Write Scripting Ouptut before viz_output
+################### Write Scripting Ouptut after viz_output
+################### Write Scripting Ouptut before rxn_output
+################### Write Scripting Ouptut after rxn_output
+################### Write Scripting Ouptut after everything
+
 
 class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Scripting", update=check_scripting)
@@ -174,69 +203,77 @@ class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
     external_file_name = StringProperty ( name = "External File Name", subtype='FILE_PATH', default="" )
 
     include_where_enum = [
-        ('Include Before', "Include Before", ""),
-        ('Include After',  "Include After",  ""),
-        ("Don't Include",  "Don't Include",  "")]
+        ('before', "Include Before", ""),
+        ('after',  "Include After",  ""),
+        ("dont_include",  "Don't Include",  "")]
     include_where = bpy.props.EnumProperty(
         items=include_where_enum, name="Include Where",
-        default='Include Before',
+        default='before',
         description="Choose relative location to include this script.",
         update=check_scripting)
 
     include_section_enum = [
-        ('Parameters',      "Parameters", ""),
-        ('Initialization',  "Initialization",  ""),
-        ("Molecules",       "Molecules",  ""),
-        ("Reactions",       "Reactions",  ""),
-        ("Geometry",        "Geometry",  ""),
-        ("Output",          "Output",  "")]
+        ('everything',       "Everything", ""),
+        ('parameters',       "Parameters", ""),
+        ('initialization',   "Initialization",  ""),
+        ('partitions',       "Partitions",  ""),
+        ("molecules",        "Molecules",  ""),
+        ("surface_classes",  "Surface Classes",  ""),
+        ("reactions",        "Reactions",  ""),
+        ("geometry",         "Geometry",  ""),
+        ("mod_surf_regions", "Modify Surface Regions",  ""),
+        ("release_patterns", "Release Patterns",  ""),
+        ("instantiate",      "Instantiate Objects",  ""),
+        ("seed",             "Seed",  ""),
+        ("viz_output",       "Visualization Output",  ""),
+        ("rxn_output",       "Reaction Output",  "")]
     include_section = bpy.props.EnumProperty(
         items=include_section_enum, name="Include Section",
-        default='Initialization',
+        default='initialization',
         description="Choose MDL section to include this script.",
         update=check_scripting)
 
     internal_external_enum = [
-        ('Internal', "Internal", ""),
-        ("External", "External",  "")]
+        ('internal', "Internal", ""),
+        ("external", "External",  "")]
     internal_external = bpy.props.EnumProperty(
         items=internal_external_enum, name="Internal/External",
-        default='Internal',
+        default='internal',
         description="Choose location of file (internal text or external file).",
         update=check_scripting)
 
     mdl_python_enum = [
-        ('MDL',    "MDL", ""),
-        ("Python", "Python",  "")]
+        ('mdl',    "MDL", ""),
+        ("python", "Python",  "")]
     mdl_python = bpy.props.EnumProperty(
         items=mdl_python_enum, name="MDL/Python",
-        default='MDL',
+        default='mdl',
         description="Choose type of scripting (MDL or Python).",
         update=check_scripting)
 
     def get_description ( self ):
         desc = ""
 
-        if self.include_where == "Don't Include":
+        if self.include_where == "dont_include":
             desc = "Don't include "
-            if self.internal_external == "Internal":
+            if self.internal_external == "internal":
                 desc += "internal \"" + self.internal_file_name + "\" "
-            if self.internal_external == "External":
+            if self.internal_external == "external":
                 desc += "external \"" + self.external_file_name + "\" "
         else:
             int_ext = ""
             fname = ""
-            if self.internal_external == "Internal":
+            if self.internal_external == "internal":
                 int_ext = "internal "
                 fname = "\"" + self.internal_file_name + "\" "
-            if self.internal_external == "External":
+            if self.internal_external == "external":
                 int_ext = "external "
                 fname = "\"" + self.external_file_name + "\" "
 
             where = ""
-            if self.include_where == "Include Before":
+            if self.include_where == "before":
                 where = "before "
-            if self.include_where == "Include After":
+            if self.include_where == "after":
                 where = "after "
 
             mdl_py = self.mdl_python + " "
@@ -259,9 +296,9 @@ class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
             
             row = layout.row()
 
-            if (self.internal_external == "Internal"):
+            if (self.internal_external == "internal"):
 
-                if (self.mdl_python == "MDL"):
+                if (self.mdl_python == "mdl"):
                     row.prop_search ( self, "internal_file_name",
                                       context.scene.mcell.scripting, "internal_mdl_scripts_list",
                                       text="File:", icon='TEXT' )
@@ -274,7 +311,7 @@ class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
                         box.label ( bpy.data.texts[txt.name].as_string() )
                     """
 
-                if (self.mdl_python == "Python"):
+                if (self.mdl_python == "python"):
                     row.prop_search ( self, "internal_file_name",
                                       context.scene.mcell.scripting, "internal_python_scripts_list",
                                       text="File:", icon='TEXT' )
@@ -287,7 +324,7 @@ class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
                         box.label ( bpy.data.texts[txt.name].as_string() )
                     """
 
-            if (self.internal_external == "External"):
+            if (self.internal_external == "external"):
 
                 row.prop ( self, "external_file_name" )
                 row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
@@ -295,6 +332,7 @@ class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
             row = layout.row()
             row.prop(self, "include_where", text="", expand=False)
             row.prop(self, "include_section", text="", expand=False)
+
 
 class CellBlenderScriptProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Script")
@@ -304,6 +342,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
 
     active_scripting_index = IntProperty(name="Active Scripting Index", default=0)
     scripting_list = CollectionProperty(type=CellBlenderScriptingProperty, name="Scripting List")
+
     internal_mdl_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="MDL Internal Scripts")
     external_mdl_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="MDL External Scripts")
     internal_python_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="Python Internal Scripts")
@@ -345,6 +384,11 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
 
     def write_scripting_output ( self, before_after, section, context, out_file, filedir ):
         print ( "################### Write Scripting Ouptut " + before_after + " " + section )
-        out_file.write("\n/* Begin Custom MDL Inserted %s %s */\n" % (before_after, section))
-        out_file.write("/* End Custom MDL Inserted %s %s */\n\n" % (before_after, section))
+        out_file.write("\n\n/* Begin Custom MDL Inserted %s %s */\n" % (before_after, section))
+        for script in self.scripting_list:
+            if (script.include_where == before_after) and (script.include_section == section):
+                out_file.write ( "\n/* Begin file %s */\n\n" % (script.internal_file_name))
+                out_file.write ( bpy.data.texts[script.internal_file_name].as_string() )
+                out_file.write ( "\n\n/* End file %s */\n\n" % (script.internal_file_name))
+        out_file.write("\n\n/* End Custom MDL Inserted %s %s */\n\n" % (before_after, section))
         pass
