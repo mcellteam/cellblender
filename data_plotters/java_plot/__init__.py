@@ -53,6 +53,7 @@ def requirements_met():
 
 
 def plot ( data_path, plot_spec ):
+    print ( "Java plot called with \"" + data_path + "\", and \"" + plot_spec + "\"" );
     program_path = os.path.dirname(__file__)
     # print ( "Java Plotter called with %s, %s" % (data_path, plot_spec) )
     # print ( "Plotter-specific files are located here: %s" % ( program_path ) )
@@ -62,6 +63,8 @@ def plot ( data_path, plot_spec ):
     plot_spec = subdivide ( plot_spec.split(), "page" )
     color_spec = ""
     
+    any_found = False
+    
     for page in plot_spec:
     
         # The java program only understands color=#rrggbb and fxy=filename parameters so find "f=":
@@ -70,6 +73,7 @@ def plot ( data_path, plot_spec ):
         for generic_param in page:
             if generic_param[0:2] == "f=":
                 found = True
+                any_found = True
                 break
         
         # Go through the entire plot command (whether found or not) to set other settings
@@ -88,4 +92,17 @@ def plot ( data_path, plot_spec ):
             print ( "Plotting from: " + data_path )
             print ( "Plotting with: " + plot_cmd )
             pid = subprocess.Popen ( plot_cmd.split(), cwd=data_path )
+
+    if not any_found:
+    
+        # Bring up an empty plotting window (useful for pure MDL runs)
+
+        plot_cmd = find_in_path("java")
+        plot_cmd = plot_cmd + ' -jar ' + os.path.join ( program_path, 'PlotData.jar' ) + " "
+        plot_cmd = plot_cmd + java_plot_spec
+        print ( "Plotting from: " + data_path )
+        print ( "Plotting with: " + plot_cmd )
+        pid = subprocess.Popen ( plot_cmd.split(), cwd=data_path )
+
+    
 

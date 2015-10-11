@@ -609,6 +609,8 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         else:
             self.rxn_step.draw(layout,ps)
             row = layout.row()
+            
+            # Do not need molecules to bring up plotting for pure MDL cases
             if mcell.molecules.molecule_list:
                 col = row.column()
                 col.template_list("MCELL_UL_check_reaction_output_settings",
@@ -672,49 +674,51 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                                 except KeyError:
                                     pass
 
-                    layout.separator()
-                    layout.separator()
-
-                    row = layout.row()
-                    row.label(text="Plot Reaction Data:",
-                              icon='FORCE_LENNARDJONES')
-
-                    row = layout.row()
-
-                    col = row.column()
-                    col.prop(self, "plot_layout")
-
-                    col = row.column()
-                    col.prop(self, "combine_seeds")
-
-                    row = layout.row()
-
-                    col = row.column()
-                    col.prop(self, "plot_legend")
-
-                    col = row.column()
-                    col.prop(self, "mol_colors")
-
-
-                    row = layout.row()
-                    button_num = 0
-                    num_columns = len(cellblender.cellblender_info[
-                        'cellblender_plotting_modules'])
-                    if num_columns > 3:
-                        num_columns = 2
-                    for plot_module in cellblender.cellblender_info[
-                            'cellblender_plotting_modules']:
-                        mod_name = plot_module.get_name()
-                        if (button_num % num_columns) == 0:
-                            button_num = 0
-                            row = layout.row()
-                        col = row.column()
-                        col.operator("mcell.plot_rxn_output_generic",
-                                     text=mod_name).plotter_button_label = mod_name
-                        button_num = button_num + 1
-
             else:
+
                 row.label(text="Define at least one molecule", icon='ERROR')
+
+            layout.separator()
+            layout.separator()
+
+            row = layout.row()
+            row.label(text="Plot Reaction Data:",
+                      icon='FORCE_LENNARDJONES')
+
+            row = layout.row()
+
+            col = row.column()
+            col.prop(self, "plot_layout")
+
+            col = row.column()
+            col.prop(self, "combine_seeds")
+
+            row = layout.row()
+
+            col = row.column()
+            col.prop(self, "plot_legend")
+
+            col = row.column()
+            col.prop(self, "mol_colors")
+
+
+            row = layout.row()
+            button_num = 0
+            num_columns = len(cellblender.cellblender_info[
+                'cellblender_plotting_modules'])
+            if num_columns > 3:
+                num_columns = 2
+            for plot_module in cellblender.cellblender_info[
+                    'cellblender_plotting_modules']:
+                mod_name = plot_module.get_name()
+                if (button_num % num_columns) == 0:
+                    button_num = 0
+                    row = layout.row()
+                col = row.column()
+                col.operator("mcell.plot_rxn_output_generic",
+                             text=mod_name).plotter_button_label = mod_name
+                button_num = button_num + 1
+
 
 
     def draw_panel ( self, context, panel ):

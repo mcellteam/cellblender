@@ -1818,7 +1818,7 @@ public class PlotData extends JFrame implements WindowListener {
 	}
 
   public static void main(String[] args) {
-		System.out.println ( "Data Plotting Program ..." );
+		System.out.println ( "Java Data Plotting Program ..." );
 		
 		dp = new DisplayPanel();
     dp.loading = true;
