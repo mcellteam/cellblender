@@ -849,6 +849,11 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		frame = f;
 	}
 	
+	String working_directory = "";
+	public void set_directory ( String path ) {
+		working_directory = path;
+	}
+
 	public void add_file ( data_file df ) {
 	  boolean old_loading = loading;
 	  loading = true;
@@ -1136,9 +1141,14 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 			// Change to a new base folder
 			// gdata.println ( 50, "Opening new file ..." );
 			//String old_path = current_base_path;
-			
+
 			if (fd == null) {
+        System.out.println ( "Creating a file dialog." );
 				fd = new FileDialog ( frame, "Choose a file" );
+				if (working_directory.length() > 0) {
+				  System.out.println ( "Setting Working Directory to: " + working_directory );
+				  fd.setDirectory ( working_directory );
+				}
 			}
 			fd.setTitle ( "Open a Reaction File" );
 			// fd.setFilenameFilter ( this );
@@ -1850,6 +1860,7 @@ public class PlotData extends JFrame implements WindowListener {
     if (args.length > 0) {
       Color next_color = null;
       for (int arg=0; arg<args.length; arg++) {
+        System.out.println ( "  Java Plotter argument " + arg + " = " + args[arg] );
         try {
           if ( (args[arg].equals("?")) || (args[arg].equals("/?")) ) {
             System.out.println ( "Args: [fxy=filename ...] [GenTestFiles] [?]" );
@@ -1966,6 +1977,10 @@ public class PlotData extends JFrame implements WindowListener {
             }
           } else if ( args[arg].equalsIgnoreCase("auto") ) {
             System.out.println ( "Autoscaling = true" );
+          } else if ( (args[arg].length() > 5) && (args[arg].substring(0,5).equalsIgnoreCase("path=")) ) {
+            String working_directory = args[arg].substring(5);
+            System.out.println ( "Path = " + working_directory );
+            dp.set_directory ( working_directory );
           } else if ( (args[arg].length() > 4) && (args[arg].substring(0,4).equalsIgnoreCase("fxy=")) ) {
             System.out.println ( "Reading file " + args[arg].substring(4) + " ..." );
             file_xy fxy = new file_xy ( args[arg].substring(4) );
