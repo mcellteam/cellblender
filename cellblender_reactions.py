@@ -36,6 +36,7 @@ from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
 
 # python imports
 import re
+import os
 
 # CellBlender imports
 import cellblender
