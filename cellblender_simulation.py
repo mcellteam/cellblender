@@ -700,6 +700,17 @@ class MCELL_OT_clear_simulation_queue(bpy.types.Operator):
 
 
 @persistent
+def disable_python(context):
+    """ Disable running of Python Scripts whenever a new .blend file is loaded """
+    print ( "load post handler: cellblender_simulation.disable_python() called" )
+
+    if not context:
+        context = bpy.context
+
+    context.scene.mcell.run_simulation.enable_python_scripting = False
+
+
+@persistent
 def clear_run_list(context):
     """ Clear processes_list when loading a blend.
 
@@ -878,6 +889,8 @@ class MCellSimStringProperty(bpy.types.PropertyGroup):
 
 
 class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
+    enable_python_scripting = BoolProperty ( name='Enable Python Scripting', default=False )  # Intentionally not in the data model
+
     start_seed = IntProperty(
         name="Start Seed", default=1, min=1,
         description="The starting value of the random number generator seed",
@@ -928,6 +941,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
 
     show_output_options = BoolProperty ( name='Output Options', default=False )
+    python_scripting_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
 
     simulation_run_control_enum = [
@@ -984,6 +998,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         if dm['data_model_version'] != "DM_2015_04_23_1753":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationPropertyGroup data model to current version." )
 
+        self.enable_python_scripting = False  # Explicitly disable this when building from a data model
         self.name = dm["name"]
         self.processes_list.clear()
         for p in dm['processes_list']:
@@ -1010,6 +1025,16 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
             main_mdl = project_files_path()
             main_mdl = os.path.join(main_mdl, scene_name + ".main.mdl")
+
+            helptext = "Allow Running of Python Code in Scripting Panel\n" + \
+                       " \n" + \
+                       "The Scripting Interface can run Python code contained\n" + \
+                       "in text files (text blocks) within Blender.\n" + \
+                       "\n" + \
+                       "Running scripts from unknown sources is a security risk.\n" + \
+                       "Only enable this option if you are confident that all of\n" + \
+                       "the scripts contained in this .blend file are safe to run."
+            ps.draw_prop_with_help ( layout, "Enable Python Scripting", self, "enable_python_scripting", "python_scripting_show_help", self.python_scripting_show_help, helptext )
 
             row = layout.row()
 

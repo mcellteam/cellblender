@@ -273,6 +273,7 @@ def register():
     add_handler ( bpy.app.handlers.load_pre, cellblender_main.report_load_pre )
 
     # Add the load_post handlers
+    add_handler ( bpy.app.handlers.load_post, cellblender_simulation.disable_python )
     add_handler ( bpy.app.handlers.load_post, data_model.load_post )
     add_handler ( bpy.app.handlers.load_post, cellblender_simulation.clear_run_list )
     add_handler ( bpy.app.handlers.load_post, cellblender_objects.model_objects_update )
@@ -310,6 +311,7 @@ def unregister():
     remove_handler ( bpy.app.handlers.scene_update_pre, cellblender_main.scene_loaded )
     remove_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
     remove_handler ( bpy.app.handlers.save_pre, cellblender_objects.model_objects_update )
+    remove_handler ( bpy.app.handlers.load_post, cellblender_simulation.disable_python )
 
     atexit.unregister(simulation_queue.shutdown)
 
