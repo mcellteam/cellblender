@@ -128,6 +128,16 @@ import bpy
 import sys
 
 
+# Can't do this here because it gives: AttributeError: '_RestrictData' object has no attribute 'scenes'
+#for scn in bpy.data.scenes:
+#  print ( "Attempting to disable ID scripting for Scene " + str(scn) )
+#  if 'mcell' in scn:
+#    if 'run_simulation' in scn['mcell']:
+#      if 'enable_python_scripting' in scn['mcell']['run_simulation']:
+#        scn['mcell']['run_simulation']['enable_python_scripting'] = 0
+
+
+
 #cellblender_added_handlers = []
 
 def add_handler ( handler_list, handler_function ):

@@ -243,6 +243,9 @@ def report_load_pre(dummy):
 # Load scene callback
 @persistent
 def scene_loaded(dummy):
+    # Disable Scripting when the scene is loaded
+    bpy.context.scene.mcell.run_simulation.enable_python_scripting = False
+
     # Icon
     #print("ADDON_ICON")
     icon_files = { 'cellblender_icon': 'cellblender_icon.png', 'mol_u': 'mol_unsel.png', 'mol_s': 'mol_sel.png', 'reaction_u': 'reactions_unsel.png', 'reaction_s': 'reactions_sel.png' }

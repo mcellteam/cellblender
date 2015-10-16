@@ -696,18 +696,53 @@ class MCELL_OT_clear_simulation_queue(bpy.types.Operator):
         return {'FINISHED'}
 
 
+global_scripting_enabled_once = False
+
+class MCELL_OT_initialize_scripting (bpy.types.Operator):
+    bl_idname = "mcell.initialize_scripting"
+    bl_label = "Initialize Scripting"
+    bl_description = ("Must be done every time CellBLender is restarted.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        global global_scripting_enabled_once
+        global_scripting_enabled_once = True
+        return {'FINISHED'}
+
+
+
 # Simulation callback functions
 
 
 @persistent
 def disable_python(context):
     """ Disable running of Python Scripts whenever a new .blend file is loaded """
+
     print ( "load post handler: cellblender_simulation.disable_python() called" )
 
-    if not context:
-        context = bpy.context
+    #if not context:
+    #    context = bpy.context
+    #
+    # context.scene.mcell.run_simulation.enable_python_scripting = False
 
-    context.scene.mcell.run_simulation.enable_python_scripting = False
+    # Be sure to disable it in all other scenes as well
+
+    # Use ID properties first
+    for scn in bpy.data.scenes:
+      print ( "Attempting to disable ID scripting for Scene " + str(scn) )
+      if 'mcell' in scn:
+        if 'run_simulation' in scn['mcell']:
+          if 'enable_python_scripting' in scn['mcell']['run_simulation']:
+            scn['mcell']['run_simulation']['enable_python_scripting'] = 0
+
+    # Use RNA properties second
+    for scn in bpy.data.scenes:
+      print ( "Attempting to disable RNA scripting for Scene " + str(scn) )
+      if 'mcell' in scn:
+        if 'run_simulation' in scn.mcell:
+          if 'enable_python_scripting' in scn.mcell.run_simulation:
+            scn.mcell.run_simulation.enable_python_scripting = False
+
 
 
 @persistent
@@ -942,6 +977,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
     show_output_options = BoolProperty ( name='Output Options', default=False )
     python_scripting_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    python_initialize_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
 
     simulation_run_control_enum = [
@@ -1026,15 +1062,29 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
             main_mdl = project_files_path()
             main_mdl = os.path.join(main_mdl, scene_name + ".main.mdl")
 
-            helptext = "Allow Running of Python Code in Scripting Panel\n" + \
-                       " \n" + \
-                       "The Scripting Interface can run Python code contained\n" + \
-                       "in text files (text blocks) within Blender.\n" + \
-                       "\n" + \
-                       "Running scripts from unknown sources is a security risk.\n" + \
-                       "Only enable this option if you are confident that all of\n" + \
-                       "the scripts contained in this .blend file are safe to run."
-            ps.draw_prop_with_help ( layout, "Enable Python Scripting", self, "enable_python_scripting", "python_scripting_show_help", self.python_scripting_show_help, helptext )
+
+            global global_scripting_enabled_once
+
+            if global_scripting_enabled_once:
+
+                helptext = "Allow Running of Python Code in Scripting Panel\n" + \
+                           " \n" + \
+                           "The Scripting Interface can run Python code contained\n" + \
+                           "in text files (text blocks) within Blender.\n" + \
+                           "\n" + \
+                           "Running scripts from unknown sources is a security risk.\n" + \
+                           "Only enable this option if you are confident that all of\n" + \
+                           "the scripts contained in this .blend file are safe to run."
+                ps.draw_prop_with_help ( layout, "Enable Python Scripting", self, "enable_python_scripting", "python_scripting_show_help", self.python_scripting_show_help, helptext )
+
+            #else:
+
+            #    row = layout.row()
+            #    col = row.column()
+            #    col.label ( "Enable Scripting" )
+            #    col = row.column()
+            #    col.operator ( "mcell.initialize_scripting" )
+
 
             row = layout.row()
 
@@ -1135,6 +1185,16 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     if mcell.cellblender_preferences.show_sim_runner_options:
                         col = row.column()
                         col.prop(self, "simulation_run_control")
+
+                    #row = box.row()
+                    #col = row.column()
+                    #col.label ( "Enable Scripting" )
+                    #col = row.column()
+                    #col.operator ( "mcell.initialize_scripting", icon="COLOR_RED" )
+
+                    helptext = "Initialize Python Code Scripting for this Session\n" + \
+                               "This must be done each time CellBlender is restarted."
+                    ps.draw_operator_with_help ( box, "Enable Python Scripting", self, "mcell.initialize_scripting", "python_initialize_show_help", self.python_initialize_show_help, helptext )
 
                 else:
                     row = box.row(align=True)

@@ -2075,15 +2075,15 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         col = row.column()
         col.prop ( prop_group, show, icon='INFO', text="" )
         if show_help:
-          row = layout.row()
-          # Use a split with two columns to indent the box
-          split = row.split(0.03)
-          col = split.column()
-          col = split.column()
-          box = col.box()
-          desc_list = help_string.split("\n")
-          for desc_line in desc_list:
-              box.label (text=desc_line)
+            row = layout.row()
+            # Use a split with two columns to indent the box
+            split = row.split(0.03)
+            col = split.column()
+            col = split.column()
+            box = col.box()
+            desc_list = help_string.split("\n")
+            for desc_line in desc_list:
+                box.label (text=desc_line)
 
 
     def draw_prop_with_help ( self, layout, prop_label, prop_group, prop, show, show_help, help_string ):
@@ -2097,15 +2097,37 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         col = row.column()
         col.prop ( prop_group, show, icon='INFO', text="" )
         if show_help:
-          row = layout.row()
-          # Use a split with two columns to indent the box
-          split = row.split(0.03)
-          col = split.column()
-          col = split.column()
-          box = col.box()
-          desc_list = help_string.split("\n")
-          for desc_line in desc_list:
-              box.label (text=desc_line)
+            row = layout.row()
+            # Use a split with two columns to indent the box
+            split = row.split(0.03)
+            col = split.column()
+            col = split.column()
+            box = col.box()
+            desc_list = help_string.split("\n")
+            for desc_line in desc_list:
+                box.label (text=desc_line)
+
+
+    def draw_operator_with_help ( self, layout, op_label, prop_group, op, show, show_help, help_string ):
+        """ This function helps draw operators with help (info) button functionality """
+        row = layout.row()
+        split = row.split(self.param_label_fraction)
+        col = split.column()
+        col.label ( text=op_label )
+        col = split.column()
+        col.operator ( op )
+        col = row.column()
+        col.prop ( prop_group, show, icon='INFO', text="" )
+        if show_help:
+            row = layout.row()
+            # Use a split with two columns to indent the box
+            split = row.split(0.03)
+            col = split.column()
+            col = split.column()
+            box = col.box()
+            desc_list = help_string.split("\n")
+            for desc_line in desc_list:
+                box.label (text=desc_line)
 
 
     def draw_prop_search_with_help ( self, layout, prop_label, prop_group, prop, prop_parent, prop_list_name, show, show_help, help_string, icon='FORCE_LENNARDJONES' ):
@@ -2123,15 +2145,15 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         col = row.column()
         col.prop ( prop_group, show, icon='INFO', text="" )
         if show_help:
-          row = layout.row()
-          # Use a split with two columns to indent the box
-          split = row.split(0.03)
-          col = split.column()
-          col = split.column()
-          box = col.box()
-          desc_list = help_string.split("\n")
-          for desc_line in desc_list:
-              box.label (text=desc_line)
+            row = layout.row()
+            # Use a split with two columns to indent the box
+            split = row.split(0.03)
+            col = split.column()
+            col = split.column()
+            box = col.box()
+            desc_list = help_string.split("\n")
+            for desc_line in desc_list:
+                box.label (text=desc_line)
 
 
 
