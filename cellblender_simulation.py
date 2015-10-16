@@ -77,7 +77,13 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
     def poll(self,context):
 
         mcell = context.scene.mcell
-        if str(mcell.run_simulation.simulation_run_control) == 'QUEUE':
+        if mcell.cellblender_preferences.lockout_export and (not mcell.cellblender_preferences.decouple_export_run):
+            # print ( "Exporting is currently locked out. See the Preferences/ExtraOptions panel." )
+            # The "self" here doesn't contain or permit the report function.
+            # self.report({'INFO'}, "Exporting is Locked Out")
+            return False
+
+        elif str(mcell.run_simulation.simulation_run_control) == 'QUEUE':
             processes_list = mcell.run_simulation.processes_list
             for pl_item in processes_list:
                 pid = int(pl_item.name.split(',')[0].split(':')[1])
@@ -89,15 +95,31 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
 
-        print ( "Need to run " + str(mcell.run_simulation.simulation_run_control) )
-        if str(mcell.run_simulation.simulation_run_control) == 'JAVA':
-            bpy.ops.mcell.run_simulation_control_java()
-        elif str(mcell.run_simulation.simulation_run_control) == 'OPENGL':
-            bpy.ops.mcell.run_simulation_control_opengl()
-        elif str(mcell.run_simulation.simulation_run_control) == 'COMMAND':
-            bpy.ops.mcell.run_simulation_normal()
+        if mcell.cellblender_preferences.lockout_export and (not mcell.cellblender_preferences.decouple_export_run):
+            print ( "Exporting is currently locked out. See the Preferences/ExtraOptions panel." )
+            self.report({'INFO'}, "Exporting is Locked Out")
         else:
-            bpy.ops.mcell.run_simulation_control_queue()
+            ### Note: This section of code was taken from the export for cases where a
+            ###   newly opened .blend file is being run without being exported.
+            ###   In that case, the project name was still defaulted to "cellblender_project".
+
+            # Filter or replace problem characters (like space, ...)
+            scene_name = context.scene.name.replace(" ", "_")
+            # Change the actual scene name to the legal MCell Name
+            context.scene.name = scene_name
+            # Set this for now to have it hopefully propagate until base_name can
+            # be removed
+            mcell.project_settings.base_name = scene_name
+
+            print ( "Need to run " + str(mcell.run_simulation.simulation_run_control) )
+            if str(mcell.run_simulation.simulation_run_control) == 'JAVA':
+                bpy.ops.mcell.run_simulation_control_java()
+            elif str(mcell.run_simulation.simulation_run_control) == 'OPENGL':
+                bpy.ops.mcell.run_simulation_control_opengl()
+            elif str(mcell.run_simulation.simulation_run_control) == 'COMMAND':
+                bpy.ops.mcell.run_simulation_normal()
+            else:
+                bpy.ops.mcell.run_simulation_control_queue()
         return {'FINISHED'}
 
 
@@ -991,35 +1013,39 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
 
-            export_icon = 'EXPORT'
-            if mcell.cellblender_preferences.lockout_export:
-                export_icon = 'CANCEL'
-
             # Only allow the simulation to be run if both an MCell binary and a
             # project dir have been selected. There also needs to be a main mdl
             # file present.
             if not mcell.cellblender_preferences.mcell_binary:
+                # Note that we should be able to export without requiring an MCell Binary,
+                #  but this code is a little messy as it is ... so this requirement remains.
                 row.label(text="Set an MCell binary in CellBlender - Preferences Panel", icon='ERROR')
             elif not os.path.dirname(bpy.data.filepath):
                 row.label(
-                    text="Open or save a .blend file to set the project directory",
-                    icon='ERROR')
+                    text="Open or save a .blend file to set the project directory", icon='ERROR')
             elif (not os.path.isfile(main_mdl) and
                     mcell.cellblender_preferences.decouple_export_run):
                 row.label(text="Export the project", icon='ERROR')
                 row = layout.row()
-                row.operator(
-                    "mcell.export_project",
-                    text="Export CellBlender Project", icon=export_icon)
+                row.operator("mcell.export_project",
+                    text="Export CellBlender Project", icon='EXPORT')
             else:
 
                 row = layout.row(align=True)
                 if mcell.cellblender_preferences.decouple_export_run:
-                    row.operator(
-                        "mcell.export_project", text="Export CellBlender Project",
-                        icon=export_icon)
-                row.operator("mcell.run_simulation", text="Run",
-                             icon='COLOR_RED')
+                    if mcell.cellblender_preferences.lockout_export:
+                        row.operator( "mcell.export_project", 
+                            text="Export CellBlender Project", icon='CANCEL')
+                    else:
+                        row.operator( "mcell.export_project",
+                            text="Export CellBlender Project", icon='EXPORT')
+                    row.operator("mcell.run_simulation", text="Run", icon='COLOR_RED')
+                else:
+                    if mcell.cellblender_preferences.lockout_export:
+                        row.operator("mcell.run_simulation", text="Export & Run", icon='CANCEL')
+                    else:
+                        row.operator("mcell.run_simulation", text="Export & Run", icon='COLOR_RED')
+
                 
                 if self.simulation_run_control != "QUEUE":
                     if self.processes_list and (len(self.processes_list) > 0):
@@ -1076,10 +1102,11 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     col = row.column()
                     col.prop(mcell.cellblender_preferences, "decouple_export_run")
 
-# Disable selector for simulation_run_control options
-#  Queue control is the default
-#  Queue control is currently the only option which properly disables the
-#  run_simulation operator while simulations are currenlty running or queued
+                    # Generally hide the selector for simulation_run_control options
+                    #  Queue control is the default
+                    #  Queue control is currently the only option which properly disables the
+                    #  run_simulation operator while simulations are currenlty running or queued
+                    # Only show this option it when specifically requested
                     if mcell.cellblender_preferences.show_sim_runner_options:
                         col = row.column()
                         col.prop(self, "simulation_run_control")

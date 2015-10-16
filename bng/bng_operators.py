@@ -2,7 +2,7 @@ import bpy
 import os
 import subprocess
 
-from cellblender import cellblender_properties
+from cellblender import cellblender_main
 #from cellblender import cellblender_operators
 #from . import net
 

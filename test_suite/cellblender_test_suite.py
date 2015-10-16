@@ -40,6 +40,9 @@ import math
 import mathutils
 from bpy.props import *
 
+import cellblender
+
+
 test_groups = []
 max_test_groups = 30   # Needed to define a BoolVectorProperty to show and hide each group (32 is max!?!?!)
 next_test_group_num = 0    # The index number of the next group to be added
@@ -77,7 +80,10 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
     path_to_mcell = bpy.props.StringProperty(name="Path to MCell", default="")
     path_to_blend = bpy.props.StringProperty(name="Path to Blend", default="")
     run_mcell = bpy.props.BoolProperty(name="Run MCell", default=False)
+    exit_on_error = bpy.props.BoolProperty(name="Exit on Error", default=True)
+    run_with_queue = bpy.props.BoolProperty(name="Run with Queue", default=False)
     test_status = bpy.props.StringProperty(name="TestStatus", default="?")
+
     
     # Properties needed for the dynamically created test case groups
 
@@ -192,6 +198,8 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
           row.label( icon='FILE_TICK', text="Pass" )
         elif app.test_status == "F":
           row.label( icon='ERROR',     text="Fail" )
+        row.prop(app, "exit_on_error")
+        row.prop(app, "run_with_queue")
         row.prop(app, "run_mcell")
 
         for group_num in range(next_test_group_num):
@@ -384,8 +392,10 @@ class CellBlender_Model:
 
         mcell.cellblender_preferences.mcell_binary_valid = True
         mcell.cellblender_preferences.show_sim_runner_options = True
-        #mcell.run_simulation.simulation_run_control = 'QUEUE'
-        mcell.run_simulation.simulation_run_control = 'COMMAND'
+        if app.run_with_queue:
+            mcell.run_simulation.simulation_run_control = 'QUEUE'
+        else:
+            mcell.run_simulation.simulation_run_control = 'COMMAND'
         
         return mcell
 
@@ -795,7 +805,10 @@ class CellBlender_Model:
         self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].molecule = mol_name
         self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].surf_class_orient = sc_orient
         self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].surf_class_type = sc_type
-        self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].clamp_value_str = sc_clamp_val_str
+        #self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].clamp_value_str = sc_clamp_val_str
+        self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].clamp_value.set_expr ( sc_clamp_val_str )
+
+
         print ( "Done Adding Surface Class Property " + sc_orient + " " + sc_type + " " + sc_clamp_val_str )
         return self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index]
 
@@ -809,11 +822,13 @@ class CellBlender_Model:
         self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].surf_class_name = surf_class_name
         self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].object_name = obj_name
         self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].region_name = reg_name
+        self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].all_faces = False
+
         print ( "Done Adding Surface Class to Region " + surf_class_name )
         return self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index]
 
 
-    def add_surface_region_to_model_by_normal ( self, obj_name, surf_name, nx=0, ny=0, nz=0, min_dot_prod=0.5 ):
+    def add_surface_region_to_model_object_by_normal ( self, obj_name, surf_name, nx=0, ny=0, nz=0, min_dot_prod=0.5 ):
 
         print ("Selected Object = " + str(self.context.object) )
         # bpy.ops.object.mode_set ( mode="EDIT" )
@@ -866,11 +881,11 @@ class CellBlender_Model:
 
 
     def add_surface_region_to_model_all_faces ( self, obj_name, surf_name ):
-        self.add_surface_region_to_model_by_normal ( obj_name, surf_name )
+        self.add_surface_region_to_model_object_by_normal ( obj_name, surf_name )
 
 
-    def all_processes_finished ( self ):
-        print ( "Checking if all processes are done..." )
+    def all_non_queue_processes_finished ( self ):
+        print ( "Checking if all non-queue processes are done..." )
         plist = self.mcell.run_simulation.processes_list
         all_done = False
         if len(plist) <= 0:
@@ -886,18 +901,39 @@ class CellBlender_Model:
         return all_done
 
 
+    def all_queue_processes_finished ( self ):
+        print ( "Checking if all processes are done..." )
+        mcell = self.mcell
+        processes_list = mcell.run_simulation.processes_list
+        active_index = mcell.run_simulation.active_process_index
+        ap = processes_list[active_index]
+        pid = int(ap.name.split(',')[0].split(':')[1])
+        q_item = cellblender.simulation_queue.task_dict.get(pid)
+        if q_item:
+            if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
+                return False
+        return True
+
+
     def wait ( self, wait_time ):
-        if self.all_processes_finished():
-            print ( "============== ALL DONE ==============" )
-        else:
-            print ( "============== WAITING ==============" )
         import time
-        time.sleep ( wait_time )
+        app = bpy.context.scene.cellblender_test_suite
+        if app.run_with_queue:
+            print ( "============== WAITING for QUEUE ==============" )
+            while not self.all_queue_processes_finished():
+                print ( "============== WAITING for QUEUE to Finish ==============" )
+                time.sleep ( 1.0 )
+        else:
+            if self.all_non_queue_processes_finished():
+                print ( "============== ALL DONE ==============" )
+            else:
+                print ( "============== WAITING for COMMAND ==============" )
+            time.sleep ( wait_time )
 
 
     def run_model ( self, iterations="100", time_step="1e-6", export_format="mcell_mdl_unified", wait_time=10.0 ):
         """ export_format is one of: mcell_mdl_unified, mcell_mdl_modular """
-        print ( "Running Simulation" )
+        print ( "Test Suite is running the simulation ..." )
         self.mcell.cellblender_main_panel.init_select = True
         self.mcell.initialization.iterations.set_expr(iterations)
         self.mcell.initialization.time_step.set_expr(time_step)
@@ -981,7 +1017,8 @@ class CellBlender_Model:
                     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                     app.test_status = "F"
-                    bpy.ops.wm.quit_blender() 
+                    if app.exit_on_error:
+                        bpy.ops.wm.quit_blender() 
 
         else:
 
@@ -991,7 +1028,8 @@ class CellBlender_Model:
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
             app.test_status = "F"
-            bpy.ops.wm.quit_blender()
+            if app.exit_on_error:
+                bpy.ops.wm.quit_blender() 
 
 
     def scale_view_distance ( self, scale ):
@@ -2145,7 +2183,7 @@ class CubeSurfaceTestOp(bpy.types.Operator):
         mcell = cb_model.get_mcell()
 
         cb_model.add_cube_to_model ( name="Cell", draw_type="WIRE" )
-        cb_model.add_surface_region_to_model_by_normal ( "Cell", "top", 0, 0, 1, 0.8 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "top", 0, 0, 1, 0.8 )
 
         mola = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
         mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-6" )
@@ -2204,7 +2242,7 @@ class SphereSurfaceTestOp(bpy.types.Operator):
         mcell = cb_model.get_mcell()
 
         cb_model.add_icosphere_to_model ( name="Cell", draw_type="WIRE" )
-        cb_model.add_surface_region_to_model_by_normal ( "Cell", "top", 0, 0, 1, 0.8 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "top", 0, 0, 1, 0.8 )
 
         mola = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
         mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-6" )
@@ -2264,8 +2302,8 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
         mcell = cb_model.get_mcell()
 
         cb_model.add_icosphere_to_model ( name="Cell", draw_type="WIRE", subdiv=4 )
-        cb_model.add_surface_region_to_model_by_normal ( "Cell", "top", 0, 0, 1, 0.0 )
-        cb_model.add_surface_region_to_model_by_normal ( "Cell", "y",   0, 1, 0, 0.0 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "top", 0, 0, 1, 0.0 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "y",   0, 1, 0, 0.0 )
 
         mola  = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-5" )
         mols1 = cb_model.add_molecule_species_to_model ( name="s1", mol_type="2D", diff_const_expr="0" )
@@ -2409,7 +2447,7 @@ class SurfaceClassesTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='5000', time_step='1e-6', wait_time=40.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "b781cd49d7b9499b87570a4ca920134b701657c5", test_name="Surface Classes Test" )
+        cb_model.compare_mdl_with_sha1 ( "1bdb9fbc56851773331dd58f45de418cbaa8315e", test_name="Surface Classes Test" )
 
         cb_model.refresh_molecules()
 
@@ -2455,8 +2493,8 @@ class CapsuleTestOp(bpy.types.Operator):
 
         cb_model.add_capsule_to_model ( name="shell",   draw_type="WIRE", x=0, y=0, z=0, sigma=0, subdiv=2, radius=0.501, cyl_len=4.002, subdivide_sides=False )
         cb_model.add_capsule_to_model ( name="capsule", draw_type="WIRE", x=0, y=0, z=0, sigma=0, subdiv=2, radius=0.500, cyl_len=4,     subdivide_sides=False )
-        cb_model.add_surface_region_to_model_by_normal ( "capsule", "top", nx=0, ny=0, nz=1, min_dot_prod=0.5 )
-        cb_model.add_surface_region_to_model_by_normal ( "capsule", "bot", nx=0, ny=0, nz=-1, min_dot_prod=0.5 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "capsule", "top", nx=0, ny=0, nz=1, min_dot_prod=0.5 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "capsule", "bot", nx=0, ny=0, nz=-1, min_dot_prod=0.5 )
 
 
         mola  = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
@@ -2490,7 +2528,7 @@ class CapsuleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='10000', time_step='1e-6', wait_time=50.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "3aaca27e86f45a29de7c121bef1a08029ef8ca37", test_name="Capsule in Capsule Test" )
+        cb_model.compare_mdl_with_sha1 ( "c9950d6bad9e7c18af96df94fcc59781b1b7fcc0", test_name="Capsule in Capsule Test" )
 
         cb_model.refresh_molecules()
         
@@ -2771,7 +2809,7 @@ class SimpleMoleculeCountTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='100', time_step='1e-6', wait_time=3.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "d24da83d3b07bb1f3be2e571fa29f99c054d6478", test_name="Simple Molecule Count Test" )
+        cb_model.compare_mdl_with_sha1 ( "7b6af2c8c36dc91eb62c62009c14cf8024f21595", test_name="Simple Molecule Count Test" )
 
         cb_model.refresh_molecules()
         cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
@@ -2850,7 +2888,7 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1500', time_step=dt, wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "ec68e0720b43755c4f193d65ebaaa55eb2c2cfae", test_name="Release Time Patterns Test" )
+        cb_model.compare_mdl_with_sha1 ( "7b9760c0925108f964e316603ea0fbdf9a13a18b", test_name="Release Time Patterns Test" )
 
         cb_model.refresh_molecules()
 
@@ -2965,7 +3003,7 @@ class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
 
     def execute(self, context):
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="be2169e601b5148c9d2da24143aae99367bf7f39", test_name="Lotka Volterra Torus - Diffusion Limited Reaction", wait_time=15.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="5b7ea646b35cc54eb56a36a08a34217e2900c928", test_name="Lotka Volterra Torus - Diffusion Limited Reaction", wait_time=15.0 )
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -2988,7 +3026,7 @@ class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
 
     def execute(self, context):
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="bd1033a5ec4f6c51c017da4640d5bce7df5cdbd8", test_name="Lotka Volterra Torus - Physiologic Reaction", wait_time=60.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="4be2236905c76aa47d1f2b76904ef76bdc025c01", test_name="Lotka Volterra Torus - Physiologic Reaction", wait_time=60.0 )
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -3025,14 +3063,14 @@ class OrganelleTestOp(bpy.types.Operator):
 
         # Create the object and add it to the CellBlender model
         cb_model.add_icosphere_to_model ( name="Organelle_1", draw_type="WIRE", size=0.3, y=-0.25, subdiv=subdiv+1 )
-        cb_model.add_surface_region_to_model_by_normal ( "Organelle_1", "top", 0, 1, 0, 0.92 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Organelle_1", "top", 0, 1, 0, 0.92 )
 
 
         # Create Organelle 2
 
         # Create the object and add it to the CellBlender model
         cb_model.add_icosphere_to_model ( name="Organelle_2", draw_type="WIRE", size=0.2, y=0.31, subdiv=subdiv+1 )
-        cb_model.add_surface_region_to_model_by_normal ( "Organelle_2", "top", 0, -1, 0, 0.8 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Organelle_2", "top", 0, -1, 0, 0.8 )
 
 
         # Create Cell itself
@@ -3084,7 +3122,7 @@ class OrganelleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=25.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "ecd81fc1c5b65777866da16f286b4eb70e362620", test_name="Organelle Test" )
+        cb_model.compare_mdl_with_sha1 ( "3003cef2476115267c044801d06486903edef600", test_name="Organelle Test" )
 
         cb_model.refresh_molecules()
 
@@ -3206,7 +3244,7 @@ class MinDMinETestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='0.5 * 200/dt', time_step='dt', wait_time=5.0 )  # Can use to generate MDL, but SHA1 won't be right: export_format="mcell_mdl_modular", 
 
-        cb_model.compare_mdl_with_sha1 ( "cd346130b01966382fd2b6829235e25f13f3dddb", test_name="E. coli MinD/MinE System" )
+        cb_model.compare_mdl_with_sha1 ( "300a55f3238a33a9cc8349b68f1e385d3712ee8f", test_name="E. coli MinD/MinE System" )
 
         cb_model.set_view_back()
 

@@ -14,7 +14,7 @@ cellblender_info = {
 
         "data_model.py",
 
-        "cellblender_properties.py",
+        "cellblender_main.py",
 
         "parameter_system.py",
         "cellblender_preferences.py",
@@ -31,6 +31,7 @@ cellblender_info = {
         "cellblender_mol_viz.py",
         "cellblender_meshalyzer.py",
         "cellblender_objects.py",
+        "cellblender_scripting.py",
         "object_surface_regions.py",
         "run_simulations.py",
         "sim_runner_queue.py",

@@ -57,6 +57,10 @@ class FieldReader {
 
 abstract class data_file {
 
+	public double index ( double x ) {
+	  return ( Double.NaN );
+	}
+
 	public abstract double f ( double x );
 	public abstract void find_x_range();
 	public abstract void find_y_range();
@@ -653,6 +657,60 @@ class file_xy extends data_file {
 		  if (y_values[i] > max_y) max_y = y_values[i];
 		}
 	}
+	public double index ( double x ) {
+	  // Assume x values are sorted
+	  if (x_values == null) {
+	    return Double.NaN;
+	  } else {
+	    if (x < x_values[0]) {
+	      return ( Double.NaN );
+	      // return ( y_values[0] );
+	    } else if (x > x_values[x_values.length-1]) {
+	      return ( Double.NaN );
+	      // return ( y_values[y_values.length-1] );
+	    } else {
+	      // Find and interpolate a data point
+				if (Double.isNaN(average_delta)) {	      
+	        // Perform a linear search from the beginning
+	        for (int i=1; i<x_values.length; i++) {
+	          if (x < x_values[i]) {
+	            // Interpolate between i-1 and i
+	            return ( (i-1) + ( (x-x_values[i-1]) / (x_values[i]-x_values[i-1]) ) );
+	          }
+	        }
+  	      return ( y_values[y_values.length-1] );
+	      } else {
+  	      // Perform a linear search from the estimated location
+	        int guess_i = (int)((x - x_values[0]) / average_delta);
+	        if (guess_i < 0) guess_i = 0;
+	        if (guess_i >= x_values.length) guess_i = x_values.length-1;
+//System.out.println ( "Searching from " + guess_i );
+	        if (x == x_values[guess_i]) {
+	          // Exact match ... not too likely unless x values are integer or power of 2
+	          return ( (double)guess_i );
+	        } else if (x > x_values[guess_i]) {
+	          // x is greater than the guess so search up from guess
+	          for (int i=guess_i+1; i<x_values.length; i++) {
+	            if (x < x_values[i]) {
+	              // Interpolate between i-1 and i
+  	            return ( (i-1) + ( (x-x_values[i-1]) / (x_values[i]-x_values[i-1]) ) );
+	            }
+	          }
+    	      return ( (double)(y_values.length-1) );
+	        } else {
+	          // x is less than the guess so search down from guess
+	          for (int i=guess_i-1; i>=0; i--) {
+	            if (x > x_values[i]) {
+	              // Interpolate between i and i+1
+	              return ( i + ( (x-x_values[i]) / (x_values[i+1]-x_values[i]) ) );
+	            }
+	          }
+    	      return ( (double)0 );
+	        }
+	      }
+	    }
+	  }
+	}
 	public double f ( double x ) {
 	  // Assume x values are sorted
 	  if (x_values == null) {
@@ -707,7 +765,6 @@ class file_xy extends data_file {
 	    }
 	  }
 	}
-
 }
 
 
@@ -889,6 +946,17 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 								combined = true;
 							}
 						}
+					} else if (field.equals("Sample_Numbers:")) {
+						field = fr.next_field();
+						if ( (field != null) && (field.length() > 0) ) {
+							double samp_num_level = new Double(field);
+							System.out.println ( "Setting Sample Numbers to : " + samp_num_level );
+							if (samp_num_level < 0.5) {
+								sample_numbers = false;
+							} else {
+								sample_numbers = true;
+							}
+						}
 					} else if (field.equals("Variable_Y:")) {
 						field = fr.next_field();
 						if ( (field != null) && (field.length() > 0) ) {
@@ -947,6 +1015,11 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 			} else {
 				o.write ( "Variable_Y: 0.0\n" );
 			}
+			if (sample_numbers) {
+				o.write ( "Sample_Numbers: 1.0\n" );
+			} else {
+				o.write ( "Sample_Numbers: 0.0\n" );
+			}
 			Rectangle r = getBounds();
 			o.write ( "WindowWidth: " + r.width + "\n" );
 			o.write ( "WindowHeight: " + r.height + "\n" );
@@ -968,6 +1041,8 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 	boolean annotation = true;
 	boolean fit_x = false;
 	boolean antialias = false;
+	boolean sample_numbers = false;
+	double scrollwheel_zoom_factor = 1.25;
 	
 	JMenu remove_menu = null;
 	
@@ -986,17 +1061,51 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 	    	// file_menu.add ( mi = remove_menu = new JMenu("Remove") );
 	    	// mi.addActionListener(this);
 	    	menu_bar.add ( file_menu );
-			JMenu set_menu = new JMenu("Show");
-		  	set_menu.add ( mi = new JMenuItem("Full Range") );
+			JMenu show_menu = new JMenu("Show");
+		  	show_menu.add ( mi = new JMenuItem("Full Range") );
 		  	mi.addActionListener(this);
-		  	set_menu.add ( mi = new JCheckBoxMenuItem("Combined",combined) );
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("Combined",combined) );
 		  	mi.addActionListener(this);
-		  	set_menu.add ( mi = new JCheckBoxMenuItem("Variable Y",var_y) );
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("Variable Y",var_y) );
 		  	mi.addActionListener(this);
-		  	set_menu.add ( mi = new JCheckBoxMenuItem("Annotation",annotation) );
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("Annotation",annotation) );
 		  	mi.addActionListener(this);
-		  	set_menu.add ( mi = new JCheckBoxMenuItem("Antialiasing",antialias) );
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("Antialiasing",antialias) );
 		  	mi.addActionListener(this);
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("Sample Numbers",sample_numbers) );
+		  	mi.addActionListener(this);
+		  	menu_bar.add ( show_menu );
+			JMenu set_menu = new JMenu("Set");
+			  JMenu set_scrollwheel_factor_menu = new JMenu("Scroll Wheel Factor");
+			    bg = new ButtonGroup();
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 2.00") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.50") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.25",true) );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.20") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.10") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.05") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.02") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.01") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+		    	set_scrollwheel_factor_menu.add ( mi = new JRadioButtonMenuItem("Scale by 1.001") );
+		    	mi.addActionListener(this);
+		    	bg.add ( mi );
+  		  	set_menu.add ( set_scrollwheel_factor_menu );
 		  	menu_bar.add ( set_menu );
 	   return (menu_bar);
 	}
@@ -1096,6 +1205,25 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 				System.out.println ( "Antialiasing Off" );
 				antialias = false;
 			}
+		} else if (cmd.equalsIgnoreCase("Sample Numbers")) {
+			JCheckBoxMenuItem mi = (JCheckBoxMenuItem)(e.getSource());
+			if (mi.isSelected()) {
+				System.out.println ( "Sample Numbers On" );
+				sample_numbers = true;
+			} else {
+				System.out.println ( "Sample Numbers Off" );
+				sample_numbers = false;
+			}
+		} else if (cmd.startsWith("Scale by ")) {
+			JRadioButtonMenuItem mi = (JRadioButtonMenuItem)(e.getSource());
+		  String valstr = cmd.substring("Scale by ".length());
+		  try {
+		    double v = Double.parseDouble(valstr);
+				System.out.println ( "Setting Scroll Wheel Zoom Factor to " + v );
+		    scrollwheel_zoom_factor = v;
+      } catch (Exception ee) {
+        System.out.println ( "Error parsing double from " + valstr );
+      }
 		} else if (cmd.equalsIgnoreCase("Full Range")) {
 			fit_x = true;
 		}
@@ -1263,18 +1391,27 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		  x0i = x0i - tpdi;
 	  }
 
+    // Draw vertical time lines based on time or sample number
+
 	  g.setClip (0,0,win_w,win_h);
 	  g.translate (0,0);
-	  int grid_x;
-	  do {
-		  grid_x = (int)(( x0i - x0 ) * x_scale);
-		  // System.out.println ( "Grid line at " + grid_x + " = " + x0i );
-		  g.setColor ( new Color ( 50, 50, 50 ) );
-		  g.drawLine ( grid_x, 0, grid_x, h * num_panels );
-	    g.setColor ( Color.gray );
-		  g.drawString ( ""+ Math.round(1000000*x0i)/1000000.0, grid_x, win_h-5 );
-		  x0i += tpdi;
-	  } while (grid_x < w);
+    int grid_x;
+    // System.out.println ( "===================" );
+    do {
+	    grid_x = (int)(( x0i - x0 ) * x_scale);
+      // System.out.println ( "Grid line at " + grid_x + " = " + x0i );
+	    g.setColor ( new Color ( 50, 50, 50 ) );
+	    g.drawLine ( grid_x, 0, grid_x, h * num_panels );
+      g.setColor ( Color.gray );
+      if (sample_numbers) {
+        // System.out.println ( "grid_x = " + grid_x + ", x0i = " + x0i + ", x0 = " + x0 + ", scale = " + x_scale );
+				//  x = (i / x_scale) + x0;
+	      g.drawString ( ""+ (int)(Math.round(f[0].index(x0i))), grid_x, win_h-5 );
+	    } else {
+	      g.drawString ( ""+ Math.round(1000000*x0i)/1000000.0, grid_x, win_h-5 );
+	    }
+	    x0i += tpdi;
+    } while (grid_x < w);
 
 	  // Now draw the data panels
 	  
@@ -1495,9 +1632,9 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 	    // System.out.print ( "MouseWheel: " + e.getWheelRotation() + ", x: " + e.getX() + ", x0: " + x0 + ", pre-x_scale: " + x_scale);
 	    int w = -e.getWheelRotation();
 	    if (w > 0) {
-		    x_scale = 1.25 * w * x_scale;
+		    x_scale = scrollwheel_zoom_factor * w * x_scale;
 	    } else if (w < 0) {
-		    x_scale = x_scale / (1.25 * (-w));
+		    x_scale = x_scale / (scrollwheel_zoom_factor * (-w));
 	    }
 	    // System.out.println ( ", post-x_scale: " + x_scale);
 	    x0 += (x/old_x_scale) - (x/x_scale);

@@ -2,6 +2,20 @@ import os
 import bpy
 
 
+def timeline_view_all ( context ):
+    if bpy.context.screen != None:
+        for area in bpy.context.screen.areas:
+            if area != None:
+                if area.type == 'TIMELINE':
+                    for region in area.regions:
+                        if region.type == 'WINDOW':
+                            ctx = bpy.context.copy()
+                            ctx['area'] = area
+                            ctx['region'] = region
+                            bpy.ops.time.view_all(ctx)
+                            break  # It's not clear if this should break or continue ... breaking for now
+
+
 def project_files_path():
     ''' Consolidate the creation of the path to the project files'''
 

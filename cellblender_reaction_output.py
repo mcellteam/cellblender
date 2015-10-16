@@ -145,9 +145,18 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
                 elif rxn_output.count_location == 'Region':
                     file_name = "%s.%s.%s.dat" % (molecule_name,
                                            object_name, region_name)
-            else:
+            elif rxn_output.rxn_or_mol == 'Reaction':
                 rxn_name = rxn_output.reaction_name
-                file_name = "%s.World.dat" % (rxn_name)
+                if rxn_output.count_location == 'World':
+                    file_name = "%s.World.dat" % (rxn_name)
+                elif rxn_output.count_location == 'Object':
+                    file_name = "%s.%s.dat" % (rxn_name, object_name)
+                elif rxn_output.count_location == 'Region':
+                    file_name = "%s.%s.%s.dat" % (rxn_name,
+                                           object_name, region_name)
+
+            elif rxn_output.rxn_or_mol == 'MDLString':
+                file_name = rxn_output.mdl_file_prefix + "_MDLString.dat"
 
             if file_name:
                 file_name = os.path.join("seed_*", file_name)
@@ -251,7 +260,9 @@ def check_rxn_output(self, context):
     else:
         count_name = molecule_name
         rxn_output.status = ""
+        # Can't do these here because this causes another check_rxn_output call (infinite recursion)
         #rxn_output.name = rxn_output.mdl_string
+        #rxn_output.name = "MDL: " + rxn_output.mdl_string
 
         return
 
@@ -303,6 +314,22 @@ def check_rxn_output(self, context):
     return
 
 
+
+def update_name_and_check_rxn_output(self, context):
+    # Set the name to show the MDL
+
+    mcell = context.scene.mcell
+    rxn_output_list = mcell.rxn_output.rxn_output_list
+    rxn_output = rxn_output_list[mcell.rxn_output.active_rxn_output_index]
+    if rxn_output.rxn_or_mol == 'MDLString':
+        rxn_output.name = "MDL: " + rxn_output.mdl_string
+
+    # Now perform the normal reaction output check:
+    check_rxn_output(self, context)
+    return
+
+
+
 # Reaction Output Panel Classes
 
 
@@ -346,7 +373,10 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     mdl_string = StringProperty(
         name="MDL Definition",
         description="Count using a literal MDL definition.",
-        update=check_rxn_output)
+        update=update_name_and_check_rxn_output)
+    mdl_file_prefix = StringProperty(
+        name="MDL File Prefix",
+        description="Prefix name for this file." )
     object_name = StringProperty(
         name="Object", update=check_rxn_output)
     region_name = StringProperty(
@@ -367,18 +397,23 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
         items=rxn_or_mol_enum, name="Count Reaction or Molecule",
         default='Molecule',
         description="Select between counting a reaction or molecule.",
-        update=check_rxn_output)
+        update=update_name_and_check_rxn_output)
+
+    mdl_string_show_help = BoolProperty ( default=False, description="Toggle more information about this item" )
+    mdl_file_prefix_show_help = BoolProperty ( default=False, description="Toggle more information about this item" )
+
     # plot_command = StringProperty(name="Command")  # , update=check_rxn_output)
     status = StringProperty(name="Status")
 
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output building Data Model" )
         ro_dm = {}
-        ro_dm['data_model_version'] = "DM_2015_07_24_2311"
+        ro_dm['data_model_version'] = "DM_2015_10_07_1500"
         ro_dm['name'] = self.name
         ro_dm['molecule_name'] = self.molecule_name
         ro_dm['reaction_name'] = self.reaction_name
         ro_dm['mdl_string'] = self.mdl_string
+        ro_dm['mdl_file_prefix'] = self.mdl_file_prefix
         ro_dm['object_name'] = self.object_name
         ro_dm['region_name'] = self.region_name
         ro_dm['count_location'] = self.count_location
@@ -398,8 +433,17 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
             dm['mdl_string'] = ""
             dm['data_model_version'] = "DM_2015_07_24_2311"
 
+        if dm['data_model_version'] == "DM_2015_07_24_2311":
+            # Versions prior to this re-used the molecule name to hold the file prefix, so check and copy
+            if dm['rxn_or_mol'] == "MDLString":
+                dm['mdl_file_prefix'] = dm['molecule_name']
+                dm['molecule_name'] = ""
+            else:
+                dm['mdl_file_prefix'] = ""
+            dm['data_model_version'] = "DM_2015_10_07_1500"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_07_24_2311":
+        if dm['data_model_version'] != "DM_2015_10_07_1500":
             data_model.flag_incompatible_data_model ( "Upgrade Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
             return None
 
@@ -408,16 +452,17 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
         # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_07_24_2311":
+        if dm['data_model_version'] != "DM_2015_10_07_1500":
             data_model.handle_incompatible_data_model ( "Build Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
         self.name = dm["name"]
         self.molecule_name = dm["molecule_name"]
         self.reaction_name = dm["reaction_name"]
+        self.mdl_string = dm['mdl_string']
+        self.mdl_file_prefix = dm['mdl_file_prefix']
         self.object_name = dm["object_name"]
         self.region_name = dm["region_name"]
         self.count_location = dm["count_location"]
         self.rxn_or_mol = dm["rxn_or_mol"]
-        self.mdl_string = dm['mdl_string']
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -477,7 +522,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         self.rxn_step.init_ref (
             parameter_system, "Rxn_Output_Step", user_name="Step", 
             user_expr="", user_units="", user_descr="Step\n"
-            "Output reaction data every t seconds.") 
+            "Output reaction data every t seconds.\nUses simulation time step when blank.") 
 
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output Panel building Data Model" )
@@ -554,7 +599,6 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         print ( "Done removing all Reaction Output Properties." )
 
 
-
     def draw_layout ( self, context, layout ):
         """ Draw the reaction output "panel" within the layout """
         mcell = context.scene.mcell
@@ -589,26 +633,44 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                             rxn_output, "reaction_name", mcell.reactions,
                             "reaction_name_list", icon='FORCE_LENNARDJONES')
                     elif rxn_output.rxn_or_mol == 'MDLString':
-                        layout.prop(rxn_output, "mdl_string")
-                        layout.prop(rxn_output,"molecule_name")
-                        #literal mdl string
+                        ## layout.prop(rxn_output, "mdl_string")
+                        helptext = "MDL String\n" + \
+                                   "Specifies the MDL String used to generate output.\n" + \
+                                   "Example:\n" + \
+                                   "   COUNT[my_mol,Scene.Circle.039,FRONT_CROSSINGS]\n" + \
+                                   "See MCell Quick Reference Guide for more details."
+                        ps.draw_prop_with_help ( layout, "MDL String", rxn_output, "mdl_string", "mdl_string_show_help", rxn_output.mdl_string_show_help, helptext )
 
-                    layout.prop(rxn_output, "count_location", expand=True)
-                    # Show the object selector if Object or Region is selected
-                    if rxn_output.count_location != "World":
-                        layout.prop_search(
-                            rxn_output, "object_name", mcell.model_objects,
-                            "object_list", icon='MESH_ICOSPHERE')
-                        if (rxn_output.object_name and
-                                (rxn_output.count_location == "Region")):
-                            try:
-                                regions = bpy.data.objects[
-                                    rxn_output.object_name].mcell.regions
-                                layout.prop_search(rxn_output, "region_name",
-                                                   regions, "region_list",
-                                                   icon='FACESEL_HLT')
-                            except KeyError:
-                                pass
+                        ## layout.prop(rxn_output,"mdl_file_prefix")
+                        helptext = "MDL File Prefix\n" + \
+                                   "Specifies a portion of the file name for this output.\n" + \
+                                   "Example:\n" + \
+                                   "     circle_039_front_cross\n" + \
+                                   "  will generate a file named:\n" + \
+                                   "     circle_039_front_cross_MDLString.dat\n" + \
+                                   "That file will be located in react_data/seed_xxxxx\n" + \
+                                   "All output files must have unique names.\n" + \
+                                   "See MCell Quick Reference Guide for more details."
+                        ps.draw_prop_with_help ( layout, "MDL File Prefix", rxn_output, "mdl_file_prefix", "mdl_file_prefix_show_help", rxn_output.mdl_file_prefix_show_help, helptext )
+
+
+                    if rxn_output.rxn_or_mol != 'MDLString':
+                        layout.prop(rxn_output, "count_location", expand=True)
+                        # Show the object selector if Object or Region is selected
+                        if rxn_output.count_location != "World":
+                            layout.prop_search(
+                                rxn_output, "object_name", mcell.model_objects,
+                                "object_list", icon='MESH_ICOSPHERE')
+                            if (rxn_output.object_name and
+                                    (rxn_output.count_location == "Region")):
+                                try:
+                                    regions = bpy.data.objects[
+                                        rxn_output.object_name].mcell.regions
+                                    layout.prop_search(rxn_output, "region_name",
+                                                       regions, "region_list",
+                                                       icon='FACESEL_HLT')
+                                except KeyError:
+                                    pass
 
                     layout.separator()
                     layout.separator()
