@@ -213,7 +213,7 @@ class EXTERNAL_OT_reaction_output_add(bpy.types.Operator):
             rxn_output = mcell.rxn_output.rxn_output_list[
                 mcell.rxn_output.active_rxn_output_index]
             rxn_output.mdl_string = '+'.join(strBuffer)
-            rxn_output.molecule_name = key['name']
+            rxn_output.mdl_file_prefix = key['name']
             rxn_output.rxn_or_mol = 'MDLString'
 
             
