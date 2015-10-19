@@ -218,6 +218,8 @@ def register():
     bpy.types.INFO_MT_file_export.append(data_model.menu_func_export)
     bpy.types.INFO_MT_file_import.append(data_model.menu_func_import_all)
     bpy.types.INFO_MT_file_export.append(data_model.menu_func_export_all)
+    bpy.types.INFO_MT_file_import.append(data_model.menu_func_import_all_json)
+    bpy.types.INFO_MT_file_export.append(data_model.menu_func_export_all_json)
     bpy.types.INFO_MT_file_export.append(data_model.menu_func_print)
 
 

@@ -193,6 +193,23 @@ class ExportDataModelAll(bpy.types.Operator, ExportHelper):
         return {'FINISHED'}
 
 
+class ExportDataModelAllJSON(bpy.types.Operator, ExportHelper):
+    '''Export the CellBlender model including geometry as a JSON text file'''
+    bl_idname = "cb.export_data_model_all_json" 
+    bl_label = "Export Data Model with Geometry JSON"
+    bl_description = "Export CellBlender Data Model and Geometry to a JSON text file"
+
+    filename_ext = ".json"
+    filter_glob = StringProperty(default="*.json",options={'HIDDEN'},)
+
+    def execute(self, context):
+        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
+        f = open ( self.filepath, 'w' )
+        f.write ( json_from_data_model ( mcell_dm ) )
+        f.close()
+        return {'FINISHED'}
+
+
 class ImportDataModel(bpy.types.Operator, ExportHelper):
     '''Import a CellBlender model from a Python Pickle in a text file'''
     bl_idname = "cb.import_data_model" 
@@ -232,6 +249,29 @@ class ImportDataModelAll(bpy.types.Operator, ExportHelper):
         f.close()
 
         dm = unpickle_data_model ( pickle_string )
+        dm['mcell'] = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
+        context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
+
+        print ( "Done loading CellBlender model." )
+        return {'FINISHED'}
+
+class ImportDataModelAllJSON(bpy.types.Operator, ExportHelper):
+    '''Import a CellBlender model with geometry from a JSON text file'''
+    bl_idname = "cb.import_data_model_all_json" 
+    bl_label = "Import Data Model with Geometry JSON"
+    bl_description = "Import CellBlender Data Model and Geometry from a JSON text file"
+
+    filename_ext = ".json"
+    filter_glob = StringProperty(default="*.json",options={'HIDDEN'},)
+
+    def execute(self, context):
+        print ( "Loading CellBlender model from JSON file: " + self.filepath + " ..." )
+        f = open ( self.filepath, 'r' )
+        json_string = f.read()
+        f.close()
+
+        dm = {}
+        dm['mcell'] = data_model_from_json ( json_string )
         dm['mcell'] = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
         context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
 
@@ -522,8 +562,15 @@ def menu_func_import_all(self, context):
 def menu_func_export_all(self, context):
     self.layout.operator("cb.export_data_model_all", text="CellBlender Model and Geometry (text/pickle)")
 
+def menu_func_import_all_json(self, context):
+    self.layout.operator("cb.import_data_model_all_json", text="CellBlender Model and Geometry (JSON)")
+
+def menu_func_export_all_json(self, context):
+    self.layout.operator("cb.export_data_model_all_json", text="CellBlender Model and Geometry (JSON)")
+
 def menu_func_print(self, context):
     self.layout.operator("cb.print_data_model", text="Print CellBlender Model (text)")
+
 
 
 # We use per module class registration/unregistration
