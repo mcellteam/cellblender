@@ -205,7 +205,7 @@ class ExportDataModelAllJSON(bpy.types.Operator, ExportHelper):
     def execute(self, context):
         mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
         f = open ( self.filepath, 'w' )
-        f.write ( json_from_data_model ( mcell_dm ) )
+        f.write ( json_from_data_model ( {"mcell": mcell_dm} ) )
         f.close()
         return {'FINISHED'}
 
@@ -271,7 +271,7 @@ class ImportDataModelAllJSON(bpy.types.Operator, ExportHelper):
         f.close()
 
         dm = {}
-        dm['mcell'] = data_model_from_json ( json_string )
+        dm['mcell'] = data_model_from_json ( json_string ) ['mcell']
         dm['mcell'] = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
         context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
 
