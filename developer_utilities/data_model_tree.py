@@ -2,6 +2,7 @@
 
 import sys
 import pickle
+import json
 import pygtk
 pygtk.require ( '2.0' )
 import gtk
@@ -66,6 +67,16 @@ class data_model_tree:
     menu_name = "Dump Tree"
     menu_item = gtk.MenuItem ( menu_name )
     menu_item.connect ( "activate", self.dump_tree_callback, menu_name )
+    self.menu.append ( menu_item )
+
+    menu_name = "Dump JSON"
+    menu_item = gtk.MenuItem ( menu_name )
+    menu_item.connect ( "activate", self.dump_json_callback, menu_name )
+    self.menu.append ( menu_item )
+
+    menu_name = "Dump JSON2"
+    menu_item = gtk.MenuItem ( menu_name )
+    menu_item.connect ( "activate", self.dump_json_indented_callback, menu_name )
     self.menu.append ( menu_item )
 
     self.file_menu.set_submenu(self.menu)
@@ -277,18 +288,37 @@ class data_model_tree:
     """ Return a data model from a pickle string """
     return ( pickle.loads ( dmp.encode('latin1') ) )
 
+
   def read_data_model ( self, file_name ):
     """ Return a data model read from a named file """
-    f = open ( file_name, 'r' )
-    pickled_model = f.read()
-    data_model = self.unpickle_data_model ( pickled_model )
+    if (file_name[-5:].lower() == '.json'):
+      # Assume this is a JSON format file
+      print ( "Opening a JSON file" )
+      f = open ( file_name, 'r' )
+      json_model = f.read()
+      data_model = json.loads ( json_model )
+    else:
+      # Assume this is a pickled format file
+      print ( "Opening a Pickle file" )
+      f = open ( file_name, 'r' )
+      pickled_model = f.read()
+      data_model = self.unpickle_data_model ( pickled_model )
     return data_model
+
 
   def write_data_model ( self, dm, file_name ):
     """ Write a data model to a named file """
-    f = open ( file_name, 'w' )
-    status = f.write ( self.pickle_data_model(dm) )
-    f.close()
+    if (file_name[-5:].lower() == '.json'):
+      # Assume this is a JSON format file
+      print ( "Saving a JSON file" )
+      f = open ( file_name, 'w' )
+      status = f.write ( json.dumps ( dm ) )
+    else:
+      # Assume this is a pickled format file
+      print ( "Saving to a Pickle file" )
+      f = open ( file_name, 'w' )
+      status = f.write ( self.pickle_data_model(dm) )
+      f.close()
     return status
 
 
@@ -314,7 +344,7 @@ class data_model_tree:
 
     dm_from_tree = self.build_dm_from_tree ( widget, extra )
 
-    self.dump_data_model ( "DM From Tree", dm_from_tree )
+    # self.dump_data_model ( "DM From Tree", dm_from_tree )
     self.data_model = dm_from_tree['Data Model']
 
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -373,6 +403,15 @@ class data_model_tree:
     else:
       print ( str(self.dump_depth*"  ") + name + " = " + str(dm) )
 
+
+  def dump_json_callback ( self, widget, extra ):
+    # print ( "===== Data Model =====" )
+    print ( json.dumps ( self.data_model ) )
+
+
+  def dump_json_indented_callback ( self, widget, extra ):
+    # print ( "===== Data Model =====" )
+    print ( json.dumps ( self.data_model, indent=2 ) )
 
 
   def dump_keys_callback ( self, widget, extra ):
