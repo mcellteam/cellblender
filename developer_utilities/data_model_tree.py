@@ -7,6 +7,10 @@ import pygtk
 pygtk.require ( '2.0' )
 import gtk
 
+
+import data_model_to_mdl
+
+
 def responseToOKDialog(entry, dialog, response):
   print ( "OK Clicked" )
   dialog.response(response)
@@ -78,6 +82,12 @@ class data_model_tree:
     menu_item = gtk.MenuItem ( menu_name )
     menu_item.connect ( "activate", self.dump_json_indented_callback, menu_name )
     self.menu.append ( menu_item )
+
+    menu_name = "Dump MDL"
+    menu_item = gtk.MenuItem ( menu_name )
+    menu_item.connect ( "activate", self.dump_as_mdl_callback, menu_name )
+    self.menu.append ( menu_item )
+
 
     self.file_menu.set_submenu(self.menu)
     self.menu_bar.append(self.file_menu)
@@ -425,6 +435,13 @@ class data_model_tree:
 
     for s in key_list:
         print ( s )
+
+
+  def dump_as_mdl_callback ( self, widget, extra ):
+    # print ( "===== Data Model =====" )
+    data_model_to_mdl.write_mdl ( self.data_model, "data_model.mdl" )
+
+
 
   def get_data_model_keys ( self, dm, key_prefix ):
       #global data_model_keys
