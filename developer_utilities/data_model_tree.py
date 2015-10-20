@@ -48,42 +48,42 @@ class data_model_tree:
     self.file_menu.show()
     self.menu = gtk.Menu()
 
-    menu_name = "Open"
+    menu_name = "Open Data Model"
     menu_item = gtk.MenuItem ( menu_name )
     menu_item.connect ( "activate", self.open_callback, menu_name )
     self.menu.append ( menu_item )
 
-    menu_name = "Save"
+    menu_name = "Save Data Model"
     menu_item = gtk.MenuItem ( menu_name )
     menu_item.connect ( "activate", self.save_callback, menu_name )
     self.menu.append ( menu_item )
 
-    menu_name = "Dump Model"
+    menu_name = "Dump Data Model"
     menu_item = gtk.MenuItem ( menu_name )
     menu_item.connect ( "activate", self.dump_model_callback, menu_name )
     self.menu.append ( menu_item )
 
-    menu_name = "Dump Keys"
+    menu_name = "Dump Data Model Keys"
     menu_item = gtk.MenuItem ( menu_name )
     menu_item.connect ( "activate", self.dump_keys_callback, menu_name )
     self.menu.append ( menu_item )
 
-    menu_name = "Dump Tree"
+    menu_name = "Dump GUI Tree"
     menu_item = gtk.MenuItem ( menu_name )
     menu_item.connect ( "activate", self.dump_tree_callback, menu_name )
     self.menu.append ( menu_item )
 
-    menu_name = "Dump JSON"
+    menu_name = "Export JSON"
     menu_item = gtk.MenuItem ( menu_name )
     menu_item.connect ( "activate", self.dump_json_callback, menu_name )
     self.menu.append ( menu_item )
 
-    menu_name = "Dump JSON2"
+    menu_name = "Export JSON2"
     menu_item = gtk.MenuItem ( menu_name )
     menu_item.connect ( "activate", self.dump_json_indented_callback, menu_name )
     self.menu.append ( menu_item )
 
-    menu_name = "Dump MDL"
+    menu_name = "Export MDL"
     menu_item = gtk.MenuItem ( menu_name )
     menu_item.connect ( "activate", self.dump_as_mdl_callback, menu_name )
     self.menu.append ( menu_item )
@@ -262,7 +262,7 @@ class data_model_tree:
         exit(999)
 
       #print ( str(self.dump_depth*"  ")+ val + " :  storing " + str(converted_name) + " = " + str(converted_val) + " of type " + str(detected_type) + " into a " + str(type(store_in)) )
-      print ( str(self.dump_depth*"  ")+ val + " :  storing " + str(converted_name) + " of type " + str(detected_type) + " into a " + str(type(store_in)) )
+      #print ( str(self.dump_depth*"  ")+ val + " :  storing " + str(converted_name) + " of type " + str(detected_type) + " into a " + str(type(store_in)) )
 
       if type(store_in) == type({'a':1}):
         store_in.update ( { converted_name: converted_val } )
@@ -274,19 +274,25 @@ class data_model_tree:
     return store_in
 
 
+
   def build_dm_from_tree ( self, widget, extra ):
     tm = self.treeview.get_model()
     print ( "Building Data Model from GTK Tree Model " + str(type(tm)) )
     # print ( "GTK Tree Model has " + str(dir(tm)) )
-    print ( "GTK Tree Model has " + str(len(tm)) + " rows" )
+    # print ( "GTK Tree Model has " + str(len(tm)) + " rows" )
     iter = tm.get_iter_root()
     while iter != None:
-      print ( "Iter not None" )
+      # print ( "Iter not None" )
       iter = tm.iter_next(iter)
 
     dm_from_tree = {}
     dm_from_tree = self.build_dm_from_tree_recurse ( tm, iter, dm_from_tree )
     return dm_from_tree
+
+  def update_data_model_from_tree ( self, widget, extra ):
+    dm_from_tree = self.build_dm_from_tree(widget,extra)
+    self.data_model = dm_from_tree['Data Model']
+
 
 
 
@@ -351,15 +357,9 @@ class data_model_tree:
     
   def save_callback ( self, widget, extra ):
     print ( "Saving file: " + self.file_name )
-
-    dm_from_tree = self.build_dm_from_tree ( widget, extra )
-
-    # self.dump_data_model ( "DM From Tree", dm_from_tree )
-    self.data_model = dm_from_tree['Data Model']
-
+    self.update_data_model_from_tree ( widget, extra )
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
     self.write_data_model ( self.data_model, self.file_name )
-
 
     
   def build_tree_from_data_model ( self, parent, name, dm ):
@@ -387,10 +387,11 @@ class data_model_tree:
       new_parent = self.treestore.append(parent,[name + " = " + str(dm),str(type(dm))])
 
 
-
   def dump_model_callback ( self, widget, extra ):
     print ( "===== Data Model =====" )
+    self.update_data_model_from_tree ( widget, extra )
     self.dump_data_model ( "Data Model", self.data_model )
+
 
   def dump_data_model ( self, name, dm ):
     if type(dm) == type({'a':1}):  #dm is a dictionary
@@ -416,16 +417,19 @@ class data_model_tree:
 
   def dump_json_callback ( self, widget, extra ):
     # print ( "===== Data Model =====" )
+    self.update_data_model_from_tree ( widget, extra )
     print ( json.dumps ( self.data_model ) )
 
 
   def dump_json_indented_callback ( self, widget, extra ):
     # print ( "===== Data Model =====" )
+    self.update_data_model_from_tree ( widget, extra )
     print ( json.dumps ( self.data_model, indent=2 ) )
 
 
   def dump_keys_callback ( self, widget, extra ):
     print ( "===== Data Model Keys =====" )
+    self.update_data_model_from_tree ( widget, extra )
 
     self.data_model_keys = set([])
     key_set = self.get_data_model_keys ( self.data_model, "" )
@@ -439,8 +443,8 @@ class data_model_tree:
 
   def dump_as_mdl_callback ( self, widget, extra ):
     # print ( "===== Data Model =====" )
+    self.update_data_model_from_tree ( widget, extra )
     data_model_to_mdl.write_mdl ( self.data_model, "data_model.mdl" )
-
 
 
   def get_data_model_keys ( self, dm, key_prefix ):
