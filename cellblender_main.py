@@ -1022,7 +1022,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
             subgroup_name = "partitions"
             if subgroup_name in dm[group_name]:
-                dm[group_name][subgroup_name] = cellblender_partitions.MCellPartitionsPropertyGroup.upgrade_data_model ( dm[group_name] )
+                dm[group_name][subgroup_name] = cellblender_partitions.MCellPartitionsPropertyGroup.upgrade_data_model ( dm[group_name][subgroup_name] )
                 if dm[group_name][subgroup_name] == None:
                     return None
 

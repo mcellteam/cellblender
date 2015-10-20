@@ -357,15 +357,15 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
         dm_dict['data_model_version'] = "DM_2014_10_24_1638"
         dm_dict['include'] = self.include==True
         dm_dict['recursion_flag'] = self.recursion_flag==True
-        dm_dict['x_start'] = str(self.x_start)
-        dm_dict['x_end'] =   str(self.x_end)
-        dm_dict['x_step'] =  str(self.x_step)
-        dm_dict['y_start'] = str(self.y_start)
-        dm_dict['y_end'] =   str(self.y_end)
-        dm_dict['y_step'] =  str(self.y_step)
-        dm_dict['x_start'] = str(self.z_start)
-        dm_dict['z_end'] =   str(self.z_end)
-        dm_dict['z_step'] =  str(self.z_step)
+        dm_dict['x_start'] = "%g" % (self.x_start)
+        dm_dict['x_end'] =   "%g" % (self.x_end)
+        dm_dict['x_step'] =  "%g" % (self.x_step)
+        dm_dict['y_start'] = "%g" % (self.y_start)
+        dm_dict['y_end'] =   "%g" % (self.y_end)
+        dm_dict['y_step'] =  "%g" % (self.y_step)
+        dm_dict['z_start'] = "%g" % (self.z_start)
+        dm_dict['z_end'] =   "%g" % (self.z_end)
+        dm_dict['z_step'] =  "%g" % (self.z_step)
         return dm_dict
 
 
@@ -377,7 +377,22 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] == "DM_2014_10_24_1638":
+            # There was a bug in earlier exports of the data model which saved self.z_start to dm['x_start']
+            # Similarly, self.z_start was loaded from dm['x_start'] when the model was read back into properties
+            # Here's the error code (fixed in this version):
+            #  build_data_model_from_properties:
+            #    dm_dict['x_start'] = str(self.z_start)
+            #  build_properties_from_data_model:
+            #    self.z_start = float(dm["x_start"])
+            # So those data models did not have a 'z_start' key in their partition dictionary at all.
+            # The originally intended 'x_start' in those data models had likely been over-written by 'z_start'
+            # To upgrade this, add a 'z_start' key with the value of 'x_start' (which was the previous z_start)
+            dm['z_start'] = dm['x_start']
+            # Update the data model version to mark that this patch has been applied
+            dm['data_model_version'] = "DM_2015_10_20_1446"
+
+        if dm['data_model_version'] != "DM_2015_10_20_1446":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellPartitionsPropertyGroup data model to current version." )
             return None
 
@@ -400,7 +415,7 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
         self.y_start = float(dm["y_start"])
         self.y_end = float(dm["y_end"])
         self.y_step = float(dm["y_step"])
-        self.z_start = float(dm["x_start"])
+        self.z_start = float(dm["z_start"])
         self.z_end = float(dm["z_end"])
         self.z_step = float(dm["z_step"])
 

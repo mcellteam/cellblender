@@ -207,7 +207,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         notify_dict['iteration_report'] = self.iteration_report==True
         notify_dict['partition_location_report'] = self.partition_location_report==True
         notify_dict['probability_report'] = str(self.probability_report)
-        notify_dict['probability_report_threshold'] = str(self.probability_report_threshold)
+        notify_dict['probability_report_threshold'] = "%g" % (self.probability_report_threshold)
         notify_dict['varying_probability_report'] = self.varying_probability_report==True
         notify_dict['progress_report'] = self.progress_report==True
         notify_dict['release_event_report'] = self.release_event_report==True
@@ -219,11 +219,11 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         warn_dict['all_warnings'] = str(self.all_warnings)
         warn_dict['degenerate_polygons'] = str(self.degenerate_polygons)
         warn_dict['high_reaction_probability'] = str(self.high_reaction_probability)
-        warn_dict['high_probability_threshold'] = str(self.high_probability_threshold)
+        warn_dict['high_probability_threshold'] = "%g" % (self.high_probability_threshold)
         warn_dict['lifetime_too_short'] = str(self.lifetime_too_short)
         warn_dict['lifetime_threshold'] = str(self.lifetime_threshold)
         warn_dict['missed_reactions'] = str(self.missed_reactions)
-        warn_dict['missed_reaction_threshold'] = str(self.missed_reaction_threshold)
+        warn_dict['missed_reaction_threshold'] = "%g" % (self.missed_reaction_threshold)
         warn_dict['negative_diffusion_constant'] = str(self.negative_diffusion_constant)
         warn_dict['missing_surface_orientation'] = str(self.missing_surface_orientation)
         warn_dict['negative_reaction_rate'] = str(self.negative_reaction_rate)

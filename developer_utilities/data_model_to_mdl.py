@@ -22,6 +22,7 @@ and attempts to generate corresponding MCell MDL.
 Note that it is acceptable to assume that this code is getting the
 most current data model since CellBlender can upgrade any previous
 data model and provide the most current to this function.
+
 """
 
 
@@ -72,8 +73,31 @@ def write_dm_on_off ( dm, f, dm_name, mdl_name, blank_default="", indent="" ):
 
 #### Start of MDL Code ####
 
+"""
+List of CellBlender files containing Data Model code:
+  ( found with: grep build_data_model_from_properties *.py )
+
+    File                               Classes Exported to Data Model
+    ----                               ------------------------------
+    cellblender_initialization.py      MCellInitializationPropertyGroup
+    cellblender_legacy.py              None (only comments found)
+    cellblender_main.py                MCellPropertyGroup
+    cellblender_molecules.py           MCellMoleculeProperty MCellMoleculesListProperty
+    cellblender_mol_viz.py             MCellMolVizPropertyGroup MCellVizOutputPropertyGroup
+    cellblender_objects.py             MCellModelObjectsProperty  MCellModelObjectsPropertyGroup
+    cellblender_partitions.py          MCellPartitionsPropertyGroup
+    cellblender_reaction_output.py     MCellReactionOutputProperty MCellReactionOutputPropertyGroup
+    cellblender_reactions.py           MCellReactionProperty MCellReactionsListProperty
+    cellblender_release.py             MCellMoleculeReleaseProperty MCellMoleculeReleasePropertyGroup MCellReleasePatternProperty MCellReleasePatternPropertyGroup
+    cellblender_simulation.py          MCellRunSimulationProcessesProperty MCellRunSimulationPropertyGroup
+    cellblender_surface_classes.py     MCellSurfaceClassPropertiesProperty MCellSurfaceClassesProperty MCellSurfaceClassesPropertyGroup
+    cellblender_surface_regions.py     MCellModSurfRegionsProperty MCellModSurfRegionsPropertyGroup
+    data_model.py                      None (only calls to other methods)
+    parameter_system.py                Parameter_Data ParameterSystemPropertyGroup
+"""
+
 def write_mdl ( dm, file_name ):
-    """ Write a data model to a named file """
+    """ Write a data model to a named file (generally follows "export_mcell_mdl" ordering) """
     f = open ( file_name, 'w' )
     # f.write ( "/* MDL Generated from Data Model */\n" )
     if ('mcell' in dm):
@@ -84,6 +108,9 @@ def write_mdl ( dm, file_name ):
       if 'initialization' in mcell:
         init = mcell['initialization']
         write_initialization ( init, f )
+        if 'partitions' in init:
+          parts = mcell['initialization']['partitions']
+          write_partitions ( parts, f )
       if 'define_molecules' in mcell:
         mols = mcell['define_molecules']
         write_molecules ( mols, f )
@@ -112,7 +139,7 @@ def write_parameter_system ( ps, f ):
       f.write ( "/* DEFINE PARAMETERS */\n" );
       mplist = ps['model_parameters']
       for p in mplist:
-        if False:
+        if True:
           f.write ( p['par_name'] + " = " +              p['par_expression'] + "    /* " + p['par_description'] + " " + p['par_units'] + " */\n" )
         else:
           f.write ( p['par_name'] + " = " + "%.g"%(p['extras']['par_value']) + "    /* " + p['par_description'] + " " + p['par_units'] + " */\n" )
@@ -201,6 +228,15 @@ def write_warnings ( warnings, f ):
       if 'missed_reactions' in warnings:
         if warnings['missed_reactions'] == 'WARNING':
           write_dm_str_val ( warnings, f, 'missed_reaction_threshold', 'MISSED_REACTION_THRESHOLD', indent="   " )
+
+def write_partitions ( parts, f ):
+    if 'include' in parts:
+      if parts['include']:
+        # Note that partition values are floats in CellBlender, but exported as strings for future compatibility with expressions
+        f.write ( "PARTITION_X = [[%s TO %s STEP %s]]\n" % ( parts['x_start'], parts['x_end'], parts['x_step'] ) )
+        f.write ( "PARTITION_Y = [[%s TO %s STEP %s]]\n" % ( parts['y_start'], parts['y_end'], parts['y_step'] ) )
+        f.write ( "PARTITION_Z = [[%s TO %s STEP %s]]\n" % ( parts['z_start'], parts['z_end'], parts['z_step'] ) )
+        f.write ( "\n" )
 
 def write_molecules ( mols, f ):
     if 'molecule_list' in mols:
