@@ -64,9 +64,9 @@ def plot ( data_path, plot_spec ):
     color_spec = ""
     
     any_found = False
-    
+
     for page in plot_spec:
-    
+
         # The java program only understands color=#rrggbb and fxy=filename parameters so find "f=":
 
         found = False
@@ -75,7 +75,7 @@ def plot ( data_path, plot_spec ):
                 found = True
                 any_found = True
                 break
-        
+
         # Go through the entire plot command (whether found or not) to set other settings
 
         java_plot_spec = ""
@@ -95,7 +95,7 @@ def plot ( data_path, plot_spec ):
             pid = subprocess.Popen ( plot_cmd.split(), cwd=data_path )
 
     if not any_found:
-    
+
         # Bring up an empty plotting window (useful for pure MDL runs)
 
         plot_cmd = find_in_path("java")
@@ -106,5 +106,4 @@ def plot ( data_path, plot_spec ):
         print ( "Plotting with: " + plot_cmd )
         pid = subprocess.Popen ( plot_cmd.split(), cwd=data_path )
 
-    
 

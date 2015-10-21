@@ -193,7 +193,7 @@ def write_notifications ( notifications, f ):
       else:
         individual = False
         write_dm_str_val ( notifications, f, 'all_notifications', 'ALL_NOTIFICATIONS', indent="   " )
-      
+
     if individual:
       if 'probability_report' in notifications:
         if notifications['probability_report'] == 'THRESHOLD':
@@ -218,7 +218,7 @@ def write_warnings ( warnings, f ):
       else:
         individual = False
         write_dm_str_val ( warnings, f, 'all_warnings', 'ALL_WARNINGS', indent="   " )
-      
+
     if individual:
       write_dm_str_val ( warnings, f, 'degenerate_polygons', 'DEGENERATE_POLYGONS', indent="   " )
       write_dm_str_val ( warnings, f, 'negative_diffusion_constant', 'NEGATIVE_DIFFUSION_CONSTANT', indent="   " )
@@ -300,7 +300,7 @@ def write_reactions ( reacts, f ):
           f.write("\n")
         f.write ( "}\n" )
         f.write("\n")
-        
+
 def write_geometry ( geom, f ):
     if 'object_list' in geom:
       glist = geom['object_list']
@@ -430,7 +430,7 @@ def write_viz_out ( vizout, f ):
     f.write ( "/*             NOT DONE YET!!!          */\n" )
     f.write ( "/****************************************/\n" )
     """
-    When: all_iterations=True start=0 end=1 step=1
+    When: export_all=True all_iterations=True start=0 end=1 step=1
 
       VIZ_OUTPUT
       {
@@ -443,6 +443,19 @@ def write_viz_out ( vizout, f ):
         }
       }
 
+    When: export_all=False (mols:b,s,spike checked) all_iterations=False start=20 end=100 step=10
+
+      VIZ_OUTPUT
+      {
+        MODE = CELLBLENDER
+        FILENAME = "./viz_data/seed_" & seed & "/Scene"
+        MOLECULES
+        {
+          NAME_LIST {b s spike}
+          ITERATION_NUMBERS {ALL_DATA @ [[20 TO 100 STEP 10]]}
+        }
+      }
+
     """
 
 
@@ -452,7 +465,7 @@ def help():
     print ( "Requires 3 parameters:   data_model_file_name   mdl_base_name   seed" )
     # print ( "Use Control-D to exit the interactive mode" )
     print ( "=======================================\n\n" )
-    
+
 
 data_model_depth = 0
 def dump_data_model ( dm ):

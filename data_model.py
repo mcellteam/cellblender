@@ -195,7 +195,7 @@ class ExportDataModelAll(bpy.types.Operator, ExportHelper):
 
 class ExportDataModelAllJSON(bpy.types.Operator, ExportHelper):
     '''Export the CellBlender model including geometry as a JSON text file'''
-    bl_idname = "cb.export_data_model_all_json" 
+    bl_idname = "cb.export_data_model_all_json"
     bl_label = "Export Data Model with Geometry JSON"
     bl_description = "Export CellBlender Data Model and Geometry to a JSON text file"
 
@@ -257,7 +257,7 @@ class ImportDataModelAll(bpy.types.Operator, ExportHelper):
 
 class ImportDataModelAllJSON(bpy.types.Operator, ExportHelper):
     '''Import a CellBlender model with geometry from a JSON text file'''
-    bl_idname = "cb.import_data_model_all_json" 
+    bl_idname = "cb.import_data_model_all_json"
     bl_label = "Import Data Model with Geometry JSON"
     bl_description = "Import CellBlender Data Model and Geometry from a JSON text file"
 

@@ -609,7 +609,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         else:
             self.rxn_step.draw(layout,ps)
             row = layout.row()
-            
+
             # Do not need molecules to bring up plotting for pure MDL cases
             if mcell.molecules.molecule_list:
                 col = row.column()
