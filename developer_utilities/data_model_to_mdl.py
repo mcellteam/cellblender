@@ -96,7 +96,7 @@ List of CellBlender files containing Data Model code:
     parameter_system.py                Parameter_Data ParameterSystemPropertyGroup
 """
 
-def write_mdl ( dm, file_name ):
+def write_mdl ( dm, file_name, seed ):
     """ Write a data model to a named file (generally follows "export_mcell_mdl" ordering) """
     f = open ( file_name, 'w' )
     # f.write ( "/* MDL Generated from Data Model */\n" )
@@ -130,7 +130,14 @@ def write_mdl ( dm, file_name ):
           geom = mcell['geometrical_objects']
         if 'release_sites' in mcell:
           rels = mcell['release_sites']
-        write_instances ( geom, rels, f )
+        write_instances ( geom, rels, mcell['define_molecules'], f )
+
+      f.write("sprintf(seed,\"%05g\",SEED)\n\n")
+
+      if 'viz_output' in mcell:
+        vizout = mcell['viz_output']
+        write_viz_out ( vizout, f )
+
     f.close()
 
 
@@ -349,7 +356,7 @@ def write_release_patterns ( pats, f ):
           f.write ( "}\n" )
           f.write("\n")
 
-def write_instances ( geom, rels, f ):
+def write_instances ( geom, rels, mols, f ):
     f.write ( "INSTANTIATE Scene OBJECT\n" )
     f.write ( "{\n" )
     if geom != None:
@@ -365,19 +372,85 @@ def write_instances ( geom, rels, f ):
           for r in rlist:
             f.write ( "  %s RELEASE_SITE\n" % (r['name']) )
             f.write ( "  {\n" )
-            f.write ( "/****************************************/\n" )
-            f.write ( "  NOT DONE YET!!!\n" )
-            f.write ( "/****************************************/\n" )
+
+            # First handle the release shape
+            if ((r['shape'] == 'CUBIC') |
+                (r['shape'] == 'SPHERICAL') |
+                (r['shape'] == 'SPHERICAL_SHELL')):
+              # Output MDL for releasing in a non-object shape pattern
+              f.write("   SHAPE = %s\n" % (r['shape']))
+              f.write("   LOCATION = [%s, %s, %s]\n" % (r['location_x'],r['location_y'],r['location_z']))
+              f.write("   SITE_DIAMETER = %s\n" % (r['site_diameter']))
+            elif r['shape'] == "OBJECT":
+              # Output MDL for releasing in or on and object
+              #TODO Note that the use of "Scene." here for object names is a temporary measure!!!!
+              f.write("   SHAPE = Scene.%s\n" % (r['object_expr']))
+
+            # Next handle the molecule to be released (maybe the Molecule List should have been a dictionary keyed on mol_name?)
+            mlist = mols['molecule_list']
+            mol = None
+            for m in mlist:
+              if m['mol_name'] == r['molecule']:
+                mol = m
+                break
+
+            if mol:
+              if mol['mol_type'] == '2D':
+                f.write("   MOLECULE = %s%s\n" % (r['molecule'],r['orient']))
+              else:
+                f.write("   MOLECULE = %s\n" % (r['molecule']))
+
+            # Now write out the quantity, probability, and pattern
+
+            if r['quantity_type'] == 'NUMBER_TO_RELEASE':
+              f.write("   NUMBER_TO_RELEASE = %s\n" % (r['quantity']))
+            elif r['quantity_type'] == 'GAUSSIAN_RELEASE_NUMBER':
+              f.write("   GAUSSIAN_RELEASE_NUMBER\n")
+              f.write("   {\n")
+              f.write("        MEAN_NUMBER = %s\n" % (r['quantity']))
+              f.write("        STANDARD_DEVIATION = %s\n" % (r['stddev']))
+              f.write("      }\n")
+            elif r['quantity_type'] == 'DENSITY':
+              if mol:
+                if mol['mol_type'] == '2D':
+                  f.write("   DENSITY = %s\n" % (r['quantity']))
+                else:
+                  f.write("   CONCENTRATION = %s\n" % (r['quantity']))
+            f.write("   RELEASE_PROBABILITY = %s\n" % (r['release_probability']))
+            if len(r['pattern']) > 0:
+              f.write("   RELEASE_PATTERN = %s\n" % (r['pattern']))
+
             f.write ( "  }\n" )
     f.write ( "}\n" )
+    f.write("\n")
 
+
+def write_viz_out ( vizout, f ):
+    f.write ( "/****************************************/\n" )
+    f.write ( "/*             NOT DONE YET!!!          */\n" )
+    f.write ( "/****************************************/\n" )
+    """
+    When: all_iterations=True start=0 end=1 step=1
+
+      VIZ_OUTPUT
+      {
+        MODE = CELLBLENDER
+        FILENAME = "./viz_data/seed_" & seed & "/Scene"
+        MOLECULES
+        {
+          NAME_LIST {ALL_MOLECULES}
+          ITERATION_NUMBERS {ALL_DATA @ ALL_ITERATIONS}
+        }
+      }
+
+    """
 
 
 def help():
     print ( "\n\nhelp():" )
     print ( "\n=======================================" )
-    print ( "Requires 2 parameters: data_model_file_name mdl_base_name" )
-    print ( "Use Control-D to exit the interactive mode" )
+    print ( "Requires 3 parameters:   data_model_file_name   mdl_base_name   seed" )
+    # print ( "Use Control-D to exit the interactive mode" )
     print ( "=======================================\n\n" )
     
 
@@ -404,11 +477,11 @@ def dump_data_model ( dm ):
 
 
 
-if len(sys.argv) > 2:
-    print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] )
+if len(sys.argv) > 3:
+    print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] + " " + sys.argv[3] )
     dm = read_data_model ( sys.argv[1] )
     dump_data_model ( dm )
-    write_mdl ( dm, sys.argv[2] )
+    write_mdl ( dm, sys.argv[2], sys.argv[3] )
     print ( "Wrote Data Model found in \"" + sys.argv[1] + " to MDL file " + sys.argv[2] )
     # Drop into an interactive python session
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
