@@ -1873,8 +1873,19 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         print ( "Parameter System building Data Model" )
         par_sys_dm = {}
         gen_par_list = []
+        """
+        # Old method just saved the parameters in the list with no order dependency
         for p in self.general_parameter_list:
             gen_par_list.append ( p.build_data_model_from_properties() )
+        """
+        # New method saves the list in dependency order so they can be exported to MDL in dependency order
+
+        ordered_names = self.build_dependency_ordered_name_list()
+        # Output as expressions where order matters
+        for pn in ordered_names:
+            p = self.general_parameter_list[pn]
+            gen_par_list.append ( p.build_data_model_from_properties() )
+
         par_sys_dm['model_parameters'] = gen_par_list
         return par_sys_dm
 

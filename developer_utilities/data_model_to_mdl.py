@@ -145,6 +145,7 @@ def write_parameter_system ( ps, f ):
           f.write ( p['par_name'] + " = " + "%.g"%(p['extras']['par_value']) + "    /* " + p['par_description'] + " " + p['par_units'] + " */\n" )
       f.write ( "\n" );
 
+
 def write_initialization ( init, f ):
     write_dm_str_val ( init, f, 'iterations',                'ITERATIONS' )
     write_dm_str_val ( init, f, 'time_step',                 'TIME_STEP' )
