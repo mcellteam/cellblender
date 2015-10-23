@@ -114,12 +114,18 @@ def write_mdl ( dm, file_name ):
       if 'define_molecules' in mcell:
         mols = mcell['define_molecules']
         write_molecules ( mols, f )
+      if 'define_surface_classes' in mcell:
+        sclasses = mcell['define_surface_classes']
+        write_surface_classes ( sclasses, f )
       if 'define_reactions' in mcell:
         reacts = mcell['define_reactions']
         write_reactions ( reacts, f )
       if 'geometrical_objects' in mcell:
         geom = mcell['geometrical_objects']
         write_geometry ( geom, f )
+      if 'modify_surface_regions' in mcell:
+        modsurfrs = mcell['modify_surface_regions']
+        write_modify_surf_regions ( modsurfrs, f )
       if 'define_release_patterns' in mcell:
         pats = mcell['define_release_patterns']
         write_release_patterns ( pats, f )
@@ -188,6 +194,7 @@ def write_initialization ( init, f ):
 
     f.write ( "\n" );
 
+
 def write_notifications ( notifications, f ):
     individual = True
     if 'all_notifications' in notifications:
@@ -212,6 +219,7 @@ def write_notifications ( notifications, f ):
       write_dm_on_off  ( notifications, f, 'progress_report', 'PROGRESS_REPORT', indent="   " )
       write_dm_on_off  ( notifications, f, 'release_event_report', 'RELEASE_EVENT_REPORT', indent="   " )
       write_dm_on_off  ( notifications, f, 'molecule_collision_report', 'MOLECULE_COLLISION_REPORT', indent="   " )
+
 
 def write_warnings ( warnings, f ):
     individual = True
@@ -240,6 +248,7 @@ def write_warnings ( warnings, f ):
         if warnings['missed_reactions'] == 'WARNING':
           write_dm_str_val ( warnings, f, 'missed_reaction_threshold', 'MISSED_REACTION_THRESHOLD', indent="   " )
 
+
 def write_partitions ( parts, f ):
     if 'include' in parts:
       if parts['include']:
@@ -248,6 +257,7 @@ def write_partitions ( parts, f ):
         f.write ( "PARTITION_Y = [[%s TO %s STEP %s]]\n" % ( parts['y_start'], parts['y_end'], parts['y_step'] ) )
         f.write ( "PARTITION_Z = [[%s TO %s STEP %s]]\n" % ( parts['z_start'], parts['z_end'], parts['z_step'] ) )
         f.write ( "\n" )
+
 
 def write_molecules ( mols, f ):
     if 'molecule_list' in mols:
@@ -274,6 +284,29 @@ def write_molecules ( mols, f ):
           f.write("  }\n")
         f.write ( "}\n" )
       f.write ( "\n" );
+
+
+def write_surface_classes ( sclasses, f ):
+    if 'surface_class_list' in sclasses:
+      sclist = sclasses['surface_class_list']
+      if len(sclist) > 0:
+        f.write ( "DEFINE_SURFACE_CLASSES\n" )
+        f.write ( "{\n" )
+        for sc in sclist:
+          f.write ( "  %s\n" % (sc['name']) )
+          f.write ( "  {\n" )
+          if 'surface_class_prop_list' in sc:
+            for scp in sc['surface_class_prop_list']:
+              if scp['surf_class_type'] == 'CLAMP_CONCENTRATION':
+                  clamp_value = scp['clamp_value']
+                  f.write("    %s" % scp['surf_class_type'])
+                  f.write(" %s%s = %s\n" % (scp['molecule'],scp['surf_class_orient'],scp['clamp_value']))
+              else:
+                  f.write("    %s = %s%s\n" % (scp['surf_class_type'],scp['molecule'],scp['surf_class_orient']))
+          f.write ( "  }\n" )
+        f.write ( "}\n" )
+        f.write("\n")
+
 
 def write_reactions ( reacts, f ):
     if 'reaction_list' in reacts:
@@ -303,6 +336,7 @@ def write_reactions ( reacts, f ):
           f.write("\n")
         f.write ( "}\n" )
         f.write("\n")
+
 
 def write_geometry ( geom, f ):
     if 'object_list' in geom:
@@ -344,20 +378,6 @@ def write_geometry ( geom, f ):
           f.write ( "}\n")
           f.write ( "\n" );
 
-def write_release_patterns ( pats, f ):
-    if 'release_pattern_list' in pats:
-      plist = pats['release_pattern_list']
-      if len(plist) > 0:
-        for p in plist:
-          f.write ( "DEFINE_RELEASE_PATTERN %s\n" % (p['name']) )
-          f.write ( "{\n" )
-          f.write ( "  DELAY = %s\n" % (p['delay']) )
-          f.write ( "  RELEASE_INTERVAL = %s\n" % (p['release_interval']) )
-          f.write ( "  TRAIN_DURATION = %s\n" % (p['train_duration']) )
-          f.write ( "  TRAIN_INTERVAL = %s\n" % (p['train_interval']) )
-          f.write ( "  NUMBER_OF_TRAINS = %s\n" % (p['number_of_trains']) )
-          f.write ( "}\n" )
-          f.write("\n")
 
 def write_instances ( geom, rels, mols, f ):
     #TODO Note that the use of "Scene" here is a temporary measure!!!!
@@ -428,6 +448,41 @@ def write_instances ( geom, rels, mols, f ):
     f.write ( "}\n" )
     f.write("\n")
 
+
+def write_modify_surf_regions ( modsurfrs, f ):
+    if 'modify_surface_regions_list' in modsurfrs:
+      msrlist = modsurfrs['modify_surface_regions_list']
+      if len(msrlist) > 0:
+        f.write ( "MODIFY_SURFACE_REGIONS\n" )
+        f.write ( "{\n" )
+        for msr in msrlist:
+          surf = "ALL"
+          if len(msr['region_name']) > 0:
+            surf = msr['region_name']
+          f.write ( "  %s[%s]\n" % (msr['object_name'],surf) )
+          f.write ( "  {\n" )
+          f.write ( "    SURFACE_CLASS = %s\n" % (msr['surf_class_name']) )
+          f.write ( "  }\n" )
+        f.write ( "}\n" )
+        f.write("\n")
+
+
+def write_release_patterns ( pats, f ):
+    if 'release_pattern_list' in pats:
+      plist = pats['release_pattern_list']
+      if len(plist) > 0:
+        for p in plist:
+          f.write ( "DEFINE_RELEASE_PATTERN %s\n" % (p['name']) )
+          f.write ( "{\n" )
+          f.write ( "  DELAY = %s\n" % (p['delay']) )
+          f.write ( "  RELEASE_INTERVAL = %s\n" % (p['release_interval']) )
+          f.write ( "  TRAIN_DURATION = %s\n" % (p['train_duration']) )
+          f.write ( "  TRAIN_INTERVAL = %s\n" % (p['train_interval']) )
+          f.write ( "  NUMBER_OF_TRAINS = %s\n" % (p['number_of_trains']) )
+          f.write ( "}\n" )
+          f.write("\n")
+
+
 def write_viz_out ( vizout, mols, f ):
 
     mol_list_string = ""
@@ -463,36 +518,6 @@ def write_viz_out ( vizout, mols, f ):
       f.write ( "  }\n" )
       f.write ( "}\n" )
       f.write ( "\n" );
-
-    """
-    When: export_all=True all_iterations=True ( start=0 end=1 step=1 : not visible in the interface )
-
-      VIZ_OUTPUT
-      {
-        MODE = CELLBLENDER
-        FILENAME = "./viz_data/seed_" & seed & "/Scene"
-        MOLECULES
-        {
-          NAME_LIST {ALL_MOLECULES}
-          ITERATION_NUMBERS {ALL_DATA @ ALL_ITERATIONS}
-        }
-      }
-
-    When: export_all=False (mols:b,s,spike checked) all_iterations=False start=20 end=100 step=10
-
-      VIZ_OUTPUT
-      {
-        MODE = CELLBLENDER
-        FILENAME = "./viz_data/seed_" & seed & "/Scene"
-        MOLECULES
-        {
-          NAME_LIST {b s spike}
-          ITERATION_NUMBERS {ALL_DATA @ [[20 TO 100 STEP 10]]}
-        }
-      }
-
-    """
-
 
 
 data_model_depth = 0
