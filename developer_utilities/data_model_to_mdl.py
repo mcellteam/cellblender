@@ -96,7 +96,7 @@ List of CellBlender files containing Data Model code:
     parameter_system.py                Parameter_Data ParameterSystemPropertyGroup
 """
 
-def write_mdl ( dm, file_name, seed ):
+def write_mdl ( dm, file_name ):
     """ Write a data model to a named file (generally follows "export_mcell_mdl" ordering) """
     f = open ( file_name, 'w' )
     # f.write ( "/* MDL Generated from Data Model */\n" )
@@ -136,7 +136,10 @@ def write_mdl ( dm, file_name, seed ):
 
       if 'viz_output' in mcell:
         vizout = mcell['viz_output']
-        write_viz_out ( vizout, f )
+        mols = None
+        if ('define_molecules' in mcell):
+          mols = mcell['define_molecules']
+        write_viz_out ( vizout, mols, f )
 
     f.close()
 
@@ -357,6 +360,7 @@ def write_release_patterns ( pats, f ):
           f.write("\n")
 
 def write_instances ( geom, rels, mols, f ):
+    #TODO Note that the use of "Scene" here is a temporary measure!!!!
     f.write ( "INSTANTIATE Scene OBJECT\n" )
     f.write ( "{\n" )
     if geom != None:
@@ -424,13 +428,44 @@ def write_instances ( geom, rels, mols, f ):
     f.write ( "}\n" )
     f.write("\n")
 
+def write_viz_out ( vizout, mols, f ):
 
-def write_viz_out ( vizout, f ):
-    f.write ( "/****************************************/\n" )
-    f.write ( "/*             NOT DONE YET!!!          */\n" )
-    f.write ( "/****************************************/\n" )
+    mol_list_string = ""
+
+    if vizout['export_all']:
+      # Don't check the molecules just output all of them
+      mol_list_string = "ALL_MOLECULES"
+    elif (mols != None):
+      # There might be some (or all) molecules with viz output enabled ... need to check
+      if 'molecule_list' in mols:
+        mlist = mols['molecule_list']
+        if len(mlist) > 0:
+          for m in mlist:
+            if 'export_viz' in m:
+              if m['export_viz']:
+                mol_list_string += " " + m['mol_name']
+      mol_list_string = mol_list_string.strip()
+
+    # Write a visualization block only if needed
+    if len(mol_list_string) > 0:
+      f.write ( "VIZ_OUTPUT\n" )
+      f.write ( "{\n" )
+      f.write ( "  MODE = CELLBLENDER\n" )
+      #TODO Note that the use of "Scene" here for file output is a temporary measure!!!!
+      f.write ( "  FILENAME = \"./viz_data/seed_\" & seed & \"/Scene\"\n" )
+      f.write ( "  MOLECULES\n" )
+      f.write ( "  {\n" )
+      f.write ( "    NAME_LIST {%s}\n" % (mol_list_string) )
+      if vizout['all_iterations']:
+        f.write ( "    ITERATION_NUMBERS {ALL_DATA @ ALL_ITERATIONS}\n" )
+      else:
+        f.write ( "    ITERATION_NUMBERS {ALL_DATA @ [[%s TO %s STEP %s]]}\n" % (vizout['start'], vizout['end'], vizout['step']) )
+      f.write ( "  }\n" )
+      f.write ( "}\n" )
+      f.write ( "\n" );
+
     """
-    When: export_all=True all_iterations=True start=0 end=1 step=1
+    When: export_all=True all_iterations=True ( start=0 end=1 step=1 : not visible in the interface )
 
       VIZ_OUTPUT
       {
@@ -459,13 +494,6 @@ def write_viz_out ( vizout, f ):
     """
 
 
-def help():
-    print ( "\n\nhelp():" )
-    print ( "\n=======================================" )
-    print ( "Requires 3 parameters:   data_model_file_name   mdl_base_name   seed" )
-    # print ( "Use Control-D to exit the interactive mode" )
-    print ( "=======================================\n\n" )
-
 
 data_model_depth = 0
 def dump_data_model ( dm ):
@@ -490,16 +518,22 @@ def dump_data_model ( dm ):
 
 
 
-if len(sys.argv) > 3:
-    print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] + " " + sys.argv[3] )
+if len(sys.argv) > 2:
+    print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] )
     dm = read_data_model ( sys.argv[1] )
-    dump_data_model ( dm )
-    write_mdl ( dm, sys.argv[2], sys.argv[3] )
+    # dump_data_model ( dm )
+    write_mdl ( dm, sys.argv[2] )
     print ( "Wrote Data Model found in \"" + sys.argv[1] + " to MDL file " + sys.argv[2] )
     # Drop into an interactive python session
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 else:
     # Print the help information
-    help()
+    print ( "\nhelp():" )
+    print ( "\n=======================================" )
+    print ( "Requires 2 parameters:" )
+    print ( "   data_model_file_name - A Data Model (pickled format)" )
+    print ( "   mdl_base_name - The base name to use for the project" )
+    # print ( "Use Control-D to exit the interactive mode" )
+    print ( "=======================================\n" )
 
