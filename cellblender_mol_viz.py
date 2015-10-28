@@ -1004,7 +1004,9 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
             mv_color = []
             for i in c.vec:
                 mv_color.append ( i )
-            mv_color_list.append ( mv_color )
+            # Only store if it's not already stored
+            if not mv_color in mv_color_list:
+                mv_color_list.append ( mv_color )
         mv_dm['color_list'] = mv_color_list
 
         mv_dm['color_index'] = self.color_index
@@ -1063,7 +1065,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         self.mol_file_start_index = dm['file_start_index']
         self.mol_file_stop_index = dm['file_stop_index']
         self.mol_file_step_index = dm['file_step_index']
-            
+
         for s in dm["viz_list"]:
             new_item = self.mol_viz_list.add()
             new_item.name = s
@@ -1071,6 +1073,15 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         self.render_and_save = dm['render_and_save']
         self.mol_viz_enable = dm['viz_enable']
 
+
+        # Remove duplicates from color list before building colors
+        new_color_list = []
+        for c in dm["color_list"]:
+            if not c in new_color_list:
+                new_color_list.append ( c )
+        dm['color_list'] = new_color_list
+
+        # Add to the color_list collection
         for c in dm["color_list"]:
             new_item = self.color_list.add()
             new_item.vec = c
