@@ -55,9 +55,23 @@ def plot(data_path, plot_spec):
         print("Unable to plot: python not found in path")
     else:
         plot_cmd.append(os.path.join(program_path, "mpl_simple.py"))
-        for generic_param in plot_spec.split():
+
+        generic_params = plot_spec.split()
+
+        legend = False
+        for generic_param in generic_params:
+            if "legend" in generic_param:
+                legend = True
+
+        if legend:
+          plot_cmd.append ( "-legend" )
+        else:
+          plot_cmd.append ( "-no-legend" )
+
+        for generic_param in generic_params:
             if generic_param[0:2] == "f=":
                 plot_cmd.append(generic_param[2:])
+
         print ( "Plotting from: " + data_path )
         print ( "Plot Command:  " + " ".join(plot_cmd) )
         pid = subprocess.Popen(plot_cmd, cwd=data_path)

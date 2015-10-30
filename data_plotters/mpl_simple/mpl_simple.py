@@ -28,14 +28,21 @@ if (__name__ == '__main__'):
     ax.set_xlabel(r'Time (s)')
     ax.set_ylabel(r'Count')
 
+    legend = False
     for i in range(1, len(sys.argv)):
         filename = sys.argv[i]
-        print('Plotting %s' % (filename))
-        data = numpy.fromfile(sys.argv[i],sep=' ')
-        x = data[0::2]
-        y = data[1::2]
-        ax.plot(x, y, label=filename)
+        if filename == "-legend":
+            legend = True
+        elif filename == "-no-legend":
+            legend = False
+        else:
+            print('Plotting %s' % (filename))
+            data = numpy.fromfile(sys.argv[i],sep=' ')
+            x = data[0::2]
+            y = data[1::2]
+            ax.plot(x, y, label=filename)
 
-    ax.legend()
+    if legend:
+        ax.legend()
 
     plt.show()
