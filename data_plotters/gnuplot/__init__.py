@@ -26,19 +26,25 @@ def requirements_met():
 def plot(data_path, plot_spec):
     program_path = os.path.dirname(__file__)
 
-    # XmGrace expects plain file names so translate:
-
     plot_cmd = find_in_path("gnuplot")
     
-    # plot_cmd += " -persist -e \"plot sin(x) with lines\""
-
-    p = subprocess.Popen ( [plot_cmd], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
-    si = p.stdin
-    so = p.stdout
-    se = p.stderr
+    # Get the file names from the generic command (f=seed_00001/file1.dat f=seed_00001/file2.dat)
     
-    si.write ( b"plot cos(2*x)\n" )
-    si.flush()
+    file_list = []
+
+    for plot_param in plot_spec.split():
+      if plot_param[0:2] == "f=":
+        file_list.append ( plot_param[2:] )
+
+    # Create a subprocess running gnuplot
+
+    p = subprocess.Popen ( [plot_cmd, "-persist"], cwd=data_path, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+
+    for f in file_list:
+      cmd = "plot \"" + f + "\" with lines\n"
+      print ( "Sending " + cmd )
+      p.stdin.write ( cmd.encode() )
+    p.stdin.flush()
 
 
     #for plot_param in plot_spec.split():
