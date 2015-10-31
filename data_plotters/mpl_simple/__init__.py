@@ -42,8 +42,8 @@ def requirements_met():
 
 def plot(data_path, plot_spec):
     program_path = os.path.dirname(__file__)
-    # print("Simple Plotter called with %s, %s" % (data_path, plot_spec))
-    # print("Plotter-specific files are located here: %s" %(program_path))
+    print("Simple Plotter called with %s, %s" % (data_path, plot_spec))
+    print("Plotter-specific files are located here: %s" %(program_path))
 
     # mpl_simple.py expects plain file names so translate:
 
