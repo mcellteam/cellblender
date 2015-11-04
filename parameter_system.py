@@ -1922,8 +1922,12 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         if 'model_parameters' in par_sys_dm:
             # Add all of the parameters - some will be invalid if they depend on other parameters that haven't been read yet
             for p in par_sys_dm['model_parameters']:
-                print ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + p['par_units'] + ") ... " + p['par_description'] )
-                self.add_general_parameter_with_values ( p['par_name'], p['par_expression'], p['par_units'], p['par_description'] )
+                units = ""
+                descr = ""
+                if 'par_units' in p: units = p['par_units']
+                if 'par_description' in p: descr = p['par_description']
+                print ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + units + ") ... " + descr )
+                self.add_general_parameter_with_values ( p['par_name'], p['par_expression'], units, descr )
 
             # Update the parameter expressions for any that were invalid after all have been added
             last_num_invalid = 0
