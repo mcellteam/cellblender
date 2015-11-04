@@ -295,14 +295,14 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
         # Now convert the updated Data Model into CellBlender Properties
         self.name = dm_dict["mol_name"]
-        self.bnglLabel = dm_dict['mol_bngl_label']
-        self.type = dm_dict["mol_type"]
-        self.diffusion_constant.set_expr ( dm_dict["diffusion_constant"] )
-        self.target_only = dm_dict["target_only"]
-        self.custom_time_step.set_expr ( dm_dict["custom_time_step"] )
-        self.custom_space_step.set_expr ( dm_dict["custom_space_step"] )
+        if "mol_bngl_label" in dm_dict: self.bnglLabel = dm_dict['mol_bngl_label']
+        if "mol_type" in dm_dict: self.type = dm_dict["mol_type"]
+        if "diffusion_constant" in dm_dict: self.diffusion_constant.set_expr ( dm_dict["diffusion_constant"] )
+        if "target_only" in dm_dict: self.target_only = dm_dict["target_only"]
+        if "custom_time_step" in dm_dict: self.custom_time_step.set_expr ( dm_dict["custom_time_step"] )
+        if "custom_space_step" in dm_dict: self.custom_space_step.set_expr ( dm_dict["custom_space_step"] )
         # TODO: Add after data model release:   self.maximum_step_length.set_expr ( dm_dict["maximum_step_length"] )
-        self.export_viz = dm_dict["export_viz"]
+        if "export_viz" in dm_dict: self.export_viz = dm_dict["export_viz"]
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
