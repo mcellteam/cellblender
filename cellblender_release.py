@@ -608,18 +608,18 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
 
         self.name = dm_dict["name"]
         self.molecule = dm_dict["molecule"]
-        self.shape = dm_dict["shape"]
-        self.orient = dm_dict["orient"]
-        self.object_expr = dm_dict["object_expr"]
-        self.location_x.set_expr ( dm_dict["location_x"] )
-        self.location_y.set_expr ( dm_dict["location_y"] )
-        self.location_z.set_expr ( dm_dict["location_z"] )
-        self.diameter.set_expr ( dm_dict["site_diameter"] )
-        self.probability.set_expr ( dm_dict["release_probability"] )
-        self.quantity_type = dm_dict["quantity_type"]
-        self.quantity.set_expr ( dm_dict["quantity"] )
-        self.stddev.set_expr ( dm_dict["stddev"] )
-        self.pattern = dm_dict["pattern"]
+        if "shape" in dm_dict: self.shape = dm_dict["shape"]
+        if "orient" in dm_dict: self.orient = dm_dict["orient"]
+        if "object_expr" in dm_dict: self.object_expr = dm_dict["object_expr"]
+        if "location_x" in dm_dict: self.location_x.set_expr ( dm_dict["location_x"] )
+        if "location_y" in dm_dict: self.location_y.set_expr ( dm_dict["location_y"] )
+        if "location_z" in dm_dict: self.location_z.set_expr ( dm_dict["location_z"] )
+        if "site_diameter" in dm_dict: self.diameter.set_expr ( dm_dict["site_diameter"] )
+        if "release_probability" in dm_dict: self.probability.set_expr ( dm_dict["release_probability"] )
+        if "quantity_type" in dm_dict: self.quantity_type = dm_dict["quantity_type"]
+        if "quantity" in dm_dict: self.quantity.set_expr ( dm_dict["quantity"] )
+        if "stddev" in dm_dict: self.stddev.set_expr ( dm_dict["stddev"] )
+        if "pattern" in dm_dict: self.pattern = dm_dict["pattern"]
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
