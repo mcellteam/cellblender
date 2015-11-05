@@ -423,6 +423,9 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             col.operator("mcell.model_objects_remove", icon='ZOOMOUT', text="")
             
             if len(self.object_list) > 0:
+                layout.label(text="") # Use as a separator
+                layout.box() # Use as a separator
+                layout.label(text="") # Use as a separator
                 box = layout.box()
                 row = box.row()
                 if not self.show_display:
