@@ -470,8 +470,23 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
         return(reg_info)
 
 
+    def add_ALL_if_needed(self, context):
+        print ( "#  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # " )
+        print ( "  Adding ALL if Needed " )
+        print ( "#  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  #  # " )
+        if not ('ALL' in self.region_list):
+            id = self.allocate_id()
+            new_reg=self.region_list.add()
+            new_reg.init_region(context, id)
+            reg_name = "ALL"
+            new_reg.name = reg_name
+            idx = self.region_list.find(reg_name)
+            self.active_reg_index = idx
+
+
     def add_region(self, context):
         """ Add a new region to the list of regions and set as the active region """
+        self.add_ALL_if_needed(context)
         id = self.allocate_id()
         new_reg=self.region_list.add()
         new_reg.init_region(context, id)
@@ -484,6 +499,7 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
 
     def add_region_by_name(self, context, reg_name):
         """ Add a new region to the list of regions and set as the active region """
+        self.add_ALL_if_needed(context)
         curr_reg_name = reg_name
         try:
             curr_reg = self.get_active_region()
@@ -712,12 +728,14 @@ class MCellObjectPropertyGroup(bpy.types.PropertyGroup):
         reg_dict = {}
         obj_regs = self.regions.region_list
         for reg in obj_regs:
-            id = str(reg.id)
-            mesh = obj.data
-            #reg_faces = list(object_surface_regions.get_region_faces(mesh,id))
-            reg_faces = list(reg.get_region_faces(mesh))
-            reg_faces.sort()
-            reg_dict[reg.name] = reg_faces
+            # Exclude the "ALL" region which is synthesized inside CellBlender only to allow selection
+            if reg.name != 'ALL':
+                id = str(reg.id)
+                mesh = obj.data
+                #reg_faces = list(object_surface_regions.get_region_faces(mesh,id))
+                reg_faces = list(reg.get_region_faces(mesh))
+                reg_faces.sort()
+                reg_dict[reg.name] = reg_faces
         return reg_dict
 
 

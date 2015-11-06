@@ -172,10 +172,12 @@ class MCELL_OT_mod_surf_regions_add(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        mod_surf_regions = context.scene.mcell.mod_surf_regions
-        mod_surf_regions.mod_surf_regions_list.add()
-        mod_surf_regions.active_mod_surf_regions_index = len(
-            mod_surf_regions.mod_surf_regions_list) - 1
+        context.scene.mcell.mod_surf_regions.add_mod_surf_region (context)
+
+        # mod_surf_regions = context.scene.mcell.mod_surf_regions
+        # mod_surf_regions.mod_surf_regions_list.add()
+        # mod_surf_regions.active_mod_surf_regions_index = len(
+        #     mod_surf_regions.mod_surf_regions_list) - 1
         check_active_mod_surf_regions(self, context)
 
         return {'FINISHED'}
@@ -257,8 +259,7 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Assign Surface Class")
     surf_class_name = StringProperty(
         name="Surface Class Name",
-        description="This surface class will be assigned to the surface "
-                    "region listed below.",
+        description="This surface class will be assigned to the surface region listed below.",
         update=check_active_mod_surf_regions)
     object_name = StringProperty(
         name="Object Name",
@@ -271,8 +272,7 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
         update=check_active_mod_surf_regions)
     region_name = StringProperty(
         name="Region Name",
-        description="This surface region will have the above surface class "
-                    "assigned to it.",
+        description="This surface region will have the above surface class assigned to it.",
         update=check_active_mod_surf_regions)
     status = StringProperty(name="Status")
 
@@ -334,6 +334,16 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
         type=MCellModSurfRegionsProperty, name="Assign Surface Class List")
     active_mod_surf_regions_index = IntProperty(
         name="Active Assign Surface Class Index", default=0)
+
+    def add_mod_surf_region (self, context):
+        self.mod_surf_regions_list.add()
+        self.active_mod_surf_regions_index = len(self.mod_surf_regions_list) - 1
+
+
+
+    def init_properties ( self, parameter_system ):
+        print ( "Initializing Properties for Surface Regions Group" )
+
 
     def build_data_model_from_properties ( self, context ):
         print ( "Assign Surface Class List building Data Model" )
@@ -440,9 +450,10 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
                                 active_mod_surf_regions.object_name].mcell.regions
                             layout.prop ( active_mod_surf_regions, "all_faces" )
                             if not active_mod_surf_regions.all_faces:
-                                layout.prop_search(active_mod_surf_regions,
-                                                   "region_name", regions,
-                                                   "region_list", icon='FACESEL_HLT')
+                                # Set active_mod_surf_regions['region_name'] from regions['region_list']
+                                layout.prop_search(active_mod_surf_regions, "region_name",
+                                                   regions,                 "region_list",
+                                                   icon='FACESEL_HLT')
                         except KeyError:
                             pass
 

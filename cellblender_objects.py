@@ -74,6 +74,7 @@ class MCELL_OT_model_objects_add(bpy.types.Operator):
                                                ngon_method='BEAUTY')
             bpy.ops.object.mode_set(mode='OBJECT')
             obj.mcell.include = True
+            obj.mcell.regions.add_ALL_if_needed(context)
 
         model_objects_update(context)
 
@@ -538,6 +539,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         for k,o in context.scene.objects.items():
             if k in mo_list:
                 o.mcell.include = True
+                o.mcell.regions.add_ALL_if_needed(context)
             else:
                 o.mcell.include = False
 
