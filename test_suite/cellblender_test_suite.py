@@ -2372,19 +2372,19 @@ class SurfaceClassesTestOp(bpy.types.Operator):
         cb_model.switch_to_orthographic()
 
         cb_model.add_cube_to_model ( name="ti", draw_type="WIRE", x=0, y=0, z=0, size=0.5 )
-        cb_model.add_surface_region_to_model_all_faces ( "ti", "t_reg" )
+        cb_model.add_surface_region_to_model_object_by_normal ( "ti", "t_reg" )  # Without a normal vector this assigns all faces by region (not by "ALL")
         cb_model.add_cube_to_model ( name="to", draw_type="WIRE", x=0, y=0, z=0, size=1.0 )
 
         cb_model.add_cube_to_model ( name="ri", draw_type="WIRE", x=0, y=-3, z=0, size=0.5 )
-        cb_model.add_surface_region_to_model_all_faces ( "ri", "r_reg" )
+        cb_model.add_surface_region_to_model_object_by_normal ( "ri", "r_reg" )  # Without a normal vector this assigns all faces by region (not by "ALL")
         cb_model.add_cube_to_model ( name="ro", draw_type="WIRE", x=0, y=-3, z=0, size=1.0 )
 
         cb_model.add_cube_to_model ( name="ai", draw_type="WIRE", x=0, y=3, z=0, size=0.5 )
-        cb_model.add_surface_region_to_model_all_faces ( "ai", "a_reg" )
+        cb_model.add_surface_region_to_model_object_by_normal ( "ai", "a_reg" )  # Without a normal vector this assigns all faces by region (not by "ALL")
         cb_model.add_cube_to_model ( name="ao", draw_type="WIRE", x=0, y=3, z=0, size=1.0 )
 
         cb_model.add_cube_to_model ( name="ci", draw_type="WIRE", x=0, y=0, z=3, size=0.5 )
-        cb_model.add_surface_region_to_model_all_faces ( "ci", "c_reg" )
+        cb_model.add_surface_region_to_model_object_by_normal ( "ci", "c_reg" )  # Without a normal vector this assigns all faces by region (not by "ALL")
         cb_model.add_cube_to_model ( name="co", draw_type="WIRE", x=0, y=0, z=3, size=1.0 )
 
         cb_model.add_label_to_model ( name="t", text="Trans",   x=0, y=-1.13, z=-2,  size=1, rx=math.pi/2, ry=0, rz=math.pi/2 )
@@ -3185,7 +3185,7 @@ class MinDMinETestOp(bpy.types.Operator):
         # Create the capsule object, and define the surface as a membrane
 
         cb_model.add_capsule_to_model ( name="ecoli", draw_type="WIRE", x=0, y=0, z=0, sigma=0, subdiv=2, radius=0.5, cyl_len=3 )
-        cb_model.add_surface_region_to_model_all_faces ( "ecoli", "membrane" )
+        cb_model.add_surface_region_to_model_object_by_normal ( "ecoli", "membrane" )
 
 
         # Create a surface class and assign it to the membrane
