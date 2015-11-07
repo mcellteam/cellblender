@@ -822,7 +822,7 @@ class CellBlender_Model:
         self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].surf_class_name = surf_class_name
         self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].object_name = obj_name
         self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].region_name = reg_name
-        self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].all_faces = False
+        self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].region_selection = 'SEL'
 
         print ( "Done Adding Surface Class to Region " + surf_class_name )
         return self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index]
