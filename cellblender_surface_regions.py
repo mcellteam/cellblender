@@ -94,7 +94,8 @@ def check_mod_surf_regions(self, context):
     active_mod_surf_regions = self
     surf_class_name = active_mod_surf_regions.surf_class_name
     object_name = active_mod_surf_regions.object_name
-    all_faces = active_mod_surf_regions.all_faces
+    region_selection = active_mod_surf_regions.region_selection
+
     region_name = active_mod_surf_regions.region_name
 
     region_list = []
@@ -119,7 +120,7 @@ def check_mod_surf_regions(self, context):
 
 
     # Format the entry as it will appear in the Modify Surface Regions
-    if all_faces:
+    if region_selection == 'ALL':
         active_mod_surf_regions.name = ("Surface Class: %s   Object: %s   ALL" % (
                                             surf_class_name, object_name))
     else:
@@ -138,7 +139,7 @@ def check_mod_surf_regions(self, context):
         status = "Undefined object: %s" % active_mod_surf_regions.object_name
     # Make sure the user entered object name is in the object's
     # Surface Region list
-    elif (not region_name in region_list) and (not all_faces):
+    elif (not region_name in region_list) and (region_selection != 'ALL'):
         status = "Undefined region: %s" % region_name
 
     active_mod_surf_regions.status = status
@@ -265,10 +266,13 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
         description="A region on this object will have the above surface "
                     "class assigned to it.",
         update=check_active_mod_surf_regions)
-    all_faces = BoolProperty (
-        name="All Faces", default=True,
-        description="Refers to the pre-defined \"ALL\" region which consists of all faces of the object.",
-        update=check_active_mod_surf_regions)
+    region_selection_enum = [
+        ('ALL', "All Surfaces", ""),
+        ('SEL', "Specified Region", "")]
+    region_selection = EnumProperty(
+        items=region_selection_enum, name="Region Selection",
+        default='ALL',
+        description="Choose between ALL Surfaces or Specified Regions. ")
     region_name = StringProperty(
         name="Region Name",
         description="This surface region will have the above surface class "
@@ -276,17 +280,19 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
         update=check_active_mod_surf_regions)
     status = StringProperty(name="Status")
 
+
     def remove_properties ( self, context ):
         print ( "Removing all Surface Regions Properties... no collections to remove." )
+
 
     def build_data_model_from_properties ( self, context ):
         print ( "Surface Region building Data Model" )
         sr_dm = {}
-        sr_dm['data_model_version'] = "DM_2015_09_25_1216"
+        sr_dm['data_model_version'] = "DM_2015_11_06_1732"
         sr_dm['name'] = self.name
         sr_dm['surf_class_name'] = self.surf_class_name
         sr_dm['object_name'] = self.object_name
-        sr_dm['all_faces'] = self.all_faces
+        sr_dm['region_selection'] = self.region_selection
         sr_dm['region_name'] = self.region_name
         return sr_dm
 
@@ -296,16 +302,27 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
         # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
         print ( "------------------------->>> Upgrading MCellModSurfRegionsProperty Data Model" )
         if not ('data_model_version' in dm):
-            # Make changes to move from unversioned to DM_2014_10_24_1638 to DM_2015_09_25_1216
+            # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] == "DM_2014_10_24_1638":
             # Make changes to move from DM_2014_10_24_1638 to DM_2015_09_25_1216
+            # Added an "all_faces" flag to specify the "ALL" option (default to false)
             dm['all_faces'] = False
             dm['data_model_version'] = "DM_2015_09_25_1216"
 
-        if dm['data_model_version'] != "DM_2015_09_25_1216":
-            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsProperty data model to current version." )
+        if dm['data_model_version'] == "DM_2015_09_25_1216":
+            # Make changes to move from DM_2015_09_25_1216 to DM_2015_11_06_1732
+            # Changed representation from "Boolean all_faces" to "Enum region_selection"
+            if dm['all_faces']:
+                dm['region_selection'] = 'ALL'
+            else:
+                dm['region_selection'] = 'SEL'
+            dm.pop('all_faces')
+            dm['data_model_version'] = "DM_2015_11_06_1732"
+
+        if dm['data_model_version'] != "DM_2015_11_06_1732":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsProperty data_model to current version." )
             return None
 
         return dm
@@ -314,13 +331,13 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
     def build_properties_from_data_model ( self, context, dm ):
 
         # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_09_25_1216":
-            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsProperty data model to current version." )
+        if dm['data_model_version'] != "DM_2015_11_06_1732":
+            data_model.handle_incompatible_data_model ( "Error: MCellModSurfRegionsProperty data model is not current." )
 
         self.name = dm["name"]
         self.surf_class_name = dm["surf_class_name"]
         self.object_name = dm["object_name"]
-        self.all_faces = dm['all_faces']
+        self.region_selection = dm['region_selection']
         self.region_name = dm["region_name"]
 
     def check_properties_after_building ( self, context ):
@@ -370,7 +387,7 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
 
         # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2014_10_24_1638":
-            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsPropertyGroup data model to current version." )
+            data_model.handle_incompatible_data_model ( "Error: MCellModSurfRegionsPropertyGroup data model is not current." )
 
         while len(self.mod_surf_regions_list) > 0:
             self.mod_surf_regions_list.remove(0)
@@ -438,8 +455,9 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
                         try:
                             regions = bpy.data.objects[
                                 active_mod_surf_regions.object_name].mcell.regions
-                            layout.prop ( active_mod_surf_regions, "all_faces" )
-                            if not active_mod_surf_regions.all_faces:
+                            layout.prop ( active_mod_surf_regions, "region_selection" )
+
+                            if active_mod_surf_regions.region_selection == 'SEL':
                                 layout.prop_search(active_mod_surf_regions,
                                                    "region_name", regions,
                                                    "region_list", icon='FACESEL_HLT')
