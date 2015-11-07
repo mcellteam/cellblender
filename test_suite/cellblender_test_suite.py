@@ -821,8 +821,11 @@ class CellBlender_Model:
         surf_index = self.mcell.mod_surf_regions.active_mod_surf_regions_index
         self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].surf_class_name = surf_class_name
         self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].object_name = obj_name
-        self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].region_name = reg_name
-        self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].region_selection = 'SEL'
+        if reg_name == 'ALL':
+          self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].region_selection = 'ALL'
+        else:
+          self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].region_name = reg_name
+          self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index].region_selection = 'SEL'
 
         print ( "Done Adding Surface Class to Region " + surf_class_name )
         return self.mcell.mod_surf_regions.mod_surf_regions_list[surf_index]
@@ -2380,7 +2383,7 @@ class SurfaceClassesTestOp(bpy.types.Operator):
         cb_model.add_cube_to_model ( name="ro", draw_type="WIRE", x=0, y=-3, z=0, size=1.0 )
 
         cb_model.add_cube_to_model ( name="ai", draw_type="WIRE", x=0, y=3, z=0, size=0.5 )
-        cb_model.add_surface_region_to_model_object_by_normal ( "ai", "a_reg" )  # Without a normal vector this assigns all faces by region (not by "ALL")
+        # cb_model.add_surface_region_to_model_object_by_normal ( "ai", "a_reg" )  # Without a normal vector this assigns all faces by region (not by "ALL")
         cb_model.add_cube_to_model ( name="ao", draw_type="WIRE", x=0, y=3, z=0, size=1.0 )
 
         cb_model.add_cube_to_model ( name="ci", draw_type="WIRE", x=0, y=0, z=3, size=0.5 )
@@ -2417,7 +2420,8 @@ class SurfaceClassesTestOp(bpy.types.Operator):
 
         cb_model.assign_surface_class_to_region ( "trans_to_t", "ti", "t_reg" )
         cb_model.assign_surface_class_to_region ( "reflect_to_r", "ri", "r_reg" )
-        cb_model.assign_surface_class_to_region ( "absorb_to_a", "ai", "a_reg" )
+        ## cb_model.assign_surface_class_to_region ( "absorb_to_a", "ai", "a_reg" )
+        cb_model.assign_surface_class_to_region ( "absorb_to_a", "ai", "ALL" )
         cb_model.assign_surface_class_to_region ( "clamp_to_c", "ci", "c_reg" )
 
 
@@ -2447,7 +2451,7 @@ class SurfaceClassesTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='5000', time_step='1e-6', wait_time=40.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "1bdb9fbc56851773331dd58f45de418cbaa8315e", test_name="Surface Classes Test" )
+        cb_model.compare_mdl_with_sha1 ( "cce6f22d7a48e6c513c670a5917909c0129fbf4c", test_name="Surface Classes Test" )
 
         cb_model.refresh_molecules()
 
