@@ -701,6 +701,9 @@ def save_surface_classes(context, out_file, surf_class_list):
             unfiltered_surf_class_props_list)
         for surf_class_props in surf_class_props_list:
             molecule = surf_class_props.molecule
+            affected_mols = surf_class_props.affected_mols
+            if affected_mols != 'SINGLE':
+                molecule = affected_mols
             orient = surf_class_props.surf_class_orient
             surf_class_type = surf_class_props.surf_class_type
             if surf_class_type == 'CLAMP_CONCENTRATION':

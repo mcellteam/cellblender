@@ -802,6 +802,7 @@ class CellBlender_Model:
         bpy.ops.mcell.surf_class_props_add()
         surf_index = self.mcell.surface_classes.active_surf_class_index
         prop_index = self.mcell.surface_classes.surf_class_list[surf_index].active_surf_class_props_index
+        self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].affected_mols = 'SINGLE'
         self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].molecule = mol_name
         self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].surf_class_orient = sc_orient
         self.mcell.surface_classes.surf_class_list[surf_index].surf_class_props_list[prop_index].surf_class_type = sc_type

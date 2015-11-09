@@ -95,6 +95,7 @@ def check_surf_class_props(self, context):
     surf_class_props = active_surf_class.surf_class_props_list[
         active_surf_class.active_surf_class_props_index]
     mol_list = mcell.molecules.molecule_list
+    affected_mols = surf_class_props.affected_mols
     molecule = surf_class_props.molecule
     surf_class_type = surf_class_props.surf_class_type
     orient = surf_class_props.surf_class_orient
@@ -102,21 +103,25 @@ def check_surf_class_props(self, context):
     surf_class_type = convert_surf_class_str(surf_class_type)
     orient = convert_orient_str(orient)
 
-    surf_class_props.name = "Molec.: %s   Orient.: %s   Type: %s" % (
-        molecule, orient, surf_class_type)
+    if affected_mols == 'SINGLE':
+        surf_class_props.name = "Molec.: %s   Orient.: %s   Type: %s" % (molecule, orient, surf_class_type)
+    else:
+        surf_class_props.name = "Molec.: %s   Orient.: %s   Type: %s" % (affected_mols, orient, surf_class_type)
 
     status = ""
 
-    # Check for illegal names (Starts with a letter. No special characters.)
-    mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)"
-    m = re.match(mol_filter, molecule)
-    if m is None:
-        status = "Molecule name error: %s" % (molecule)
-    else:
-        # Check for undefined names
-        mol_name = m.group(1)
-        if not mol_name in mol_list:
-            status = "Undefined molecule: %s" % (mol_name)
+    if affected_mols == 'SINGLE':
+        # Check for illegal names (Starts with a letter. No special characters.)
+        mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*)"
+        m = re.match(mol_filter, molecule)
+
+        if m is None:
+            status = "SC: Molecule name error: %s" % (molecule)
+        else:
+            # Check for undefined names
+            mol_name = m.group(1)
+            if not mol_name in mol_list:
+                status = "Undefined molecule: %s" % (mol_name)
 
     surf_class_props.status = status
 
@@ -307,6 +312,16 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
 
     """
 
+    affected_mols_enum = [
+        ( 'ALL_MOLECULES', "All Molecules", "" ),
+        ( 'ALL_VOLUME_MOLECULES', "All Volume Molecules", "" ),
+        ( 'ALL_SURFACE_MOLECULES', "All Surface Molecules", "" ),
+        ( 'SINGLE', "Single Molecule", "" ) ]
+    affected_mols = EnumProperty (
+        items = affected_mols_enum, name="Molecules", default='ALL_MOLECULES',
+        description="Molecules (or groups of molecules) affected by this surface class.",
+        update=check_surf_class_props )
+
     name = StringProperty(name="Molecule", default="Molecule")
     molecule = StringProperty(
         name="Molecule Name",
@@ -317,7 +332,7 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         (',', "Bottom/Back", ""),
         (';', "Ignore", "")]
     surf_class_orient = EnumProperty(
-        items=surf_class_orient_enum, name="Orientation",
+        items=surf_class_orient_enum, name="Orientation", default=";",
         description="Volume molecules affected at front or back of a surface. "
                     "Surface molecules affected by orientation at border.",
         update=check_surf_class_props)
@@ -327,7 +342,7 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         ('REFLECTIVE', "Reflective", ""),
         ('CLAMP_CONCENTRATION', "Clamp Concentration", "")]
     surf_class_type = EnumProperty(
-        items=surf_class_type_enum, name="Type",
+        items=surf_class_type_enum, name="Type", default="TRANSPARENT",
         description="Molecules are destroyed by absorptive surfaces, pass "
                     "through transparent, and \"bounce\" off of reflective.",
         update=check_surf_class_props)
@@ -339,8 +354,9 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         sc = self
         sc_dict = {}
-        sc_dict['data_model_version'] = "DM_2014_10_24_1638"
+        sc_dict['data_model_version'] = "DM_2015_11_08_1756"
         sc_dict['name'] = sc.name
+        sc_dict['affected_mols'] = sc.affected_mols
         sc_dict['molecule'] = sc.molecule
         sc_dict['surf_class_orient'] = str(sc.surf_class_orient)
         sc_dict['surf_class_type'] = str(sc.surf_class_type)
@@ -362,7 +378,12 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
             # Just update the data model version
             dm['data_model_version'] = "DM_2015_09_25_1653"
 
-        if dm['data_model_version'] != "DM_2015_09_25_1653":
+        if dm['data_model_version'] == "DM_2015_09_25_1653":
+            # Previous versions could only represent SINGLE molecules, so make it explicit when upgrading
+            dm['affected_mols'] = "SINGLE"
+            dm['data_model_version'] = "DM_2015_11_08_1756"
+
+        if dm['data_model_version'] != "DM_2015_11_08_1756":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellSurfaceClassPropertiesProperty data model to current version." )
             return None
 
@@ -371,10 +392,11 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
         # Check that the data model version matches the current version for this property group
-        if dm['data_model_version'] != "DM_2015_09_25_1653":
+        if dm['data_model_version'] != "DM_2015_11_08_1756":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellSurfaceClassPropertiesProperty data model to current version." )
         # Now convert the updated Data Model into CellBlender Properties
         self.name = dm["name"]
+        self.affected_mols = dm['affected_mols']
         self.molecule = dm["molecule"]
         self.surf_class_orient = dm["surf_class_orient"]
         self.surf_class_type = dm["surf_class_type"]
@@ -382,9 +404,10 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
 
     def init_properties ( self, parameter_system ):
         self.name = "Molecule"
+        self.affected_mols = 'ALL_MOLECULES'
         self.molecule = ""
-        self.surf_class_orient = '\''
-        self.surf_class_type = 'REFLECTIVE'
+        self.surf_class_orient = ';'
+        self.surf_class_type = 'TRANSPARENT'
         helptext = "Clamp the Concentration of this molecule to this value on this surface."
         self.clamp_value.init_ref ( parameter_system, "Surf_Class_Val_Type", user_name="Value", user_expr="0", user_units="Concentration Units: Molar", user_descr=helptext )
 
@@ -642,16 +665,18 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
             col.operator("mcell.surface_class_add", icon='ZOOMIN', text="")
             col.operator("mcell.surface_class_remove", icon='ZOOMOUT', text="")
             row = layout.row()
+
             # Show the surface class properties template_list if there is at least
             # a single surface class.
+
             if self.surf_class_list:
                 active_surf_class = self.surf_class_list[
                     self.active_surf_class_index]
                 row = layout.row()
+
                 row.prop(active_surf_class, "name")
                 row = layout.row()
-                row.label(text="%s Properties:" % active_surf_class.name,
-                          icon='FACESEL_HLT')
+                row.label(text="%s Properties:" % active_surf_class.name, icon='FACESEL_HLT')
                 row = layout.row()
                 col = row.column()
                 # The template_list for the properties of a surface class.
@@ -670,9 +695,11 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
                 if active_surf_class.surf_class_props_list:
                     surf_class_props = active_surf_class.surf_class_props_list[
                         active_surf_class.active_surf_class_props_index]
-                    layout.prop_search(surf_class_props, "molecule",
-                                       mcell.molecules, "molecule_list",
-                                       icon='FORCE_LENNARDJONES')
+                    layout.prop(surf_class_props, "affected_mols")
+                    if surf_class_props.affected_mols == 'SINGLE':
+                        layout.prop_search(surf_class_props, "molecule",
+                                           mcell.molecules, "molecule_list",
+                                           icon='FORCE_LENNARDJONES')
                     layout.prop(surf_class_props, "surf_class_orient")
                     layout.prop(surf_class_props, "surf_class_type")
                     if (surf_class_props.surf_class_type == 'CLAMP_CONCENTRATION'):

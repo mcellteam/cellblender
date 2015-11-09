@@ -297,12 +297,15 @@ def write_surface_classes ( sclasses, f ):
           f.write ( "  {\n" )
           if 'surface_class_prop_list' in sc:
             for scp in sc['surface_class_prop_list']:
+              mol = scp['molecule']
+              if scp['affected_mols'] != 'SINGLE':
+                  mol = scp['affected_mols']
               if scp['surf_class_type'] == 'CLAMP_CONCENTRATION':
                   clamp_value = scp['clamp_value']
                   f.write("    %s" % scp['surf_class_type'])
-                  f.write(" %s%s = %s\n" % (scp['molecule'],scp['surf_class_orient'],scp['clamp_value']))
+                  f.write(" %s%s = %s\n" % (mol,scp['surf_class_orient'],scp['clamp_value']))
               else:
-                  f.write("    %s = %s%s\n" % (scp['surf_class_type'],scp['molecule'],scp['surf_class_orient']))
+                  f.write("    %s = %s%s\n" % (scp['surf_class_type'],mol,scp['surf_class_orient']))
           f.write ( "  }\n" )
         f.write ( "}\n" )
         f.write("\n")
