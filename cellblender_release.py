@@ -240,7 +240,7 @@ def check_release_molecule(context):
         if not mol_name in mol_list:
             status = "Undefined molecule: %s" % (mol_name)
         # Only change if necessary to avoid infinite recursion
-        elif (mol_list[mol_name].type == '2D') and (not rel.shape == 'OBJECT'):
+        elif (mol_list[mol_name].type == '2D') and (not rel.shape in ('OBJECT', 'LIST') ):
             rel.shape = 'OBJECT'
 
     return status
@@ -457,6 +457,10 @@ class MCellPointItemPropertyGroup(bpy.types.PropertyGroup):
     x = FloatProperty ( name="X", default=0.0 )
     y = FloatProperty ( name="Y", default=0.0 )
     z = FloatProperty ( name="Z", default=0.0 )
+
+    def build_data_model_from_properties ( self, context ):
+        return [ self.x, self.y, self.z ]
+
 
 class MCellPointListPropertyGroup ( bpy.types.PropertyGroup ):
     points = CollectionProperty ( type=MCellPointItemPropertyGroup )
@@ -685,7 +689,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
-        r_dict['data_model_version'] = "DM_2014_10_24_1638"
+        r_dict['data_model_version'] = "DM_2015_11_11_1530"
         r_dict['name'] = r.name
         r_dict['molecule'] = r.molecule
         r_dict['shape'] = r.shape
@@ -700,7 +704,12 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         r_dict['quantity'] = r.quantity.get_expr()
         r_dict['stddev'] = r.stddev.get_expr()
         r_dict['pattern'] = str(r.pattern)
+        points_list = []
+        for p in r.point_list.points:
+            points_list.append ( p.build_data_model_from_properties(context) )
+        r_dict['points_list'] = points_list
         return r_dict
+
 
 
     @staticmethod
