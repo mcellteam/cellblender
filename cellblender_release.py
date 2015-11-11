@@ -462,9 +462,12 @@ class MCellPointListPropertyGroup ( bpy.types.PropertyGroup ):
     points = CollectionProperty ( type=MCellPointItemPropertyGroup )
     active_point_index = IntProperty(name="Active Point Index", default=0)
 
-    def add_point ( self, context ):
+    def add_point ( self, context, x=0, y=0, z=0 ):
         """ Add a new point to the list of points and set as the active point """
         new_pt = self.points.add()
+        new_pt.x = x
+        new_pt.y = y
+        new_pt.z = z
         self.active_point_index = len(self.points)-1
 
     def remove_active_point ( self, context ):
@@ -487,6 +490,59 @@ class MCell_Point_List_OT_point_add(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCell_Point_List_OT_point_add_cursor(bpy.types.Operator):
+    bl_idname = "mcellptlist.point_add_cursor"
+    bl_label = "Add Point at Cursor"
+    bl_description = "Add a new point to the list at location of 3D cursor"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        cursor = context.scene.cursor_location
+        rs = context.scene.mcell.release_sites
+        rs.mol_release_list[rs.active_release_index].point_list.add_point(context,x=cursor.x,y=cursor.y,z=cursor.z)
+        return {'FINISHED'}
+
+
+class MCell_Point_List_OT_point_add_obj_sel(bpy.types.Operator):
+    bl_idname = "mcellptlist.point_add_obj_sel"
+    bl_label = "Add Selected Points from Object"
+    bl_description = "Add all selected points from all selected objects (Object Mode Only)"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        cursor = context.scene.cursor_location
+        rs = context.scene.mcell.release_sites
+        pl = rs.mol_release_list[rs.active_release_index].point_list
+
+        for data_object in context.scene.objects:
+            if data_object.type == 'MESH':
+                if data_object.select:
+                    print ( " Selected object: " + data_object.name )
+
+                    saved_hide_status = data_object.hide
+                    data_object.hide = False
+
+                    context.scene.objects.active = data_object
+                    bpy.ops.object.mode_set(mode='OBJECT')
+
+                    loc_x = data_object.location.x
+                    loc_y = data_object.location.y
+                    loc_z = data_object.location.z
+
+                    mesh = data_object.data
+                    matrix = data_object.matrix_world
+                    vertices = mesh.vertices
+                    for v in vertices:
+                        if v.select:
+                            t_vec = matrix * v.co
+                            pl.add_point(context, x=t_vec.x-loc_x, y=t_vec.y-loc_y, z=t_vec.z-loc_z )
+
+                    data_object.hide = saved_hide_status
+
+        return {'FINISHED'}
+
+
+
 class MCell_Point_List_OT_point_remove(bpy.types.Operator):
     bl_idname = "mcellptlist.point_remove"
     bl_label = "Remove point"
@@ -502,6 +558,8 @@ class MCell_Point_List_OT_point_remove(bpy.types.Operator):
 class MCell_PointList_UL(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
         row = layout.row()
+        col = row.column()
+        col.label ( "Point:" )
         col = row.column()
         col.prop ( item, 'x' )
         col = row.column()
@@ -870,11 +928,13 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                         row = layout.row()
                         col = row.column()
                         pl = rel.point_list
-                        col.template_list("MCell_PointList_UL", "", pl, "points", pl, "active_point_index", rows=3)
+                        col.template_list("MCell_PointList_UL", "", pl, "points", pl, "active_point_index", rows=4, maxrows=20)
                         col = row.column(align=True)
                         col.operator("mcellptlist.point_add", icon='ZOOMIN', text="")
                         col.operator("mcellptlist.point_remove", icon='ZOOMOUT', text="")
-
+                        col.separator()
+                        col.operator("mcellptlist.point_add_cursor", icon='CURSOR', text="")
+                        col.operator("mcellptlist.point_add_obj_sel", icon='EDITMODE_HLT', text="")
 
 
                     if (rel.shape == 'LIST'):
