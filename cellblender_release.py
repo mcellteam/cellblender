@@ -453,6 +453,65 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
 
 
 
+class MCellPointItemPropertyGroup(bpy.types.PropertyGroup):
+    x = FloatProperty ( name="X", default=0.0 )
+    y = FloatProperty ( name="Y", default=0.0 )
+    z = FloatProperty ( name="Z", default=0.0 )
+
+class MCellPointListPropertyGroup ( bpy.types.PropertyGroup ):
+    points = CollectionProperty ( type=MCellPointItemPropertyGroup )
+    active_point_index = IntProperty(name="Active Point Index", default=0)
+
+    def add_point ( self, context ):
+        """ Add a new point to the list of points and set as the active point """
+        new_pt = self.points.add()
+        self.active_point_index = len(self.points)-1
+
+    def remove_active_point ( self, context ):
+        """ Remove the active point from the list of points """
+        self.points.remove ( self.active_point_index )
+        self.active_point_index -= 1
+        if self.active_point_index < 0:
+            self.active_point_index = 0
+
+
+class MCell_Point_List_OT_point_add(bpy.types.Operator):
+    bl_idname = "mcellptlist.point_add"
+    bl_label = "Add Point"
+    bl_description = "Add a new point to the list"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        rs = context.scene.mcell.release_sites
+        rs.mol_release_list[rs.active_release_index].point_list.add_point(context)
+        return {'FINISHED'}
+
+
+class MCell_Point_List_OT_point_remove(bpy.types.Operator):
+    bl_idname = "mcellptlist.point_remove"
+    bl_label = "Remove point"
+    bl_description = "Remove selected point from the list"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        rs = context.scene.mcell.release_sites
+        rs.mol_release_list[rs.active_release_index].point_list.remove_active_point(context)
+        self.report({'INFO'}, "Deleted point")
+        return {'FINISHED'}
+
+class MCell_PointList_UL(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+        row = layout.row()
+        col = row.column()
+        col.prop ( item, 'x' )
+        col = row.column()
+        col.prop ( item, 'y' )
+        col = row.column()
+        col.prop ( item, 'z' )
+
+
+
+
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Site Name", default="Release_Site",
@@ -466,7 +525,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         ('CUBIC', 'Cubic', ''),
         ('SPHERICAL', 'Spherical', ''),
         ('SPHERICAL_SHELL', 'Spherical Shell', ''),
-        #('LIST', 'List', ''),
+        ('LIST', 'List', ''),
         ('OBJECT', 'Object/Region', '')]
     shape = EnumProperty(
         items=shape_enum, name="Release Shape",
@@ -494,6 +553,8 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     location_x = PointerProperty ( name="Relese Loc X", type=parameter_system.Parameter_Reference )
     location_y = PointerProperty ( name="Relese Loc Y", type=parameter_system.Parameter_Reference )
     location_z = PointerProperty ( name="Relese Loc Z", type=parameter_system.Parameter_Reference )
+    
+    point_list = PointerProperty ( type=MCellPointListPropertyGroup )
 
     diameter = PointerProperty ( name="Site Diameter", type=parameter_system.Parameter_Reference )
     probability = PointerProperty ( name="Release Probability", type=parameter_system.Parameter_Reference )
@@ -774,10 +835,14 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
                     helptext = "Release Site Shape\n" + \
                                "Defines the shape of the release site. A shape may be:\n" + \
+                               "  A list of locations.\n" + \
                                "  A geometric cubic region.\n" + \
                                "  A geometric spherical region.\n" + \
                                "  A geometric spherical shell region.\n" + \
                                "  A CellBlender/MCell Object or Region\n" + \
+                               " \n" + \
+                               "When the release site shape is \"List\", CellBlender provides\n" + \
+                               "a mechanism to add points to the list.\n" + \
                                " \n" + \
                                "When the release site shape is one of the predefined geometric\n" + \
                                "shapes, CellBlender will provide fields for its location and size.\n" + \
@@ -800,6 +865,21 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                         rel.location_z.draw(layout,ps)
                         rel.diameter.draw(layout,ps)
 
+
+                    if (rel.shape == 'LIST'):
+                        row = layout.row()
+                        col = row.column()
+                        pl = rel.point_list
+                        col.template_list("MCell_PointList_UL", "", pl, "points", pl, "active_point_index", rows=3)
+                        col = row.column(align=True)
+                        col.operator("mcellptlist.point_add", icon='ZOOMIN', text="")
+                        col.operator("mcellptlist.point_remove", icon='ZOOMOUT', text="")
+
+
+
+                    if (rel.shape == 'LIST'):
+                        rel.diameter.draw(layout,ps,label="Search Distance")
+
                     if rel.shape == 'OBJECT':
                         helptext = "Release Site Object/Region\n" + \
                                    "This field requires an MCell-compatible object expression or region\n" + \
@@ -812,20 +892,22 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
                     rel.probability.draw(layout,ps)
             
-                    helptext = "Quantity Type\n" + \
-                               "Defines the meaning of the Quantity:\n" + \
-                               "  Constant Number\n" + \
-                               "  Gaussian Number\n" + \
-                               "  Concentration / Density\n" + \
-                               " \n" + \
-                               "The value of this field determines the interpretation of the\n" + \
-                               "Quantity to Release field below."
-                    ps.draw_prop_with_help ( layout, "Quantity Type:", rel, "quantity_type", "quantity_type_show_help", rel.quantity_type_show_help, helptext )
+                    if (rel.shape != 'LIST'):
 
-                    rel.quantity.draw(layout,ps)
+                        helptext = "Quantity Type\n" + \
+                                   "Defines the meaning of the Quantity:\n" + \
+                                   "  Constant Number\n" + \
+                                   "  Gaussian Number\n" + \
+                                   "  Concentration / Density\n" + \
+                                   " \n" + \
+                                   "The value of this field determines the interpretation of the\n" + \
+                                   "Quantity to Release field below."
+                        ps.draw_prop_with_help ( layout, "Quantity Type:", rel, "quantity_type", "quantity_type_show_help", rel.quantity_type_show_help, helptext )
 
-                    if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
-                        rel.stddev.draw(layout,ps)
+                        rel.quantity.draw(layout,ps)
+
+                        if rel.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
+                            rel.stddev.draw(layout,ps)
 
                     # We use release_pattern_rxn_name_list instead of
                     # release_pattern_list here, because we want to be able to

@@ -350,7 +350,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
 
     #@profile('Parameter_Reference.draw')
-    def draw ( self, layout, parameter_system ):
+    def draw ( self, layout, parameter_system, label=None ):
         plist = parameter_system.panel_parameter_list
         try:
             p = self.get_param(plist)
@@ -359,6 +359,9 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
                 # Cheat by using the same name (layout) so subsequent code doesn't change
                 layout = layout.box()
             row = layout.row()
+            pname = label
+            if pname == None:
+                pname = p.par_name
             if p.isvalid:
                 value = 0
                 disp_val = " "
@@ -368,13 +371,13 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
                 if parameter_system.param_display_mode == 'one_line':
                     split = row.split(parameter_system.param_label_fraction)
                     col = split.column()
-                    col.label ( text=p.par_name+" = "+disp_val )
+                    col.label ( text=pname+" = "+disp_val )
                     col = split.column()
                     col.prop ( p, "expr", text="" )
                     col = row.column()
                     col.prop ( p, "show_help", icon='INFO', text="" )
                 elif parameter_system.param_display_mode == 'two_line':
-                    row.label ( icon='NONE', text=p.par_name+" = "+disp_val )
+                    row.label ( icon='NONE', text=pname+" = "+disp_val )
                     row = layout.row()
                     split = row.split(0.03)
                     col = split.column()
@@ -387,13 +390,13 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
                 if parameter_system.param_display_mode == 'one_line':
                     split = row.split(parameter_system.param_label_fraction)
                     col = split.column()
-                    col.label ( text=p.par_name+" = ?", icon='ERROR' )
+                    col.label ( text=pname+" = ?", icon='ERROR' )
                     col = split.column()
                     col.prop ( p, "expr", text="", icon='ERROR' )
                     col = row.column()
                     col.prop ( p, "show_help", icon='INFO', text="" )
                 elif parameter_system.param_display_mode == 'two_line':
-                    row.label ( icon='ERROR', text=p.par_name+" = ?" )
+                    row.label ( icon='ERROR', text=pname+" = ?" )
                     row = layout.row()
                     split = row.split(0.03)
                     col = split.column()
