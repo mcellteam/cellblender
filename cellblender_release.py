@@ -42,6 +42,8 @@ import cellblender
 from . import parameter_system
 from . import cellblender_utils
 
+import cellblender.data_model as data_model
+
 
 # We use per module class registration/unregistration
 def register():
@@ -691,12 +693,13 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         self.stddev.init_ref      ( parameter_system, "Rel_StdDev_Type", user_name="Standard Deviation",  user_expr="0", user_units="", user_descr=helptext )
 
     def remove_properties ( self, context ):
-        print ( "Removing all Molecule Release Properties... no collections to remove." )
+        print ( "Removing all Molecule Release Properties... " )
+        self.remove_all_points ( context )
 
     def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
-        r_dict['data_model_version'] = "DM_2015_11_11_1530"
+        r_dict['data_model_version'] = "DM_2015_11_11_1717"
         r_dict['name'] = r.name
         r_dict['molecule'] = r.molecule
         r_dict['shape'] = r.shape
@@ -727,8 +730,14 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
+        if dm['data_model_version'] == "DM_2014_10_24_1638":
+            # Make changes to move from DM_2014_10_24_1638 to DM_2015_11_11_1717
+            # Added a "points_list" list of points
+            dm['points_list'] = []
+            dm['data_model_version'] = "DM_2015_11_11_1717"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] != "DM_2015_11_11_1717":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeReleaseProperty data model to current version." )
             return None
 
@@ -738,7 +747,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm_dict ):
 
-        if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
+        if dm_dict['data_model_version'] != "DM_2015_11_11_1717":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeReleaseProperty data model to current version." )
 
         self.name = dm_dict["name"]
@@ -755,6 +764,9 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         if "quantity" in dm_dict: self.quantity.set_expr ( dm_dict["quantity"] )
         if "stddev" in dm_dict: self.stddev.set_expr ( dm_dict["stddev"] )
         if "pattern" in dm_dict: self.pattern = dm_dict["pattern"]
+        if "points_list" in dm_dict:
+            for p in dm_dict['points_list']:
+                self.add_point ( context, p[0], p[1], p[2] )
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )

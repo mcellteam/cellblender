@@ -41,25 +41,6 @@ import bpy
 from cellblender import object_surface_regions
 from cellblender.cellblender_utils import project_files_path
 
-# This function was moved to MCellObjectPropertyGroup in object_surface_regions.py by Bob
-# TODO: Delete this commented code ... eventually
-#def get_regions(obj):
-#    """ Return a dictionary with region names """
-#
-#    reg_dict = {}
-#
-#    obj_regs = obj.mcell.regions.region_list
-#    for reg in obj_regs:
-#        id = str(reg.id)
-#        mesh = obj.data
-#        #reg_faces = list(cellblender_operators.get_region_faces(mesh,id))
-#        reg_faces = list(reg.get_region_faces(mesh))
-#
-#        reg_faces.sort()
-#        reg_dict[reg.name] = reg_faces
-#
-#    return reg_dict
-
 
 def save(context, filepath=""):
     """ Top level function for saving the current MCell model
@@ -531,53 +512,65 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
 
         print ( "release_site.shape = " + release_site.shape )
         
-        # release sites with predefined shapes
-        if ((release_site.shape == 'CUBIC') |
-                (release_site.shape == 'SPHERICAL') |
-                (release_site.shape == 'SPHERICAL_SHELL')):
+        # Always need the molecule, so do it first
+        mol_spec = None
+        if release_site.molecule in mol_list:
+            if mol_list[release_site.molecule].type == '2D':
+                mol_spec = "%s%s" % (release_site.molecule, release_site.orient)
+            else:
+                mol_spec = "%s" % (release_site.molecule)
+
+
+        # release sites with predefined shapes or list shapes
+        if ((release_site.shape == 'LIST') |
+            (release_site.shape == 'CUBIC') |
+            (release_site.shape == 'SPHERICAL') |
+            (release_site.shape == 'SPHERICAL_SHELL')):
 
             out_file.write("   SHAPE = %s\n" % (release_site.shape))
-            out_file.write("   LOCATION = [%s, %s, %s]\n" %
-                           (release_site.location_x.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions),
-                            release_site.location_y.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions),
-                            release_site.location_z.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
+            if release_site.shape != 'LIST':
+                out_file.write("   LOCATION = [%s, %s, %s]\n" %
+                               (release_site.location_x.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions),
+                                release_site.location_y.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions),
+                                release_site.location_z.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
             out_file.write("   SITE_DIAMETER = %s\n" %
                            (release_site.diameter.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
 
         # user defined shapes
         if (release_site.shape == 'OBJECT'):
-            inst_obj_expr = instance_object_expr(context,
-                                                 release_site.object_expr)
+            inst_obj_expr = instance_object_expr(context, release_site.object_expr)
             out_file.write("   SHAPE = %s\n" % (inst_obj_expr))
 
-        if release_site.molecule in mol_list:
-            if mol_list[release_site.molecule].type == '2D':
-                out_file.write("   MOLECULE = %s%s\n" % (release_site.molecule,
-                                                         release_site.orient))
-            else:
-                out_file.write("   MOLECULE = %s\n" % (release_site.molecule))
-
-        if release_site.quantity_type == 'NUMBER_TO_RELEASE':
-            out_file.write("   NUMBER_TO_RELEASE = %s\n" %
-                       (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
-
-        elif release_site.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
-            out_file.write("   GAUSSIAN_RELEASE_NUMBER\n")
+        if (release_site.shape == 'LIST'):
+            out_file.write("   MOLECULE_POSITIONS\n")
             out_file.write("   {\n")
-            out_file.write("        MEAN_NUMBER = %s\n" %
-                           (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
-            out_file.write("        STANDARD_DEVIATION = %s\n" %
-                           (release_site.stddev.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
-            out_file.write("      }\n")
+            for p in release_site.points_list:
+                out_file.write("        %s [%g, %g, %g]\n" % ( mol_spec, p.x, p.y, p.z ) )
+            out_file.write("   }\n")
+        else:
+            out_file.write("   MOLECULE = %s\n" % (mol_spec))
 
-        elif release_site.quantity_type == 'DENSITY':
-            if release_site.molecule in mol_list:
-                if mol_list[release_site.molecule].type == '2D':
-                    out_file.write("   DENSITY = %s\n" %
+            if release_site.quantity_type == 'NUMBER_TO_RELEASE':
+                out_file.write("   NUMBER_TO_RELEASE = %s\n" %
+                           (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
+
+            elif release_site.quantity_type == 'GAUSSIAN_RELEASE_NUMBER':
+                out_file.write("   GAUSSIAN_RELEASE_NUMBER\n")
+                out_file.write("   {\n")
+                out_file.write("        MEAN_NUMBER = %s\n" %
                                (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
-                else:
-                    out_file.write("   CONCENTRATION = %s\n" %
-                               (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
+                out_file.write("        STANDARD_DEVIATION = %s\n" %
+                               (release_site.stddev.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
+                out_file.write("   }\n")
+
+            elif release_site.quantity_type == 'DENSITY':
+                if release_site.molecule in mol_list:
+                    if mol_list[release_site.molecule].type == '2D':
+                        out_file.write("   DENSITY = %s\n" %
+                                   (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
+                    else:
+                        out_file.write("   CONCENTRATION = %s\n" %
+                                   (release_site.quantity.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
 
         out_file.write("   RELEASE_PROBABILITY = %s\n" %
                        (release_site.probability.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
