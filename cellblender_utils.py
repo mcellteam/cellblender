@@ -1,5 +1,6 @@
 import os
 import bpy
+import shutil
 
 
 def timeline_view_all ( context ):
@@ -87,6 +88,21 @@ def get_python_path ( mcell ):
         python_path = shutil.which("python", mode=os.X_OK)
         print ( "Using shutil.which Python: " + python_path )
     return python_path
+
+
+def get_mcell_path ( mcell ):
+    # If MCell path was set by user, use that one. Otherwise, try to use
+    # bundled version (i.e. <cellblender_path>/bin/mcell). As a last resort,
+    # try finding MCell in user's path, which will likely fail on Windows.
+    mcell_path = None
+    bundled_path = os.path.join(os.path.dirname(__file__), "bin/mcell")
+    if mcell.cellblender_preferences.mcell_binary_valid:
+        mcell_path = mcell.cellblender_preferences.mcell_binary
+    elif is_executable(bundled_path):
+        mcell_path = bundled_path
+    else:
+        mcell_path = shutil.which("mcell", mode=os.X_OK)
+    return mcell_path
 
 
 def is_executable(binary_path):

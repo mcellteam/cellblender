@@ -232,14 +232,12 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
 
         mcell = context.scene.mcell
 
-        binary_path = mcell.cellblender_preferences.mcell_binary
-        mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
+        mcell_binary = cellblender_utils.get_mcell_path(mcell)
 
         start_seed = mcell.run_simulation.start_seed
         end_seed = mcell.run_simulation.end_seed
         mcell_processes = mcell.run_simulation.mcell_processes
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
-        mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
         project_dir = project_files_path()
         status = ""
@@ -1091,7 +1089,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
             # Only allow the simulation to be run if both an MCell binary and a
             # project dir have been selected. There also needs to be a main mdl
             # file present.
-            if not mcell.cellblender_preferences.mcell_binary:
+            if not cellblender_utils.get_mcell_path(mcell):
                 # Note that we should be able to export without requiring an MCell Binary,
                 #  but this code is a little messy as it is ... so this requirement remains.
                 row.label(text="Set an MCell binary in CellBlender - Preferences Panel", icon='ERROR')
