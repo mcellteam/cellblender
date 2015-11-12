@@ -102,13 +102,13 @@ class OutputQueue:
 
 
 class SimQueue:
-  def __init__(self):
+  def __init__(self, python_path):
     self.work_q = Queue(maxsize=0)
     self.workers = []
     self.task_dict = {}
     self.n_threads = 0
     self.evnt_bl_text_quit = threading.Event()
-    self.python_exec = 'python'
+    self.python_exec = python_path
     module_dir_path = os.path.dirname(os.path.realpath(__file__))
     module_file_path = os.path.join(module_dir_path, 'run_wrapper.py')
     self.run_wrapper = module_file_path
@@ -257,7 +257,7 @@ if (__name__ == '__main__'):
   parser.add_argument('--cpus', help='number of CPUs to use.  If omitted, use the number of hyperthreads available.')
   ns=parser.parse_args()
 
-  my_q = SimQueue()
+  my_q = SimQueue('python')
 
   if ns.cpus:
     cpus = int(ns.cpus)

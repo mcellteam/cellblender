@@ -73,12 +73,12 @@ def check_val_str(val_str, min_val, max_val):
     return (val, status)
 
 
-def get_python_path ( mcell ):
+def get_python_path ( mcell=None ):
     # If python path was set by user, use that one. Otherwise, try to
     # automatically find it. This will probably fail on Windows unless it's
     # set in the PATH.
     python_path = None
-    if mcell.cellblender_preferences.python_binary_valid:
+    if mcell and mcell.cellblender_preferences.python_binary_valid:
         python_path = mcell.cellblender_preferences.python_binary
         print ( "Using user specified Python: " + python_path )
     elif (bpy.app.binary_path_python != None) and (len(bpy.app.binary_path_python) > 0):

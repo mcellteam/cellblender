@@ -122,7 +122,12 @@ else:
     except:
         print("cellblender.data_plotters was not imported")
 
-simulation_queue = sim_runner_queue.SimQueue()
+# XXX: bpy.context.mcell isn't available here, so we can't use get_python_path
+# as intended. It will always use Blender's python or the system version of
+# python. Maybe this is good enough, but we might want to revisit this and
+# clean it up.
+python_path = cellblender_utils.get_python_path()
+simulation_queue = sim_runner_queue.SimQueue(python_path)
 
 import bpy
 import sys
