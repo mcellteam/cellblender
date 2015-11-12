@@ -452,7 +452,6 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
 
 
 
-
 class MCellPointItemPropertyGroup(bpy.types.PropertyGroup):
     x = FloatProperty ( name="X", default=0.0 )
     y = FloatProperty ( name="Y", default=0.0 )
@@ -460,26 +459,6 @@ class MCellPointItemPropertyGroup(bpy.types.PropertyGroup):
 
     def build_data_model_from_properties ( self, context ):
         return [ self.x, self.y, self.z ]
-
-
-class MCellPointListPropertyGroup ( bpy.types.PropertyGroup ):
-    points = CollectionProperty ( type=MCellPointItemPropertyGroup )
-    active_point_index = IntProperty(name="Active Point Index", default=0)
-
-    def add_point ( self, context, x=0, y=0, z=0 ):
-        """ Add a new point to the list of points and set as the active point """
-        new_pt = self.points.add()
-        new_pt.x = x
-        new_pt.y = y
-        new_pt.z = z
-        self.active_point_index = len(self.points)-1
-
-    def remove_active_point ( self, context ):
-        """ Remove the active point from the list of points """
-        self.points.remove ( self.active_point_index )
-        self.active_point_index -= 1
-        if self.active_point_index < 0:
-            self.active_point_index = 0
 
 
 class MCell_Point_List_OT_point_add(bpy.types.Operator):
@@ -490,7 +469,7 @@ class MCell_Point_List_OT_point_add(bpy.types.Operator):
 
     def execute(self, context):
         rs = context.scene.mcell.release_sites
-        rs.mol_release_list[rs.active_release_index].point_list.add_point(context)
+        rs.mol_release_list[rs.active_release_index].add_point(context)
         return {'FINISHED'}
 
 
@@ -503,7 +482,7 @@ class MCell_Point_List_OT_point_add_cursor(bpy.types.Operator):
     def execute(self, context):
         cursor = context.scene.cursor_location
         rs = context.scene.mcell.release_sites
-        rs.mol_release_list[rs.active_release_index].point_list.add_point(context,x=cursor.x,y=cursor.y,z=cursor.z)
+        rs.mol_release_list[rs.active_release_index].add_point(context,x=cursor.x,y=cursor.y,z=cursor.z)
         return {'FINISHED'}
 
 
@@ -516,7 +495,7 @@ class MCell_Point_List_OT_point_add_obj_sel(bpy.types.Operator):
     def execute(self, context):
         cursor = context.scene.cursor_location
         rs = context.scene.mcell.release_sites
-        pl = rs.mol_release_list[rs.active_release_index].point_list
+        pl = rs.mol_release_list[rs.active_release_index]
 
         for data_object in context.scene.objects:
             if data_object.type == 'MESH':
@@ -555,9 +534,20 @@ class MCell_Point_List_OT_point_remove(bpy.types.Operator):
 
     def execute(self, context):
         rs = context.scene.mcell.release_sites
-        rs.mol_release_list[rs.active_release_index].point_list.remove_active_point(context)
-        self.report({'INFO'}, "Deleted point")
+        rs.mol_release_list[rs.active_release_index].remove_active_point(context)
         return {'FINISHED'}
+
+class MCell_Point_List_OT_point_remove_all(bpy.types.Operator):
+    bl_idname = "mcellptlist.point_remove_all"
+    bl_label = "Remove All"
+    bl_description = "Remove all points from the list"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        rs = context.scene.mcell.release_sites
+        rs.mol_release_list[rs.active_release_index].remove_all_points(context)
+        return {'FINISHED'}
+
 
 class MCell_PointList_UL(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
@@ -607,16 +597,12 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         description="Release in/on the specified object/region.",
         update=check_release_site)
         
-    #location = bpy.props.FloatVectorProperty(
-    #    name="Location", precision=4,
-    #    description="The center of the release site specified by XYZ "
-    #                "coordinates")
-
     location_x = PointerProperty ( name="Relese Loc X", type=parameter_system.Parameter_Reference )
     location_y = PointerProperty ( name="Relese Loc Y", type=parameter_system.Parameter_Reference )
     location_z = PointerProperty ( name="Relese Loc Z", type=parameter_system.Parameter_Reference )
     
-    point_list = PointerProperty ( type=MCellPointListPropertyGroup )
+    points_list = CollectionProperty ( type=MCellPointItemPropertyGroup )
+    active_point_index = IntProperty(name="Active Point Index", default=0)
 
     diameter = PointerProperty ( name="Site Diameter", type=parameter_system.Parameter_Reference )
     probability = PointerProperty ( name="Release Probability", type=parameter_system.Parameter_Reference )
@@ -645,6 +631,27 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     mol_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     rel_pattern_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
+
+    def add_point ( self, context, x=0, y=0, z=0 ):
+        """ Add a new point to the list of points and set as the active point """
+        new_pt = self.points_list.add()
+        new_pt.x = x
+        new_pt.y = y
+        new_pt.z = z
+        self.active_point_index = len(self.points_list)-1
+
+    def remove_active_point ( self, context ):
+        """ Remove the active point from the list of points """
+        self.points_list.remove ( self.active_point_index )
+        self.active_point_index -= 1
+        if self.active_point_index < 0:
+            self.active_point_index = 0
+
+    def remove_all_points ( self, context ):
+        """ Remove all points from the list of points """
+        while len(self.points_list) > 0:
+            self.points_list.remove ( 0 )
+        self.active_point_index = 0
 
 
     def init_properties ( self, parameter_system ):
@@ -705,7 +712,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         r_dict['stddev'] = r.stddev.get_expr()
         r_dict['pattern'] = str(r.pattern)
         points_list = []
-        for p in r.point_list.points:
+        for p in r.points_list:
             points_list.append ( p.build_data_model_from_properties(context) )
         r_dict['points_list'] = points_list
         return r_dict
@@ -936,14 +943,18 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                     if (rel.shape == 'LIST'):
                         row = layout.row()
                         col = row.column()
-                        pl = rel.point_list
-                        col.template_list("MCell_PointList_UL", "", pl, "points", pl, "active_point_index", rows=4, maxrows=20)
+
+                        col.template_list("MCell_PointList_UL", "", rel, "points_list", rel, "active_point_index", rows=5, maxrows=20)
+
                         col = row.column(align=True)
                         col.operator("mcellptlist.point_add", icon='ZOOMIN', text="")
                         col.operator("mcellptlist.point_remove", icon='ZOOMOUT', text="")
                         col.separator()
                         col.operator("mcellptlist.point_add_cursor", icon='CURSOR', text="")
                         col.operator("mcellptlist.point_add_obj_sel", icon='EDITMODE_HLT', text="")
+
+                        col.separator()
+                        col.operator("mcellptlist.point_remove_all", icon='X_VEC', text="")
 
 
                     if (rel.shape == 'LIST'):
