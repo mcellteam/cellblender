@@ -545,7 +545,7 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
             out_file.write("   MOLECULE_POSITIONS\n")
             out_file.write("   {\n")
             for p in release_site.points_list:
-                out_file.write("        %s [%g, %g, %g]\n" % ( mol_spec, p.x, p.y, p.z ) )
+                out_file.write("     %s [%.15g, %.15g, %.15g]\n" % ( mol_spec, p.x, p.y, p.z ) )
             out_file.write("   }\n")
         else:
             out_file.write("   MOLECULE = %s\n" % (mol_spec))
