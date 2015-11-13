@@ -1,6 +1,7 @@
 import os
 import bpy
 import shutil
+import sys
 
 
 def timeline_view_all ( context ):
@@ -95,7 +96,11 @@ def get_mcell_path ( mcell ):
     # bundled version (i.e. <cellblender_path>/bin/mcell). As a last resort,
     # try finding MCell in user's path, which will likely fail on Windows.
     mcell_path = None
-    bundled_path = os.path.join(os.path.dirname(__file__), "bin/mcell")
+    if sys.platform == "win32":
+        mcell_binary = "mcell.exe"
+    else:
+        mcell_binary = "mcell"
+    bundled_path = os.path.join(os.path.dirname(__file__), "bin", mcell_binary)
     if mcell.cellblender_preferences.mcell_binary_valid:
         mcell_path = mcell.cellblender_preferences.mcell_binary
     elif is_executable(bundled_path):
