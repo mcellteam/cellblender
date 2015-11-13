@@ -159,6 +159,8 @@ def remove_handler ( handler_list, handler_function ):
         handler_list.remove ( handler_function )
 
 
+
+
 # We use per module class registration/unregistration
 def register():
     print ( "Registering CellBlender with Blender version = " + str(bpy.app.version) )
@@ -204,7 +206,21 @@ def register():
 #    bpy.utils.register_class(cellblender_reaction_output.MCELL_PT_reaction_output_settings)
 #    bpy.utils.register_class(cellblender_mol_viz.MCELL_PT_visualization_output_settings)
 
+    # Remove all menu items first to avoid duplicates
+    bpy.types.INFO_MT_file_import.remove(io_mesh_mcell_mdl.menu_func_import)
+    bpy.types.INFO_MT_file_export.remove(io_mesh_mcell_mdl.menu_func_export)
+    bpy.types.INFO_MT_file_import.remove(mdl.menu_func_import)
+    bpy.types.INFO_MT_file_import.remove(bng.menu_func_import)
+    bpy.types.INFO_MT_file_import.remove(data_model.menu_func_import)
+    bpy.types.INFO_MT_file_export.remove(data_model.menu_func_export)
+    bpy.types.INFO_MT_file_import.remove(data_model.menu_func_import_all)
+    bpy.types.INFO_MT_file_export.remove(data_model.menu_func_export_all)
+    bpy.types.INFO_MT_file_import.remove(data_model.menu_func_import_all_json)
+    bpy.types.INFO_MT_file_export.remove(data_model.menu_func_export_all_json)
+    bpy.types.INFO_MT_file_export.remove(data_model.menu_func_print)
 
+
+    # Now reinstall all menu items
     bpy.types.INFO_MT_file_import.append(io_mesh_mcell_mdl.menu_func_import)
     bpy.types.INFO_MT_file_export.append(io_mesh_mcell_mdl.menu_func_export)
 
