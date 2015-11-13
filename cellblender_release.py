@@ -520,7 +520,8 @@ class MCell_Point_List_OT_point_add_obj_sel(bpy.types.Operator):
                     for v in vertices:
                         if v.select:
                             t_vec = matrix * v.co
-                            pl.add_point(context, x=t_vec.x-loc_x, y=t_vec.y-loc_y, z=t_vec.z-loc_z )
+                            #pl.add_point(context, x=t_vec.x+loc_x, y=t_vec.y+loc_y, z=t_vec.z+loc_z )
+                            pl.add_point(context, x=t_vec.x, y=t_vec.y, z=t_vec.z )
 
                     data_object.hide = saved_hide_status
 
