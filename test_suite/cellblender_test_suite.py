@@ -415,6 +415,11 @@ class CellBlender_Model:
         self.scn = scn
         self.mcell = mcell
 
+    def set_draw_type_for_object ( self, name="", draw_type="WIRE" ):
+        if name in bpy.data.objects:
+            bpy.data.objects[name].draw_type = draw_type
+
+
     def create_object_from_mesh ( self, name="ObjectFromMesh", draw_type="WIRE", x=0, y=0, z=0, vertex_list=None, face_list=None ):
 
         print ( "===> Creating an object from " + str(len(vertex_list)) + " vertices and " + str(len(face_list)) + " faces." )
@@ -978,12 +983,14 @@ class CellBlender_Model:
 
             print ( "Done Changing Display for Molecule \"" + mol.name + "\"" )
 
+    def get_main_mdl_file_path ( self ):
+        return self.path_to_blend[:self.path_to_blend.rfind('.')] + "_files/mcell/Scene.main.mdl"
 
     def compare_mdl_with_sha1 ( self, good_hash="", test_name=None ):
         """ Compute the sha1 for file_name and compare with sha1 """
         app = bpy.context.scene.cellblender_test_suite
         
-        file_name = self.path_to_blend[:self.path_to_blend.rfind('.')] + "_files/mcell/Scene.main.mdl"
+        file_name = self.get_main_mdl_file_path()
 
         if test_name == None:
             test_name = "Test"
@@ -1021,6 +1028,7 @@ class CellBlender_Model:
                     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
                     app.test_status = "F"
+
                     if app.exit_on_error:
                         bpy.ops.wm.quit_blender() 
 
@@ -1042,6 +1050,15 @@ class CellBlender_Model:
         for space in spaces:
             space.region_3d.view_distance *= scale
         #bpy.ops.view3d.zoom(delta=3)
+        #set_view_3d()
+
+
+    def set_axis_angle ( self, axis, angle ):
+        """ Change the view axis and angle for all 3D_VIEW windows """
+        spaces = self.get_3d_view_spaces()
+        for space in spaces:
+            space.region_3d.view_rotation.axis = mathutils.Vector(axis)
+            space.region_3d.view_rotation.angle = angle
         #set_view_3d()
 
     """
@@ -2773,6 +2790,193 @@ class EcoliTestOp(bpy.types.Operator):
 
         cb_model.scale_view_distance ( 0.45 )
         # cb_model.hide_manipulator ( hide=True )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+###########################################################################################################
+##   Helper Function supporting MDL Import Testing
+
+def write_mdl_geometry_file ( filename ):
+  ol = [
+
+    { "name": "M",
+      "vertex_list": [
+        [ -0.1742, -0.0654, 0.6820 ], [ -0.2652, -0.0654, 0.6820 ], [ -0.4922, -0.0654, 0.4020 ], [ -0.7182, -0.0654, 0.6820 ],
+        [ -0.8102, -0.0654, 0.6820 ], [ -0.8102, -0.0654, 0.0000 ], [ -0.7122, -0.0654, 0.0000 ], [ -0.7112, -0.0654, 0.5310 ],
+        [ -0.4922, -0.0654, 0.2670 ], [ -0.2732, -0.0654, 0.5310 ], [ -0.2722, -0.0654, 0.0000 ], [ -0.1742, -0.0654, 0.0000 ],
+        [ -0.7122,  0.0654, 0.0000 ], [ -0.7112,  0.0654, 0.5310 ], [ -0.4922,  0.0654, 0.4020 ], [ -0.7182,  0.0654, 0.6820 ],
+        [ -0.4922,  0.0654, 0.2670 ], [ -0.1742,  0.0654, 0.6820 ], [ -0.2732,  0.0654, 0.5310 ], [ -0.2722,  0.0654, 0.0000 ],
+        [ -0.1742,  0.0654, 0.0000 ], [ -0.8102,  0.0654, 0.6820 ], [ -0.8102,  0.0654, 0.0000 ], [ -0.2652,  0.0654, 0.6820 ]
+      ],
+      "element_connections": [
+        [  9,  1,  0 ], [  4,  7,  5 ], [  8,  7,  2 ], [ 10,  9, 11 ], [  9,  0, 11 ], [  2,  9,  8 ], [  2,  1,  9 ], [  7,  3,  2 ],
+        [ 18, 17, 23 ], [ 13, 15, 21 ], [ 16, 14, 13 ], [ 19, 20, 18 ], [ 18, 20, 17 ], [ 14, 16, 18 ], [ 14, 18, 23 ], [ 13, 14, 15 ],
+        [  6, 12, 22 ], [  9, 18, 16 ], [ 10, 19, 18 ], [  2, 14, 23 ], [ 11, 20, 19 ], [  1, 23, 17 ],
+        [  5, 22, 21 ], [  8, 16, 13 ], [  7, 13, 12 ], [  3, 15, 14 ], [  0, 17, 20 ], [  4, 21, 15 ], [  6,  5,  7 ], [  4,  3,  7 ],
+        [ 21, 22, 13 ], [ 12, 13, 22 ], [  5,  6, 22 ], [  8,  9, 16 ], [  9, 10, 18 ], [  1,  2, 23 ],
+        [ 10, 11, 19 ], [  0,  1, 17 ], [  4,  5, 21 ], [  7,  8, 13 ], [  6,  7, 12 ], [  2,  3, 14 ], [ 11,  0, 20 ], [  3,  4, 15 ]
+      ]
+    },
+
+    { "name": "D",
+      "vertex_list": [
+        [ -0.0262, -0.0654, 0.0000 ], [  0.2397, -0.0654, 0.0000 ], [  0.3446, -0.0654, 0.0131 ], [  0.4335, -0.0654, 0.0495 ],
+        [  0.4993, -0.0654, 0.0976 ], [  0.5490, -0.0654, 0.1685 ], [  0.5817, -0.0654, 0.2474 ], [  0.5966, -0.0654, 0.3384 ],
+        [  0.5923, -0.0654, 0.4221 ], [  0.5636, -0.0654, 0.5009 ], [  0.5147, -0.0654, 0.5718 ], [  0.4448, -0.0654, 0.6293 ],
+        [  0.3531, -0.0654, 0.6679 ], [  0.2387, -0.0654, 0.6820 ], [ -0.0262, -0.0654, 0.6820 ], [  0.0717, -0.0654, 0.5940 ],
+        [  0.2227, -0.0654, 0.5940 ], [  0.3096, -0.0654, 0.5847 ], [  0.3796, -0.0654, 0.5588 ], [  0.4333, -0.0654, 0.5188 ],
+        [  0.4710, -0.0654, 0.4674 ], [  0.4933, -0.0654, 0.4073 ], [  0.5007, -0.0654, 0.3410 ], [  0.4938, -0.0654, 0.2732 ],
+        [  0.4654, -0.0654, 0.2101 ], [  0.4248, -0.0654, 0.1576 ], [  0.3640, -0.0654, 0.1157 ], [  0.3023, -0.0654, 0.0961 ],
+        [  0.2277, -0.0654, 0.0880 ], [  0.0717, -0.0654, 0.0880 ], [  0.5923,  0.0654, 0.4221 ], [  0.4933,  0.0654, 0.4073 ],
+        [ -0.0262,  0.0654, 0.0000 ], [ -0.0262,  0.0654, 0.6820 ], [  0.3023,  0.0654, 0.0961 ], [  0.2277,  0.0654, 0.0880 ],
+        [  0.2387,  0.0654, 0.6820 ], [  0.2397,  0.0654, 0.0000 ], [  0.0717,  0.0654, 0.5940 ], [  0.4938,  0.0654, 0.2732 ],
+        [  0.4654,  0.0654, 0.2101 ], [  0.4335,  0.0654, 0.0495 ], [  0.4993,  0.0654, 0.0976 ], [  0.0717,  0.0654, 0.0880 ],
+        [  0.5147,  0.0654, 0.5718 ], [  0.4448,  0.0654, 0.6293 ], [  0.4248,  0.0654, 0.1576 ], [  0.5490,  0.0654, 0.1685 ],
+        [  0.3096,  0.0654, 0.5847 ], [  0.3796,  0.0654, 0.5588 ], [  0.5636,  0.0654, 0.5009 ], [  0.5817,  0.0654, 0.2474 ],
+        [  0.4333,  0.0654, 0.5188 ], [  0.4710,  0.0654, 0.4674 ], [  0.2227,  0.0654, 0.5940 ], [  0.3531,  0.0654, 0.6679 ],
+        [  0.5966,  0.0654, 0.3384 ], [  0.3446,  0.0654, 0.0131 ], [  0.5007,  0.0654, 0.3410 ], [  0.3640,  0.0654, 0.1157 ]
+      ],
+      "element_connections": [
+        [  0, 14, 15 ], [  0, 15, 29 ], [ 20, 10,  9 ], [  5, 23,  6 ], [ 23,  7,  6 ], [ 22,  8,  7 ], [  4, 24,  5 ], [ 27, 26,  2 ],
+        [ 11, 18, 12 ], [ 13, 15, 14 ], [ 20,  9, 21 ], [ 13, 16, 15 ], [ 19, 10, 20 ], [ 13, 17, 16 ], [ 18, 11, 19 ], [ 13, 12, 17 ],
+        [ 10, 19, 11 ], [  8, 21,  9 ], [ 17, 12, 18 ], [ 24, 23,  5 ], [ 22,  7, 23 ], [ 21,  8, 22 ], [ 25, 24,  4 ], [  3, 25,  4 ],
+        [ 28,  1, 29 ], [  3, 26, 25 ], [ 27,  1, 28 ], [  3,  2, 26 ], [  1, 27,  2 ], [ 29,  1,  0 ], [ 32, 38, 33 ], [ 32, 43, 38 ],
+        [ 53, 50, 44 ], [ 47, 51, 39 ], [ 39, 51, 56 ], [ 58, 56, 30 ], [ 42, 47, 40 ], [ 34, 57, 59 ], [ 45, 55, 49 ], [ 36, 33, 38 ],
+        [ 53, 31, 50 ], [ 36, 38, 54 ], [ 52, 53, 44 ], [ 36, 54, 48 ], [ 49, 52, 45 ], [ 36, 48, 55 ], [ 44, 45, 52 ], [ 30, 50, 31 ],
+        [ 48, 49, 55 ], [ 40, 47, 39 ], [ 58, 39, 56 ], [ 31, 58, 30 ], [ 46, 42, 40 ], [ 41, 42, 46 ], [ 35, 43, 37 ], [ 41, 46, 59 ],
+        [ 34, 35, 37 ], [ 41, 59, 57 ], [ 37, 57, 34 ], [ 43, 32, 37 ], [  9, 50, 30 ], [  5,  6, 51 ], [  7,  8, 30 ], [ 28, 35, 34 ],
+        [ 19, 52, 49 ], [ 22, 23, 39 ], [  3, 41, 57 ], [ 14, 33, 36 ], [ 12, 55, 45 ], [ 21, 31, 53 ], [ 27, 34, 59 ], [  1, 37, 32 ],
+        [ 10, 44, 50 ], [  6,  7, 56 ], [ 17, 48, 54 ], [ 11, 45, 44 ], [ 20, 53, 52 ], [ 13, 36, 55 ], [ 25, 46, 40 ], [ 26, 59, 46 ],
+        [ 24, 40, 39 ], [  4, 42, 41 ], [ 16, 54, 38 ], [ 18, 49, 48 ], [ 22, 58, 31 ], [  4,  5, 47 ], [  0, 32, 33 ], [  2, 57, 37 ],
+        [ 15, 38, 43 ], [ 29, 43, 35 ], [  8,  9, 30 ], [ 47,  5, 51 ], [ 56,  7, 30 ], [ 27, 28, 34 ], [ 18, 19, 49 ], [ 58, 22, 39 ],
+        [  2,  3, 57 ], [ 13, 14, 36 ], [ 11, 12, 45 ], [ 20, 21, 53 ], [ 26, 27, 59 ], [  0,  1, 32 ], [  9, 10, 50 ], [ 51,  6, 56 ],
+        [ 16, 17, 54 ], [ 10, 11, 44 ], [ 19, 20, 52 ], [ 12, 13, 55 ], [ 24, 25, 40 ], [ 25, 26, 46 ], [ 23, 24, 39 ], [  3,  4, 41 ],
+        [ 15, 16, 38 ], [ 17, 18, 48 ], [ 21, 22, 31 ], [ 42,  4, 47 ], [ 14,  0, 33 ], [  1,  2, 37 ], [ 29, 15, 43 ], [ 28, 29, 35 ]
+      ]
+    },
+
+    { "name": "L",
+      "vertex_list": [
+        [  0.8197, -0.0654, 0.6820 ], [  0.7217, -0.0654, 0.6820 ], [  0.7217, -0.0654, 0.0000 ], [  1.1277, -0.0654, 0.0000 ],
+        [  1.1277, -0.0654, 0.0880 ], [  0.8197, -0.0654, 0.0880 ], [  1.1277,  0.0654, 0.0880 ], [  0.8197,  0.0654, 0.0880 ],
+        [  0.8197,  0.0654, 0.6820 ], [  0.7217,  0.0654, 0.0000 ], [  1.1277,  0.0654, 0.0000 ], [  0.7217,  0.0654, 0.6820 ]
+      ],
+      "element_connections": [
+        [ 2,  1, 0 ], [ 2, 0,  5 ], [ 2,  5, 4 ], [ 2, 4,  3 ], [ 9, 8, 11 ], [ 9, 7, 8 ], [ 9, 6, 7 ], [ 9, 10,  6 ],
+        [ 3, 10, 9 ], [ 4, 6, 10 ], [ 1, 11, 8 ], [ 2, 9, 11 ], [ 0, 8,  7 ], [ 5, 7, 6 ], [ 2, 3, 9 ], [ 3,  4, 10 ],
+        [ 0,  1, 8 ], [ 1, 2, 11 ], [ 5,  0, 7 ], [ 4, 5,  6 ]
+      ]
+    }
+
+  ]
+
+  f = open ( filename, "w" )
+  for o in ol:
+    f.write ( o['name'] + " POLYGON_LIST\n" )
+    f.write ( "{\n" )
+
+    f.write ( "  VERTEX_LIST\n" )
+    f.write ( "  {\n" )
+    vl = o['vertex_list']
+    for v in vl:
+      s = "    ["
+      i = 0
+      for n in v:
+        if n < 0:
+          s += " %.4f" % n
+        else:
+          s += "  %.4f" % n
+        if i < 2:
+          s += ","
+        i += 1
+      s += " ]\n"
+      f.write ( s )
+
+    f.write ( "  }\n" )
+
+    f.write ( "  ELEMENT_CONNECTIONS\n" )
+    f.write ( "  {\n" )
+    el = o['element_connections']
+    for ec in el:
+      s = "    ["
+      i = 0
+      for n in ec:
+        s += " %d" % n
+        if i < 2:
+          s += ","
+        i += 1
+      s += " ]\n"
+      f.write ( s )
+
+    f.write ( "  }\n" )
+
+    f.write ( "}\n" )
+
+    f.write ( "\n" )
+
+
+###########################################################################################################
+group_name = "Simple Geometry Tests"
+test_name = "MDL Geometry Import Test"
+operator_name = "cellblender_test.import_geometry"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class MDLGeoImport(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        cb_model.switch_to_orthographic()
+
+        molM = cb_model.add_molecule_species_to_model ( name="M", diff_const_expr="1e-5" )
+        molD = cb_model.add_molecule_species_to_model ( name="D", diff_const_expr="1e-5" )
+        molL = cb_model.add_molecule_species_to_model ( name="L", diff_const_expr="1e-5" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="M",  name="m_rel",  q_expr="1000", d="0", x="-0.7614", y="0", z="0.042", shape="SPHERICAL" )
+        cb_model.add_molecule_release_site_to_model ( mol="D",  name="d_rel",  q_expr="1000", d="0", x= "0.0257", y="0", z="0.042", shape="SPHERICAL" )
+        cb_model.add_molecule_release_site_to_model ( mol="L",  name="l_rel",  q_expr= "500", d="0", x= "1.0846", y="0", z="0.042", shape="SPHERICAL" )
+
+        f = "mdl_geometry_test.mdl"
+        bp = cb_model.path_to_blend
+        p = bp[0:bp.rfind(os.sep)]
+        fn = p + os.sep + f
+
+        print ( "\n\nWriting Test MDL Geometry File: " + fn )
+        write_mdl_geometry_file ( fn )
+
+        print ( "Importing Test MDL Geometry File: " + fn + "\n\n" )
+        bpy.ops.import_mdl_mesh.mdl(filepath=fn, files=[{"name":f}], directory=p, filter_glob="*.mdl", add_to_model_objects=True)
+
+        cb_model.set_draw_type_for_object ( name="M", draw_type="WIRE" )
+        cb_model.set_draw_type_for_object ( name="D", draw_type="WIRE" )
+        cb_model.set_draw_type_for_object ( name="L", draw_type="WIRE" )
+
+        cb_model.add_label_to_model ( name="mc", text="Import",   x=-0.65, y=0, z=-0.45,  size=0.5, rx=math.pi/2, ry=0, rz=0 )
+
+        cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "fd775e4679c27a320ad691159a61c0f9d9f6a5e1", test_name="MDL Geometry Import Test" )
+
+        cb_model.refresh_molecules()
+        scn.frame_current = 1
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.1 )
+        cb_model.set_axis_angle ( [0.961, -0.177, -0.213], 1.4253 )
 
         cb_model.play_animation()
 
