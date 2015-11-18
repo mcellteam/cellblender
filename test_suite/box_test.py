@@ -232,9 +232,11 @@ class BoxMakerPropertyGroup(bpy.types.PropertyGroup):
 
         app = scene.box_maker
 
-        size = app.min_length + ( (app.max_length-app.min_length) * ( (1 - math.cos ( 2 * math.pi * cur_frame / app.period_frames )) / 2 ) )
+        size_x = app.min_length + ( (app.max_length-app.min_length) * ( (1 - math.cos ( 2 * math.pi * cur_frame / app.period_frames )) / 2 ) )
+        size_y = app.min_length + ( (app.max_length-app.min_length) * ( (1 - math.cos ( 2 * math.pi * cur_frame / app.period_frames )) / 2 ) )
+        size_z = app.min_length + ( (app.max_length-app.min_length) * ( (1 - math.sin ( 2 * math.pi * cur_frame / app.period_frames )) / 2 ) )
         
-        return BasicBox ( size )
+        return BasicBox ( size_x, size_y, size_z )
 
 
 
@@ -640,21 +642,21 @@ class BasicBox (plf_object):
           ring[j] = temp;
 
 
-  def __init__ ( self, size=1.0 ):
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
 
     # Create a box of the requested size
 
     self.points = [];
     self.faces = [];
 
-    self.points = self.points + [ point (  size,  size, -size ) ]
-    self.points = self.points + [ point (  size, -size, -size ) ]
-    self.points = self.points + [ point ( -size, -size, -size ) ]
-    self.points = self.points + [ point ( -size,  size, -size ) ]
-    self.points = self.points + [ point (  size,  size,  size ) ]
-    self.points = self.points + [ point (  size, -size,  size ) ]
-    self.points = self.points + [ point ( -size, -size,  size ) ]
-    self.points = self.points + [ point ( -size,  size,  size ) ]
+    self.points = self.points + [ point (  size_x,  size_y, -size_z ) ]
+    self.points = self.points + [ point (  size_x, -size_y, -size_z ) ]
+    self.points = self.points + [ point ( -size_x, -size_y, -size_z ) ]
+    self.points = self.points + [ point ( -size_x,  size_y, -size_z ) ]
+    self.points = self.points + [ point (  size_x,  size_y,  size_z ) ]
+    self.points = self.points + [ point (  size_x, -size_y,  size_z ) ]
+    self.points = self.points + [ point ( -size_x, -size_y,  size_z ) ]
+    self.points = self.points + [ point ( -size_x,  size_y,  size_z ) ]
 
     face_list = [ [ 1, 2, 3 ], [ 7, 6, 5 ], [ 4, 5, 1 ], [ 5, 6, 2 ],
                   [ 2, 6, 7 ], [ 0, 3, 7 ], [ 0, 1, 3 ], [ 4, 7, 5 ],
