@@ -127,7 +127,7 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
         else:
           # Force the top level mol_viz directory to be where the .blend file
           # lives plus "viz_data". The seed directories will live underneath it.
-          mol_viz_top_level_dir = os.path.join(project_files_path(), "viz_data/")
+          mol_viz_top_level_dir = os.path.join(project_files_path(), "viz_data", "")
           mol_viz_top_level_dir = os.path.relpath(mol_viz_top_level_dir)
           mol_viz_seed_list = glob.glob(os.path.join(mol_viz_top_level_dir, "*"))
           mol_viz_seed_list.sort()

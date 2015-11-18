@@ -560,7 +560,7 @@ class Generate_MDL_Geometry(bpy.types.Operator):
                 full_fname = os.path.join(path_to_dg_files,fname)
                 print ( "Saving file " + full_fname )
                 capsule_chain_plf.write_as_mdl ( file_name=full_fname, partitions=True, instantiate=True )
-                geom_list_file.write('%.9g %s\n' % (step*context.scene.capsule_maker.time_step, "./" + os.path.join("dynamic_geometry",fname)))
+                geom_list_file.write('%.9g %s\n' % (step*context.scene.capsule_maker.time_step, os.path.join(".","dynamic_geometry",fname)))
             step += 1
         geom_list_file.close()
         update_mdl_files(app)

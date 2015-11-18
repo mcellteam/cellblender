@@ -195,7 +195,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     previous_scale = FloatProperty ( name="Previous_Scale", min=0.0, default=1.0, description="Previous Scale" )
     #cumulative_scale = FloatProperty ( name="Cumulative_Scale", min=0.0, default=1.0, description="Cumulative Scale" )
 
-    glyph_lib = os.path.join(os.path.dirname(__file__), "glyph_library.blend/Mesh/")
+    glyph_lib = os.path.join(os.path.dirname(__file__), "glyph_library.blend", "Mesh", "")
     glyph_enum = [
         ('Cone', "Cone", ""),
         ('Cube', "Cube", ""),
