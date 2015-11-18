@@ -455,9 +455,9 @@ class MCELL_PT_molecule_release(bpy.types.Panel):
 
 
 class MCellPointItemPropertyGroup(bpy.types.PropertyGroup):
-    x = FloatProperty ( name="X", default=0.0 )
-    y = FloatProperty ( name="Y", default=0.0 )
-    z = FloatProperty ( name="Z", default=0.0 )
+    x = FloatProperty ( name="X", default=0.0, precision=7 )
+    y = FloatProperty ( name="Y", default=0.0, precision=7 )
+    z = FloatProperty ( name="Z", default=0.0, precision=7 )
 
     def build_data_model_from_properties ( self, context ):
         return [ self.x, self.y, self.z ]
