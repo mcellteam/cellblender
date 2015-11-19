@@ -42,6 +42,11 @@ from bpy.props import *
 
 import cellblender
 
+from bpy.app.handlers import persistent
+
+
+active_frame_change_handler = None
+
 
 test_groups = []
 max_test_groups = 30   # Needed to define a BoolVectorProperty to show and hide each group (32 is max!?!?!)
@@ -1241,23 +1246,16 @@ class plf_object:
         looking_for = obj_to_add.points[oa_face.verts[new_vert_index]]
         found = -1
         for p in self.points:
-          #print ( "  I have: [" + str(p.x) + ","  + str(p.y) + ","  + str(p.z) + "]" )
           if (p.x == looking_for.x) and (p.y == looking_for.y) and (p.z == looking_for.z):
             found = self.points.index(p)
             break
         if found >= 0:
-          #print ( "Found a point" )
           new_verts[new_vert_index] = found
-        #else:
-        #  print ( "Didn't find a point" )
         if (new_verts[new_vert_index] < 0):
           # The point was not found in the target object, so add it
           new_p = point ( looking_for.x, looking_for.y, looking_for.z );
           self.points.append ( new_p );
           new_verts[new_vert_index] = self.points.index(new_p);
-
-        #for p in self.points:
-        #  print ( "  I now have: [" + str(p.x) + ","  + str(p.y) + ","  + str(p.z) + "]" )
 
       new_f = face(new_verts[0], new_verts[1], new_verts[2]);
       self.faces.append ( new_f );
@@ -1321,6 +1319,124 @@ class plf_object:
       for i in range(len(result_list)):
         result.append ( result_list[i] );
     return ( result );
+
+
+  def write_as_mdl ( self, file_name=None, partitions=False, instantiate=False ):
+    if file_name != None:
+      out_file = open ( file_name, "w" )
+      if partitions:
+          out_file.write ( "PARTITION_X = [[-2.0 TO 2.0 STEP 0.5]]\n" )
+          out_file.write ( "PARTITION_Y = [[-2.0 TO 2.0 STEP 0.5]]\n" )
+          out_file.write ( "PARTITION_Z = [[-2.0 TO 2.0 STEP 0.5]]\n" )
+          out_file.write ( "\n" )
+      out_file.write ( "box POLYGON_LIST\n" )
+      out_file.write ( "{\n" )
+      out_file.write ( "  VERTEX_LIST\n" )
+      out_file.write ( "  {\n" )
+      for p in self.points:
+          out_file.write ( "    [ " + str(p.x) + ", " + str(p.y) + ", " + str(p.z) + " ]\n" );
+      out_file.write ( "  }\n" )
+      out_file.write ( "  ELEMENT_CONNECTIONS\n" )
+      out_file.write ( "  {\n" )
+      for f in self.faces:
+          s = "    [ " + str(f.verts[0]) + ", " + str(f.verts[1]) + ", " + str(f.verts[2]) + " ]\n"
+          out_file.write ( s );
+      out_file.write ( "  }\n" )
+      out_file.write ( "}\n" )
+      if instantiate:
+          out_file.write ( "\n" )
+          out_file.write ( "INSTANTIATE Scene OBJECT {\n" )
+          out_file.write ( "  box OBJECT box {}\n" )
+          out_file.write ( "}\n" )
+      out_file.close()
+
+
+  def read_from_regularized_mdl ( self, file_name=None, partitions=False, instantiate=False ):
+
+    # This function makes some assumptions about the format of the geometry in an MDL file
+
+    self.points = []
+    self.faces = []
+
+    if file_name == None:
+      # Generate an easy tetrahedron for testing
+      self.add_point ( point(0,0,0) )
+      self.add_point ( point(0,0,1) )
+      self.add_point ( point(0,1,0) )
+      self.add_point ( point(1,0,0) )
+      self.add_face ( face ( 0, 1, 2 ) )
+      self.add_face ( face ( 0, 1, 3 ) )
+      self.add_face ( face ( 0, 2, 3 ) )
+      self.add_face ( face ( 1, 2, 3 ) )
+
+    if file_name != None:
+      try:
+        f = open ( file_name, 'r' )
+        lines = f.readlines();
+
+        mode = ""
+
+        for line in lines:
+          l = line.strip()
+
+          if l == "VERTEX_LIST":
+            mode = 'v'
+          elif l == "ELEMENT_CONNECTIONS":
+            mode = 'f'
+          elif l == "}":
+            mode = ""
+
+          if (len(l)>1):
+            if (l[0] == '[') and (l[-1] == ']'):
+              # This is list
+              v = l[1:-1].replace(',',' ').split()
+
+              if mode == 'v':
+                # This is a vertex
+                self.add_point ( point ( float(v[0]), float(v[1]), float(v[2]) ) )
+              elif mode == 'f':
+                # This is a face
+                self.add_face ( face ( int(v[0]), int(v[1]), int(v[2]) ) )
+        f.close()
+      except FileNotFoundError as ioe:
+          # User has probably dragged off the time line, just ignore it
+          pass
+      except Exception as e:
+          print ( "Exception reading MDL: " + str(e) )
+      except:
+          print ( "Unknown Exception" )
+
+
+
+class BasicBox (plf_object):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    # Create a box of the requested size
+
+    self.points = [];
+    self.faces = [];
+
+    self.points = self.points + [ point (  size_x,  size_y, -size_z ) ]
+    self.points = self.points + [ point (  size_x, -size_y, -size_z ) ]
+    self.points = self.points + [ point ( -size_x, -size_y, -size_z ) ]
+    self.points = self.points + [ point ( -size_x,  size_y, -size_z ) ]
+    self.points = self.points + [ point (  size_x,  size_y,  size_z ) ]
+    self.points = self.points + [ point (  size_x, -size_y,  size_z ) ]
+    self.points = self.points + [ point ( -size_x, -size_y,  size_z ) ]
+    self.points = self.points + [ point ( -size_x,  size_y,  size_z ) ]
+
+    face_list = [ [ 1, 2, 3 ], [ 7, 6, 5 ], [ 4, 5, 1 ], [ 5, 6, 2 ],
+                  [ 2, 6, 7 ], [ 0, 3, 7 ], [ 0, 1, 3 ], [ 4, 7, 5 ],
+                  [ 0, 4, 1 ], [ 1, 5, 2 ], [ 3, 2, 7 ], [ 4, 0, 7 ] ]
+
+    for f in face_list:
+      new_face = plf_object();
+      new_face.add_point ( self.points[f[0]] );
+      new_face.add_point ( self.points[f[1]] );
+      new_face.add_point ( self.points[f[2]] );
+      new_face.add_face ( face (0, 1, 2) );
+      self.merge ( new_face );
 
 
 
@@ -1611,8 +1727,6 @@ class Capsule (plf_object):
             self.merge ( new_face );
 
 
-
-
 class ShapedCylinder (plf_object):
 
   def sort_ring_indicies ( self, ring ):
@@ -1763,6 +1877,8 @@ class SimRunnerCommandTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+        global active_frame_change_handler
+        active_frame_change_handler = None
         SimRunnerExample ( context, method="COMMAND", test_name="Simulation Runner Command Test" )
         return { 'FINISHED' }
 
@@ -1783,6 +1899,8 @@ class SimRunnerQueueTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+        global active_frame_change_handler
+        active_frame_change_handler = None
         SimRunnerExample ( context, method="QUEUE", test_name="Simulation Runner Queue Test" )
         return { 'FINISHED' }
 
@@ -1803,6 +1921,8 @@ class SimRunnerJavaTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+        global active_frame_change_handler
+        active_frame_change_handler = None
         SimRunnerExample ( context, method="JAVA", test_name="Simulation Runner Java Test" )
         return { 'FINISHED' }
 
@@ -1843,6 +1963,9 @@ class SingleMoleculeTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
 
         cb_model = CellBlender_Model ( context )
 
@@ -1886,6 +2009,9 @@ class DoubleSphereTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
 
         cb_model = CellBlender_Model ( context )
 
@@ -1932,6 +2058,9 @@ class VolDiffusionConstTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
 
         cb_model = CellBlender_Model ( context )
 
@@ -1982,6 +2111,9 @@ class ReactionTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
 
         cb_model = CellBlender_Model ( context )
 
@@ -2044,6 +2176,9 @@ class ReleaseShapeTestOp(bpy.types.Operator):
 
     def execute(self, context):
 
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
         cb_model = CellBlender_Model ( context )
 
         scn = cb_model.get_scene()
@@ -2104,6 +2239,9 @@ class ParSystemTestOp(bpy.types.Operator):
 
     def execute(self, context):
 
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
         cb_model = CellBlender_Model ( context )
 
         scn = cb_model.get_scene()
@@ -2154,6 +2292,9 @@ class CubeTestOp(bpy.types.Operator):
 
     def execute(self, context):
 
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
         cb_model = CellBlender_Model ( context )
 
         scn = cb_model.get_scene()
@@ -2197,6 +2338,9 @@ class CubeSurfaceTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
 
         cb_model = CellBlender_Model ( context )
 
@@ -2257,6 +2401,9 @@ class SphereSurfaceTestOp(bpy.types.Operator):
 
     def execute(self, context):
 
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
         cb_model = CellBlender_Model ( context )
 
         scn = cb_model.get_scene()
@@ -2316,6 +2463,9 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
 
         cb_model = CellBlender_Model ( context )
 
@@ -2384,6 +2534,9 @@ class SurfaceClassesTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
 
         cb_model = CellBlender_Model ( context )
 
@@ -2506,6 +2659,9 @@ class CapsuleTestOp(bpy.types.Operator):
 
     def execute(self, context):
 
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
         cb_model = CellBlender_Model ( context )
 
         scn = cb_model.get_scene()
@@ -2595,6 +2751,9 @@ class GobletTestOp(bpy.types.Operator):
 
     def execute(self, context):
 
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
         cb_model = CellBlender_Model ( context )
 
         scn = cb_model.get_scene()
@@ -2659,6 +2818,9 @@ class EcoliTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
 
         cb_model = CellBlender_Model ( context )
 
@@ -2935,6 +3097,9 @@ class MDLGeoImport(bpy.types.Operator):
 
     def execute(self, context):
 
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
         cb_model = CellBlender_Model ( context )
 
         scn = cb_model.get_scene()
@@ -2984,6 +3149,60 @@ class MDLGeoImport(bpy.types.Operator):
 
 
 
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Cube Test"
+operator_name = "cellblender_test.dynamic_cube_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+@persistent
+def dynamic_cube_frame_change_handler(scene):
+    #scene.box_maker.update_scene(scene)
+    print ( "Dynamic Cube Frame Change Handler!!!" )
+
+class DynCubeTestOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = dynamic_cube_frame_change_handler
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        cb_model.add_cube_to_model ( name="Cell", draw_type="WIRE" )
+
+        mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
+
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "c32241a2f97ace100f1af7a711a6a970c6b9a135", test_name="Dynamic Cube Test" )
+
+        cb_model.refresh_molecules()
+
+        cb_model.change_molecule_display ( mol, glyph='Cube', scale=4.0, red=1.0, green=0.0, blue=0.0 )
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.25 )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
 ###########################################################################################################
 group_name = "Counting Tests"
 test_name = "Simple Molecule Count Test"
@@ -3000,6 +3219,9 @@ class SimpleMoleculeCountTestOp(bpy.types.Operator):
 
     def execute(self, context):
     
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
         print ( str(test_groups) )
 
         cb_model = CellBlender_Model ( context )
@@ -3047,6 +3269,9 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
 
         cb_model = CellBlender_Model ( context )
 
@@ -3212,6 +3437,9 @@ class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
 
     def execute(self, context):
 
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
         cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="5b7ea646b35cc54eb56a36a08a34217e2900c928", test_name="Lotka Volterra Torus - Diffusion Limited Reaction", wait_time=15.0 )
         cb_model.play_animation()
 
@@ -3235,6 +3463,9 @@ class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
 
     def execute(self, context):
 
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
         cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="4be2236905c76aa47d1f2b76904ef76bdc025c01", test_name="Lotka Volterra Torus - Physiologic Reaction", wait_time=60.0 )
         cb_model.play_animation()
 
@@ -3257,6 +3488,9 @@ class OrganelleTestOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
 
         cb_model = CellBlender_Model ( context )
 
@@ -3374,6 +3608,9 @@ class MinDMinETestOp(bpy.types.Operator):
 
     def execute(self, context):
 
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
         cb_model = CellBlender_Model ( context )
 
         scn = cb_model.get_scene()
@@ -3469,8 +3706,6 @@ class MinDMinETestOp(bpy.types.Operator):
 
 
 
-from bpy.app.handlers import persistent
-
 def add_handler ( handler_list, handler_function ):
     """ Only add a handler if it's not already in the list """
     if not (handler_function in handler_list):
@@ -3490,6 +3725,13 @@ def remove_handler ( handler_list, handler_function ):
 def scene_loaded(dummy):
     bpy.context.scene.cellblender_test_suite.make_real()
 
+# Frame change callback
+@persistent
+def test_suite_frame_change_handler(scene):
+  global active_frame_change_handler
+  if active_frame_change_handler != None:
+      active_frame_change_handler ( scene )
+
 
 def register():
     print ("Registering ", __name__)
@@ -3497,10 +3739,12 @@ def register():
     bpy.types.Scene.cellblender_test_suite = bpy.props.PointerProperty(type=CellBlenderTestPropertyGroup)
     # Add the scene update pre handler
     add_handler ( bpy.app.handlers.scene_update_pre, scene_loaded )
+    add_handler ( bpy.app.handlers.frame_change_pre, test_suite_frame_change_handler )
 
 
 def unregister():
     print ("Unregistering ", __name__)
+    remove_handler ( bpy.app.handlers.frame_change_pre, test_suite_frame_change_handler )
     remove_handler ( bpy.app.handlers.scene_update_pre, scene_loaded )
     bpy.utils.unregister_module(__name__)
     del bpy.types.Scene.cellblender_test_suite
