@@ -1041,6 +1041,17 @@ class CellBlender_Model:
     def get_main_mdl_file_path ( self ):
         return self.get_mdl_file_path() + os.sep + "Scene.main.mdl"
 
+    def get_subfiles ( self, parent_file ):
+        subfiles = []
+        main_mdl_lines = open(parent_file,'rb').readlines()
+        for l in main_mdl_lines:
+          l = l.decode()
+          if (l.startswith('INCLUDE_FILE = "')) or (l.startswith('DYNAMIC_GEOMETRY = "')):
+            l = l[l.index('"')+1:]
+            l = l[:l.index('"')]
+            subfiles.append ( l )
+        return subfiles
+
     def compare_mdl_with_sha1 ( self, good_hash="", test_name=None ):
         """ Compute the sha1 for file_name and compare with sha1 """
         app = bpy.context.scene.cellblender_test_suite
@@ -1052,7 +1063,13 @@ class CellBlender_Model:
 
         hashobject = hashlib.sha1()
         if os.path.isfile(file_name):
-            hashobject.update(open(file_name, 'rb').read())  # .encode("utf-8"))
+            hashobject.update(open(file_name, 'rb').read())
+            print ( "Computed hash for " + file_name + " = " + str(hashobject.hexdigest()) )
+            path = file_name[0:file_name.rfind(os.sep)]
+            for f in self.get_subfiles(file_name):
+                hashobject.update(open(path+os.sep+f, 'rb').read())
+                print ( "    plus hash for " + file_name + " = " + str(hashobject.hexdigest()) )
+
             file_hash = str(hashobject.hexdigest())
             print("  SHA1 = " + file_hash + " for \n     " + file_name )
 
@@ -3336,8 +3353,6 @@ class DynCubeTestOp(bpy.types.Operator):
             step += 1
         geom_list_file.close()
         
-        #### TODO update_mdl_files(app)
-
 
         # Run the frame change handler one time to create the box object
         dynamic_cube_frame_change_handler(context.scene)
@@ -3424,7 +3439,7 @@ class DynCubeTestOp(bpy.types.Operator):
 
         cb_model.run_only ( wait_time=30.0 )
 
-        ### cb_model.compare_mdl_with_sha1 ( "", test_name="Dynamic Cube Test" )
+        cb_model.compare_mdl_with_sha1 ( "41d8a902118d7980136f0965dae14476b88b90b3", test_name="Dynamic Cube Test" )
 
         cb_model.refresh_molecules()
 
