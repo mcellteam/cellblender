@@ -23,7 +23,7 @@ def requirements_met():
         return True
 
 
-def plot(data_path, plot_spec):
+def plot(data_path, plot_spec, python_path=None):
     program_path = os.path.dirname(__file__)
 
     # XmGrace expects plain file names so translate:

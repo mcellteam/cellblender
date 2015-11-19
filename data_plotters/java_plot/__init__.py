@@ -52,7 +52,7 @@ def requirements_met():
             return False
 
 
-def plot ( data_path, plot_spec ):
+def plot ( data_path, plot_spec, python_path=None ):
     print ( "Java plot called with \"" + data_path + "\", and \"" + plot_spec + "\"" );
     program_path = os.path.dirname(__file__)
     # print ( "Java Plotter called with %s, %s" % (data_path, plot_spec) )

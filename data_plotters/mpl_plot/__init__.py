@@ -37,7 +37,9 @@ def requirements_met():
     return ok
 
 
-def plot(data_path, plot_spec):
+def plot(data_path, plot_spec, python_path=None):
+    # We should  not use python_path because it might point to Blender's
+    # python, which doesn't have matplotlib, scipy, numpy
     program_path = os.path.dirname(__file__)
     # print("MPL Plotter called with %s, %s" % (data_path, plot_spec))
     # print("Plotter-specific files are located here: %s" %(program_path))

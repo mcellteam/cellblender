@@ -45,7 +45,7 @@ import cellblender
 from . import parameter_system
 from . import cellblender_release
 from . import cellblender_utils
-from cellblender.cellblender_utils import project_files_path
+from cellblender.cellblender_utils import project_files_path, get_python_path
 
 
 # We use per module class registration/unregistration
@@ -226,7 +226,8 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
 
         print("Plotting from", data_path)
         print("Plotting spec", plot_spec_string)
-        plot_module.plot(data_path, plot_spec_string)
+        python_path = get_python_path()
+        plot_module.plot(data_path, plot_spec_string, python_path)
 
         return {'FINISHED'}
 
