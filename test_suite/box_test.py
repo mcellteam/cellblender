@@ -629,19 +629,6 @@ class plf_object:
 
 class BasicBox (plf_object):
 
-  def sort_ring_indicies ( self, ring ):
-    for i in range(len(ring)):
-      for j in range(i+1,len(ring)):
-        pi = self.points[ring[i]];
-        pj = self.points[ring[j]];
-        itheta = math.atan2(pi.x, pi.y);
-        jtheta = math.atan2(pj.x, pj.y);
-        if (jtheta < itheta):
-          temp = ring[i];
-          ring[i] = ring[j];
-          ring[j] = temp;
-
-
   def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
 
     # Create a box of the requested size
