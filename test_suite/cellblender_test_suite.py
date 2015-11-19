@@ -84,6 +84,7 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
     show_setup = bpy.props.BoolProperty(name="ShowSetUp", default=True)
     path_to_mcell = bpy.props.StringProperty(name="Path to MCell", default="")
     path_to_blend = bpy.props.StringProperty(name="Path to Blend", default="")
+    path_to_mdl = bpy.props.StringProperty(name="Path to MDL", default="")
     run_mcell = bpy.props.BoolProperty(name="Run MCell", default=False)
     exit_on_error = bpy.props.BoolProperty(name="Exit on Error", default=True)
     run_with_queue = bpy.props.BoolProperty(name="Run with Queue", default=False)
@@ -356,7 +357,7 @@ class CellBlender_Model:
         if len(app.path_to_blend) > 0:
             self.path_to_blend = app.path_to_blend
         else:
-            self.path_to_blend = os.getcwd() + "/Test.blend"
+            self.path_to_blend = os.getcwd() + os.sep + "Test.blend"
 
         bpy.ops.wm.save_as_mainfile(filepath=self.path_to_blend, check_existing=False)
 
@@ -403,6 +404,9 @@ class CellBlender_Model:
             mcell.run_simulation.simulation_run_control = 'COMMAND'
         
         return mcell
+
+    def decouple_export_and_run ( self, context, val=True ):
+        context.scene.mcell.cellblender_preferences.decouple_export_run = val
 
     def setup_cb_defaults ( self, context ):
 
@@ -451,6 +455,21 @@ class CellBlender_Model:
         bpy.ops.mcell.model_objects_add()
         bpy.data.objects[name].draw_type = draw_type
         bpy.ops.object.mode_set ( mode="OBJECT" )
+        print ( "Done Adding " + name )
+
+
+    def add_active_object_to_model ( self, name="Cell", draw_type="WIRE" ):
+        """ draw_type is one of: WIRE, TEXTURED, SOLID, BOUNDS """
+        print ( "Adding " + name )
+        bpy.data.objects[name].draw_type = draw_type
+        bpy.data.objects[name].select = True
+
+        # Make the object active and add it to the model objects list
+
+        self.scn.objects.active = bpy.data.objects[name]
+
+        self.mcell.cellblender_main_panel.objects_select = True
+        bpy.ops.mcell.model_objects_add()
         print ( "Done Adding " + name )
 
 
@@ -945,6 +964,34 @@ class CellBlender_Model:
             time.sleep ( wait_time )
 
 
+    def export_model ( self, iterations="100", time_step="1e-6", export_format="mcell_mdl_unified" ):
+        """ export_format is one of: mcell_mdl_unified, mcell_mdl_modular """
+        print ( "Test Suite is exporting the model ..." )
+        self.mcell.cellblender_main_panel.init_select = True
+        self.mcell.initialization.iterations.set_expr(iterations)
+        self.mcell.initialization.time_step.set_expr(time_step)
+        self.mcell.export_project.export_format = export_format
+
+        app = bpy.context.scene.cellblender_test_suite
+        bpy.ops.mcell.export_project()
+
+
+    def run_only ( self, wait_time=10.0 ):
+        """ export_format is one of: mcell_mdl_unified, mcell_mdl_modular """
+        print ( "Test Suite is running the simulation ..." )
+        self.mcell.cellblender_main_panel.init_select = True
+
+        app = bpy.context.scene.cellblender_test_suite
+        if app.run_mcell:
+            bpy.ops.mcell.run_simulation()
+            for i in range(10):
+                self.wait ( wait_time / 10.0 )
+                print ( "Test Suite is Waiting for MCell to complete ..." )
+            print ( "Test Suite is done waiting!!" )
+
+
+
+
     def run_model ( self, iterations="100", time_step="1e-6", export_format="mcell_mdl_unified", wait_time=10.0 ):
         """ export_format is one of: mcell_mdl_unified, mcell_mdl_modular """
         print ( "Test Suite is running the simulation ..." )
@@ -988,8 +1035,11 @@ class CellBlender_Model:
 
             print ( "Done Changing Display for Molecule \"" + mol.name + "\"" )
 
+    def get_mdl_file_path ( self ):
+        return self.path_to_blend[:self.path_to_blend.rfind('.')] + "_files" + os.sep + "mcell"
+
     def get_main_mdl_file_path ( self ):
-        return self.path_to_blend[:self.path_to_blend.rfind('.')] + "_files/mcell/Scene.main.mdl"
+        return self.get_mdl_file_path() + os.sep + "Scene.main.mdl"
 
     def compare_mdl_with_sha1 ( self, good_hash="", test_name=None ):
         """ Compute the sha1 for file_name and compare with sha1 """
@@ -3156,14 +3206,88 @@ test_name = "Dynamic Cube Test"
 operator_name = "cellblender_test.dynamic_cube_test"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
+def read_plf_from_mdl ( scene, frame_num=None ):
+    cur_frame = frame_num
+    if cur_frame == None:
+      cur_frame = scene.frame_current
+
+    # app = scene.box_maker
+
+    fname = "frame_%d.mdl"%cur_frame
+    full_fname = None
+    if cur_frame == 0:
+        # This geometry file is saved as a normal geometry MDL file and not included in the dynamic geometry file list
+        full_fname = os.path.join(scene.cellblender_test_suite.path_to_mdl,"Scene.geometry.mdl")
+    else:
+        # This geometry file is saved as a dynamic geometry MDL file and is included in the dynamic geometry file list
+        path_to_dg_files = os.path.join ( scene.cellblender_test_suite.path_to_mdl, "dynamic_geometry" )
+        full_fname = os.path.join(path_to_dg_files,fname)
+
+    plf_from_mdl = plf_object()
+    plf_from_mdl.read_from_regularized_mdl (file_name = full_fname )
+
+    return plf_from_mdl
+
+
+
 @persistent
 def dynamic_cube_frame_change_handler(scene):
     #scene.box_maker.update_scene(scene)
-    print ( "Dynamic Cube Frame Change Handler!!!" )
+    # print ( "Dynamic Cube Frame Change Handler!!!" )
+    
+    cell_name = "box"
+
+    box_plf = None
+    box_plf = read_plf_from_mdl ( scene )
+
+    vertex_list = box_plf.points
+    face_list = box_plf.faces
+
+    vertices = []
+    for point in vertex_list:
+        vertices.append ( mathutils.Vector((point.x,point.y,point.z)) )
+    faces = []
+    for face_element in face_list:
+        faces.append ( face_element.verts )
+
+    new_mesh = bpy.data.meshes.new ( cell_name + "_mesh" )
+    new_mesh.from_pydata ( vertices, [], faces )
+    new_mesh.update()
+    
+    box_object = None
+    if cell_name in scene.objects:
+        box_object = scene.objects[cell_name]
+        old_mesh = box_object.data
+        box_object.data = new_mesh
+        bpy.data.meshes.remove ( old_mesh )
+    else:
+        box_object = bpy.data.objects.new ( cell_name, new_mesh )
+        scene.objects.link ( box_object )
+
+
+
 
 class DynCubeTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+
+
+    def create_box ( self, scene, frame_num=None ):
+
+        cur_frame = frame_num
+        if cur_frame == None:
+          cur_frame = scene.frame_current
+
+        min_length = 0.25
+        max_length = 3.5
+        period_frames = 100
+
+        size_x = min_length + ( (max_length-min_length) * ( (1 - math.cos ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
+        size_y = min_length + ( (max_length-min_length) * ( (1 - math.cos ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
+        size_z = min_length + ( (max_length-min_length) * ( (1 - math.sin ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
+
+        return BasicBox ( size_x, size_y, size_z )
+
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -3176,24 +3300,143 @@ class DynCubeTestOp(bpy.types.Operator):
 
         cb_model = CellBlender_Model ( context )
 
+        bp = cb_model.path_to_blend
+        p = bp[0:bp.rfind(os.sep)]
+        path_to_mdl = cb_model.get_mdl_file_path()
+        context.scene.cellblender_test_suite.path_to_mdl = path_to_mdl
+
+        # Make the Dynamic Geometry MDL files
+        time_step = 1e-6
+        iterations = 300
+        start = 1
+        end = iterations
+        
+        print ( "Saving frames from " + str(start) + " to " + str(end) )
+        # Make the directory in case CellBlender hasn't been run to make it already
+        os.makedirs(path_to_mdl,exist_ok=True)
+        geom_list_file = open(os.path.join(path_to_mdl,'box_dyn_geom_list.txt'), "w", encoding="utf8", newline="\n")
+        path_to_dg_files = os.path.join ( path_to_mdl, "dynamic_geometry" )
+        if not os.path.exists(path_to_dg_files):
+            os.makedirs(path_to_dg_files)        
+        step = 0
+        for f in range(1 + 1+end-start):
+            box_plf = self.create_box ( context.scene, frame_num=f )
+            fname = "frame_%d.mdl"%f
+            if f == 0:
+                # This geometry file is saved as a normal geometry MDL file and not included in the dynamic geometry file list
+                full_fname = os.path.join(path_to_mdl,"Scene.geometry.mdl")
+                print ( "Saving file " + full_fname )
+                box_plf.write_as_mdl ( file_name=full_fname, partitions=False, instantiate=False )
+            else:
+                # This geometry file is saved as a dynamic geometry MDL file and is included in the dynamic geometry file list
+                full_fname = os.path.join(path_to_dg_files,fname)
+                print ( "Saving file " + full_fname )
+                box_plf.write_as_mdl ( file_name=full_fname, partitions=True, instantiate=True )
+                geom_list_file.write('%.9g %s\n' % (step*time_step, os.path.join(".","dynamic_geometry",fname)))
+            step += 1
+        geom_list_file.close()
+        
+        #### TODO update_mdl_files(app)
+
+
+        # Run the frame change handler one time to create the box object
+        dynamic_cube_frame_change_handler(context.scene)
+
+
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
 
-        cb_model.add_cube_to_model ( name="Cell", draw_type="WIRE" )
+        cb_model.add_active_object_to_model ( name="box", draw_type="BOUNDS" )
 
-        mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+        molv = cb_model.add_molecule_species_to_model ( name="v", mol_type="3D", diff_const_expr="1e-5" )
+        mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-4" )
 
-        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
+        cb_model.add_molecule_release_site_to_model ( mol="v", shape="OBJECT", obj_expr="box", q_expr="1000" )
+        cb_model.add_molecule_release_site_to_model ( mol="s", shape="OBJECT", obj_expr="box", q_expr="1000" )
 
-        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "c32241a2f97ace100f1af7a711a6a970c6b9a135", test_name="Dynamic Cube Test" )
+        cb_model.decouple_export_and_run ( context )
+
+        cb_model.export_model ( iterations=str(iterations), time_step=str(time_step), export_format="mcell_mdl_modular" )
+        
+        
+        # Update the main MDL file Scene.main.mdl to insert the DYNAMIC_GEOMETRY directive
+        try:
+
+            full_fname = os.path.join(path_to_mdl,"Scene.main.mdl")
+            print ( "Updating Main MDL file: " + full_fname )
+            mdl_file = open ( full_fname )
+            mdl_lines = mdl_file.readlines()
+            mdl_file.close()
+
+            # Remove any old dynamic geometry lines
+            new_lines = []
+            for line in mdl_lines:
+                if line.strip()[0:16] != "DYNAMIC_GEOMETRY":
+                    new_lines.append(line)
+            lines = new_lines
+
+            mdl_file = open ( full_fname, "w" )
+            line_num = 0
+            for line in lines:
+                line_num += 1
+                mdl_file.write ( line )
+                if line_num == 3:
+                    # Insert the dynamic geometry line
+                    mdl_file.write ( "DYNAMIC_GEOMETRY = \"box_dyn_geom_list.txt\"\n" )
+            mdl_file.close()
+
+            full_fname = os.path.join(path_to_mdl,"Scene.initialization.mdl")
+            print ( "Updating Initialization MDL file: " + full_fname )
+            mdl_file = open ( full_fname )
+            mdl_lines = mdl_file.readlines()
+            mdl_file.close()
+
+            # Remove any old LARGE_MOLECULAR_DISPLACEMENT lines
+            new_lines = []
+            for line in mdl_lines:
+                if line.strip()[0:28] != "LARGE_MOLECULAR_DISPLACEMENT":
+                    new_lines.append(line)
+            lines = new_lines
+
+            # Find the WARNINGS section
+            warning_line = -10
+            line_num = 0
+            for line in lines:
+                line_num += 1
+                if line.strip() == "WARNINGS":
+                    warning_line = line_num
+
+            mdl_file = open ( full_fname, "w" )
+            line_num = 0
+            for line in lines:
+                line_num += 1
+                mdl_file.write ( line )
+                if line_num == warning_line + 1:
+                    # Insert the dynamic geometry line
+                    mdl_file.write ( "   LARGE_MOLECULAR_DISPLACEMENT = IGNORED\n" )
+            mdl_file.close()
+        except Exception as e:
+            print ( "Warning: unable to update the existing Scene.main.mdl file, try running the model to generate it first." )
+            print ( "   Exception = " + str(e) )
+        except:
+            print ( "Warning: unable to update the existing Scene.main.mdl file, try running the model to generate it first." )
+
+        cb_model.run_only ( wait_time=30.0 )
+
+        ### cb_model.compare_mdl_with_sha1 ( "", test_name="Dynamic Cube Test" )
 
         cb_model.refresh_molecules()
 
-        cb_model.change_molecule_display ( mol, glyph='Cube', scale=4.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( molv, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mols, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
 
         cb_model.set_view_back()
+
+        cb_model.switch_to_orthographic()
+        # cb_model.set_axis_angle ( [0, 1, 0], 0 )
+        cb_model.scale_view_distance ( 1.5 )
+        cb_model.set_axis_angle ( [0.961, -0.177, -0.213], 1.4253 )
 
         cb_model.scale_view_distance ( 0.25 )
 
