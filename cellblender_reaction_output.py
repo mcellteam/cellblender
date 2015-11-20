@@ -96,13 +96,11 @@ class MCELL_OT_rxn_output_remove(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
-    bl_idname = "mcell.plot_rxn_output_generic"
-    bl_label = "Plot Reactions"
-    bl_description = "Plot the reactions using specified plotting package"
+class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
+    bl_idname = "mcell.plot_rxn_output_with_selected"
+    bl_label = "Plot"
+    bl_description = "Plot the reactions using selected plotting package"
     bl_options = {'REGISTER', 'UNDO'}
-
-    plotter_button_label = bpy.props.StringProperty()
 
     def execute(self, context):
         mcell = context.scene.mcell
@@ -112,15 +110,17 @@ class MCELL_OT_plot_rxn_output_generic(bpy.types.Operator):
         combine_seeds = mcell.rxn_output.combine_seeds
         mol_colors = mcell.rxn_output.mol_colors
 
-        plot_button_label = self.plotter_button_label
-
         # Look up the plotting module by its name
+        
+        mod_name = None
 
         for plot_module in cellblender.cellblender_info[
                 'cellblender_plotting_modules']:
             mod_name = plot_module.get_name()
-            if mod_name == plot_button_label:
+            if mod_name == mcell.rxn_output.plotter_to_use:
                 break
+        if mod_name == None:
+            return {'FINISHED'}
 
         # Plot the data via this module
         # print("Preparing to call %s" % (mod_name))
@@ -477,6 +477,27 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
 import cellblender
 
 
+def get_plotters_as_items(scene, context):
+    prefs = [ "MatPlotLib Plotter", "XmGrace Plotter", "GnuPlot Plotter", "Java Plotter", "Simple Plotter" ]
+    found = []
+    available = []
+    for plot_module in cellblender.cellblender_info['cellblender_plotting_modules']:
+        mod_name = plot_module.get_name()
+        found.append ( mod_name )
+    # Order the items according to hard-coded preferences
+    for p in prefs:
+        if p in found:
+            available.append ( p )
+    # Include the unlisted plotters at the end
+    for p in found:
+        if not (p in available):
+            available.append ( p )
+    items = []
+    for p in available:
+        items.append ( (p, p, "") )
+    return items
+
+
 class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
 
     rxn_step = PointerProperty ( name="Step",
@@ -518,6 +539,10 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         name="Molecule Colors",
         description="Use Molecule Colors for line colors.",
         default=False)
+    plotter_to_use = EnumProperty(
+        name="", # "Plot with:",
+        description="Plotter to use.",
+        items=get_plotters_as_items )
 
     def init_properties ( self, parameter_system ):
         self.rxn_step.init_ref (
@@ -563,9 +588,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             for item in dm["reaction_output_list"]:
                 if MCellReactionOutputProperty.upgrade_data_model ( item ) == None:
                     return None
-
         return dm
-
 
 
     def build_properties_from_data_model ( self, context, dm ):
@@ -588,8 +611,10 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                 # ro.init_properties(context.scene.mcell.parameter_system)
                 ro.build_properties_from_data_model ( context, r )
 
+
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
+
 
     def remove_properties ( self, context ):
         print ( "Removing all Reaction Output Properties..." )
@@ -683,8 +708,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             layout.separator()
 
             row = layout.row()
-            row.label(text="Plot Reaction Data:",
-                      icon='FORCE_LENNARDJONES')
+            row.label(text="Plot Reaction Data:", icon='FORCE_LENNARDJONES')
 
             row = layout.row()
 
@@ -702,23 +726,13 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             col = row.column()
             col.prop(self, "mol_colors")
 
-
             row = layout.row()
-            button_num = 0
-            num_columns = len(cellblender.cellblender_info[
-                'cellblender_plotting_modules'])
-            if num_columns > 3:
-                num_columns = 2
-            for plot_module in cellblender.cellblender_info[
-                    'cellblender_plotting_modules']:
-                mod_name = plot_module.get_name()
-                if (button_num % num_columns) == 0:
-                    button_num = 0
-                    row = layout.row()
-                col = row.column()
-                col.operator("mcell.plot_rxn_output_generic",
-                             text=mod_name).plotter_button_label = mod_name
-                button_num = button_num + 1
+            col = row.column()
+            col.prop ( self, "plotter_to_use" )
+
+            col = row.column()
+            col.operator("mcell.plot_rxn_output_with_selected")
+
 
 
 
