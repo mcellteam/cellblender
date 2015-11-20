@@ -19,7 +19,7 @@ cellblender_info = {
 
         "cellblender_main.py",
 
-        "githooks"+os.sep+"pre-commit"
+        "githooks"+os.sep+"pre-commit",
 
         "parameter_system.py",
         "cellblender_preferences.py",
@@ -56,10 +56,9 @@ cellblender_info = {
 
         "SimControl.java",
         "META-INF"+os.sep+"MANIFEST.MF",
-#        "SimControl.jar",
-#        "SimControl.c",
-#        "SimControl",
-
+        #        "SimControl.jar",
+        #        "SimControl.c",
+        #        "SimControl",
         "cellblender_utils.py",
         "glyph_library.blend",
         "io_mesh_mcell_mdl"+os.sep+"__init__.py",
@@ -68,7 +67,7 @@ cellblender_info = {
         "io_mesh_mcell_mdl"+os.sep+"import_mcell_mdl_pyparsing.py",
         "io_mesh_mcell_mdl"+os.sep+"import_shared.py",
         "io_mesh_mcell_mdl"+os.sep+"pyparsing.py",
-#        "io_mesh_mcell_mdl"+os.sep+"mdlmesh_parser.py",
+        #        "io_mesh_mcell_mdl"+os.sep+"mdlmesh_parser.py",
         "io_mesh_mcell_mdl"+os.sep+"mdlobj.py",
         "data_plotters"+os.sep+"__init__.py",
         "data_plotters"+os.sep+"mpl_simple"+os.sep+"__init__.py",
@@ -101,7 +100,7 @@ cellblender_info = {
         "data_plotters"+os.sep+"cellblender-plot"+os.sep+"external"+os.sep+"spectrum.js",
         "data_plotters"+os.sep+"cellblender-plot"+os.sep+"unit-tests"+os.sep+"gen-tests.c",
         "data_plotters"+os.sep+"cellblender-plot"+os.sep+"unit-tests"+os.sep+"gen-tests-description.txt",
-#        "data_plotters"+os.sep+"java_plot"+os.sep+"PlotData.jar",
+        #        "data_plotters"+os.sep+"java_plot"+os.sep+"PlotData.jar",
         "mdl"+os.sep+"__init__.py",
         "bng"+os.sep+"__init__.py",
         "bng"+os.sep+"sbml2blender.py",
