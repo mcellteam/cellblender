@@ -1,0 +1,3 @@
+[submodule "data_plotters/cellblender-plot"]
+	path = data_plotters/cellblender-plot
+	url = https://github.com/mcellteam/cellblender-plot
