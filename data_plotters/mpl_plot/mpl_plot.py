@@ -18,12 +18,10 @@ This is the current plan for a simple plotting syntax:
   yaxis=label : set label for y axis
 '''
 
-from numpy import *
-from scipy import *
-from pylab import *
+from numpy import math, fromfile
+import sys
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
 
 if (len(sys.argv) < 2):
