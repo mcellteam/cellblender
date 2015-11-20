@@ -19,6 +19,8 @@ cellblender_info = {
 
         "cellblender_main.py",
 
+        "githooks"+os.sep+"pre-commit"
+
         "parameter_system.py",
         "cellblender_preferences.py",
         "cellblender_project.py",
