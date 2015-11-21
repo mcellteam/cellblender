@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Histogram</title>
+		<script src="external/all-min.js"></script>
+		<link rel='stylesheet' href='external/all-min.css'></script>
+		<link rel="stylesheet", type="text/css", a href = "histogram.css" />
+	</head>
+
+	<body>
+		<!-- left panel -->
+		<div id = "settings-panel" class = "side-panel">
+			<!-- plot range and chart display options -->
+			<div id = "chart-settings">
+				<b>Bin count</b> <input type = "number" id = "bin-count"> <br />
+
+				<b>Chart background</b>
+				<input type = "color" id = "chart-color">
+				<br />
+
+				<b>Show legend</b>
+				<input type = "checkbox" id = "toggle-legend" checked><br />
+			</div>
+		</div>
+		<div id = "outer-expand" class = "expand">
+			<span>&#x21fd;</span>
+		</div>
+
+		<div id = "chart-container">
+			<div id = "chart"></div>
+		</div>
+
+		<!-- edit chart title -->
+		<div class = "edit-label" id = "edit-title">
+			Title <input type = "text" class = "label-text"><br />
+			<!-- options in plot-main.js -->
+			Font <select class = "label-font"></select>
+			<span></span>
+			<input type = "color" class = "label-color">
+			<span></span>
+			<input type = "number" class = "label-size"> <br />
+			<button class = 'apply-label'>Apply</button>
+			<button class = 'cancel'>Cancel</button>
+		</div>
+
+		<!-- edit x-axis label -->
+		<div class = "edit-label" id = "edit-x-label">
+			Title <input type = "text" class = "label-text"><br />
+			Font <select class = "label-font"></select>
+			<span></span>
+			<input type = "color" class = "label-color">
+			<span></span>
+			<input type = "number" class = "label-size"> <br />
+			Tick interval <input type = "number" class = "tick-interval"> <br />
+			<button class = 'apply-label'>Apply</button>
+			<button class = 'cancel'>Cancel</button>
+		</div>
+
+		<!-- edit y-axis label -->
+		<div class = "edit-label" id = "edit-y-label">
+			Title <input type = "text" class = "label-text"><br />
+			Font <select class = "label-font"></select>
+			<span></span>
+			<input type = "color" class = "label-color">
+			<span></span>
+			<input type = "number" class = "label-size"> <br />
+			Tick interval <input type = "number" class = "tick-interval"> <br />
+			<button class = 'apply-label'>Apply</button>
+			<button class = 'cancel'>Cancel</button>
+		</div>
+
+		<!-- main script -->
+		<script src = "common-display.js"></script>
+		<script src = "histogram.js"></script>
+	</body>
+</html>

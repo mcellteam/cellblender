@@ -1,0 +1,7 @@
+Intended for testing many molecules with few iterations. The data files do not come from actual CB simulations and directory doesn't follow normal format.
+
+=== files/directories ===
+
+gen-tests.c: generate reaction data. Current usage: ./gen-tests [-d <directory name>] [-n <number of molecules>] [-t <number of iterations>] [-r <if random>]
+
+[test name]/*.dat: reaction data files

@@ -1,0 +1,134 @@
+html, body {
+	font-family: sans-serif;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+/* left panel */
+.side-panel {
+	float: left;
+	width: 20%;
+	height: 100%;
+	font-size: 13px;
+	overflow: hidden;
+	background: #ededed;
+	border-right: 1px solid gray;
+}
+
+.expand { float: left; border-right: 1px solid black; height: 100%; background: #ededed; }
+.expand * { position: relative; top: 50%; }
+
+/* top-left */
+#chart-settings {
+	width: 100%;
+	height: 20%;
+	float: left;
+	padding: 10px;
+	border-bottom: 1px solid gray;
+	background: #ededed;
+}
+
+#chart-settings input[type = "number"] {	 width: 30%; }
+
+/* middle-left; list view of series/files */
+#series-view {
+	float: left;
+	display: inline block;
+	background: #e1e1e1;
+	width: 100%;
+	border-bottom: 1px solid #bdbdbd;
+}
+
+/* series selection + button area */
+.select-series {
+	float: left;
+	padding: 15px;
+	width: 100%;
+	background: #ededed;
+}
+
+#series-view .space {
+	margin-left: 5px;
+	font-size: 12px;
+}
+
+/* contains options */
+#series-view #set-series {
+	display: none;
+	padding: 10px;
+	background: #e1e1e1;
+}
+
+/* selection list */
+#series-view #series-list {
+	margin-top: 10px;
+	width: 125px;
+	height: 50%;
+}
+
+/* series option area */
+#gen-hist a {
+	color: black;
+	text-decoration: none;
+}
+
+/* chart click labels */
+.edit-label {
+	background-color: #FCF79F;
+	position: absolute;
+	display: none;
+	padding: 10px;
+	width: 200px;
+	height: 100px;
+	font-size: 13px;
+}
+
+#edit-title {
+	width: 250px;
+	height: 80px;
+}
+
+#edit-x-label, #edit-y-label {
+	width: 250px;
+	height: 100px;
+}
+
+.edit-label span { margin-left: 5px; }
+
+.edit-label .label-font { width: 120px; }
+.edit-label .label-size { width: 25px; }
+
+.edit-label .sp-preview-inner { width: 15px; height: 15px; }
+.edit-label .sp-preview { width: 15px; height: 15px; }
+.edit-label .sp-replacer { width: 15px; height: 15px; }
+.edit-label .sp-dd { display: none; }
+
+.edit-label .tick-interval { width: 60px; }
+
+button {
+	font-size: 13px;
+	margin: 0;
+}
+
+/* remainder region containing chart */
+#chart-container {
+	float: left;
+	display: inline block;
+	margin-right: 0;
+	width: 78%;
+	height: 100%;
+}
+
+/* chart container */
+#chart {
+	position: relative;
+	width: 70%;
+	height: 60%;
+	margin-left: 15%;
+	margin-top: 3%;
+	float: left;
+	display: inline block;
+	border: 1px solid gray;
+	text-align: center;
+}

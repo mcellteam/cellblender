@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Main plot</title>
+		<script src="external/all-min.js"></script>
+		<link rel='stylesheet' type = "text/css", a href='external/all-min.css' />
+		<link rel="stylesheet", type="text/css", a href = "plot-main.css" />
+	</head>
+
+	<body>
+		<!-- left panel -->
+		<div id = "settings-panel" class = "side-panel">
+			<!-- plot range and chart display options -->
+			<div id = "chart-settings">
+				<b>Plot range</b><br />
+				<b>x</b> from
+				<input type = "number" id = "x-min" class = "plot-range">
+				to <input type = "number" id = "x-max" class = "plot-range">
+				<br />
+				<b>y</b> from <input type = "number" id = "y-min" class = "plot-range">
+				to <input type = "number" id = "y-max" class = "plot-range"><br />
+
+				<b>Chart background</b>
+				<input type = "color" id = "chart-color">
+				<br /><br />
+
+				<b>Show legend</b>
+				<input type = "checkbox" id = "toggle-legend" checked>
+				<text>&nbsp;</text>
+				<b>Show lines</b>
+				<input type = "checkbox" id = "toggle-ls" checked><br />
+				<b>Point marker</b>
+				<select id = "mark-type" checked>
+					<option value = "true">All points</option>
+					<option value = "null" selected>Sparse</option>
+					<option value = "false">None</option>
+				</select>
+				<br />
+			</div>
+
+			<!-- series display options -->
+			<div id = "series-view">
+				<!-- series list area -->
+				<div class = "select-series">
+					<button id = "remove-series">Remove</button>
+					<button id = "show-all">Show</button>
+					<button id = "hide-all">Hide</button><br /><br />
+
+					<input type = "text" id = "search-series"><br />
+
+					<!-- option name and value equal series name -->
+					<select multiple size = "7" id = "series-list">
+					</select><br /><br />
+
+					<span>&nbsp;</span>Add series <br />
+					<input type = "file" id = "add-series" multiple>
+				</div>
+				<div id = "set-series">
+					<span class = "one-series">&nbsp;</span><br />
+					<span class = "one-series space"></span>
+					<span class = "one-series">Upload plot data</span><br />
+					<input type = "file" id = "series-data"><br /><br/>
+
+					<span class = "one-series">Name</span> <input type = "text" id = "series-name"><br/><br/>
+					<span class = "text">Color</span> <input type = "color" id = "series-color">
+					<br/><br/> <span class = "text">Symbol</span>
+					<select id = "series-symbol">
+						<option name = "circle">circle</option>
+						<option name = "square">square</option>
+						<option name = "diamond">diamond</option>
+						<option name = "triangle">triangle</option>
+						<option name = "triangle-down">triangle-down</option>
+					</select>
+
+					<br /><br />
+
+					<button id = "gen-mean">Plot mean</button>
+					<button id = "gen-hist">Histogram</button>
+				</div>
+			</div>
+		</div>
+		<div id = "inner-expand" class = "expand">
+			<span>&#x21fd;</span>
+		</div>
+
+		<div id = "spreadsheet-panel" class = "side-panel">
+			<div id = "sheet-search">
+				<b>Find by x</b> <text>&nbsp;</text> <input type = "number" id = "sheet-series-x"> <br />
+				<text class = "sheet-search-error">No such x-value</text>
+			</div>
+
+			<table id = "series-spreadsheet">
+				<thead id = "sheet-header">
+					<tr>
+						<th colspan = "2" id = "sheet-title">No series selected</th></tr>
+				</thead>
+				<tbody id = "sheet-data">
+				</tbody>
+			</table>
+		</div>
+		<div id = "outer-expand" class = "expand">
+			<span>&#x21fe;</span>
+		</div>
+
+		<!-- chart area -->
+		<div id = "chart-container">
+			<div id = "chart"></div>
+		</div>
+
+		<!-- edit chart title -->
+		<div class = "edit-label" id = "edit-title">
+			Title <input type = "text" class = "label-text"><br />
+			<!-- options in plot-main.js -->
+			Font <select class = "label-font"></select>
+			<span></span>
+			<input type = "color" class = "label-color">
+			<span></span>
+			<input type = "number" class = "label-size"> <br />
+			<button class = 'apply-label'>Apply</button>
+			<button class = 'cancel'>Cancel</button>
+		</div>
+
+		<!-- edit x-axis label -->
+		<div class = "edit-label" id = "edit-x-label">
+			Title <input type = "text" class = "label-text"><br />
+			Font <select class = "label-font"></select>
+			<span></span>
+			<input type = "color" class = "label-color">
+			<span></span>
+			<input type = "number" class = "label-size"> <br />
+			Tick interval <input type = "number" class = "tick-interval"> <br />
+			<button class = 'apply-label'>Apply</button>
+			<button class = 'cancel'>Cancel</button>
+		</div>
+
+		<!-- edit y-axis label -->
+		<div class = "edit-label" id = "edit-y-label">
+			Title <input type = "text" class = "label-text"><br />
+			Font <select class = "label-font"></select>
+			<span></span>
+			<input type = "color" class = "label-color">
+			<span></span>
+			<input type = "number" class = "label-size"> <br />
+			Tick interval <input type = "number" class = "tick-interval"> <br />
+			<button class = 'apply-label'>Apply</button>
+			<button class = 'cancel'>Cancel</button>
+		</div>
+
+		<!-- main script -->
+		<script src = "common-display.js"></script>
+		<script src = "plot-main.js"></script>
+	</body>
+</html>
