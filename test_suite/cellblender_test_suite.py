@@ -3452,8 +3452,9 @@ class DynCubeTestOp(bpy.types.Operator):
         size_y = min_length + ( (max_length-min_length) * ( (1 - math.cos ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
         size_z = min_length + ( (max_length-min_length) * ( (1 - math.sin ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
 
-        subs = 3
-        return BasicBox ( size_x, size_y, size_z, x_subs=subs, y_subs=subs, z_subs=subs )
+        subs = 7
+        return BasicBox ( size_x, size_y, size_z, x_subs=1, y_subs=1, z_subs=1 )
+        # return BasicBox_Subdiv ( size_x, size_y, size_z, x_subs=1, y_subs=1, z_subs=subs )
 
 
     def invoke(self, context, event):
