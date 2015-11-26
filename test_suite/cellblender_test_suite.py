@@ -318,26 +318,6 @@ class CellBlender_Model:
         return self.mcell
 
 
-    """
-    def get_3d_view_areas(self):
-        areas_3d = []
-        for area in self.context.screen.areas:
-            if area.type == 'VIEW_3D':
-                areas_3d = areas_3d + [area]
-                # area.spaces.active.show_manipulator = False
-        return areas_3d
-    """
-
-    def get_3d_view_spaces(self):
-        spaces_3d = []
-        for area in self.context.screen.areas:
-            for space in area.spaces:
-                if space.type == 'VIEW_3D':
-                    spaces_3d = spaces_3d + [space]
-                    # area.spaces.active.show_manipulator = False
-        return spaces_3d
-
-
     def set_view_3d(self):
         area = bpy.context.area
         if area == None:
@@ -963,23 +943,31 @@ class CellBlender_Model:
                 print ( "============== WAITING for COMMAND ==============" )
             time.sleep ( wait_time )
 
+    def set_sim_seed ( self, seed=1 ):
+        # This is a bit tricky since CellBlender won't allow a start seed greater than the end seed
+        self.mcell.run_simulation.end_seed = seed
+        self.mcell.run_simulation.start_seed = seed
+        self.mcell.run_simulation.end_seed = seed
 
-    def export_model ( self, iterations="100", time_step="1e-6", export_format="mcell_mdl_unified" ):
+
+    def export_model ( self, iterations="100", time_step="1e-6", export_format="mcell_mdl_unified", seed=1 ):
         """ export_format is one of: mcell_mdl_unified, mcell_mdl_modular """
-        print ( "Test Suite is exporting the model ..." )
+        print ( "Test Suite is exporting the model with seed " + str(seed) + " ..." )
         self.mcell.cellblender_main_panel.init_select = True
         self.mcell.initialization.iterations.set_expr(iterations)
         self.mcell.initialization.time_step.set_expr(time_step)
+        self.set_sim_seed ( seed )
         self.mcell.export_project.export_format = export_format
 
         app = bpy.context.scene.cellblender_test_suite
         bpy.ops.mcell.export_project()
 
 
-    def run_only ( self, wait_time=10.0 ):
+    def run_only ( self, wait_time=10.0, seed=1 ):
         """ export_format is one of: mcell_mdl_unified, mcell_mdl_modular """
-        print ( "Test Suite is running the simulation ..." )
+        print ( "Test Suite is running the simulation with seed " + str(seed) + " ..." )
         self.mcell.cellblender_main_panel.init_select = True
+        self.set_sim_seed ( seed )
 
         app = bpy.context.scene.cellblender_test_suite
         if app.run_mcell:
@@ -992,12 +980,13 @@ class CellBlender_Model:
 
 
 
-    def run_model ( self, iterations="100", time_step="1e-6", export_format="mcell_mdl_unified", wait_time=10.0 ):
+    def run_model ( self, iterations="100", time_step="1e-6", export_format="mcell_mdl_unified", wait_time=10.0, seed=1 ):
         """ export_format is one of: mcell_mdl_unified, mcell_mdl_modular """
-        print ( "Test Suite is running the simulation ..." )
+        print ( "Test Suite is exporting the model and running the simulation with seed " + str(seed) + " ..." )
         self.mcell.cellblender_main_panel.init_select = True
         self.mcell.initialization.iterations.set_expr(iterations)
         self.mcell.initialization.time_step.set_expr(time_step)
+        self.set_sim_seed ( seed )
         self.mcell.export_project.export_format = export_format
 
         app = bpy.context.scene.cellblender_test_suite
@@ -1121,6 +1110,27 @@ class CellBlender_Model:
                 bpy.ops.wm.quit_blender() 
 
 
+    """
+    def get_3d_view_areas(self):
+        areas_3d = []
+        for area in self.context.screen.areas:
+            if area.type == 'VIEW_3D':
+                areas_3d = areas_3d + [area]
+                # area.spaces.active.show_manipulator = False
+        return areas_3d
+    """
+
+    def get_3d_view_spaces(self):
+        spaces_3d = []
+        for area in self.context.screen.areas:
+            for space in area.spaces:
+                if space.type == 'VIEW_3D':
+                    spaces_3d = spaces_3d + [space]
+                    # area.spaces.active.show_manipulator = False
+        return spaces_3d
+
+
+
     def scale_view_distance ( self, scale ):
         """ Change the view distance for all 3D_VIEW windows """
         spaces = self.get_3d_view_spaces()
@@ -1138,12 +1148,13 @@ class CellBlender_Model:
             space.region_3d.view_rotation.angle = angle
         #set_view_3d()
 
-    """
+
     def hide_manipulator ( self, hide=True ):
+        # C.screen.areas[4].spaces[0].show_manipulator = False
         spaces = self.get_3d_view_spaces()
         for space in spaces:
-            space.region_3d.show_manipulator = hide
-    """
+            space.show_manipulator = not hide
+
 
     def switch_to_perspective ( self ):
         """ Change to perspective for all 3D_VIEW windows """
@@ -1162,7 +1173,6 @@ class CellBlender_Model:
         app = bpy.context.scene.cellblender_test_suite
         if app.run_mcell:
             bpy.ops.screen.animation_play()
-
 
 
 ######################
@@ -1393,7 +1403,7 @@ class plf_object:
     return ( result );
 
 
-  def write_as_mdl ( self, file_name=None, partitions=False, instantiate=False ):
+  def write_as_mdl ( self, object_name, file_name=None, partitions=False, instantiate=False ):
     if file_name != None:
       out_file = open ( file_name, "w" )
       if partitions:
@@ -1401,7 +1411,7 @@ class plf_object:
           out_file.write ( "PARTITION_Y = [[-2.0 TO 2.0 STEP 0.5]]\n" )
           out_file.write ( "PARTITION_Z = [[-2.0 TO 2.0 STEP 0.5]]\n" )
           out_file.write ( "\n" )
-      out_file.write ( "box POLYGON_LIST\n" )
+      out_file.write ( object_name + " POLYGON_LIST\n" )
       out_file.write ( "{\n" )
       out_file.write ( "  VERTEX_LIST\n" )
       out_file.write ( "  {\n" )
@@ -1418,7 +1428,7 @@ class plf_object:
       if instantiate:
           out_file.write ( "\n" )
           out_file.write ( "INSTANTIATE Scene OBJECT {\n" )
-          out_file.write ( "  box OBJECT box {}\n" )
+          out_file.write ( "  " + object_name + " OBJECT " + object_name + " {}\n" )
           out_file.write ( "}\n" )
       out_file.close()
 
@@ -1482,7 +1492,7 @@ class plf_object:
 
 class BasicBox (plf_object):
 
-  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0, x_subs=3, y_subs=3, z_subs=3 ):
 
     # Create a box of the requested size
 
@@ -1503,6 +1513,103 @@ class BasicBox (plf_object):
                   [ 0, 4, 1 ], [ 1, 5, 2 ], [ 3, 2, 7 ], [ 4, 0, 7 ] ]
 
     for f in face_list:
+      new_face = plf_object();
+      new_face.add_point ( self.points[f[0]] );
+      new_face.add_point ( self.points[f[1]] );
+      new_face.add_point ( self.points[f[2]] );
+      new_face.add_face ( face (0, 1, 2) );
+      self.merge ( new_face );
+
+
+class BasicBox_Subdiv (plf_object):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0, x_subs=3, y_subs=3, z_subs=3 ):
+
+    # Create a unit box first then resize it later
+
+    xcoords = [ (2*(x-(x_subs/2.0))/x_subs) for x in range(0,x_subs+1) ]
+    ycoords = [ (2*(y-(y_subs/2.0))/y_subs) for y in range(0,y_subs+1) ]
+    zcoords = [ (2*(z-(z_subs/2.0))/z_subs) for z in range(0,z_subs+1) ]
+
+    # Create the top and bottom faces using integer coordinates
+
+    faces_index_list = []
+
+    # Make the bottom and top (along z)
+    for x in range(x_subs):
+      for y in range(y_subs):
+        vertex_0_00 = [x+0,y+0,0]
+        vertex_0_01 = [x+1,y+0,0]
+        vertex_0_10 = [x+0,y+1,0]
+        vertex_0_11 = [x+1,y+1,0]
+        faces_index_list.append ( [vertex_0_00, vertex_0_11, vertex_0_01] )
+        faces_index_list.append ( [vertex_0_00, vertex_0_10, vertex_0_11] )
+        vertex_1_00 = [x+0,y+0,z_subs]
+        vertex_1_01 = [x+1,y+0,z_subs]
+        vertex_1_10 = [x+0,y+1,z_subs]
+        vertex_1_11 = [x+1,y+1,z_subs]
+        faces_index_list.append ( [vertex_1_00, vertex_1_01, vertex_1_11] )
+        faces_index_list.append ( [vertex_1_00, vertex_1_11, vertex_1_10] )
+
+    # Make the right and left (along y)
+    for x in range(x_subs):
+      for z in range(z_subs):
+        vertex_0_00 = [x+0,0,z+0]
+        vertex_0_01 = [x+1,0,z+0]
+        vertex_0_10 = [x+0,0,z+1]
+        vertex_0_11 = [x+1,0,z+1]
+        faces_index_list.append ( [vertex_0_00, vertex_0_01, vertex_0_11] )
+        faces_index_list.append ( [vertex_0_00, vertex_0_11, vertex_0_10] )
+        vertex_1_00 = [x+0,y_subs,z+0]
+        vertex_1_01 = [x+1,y_subs,z+0]
+        vertex_1_10 = [x+0,y_subs,z+1]
+        vertex_1_11 = [x+1,y_subs,z+1]
+        faces_index_list.append ( [vertex_1_00, vertex_1_11, vertex_1_01] )
+        faces_index_list.append ( [vertex_1_00, vertex_1_10, vertex_1_11] )
+
+    # Make the back and front (along x)
+    for y in range(y_subs):
+      for z in range(z_subs):
+        vertex_0_00 = [0,y+0,z+0]
+        vertex_0_01 = [0,y+1,z+0]
+        vertex_0_10 = [0,y+0,z+1]
+        vertex_0_11 = [0,y+1,z+1]
+        faces_index_list.append ( [vertex_0_00, vertex_0_11, vertex_0_01] )
+        faces_index_list.append ( [vertex_0_00, vertex_0_10, vertex_0_11] )
+        vertex_1_00 = [x_subs,y+0,z+0]
+        vertex_1_01 = [x_subs,y+1,z+0]
+        vertex_1_10 = [x_subs,y+0,z+1]
+        vertex_1_11 = [x_subs,y+1,z+1]
+        faces_index_list.append ( [vertex_1_00, vertex_1_01, vertex_1_11] )
+        faces_index_list.append ( [vertex_1_00, vertex_1_11, vertex_1_10] )
+
+    # Create the points list and faces list
+    faces = []
+    point_inds = []
+
+    # First build the faces and the list of points with integer coordinates
+    for fi in faces_index_list:
+      f = []
+      for pi in fi:
+        if not (pi in point_inds):
+          point_inds.append(pi)
+        f.append ( point_inds.index(pi) )
+      faces.append ( f )
+
+    # Next build the points list from the points index list (one-for-one to match the faces indicies)
+    points = []
+    for pi in point_inds:
+      points.append ( [ size_x*xcoords[pi[0]], size_y*ycoords[pi[1]], size_z*zcoords[pi[2]] ] )
+
+    # Finally build the PLF structures from these lists
+
+    self.points = [];
+    self.faces = [];
+
+    for p in points:
+      self.points.append ( point ( p[0], p[1], p[2] ) )
+
+    for f in faces:
       new_face = plf_object();
       new_face.add_point ( self.points[f[0]] );
       new_face.add_point ( self.points[f[1]] );
@@ -1540,7 +1647,7 @@ class IcoSphere ( plf_object ):
     return (index);
 
 
-  def __init__ ( self, recursion_level ):
+  def __init__ ( self, recursion_level, scale_x=1.0, scale_y=1.0, scale_z=1.0 ):
 
     self.points = [];
 
@@ -1569,7 +1676,7 @@ class IcoSphere ( plf_object ):
     if (True):
       # A PI/6 rotation about z (transform x and y) gives an approximate equator in x-y plane
       angle = (math.pi / 2) - math.atan(1/t);
-      print ( "Rotating with angle = " + str(180 * angle / math.pi) );
+      # print ( "Rotating with angle = " + str(180 * angle / math.pi) );
       for p in self.points:
         newx = (math.cos(angle) * p.x) - (math.sin(angle) * p.z);
         newz = (math.sin(angle) * p.x) + (math.cos(angle) * p.z);
@@ -1645,6 +1752,10 @@ class IcoSphere ( plf_object ):
         self.faces.append ( face ( vertex_indicies[3], vertex_indicies[4], vertex_indicies[5] ) );
         self.faces.append ( face ( vertex_indicies[1], vertex_indicies[3], vertex_indicies[5] ) );
 
+    for pt in self.points:
+      pt.x *= scale_x
+      pt.y *= scale_y
+      pt.z *= scale_z
 
 
 class Capsule (plf_object):
@@ -1930,6 +2041,8 @@ def SimRunnerExample ( context, method="COMMAND", test_name=None ):
 
     cb_model.scale_view_distance ( 0.1 )
 
+    cb_model.hide_manipulator ( hide=True )
+
     cb_model.play_animation()
 
 
@@ -2060,6 +2173,8 @@ class SingleMoleculeTestOp(bpy.types.Operator):
 
         cb_model.scale_view_distance ( 0.02 )
 
+        cb_model.hide_manipulator ( hide=True )
+
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -2108,6 +2223,8 @@ class DoubleSphereTestOp(bpy.types.Operator):
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.1 )
+
+        cb_model.hide_manipulator ( hide=True )
 
         cb_model.play_animation()
 
@@ -2161,6 +2278,8 @@ class VolDiffusionConstTestOp(bpy.types.Operator):
 
         cb_model.scale_view_distance ( 0.1 )
         cb_model.switch_to_orthographic()
+
+        cb_model.hide_manipulator ( hide=True )
 
         cb_model.play_animation()
 
@@ -2226,6 +2345,8 @@ class ReactionTestOp(bpy.types.Operator):
 
         cb_model.scale_view_distance ( 0.1 )
 
+        cb_model.hide_manipulator ( hide=True )
+
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -2289,6 +2410,8 @@ class ReleaseShapeTestOp(bpy.types.Operator):
 
         cb_model.scale_view_distance ( 0.25 )
 
+        cb_model.hide_manipulator ( hide=True )
+
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -2340,6 +2463,8 @@ class ParSystemTestOp(bpy.types.Operator):
 
         cb_model.scale_view_distance ( 0.04 )
 
+        cb_model.hide_manipulator ( hide=True )
+
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -2389,6 +2514,8 @@ class CubeTestOp(bpy.types.Operator):
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.25 )
+
+        cb_model.hide_manipulator ( hide=True )
 
         cb_model.play_animation()
 
@@ -2451,6 +2578,8 @@ class CubeSurfaceTestOp(bpy.types.Operator):
 
         cb_model.scale_view_distance ( 0.25 )
 
+        cb_model.hide_manipulator ( hide=True )
+
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -2512,6 +2641,8 @@ class SphereSurfaceTestOp(bpy.types.Operator):
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.25 )
+
+        cb_model.hide_manipulator ( hide=True )
 
         cb_model.play_animation()
 
@@ -2584,6 +2715,8 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.25 )
+
+        cb_model.hide_manipulator ( hide=True )
 
         cb_model.play_animation()
 
@@ -2709,6 +2842,8 @@ class SurfaceClassesTestOp(bpy.types.Operator):
 
         cb_model.scale_view_distance ( 0.5 )
 
+        cb_model.hide_manipulator ( hide=True )
+
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -2800,6 +2935,8 @@ class CapsuleTestOp(bpy.types.Operator):
 
         cb_model.scale_view_distance ( 0.25 )
 
+        cb_model.hide_manipulator ( hide=True )
+
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -2864,6 +3001,8 @@ class GobletTestOp(bpy.types.Operator):
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.25 )
+
+        cb_model.hide_manipulator ( hide=True )
 
         cb_model.play_animation()
 
@@ -3023,7 +3162,8 @@ class EcoliTestOp(bpy.types.Operator):
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.45 )
-        # cb_model.hide_manipulator ( hide=True )
+
+        cb_model.hide_manipulator ( hide=True )
 
         cb_model.play_animation()
 
@@ -3215,25 +3355,22 @@ class MDLGeoImport(bpy.types.Operator):
         cb_model.scale_view_distance ( 0.1 )
         cb_model.set_axis_angle ( [0.961, -0.177, -0.213], 1.4253 )
 
+        cb_model.hide_manipulator ( hide=True )
+
         cb_model.play_animation()
 
         return { 'FINISHED' }
 
 
 
-
 ###########################################################################################################
-group_name = "Dynamic Geometry Tests"
-test_name = "Dynamic Cube Test"
-operator_name = "cellblender_test.dynamic_cube_test"
-next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+# Shared support functions for dynamic geometry tests
 
+@persistent
 def read_plf_from_mdl ( scene, frame_num=None ):
     cur_frame = frame_num
     if cur_frame == None:
       cur_frame = scene.frame_current
-
-    # app = scene.box_maker
 
     fname = "frame_%d.mdl"%cur_frame
     full_fname = None
@@ -3250,6 +3387,13 @@ def read_plf_from_mdl ( scene, frame_num=None ):
 
     return plf_from_mdl
 
+
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Cube Test"
+operator_name = "cellblender_test.dynamic_cube_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
 
 @persistent
@@ -3308,7 +3452,8 @@ class DynCubeTestOp(bpy.types.Operator):
         size_y = min_length + ( (max_length-min_length) * ( (1 - math.cos ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
         size_z = min_length + ( (max_length-min_length) * ( (1 - math.sin ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
 
-        return BasicBox ( size_x, size_y, size_z )
+        subs = 3
+        return BasicBox ( size_x, size_y, size_z, x_subs=subs, y_subs=subs, z_subs=subs )
 
 
     def invoke(self, context, event):
@@ -3332,14 +3477,14 @@ class DynCubeTestOp(bpy.types.Operator):
         iterations = 300
         start = 1
         end = iterations
-        
+
         print ( "Saving frames from " + str(start) + " to " + str(end) )
         # Make the directory in case CellBlender hasn't been run to make it already
         os.makedirs(path_to_mdl,exist_ok=True)
         geom_list_file = open(os.path.join(path_to_mdl,'box_dyn_geom_list.txt'), "w", encoding="utf8", newline="\n")
         path_to_dg_files = os.path.join ( path_to_mdl, "dynamic_geometry" )
         if not os.path.exists(path_to_dg_files):
-            os.makedirs(path_to_dg_files)        
+            os.makedirs(path_to_dg_files)
         step = 0
         for f in range(1 + 1+end-start):
             box_plf = self.create_box ( context.scene, frame_num=f )
@@ -3348,16 +3493,16 @@ class DynCubeTestOp(bpy.types.Operator):
                 # This geometry file is saved as a normal geometry MDL file and not included in the dynamic geometry file list
                 full_fname = os.path.join(path_to_mdl,"Scene.geometry.mdl")
                 print ( "Saving file " + full_fname )
-                box_plf.write_as_mdl ( file_name=full_fname, partitions=False, instantiate=False )
+                box_plf.write_as_mdl ( "box", file_name=full_fname, partitions=False, instantiate=False )
             else:
                 # This geometry file is saved as a dynamic geometry MDL file and is included in the dynamic geometry file list
                 full_fname = os.path.join(path_to_dg_files,fname)
                 print ( "Saving file " + full_fname )
-                box_plf.write_as_mdl ( file_name=full_fname, partitions=True, instantiate=True )
+                box_plf.write_as_mdl ( "box", file_name=full_fname, partitions=True, instantiate=True )
                 geom_list_file.write('%.9g %s\n' % (step*time_step, os.path.join(".","dynamic_geometry",fname)))
             step += 1
         geom_list_file.close()
-        
+
 
         # Run the frame change handler one time to create the box object
         dynamic_cube_frame_change_handler(context.scene)
@@ -3378,8 +3523,8 @@ class DynCubeTestOp(bpy.types.Operator):
         cb_model.decouple_export_and_run ( context )
 
         cb_model.export_model ( iterations=str(iterations), time_step=str(time_step), export_format="mcell_mdl_modular" )
-        
-        
+
+
         # Update the main MDL file Scene.main.mdl to insert the DYNAMIC_GEOMETRY directive
         try:
 
@@ -3442,14 +3587,14 @@ class DynCubeTestOp(bpy.types.Operator):
         except:
             print ( "Warning: unable to update the existing Scene.main.mdl file, try running the model to generate it first." )
 
-        cb_model.run_only ( wait_time=30.0 )
+        cb_model.run_only ( wait_time=30.0, seed=2 )
 
         cb_model.compare_mdl_with_sha1 ( "41d8a902118d7980136f0965dae14476b88b90b3", test_name="Dynamic Cube Test" )
 
         cb_model.refresh_molecules()
 
-        cb_model.change_molecule_display ( molv, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( mols, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molv, glyph='Cube', scale=3.0, red=1.0, green=1.0, blue=1.0 )
+        cb_model.change_molecule_display ( mols, glyph='Cone', scale=5.0, red=0.0, green=1.0, blue=0.1 )
 
         cb_model.set_view_back()
 
@@ -3460,9 +3605,237 @@ class DynCubeTestOp(bpy.types.Operator):
 
         cb_model.scale_view_distance ( 0.25 )
 
+        cb_model.hide_manipulator ( hide=True )
+
         cb_model.play_animation()
 
         return { 'FINISHED' }
+
+
+
+
+
+
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Icosphere Test"
+operator_name = "cellblender_test.dynamic_icosphere_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+
+@persistent
+def dynamic_icosphere_frame_change_handler(scene):
+    cell_name = "cell"
+
+    cell_plf = None
+    cell_plf = read_plf_from_mdl ( scene )
+
+    vertex_list = cell_plf.points
+    face_list = cell_plf.faces
+
+    vertices = []
+    for point in vertex_list:
+        vertices.append ( mathutils.Vector((point.x,point.y,point.z)) )
+    faces = []
+    for face_element in face_list:
+        faces.append ( face_element.verts )
+
+    new_mesh = bpy.data.meshes.new ( cell_name + "_mesh" )
+    new_mesh.from_pydata ( vertices, [], faces )
+    new_mesh.update()
+
+    cell_object = None
+    if cell_name in scene.objects:
+        cell_object = scene.objects[cell_name]
+        old_mesh = cell_object.data
+        cell_object.data = new_mesh
+        bpy.data.meshes.remove ( old_mesh )
+    else:
+        cell_object = bpy.data.objects.new ( cell_name, new_mesh )
+        scene.objects.link ( cell_object )
+
+
+class DynIcosphereTestOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+
+    def create_cell ( self, scene, frame_num=None ):
+
+        cur_frame = frame_num
+        if cur_frame == None:
+          cur_frame = scene.frame_current
+
+        # OK:   (0.8,1.2), (0.5,1.5)
+        # Fail: (0.5,3.0), (0.5,2.0)
+        min_length = 0.5
+        max_length = 2.0
+        period_frames = 100
+
+        size_x = min_length + ( (max_length-min_length) * ( (1 - math.cos ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
+        size_y = min_length + ( (max_length-min_length) * ( (1 - math.cos ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
+        size_z = min_length + ( (max_length-min_length) * ( (1 - math.sin ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
+
+        #return IcoSphere ( 2 )
+        return IcoSphere ( 2, scale_x=size_x, scale_y=size_y, scale_z=size_z )
+
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = dynamic_icosphere_frame_change_handler
+
+        cb_model = CellBlender_Model ( context )
+
+        bp = cb_model.path_to_blend
+        p = bp[0:bp.rfind(os.sep)]
+        path_to_mdl = cb_model.get_mdl_file_path()
+        context.scene.cellblender_test_suite.path_to_mdl = path_to_mdl
+
+        # Make the Dynamic Geometry MDL files
+        time_step = 1e-6
+        iterations = 300
+        start = 1
+        end = iterations
+
+        print ( "Saving frames from " + str(start) + " to " + str(end) )
+        # Make the directory in case CellBlender hasn't been run to make it already
+        os.makedirs(path_to_mdl,exist_ok=True)
+        geom_list_file = open(os.path.join(path_to_mdl,'cell_dyn_geom_list.txt'), "w", encoding="utf8", newline="\n")
+        path_to_dg_files = os.path.join ( path_to_mdl, "dynamic_geometry" )
+        if not os.path.exists(path_to_dg_files):
+            os.makedirs(path_to_dg_files)
+        step = 0
+        for f in range(1 + 1+end-start):
+            cell_plf = self.create_cell ( context.scene, frame_num=f )
+            fname = "frame_%d.mdl"%f
+            if f == 0:
+                # This geometry file is saved as a normal geometry MDL file and not included in the dynamic geometry file list
+                full_fname = os.path.join(path_to_mdl,"Scene.geometry.mdl")
+                print ( "Saving file " + full_fname )
+                cell_plf.write_as_mdl ( "cell", file_name=full_fname, partitions=False, instantiate=False )
+            else:
+                # This geometry file is saved as a dynamic geometry MDL file and is included in the dynamic geometry file list
+                full_fname = os.path.join(path_to_dg_files,fname)
+                print ( "Saving file " + full_fname )
+                cell_plf.write_as_mdl ( "cell", file_name=full_fname, partitions=True, instantiate=True )
+                geom_list_file.write('%.9g %s\n' % (step*time_step, os.path.join(".","dynamic_geometry",fname)))
+            step += 1
+        geom_list_file.close()
+
+
+        # Run the frame change handler one time to create the cell object
+        dynamic_icosphere_frame_change_handler(context.scene)
+
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        cb_model.add_active_object_to_model ( name="cell", draw_type="WIRE" )
+
+        molv = cb_model.add_molecule_species_to_model ( name="v", mol_type="3D", diff_const_expr="1e-5" )
+        mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-4" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="v", shape="OBJECT", obj_expr="cell", q_expr="1000" )
+        cb_model.add_molecule_release_site_to_model ( mol="s", shape="OBJECT", obj_expr="cell", q_expr="1000" )
+
+
+        cb_model.decouple_export_and_run ( context )
+
+        cb_model.export_model ( iterations=str(iterations), time_step=str(time_step), seed=2, export_format="mcell_mdl_modular" )
+
+
+        # Update the main MDL file Scene.main.mdl to insert the DYNAMIC_GEOMETRY directive
+        try:
+
+            full_fname = os.path.join(path_to_mdl,"Scene.main.mdl")
+            print ( "Updating Main MDL file: " + full_fname )
+            mdl_file = open ( full_fname )
+            mdl_lines = mdl_file.readlines()
+            mdl_file.close()
+
+            # Remove any old dynamic geometry lines
+            new_lines = []
+            for line in mdl_lines:
+                if line.strip()[0:16] != "DYNAMIC_GEOMETRY":
+                    new_lines.append(line)
+            lines = new_lines
+
+            mdl_file = open ( full_fname, "w" )
+            line_num = 0
+            for line in lines:
+                line_num += 1
+                mdl_file.write ( line )
+                if line_num == 3:
+                    # Insert the dynamic geometry line
+                    mdl_file.write ( "DYNAMIC_GEOMETRY = \"cell_dyn_geom_list.txt\"\n" )
+            mdl_file.close()
+
+            full_fname = os.path.join(path_to_mdl,"Scene.initialization.mdl")
+            print ( "Updating Initialization MDL file: " + full_fname )
+            mdl_file = open ( full_fname )
+            mdl_lines = mdl_file.readlines()
+            mdl_file.close()
+
+            # Remove any old LARGE_MOLECULAR_DISPLACEMENT lines
+            new_lines = []
+            for line in mdl_lines:
+                if line.strip()[0:28] != "LARGE_MOLECULAR_DISPLACEMENT":
+                    new_lines.append(line)
+            lines = new_lines
+
+            # Find the WARNINGS section
+            warning_line = -10
+            line_num = 0
+            for line in lines:
+                line_num += 1
+                if line.strip() == "WARNINGS":
+                    warning_line = line_num
+
+            mdl_file = open ( full_fname, "w" )
+            line_num = 0
+            for line in lines:
+                line_num += 1
+                mdl_file.write ( line )
+                if line_num == warning_line + 1:
+                    # Insert the dynamic geometry line
+                    mdl_file.write ( "   LARGE_MOLECULAR_DISPLACEMENT = IGNORED\n" )
+            mdl_file.close()
+        except Exception as e:
+            print ( "Warning: unable to update the existing Scene.main.mdl file, try running the model to generate it first." )
+            print ( "   Exception = " + str(e) )
+        except:
+            print ( "Warning: unable to update the existing Scene.main.mdl file, try running the model to generate it first." )
+
+        cb_model.run_only ( wait_time=30.0, seed=2 )
+
+        cb_model.compare_mdl_with_sha1 ( "c96ce06c266949265ee7300d6194b2fabb708f2d", test_name="Dynamic Icosphere Test" )
+
+        cb_model.refresh_molecules()
+
+        cb_model.change_molecule_display ( molv, glyph='Cube', scale=3.0, red=1.0, green=1.0, blue=1.0 )
+        cb_model.change_molecule_display ( mols, glyph='Cone', scale=5.0, red=0.0, green=1.0, blue=0.1 )
+
+        cb_model.set_view_back()
+
+        cb_model.switch_to_orthographic()
+        # cb_model.set_axis_angle ( [0, 1, 0], 0 )
+        cb_model.scale_view_distance ( 0.7 )
+        cb_model.set_axis_angle ( [0.961, -0.177, -0.213], 1.4253 )
+
+        cb_model.scale_view_distance ( 0.25 )
+
+        cb_model.hide_manipulator ( hide=True )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
 
 
 
@@ -3509,6 +3882,8 @@ class SimpleMoleculeCountTestOp(bpy.types.Operator):
         cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
         cb_model.set_view_back()
         cb_model.scale_view_distance ( 0.1 )
+
+        cb_model.hide_manipulator ( hide=True )
 
         cb_model.play_animation()
 
@@ -3598,6 +3973,8 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.05 )
+
+        cb_model.hide_manipulator ( hide=True )
 
         cb_model.play_animation()
 
@@ -3704,6 +4081,7 @@ class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
         active_frame_change_handler = None
 
         cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="5b7ea646b35cc54eb56a36a08a34217e2900c928", test_name="Lotka Volterra Torus - Diffusion Limited Reaction", wait_time=15.0 )
+        cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -3730,6 +4108,7 @@ class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
         active_frame_change_handler = None
 
         cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="4be2236905c76aa47d1f2b76904ef76bdc025c01", test_name="Lotka Volterra Torus - Physiologic Reaction", wait_time=60.0 )
+        cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -3847,6 +4226,8 @@ class OrganelleTestOp(bpy.types.Operator):
 
         cb_model.scale_view_distance ( 0.07 )
 
+        cb_model.hide_manipulator ( hide=True )
+
         cb_model.play_animation()
 
         return { 'FINISHED' }
@@ -3958,6 +4339,10 @@ class MinDMinETestOp(bpy.types.Operator):
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.25 )
+
+        cb_model.hide_manipulator ( hide=True )
+
+        cb_model.play_animation()
 
         return { 'FINISHED' }
 
