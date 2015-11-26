@@ -1041,11 +1041,16 @@ class CellBlender_Model:
     def get_main_mdl_file_path ( self ):
         return self.get_mdl_file_path() + os.sep + "Scene.main.mdl"
 
-    def get_subfiles ( self, parent_file ):
+    def get_subfiles_from_mdl_file ( self, parent_file ):
+        """ Find the list of included files and dynamic geometry referenced files """
+        # Note that this is not currently recursive ... in other words it only checks files included in the top level file
+        # While this function does return the dynamic geometry list file, it does not return the files contained in that list
+        # Since the only dynamic geometry being tested was created by the test suite, checking those files would not be testing CellBlender.
+        # The same is true of the dynamic geometry list file, but it's being included anyway ... since it's just one file.
         subfiles = []
         main_mdl_lines = open(parent_file,'rb').readlines()
         for l in main_mdl_lines:
-          l = l.decode()
+          l = l.decode().strip()
           if (l.startswith('INCLUDE_FILE = "')) or (l.startswith('DYNAMIC_GEOMETRY = "')):
             l = l[l.index('"')+1:]
             l = l[:l.index('"')]
@@ -1053,7 +1058,7 @@ class CellBlender_Model:
         return subfiles
 
     def compare_mdl_with_sha1 ( self, good_hash="", test_name=None ):
-        """ Compute the sha1 for file_name and compare with sha1 """
+        """ Compute the sha1 for the main MDL file and included MDL files and compare with good_hash """
         app = bpy.context.scene.cellblender_test_suite
         
         file_name = self.get_main_mdl_file_path()
@@ -1066,9 +1071,9 @@ class CellBlender_Model:
             hashobject.update(open(file_name, 'rb').read())
             print ( "Computed hash for " + file_name + " = " + str(hashobject.hexdigest()) )
             path = file_name[0:file_name.rfind(os.sep)]
-            for f in self.get_subfiles(file_name):
+            for f in self.get_subfiles_from_mdl_file(file_name):
                 hashobject.update(open(path+os.sep+f, 'rb').read())
-                print ( "    plus hash for " + file_name + " = " + str(hashobject.hexdigest()) )
+                print ( "    plus hash for " + path+os.sep+f + " = " + str(hashobject.hexdigest()) )
 
             file_hash = str(hashobject.hexdigest())
             print("  SHA1 = " + file_hash + " for \n     " + file_name )
