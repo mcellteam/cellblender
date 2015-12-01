@@ -3174,7 +3174,7 @@ class EcoliTestOp(bpy.types.Operator):
 ###########################################################################################################
 ##   Helper Function supporting MDL Import Testing
 
-def write_mdl_geometry_file ( filename ):
+def write_geometry_file_M_D_L ( filename ):
   ol = [
 
     { "name": "M",
@@ -3333,7 +3333,7 @@ class MDLGeoImport(bpy.types.Operator):
         fn = p + os.sep + f
 
         print ( "\n\nWriting Test MDL Geometry File: " + fn )
-        write_mdl_geometry_file ( fn )
+        write_geometry_file_M_D_L ( fn )
 
         print ( "Importing Test MDL Geometry File: " + fn + "\n\n" )
         bpy.ops.import_mdl_mesh.mdl(filepath=fn, files=[{"name":f}], directory=p, filter_glob="*.mdl", add_to_model_objects=True)
@@ -3388,14 +3388,6 @@ def read_plf_from_mdl ( scene, frame_num=None ):
     return plf_from_mdl
 
 
-
-###########################################################################################################
-group_name = "Dynamic Geometry Tests"
-test_name = "Dynamic Cube Test"
-operator_name = "cellblender_test.dynamic_cube_test"
-next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
-
-
 @persistent
 def dynamic_cube_frame_change_handler(scene):
     #scene.box_maker.update_scene(scene)
@@ -3429,6 +3421,372 @@ def dynamic_cube_frame_change_handler(scene):
     else:
         box_object = bpy.data.objects.new ( cell_name, new_mesh )
         scene.objects.link ( box_object )
+
+
+def create_subdiv_squashed_z_box ( scene, min_len=0.25, max_len=3.5, period_frames=100, subs=[1,1,1], frame_num=None ):
+
+    cur_frame = frame_num
+    if cur_frame == None:
+      cur_frame = scene.frame_current
+
+    size_x = min_len + ( (max_len-min_len) * ( (1 - math.cos ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
+    size_y = min_len + ( (max_len-min_len) * ( (1 - math.cos ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
+    size_z = min_len + ( (max_len-min_len) * ( (1 - math.sin ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
+
+    #subs = 7
+    #return BasicBox ( size_x, size_y, size_z, x_subs=1, y_subs=1, z_subs=1 )
+    return BasicBox_Subdiv ( size_x, size_y, size_z, x_subs=subs[0], y_subs=subs[1], z_subs=subs[2] )
+
+
+def DynamicGeometryCubeTest ( context, mol_types="vs", size=[1.0,1.0,1.0], subs=[1,1,1], dc_2D="1e-4", dc_3D="1e-5", time_step=1e-6, iterations=300, min_len=0.25, max_len=3.5, period_frames=100, mdl_hash="", test_name="Dynamic Geometry Cube", wait_time=30.0, seed=1 ):
+
+    cb_model = CellBlender_Model ( context )
+
+    bp = cb_model.path_to_blend
+    p = bp[0:bp.rfind(os.sep)]
+    path_to_mdl = cb_model.get_mdl_file_path()
+    context.scene.cellblender_test_suite.path_to_mdl = path_to_mdl
+
+    # Make the Dynamic Geometry MDL files
+    start = 1
+    end = iterations
+
+    print ( "Saving frames from " + str(start) + " to " + str(end) )
+    print ( "Total Faces = " + str( ((subs[0]*subs[1])*2*2) + ((subs[1]*subs[2])*2*2) + ((subs[2]*subs[0])*2*2) ) )
+    # Make the directory in case CellBlender hasn't been run to make it already
+    os.makedirs(path_to_mdl,exist_ok=True)
+    geom_list_file = open(os.path.join(path_to_mdl,'box_dyn_geom_list.txt'), "w", encoding="utf8", newline="\n")
+    path_to_dg_files = os.path.join ( path_to_mdl, "dynamic_geometry" )
+    if not os.path.exists(path_to_dg_files):
+        os.makedirs(path_to_dg_files)
+    step = 0
+    for f in range(1 + 1+end-start):
+        # box_plf = create_subdiv_squashed_z_box ( context.scene, min_len=0.25, max_len=3.5, period_frames=100, subs=subs, frame_num=f )
+        box_plf = create_subdiv_squashed_z_box ( context.scene, min_len=min_len, max_len=max_len, period_frames=period_frames, subs=subs, frame_num=f )
+        fname = "frame_%d.mdl"%f
+        if f == 0:
+            # This geometry file is saved as a normal geometry MDL file and not included in the dynamic geometry file list
+            full_fname = os.path.join(path_to_mdl,"Scene.geometry.mdl")
+            print ( "Saving file " + full_fname )
+            box_plf.write_as_mdl ( "box", file_name=full_fname, partitions=False, instantiate=False )
+        else:
+            # This geometry file is saved as a dynamic geometry MDL file and is included in the dynamic geometry file list
+            full_fname = os.path.join(path_to_dg_files,fname)
+            print ( "Saving file " + full_fname )
+            box_plf.write_as_mdl ( "box", file_name=full_fname, partitions=True, instantiate=True )
+            geom_list_file.write('%.9g %s\n' % (step*time_step, os.path.join(".","dynamic_geometry",fname)))
+        step += 1
+    geom_list_file.close()
+
+
+    # Run the frame change handler one time to create the box object
+    dynamic_cube_frame_change_handler(context.scene)
+
+
+    scn = cb_model.get_scene()
+    mcell = cb_model.get_mcell()
+
+    cb_model.add_active_object_to_model ( name="box", draw_type="BOUNDS" )
+
+    if "v" in mol_types: molv = cb_model.add_molecule_species_to_model ( name="v", mol_type="3D", diff_const_expr=dc_3D )
+    if "s" in mol_types: mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr=dc_2D )
+
+    if "v" in mol_types: cb_model.add_molecule_release_site_to_model ( mol="v", shape="OBJECT", obj_expr="box", q_expr="1000" )
+    if "s" in mol_types: cb_model.add_molecule_release_site_to_model ( mol="s", shape="OBJECT", obj_expr="box", q_expr="1000" )
+
+
+    cb_model.decouple_export_and_run ( context )
+
+    cb_model.export_model ( iterations=str(iterations), time_step=str(time_step), export_format="mcell_mdl_modular" )
+
+
+    # Update the main MDL file Scene.main.mdl to insert the DYNAMIC_GEOMETRY directive
+    try:
+
+        full_fname = os.path.join(path_to_mdl,"Scene.main.mdl")
+        print ( "Updating Main MDL file: " + full_fname )
+        mdl_file = open ( full_fname )
+        mdl_lines = mdl_file.readlines()
+        mdl_file.close()
+
+        # Remove any old dynamic geometry lines
+        new_lines = []
+        for line in mdl_lines:
+            if line.strip()[0:16] != "DYNAMIC_GEOMETRY":
+                new_lines.append(line)
+        lines = new_lines
+
+        mdl_file = open ( full_fname, "w" )
+        line_num = 0
+        for line in lines:
+            line_num += 1
+            mdl_file.write ( line )
+            if line_num == 3:
+                # Insert the dynamic geometry line
+                mdl_file.write ( "DYNAMIC_GEOMETRY = \"box_dyn_geom_list.txt\"\n" )
+        mdl_file.close()
+
+        full_fname = os.path.join(path_to_mdl,"Scene.initialization.mdl")
+        print ( "Updating Initialization MDL file: " + full_fname )
+        mdl_file = open ( full_fname )
+        mdl_lines = mdl_file.readlines()
+        mdl_file.close()
+
+        # Remove any old LARGE_MOLECULAR_DISPLACEMENT lines
+        new_lines = []
+        for line in mdl_lines:
+            if line.strip()[0:28] != "LARGE_MOLECULAR_DISPLACEMENT":
+                new_lines.append(line)
+        lines = new_lines
+
+        # Find the WARNINGS section
+        warning_line = -10
+        line_num = 0
+        for line in lines:
+            line_num += 1
+            if line.strip() == "WARNINGS":
+                warning_line = line_num
+
+        mdl_file = open ( full_fname, "w" )
+        line_num = 0
+        for line in lines:
+            line_num += 1
+            mdl_file.write ( line )
+            if line_num == warning_line + 1:
+                # Insert the dynamic geometry line
+                mdl_file.write ( "   LARGE_MOLECULAR_DISPLACEMENT = IGNORED\n" )
+        mdl_file.close()
+    except Exception as e:
+        print ( "Warning: unable to update the existing Scene.main.mdl file, try running the model to generate it first." )
+        print ( "   Exception = " + str(e) )
+    except:
+        print ( "Warning: unable to update the existing Scene.main.mdl file, try running the model to generate it first." )
+
+    cb_model.run_only ( wait_time=wait_time, seed=seed )
+
+    cb_model.compare_mdl_with_sha1 ( "41d8a902118d7980136f0965dae14476b88b90b3", test_name="Dynamic Cube Test" )
+
+    cb_model.refresh_molecules()
+
+    if "v" in mol_types: cb_model.change_molecule_display ( molv, glyph='Cube', scale=3.0, red=1.0, green=1.0, blue=1.0 )
+    if "s" in mol_types: cb_model.change_molecule_display ( mols, glyph='Cone', scale=5.0, red=0.0, green=1.0, blue=0.1 )
+
+    cb_model.set_view_back()
+
+    cb_model.switch_to_orthographic()
+    # cb_model.set_axis_angle ( [0, 1, 0], 0 )
+    cb_model.scale_view_distance ( 1.5 )
+    cb_model.set_axis_angle ( [0.961, -0.177, -0.213], 1.4253 )
+
+    cb_model.scale_view_distance ( 0.25 )
+
+    cb_model.hide_manipulator ( hide=True )
+
+    return cb_model
+
+
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Cube Test Minimal Geometry"
+operator_name = "cellblender_test.dynamic_cube_test_minimal"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class DynCubeTestMinimalOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = dynamic_cube_frame_change_handler
+
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="", test_name="Dynamic Geometry - Minimal Cube", wait_time=15.0, seed=1 )
+
+        cb_model.hide_manipulator ( hide=True )
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Cube Test Volume Only"
+operator_name = "cellblender_test.dynamic_cube_test_vol_only"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class DynCubeTestMinimalOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = dynamic_cube_frame_change_handler
+
+        cb_model = DynamicGeometryCubeTest ( context, mol_types="v", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="", test_name="Dynamic Cube Test Volume Only", wait_time=15.0, seed=1 )
+
+        cb_model.hide_manipulator ( hide=True )
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Cube Test Surface Only"
+operator_name = "cellblender_test.dynamic_cube_test_surf_only"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class DynCubeTestMinimalOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = dynamic_cube_frame_change_handler
+
+        cb_model = DynamicGeometryCubeTest ( context, mol_types="s", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="", test_name="Dynamic Cube Test Surface Only", wait_time=15.0, seed=1 )
+
+        cb_model.hide_manipulator ( hide=True )
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Geometry - Slow Moving Cube"
+operator_name = "cellblender_test.dynamic_cube_test_minimal_slow"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class DynCubeTestMinimalOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = dynamic_cube_frame_change_handler
+
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.99, max_len=1.01, mdl_hash="", test_name="Dynamic Geometry - Slow Moving Cube", wait_time=15.0, seed=1 )
+        cb_model.hide_manipulator ( hide=True )
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Geometry - Very Slow Moving Cube"
+operator_name = "cellblender_test.dynamic_cube_test_minimal_slow"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class DynCubeTestMinimalOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = dynamic_cube_frame_change_handler
+
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.999, max_len=1.001, mdl_hash="", test_name="Dynamic Geometry - Very Slow Moving Cube", wait_time=15.0, seed=1 )
+        cb_model.hide_manipulator ( hide=True )
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Geometry - Stopped Cube"
+operator_name = "cellblender_test.dynamic_cube_test_minimal_stopped"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class DynCubeTestMinimalOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = dynamic_cube_frame_change_handler
+
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=1.0, max_len=1.0, mdl_hash="", test_name="Dynamic Geometry - Stopped Cube", wait_time=15.0, seed=1 )
+        cb_model.hide_manipulator ( hide=True )
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Geometry - Cube with 10 Z-Slices"
+operator_name = "cellblender_test.dynamic_cube_test_10_z_slices"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class DynCubeTestMinimalOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = dynamic_cube_frame_change_handler
+
+        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,10], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="", test_name="Dynamic Geometry - Cube with 10 Z-Slices", wait_time=15.0, seed=1 )
+        cb_model.hide_manipulator ( hide=True )
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Cube Test"
+operator_name = "cellblender_test.dynamic_cube_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
 
 
@@ -3611,6 +3969,7 @@ class DynCubeTestOp(bpy.types.Operator):
         cb_model.play_animation()
 
         return { 'FINISHED' }
+
 
 
 
