@@ -1201,6 +1201,9 @@ class point:
   def equals ( self, p ):
     return (self == p )
 
+  def toList ( self ):
+    return ( [ self.x, self.y, self.z ] );
+
   def toString ( self ):
     return ( "(" + str(self.x) + "," + str(self.y) + "," + str(self.z) + ")" );
 
@@ -1228,6 +1231,10 @@ class line:
   
   def toString( self ):
     return ( "["+str(p1.x)+","+str(p1.y)+","+str(p1.z)+"]-["+str(p2.x)+","+str(p2.y)+","+str(p2.z)+"]" );
+
+
+import array
+import traceback
 
 
 class plf_object:
@@ -1403,6 +1410,168 @@ class plf_object:
     return ( result );
 
 
+
+  def write_as_binary_geometry ( self, object_name, file_name=None, ):
+    print ( "Saving binary geometry file " + file_name )
+    try:
+      geo_file = open ( file_name, "wb" )
+
+      array.array ( 'B', [1] ).tofile(geo_file)                 # Version number of this file
+
+      array.array ( 'i', [1] ).tofile(geo_file)                 # Number of Objects, -1 implies whatever is in the file
+
+      # Write out an object
+      array.array ( 'B', [2] ).tofile(geo_file)                 # 2 = Code for a polygon list
+      array.array ( 'I', [len(object_name)] ).tofile(geo_file)  # Length of Object Name
+      a = array.array ( 'B' )                                   # Object Name
+      a.frombytes ( object_name.encode() )                      # Object Name
+      a.tofile(geo_file)                                        # Object Name
+      array.array ( 'I', [0] ).tofile(geo_file)                 # Number of Transforms
+
+      array.array ( 'I', [len(self.points)] ).tofile(geo_file)  # Number of points (verts)
+      for p in self.points:
+        array.array ( 'd', p.toList() ).tofile(geo_file)        # Each point (x,y,z) as double
+      array.array ( 'I', [len(self.faces)] ).tofile(geo_file)   # Number of faces (polygons)
+      for f in self.faces:
+        array.array ( 'I', f.verts ).tofile(geo_file)           # Each face is a list of integers
+      array.array ( 'I', [0] ).tofile(geo_file)                 # Number of Regions
+
+      geo_file.close()
+
+    except IOError:
+      print(("\n***** IOError: File: %s\n") % (file_name))
+
+    except ValueError:
+      print(("\n***** ValueError: Invalid data in file: %s\n") % (file_name))
+
+    except RuntimeError as rte:
+      print(("\n***** RuntimeError writing file: %s\n") % (file_name))
+      print("      str(error): \n" + str(rte) + "\n")
+      fail_error = sys.exc_info()
+      print ( "    Error Type: " + str(fail_error[0]) )
+      print ( "    Error Value: " + str(fail_error[1]) )
+      tb = fail_error[2]
+      # tb.print_stack()
+      print ( "=== Traceback Start ===" )
+      traceback.print_tb(tb)
+      print ( "=== Traceback End ===" )
+
+    except Exception as uex:
+      # Catch any exception
+      print ( "\n***** Unexpected exception:" + str(uex) + "\n" )
+      raise
+
+
+  def read_from_binary_geometry ( self, file_name ):
+    # print ( "Reading binary geometry file " + file_name )
+    try:
+      geo_file = open ( file_name, "rb" )
+
+      a = array.array ( 'B' )
+      a.fromfile(geo_file, 1)                                   # Version number of this file
+
+      if a[0] != 1:
+        raise ValueError ( 'File \'%s\' does not begin with Version=1' % file_name )
+
+      a = array.array ( 'i' )
+      a.fromfile(geo_file, 1)                                   # Number of Objects, -1 implies whatever is in the file
+
+      if a[0] != 1:
+        raise ValueError ( 'File \'%s\' does not contain just one object' % file_name )
+
+      a = array.array ( 'B' )
+      a.fromfile(geo_file, 1)                                   # Code for this object (should be 2)
+
+      if a[0] != 2:
+        raise ValueError ( 'File \'%s\' does not contain a POLYGON LIST object' % file_name )
+
+      a = array.array ( 'I' )
+      a.fromfile(geo_file, 1)
+      name_len = a[0]
+      a = array.array ( 'B' )
+      a.fromfile(geo_file, name_len)
+      obj_name = a.tostring().decode()
+
+      a = array.array ( 'I' )
+      a.fromfile(geo_file, 1)                                   # Number of Transforms
+
+      if a[0] != 0:
+        raise ValueError ( 'File \'%s\' contains transforms which are not supported' % file_name )
+
+      a = array.array ( 'I' )
+      a.fromfile(geo_file, 1)                                   # Number of verts
+
+      num_verts = a[0]
+
+      v = array.array ( 'd' )
+      v.fromfile(geo_file, 3*num_verts)                         # All verts
+
+
+      a = array.array ( 'I' )
+      a.fromfile(geo_file, 1)                                   # Number of faces
+
+      num_faces = a[0]
+
+      f = array.array ( 'I' )
+      f.fromfile(geo_file, 3*num_faces)                         # All faces
+
+      a = array.array ( 'I' )
+      a.fromfile(geo_file, 1)                                   # Number of Regions
+
+      if a[0] != 0:
+        raise ValueError ( 'File \'%s\' contains regions which are not supported' % file_name )
+
+      geo_file.close()
+
+      # Convert from arrays to lists inside this plf object
+
+      self.points = []
+      while len(v) > 0:
+        self.points.append ( point ( v.pop(0), v.pop(0), v.pop(0) ) )
+
+      """ This worked but was slow - Merging isn't needed when the faces already refer to the points in a list
+      self.faces = []
+      while len(f) > 0:
+        new_face = plf_object();
+        new_face.add_point ( self.points[f.pop(0)] );
+        new_face.add_point ( self.points[f.pop(0)] );
+        new_face.add_point ( self.points[f.pop(0)] );
+        new_face.add_face ( face (0, 1, 2) );
+        self.merge ( new_face );
+      """
+
+      self.faces = []
+      while len(f) > 0:
+        self.faces.append ( face ( f.pop(0), f.pop(0), f.pop(0) ) )
+
+
+
+
+    except IOError:
+      print(("\n***** IOError: File: %s\n") % (file_name))
+
+    except ValueError:
+      print(("\n***** ValueError: Invalid data in file: %s\n") % (file_name))
+
+    except RuntimeError as rte:
+      print(("\n***** RuntimeError writing file: %s\n") % (file_name))
+      print("      str(error): \n" + str(rte) + "\n")
+      fail_error = sys.exc_info()
+      print ( "    Error Type: " + str(fail_error[0]) )
+      print ( "    Error Value: " + str(fail_error[1]) )
+      tb = fail_error[2]
+      # tb.print_stack()
+      print ( "=== Traceback Start ===" )
+      traceback.print_tb(tb)
+      print ( "=== Traceback End ===" )
+
+    except Exception as uex:
+      # Catch any exception
+      print ( "\n***** Unexpected exception:" + str(uex) + "\n" )
+      raise
+
+
+
   def write_as_mdl ( self, object_name, file_name=None, partitions=False, instantiate=False ):
     if file_name != None:
       out_file = open ( file_name, "w" )
@@ -1512,6 +1681,7 @@ class BasicBox (plf_object):
                   [ 2, 6, 7 ], [ 0, 3, 7 ], [ 0, 1, 3 ], [ 4, 7, 5 ],
                   [ 0, 4, 1 ], [ 1, 5, 2 ], [ 3, 2, 7 ], [ 4, 0, 7 ] ]
 
+    """ This worked but was slow - Merging isn't needed when the faces already refer to the points in a list
     for f in face_list:
       new_face = plf_object();
       new_face.add_point ( self.points[f[0]] );
@@ -1519,6 +1689,12 @@ class BasicBox (plf_object):
       new_face.add_point ( self.points[f[2]] );
       new_face.add_face ( face (0, 1, 2) );
       self.merge ( new_face );
+    """
+
+    for f in face_list:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+
 
 
 class BasicBox_Subdiv (plf_object):
@@ -1609,6 +1785,7 @@ class BasicBox_Subdiv (plf_object):
     for p in points:
       self.points.append ( point ( p[0], p[1], p[2] ) )
 
+    """ This worked but was slow - Merging isn't needed when the faces already refer to the points in a list
     for f in faces:
       new_face = plf_object();
       new_face.add_point ( self.points[f[0]] );
@@ -1616,6 +1793,14 @@ class BasicBox_Subdiv (plf_object):
       new_face.add_point ( self.points[f[2]] );
       new_face.add_face ( face (0, 1, 2) );
       self.merge ( new_face );
+    """
+
+    for f in faces:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+
+
+
 
 
 
@@ -3389,6 +3574,22 @@ def read_plf_from_mdl ( scene, frame_num=None ):
 
 
 @persistent
+def read_plf_from_binary_geometry ( scene, frame_num=None ):
+    cur_frame = frame_num
+    if cur_frame == None:
+      cur_frame = scene.frame_current
+
+    fname = "frame_%d.dgb"%cur_frame
+    path_to_dg_files = os.path.join ( scene.cellblender_test_suite.path_to_mdl, "dynamic_geometry" )
+    full_fname = os.path.join(path_to_dg_files,fname)
+
+    plf_from_binary_geometry = plf_object()
+    plf_from_binary_geometry.read_from_binary_geometry (file_name = full_fname )
+
+    return plf_from_binary_geometry
+
+
+@persistent
 def dynamic_cube_frame_change_handler(scene):
     #scene.box_maker.update_scene(scene)
     # print ( "Dynamic Cube Frame Change Handler!!!" )
@@ -3396,7 +3597,8 @@ def dynamic_cube_frame_change_handler(scene):
     cell_name = "box"
 
     box_plf = None
-    box_plf = read_plf_from_mdl ( scene )
+    # box_plf = read_plf_from_mdl ( scene )
+    box_plf = read_plf_from_binary_geometry ( scene )
 
     vertex_list = box_plf.points
     face_list = box_plf.faces
@@ -3464,6 +3666,7 @@ def DynamicGeometryCubeTest ( context, mol_types="vs", size=[1.0,1.0,1.0], subs=
         # box_plf = create_subdiv_squashed_z_box ( context.scene, min_len=0.25, max_len=3.5, period_frames=100, subs=subs, frame_num=f )
         box_plf = create_subdiv_squashed_z_box ( context.scene, min_len=min_len, max_len=max_len, period_frames=period_frames, subs=subs, frame_num=f )
         fname = "frame_%d.mdl"%f
+        box_plf.write_as_binary_geometry ( "box", file_name=os.path.join( path_to_dg_files, "frame_%d.dgb" % f ) )
         if f == 0:
             # This geometry file is saved as a normal geometry MDL file and not included in the dynamic geometry file list
             full_fname = os.path.join(path_to_mdl,"Scene.geometry.mdl")
@@ -3553,7 +3756,7 @@ def DynamicGeometryCubeTest ( context, mol_types="vs", size=[1.0,1.0,1.0], subs=
             line_num += 1
             mdl_file.write ( line )
             if line_num == warning_line + 1:
-                # Insert the dynamic geometry line
+                # Insert a line to ignore large molecular displacements
                 mdl_file.write ( "   LARGE_MOLECULAR_DISPLACEMENT = IGNORED\n" )
         mdl_file.close()
     except Exception as e:
@@ -3634,6 +3837,34 @@ class DynCubeTestMinimalOp(bpy.types.Operator):
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
         cb_model = DynamicGeometryCubeTest ( context, mol_types="v", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="", test_name="Dynamic Cube Test Volume Only", wait_time=15.0, seed=1 )
+
+        cb_model.hide_manipulator ( hide=True )
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Cube Vol Only 100 Z-Slices"
+operator_name = "cellblender_test.dynamic_cube_test_vol_only"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class DynCubeTestMinimalOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = dynamic_cube_frame_change_handler
+
+        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,100], mol_types="v", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="", test_name="Dynamic Cube Vol Only 100 Z-Slices", wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -3774,6 +4005,34 @@ class DynCubeTestMinimalOp(bpy.types.Operator):
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
         cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,10], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="", test_name="Dynamic Geometry - Cube with 10 Z-Slices", wait_time=15.0, seed=1 )
+        cb_model.hide_manipulator ( hide=True )
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Geometry - Cube with 100 Z-Slices"
+operator_name = "cellblender_test.dynamic_cube_test_10_z_slices"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class DynCubeTestMinimalOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = dynamic_cube_frame_change_handler
+
+        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,100], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="", test_name="Dynamic Geometry - Cube with 100 Z-Slices", wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
