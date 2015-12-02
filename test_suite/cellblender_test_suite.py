@@ -3767,7 +3767,7 @@ def DynamicGeometryCubeTest ( context, mol_types="vs", size=[1.0,1.0,1.0], subs=
 
     cb_model.run_only ( wait_time=wait_time, seed=seed )
 
-    cb_model.compare_mdl_with_sha1 ( "41d8a902118d7980136f0965dae14476b88b90b3", test_name="Dynamic Cube Test" )
+    cb_model.compare_mdl_with_sha1 ( mdl_hash, test_name=test_name )
 
     cb_model.refresh_molecules()
 
@@ -3795,7 +3795,7 @@ test_name = "Dynamic Cube Test Minimal Geometry"
 operator_name = "cellblender_test.dynamic_cube_test_minimal"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class DynCubeTestMinimalOp(bpy.types.Operator):
+class DynCubeTestMinimalGeomOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
 
@@ -3808,7 +3808,7 @@ class DynCubeTestMinimalOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="", test_name="Dynamic Geometry - Minimal Cube", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="0288f3bedfbeb6637e88c47bc9e0382f5a1c0f1c", test_name="Dynamic Cube Test Minimal Geometry", wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -3823,7 +3823,7 @@ test_name = "Dynamic Cube Test Volume Only"
 operator_name = "cellblender_test.dynamic_cube_test_vol_only"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class DynCubeTestMinimalOp(bpy.types.Operator):
+class DynCubeTestVolOnlyOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
 
@@ -3836,7 +3836,7 @@ class DynCubeTestMinimalOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, mol_types="v", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="", test_name="Dynamic Cube Test Volume Only", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, mol_types="v", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="93b28ad746ddf66461d7f90dbcc2d833c37d249a", test_name="Dynamic Cube Test Volume Only", wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -3848,10 +3848,10 @@ class DynCubeTestMinimalOp(bpy.types.Operator):
 ###########################################################################################################
 group_name = "Dynamic Geometry Tests"
 test_name = "Dynamic Cube Vol Only 100 Z-Slices"
-operator_name = "cellblender_test.dynamic_cube_test_vol_only"
+operator_name = "cellblender_test.dynamic_cube_test_vol_only_z100"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class DynCubeTestMinimalOp(bpy.types.Operator):
+class DynCubeTestVolOnlyZ100Op(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
 
@@ -3864,7 +3864,7 @@ class DynCubeTestMinimalOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,100], mol_types="v", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="", test_name="Dynamic Cube Vol Only 100 Z-Slices", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,100], mol_types="v", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="ccd559ca386e342e3fdec497e63f2f18e742295e", test_name="Dynamic Cube Vol Only 100 Z-Slices", wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -3879,7 +3879,7 @@ test_name = "Dynamic Cube Test Surface Only"
 operator_name = "cellblender_test.dynamic_cube_test_surf_only"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class DynCubeTestMinimalOp(bpy.types.Operator):
+class DynCubeTestSurfOnlyOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
 
@@ -3892,7 +3892,7 @@ class DynCubeTestMinimalOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, mol_types="s", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="", test_name="Dynamic Cube Test Surface Only", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, mol_types="s", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="9ae4ff8cd645df14cad79c3e530faaa4ffe2105f", test_name="Dynamic Cube Test Surface Only", wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -3907,7 +3907,7 @@ test_name = "Dynamic Geometry - Slow Moving Cube"
 operator_name = "cellblender_test.dynamic_cube_test_minimal_slow"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class DynCubeTestMinimalOp(bpy.types.Operator):
+class DynCubeTestMinimalSlowOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
 
@@ -3920,7 +3920,7 @@ class DynCubeTestMinimalOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.99, max_len=1.01, mdl_hash="", test_name="Dynamic Geometry - Slow Moving Cube", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.99, max_len=1.01, mdl_hash="af3d0ec0bf625e1a9c6b4ac42baa79fbc997d740", test_name="Dynamic Geometry - Slow Moving Cube", wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -3932,10 +3932,10 @@ class DynCubeTestMinimalOp(bpy.types.Operator):
 ###########################################################################################################
 group_name = "Dynamic Geometry Tests"
 test_name = "Dynamic Geometry - Very Slow Moving Cube"
-operator_name = "cellblender_test.dynamic_cube_test_minimal_slow"
+operator_name = "cellblender_test.dynamic_cube_test_minimal_very_slow"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class DynCubeTestMinimalOp(bpy.types.Operator):
+class DynCubeTestMinimalVerySlowOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
 
@@ -3948,7 +3948,7 @@ class DynCubeTestMinimalOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.999, max_len=1.001, mdl_hash="", test_name="Dynamic Geometry - Very Slow Moving Cube", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.999, max_len=1.001, mdl_hash="67d4175d1e4ec7c320ccac0ad9f1817b11ecddf6", test_name="Dynamic Geometry - Very Slow Moving Cube", wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -3963,7 +3963,7 @@ test_name = "Dynamic Geometry - Stopped Cube"
 operator_name = "cellblender_test.dynamic_cube_test_minimal_stopped"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class DynCubeTestMinimalOp(bpy.types.Operator):
+class DynCubeTestMinimalStoppedOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
 
@@ -3976,7 +3976,7 @@ class DynCubeTestMinimalOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=1.0, max_len=1.0, mdl_hash="", test_name="Dynamic Geometry - Stopped Cube", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=1.0, max_len=1.0, mdl_hash="7c0a8bd3eadb4ebd968e249bbd077337412ce8b8", test_name="Dynamic Geometry - Stopped Cube", wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -3991,7 +3991,7 @@ test_name = "Dynamic Geometry - Cube with 10 Z-Slices"
 operator_name = "cellblender_test.dynamic_cube_test_10_z_slices"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class DynCubeTestMinimalOp(bpy.types.Operator):
+class DynCubeTestVolOnlyZ10Op(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
 
@@ -4004,7 +4004,7 @@ class DynCubeTestMinimalOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,10], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="", test_name="Dynamic Geometry - Cube with 10 Z-Slices", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,10], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="13f6965d3ef2854ae91601ace68c42bab91b0a35", test_name="Dynamic Geometry - Cube with 10 Z-Slices", wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -4016,10 +4016,10 @@ class DynCubeTestMinimalOp(bpy.types.Operator):
 ###########################################################################################################
 group_name = "Dynamic Geometry Tests"
 test_name = "Dynamic Geometry - Cube with 100 Z-Slices"
-operator_name = "cellblender_test.dynamic_cube_test_10_z_slices"
+operator_name = "cellblender_test.dynamic_cube_test_100_z_slices"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class DynCubeTestMinimalOp(bpy.types.Operator):
+class DynCubeTestVolOnlyZ100Op(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
 
@@ -4032,7 +4032,7 @@ class DynCubeTestMinimalOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,100], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="", test_name="Dynamic Geometry - Cube with 100 Z-Slices", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,100], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="ffab09020803fdf36444f751c8e95988d0f83f92", test_name="Dynamic Geometry - Cube with 100 Z-Slices", wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -4046,8 +4046,6 @@ group_name = "Dynamic Geometry Tests"
 test_name = "Dynamic Cube Test"
 operator_name = "cellblender_test.dynamic_cube_test"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
-
-
 
 
 class DynCubeTestOp(bpy.types.Operator):
@@ -4207,7 +4205,7 @@ class DynCubeTestOp(bpy.types.Operator):
 
         cb_model.run_only ( wait_time=30.0, seed=2 )
 
-        cb_model.compare_mdl_with_sha1 ( "41d8a902118d7980136f0965dae14476b88b90b3", test_name="Dynamic Cube Test" )
+        cb_model.compare_mdl_with_sha1 ( "ffab09020803fdf36444f751c8e95988d0f83f92", test_name="Dynamic Cube Test" )
 
         cb_model.refresh_molecules()
 
