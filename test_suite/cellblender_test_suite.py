@@ -85,9 +85,9 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
     path_to_mcell = bpy.props.StringProperty(name="Path to MCell", default="")
     path_to_blend = bpy.props.StringProperty(name="Path to Blend", default="")
     path_to_mdl = bpy.props.StringProperty(name="Path to MDL", default="")
-    run_mcell = bpy.props.BoolProperty(name="Run MCell", default=False)
     exit_on_error = bpy.props.BoolProperty(name="Exit on Error", default=True)
-    run_with_queue = bpy.props.BoolProperty(name="Run with Queue", default=False)
+    run_mcell = bpy.props.BoolProperty(name="Run MCell", default=True)
+    run_with_queue = bpy.props.BoolProperty(name="Run with Queue", default=True)
     test_status = bpy.props.StringProperty(name="TestStatus", default="?")
 
     
@@ -205,8 +205,8 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
         elif app.test_status == "F":
           row.label( icon='ERROR',     text="Fail" )
         row.prop(app, "exit_on_error")
-        row.prop(app, "run_with_queue")
         row.prop(app, "run_mcell")
+        row.prop(app, "run_with_queue")
 
         for group_num in range(next_test_group_num):
             # print ( "Drawing Group " + str(group_num) )
