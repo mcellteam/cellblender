@@ -145,6 +145,14 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
 # This is circumvented by simply calling the associated member function passed as self:
 
 def check_callback(self, context):
+    print ( "check_callback called with self = " + str(self) )
+    self.check_callback(context)
+    return
+
+
+def name_change_callback(self, context):
+    print ( "name_change_callback called with self = " + str(self) )
+    self.name_change_callback(context)
     self.check_callback(context)
     return
 
@@ -162,7 +170,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Molecule Name", default="Molecule",
         description="The molecule species name",
-        update=check_callback)
+        update=name_change_callback)
+    old_name = StringProperty(name="Old Mol Name", default="Molecule")
     id = IntProperty(name="Molecule ID", default=0)
     type_enum = [
         ('2D', "Surface Molecule", ""),
@@ -397,6 +406,15 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 "does not affect unimolecular reactions." )
             self.custom_time_step.draw(box,parameter_system)
             self.custom_space_step.draw(box,parameter_system)
+
+
+    def name_change_callback(self, context):
+        """Changing the name of a molecule triggers changes to the mesh, material, and glyph which are keyed off of the name"""
+        print ( "**** Need to change names for mesh, material, and glyph" )
+        print ( "Old name = " + self.old_name )
+        print ( "New name = " + self.name )
+        self.old_name = self.name
+        return
 
 
     def check_callback(self, context):

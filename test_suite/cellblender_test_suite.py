@@ -4205,7 +4205,7 @@ class DynCubeTestOp(bpy.types.Operator):
 
         cb_model.run_only ( wait_time=30.0, seed=2 )
 
-        cb_model.compare_mdl_with_sha1 ( "ffab09020803fdf36444f751c8e95988d0f83f92", test_name="Dynamic Cube Test" )
+        cb_model.compare_mdl_with_sha1 ( "0288f3bedfbeb6637e88c47bc9e0382f5a1c0f1c", test_name="Dynamic Cube Test" )
 
         cb_model.refresh_molecules()
 

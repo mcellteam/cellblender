@@ -435,6 +435,60 @@ def mol_viz_clear(mcell_prop, force_clear=False):
 
 
 
+def newer_mol_viz_clear(mcell_prop, force_clear=False):
+    """ Clear the viz data from the previous frame. """
+
+    mcell = mcell_prop
+    scn = bpy.context.scene
+    scn_objs = scn.objects
+    meshes = bpy.data.meshes
+    objs = bpy.data.objects
+
+    if force_clear:
+      mol_viz_list = [obj for obj in scn_objs if (obj.name[:4] == 'mol_') and (obj.name[-6:] != '_shape')]
+    else:
+      mol_viz_list = mcell.mol_viz.mol_viz_list
+
+    for mol_item in mol_viz_list:
+        mol_name = mol_item.name
+        mol_obj = scn_objs.get(mol_name)
+        if mol_obj:
+            hide = mol_obj.hide
+
+            mol_pos_mesh = mol_obj.data
+            mol_pos_mesh_name = mol_pos_mesh.name
+            #mol_shape_obj_name = "%s_shape" % (mol_name)
+            #mol_shape_obj = objs.get(mol_shape_obj_name)
+            #if mol_shape_obj:
+            #    mol_shape_obj.parent = None
+
+            #scn_objs.unlink(mol_obj)
+            #objs.remove(mol_obj)
+            #meshes.remove(mol_pos_mesh)
+
+            new_mol_pos_mesh = meshes.new(mol_pos_mesh_name)
+            #mol_obj = objs.new(mol_name, mol_pos_mesh)
+            mol_obj.data = new_mol_pos_mesh
+            meshes.remove(mol_pos_mesh)
+            #scn_objs.link(mol_obj)
+
+            #if mol_shape_obj:
+            #    mol_shape_obj.parent = mol_obj
+
+            #mol_obj.dupli_type = 'VERTS'
+            #mol_obj.use_dupli_vertices_rotation = True
+            #mols_obj = objs.get("molecules")
+            #mol_obj.parent = mols_obj
+
+            mol_obj.hide = hide
+
+    # Reset mol_viz_list to empty
+    for i in range(len(mcell.mol_viz.mol_viz_list)-1, -1, -1):
+        mcell.mol_viz.mol_viz_list.remove(i)
+
+
+
+
 
 def orig_mol_viz_file_read(mcell_prop, filepath):
     """ Draw the viz data for the current frame. """
@@ -920,9 +974,7 @@ def mol_viz_file_read(mcell_prop, filepath):
             # Each entry in the list is ordered like this (afaik):
             # [molec_name, [x_pos, y_pos, z_pos, x_orient, y_orient, z_orient]]
             # Orientations are zero in the case of volume molecules.
-            mol_data = [[s.split()[0], [
-                float(x) for x in s.split()[2:]]] for s in open(
-                    filepath, "r").read().split("\n") if s != ""]
+            mol_data = [ [ s.split()[0], [float(x) for x in s.split()[2:]] ] for s in open(filepath, "r").read().split("\n") if s != "" ]
 
             for mol in mol_data:
                 mol_name = "mol_%s" % (mol[0])
