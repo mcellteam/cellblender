@@ -219,7 +219,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         ('A', "A", ""),
         ('B', "B", ""),
         ('C', "C", ""),
-        ('Box', "Box", ""),
+        ('Cube', "Cube", ""),
         ('Pyramid', "Pyramid", ""),
         ('Tetrahedron', "Tetrahedron", "")]
     glyph = EnumProperty ( items=glyph_enum, name="", update=shape_change_callback )
@@ -241,7 +241,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         self.name = "Molecule_"+str(self.mol_id)
         self.old_name = self.name
 
-        self.num = random.randint(10,50)
+        self.num = 0 ### random.randint(10,50)
         self.dist = random.uniform(0.1,0.5)
         self.center_x = random.uniform(-2.0,2.0)
         self.center_y = random.uniform(-2.0,2.0)
@@ -350,7 +350,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         row.prop(self, "name")
         row = layout.row()
         row.prop(self, "diffusion_constant")
-        
+        """
         box = layout.box()
         
         row = layout.row()
@@ -358,9 +358,35 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         if self.name+"_mat" in bpy.data.materials:
             row = layout.row()
             row.prop ( bpy.data.materials[self.name+"_mat"], "diffuse_color", text="Color" )
-        
+
         box = layout.box()
         
+        row = layout.row()
+        row.prop(self, "num")
+        row.prop(self, "dist")
+        row = layout.row()
+        row.prop(self, "center_x")
+        row.prop(self, "center_y")
+        row.prop(self, "center_z")
+        """
+
+
+    def draw_display_layout ( self, context, layout, mol_list ):
+        """ Draw the molecule display "panel" within the layout """
+        row = layout.row()
+        row.prop(self, "glyph", text="Shape")
+        if self.name+"_mat" in bpy.data.materials:
+            row = layout.row()
+            row.prop ( bpy.data.materials[self.name+"_mat"], "diffuse_color", text="Color" )
+            row = layout.row()
+            col = row.column()
+            col.label ( "Brightness" )
+            col = row.column()
+            col.prop ( bpy.data.materials[self.name+"_mat"], "emit", text="Emit" )
+        
+
+    def draw_release_layout ( self, context, layout, mol_list ):
+        """ Draw the molecule release "panel" within the layout """
         row = layout.row()
         row.prop(self, "num")
         row.prop(self, "dist")
@@ -417,6 +443,14 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
     show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_advanced = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
 
+
+    show_molecules = bpy.props.BoolProperty(default=True, name="Define Molecules")
+    show_display = bpy.props.BoolProperty(default=False, name="Molecule Display Options")
+    show_release = bpy.props.BoolProperty(default=False, name="Define a Release Site")
+    show_run = bpy.props.BoolProperty(default=True, name="Run Simulation")
+
+
+
     def allocate_available_id ( self ):
         """ Return a unique molecule ID for a new molecule """
         if len(self.molecule_list) <= 0:
@@ -456,28 +490,80 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
         """ Draw the molecule "panel" within the layout """
 
         row = layout.row()
-        row.operator ( "molecule_sim.load_home_file" )
-        row.operator ( "molecule_sim.save_home_file" )
+        row.operator ( "molecule_sim.load_home_file", icon='IMPORT' )
+        row.operator ( "molecule_sim.save_home_file", icon='EXPORT' )
+
+        box = layout.box() ### Used only as a separator
 
         row = layout.row()
-        col = row.column()
-        col.template_list("MolSim_UL_check_molecule", "define_molecules",
-                          self, "molecule_list",
-                          self, "active_mol_index",
-                          rows=2)
-        col = row.column(align=True)
-        col.operator("molecule_simulation.molecule_add", icon='ZOOMIN', text="")
-        col.operator("molecule_simulation.molecule_remove", icon='ZOOMOUT', text="")
+        row.alignment = 'LEFT'
+        if self.show_molecules:
+            row.prop(self, "show_molecules", icon='TRIA_DOWN', emboss=False)
+
+
+
+            ################################
+            row = layout.row()
+            row.label ( "Renaming Molecules Doesn't Work YET!!!", icon='ERROR' )
+            ################################
+
+
+
+            row = layout.row()
+            col = row.column()
+            col.template_list("MolSim_UL_check_molecule", "define_molecules",
+                              self, "molecule_list",
+                              self, "active_mol_index",
+                              rows=2)
+            col = row.column(align=True)
+            col.operator("molecule_simulation.molecule_add", icon='ZOOMIN', text="")
+            col.operator("molecule_simulation.molecule_remove", icon='ZOOMOUT', text="")
+            if self.molecule_list:
+                mol = self.molecule_list[self.active_mol_index]
+                mol.draw_layout ( context, layout, self )
+        else:
+            row.prop(self, "show_molecules", icon='TRIA_RIGHT', emboss=False)
+
+
         if self.molecule_list:
-            mol = self.molecule_list[self.active_mol_index]
-            # The self is needed to pass the "advanced" flag to the molecule
-            mol.draw_layout ( context, layout, self )
+            if len(self.molecule_list) > 0:
+                box = layout.box() ### Used only as a separator
 
-        box = layout.box()
+                row = layout.row()
+                row.alignment = 'LEFT'
+                if self.show_display:
+                    row.prop(self, "show_display", icon='TRIA_DOWN', emboss=False)
+                    row = layout.row()
+                    if self.molecule_list:
+                        mol = self.molecule_list[self.active_mol_index]
+                        mol.draw_display_layout ( context, layout, self )
+                else:
+                    row.prop(self, "show_display", icon='TRIA_RIGHT', emboss=False)
+
+                box = layout.box() ### Used only as a separator
+
+                row = layout.row()
+                row.alignment = 'LEFT'
+                if self.show_release:
+                    row.prop(self, "show_release", icon='TRIA_DOWN', emboss=False)
+                    row = layout.row()
+                    if self.molecule_list:
+                        mol = self.molecule_list[self.active_mol_index]
+                        mol.draw_release_layout ( context, layout, self )
+                else:
+                    row.prop(self, "show_release", icon='TRIA_RIGHT', emboss=False)
+
+        box = layout.box() ### Used only as a separator
 
         row = layout.row()
-        row.operator("mol_sim.run")
-        row.operator("mol_sim.activate")
+        row.alignment = 'LEFT'
+        if self.show_run:
+            row.prop(self, "show_run", icon='TRIA_DOWN', emboss=False)
+            row = layout.row()
+            row.operator("mol_sim.run", icon='COLOR_RED')
+            row.operator("mol_sim.activate", icon='FILE_REFRESH')
+        else:
+            row.prop(self, "show_run", icon='TRIA_RIGHT', emboss=False)
 
 
 
@@ -1220,7 +1306,7 @@ def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="", force=Fal
             size = 0.1
             print ( "Creating a new glyph for " + obj_name )
             shape_plf = None
-            if "Box" == glyph:
+            if "Cube" == glyph:
                 shape_plf = BasicBox  ( size, size, size )
             elif "Pyramid" == glyph:
                 shape_plf = Pyramid  ( size, size, size )
