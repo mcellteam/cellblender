@@ -25,6 +25,233 @@ from bpy.props import *
 from bpy.app.handlers import persistent
 
 
+
+
+#######################################################
+#########  Code from test_material_props.py  ##########
+#######################################################
+
+
+
+import bpy
+from bpy.types import Menu, Panel, UIList
+from rna_prop_ui import PropertyPanel
+from bpy.app.translations import pgettext_iface as iface_
+
+
+def active_node_mat(mat):
+    # TODO, 2.4x has a pipeline section, for 2.5 we need to communicate
+    # which settings from node-materials are used
+    if mat is not None:
+        mat_node = mat.active_node_material
+        if mat_node:
+            return mat_node
+        else:
+            return mat
+
+    return None
+
+
+def check_material(mat):
+    if mat is not None:
+        if mat.use_nodes:
+            if mat.active_node_material is not None:
+                return True
+            return False
+        return True
+    return False
+
+
+def simple_material(mat):
+    if (mat is not None) and (not mat.use_nodes):
+        return True
+    return False
+
+
+class MolMATERIAL_MT_sss_presets(Menu):
+    bl_label = "SSS Presets"
+    preset_subdir = "sss"
+    preset_operator = "script.execute_preset"
+    draw = Menu.draw_preset
+
+
+class MolMATERIAL_MT_specials(Menu):
+    bl_label = "MolMaterial Specials"
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.operator("object.material_slot_copy", icon='COPY_ID')
+        layout.operator("material.copy", icon='COPYDOWN')
+        layout.operator("material.paste", icon='PASTEDOWN')
+
+
+class MolMATERIAL_UL_matslots(UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        # assert(isinstance(item, bpy.types.MaterialSlot)
+        # ob = data
+        slot = item
+        ma = slot.material
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            if ma:
+                layout.prop(ma, "name", text="", emboss=False, icon_value=icon)
+            else:
+                layout.label(text="", icon_value=icon)
+            if ma and not context.scene.render.use_shading_nodes:
+                manode = ma.active_node_material
+                if manode:
+                    layout.label(text=iface_("Node %s") % manode.name, translate=False, icon_value=layout.icon(manode))
+                elif ma.use_nodes:
+                    layout.label(text="Node <none>")
+        elif self.layout_type == 'GRID':
+            layout.alignment = 'CENTER'
+            layout.label(text="", icon_value=icon)
+
+
+class MolMaterialButtonsPanel:
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "material"
+    # COMPAT_ENGINES must be defined in each subclass, external engines can add themselves here
+
+    @classmethod
+    def poll(cls, context):
+        return context.material and (context.scene.render.engine in cls.COMPAT_ENGINES)
+
+"""
+class MolMATERIAL_PT_context_material(MolMaterialButtonsPanel, Panel):
+    bl_label = ""
+    bl_options = {'HIDE_HEADER'}
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+
+    @classmethod
+    def poll(cls, context):
+        # An exception, don't call the parent poll func because
+        # this manages materials for all engine types
+
+        engine = context.scene.render.engine
+        return (context.material or context.object) and (engine in cls.COMPAT_ENGINES)
+
+    def draw(self, context):
+        layout = self.layout
+
+        mat = context.material
+        ob = context.object
+        slot = context.material_slot
+        space = context.space_data
+        is_sortable = (len(ob.material_slots) > 1)
+
+        if ob:
+            rows = 1
+            if is_sortable:
+                rows = 4
+
+            row = layout.row()
+
+            row.template_list("MolMATERIAL_UL_matslots", "", ob, "material_slots", ob, "active_material_index", rows=rows)
+
+            col = row.column(align=True)
+            col.operator("object.material_slot_add", icon='ZOOMIN', text="")
+            col.operator("object.material_slot_remove", icon='ZOOMOUT', text="")
+
+            col.menu("MolMATERIAL_MT_specials", icon='DOWNARROW_HLT', text="")
+
+            if is_sortable:
+                col.separator()
+
+                col.operator("object.material_slot_move", icon='TRIA_UP', text="").direction = 'UP'
+                col.operator("object.material_slot_move", icon='TRIA_DOWN', text="").direction = 'DOWN'
+
+            if ob.mode == 'EDIT':
+                row = layout.row(align=True)
+                row.operator("object.material_slot_assign", text="Assign")
+                row.operator("object.material_slot_select", text="Select")
+                row.operator("object.material_slot_deselect", text="Deselect")
+
+        split = layout.split(percentage=0.65)
+
+        if ob:
+            split.template_ID(ob, "active_material", new="material.new")
+            row = split.row()
+            if mat:
+                row.prop(mat, "use_nodes", icon='NODETREE', text="")
+
+            if slot:
+                row.prop(slot, "link", text="")
+            else:
+                row.label()
+        elif mat:
+            split.template_ID(space, "pin_id")
+            split.separator()
+
+        if mat:
+            layout.prop(mat, "type", expand=True)
+            if mat.use_nodes:
+                row = layout.row()
+                row.label(text="", icon='NODETREE')
+                if mat.active_node_material:
+                    row.prop(mat.active_node_material, "name", text="")
+                else:
+                    row.label(text="No material node selected")
+"""
+
+
+class MolMATERIAL_PT_preview(MolMaterialButtonsPanel, Panel):
+    bl_label = "Mol Preview"
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+
+    @classmethod
+    def poll(cls, context):
+        mat = context.material
+        engine = context.scene.render.engine
+        return check_material(mat) and (mat.type in {'SURFACE', 'WIRE'}) and (engine in cls.COMPAT_ENGINES)
+
+    def draw(self, context):
+        self.layout.template_preview(context.material)
+        mat = active_node_mat(context.material)
+        row = self.layout.row()
+        col = row.column()
+        col.prop(mat, "diffuse_color", text="")
+        col = row.column()
+        col.prop(mat, "emit", text="Mol Emit")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 active_frame_change_handler = None
 
 
@@ -49,6 +276,12 @@ def name_change_callback(self, context):
 
 def display_callback(self, context):
     #self.display_callback(context)
+    return
+
+def shape_change_callback(self, context):
+    print ( "Shape change callback for molecule " + self.name )
+    #plf = MolCluster ( self.num, self.dist, self.center_x, self.center_y, self.center_z, context.scene.frame_current )
+    #update_obj_from_plf ( context.scene, "molecules", self.name, plf, glyph=self.glyph, force=True )
     return
 
 import os
@@ -88,7 +321,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         ('Box', "Box", ""),
         ('Pyramid', "Pyramid", ""),
         ('Tetrahedron', "Tetrahedron", "")]
-    glyph = EnumProperty ( items=glyph_enum, name="", update=display_callback )
+    glyph = EnumProperty ( items=glyph_enum, name="", update=shape_change_callback )
 
 
     export_viz = bpy.props.BoolProperty(
@@ -215,14 +448,15 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         row = layout.row()
         row.prop(self, "name")
         row = layout.row()
-        row.prop(self, "glyph")
-        row = layout.row()
         row.prop(self, "diffusion_constant")
         
         box = layout.box()
         
         row = layout.row()
-        row.prop ( bpy.data.materials[self.name + "_mat"], "diffuse_color" )
+        row.prop(self, "glyph", text="Shape")
+        if self.name+"_mat" in bpy.data.materials:
+            row = layout.row()
+            row.prop ( bpy.data.materials[self.name+"_mat"], "diffuse_color", text="Color" )
         
         box = layout.box()
         
@@ -575,6 +809,7 @@ class face:
   def toString( self ):
     return ( "[" + str(verts[0]) + "," + str(verts[1]) + "," + str(verts[2]) + "]" );
 
+
 class plf_object:
 
   # An object that can hold points and faces
@@ -713,7 +948,7 @@ class Letter_B (plf_object):
     self.points = [];
     self.faces = [];
     for p in pts:
-      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*(p[2]-0.075) ) )
     for f in fcs:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
@@ -811,7 +1046,7 @@ class Letter_C (plf_object):
     self.points = [];
     self.faces = [];
     for p in pts:
-      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*(p[2]-0.075) ) )
     for f in fcs:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
@@ -926,6 +1161,24 @@ class MolCluster (plf_object):
 """
 Generating Letters:
 
+text = "Hello"
+bpy.ops.object.text_add(location=(0,0,0),rotation=(0,0,0))
+text_object = bpy.context.object
+text_object.name = text + "_name"
+text_data = text_object.data
+text_data.name = text + "_data"
+
+text_object_data.body = text
+text_object_data.size = 2
+text_object_data.extrude = 0.2
+
+bpy.ops.object.convert(target=  'MESH')
+bpy.ops.shade_flat()
+
+
+
+
+
 bpy.ops.view3d.snap_cursor_to_center()
 bpy.ops.object.text_add(view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
 bpy.ops.object.editmode_toggle()
@@ -1014,7 +1267,7 @@ def generate_letter_object ( letter ):
 
 
 
-def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="" ):
+def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="", force=False ):
 
     vertex_list = plf.points
     face_list = plf.faces
@@ -1051,7 +1304,8 @@ def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="" ):
         obj = bpy.data.objects.new ( obj_name, new_mesh )
         scene.objects.link ( obj )
         if parent_name:
-            obj.parent = bpy.data.objects[parent_name]
+            if parent_name in bpy.data.objects:
+                obj.parent = bpy.data.objects[parent_name]
 
     if "old_"+mesh_name in bpy.data.meshes:
         bpy.data.meshes.remove ( bpy.data.meshes["old_"+mesh_name] )
@@ -1059,6 +1313,7 @@ def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="" ):
     if len(face_list) <= 0:
         # These are points only, so create a shape glyph as needed to show the points
         shape_name = obj_name + "_shape"
+        #if force or not (shape_name in scene.objects):
         if not (shape_name in scene.objects):
             old_shape_name = "old_" + shape_name
             size = 0.1
@@ -1091,15 +1346,32 @@ def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="" ):
             new_mesh = bpy.data.meshes.new ( shape_name )
             new_mesh.from_pydata ( shape_vertices, [], shape_faces )
             new_mesh.update()
+
             shape = bpy.data.objects.new ( shape_name, new_mesh )
             shape.data.materials.clear()  # New
             shape.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
+
+            # This didn't work very well
+
+            #if not (shape_name in scene.objects):
+            #    shape = bpy.data.objects.new ( shape_name, new_mesh )
+            ## Create a material specifically for this object
+            #if obj_name+"_mat" in bpy.data.materials:
+            #    shape.data.materials.clear()  # New
+            #    shape.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
+            ## Remove current children from the target object (otherwise glyphs will be merged ... useful in the future)
+            #while len(obj.children) > 0:
+            #    obj.children[0].parent = None
+
+
+            # Add the shape to the scene as a glyph for the object
             scene.objects.link ( shape )
             obj.dupli_type = 'VERTS'
             shape.parent = obj
             
             if old_shape_name in bpy.data.meshes:
-                bpy.data.meshes.remove ( bpy.data.meshes[old_shape_name] )
+                if bpy.data.meshes[old_shape_name].users <= 0:
+                    bpy.data.meshes.remove ( bpy.data.meshes[old_shape_name] )
 
     # Could return the object here if needed
 
