@@ -27,9 +27,9 @@ from bpy.app.handlers import persistent
 
 
 
-#######################################################
-#########  Code from test_material_props.py  ##########
-#######################################################
+################################################################
+#########  Start of Code from test_material_props.py  ##########
+################################################################
 
 
 
@@ -68,14 +68,14 @@ def simple_material(mat):
     return False
 
 
-class MolMATERIAL_MT_sss_presets(Menu):
+class MATERIAL_MT_mol_sss_presets(Menu):
     bl_label = "SSS Presets"
     preset_subdir = "sss"
     preset_operator = "script.execute_preset"
     draw = Menu.draw_preset
 
 
-class MolMATERIAL_MT_specials(Menu):
+class MATERIAL_MT_mol_specials(Menu):
     bl_label = "MolMaterial Specials"
 
     def draw(self, context):
@@ -86,7 +86,7 @@ class MolMATERIAL_MT_specials(Menu):
         layout.operator("material.paste", icon='PASTEDOWN')
 
 
-class MolMATERIAL_UL_matslots(UIList):
+class MATERIAL_UL_mol_matslots(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # assert(isinstance(item, bpy.types.MaterialSlot)
         # ob = data
@@ -118,85 +118,9 @@ class MolMaterialButtonsPanel:
     def poll(cls, context):
         return context.material and (context.scene.render.engine in cls.COMPAT_ENGINES)
 
-"""
-class MolMATERIAL_PT_context_material(MolMaterialButtonsPanel, Panel):
-    bl_label = ""
-    bl_options = {'HIDE_HEADER'}
-    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
-
-    @classmethod
-    def poll(cls, context):
-        # An exception, don't call the parent poll func because
-        # this manages materials for all engine types
-
-        engine = context.scene.render.engine
-        return (context.material or context.object) and (engine in cls.COMPAT_ENGINES)
-
-    def draw(self, context):
-        layout = self.layout
-
-        mat = context.material
-        ob = context.object
-        slot = context.material_slot
-        space = context.space_data
-        is_sortable = (len(ob.material_slots) > 1)
-
-        if ob:
-            rows = 1
-            if is_sortable:
-                rows = 4
-
-            row = layout.row()
-
-            row.template_list("MolMATERIAL_UL_matslots", "", ob, "material_slots", ob, "active_material_index", rows=rows)
-
-            col = row.column(align=True)
-            col.operator("object.material_slot_add", icon='ZOOMIN', text="")
-            col.operator("object.material_slot_remove", icon='ZOOMOUT', text="")
-
-            col.menu("MolMATERIAL_MT_specials", icon='DOWNARROW_HLT', text="")
-
-            if is_sortable:
-                col.separator()
-
-                col.operator("object.material_slot_move", icon='TRIA_UP', text="").direction = 'UP'
-                col.operator("object.material_slot_move", icon='TRIA_DOWN', text="").direction = 'DOWN'
-
-            if ob.mode == 'EDIT':
-                row = layout.row(align=True)
-                row.operator("object.material_slot_assign", text="Assign")
-                row.operator("object.material_slot_select", text="Select")
-                row.operator("object.material_slot_deselect", text="Deselect")
-
-        split = layout.split(percentage=0.65)
-
-        if ob:
-            split.template_ID(ob, "active_material", new="material.new")
-            row = split.row()
-            if mat:
-                row.prop(mat, "use_nodes", icon='NODETREE', text="")
-
-            if slot:
-                row.prop(slot, "link", text="")
-            else:
-                row.label()
-        elif mat:
-            split.template_ID(space, "pin_id")
-            split.separator()
-
-        if mat:
-            layout.prop(mat, "type", expand=True)
-            if mat.use_nodes:
-                row = layout.row()
-                row.label(text="", icon='NODETREE')
-                if mat.active_node_material:
-                    row.prop(mat.active_node_material, "name", text="")
-                else:
-                    row.label(text="No material node selected")
-"""
 
 
-class MolMATERIAL_PT_preview(MolMaterialButtonsPanel, Panel):
+class MATERIAL_PT_mol_preview(MolMaterialButtonsPanel, Panel):
     bl_label = "Mol Preview"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
@@ -217,32 +141,9 @@ class MolMATERIAL_PT_preview(MolMaterialButtonsPanel, Panel):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+##############################################################
+#########  End of Code from test_material_props.py  ##########
+##############################################################
 
 
 
