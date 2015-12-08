@@ -208,6 +208,11 @@ class MoleculeProperty(bpy.types.PropertyGroup):
     previous_scale = FloatProperty ( name="Previous_Scale", min=0.0, default=1.0, description="Previous Scale" )
     #cumulative_scale = FloatProperty ( name="Cumulative_Scale", min=0.0, default=1.0, description="Cumulative Scale" )
 
+    method_enum = [
+        ('slow', "slow", ""),
+        ('med', "med", ""),
+        ('fast', "fast", "")]
+    method = EnumProperty ( items=method_enum, name="", update=value_changed )
     num      = bpy.props.IntProperty   ( name="num",  default=100,              description="Number of A Molecules",     update=value_changed )
     dist     = bpy.props.FloatProperty ( name="dist", default=0.2, precision=3, description="Distribution",              update=value_changed )
     center_x = bpy.props.FloatProperty ( name="x",    default=-1,  precision=3, description="Location along the x-axis", update=value_changed )
@@ -241,6 +246,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         self.name = "Molecule_"+str(self.mol_id)
         self.old_name = self.name
 
+        self.method = self.method_enum[0][0]
         self.num = 0 ### random.randint(10,50)
         self.dist = random.uniform(0.1,0.5)
         self.center_x = random.uniform(-2.0,2.0)
@@ -388,6 +394,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
     def draw_release_layout ( self, context, layout, mol_list ):
         """ Draw the molecule release "panel" within the layout """
         row = layout.row()
+        row.prop(self, "method")
         row.prop(self, "num")
         row.prop(self, "dist")
         row = layout.row()
@@ -397,7 +404,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
 
 
     def update_simulation ( self, scene ):
-        plf = MolCluster ( self.num, self.dist, self.center_x, self.center_y, self.center_z, scene.frame_current )
+        plf = MolCluster ( self.num, self.dist, self.center_x, self.center_y, self.center_z, scene.frame_current, method=self.method )
         update_obj_from_plf ( scene, "molecules", self.name, plf, glyph=self.glyph )
 
 
@@ -1131,18 +1138,45 @@ mbso.parent = mb
 
 """
 
+
+fixed_points = []
+fixed_index = 0
+
+
 class MolCluster (plf_object):
 
-  def __init__ ( self, num, dist, center_x, center_y, center_z, seed ):
+  def __init__ ( self, num, dist, center_x, center_y, center_z, seed, method='slow' ):
 
     # Create a distribution as requested
+    
+    global fixed_points
+    global fixed_index
+
+    if len(fixed_points) <= 0:
+        print ( "Generating normal distribution" )
+        random.seed ( seed )
+        for i in range(100000):
+            fixed_points.append ( point ( random.normalvariate(center_x,dist), random.normalvariate(center_y,dist), random.normalvariate(center_z,dist) ) )
 
     self.points = [];
     self.faces = [];
+    
+    if method == 'slow':    # Use random number generator (slowest)
+        for i in range(num):
+            self.points.append ( point ( random.normalvariate(center_x,dist), random.normalvariate(center_y,dist), random.normalvariate(center_z,dist) ) )
+    elif method == 'med':  # Use precalculated random points (faster, but repeats points)
+        fixed_index = random.randint ( 0, len(fixed_points)-4 )
+        for i in range(num):
+            if fixed_index >= len(fixed_points):
+                fixed_index = random.randint ( 0, len(fixed_points)-1 )
+            self.points.append ( fixed_points[fixed_index] )
+            fixed_index += 1
+    elif method == 'fast':     # Use a single fixed value (fastest, all points are the same!!)
+        single_point = point ( center_x, center_y, center_z )
+        for i in range(num):
+            self.points.append ( single_point )
 
-    random.seed ( seed )
-    for i in range(num):
-        self.points = self.points + [ point ( random.normalvariate(center_x,dist), random.normalvariate(center_y,dist), random.normalvariate(center_z,dist) ) ]
+        
 
 
 """
