@@ -111,15 +111,23 @@ class MATERIAL_UL_mol_matslots(UIList):
 class MolMaterialButtonsPanel:
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
-    bl_context = "material"
+    bl_context = "scene"
     # COMPAT_ENGINES must be defined in each subclass, external engines can add themselves here
+    """
+    @classmethod
+    def poll(cls, context):
+        return context.material and (context.scene.render.engine in cls.COMPAT_ENGINES)
+    """
 
     @classmethod
     def poll(cls, context):
+        print ( "Inside MolMatButton_poll " + str(context.material) )
         return context.material and (context.scene.render.engine in cls.COMPAT_ENGINES)
 
 
 
+
+"""
 class MATERIAL_PT_mol_preview(MolMaterialButtonsPanel, Panel):
     bl_label = "Mol Preview"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
@@ -138,6 +146,50 @@ class MATERIAL_PT_mol_preview(MolMaterialButtonsPanel, Panel):
         col.prop(mat, "diffuse_color", text="")
         col = row.column()
         col.prop(mat, "emit", text="Mol Emit")
+"""
+
+
+class MolMATERIAL_PT_preview(MolMaterialButtonsPanel, Panel):
+    bl_label = "Molecule Material Preview"
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+
+    """
+    @classmethod
+    def poll(cls, context):
+        mat = context.material
+        engine = context.scene.render.engine
+        return check_material(mat) and (mat.type in {'SURFACE', 'WIRE'}) and (engine in cls.COMPAT_ENGINES)
+    """
+
+    @classmethod
+    def poll(cls, context):
+        print ( "Inside MolMATERIAL_PT_preview poll method " + str(context) )
+        return len(bpy.data.materials) and (context.scene.render.engine in cls.COMPAT_ENGINES)
+        # context.material and (context.scene.render.engine in cls.COMPAT_ENGINES)
+
+
+    def draw(self, context):
+        print ( "Inside MolMATERIAL_PT_preview draw method " + str(context) )
+        #self.layout.template_preview(context.material)
+        self.layout.template_preview(bpy.data.materials[0])
+        #mat = active_node_mat(context.material)
+        mat = active_node_mat(bpy.data.materials[0])
+        row = self.layout.row()
+        col = row.column()
+        col.prop(mat, "diffuse_color", text="")
+        col = row.column()
+        col.prop(mat, "emit", text="Mol Emit")
+
+
+
+
+
+
+
+
+
+
+
 
 
 
