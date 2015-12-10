@@ -2,7 +2,7 @@ bl_info = {
   "version": "0.1",
   "name": "Molecule Simulator",
   'author': 'Bob',
-  "location": "Properties > Scene",
+  "location": "View3D -> ToolShelf -> MolSim",
   "category": "Cell Modeling"
   }
 
@@ -163,22 +163,32 @@ class MolMATERIAL_PT_preview(MolMaterialButtonsPanel, Panel):
 
     @classmethod
     def poll(cls, context):
-        print ( "Inside MolMATERIAL_PT_preview poll method " + str(context) )
-        return len(bpy.data.materials) and (context.scene.render.engine in cls.COMPAT_ENGINES)
-        # context.material and (context.scene.render.engine in cls.COMPAT_ENGINES)
+        ok = len(bpy.data.materials) and (context.scene.render.engine in cls.COMPAT_ENGINES)
+        if not ok:
+          print ( "MolMATERIAL_PT_preview poll returning " + str(ok) )
+        return ok
 
 
     def draw(self, context):
         print ( "Inside MolMATERIAL_PT_preview draw method " + str(context) )
         #self.layout.template_preview(context.material)
-        self.layout.template_preview(bpy.data.materials[0])
-        #mat = active_node_mat(context.material)
-        mat = active_node_mat(bpy.data.materials[0])
-        row = self.layout.row()
-        col = row.column()
-        col.prop(mat, "diffuse_color", text="")
-        col = row.column()
-        col.prop(mat, "emit", text="Mol Emit")
+        if 'molecule_simulation' in context.scene.keys():
+          print ( "Context OK, showing materials" )
+          app = context.scene.molecule_simulation
+          m = app.molecule_list[app.active_mol_index]
+          mat_name = m.name + "_mat"
+          print ( "" + mat_name + " in bpy.data.materials = " + str(mat_name in bpy.data.materials) )
+          if mat_name in bpy.data.materials:
+            self.layout.template_preview(bpy.data.materials[mat_name])
+            #mat = active_node_mat(context.material)
+            mat = active_node_mat(bpy.data.materials[mat_name])
+            row = self.layout.row()
+            col = row.column()
+            col.prop(mat, "diffuse_color", text="")
+            col = row.column()
+            col.prop(mat, "emit", text="Mol Emit")
+        else:
+          print ( "Context NOT OK, not showing materials" )
 
 
 
@@ -429,7 +439,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         """
 
 
-    def draw_display_layout ( self, context, layout, mol_list ):
+    def old_draw_display_layout ( self, context, layout, mol_list ):
         """ Draw the molecule display "panel" within the layout """
         row = layout.row()
         row.prop(self, "glyph", text="Shape")
@@ -441,6 +451,66 @@ class MoleculeProperty(bpy.types.PropertyGroup):
             col.label ( "Brightness" )
             col = row.column()
             col.prop ( bpy.data.materials[self.name+"_mat"], "emit", text="Emit" )
+
+
+    def draw_display_layout ( self, context, layout, mol_list ):
+        """ Draw the molecule display "panel" within the layout """
+        mat_name = self.name+"_mat"
+        if mat_name in bpy.data.materials:
+            if len(bpy.data.materials) and (context.scene.render.engine in {'BLENDER_RENDER', 'BLENDER_GAME'}):
+              if 'molecule_simulation' in context.scene.keys():
+                #print ( "Context OK, showing materials" )
+                app = context.scene.molecule_simulation
+                m = app.molecule_list[app.active_mol_index]
+                mat_name = m.name + "_mat"
+                #print ( "" + mat_name + " in bpy.data.materials = " + str(mat_name in bpy.data.materials) )
+                if mat_name in bpy.data.materials:
+                  layout.template_preview(bpy.data.materials[mat_name])
+              else:
+                print ( "molecule_simulation not found, not showing color preview" )
+                pass
+            row = layout.row()
+            row.prop ( bpy.data.materials[mat_name], "diffuse_color", text="Color" )
+            row = layout.row()
+            col = row.column()
+            col.label ( "Brightness" )
+            col = row.column()
+            col.prop ( bpy.data.materials[mat_name], "emit", text="Emit" )
+        else:
+            print ( "Material " + mat_name + " not found, not showing materials" )
+        row = layout.row()
+        row.prop(self, "glyph", text="Shape")
+
+
+    def draw(self, context):
+        print ( "Inside MolMATERIAL_PT_preview draw method " + str(context) )
+        if len(bpy.data.materials) and (context.scene.render.engine in {'BLENDER_RENDER', 'BLENDER_GAME'}):
+          #self.layout.template_preview(context.material)
+          if 'molecule_simulation' in context.scene.keys():
+            print ( "Context OK, showing materials" )
+            app = context.scene.molecule_simulation
+            m = app.molecule_list[app.active_mol_index]
+            mat_name = m.name + "_mat"
+            print ( "" + mat_name + " in bpy.data.materials = " + str(mat_name in bpy.data.materials) )
+            if mat_name in bpy.data.materials:
+              self.layout.template_preview(bpy.data.materials[mat_name])
+              #mat = active_node_mat(context.material)
+              mat = active_node_mat(bpy.data.materials[mat_name])
+              row = self.layout.row()
+              col = row.column()
+              col.prop(mat, "diffuse_color", text="")
+              col = row.column()
+              col.prop(mat, "emit", text="Mol Emit")
+          else:
+            print ( "molecule_simulation not found, not showing materials" )
+        else:
+          print ( "Context NOT OK, not showing materials" )
+
+
+
+
+
+
         
 
     def draw_release_layout ( self, context, layout, mol_list ):
@@ -626,14 +696,52 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
 
 
 
-class MoleculeSimPanel(bpy.types.Panel):
+class MoleculeSimToolPanel(bpy.types.Panel):
     bl_label = "Molecule Simulation"
+
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "TOOLS"
+    bl_category = "MolSim"
+    # bl_context = "scene"
+
+    @classmethod
+    def poll(cls, context):
+        return (context.scene is not None)
+
+    def draw(self, context):
+        row = self.layout.row()
+        row.label ( "Tool Shelf Version", icon='COLOR_GREEN' )
+
+        box = self.layout.box() ### Used only as a separator
+
+        app = context.scene.molecule_simulation
+        app.draw_layout ( context, self.layout )
+
+
+
+class MoleculeSimScenePanel(bpy.types.Panel):
+    bl_label = "Molecule Simulation Scene"
+
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
+
+    @classmethod
+    def poll(cls, context):
+        return (context.scene is not None)
+
     def draw(self, context):
+
+        row = self.layout.row()
+        row.label ( "Scene Panel Version", icon='COLOR_BLUE' )
+
+        box = self.layout.box() ### Used only as a separator
+
         app = context.scene.molecule_simulation
         app.draw_layout ( context, self.layout )
+
+
+
 
 class LoadHomeOp(bpy.types.Operator):
     bl_idname = "molecule_sim.load_home_file"
