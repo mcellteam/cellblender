@@ -246,8 +246,11 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         scn = bpy.context.scene
         scn_objs = scn.objects
 
-        shape_name = self.name + "_shape"
-        material_name = self.name + "_mat"
+        mol_name = "mol_" + self.name
+        mol_pos_mesh_name = mol_name + "_pos"
+        shape_name = mol_name + "_shape"
+        material_name = mol_name + "_mat"
+
 
         # First be sure that the parent "empty" for holding molecules is available (create as needed)
         mols_obj = bpy.data.objects.get("molecules")
@@ -352,15 +355,14 @@ class MoleculeProperty(bpy.types.PropertyGroup):
             mol_shape_mesh.materials.append(mol_mat)
 
         # Create a "mesh" to hold instances of molecule positions
-        mol_pos_mesh_name = "%s_pos" % (self.name)
         mol_pos_mesh = meshes.get(mol_pos_mesh_name)
         if not mol_pos_mesh:
             mol_pos_mesh = meshes.new(mol_pos_mesh_name)
 
         # Create object to contain the mol_pos_mesh data
-        mol_obj = objs.get(self.name)
+        mol_obj = objs.get(mol_name)
         if not mol_obj:
-            mol_obj = objs.new(self.name, mol_pos_mesh)
+            mol_obj = objs.new(mol_name, mol_pos_mesh)
             scn_objs.link(mol_obj)
             mol_shape_obj.parent = mol_obj
             mol_obj.dupli_type = 'VERTS'
@@ -452,11 +454,11 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         scn = bpy.context.scene
         scn_objs = scn.objects
 
-        mol_obj_name        = self.name
-        mol_shape_obj_name  = self.name + "_shape"
-        mol_shape_mesh_name = self.name + "_shape"
-        mol_pos_mesh_name   = self.name + "_pos"
-        mol_material_name   = self.name + "_mat"
+        mol_obj_name        = "mol_" + self.name
+        mol_shape_obj_name  = mol_obj_name + "_shape"
+        mol_shape_mesh_name = mol_obj_name + "_shape"
+        mol_pos_mesh_name   = mol_obj_name + "_pos"
+        mol_material_name   = mol_obj_name + "_mat"
 
         mols_obj = objs.get("molecules")
 
@@ -466,8 +468,10 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         mol_pos_mesh = meshes.get(mol_pos_mesh_name)
         mol_material = mats.get(mol_material_name)
         
-        scn_objs.unlink ( mol_obj )
-        scn_objs.unlink ( mol_shape_obj )
+        if mol_obj:
+            scn_objs.unlink ( mol_obj )
+        if mol_shape_obj:
+            scn_objs.unlink ( mol_shape_obj )
 
         if mol_obj.users <= 0:
             objs.remove ( mol_obj )
@@ -493,7 +497,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         """ Draw the molecule display "panel" within the layout """
         row = layout.row()
         row.prop(self, "glyph", text="Shape")
-        mat_name = self.name+"_mat"
+        mat_name = "mol_" + self.name+"_mat"
         if mat_name in bpy.data.materials:
             row = layout.row()
             row.prop ( bpy.data.materials[mat_name], "diffuse_color", text="Color" )
@@ -507,7 +511,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
                 #print ( "Context OK, showing materials" )
                 app = context.scene.molecule_simulation
                 m = app.molecule_list[app.active_mol_index]
-                mat_name = m.name + "_mat"
+                mat_name = "mol_" + m.name + "_mat"
                 #print ( "" + mat_name + " in bpy.data.materials = " + str(mat_name in bpy.data.materials) )
                 if mat_name in bpy.data.materials:
                   row = layout.row()
@@ -533,7 +537,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
             print ( "Context OK, showing materials" )
             app = context.scene.molecule_simulation
             m = app.molecule_list[app.active_mol_index]
-            mat_name = m.name + "_mat"
+            mat_name = "mol_" + m.name + "_mat"
             print ( "" + mat_name + " in bpy.data.materials = " + str(mat_name in bpy.data.materials) )
             if mat_name in bpy.data.materials:
               self.layout.template_preview(bpy.data.materials[mat_name])
@@ -565,7 +569,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
 
     def update_molecule_positions ( self, scene ):
         plf = MolCluster ( self.num, self.dist, self.center_x, self.center_y, self.center_z, scene.frame_current, method=self.method )
-        update_obj_from_plf ( scene, "molecules", self.name, plf, glyph=self.glyph )
+        update_obj_from_plf ( scene, "molecules", "mol_" + self.name, plf, glyph=self.glyph )
 
 
 # Molecule Operators:
