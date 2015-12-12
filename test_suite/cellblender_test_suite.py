@@ -3559,7 +3559,7 @@ def read_plf_from_mdl ( scene, frame_num=None ):
 
     fname = "frame_%d.mdl"%cur_frame
     full_fname = None
-    if cur_frame == 0:
+    if False and (cur_frame == 0):
         # This geometry file is saved as a normal geometry MDL file and not included in the dynamic geometry file list
         full_fname = os.path.join(scene.cellblender_test_suite.path_to_mdl,"Scene.geometry.mdl")
     else:
@@ -3839,7 +3839,7 @@ class DynCubeTestMinimalGeomOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="0288f3bedfbeb6637e88c47bc9e0382f5a1c0f1c", test_name="Dynamic Cube Test Minimal Geometry", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="0900cce8a9b2a9f23031bc3123491b63f9a62f63", test_name="Dynamic Cube Test Minimal Geometry", wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -3867,7 +3867,7 @@ class DynCubeTestVolOnlyOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, mol_types="v", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="93b28ad746ddf66461d7f90dbcc2d833c37d249a", test_name="Dynamic Cube Test Volume Only", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, mol_types="v", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="cff0f9e9eea6e9ef101db0007fc53c009c6d28f3", test_name="Dynamic Cube Test Volume Only", wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -3895,7 +3895,7 @@ class DynCubeTestVolOnlyZ100Op(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,100], mol_types="v", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="ccd559ca386e342e3fdec497e63f2f18e742295e", test_name="Dynamic Cube Vol Only 100 Z-Slices", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,100], mol_types="v", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="cff0f9e9eea6e9ef101db0007fc53c009c6d28f3", test_name="Dynamic Cube Vol Only 100 Z-Slices", wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -3923,7 +3923,7 @@ class DynCubeTestSurfOnlyOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, mol_types="s", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="9ae4ff8cd645df14cad79c3e530faaa4ffe2105f", test_name="Dynamic Cube Test Surface Only", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, mol_types="s", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="dbf03ac94fd12d764896003160475bbe4fe2d82c", test_name="Dynamic Cube Test Surface Only", wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -3951,7 +3951,7 @@ class DynCubeTestMinimalSlowOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.99, max_len=1.01, mdl_hash="af3d0ec0bf625e1a9c6b4ac42baa79fbc997d740", test_name="Dynamic Geometry - Slow Moving Cube", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.99, max_len=1.01, mdl_hash="0900cce8a9b2a9f23031bc3123491b63f9a62f63", test_name="Dynamic Geometry - Slow Moving Cube", wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -3979,7 +3979,7 @@ class DynCubeTestMinimalVerySlowOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.999, max_len=1.001, mdl_hash="67d4175d1e4ec7c320ccac0ad9f1817b11ecddf6", test_name="Dynamic Geometry - Very Slow Moving Cube", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.999, max_len=1.001, mdl_hash="0900cce8a9b2a9f23031bc3123491b63f9a62f63", test_name="Dynamic Geometry - Very Slow Moving Cube", wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -4007,7 +4007,7 @@ class DynCubeTestMinimalStoppedOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=1.0, max_len=1.0, mdl_hash="7c0a8bd3eadb4ebd968e249bbd077337412ce8b8", test_name="Dynamic Geometry - Stopped Cube", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=1.0, max_len=1.0, mdl_hash="0900cce8a9b2a9f23031bc3123491b63f9a62f63", test_name="Dynamic Geometry - Stopped Cube", wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -4035,7 +4035,7 @@ class DynCubeTestVolOnlyZ10Op(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,10], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="13f6965d3ef2854ae91601ace68c42bab91b0a35", test_name="Dynamic Geometry - Cube with 10 Z-Slices", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,10], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="0900cce8a9b2a9f23031bc3123491b63f9a62f63", test_name="Dynamic Geometry - Cube with 10 Z-Slices", wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -4063,7 +4063,7 @@ class DynCubeTestVolOnlyZ100Op(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,100], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="ffab09020803fdf36444f751c8e95988d0f83f92", test_name="Dynamic Geometry - Cube with 100 Z-Slices", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,100], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="0900cce8a9b2a9f23031bc3123491b63f9a62f63", test_name="Dynamic Geometry - Cube with 100 Z-Slices", wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -4265,7 +4265,7 @@ class DynCubeTestOp(bpy.types.Operator):
 
         cb_model.run_only ( wait_time=30.0, seed=2 )
 
-        cb_model.compare_mdl_with_sha1 ( "ffab09020803fdf36444f751c8e95988d0f83f92", test_name="Dynamic Cube Test" )
+        cb_model.compare_mdl_with_sha1 ( "0900cce8a9b2a9f23031bc3123491b63f9a62f63", test_name="Dynamic Cube Test" )
 
         cb_model.refresh_molecules()
 
@@ -4521,7 +4521,7 @@ class DynIcosphereTestOp(bpy.types.Operator):
 
         cb_model.run_only ( wait_time=30.0, seed=2 )
 
-        cb_model.compare_mdl_with_sha1 ( "c96ce06c266949265ee7300d6194b2fabb708f2d", test_name="Dynamic Icosphere Test" )
+        cb_model.compare_mdl_with_sha1 ( "ce9e06eed9151d59edd49e4c0bf27cb6985af44c", test_name="Dynamic Icosphere Test" )
 
         cb_model.refresh_molecules()
 
