@@ -209,7 +209,8 @@ class BoxMakerPropertyGroup(bpy.types.PropertyGroup):
 
         fname = "frame_%d.mdl"%cur_frame
         full_fname = None
-        if cur_frame == 0:
+
+        if False and (cur_frame == 0):
             # This geometry file is saved as a normal geometry MDL file and not included in the dynamic geometry file list
             full_fname = os.path.join(app.path_to_mdl,"Scene.geometry.mdl")
         else:
@@ -306,6 +307,30 @@ def update_mdl_files(app):
                 new_lines.append(line)
         lines = new_lines
 
+        # Remove the Scene.geometry.mdl file line
+        new_lines = []
+        for line in lines:
+            if not "\"Scene.geometry.mdl\"" in line:
+                new_lines.append(line)
+        lines = new_lines
+
+        # Change the "INSTANTIATE Scene OBJECT" line  to  "INSTANTIATE Releases OBJECT"
+        new_lines = []
+        for line in lines:
+            if "INSTANTIATE Scene OBJECT" in line:
+                new_lines.append("INSTANTIATE Releases OBJECT\n")
+            else:
+                new_lines.append(line)
+        lines = new_lines
+
+        # Remove the "  box OBJECT box {}" line:
+        new_lines = []
+        for line in lines:
+            if not "box OBJECT box {}" in line:
+                new_lines.append(line)
+        lines = new_lines
+
+        # Rewrite the MDL with the changes
         mdl_file = open ( full_fname, "w" )
         line_num = 0
         for line in lines:
@@ -385,7 +410,7 @@ class Generate_MDL_Geometry(bpy.types.Operator):
         for f in range(1 + 1+end-start):
             box_plf = context.scene.box_maker.create_box ( context.scene, frame_num=f )
             fname = "frame_%d.mdl"%f
-            if f == 0:
+            if False and (f == 0):
                 # This geometry file is saved as a normal geometry MDL file and not included in the dynamic geometry file list
                 full_fname = os.path.join(app.path_to_mdl,"Scene.geometry.mdl")
                 print ( "Saving file " + full_fname )

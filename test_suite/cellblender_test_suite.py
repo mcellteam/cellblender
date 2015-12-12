@@ -3667,7 +3667,7 @@ def DynamicGeometryCubeTest ( context, mol_types="vs", size=[1.0,1.0,1.0], subs=
         box_plf = create_subdiv_squashed_z_box ( context.scene, min_len=min_len, max_len=max_len, period_frames=period_frames, subs=subs, frame_num=f )
         fname = "frame_%d.mdl"%f
         box_plf.write_as_binary_geometry ( "box", file_name=os.path.join( path_to_dg_files, "frame_%d.dgb" % f ) )
-        if f == 0:
+        if False and (f == 0):
             # This geometry file is saved as a normal geometry MDL file and not included in the dynamic geometry file list
             full_fname = os.path.join(path_to_mdl,"Scene.geometry.mdl")
             print ( "Saving file " + full_fname )
@@ -3719,6 +3719,37 @@ def DynamicGeometryCubeTest ( context, mol_types="vs", size=[1.0,1.0,1.0], subs=
                 new_lines.append(line)
         lines = new_lines
 
+
+
+
+        # Remove the Scene.geometry.mdl file line
+        new_lines = []
+        for line in lines:
+            if not "\"Scene.geometry.mdl\"" in line:
+                new_lines.append(line)
+        lines = new_lines
+
+        # Change the "INSTANTIATE Scene OBJECT" line  to  "INSTANTIATE Releases OBJECT"
+        new_lines = []
+        for line in lines:
+            if "INSTANTIATE Scene OBJECT" in line:
+                new_lines.append("INSTANTIATE Releases OBJECT\n")
+            else:
+                new_lines.append(line)
+        lines = new_lines
+
+        # Remove the "  box OBJECT box {}" line:
+        new_lines = []
+        for line in lines:
+            if not "box OBJECT box {}" in line:
+                new_lines.append(line)
+        lines = new_lines
+
+
+
+
+
+        # Rewrite the MDL with the changes
         mdl_file = open ( full_fname, "w" )
         line_num = 0
         for line in lines:
@@ -4105,7 +4136,7 @@ class DynCubeTestOp(bpy.types.Operator):
         for f in range(1 + 1+end-start):
             box_plf = self.create_box ( context.scene, frame_num=f )
             fname = "frame_%d.mdl"%f
-            if f == 0:
+            if False and (f == 0):
                 # This geometry file is saved as a normal geometry MDL file and not included in the dynamic geometry file list
                 full_fname = os.path.join(path_to_mdl,"Scene.geometry.mdl")
                 print ( "Saving file " + full_fname )
@@ -4157,6 +4188,35 @@ class DynCubeTestOp(bpy.types.Operator):
                     new_lines.append(line)
             lines = new_lines
 
+
+
+
+            # Remove the Scene.geometry.mdl file line
+            new_lines = []
+            for line in lines:
+                if not "\"Scene.geometry.mdl\"" in line:
+                    new_lines.append(line)
+            lines = new_lines
+
+            # Change the "INSTANTIATE Scene OBJECT" line  to  "INSTANTIATE Releases OBJECT"
+            new_lines = []
+            for line in lines:
+                if "INSTANTIATE Scene OBJECT" in line:
+                    new_lines.append("INSTANTIATE Releases OBJECT\n")
+                else:
+                    new_lines.append(line)
+            lines = new_lines
+
+            # Remove the "  box OBJECT box {}" line:
+            new_lines = []
+            for line in lines:
+                if not "box OBJECT box {}" in line:
+                    new_lines.append(line)
+            lines = new_lines
+
+
+
+            # Rewrite the MDL with the changes
             mdl_file = open ( full_fname, "w" )
             line_num = 0
             for line in lines:
@@ -4331,7 +4391,7 @@ class DynIcosphereTestOp(bpy.types.Operator):
         for f in range(1 + 1+end-start):
             cell_plf = self.create_cell ( context.scene, frame_num=f )
             fname = "frame_%d.mdl"%f
-            if f == 0:
+            if False and (f == 0):
                 # This geometry file is saved as a normal geometry MDL file and not included in the dynamic geometry file list
                 full_fname = os.path.join(path_to_mdl,"Scene.geometry.mdl")
                 print ( "Saving file " + full_fname )
@@ -4383,6 +4443,35 @@ class DynIcosphereTestOp(bpy.types.Operator):
                     new_lines.append(line)
             lines = new_lines
 
+
+
+            # Remove the Scene.geometry.mdl file line
+            new_lines = []
+            for line in lines:
+                if not "\"Scene.geometry.mdl\"" in line:
+                    new_lines.append(line)
+            lines = new_lines
+
+            # Change the "INSTANTIATE Scene OBJECT" line  to  "INSTANTIATE Releases OBJECT"
+            new_lines = []
+            for line in lines:
+                if "INSTANTIATE Scene OBJECT" in line:
+                    new_lines.append("INSTANTIATE Releases OBJECT\n")
+                else:
+                    new_lines.append(line)
+            lines = new_lines
+
+            # Remove the "  cell OBJECT cell {}" line:
+            new_lines = []
+            for line in lines:
+                if not "cell OBJECT cell {}" in line:
+                    new_lines.append(line)
+            lines = new_lines
+
+
+
+
+
             mdl_file = open ( full_fname, "w" )
             line_num = 0
             for line in lines:
@@ -4414,6 +4503,7 @@ class DynIcosphereTestOp(bpy.types.Operator):
                 if line.strip() == "WARNINGS":
                     warning_line = line_num
 
+            # Rewrite the MDL with the changes
             mdl_file = open ( full_fname, "w" )
             line_num = 0
             for line in lines:
