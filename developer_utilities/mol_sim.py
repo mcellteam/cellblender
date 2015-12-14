@@ -151,7 +151,17 @@ def name_change_callback(self, context):
     print ( "name_change_callback called with self = " + str(self) )
     print ( "  old = " + self.old_name + " => new = " + self.name )
     print ( "name_change_callback called with self = " + str(self) )
-    #self.name_change_callback(context)
+    old_mol_name = "mol_" + self.old_name
+    new_mol_name = "mol_" + self.name
+
+    bpy.data.materials[old_mol_name + '_mat'].name = new_mol_name + '_mat'
+    bpy.data.meshes[old_mol_name + '_shape'].name = new_mol_name + '_shape'
+    bpy.data.objects[old_mol_name + '_shape'].name = new_mol_name + '_shape'
+    bpy.data.meshes[old_mol_name + '_pos'].name = new_mol_name + '_pos'
+    bpy.data.objects[old_mol_name].name = new_mol_name
+
+    self.old_name = self.name    
+    
     #self.check_callback(context)
     return
 
@@ -734,6 +744,7 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
             row = layout.row()
             row.operator("mol_sim.run", icon='COLOR_RED')
             row.operator("mol_sim.activate", icon='FILE_REFRESH')
+            row.operator("mol_sim.deactivate", icon='X')
         else:
             row.prop(self, "show_run", icon='TRIA_RIGHT', emboss=False)
 
@@ -1518,21 +1529,25 @@ def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="", force=Fal
 
     # Assign the new mesh to the object (deleting any old mesh if the object already exists)
     obj = None
+    old_mesh = None
     if obj_name in scene.objects:
         obj = scene.objects[obj_name]
         old_mesh = obj.data
         obj.data = new_mesh
-        bpy.data.meshes.remove ( old_mesh )
+        if old_mesh.users <= 0:
+            bpy.data.meshes.remove ( old_mesh )
     else:
         print ( "Creating a new object" )
         obj = bpy.data.objects.new ( obj_name, new_mesh )
         scene.objects.link ( obj )
+        # Assign the parent if requested in the call with a non-none parent_name
         if parent_name:
             if parent_name in bpy.data.objects:
                 obj.parent = bpy.data.objects[parent_name]
 
     if "old_"+mesh_name in bpy.data.meshes:
-        bpy.data.meshes.remove ( bpy.data.meshes["old_"+mesh_name] )
+        if bpy.data.meshes["old_"+mesh_name].users <= 0:
+            bpy.data.meshes.remove ( bpy.data.meshes["old_"+mesh_name] )
 
     if len(face_list) <= 0:
         # These are points only, so create a shape glyph as needed to show the points
@@ -1696,6 +1711,21 @@ class MoleculeSimActivateOperator(bpy.types.Operator):
 
         global active_frame_change_handler
         active_frame_change_handler = mol_sim_frame_change_handler
+        return { 'FINISHED' }
+
+
+class MoleculeSimDeactivateOperator(bpy.types.Operator):
+    bl_idname = "mol_sim.deactivate"
+    bl_label = "Deactivate"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
         return { 'FINISHED' }
 
 
