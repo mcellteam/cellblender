@@ -536,6 +536,13 @@ class MoleculeProperty(bpy.types.PropertyGroup):
                 pass
         else:
             print ( "Material " + mat_name + " not found, not showing materials" )
+        row = layout.row()
+        row.operator("molecule_simulation.molecule_show_only", icon='RESTRICT_VIEW_OFF', text="Show Only "+self.name)
+        row.operator("molecule_simulation.molecule_hide", icon='RESTRICT_VIEW_OFF', text="Hide "+self.name)
+        row = layout.row()
+        row.operator("molecule_simulation.molecule_show_all", icon='RESTRICT_VIEW_OFF')
+        row.operator("molecule_simulation.molecule_show", icon='RESTRICT_VIEW_OFF', text="Show "+self.name)
+
 
 
 
@@ -614,6 +621,75 @@ class MolSim_UL_check_molecule(bpy.types.UIList):
 
 
 
+class APP_OT_molecule_show(bpy.types.Operator):
+    bl_idname = "molecule_simulation.molecule_show"
+    bl_label = "Show"
+    bl_description = "Show the current molecule"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        ms = context.scene.molecule_simulation
+        show_name = "mol_" + ms.molecule_list[ms.active_mol_index].name
+        show_shape_name = show_name + "_shape"
+        show_items = [show_name, show_shape_name]
+        print ( "Showing " + str(show_items) )
+        for o in context.scene.objects:
+            if o.name in show_items:
+                o.hide = False
+        return {'FINISHED'}
+
+class APP_OT_molecule_hide(bpy.types.Operator):
+    bl_idname = "molecule_simulation.molecule_hide"
+    bl_label = "Hide"
+    bl_description = "Hide the current molecule"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        ms = context.scene.molecule_simulation
+        hide_name = "mol_" + ms.molecule_list[ms.active_mol_index].name
+        hide_shape_name = hide_name + "_shape"
+        hide_items = [hide_name, hide_shape_name]
+        print ( "Hiding " + str(hide_items) )
+        for o in context.scene.objects:
+            if o.name in hide_items:
+                o.hide = True
+        return {'FINISHED'}
+
+class APP_OT_molecule_show_only(bpy.types.Operator):
+    bl_idname = "molecule_simulation.molecule_show_only"
+    bl_label = "Show Only"
+    bl_description = "Only show the current molecule"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        ms = context.scene.molecule_simulation
+        show_only_name = "mol_" + ms.molecule_list[ms.active_mol_index].name
+        show_only_shape_name = show_only_name + "_shape"
+        show_only_items = [show_only_name, show_only_shape_name]
+        print ( "Only showing " + str(show_only_items) )
+        for o in context.scene.objects:
+            if o.name in show_only_items:
+                o.hide = False
+            else:
+                o.hide = True
+        return {'FINISHED'}
+
+class APP_OT_molecule_show_all(bpy.types.Operator):
+    bl_idname = "molecule_simulation.molecule_show_all"
+    bl_label = "Show All"
+    bl_description = "Show the all molecules"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        ms = context.scene.molecule_simulation
+        print ( "Showing All" )
+        for o in context.scene.objects:
+            if o.name.startswith("mol_"):
+                o.hide = False
+        return {'FINISHED'}
+
+
+
 
 class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
     run_mcell = bpy.props.BoolProperty(name="Run MCell", default=True)
@@ -685,8 +761,8 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
 
 
             ################################
-            row = layout.row()
-            row.label ( "Renaming Molecules Doesn't Work YET!!!", icon='ERROR' )
+            #row = layout.row()
+            #row.label ( "Renaming Molecules Doesn't Work YET!!!", icon='ERROR' )
             ################################
 
 
