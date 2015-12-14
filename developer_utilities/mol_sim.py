@@ -614,10 +614,31 @@ class APP_OT_molecule_remove(bpy.types.Operator):
 
 class MolSim_UL_check_molecule(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        # print ("Draw with " + str(data) + " " + str(item) + " " + str(active_data) + " " + str(active_propname) + " " + str(index) )
         if item.status:
             layout.label(item.status, icon='ERROR')
         else:
-            layout.label(item.name, icon='FILE_TICK')
+            col = layout.column()
+            col.label(item.name, icon='FILE_TICK')
+
+            ms = context.scene.molecule_simulation
+            show_name = "mol_" + item.name
+            show_shape_name = show_name + "_shape"
+            objs = context.scene.objects
+            col = layout.column()
+            col.prop(objs[show_name], "hide", text="", icon='GROUP_VERTEX')
+            col = layout.column()
+            col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_LENNARDJONES')
+            """
+            for o in context.scene.objects:
+                if o.name == show_name:
+                    col = layout.column()
+                    col.prop(o, "hide", text="", icon='GROUP_VERTEX')
+                if o.name == show_shape_name:
+                    col = layout.column()
+                    col.prop(o, "hide", text="", icon='FORCE_LENNARDJONES')
+            """
+
 
 
 
