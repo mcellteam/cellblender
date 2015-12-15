@@ -170,11 +170,48 @@ def display_callback(self, context):
     #self.display_callback(context)
     return
 
+def glyph_visibility_callback(self, context):
+    # print ( "Glyph vis change callback for molecule " + self.name )
+    ms = context.scene.molecule_simulation
+    show_name = "mol_" + self.name
+    show_shape_name = show_name + "_shape"
+    objs = context.scene.objects
+    objs[show_name].hide = not self.glyph_visibility
+    objs[show_shape_name].hide = not self.glyph_visibility
+    return
+
+def glyph_show_only_callback(self, context):
+    # print ( "Glyph show only callback for molecule " + self.name )
+    # Note the check before set to keep from infinite recursion in properties!!
+    if self.glyph_show_only != False:
+        self.glyph_show_only = False
+    ms = context.scene.molecule_simulation
+    ml = ms.molecule_list
+    show_only_name = "mol_" + self.name
+    show_only_shape_name = show_only_name + "_shape"
+    show_only_items = [show_only_name, show_only_shape_name]
+    # print ( "Only showing " + str(show_only_items) )
+    
+    # Note the check before set to keep from infinite recursion in properties!!
+    for o in context.scene.objects:
+        if o.name in show_only_items:
+            if o.hide != False:
+                o.hide = False
+        else:
+            if o.hide != True:
+                o.hide = True
+    for o in ml:
+        if o.name == self.name:
+            if o.glyph_visibility != True:
+                o.glyph_visibility = True
+        else:
+            if o.glyph_visibility != False:
+                o.glyph_visibility = False
+    return
+
 def shape_change_callback(self, context):
-    print ( "Shape change callback for molecule " + self.name )
+    # print ( "Shape change callback for molecule " + self.name )
     self.create_mol_data ( context )
-    #plf = MolCluster ( self.num, self.dist, self.center_x, self.center_y, self.center_z, context.scene.frame_current )
-    #update_obj_from_plf ( context.scene, "molecules", self.name, plf, glyph=self.glyph, force=True )
     return
 
 import os
@@ -188,6 +225,9 @@ class MoleculeProperty(bpy.types.PropertyGroup):
     material_name = StringProperty(name="MatName", default="")
 
     mol_id = IntProperty(name="Molecule ID", default=0)
+    
+    glyph_visibility = BoolProperty ( default=True, description='Show this molecule glyph', update=glyph_visibility_callback )
+    glyph_show_only = BoolProperty ( default=False, description='Show only this molecule glyph', update=glyph_show_only_callback )
 
 
     diffusion_constant = FloatProperty ( name="Molecule Diffusion Constant" )
@@ -625,21 +665,28 @@ class MolSim_UL_check_molecule(bpy.types.UIList):
             show_name = "mol_" + item.name
             show_shape_name = show_name + "_shape"
             objs = context.scene.objects
+            #col = layout.column()
+            #col.operator("molecule_simulation.molecule_show_only", icon='VIEWZOOM', text="")
             col = layout.column()
-            col.prop(objs[show_name], "hide", text="", icon='GROUP_VERTEX')
+            col.prop(item, "glyph_show_only", text="", icon='VIEWZOOM')
             col = layout.column()
-            col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_LENNARDJONES')
-            """
-            for o in context.scene.objects:
-                if o.name == show_name:
-                    col = layout.column()
-                    col.prop(o, "hide", text="", icon='GROUP_VERTEX')
-                if o.name == show_shape_name:
-                    col = layout.column()
-                    col.prop(o, "hide", text="", icon='FORCE_LENNARDJONES')
-            """
-
-
+            col.prop(item, "glyph_visibility", text="", icon='RESTRICT_VIEW_OFF')
+            #col = layout.column()
+            #col.prop(objs[show_name], "hide", text="", icon='RESTRICT_VIEW_OFF')
+            col = layout.column()
+            if objs[show_name].hide:
+                # NOTE: For some reason, when Blender displays a boolean, it will use an offset of 1 for true.
+                #       So since GROUP_BONE is the icon BEFORE GROUP_VERTEX, picking it when true shows GROUP_VERTEX.
+                col.prop(objs[show_name], "hide", text="", icon='GROUP_BONE')
+            else:
+                col.prop(objs[show_name], "hide", text="", icon='GROUP_VERTEX')
+            col = layout.column()
+            if objs[show_shape_name].hide:
+                # NOTE: For some reason, when Blender displays a boolean, it will use an offset of 1 for true.
+                #       So since GROUP_BONE is the icon BEFORE GROUP_VERTEX, picking it when true shows GROUP_VERTEX.
+                col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_CHARGE')
+            else:
+                col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_LENNARDJONES')
 
 
 class APP_OT_molecule_show(bpy.types.Operator):
@@ -707,6 +754,21 @@ class APP_OT_molecule_show_all(bpy.types.Operator):
         for o in context.scene.objects:
             if o.name.startswith("mol_"):
                 o.hide = False
+        return {'FINISHED'}
+
+
+class APP_OT_molecule_hide_all(bpy.types.Operator):
+    bl_idname = "molecule_simulation.molecule_hide_all"
+    bl_label = "Hide All"
+    bl_description = "Hide the all molecules"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        ms = context.scene.molecule_simulation
+        print ( "Hiding All" )
+        for o in context.scene.objects:
+            if o.name.startswith("mol_"):
+                o.hide = True
         return {'FINISHED'}
 
 
@@ -797,6 +859,8 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
             col = row.column(align=True)
             col.operator("molecule_simulation.molecule_add", icon='ZOOMIN', text="")
             col.operator("molecule_simulation.molecule_remove", icon='ZOOMOUT', text="")
+            col.operator("molecule_simulation.molecule_show_all", icon='ZOOM_IN', text="")
+            col.operator("molecule_simulation.molecule_hide_all", icon='ZOOM_OUT', text="")
             if self.molecule_list:
                 mol = self.molecule_list[self.active_mol_index]
                 mol.draw_layout ( context, layout, self )
