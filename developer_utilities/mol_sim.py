@@ -856,11 +856,14 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
                               self, "molecule_list",
                               self, "active_mol_index",
                               rows=2)
-            col = row.column(align=True)
-            col.operator("molecule_simulation.molecule_add", icon='ZOOMIN', text="")
-            col.operator("molecule_simulation.molecule_remove", icon='ZOOMOUT', text="")
-            col.operator("molecule_simulation.molecule_show_all", icon='ZOOM_IN', text="")
-            col.operator("molecule_simulation.molecule_hide_all", icon='ZOOM_OUT', text="")
+            col = row.column(align=False)
+            # Use subcolumns to group logically related buttons together
+            subcol = col.column(align=True)
+            subcol.operator("molecule_simulation.molecule_add", icon='ZOOMIN', text="")
+            subcol.operator("molecule_simulation.molecule_remove", icon='ZOOMOUT', text="")
+            subcol = col.column(align=True)
+            subcol.operator("molecule_simulation.molecule_show_all", icon='ZOOM_IN', text="")
+            subcol.operator("molecule_simulation.molecule_hide_all", icon='ZOOM_OUT', text="")
             if self.molecule_list:
                 mol = self.molecule_list[self.active_mol_index]
                 mol.draw_layout ( context, layout, self )
