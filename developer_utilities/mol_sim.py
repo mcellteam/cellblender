@@ -207,6 +207,9 @@ def glyph_show_only_callback(self, context):
         else:
             if o.glyph_visibility != False:
                 o.glyph_visibility = False
+    if self.name in ms.molecule_list:
+        # Select this item in the list as well
+        ms.active_mol_index = ms.molecule_list.find ( self.name )
     return
 
 def shape_change_callback(self, context):
@@ -567,7 +570,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
                   row = layout.row()
                   row.alignment = 'LEFT'
                   if mol_list_group.show_preview:
-                    row.prop(mol_list_group, "show_preview", icon='TRIA_DOWN', emboss=False, text="Molecule Preview (resize to refresh)")
+                    row.prop(mol_list_group, "show_preview", icon='TRIA_DOWN', emboss=False, text="Material Preview (resize to refresh)")
                     layout.template_preview(bpy.data.materials[mat_name])
                   else:
                     row.prop(mol_list_group, "show_preview", icon='TRIA_RIGHT', emboss=False)
@@ -695,6 +698,9 @@ class MolSim_UL_check_molecule(bpy.types.UIList):
                     col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_LENNARDJONES')
 
 
+"""
+These functions are now implemented in the molecule list
+
 class APP_OT_molecule_show(bpy.types.Operator):
     bl_idname = "molecule_simulation.molecule_show"
     bl_label = "Show"
@@ -747,6 +753,7 @@ class APP_OT_molecule_show_only(bpy.types.Operator):
             else:
                 o.hide = True
         return {'FINISHED'}
+"""
 
 class APP_OT_molecule_show_all(bpy.types.Operator):
     bl_idname = "molecule_simulation.molecule_show_all"
@@ -799,10 +806,10 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
     show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_advanced = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
 
-    show_extra_columns = bpy.props.BoolProperty(default=True, name="Show additional show/hide columns")
+    show_extra_columns = bpy.props.BoolProperty(default=True, description="Show additional visibility control columns")
     show_molecules = bpy.props.BoolProperty(default=True, name="Define Molecules")
     show_display = bpy.props.BoolProperty(default=False, name="Molecule Display Options")
-    show_preview = bpy.props.BoolProperty(default=False, name="Molecule Preview")
+    show_preview = bpy.props.BoolProperty(default=False, name="Material Preview")
     show_release = bpy.props.BoolProperty(default=False, name="Define a Release Site")
     show_run = bpy.props.BoolProperty(default=True, name="Run Simulation")
 
@@ -826,15 +833,16 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_active_molecule ( self, context ):
         """ Remove the active molecule from the list of molecules """
-        mol = self.molecule_list[self.active_mol_index]
-        if mol:
-            mol.remove_mol_data(context)
-        self.molecule_list.remove ( self.active_mol_index )
-        self.active_mol_index -= 1
-        if self.active_mol_index < 0:
-            self.active_mol_index = 0
-        if len(self.molecule_list) <= 0:
-            self.next_id = 1
+        if len(self.molecule_list) > 0:
+            mol = self.molecule_list[self.active_mol_index]
+            if mol:
+                mol.remove_mol_data(context)
+            self.molecule_list.remove ( self.active_mol_index )
+            self.active_mol_index -= 1
+            if self.active_mol_index < 0:
+                self.active_mol_index = 0
+            if len(self.molecule_list) <= 0:
+                self.next_id = 1
 
     def update_simulation ( self, scene ):
         for mol in self.molecule_list:
