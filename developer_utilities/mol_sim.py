@@ -576,12 +576,14 @@ class MoleculeProperty(bpy.types.PropertyGroup):
                 pass
         else:
             print ( "Material " + mat_name + " not found, not showing materials" )
+        """
         row = layout.row()
         row.operator("molecule_simulation.molecule_show_only", icon='RESTRICT_VIEW_OFF', text="Show Only "+self.name)
         row.operator("molecule_simulation.molecule_hide", icon='RESTRICT_VIEW_OFF', text="Hide "+self.name)
         row = layout.row()
         row.operator("molecule_simulation.molecule_show_all", icon='RESTRICT_VIEW_OFF')
         row.operator("molecule_simulation.molecule_show", icon='RESTRICT_VIEW_OFF', text="Show "+self.name)
+        """
 
 
 
@@ -670,23 +672,27 @@ class MolSim_UL_check_molecule(bpy.types.UIList):
             col = layout.column()
             col.prop(item, "glyph_show_only", text="", icon='VIEWZOOM')
             col = layout.column()
-            col.prop(item, "glyph_visibility", text="", icon='RESTRICT_VIEW_OFF')
+            if item.glyph_visibility:
+                col.prop(item, "glyph_visibility", text="", icon='RESTRICT_VIEW_OFF')
+            else:
+                col.prop(item, "glyph_visibility", text="", icon='RESTRICT_VIEW_ON')
             #col = layout.column()
             #col.prop(objs[show_name], "hide", text="", icon='RESTRICT_VIEW_OFF')
-            col = layout.column()
-            if objs[show_name].hide:
-                # NOTE: For some reason, when Blender displays a boolean, it will use an offset of 1 for true.
-                #       So since GROUP_BONE is the icon BEFORE GROUP_VERTEX, picking it when true shows GROUP_VERTEX.
-                col.prop(objs[show_name], "hide", text="", icon='GROUP_BONE')
-            else:
-                col.prop(objs[show_name], "hide", text="", icon='GROUP_VERTEX')
-            col = layout.column()
-            if objs[show_shape_name].hide:
-                # NOTE: For some reason, when Blender displays a boolean, it will use an offset of 1 for true.
-                #       So since GROUP_BONE is the icon BEFORE GROUP_VERTEX, picking it when true shows GROUP_VERTEX.
-                col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_CHARGE')
-            else:
-                col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_LENNARDJONES')
+            if ms.show_extra_columns:
+                col = layout.column()
+                if objs[show_name].hide:
+                    # NOTE: For some reason, when Blender displays a boolean, it will use an offset of 1 for true.
+                    #       So since GROUP_BONE is the icon BEFORE GROUP_VERTEX, picking it when true shows GROUP_VERTEX.
+                    col.prop(objs[show_name], "hide", text="", icon='GROUP_BONE')
+                else:
+                    col.prop(objs[show_name], "hide", text="", icon='GROUP_VERTEX')
+                col = layout.column()
+                if objs[show_shape_name].hide:
+                    # NOTE: For some reason, when Blender displays a boolean, it will use an offset of 1 for true.
+                    #       So since GROUP_BONE is the icon BEFORE GROUP_VERTEX, picking it when true shows GROUP_VERTEX.
+                    col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_CHARGE')
+                else:
+                    col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_LENNARDJONES')
 
 
 class APP_OT_molecule_show(bpy.types.Operator):
@@ -751,6 +757,11 @@ class APP_OT_molecule_show_all(bpy.types.Operator):
     def execute(self, context):
         ms = context.scene.molecule_simulation
         print ( "Showing All" )
+        for o in ms.molecule_list:
+            if not o.glyph_visibility:
+                o.glyph_visibility = True
+            if o.glyph_show_only:
+                o.glyph_show_only = False
         for o in context.scene.objects:
             if o.name.startswith("mol_"):
                 o.hide = False
@@ -766,6 +777,11 @@ class APP_OT_molecule_hide_all(bpy.types.Operator):
     def execute(self, context):
         ms = context.scene.molecule_simulation
         print ( "Hiding All" )
+        for o in ms.molecule_list:
+            if o.glyph_visibility:
+                o.glyph_visibility = False
+            if o.glyph_show_only:
+                o.glyph_show_only = False
         for o in context.scene.objects:
             if o.name.startswith("mol_"):
                 o.hide = True
@@ -783,7 +799,7 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
     show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_advanced = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
 
-
+    show_extra_columns = bpy.props.BoolProperty(default=True, name="Show additional show/hide columns")
     show_molecules = bpy.props.BoolProperty(default=True, name="Define Molecules")
     show_display = bpy.props.BoolProperty(default=False, name="Molecule Display Options")
     show_preview = bpy.props.BoolProperty(default=False, name="Molecule Preview")
@@ -864,6 +880,9 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
             subcol = col.column(align=True)
             subcol.operator("molecule_simulation.molecule_show_all", icon='ZOOM_IN', text="")
             subcol.operator("molecule_simulation.molecule_hide_all", icon='ZOOM_OUT', text="")
+            subcol = col.column(align=True)
+            subcol.prop (self, "show_extra_columns", text="")
+
             if self.molecule_list:
                 mol = self.molecule_list[self.active_mol_index]
                 mol.draw_layout ( context, layout, self )

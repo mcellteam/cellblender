@@ -334,14 +334,14 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             lr_bar_display = self.custom_space_step.get_value()
         else:
             # Calculate lr_bar_display from diffusion constant and time step
-            dc = self.diffusion_constant.get_value()
+            dc = 1e8 * self.diffusion_constant.get_value() # convert from cm2/s to um2/s 
             ts = bpy.context.scene.mcell.initialization.time_step.get_value()
             if len(self.custom_time_step.get_expr().strip()) > 0:
                 ts = self.custom_time_step.get_value()
             lr_bar_display = 2 * math.sqrt ( 4 * dc * ts / math.pi )
 
         row = layout.row()
-        row.label(text="lr_bar: %g"%(lr_bar_display), icon='BLANK1')  # BLANK1 RIGHTARROW_THIN SMALL_TRI_RIGHT_VEC DISCLOSURE_TRI_RIGHT_VEC DRIVER DOT FORWARD LINKED
+        row.label(text="lr_bar:  %.4g  microns"%(lr_bar_display), icon='BLANK1')  # BLANK1 RIGHTARROW_THIN SMALL_TRI_RIGHT_VEC DISCLOSURE_TRI_RIGHT_VEC DRIVER DOT FORWARD LINKED
         #layout.prop ( self, "lr_bar_trigger", icon='NONE', text="lr_bar: " + str(lr_bar_display) )
 
         box = layout.box()
