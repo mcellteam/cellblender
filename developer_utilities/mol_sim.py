@@ -150,15 +150,19 @@ def check_callback(self, context):
 def name_change_callback(self, context):
     print ( "name_change_callback called with self = " + str(self) )
     print ( "  old = " + self.old_name + " => new = " + self.name )
-    print ( "name_change_callback called with self = " + str(self) )
     old_mol_name = "mol_" + self.old_name
     new_mol_name = "mol_" + self.name
 
-    bpy.data.materials[old_mol_name + '_mat'].name = new_mol_name + '_mat'
-    bpy.data.meshes[old_mol_name + '_shape'].name = new_mol_name + '_shape'
-    bpy.data.objects[old_mol_name + '_shape'].name = new_mol_name + '_shape'
-    bpy.data.meshes[old_mol_name + '_pos'].name = new_mol_name + '_pos'
-    bpy.data.objects[old_mol_name].name = new_mol_name
+    if old_mol_name + '_mat' in bpy.data.materials:
+        bpy.data.materials[old_mol_name + '_mat'].name = new_mol_name + '_mat'
+    if old_mol_name + '_shape' in bpy.data.meshes:
+        bpy.data.meshes[old_mol_name + '_shape'].name = new_mol_name + '_shape'
+    if old_mol_name + '_shape' in bpy.data.objects:
+        bpy.data.objects[old_mol_name + '_shape'].name = new_mol_name + '_shape'
+    if old_mol_name + '_pos' in bpy.data.meshes:
+        bpy.data.meshes[old_mol_name + '_pos'].name = new_mol_name + '_pos'
+    if old_mol_name in bpy.data.objects:
+        bpy.data.objects[old_mol_name].name = new_mol_name
 
     self.old_name = self.name    
     
@@ -758,7 +762,7 @@ class APP_OT_molecule_show_only(bpy.types.Operator):
 class APP_OT_molecule_show_all(bpy.types.Operator):
     bl_idname = "molecule_simulation.molecule_show_all"
     bl_label = "Show All"
-    bl_description = "Show the all molecules"
+    bl_description = "Show all of the molecules"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -778,7 +782,7 @@ class APP_OT_molecule_show_all(bpy.types.Operator):
 class APP_OT_molecule_hide_all(bpy.types.Operator):
     bl_idname = "molecule_simulation.molecule_hide_all"
     bl_label = "Hide All"
-    bl_description = "Hide the all molecules"
+    bl_description = "Hide all of the molecules"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -886,8 +890,8 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
             subcol.operator("molecule_simulation.molecule_add", icon='ZOOMIN', text="")
             subcol.operator("molecule_simulation.molecule_remove", icon='ZOOMOUT', text="")
             subcol = col.column(align=True)
-            subcol.operator("molecule_simulation.molecule_show_all", icon='ZOOM_IN', text="")
-            subcol.operator("molecule_simulation.molecule_hide_all", icon='ZOOM_OUT', text="")
+            subcol.operator("molecule_simulation.molecule_show_all", icon='RESTRICT_VIEW_OFF', text="")
+            subcol.operator("molecule_simulation.molecule_hide_all", icon='RESTRICT_VIEW_ON', text="")
             subcol = col.column(align=True)
             subcol.prop (self, "show_extra_columns", text="")
 
