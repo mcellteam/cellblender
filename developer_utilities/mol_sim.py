@@ -2,7 +2,7 @@ bl_info = {
   "version": "0.1",
   "name": "Molecule Simulator",
   'author': 'Bob',
-  "location": "Properties > Scene",
+  "location": "View3D -> ToolShelf -> MolSim",
   "category": "Cell Modeling"
   }
 
@@ -25,6 +25,115 @@ from bpy.props import *
 from bpy.app.handlers import persistent
 
 
+
+
+################################################################
+#########  Start of Code from test_material_props.py  ##########
+################################################################
+
+
+
+import bpy
+from bpy.types import Menu, Panel, UIList
+from rna_prop_ui import PropertyPanel
+from bpy.app.translations import pgettext_iface as iface_
+
+
+def active_node_mat(mat):
+    # TODO, 2.4x has a pipeline section, for 2.5 we need to communicate
+    # which settings from node-materials are used
+    if mat is not None:
+        mat_node = mat.active_node_material
+        if mat_node:
+            return mat_node
+        else:
+            return mat
+
+    return None
+
+
+def check_material(mat):
+    if mat is not None:
+        if mat.use_nodes:
+            if mat.active_node_material is not None:
+                return True
+            return False
+        return True
+    return False
+
+
+def simple_material(mat):
+    if (mat is not None) and (not mat.use_nodes):
+        return True
+    return False
+
+
+class MATERIAL_MT_mol_sss_presets(Menu):
+    bl_label = "SSS Presets"
+    preset_subdir = "sss"
+    preset_operator = "script.execute_preset"
+    draw = Menu.draw_preset
+
+
+class MATERIAL_MT_mol_specials(Menu):
+    bl_label = "MolMaterial Specials"
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.operator("object.material_slot_copy", icon='COPY_ID')
+        layout.operator("material.copy", icon='COPYDOWN')
+        layout.operator("material.paste", icon='PASTEDOWN')
+
+
+class MATERIAL_UL_mol_matslots(UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        # assert(isinstance(item, bpy.types.MaterialSlot)
+        # ob = data
+        slot = item
+        ma = slot.material
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            if ma:
+                layout.prop(ma, "name", text="", emboss=False, icon_value=icon)
+            else:
+                layout.label(text="", icon_value=icon)
+            if ma and not context.scene.render.use_shading_nodes:
+                manode = ma.active_node_material
+                if manode:
+                    layout.label(text=iface_("Node %s") % manode.name, translate=False, icon_value=layout.icon(manode))
+                elif ma.use_nodes:
+                    layout.label(text="Node <none>")
+        elif self.layout_type == 'GRID':
+            layout.alignment = 'CENTER'
+            layout.label(text="", icon_value=icon)
+
+
+class MolMaterialButtonsPanel:
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "scene"
+    # COMPAT_ENGINES must be defined in each subclass, external engines can add themselves here
+    """
+    @classmethod
+    def poll(cls, context):
+        return context.material and (context.scene.render.engine in cls.COMPAT_ENGINES)
+    """
+
+    @classmethod
+    def poll(cls, context):
+        print ( "Inside MolMatButton_poll " + str(context.material) )
+        return context.material and (context.scene.render.engine in cls.COMPAT_ENGINES)
+
+
+
+
+
+##############################################################
+#########  End of Code from test_material_props.py  ##########
+##############################################################
+
+
+
 active_frame_change_handler = None
 
 
@@ -41,14 +150,75 @@ def check_callback(self, context):
 def name_change_callback(self, context):
     print ( "name_change_callback called with self = " + str(self) )
     print ( "  old = " + self.old_name + " => new = " + self.name )
-    print ( "name_change_callback called with self = " + str(self) )
-    #self.name_change_callback(context)
+    old_mol_name = "mol_" + self.old_name
+    new_mol_name = "mol_" + self.name
+
+    if old_mol_name + '_mat' in bpy.data.materials:
+        bpy.data.materials[old_mol_name + '_mat'].name = new_mol_name + '_mat'
+    if old_mol_name + '_shape' in bpy.data.meshes:
+        bpy.data.meshes[old_mol_name + '_shape'].name = new_mol_name + '_shape'
+    if old_mol_name + '_shape' in bpy.data.objects:
+        bpy.data.objects[old_mol_name + '_shape'].name = new_mol_name + '_shape'
+    if old_mol_name + '_pos' in bpy.data.meshes:
+        bpy.data.meshes[old_mol_name + '_pos'].name = new_mol_name + '_pos'
+    if old_mol_name in bpy.data.objects:
+        bpy.data.objects[old_mol_name].name = new_mol_name
+
+    self.old_name = self.name    
+    
     #self.check_callback(context)
     return
 
 
 def display_callback(self, context):
     #self.display_callback(context)
+    return
+
+def glyph_visibility_callback(self, context):
+    # print ( "Glyph vis change callback for molecule " + self.name )
+    ms = context.scene.molecule_simulation
+    show_name = "mol_" + self.name
+    show_shape_name = show_name + "_shape"
+    objs = context.scene.objects
+    objs[show_name].hide = not self.glyph_visibility
+    objs[show_shape_name].hide = not self.glyph_visibility
+    return
+
+def glyph_show_only_callback(self, context):
+    # print ( "Glyph show only callback for molecule " + self.name )
+    # Note the check before set to keep from infinite recursion in properties!!
+    if self.glyph_show_only != False:
+        self.glyph_show_only = False
+    ms = context.scene.molecule_simulation
+    ml = ms.molecule_list
+    show_only_name = "mol_" + self.name
+    show_only_shape_name = show_only_name + "_shape"
+    show_only_items = [show_only_name, show_only_shape_name]
+    # print ( "Only showing " + str(show_only_items) )
+    
+    # Note the check before set to keep from infinite recursion in properties!!
+    for o in context.scene.objects:
+        if o.name in show_only_items:
+            if o.hide != False:
+                o.hide = False
+        else:
+            if o.hide != True:
+                o.hide = True
+    for o in ml:
+        if o.name == self.name:
+            if o.glyph_visibility != True:
+                o.glyph_visibility = True
+        else:
+            if o.glyph_visibility != False:
+                o.glyph_visibility = False
+    if self.name in ms.molecule_list:
+        # Select this item in the list as well
+        ms.active_mol_index = ms.molecule_list.find ( self.name )
+    return
+
+def shape_change_callback(self, context):
+    # print ( "Shape change callback for molecule " + self.name )
+    self.create_mol_data ( context )
     return
 
 import os
@@ -62,6 +232,9 @@ class MoleculeProperty(bpy.types.PropertyGroup):
     material_name = StringProperty(name="MatName", default="")
 
     mol_id = IntProperty(name="Molecule ID", default=0)
+    
+    glyph_visibility = BoolProperty ( default=True, description='Show this molecule glyph', update=glyph_visibility_callback )
+    glyph_show_only = BoolProperty ( default=False, description='Show only this molecule glyph', update=glyph_show_only_callback )
 
 
     diffusion_constant = FloatProperty ( name="Molecule Diffusion Constant" )
@@ -74,6 +247,11 @@ class MoleculeProperty(bpy.types.PropertyGroup):
     previous_scale = FloatProperty ( name="Previous_Scale", min=0.0, default=1.0, description="Previous Scale" )
     #cumulative_scale = FloatProperty ( name="Cumulative_Scale", min=0.0, default=1.0, description="Cumulative Scale" )
 
+    method_enum = [
+        ('slow', "slow", ""),
+        ('med', "med", ""),
+        ('fast', "fast", "")]
+    method = EnumProperty ( items=method_enum, name="", update=value_changed )
     num      = bpy.props.IntProperty   ( name="num",  default=100,              description="Number of A Molecules",     update=value_changed )
     dist     = bpy.props.FloatProperty ( name="dist", default=0.2, precision=3, description="Distribution",              update=value_changed )
     center_x = bpy.props.FloatProperty ( name="x",    default=-1,  precision=3, description="Location along the x-axis", update=value_changed )
@@ -85,10 +263,10 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         ('A', "A", ""),
         ('B', "B", ""),
         ('C', "C", ""),
-        ('Box', "Box", ""),
+        ('Cube', "Cube", ""),
         ('Pyramid', "Pyramid", ""),
         ('Tetrahedron', "Tetrahedron", "")]
-    glyph = EnumProperty ( items=glyph_enum, name="", update=display_callback )
+    glyph = EnumProperty ( items=glyph_enum, name="", update=shape_change_callback )
 
 
     export_viz = bpy.props.BoolProperty(
@@ -107,7 +285,8 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         self.name = "Molecule_"+str(self.mol_id)
         self.old_name = self.name
 
-        self.num = random.randint(10,50)
+        self.method = self.method_enum[0][0]
+        self.num = 0 ### random.randint(10,50)
         self.dist = random.uniform(0.1,0.5)
         self.center_x = random.uniform(-2.0,2.0)
         self.center_y = random.uniform(-2.0,2.0)
@@ -124,14 +303,90 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         scn = bpy.context.scene
         scn_objs = scn.objects
 
-        shape_name = self.name + "_shape"
-        material_name = self.name + "_mat"
+        mol_name = "mol_" + self.name
+        mol_pos_mesh_name = mol_name + "_pos"
+        shape_name = mol_name + "_shape"
+        material_name = mol_name + "_mat"
 
+
+        # First be sure that the parent "empty" for holding molecules is available (create as needed)
         mols_obj = bpy.data.objects.get("molecules")
         if not mols_obj:
             bpy.ops.object.add(location=[0, 0, 0])
             mols_obj = bpy.context.selected_objects[0]
             mols_obj.name = "molecules"
+
+        # Build the new shape vertices and faces
+        size = 0.1
+        print ( "Creating a new glyph for " + self.name )
+        shape_plf = None
+        if   "Cube" == self.glyph:
+            shape_plf = BasicBox  ( size, size, size )
+        elif "Pyramid" == self.glyph:
+            shape_plf = Pyramid  ( size, size, size )
+        elif "Tetrahedron" == self.glyph:
+            shape_plf = Tetrahedron  ( size, size, size )
+        elif "A" in self.glyph:
+            shape_plf = Letter_A  ( size, size, size )
+        elif "B" in self.glyph:
+            shape_plf = Letter_B  ( size, size, size )
+        elif "C" in self.glyph:
+            shape_plf = Letter_C  ( size, size, size )
+        else:
+            shape_plf = BasicBox ( size, size, size )
+        shape_vertices = []
+        for point in shape_plf.points:
+            shape_vertices.append ( mathutils.Vector((point.x,point.y,point.z)) )
+        shape_faces = []
+        for face_element in shape_plf.faces:
+            shape_faces.append ( face_element.verts )
+
+
+        # Delete the old object and mesh
+        if shape_name in objs:
+            scn_objs.unlink ( objs[shape_name] )
+            objs.remove ( objs[shape_name] )
+        if shape_name in meshes:
+            meshes.remove ( meshes[shape_name] )
+
+        # Create and build the new mesh
+        mol_shape_mesh = bpy.data.meshes.new ( shape_name )
+        mol_shape_mesh.from_pydata ( shape_vertices, [], shape_faces )
+        mol_shape_mesh.update()
+
+        # Create the new shape object from the mesh
+        mol_shape_obj = bpy.data.objects.new ( shape_name, mol_shape_mesh )
+
+        # Add the shape to the scene as a glyph for the object
+        scn.objects.link ( mol_shape_obj )
+
+        """
+                    mol_shape_obj.data.materials.clear()  # New
+                    mol_shape_obj.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
+
+                    # This didn't work very well
+
+                    #if not (shape_name in scene.objects):
+                    #    shape = bpy.data.objects.new ( shape_name, mol_shape_mesh )
+                    ## Create a material specifically for this object
+                    #if obj_name+"_mat" in bpy.data.materials:
+                    #    shape.data.materials.clear()  # New
+                    #    shape.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
+                    ## Remove current children from the target object (otherwise glyphs will be merged ... useful in the future)
+                    #while len(obj.children) > 0:
+                    #    obj.children[0].parent = None
+
+
+                    # Add the shape to the scene as a glyph for the object
+                    scene.objects.link ( shape )
+                    obj.dupli_type = 'VERTS'
+                    shape.parent = obj
+                    
+                    if old_shape_name in bpy.data.meshes:
+                        if bpy.data.meshes[old_shape_name].users <= 0:
+                            bpy.data.meshes.remove ( bpy.data.meshes[old_shape_name] )
+
+
 
         mol_shape_mesh = meshes.get(shape_name)
         if not mol_shape_mesh:
@@ -144,6 +399,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
             mol_shape_mesh.name = shape_name
         else:
             mol_shape_obj = objs.get(shape_name)
+        """
 
         # Look-up material, create if needed.
         # Associate material with mesh shape.
@@ -151,25 +407,100 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         mol_mat = mats.get(material_name)
         if not mol_mat:
             mol_mat = mats.new(material_name)
-            # Need to pick a color here
+            # Need to pick a color here ?
         if not mol_shape_mesh.materials.get(material_name):
             mol_shape_mesh.materials.append(mol_mat)
 
         # Create a "mesh" to hold instances of molecule positions
-        mol_pos_mesh_name = "%s_pos" % (self.name)
         mol_pos_mesh = meshes.get(mol_pos_mesh_name)
         if not mol_pos_mesh:
             mol_pos_mesh = meshes.new(mol_pos_mesh_name)
 
         # Create object to contain the mol_pos_mesh data
-        mol_obj = objs.get(self.name)
+        mol_obj = objs.get(mol_name)
         if not mol_obj:
-            mol_obj = objs.new(self.name, mol_pos_mesh)
+            mol_obj = objs.new(mol_name, mol_pos_mesh)
             scn_objs.link(mol_obj)
             mol_shape_obj.parent = mol_obj
             mol_obj.dupli_type = 'VERTS'
             mol_obj.use_dupli_vertices_rotation = True
             mol_obj.parent = mols_obj
+
+        # Add the shape to the scene as a glyph for the object
+        mol_obj.dupli_type = 'VERTS'
+        mol_shape_obj.parent = mol_obj
+
+
+
+        """
+
+        # These are points only, so create a shape glyph as needed to show the points
+        shape_name = obj_name + "_shape"
+        #if force or not (shape_name in scene.objects):
+        if not (shape_name in scene.objects):
+            old_shape_name = "old_" + shape_name
+            size = 0.1
+            print ( "Creating a new glyph for " + obj_name )
+            shape_plf = None
+            if "Cube" == glyph:
+                shape_plf = BasicBox  ( size, size, size )
+            elif "Pyramid" == glyph:
+                shape_plf = Pyramid  ( size, size, size )
+            elif "Tetrahedron" == glyph:
+                shape_plf = Tetrahedron  ( size, size, size )
+            elif "A" in glyph:
+                shape_plf = Letter_A  ( size, size, size )
+            elif "B" in glyph:
+                shape_plf = Letter_B  ( size, size, size )
+            elif "C" in glyph:
+                shape_plf = Letter_C  ( size, size, size )
+            else:
+                shape_plf = BasicBox ( size, size, size )
+            shape_vertices = []
+            for point in shape_plf.points:
+                shape_vertices.append ( mathutils.Vector((point.x,point.y,point.z)) )
+            shape_faces = []
+            for face_element in shape_plf.faces:
+                shape_faces.append ( face_element.verts )
+
+
+            # Rename the old mesh shape if it exists
+            if shape_name in bpy.data.meshes:
+                bpy.data.meshes[shape_name].name = old_shape_name
+            # Create and build the new mesh
+            new_mesh = bpy.data.meshes.new ( shape_name )
+            new_mesh.from_pydata ( shape_vertices, [], shape_faces )
+            new_mesh.update()
+
+            shape = bpy.data.objects.new ( shape_name, new_mesh )
+            shape.data.materials.clear()  # New
+            shape.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
+
+            # This didn't work very well
+
+            #if not (shape_name in scene.objects):
+            #    shape = bpy.data.objects.new ( shape_name, new_mesh )
+            ## Create a material specifically for this object
+            #if obj_name+"_mat" in bpy.data.materials:
+            #    shape.data.materials.clear()  # New
+            #    shape.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
+            ## Remove current children from the target object (otherwise glyphs will be merged ... useful in the future)
+            #while len(obj.children) > 0:
+            #    obj.children[0].parent = None
+
+
+            # Add the shape to the scene as a glyph for the object
+            scene.objects.link ( shape )
+            obj.dupli_type = 'VERTS'
+            shape.parent = obj
+            
+            if old_shape_name in bpy.data.meshes:
+                if bpy.data.meshes[old_shape_name].users <= 0:
+                    bpy.data.meshes.remove ( bpy.data.meshes[old_shape_name] )
+
+        # Could return the object here if needed
+
+        """
 
 
     def remove_mol_data ( self, context ):
@@ -180,11 +511,11 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         scn = bpy.context.scene
         scn_objs = scn.objects
 
-        mol_obj_name        = self.name
-        mol_shape_obj_name  = self.name + "_shape"
-        mol_shape_mesh_name = self.name + "_shape"
-        mol_pos_mesh_name   = self.name + "_pos"
-        mol_material_name   = self.name + "_mat"
+        mol_obj_name        = "mol_" + self.name
+        mol_shape_obj_name  = mol_obj_name + "_shape"
+        mol_shape_mesh_name = mol_obj_name + "_shape"
+        mol_pos_mesh_name   = mol_obj_name + "_pos"
+        mol_material_name   = mol_obj_name + "_mat"
 
         mols_obj = objs.get("molecules")
 
@@ -194,8 +525,10 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         mol_pos_mesh = meshes.get(mol_pos_mesh_name)
         mol_material = mats.get(mol_material_name)
         
-        scn_objs.unlink ( mol_obj )
-        scn_objs.unlink ( mol_shape_obj )
+        if mol_obj:
+            scn_objs.unlink ( mol_obj )
+        if mol_shape_obj:
+            scn_objs.unlink ( mol_shape_obj )
 
         if mol_obj.users <= 0:
             objs.remove ( mol_obj )
@@ -209,24 +542,89 @@ class MoleculeProperty(bpy.types.PropertyGroup):
             mats.remove ( mol_material )
         
 
-
-    def draw_layout ( self, context, layout, mol_list ):
+    def draw_layout ( self, context, layout, mol_list_group ):
         """ Draw the molecule "panel" within the layout """
         row = layout.row()
         row.prop(self, "name")
         row = layout.row()
-        row.prop(self, "glyph")
-        row = layout.row()
         row.prop(self, "diffusion_constant")
-        
-        box = layout.box()
-        
+
+
+    def draw_display_layout ( self, context, layout, mol_list_group ):
+        """ Draw the molecule display "panel" within the layout """
         row = layout.row()
-        row.prop ( bpy.data.materials[self.name + "_mat"], "diffuse_color" )
-        
-        box = layout.box()
-        
+        row.prop(self, "glyph", text="Shape")
+        mat_name = "mol_" + self.name+"_mat"
+        if mat_name in bpy.data.materials:
+            row = layout.row()
+            row.prop ( bpy.data.materials[mat_name], "diffuse_color", text="Color" )
+            row = layout.row()
+            col = row.column()
+            col.label ( "Brightness" )
+            col = row.column()
+            col.prop ( bpy.data.materials[mat_name], "emit", text="Emit" )
+            if len(bpy.data.materials) and (context.scene.render.engine in {'BLENDER_RENDER', 'BLENDER_GAME'}):
+              if 'molecule_simulation' in context.scene.keys():
+                #print ( "Context OK, showing materials" )
+                app = context.scene.molecule_simulation
+                m = app.molecule_list[app.active_mol_index]
+                mat_name = "mol_" + m.name + "_mat"
+                #print ( "" + mat_name + " in bpy.data.materials = " + str(mat_name in bpy.data.materials) )
+                if mat_name in bpy.data.materials:
+                  row = layout.row()
+                  row.alignment = 'LEFT'
+                  if mol_list_group.show_preview:
+                    row.prop(mol_list_group, "show_preview", icon='TRIA_DOWN', emboss=False, text="Material Preview (resize to refresh)")
+                    layout.template_preview(bpy.data.materials[mat_name])
+                  else:
+                    row.prop(mol_list_group, "show_preview", icon='TRIA_RIGHT', emboss=False)
+              else:
+                print ( "molecule_simulation not found, not showing color preview" )
+                pass
+        else:
+            print ( "Material " + mat_name + " not found, not showing materials" )
+        """
         row = layout.row()
+        row.operator("molecule_simulation.molecule_show_only", icon='RESTRICT_VIEW_OFF', text="Show Only "+self.name)
+        row.operator("molecule_simulation.molecule_hide", icon='RESTRICT_VIEW_OFF', text="Hide "+self.name)
+        row = layout.row()
+        row.operator("molecule_simulation.molecule_show_all", icon='RESTRICT_VIEW_OFF')
+        row.operator("molecule_simulation.molecule_show", icon='RESTRICT_VIEW_OFF', text="Show "+self.name)
+        """
+
+
+
+
+    def draw(self, context):
+        print ( "Inside MolMATERIAL_PT_preview draw method " + str(context) )
+        if len(bpy.data.materials) and (context.scene.render.engine in {'BLENDER_RENDER', 'BLENDER_GAME'}):
+          #self.layout.template_preview(context.material)
+          if 'molecule_simulation' in context.scene.keys():
+            print ( "Context OK, showing materials" )
+            app = context.scene.molecule_simulation
+            m = app.molecule_list[app.active_mol_index]
+            mat_name = "mol_" + m.name + "_mat"
+            print ( "" + mat_name + " in bpy.data.materials = " + str(mat_name in bpy.data.materials) )
+            if mat_name in bpy.data.materials:
+              self.layout.template_preview(bpy.data.materials[mat_name])
+              #mat = active_node_mat(context.material)
+              mat = active_node_mat(bpy.data.materials[mat_name])
+              row = self.layout.row()
+              col = row.column()
+              col.prop(mat, "diffuse_color", text="")
+              col = row.column()
+              col.prop(mat, "emit", text="Mol Emit")
+          else:
+            print ( "molecule_simulation not found, not showing materials" )
+        else:
+          print ( "Context NOT OK, not showing materials" )
+
+
+
+    def draw_release_layout ( self, context, layout, mol_list_group ):
+        """ Draw the molecule release "panel" within the layout """
+        row = layout.row()
+        row.prop(self, "method")
         row.prop(self, "num")
         row.prop(self, "dist")
         row = layout.row()
@@ -235,9 +633,9 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         row.prop(self, "center_z")
 
 
-    def update_simulation ( self, scene ):
-        plf = MolCluster ( self.num, self.dist, self.center_x, self.center_y, self.center_z, scene.frame_current )
-        update_obj_from_plf ( scene, "molecules", self.name, plf, glyph=self.glyph )
+    def update_molecule_positions ( self, scene ):
+        plf = MolCluster ( self.num, self.dist, self.center_x, self.center_y, self.center_z, scene.frame_current, method=self.method )
+        update_obj_from_plf ( scene, "molecules", "mol_" + self.name, plf, glyph=self.glyph )
 
 
 # Molecule Operators:
@@ -265,10 +663,140 @@ class APP_OT_molecule_remove(bpy.types.Operator):
 
 class MolSim_UL_check_molecule(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        # print ("Draw with " + str(data) + " " + str(item) + " " + str(active_data) + " " + str(active_propname) + " " + str(index) )
         if item.status:
             layout.label(item.status, icon='ERROR')
         else:
-            layout.label(item.name, icon='FILE_TICK')
+            col = layout.column()
+            col.label(item.name, icon='FILE_TICK')
+
+            ms = context.scene.molecule_simulation
+            show_name = "mol_" + item.name
+            show_shape_name = show_name + "_shape"
+            objs = context.scene.objects
+            #col = layout.column()
+            #col.operator("molecule_simulation.molecule_show_only", icon='VIEWZOOM', text="")
+            col = layout.column()
+            col.prop(item, "glyph_show_only", text="", icon='VIEWZOOM')
+            col = layout.column()
+            if item.glyph_visibility:
+                col.prop(item, "glyph_visibility", text="", icon='RESTRICT_VIEW_OFF')
+            else:
+                col.prop(item, "glyph_visibility", text="", icon='RESTRICT_VIEW_ON')
+            #col = layout.column()
+            #col.prop(objs[show_name], "hide", text="", icon='RESTRICT_VIEW_OFF')
+            if ms.show_extra_columns:
+                col = layout.column()
+                if objs[show_name].hide:
+                    # NOTE: For some reason, when Blender displays a boolean, it will use an offset of 1 for true.
+                    #       So since GROUP_BONE is the icon BEFORE GROUP_VERTEX, picking it when true shows GROUP_VERTEX.
+                    col.prop(objs[show_name], "hide", text="", icon='GROUP_BONE')
+                else:
+                    col.prop(objs[show_name], "hide", text="", icon='GROUP_VERTEX')
+                col = layout.column()
+                if objs[show_shape_name].hide:
+                    # NOTE: For some reason, when Blender displays a boolean, it will use an offset of 1 for true.
+                    #       So since GROUP_BONE is the icon BEFORE GROUP_VERTEX, picking it when true shows GROUP_VERTEX.
+                    col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_CHARGE')
+                else:
+                    col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_LENNARDJONES')
+
+
+"""
+These functions are now implemented in the molecule list
+
+class APP_OT_molecule_show(bpy.types.Operator):
+    bl_idname = "molecule_simulation.molecule_show"
+    bl_label = "Show"
+    bl_description = "Show the current molecule"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        ms = context.scene.molecule_simulation
+        show_name = "mol_" + ms.molecule_list[ms.active_mol_index].name
+        show_shape_name = show_name + "_shape"
+        show_items = [show_name, show_shape_name]
+        print ( "Showing " + str(show_items) )
+        for o in context.scene.objects:
+            if o.name in show_items:
+                o.hide = False
+        return {'FINISHED'}
+
+class APP_OT_molecule_hide(bpy.types.Operator):
+    bl_idname = "molecule_simulation.molecule_hide"
+    bl_label = "Hide"
+    bl_description = "Hide the current molecule"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        ms = context.scene.molecule_simulation
+        hide_name = "mol_" + ms.molecule_list[ms.active_mol_index].name
+        hide_shape_name = hide_name + "_shape"
+        hide_items = [hide_name, hide_shape_name]
+        print ( "Hiding " + str(hide_items) )
+        for o in context.scene.objects:
+            if o.name in hide_items:
+                o.hide = True
+        return {'FINISHED'}
+
+class APP_OT_molecule_show_only(bpy.types.Operator):
+    bl_idname = "molecule_simulation.molecule_show_only"
+    bl_label = "Show Only"
+    bl_description = "Only show the current molecule"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        ms = context.scene.molecule_simulation
+        show_only_name = "mol_" + ms.molecule_list[ms.active_mol_index].name
+        show_only_shape_name = show_only_name + "_shape"
+        show_only_items = [show_only_name, show_only_shape_name]
+        print ( "Only showing " + str(show_only_items) )
+        for o in context.scene.objects:
+            if o.name in show_only_items:
+                o.hide = False
+            else:
+                o.hide = True
+        return {'FINISHED'}
+"""
+
+class APP_OT_molecule_show_all(bpy.types.Operator):
+    bl_idname = "molecule_simulation.molecule_show_all"
+    bl_label = "Show All"
+    bl_description = "Show all of the molecules"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        ms = context.scene.molecule_simulation
+        print ( "Showing All" )
+        for o in ms.molecule_list:
+            if not o.glyph_visibility:
+                o.glyph_visibility = True
+            if o.glyph_show_only:
+                o.glyph_show_only = False
+        for o in context.scene.objects:
+            if o.name.startswith("mol_"):
+                o.hide = False
+        return {'FINISHED'}
+
+
+class APP_OT_molecule_hide_all(bpy.types.Operator):
+    bl_idname = "molecule_simulation.molecule_hide_all"
+    bl_label = "Hide All"
+    bl_description = "Hide all of the molecules"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        ms = context.scene.molecule_simulation
+        print ( "Hiding All" )
+        for o in ms.molecule_list:
+            if o.glyph_visibility:
+                o.glyph_visibility = False
+            if o.glyph_show_only:
+                o.glyph_show_only = False
+        for o in context.scene.objects:
+            if o.name.startswith("mol_"):
+                o.hide = True
+        return {'FINISHED'}
 
 
 
@@ -281,6 +809,15 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
     next_id = IntProperty(name="Counter for Unique Molecule IDs", default=1)  # Start ID's at 1 to confirm initialization
     show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_advanced = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
+
+    show_extra_columns = bpy.props.BoolProperty(default=True, description="Show additional visibility control columns")
+    show_molecules = bpy.props.BoolProperty(default=True, name="Define Molecules")
+    show_display = bpy.props.BoolProperty(default=False, name="Molecule Display Options")
+    show_preview = bpy.props.BoolProperty(default=False, name="Material Preview")
+    show_release = bpy.props.BoolProperty(default=False, name="Define a Release Site")
+    show_run = bpy.props.BoolProperty(default=True, name="Run Simulation")
+
+
 
     def allocate_available_id ( self ):
         """ Return a unique molecule ID for a new molecule """
@@ -300,20 +837,21 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_active_molecule ( self, context ):
         """ Remove the active molecule from the list of molecules """
-        mol = self.molecule_list[self.active_mol_index]
-        if mol:
-            mol.remove_mol_data(context)
-        self.molecule_list.remove ( self.active_mol_index )
-        self.active_mol_index -= 1
-        if self.active_mol_index < 0:
-            self.active_mol_index = 0
-        if len(self.molecule_list) <= 0:
-            self.next_id = 1
+        if len(self.molecule_list) > 0:
+            mol = self.molecule_list[self.active_mol_index]
+            if mol:
+                mol.remove_mol_data(context)
+            self.molecule_list.remove ( self.active_mol_index )
+            self.active_mol_index -= 1
+            if self.active_mol_index < 0:
+                self.active_mol_index = 0
+            if len(self.molecule_list) <= 0:
+                self.next_id = 1
 
     def update_simulation ( self, scene ):
         for mol in self.molecule_list:
             # print ("Updating molecule " + mol.name)
-            mol.update_simulation ( scene )
+            mol.update_molecule_positions ( scene )
 
 
 
@@ -321,39 +859,138 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
         """ Draw the molecule "panel" within the layout """
 
         row = layout.row()
-        row.operator ( "molecule_sim.load_home_file" )
-        row.operator ( "molecule_sim.save_home_file" )
+        row.operator ( "molecule_sim.load_home_file", icon='IMPORT' )
+        row.operator ( "molecule_sim.save_home_file", icon='EXPORT' )
+
+        box = layout.box() ### Used only as a separator
 
         row = layout.row()
-        col = row.column()
-        col.template_list("MolSim_UL_check_molecule", "define_molecules",
-                          self, "molecule_list",
-                          self, "active_mol_index",
-                          rows=2)
-        col = row.column(align=True)
-        col.operator("molecule_simulation.molecule_add", icon='ZOOMIN', text="")
-        col.operator("molecule_simulation.molecule_remove", icon='ZOOMOUT', text="")
+        row.alignment = 'LEFT'
+        if self.show_molecules:
+            row.prop(self, "show_molecules", icon='TRIA_DOWN', emboss=False)
+
+
+
+            ################################
+            #row = layout.row()
+            #row.label ( "Renaming Molecules Doesn't Work YET!!!", icon='ERROR' )
+            ################################
+
+
+
+            row = layout.row()
+            col = row.column()
+            col.template_list("MolSim_UL_check_molecule", "define_molecules",
+                              self, "molecule_list",
+                              self, "active_mol_index",
+                              rows=2)
+            col = row.column(align=False)
+            # Use subcolumns to group logically related buttons together
+            subcol = col.column(align=True)
+            subcol.operator("molecule_simulation.molecule_add", icon='ZOOMIN', text="")
+            subcol.operator("molecule_simulation.molecule_remove", icon='ZOOMOUT', text="")
+            subcol = col.column(align=True)
+            subcol.operator("molecule_simulation.molecule_show_all", icon='RESTRICT_VIEW_OFF', text="")
+            subcol.operator("molecule_simulation.molecule_hide_all", icon='RESTRICT_VIEW_ON', text="")
+            subcol = col.column(align=True)
+            subcol.prop (self, "show_extra_columns", text="")
+
+            if self.molecule_list:
+                mol = self.molecule_list[self.active_mol_index]
+                mol.draw_layout ( context, layout, self )
+        else:
+            row.prop(self, "show_molecules", icon='TRIA_RIGHT', emboss=False)
+
+
         if self.molecule_list:
-            mol = self.molecule_list[self.active_mol_index]
-            # The self is needed to pass the "advanced" flag to the molecule
-            mol.draw_layout ( context, layout, self )
+            if len(self.molecule_list) > 0:
+                box = layout.box() ### Used only as a separator
 
-        box = layout.box()
+                row = layout.row()
+                row.alignment = 'LEFT'
+                if self.show_display:
+                    row.prop(self, "show_display", icon='TRIA_DOWN', emboss=False)
+                    row = layout.row()
+                    if self.molecule_list:
+                        mol = self.molecule_list[self.active_mol_index]
+                        mol.draw_display_layout ( context, layout, self )
+                else:
+                    row.prop(self, "show_display", icon='TRIA_RIGHT', emboss=False)
+
+                box = layout.box() ### Used only as a separator
+
+                row = layout.row()
+                row.alignment = 'LEFT'
+                if self.show_release:
+                    row.prop(self, "show_release", icon='TRIA_DOWN', emboss=False)
+                    row = layout.row()
+                    if self.molecule_list:
+                        mol = self.molecule_list[self.active_mol_index]
+                        mol.draw_release_layout ( context, layout, self )
+                else:
+                    row.prop(self, "show_release", icon='TRIA_RIGHT', emboss=False)
+
+        box = layout.box() ### Used only as a separator
 
         row = layout.row()
-        row.operator("mol_sim.run")
-        row.operator("mol_sim.activate")
+        row.alignment = 'LEFT'
+        if self.show_run:
+            row.prop(self, "show_run", icon='TRIA_DOWN', emboss=False)
+            row = layout.row()
+            row.operator("mol_sim.run", icon='COLOR_RED')
+            row.operator("mol_sim.activate", icon='FILE_REFRESH')
+            row.operator("mol_sim.deactivate", icon='X')
+        else:
+            row.prop(self, "show_run", icon='TRIA_RIGHT', emboss=False)
 
 
 
-class MoleculeSimPanel(bpy.types.Panel):
+class MoleculeSimToolPanel(bpy.types.Panel):
     bl_label = "Molecule Simulation"
+
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "TOOLS"
+    bl_category = "MolSim"
+    # bl_context = "scene"
+
+    @classmethod
+    def poll(cls, context):
+        return (context.scene is not None)
+
+    def draw(self, context):
+        row = self.layout.row()
+        row.label ( "Tool Shelf Version", icon='COLOR_GREEN' )
+
+        box = self.layout.box() ### Used only as a separator
+
+        app = context.scene.molecule_simulation
+        app.draw_layout ( context, self.layout )
+
+
+
+class MoleculeSimScenePanel(bpy.types.Panel):
+    bl_label = "Molecule Simulation Scene"
+
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "scene"
+
+    @classmethod
+    def poll(cls, context):
+        return (context.scene is not None)
+
     def draw(self, context):
+
+        row = self.layout.row()
+        row.label ( "Scene Panel Version", icon='COLOR_BLUE' )
+
+        box = self.layout.box() ### Used only as a separator
+
         app = context.scene.molecule_simulation
         app.draw_layout ( context, self.layout )
+
+
+
 
 class LoadHomeOp(bpy.types.Operator):
     bl_idname = "molecule_sim.load_home_file"
@@ -575,6 +1212,7 @@ class face:
   def toString( self ):
     return ( "[" + str(verts[0]) + "," + str(verts[1]) + "," + str(verts[2]) + "]" );
 
+
 class plf_object:
 
   # An object that can hold points and faces
@@ -713,7 +1351,7 @@ class Letter_B (plf_object):
     self.points = [];
     self.faces = [];
     for p in pts:
-      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*(p[2]-0.075) ) )
     for f in fcs:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
@@ -811,7 +1449,7 @@ class Letter_C (plf_object):
     self.points = [];
     self.faces = [];
     for p in pts:
-      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*(p[2]-0.075) ) )
     for f in fcs:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
@@ -909,22 +1547,67 @@ mbso.parent = mb
 
 """
 
+
+fixed_points = []
+fixed_index = 0
+
+
 class MolCluster (plf_object):
 
-  def __init__ ( self, num, dist, center_x, center_y, center_z, seed ):
+  def __init__ ( self, num, dist, center_x, center_y, center_z, seed, method='slow' ):
 
     # Create a distribution as requested
+    
+    global fixed_points
+    global fixed_index
+
+    if len(fixed_points) <= 0:
+        print ( "Generating normal distribution" )
+        random.seed ( seed )
+        for i in range(100000):
+            fixed_points.append ( point ( random.normalvariate(center_x,dist), random.normalvariate(center_y,dist), random.normalvariate(center_z,dist) ) )
 
     self.points = [];
     self.faces = [];
+    
+    if method == 'slow':    # Use random number generator (slowest)
+        for i in range(num):
+            self.points.append ( point ( random.normalvariate(center_x,dist), random.normalvariate(center_y,dist), random.normalvariate(center_z,dist) ) )
+    elif method == 'med':  # Use precalculated random points (faster, but repeats points)
+        fixed_index = random.randint ( 0, len(fixed_points)-4 )
+        for i in range(num):
+            if fixed_index >= len(fixed_points):
+                fixed_index = random.randint ( 0, len(fixed_points)-1 )
+            self.points.append ( fixed_points[fixed_index] )
+            fixed_index += 1
+    elif method == 'fast':     # Use a single fixed value (fastest, all points are the same!!)
+        single_point = point ( center_x, center_y, center_z )
+        for i in range(num):
+            self.points.append ( single_point )
 
-    random.seed ( seed )
-    for i in range(num):
-        self.points = self.points + [ point ( random.normalvariate(center_x,dist), random.normalvariate(center_y,dist), random.normalvariate(center_z,dist) ) ]
+        
 
 
 """
 Generating Letters:
+
+text = "Hello"
+bpy.ops.object.text_add(location=(0,0,0),rotation=(0,0,0))
+text_object = bpy.context.object
+text_object.name = text + "_name"
+text_data = text_object.data
+text_data.name = text + "_data"
+
+text_object_data.body = text
+text_object_data.size = 2
+text_object_data.extrude = 0.2
+
+bpy.ops.object.convert(target=  'MESH')
+bpy.ops.shade_flat()
+
+
+
+
 
 bpy.ops.view3d.snap_cursor_to_center()
 bpy.ops.object.text_add(view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
@@ -1014,7 +1697,7 @@ def generate_letter_object ( letter ):
 
 
 
-def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="" ):
+def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="", force=False ):
 
     vertex_list = plf.points
     face_list = plf.faces
@@ -1041,30 +1724,36 @@ def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="" ):
 
     # Assign the new mesh to the object (deleting any old mesh if the object already exists)
     obj = None
+    old_mesh = None
     if obj_name in scene.objects:
         obj = scene.objects[obj_name]
         old_mesh = obj.data
         obj.data = new_mesh
-        bpy.data.meshes.remove ( old_mesh )
+        if old_mesh.users <= 0:
+            bpy.data.meshes.remove ( old_mesh )
     else:
         print ( "Creating a new object" )
         obj = bpy.data.objects.new ( obj_name, new_mesh )
         scene.objects.link ( obj )
+        # Assign the parent if requested in the call with a non-none parent_name
         if parent_name:
-            obj.parent = bpy.data.objects[parent_name]
+            if parent_name in bpy.data.objects:
+                obj.parent = bpy.data.objects[parent_name]
 
     if "old_"+mesh_name in bpy.data.meshes:
-        bpy.data.meshes.remove ( bpy.data.meshes["old_"+mesh_name] )
+        if bpy.data.meshes["old_"+mesh_name].users <= 0:
+            bpy.data.meshes.remove ( bpy.data.meshes["old_"+mesh_name] )
 
     if len(face_list) <= 0:
         # These are points only, so create a shape glyph as needed to show the points
         shape_name = obj_name + "_shape"
+        #if force or not (shape_name in scene.objects):
         if not (shape_name in scene.objects):
             old_shape_name = "old_" + shape_name
             size = 0.1
             print ( "Creating a new glyph for " + obj_name )
             shape_plf = None
-            if "Box" == glyph:
+            if "Cube" == glyph:
                 shape_plf = BasicBox  ( size, size, size )
             elif "Pyramid" == glyph:
                 shape_plf = Pyramid  ( size, size, size )
@@ -1091,15 +1780,32 @@ def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="" ):
             new_mesh = bpy.data.meshes.new ( shape_name )
             new_mesh.from_pydata ( shape_vertices, [], shape_faces )
             new_mesh.update()
+
             shape = bpy.data.objects.new ( shape_name, new_mesh )
             shape.data.materials.clear()  # New
             shape.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
+
+            # This didn't work very well
+
+            #if not (shape_name in scene.objects):
+            #    shape = bpy.data.objects.new ( shape_name, new_mesh )
+            ## Create a material specifically for this object
+            #if obj_name+"_mat" in bpy.data.materials:
+            #    shape.data.materials.clear()  # New
+            #    shape.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
+            ## Remove current children from the target object (otherwise glyphs will be merged ... useful in the future)
+            #while len(obj.children) > 0:
+            #    obj.children[0].parent = None
+
+
+            # Add the shape to the scene as a glyph for the object
             scene.objects.link ( shape )
             obj.dupli_type = 'VERTS'
             shape.parent = obj
             
             if old_shape_name in bpy.data.meshes:
-                bpy.data.meshes.remove ( bpy.data.meshes[old_shape_name] )
+                if bpy.data.meshes[old_shape_name].users <= 0:
+                    bpy.data.meshes.remove ( bpy.data.meshes[old_shape_name] )
 
     # Could return the object here if needed
 
@@ -1124,7 +1830,7 @@ def add_new_empty_object ( child_name, parent_name=None ):
         bpy.ops.object.add(location=[0, 0, 0])      # Create an "Empty" object in the Blender scene
         ### Note, the following line seems to cause an exception in some contexts: 'Context' object has no attribute 'selected_objects'
         obj = bpy.context.selected_objects[0]  # The newly added object will be selected
-        obj.name = child_name                 # Name this empty object "molecules" 
+        obj.name = child_name                  # Name this empty object "molecules"
         obj.hide_select = True
         obj.hide = True
     if parent_name:
@@ -1200,6 +1906,21 @@ class MoleculeSimActivateOperator(bpy.types.Operator):
 
         global active_frame_change_handler
         active_frame_change_handler = mol_sim_frame_change_handler
+        return { 'FINISHED' }
+
+
+class MoleculeSimDeactivateOperator(bpy.types.Operator):
+    bl_idname = "mol_sim.deactivate"
+    bl_label = "Deactivate"
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
         return { 'FINISHED' }
 
 
