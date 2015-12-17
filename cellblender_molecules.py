@@ -50,6 +50,287 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 
+# Generic Geometry Helper Classes
+
+class CellBlender_point:
+  x=0
+  y=0
+  z=0
+
+  def __init__ ( self, x, y, z ):
+    self.x = x
+    self.y = y
+    self.z = z
+
+  def toList ( self ):
+    return ( [ self.x, self.y, self.z ] )
+
+  def toString ( self ):
+    return ( "(" + str(self.x) + "," + str(self.y) + "," + str(self.z) + ")" )
+
+
+class CellBlender_face:
+  verts = []
+
+  def __init__ ( self, v1, v2, v3 ):
+    self.verts = []
+    self.verts.append ( v1 )
+    self.verts.append ( v2 )
+    self.verts.append ( v3 )
+
+  def toString( self ):
+    return ( "[" + str(verts[0]) + "," + str(verts[1]) + "," + str(verts[2]) + "]" )
+
+
+class CellBlender_mesh:
+
+  # An object that can hold points and faces
+
+  points = []
+  faces = []
+
+  def __init__ ( self ):
+    self.points = []
+    self.faces = []
+
+
+  def update_glyph_mesh ( scene, parent_name, obj_name, glyph="", force=False ):
+    # Adapted from "update_obj_from_plf" in mol_sim.py
+
+    # Updates or Creates a Blender object with an associated mesh from this object's points and faces
+
+    vertices = []
+    for point in self.points:
+        vertices.append ( mathutils.Vector((point.x,point.y,point.z)) )
+    faces = []
+    for face_element in self.faces:
+        faces.append ( face_element.verts )
+
+    mesh_name = obj_name + "_mesh"
+    if mesh_name in bpy.data.meshes:
+        bpy.data.meshes[mesh_name].name = "old_" + mesh_name
+
+    # Create and build the new mesh
+    new_mesh = bpy.data.meshes.new ( mesh_name )
+    new_mesh.from_pydata ( vertices, [], faces )
+    new_mesh.update()
+
+    # Assign the new mesh to the object (deleting any old mesh if the object already exists)
+    obj = None
+    old_mesh = None
+    if obj_name in scene.objects:
+        obj = scene.objects[obj_name]
+        old_mesh = obj.data
+        obj.data = new_mesh
+        if old_mesh.users <= 0:
+            bpy.data.meshes.remove ( old_mesh )
+    else:
+        print ( "Creating a new glyph object" )
+        obj = bpy.data.objects.new ( obj_name, new_mesh )
+        scene.objects.link ( obj )
+        # Assign the parent if requested in the call with a non-none parent_name
+        if parent_name:
+            if parent_name in bpy.data.objects:
+                obj.parent = bpy.data.objects[parent_name]
+
+    if "old_"+mesh_name in bpy.data.meshes:
+        if bpy.data.meshes["old_"+mesh_name].users <= 0:
+            bpy.data.meshes.remove ( bpy.data.meshes["old_"+mesh_name] )
+
+    # Could return the object here if needed
+
+
+
+class CellBlender_Cube (CellBlender_mesh):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    # Create a box of the requested size
+
+    self.points = []
+    self.faces = []
+
+    self.points = self.points + [ CellBlender_point (  size_x,  size_y, -size_z ) ]
+    self.points = self.points + [ CellBlender_point (  size_x, -size_y, -size_z ) ]
+    self.points = self.points + [ CellBlender_point ( -size_x, -size_y, -size_z ) ]
+    self.points = self.points + [ CellBlender_point ( -size_x,  size_y, -size_z ) ]
+    self.points = self.points + [ CellBlender_point (  size_x,  size_y,  size_z ) ]
+    self.points = self.points + [ CellBlender_point (  size_x, -size_y,  size_z ) ]
+    self.points = self.points + [ CellBlender_point ( -size_x, -size_y,  size_z ) ]
+    self.points = self.points + [ CellBlender_point ( -size_x,  size_y,  size_z ) ]
+
+    face_list = [ [ 1, 2, 3 ], [ 7, 6, 5 ], [ 4, 5, 1 ], [ 5, 6, 2 ],
+                  [ 2, 6, 7 ], [ 0, 3, 7 ], [ 0, 1, 3 ], [ 4, 7, 5 ],
+                  [ 0, 4, 1 ], [ 1, 5, 2 ], [ 3, 2, 7 ], [ 4, 0, 7 ] ]
+
+    for f in face_list:
+      self.faces.append ( CellBlender_face ( f[0], f[1], f[2] ) )
+
+
+class CellBlender_Pyramid (CellBlender_mesh):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    # Create a pyramid of the requested size
+
+    self.points = []
+    self.faces = []
+
+    self.points = self.points + [ CellBlender_point (  size_x,  size_y, -size_z ) ]
+    self.points = self.points + [ CellBlender_point (  size_x, -size_y, -size_z ) ]
+    self.points = self.points + [ CellBlender_point ( -size_x, -size_y, -size_z ) ]
+    self.points = self.points + [ CellBlender_point ( -size_x,  size_y, -size_z ) ]
+    self.points = self.points + [ CellBlender_point (     0.0,     0.0,  size_z ) ]
+
+    face_list = [ [ 1, 2, 3 ], [ 0, 1, 3 ], [ 0, 4, 1 ],
+                  [ 1, 4, 2 ], [ 2, 4, 3 ], [ 3, 4, 0 ] ]
+
+    for f in face_list:
+      self.faces.append ( CellBlender_face ( f[0], f[1], f[2] ) )
+
+
+
+class CellBlender_IcoSphere (CellBlender_mesh):
+
+  # Subclass of CellBlender_mesh that builds an icosphere with recursion
+
+  def add_normalized_vertex ( self, p ):
+    # Normalize the point
+    # Add to the list of points if it's not already in the list
+    # Return an index to the new or existing point in the list
+
+    l = math.sqrt ( (p.x * p.x) + (p.y * p.y) + (p.z * p.z) )
+    pnorm = CellBlender_point ( p.x/l, p.y/l, p.z/l )
+
+    # Check if it's already there
+    index = -1
+    for pt in self.points:
+      if (pt.x == pnorm.x) and (pt.y == pnorm.y) and (pt.z == pnorm.z):
+        index = self.points.index(pt)
+        break
+
+    if (index < 0):
+      self.points.append ( pnorm )
+      index = self.points.index ( pnorm )
+      #print ( "Added vertex at " + str(index) )
+    #else:
+    #  print ( "Found vertex at " + str(index) )
+    return (index)
+
+
+  def __init__ ( self, recursion_level=0, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    self.points = []
+
+    t = (1.0 + math.sqrt(5.0)) / 2.0  # Approx 1.618033988749895
+
+    # Create 12 verticies from the 3 perpendicular planes whose corners define an icosahedron
+
+    self.add_normalized_vertex ( CellBlender_point (-1,  t,  0) )
+    self.add_normalized_vertex ( CellBlender_point ( 1,  t,  0) )
+    self.add_normalized_vertex ( CellBlender_point (-1, -t,  0) )
+    self.add_normalized_vertex ( CellBlender_point ( 1, -t,  0) )
+
+    self.add_normalized_vertex ( CellBlender_point ( 0, -1,  t) )
+    self.add_normalized_vertex ( CellBlender_point ( 0,  1,  t) )
+    self.add_normalized_vertex ( CellBlender_point ( 0, -1, -t) )
+    self.add_normalized_vertex ( CellBlender_point ( 0,  1, -t) )
+
+    self.add_normalized_vertex ( CellBlender_point ( t,  0, -1) )
+    self.add_normalized_vertex ( CellBlender_point ( t,  0,  1) )
+    self.add_normalized_vertex ( CellBlender_point (-t,  0, -1) )
+    self.add_normalized_vertex ( CellBlender_point (-t,  0,  1) )
+
+
+    # Rotate all points such that the resulting icosphere will be separable at the equator
+
+    if (True):
+      # A PI/6 rotation about z (transform x and y) gives an approximate equator in x-y plane
+      angle = (math.pi / 2) - math.atan(1/t)
+      # print ( "Rotating with angle = " + str(180 * angle / math.pi) )
+      for p in self.points:
+        newx = (math.cos(angle) * p.x) - (math.sin(angle) * p.z)
+        newz = (math.sin(angle) * p.x) + (math.cos(angle) * p.z)
+        p.x = newx
+        p.z = newz
+
+    # Build the original 20 faces for the Icosphere
+
+    self.faces = []
+
+    # Add 5 faces around point 0 (top)
+    self.faces.append ( CellBlender_face (  0, 11,  5 ) )
+    self.faces.append ( CellBlender_face (  0,  5,  1 ) )
+    self.faces.append ( CellBlender_face (  0,  1,  7 ) )
+    self.faces.append ( CellBlender_face (  0,  7, 10 ) )
+    self.faces.append ( CellBlender_face (  0, 10, 11 ) )
+
+    # Add 5 faces adjacent faces
+    self.faces.append ( CellBlender_face (  1,  5,  9 ) )
+    self.faces.append ( CellBlender_face (  5, 11,  4 ) )
+    self.faces.append ( CellBlender_face ( 11, 10,  2 ) )
+    self.faces.append ( CellBlender_face ( 10,  7,  6 ) )
+    self.faces.append ( CellBlender_face (  7,  1,  8 ) )
+
+    # Add 5 faces around point 3 (bottom)
+    self.faces.append ( CellBlender_face (  3,  9,  4 ) )
+    self.faces.append ( CellBlender_face (  3,  4,  2 ) )
+    self.faces.append ( CellBlender_face (  3,  2,  6 ) )
+    self.faces.append ( CellBlender_face (  3,  6,  8 ) )
+    self.faces.append ( CellBlender_face (  3,  8,  9 ) )
+
+    # Add 5 faces adjacent faces
+    self.faces.append ( CellBlender_face (  4,  9,  5 ) )
+    self.faces.append ( CellBlender_face (  2,  4, 11 ) )
+    self.faces.append ( CellBlender_face (  6,  2, 10 ) )
+    self.faces.append ( CellBlender_face (  8,  6,  7 ) )
+    self.faces.append ( CellBlender_face (  9,  8,  1 ) )
+
+    # Subdivide the faces as requested by the recursion_level argument
+    old_points = None
+    old_faces = None
+
+    for rlevel in range(recursion_level):
+      # System.out.println ( "\nRecursion Level = " + rlevel )
+      # Save the old points and faces and build a new set for this recursion level
+      old_points = self.points
+      old_faces = self.faces
+      self.points = []
+      self.faces = []
+      for f in old_faces:
+        # Split this face into 4 more faces
+        midpoint = CellBlender_point(0,0,0)
+        potential_new_points = []
+        for i in range(6):
+          potential_new_points.append ( CellBlender_point(0,0,0) )
+        for side in range(3):
+          p1 = old_points[f.verts[side]]
+          p2 = old_points[f.verts[(side+1)%3]]
+          midpoint = CellBlender_point ( ((p1.x+p2.x)/2), ((p1.y+p2.y)/2), ((p1.z+p2.z)/2) )
+          potential_new_points[2*side] = p1
+          potential_new_points[(2*side)+1] = midpoint
+        # Add the 4 new faces
+        # Start with the verticies ... add them all since add_normalized_vertex() will remove duplicates
+        vertex_indicies = []
+        for i in range(6):
+          vertex_indicies.append ( 0 )
+        for i in range(6):
+          vertex_indicies[i] = self.add_normalized_vertex ( potential_new_points[i] )
+        # Now add the 4 new faces
+        self.faces.append ( CellBlender_face ( vertex_indicies[0], vertex_indicies[1], vertex_indicies[5] ) )
+        self.faces.append ( CellBlender_face ( vertex_indicies[1], vertex_indicies[2], vertex_indicies[3] ) )
+        self.faces.append ( CellBlender_face ( vertex_indicies[3], vertex_indicies[4], vertex_indicies[5] ) )
+        self.faces.append ( CellBlender_face ( vertex_indicies[1], vertex_indicies[3], vertex_indicies[5] ) )
+
+    for pt in self.points:
+      pt.x *= size_x
+      pt.y *= size_y
+      pt.z *= size_z
+
+
+
+
+
 # Molecule Operators:
 
 class MCELL_OT_molecule_add(bpy.types.Operator):
@@ -144,15 +425,29 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
 # Callbacks for all Property updates appear to require global (non-member) functions.
 # This is circumvented by simply calling the associated member function passed as self:
 
-def check_callback(self, context):
-    print ( "check_callback called with self = " + str(self) )
+def name_change_callback(self, context):
+    print ( "name_change_callback called with self = " + str(self) )
+    print ( "  old = " + self.old_name + " => new = " + self.name )
+    old_mol_name = "mol_" + self.old_name
+    new_mol_name = "mol_" + self.name
+
+    if old_mol_name + '_mat' in bpy.data.materials:
+        bpy.data.materials[old_mol_name + '_mat'].name = new_mol_name + '_mat'
+    if old_mol_name + '_shape' in bpy.data.meshes:
+        bpy.data.meshes[old_mol_name + '_shape'].name = new_mol_name + '_shape'
+    if old_mol_name + '_shape' in bpy.data.objects:
+        bpy.data.objects[old_mol_name + '_shape'].name = new_mol_name + '_shape'
+    if old_mol_name + '_pos' in bpy.data.meshes:
+        bpy.data.meshes[old_mol_name + '_pos'].name = new_mol_name + '_pos'
+    if old_mol_name in bpy.data.objects:
+        bpy.data.objects[old_mol_name].name = new_mol_name
+
+    self.old_name = self.name
+
     self.check_callback(context)
     return
 
-
-def name_change_callback(self, context):
-    print ( "name_change_callback called with self = " + str(self) )
-    self.name_change_callback(context)
+def check_callback(self, context):
     self.check_callback(context)
     return
 
@@ -165,13 +460,14 @@ import os
 
 
 
+
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
-    name = StringProperty(
-        name="Molecule Name", default="Molecule",
-        description="The molecule species name",
-        update=name_change_callback)
+    # name = StringProperty(name="Molecule Name", default="Molecule",description="The molecule species name",update=check_callback)
+    name = StringProperty(name="Molecule Name", default="Molecule", description="The molecule species name", update=name_change_callback)
     old_name = StringProperty(name="Old Mol Name", default="Molecule")
+
+
     id = IntProperty(name="Molecule ID", default=0)
     type_enum = [
         ('2D', "Surface Molecule", ""),
@@ -316,6 +612,152 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
 
+
+
+
+    def initialize_mol_data ( self, context ):
+        # This assumes that the ID has already been assigned!!!
+        self.name = "Molecule_"+str(self.id)
+        self.old_name = self.name
+        self.create_mol_data(context)
+
+
+    def create_mol_data ( self, context ):
+
+        meshes = bpy.data.meshes
+        mats = bpy.data.materials
+        objs = bpy.data.objects
+        scn = bpy.context.scene
+        scn_objs = scn.objects
+
+        mol_name = "mol_" + self.name
+        mol_pos_mesh_name = mol_name + "_pos"
+        shape_name = mol_name + "_shape"
+        material_name = mol_name + "_mat"
+
+
+        # First be sure that the parent "empty" for holding molecules is available (create as needed)
+        mols_obj = bpy.data.objects.get("molecules")
+        if not mols_obj:
+            bpy.ops.object.add(location=[0, 0, 0])
+            mols_obj = bpy.context.selected_objects[0]
+            mols_obj.name = "molecules"
+            mols_obj.hide = True
+
+        # Build the new shape vertices and faces
+        size = 0.1 / 20.0  # This number was chosen to be consistent with molecules already created by CellBlender
+        print ( "Creating a new glyph for " + self.name )
+        shape_mesh_data = None
+        if   "Cube" == self.glyph:
+            shape_mesh_data = CellBlender_Cube  ( size, size, size )
+        elif "Pyramid" == self.glyph:
+            shape_mesh_data = CellBlender_Pyramid  ( size, size, size )
+        elif "Icosahedron" == self.glyph:
+            shape_mesh_data = CellBlender_IcoSphere  ( 0, size, size, size )
+        elif "Sphere_1" == self.glyph:
+            shape_mesh_data = CellBlender_IcoSphere  ( 1, size, size, size )
+        elif "Sphere_2" == self.glyph:
+            shape_mesh_data = CellBlender_IcoSphere  ( 2, size, size, size )
+        else:
+            #shape_mesh_data = CellBlender_Cube ( size, size, size )
+            shape_mesh_data = CellBlender_IcoSphere  ( 1, size, size, size )
+        shape_vertices = []
+        for point in shape_mesh_data.points:
+            shape_vertices.append ( mathutils.Vector((point.x,point.y,point.z)) )
+        shape_faces = []
+        for face_element in shape_mesh_data.faces:
+            shape_faces.append ( face_element.verts )
+
+
+        # Delete the old object and mesh
+        if shape_name in objs:
+            scn_objs.unlink ( objs[shape_name] )
+            objs.remove ( objs[shape_name] )
+        if shape_name in meshes:
+            meshes.remove ( meshes[shape_name] )
+
+        # Create and build the new mesh
+        mol_shape_mesh = bpy.data.meshes.new ( shape_name )
+        mol_shape_mesh.from_pydata ( shape_vertices, [], shape_faces )
+        mol_shape_mesh.update()
+
+        # Create the new shape object from the mesh
+        mol_shape_obj = bpy.data.objects.new ( shape_name, mol_shape_mesh )
+
+        # Add the shape to the scene as a glyph for the object
+        scn.objects.link ( mol_shape_obj )
+
+        # Look-up material, create if needed.
+        # Associate material with mesh shape.
+        # Bob: Maybe we need to associate it with the OBJECT with: shape_object.material_slots[0].link = 'OBJECT'
+        mol_mat = mats.get(material_name)
+        if not mol_mat:
+            mol_mat = mats.new(material_name)
+            # Need to pick a color here ?
+        if not mol_shape_mesh.materials.get(material_name):
+            mol_shape_mesh.materials.append(mol_mat)
+
+        # Create a "mesh" to hold instances of molecule positions
+        mol_pos_mesh = meshes.get(mol_pos_mesh_name)
+        if not mol_pos_mesh:
+            mol_pos_mesh = meshes.new(mol_pos_mesh_name)
+
+        # Create object to contain the mol_pos_mesh data
+        mol_obj = objs.get(mol_name)
+        if not mol_obj:
+            mol_obj = objs.new(mol_name, mol_pos_mesh)
+            scn_objs.link(mol_obj)
+            mol_shape_obj.parent = mol_obj
+            mol_obj.dupli_type = 'VERTS'
+            mol_obj.use_dupli_vertices_rotation = True
+            mol_obj.parent = mols_obj
+
+        # Add the shape to the scene as a glyph for the object
+        mol_obj.dupli_type = 'VERTS'
+        mol_shape_obj.parent = mol_obj
+
+        # Could return the object here if needed
+
+
+    def remove_mol_data ( self, context ):
+
+        meshes = bpy.data.meshes
+        mats = bpy.data.materials
+        objs = bpy.data.objects
+        scn = bpy.context.scene
+        scn_objs = scn.objects
+
+        mol_obj_name        = "mol_" + self.name
+        mol_shape_obj_name  = mol_obj_name + "_shape"
+        mol_shape_mesh_name = mol_obj_name + "_shape"
+        mol_pos_mesh_name   = mol_obj_name + "_pos"
+        mol_material_name   = mol_obj_name + "_mat"
+
+        mols_obj = objs.get("molecules")
+
+        mol_obj = objs.get(mol_obj_name)
+        mol_shape_obj = objs.get(mol_shape_obj_name)
+        mol_shape_mesh = meshes.get(mol_shape_mesh_name)
+        mol_pos_mesh = meshes.get(mol_pos_mesh_name)
+        mol_material = mats.get(mol_material_name)
+
+        if mol_obj:
+            scn_objs.unlink ( mol_obj )
+        if mol_shape_obj:
+            scn_objs.unlink ( mol_shape_obj )
+
+        if mol_obj.users <= 0:
+            objs.remove ( mol_obj )
+            meshes.remove ( mol_pos_mesh )
+
+        if mol_shape_obj.users <= 0:
+            objs.remove ( mol_shape_obj )
+            meshes.remove ( mol_shape_mesh )
+
+        if mol_material.users <= 0:
+            mats.remove ( mol_material )
+
+
     # Exporting to an MDL file could be done just like this
     def print_details( self ):
         print ( "Name = " + self.name )
@@ -406,15 +848,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 "does not affect unimolecular reactions." )
             self.custom_time_step.draw(box,parameter_system)
             self.custom_space_step.draw(box,parameter_system)
-
-
-    def name_change_callback(self, context):
-        """Changing the name of a molecule triggers changes to the mesh, material, and glyph which are keyed off of the name"""
-        print ( "**** Need to change names for mesh, material, and glyph" )
-        print ( "Old name = " + self.old_name )
-        print ( "New name = " + self.name )
-        self.old_name = self.name
-        return
 
 
     def check_callback(self, context):
@@ -666,10 +1099,12 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         new_mol = self.molecule_list.add()
         new_mol.id = self.allocate_available_id()
         new_mol.init_properties(context.scene.mcell.parameter_system)
+        new_mol.initialize_mol_data(context)
         self.active_mol_index = len(self.molecule_list)-1
 
     def remove_active_molecule ( self, context ):
         """ Remove the active molecule from the list of molecules """
+        self.molecule_list[self.active_mol_index].remove_mol_data ( context )
         self.molecule_list.remove ( self.active_mol_index )
         self.active_mol_index -= 1
         if self.active_mol_index < 0:
