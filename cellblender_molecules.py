@@ -456,6 +456,9 @@ def display_callback(self, context):
     self.display_callback(context)
     return
 
+def change_glyph_callback(self, context):
+    self.change_glyph_callback(context)
+    return
 
 def mol_scale_callback(self, context):
     self.mol_scale_callback(context)
@@ -510,12 +513,18 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         ('Cylinder', "Cylinder", ""),
         ('Icosahedron', "Icosahedron", ""),
         ('Octahedron', "Octahedron", ""),
-        ('Pyramid', "Pyramid", ""),
         ('Receptor', "Receptor", ""),
         ('Sphere_1', "Sphere_1", ""),
         ('Sphere_2', "Sphere_2", ""),
         ('Torus', "Torus", "")]
     glyph = EnumProperty ( items=glyph_enum, name="", update=display_callback )
+
+    internal_glyph_enum = [
+        ('cellblender.cellblender_molecules.CellBlender_Pyramid()', "Pyramid", ""),
+        ('cellblender.cellblender_molecules.CellBlender_IcoSphere ( recursion_level = 3 )', "Icosahedron", ""),
+        ('Sphere_1', "Sphere_1", ""),
+        ('Sphere_2', "Sphere_2", "")]
+    internal_glyph = EnumProperty ( items=internal_glyph_enum, name="", update=change_glyph_callback )
 
 
     export_viz = bpy.props.BoolProperty(
@@ -813,6 +822,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             col = row.column()
             col.prop ( self, "glyph" )
             col = row.column()
+            col.prop ( self, "internal_glyph" )
+            col = row.column()
             col.prop ( self, "scale" )
             row = box.row()
             col = row.column()
@@ -887,6 +898,35 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         context.scene.update()  # It's also not clear if this is needed ... but it doesn't seem to hurt!!
         return
 
+
+    def change_glyph_callback(self, context):
+        """Glyph has changed for this molecule"""
+        print ( "Internal Glyph for molecule \"" + self.name + "\" changed to: " + str(self.internal_glyph) )
+        mol_name = 'mol_' + self.name
+        mol_shape_name = mol_name + '_shape'
+        #if mol_shape_name in bpy.data.objects:
+        #    if self.scale != self.previous_scale:
+        #        # Scale by the ratio of current scale to previous scale
+        #        # bpy.data.objects[mol_shape_name].scale *= (self.scale / self.previous_scale)
+        #        bpy.data.objects[mol_shape_name].scale = mathutils.Vector ( ( self.scale, self.scale, self.scale ) )
+        #        self.previous_scale = self.scale
+
+        # May not need to do the following any more:
+
+        #mol_mat_name = 'mol_' + self.name + '_mat'
+        #if mol_mat_name in bpy.data.materials.keys():
+        #    if bpy.data.materials[mol_mat_name].diffuse_color != self.color:
+        #        bpy.data.materials[mol_mat_name].diffuse_color = self.color
+        #    if bpy.data.materials[mol_mat_name].emit != self.emit:
+        #        bpy.data.materials[mol_mat_name].emit = self.emit
+
+
+        # Refresh the scene
+        # TODO The following may be needed, but were temporarily commented out:
+        #self.set_mol_glyph ( context )
+        #cellblender_mol_viz.mol_viz_update(self,context)  # It's not clear why mol_viz_update needs a self. It's not in a class.
+        context.scene.update()  # It's also not clear if this is needed ... but it doesn't seem to hurt!!
+        return
 
 
     def display_callback(self, context):
