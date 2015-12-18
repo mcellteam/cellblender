@@ -24,6 +24,7 @@ This file contains the classes for CellBlender's Reaction Output.
 
 import glob
 import os
+import tempfile
 
 import cellblender
 
@@ -96,6 +97,23 @@ class MCELL_OT_rxn_output_remove(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# This is just a means to store a temporary file path for the duration of a
+# Blender session.
+class ReactionDataTmpFile:
+    reactdata_tmpfile = None
+
+
+def create_reactdata_tmpfile(data_path):
+    if not ReactionDataTmpFile.reactdata_tmpfile:
+        with tempfile.NamedTemporaryFile(
+                delete=False, mode='wt', prefix="cellblender") as tmpfile:
+            tmpfile.write(data_path)
+            ReactionDataTmpFile.reactdata_tmpfile = tmpfile.name
+    else:
+        with open(ReactionDataTmpFile.reactdata_tmpfile, 'w') as tmpfile:
+            tmpfile.write(data_path)
+
+
 class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
     bl_idname = "mcell.plot_rxn_output_with_selected"
     bl_label = "Plot"
@@ -127,6 +145,8 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
         # The project_files_path is now where the MDL lives:
         data_path = project_files_path()
         data_path = os.path.join(data_path, "react_data")
+        create_reactdata_tmpfile(data_path)
+
         plot_spec_string = "xlabel=time(s) ylabel=count "
         if plot_legend != 'x':
             plot_spec_string = plot_spec_string + "legend=" + plot_legend
@@ -224,6 +244,7 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                             plot_spec_string + plot_sep + color_string +
                             title_string + " f=" + f)
 
+        plot_spec_string += " tf="+ReactionDataTmpFile.reactdata_tmpfile
         print("Plotting from", data_path)
         print("Plotting spec", plot_spec_string)
         python_path = get_python_path()
