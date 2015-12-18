@@ -456,10 +456,13 @@ def display_callback(self, context):
     self.display_callback(context)
     return
 
+
+def mol_scale_callback(self, context):
+    self.mol_scale_callback(context)
+    return
+
+
 import os
-
-
-
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
@@ -496,7 +499,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     color = FloatVectorProperty ( name="", min=0.0, max=1.0, default=(0.5,0.5,0.5), subtype='COLOR', description='Molecule Color', update=display_callback )
     alpha = FloatProperty ( name="Alpha", min=0.0, max=1.0, default=1.0, description="Alpha (inverse of transparency)", update=display_callback )
     emit = FloatProperty ( name="Emit", min=0.0, default=1.0, description="Emits Light (brightness)", update=display_callback )
-    scale = FloatProperty ( name="Scale", min=0.0001, default=1.0, description="Relative size (scale) for this molecule", update=display_callback )
+    scale = FloatProperty ( name="Scale", min=0.0001, default=1.0, description="Relative size (scale) for this molecule", update=mol_scale_callback )
     previous_scale = FloatProperty ( name="Previous_Scale", min=0.0, default=1.0, description="Previous Scale" )
     #cumulative_scale = FloatProperty ( name="Cumulative_Scale", min=0.0, default=1.0, description="Cumulative Scale" )
 
@@ -507,6 +510,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         ('Cylinder', "Cylinder", ""),
         ('Icosahedron', "Icosahedron", ""),
         ('Octahedron', "Octahedron", ""),
+        ('Pyramid', "Pyramid", ""),
         ('Receptor', "Receptor", ""),
         ('Sphere_1', "Sphere_1", ""),
         ('Sphere_2', "Sphere_2", ""),
@@ -802,8 +806,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             row.prop(molecules, "show_display", icon='TRIA_RIGHT',
                      text="Display Options", emboss=False)
         else:
-            row.prop(molecules, "show_display", icon='TRIA_DOWN',
-                     text="Display Options", emboss=False)
+            row.prop(molecules, "show_display", icon='TRIA_DOWN', text="Display Options", emboss=False)
             row = box.row()
             row.label ( "Molecule Display Settings" )
             row = box.row()
@@ -814,17 +817,17 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             row = box.row()
             col = row.column()
             mol_mat_name = 'mol_' + self.name + '_mat'
-            if False and mol_mat_name in bpy.data.materials.keys():
+            if mol_mat_name in bpy.data.materials:
                 # This would control the actual Blender material property directly
-                col.prop ( bpy.data.materials[mol_mat_name], "diffuse_color" )
+                col.prop ( bpy.data.materials[mol_mat_name], "diffuse_color", text="" )
                 col = row.column()
                 col.prop ( bpy.data.materials[mol_mat_name], "emit" )
-            else:
-                # This controls the molecule property which changes the Blender property via callback
-                # But changing the color via the Materials interface doesn't change these values
-                col.prop ( self, "color" )
-                col = row.column()
-                col.prop ( self, "emit" )
+            #else:
+            #    # This controls the molecule property which changes the Blender property via callback
+            #    # But changing the color via the Materials interface doesn't change these values
+            #    col.prop ( self, "color" )
+            #    col = row.column()
+            #    col.prop ( self, "emit" )
             #col = row.column()
             #col.prop ( self, "usecolor" )
         
@@ -856,30 +859,62 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         return
 
 
+    def mol_scale_callback(self, context):
+        """Scale has changed for this molecule"""
+        print ( "Scale for molecule \"" + self.name + "\" changed to: " + str(self.scale) )
+        mol_name = 'mol_' + self.name
+        mol_shape_name = mol_name + '_shape'
+        if mol_shape_name in bpy.data.objects:
+            # Scale by the ratio of current scale to previous scale
+            # bpy.data.objects[mol_shape_name].scale *= (self.scale / self.previous_scale)
+            bpy.data.objects[mol_shape_name].scale = mathutils.Vector ( ( self.scale, self.scale, self.scale ) )
+            self.previous_scale = self.scale
+
+        # May not need to do the following any more:
+
+        #mol_mat_name = 'mol_' + self.name + '_mat'
+        #if mol_mat_name in bpy.data.materials.keys():
+        #    if bpy.data.materials[mol_mat_name].diffuse_color != self.color:
+        #        bpy.data.materials[mol_mat_name].diffuse_color = self.color
+        #    if bpy.data.materials[mol_mat_name].emit != self.emit:
+        #        bpy.data.materials[mol_mat_name].emit = self.emit
+
+
+        # Refresh the scene
+        # TODO The following may be needed, but were temporarily commented out:
+        #self.set_mol_glyph ( context )
+        #cellblender_mol_viz.mol_viz_update(self,context)  # It's not clear why mol_viz_update needs a self. It's not in a class.
+        context.scene.update()  # It's also not clear if this is needed ... but it doesn't seem to hurt!!
+        return
+
+
+
     def display_callback(self, context):
         """One of the display items has changed for this molecule"""
         print ( "Display for molecule \"" + self.name + "\" changed to: " + str(self.glyph) + ", color=" + str(self.color) + ", emit=" + str(self.emit) + ", scale=" + str(self.scale) )
         mol_name = 'mol_' + self.name
         mol_shape_name = mol_name + '_shape'
-        if mol_shape_name in bpy.data.objects:
-            if self.scale != self.previous_scale:
-                # Scale by the ratio of current scale to previous scale
-                bpy.data.objects[mol_shape_name].scale *= (self.scale / self.previous_scale)
-                self.previous_scale = self.scale
-                
-            
+        #if mol_shape_name in bpy.data.objects:
+        #    if self.scale != self.previous_scale:
+        #        # Scale by the ratio of current scale to previous scale
+        #        # bpy.data.objects[mol_shape_name].scale *= (self.scale / self.previous_scale)
+        #        bpy.data.objects[mol_shape_name].scale = mathutils.Vector ( ( self.scale, self.scale, self.scale ) )
+        #        self.previous_scale = self.scale
 
-        mol_mat_name = 'mol_' + self.name + '_mat'
-        if mol_mat_name in bpy.data.materials.keys():
-            if bpy.data.materials[mol_mat_name].diffuse_color != self.color:
-                bpy.data.materials[mol_mat_name].diffuse_color = self.color
-            if bpy.data.materials[mol_mat_name].emit != self.emit:
-                bpy.data.materials[mol_mat_name].emit = self.emit
+        # May not need to do the following any more:
+
+        #mol_mat_name = 'mol_' + self.name + '_mat'
+        #if mol_mat_name in bpy.data.materials.keys():
+        #    if bpy.data.materials[mol_mat_name].diffuse_color != self.color:
+        #        bpy.data.materials[mol_mat_name].diffuse_color = self.color
+        #    if bpy.data.materials[mol_mat_name].emit != self.emit:
+        #        bpy.data.materials[mol_mat_name].emit = self.emit
 
 
         # Refresh the scene
-        self.set_mol_glyph ( context )
-        cellblender_mol_viz.mol_viz_update(self,context)  # It's not clear why mol_viz_update needs a self. It's not in a class.
+        # TODO The following may be needed, but were temporarily commented out:
+        #self.set_mol_glyph ( context )
+        #cellblender_mol_viz.mol_viz_update(self,context)  # It's not clear why mol_viz_update needs a self. It's not in a class.
         context.scene.update()  # It's also not clear if this is needed ... but it doesn't seem to hurt!!
         return
 
@@ -1096,8 +1131,9 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
     
     def add_molecule ( self, context ):
         """ Add a new molecule to the list of molecules and set as the active molecule """
+        new_id = self.allocate_available_id()  # Do this before adding so it can be reset when empty
         new_mol = self.molecule_list.add()
-        new_mol.id = self.allocate_available_id()
+        new_mol.id = new_id
         new_mol.init_properties(context.scene.mcell.parameter_system)
         new_mol.initialize_mol_data(context)
         self.active_mol_index = len(self.molecule_list)-1
@@ -1190,9 +1226,9 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
 
     def allocate_available_id ( self ):
         """ Return a unique molecule ID for a new molecule """
-        if len(self.molecule_list) <= 0:
-            # Reset the ID to 1 when there are no more molecules
-            self.next_id = 1
+        #if len(self.molecule_list) <= 0:
+        #    # Reset the ID to 1 when there are no more molecules
+        #    self.next_id = 1
         self.next_id += 1
         return ( self.next_id - 1 )
 
