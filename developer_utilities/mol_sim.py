@@ -295,11 +295,11 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         self.old_name = self.name
 
         self.method = self.method_enum[0][0]
-        self.num = 5 ### random.randint(10,50)
-        self.dist = random.uniform(0.1,0.5)
-        self.center_x = random.uniform(-2.0,2.0)
-        self.center_y = random.uniform(-2.0,2.0)
-        self.center_z = random.uniform(-2.0,2.0)
+        self.num = random.randint(2,5)
+        self.dist = random.uniform(0.01,0.02)
+        self.center_x = random.uniform(-0.1,0.1)
+        self.center_y = random.uniform(-0.1,0.1)
+        self.center_z = random.uniform(-0.1,0.1)
         self.glyph = self.glyph_enum[random.randint(0,len(self.glyph_enum)-1)][0]
         self.create_mol_data(context)
 
