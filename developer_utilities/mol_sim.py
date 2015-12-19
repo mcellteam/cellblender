@@ -357,47 +357,6 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         # Add the shape to the scene as a glyph for the object
         scn.objects.link ( mol_shape_obj )
 
-        """
-                    mol_shape_obj.data.materials.clear()  # New
-                    mol_shape_obj.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
-
-                    # This didn't work very well
-
-                    #if not (shape_name in scene.objects):
-                    #    shape = bpy.data.objects.new ( shape_name, mol_shape_mesh )
-                    ## Create a material specifically for this object
-                    #if obj_name+"_mat" in bpy.data.materials:
-                    #    shape.data.materials.clear()  # New
-                    #    shape.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
-                    ## Remove current children from the target object (otherwise glyphs will be merged ... useful in the future)
-                    #while len(obj.children) > 0:
-                    #    obj.children[0].parent = None
-
-
-                    # Add the shape to the scene as a glyph for the object
-                    scene.objects.link ( shape )
-                    obj.dupli_type = 'VERTS'
-                    shape.parent = obj
-                    
-                    if old_shape_name in bpy.data.meshes:
-                        if bpy.data.meshes[old_shape_name].users <= 0:
-                            bpy.data.meshes.remove ( bpy.data.meshes[old_shape_name] )
-
-
-
-        mol_shape_mesh = meshes.get(shape_name)
-        if not mol_shape_mesh:
-            # bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=0, size=0.005, location=[0, 0, 0])
-            bpy.ops.mesh.primitive_cube_add(radius=0.1, location=[0, 0, 0])
-            mol_shape_obj = bpy.context.active_object
-            mol_shape_obj.name = shape_name
-            mol_shape_obj.track_axis = "POS_Z"
-            mol_shape_mesh = mol_shape_obj.data
-            mol_shape_mesh.name = shape_name
-        else:
-            mol_shape_obj = objs.get(shape_name)
-        """
-
         # Look-up material, create if needed.
         # Associate material with mesh shape.
         # Bob: Maybe we need to associate it with the OBJECT with: shape_object.material_slots[0].link = 'OBJECT'
@@ -427,77 +386,6 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         mol_obj.dupli_type = 'VERTS'
         mol_shape_obj.parent = mol_obj
 
-
-
-        """
-
-        # These are points only, so create a shape glyph as needed to show the points
-        shape_name = obj_name + "_shape"
-        #if force or not (shape_name in scene.objects):
-        if not (shape_name in scene.objects):
-            old_shape_name = "old_" + shape_name
-            size = 0.1
-            print ( "Creating a new glyph for " + obj_name )
-            shape_plf = None
-            if "Cube" == glyph:
-                shape_plf = BasicBox  ( size, size, size )
-            elif "Pyramid" == glyph:
-                shape_plf = Pyramid  ( size, size, size )
-            elif "Tetrahedron" == glyph:
-                shape_plf = Tetrahedron  ( size, size, size )
-            elif "A" in glyph:
-                shape_plf = Letter_A  ( size, size, size )
-            elif "B" in glyph:
-                shape_plf = Letter_B  ( size, size, size )
-            elif "C" in glyph:
-                shape_plf = Letter_C  ( size, size, size )
-            else:
-                shape_plf = BasicBox ( size, size, size )
-            shape_vertices = []
-            for point in shape_plf.points:
-                shape_vertices.append ( mathutils.Vector((point.x,point.y,point.z)) )
-            shape_faces = []
-            for face_element in shape_plf.faces:
-                shape_faces.append ( face_element.verts )
-
-
-            # Rename the old mesh shape if it exists
-            if shape_name in bpy.data.meshes:
-                bpy.data.meshes[shape_name].name = old_shape_name
-            # Create and build the new mesh
-            new_mesh = bpy.data.meshes.new ( shape_name )
-            new_mesh.from_pydata ( shape_vertices, [], shape_faces )
-            new_mesh.update()
-
-            shape = bpy.data.objects.new ( shape_name, new_mesh )
-            shape.data.materials.clear()  # New
-            shape.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
-
-            # This didn't work very well
-
-            #if not (shape_name in scene.objects):
-            #    shape = bpy.data.objects.new ( shape_name, new_mesh )
-            ## Create a material specifically for this object
-            #if obj_name+"_mat" in bpy.data.materials:
-            #    shape.data.materials.clear()  # New
-            #    shape.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
-            ## Remove current children from the target object (otherwise glyphs will be merged ... useful in the future)
-            #while len(obj.children) > 0:
-            #    obj.children[0].parent = None
-
-
-            # Add the shape to the scene as a glyph for the object
-            scene.objects.link ( shape )
-            obj.dupli_type = 'VERTS'
-            shape.parent = obj
-            
-            if old_shape_name in bpy.data.meshes:
-                if bpy.data.meshes[old_shape_name].users <= 0:
-                    bpy.data.meshes.remove ( bpy.data.meshes[old_shape_name] )
-
-        # Could return the object here if needed
-
-        """
 
 
     def remove_mol_data ( self, context ):
@@ -580,16 +468,6 @@ class MoleculeProperty(bpy.types.PropertyGroup):
                 pass
         else:
             print ( "Material " + mat_name + " not found, not showing materials" )
-        """
-        row = layout.row()
-        row.operator("molecule_simulation.molecule_show_only", icon='RESTRICT_VIEW_OFF', text="Show Only "+self.name)
-        row.operator("molecule_simulation.molecule_hide", icon='RESTRICT_VIEW_OFF', text="Hide "+self.name)
-        row = layout.row()
-        row.operator("molecule_simulation.molecule_show_all", icon='RESTRICT_VIEW_OFF')
-        row.operator("molecule_simulation.molecule_show", icon='RESTRICT_VIEW_OFF', text="Show "+self.name)
-        """
-
-
 
 
     def draw(self, context):
@@ -698,63 +576,6 @@ class MolSim_UL_check_molecule(bpy.types.UIList):
                 else:
                     col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_LENNARDJONES')
 
-
-"""
-These functions are now implemented in the molecule list
-
-class APP_OT_molecule_show(bpy.types.Operator):
-    bl_idname = "molecule_simulation.molecule_show"
-    bl_label = "Show"
-    bl_description = "Show the current molecule"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        ms = context.scene.molecule_simulation
-        show_name = "mol_" + ms.molecule_list[ms.active_mol_index].name
-        show_shape_name = show_name + "_shape"
-        show_items = [show_name, show_shape_name]
-        print ( "Showing " + str(show_items) )
-        for o in context.scene.objects:
-            if o.name in show_items:
-                o.hide = False
-        return {'FINISHED'}
-
-class APP_OT_molecule_hide(bpy.types.Operator):
-    bl_idname = "molecule_simulation.molecule_hide"
-    bl_label = "Hide"
-    bl_description = "Hide the current molecule"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        ms = context.scene.molecule_simulation
-        hide_name = "mol_" + ms.molecule_list[ms.active_mol_index].name
-        hide_shape_name = hide_name + "_shape"
-        hide_items = [hide_name, hide_shape_name]
-        print ( "Hiding " + str(hide_items) )
-        for o in context.scene.objects:
-            if o.name in hide_items:
-                o.hide = True
-        return {'FINISHED'}
-
-class APP_OT_molecule_show_only(bpy.types.Operator):
-    bl_idname = "molecule_simulation.molecule_show_only"
-    bl_label = "Show Only"
-    bl_description = "Only show the current molecule"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        ms = context.scene.molecule_simulation
-        show_only_name = "mol_" + ms.molecule_list[ms.active_mol_index].name
-        show_only_shape_name = show_only_name + "_shape"
-        show_only_items = [show_only_name, show_only_shape_name]
-        print ( "Only showing " + str(show_only_items) )
-        for o in context.scene.objects:
-            if o.name in show_only_items:
-                o.hide = False
-            else:
-                o.hide = True
-        return {'FINISHED'}
-"""
 
 class APP_OT_molecule_show_all(bpy.types.Operator):
     bl_idname = "molecule_simulation.molecule_show_all"
@@ -865,15 +686,6 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
         row.alignment = 'LEFT'
         if self.show_molecules:
             row.prop(self, "show_molecules", icon='TRIA_DOWN', emboss=False)
-
-
-
-            ################################
-            #row = layout.row()
-            #row.label ( "Renaming Molecules Doesn't Work YET!!!", icon='ERROR' )
-            ################################
-
-
 
             row = layout.row()
             col = row.column()
@@ -1111,12 +923,7 @@ class Molecule_Model:
     def change_molecule_display ( self, mol, glyph="Cube", scale=1.0, red=-1, green=-1, blue=-1 ):
         app = bpy.context.scene.molecule_simulation
         if app.run_mcell:
-            #if mol.name == "Molecule":
-            #    print ("Name isn't correct")
-            #    return
             print ( "Changing Display for Molecule \"" + mol.name + "\" to R="+str(red)+",G="+str(green)+",B="+str(blue) )
-            #self.mcell.cellblender_main_panel.molecule_select = True
-            #self.mcell.molecules.show_display = True
             mol.glyph = glyph
             mol.scale = scale
             if red >= 0: mol.color.r = red
