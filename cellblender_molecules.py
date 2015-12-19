@@ -33,6 +33,7 @@ import mathutils
 
 # python imports
 import re
+import os
 
 import cellblender
 # from . import cellblender_parameters
@@ -49,6 +50,83 @@ def register():
 def unregister():
     bpy.utils.unregister_module(__name__)
 
+
+def set_molecule_glyph ( context, glyph_name ):
+
+    mcell = context.scene.mcell
+    meshes = bpy.data.meshes
+    mcell.molecule_glyphs.status = ""
+    select_objs = context.selected_objects
+    if (len(select_objs) != 1):
+        mcell.molecule_glyphs.status = "Select One Molecule"
+        return
+    if (select_objs[0].type != 'MESH'):
+        mcell.molecule_glyphs.status = "Selected Object Not a Molecule"
+        return
+
+    mol_obj = select_objs[0]
+    mol_shape_name = mol_obj.name
+
+    # There may be objects in the scene with the same name as the glyphs in
+    # the glyph library, so we need to deal with this possibility
+    new_glyph_name = glyph_name
+    if glyph_name in meshes:
+        # pattern: glyph name, period, numbers. (example match: "Cube.001")
+        pattern = re.compile(r'%s(\.\d+)' % glyph_name)
+        competing_names = [m.name for m in meshes if pattern.match(m.name)]
+        # example: given this: ["Cube.001", "Cube.3"], make this: [1, 3]
+        trailing_nums = [int(n.split('.')[1]) for n in competing_names]
+        # remove dups & sort... better way than list->set->list?
+        trailing_nums = list(set(trailing_nums))
+        trailing_nums.sort()
+        i = 0
+        gap = False
+        for i in range(0, len(trailing_nums)):
+            if trailing_nums[i] != i+1:
+                gap = True
+                break
+        if not gap and trailing_nums:
+            i+=1
+        new_glyph_name = "%s.%03d" % (glyph_name, i + 1)
+
+    if (bpy.app.version[0] > 2) or ( (bpy.app.version[0]==2) and (bpy.app.version[1] > 71) ):
+      bpy.ops.wm.link(
+          directory=mcell.molecule_glyphs.glyph_lib,
+          files=[{"name": glyph_name}], link=False, autoselect=False)
+    else:
+      bpy.ops.wm.link_append(
+          directory=mcell.molecule_glyphs.glyph_lib,
+          files=[{"name": glyph_name}], link=False, autoselect=False)
+
+    mol_mat = mol_obj.material_slots[0].material
+    new_mol_mesh = meshes[new_glyph_name]
+    mol_obj.data = new_mol_mesh
+    mol_obj.hide_select = True
+    meshes.remove(meshes[mol_shape_name])
+
+    new_mol_mesh.name = mol_shape_name
+    new_mol_mesh.materials.append(mol_mat)
+
+
+class MCellMoleculeGlyphsPropertyGroup(bpy.types.PropertyGroup):
+    glyph_lib = os.path.join(
+        os.path.dirname(__file__), "glyph_library.blend/Mesh/")
+    glyph_enum = [
+        ('Cone', "Cone", ""),
+        ('Cube', "Cube", ""),
+        ('Cylinder', "Cylinder", ""),
+        ('Icosahedron', "Icosahedron", ""),
+        ('Octahedron', "Octahedron", ""),
+        ('Receptor', "Receptor", ""),
+        ('Sphere_1', "Sphere_1", ""),
+        ('Sphere_2', "Sphere_2", ""),
+        ('Torus', "Torus", "")]
+    glyph = EnumProperty(items=glyph_enum, name="Molecule Shapes")
+    show_glyph = BoolProperty(name="Show Glyphs",description="Show Glyphs ... can cause slowness!!",default=True)
+    status = StringProperty(name="Status")
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Molecule Glyph Properties... no collections to remove." )
 
 # Molecule Operators:
 
@@ -83,7 +161,6 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
-        meshes = bpy.data.meshes
         mcell.molecule_glyphs.status = ""
         select_objs = context.selected_objects
         if (len(select_objs) != 1):
@@ -93,49 +170,9 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
             mcell.molecule_glyphs.status = "Selected Object Not a Molecule"
             return {'FINISHED'}
 
-        mol_obj = select_objs[0]
-        mol_shape_name = mol_obj.name
-
         glyph_name = mcell.molecule_glyphs.glyph
 
-        # There may be objects in the scene with the same name as the glyphs in
-        # the glyph library, so we need to deal with this possibility
-        new_glyph_name = glyph_name
-        if glyph_name in meshes:
-            # pattern: glyph name, period, numbers. (example match: "Cube.001")
-            pattern = re.compile(r'%s(\.\d+)' % glyph_name)
-            competing_names = [m.name for m in meshes if pattern.match(m.name)]
-            # example: given this: ["Cube.001", "Cube.3"], make this: [1, 3]
-            trailing_nums = [int(n.split('.')[1]) for n in competing_names]
-            # remove dups & sort... better way than list->set->list?
-            trailing_nums = list(set(trailing_nums))
-            trailing_nums.sort()
-            i = 0
-            gap = False
-            for i in range(0, len(trailing_nums)):
-                if trailing_nums[i] != i+1:
-                    gap = True
-                    break
-            if not gap and trailing_nums:
-                i+=1
-            new_glyph_name = "%s.%03d" % (glyph_name, i + 1)
-
-        if (bpy.app.version[0] > 2) or ( (bpy.app.version[0]==2) and (bpy.app.version[1] > 71) ):
-          bpy.ops.wm.link(
-              directory=mcell.molecule_glyphs.glyph_lib,
-              files=[{"name": glyph_name}], link=False, autoselect=False)
-        else:
-          bpy.ops.wm.link_append(
-              directory=mcell.molecule_glyphs.glyph_lib,
-              files=[{"name": glyph_name}], link=False, autoselect=False)
-
-        mol_mat = mol_obj.material_slots[0].material
-        new_mol_mesh = meshes[new_glyph_name]
-        mol_obj.data = new_mol_mesh
-        meshes.remove(meshes[mol_shape_name])
-
-        new_mol_mesh.name = mol_shape_name
-        new_mol_mesh.materials.append(mol_mat)
+        set_molecule_glyph ( context, glyph_name )
 
         return {'FINISHED'}
 
@@ -428,7 +465,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
         # Refresh the scene
         self.set_mol_glyph ( context )
-        cellblender_mol_viz.mol_viz_update(self,context)  # It's not clear why mol_viz_update needs a self. It's not in a class.
+        cellblender_mol_viz.mol_viz_update(self,context)  # It's not clear why mol_viz_update needs a self. It's not in a class, and doesn't use the "self".
         context.scene.update()  # It's also not clear if this is needed ... but it doesn't seem to hurt!!
         return
 
@@ -454,62 +491,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
             # Exact code starts here (allow it to duplicate some previous code for now):
 
-            mcell = context.scene.mcell
-            meshes = bpy.data.meshes
-            mcell.molecule_glyphs.status = ""
-            select_objs = context.selected_objects
-            if (len(select_objs) != 1):
-                mcell.molecule_glyphs.status = "Select One Molecule"
-                return
-            if (select_objs[0].type != 'MESH'):
-                mcell.molecule_glyphs.status = "Selected Object Not a Molecule"
-                return
-
-            mol_obj = select_objs[0]
-            mol_shape_name = mol_obj.name
-
-            # glyph_name = mcell.molecule_glyphs.glyph
-            glyph_name = str(self.glyph)
-
-            # There may be objects in the scene with the same name as the glyphs in
-            # the glyph library, so we need to deal with this possibility
-            new_glyph_name = glyph_name
-            if glyph_name in meshes:
-                # pattern: glyph name, period, numbers. (example match: "Cube.001")
-                pattern = re.compile(r'%s(\.\d+)' % glyph_name)
-                competing_names = [m.name for m in meshes if pattern.match(m.name)]
-                # example: given this: ["Cube.001", "Cube.3"], make this: [1, 3]
-                trailing_nums = [int(n.split('.')[1]) for n in competing_names]
-                # remove dups & sort... better way than list->set->list?
-                trailing_nums = list(set(trailing_nums))
-                trailing_nums.sort()
-                i = 0
-                gap = False
-                for i in range(0, len(trailing_nums)):
-                    if trailing_nums[i] != i+1:
-                        gap = True
-                        break
-                if not gap and trailing_nums:
-                    i+=1
-                new_glyph_name = "%s.%03d" % (glyph_name, i + 1)
-
-            if (bpy.app.version[0] > 2) or ( (bpy.app.version[0]==2) and (bpy.app.version[1] > 71) ):
-              bpy.ops.wm.link(
-                  directory=mcell.molecule_glyphs.glyph_lib,
-                  files=[{"name": glyph_name}], link=False, autoselect=False)
-            else:
-              bpy.ops.wm.link_append(
-                  directory=mcell.molecule_glyphs.glyph_lib,
-                  files=[{"name": glyph_name}], link=False, autoselect=False)
-
-            mol_mat = mol_obj.material_slots[0].material
-            new_mol_mesh = meshes[new_glyph_name]
-            mol_obj.data = new_mol_mesh
-            mol_obj.hide_select = True
-            meshes.remove(meshes[mol_shape_name])
-
-            new_mol_mesh.name = mol_shape_name
-            new_mol_mesh.materials.append(mol_mat)
+            set_molecule_glyph ( context, self.glyph )
 
         return
 
