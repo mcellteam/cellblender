@@ -260,12 +260,20 @@ class MoleculeProperty(bpy.types.PropertyGroup):
 
     glyph_lib = os.path.join(os.path.dirname(__file__), "glyph_library.blend", "Mesh", "")
     glyph_enum = [
+        ('Cone', "Cone", ""),
+        ('Cube', "Cube", ""),
+        ('Cylinder', "Cylinder", ""),
+        ('Icosahedron', "Icosahedron", ""),
+        ('Octahedron', "Octahedron", ""),
+        ('Receptor', "Receptor", ""),
+        ('Sphere1', "Sphere1", ""),
+        ('Sphere2', "Sphere2", ""),
+        ('Torus', "Torus", ""),
+        ('Tetrahedron', "Tetrahedron", ""),
+        ('Pyramid', "Pyramid", ""),
         ('A', "A", ""),
         ('B', "B", ""),
-        ('C', "C", ""),
-        ('Cube', "Cube", ""),
-        ('Pyramid', "Pyramid", ""),
-        ('Tetrahedron', "Tetrahedron", "")]
+        ('C', "C", "")]
     glyph = EnumProperty ( items=glyph_enum, name="", update=shape_change_callback )
 
 
@@ -320,21 +328,9 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         # Build the new shape vertices and faces
         size = 0.1
         print ( "Creating a new glyph for " + self.name )
-        shape_plf = None
-        if   "Cube" == self.glyph:
-            shape_plf = BasicBox  ( size, size, size )
-        elif "Pyramid" == self.glyph:
-            shape_plf = Pyramid  ( size, size, size )
-        elif "Tetrahedron" == self.glyph:
-            shape_plf = Tetrahedron  ( size, size, size )
-        elif "A" in self.glyph:
-            shape_plf = Letter_A  ( size, size, size )
-        elif "B" in self.glyph:
-            shape_plf = Letter_B  ( size, size, size )
-        elif "C" in self.glyph:
-            shape_plf = Letter_C  ( size, size, size )
-        else:
-            shape_plf = BasicBox ( size, size, size )
+
+        shape_plf = get_named_shape ( self.glyph, size_x=size, size_y=size, size_z=size )
+
         shape_vertices = []
         for point in shape_plf.points:
             shape_vertices.append ( mathutils.Vector((point.x,point.y,point.z)) )
@@ -1184,6 +1180,8 @@ class Molecule_Model:
             bpy.ops.screen.animation_play()
 
 
+#### Start of Molecule Shape Code #### 
+
 class point:
   x=0;
   y=0;
@@ -1216,7 +1214,7 @@ class face:
 
 class plf_object:
 
-  # An object that can hold points and faces
+  # An object that can hold points and faces (the "L" in PLF stood for Lines which are not needed here)
 
   points = []
   faces = []
@@ -1224,8 +1222,6 @@ class plf_object:
   def __init__ ( self ):
     self.points = []
     self.faces = []
-
-
 
 
 class CellBlender_Octahedron (plf_object):
@@ -2015,17 +2011,19 @@ class Tetrahedron (plf_object):
 
     # Create a tetrahedron of the requested size
 
-    size_scale = 0.05
+    size_scale = 0.05 * 1.5
 
     self.points = [];
     self.faces = [];
 
-    self.points = self.points + [ point (  size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
-    self.points = self.points + [ point (     0.0*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
-    self.points = self.points + [ point ( -size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
-    self.points = self.points + [ point (     0.0*size_scale,     0.0*size_scale,  size_z*size_scale ) ]
+    z = 1 / math.sqrt(2)
 
-    face_list = [ [ 0, 1, 2 ], [ 0, 3, 1 ], [ 1, 3, 2 ], [ 2, 3, 0 ] ]
+    self.points = self.points + [ point (  -1*size_x*size_scale,  0, -z*size_z*size_scale ) ]
+    self.points = self.points + [ point (   1*size_x*size_scale,  0, -z*size_z*size_scale ) ]
+    self.points = self.points + [ point (  0, -1*size_y*size_scale,   z*size_z*size_scale ) ]
+    self.points = self.points + [ point (  0,  1*size_y*size_scale,   z*size_z*size_scale ) ]
+
+    face_list = [ [ 0, 1, 2 ], [ 0, 2, 3 ], [ 0, 3, 1 ], [ 1, 3, 2 ] ]
 
     for f in face_list:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
@@ -2083,7 +2081,7 @@ class BasicBox (plf_object):
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
 
-def orig_get_named_shape ( glyph_name, size_x=1.0, size_y=1.0, size_z=1.0 ):
+def get_named_shape ( glyph_name, size_x=1.0, size_y=1.0, size_z=1.0 ):
 
     shape_plf = None
     if   "Octahedron" == glyph_name:
@@ -2122,27 +2120,7 @@ def orig_get_named_shape ( glyph_name, size_x=1.0, size_y=1.0, size_z=1.0 ):
     return shape_plf
 
 
-
-def get_named_shape ( glyph, size_x=1.0, size_y=1.0, size_z=1.0 ):
-
-    shape_plf = None
-    if "Cube" == glyph:
-        shape_plf = BasicBox  ( size_x, size_y, size_z )
-    elif "Pyramid" == glyph:
-        shape_plf = Pyramid  ( size_x, size_y, size_z )
-    elif "Tetrahedron" == glyph:
-        shape_plf = Tetrahedron  ( size_x, size_y, size_z )
-    elif "A" in glyph:
-        shape_plf = Letter_A  ( size_x, size_y, size_z )
-    elif "B" in glyph:
-        shape_plf = Letter_B  ( size_x, size_y, size_z )
-    elif "C" in glyph:
-        shape_plf = Letter_C  ( size_x, size_y, size_z )
-    else:
-        shape_plf = BasicBox ( size_x, size_y, size_z )
-    return shape_plf
-
-
+#### End of Molecule Shape Code #### 
 
 
 
@@ -2158,17 +2136,6 @@ def create_squashed_z_box ( scene, min_len=0.25, max_len=3.5, period_frames=100,
 
     return BasicBox ( size_x, size_y, size_z )
 
-"""
-
-add Torus
-rename Torus to 'mol_b_shape'
-
-mbso = bpy.data.objects['mol_b_shape']
-mb = bpy.data.objects['mol_b']
-mb.dupli_type = 'VERTS'
-mbso.parent = mb
-
-"""
 
 
 fixed_points = []
@@ -2208,67 +2175,10 @@ class MolCluster (plf_object):
         for i in range(num):
             self.points.append ( single_point )
 
-        
-
-
-"""
-Generating Letters:
-
-text = "Hello"
-bpy.ops.object.text_add(location=(0,0,0),rotation=(0,0,0))
-text_object = bpy.context.object
-text_object.name = text + "_name"
-text_data = text_object.data
-text_data.name = text + "_data"
-
-text_object_data.body = text
-text_object_data.size = 2
-text_object_data.extrude = 0.2
-
-bpy.ops.object.convert(target=  'MESH')
-bpy.ops.shade_flat()
-
-
-
-
-
-bpy.ops.view3d.snap_cursor_to_center()
-bpy.ops.object.text_add(view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
-bpy.ops.object.editmode_toggle()
-bpy.ops.font.delete(type='PREVIOUS_OR_SELECTION')
-bpy.ops.font.delete(type='PREVIOUS_OR_SELECTION')
-bpy.ops.font.delete(type='PREVIOUS_OR_SELECTION')
-bpy.ops.font.delete(type='PREVIOUS_OR_SELECTION')
-bpy.ops.font.text_insert(text="A")
-bpy.ops.object.editmode_toggle()
-bpy.ops.object.convert(target='MESH')
-bpy.ops.object.editmode_toggle()
-bpy.ops.mesh.select_all(action='TOGGLE')
-bpy.ops.mesh.extrude_region_move(MESH_OT_extrude_region={"mirror":False}, TRANSFORM_OT_translate={"value":(0, 0, 0.108318), "constraint_axis":(False, False, True), "constraint_orientation":'GLOBAL', "mirror":False, "proportional":'DISABLED', "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False})
-bpy.ops.object.editmode_toggle()
-
-
-
-
-bpy.ops.view3d.snap_cursor_to_center()
-bpy.ops.object.text_add()
-ob=bpy.context.object
-ob.data.body = "A"
-bpy.ops.object.convert(target='MESH')
-bpy.ops.object.editmode_toggle()
-bpy.ops.mesh.select_all(action='SELECT')
-bpy.ops.mesh.extrude_region_move(MESH_OT_extrude_region={"mirror":False}, TRANSFORM_OT_translate={"value":(0, 0, 0.1), "constraint_axis":(False, False, True), "constraint_orientation":'GLOBAL', "mirror":False, "proportional":'DISABLED', "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False})
-bpy.ops.mesh.select_all(action='SELECT')
-bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
-bpy.ops.object.editmode_toggle()
-bpy.ops.transform.resize(value=(0.1, 0.1, 0.1), constraint_axis=(False, False, False), constraint_orientation='GLOBAL', mirror=False, proportional='DISABLED', proportional_edit_falloff='SMOOTH', proportional_size=1)
-bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
-bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
-bpy.ops.object.select_all(action='DESELECT')
-"""
 
 
 def generate_letter_object ( letter ):
+    # Note that this doesn't work properly. Earlier versions of this code had additional experiments in doing this.
     print ( "Creating the letter " + letter )
     bpy.ops.view3d.snap_cursor_to_center()
     bpy.ops.object.text_add()
@@ -2284,27 +2194,6 @@ def generate_letter_object ( letter ):
 
     #   bpy.ops.mesh.extrude_region_move(MESH_OT_extrude_region={"mirror":False}, TRANSFORM_OT_translate={"value":(0, 0, 0.1), "constraint_axis":(False, False, True), "constraint_orientation":'NORMAL', "mirror":False })
 
-    """
-    bpy.ops.mesh.extrude_region_move (
-         MESH_OT_extrude_region={"mirror":False},
-         TRANSFORM_OT_translate={ "value":(0, 0, 0.1), 
-                                  "constraint_axis":(False, False, True), 
-                                  "constraint_orientation":'GLOBAL', 
-                                  "mirror":False, 
-                                  "proportional":'DISABLED', 
-                                  "proportional_edit_falloff":'SMOOTH', 
-                                  "proportional_size":1, 
-                                  "snap":False, 
-                                  "snap_target":'CLOSEST', 
-                                  "snap_point":(0, 0, 0), 
-                                  "snap_align":False, 
-                                  "snap_normal":(0, 0, 0), 
-                                  "gpencil_strokes":False, 
-                                  "texture_space":False, 
-                                  "remove_on_cancel":False, 
-                                  "release_confirm":False } )
-    """
-
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
     bpy.ops.object.editmode_toggle()
@@ -2314,7 +2203,6 @@ def generate_letter_object ( letter ):
     bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
     bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
     bpy.ops.object.select_all(action='DESELECT')
-
 
     print ( "Done creating the letter " + letter )
 
@@ -2377,24 +2265,6 @@ def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="", force=Fal
             print ( "Creating a new glyph for " + obj_name )
 
             shape_plf = get_named_shape ( glyph, size_x=size, size_y=size, size_z=size )
-
-            """
-            shape_plf = None
-            if "Cube" == glyph:
-                shape_plf = BasicBox  ( size, size, size )
-            elif "Pyramid" == glyph:
-                shape_plf = Pyramid  ( size, size, size )
-            elif "Tetrahedron" == glyph:
-                shape_plf = Tetrahedron  ( size, size, size )
-            elif "A" in glyph:
-                shape_plf = Letter_A  ( size, size, size )
-            elif "B" in glyph:
-                shape_plf = Letter_B  ( size, size, size )
-            elif "C" in glyph:
-                shape_plf = Letter_C  ( size, size, size )
-            else:
-                shape_plf = BasicBox ( size, size, size )
-            """
 
             shape_vertices = []
             for point in shape_plf.points:
