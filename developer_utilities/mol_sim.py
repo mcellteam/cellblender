@@ -260,21 +260,12 @@ class MoleculeProperty(bpy.types.PropertyGroup):
 
     glyph_lib = os.path.join(os.path.dirname(__file__), "glyph_library.blend", "Mesh", "")
     glyph_enum = [
-        ('Cone', "Cone", ""),
-        ('Cube', "Cube", ""),
-        ('Cylinder', "Cylinder", ""),
-        ('Icosahedron', "Icosahedron", ""),
-        ('Octahedron', "Octahedron", ""),
-        ('Receptor', "Receptor", ""),
-        ('Sphere1', "Sphere1", ""),
-        ('Sphere2', "Sphere2", ""),
-        ('Torus', "Torus", ""),
-        ('Tetrahedron', "Tetrahedron", ""),
-        ('Pyramid', "Pyramid", ""),
         ('A', "A", ""),
         ('B', "B", ""),
-        ('C', "C", "")]
-        
+        ('C', "C", ""),
+        ('Cube', "Cube", ""),
+        ('Pyramid', "Pyramid", ""),
+        ('Tetrahedron', "Tetrahedron", "")]
     glyph = EnumProperty ( items=glyph_enum, name="", update=shape_change_callback )
 
 
@@ -295,11 +286,12 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         self.old_name = self.name
 
         self.method = self.method_enum[0][0]
-        self.num = random.randint(2,5)
-        self.dist = random.uniform(0.01,0.02)
-        self.center_x = random.uniform(-0.1,0.1)
-        self.center_y = random.uniform(-0.1,0.1)
-        self.center_z = random.uniform(-0.1,0.1)
+        self.num = 0 ### random.randint(10,50)
+        self.dist = random.uniform(0.01,0.05)
+        loc_range = 0.1
+        self.center_x = random.uniform(-loc_range,loc_range)
+        self.center_y = random.uniform(-loc_range,loc_range)
+        self.center_z = random.uniform(-loc_range,loc_range)
         self.glyph = self.glyph_enum[random.randint(0,len(self.glyph_enum)-1)][0]
         self.create_mol_data(context)
 
@@ -328,8 +320,21 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         # Build the new shape vertices and faces
         size = 0.1
         print ( "Creating a new glyph for " + self.name )
-        shape_plf = get_named_shape ( self.glyph, size_x=size, size_y=size, size_z=size )
-
+        shape_plf = None
+        if   "Cube" == self.glyph:
+            shape_plf = BasicBox  ( size, size, size )
+        elif "Pyramid" == self.glyph:
+            shape_plf = Pyramid  ( size, size, size )
+        elif "Tetrahedron" == self.glyph:
+            shape_plf = Tetrahedron  ( size, size, size )
+        elif "A" in self.glyph:
+            shape_plf = Letter_A  ( size, size, size )
+        elif "B" in self.glyph:
+            shape_plf = Letter_B  ( size, size, size )
+        elif "C" in self.glyph:
+            shape_plf = Letter_C  ( size, size, size )
+        else:
+            shape_plf = BasicBox ( size, size, size )
         shape_vertices = []
         for point in shape_plf.points:
             shape_vertices.append ( mathutils.Vector((point.x,point.y,point.z)) )
@@ -513,6 +518,8 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         mol_pos_mesh_name   = mol_obj_name + "_pos"
         mol_material_name   = mol_obj_name + "_mat"
 
+        mols_obj = objs.get("molecules")
+
         mol_obj = objs.get(mol_obj_name)
         mol_shape_obj = objs.get(mol_shape_obj_name)
         mol_shape_mesh = meshes.get(mol_shape_mesh_name)
@@ -524,19 +531,16 @@ class MoleculeProperty(bpy.types.PropertyGroup):
         if mol_shape_obj:
             scn_objs.unlink ( mol_shape_obj )
 
-        if mol_obj:
-            if mol_obj.users <= 0:
-                objs.remove ( mol_obj )
-                meshes.remove ( mol_pos_mesh )
+        if mol_obj.users <= 0:
+            objs.remove ( mol_obj )
+            meshes.remove ( mol_pos_mesh )
 
-        if mol_shape_obj:
-            if mol_shape_obj.users <= 0:
-                objs.remove ( mol_shape_obj )
-                meshes.remove ( mol_shape_mesh )
+        if mol_shape_obj.users <= 0:
+            objs.remove ( mol_shape_obj )
+            meshes.remove ( mol_shape_mesh )
         
-        if mol_material:
-            if mol_material.users <= 0:
-                mats.remove ( mol_material )
+        if mol_material.users <= 0:
+            mats.remove ( mol_material )
         
 
     def draw_layout ( self, context, layout, mol_list_group ):
@@ -807,7 +811,7 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
     show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_advanced = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
 
-    show_extra_columns = bpy.props.BoolProperty(default=False, description="Show additional visibility control columns")
+    show_extra_columns = bpy.props.BoolProperty(default=True, description="Show additional visibility control columns")
     show_molecules = bpy.props.BoolProperty(default=True, name="Define Molecules")
     show_display = bpy.props.BoolProperty(default=False, name="Molecule Display Options")
     show_preview = bpy.props.BoolProperty(default=False, name="Material Preview")
@@ -1220,6 +1224,8 @@ class plf_object:
   def __init__ ( self ):
     self.points = []
     self.faces = []
+
+
 
 
 class CellBlender_Octahedron (plf_object):
@@ -2077,7 +2083,7 @@ class BasicBox (plf_object):
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
 
-def get_named_shape ( glyph_name, size_x=1.0, size_y=1.0, size_z=1.0 ):
+def orig_get_named_shape ( glyph_name, size_x=1.0, size_y=1.0, size_z=1.0 ):
 
     shape_plf = None
     if   "Octahedron" == glyph_name:
@@ -2114,6 +2120,29 @@ def get_named_shape ( glyph_name, size_x=1.0, size_y=1.0, size_z=1.0 ):
         shape_plf = BasicBox ( size_x, size_y, size_z )
 
     return shape_plf
+
+
+
+def get_named_shape ( glyph, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    shape_plf = None
+    if "Cube" == glyph:
+        shape_plf = BasicBox  ( size_x, size_y, size_z )
+    elif "Pyramid" == glyph:
+        shape_plf = Pyramid  ( size_x, size_y, size_z )
+    elif "Tetrahedron" == glyph:
+        shape_plf = Tetrahedron  ( size_x, size_y, size_z )
+    elif "A" in glyph:
+        shape_plf = Letter_A  ( size_x, size_y, size_z )
+    elif "B" in glyph:
+        shape_plf = Letter_B  ( size_x, size_y, size_z )
+    elif "C" in glyph:
+        shape_plf = Letter_C  ( size_x, size_y, size_z )
+    else:
+        shape_plf = BasicBox ( size_x, size_y, size_z )
+    return shape_plf
+
+
 
 
 
@@ -2326,7 +2355,7 @@ def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="", force=Fal
         if old_mesh.users <= 0:
             bpy.data.meshes.remove ( old_mesh )
     else:
-        print ( "Creating a new object for " + obj_name )
+        print ( "Creating a new object" )
         obj = bpy.data.objects.new ( obj_name, new_mesh )
         scene.objects.link ( obj )
         # Assign the parent if requested in the call with a non-none parent_name
@@ -2346,7 +2375,26 @@ def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="", force=Fal
             old_shape_name = "old_" + shape_name
             size = 0.1
             print ( "Creating a new glyph for " + obj_name )
-            shape_plf = get_named_shape ( obj_name, size_x=size, size_y=size, size_z=size )
+
+            shape_plf = get_named_shape ( glyph, size_x=size, size_y=size, size_z=size )
+
+            """
+            shape_plf = None
+            if "Cube" == glyph:
+                shape_plf = BasicBox  ( size, size, size )
+            elif "Pyramid" == glyph:
+                shape_plf = Pyramid  ( size, size, size )
+            elif "Tetrahedron" == glyph:
+                shape_plf = Tetrahedron  ( size, size, size )
+            elif "A" in glyph:
+                shape_plf = Letter_A  ( size, size, size )
+            elif "B" in glyph:
+                shape_plf = Letter_B  ( size, size, size )
+            elif "C" in glyph:
+                shape_plf = Letter_C  ( size, size, size )
+            else:
+                shape_plf = BasicBox ( size, size, size )
+            """
 
             shape_vertices = []
             for point in shape_plf.points:
