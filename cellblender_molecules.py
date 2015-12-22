@@ -195,8 +195,9 @@ class CellBlender_Octahedron (plf_object):
 
     self.points = [];
     self.faces = [];
+    # Note that the "y" and "z" coordinates have been swapped to get surface molecules right
     for p in pts:
-      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[2], size_scale*size_z*p[1] ) )
     for f in fcs:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
@@ -276,8 +277,9 @@ class CellBlender_Cone (plf_object):
 
     self.points = [];
     self.faces = [];
+    # Note that the "y" and "z" coordinates have been swapped to get surface molecules right
     for p in pts:
-      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[2], size_scale*size_z*p[1] ) )
     for f in fcs:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
@@ -313,8 +315,9 @@ class CellBlender_Cylinder (plf_object):
 
     self.points = [];
     self.faces = [];
+    # Note that the "y" and "z" coordinates have been swapped to get surface molecules right
     for p in pts:
-      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[2], size_scale*size_z*p[1] ) )
     for f in fcs:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
@@ -457,8 +460,9 @@ class CellBlender_Torus (plf_object):
 
     self.points = [];
     self.faces = [];
+    # Note that the "y" and "z" coordinates have been swapped to get surface molecules right
     for p in pts:
-      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[2], size_scale*size_z*p[1] ) )
     for f in fcs:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
@@ -722,8 +726,9 @@ class CellBlender_Receptor (plf_object):
 
     self.points = [];
     self.faces = [];
+    # Note that the "y" and "z" coordinates have been swapped to get surface molecules right
     for p in pts:
-      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[2], size_scale*size_z*p[1] ) )
     for f in fcs:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
@@ -993,11 +998,12 @@ class Pyramid (plf_object):
     self.points = [];
     self.faces = [];
 
-    self.points = self.points + [ point (  size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
+    # Note that the "y" and "z" coordinates have been swapped to get surface molecules right
+    self.points = self.points + [ point (  size_x*size_scale, -size_y*size_scale,  size_z*size_scale ) ]
     self.points = self.points + [ point (  size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
     self.points = self.points + [ point ( -size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
-    self.points = self.points + [ point ( -size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
-    self.points = self.points + [ point (     0.0*size_scale,     0.0*size_scale,  size_z*size_scale ) ]
+    self.points = self.points + [ point ( -size_x*size_scale, -size_y*size_scale,  size_z*size_scale ) ]
+    self.points = self.points + [ point (     0.0*size_scale,  size_y*size_scale,     0.0*size_scale ) ]
 
     face_list = [ [ 1, 2, 3 ], [ 0, 1, 3 ], [ 0, 4, 1 ],
                   [ 1, 4, 2 ], [ 2, 4, 3 ], [ 3, 4, 0 ] ]
@@ -1271,7 +1277,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     color = FloatVectorProperty ( name="", min=0.0, max=1.0, default=(0.5,0.5,0.5), subtype='COLOR', description='Molecule Color', update=display_callback )
     alpha = FloatProperty ( name="Alpha", min=0.0, max=1.0, default=1.0, description="Alpha (inverse of transparency)", update=display_callback )
     emit = FloatProperty ( name="Emit", min=0.0, default=1.0, description="Emits Light (brightness)", update=display_callback )
-    scale = FloatProperty ( name="Scale", min=0.0001, default=1.0, description="Relative size (scale) for this molecule", update=display_callback )
+    scale = FloatProperty ( name="Scale", min=0.0001, default=1.0, description="Relative size (scale) for this molecule", update=shape_change_callback )
     previous_scale = FloatProperty ( name="Previous_Scale", min=0.0, default=1.0, description="Previous Scale" )
     #cumulative_scale = FloatProperty ( name="Cumulative_Scale", min=0.0, default=1.0, description="Cumulative Scale" )
 
@@ -1380,9 +1386,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             mols_obj.hide = True
 
         # Build the new shape vertices and faces
-        size = 0.1
         print ( "Creating a new glyph for " + self.name )
 
+        size = 0.1 * self.scale
         shape_plf = get_named_shape ( self.glyph, size_x=size, size_y=size, size_z=size )
 
         shape_vertices = []
@@ -1625,6 +1631,11 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 col.label ( "Brightness" )
                 col = row.column()
                 col.prop ( bpy.data.materials[mat_name], "emit", text="Emit" )
+                row = box.row()
+                col = row.column()
+                col.label ( "Scale" )
+                col = row.column()
+                col.prop ( self, "scale", text="Factor" )
                 if len(bpy.data.materials) and (bpy.context.scene.render.engine in {'BLENDER_RENDER', 'BLENDER_GAME'}):
                   if 'mcell' in bpy.context.scene.keys():
                     #print ( "Context OK, showing materials" )
@@ -2087,7 +2098,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             col.template_list("MCell_UL_check_molecule", "define_molecules",
                               self, "molecule_list",
                               self, "active_mol_index",
-                              rows=2)
+                              rows=4)
             col = row.column(align=False)
             # Use subcolumns to group logically related buttons together
             subcol = col.column(align=True)
