@@ -2108,7 +2108,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             subcol.operator("mcell.molecule_show_all", icon='RESTRICT_VIEW_OFF', text="")
             subcol.operator("mcell.molecule_hide_all", icon='RESTRICT_VIEW_ON', text="")
             subcol = col.column(align=True)
-            subcol.prop (self, "show_extra_columns", text="")
+            subcol.prop (self, "show_extra_columns", icon='SCRIPTWIN', text="")
 
             if self.molecule_list:
                 mol = self.molecule_list[self.active_mol_index]
