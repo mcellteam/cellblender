@@ -1042,6 +1042,7 @@ class BasicBox (plf_object):
 
 def get_named_shape ( glyph_name, size_x=1.0, size_y=1.0, size_z=1.0 ):
 
+    print ( "get_named_shape: " + glyph_name )
     shape_plf = None
     if   "Octahedron" == glyph_name:
         shape_plf = CellBlender_Octahedron  ( size_x, size_y, size_z )
@@ -1067,11 +1068,11 @@ def get_named_shape ( glyph_name, size_x=1.0, size_y=1.0, size_z=1.0 ):
         shape_plf = Pyramid ( size_x, size_y, size_z )
     elif "Tetrahedron" == glyph_name:
         shape_plf = Tetrahedron ( size_x, size_y, size_z )
-    elif "A" in glyph_name:
+    elif "Letter_A" == glyph_name:
         shape_plf = Letter_A ( size_x, size_y, size_z )
-    elif "B" in glyph_name:
+    elif "Letter_B" == glyph_name:
         shape_plf = Letter_B ( size_x, size_y, size_z )
-    elif "C" in glyph_name:
+    elif "Letter_C" == glyph_name:
         shape_plf = Letter_C ( size_x, size_y, size_z )
     else:
         shape_plf = BasicBox ( size_x, size_y, size_z )
@@ -1294,11 +1295,14 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         ('Torus', "Torus", ""),
         ('Tetrahedron', "Tetrahedron", ""),
         ('Pyramid', "Pyramid", ""),
+        ('Letter', "Letter", "")]
+    glyph = EnumProperty ( items=glyph_enum, name="Molecule Shape", update=shape_change_callback )
+
+    letter_enum = [
         ('A', "A", ""),
         ('B', "B", ""),
         ('C', "C", "")]
-    glyph = EnumProperty ( items=glyph_enum, name="", update=shape_change_callback )
-
+    letter = EnumProperty ( items=letter_enum, name="Molecule Letter", update=shape_change_callback )
 
     export_viz = bpy.props.BoolProperty(
         default=False, description="If selected, the molecule will be "
@@ -1389,7 +1393,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         print ( "Creating a new glyph for " + self.name )
 
         size = 0.1 * self.scale
-        shape_plf = get_named_shape ( self.glyph, size_x=size, size_y=size, size_z=size )
+        glyph_name = self.glyph
+        if glyph_name == "Letter":
+            glyph_name = "Letter_" + self.letter
+        shape_plf = get_named_shape ( glyph_name, size_x=size, size_y=size, size_z=size )
 
         shape_vertices = []
         for point in shape_plf.points:
@@ -1622,6 +1629,11 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
             row = box.row()
             row.prop(self, "glyph", text="Shape")
+
+            if self.glyph == "Letter":
+                row = box.row()
+                row.prop(self, "letter", text="Letter")
+
             mat_name = "mol_" + self.name+"_mat"
             if mat_name in bpy.data.materials:
                 row = box.row()
