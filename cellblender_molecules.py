@@ -195,9 +195,8 @@ class CellBlender_Octahedron (plf_object):
 
     self.points = [];
     self.faces = [];
-    # Note that the "y" and "z" coordinates have been swapped to get surface molecules right
     for p in pts:
-      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[2], size_scale*size_z*p[1] ) )
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
     for f in fcs:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
@@ -277,9 +276,8 @@ class CellBlender_Cone (plf_object):
 
     self.points = [];
     self.faces = [];
-    # Note that the "y" and "z" coordinates have been swapped to get surface molecules right
     for p in pts:
-      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[2], size_scale*size_z*p[1] ) )
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
     for f in fcs:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
@@ -315,9 +313,8 @@ class CellBlender_Cylinder (plf_object):
 
     self.points = [];
     self.faces = [];
-    # Note that the "y" and "z" coordinates have been swapped to get surface molecules right
     for p in pts:
-      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[2], size_scale*size_z*p[1] ) )
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
     for f in fcs:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
@@ -460,9 +457,8 @@ class CellBlender_Torus (plf_object):
 
     self.points = [];
     self.faces = [];
-    # Note that the "y" and "z" coordinates have been swapped to get surface molecules right
     for p in pts:
-      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[2], size_scale*size_z*p[1] ) )
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
     for f in fcs:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
@@ -726,9 +722,8 @@ class CellBlender_Receptor (plf_object):
 
     self.points = [];
     self.faces = [];
-    # Note that the "y" and "z" coordinates have been swapped to get surface molecules right
     for p in pts:
-      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[2], size_scale*size_z*p[1] ) )
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
     for f in fcs:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
@@ -998,12 +993,11 @@ class Pyramid (plf_object):
     self.points = [];
     self.faces = [];
 
-    # Note that the "y" and "z" coordinates have been swapped to get surface molecules right
-    self.points = self.points + [ point (  size_x*size_scale, -size_y*size_scale,  size_z*size_scale ) ]
+    self.points = self.points + [ point (  size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
     self.points = self.points + [ point (  size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
     self.points = self.points + [ point ( -size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
-    self.points = self.points + [ point ( -size_x*size_scale, -size_y*size_scale,  size_z*size_scale ) ]
-    self.points = self.points + [ point (     0.0*size_scale,  size_y*size_scale,     0.0*size_scale ) ]
+    self.points = self.points + [ point ( -size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point (     0.0*size_scale,     0.0*size_scale,  size_z*size_scale ) ]
 
     face_list = [ [ 1, 2, 3 ], [ 0, 1, 3 ], [ 0, 4, 1 ],
                   [ 1, 4, 2 ], [ 2, 4, 3 ], [ 3, 4, 0 ] ]
@@ -1427,6 +1421,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         mol_shape_obj.lock_location[0] = True
         mol_shape_obj.lock_location[1] = True
         mol_shape_obj.lock_location[2] = True
+        mol_shape_obj.track_axis = "POS_Z"
         # Allow the shape to be selected so it can have its size changed like any other object.
         mol_shape_obj.hide_select = False
 
