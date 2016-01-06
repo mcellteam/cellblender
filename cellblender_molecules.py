@@ -970,13 +970,16 @@ class Tetrahedron (plf_object):
     self.faces = [];
 
     z = 1 / math.sqrt(2)
+    sqr3 = math.sqrt(3)
+    sqr3i = 1 / sqr3
+    sqr23 = math.sqrt(2.0/3.0)
 
-    self.points = self.points + [ point (  -1*size_x*size_scale,  0, -z*size_z*size_scale ) ]
-    self.points = self.points + [ point (   1*size_x*size_scale,  0, -z*size_z*size_scale ) ]
-    self.points = self.points + [ point (  0, -1*size_y*size_scale,   z*size_z*size_scale ) ]
-    self.points = self.points + [ point (  0,  1*size_y*size_scale,   z*size_z*size_scale ) ]
+    self.points = self.points + [ point (  0*size_x*size_scale, (sqr3-sqr3i)*size_y*size_scale, -sqr23*size_z*size_scale ) ]
+    self.points = self.points + [ point ( -1*size_x*size_scale,       -sqr3i*size_y*size_scale, -sqr23*size_z*size_scale ) ]
+    self.points = self.points + [ point (  1*size_x*size_scale,       -sqr3i*size_y*size_scale, -sqr23*size_z*size_scale ) ]
+    self.points = self.points + [ point (  0*size_x*size_scale,            0*size_y*size_scale,  sqr23*size_z*size_scale ) ]
 
-    face_list = [ [ 0, 1, 2 ], [ 0, 2, 3 ], [ 0, 3, 1 ], [ 1, 3, 2 ] ]
+    face_list = [ [ 0, 2, 1 ], [ 0, 3, 2 ], [ 0, 1, 3 ], [ 1, 2, 3 ] ]
 
     for f in face_list:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
