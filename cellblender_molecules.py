@@ -177,12 +177,93 @@ class plf_object:
     self.faces = []
 
 
+
+class Tetrahedron (plf_object):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    # Create a tetrahedron of the requested size
+
+    size_scale = 0.05 * 0.1
+
+    self.points = [];
+    self.faces = [];
+
+    z = 1 / math.sqrt(2)
+    sqr3 = math.sqrt(3)
+    sqr3i = 1 / sqr3
+    sqr23 = math.sqrt(2.0/3.0)
+
+    self.points = self.points + [ point (  0*size_x*size_scale, (sqr3-sqr3i)*size_y*size_scale, -sqr23*size_z*size_scale ) ]
+    self.points = self.points + [ point ( -1*size_x*size_scale,       -sqr3i*size_y*size_scale, -sqr23*size_z*size_scale ) ]
+    self.points = self.points + [ point (  1*size_x*size_scale,       -sqr3i*size_y*size_scale, -sqr23*size_z*size_scale ) ]
+    self.points = self.points + [ point (  0*size_x*size_scale,            0*size_y*size_scale,  sqr23*size_z*size_scale ) ]
+
+    face_list = [ [ 0, 2, 1 ], [ 0, 3, 2 ], [ 0, 1, 3 ], [ 1, 2, 3 ] ]
+
+    for f in face_list:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+
+class Pyramid (plf_object):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    # Create a pyramid of the requested size
+
+    size_scale = 0.05 * 0.1
+
+    self.points = [];
+    self.faces = [];
+
+    self.points = self.points + [ point (  size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point (  size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point ( -size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point ( -size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point (     0.0*size_scale,     0.0*size_scale,  size_z*size_scale ) ]
+
+    face_list = [ [ 1, 2, 3 ], [ 0, 1, 3 ], [ 0, 4, 1 ],
+                  [ 1, 4, 2 ], [ 2, 4, 3 ], [ 3, 4, 0 ] ]
+
+    for f in face_list:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+
+class BasicBox (plf_object):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    # Create a box of the requested size
+
+    size_scale = 0.05 * 0.1
+
+    self.points = [];
+    self.faces = [];
+
+    self.points = self.points + [ point (  size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point (  size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point ( -size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point ( -size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point (  size_x*size_scale,  size_y*size_scale,  size_z*size_scale ) ]
+    self.points = self.points + [ point (  size_x*size_scale, -size_y*size_scale,  size_z*size_scale ) ]
+    self.points = self.points + [ point ( -size_x*size_scale, -size_y*size_scale,  size_z*size_scale ) ]
+    self.points = self.points + [ point ( -size_x*size_scale,  size_y*size_scale,  size_z*size_scale ) ]
+
+    face_list = [ [ 1, 2, 3 ], [ 7, 6, 5 ], [ 4, 5, 1 ], [ 5, 6, 2 ],
+                  [ 2, 6, 7 ], [ 0, 3, 7 ], [ 0, 1, 3 ], [ 4, 7, 5 ],
+                  [ 0, 4, 1 ], [ 1, 5, 2 ], [ 3, 2, 7 ], [ 4, 0, 7 ] ]
+
+    for f in face_list:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+
+
 class CellBlender_Octahedron (plf_object):
 
   def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
 
     # Create an object of the requested size
-    size_scale = 10
+    size_scale = 1
 
     self.points = [];
     self.faces = [];
@@ -206,7 +287,7 @@ class CellBlender_Cube (plf_object):
   def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
 
     # Create an object of the requested size
-    size_scale = 10
+    size_scale = 1
 
     self.points = [];
     self.faces = [];
@@ -231,7 +312,7 @@ class CellBlender_Icosahedron (plf_object):
   def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
 
     # Create an object of the requested size
-    size_scale = 10
+    size_scale = 1
 
     self.points = [];
     self.faces = [];
@@ -258,7 +339,7 @@ class CellBlender_Cone (plf_object):
   def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
 
     # Create an object of the requested size
-    size_scale = 10
+    size_scale = 1
 
     self.points = [];
     self.faces = [];
@@ -287,7 +368,7 @@ class CellBlender_Cylinder (plf_object):
   def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
 
     # Create an object of the requested size
-    size_scale = 10
+    size_scale = 1
 
     self.points = [];
     self.faces = [];
@@ -324,7 +405,7 @@ class CellBlender_Torus (plf_object):
   def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
 
     # Create an object of the requested size
-    size_scale = 10
+    size_scale = 1
 
     self.points = [];
     self.faces = [];
@@ -468,7 +549,7 @@ class CellBlender_Sphere1 (plf_object):
   def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
 
     # Create an object of the requested size
-    size_scale = 10
+    size_scale = 1
 
     self.points = [];
     self.faces = [];
@@ -508,7 +589,7 @@ class CellBlender_Sphere2 (plf_object):
   def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
 
     # Create an object of the requested size
-    size_scale = 10
+    size_scale = 1
 
     self.points = [];
     self.faces = [];
@@ -606,7 +687,7 @@ class CellBlender_Receptor (plf_object):
   def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
 
     # Create an object of the requested size
-    size_scale = 10
+    size_scale = 1
 
     self.points = [];
     self.faces = [];
@@ -728,10 +809,110 @@ class CellBlender_Receptor (plf_object):
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
 
-class Letter_A (plf_object):
+
+class plf_object_flat (plf_object):
+
+  def xor_to_set ( self, s, l ):
+    # Use "xor" logic to add a line if it's not there, but remove it if it is there
+    # The removal check needs to check both orderings of the points in the line
+    found = False
+    if l in s:
+      # print ( "Found in normal order and removed" )
+      found = True
+      s.remove(l)
+    else:
+      ll = (l[1],l[0])
+      if ll in s:
+        # print ( "Found in reverse order and removed" )
+        found = True
+        s.remove(ll)
+    if not found:
+      s |= { l }
+    
+
+  def build_from_2D ( self, points_2d, faces_2d, thickness, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    self.points = [];
+    self.faces = [];
+
+    np = len(points_2d)
+
+    # Start by ensuring that all of the 2D faces have normals facing up
+    for f in faces_2d:
+
+      #print ( "p1(%d) = ( %0.3f, %0.3f )" % (f[0], points_2d[f[0]][0], points_2d[f[0]][1]) )
+      #print ( "p2(%d) = ( %0.3f, %0.3f )" % (f[1], points_2d[f[1]][0], points_2d[f[1]][1]) )
+      #print ( "p3(%d) = ( %0.3f, %0.3f )" % (f[2], points_2d[f[2]][0], points_2d[f[2]][1]) )
+
+      # Compute the portion of the cross product needed for z
+      u1 = points_2d[f[1]][0] - points_2d[f[0]][0]
+      v1 = points_2d[f[1]][1] - points_2d[f[0]][1]
+      u2 = points_2d[f[2]][0] - points_2d[f[0]][0]
+      v2 = points_2d[f[2]][1] - points_2d[f[0]][1]
+      cross = (u1*v2) - (u2*v1)
+      #print ( "uv = " + str(u1) + " " + str(v1) + " " + str(u2) + " " + str(v2) )
+      #print ( "Cross = " + str(cross) )
+      if cross < 0:
+        # Swap the order of the points to flip the normal
+        #print ( "Swapping " + str(f) )
+        temp = f[2]
+        f[2] = f[1]
+        f[1] = temp
+
+
+    # Create a set of all the lines which appear only once - the "edges" that need to be extruded
+    v = set()
+    
+    # Go through all of the faces and the lines in each face
+    for f in faces_2d:
+      # Use "xor" logic to add a line if it's not there, but remove it if it is there
+      self.xor_to_set ( v, (f[0], f[1]) )
+      self.xor_to_set ( v, (f[1], f[2]) )
+      self.xor_to_set ( v, (f[2], f[0]) )
+
+    edges = [ e for e in v ]
+    # print ( "Edges = " + str(edges) )
+    
+
+    # Copy the 2D points into the 3D top
+    for p in points_2d:
+      self.points.append ( point ( size_x*p[0], size_y*p[1], size_z*(thickness/2) ) )
+
+    # Copy the 2D points into the 3D bottom
+    for p in points_2d:
+      self.points.append ( point ( size_x*p[0], size_y*p[1], size_z*(-thickness/2) ) )
+
+    # Copy the 2D top faces to the 3D top faces
+    for f in faces_2d:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+    # Copy the 2D top faces to the 3D bottom faces (rearrange for downward normal)
+    for f in faces_2d:
+      self.faces.append ( face ( np+f[0], np+f[2], np+f[1] ) )
+    
+    # Make the sides from the edges
+    for e in edges:
+      self.faces.append ( face ( e[0], np+e[0], e[1] ) )
+      self.faces.append ( face ( np+e[0], np+e[1], e[1] ) )
+    
+
+class Letter_A (plf_object_flat):
 
   def __init__  ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
-    size_scale = 0.15
+    size_scale = 0.1 / 6.9
+    points_2d = [
+      [0.03136,0.4235],[-0.03764,0.4235],[-0.3306,-0.2625],[-0.2306,-0.2625],[-0.1446,-0.06155],
+      [0.1454,-0.06155],[0.2364,-0.2625],[0.3364,-0.2625],[-0.004636,0.2735],[0.1054,0.02645], [-0.1066,0.02645] ]
+
+    faces_2d = [ [2,1,0],[2,0,8],[8,0,7],[2,8,10],[9,8,7],[2,10,4],[4,10,9],[4,9,5],[5,9,7],[2,4,3],[6,5,7] ]
+
+    self.build_from_2D ( points_2d, faces_2d, 0.002, size_x*size_scale, size_y*size_scale, size_z )
+
+
+class old_Letter_A (plf_object):
+
+  def __init__  ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+    size_scale = 0.15 * 0.1
     pts = [
       [0.03136,0.4235,-0.075],[-0.03764,0.4235,-0.075],[-0.3306,-0.2625,-0.075],[-0.2306,-0.2625,-0.075],[-0.1446,-0.06155,-0.075],
       [0.1454,-0.06155,-0.075],[0.2364,-0.2625,-0.075],[0.3364,-0.2625,-0.075],[-0.004636,0.2735,-0.075],[0.1054,0.02645,-0.075],
@@ -757,7 +938,7 @@ class Letter_A (plf_object):
 class Letter_B (plf_object):
 
   def __init__  ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
-    size_scale = 0.15
+    size_scale = 0.15 * 0.1
     pts = [
       [-0.2006,-0.3332,0],[0.03337,-0.3332,0],[0.0739,-0.3312,0],[0.1101,-0.3255,0],[0.1421,-0.3166,0],[0.17,-0.3047,0],
       [0.1941,-0.2903,0],[0.2145,-0.2737,0],[0.2313,-0.2554,0],[0.2447,-0.2357,0],[0.2549,-0.2151,0],[0.2619,-0.1938,0],
@@ -862,7 +1043,7 @@ class Letter_B (plf_object):
 class Letter_C (plf_object):
 
   def __init__  ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
-    size_scale = 0.15
+    size_scale = 0.15 * 0.1
     pts = [
       [0.2744,0.2927,0],[0.2516,0.302,0],[0.2297,0.3104,0],[0.2085,0.3179,0],[0.188,0.3246,0],[0.1681,0.3304,0],
       [0.1488,0.3353,0],[0.13,0.3395,0],[0.1116,0.3429,0],[0.09346,0.3454,0],[0.07563,0.3473,0],[0.05798,0.3484,0],
@@ -957,94 +1138,10 @@ class Letter_C (plf_object):
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
 
-class Letter_D (plf_object):
-
-  def xor_to_set ( self, s, l ):
-    # Use "xor" logic to add a line if it's not there, but remove it if it is there
-    # The removal check needs to check both orderings of the points in the line
-    found = False
-    if l in s:
-      # print ( "Found in normal order and removed" )
-      found = True
-      s.remove(l)
-    else:
-      ll = (l[1],l[0])
-      if ll in s:
-        # print ( "Found in reverse order and removed" )
-        found = True
-        s.remove(ll)
-    if not found:
-      s |= { l }
-    
-
-  def build_from_2D ( self, points_2d, faces_2d, thickness, size_x=1.0, size_y=1.0, size_z=1.0 ):
-
-    self.points = [];
-    self.faces = [];
-
-    np = len(points_2d)
-
-    # Start by ensuring that all of the 2D faces have normals facing up
-    for f in faces_2d:
-
-      #print ( "p1(%d) = ( %0.3f, %0.3f )" % (f[0], points_2d[f[0]][0], points_2d[f[0]][1]) )
-      #print ( "p2(%d) = ( %0.3f, %0.3f )" % (f[1], points_2d[f[1]][0], points_2d[f[1]][1]) )
-      #print ( "p3(%d) = ( %0.3f, %0.3f )" % (f[2], points_2d[f[2]][0], points_2d[f[2]][1]) )
-
-      # Compute the portion of the cross product needed for z
-      u1 = points_2d[f[1]][0] - points_2d[f[0]][0]
-      v1 = points_2d[f[1]][1] - points_2d[f[0]][1]
-      u2 = points_2d[f[2]][0] - points_2d[f[0]][0]
-      v2 = points_2d[f[2]][1] - points_2d[f[0]][1]
-      cross = (u1*v2) - (u2*v1)
-      #print ( "uv = " + str(u1) + " " + str(v1) + " " + str(u2) + " " + str(v2) )
-      #print ( "Cross = " + str(cross) )
-      if cross < 0:
-        # Swap the order of the points to flip the normal
-        #print ( "Swapping " + str(f) )
-        temp = f[2]
-        f[2] = f[1]
-        f[1] = temp
-
-
-    # Create a set of all the lines which appear only once - the "edges" that need to be extruded
-    v = set()
-    
-    # Go through all of the faces and the lines in each face
-    for f in faces_2d:
-      # Use "xor" logic to add a line if it's not there, but remove it if it is there
-      self.xor_to_set ( v, (f[0], f[1]) )
-      self.xor_to_set ( v, (f[1], f[2]) )
-      self.xor_to_set ( v, (f[2], f[0]) )
-
-    edges = [ e for e in v ]
-    # print ( "Edges = " + str(edges) )
-    
-
-    # Copy the 2D points into the 3D top
-    for p in points_2d:
-      self.points.append ( point ( size_x*p[0], size_y*p[1], size_z*(thickness/2) ) )
-
-    # Copy the 2D points into the 3D bottom
-    for p in points_2d:
-      self.points.append ( point ( size_x*p[0], size_y*p[1], size_z*(-thickness/2) ) )
-
-    # Copy the 2D top faces to the 3D top faces
-    for f in faces_2d:
-      self.faces.append ( face ( f[0], f[1], f[2] ) )
-
-    # Copy the 2D top faces to the 3D bottom faces (rearrange for downward normal)
-    for f in faces_2d:
-      self.faces.append ( face ( np+f[0], np+f[2], np+f[1] ) )
-    
-    # Make the sides from the edges
-    for e in edges:
-      self.faces.append ( face ( e[0], np+e[0], e[1] ) )
-      self.faces.append ( face ( np+e[0], np+e[1], e[1] ) )
-    
+class Letter_D (plf_object_flat):
 
   def __init__  ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
-    size_scale = 0.15
+    size_scale = 0.1
 
     points_2d = [ [2.30,0.19], [2.74,0.19], [2.91,0.36], [2.91,1.02], [2.74,1.17], [2.30,1.17],
                   [2.48,0.38], [2.65,0.38], [2.71,0.44], [2.71,0.92], [2.65,0.99], [2.48,0.99] ]
@@ -1058,89 +1155,22 @@ class Letter_D (plf_object):
       p[0] = p[0] * 0.1
       p[1] = p[1] * 0.1
 
-    self.build_from_2D ( points_2d, faces_2d, 0.02, size_x, size_y, size_z )
+    self.build_from_2D ( points_2d, faces_2d, 0.002, size_scale*size_x, size_scale*size_y, size_z )
 
 
+class Letter_E (plf_object_flat):
+
+  def __init__  ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    points_2d = [ [0.002762,0.004985,0],[-0.002913,0.004985,0],[-0.002913,-0.005015,0],[0.002894,-0.005015,0],[0.002894,-0.003724,0],
+                  [-0.001476,-0.003724,0],[-0.001476,-0.0006158,0],[0.001922,-0.0006158,0],[0.001922,0.0006745,0],[-0.001476,0.0006745,0],
+                  [-0.001476,0.003695,0],[0.002762,0.003695,0] ]
+
+    faces_2d = [ [2,10,1],[10,0,1],[10,11,0],[2,9,10],[2,6,9],[6,8,9],[6,7,8],[2,5,6],[2,4,5],[2,3,4] ]
+
+    self.build_from_2D ( points_2d, faces_2d, 0.002, size_x, size_y, size_z )
 
 
-
-class Tetrahedron (plf_object):
-
-  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
-
-    # Create a tetrahedron of the requested size
-
-    size_scale = 0.05 * 1.5
-
-    self.points = [];
-    self.faces = [];
-
-    z = 1 / math.sqrt(2)
-    sqr3 = math.sqrt(3)
-    sqr3i = 1 / sqr3
-    sqr23 = math.sqrt(2.0/3.0)
-
-    self.points = self.points + [ point (  0*size_x*size_scale, (sqr3-sqr3i)*size_y*size_scale, -sqr23*size_z*size_scale ) ]
-    self.points = self.points + [ point ( -1*size_x*size_scale,       -sqr3i*size_y*size_scale, -sqr23*size_z*size_scale ) ]
-    self.points = self.points + [ point (  1*size_x*size_scale,       -sqr3i*size_y*size_scale, -sqr23*size_z*size_scale ) ]
-    self.points = self.points + [ point (  0*size_x*size_scale,            0*size_y*size_scale,  sqr23*size_z*size_scale ) ]
-
-    face_list = [ [ 0, 2, 1 ], [ 0, 3, 2 ], [ 0, 1, 3 ], [ 1, 2, 3 ] ]
-
-    for f in face_list:
-      self.faces.append ( face ( f[0], f[1], f[2] ) )
-
-
-class Pyramid (plf_object):
-
-  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
-
-    # Create a pyramid of the requested size
-
-    size_scale = 0.05
-
-    self.points = [];
-    self.faces = [];
-
-    self.points = self.points + [ point (  size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
-    self.points = self.points + [ point (  size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
-    self.points = self.points + [ point ( -size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
-    self.points = self.points + [ point ( -size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
-    self.points = self.points + [ point (     0.0*size_scale,     0.0*size_scale,  size_z*size_scale ) ]
-
-    face_list = [ [ 1, 2, 3 ], [ 0, 1, 3 ], [ 0, 4, 1 ],
-                  [ 1, 4, 2 ], [ 2, 4, 3 ], [ 3, 4, 0 ] ]
-
-    for f in face_list:
-      self.faces.append ( face ( f[0], f[1], f[2] ) )
-
-
-class BasicBox (plf_object):
-
-  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
-
-    # Create a box of the requested size
-
-    size_scale = 0.05
-
-    self.points = [];
-    self.faces = [];
-
-    self.points = self.points + [ point (  size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
-    self.points = self.points + [ point (  size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
-    self.points = self.points + [ point ( -size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
-    self.points = self.points + [ point ( -size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
-    self.points = self.points + [ point (  size_x*size_scale,  size_y*size_scale,  size_z*size_scale ) ]
-    self.points = self.points + [ point (  size_x*size_scale, -size_y*size_scale,  size_z*size_scale ) ]
-    self.points = self.points + [ point ( -size_x*size_scale, -size_y*size_scale,  size_z*size_scale ) ]
-    self.points = self.points + [ point ( -size_x*size_scale,  size_y*size_scale,  size_z*size_scale ) ]
-
-    face_list = [ [ 1, 2, 3 ], [ 7, 6, 5 ], [ 4, 5, 1 ], [ 5, 6, 2 ],
-                  [ 2, 6, 7 ], [ 0, 3, 7 ], [ 0, 1, 3 ], [ 4, 7, 5 ],
-                  [ 0, 4, 1 ], [ 1, 5, 2 ], [ 3, 2, 7 ], [ 4, 0, 7 ] ]
-
-    for f in face_list:
-      self.faces.append ( face ( f[0], f[1], f[2] ) )
 
 
 def get_named_shape ( glyph_name, size_x=1.0, size_y=1.0, size_z=1.0 ):
@@ -1179,6 +1209,8 @@ def get_named_shape ( glyph_name, size_x=1.0, size_y=1.0, size_z=1.0 ):
         shape_plf = Letter_C ( size_x, size_y, size_z )
     elif "Letter_D" == glyph_name:
         shape_plf = Letter_D ( size_x, size_y, size_z )
+    elif "Letter_E" == glyph_name:
+        shape_plf = Letter_E ( size_x, size_y, size_z )
     else:
         shape_plf = BasicBox ( size_x, size_y, size_z )
 
@@ -1407,7 +1439,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         ('A', "A", ""),
         ('B', "B", ""),
         ('C', "C", ""),
-        ('D', "D", "")]
+        ('D', "D", ""),
+        ('E', "E", "")]
     letter = EnumProperty ( items=letter_enum, name="Molecule Letter", update=shape_change_callback )
 
     export_viz = bpy.props.BoolProperty(
@@ -1498,7 +1531,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         # Build the new shape vertices and faces
         print ( "Creating a new glyph for " + self.name )
 
-        size = 0.1 * self.scale
+        size = 1.0 * self.scale
         glyph_name = self.glyph
         if glyph_name == "Letter":
             glyph_name = "Letter_" + self.letter
