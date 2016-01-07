@@ -957,6 +957,112 @@ class Letter_C (plf_object):
       self.faces.append ( face ( f[0], f[1], f[2] ) )
 
 
+class Letter_D (plf_object):
+
+  def xor_to_set ( self, s, l ):
+    # Use "xor" logic to add a line if it's not there, but remove it if it is there
+    # The removal check needs to check both orderings of the points in the line
+    found = False
+    if l in s:
+      # print ( "Found in normal order and removed" )
+      found = True
+      s.remove(l)
+    else:
+      ll = (l[1],l[0])
+      if ll in s:
+        # print ( "Found in reverse order and removed" )
+        found = True
+        s.remove(ll)
+    if not found:
+      s |= { l }
+    
+
+  def build_from_2D ( self, points_2d, faces_2d, thickness, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    self.points = [];
+    self.faces = [];
+
+    np = len(points_2d)
+
+    # Start by ensuring that all of the 2D faces have normals facing up
+    for f in faces_2d:
+
+      #print ( "p1(%d) = ( %0.3f, %0.3f )" % (f[0], points_2d[f[0]][0], points_2d[f[0]][1]) )
+      #print ( "p2(%d) = ( %0.3f, %0.3f )" % (f[1], points_2d[f[1]][0], points_2d[f[1]][1]) )
+      #print ( "p3(%d) = ( %0.3f, %0.3f )" % (f[2], points_2d[f[2]][0], points_2d[f[2]][1]) )
+
+      # Compute the portion of the cross product needed for z
+      u1 = points_2d[f[1]][0] - points_2d[f[0]][0]
+      v1 = points_2d[f[1]][1] - points_2d[f[0]][1]
+      u2 = points_2d[f[2]][0] - points_2d[f[0]][0]
+      v2 = points_2d[f[2]][1] - points_2d[f[0]][1]
+      cross = (u1*v2) - (u2*v1)
+      #print ( "uv = " + str(u1) + " " + str(v1) + " " + str(u2) + " " + str(v2) )
+      #print ( "Cross = " + str(cross) )
+      if cross < 0:
+        # Swap the order of the points to flip the normal
+        #print ( "Swapping " + str(f) )
+        temp = f[2]
+        f[2] = f[1]
+        f[1] = temp
+
+
+    # Create a set of all the lines which appear only once - the "edges" that need to be extruded
+    v = set()
+    
+    # Go through all of the faces and the lines in each face
+    for f in faces_2d:
+      # Use "xor" logic to add a line if it's not there, but remove it if it is there
+      self.xor_to_set ( v, (f[0], f[1]) )
+      self.xor_to_set ( v, (f[1], f[2]) )
+      self.xor_to_set ( v, (f[2], f[0]) )
+
+    edges = [ e for e in v ]
+    # print ( "Edges = " + str(edges) )
+    
+
+    # Copy the 2D points into the 3D top
+    for p in points_2d:
+      self.points.append ( point ( size_x*p[0], size_y*p[1], size_z*(thickness/2) ) )
+
+    # Copy the 2D points into the 3D bottom
+    for p in points_2d:
+      self.points.append ( point ( size_x*p[0], size_y*p[1], size_z*(-thickness/2) ) )
+
+    # Copy the 2D top faces to the 3D top faces
+    for f in faces_2d:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+    # Copy the 2D top faces to the 3D bottom faces (rearrange for downward normal)
+    for f in faces_2d:
+      self.faces.append ( face ( np+f[0], np+f[2], np+f[1] ) )
+    
+    # Make the sides from the edges
+    for e in edges:
+      self.faces.append ( face ( e[0], np+e[0], e[1] ) )
+      self.faces.append ( face ( np+e[0], np+e[1], e[1] ) )
+    
+
+  def __init__  ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+    size_scale = 0.15
+
+    points_2d = [ [2.30,0.19], [2.74,0.19], [2.91,0.36], [2.91,1.02], [2.74,1.17], [2.30,1.17],
+                  [2.48,0.38], [2.65,0.38], [2.71,0.44], [2.71,0.92], [2.65,0.99], [2.48,0.99] ]
+    faces_2d = [ [0,7,6], [0,1,7], [1,8,7], [1,2,8], [2,9,8], [2,3,9], [3,10,9], [3,4,10], [4,11,10], [4,5,11], [5,6,11], [0,6,5] ]
+    
+    for p in points_2d:
+      p[0] = p[0] - 2.568
+      p[1] = p[1] - 0.7
+
+    for p in points_2d:
+      p[0] = p[0] * 0.1
+      p[1] = p[1] * 0.1
+
+    self.build_from_2D ( points_2d, faces_2d, 0.02, size_x, size_y, size_z )
+
+
+
+
 
 class Tetrahedron (plf_object):
 
@@ -1071,6 +1177,8 @@ def get_named_shape ( glyph_name, size_x=1.0, size_y=1.0, size_z=1.0 ):
         shape_plf = Letter_B ( size_x, size_y, size_z )
     elif "Letter_C" == glyph_name:
         shape_plf = Letter_C ( size_x, size_y, size_z )
+    elif "Letter_D" == glyph_name:
+        shape_plf = Letter_D ( size_x, size_y, size_z )
     else:
         shape_plf = BasicBox ( size_x, size_y, size_z )
 
@@ -1298,7 +1406,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     letter_enum = [
         ('A', "A", ""),
         ('B', "B", ""),
-        ('C', "C", "")]
+        ('C', "C", ""),
+        ('D', "D", "")]
     letter = EnumProperty ( items=letter_enum, name="Molecule Letter", update=shape_change_callback )
 
     export_viz = bpy.props.BoolProperty(
