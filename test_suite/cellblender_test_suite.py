@@ -1007,7 +1007,7 @@ class CellBlender_Model:
             bpy.ops.cbm.refresh_operator()
 
 
-    def change_molecule_display ( self, mol, glyph="Cube", scale=1.0, red=-1, green=-1, blue=-1 ):
+    def change_molecule_display ( self, mol, glyph="Cube", letter="A", scale=1.0, red=-1, green=-1, blue=-1 ):
         app = bpy.context.scene.cellblender_test_suite
         if app.run_mcell:
             #if mol.name == "Molecule":
@@ -1017,6 +1017,7 @@ class CellBlender_Model:
             self.mcell.cellblender_main_panel.molecule_select = True
             self.mcell.molecules.show_display = True
             mol.glyph = glyph
+            mol.letter = letter
             mol.scale = scale
             if red >= 0: mol.color.r = red
             if green >= 0: mol.color.g = green
@@ -2643,6 +2644,68 @@ class ParSystemTestOp(bpy.types.Operator):
         cb_model.refresh_molecules()
 
         cb_model.change_molecule_display ( mol, glyph='Torus', scale=4.0, red=1.0, green=1.0, blue=0.0 )
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.04 )
+
+        cb_model.hide_manipulator ( hide=True )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+
+###########################################################################################################
+group_name = "Non-Geometry Tests"
+test_name = "Molecule Glyph Test"
+operator_name = "cellblender_test.molecule_glyph"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class GlyphTestOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
+        cb_model = CellBlender_Model ( context )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+        
+        cb_model.add_parameter_to_model ( name="n", expr="10", units="", desc="Number of molecules to release" )
+        cb_model.add_parameter_to_model ( name="dc", expr="1e-6", units="", desc="Diffusion Constant" )
+
+        glyph_letters = "A" # "BCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+        mols = []
+        for mol_name in glyph_letters:
+            mol = cb_model.add_molecule_species_to_model ( name=mol_name, diff_const_expr="dc" )
+            cb_model.add_molecule_release_site_to_model ( mol=mol_name, q_expr="n" )
+            mols.append ( mol )
+
+        cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=4.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "", test_name="Molecule Glyph Test" )
+
+        cb_model.refresh_molecules()
+
+        print ( "Preparing to change the molecule glyph" )
+        i = 0
+        for mol in mols:
+            print ( "Changing letter to " + glyph_letters[i] )
+            cb_model.change_molecule_display ( mol, glyph='Letter', letter=glyph_letters[i], scale=4.0, red=1.0, green=1.0, blue=0.0 )
+            # cb_model.change_molecule_display ( mol, glyph='Torus', scale=4.0, red=1.0, green=1.0, blue=0.0 )
+            i += 1
 
         cb_model.set_view_back()
 
