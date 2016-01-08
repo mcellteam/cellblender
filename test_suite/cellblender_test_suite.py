@@ -37,6 +37,7 @@ import os.path
 import hashlib
 import bpy
 import math
+import random
 import mathutils
 from bpy.props import *
 
@@ -1024,6 +1025,21 @@ class CellBlender_Model:
             if blue >= 0: mol.color.b = blue
 
             print ( "Done Changing Display for Molecule \"" + mol.name + "\"" )
+
+    def set_material_random ( self, mol_name ):
+        app = bpy.context.scene.cellblender_test_suite
+        self.mcell.cellblender_main_panel.molecule_select = True
+        self.mcell.molecules.show_display = True
+
+        red = random.random()
+        green = random.random()
+        blue = random.random()
+        # print ( "Changing Material for Molecule \"" + mol_name + "\" to R="+str(red)+",G="+str(green)+",B="+str(blue) )
+        mat_name = "mol_" + mol_name + "_mat"
+        if mat_name in bpy.data.materials:
+            bpy.data.materials[mat_name].diffuse_color = (red, green, blue)
+
+        # print ( "Done Changing Material for Molecule \"" + mol_name + "\"" )
 
     def get_mdl_file_path ( self ):
         return self.path_to_blend[:self.path_to_blend.rfind('.')] + "_files" + os.sep + "mcell"
@@ -2685,27 +2701,32 @@ class GlyphTestOp(bpy.types.Operator):
         cb_model.add_parameter_to_model ( name="n", expr="10", units="", desc="Number of molecules to release" )
         cb_model.add_parameter_to_model ( name="dc", expr="1e-6", units="", desc="Diffusion Constant" )
 
-        glyph_letters = "A" # "BCDEFGHIJKLMNOPQRSTUVWXYZ"
+        # Create a default molecule as a way to get the glyph names without hard-coding here
+        mol = cb_model.add_molecule_species_to_model ( name="NoMols" )
 
-        mols = []
-        for mol_name in glyph_letters:
-            mol = cb_model.add_molecule_species_to_model ( name=mol_name, diff_const_expr="dc" )
-            cb_model.add_molecule_release_site_to_model ( mol=mol_name, q_expr="n" )
-            mols.append ( mol )
+        # Get the current glyph names
+        glyph_names = [ l[0] for l in mol.glyph_enum ]
+        glyph_letters = [ l[0] for l in mol.letter_enum ]
+
+        for glyph_name in glyph_names:
+            if glyph_name == 'Letter':
+                for letter_name in glyph_letters:
+                    mol = cb_model.add_molecule_species_to_model ( name=letter_name, diff_const_expr="dc" )
+                    mol.glyph = 'Letter'
+                    mol.letter = letter_name
+                    cb_model.set_material_random ( letter_name )
+                    cb_model.add_molecule_release_site_to_model ( mol=letter_name, q_expr="n" )
+            else:
+                mol = cb_model.add_molecule_species_to_model ( name=glyph_name, diff_const_expr="dc" )
+                mol.glyph = glyph_name
+                cb_model.set_material_random ( glyph_name )
+                cb_model.add_molecule_release_site_to_model ( mol=glyph_name, q_expr="n" )
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=4.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "", test_name="Molecule Glyph Test" )
+        cb_model.compare_mdl_with_sha1 ( "aa87e80b427ed81885b1d2963365891197dfd208", test_name="Molecule Glyph Test" )
 
         cb_model.refresh_molecules()
-
-        print ( "Preparing to change the molecule glyph" )
-        i = 0
-        for mol in mols:
-            print ( "Changing letter to " + glyph_letters[i] )
-            cb_model.change_molecule_display ( mol, glyph='Letter', letter=glyph_letters[i], scale=4.0, red=1.0, green=1.0, blue=0.0 )
-            # cb_model.change_molecule_display ( mol, glyph='Torus', scale=4.0, red=1.0, green=1.0, blue=0.0 )
-            i += 1
 
         cb_model.set_view_back()
 
