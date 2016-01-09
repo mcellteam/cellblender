@@ -273,6 +273,54 @@ def shape_change_callback(self, context):
     self.create_mol_data () # ( context )
     return
 
+def shading_change_callback(self, context):
+    # print ( "Shading change callback for molecule " + self.name )
+    shape_name = 'mol_' + self.name + '_shape'
+    cur_sel = bpy.data.objects[shape_name].select
+    bpy.data.objects[shape_name].select = True
+    if self.shade_smooth:
+        bpy.ops.object.shade_smooth()
+    else:
+        bpy.ops.object.shade_flat()
+    bpy.data.objects[shape_name].select = cur_sel
+    return
+
+class MCELL_OT_mol_shade_flat(bpy.types.Operator):
+    bl_idname = "mcell.mol_shade_flat"
+    bl_label = "Shade Flat"
+    bl_description = "Apply flat shading to this molecule"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mols = context.scene.mcell.molecules
+        if len(mols.molecule_list) > 0:
+            mol = mols.molecule_list[mols.active_mol_index]
+            if mol:
+                shape_name = 'mol_' + mol.name + '_shape'
+                cur_sel = bpy.data.objects[shape_name].select
+                bpy.data.objects[shape_name].select = True
+                bpy.ops.object.shade_flat()
+                bpy.data.objects[shape_name].select = cur_sel
+        return {'FINISHED'}
+
+class MCELL_OT_mol_shade_smooth(bpy.types.Operator):
+    bl_idname = "mcell.mol_shade_smooth"
+    bl_label = "Shade Smooth"
+    bl_description = "Apply smooth shading to this molecule"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mols = context.scene.mcell.molecules
+        if len(mols.molecule_list) > 0:
+            mol = mols.molecule_list[mols.active_mol_index]
+            if mol:
+                shape_name = 'mol_' + mol.name + '_shape'
+                cur_sel = bpy.data.objects[shape_name].select
+                bpy.data.objects[shape_name].select = True
+                bpy.ops.object.shade_smooth()
+                bpy.data.objects[shape_name].select = cur_sel
+        return {'FINISHED'}
+
 
 import os
 
@@ -368,6 +416,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         ('Y', "Y", ""),
         ('Z', "Z", "")]
     letter = EnumProperty ( items=letter_enum, name="Molecule Letter", update=shape_change_callback )
+
+    shade_smooth = BoolProperty ( name="Smooth Shading", default=False, update=shading_change_callback )
 
     export_viz = bpy.props.BoolProperty(
         default=False, description="If selected, the molecule will be "
@@ -714,6 +764,13 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 col.label ( "Scale" )
                 col = row.column()
                 col.prop ( self, "scale", text="Factor" )
+                ## row = box.row()
+                ## row.prop ( self, "shade_smooth", text="Smooth" )
+                row = box.row()
+                col = row.column()
+                col.operator ('mcell.mol_shade_smooth')
+                col = row.column()
+                col.operator ('mcell.mol_shade_flat')
                 if len(bpy.data.materials) and (bpy.context.scene.render.engine in {'BLENDER_RENDER', 'BLENDER_GAME'}):
                   if 'mcell' in bpy.context.scene.keys():
                     #print ( "Context OK, showing materials" )

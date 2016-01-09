@@ -1008,7 +1008,7 @@ class CellBlender_Model:
             bpy.ops.cbm.refresh_operator()
 
 
-    def change_molecule_display ( self, mol, glyph="Cube", letter="A", scale=1.0, red=-1, green=-1, blue=-1 ):
+    def old_change_molecule_display ( self, mol, glyph="Cube", letter="A", scale=1.0, red=-1, green=-1, blue=-1 ):
         app = bpy.context.scene.cellblender_test_suite
         if app.run_mcell:
             #if mol.name == "Molecule":
@@ -1026,14 +1026,37 @@ class CellBlender_Model:
 
             print ( "Done Changing Display for Molecule \"" + mol.name + "\"" )
 
-    def set_material_random ( self, mol_name ):
+    def change_molecule_display ( self, mol, glyph="Cube", letter="A", scale=1.0, red=-1, green=-1, blue=-1 ):
+
+        print ( "Changing Display for Molecule \"" + mol.name + "\" to R="+str(red)+",G="+str(green)+",B="+str(blue) )
+
+        app = bpy.context.scene.cellblender_test_suite
         app = bpy.context.scene.cellblender_test_suite
         self.mcell.cellblender_main_panel.molecule_select = True
         self.mcell.molecules.show_display = True
 
-        red = random.random()
-        green = random.random()
-        blue = random.random()
+        mol.glyph = glyph
+        mol.letter = letter
+        mol.scale = scale
+        mat_name = "mol_" + mol.name + "_mat"
+        if mat_name in bpy.data.materials:
+            cur_red = bpy.data.materials[mat_name].diffuse_color[0]
+            cur_green = bpy.data.materials[mat_name].diffuse_color[1]
+            cur_blue = bpy.data.materials[mat_name].diffuse_color[2]
+            if red >= 0: cur_red = red
+            if green >= 0: cur_green = green
+            if blue >= 0: cur_blue = blue
+            bpy.data.materials[mat_name].diffuse_color = (cur_red, cur_green, cur_blue)
+        print ( "Done Changing Display for Molecule \"" + mol.name + "\"" )
+
+    def set_mol_material ( self, mol_name, red=-1, green=-1, blue=-1 ):
+        app = bpy.context.scene.cellblender_test_suite
+        self.mcell.cellblender_main_panel.molecule_select = True
+        self.mcell.molecules.show_display = True
+
+        if red < 0: red = random.random()
+        if green < 0: green = random.random()
+        if blue < 0: blue = random.random()
         # print ( "Changing Material for Molecule \"" + mol_name + "\" to R="+str(red)+",G="+str(green)+",B="+str(blue) )
         mat_name = "mol_" + mol_name + "_mat"
         if mat_name in bpy.data.materials:
@@ -2712,14 +2735,11 @@ class GlyphTestOp(bpy.types.Operator):
             if glyph_name == 'Letter':
                 for letter_name in glyph_letters:
                     mol = cb_model.add_molecule_species_to_model ( name=letter_name, diff_const_expr="dc" )
-                    mol.glyph = 'Letter'
-                    mol.letter = letter_name
-                    cb_model.set_material_random ( letter_name )
+                    cb_model.change_molecule_display ( mol, glyph="Letter", letter=letter_name, scale=1.0, red=random.random(), green=random.random(), blue=random.random() )
                     cb_model.add_molecule_release_site_to_model ( mol=letter_name, q_expr="n" )
             else:
                 mol = cb_model.add_molecule_species_to_model ( name=glyph_name, diff_const_expr="dc" )
-                mol.glyph = glyph_name
-                cb_model.set_material_random ( glyph_name )
+                cb_model.change_molecule_display ( mol, glyph=glyph_name, scale=1.0, red=random.random(), green=random.random(), blue=random.random() )
                 cb_model.add_molecule_release_site_to_model ( mol=glyph_name, q_expr="n" )
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=4.0 )
