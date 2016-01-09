@@ -273,18 +273,6 @@ def shape_change_callback(self, context):
     self.create_mol_data () # ( context )
     return
 
-def shading_change_callback(self, context):
-    # print ( "Shading change callback for molecule " + self.name )
-    shape_name = 'mol_' + self.name + '_shape'
-    cur_sel = bpy.data.objects[shape_name].select
-    bpy.data.objects[shape_name].select = True
-    if self.shade_smooth:
-        bpy.ops.object.shade_smooth()
-    else:
-        bpy.ops.object.shade_flat()
-    bpy.data.objects[shape_name].select = cur_sel
-    return
-
 class MCELL_OT_mol_shade_flat(bpy.types.Operator):
     bl_idname = "mcell.mol_shade_flat"
     bl_label = "Shade Flat"
@@ -416,8 +404,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         ('Y', "Y", ""),
         ('Z', "Z", "")]
     letter = EnumProperty ( items=letter_enum, name="Molecule Letter", update=shape_change_callback )
-
-    shade_smooth = BoolProperty ( name="Smooth Shading", default=False, update=shading_change_callback )
 
     export_viz = bpy.props.BoolProperty(
         default=False, description="If selected, the molecule will be "
@@ -764,8 +750,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 col.label ( "Scale" )
                 col = row.column()
                 col.prop ( self, "scale", text="Factor" )
-                ## row = box.row()
-                ## row.prop ( self, "shade_smooth", text="Smooth" )
                 row = box.row()
                 col = row.column()
                 col.operator ('mcell.mol_shade_smooth')
