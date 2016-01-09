@@ -1026,7 +1026,7 @@ class CellBlender_Model:
 
             print ( "Done Changing Display for Molecule \"" + mol.name + "\"" )
 
-    def change_molecule_display ( self, mol, glyph="Cube", letter="A", scale=1.0, red=-1, green=-1, blue=-1 ):
+    def change_molecule_display ( self, mol, glyph="Cube", letter="A", scale=1.0, emit=0.5, red=-1, green=-1, blue=-1 ):
 
         print ( "Changing Display for Molecule \"" + mol.name + "\" to R="+str(red)+",G="+str(green)+",B="+str(blue) )
 
@@ -1047,6 +1047,7 @@ class CellBlender_Model:
             if green >= 0: cur_green = green
             if blue >= 0: cur_blue = blue
             bpy.data.materials[mat_name].diffuse_color = (cur_red, cur_green, cur_blue)
+            bpy.data.materials[mat_name].emit = emit
         print ( "Done Changing Display for Molecule \"" + mol.name + "\"" )
 
     def set_mol_material ( self, mol_name, red=-1, green=-1, blue=-1 ):
@@ -1218,9 +1219,6 @@ class CellBlender_Model:
 ######################
 #   Model  Support   #
 ######################
-
-import math
-import random
 
 class point:
   x=0;
@@ -2384,6 +2382,8 @@ class SingleMoleculeTestOp(bpy.types.Operator):
 
         mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
 
+        cb_model.change_molecule_display ( mol, glyph="Torus", scale=5.0, red=1, green=1, blue=0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="1" )
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
@@ -2391,8 +2391,6 @@ class SingleMoleculeTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "19fd01beddf82da6026810b52d6955638674f556", test_name="Single Molecule Test" )
 
         cb_model.refresh_molecules()
-
-        cb_model.change_molecule_display ( mol, glyph='Torus', scale=4.0, red=1.0, green=1.0, blue=0.0 )
 
         cb_model.set_view_back()
 
@@ -2433,6 +2431,9 @@ class DoubleSphereTestOp(bpy.types.Operator):
         mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
         mol_b = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-6" )
 
+        cb_model.change_molecule_display ( mol_a, glyph='Letter', letter='A', scale=2.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_b, glyph='Letter', letter='B', scale=2.0, red=0.0, green=1.0, blue=0.0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="400", d="0.5", y="-0.25" )
         cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="400", d="0.5", y="0.25" )
 
@@ -2441,9 +2442,6 @@ class DoubleSphereTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "4410b18c1530f79c07cc2aebec52a7eabc4aded4", test_name="Double Sphere Test" )
 
         cb_model.refresh_molecules()
-
-        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=2.0, red=0.0, green=1.0, blue=0.0 )
 
         cb_model.set_view_back()
 
@@ -2485,6 +2483,10 @@ class VolDiffusionConstTestOp(bpy.types.Operator):
         mol_b = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-7" )
         mol_c = cb_model.add_molecule_species_to_model ( name="c", diff_const_expr="1e-8" )
 
+        cb_model.change_molecule_display ( mol_a, glyph='Letter', letter='A', scale=2.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_b, glyph='Letter', letter='B', scale=2.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_c, glyph='Letter', letter='C', scale=2.0, red=0.1, green=0.1, blue=1.0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="100", d="0.01", y="-0.25" )
         cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="100", d="0.01", y= "0.0" )
         cb_model.add_molecule_release_site_to_model ( mol="c", q_expr="100", d="0.01", y= "0.25" )
@@ -2494,10 +2496,6 @@ class VolDiffusionConstTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "59b7e9f0f672791101d6a0061af362688e8caa42", test_name="Volume Diffusion Constant Test" )
 
         cb_model.refresh_molecules()
-
-        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=2.0, red=0.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( mol_c, glyph='Cube', scale=2.0, red=0.1, green=0.1, blue=1.0 )
 
         cb_model.set_view_back()
 
@@ -2540,31 +2538,20 @@ class ReactionTestOp(bpy.types.Operator):
         mol_b = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-6" )
         mol_c = cb_model.add_molecule_species_to_model ( name="bg", diff_const_expr="1e-5" )
 
+        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=2.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_c, glyph='Torus', scale=10.0, red=1.0, green=1.0, blue=0.5 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="400", d="0.5", y="-0.05" )
         cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="400", d="0.5", y="0.05" )
-
-        # Create a single c molecule at the origin so its properties will be changed
-        cb_model.add_molecule_release_site_to_model ( mol="bg", q_expr="1", d="0", y="0" )
 
         cb_model.add_reaction_to_model ( rin="a + b", rtype="irreversible", rout="bg", fwd_rate="1e8", bkwd_rate="" )
 
         cb_model.run_model ( iterations='2000', time_step='1e-6', wait_time=20.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "e302a61ecda563a02e8d65ef17c648ff088745d2", test_name="Simple Reaction Test" )
+        cb_model.compare_mdl_with_sha1 ( "f428886cdb457b31f8cc5cce5760e7860c41f5cb", test_name="Simple Reaction Test" )
 
         cb_model.refresh_molecules()
-
-        # Try to advance frame so molecules exist before changing them
-        # scn.frame_current = 1999
-
-        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=2.0, red=0.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( mol_c, glyph='Torus', scale=10.0, red=1.0, green=1.0, blue=0.5 )
-
-        #cb_model.refresh_molecules()
-
-        # Set time back to 0
-        #scn.frame_current = 0
 
         cb_model.set_view_back()
 
@@ -2611,6 +2598,13 @@ class ReleaseShapeTestOp(bpy.types.Operator):
         mol_c = cb_model.add_molecule_species_to_model ( name="bg", diff_const_expr=diff_const )
         mol_d = cb_model.add_molecule_species_to_model ( name="d", diff_const_expr=diff_const )
 
+        mol_scale = 2.5
+
+        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=mol_scale, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=mol_scale, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_c, glyph='Cube', scale=mol_scale, red=0.0, green=0.0, blue=1.0 )
+        cb_model.change_molecule_display ( mol_d, glyph='Cube', scale=mol_scale, red=1.0, green=1.0, blue=0.0 )
+
         num_rel = "1000"
 
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr=num_rel, shape="OBJECT", obj_expr="Cell",  )
@@ -2623,13 +2617,6 @@ class ReleaseShapeTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "c622d3e5c9eaf20911b95ae006eb197401d0e982", test_name="Release Shape Test" )
 
         cb_model.refresh_molecules()
-
-        mol_scale = 2.5
-
-        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=mol_scale, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=mol_scale, red=0.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( mol_c, glyph='Cube', scale=mol_scale, red=0.0, green=0.0, blue=1.0 )
-        cb_model.change_molecule_display ( mol_d, glyph='Cube', scale=mol_scale, red=1.0, green=1.0, blue=0.0 )
 
         cb_model.set_view_back()
 
@@ -2674,6 +2661,8 @@ class ParSystemTestOp(bpy.types.Operator):
 
         mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="dc" )
 
+        cb_model.change_molecule_display ( mol, glyph='Torus', scale=4.0, red=1.0, green=1.0, blue=0.0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="C" )
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
@@ -2681,8 +2670,6 @@ class ParSystemTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "f7a25eacc4b0ecfa6619c9428ddd761920aab7dd", test_name="Parameter System Test" )
 
         cb_model.refresh_molecules()
-
-        cb_model.change_molecule_display ( mol, glyph='Torus', scale=4.0, red=1.0, green=1.0, blue=0.0 )
 
         cb_model.set_view_back()
 
@@ -2790,6 +2777,8 @@ class CubeTestOp(bpy.types.Operator):
 
         mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
 
+        cb_model.change_molecule_display ( mol, glyph='Cube', scale=4.0, red=1.0, green=0.0, blue=0.0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
@@ -2797,8 +2786,6 @@ class CubeTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "c32241a2f97ace100f1af7a711a6a970c6b9a135", test_name="Simple Cube Test" )
 
         cb_model.refresh_molecules()
-
-        cb_model.change_molecule_display ( mol, glyph='Cube', scale=4.0, red=1.0, green=0.0, blue=0.0 )
 
         cb_model.set_view_back()
 
@@ -2842,26 +2829,23 @@ class CubeSurfaceTestOp(bpy.types.Operator):
         mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-6" )
         molb = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-6" )
 
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mols, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molb, glyph='Torus', scale=9.0, emit=2.0, red=1.0, green=1.0, blue=1.0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
         cb_model.add_molecule_release_site_to_model ( mol="s", shape="OBJECT", obj_expr="Cell[top]", orient="'", q_expr="1000" )
-        #### Add a single b molecule so the display values can be set ... otherwise they're not applied properly
-        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="1", shape="SPHERICAL", d="0", z="1.001" )
-
 
         cb_model.add_reaction_to_model ( rin="a' + s,", rtype="irreversible", rout="b, + s,", fwd_rate="1e8", bkwd_rate="" )
 
 
         cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=6.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "32312790f206beaa798ce0a7218f1f712840b0d5", test_name="Cube Surface Test" )
+        cb_model.compare_mdl_with_sha1 ( "30e124487f8cbd63281c3c8cc2b8215bc1637193", test_name="Cube Surface Test" )
 
         cb_model.refresh_molecules()
         
         scn.frame_current = 1
-
-        cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( mols, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( molb, glyph='Cube', scale=6.0, red=1.0, green=1.0, blue=1.0 )
 
         cb_model.set_view_back()
 
@@ -2906,26 +2890,22 @@ class SphereSurfaceTestOp(bpy.types.Operator):
         mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-6" )
         molb = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-6" )
 
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mols, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molb, glyph='Cube', scale=6.0, red=1.0, green=1.0, blue=1.0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
         cb_model.add_molecule_release_site_to_model ( mol="s", shape="OBJECT", obj_expr="Cell[top]", orient="'", q_expr="1000" )
-        #### Add a single b molecule so the display values can be set ... otherwise they're not applied properly
-        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="1", shape="SPHERICAL", d="0", z="1.001" )
-
 
         cb_model.add_reaction_to_model ( rin="a' + s,", rtype="irreversible", rout="b, + s,", fwd_rate="1e8", bkwd_rate="" )
 
-
         cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=7.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "90ef79fc7405aff0bbf9a6f6864f11b148c622a4", test_name="Sphere Surface Test" )
+        cb_model.compare_mdl_with_sha1 ( "ef5ceab9bd89f33fe28ef7425b26e8397d1fb763", test_name="Sphere Surface Test" )
 
         cb_model.refresh_molecules()
         
         scn.frame_current = 1
-
-        cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( mols, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( molb, glyph='Cube', scale=6.0, red=1.0, green=1.0, blue=1.0 )
 
         cb_model.set_view_back()
 
@@ -2968,38 +2948,44 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
         cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "top", 0, 0, 1, 0.0 )
         cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "y",   0, 1, 0, 0.0 )
 
+        print ( "Just before adding molecules" )
         mola  = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-5" )
         mols1 = cb_model.add_molecule_species_to_model ( name="s1", mol_type="2D", diff_const_expr="0" )
         mols2 = cb_model.add_molecule_species_to_model ( name="s2", mol_type="2D", diff_const_expr="0" )
         molb1 = cb_model.add_molecule_species_to_model ( name="b1", diff_const_expr="1e-7" )
         molb2 = cb_model.add_molecule_species_to_model ( name="b2", diff_const_expr="1e-7" )
 
+        print ( "Just before changing molecule display" )
+        cb_model.wait ( 1.0 )
+        cb_model.change_molecule_display ( mola, glyph='Cube',  scale=3.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.wait ( 1.0 )
+        cb_model.change_molecule_display ( mols1, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.wait ( 1.0 )
+        cb_model.change_molecule_display ( mols2, glyph='Cone', scale=3.0, red=1.0, green=0.0, blue=1.0 )
+        cb_model.wait ( 1.0 )
+        cb_model.change_molecule_display ( molb1, glyph='Cube', scale=4.0, red=1.0, green=1.0, blue=0.0 )
+        cb_model.wait ( 1.0 )
+        cb_model.change_molecule_display ( molb2, glyph='Cube', scale=4.0, red=0.0, green=1.0, blue=1.0 )
+        cb_model.wait ( 1.0 )
+
+        print ( "Just before adding release sites" )
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="2000" )
         cb_model.add_molecule_release_site_to_model ( mol="s1", shape="OBJECT", obj_expr="Cell[top]", orient="'", q_expr="2000" )
         cb_model.add_molecule_release_site_to_model ( mol="s2", shape="OBJECT", obj_expr="Cell[y]", orient="'", q_expr="2000" )
-        #### Add a single b molecule so the display values can be set ... otherwise they're not applied properly
-        cb_model.add_molecule_release_site_to_model ( mol="b1", q_expr="1", shape="SPHERICAL", d="0", z="0" )
-        cb_model.add_molecule_release_site_to_model ( mol="b2", q_expr="1", shape="SPHERICAL", d="0", z="0" )
 
-
+        print ( "Just before adding reactions" )
         cb_model.add_reaction_to_model ( rin="a' + s1,", rtype="irreversible", rout="a' + b1, + s1,", fwd_rate="1e10", bkwd_rate="" )
         cb_model.add_reaction_to_model ( rin="a' + s2,", rtype="irreversible", rout="a' + b2, + s2,", fwd_rate="1e10", bkwd_rate="" )
 
-
+        print ( "Just before run" )
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=5.0 )
+        print ( "Just after run" )
 
-        cb_model.compare_mdl_with_sha1 ( "3f0d87d4f5e1ab1ecedde6c0d48fa3d2dc89ab93", test_name="Overlapping Surface Test" )
+        cb_model.compare_mdl_with_sha1 ( "", test_name="Overlapping Surface Test" )
 
         cb_model.refresh_molecules()
 
         scn.frame_current = 1
-
-        """
-        cb_model.change_molecule_display ( mola, glyph='Cube',  scale=3.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( mols1, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( mols2, glyph='Cone', scale=3.0, red=1.0, green=0.0, blue=1.0 )
-        cb_model.change_molecule_display ( molb1, glyph='Cube', scale=4.0, red=1.0, green=1.0, blue=1.0 )
-        """
 
         cb_model.set_view_back()
 
@@ -3065,6 +3051,11 @@ class SurfaceClassesTestOp(bpy.types.Operator):
         molr = cb_model.add_molecule_species_to_model ( name="r", diff_const_expr="1e-6" )
         molc = cb_model.add_molecule_species_to_model ( name="c", diff_const_expr="1e-6" )
 
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=5.0, red=0.0, green=0.7, blue=1.0 )
+        cb_model.change_molecule_display ( molt, glyph='Cube', scale=5.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molr, glyph='Cube', scale=5.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( molc, glyph='Cube', scale=5.0, red=1.0, green=1.0, blue=0.5 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="ai", q_expr="100" )
         cb_model.add_molecule_release_site_to_model ( mol="t", shape="OBJECT", obj_expr="ti", q_expr="100" )
         cb_model.add_molecule_release_site_to_model ( mol="r", shape="OBJECT", obj_expr="ri", q_expr="100" )
@@ -3122,11 +3113,6 @@ class SurfaceClassesTestOp(bpy.types.Operator):
 
         scn.frame_current = 1
 
-        cb_model.change_molecule_display ( mola, glyph='Cube', scale=5.0, red=0.0, green=0.7, blue=1.0 )
-        cb_model.change_molecule_display ( molt, glyph='Cube', scale=5.0, red=0.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( molr, glyph='Cube', scale=5.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( molc, glyph='Cube', scale=5.0, red=1.0, green=1.0, blue=0.5 )
-
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.5 )
@@ -3177,12 +3163,23 @@ class CapsuleTestOp(bpy.types.Operator):
         molpb = cb_model.add_molecule_species_to_model ( name="pb", mol_type="2D", diff_const_expr="0" )
         molc  = cb_model.add_molecule_species_to_model ( name="c", diff_const_expr="1e-7" )
 
+        """
+        This seems to crash Blender, so leave molecules with default settings for now
+
+        cb_model.change_molecule_display ( mola,  glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( molpa, glyph='Cone', scale=2.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molb,  glyph='Cube', scale=3.0, red=1.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molpb, glyph='Cone', scale=2.0, red=0.0, green=1.0, blue=1.0 )
+        cb_model.change_molecule_display ( molc,  glyph='Cube', scale=4.0, red=1.0, green=1.0, blue=1.0 )
+        """
+
+
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="capsule", q_expr="2000" )
         cb_model.add_molecule_release_site_to_model ( mol="pa", shape="OBJECT", obj_expr="capsule[top]", orient="'", q_expr="1000" )
         cb_model.add_molecule_release_site_to_model ( mol="pb", shape="OBJECT", obj_expr="capsule[bot]", orient="'", q_expr="1000" )
         #### Add a single b molecule so the display values can be set ... otherwise they're not applied properly
-        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="1", shape="SPHERICAL", d="0", z="0.000" )
-        cb_model.add_molecule_release_site_to_model ( mol="c", q_expr="1", shape="SPHERICAL", d="0", z="0.000" )
+        #cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="1", shape="SPHERICAL", d="0", z="0.000" )
+        #cb_model.add_molecule_release_site_to_model ( mol="c", q_expr="1", shape="SPHERICAL", d="0", z="0.000" )
 
 
         cb_model.add_reaction_to_model ( rin="a' + pa,", rtype="irreversible", rout="b, + pa,", fwd_rate="1e9", bkwd_rate="" )
@@ -3202,7 +3199,7 @@ class CapsuleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='10000', time_step='1e-6', wait_time=50.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "c9950d6bad9e7c18af96df94fcc59781b1b7fcc0", test_name="Capsule in Capsule Test" )
+        cb_model.compare_mdl_with_sha1 ( "08925065123f873d3b7eb6dc49df287c9e968588", test_name="Capsule in Capsule Test" )
 
         cb_model.refresh_molecules()
         
@@ -3210,16 +3207,6 @@ class CapsuleTestOp(bpy.types.Operator):
 
         cb_model.refresh_molecules()
         
-        """
-        This seems to crash Blender, so leave molecules with default settings for now
-
-        cb_model.change_molecule_display ( mola,  glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( molpa, glyph='Cone', scale=2.0, red=0.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( molb,  glyph='Cube', scale=3.0, red=1.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( molpb, glyph='Cone', scale=2.0, red=0.0, green=1.0, blue=1.0 )
-        cb_model.change_molecule_display ( molc,  glyph='Cube', scale=4.0, red=1.0, green=1.0, blue=1.0 )
-        """
-
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.25 )
@@ -3273,6 +3260,8 @@ class GobletTestOp(bpy.types.Operator):
 
         mola  = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
 
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=0.96, green=1.0, blue=0.3 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="goblet", q_expr="1000" )
 
         cb_model.set_visualization ( enable_visualization=True, export_all=True, all_iterations=False, start=0, end=100000, step=1 )
@@ -3284,8 +3273,6 @@ class GobletTestOp(bpy.types.Operator):
         cb_model.refresh_molecules()
         
         scn.frame_current = 1
-
-        cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=0.96, green=1.0, blue=0.3 )
 
         cb_model.set_view_back()
 
@@ -3434,6 +3421,8 @@ class EcoliTestOp(bpy.types.Operator):
 
         mola  = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
 
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=5.0, red=0.0, green=0.7, blue=1.0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="ecoli", q_expr="1000" )
 
         cb_model.set_visualization ( enable_visualization=True, export_all=True, all_iterations=False, start=0, end=100000, step=1 )
@@ -3445,8 +3434,6 @@ class EcoliTestOp(bpy.types.Operator):
         cb_model.refresh_molecules()
         
         scn.frame_current = 1
-
-        cb_model.change_molecule_display ( mola, glyph='Cube', scale=5.0, red=0.0, green=0.7, blue=1.0 )
 
         cb_model.set_view_back()
 
@@ -3608,9 +3595,13 @@ class MDLGeoImport(bpy.types.Operator):
 
         cb_model.switch_to_orthographic()
 
-        molM = cb_model.add_molecule_species_to_model ( name="M", diff_const_expr="1e-5" )
+        molM = cb_model.add_molecule_species_to_model ( name="M", diff_const_expr="5e-5" )
         molD = cb_model.add_molecule_species_to_model ( name="D", diff_const_expr="1e-5" )
-        molL = cb_model.add_molecule_species_to_model ( name="L", diff_const_expr="1e-5" )
+        molL = cb_model.add_molecule_species_to_model ( name="L", diff_const_expr="5e-6" )
+
+        cb_model.change_molecule_display ( molM, glyph='Cube', scale=3.0, red=0.0, green=0.7, blue=1.0 )
+        cb_model.change_molecule_display ( molD, glyph='Cube', scale=3.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molL, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
 
         cb_model.add_molecule_release_site_to_model ( mol="M",  name="m_rel",  q_expr="1000", d="0", x="-0.7614", y="0", z="0.042", shape="SPHERICAL" )
         cb_model.add_molecule_release_site_to_model ( mol="D",  name="d_rel",  q_expr="1000", d="0", x= "0.0257", y="0", z="0.042", shape="SPHERICAL" )
@@ -3633,9 +3624,9 @@ class MDLGeoImport(bpy.types.Operator):
 
         cb_model.add_label_to_model ( name="mc", text="Import",   x=-0.65, y=0, z=-0.45,  size=0.5, rx=math.pi/2, ry=0, rz=0 )
 
-        cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
+        cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "fd775e4679c27a320ad691159a61c0f9d9f6a5e1", test_name="MDL Geometry Import Test" )
+        cb_model.compare_mdl_with_sha1 ( "3c86ddb37d93838bcc40bebaab0ccccf5d51f782", test_name="MDL Geometry Import Test" )
 
         cb_model.refresh_molecules()
         scn.frame_current = 1
