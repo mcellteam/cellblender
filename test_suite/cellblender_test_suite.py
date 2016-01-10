@@ -305,7 +305,15 @@ class CellBlender_Model:
     mcell = None
     path_to_blend = None
     
-    def __init__(self, cb_context):
+    def __init__(self, cb_context, model_name=None):
+        banner_text = "Initializing CellBlender Model"
+        if model_name != None:
+            banner_text = "Initializing CellBlender Model: \"" + str(model_name) + "\""
+        print ( "\n##############################################################################################################" )
+        print ( "##############################################################################################################" )
+        print ( "## " + banner_text )
+        print ( "##############################################################################################################" )
+        print ( "##############################################################################################################\n" )
         # bpy.ops.wm.read_homefile()
         self.old_type = None
         self.context = cb_context
@@ -2758,6 +2766,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class CubeTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2768,7 +2777,7 @@ class CubeTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2783,7 +2792,7 @@ class CubeTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "c32241a2f97ace100f1af7a711a6a970c6b9a135", test_name="Simple Cube Test" )
+        cb_model.compare_mdl_with_sha1 ( "c32241a2f97ace100f1af7a711a6a970c6b9a135", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
