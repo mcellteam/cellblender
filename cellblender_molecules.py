@@ -269,7 +269,7 @@ def glyph_show_only_callback(self, context):
     return
 
 def shape_change_callback(self, context):
-    # print ( "Shape change callback for molecule " + self.name )
+    print ( "Shape change callback for molecule " + self.name )
     self.create_mol_data () # ( context )
     return
 
