@@ -1,11 +1,11 @@
 
-INSTALL_DIR = ~/.config/blender/2.75/scripts/addons/io_mesh_import_mcell_mdl/
+INSTALL_DIR = ~/.config/blender/2.76/scripts/addons/io_mesh_import_mcell_mdl/
 
 SHELL = /bin/sh
 OBJS = mdlparse.bison.o mdlmesh_parser.o vector.o mdlmesh_parser_wrap.o
 
 _mdlmesh_parser.so: makefile setup.py mdlobj.py mdlparse.bison.c mdlmesh_parser.c vector.c mdlmesh_parser_wrap.c 
-	python3.3 setup.py build_ext --inplace
+	python3 setup.py build_ext --inplace
 	@if [ -e _mdlmesh_parser.cpython-33m.so ] ; then \
 	    mv _mdlmesh_parser.cpython-33m.so _mdlmesh_parser.so; \
 	fi
