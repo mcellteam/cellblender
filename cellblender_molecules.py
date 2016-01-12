@@ -1103,7 +1103,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         new_mol = self.molecule_list.add()
         new_mol.id = self.allocate_available_id()
         new_mol.init_properties(context.scene.mcell.parameter_system)
-        new_mol.initialize(context)
+        # new_mol.initialize(context)
         self.active_mol_index = len(self.molecule_list)-1
 
     def remove_active_molecule ( self, context ):

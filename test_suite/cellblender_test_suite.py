@@ -547,8 +547,14 @@ class CellBlender_Model:
         self.mcell.molecules.molecule_list[mol_index].type = mol_type
         self.mcell.molecules.molecule_list[mol_index].diffusion_constant.set_expr(diff_const_expr)
         self.mcell.molecules.molecule_list[mol_index].custom_time_step.set_expr(custom_time_step)
-        print ( "Done Adding Molecule " + name )
+        print ( "Done Adding Molecule " + name + " = " + str(self.mcell.molecules.molecule_list[mol_index].name) )
         return self.mcell.molecules.molecule_list[mol_index]
+
+
+    def get_molecule_species_by_name ( self, name ):
+        """ Get a molecule species """
+        print ( "Getting Molecule Species " + name )
+        return self.mcell.molecules.molecule_list.get(name)
 
 
     def add_molecule_release_site_to_model ( self, name=None, mol="a", shape="SPHERICAL", obj_expr="", orient="'", q_expr="100", q_type='NUMBER_TO_RELEASE', d="0", x="0", y="0", z="0", pattern=None ):
@@ -2783,7 +2789,6 @@ class CubeTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
     self_test_name = test_name
-    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2944,6 +2949,221 @@ class SphereSurfaceTestOp(bpy.types.Operator):
         cb_model.play_animation()
 
         return { 'FINISHED' }
+
+
+
+
+###########################################################################################################
+group_name = "Simple Geometry Tests"
+test_name = "Overlapping Surface Test Mols a,s1,b1"
+operator_name = "cellblender_test.overlapping_surf_test_ex1"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class OverlappingSurfaceTestOp1(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+    self_test_name = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
+        cb_model = CellBlender_Model (  context, self.self_test_name )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        cb_model.add_icosphere_to_model ( name="Cell", draw_type="WIRE", subdiv=4 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "top", 0, 0, 1, 0.0 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "y",   0, 1, 0, 0.0 )
+
+        mola  = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-5" )
+        mols1 = cb_model.add_molecule_species_to_model ( name="s1", mol_type="2D", diff_const_expr="0" )
+        #mols2 = cb_model.add_molecule_species_to_model ( name="s2", mol_type="2D", diff_const_expr="0" )
+        molb1 = cb_model.add_molecule_species_to_model ( name="b1", diff_const_expr="1e-7" )
+        #molb2 = cb_model.add_molecule_species_to_model ( name="b2", diff_const_expr="1e-7" )
+
+        # This seems to crash Blender, so leave molecules with default settings for now
+
+        cb_model.change_molecule_display ( mola, glyph='Cube',  scale=3.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mols1, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
+        #cb_model.change_molecule_display ( mols2, glyph='Cone', scale=3.0, red=1.0, green=0.0, blue=1.0 )
+        cb_model.change_molecule_display ( molb1, glyph='Cube', scale=4.0, red=1.0, green=1.0, blue=0.0 )
+        #cb_model.change_molecule_display ( molb2, glyph='Cube', scale=4.0, red=0.0, green=1.0, blue=1.0 )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="2000" )
+        cb_model.add_molecule_release_site_to_model ( mol="s1", shape="OBJECT", obj_expr="Cell[top]", orient="'", q_expr="2000" )
+        #cb_model.add_molecule_release_site_to_model ( mol="s2", shape="OBJECT", obj_expr="Cell[y]", orient="'", q_expr="2000" )
+
+        cb_model.add_reaction_to_model ( rin="a' + s1,", rtype="irreversible", rout="a' + b1, + s1,", fwd_rate="1e10", bkwd_rate="" )
+        #cb_model.add_reaction_to_model ( rin="a' + s2,", rtype="irreversible", rout="a' + b2, + s2,", fwd_rate="1e10", bkwd_rate="" )
+
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=5.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "", test_name=self.self_test_name )
+
+        cb_model.refresh_molecules()
+
+        scn.frame_current = 1
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.25 )
+
+        cb_model.hide_manipulator ( hide=True )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+###########################################################################################################
+group_name = "Simple Geometry Tests"
+test_name = "Overlapping Surface Test Experiment Mols a,s1,s2,b1"
+operator_name = "cellblender_test.overlapping_surf_test_ex2"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class OverlappingSurfaceTestOp2(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+    self_test_name = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
+        cb_model = CellBlender_Model (  context, self.self_test_name )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        cb_model.add_icosphere_to_model ( name="Cell", draw_type="WIRE", subdiv=4 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "top", 0, 0, 1, 0.0 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "y",   0, 1, 0, 0.0 )
+
+        mola  = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-5" )
+        mols1 = cb_model.add_molecule_species_to_model ( name="s1", mol_type="2D", diff_const_expr="0" )
+        mols2 = cb_model.add_molecule_species_to_model ( name="s2", mol_type="2D", diff_const_expr="0" )
+        molb1 = cb_model.add_molecule_species_to_model ( name="b1", diff_const_expr="1e-7" )
+        #molb2 = cb_model.add_molecule_species_to_model ( name="b2", diff_const_expr="1e-7" )
+
+        # This seems to crash Blender, so leave molecules with default settings for now
+
+        cb_model.change_molecule_display ( mola, glyph='Cube',  scale=3.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mols1, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
+        #cb_model.change_molecule_display ( mols2, glyph='Cone', scale=3.0, red=1.0, green=0.0, blue=1.0 )
+        cb_model.change_molecule_display ( molb1, glyph='Cube', scale=4.0, red=1.0, green=1.0, blue=0.0 )
+        #cb_model.change_molecule_display ( molb2, glyph='Cube', scale=4.0, red=0.0, green=1.0, blue=1.0 )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="2000" )
+        cb_model.add_molecule_release_site_to_model ( mol="s1", shape="OBJECT", obj_expr="Cell[top]", orient="'", q_expr="2000" )
+        #cb_model.add_molecule_release_site_to_model ( mol="s2", shape="OBJECT", obj_expr="Cell[y]", orient="'", q_expr="2000" )
+
+        cb_model.add_reaction_to_model ( rin="a' + s1,", rtype="irreversible", rout="a' + b1, + s1,", fwd_rate="1e10", bkwd_rate="" )
+        #cb_model.add_reaction_to_model ( rin="a' + s2,", rtype="irreversible", rout="a' + b2, + s2,", fwd_rate="1e10", bkwd_rate="" )
+
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=5.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "", test_name=self.self_test_name )
+
+        cb_model.refresh_molecules()
+
+        scn.frame_current = 1
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.25 )
+
+        cb_model.hide_manipulator ( hide=True )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+###########################################################################################################
+group_name = "Simple Geometry Tests"
+test_name = "Overlapping Surface Test Experiment Mols a,s1,s2,b1,b2"
+operator_name = "cellblender_test.overlapping_surf_test_ex3"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class OverlappingSurfaceTestOp3(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+    self_test_name = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
+        cb_model = CellBlender_Model (  context, self.self_test_name )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        cb_model.add_icosphere_to_model ( name="Cell", draw_type="WIRE", subdiv=4 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "top", 0, 0, 1, 0.0 )
+        cb_model.add_surface_region_to_model_object_by_normal ( "Cell", "y",   0, 1, 0, 0.0 )
+
+        mola  = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-5" )
+        mols1 = cb_model.add_molecule_species_to_model ( name="s1", mol_type="2D", diff_const_expr="0" )
+        mols2 = cb_model.add_molecule_species_to_model ( name="s2", mol_type="2D", diff_const_expr="0" )
+        molb1 = cb_model.add_molecule_species_to_model ( name="b1", diff_const_expr="1e-7" )
+        molb2 = cb_model.add_molecule_species_to_model ( name="b2", diff_const_expr="1e-7" )
+
+        # This seems to crash Blender, so leave molecules with default settings for now
+        print ( "mols1.name :"  )
+        print ( "  " + str(mols1.name) )
+
+        cb_model.change_molecule_display ( cb_model.get_molecule_species_by_name('a'), glyph='Cube',  scale=3.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( cb_model.get_molecule_species_by_name('s1'), glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( cb_model.get_molecule_species_by_name('s2'), glyph='Cone', scale=3.0, red=1.0, green=0.0, blue=1.0 )
+        cb_model.change_molecule_display ( cb_model.get_molecule_species_by_name('b1'), glyph='Cube', scale=4.0, red=1.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( cb_model.get_molecule_species_by_name('b2'), glyph='Cube', scale=4.0, red=0.0, green=1.0, blue=1.0 )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="2000" )
+        cb_model.add_molecule_release_site_to_model ( mol="s1", shape="OBJECT", obj_expr="Cell[top]", orient="'", q_expr="2000" )
+        #cb_model.add_molecule_release_site_to_model ( mol="s2", shape="OBJECT", obj_expr="Cell[y]", orient="'", q_expr="2000" )
+
+        cb_model.add_reaction_to_model ( rin="a' + s1,", rtype="irreversible", rout="a' + b1, + s1,", fwd_rate="1e10", bkwd_rate="" )
+        #cb_model.add_reaction_to_model ( rin="a' + s2,", rtype="irreversible", rout="a' + b2, + s2,", fwd_rate="1e10", bkwd_rate="" )
+
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=5.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "", test_name=self.self_test_name )
+
+        cb_model.refresh_molecules()
+
+        #scn.frame_current = 1
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.25 )
+
+        cb_model.hide_manipulator ( hide=True )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
 
 
 
