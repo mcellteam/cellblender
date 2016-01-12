@@ -151,27 +151,6 @@ import mathutils
 import cellblender
 
 
-class MCellMoleculeGlyphsPropertyGroup(bpy.types.PropertyGroup):
-    glyph_lib = os.path.join(
-        os.path.dirname(__file__), "glyph_library.blend/Mesh/")
-    glyph_enum = [
-        ('Cone', "Cone", ""),
-        ('Cube', "Cube", ""),
-        ('Cylinder', "Cylinder", ""),
-        ('Icosahedron', "Icosahedron", ""),
-        ('Octahedron', "Octahedron", ""),
-        ('Receptor', "Receptor", ""),
-        ('Sphere_1', "Sphere_1", ""),
-        ('Sphere_2', "Sphere_2", ""),
-        ('Torus', "Torus", "")]
-    glyph = EnumProperty(items=glyph_enum, name="Molecule Shapes")
-    show_glyph = BoolProperty(name="Show Glyphs",description="Show Glyphs ... can cause slowness!!",default=True)
-    status = StringProperty(name="Status")
-
-    def remove_properties ( self, context ):
-        print ( "Removing all Molecule Glyph Properties... no collections to remove." )
-
-
 
 class MCellObjectSelectorPropertyGroup(bpy.types.PropertyGroup):
     filter = StringProperty(
@@ -909,7 +888,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=MCellObjectSelectorPropertyGroup,
         name="CellBlender Project Settings")
     molecule_glyphs = PointerProperty(
-        type=MCellMoleculeGlyphsPropertyGroup, name="Molecule Shapes")
+        type=cellblender_molecules.MCellMoleculeGlyphsPropertyGroup, name="Molecule Shapes")
 
     legacy = PointerProperty(
         type=cellblender_legacy.MCellLegacyGroup, name="Lecacy Support")

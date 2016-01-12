@@ -37,6 +37,7 @@ import os.path
 import hashlib
 import bpy
 import math
+import random
 import mathutils
 from bpy.props import *
 
@@ -304,7 +305,15 @@ class CellBlender_Model:
     mcell = None
     path_to_blend = None
     
-    def __init__(self, cb_context):
+    def __init__(self, cb_context, model_name=None):
+        banner_text = "Initializing CellBlender Model"
+        if model_name != None:
+            banner_text = "Initializing CellBlender Model: \"" + str(model_name) + "\""
+        print ( "\n##############################################################################################################" )
+        print ( "##############################################################################################################" )
+        print ( "## " + banner_text )
+        print ( "##############################################################################################################" )
+        print ( "##############################################################################################################\n" )
         # bpy.ops.wm.read_homefile()
         self.old_type = None
         self.context = cb_context
@@ -538,8 +547,14 @@ class CellBlender_Model:
         self.mcell.molecules.molecule_list[mol_index].type = mol_type
         self.mcell.molecules.molecule_list[mol_index].diffusion_constant.set_expr(diff_const_expr)
         self.mcell.molecules.molecule_list[mol_index].custom_time_step.set_expr(custom_time_step)
-        print ( "Done Adding Molecule " + name )
+        print ( "Done Adding Molecule " + name + " = " + str(self.mcell.molecules.molecule_list[mol_index].name) )
         return self.mcell.molecules.molecule_list[mol_index]
+
+
+    def get_molecule_species_by_name ( self, name ):
+        """ Get a molecule species """
+        print ( "Getting Molecule Species " + name )
+        return self.mcell.molecules.molecule_list.get(name)
 
 
     def add_molecule_release_site_to_model ( self, name=None, mol="a", shape="SPHERICAL", obj_expr="", orient="'", q_expr="100", q_type='NUMBER_TO_RELEASE', d="0", x="0", y="0", z="0", pattern=None ):
@@ -1007,7 +1022,7 @@ class CellBlender_Model:
             bpy.ops.cbm.refresh_operator()
 
 
-    def change_molecule_display ( self, mol, glyph="Cube", scale=1.0, red=-1, green=-1, blue=-1 ):
+    def old_change_molecule_display ( self, mol, glyph="Cube", letter="A", scale=1.0, red=-1, green=-1, blue=-1 ):
         app = bpy.context.scene.cellblender_test_suite
         if app.run_mcell:
             #if mol.name == "Molecule":
@@ -1017,12 +1032,57 @@ class CellBlender_Model:
             self.mcell.cellblender_main_panel.molecule_select = True
             self.mcell.molecules.show_display = True
             mol.glyph = glyph
+            mol.letter = letter
             mol.scale = scale
             if red >= 0: mol.color.r = red
             if green >= 0: mol.color.g = green
             if blue >= 0: mol.color.b = blue
 
             print ( "Done Changing Display for Molecule \"" + mol.name + "\"" )
+
+    def change_molecule_display ( self, mol, glyph="Cube", letter="A", scale=1.0, emit=0.5, red=-1, green=-1, blue=-1 ):
+        print ( "Inside change_molecule_display\n" )
+
+        if mol != None:
+
+            print ( "Changing Display for Molecule \"" + mol.name + "\" to R="+str(red)+",G="+str(green)+",B="+str(blue) )
+
+            app = bpy.context.scene.cellblender_test_suite
+            self.mcell.cellblender_main_panel.molecule_select = True
+            self.mcell.molecules.show_display = True
+
+            mol.glyph = glyph
+            mol.letter = letter
+            mol.scale = scale
+            mat_name = "mol_" + mol.name + "_mat"
+            if mat_name in bpy.data.materials:
+                cur_red = bpy.data.materials[mat_name].diffuse_color[0]
+                cur_green = bpy.data.materials[mat_name].diffuse_color[1]
+                cur_blue = bpy.data.materials[mat_name].diffuse_color[2]
+                if red >= 0: cur_red = red
+                if green >= 0: cur_green = green
+                if blue >= 0: cur_blue = blue
+                bpy.data.materials[mat_name].diffuse_color = (cur_red, cur_green, cur_blue)
+                bpy.data.materials[mat_name].emit = emit
+            print ( "Done Changing Display for Molecule \"" + mol.name + "\"" )
+
+        print ( "Leaving change_molecule_display\n" )
+
+
+    def set_mol_material ( self, mol_name, red=-1, green=-1, blue=-1 ):
+        app = bpy.context.scene.cellblender_test_suite
+        self.mcell.cellblender_main_panel.molecule_select = True
+        self.mcell.molecules.show_display = True
+
+        if red < 0: red = random.random()
+        if green < 0: green = random.random()
+        if blue < 0: blue = random.random()
+        # print ( "Changing Material for Molecule \"" + mol_name + "\" to R="+str(red)+",G="+str(green)+",B="+str(blue) )
+        mat_name = "mol_" + mol_name + "_mat"
+        if mat_name in bpy.data.materials:
+            bpy.data.materials[mat_name].diffuse_color = (red, green, blue)
+
+        # print ( "Done Changing Material for Molecule \"" + mol_name + "\"" )
 
     def get_mdl_file_path ( self ):
         return self.path_to_blend[:self.path_to_blend.rfind('.')] + "_files" + os.sep + "mcell"
@@ -1178,9 +1238,6 @@ class CellBlender_Model:
 ######################
 #   Model  Support   #
 ######################
-
-import math
-import random
 
 class point:
   x=0;
@@ -2204,13 +2261,18 @@ class ShapedCylinder (plf_object):
 
 def SimRunnerExample ( context, method="COMMAND", test_name=None ):
 
-    cb_model = CellBlender_Model ( context )
+    cb_model = CellBlender_Model (  context, test_name )
 
     scn = cb_model.get_scene()
     mcell = cb_model.get_mcell()
     mcell.run_simulation.simulation_run_control = method
 
     mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+
+    ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+    ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+    mol_a  = cb_model.get_molecule_species_by_name('a')
 
     cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="200" )
 
@@ -2241,6 +2303,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class SimRunnerCommandTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2249,7 +2312,7 @@ class SimRunnerCommandTestOp(bpy.types.Operator):
     def execute(self, context):
         global active_frame_change_handler
         active_frame_change_handler = None
-        SimRunnerExample ( context, method="COMMAND", test_name="Simulation Runner Command Test" )
+        SimRunnerExample ( context, method="COMMAND", test_name=self.self_test_name )
         return { 'FINISHED' }
 
 
@@ -2263,6 +2326,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class SimRunnerQueueTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2271,7 +2335,7 @@ class SimRunnerQueueTestOp(bpy.types.Operator):
     def execute(self, context):
         global active_frame_change_handler
         active_frame_change_handler = None
-        SimRunnerExample ( context, method="QUEUE", test_name="Simulation Runner Queue Test" )
+        SimRunnerExample ( context, method="QUEUE", test_name=self.self_test_name )
         return { 'FINISHED' }
 
 
@@ -2285,6 +2349,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class SimRunnerJavaTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2293,7 +2358,7 @@ class SimRunnerJavaTestOp(bpy.types.Operator):
     def execute(self, context):
         global active_frame_change_handler
         active_frame_change_handler = None
-        SimRunnerExample ( context, method="JAVA", test_name="Simulation Runner Java Test" )
+        SimRunnerExample ( context, method="JAVA", test_name=self.self_test_name )
         return { 'FINISHED' }
 
 
@@ -2307,13 +2372,14 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class SimRunnerOpenGLTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
         return {'FINISHED'}
 
     def execute(self, context):
-        SimRunnerExample ( context, method="OPENGL", test_name="Simulation Runner Open GL Test" )
+        SimRunnerExample ( context, method="OPENGL", test_name=self.self_test_name )
         return { 'FINISHED' }
 
 
@@ -2327,6 +2393,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class SingleMoleculeTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2337,22 +2404,27 @@ class SingleMoleculeTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
 
         mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
 
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mol  = cb_model.get_molecule_species_by_name('a')
+
+        cb_model.change_molecule_display ( mol, glyph="Torus", scale=5.0, red=1, green=1, blue=0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="1" )
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
         
-        cb_model.compare_mdl_with_sha1 ( "19fd01beddf82da6026810b52d6955638674f556", test_name="Single Molecule Test" )
+        cb_model.compare_mdl_with_sha1 ( "19fd01beddf82da6026810b52d6955638674f556", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
-
-        cb_model.change_molecule_display ( mol, glyph='Torus', scale=4.0, red=1.0, green=1.0, blue=0.0 )
 
         cb_model.set_view_back()
 
@@ -2375,6 +2447,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class DoubleSphereTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2385,7 +2458,7 @@ class DoubleSphereTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2393,17 +2466,23 @@ class DoubleSphereTestOp(bpy.types.Operator):
         mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
         mol_b = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-6" )
 
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mol_a  = cb_model.get_molecule_species_by_name('a')
+        mol_b  = cb_model.get_molecule_species_by_name('b')
+
+        cb_model.change_molecule_display ( mol_a, glyph='Letter', letter='A', scale=2.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_b, glyph='Letter', letter='B', scale=2.0, red=0.0, green=1.0, blue=0.0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="400", d="0.5", y="-0.25" )
         cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="400", d="0.5", y="0.25" )
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "4410b18c1530f79c07cc2aebec52a7eabc4aded4", test_name="Double Sphere Test" )
+        cb_model.compare_mdl_with_sha1 ( "4410b18c1530f79c07cc2aebec52a7eabc4aded4", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
-
-        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=2.0, red=0.0, green=1.0, blue=0.0 )
 
         cb_model.set_view_back()
 
@@ -2426,6 +2505,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class VolDiffusionConstTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2436,7 +2516,7 @@ class VolDiffusionConstTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2445,19 +2525,26 @@ class VolDiffusionConstTestOp(bpy.types.Operator):
         mol_b = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-7" )
         mol_c = cb_model.add_molecule_species_to_model ( name="c", diff_const_expr="1e-8" )
 
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mol_a  = cb_model.get_molecule_species_by_name('a')
+        mol_b  = cb_model.get_molecule_species_by_name('b')
+        mol_c  = cb_model.get_molecule_species_by_name('c')
+
+        cb_model.change_molecule_display ( mol_a, glyph='Letter', letter='A', scale=2.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_b, glyph='Letter', letter='B', scale=2.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_c, glyph='Letter', letter='C', scale=2.0, red=0.1, green=0.1, blue=1.0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="100", d="0.01", y="-0.25" )
         cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="100", d="0.01", y= "0.0" )
         cb_model.add_molecule_release_site_to_model ( mol="c", q_expr="100", d="0.01", y= "0.25" )
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=3.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "59b7e9f0f672791101d6a0061af362688e8caa42", test_name="Volume Diffusion Constant Test" )
+        cb_model.compare_mdl_with_sha1 ( "59b7e9f0f672791101d6a0061af362688e8caa42", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
-
-        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=2.0, red=0.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( mol_c, glyph='Cube', scale=2.0, red=0.1, green=0.1, blue=1.0 )
 
         cb_model.set_view_back()
 
@@ -2481,6 +2568,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class ReactionTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2491,7 +2579,7 @@ class ReactionTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2500,31 +2588,27 @@ class ReactionTestOp(bpy.types.Operator):
         mol_b = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-6" )
         mol_c = cb_model.add_molecule_species_to_model ( name="bg", diff_const_expr="1e-5" )
 
-        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="400", d="0.5", y="-0.05" )
-        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="400", d="0.5", y="0.05" )
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
 
-        # Create a single c molecule at the origin so its properties will be changed
-        cb_model.add_molecule_release_site_to_model ( mol="bg", q_expr="1", d="0", y="0" )
-
-        cb_model.add_reaction_to_model ( rin="a + b", rtype="irreversible", rout="bg", fwd_rate="1e8", bkwd_rate="" )
-
-        cb_model.run_model ( iterations='2000', time_step='1e-6', wait_time=20.0 )
-
-        cb_model.compare_mdl_with_sha1 ( "e302a61ecda563a02e8d65ef17c648ff088745d2", test_name="Simple Reaction Test" )
-
-        cb_model.refresh_molecules()
-
-        # Try to advance frame so molecules exist before changing them
-        # scn.frame_current = 1999
+        mol_a  = cb_model.get_molecule_species_by_name('a')
+        mol_b  = cb_model.get_molecule_species_by_name('b')
+        mol_c  = cb_model.get_molecule_species_by_name('bg')
 
         cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
         cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=2.0, red=0.0, green=1.0, blue=0.0 )
         cb_model.change_molecule_display ( mol_c, glyph='Torus', scale=10.0, red=1.0, green=1.0, blue=0.5 )
 
-        #cb_model.refresh_molecules()
+        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="400", d="0.5", y="-0.05" )
+        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="400", d="0.5", y="0.05" )
 
-        # Set time back to 0
-        #scn.frame_current = 0
+        cb_model.add_reaction_to_model ( rin="a + b", rtype="irreversible", rout="bg", fwd_rate="1e8", bkwd_rate="" )
+
+        cb_model.run_model ( iterations='2000', time_step='1e-6', wait_time=20.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "f428886cdb457b31f8cc5cce5760e7860c41f5cb", test_name=self.self_test_name )
+
+        cb_model.refresh_molecules()
 
         cb_model.set_view_back()
 
@@ -2547,6 +2631,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class ReleaseShapeTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2557,7 +2642,7 @@ class ReleaseShapeTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2571,6 +2656,21 @@ class ReleaseShapeTestOp(bpy.types.Operator):
         mol_c = cb_model.add_molecule_species_to_model ( name="bg", diff_const_expr=diff_const )
         mol_d = cb_model.add_molecule_species_to_model ( name="d", diff_const_expr=diff_const )
 
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mol_a  = cb_model.get_molecule_species_by_name('a')
+        mol_b  = cb_model.get_molecule_species_by_name('b')
+        mol_c  = cb_model.get_molecule_species_by_name('bg')
+        mol_d  = cb_model.get_molecule_species_by_name('d')
+
+        mol_scale = 2.5
+
+        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=mol_scale, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=mol_scale, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( mol_c, glyph='Cube', scale=mol_scale, red=0.0, green=0.0, blue=1.0 )
+        cb_model.change_molecule_display ( mol_d, glyph='Cube', scale=mol_scale, red=1.0, green=1.0, blue=0.0 )
+
         num_rel = "1000"
 
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr=num_rel, shape="OBJECT", obj_expr="Cell",  )
@@ -2580,16 +2680,9 @@ class ReleaseShapeTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=5.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "c622d3e5c9eaf20911b95ae006eb197401d0e982", test_name="Release Shape Test" )
+        cb_model.compare_mdl_with_sha1 ( "c622d3e5c9eaf20911b95ae006eb197401d0e982", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
-
-        mol_scale = 2.5
-
-        cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=mol_scale, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( mol_b, glyph='Cube', scale=mol_scale, red=0.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( mol_c, glyph='Cube', scale=mol_scale, red=0.0, green=0.0, blue=1.0 )
-        cb_model.change_molecule_display ( mol_d, glyph='Cube', scale=mol_scale, red=1.0, green=1.0, blue=0.0 )
 
         cb_model.set_view_back()
 
@@ -2612,6 +2705,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class ParSystemTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2622,7 +2716,7 @@ class ParSystemTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2634,15 +2728,85 @@ class ParSystemTestOp(bpy.types.Operator):
 
         mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="dc" )
 
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mol  = cb_model.get_molecule_species_by_name('a')
+
+        cb_model.change_molecule_display ( mol, glyph='Torus', scale=4.0, red=1.0, green=1.0, blue=0.0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="C" )
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "f7a25eacc4b0ecfa6619c9428ddd761920aab7dd", test_name="Parameter System Test" )
+        cb_model.compare_mdl_with_sha1 ( "f7a25eacc4b0ecfa6619c9428ddd761920aab7dd", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
-        cb_model.change_molecule_display ( mol, glyph='Torus', scale=4.0, red=1.0, green=1.0, blue=0.0 )
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.04 )
+
+        cb_model.hide_manipulator ( hide=True )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+
+###########################################################################################################
+group_name = "Non-Geometry Tests"
+test_name = "Molecule Glyph Test"
+operator_name = "cellblender_test.molecule_glyph"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class GlyphTestOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+    self_test_name = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
+        cb_model = CellBlender_Model (  context, self.self_test_name )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+        
+        cb_model.add_parameter_to_model ( name="n", expr="10", units="", desc="Number of molecules to release" )
+        cb_model.add_parameter_to_model ( name="dc", expr="1e-6", units="", desc="Diffusion Constant" )
+
+        # Create a default molecule as a way to get the glyph names without hard-coding here
+        mol = cb_model.add_molecule_species_to_model ( name="NoMols" )
+
+        # Get the current glyph names
+        glyph_names = [ l[0] for l in mol.glyph_enum ]
+        glyph_letters = [ l[0] for l in mol.letter_enum ]
+
+        for glyph_name in glyph_names:
+            if glyph_name == 'Letter':
+                for letter_name in glyph_letters:
+                    mol = cb_model.add_molecule_species_to_model ( name=letter_name, diff_const_expr="dc" )
+                    cb_model.change_molecule_display ( mol, glyph="Letter", letter=letter_name, scale=1.0, red=random.random(), green=random.random(), blue=random.random() )
+                    cb_model.add_molecule_release_site_to_model ( mol=letter_name, q_expr="n" )
+            else:
+                mol = cb_model.add_molecule_species_to_model ( name=glyph_name, diff_const_expr="dc" )
+                cb_model.change_molecule_display ( mol, glyph=glyph_name, scale=1.0, red=random.random(), green=random.random(), blue=random.random() )
+                cb_model.add_molecule_release_site_to_model ( mol=glyph_name, q_expr="n" )
+
+        cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=4.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "aa87e80b427ed81885b1d2963365891197dfd208", test_name=self.self_test_name )
+
+        cb_model.refresh_molecules()
 
         cb_model.set_view_back()
 
@@ -2667,6 +2831,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class CubeTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2677,7 +2842,7 @@ class CubeTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2686,15 +2851,20 @@ class CubeTestOp(bpy.types.Operator):
 
         mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
 
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mol  = cb_model.get_molecule_species_by_name('a')
+
+        cb_model.change_molecule_display ( mol, glyph='Cube', scale=4.0, red=1.0, green=0.0, blue=0.0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "c32241a2f97ace100f1af7a711a6a970c6b9a135", test_name="Simple Cube Test" )
+        cb_model.compare_mdl_with_sha1 ( "c32241a2f97ace100f1af7a711a6a970c6b9a135", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
-
-        cb_model.change_molecule_display ( mol, glyph='Cube', scale=4.0, red=1.0, green=0.0, blue=0.0 )
 
         cb_model.set_view_back()
 
@@ -2716,6 +2886,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class CubeSurfaceTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2726,7 +2897,7 @@ class CubeSurfaceTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2738,26 +2909,30 @@ class CubeSurfaceTestOp(bpy.types.Operator):
         mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-6" )
         molb = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-6" )
 
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mola  = cb_model.get_molecule_species_by_name('a')
+        mols  = cb_model.get_molecule_species_by_name('s')
+        molb  = cb_model.get_molecule_species_by_name('b')
+
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mols, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molb, glyph='Torus', scale=9.0, emit=2.0, red=1.0, green=1.0, blue=1.0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
         cb_model.add_molecule_release_site_to_model ( mol="s", shape="OBJECT", obj_expr="Cell[top]", orient="'", q_expr="1000" )
-        #### Add a single b molecule so the display values can be set ... otherwise they're not applied properly
-        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="1", shape="SPHERICAL", d="0", z="1.001" )
-
 
         cb_model.add_reaction_to_model ( rin="a' + s,", rtype="irreversible", rout="b, + s,", fwd_rate="1e8", bkwd_rate="" )
 
 
         cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=6.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "32312790f206beaa798ce0a7218f1f712840b0d5", test_name="Cube Surface Test" )
+        cb_model.compare_mdl_with_sha1 ( "30e124487f8cbd63281c3c8cc2b8215bc1637193", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
         
         scn.frame_current = 1
-
-        cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( mols, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( molb, glyph='Cube', scale=6.0, red=1.0, green=1.0, blue=1.0 )
 
         cb_model.set_view_back()
 
@@ -2780,6 +2955,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class SphereSurfaceTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2790,7 +2966,7 @@ class SphereSurfaceTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2802,26 +2978,29 @@ class SphereSurfaceTestOp(bpy.types.Operator):
         mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-6" )
         molb = cb_model.add_molecule_species_to_model ( name="b", diff_const_expr="1e-6" )
 
-        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
-        cb_model.add_molecule_release_site_to_model ( mol="s", shape="OBJECT", obj_expr="Cell[top]", orient="'", q_expr="1000" )
-        #### Add a single b molecule so the display values can be set ... otherwise they're not applied properly
-        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="1", shape="SPHERICAL", d="0", z="1.001" )
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
 
-
-        cb_model.add_reaction_to_model ( rin="a' + s,", rtype="irreversible", rout="b, + s,", fwd_rate="1e8", bkwd_rate="" )
-
-
-        cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=7.0 )
-
-        cb_model.compare_mdl_with_sha1 ( "90ef79fc7405aff0bbf9a6f6864f11b148c622a4", test_name="Sphere Surface Test" )
-
-        cb_model.refresh_molecules()
-        
-        scn.frame_current = 1
+        mola  = cb_model.get_molecule_species_by_name('a')
+        mols  = cb_model.get_molecule_species_by_name('s')
+        molb  = cb_model.get_molecule_species_by_name('b')
 
         cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
         cb_model.change_molecule_display ( mols, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
         cb_model.change_molecule_display ( molb, glyph='Cube', scale=6.0, red=1.0, green=1.0, blue=1.0 )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
+        cb_model.add_molecule_release_site_to_model ( mol="s", shape="OBJECT", obj_expr="Cell[top]", orient="'", q_expr="1000" )
+
+        cb_model.add_reaction_to_model ( rin="a' + s,", rtype="irreversible", rout="b, + s,", fwd_rate="1e8", bkwd_rate="" )
+
+        cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=7.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "ef5ceab9bd89f33fe28ef7425b26e8397d1fb763", test_name=self.self_test_name )
+
+        cb_model.refresh_molecules()
+        
+        scn.frame_current = 1
 
         cb_model.set_view_back()
 
@@ -2838,13 +3017,14 @@ class SphereSurfaceTestOp(bpy.types.Operator):
 
 ###########################################################################################################
 group_name = "Simple Geometry Tests"
-test_name = "Overlapping Surface Test"
+test_name = "Overlapping Surface Test Mols a,s1,b1"
 operator_name = "cellblender_test.overlapping_surf_test"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
 class OverlappingSurfaceTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2855,7 +3035,7 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2870,32 +3050,35 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
         molb1 = cb_model.add_molecule_species_to_model ( name="b1", diff_const_expr="1e-7" )
         molb2 = cb_model.add_molecule_species_to_model ( name="b2", diff_const_expr="1e-7" )
 
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mola  = cb_model.get_molecule_species_by_name('a')
+        mols1 = cb_model.get_molecule_species_by_name('s1')
+        mols2 = cb_model.get_molecule_species_by_name('s2')
+        molb1  = cb_model.get_molecule_species_by_name('b1')
+        molb2  = cb_model.get_molecule_species_by_name('b2')
+
+        cb_model.change_molecule_display ( mola, glyph='Cube',  scale=3.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( mols1, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( mols2, glyph='Cone', scale=3.0, red=1.0, green=0.0, blue=1.0 )
+        cb_model.change_molecule_display ( molb1, glyph='Cube', scale=4.0, red=1.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molb2, glyph='Cube', scale=4.0, red=0.0, green=1.0, blue=1.0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="2000" )
         cb_model.add_molecule_release_site_to_model ( mol="s1", shape="OBJECT", obj_expr="Cell[top]", orient="'", q_expr="2000" )
         cb_model.add_molecule_release_site_to_model ( mol="s2", shape="OBJECT", obj_expr="Cell[y]", orient="'", q_expr="2000" )
-        #### Add a single b molecule so the display values can be set ... otherwise they're not applied properly
-        cb_model.add_molecule_release_site_to_model ( mol="b1", q_expr="1", shape="SPHERICAL", d="0", z="0" )
-        cb_model.add_molecule_release_site_to_model ( mol="b2", q_expr="1", shape="SPHERICAL", d="0", z="0" )
-
 
         cb_model.add_reaction_to_model ( rin="a' + s1,", rtype="irreversible", rout="a' + b1, + s1,", fwd_rate="1e10", bkwd_rate="" )
         cb_model.add_reaction_to_model ( rin="a' + s2,", rtype="irreversible", rout="a' + b2, + s2,", fwd_rate="1e10", bkwd_rate="" )
 
-
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=5.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "3f0d87d4f5e1ab1ecedde6c0d48fa3d2dc89ab93", test_name="Overlapping Surface Test" )
+        cb_model.compare_mdl_with_sha1 ( "", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
         scn.frame_current = 1
-
-        """
-        cb_model.change_molecule_display ( mola, glyph='Cube',  scale=3.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( mols1, glyph='Cone', scale=3.0, red=0.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( mols2, glyph='Cone', scale=3.0, red=1.0, green=0.0, blue=1.0 )
-        cb_model.change_molecule_display ( molb1, glyph='Cube', scale=4.0, red=1.0, green=1.0, blue=1.0 )
-        """
 
         cb_model.set_view_back()
 
@@ -2909,6 +3092,7 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
 
 
 
+
 ###########################################################################################################
 group_name = "Simple Geometry Tests"
 test_name = "Surface Classes Test"
@@ -2918,6 +3102,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class SurfaceClassesTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -2928,7 +3113,7 @@ class SurfaceClassesTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2960,6 +3145,19 @@ class SurfaceClassesTestOp(bpy.types.Operator):
         molt = cb_model.add_molecule_species_to_model ( name="t", diff_const_expr="1e-6" )
         molr = cb_model.add_molecule_species_to_model ( name="r", diff_const_expr="1e-6" )
         molc = cb_model.add_molecule_species_to_model ( name="c", diff_const_expr="1e-6" )
+
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mola  = cb_model.get_molecule_species_by_name('a')
+        molt  = cb_model.get_molecule_species_by_name('t')
+        molr  = cb_model.get_molecule_species_by_name('r')
+        molc  = cb_model.get_molecule_species_by_name('c')
+
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=5.0, red=0.0, green=0.7, blue=1.0 )
+        cb_model.change_molecule_display ( molt, glyph='Cube', scale=5.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molr, glyph='Cube', scale=5.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( molc, glyph='Cube', scale=5.0, red=1.0, green=1.0, blue=0.5 )
 
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="ai", q_expr="100" )
         cb_model.add_molecule_release_site_to_model ( mol="t", shape="OBJECT", obj_expr="ti", q_expr="100" )
@@ -3012,16 +3210,11 @@ class SurfaceClassesTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='5000', time_step='1e-6', wait_time=40.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "cce6f22d7a48e6c513c670a5917909c0129fbf4c", test_name="Surface Classes Test" )
+        cb_model.compare_mdl_with_sha1 ( "cce6f22d7a48e6c513c670a5917909c0129fbf4c", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
         scn.frame_current = 1
-
-        cb_model.change_molecule_display ( mola, glyph='Cube', scale=5.0, red=0.0, green=0.7, blue=1.0 )
-        cb_model.change_molecule_display ( molt, glyph='Cube', scale=5.0, red=0.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( molr, glyph='Cube', scale=5.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( molc, glyph='Cube', scale=5.0, red=1.0, green=1.0, blue=0.5 )
 
         cb_model.set_view_back()
 
@@ -3044,6 +3237,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class CapsuleTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -3054,7 +3248,7 @@ class CapsuleTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -3073,12 +3267,28 @@ class CapsuleTestOp(bpy.types.Operator):
         molpb = cb_model.add_molecule_species_to_model ( name="pb", mol_type="2D", diff_const_expr="0" )
         molc  = cb_model.add_molecule_species_to_model ( name="c", diff_const_expr="1e-7" )
 
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mola  = cb_model.get_molecule_species_by_name('a')
+        molpa = cb_model.get_molecule_species_by_name('p1')
+        molb  = cb_model.get_molecule_species_by_name('b')
+        molpb = cb_model.get_molecule_species_by_name('pb')
+        molc  = cb_model.get_molecule_species_by_name('c')
+
+        cb_model.change_molecule_display ( mola,  glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( molpa, glyph='Cone', scale=2.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molb,  glyph='Cube', scale=3.0, red=1.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molpb, glyph='Cone', scale=2.0, red=0.0, green=1.0, blue=1.0 )
+        cb_model.change_molecule_display ( molc,  glyph='Cube', scale=4.0, red=1.0, green=1.0, blue=1.0 )
+
+
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="capsule", q_expr="2000" )
         cb_model.add_molecule_release_site_to_model ( mol="pa", shape="OBJECT", obj_expr="capsule[top]", orient="'", q_expr="1000" )
         cb_model.add_molecule_release_site_to_model ( mol="pb", shape="OBJECT", obj_expr="capsule[bot]", orient="'", q_expr="1000" )
         #### Add a single b molecule so the display values can be set ... otherwise they're not applied properly
-        cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="1", shape="SPHERICAL", d="0", z="0.000" )
-        cb_model.add_molecule_release_site_to_model ( mol="c", q_expr="1", shape="SPHERICAL", d="0", z="0.000" )
+        #cb_model.add_molecule_release_site_to_model ( mol="b", q_expr="1", shape="SPHERICAL", d="0", z="0.000" )
+        #cb_model.add_molecule_release_site_to_model ( mol="c", q_expr="1", shape="SPHERICAL", d="0", z="0.000" )
 
 
         cb_model.add_reaction_to_model ( rin="a' + pa,", rtype="irreversible", rout="b, + pa,", fwd_rate="1e9", bkwd_rate="" )
@@ -3098,7 +3308,7 @@ class CapsuleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='10000', time_step='1e-6', wait_time=50.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "c9950d6bad9e7c18af96df94fcc59781b1b7fcc0", test_name="Capsule in Capsule Test" )
+        cb_model.compare_mdl_with_sha1 ( "08925065123f873d3b7eb6dc49df287c9e968588", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
         
@@ -3106,16 +3316,6 @@ class CapsuleTestOp(bpy.types.Operator):
 
         cb_model.refresh_molecules()
         
-        """
-        This seems to crash Blender, so leave molecules with default settings for now
-
-        cb_model.change_molecule_display ( mola,  glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( molpa, glyph='Cone', scale=2.0, red=0.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( molb,  glyph='Cube', scale=3.0, red=1.0, green=1.0, blue=0.0 )
-        cb_model.change_molecule_display ( molpb, glyph='Cone', scale=2.0, red=0.0, green=1.0, blue=1.0 )
-        cb_model.change_molecule_display ( molc,  glyph='Cube', scale=4.0, red=1.0, green=1.0, blue=1.0 )
-        """
-
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.25 )
@@ -3138,6 +3338,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class GobletTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -3148,7 +3349,7 @@ class GobletTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -3169,19 +3370,24 @@ class GobletTestOp(bpy.types.Operator):
 
         mola  = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
 
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mola  = cb_model.get_molecule_species_by_name('a')
+
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=0.96, green=1.0, blue=0.3 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="goblet", q_expr="1000" )
 
         cb_model.set_visualization ( enable_visualization=True, export_all=True, all_iterations=False, start=0, end=100000, step=1 )
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "bd1d3190e609f84e69fb0651225c2fc5499ffebf", test_name="Goblet Test" )
+        cb_model.compare_mdl_with_sha1 ( "bd1d3190e609f84e69fb0651225c2fc5499ffebf", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
         
         scn.frame_current = 1
-
-        cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=0.96, green=1.0, blue=0.3 )
 
         cb_model.set_view_back()
 
@@ -3208,6 +3414,7 @@ NOTE: This algorithm doesn't generate equally spaced slices as expected.
 class EcoliTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -3218,7 +3425,7 @@ class EcoliTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -3330,19 +3537,24 @@ class EcoliTestOp(bpy.types.Operator):
 
         mola  = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
 
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mola  = cb_model.get_molecule_species_by_name('a')
+
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=5.0, red=0.0, green=0.7, blue=1.0 )
+
         cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="ecoli", q_expr="1000" )
 
         cb_model.set_visualization ( enable_visualization=True, export_all=True, all_iterations=False, start=0, end=100000, step=1 )
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "652c19b96ff7d162c5c92d83113feb588b012f0d", test_name="Dividing Capsule Test" )
+        cb_model.compare_mdl_with_sha1 ( "652c19b96ff7d162c5c92d83113feb588b012f0d", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
         
         scn.frame_current = 1
-
-        cb_model.change_molecule_display ( mola, glyph='Cube', scale=5.0, red=0.0, green=0.7, blue=1.0 )
 
         cb_model.set_view_back()
 
@@ -3487,6 +3699,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class MDLGeoImport(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -3497,16 +3710,27 @@ class MDLGeoImport(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
 
         cb_model.switch_to_orthographic()
 
-        molM = cb_model.add_molecule_species_to_model ( name="M", diff_const_expr="1e-5" )
+        molM = cb_model.add_molecule_species_to_model ( name="M", diff_const_expr="5e-5" )
         molD = cb_model.add_molecule_species_to_model ( name="D", diff_const_expr="1e-5" )
-        molL = cb_model.add_molecule_species_to_model ( name="L", diff_const_expr="1e-5" )
+        molL = cb_model.add_molecule_species_to_model ( name="L", diff_const_expr="5e-6" )
+
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        molM  = cb_model.get_molecule_species_by_name('M')
+        molD  = cb_model.get_molecule_species_by_name('D')
+        molL  = cb_model.get_molecule_species_by_name('L')
+
+        cb_model.change_molecule_display ( molM, glyph='Cube', scale=3.0, red=0.0, green=0.7, blue=1.0 )
+        cb_model.change_molecule_display ( molD, glyph='Cube', scale=3.0, red=0.0, green=1.0, blue=0.0 )
+        cb_model.change_molecule_display ( molL, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
 
         cb_model.add_molecule_release_site_to_model ( mol="M",  name="m_rel",  q_expr="1000", d="0", x="-0.7614", y="0", z="0.042", shape="SPHERICAL" )
         cb_model.add_molecule_release_site_to_model ( mol="D",  name="d_rel",  q_expr="1000", d="0", x= "0.0257", y="0", z="0.042", shape="SPHERICAL" )
@@ -3529,9 +3753,9 @@ class MDLGeoImport(bpy.types.Operator):
 
         cb_model.add_label_to_model ( name="mc", text="Import",   x=-0.65, y=0, z=-0.45,  size=0.5, rx=math.pi/2, ry=0, rz=0 )
 
-        cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
+        cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "fd775e4679c27a320ad691159a61c0f9d9f6a5e1", test_name="MDL Geometry Import Test" )
+        cb_model.compare_mdl_with_sha1 ( "3c86ddb37d93838bcc40bebaab0ccccf5d51f782", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
         scn.frame_current = 1
@@ -3642,7 +3866,7 @@ def create_subdiv_squashed_z_box ( scene, min_len=0.25, max_len=3.5, period_fram
 
 def DynamicGeometryCubeTest ( context, mol_types="vs", size=[1.0,1.0,1.0], subs=[1,1,1], dc_2D="1e-4", dc_3D="1e-5", time_step=1e-6, iterations=300, min_len=0.25, max_len=3.5, period_frames=100, mdl_hash="", test_name="Dynamic Geometry Cube", wait_time=30.0, seed=1 ):
 
-    cb_model = CellBlender_Model ( context )
+    cb_model = CellBlender_Model (  context, test_name )
 
     bp = cb_model.path_to_blend
     p = bp[0:bp.rfind(os.sep)]
@@ -3802,8 +4026,10 @@ def DynamicGeometryCubeTest ( context, mol_types="vs", size=[1.0,1.0,1.0], subs=
 
     cb_model.refresh_molecules()
 
-    if "v" in mol_types: cb_model.change_molecule_display ( molv, glyph='Cube', scale=3.0, red=1.0, green=1.0, blue=1.0 )
-    if "s" in mol_types: cb_model.change_molecule_display ( mols, glyph='Cone', scale=5.0, red=0.0, green=1.0, blue=0.1 )
+    ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list - get molecule species by name.
+
+    if "v" in mol_types: cb_model.change_molecule_display ( cb_model.get_molecule_species_by_name('v'), glyph='Cube', scale=3.0, red=1.0, green=1.0, blue=1.0 )
+    if "s" in mol_types: cb_model.change_molecule_display ( cb_model.get_molecule_species_by_name('s'), glyph='Cone', scale=5.0, red=0.0, green=1.0, blue=0.1 )
 
     cb_model.set_view_back()
 
@@ -3829,6 +4055,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class DynCubeTestMinimalGeomOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -3857,6 +4084,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class DynCubeTestVolOnlyOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -3867,7 +4095,7 @@ class DynCubeTestVolOnlyOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, mol_types="v", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="cff0f9e9eea6e9ef101db0007fc53c009c6d28f3", test_name="Dynamic Cube Test Volume Only", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, mol_types="v", dc_2D="1e-7", dc_3D="1e-7", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="7d87b4d9131b66da4e38bec317f4e684ffbefc77", test_name="Dynamic Cube Test Volume Only", wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -3877,6 +4105,7 @@ class DynCubeTestVolOnlyOp(bpy.types.Operator):
 
 
 ###########################################################################################################
+"""
 group_name = "Dynamic Geometry Tests"
 test_name = "Dynamic Cube Vol Only 100 Z-Slices"
 operator_name = "cellblender_test.dynamic_cube_test_vol_only_z100"
@@ -3885,6 +4114,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class DynCubeTestVolOnlyZ100Op(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -3901,6 +4131,7 @@ class DynCubeTestVolOnlyZ100Op(bpy.types.Operator):
         cb_model.play_animation()
 
         return { 'FINISHED' }
+"""
 
 
 
@@ -3913,6 +4144,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class DynCubeTestSurfOnlyOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -3923,7 +4155,7 @@ class DynCubeTestSurfOnlyOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, mol_types="s", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="dbf03ac94fd12d764896003160475bbe4fe2d82c", test_name="Dynamic Cube Test Surface Only", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, mol_types="s", dc_2D="1e-7", dc_3D="1e-7", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="8bbb0187177c1d839ae54bca5801477ba59611a2", test_name="Dynamic Cube Test Surface Only", wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -3933,6 +4165,7 @@ class DynCubeTestSurfOnlyOp(bpy.types.Operator):
 
 
 ###########################################################################################################
+"""
 group_name = "Dynamic Geometry Tests"
 test_name = "Dynamic Geometry - Slow Moving Cube"
 operator_name = "cellblender_test.dynamic_cube_test_minimal_slow"
@@ -3941,6 +4174,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class DynCubeTestMinimalSlowOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -3956,11 +4190,12 @@ class DynCubeTestMinimalSlowOp(bpy.types.Operator):
         cb_model.play_animation()
 
         return { 'FINISHED' }
-
+"""
 
 
 
 ###########################################################################################################
+"""
 group_name = "Dynamic Geometry Tests"
 test_name = "Dynamic Geometry - Very Slow Moving Cube"
 operator_name = "cellblender_test.dynamic_cube_test_minimal_very_slow"
@@ -3969,6 +4204,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class DynCubeTestMinimalVerySlowOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -3984,11 +4220,13 @@ class DynCubeTestMinimalVerySlowOp(bpy.types.Operator):
         cb_model.play_animation()
 
         return { 'FINISHED' }
+"""
 
 
 
 
 ###########################################################################################################
+"""
 group_name = "Dynamic Geometry Tests"
 test_name = "Dynamic Geometry - Stopped Cube"
 operator_name = "cellblender_test.dynamic_cube_test_minimal_stopped"
@@ -3997,6 +4235,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class DynCubeTestMinimalStoppedOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -4012,6 +4251,7 @@ class DynCubeTestMinimalStoppedOp(bpy.types.Operator):
         cb_model.play_animation()
 
         return { 'FINISHED' }
+"""
 
 
 
@@ -4025,6 +4265,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class DynCubeTestVolOnlyZ10Op(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -4045,6 +4286,7 @@ class DynCubeTestVolOnlyZ10Op(bpy.types.Operator):
 
 
 ###########################################################################################################
+"""
 group_name = "Dynamic Geometry Tests"
 test_name = "Dynamic Geometry - Cube with 100 Z-Slices"
 operator_name = "cellblender_test.dynamic_cube_test_100_z_slices"
@@ -4053,6 +4295,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class DynCubeTestVolOnlyZ100Op(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -4068,6 +4311,7 @@ class DynCubeTestVolOnlyZ100Op(bpy.types.Operator):
         cb_model.play_animation()
 
         return { 'FINISHED' }
+"""
 
 
 
@@ -4082,7 +4326,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class DynCubeTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
-
+    self_test_name = test_name
 
     def create_box ( self, scene, frame_num=None ):
 
@@ -4112,7 +4356,7 @@ class DynCubeTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         bp = cb_model.path_to_blend
         p = bp[0:bp.rfind(os.sep)]
@@ -4162,6 +4406,13 @@ class DynCubeTestOp(bpy.types.Operator):
 
         molv = cb_model.add_molecule_species_to_model ( name="v", mol_type="3D", diff_const_expr="1e-5" )
         mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-4" )
+
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        molv  = cb_model.get_molecule_species_by_name('v')
+        mols  = cb_model.get_molecule_species_by_name('s')
+
 
         cb_model.add_molecule_release_site_to_model ( mol="v", shape="OBJECT", obj_expr="box", q_expr="1000" )
         cb_model.add_molecule_release_site_to_model ( mol="s", shape="OBJECT", obj_expr="box", q_expr="1000" )
@@ -4265,7 +4516,7 @@ class DynCubeTestOp(bpy.types.Operator):
 
         cb_model.run_only ( wait_time=30.0, seed=2 )
 
-        cb_model.compare_mdl_with_sha1 ( "0900cce8a9b2a9f23031bc3123491b63f9a62f63", test_name="Dynamic Cube Test" )
+        cb_model.compare_mdl_with_sha1 ( "0900cce8a9b2a9f23031bc3123491b63f9a62f63", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -4336,7 +4587,7 @@ def dynamic_icosphere_frame_change_handler(scene):
 class DynIcosphereTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
-
+    self_test_name = test_name
 
     def create_cell ( self, scene, frame_num=None ):
 
@@ -4367,7 +4618,7 @@ class DynIcosphereTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_icosphere_frame_change_handler
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         bp = cb_model.path_to_blend
         p = bp[0:bp.rfind(os.sep)]
@@ -4417,6 +4668,12 @@ class DynIcosphereTestOp(bpy.types.Operator):
 
         molv = cb_model.add_molecule_species_to_model ( name="v", mol_type="3D", diff_const_expr="1e-5" )
         mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-4" )
+
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        molv  = cb_model.get_molecule_species_by_name('v')
+        mols  = cb_model.get_molecule_species_by_name('s')
 
         cb_model.add_molecule_release_site_to_model ( mol="v", shape="OBJECT", obj_expr="cell", q_expr="1000" )
         cb_model.add_molecule_release_site_to_model ( mol="s", shape="OBJECT", obj_expr="cell", q_expr="1000" )
@@ -4521,7 +4778,7 @@ class DynIcosphereTestOp(bpy.types.Operator):
 
         cb_model.run_only ( wait_time=30.0, seed=2 )
 
-        cb_model.compare_mdl_with_sha1 ( "ce9e06eed9151d59edd49e4c0bf27cb6985af44c", test_name="Dynamic Icosphere Test" )
+        cb_model.compare_mdl_with_sha1 ( "ce9e06eed9151d59edd49e4c0bf27cb6985af44c", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -4555,6 +4812,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class SimpleMoleculeCountTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -4567,12 +4825,17 @@ class SimpleMoleculeCountTestOp(bpy.types.Operator):
 
         print ( str(test_groups) )
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
 
         mol_a = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mol_a  = cb_model.get_molecule_species_by_name('a')
 
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="500", d="0.5" )
         cb_model.add_reaction_to_model ( name="Decay", rin="a",  rtype="irreversible", rout="NULL", fwd_rate="1e5", bkwd_rate="" )
@@ -4583,7 +4846,7 @@ class SimpleMoleculeCountTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='100', time_step='1e-6', wait_time=3.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "7b6af2c8c36dc91eb62c62009c14cf8024f21595", test_name="Simple Molecule Count Test" )
+        cb_model.compare_mdl_with_sha1 ( "7b6af2c8c36dc91eb62c62009c14cf8024f21595", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
         cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
@@ -4608,6 +4871,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class ReleaseTimePatternsTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -4618,7 +4882,7 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -4629,6 +4893,12 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
         mol_b =  cb_model.add_molecule_species_to_model ( name="b",  diff_const_expr=diff_const )
         mol_bg = cb_model.add_molecule_species_to_model ( name="bg", diff_const_expr="0" )
 
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mol_a   = cb_model.get_molecule_species_by_name('a')
+        mol_b   = cb_model.get_molecule_species_by_name('b')
+        mol_bg  = cb_model.get_molecule_species_by_name('bg')
 
         decay_rate = "8e6"
         cb_model.add_reaction_to_model ( rin="a",  rtype="irreversible", rout="NULL", fwd_rate=decay_rate, bkwd_rate="" )
@@ -4667,7 +4937,7 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1500', time_step=dt, wait_time=10.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "7b9760c0925108f964e316603ea0fbdf9a13a18b", test_name="Release Time Patterns Test" )
+        cb_model.compare_mdl_with_sha1 ( "7b9760c0925108f964e316603ea0fbdf9a13a18b", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -4694,7 +4964,7 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
 
 def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_rate, interaction_radius, time_step, iterations, mdl_hash, test_name, wait_time ):
 
-    cb_model = CellBlender_Model ( context )
+    cb_model = CellBlender_Model (  context, test_name )
 
     scn = cb_model.get_scene()
     mcell = cb_model.get_mcell()
@@ -4722,6 +4992,12 @@ def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_ra
     # Add the molecules
     prey = cb_model.add_molecule_species_to_model ( name="prey", diff_const_expr="6e-6" )
     pred = cb_model.add_molecule_species_to_model ( name="predator", diff_const_expr="6e-6" )
+
+    ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+    ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+    prey = cb_model.get_molecule_species_by_name('prey')
+    pred = cb_model.get_molecule_species_by_name('predator')
 
     cb_model.add_molecule_release_site_to_model ( name="prey_rel", mol="prey", shape="OBJECT", obj_expr="arena", q_expr="1000" )
     cb_model.add_molecule_release_site_to_model ( name="pred_rel", mol="predator", shape="OBJECT", obj_expr="arena", q_expr="1000" )
@@ -4777,6 +5053,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -4787,7 +5064,7 @@ class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="5b7ea646b35cc54eb56a36a08a34217e2900c928", test_name="Lotka Volterra Torus - Diffusion Limited Reaction", wait_time=15.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="5b7ea646b35cc54eb56a36a08a34217e2900c928", test_name=self.self_test_name, wait_time=15.0 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -4804,6 +5081,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -4814,7 +5092,7 @@ class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="4be2236905c76aa47d1f2b76904ef76bdc025c01", test_name="Lotka Volterra Torus - Physiologic Reaction", wait_time=60.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="4be2236905c76aa47d1f2b76904ef76bdc025c01", test_name=self.self_test_name, wait_time=60.0 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -4831,6 +5109,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class OrganelleTestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -4841,7 +5120,7 @@ class OrganelleTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -4880,15 +5159,29 @@ class OrganelleTestOp(bpy.types.Operator):
         molt1 = cb_model.add_molecule_species_to_model ( name="t1", mol_type="2D", diff_const_expr="1e-6" )
         molt2 = cb_model.add_molecule_species_to_model ( name="t2", mol_type="2D", diff_const_expr="0" )
 
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mola  = cb_model.get_molecule_species_by_name('a')
+        molb  = cb_model.get_molecule_species_by_name('b')
+        molc  = cb_model.get_molecule_species_by_name('c')
+        mold  = cb_model.get_molecule_species_by_name('d')
+        molt1 = cb_model.get_molecule_species_by_name('t1')
+        molt2 = cb_model.get_molecule_species_by_name('t2')
+        
+        cb_model.change_molecule_display ( mola, glyph='Cube', scale=1.0, red=0.0, green=0.8, blue=0.8 )
+        cb_model.change_molecule_display ( molb, glyph='Cube', scale=1.0, red=0.0, green=0.0, blue=0.8 )
+        cb_model.change_molecule_display ( molc, glyph='Cube', scale=1.0, red=0.8, green=0.0, blue=0.8 )
+        cb_model.change_molecule_display ( mold, glyph='Cube', scale=1.0, red=1.0, green=1.0, blue=1.0 )
+
+        cb_model.change_molecule_display ( molt1, glyph='Cone', scale=1.0, red=0.0, green=0.8, blue=0.0 )
+        cb_model.change_molecule_display ( molt2, glyph='Cone', scale=1.5, red=0.8, green=0.0, blue=0.0 )
 
 
         cb_model.add_molecule_release_site_to_model ( name="rel_a",  mol="a",  shape="OBJECT", obj_expr="Cell[ALL] - (Organelle_1[ALL] + Organelle_2[ALL])", q_expr="1000" )
         cb_model.add_molecule_release_site_to_model ( name="rel_b",  mol="b",  shape="OBJECT", obj_expr="Organelle_1[ALL]", q_expr="1000" )
         cb_model.add_molecule_release_site_to_model ( name="rel_t1", mol="t1", shape="OBJECT", obj_expr="Organelle_1[top]", orient="'", q_expr="700" )
         cb_model.add_molecule_release_site_to_model ( name="rel_t2", mol="t2", shape="OBJECT", obj_expr="Organelle_2[top]", orient="'", q_expr="700" )
-        # Add a single c and d molecule so the display values can be set ... otherwise they're not applied properly
-        cb_model.add_molecule_release_site_to_model ( mol="c", shape="OBJECT", obj_expr="Organelle_2", q_expr="1" )
-        cb_model.add_molecule_release_site_to_model ( mol="d", shape="OBJECT", obj_expr="Organelle_2", q_expr="1" )
 
 
         cb_model.add_reaction_to_model ( rin="a + b",    rtype="irreversible", rout="c",        fwd_rate="1e9", bkwd_rate="" )
@@ -4914,20 +5207,11 @@ class OrganelleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=25.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "3003cef2476115267c044801d06486903edef600", test_name="Organelle Test" )
+        cb_model.compare_mdl_with_sha1 ( "3003cef2476115267c044801d06486903edef600", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
         scn.frame_current = 2
-
-        # For some reason, changing some of these molecule display settings crashes Blender (tested for both 2.74 and 2.75)
-        cb_model.change_molecule_display ( mola, glyph='Cube', scale=3.0, red=1.0, green=0.0, blue=0.0 )
-        #cb_model.change_molecule_display ( molb, glyph='Cube', scale=6.0, red=1.0, green=1.0, blue=1.0 )
-        #cb_model.change_molecule_display ( molc, glyph='Cube', scale=6.0, red=1.0, green=1.0, blue=1.0 )
-
-        #cb_model.change_molecule_display ( molt1, glyph='Cone', scale=2.0, red=1.0, green=0.0, blue=0.0 )
-        cb_model.change_molecule_display ( molt2, glyph='Cone', scale=1.5, red=0.7, green=0.7, blue=0.0 )
-
 
         cb_model.set_view_back()
 
@@ -4952,6 +5236,7 @@ next_test_group_num = register_test ( test_groups, group_name, test_name, operat
 class MinDMinETestOp(bpy.types.Operator):
     bl_idname = operator_name
     bl_label = test_name
+    self_test_name = test_name
 
     def invoke(self, context, event):
         self.execute ( context )
@@ -4962,7 +5247,7 @@ class MinDMinETestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context )
+        cb_model = CellBlender_Model (  context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -4999,6 +5284,14 @@ class MinDMinETestOp(bpy.types.Operator):
         mind_m   = cb_model.add_molecule_species_to_model ( name="mind_m",   mol_type="2D", diff_const_expr="0" )
         minde_m  = cb_model.add_molecule_species_to_model ( name="minde_m",  mol_type="2D", diff_const_expr="0" )
 
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mind_adp = cb_model.get_molecule_species_by_name('mind_adp')
+        mind_atp = cb_model.get_molecule_species_by_name('mind_atp')
+        mine     = cb_model.get_molecule_species_by_name('mine')
+        mind_m   = cb_model.get_molecule_species_by_name('mind_m')
+        minde_m  = cb_model.get_molecule_species_by_name('minde_m')
 
         # Define the release sites
 
@@ -5041,7 +5334,7 @@ class MinDMinETestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='0.5 * 200/dt', time_step='dt', wait_time=5.0 )  # Can use to generate MDL, but SHA1 won't be right: export_format="mcell_mdl_modular", 
 
-        cb_model.compare_mdl_with_sha1 ( "300a55f3238a33a9cc8349b68f1e385d3712ee8f", test_name="E. coli MinD/MinE System" )
+        cb_model.compare_mdl_with_sha1 ( "300a55f3238a33a9cc8349b68f1e385d3712ee8f", test_name=self.self_test_name )
 
         cb_model.set_view_back()
 

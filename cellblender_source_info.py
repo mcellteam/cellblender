@@ -25,6 +25,7 @@ cellblender_info = {
         "cellblender_preferences.py",
         "cellblender_project.py",
         "cellblender_initialization.py",
+        "cellblender_glyphs.py",
         "cellblender_molecules.py",
         "cellblender_reactions.py",
         "cellblender_release.py",

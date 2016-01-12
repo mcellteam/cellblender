@@ -150,15 +150,19 @@ def check_callback(self, context):
 def name_change_callback(self, context):
     print ( "name_change_callback called with self = " + str(self) )
     print ( "  old = " + self.old_name + " => new = " + self.name )
-    print ( "name_change_callback called with self = " + str(self) )
     old_mol_name = "mol_" + self.old_name
     new_mol_name = "mol_" + self.name
 
-    bpy.data.materials[old_mol_name + '_mat'].name = new_mol_name + '_mat'
-    bpy.data.meshes[old_mol_name + '_shape'].name = new_mol_name + '_shape'
-    bpy.data.objects[old_mol_name + '_shape'].name = new_mol_name + '_shape'
-    bpy.data.meshes[old_mol_name + '_pos'].name = new_mol_name + '_pos'
-    bpy.data.objects[old_mol_name].name = new_mol_name
+    if old_mol_name + '_mat' in bpy.data.materials:
+        bpy.data.materials[old_mol_name + '_mat'].name = new_mol_name + '_mat'
+    if old_mol_name + '_shape' in bpy.data.meshes:
+        bpy.data.meshes[old_mol_name + '_shape'].name = new_mol_name + '_shape'
+    if old_mol_name + '_shape' in bpy.data.objects:
+        bpy.data.objects[old_mol_name + '_shape'].name = new_mol_name + '_shape'
+    if old_mol_name + '_pos' in bpy.data.meshes:
+        bpy.data.meshes[old_mol_name + '_pos'].name = new_mol_name + '_pos'
+    if old_mol_name in bpy.data.objects:
+        bpy.data.objects[old_mol_name].name = new_mol_name
 
     self.old_name = self.name    
     
@@ -194,12 +198,13 @@ def glyph_show_only_callback(self, context):
     
     # Note the check before set to keep from infinite recursion in properties!!
     for o in context.scene.objects:
-        if o.name in show_only_items:
-            if o.hide != False:
-                o.hide = False
-        else:
-            if o.hide != True:
-                o.hide = True
+        if o.name.startswith("mol_"):
+            if o.name in show_only_items:
+                if o.hide != False:
+                    o.hide = False
+            else:
+                if o.hide != True:
+                    o.hide = True
     for o in ml:
         if o.name == self.name:
             if o.glyph_visibility != True:
@@ -207,6 +212,9 @@ def glyph_show_only_callback(self, context):
         else:
             if o.glyph_visibility != False:
                 o.glyph_visibility = False
+    if self.name in ms.molecule_list:
+        # Select this item in the list as well
+        ms.active_mol_index = ms.molecule_list.find ( self.name )
     return
 
 def shape_change_callback(self, context):
@@ -253,12 +261,20 @@ class MoleculeProperty(bpy.types.PropertyGroup):
 
     glyph_lib = os.path.join(os.path.dirname(__file__), "glyph_library.blend", "Mesh", "")
     glyph_enum = [
+        ('Cone', "Cone", ""),
+        ('Cube', "Cube", ""),
+        ('Cylinder', "Cylinder", ""),
+        ('Icosahedron', "Icosahedron", ""),
+        ('Octahedron', "Octahedron", ""),
+        ('Receptor', "Receptor", ""),
+        ('Sphere1', "Sphere1", ""),
+        ('Sphere2', "Sphere2", ""),
+        ('Torus', "Torus", ""),
+        ('Tetrahedron', "Tetrahedron", ""),
+        ('Pyramid', "Pyramid", ""),
         ('A', "A", ""),
         ('B', "B", ""),
-        ('C', "C", ""),
-        ('Cube', "Cube", ""),
-        ('Pyramid', "Pyramid", ""),
-        ('Tetrahedron', "Tetrahedron", "")]
+        ('C', "C", "")]
     glyph = EnumProperty ( items=glyph_enum, name="", update=shape_change_callback )
 
 
@@ -280,10 +296,11 @@ class MoleculeProperty(bpy.types.PropertyGroup):
 
         self.method = self.method_enum[0][0]
         self.num = 0 ### random.randint(10,50)
-        self.dist = random.uniform(0.1,0.5)
-        self.center_x = random.uniform(-2.0,2.0)
-        self.center_y = random.uniform(-2.0,2.0)
-        self.center_z = random.uniform(-2.0,2.0)
+        self.dist = random.uniform(0.01,0.05)
+        loc_range = 0.1
+        self.center_x = random.uniform(-loc_range,loc_range)
+        self.center_y = random.uniform(-loc_range,loc_range)
+        self.center_z = random.uniform(-loc_range,loc_range)
         self.glyph = self.glyph_enum[random.randint(0,len(self.glyph_enum)-1)][0]
         self.create_mol_data(context)
 
@@ -308,25 +325,28 @@ class MoleculeProperty(bpy.types.PropertyGroup):
             bpy.ops.object.add(location=[0, 0, 0])
             mols_obj = bpy.context.selected_objects[0]
             mols_obj.name = "molecules"
+            mols_obj.location.x = 0
+            mols_obj.location.y = 0
+            mols_obj.location.z = 0
+            mols_obj.lock_location[0] = True
+            mols_obj.lock_location[1] = True
+            mols_obj.lock_location[2] = True
+            mols_obj.lock_rotation[0] = True
+            mols_obj.lock_rotation[1] = True
+            mols_obj.lock_rotation[2] = True
+            mols_obj.lock_scale[0] = True
+            mols_obj.lock_scale[1] = True
+            mols_obj.lock_scale[2] = True
+            mols_obj.select = False
+            mols_obj.hide_select = True
+            mols_obj.hide = True
 
         # Build the new shape vertices and faces
         size = 0.1
         print ( "Creating a new glyph for " + self.name )
-        shape_plf = None
-        if   "Cube" == self.glyph:
-            shape_plf = BasicBox  ( size, size, size )
-        elif "Pyramid" == self.glyph:
-            shape_plf = Pyramid  ( size, size, size )
-        elif "Tetrahedron" == self.glyph:
-            shape_plf = Tetrahedron  ( size, size, size )
-        elif "A" in self.glyph:
-            shape_plf = Letter_A  ( size, size, size )
-        elif "B" in self.glyph:
-            shape_plf = Letter_B  ( size, size, size )
-        elif "C" in self.glyph:
-            shape_plf = Letter_C  ( size, size, size )
-        else:
-            shape_plf = BasicBox ( size, size, size )
+
+        shape_plf = get_named_shape ( self.glyph, size_x=size, size_y=size, size_z=size )
+
         shape_vertices = []
         for point in shape_plf.points:
             shape_vertices.append ( mathutils.Vector((point.x,point.y,point.z)) )
@@ -349,50 +369,18 @@ class MoleculeProperty(bpy.types.PropertyGroup):
 
         # Create the new shape object from the mesh
         mol_shape_obj = bpy.data.objects.new ( shape_name, mol_shape_mesh )
+        # Be sure the new shape is at the origin, and lock it there.
+        mol_shape_obj.location.x = 0
+        mol_shape_obj.location.y = 0
+        mol_shape_obj.location.z = 0
+        mol_shape_obj.lock_location[0] = True
+        mol_shape_obj.lock_location[1] = True
+        mol_shape_obj.lock_location[2] = True
+        # Allow the shape to be selected so it can have its size changed like any other object.
+        mol_shape_obj.hide_select = False
 
         # Add the shape to the scene as a glyph for the object
         scn.objects.link ( mol_shape_obj )
-
-        """
-                    mol_shape_obj.data.materials.clear()  # New
-                    mol_shape_obj.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
-
-                    # This didn't work very well
-
-                    #if not (shape_name in scene.objects):
-                    #    shape = bpy.data.objects.new ( shape_name, mol_shape_mesh )
-                    ## Create a material specifically for this object
-                    #if obj_name+"_mat" in bpy.data.materials:
-                    #    shape.data.materials.clear()  # New
-                    #    shape.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
-                    ## Remove current children from the target object (otherwise glyphs will be merged ... useful in the future)
-                    #while len(obj.children) > 0:
-                    #    obj.children[0].parent = None
-
-
-                    # Add the shape to the scene as a glyph for the object
-                    scene.objects.link ( shape )
-                    obj.dupli_type = 'VERTS'
-                    shape.parent = obj
-                    
-                    if old_shape_name in bpy.data.meshes:
-                        if bpy.data.meshes[old_shape_name].users <= 0:
-                            bpy.data.meshes.remove ( bpy.data.meshes[old_shape_name] )
-
-
-
-        mol_shape_mesh = meshes.get(shape_name)
-        if not mol_shape_mesh:
-            # bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=0, size=0.005, location=[0, 0, 0])
-            bpy.ops.mesh.primitive_cube_add(radius=0.1, location=[0, 0, 0])
-            mol_shape_obj = bpy.context.active_object
-            mol_shape_obj.name = shape_name
-            mol_shape_obj.track_axis = "POS_Z"
-            mol_shape_mesh = mol_shape_obj.data
-            mol_shape_mesh.name = shape_name
-        else:
-            mol_shape_obj = objs.get(shape_name)
-        """
 
         # Look-up material, create if needed.
         # Associate material with mesh shape.
@@ -419,81 +407,28 @@ class MoleculeProperty(bpy.types.PropertyGroup):
             mol_obj.use_dupli_vertices_rotation = True
             mol_obj.parent = mols_obj
 
+        # Be sure the new object is at the origin, and lock it there.
+        mol_obj.location.x = 0
+        mol_obj.location.y = 0
+        mol_obj.location.z = 0
+        mol_obj.lock_location[0] = True
+        mol_obj.lock_location[1] = True
+        mol_obj.lock_location[2] = True
+        # Also lock the rotation and scaling for the molecule positions.
+        mol_obj.lock_rotation[0] = True
+        mol_obj.lock_rotation[1] = True
+        mol_obj.lock_rotation[2] = True
+        mol_obj.lock_scale[0] = True
+        mol_obj.lock_scale[1] = True
+        mol_obj.lock_scale[2] = True
+
+        # Allow the molecule locations to be selected ... this may either help or become annoying.
+        mol_obj.hide_select = False
+
         # Add the shape to the scene as a glyph for the object
         mol_obj.dupli_type = 'VERTS'
         mol_shape_obj.parent = mol_obj
 
-
-
-        """
-
-        # These are points only, so create a shape glyph as needed to show the points
-        shape_name = obj_name + "_shape"
-        #if force or not (shape_name in scene.objects):
-        if not (shape_name in scene.objects):
-            old_shape_name = "old_" + shape_name
-            size = 0.1
-            print ( "Creating a new glyph for " + obj_name )
-            shape_plf = None
-            if "Cube" == glyph:
-                shape_plf = BasicBox  ( size, size, size )
-            elif "Pyramid" == glyph:
-                shape_plf = Pyramid  ( size, size, size )
-            elif "Tetrahedron" == glyph:
-                shape_plf = Tetrahedron  ( size, size, size )
-            elif "A" in glyph:
-                shape_plf = Letter_A  ( size, size, size )
-            elif "B" in glyph:
-                shape_plf = Letter_B  ( size, size, size )
-            elif "C" in glyph:
-                shape_plf = Letter_C  ( size, size, size )
-            else:
-                shape_plf = BasicBox ( size, size, size )
-            shape_vertices = []
-            for point in shape_plf.points:
-                shape_vertices.append ( mathutils.Vector((point.x,point.y,point.z)) )
-            shape_faces = []
-            for face_element in shape_plf.faces:
-                shape_faces.append ( face_element.verts )
-
-
-            # Rename the old mesh shape if it exists
-            if shape_name in bpy.data.meshes:
-                bpy.data.meshes[shape_name].name = old_shape_name
-            # Create and build the new mesh
-            new_mesh = bpy.data.meshes.new ( shape_name )
-            new_mesh.from_pydata ( shape_vertices, [], shape_faces )
-            new_mesh.update()
-
-            shape = bpy.data.objects.new ( shape_name, new_mesh )
-            shape.data.materials.clear()  # New
-            shape.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
-
-            # This didn't work very well
-
-            #if not (shape_name in scene.objects):
-            #    shape = bpy.data.objects.new ( shape_name, new_mesh )
-            ## Create a material specifically for this object
-            #if obj_name+"_mat" in bpy.data.materials:
-            #    shape.data.materials.clear()  # New
-            #    shape.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
-            ## Remove current children from the target object (otherwise glyphs will be merged ... useful in the future)
-            #while len(obj.children) > 0:
-            #    obj.children[0].parent = None
-
-
-            # Add the shape to the scene as a glyph for the object
-            scene.objects.link ( shape )
-            obj.dupli_type = 'VERTS'
-            shape.parent = obj
-            
-            if old_shape_name in bpy.data.meshes:
-                if bpy.data.meshes[old_shape_name].users <= 0:
-                    bpy.data.meshes.remove ( bpy.data.meshes[old_shape_name] )
-
-        # Could return the object here if needed
-
-        """
 
 
     def remove_mol_data ( self, context ):
@@ -567,7 +502,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
                   row = layout.row()
                   row.alignment = 'LEFT'
                   if mol_list_group.show_preview:
-                    row.prop(mol_list_group, "show_preview", icon='TRIA_DOWN', emboss=False, text="Molecule Preview (resize to refresh)")
+                    row.prop(mol_list_group, "show_preview", icon='TRIA_DOWN', emboss=False, text="Material Preview (resize to refresh)")
                     layout.template_preview(bpy.data.materials[mat_name])
                   else:
                     row.prop(mol_list_group, "show_preview", icon='TRIA_RIGHT', emboss=False)
@@ -576,14 +511,6 @@ class MoleculeProperty(bpy.types.PropertyGroup):
                 pass
         else:
             print ( "Material " + mat_name + " not found, not showing materials" )
-        row = layout.row()
-        row.operator("molecule_simulation.molecule_show_only", icon='RESTRICT_VIEW_OFF', text="Show Only "+self.name)
-        row.operator("molecule_simulation.molecule_hide", icon='RESTRICT_VIEW_OFF', text="Hide "+self.name)
-        row = layout.row()
-        row.operator("molecule_simulation.molecule_show_all", icon='RESTRICT_VIEW_OFF')
-        row.operator("molecule_simulation.molecule_show", icon='RESTRICT_VIEW_OFF', text="Show "+self.name)
-
-
 
 
     def draw(self, context):
@@ -626,7 +553,7 @@ class MoleculeProperty(bpy.types.PropertyGroup):
 
     def update_molecule_positions ( self, scene ):
         plf = MolCluster ( self.num, self.dist, self.center_x, self.center_y, self.center_z, scene.frame_current, method=self.method )
-        update_obj_from_plf ( scene, "molecules", "mol_" + self.name, plf, glyph=self.glyph )
+        update_mol_from_plf ( scene, "molecules", "mol_" + self.name, plf, glyph=self.glyph )
 
 
 # Molecule Operators:
@@ -670,87 +597,43 @@ class MolSim_UL_check_molecule(bpy.types.UIList):
             col = layout.column()
             col.prop(item, "glyph_show_only", text="", icon='VIEWZOOM')
             col = layout.column()
-            col.prop(item, "glyph_visibility", text="", icon='RESTRICT_VIEW_OFF')
+            if item.glyph_visibility:
+                col.prop(item, "glyph_visibility", text="", icon='RESTRICT_VIEW_OFF')
+            else:
+                col.prop(item, "glyph_visibility", text="", icon='RESTRICT_VIEW_ON')
             #col = layout.column()
             #col.prop(objs[show_name], "hide", text="", icon='RESTRICT_VIEW_OFF')
-            col = layout.column()
-            if objs[show_name].hide:
-                # NOTE: For some reason, when Blender displays a boolean, it will use an offset of 1 for true.
-                #       So since GROUP_BONE is the icon BEFORE GROUP_VERTEX, picking it when true shows GROUP_VERTEX.
-                col.prop(objs[show_name], "hide", text="", icon='GROUP_BONE')
-            else:
-                col.prop(objs[show_name], "hide", text="", icon='GROUP_VERTEX')
-            col = layout.column()
-            if objs[show_shape_name].hide:
-                # NOTE: For some reason, when Blender displays a boolean, it will use an offset of 1 for true.
-                #       So since GROUP_BONE is the icon BEFORE GROUP_VERTEX, picking it when true shows GROUP_VERTEX.
-                col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_CHARGE')
-            else:
-                col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_LENNARDJONES')
+            if ms.show_extra_columns:
+                col = layout.column()
+                if objs[show_name].hide:
+                    # NOTE: For some reason, when Blender displays a boolean, it will use an offset of 1 for true.
+                    #       So since GROUP_BONE is the icon BEFORE GROUP_VERTEX, picking it when true shows GROUP_VERTEX.
+                    col.prop(objs[show_name], "hide", text="", icon='GROUP_BONE')
+                else:
+                    col.prop(objs[show_name], "hide", text="", icon='GROUP_VERTEX')
+                col = layout.column()
+                if objs[show_shape_name].hide:
+                    # NOTE: For some reason, when Blender displays a boolean, it will use an offset of 1 for true.
+                    #       So since GROUP_BONE is the icon BEFORE GROUP_VERTEX, picking it when true shows GROUP_VERTEX.
+                    col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_CHARGE')
+                else:
+                    col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_LENNARDJONES')
 
-
-class APP_OT_molecule_show(bpy.types.Operator):
-    bl_idname = "molecule_simulation.molecule_show"
-    bl_label = "Show"
-    bl_description = "Show the current molecule"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        ms = context.scene.molecule_simulation
-        show_name = "mol_" + ms.molecule_list[ms.active_mol_index].name
-        show_shape_name = show_name + "_shape"
-        show_items = [show_name, show_shape_name]
-        print ( "Showing " + str(show_items) )
-        for o in context.scene.objects:
-            if o.name in show_items:
-                o.hide = False
-        return {'FINISHED'}
-
-class APP_OT_molecule_hide(bpy.types.Operator):
-    bl_idname = "molecule_simulation.molecule_hide"
-    bl_label = "Hide"
-    bl_description = "Hide the current molecule"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        ms = context.scene.molecule_simulation
-        hide_name = "mol_" + ms.molecule_list[ms.active_mol_index].name
-        hide_shape_name = hide_name + "_shape"
-        hide_items = [hide_name, hide_shape_name]
-        print ( "Hiding " + str(hide_items) )
-        for o in context.scene.objects:
-            if o.name in hide_items:
-                o.hide = True
-        return {'FINISHED'}
-
-class APP_OT_molecule_show_only(bpy.types.Operator):
-    bl_idname = "molecule_simulation.molecule_show_only"
-    bl_label = "Show Only"
-    bl_description = "Only show the current molecule"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        ms = context.scene.molecule_simulation
-        show_only_name = "mol_" + ms.molecule_list[ms.active_mol_index].name
-        show_only_shape_name = show_only_name + "_shape"
-        show_only_items = [show_only_name, show_only_shape_name]
-        print ( "Only showing " + str(show_only_items) )
-        for o in context.scene.objects:
-            if o.name in show_only_items:
-                o.hide = False
-            else:
-                o.hide = True
-        return {'FINISHED'}
 
 class APP_OT_molecule_show_all(bpy.types.Operator):
     bl_idname = "molecule_simulation.molecule_show_all"
     bl_label = "Show All"
-    bl_description = "Show the all molecules"
+    bl_description = "Show all of the molecules"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         ms = context.scene.molecule_simulation
         print ( "Showing All" )
+        for o in ms.molecule_list:
+            if not o.glyph_visibility:
+                o.glyph_visibility = True
+            if o.glyph_show_only:
+                o.glyph_show_only = False
         for o in context.scene.objects:
             if o.name.startswith("mol_"):
                 o.hide = False
@@ -760,12 +643,17 @@ class APP_OT_molecule_show_all(bpy.types.Operator):
 class APP_OT_molecule_hide_all(bpy.types.Operator):
     bl_idname = "molecule_simulation.molecule_hide_all"
     bl_label = "Hide All"
-    bl_description = "Hide the all molecules"
+    bl_description = "Hide all of the molecules"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         ms = context.scene.molecule_simulation
         print ( "Hiding All" )
+        for o in ms.molecule_list:
+            if o.glyph_visibility:
+                o.glyph_visibility = False
+            if o.glyph_show_only:
+                o.glyph_show_only = False
         for o in context.scene.objects:
             if o.name.startswith("mol_"):
                 o.hide = True
@@ -783,10 +671,10 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
     show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_advanced = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
 
-
+    show_extra_columns = bpy.props.BoolProperty(default=False, description="Show additional visibility control columns")
     show_molecules = bpy.props.BoolProperty(default=True, name="Define Molecules")
     show_display = bpy.props.BoolProperty(default=False, name="Molecule Display Options")
-    show_preview = bpy.props.BoolProperty(default=False, name="Molecule Preview")
+    show_preview = bpy.props.BoolProperty(default=False, name="Material Preview")
     show_release = bpy.props.BoolProperty(default=False, name="Define a Release Site")
     show_run = bpy.props.BoolProperty(default=True, name="Run Simulation")
 
@@ -810,15 +698,16 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_active_molecule ( self, context ):
         """ Remove the active molecule from the list of molecules """
-        mol = self.molecule_list[self.active_mol_index]
-        if mol:
-            mol.remove_mol_data(context)
-        self.molecule_list.remove ( self.active_mol_index )
-        self.active_mol_index -= 1
-        if self.active_mol_index < 0:
-            self.active_mol_index = 0
-        if len(self.molecule_list) <= 0:
-            self.next_id = 1
+        if len(self.molecule_list) > 0:
+            mol = self.molecule_list[self.active_mol_index]
+            if mol:
+                mol.remove_mol_data(context)
+            self.molecule_list.remove ( self.active_mol_index )
+            self.active_mol_index -= 1
+            if self.active_mol_index < 0:
+                self.active_mol_index = 0
+            if len(self.molecule_list) <= 0:
+                self.next_id = 1
 
     def update_simulation ( self, scene ):
         for mol in self.molecule_list:
@@ -841,26 +730,23 @@ class MoleculeSimPropertyGroup(bpy.types.PropertyGroup):
         if self.show_molecules:
             row.prop(self, "show_molecules", icon='TRIA_DOWN', emboss=False)
 
-
-
-            ################################
-            #row = layout.row()
-            #row.label ( "Renaming Molecules Doesn't Work YET!!!", icon='ERROR' )
-            ################################
-
-
-
             row = layout.row()
             col = row.column()
             col.template_list("MolSim_UL_check_molecule", "define_molecules",
                               self, "molecule_list",
                               self, "active_mol_index",
                               rows=2)
-            col = row.column(align=True)
-            col.operator("molecule_simulation.molecule_add", icon='ZOOMIN', text="")
-            col.operator("molecule_simulation.molecule_remove", icon='ZOOMOUT', text="")
-            col.operator("molecule_simulation.molecule_show_all", icon='ZOOM_IN', text="")
-            col.operator("molecule_simulation.molecule_hide_all", icon='ZOOM_OUT', text="")
+            col = row.column(align=False)
+            # Use subcolumns to group logically related buttons together
+            subcol = col.column(align=True)
+            subcol.operator("molecule_simulation.molecule_add", icon='ZOOMIN', text="")
+            subcol.operator("molecule_simulation.molecule_remove", icon='ZOOMOUT', text="")
+            subcol = col.column(align=True)
+            subcol.operator("molecule_simulation.molecule_show_all", icon='RESTRICT_VIEW_OFF', text="")
+            subcol.operator("molecule_simulation.molecule_hide_all", icon='RESTRICT_VIEW_ON', text="")
+            subcol = col.column(align=True)
+            subcol.prop (self, "show_extra_columns", text="")
+
             if self.molecule_list:
                 mol = self.molecule_list[self.active_mol_index]
                 mol.draw_layout ( context, layout, self )
@@ -1080,12 +966,7 @@ class Molecule_Model:
     def change_molecule_display ( self, mol, glyph="Cube", scale=1.0, red=-1, green=-1, blue=-1 ):
         app = bpy.context.scene.molecule_simulation
         if app.run_mcell:
-            #if mol.name == "Molecule":
-            #    print ("Name isn't correct")
-            #    return
             print ( "Changing Display for Molecule \"" + mol.name + "\" to R="+str(red)+",G="+str(green)+",B="+str(blue) )
-            #self.mcell.cellblender_main_panel.molecule_select = True
-            #self.mcell.molecules.show_display = True
             mol.glyph = glyph
             mol.scale = scale
             if red >= 0: mol.color.r = red
@@ -1149,6 +1030,8 @@ class Molecule_Model:
             bpy.ops.screen.animation_play()
 
 
+#### Start of Molecule Shape Code #### 
+
 class point:
   x=0;
   y=0;
@@ -1181,7 +1064,7 @@ class face:
 
 class plf_object:
 
-  # An object that can hold points and faces
+  # An object that can hold points and faces (the "L" in PLF stood for Lines which are not needed here)
 
   points = []
   faces = []
@@ -1191,10 +1074,561 @@ class plf_object:
     self.faces = []
 
 
+class CellBlender_Octahedron (plf_object):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    # Create an object of the requested size
+    size_scale = 10
+
+    self.points = [];
+    self.faces = [];
+
+    pts = [
+      [0.005,0.005,0],[0.005,-0.005,0],[-0.005,-0.005,0],[-0.005,0.005,0],[0,0,0.005],[0,0,-0.005] ]
+
+    fcs = [
+      [0,4,1],[0,1,5],[0,3,4],[2,4,3],[1,4,2],[1,2,5],[2,3,5],[0,5,3] ]
+
+    self.points = [];
+    self.faces = [];
+    for p in pts:
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+    for f in fcs:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+
+class CellBlender_Cube (plf_object):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    # Create an object of the requested size
+    size_scale = 10
+
+    self.points = [];
+    self.faces = [];
+
+    pts = [
+      [0.005,0.005,-0.005],[0.005,-0.005,-0.005],[-0.005,-0.005,-0.005],[-0.005,0.005,-0.005],[0.005,0.005,0.005],
+      [0.005,-0.005,0.005],[-0.005,-0.005,0.005],[-0.005,0.005,0.005] ]
+
+    fcs = [
+      [1,2,3],[7,6,5],[4,5,1],[5,6,2],[2,6,7],[0,3,7],[0,1,3],[4,7,5],[0,4,1],[1,5,2],[3,2,7], [4,0,7] ]
+
+    self.points = [];
+    self.faces = [];
+    for p in pts:
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+    for f in fcs:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+
+class CellBlender_Icosahedron (plf_object):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    # Create an object of the requested size
+    size_scale = 10
+
+    self.points = [];
+    self.faces = [];
+
+    pts = [
+      [0,0,-0.005],[0.003618,-0.002629,-0.002236],[-0.001382,-0.004253,-0.002236],[-0.004472,0,-0.002236],[-0.001382,0.004253,-0.002236],
+      [0.003618,0.002629,-0.002236],[0.001382,-0.004253,0.002236],[-0.003618,-0.002629,0.002236],[-0.003618,0.002629,0.002236],
+      [0.001382,0.004253,0.002236],[0.004472,0,0.002236],[0,0,0.005] ]
+
+    fcs = [
+      [2,0,1],[1,0,5],[3,0,2],[4,0,3],[5,0,4],[1,5,10],[2,1,6],[3,2,7],[4,3,8],[5,4,9],[6,1,10],
+      [7,2,6],[8,3,7],[9,4,8],[10,5,9],[6,10,11],[7,6,11],[8,7,11],[9,8,11],[10,9,11] ]
+
+    self.points = [];
+    self.faces = [];
+    for p in pts:
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+    for f in fcs:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+
+class CellBlender_Cone (plf_object):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    # Create an object of the requested size
+    size_scale = 10
+
+    self.points = [];
+    self.faces = [];
+
+    pts = [
+      [0,0.005,-0.005],[0.001913,0.004619,-0.005],[0.003536,0.003536,-0.005],[0.004619,0.001913,-0.005],[0.005,0,-0.005],
+      [0.004619,-0.001913,-0.005],[0.003536,-0.003536,-0.005],[0.001913,-0.004619,-0.005],[0,-0.005,-0.005],
+      [-0.001913,-0.004619,-0.005],[-0.003536,-0.003536,-0.005],[-0.004619,-0.001913,-0.005],[-0.005,0,-0.005],
+      [-0.004619,0.001913,-0.005],[-0.003536,0.003536,-0.005],[-0.001913,0.004619,-0.005],[0,0,0.005],[0,0,-0.005] ]
+
+    fcs = [
+      [1,0,16],[16,2,1],[16,3,2],[16,4,3],[16,5,4],[16,6,5],[16,7,6],[16,8,7],[16,9,8],[16,10,9],[16,11,10],
+      [16,12,11],[16,13,12],[16,14,13],[16,15,14],[16,0,15],[17,0,1],[17,1,2],[17,2,3],[17,3,4],[17,4,5],[17,5,6],
+      [17,6,7],[17,7,8],[17,8,9],[17,9,10],[17,10,11],[17,11,12],[17,12,13],[17,13,14],[17,14,15],[15,0,17] ]
+
+    self.points = [];
+    self.faces = [];
+    for p in pts:
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+    for f in fcs:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+
+class CellBlender_Cylinder (plf_object):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    # Create an object of the requested size
+    size_scale = 10
+
+    self.points = [];
+    self.faces = [];
+
+    pts = [
+      [0,0.005,-0.005],[0.001913,0.004619,-0.005],[0.003536,0.003536,-0.005],[0.004619,0.001913,-0.005],[0.005,0,-0.005],
+      [0.004619,-0.001913,-0.005],[0.003536,-0.003536,-0.005],[0.001913,-0.004619,-0.005],[0,-0.005,-0.005],
+      [-0.001913,-0.004619,-0.005],[-0.003536,-0.003536,-0.005],[-0.004619,-0.001913,-0.005],[-0.005,0,-0.005],
+      [-0.004619,0.001913,-0.005],[-0.003536,0.003536,-0.005],[-0.001913,0.004619,-0.005],[0,0.005,0.005],
+      [0.001913,0.004619,0.005],[0.003536,0.003536,0.005],[0.004619,0.001913,0.005],[0.005,0,0.005],
+      [0.004619,-0.001913,0.005],[0.003536,-0.003536,0.005],[0.001913,-0.004619,0.005],[0,-0.005,0.005],
+      [-0.001913,-0.004619,0.005],[-0.003536,-0.003536,0.005],[-0.004619,-0.001913,0.005],[-0.005,0,0.005],
+      [-0.004619,0.001913,0.005],[-0.003536,0.003536,0.005],[-0.001913,0.004619,0.005],[0,0,-0.005],[0,0,0.005] ]
+
+    fcs = [
+      [32,0,1],[33,17,16],[32,1,2],[33,18,17],[32,2,3],[33,19,18],[32,3,4],[33,20,19],[32,4,5],[33,21,20],[32,5,6],
+      [33,22,21],[32,6,7],[33,23,22],[32,7,8],[33,24,23],[32,8,9],[33,25,24],[32,9,10],[33,26,25],[32,10,11],
+      [33,27,26],[32,11,12],[33,28,27],[32,12,13],[33,29,28],[32,13,14],[33,30,29],[32,14,15],[33,31,30],[15,0,32],
+      [33,16,31],[16,17,1],[17,18,2],[18,19,3],[19,20,4],[20,21,5],[21,22,6],[22,23,7],[23,24,8],[24,25,9],
+      [25,26,10],[26,27,11],[27,28,12],[28,29,13],[29,30,14],[30,31,15],[0,15,31],[0,16,1],[1,17,2],[2,18,3],
+      [3,19,4],[4,20,5],[5,21,6],[6,22,7],[7,23,8],[8,24,9],[9,25,10],[10,26,11],[11,27,12],[12,28,13],[13,29,14],
+      [14,30,15],[16,0,31] ]
+
+    self.points = [];
+    self.faces = [];
+    for p in pts:
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+    for f in fcs:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+
+class CellBlender_Torus (plf_object):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    # Create an object of the requested size
+    size_scale = 10
+
+    self.points = [];
+    self.faces = [];
+
+    pts = [
+      [0.005,0,0],[0.004905,0,0.0004784],[0.004634,0,0.0008839],[0.004228,0,0.001155],[0.00375,0,0.00125],[0.003272,0,0.001155],
+      [0.002866,0,0.0008839],[0.002595,0,0.0004784],[0.0025,0,0],[0.002595,0,-0.0004784],[0.002866,0,-0.0008839],
+      [0.003272,0,-0.001155],[0.00375,0,-0.00125],[0.004228,0,-0.001155],[0.004634,0,-0.0008839],[0.004905,0,-0.0004784],
+      [0.004619,0.001913,0],[0.004531,0.001877,0.0004784],[0.004281,0.001773,0.0008839],[0.003906,0.001618,0.001155],
+      [0.003465,0.001435,0.00125],[0.003023,0.001252,0.001155],[0.002648,0.001097,0.0008839],[0.002398,0.0009931,0.0004784],
+      [0.00231,0.0009567,0],[0.002398,0.0009931,-0.0004784],[0.002648,0.001097,-0.0008839],[0.003023,0.001252,-0.001155],
+      [0.003465,0.001435,-0.00125],[0.003906,0.001618,-0.001155],[0.004281,0.001773,-0.0008839],[0.004531,0.001877,-0.0004784],
+      [0.003536,0.003536,0],[0.003468,0.003468,0.0004784],[0.003277,0.003277,0.0008839],[0.00299,0.00299,0.001155],
+      [0.002652,0.002652,0.00125],[0.002313,0.002313,0.001155],[0.002027,0.002027,0.0008839],[0.001835,0.001835,0.0004784],
+      [0.001768,0.001768,0],[0.001835,0.001835,-0.0004784],[0.002027,0.002027,-0.0008839],[0.002313,0.002313,-0.001155],
+      [0.002652,0.002652,-0.00125],[0.00299,0.00299,-0.001155],[0.003277,0.003277,-0.0008839],[0.003468,0.003468,-0.0004784],
+      [0.001913,0.004619,0],[0.001877,0.004531,0.0004784],[0.001773,0.004281,0.0008839],[0.001618,0.003906,0.001155],
+      [0.001435,0.003465,0.00125],[0.001252,0.003023,0.001155],[0.001097,0.002648,0.0008839],[0.0009931,0.002398,0.0004784],
+      [0.0009567,0.00231,0],[0.0009931,0.002398,-0.0004784],[0.001097,0.002648,-0.0008839],[0.001252,0.003023,-0.001155],
+      [0.001435,0.003465,-0.00125],[0.001618,0.003906,-0.001155],[0.001773,0.004281,-0.0008839],[0.001877,0.004531,-0.0004784],
+      [0,0.005,0],[0,0.004905,0.0004784],[0,0.004634,0.0008839],[0,0.004228,0.001155],
+      [0,0.00375,0.00125],[0,0.003272,0.001155],[0,0.002866,0.0008839],[0,0.002595,0.0004784],
+      [0,0.0025,0],[0,0.002595,-0.0004784],[0,0.002866,-0.0008839],[0,0.003272,-0.001155],
+      [0,0.00375,-0.00125],[0,0.004228,-0.001155],[0,0.004634,-0.0008839],[0,0.004905,-0.0004784],
+      [-0.001913,0.004619,0],[-0.001877,0.004531,0.0004784],[-0.001773,0.004281,0.0008839],[-0.001618,0.003906,0.001155],
+      [-0.001435,0.003465,0.00125],[-0.001252,0.003023,0.001155],[-0.001097,0.002648,0.0008839],[-0.0009931,0.002398,0.0004784],
+      [-0.0009567,0.00231,0],[-0.0009931,0.002398,-0.0004784],[-0.001097,0.002648,-0.0008839],[-0.001252,0.003023,-0.001155],
+      [-0.001435,0.003465,-0.00125],[-0.001618,0.003906,-0.001155],[-0.001773,0.004281,-0.0008839],[-0.001877,0.004531,-0.0004784],
+      [-0.003536,0.003536,0],[-0.003468,0.003468,0.0004784],[-0.003277,0.003277,0.0008839],[-0.00299,0.00299,0.001155],
+      [-0.002652,0.002652,0.00125],[-0.002313,0.002313,0.001155],[-0.002027,0.002027,0.0008839],[-0.001835,0.001835,0.0004784],
+      [-0.001768,0.001768,0],[-0.001835,0.001835,-0.0004784],[-0.002027,0.002027,-0.0008839],[-0.002313,0.002313,-0.001155],
+      [-0.002652,0.002652,-0.00125],[-0.00299,0.00299,-0.001155],[-0.003277,0.003277,-0.0008839],[-0.003468,0.003468,-0.0004784],
+      [-0.004619,0.001913,0],[-0.004531,0.001877,0.0004784],[-0.004281,0.001773,0.0008839],[-0.003906,0.001618,0.001155],
+      [-0.003465,0.001435,0.00125],[-0.003023,0.001252,0.001155],[-0.002648,0.001097,0.0008839],[-0.002398,0.0009931,0.0004784],
+      [-0.00231,0.0009567,0],[-0.002398,0.0009931,-0.0004784],[-0.002648,0.001097,-0.0008839],[-0.003023,0.001252,-0.001155],
+      [-0.003465,0.001435,-0.00125],[-0.003906,0.001618,-0.001155],[-0.004281,0.001773,-0.0008839],[-0.004531,0.001877,-0.0004784],
+      [-0.005,0,0],[-0.004905,0,0.0004784],[-0.004634,0,0.0008839],[-0.004228,0,0.001155],
+      [-0.00375,0,0.00125],[-0.003272,0,0.001155],[-0.002866,0,0.0008839],[-0.002595,0,0.0004784],
+      [-0.0025,0,0],[-0.002595,0,-0.0004784],[-0.002866,0,-0.0008839],[-0.003272,0,-0.001155],
+      [-0.00375,0,-0.00125],[-0.004228,0,-0.001155],[-0.004634,0,-0.0008839],[-0.004905,0,-0.0004784],
+      [-0.004619,-0.001913,0],[-0.004531,-0.001877,0.0004784],[-0.004281,-0.001773,0.0008839],[-0.003906,-0.001618,0.001155],
+      [-0.003465,-0.001435,0.00125],[-0.003023,-0.001252,0.001155],[-0.002648,-0.001097,0.0008839],[-0.002398,-0.0009931,0.0004784],
+      [-0.00231,-0.0009567,0],[-0.002398,-0.0009931,-0.0004784],[-0.002648,-0.001097,-0.0008839],[-0.003023,-0.001252,-0.001155],
+      [-0.003465,-0.001435,-0.00125],[-0.003906,-0.001618,-0.001155],[-0.004281,-0.001773,-0.0008839],[-0.004531,-0.001877,-0.0004784],
+      [-0.003536,-0.003536,0],[-0.003468,-0.003468,0.0004784],[-0.003277,-0.003277,0.0008839],[-0.00299,-0.00299,0.001155],
+      [-0.002652,-0.002652,0.00125],[-0.002313,-0.002313,0.001155],[-0.002027,-0.002027,0.0008839],[-0.001835,-0.001835,0.0004784],
+      [-0.001768,-0.001768,0],[-0.001835,-0.001835,-0.0004784],[-0.002027,-0.002027,-0.0008839],[-0.002313,-0.002313,-0.001155],
+      [-0.002652,-0.002652,-0.00125],[-0.00299,-0.00299,-0.001155],[-0.003277,-0.003277,-0.0008839],[-0.003468,-0.003468,-0.0004784],
+      [-0.001913,-0.004619,0],[-0.001877,-0.004531,0.0004784],[-0.001773,-0.004281,0.0008839],[-0.001618,-0.003906,0.001155],
+      [-0.001435,-0.003465,0.00125],[-0.001252,-0.003023,0.001155],[-0.001097,-0.002648,0.0008839],[-0.0009931,-0.002398,0.0004784],
+      [-0.0009567,-0.00231,0],[-0.0009931,-0.002398,-0.0004784],[-0.001097,-0.002648,-0.0008839],[-0.001252,-0.003023,-0.001155],
+      [-0.001435,-0.003465,-0.00125],[-0.001618,-0.003906,-0.001155],[-0.001773,-0.004281,-0.0008839],[-0.001877,-0.004531,-0.0004784],
+      [0,-0.005,0],[0,-0.004905,0.0004784],[0,-0.004634,0.0008839],[0,-0.004228,0.001155],
+      [0,-0.00375,0.00125],[0,-0.003272,0.001155],[0,-0.002866,0.0008839],[0,-0.002595,0.0004784],
+      [0,-0.0025,0],[0,-0.002595,-0.0004784],[0,-0.002866,-0.0008839],[0,-0.003272,-0.001155],
+      [0,-0.00375,-0.00125],[0,-0.004228,-0.001155],[0,-0.004634,-0.0008839],[0,-0.004905,-0.0004784],
+      [0.001913,-0.004619,0],[0.001877,-0.004531,0.0004784],[0.001773,-0.004281,0.0008839],[0.001618,-0.003906,0.001155],
+      [0.001435,-0.003465,0.00125],[0.001252,-0.003023,0.001155],[0.001097,-0.002648,0.0008839],[0.0009931,-0.002398,0.0004784],
+      [0.0009567,-0.00231,0],[0.0009931,-0.002398,-0.0004784],[0.001097,-0.002648,-0.0008839],[0.001252,-0.003023,-0.001155],
+      [0.001435,-0.003465,-0.00125],[0.001618,-0.003906,-0.001155],[0.001773,-0.004281,-0.0008839],[0.001877,-0.004531,-0.0004784],
+      [0.003536,-0.003536,0],[0.003468,-0.003468,0.0004784],[0.003277,-0.003277,0.0008839],[0.00299,-0.00299,0.001155],
+      [0.002652,-0.002652,0.00125],[0.002313,-0.002313,0.001155],[0.002027,-0.002027,0.0008839],[0.001835,-0.001835,0.0004784],
+      [0.001768,-0.001768,0],[0.001835,-0.001835,-0.0004784],[0.002027,-0.002027,-0.0008839],[0.002313,-0.002313,-0.001155],
+      [0.002652,-0.002652,-0.00125],[0.00299,-0.00299,-0.001155],[0.003277,-0.003277,-0.0008839],[0.003468,-0.003468,-0.0004784],
+      [0.004619,-0.001913,0],[0.004531,-0.001877,0.0004784],[0.004281,-0.001773,0.0008839],[0.003906,-0.001618,0.001155],
+      [0.003465,-0.001435,0.00125],[0.003023,-0.001252,0.001155],[0.002648,-0.001097,0.0008839],[0.002398,-0.0009931,0.0004784],
+      [0.00231,-0.0009567,0],[0.002398,-0.0009931,-0.0004784],[0.002648,-0.001097,-0.0008839],[0.003023,-0.001252,-0.001155],
+      [0.003465,-0.001435,-0.00125],[0.003906,-0.001618,-0.001155],[0.004281,-0.001773,-0.0008839],[0.004531,-0.001877,-0.0004784] ]
+
+    fcs = [
+      [0,16,17],[17,18,2],[18,19,3],[3,19,20],[4,20,21],[21,22,6],[22,23,7],[23,24,8],[24,25,9],[25,26,10],
+      [26,27,11],[27,28,12],[28,29,13],[29,30,14],[14,30,31],[15,31,16],[32,33,17],[33,34,18],[34,35,19],[35,36,20],
+      [36,37,21],[37,38,22],[22,38,39],[39,40,24],[24,40,41],[25,41,42],[26,42,43],[27,43,44],[44,45,29],[29,45,46],
+      [30,46,47],[31,47,32],[48,49,33],[33,49,50],[50,51,35],[35,51,52],[52,53,37],[53,54,38],[38,54,55],[55,56,40],
+      [56,57,41],[57,58,42],[58,59,43],[59,60,44],[44,60,61],[61,62,46],[62,63,47],[47,63,48],[64,65,49],[49,65,66],
+      [50,66,67],[67,68,52],[68,69,53],[69,70,54],[54,70,71],[71,72,56],[72,73,57],[73,74,58],[74,75,59],[59,75,76],
+      [76,77,61],[77,78,62],[78,79,63],[63,79,64],[80,81,65],[81,82,66],[82,83,67],[83,84,68],[84,85,69],[85,86,70],
+      [86,87,71],[71,87,88],[88,89,73],[89,90,74],[74,90,91],[75,91,92],[92,93,77],[93,94,78],[78,94,95],[95,80,64],
+      [80,96,97],[97,98,82],[98,99,83],[99,100,84],[100,101,85],[101,102,86],[102,103,87],[103,104,88],[88,104,105],
+      [105,106,90],[90,106,107],[91,107,108],[108,109,93],[93,109,110],[110,111,95],[95,111,96],[112,113,97],
+      [113,114,98],[114,115,99],[115,116,100],[116,117,101],[117,118,102],[118,119,103],[103,119,120],[120,121,105],
+      [105,121,122],[122,123,107],[107,123,124],[124,125,109],[125,126,110],[126,127,111],[111,127,112],[128,129,113],
+      [113,129,130],[114,130,131],[131,132,116],[132,133,117],[133,134,118],[118,134,135],[135,136,120],[120,136,137],
+      [137,138,122],[138,139,123],[139,140,124],[140,141,125],[141,142,126],[142,143,127],[127,143,128],[128,144,145],
+      [145,146,130],[146,147,131],[147,148,132],[148,149,133],[149,150,134],[150,151,135],[135,151,152],[152,153,137],
+      [137,153,154],[154,155,139],[155,156,140],[156,157,141],[141,157,158],[158,159,143],[143,159,144],[144,160,161],
+      [161,162,146],[146,162,163],[147,163,164],[148,164,165],[165,166,150],[166,167,151],[167,168,152],[152,168,169],
+      [169,170,154],[154,170,171],[171,172,156],[172,173,157],[157,173,174],[158,174,175],[175,160,144],[176,177,161],
+      [177,178,162],[162,178,179],[179,180,164],[164,180,181],[181,182,166],[166,182,183],[167,183,184],[184,185,169],
+      [185,186,170],[186,187,171],[187,188,172],[188,189,173],[189,190,174],[174,190,191],[191,176,160],[192,193,177],
+      [177,193,194],[194,195,179],[179,195,196],[180,196,197],[197,198,182],[182,198,199],[199,200,184],[200,201,185],
+      [201,202,186],[186,202,203],[203,204,188],[204,205,189],[205,206,190],[206,207,191],[191,207,192],[192,208,209],
+      [209,210,194],[210,211,195],[211,212,196],[196,212,213],[213,214,198],[214,215,199],[215,216,200],[216,217,201],
+      [217,218,202],[202,218,219],[219,220,204],[220,221,205],[205,221,222],[206,222,223],[223,208,192],[224,225,209],
+      [209,225,226],[226,227,211],[211,227,228],[228,229,213],[229,230,214],[214,230,231],[215,231,232],[232,233,217],
+      [233,234,218],[218,234,235],[235,236,220],[236,237,221],[237,238,222],[238,239,223],[223,239,224],[240,241,225],
+      [225,241,242],[226,242,243],[243,244,228],[244,245,229],[245,246,230],[246,247,231],[231,247,248],[248,249,233],
+      [249,250,234],[250,251,235],[251,252,236],[236,252,253],[253,254,238],[254,255,239],[239,255,240],[0,1,241],
+      [1,2,242],[2,3,243],[243,3,4],[4,5,245],[5,6,246],[6,7,247],[247,7,8],[8,9,249],[9,10,250],[250,10,11],
+      [11,12,252],[12,13,253],[13,14,254],[14,15,255],[240,255,15],[1,0,17],[1,17,2],[2,18,3],[4,3,20],[5,4,21],
+      [5,21,6],[6,22,7],[7,23,8],[8,24,9],[9,25,10],[10,26,11],[11,27,12],[12,28,13],[13,29,14],[15,14,31],
+      [0,15,16],[16,32,17],[17,33,18],[18,34,19],[19,35,20],[20,36,21],[21,37,22],[23,22,39],[23,39,24],[25,24,41],
+      [26,25,42],[27,26,43],[28,27,44],[28,44,29],[30,29,46],[31,30,47],[16,31,32],[32,48,33],[34,33,50],[34,50,35],
+      [36,35,52],[36,52,37],[37,53,38],[39,38,55],[39,55,40],[40,56,41],[41,57,42],[42,58,43],[43,59,44],[45,44,61],
+      [45,61,46],[46,62,47],[32,47,48],[48,64,49],[50,49,66],[51,50,67],[51,67,52],[52,68,53],[53,69,54],[55,54,71],
+      [55,71,56],[56,72,57],[57,73,58],[58,74,59],[60,59,76],[60,76,61],[61,77,62],[62,78,63],[48,63,64],[64,80,65],
+      [65,81,66],[66,82,67],[67,83,68],[68,84,69],[69,85,70],[70,86,71],[72,71,88],[72,88,73],[73,89,74],[75,74,91],
+      [76,75,92],[76,92,77],[77,93,78],[79,78,95],[79,95,64],[81,80,97],[81,97,82],[82,98,83],[83,99,84],[84,100,85],
+      [85,101,86],[86,102,87],[87,103,88],[89,88,105],[89,105,90],[91,90,107],[92,91,108],[92,108,93],[94,93,110],
+      [94,110,95],[80,95,96],[96,112,97],[97,113,98],[98,114,99],[99,115,100],[100,116,101],[101,117,102],[102,118,103],
+      [104,103,120],[104,120,105],[106,105,122],[106,122,107],[108,107,124],[108,124,109],[109,125,110],[110,126,111],
+      [96,111,112],[112,128,113],[114,113,130],[115,114,131],[115,131,116],[116,132,117],[117,133,118],[119,118,135],
+      [119,135,120],[121,120,137],[121,137,122],[122,138,123],[123,139,124],[124,140,125],[125,141,126],[126,142,127],
+      [112,127,128],[129,128,145],[129,145,130],[130,146,131],[131,147,132],[132,148,133],[133,149,134],[134,150,135],
+      [136,135,152],[136,152,137],[138,137,154],[138,154,139],[139,155,140],[140,156,141],[142,141,158],[142,158,143],
+      [128,143,144],[145,144,161],[145,161,146],[147,146,163],[148,147,164],[149,148,165],[149,165,150],[150,166,151],
+      [151,167,152],[153,152,169],[153,169,154],[155,154,171],[155,171,156],[156,172,157],[158,157,174],[159,158,175],
+      [159,175,144],[160,176,161],[161,177,162],[163,162,179],[163,179,164],[165,164,181],[165,181,166],[167,166,183],
+      [168,167,184],[168,184,169],[169,185,170],[170,186,171],[171,187,172],[172,188,173],[173,189,174],[175,174,191],
+      [175,191,160],[176,192,177],[178,177,194],[178,194,179],[180,179,196],[181,180,197],[181,197,182],[183,182,199],
+      [183,199,184],[184,200,185],[185,201,186],[187,186,203],[187,203,188],[188,204,189],[189,205,190],[190,206,191],
+      [176,191,192],[193,192,209],[193,209,194],[194,210,195],[195,211,196],[197,196,213],[197,213,198],[198,214,199],
+      [199,215,200],[200,216,201],[201,217,202],[203,202,219],[203,219,204],[204,220,205],[206,205,222],[207,206,223],
+      [207,223,192],[208,224,209],[210,209,226],[210,226,211],[212,211,228],[212,228,213],[213,229,214],[215,214,231],
+      [216,215,232],[216,232,217],[217,233,218],[219,218,235],[219,235,220],[220,236,221],[221,237,222],[222,238,223],
+      [208,223,224],[224,240,225],[226,225,242],[227,226,243],[227,243,228],[228,244,229],[229,245,230],[230,246,231],
+      [232,231,248],[232,248,233],[233,249,234],[234,250,235],[235,251,236],[237,236,253],[237,253,238],[238,254,239],
+      [224,239,240],[240,0,241],[241,1,242],[242,2,243],[244,243,4],[244,4,245],[245,5,246],[246,6,247],[248,247,8],
+      [248,8,249],[249,9,250],[251,250,11],[251,11,252],[252,12,253],[253,13,254],[254,14,255],[0,240,15] ]
+
+    self.points = [];
+    self.faces = [];
+    for p in pts:
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+    for f in fcs:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+
+class CellBlender_Sphere1 (plf_object):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    # Create an object of the requested size
+    size_scale = 10
+
+    self.points = [];
+    self.faces = [];
+
+    pts = [
+      [0,0,-0.005],[0.003618,-0.002629,-0.002236],[-0.001382,-0.004253,-0.002236],[-0.004472,0,-0.002236],[-0.001382,0.004253,-0.002236],
+      [0.003618,0.002629,-0.002236],[0.001382,-0.004253,0.002236],[-0.003618,-0.002629,0.002236],[-0.003618,0.002629,0.002236],
+      [0.001382,0.004253,0.002236],[0.004472,0,0.002236],[0,0,0.005],[-0.0008123,-0.0025,-0.004253],[0.002127,-0.001545,-0.004253],
+      [0.001314,-0.004045,-0.002629],[0.002127,0.001545,-0.004253],[0.004253,0,-0.002629],[-0.002629,0,-0.004253],
+      [-0.003441,-0.0025,-0.002629],[-0.0008123,0.0025,-0.004253],[-0.003441,0.0025,-0.002629],[0.001314,0.004045,-0.002629],
+      [0.004755,0.001545,0],[0.004755,-0.001545,0],[0.002939,-0.004045,0],[0,-0.005,0],[-0.002939,-0.004045,0],
+      [-0.004755,-0.001545,0],[-0.004755,0.001545,0],[-0.002939,0.004045,0],[0,0.005,0],[0.002939,0.004045,0],
+      [0.003441,-0.0025,0.002629],[-0.001314,-0.004045,0.002629],[-0.004253,0,0.002629],[-0.001314,0.004045,0.002629],
+      [0.003441,0.0025,0.002629],[0.002629,0,0.004253],[0.0008123,-0.0025,0.004253],[-0.002127,-0.001545,0.004253],
+      [-0.002127,0.001545,0.004253],[0.0008123,0.0025,0.004253] ]
+
+    fcs = [
+      [14,2,12],[12,13,14],[1,14,13],[12,0,13],[16,1,13],[13,15,16],[5,16,15],[13,0,15],[18,3,17],[17,12,18],
+      [2,18,12],[17,0,12],[20,4,19],[19,17,20],[3,20,17],[19,0,17],[21,5,15],[15,19,21],[4,21,19],[15,0,19],
+      [23,1,16],[16,22,23],[10,23,22],[22,16,5],[25,2,14],[14,24,25],[6,25,24],[24,14,1],[27,3,18],[18,26,27],
+      [7,27,26],[26,18,2],[29,4,20],[20,28,29],[8,29,28],[28,20,3],[31,5,21],[21,30,31],[9,31,30],[30,21,4],
+      [32,6,24],[24,23,32],[10,32,23],[23,24,1],[33,7,26],[26,25,33],[6,33,25],[25,26,2],[34,8,28],[28,27,34],
+      [7,34,27],[27,28,3],[35,9,30],[30,29,35],[8,35,29],[29,30,4],[36,10,22],[22,31,36],[9,36,31],[31,22,5],
+      [38,6,32],[32,37,38],[11,38,37],[37,32,10],[39,7,33],[33,38,39],[11,39,38],[38,33,6],[40,8,34],[34,39,40],
+      [11,40,39],[39,34,7],[41,9,35],[35,40,41],[11,41,40],[40,35,8],[37,10,36],[36,41,37],[11,37,41],[41,36,9] ]
+
+    self.points = [];
+    self.faces = [];
+    for p in pts:
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+    for f in fcs:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+
+class CellBlender_Sphere2 (plf_object):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    # Create an object of the requested size
+    size_scale = 10
+
+    self.points = [];
+    self.faces = [];
+
+    pts = [
+      [0,0,-0.005],[0.003618,-0.002629,-0.002236],[-0.001382,-0.004253,-0.002236],[-0.004472,0,-0.002236],[-0.001382,0.004253,-0.002236],
+      [0.003618,0.002629,-0.002236],[0.001382,-0.004253,0.002236],[-0.003618,-0.002629,0.002236],[-0.003618,0.002629,0.002236],
+      [0.001382,0.004253,0.002236],[0.004472,0,0.002236],[0,0,0.005],[-0.0008123,-0.0025,-0.004253],[0.002127,-0.001545,-0.004253],
+      [0.001314,-0.004045,-0.002629],[0.002127,0.001545,-0.004253],[0.004253,0,-0.002629],[-0.002629,0,-0.004253],
+      [-0.003441,-0.0025,-0.002629],[-0.0008123,0.0025,-0.004253],[-0.003441,0.0025,-0.002629],[0.001314,0.004045,-0.002629],
+      [0.004755,0.001545,0],[0.004755,-0.001545,0],[0.002939,-0.004045,0],[0,-0.005,0],[-0.002939,-0.004045,0],
+      [-0.004755,-0.001545,0],[-0.004755,0.001545,0],[-0.002939,0.004045,0],[0,0.005,0],[0.002939,0.004045,0],
+      [0.003441,-0.0025,0.002629],[-0.001314,-0.004045,0.002629],[-0.004253,0,0.002629],[-0.001314,0.004045,0.002629],
+      [0.003441,0.0025,0.002629],[0.002629,0,0.004253],[0.0008123,-0.0025,0.004253],[-0.002127,-0.001545,0.004253],
+      [-0.002127,0.001545,0.004253],[0.0008123,0.0025,0.004253],[-0.001141,-0.00351,-0.003373],[-0.0004222,-0.001299,-0.00481],
+      [0.002986,-0.002169,-0.003373],[0.001105,-0.0008031,-0.00481],[-3.513e-05,-0.004313,-0.002529],[0.002564,-0.003469,-0.002529],
+      [0.002986,0.002169,-0.003373],[0.001105,0.0008031,-0.00481],[0.004091,-0.001366,-0.002529],[0.004091,0.001366,-0.002529],
+      [-0.003691,0,-0.003373],[-0.001366,0,-0.00481],[-0.002507,-0.00351,-0.002529],[-0.004113,-0.001299,-0.002529],
+      [-0.001141,0.00351,-0.003373],[-0.0004222,0.001299,-0.00481],[-0.002507,0.00351,-0.002529],[-0.004113,0.001299,-0.002529],
+      [-3.513e-05,0.004313,-0.002529],[0.002564,0.003469,-0.002529],[0.004352,0.002169,-0.001162],[0.004796,0.0008031,0.001162],
+      [0.004352,-0.002169,-0.001162],[0.004796,-0.0008031,0.001162],[0.003408,-0.003469,-0.001162],[0.002246,-0.004313,0.001162],
+      [-0.0007183,-0.00481,-0.001162],[0.0007183,-0.00481,0.001162],[-0.002246,-0.004313,-0.001162],[-0.003408,-0.003469,0.001162],
+      [-0.004352,-0.002169,0.001162],[-0.004796,-0.0008031,-0.001162],[-0.004352,0.002169,0.001162],[-0.004796,0.0008031,-0.001162],
+      [-0.002246,0.004313,-0.001162],[-0.003408,0.003469,0.001162],[0.0007183,0.00481,0.001162],[-0.0007183,0.00481,-0.001162],
+      [0.002246,0.004313,0.001162],[0.003408,0.003469,-0.001162],[0.002507,-0.00351,0.002529],[0.004113,-0.001299,0.002529],
+      [-0.002564,-0.003469,0.002529],[3.513e-05,-0.004313,0.002529],[-0.004091,-0.001366,0.002529],[-0.004091,0.001366,0.002529],
+      [3.513e-05,0.004313,0.002529],[-0.002564,0.003469,0.002529],[0.002507,0.00351,0.002529],[0.004113,0.001299,0.002529],
+      [0.001366,0,0.00481],[0.003691,0,0.003373],[0.001141,-0.00351,0.003373],[0.0004222,-0.001299,0.00481],
+      [-0.002986,-0.002169,0.003373],[-0.001105,-0.0008031,0.00481],[-0.002986,0.002169,0.003373],[-0.001105,0.0008031,0.00481],
+      [0.001141,0.00351,0.003373],[0.0004222,0.001299,0.00481],[0.000264,-0.003441,-0.003618],[0.000691,-0.002127,-0.004472],
+      [0.001809,-0.002939,-0.003618],[0.003354,-0.0008123,-0.003618],[0.002236,0,-0.004472],[0.003354,0.0008123,-0.003618],
+      [-0.003191,-0.001314,-0.003618],[-0.001809,-0.001314,-0.004472],[-0.002236,-0.002629,-0.003618],[-0.002236,0.002629,-0.003618],
+      [-0.001809,0.001314,-0.004472],[-0.003191,0.001314,-0.003618],[0.001809,0.002939,-0.003618],[0.000691,0.002127,-0.004472],
+      [0.000264,0.003441,-0.003618],[0.004736,-0.0008123,-0.001382],[0.004736,0.0008123,-0.001382],[0.005,0,0],
+      [0.000691,-0.004755,-0.001382],[0.002236,-0.004253,-0.001382],[0.001545,-0.004755,0],[-0.004309,-0.002127,-0.001382],
+      [-0.003354,-0.003441,-0.001382],[-0.004045,-0.002939,0],[-0.003354,0.003441,-0.001382],[-0.004309,0.002127,-0.001382],
+      [-0.004045,0.002939,0],[0.002236,0.004253,-0.001382],[0.000691,0.004755,-0.001382],[0.001545,0.004755,0],
+      [0.003354,-0.003441,0.001382],[0.004045,-0.002939,0],[0.004309,-0.002127,0.001382],[-0.002236,-0.004253,0.001382],
+      [-0.001545,-0.004755,0],[-0.000691,-0.004755,0.001382],[-0.004736,0.0008123,0.001382],[-0.005,0,0],[-0.004736,-0.0008123,0.001382],
+      [-0.000691,0.004755,0.001382],[-0.001545,0.004755,0],[-0.002236,0.004253,0.001382],[0.004309,0.002127,0.001382],
+      [0.004045,0.002939,0],[0.003354,0.003441,0.001382],[0.002236,-0.002629,0.003618],[0.003191,-0.001314,0.003618],
+      [0.001809,-0.001314,0.004472],[-0.001809,-0.002939,0.003618],[-0.000264,-0.003441,0.003618],[-0.000691,-0.002127,0.004472],
+      [-0.003354,0.0008123,0.003618],[-0.003354,-0.0008123,0.003618],[-0.002236,0,0.004472],[-0.000264,0.003441,0.003618],
+      [-0.001809,0.002939,0.003618],[-0.000691,0.002127,0.004472],[0.003191,0.001314,0.003618],[0.002236,0.002629,0.003618],
+      [0.001809,0.001314,0.004472] ]
+
+    fcs = [
+      [102,14,46],[46,42,102],[12,102,42],[42,46,2],[102,12,103],[103,104,102],[14,102,104],[104,103,13],[44,1,47],
+      [47,104,44],[13,44,104],[104,47,14],[45,13,103],[103,43,45],[0,45,43],[43,103,12],[105,16,50],[50,44,105],
+      [13,105,44],[44,50,1],[105,13,106],[106,107,105],[16,105,107],[107,106,15],[48,5,51],[51,107,48],[15,48,107],
+      [107,51,16],[49,15,106],[106,45,49],[0,49,45],[45,106,13],[108,18,55],[55,52,108],[17,108,52],[52,55,3],
+      [108,17,109],[109,110,108],[18,108,110],[110,109,12],[42,2,54],[54,110,42],[12,42,110],[110,54,18],[43,12,109],
+      [109,53,43],[0,43,53],[53,109,17],[111,20,58],[58,56,111],[19,111,56],[56,58,4],[111,19,112],[112,113,111],
+      [20,111,113],[113,112,17],[52,3,59],[59,113,52],[17,52,113],[113,59,20],[53,17,112],[112,57,53],[0,53,57],
+      [57,112,19],[114,21,61],[61,48,114],[15,114,48],[48,61,5],[114,15,115],[115,116,114],[21,114,116],[116,115,19],
+      [56,4,60],[60,116,56],[19,56,116],[116,60,21],[57,19,115],[115,49,57],[0,57,49],[49,115,15],[117,23,64],
+      [64,50,117],[16,117,50],[50,64,1],[117,16,118],[118,119,117],[23,117,119],[119,118,22],[63,10,65],[65,119,63],
+      [22,63,119],[119,65,23],[62,22,118],[118,51,62],[5,62,51],[51,118,16],[120,25,68],[68,46,120],[14,120,46],
+      [46,68,2],[120,14,121],[121,122,120],[25,120,122],[122,121,24],[67,6,69],[69,122,67],[24,67,122],[122,69,25],
+      [66,24,121],[121,47,66],[1,66,47],[47,121,14],[123,27,73],[73,55,123],[18,123,55],[55,73,3],[123,18,124],
+      [124,125,123],[27,123,125],[125,124,26],[71,7,72],[72,125,71],[26,71,125],[125,72,27],[70,26,124],[124,54,70],
+      [2,70,54],[54,124,18],[126,29,76],[76,58,126],[20,126,58],[58,76,4],[126,20,127],[127,128,126],[29,126,128],
+      [128,127,28],[74,8,77],[77,128,74],[28,74,128],[128,77,29],[75,28,127],[127,59,75],[3,75,59],[59,127,20],
+      [129,31,81],[81,61,129],[21,129,61],[61,81,5],[129,21,130],[130,131,129],[31,129,131],[131,130,30],[78,9,80],
+      [80,131,78],[30,78,131],[131,80,31],[79,30,130],[130,60,79],[4,79,60],[60,130,21],[132,32,82],[82,67,132],
+      [24,132,67],[67,82,6],[132,24,133],[133,134,132],[32,132,134],[134,133,23],[65,10,83],[83,134,65],[23,65,134],
+      [134,83,32],[64,23,133],[133,66,64],[1,64,66],[66,133,24],[135,33,84],[84,71,135],[26,135,71],[71,84,7],
+      [135,26,136],[136,137,135],[33,135,137],[137,136,25],[69,6,85],[85,137,69],[25,69,137],[137,85,33],[68,25,136],
+      [136,70,68],[2,68,70],[70,136,26],[138,34,87],[87,74,138],[28,138,74],[74,87,8],[138,28,139],[139,140,138],
+      [34,138,140],[140,139,27],[72,7,86],[86,140,72],[27,72,140],[140,86,34],[73,27,139],[139,75,73],[3,73,75],
+      [75,139,28],[141,35,88],[88,78,141],[30,141,78],[78,88,9],[141,30,142],[142,143,141],[35,141,143],[143,142,29],
+      [77,8,89],[89,143,77],[29,77,143],[143,89,35],[76,29,142],[142,79,76],[4,76,79],[79,142,30],[144,36,91],
+      [91,63,144],[22,144,63],[63,91,10],[144,22,145],[145,146,144],[36,144,146],[146,145,31],[80,9,90],[90,146,80],
+      [31,80,146],[146,90,36],[81,31,145],[145,62,81],[5,81,62],[62,145,22],[147,38,94],[94,82,147],[32,147,82],
+      [82,94,6],[147,32,148],[148,149,147],[38,147,149],[149,148,37],[92,11,95],[95,149,92],[37,92,149],[149,95,38],
+      [93,37,148],[148,83,93],[10,93,83],[83,148,32],[150,39,96],[96,84,150],[33,150,84],[84,96,7],[150,33,151],
+      [151,152,150],[39,150,152],[152,151,38],[95,11,97],[97,152,95],[38,95,152],[152,97,39],[94,38,151],[151,85,94],
+      [6,94,85],[85,151,33],[153,40,98],[98,87,153],[34,153,87],[87,98,8],[153,34,154],[154,155,153],[40,153,155],
+      [155,154,39],[97,11,99],[99,155,97],[39,97,155],[155,99,40],[96,39,154],[154,86,96],[7,96,86],[86,154,34],
+      [156,41,100],[100,88,156],[35,156,88],[88,100,9],[156,35,157],[157,158,156],[41,156,158],[158,157,40],
+      [99,11,101],[101,158,99],[40,99,158],[158,101,41],[98,40,157],[157,89,98],[8,98,89],[89,157,35],[159,37,93],
+      [93,91,159],[36,159,91],[91,93,10],[159,36,160],[160,161,159],[37,159,161],[161,160,41],[101,11,92],[92,161,101],
+      [41,101,161],[161,92,37],[100,41,160],[160,90,100],[9,100,90],[90,160,36] ]
+
+    self.points = [];
+    self.faces = [];
+    for p in pts:
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+    for f in fcs:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+
+class CellBlender_Receptor (plf_object):
+
+  def __init__ ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    # Create an object of the requested size
+    size_scale = 10
+
+    self.points = [];
+    self.faces = [];
+
+    pts = [
+      [0,0.004956,0.001781],[0,0.005,0.002473],[0,0.005,0.003012],[0,0.004996,0.00341],
+      [0,0.004962,0.003742],[0,0.004854,0.004061],[0.004755,0.001545,0.003012],[0.003794,0.001233,-0.005168],
+      [0.003914,0.001272,-0.005065],[0.003673,0.001194,-0.005233],[0.004003,0.001301,-0.004882],[0.004,0.0013,-0.004477],
+      [0.003829,0.001244,-0.003764],[0.003536,0.001149,-0.002894],[0.003387,0.001101,-0.001916],[0.003591,0.001167,-0.0009425],
+      [0.004011,0.001303,1.023e-05],[0.004451,0.001446,0.000946],[0.004714,0.001531,0.001781],[0.004755,0.001545,0.002473],
+      [0.004751,0.001544,0.00341],[0.004719,0.001533,0.003742],[0.004617,0.0015,0.004061],[0.004407,0.001432,0.004363],
+      [0.00413,0.001342,0.004584],[0.003888,0.001263,0.004691],[0.003707,0.001205,0.004725],[0.003566,0.001159,0.004729],
+      [0.003425,0.001113,0.004725],[0.003245,0.001055,0.004691],[0.003002,0.0009759,0.004584],[0.002725,0.0008859,0.004363],
+      [0.002516,0.0008178,0.004061],[0.002413,0.0007846,0.003742],[0.002381,0.0007742,0.00341],[0.002377,0.0007729,0.003012],
+      [0.002377,0.0007729,0.002473],[0.002377,0.0007729,0.001781],[0.002351,0.0007643,0.000946],[0.002182,0.0007094,1.023e-05],
+      [0.00199,0.0006471,-0.0009479],[0.001926,0.0006265,-0.001952],[0.002096,0.0006817,-0.002979],[0.002453,0.0007975,-0.003869],
+      [0.002815,0.000915,-0.004438],[0.003073,0.0009989,-0.004872],[0.00324,0.001053,-0.005094],[0.003356,0.001091,-0.005186],
+      [0.003458,0.001124,-0.005237],[0.003561,0.001157,-0.005256],[0.002853,-0.003927,0.004061],[0.002916,-0.004014,0.003742],
+      [0.002936,-0.004042,0.00341],[0.002939,-0.004045,0.002473],[0.002913,-0.00401,0.001781],[0.002751,-0.003786,0.000946],
+      [0.002939,-0.004045,0.003012],[0.002345,-0.003228,-0.005168],[0.002419,-0.00333,-0.005065],[0.002474,-0.003405,-0.004882],
+      [0.002472,-0.003403,-0.004477],[0.002367,-0.003257,-0.003764],[0.002185,-0.003008,-0.002894],[0.002094,-0.002881,-0.001916],
+      [0.00222,-0.003055,-0.0009425],[0.002479,-0.003412,1.023e-05],[0.002724,-0.003749,0.004363],[0.002553,-0.003513,0.004584],
+      [0.002403,-0.003307,0.004691],[0.002291,-0.003154,0.004725],[0.002204,-0.003034,0.004729],[0.002117,-0.002914,0.004725],
+      [0.002006,-0.002761,0.004691],[0.001856,-0.002554,0.004584],[0.001685,-0.002319,0.004363],[0.001555,-0.00214,0.004061],
+      [0.001492,-0.002053,0.003742],[0.001472,-0.002026,0.00341],[0.001469,-0.002023,0.003012],[0.001469,-0.002023,0.002473],
+      [0.001469,-0.002023,0.001781],[0.001453,-0.002,0.000946],[0.001349,-0.001856,1.023e-05],[0.00123,-0.001693,-0.0009479],
+      [0.001191,-0.001639,-0.001952],[0.001296,-0.001784,-0.002979],[0.001516,-0.002087,-0.003869],[0.00174,-0.002395,-0.004438],
+      [0.0019,-0.002615,-0.004872],[0.002003,-0.002757,-0.005094],[0.002074,-0.002855,-0.005186],[0.002137,-0.002942,-0.005237],
+      [0.002201,-0.00303,-0.005256],[0.00227,-0.003125,-0.005233],[-0.002939,-0.004045,0.003012],[-0.002939,-0.004045,0.002473],
+      [-0.002937,-0.004042,0.00341],[-0.003561,0.001157,-0.005256],[-0.003458,0.001123,-0.005237],[-0.003356,0.00109,-0.005186],
+      [-0.00324,0.001053,-0.005094],[-0.003074,0.0009984,-0.004872],[-0.002815,0.0009143,-0.004438],[-0.002453,0.0007967,-0.003869],
+      [-0.002097,0.0006808,-0.002979],[-0.001927,0.0006255,-0.001952],[-0.00199,0.0006461,-0.0009479],[-0.002182,0.0007085,1.023e-05],
+      [-0.002351,0.0007634,0.000946],[-0.002377,0.000772,0.001781],[-0.002377,0.000772,0.002473],[-0.002377,0.000772,0.003012],
+      [-0.002381,0.0007733,0.00341],[-0.002414,0.0007838,0.003742],[-0.002516,0.000817,0.004061],[-0.002726,0.0008852,0.004363],
+      [-0.003003,0.0009753,0.004584],[-0.003245,0.001054,0.004691],[-0.003425,0.001113,0.004725],[-0.003566,0.001159,0.004729],
+      [-0.003708,0.001204,0.004725],[-0.003888,0.001263,0.004691],[-0.00413,0.001342,0.004584],[-0.004011,0.001303,1.023e-05],
+      [-0.003591,0.001167,-0.0009425],[-0.003387,0.0011,-0.001916],[-0.003536,0.001149,-0.002894],[-0.003829,0.001244,-0.003764],
+      [-0.004,0.0013,-0.004477],[-0.004003,0.001301,-0.004882],[-0.003673,0.001193,-0.005233],[-0.003914,0.001272,-0.005065],
+      [-0.003794,0.001233,-0.005168],[-0.00227,-0.003125,-0.005233],[-0.002201,-0.00303,-0.005256],[-0.002137,-0.002942,-0.005237],
+      [-0.002074,-0.002855,-0.005186],[-0.002003,-0.002757,-0.005094],[-0.0019,-0.002615,-0.004872],[-0.00174,-0.002395,-0.004438],
+      [-0.001516,-0.002087,-0.003869],[-0.001296,-0.001784,-0.002979],[-0.001191,-0.001639,-0.001952],[-0.00123,-0.001693,-0.0009479],
+      [-0.001349,-0.001856,1.023e-05],[-0.001453,-0.002,0.000946],[-0.001469,-0.002023,0.001781],[-0.001469,-0.002023,0.002473],
+      [-0.001469,-0.002023,0.003012],[-0.001472,-0.002026,0.00341],[-0.001492,-0.002053,0.003742],[-0.001555,-0.00214,0.004061],
+      [-0.001685,-0.002319,0.004363],[-0.001856,-0.002554,0.004584],[-0.002006,-0.002761,0.004691],[-0.002117,-0.002914,0.004725],
+      [-0.002204,-0.003034,0.004729],[-0.002291,-0.003154,0.004725],[-0.002403,-0.003307,0.004691],[-0.002553,-0.003513,0.004584],
+      [-0.002724,-0.003749,0.004363],[-0.002853,-0.003927,0.004061],[-0.002917,-0.004014,0.003742],[-0.002913,-0.00401,0.001781],
+      [-0.002751,-0.003786,0.000946],[-0.002479,-0.003412,1.023e-05],[-0.00222,-0.003055,-0.0009425],[-0.002094,-0.002881,-0.001916],
+      [-0.002185,-0.003008,-0.002894],[-0.002367,-0.003257,-0.003764],[-0.002472,-0.003403,-0.004477],[-0.002474,-0.003405,-0.004882],
+      [-0.002419,-0.00333,-0.005065],[-0.002345,-0.003228,-0.005168],[-0.004451,0.001446,0.000946],[-0.004714,0.001532,0.001781],
+      [-0.004755,0.001545,0.002473],[-0.004755,0.001545,0.003012],[-0.004751,0.001544,0.00341],[-0.004719,0.001533,0.003742],
+      [-0.004617,0.0015,0.004061],[-0.004407,0.001432,0.004363],[-1.314e-07,0.00399,-0.005168],[-1.041e-07,0.004116,-0.005065],
+      [-1.586e-07,0.003862,-0.005233],[0,0.004209,-0.004882],[0,0.004206,-0.004477],[-1.232e-07,0.004026,-0.003764],
+      [-1.892e-07,0.003718,-0.002894],[-2.225e-07,0.003561,-0.001916],[-1.764e-07,0.003776,-0.0009425],[0,0.004217,1.023e-05],
+      [0,0.00468,0.000946],[0,0.004634,0.004363],[0,0.004343,0.004584],[-1.106e-07,0.004088,0.004691],
+      [-1.513e-07,0.003898,0.004725],[-1.829e-07,0.00375,0.004729],[-2.145e-07,0.003601,0.004725],[-2.545e-07,0.003412,0.004691],
+      [-3.088e-07,0.003157,0.004584],[-3.719e-07,0.002866,0.004363],[-4.195e-07,0.002645,0.004061],[-4.426e-07,0.002538,0.003742],
+      [-4.498e-07,0.002504,0.00341],[-4.507e-07,0.0025,0.003012],[-4.507e-07,0.0025,0.002473],[-4.508e-07,0.0025,0.001781],
+      [-4.566e-07,0.002472,0.000946],[-4.945e-07,0.002294,1.023e-05],[-5.379e-07,0.002092,-0.0009479],[-5.521e-07,0.002026,-0.001952],
+      [-5.142e-07,0.002205,-0.002979],[-4.335e-07,0.002579,-0.003869],[-3.512e-07,0.00296,-0.004438],[-2.932e-07,0.003232,-0.004872],
+      [-2.55e-07,0.003407,-0.005094],[-2.299e-07,0.003529,-0.005186],[-2.073e-07,0.003636,-0.005237],[-1.84e-07,0.003745,-0.005256] ]
+
+    fcs = [
+      [19,2,6],[1,2,19],[20,6,2],[20,2,3],[52,6,20],[52,56,6],[19,6,53],[53,6,56],[95,56,94],[53,56,95],[96,94,56],
+      [96,56,52],[178,94,96],[178,177,94],[95,94,176],[176,94,177],[1,177,2],[176,177,1],[3,2,177],[3,177,178],
+      [97,130,219],[219,130,184],[98,97,218],[218,97,219],[99,98,217],[217,98,218],[100,99,216],[216,99,217],
+      [101,100,215],[215,100,216],[102,101,214],[214,101,215],[103,102,213],[213,102,214],[104,103,212],[212,103,213],
+      [105,104,211],[211,104,212],[106,211,210],[106,105,211],[107,210,209],[107,106,210],[108,209,208],[108,107,209],
+      [109,208,207],[109,108,208],[110,207,206],[110,109,207],[111,206,205],[111,110,206],[112,205,204],[112,111,205],
+      [113,204,203],[113,112,204],[114,203,202],[114,113,203],[115,202,201],[115,114,202],[116,201,200],[116,115,201],
+      [117,200,199],[117,116,200],[118,199,198],[118,117,199],[119,198,197],[119,118,198],[120,197,196],[120,119,197],
+      [121,196,195],[121,120,196],[122,195,194],[122,121,195],[181,194,193],[181,122,194],[180,193,5],[180,181,193],
+      [179,5,4],[179,180,5],[178,4,3],[178,179,4],[175,1,0],[175,176,1],[174,175,192],[192,175,0],[123,174,191],
+      [191,174,192],[124,123,190],[190,123,191],[125,124,189],[189,124,190],[126,189,188],[126,125,189],[127,188,187],
+      [127,126,188],[128,187,186],[128,127,187],[129,186,185],[129,128,186],[131,129,183],[183,129,185],[132,182,184],
+      [132,184,130],[132,131,182],[182,131,183],[173,172,132],[132,172,131],[173,132,130],[173,130,133],[172,171,131],
+      [131,171,129],[171,128,129],[171,170,128],[170,127,128],[170,169,127],[169,126,127],[169,168,126],[168,125,126],
+      [168,167,125],[167,166,125],[125,166,124],[166,165,124],[124,165,123],[165,164,123],[123,164,174],[164,163,174],
+      [174,163,175],[163,95,175],[175,95,176],[96,179,178],[96,162,179],[162,180,179],[162,161,180],[161,181,180],
+      [161,160,181],[160,122,181],[160,159,122],[159,121,122],[159,158,121],[158,120,121],[158,157,120],[157,119,120],
+      [157,156,119],[156,118,119],[156,155,118],[155,117,118],[155,154,117],[154,116,117],[154,153,116],[153,115,116],
+      [153,152,115],[152,114,115],[152,151,114],[151,113,114],[151,150,113],[150,112,113],[150,149,112],[149,111,112],
+      [149,148,111],[148,110,111],[148,147,110],[147,109,110],[147,146,109],[146,108,109],[146,145,108],[145,107,108],
+      [145,144,107],[144,106,107],[144,143,106],[143,105,106],[143,142,105],[142,141,105],[105,141,104],[141,140,104],
+      [104,140,103],[140,139,103],[103,139,102],[139,138,102],[102,138,101],[138,137,101],[101,137,100],[137,136,100],
+      [100,136,99],[136,135,99],[99,135,98],[135,134,98],[98,134,97],[134,133,97],[97,133,130],[92,133,134],
+      [92,93,133],[91,92,135],[135,92,134],[90,135,136],[90,91,135],[89,136,137],[89,90,136],[88,137,138],[88,89,137],
+      [87,138,139],[87,88,138],[86,139,140],[86,87,139],[85,140,141],[85,86,140],[84,141,142],[84,85,141],[83,142,143],
+      [83,84,142],[82,143,144],[82,83,143],[81,144,145],[81,82,144],[80,145,146],[80,81,145],[79,146,147],[79,80,146],
+      [78,147,148],[78,79,147],[77,148,149],[77,78,148],[76,149,150],[76,77,149],[75,150,151],[75,76,150],[74,151,152],
+      [74,75,151],[73,152,153],[73,74,152],[72,153,154],[72,73,153],[71,154,155],[71,72,154],[70,155,156],[70,71,155],
+      [69,156,157],[69,70,156],[68,157,158],[68,69,157],[67,158,159],[67,68,158],[66,67,160],[160,67,159],[50,160,161],
+      [50,66,160],[51,161,162],[51,50,161],[52,162,96],[52,51,162],[54,53,163],[163,53,95],[55,54,164],[164,54,163],
+      [65,55,165],[165,55,164],[64,165,166],[64,65,165],[63,166,167],[63,64,166],[62,167,168],[62,63,167],[61,168,169],
+      [61,62,168],[60,169,170],[60,61,169],[59,170,171],[59,60,170],[58,171,172],[58,59,171],[57,173,133],[57,133,93],
+      [57,58,173],[173,58,172],[7,8,57],[57,8,58],[7,57,93],[7,93,9],[8,10,58],[58,10,59],[10,60,59],[10,11,60],
+      [11,61,60],[11,12,61],[12,62,61],[12,13,62],[13,63,62],[13,14,63],[14,15,63],[63,15,64],[15,16,64],[64,16,65],
+      [16,17,65],[65,17,55],[17,18,55],[55,18,54],[18,19,54],[54,19,53],[20,51,52],[20,21,51],[21,50,51],[21,22,50],
+      [22,66,50],[22,23,66],[23,67,66],[23,24,67],[24,68,67],[24,25,68],[25,69,68],[25,26,69],[26,70,69],[26,27,70],
+      [27,71,70],[27,28,71],[28,72,71],[28,29,72],[29,73,72],[29,30,73],[30,74,73],[30,31,74],[31,75,74],[31,32,75],
+      [32,76,75],[32,33,76],[33,77,76],[33,34,77],[34,78,77],[34,35,78],[35,79,78],[35,36,79],[36,80,79],[36,37,80],
+      [37,81,80],[37,38,81],[38,82,81],[38,39,82],[39,83,82],[39,40,83],[40,84,83],[40,41,84],[41,42,84],[84,42,85],
+      [42,43,85],[85,43,86],[43,44,86],[86,44,87],[44,45,87],[87,45,88],[45,46,88],[88,46,89],[46,47,89],[89,47,90],
+      [47,48,90],[90,48,91],[48,49,91],[91,49,92],[49,9,92],[92,9,93],[219,184,49],[49,184,9],[218,219,48],
+      [48,219,49],[217,218,47],[47,218,48],[216,217,46],[46,217,47],[215,216,45],[45,216,46],[214,215,44],[44,215,45],
+      [213,214,43],[43,214,44],[212,213,42],[42,213,43],[211,212,41],[41,212,42],[210,41,40],[210,211,41],[209,40,39],
+      [209,210,40],[208,39,38],[208,209,39],[207,38,37],[207,208,38],[206,37,36],[206,207,37],[205,36,35],[205,206,36],
+      [204,35,34],[204,205,35],[203,34,33],[203,204,34],[202,33,32],[202,203,33],[201,32,31],[201,202,32],[200,31,30],
+      [200,201,31],[199,30,29],[199,200,30],[198,29,28],[198,199,29],[197,28,27],[197,198,28],[196,27,26],[196,197,27],
+      [195,26,25],[195,196,26],[194,25,24],[194,195,25],[193,24,23],[193,194,24],[5,23,22],[5,193,23],[4,22,21],
+      [4,5,22],[3,21,20],[3,4,21],[0,1,18],[18,1,19],[17,192,0],[18,17,0],[191,192,16],[16,192,17],[190,191,15],
+      [15,191,16],[189,190,14],[14,190,15],[188,14,13],[188,189,14],[187,13,12],[187,188,13],[186,12,11],[186,187,12],
+      [185,11,10],[185,186,11],[183,185,8],[8,185,10],[182,7,9],[182,9,184],[182,183,7],[7,183,8] ]
+
+    self.points = [];
+    self.faces = [];
+    for p in pts:
+      self.points.append ( point ( size_scale*size_x*p[0], size_scale*size_y*p[1], size_scale*size_z*p[2] ) )
+    for f in fcs:
+      self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+
 class Letter_A (plf_object):
 
   def __init__  ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
-    size_scale = 5
+    size_scale = 0.15
     pts = [
       [0.03136,0.4235,-0.075],[-0.03764,0.4235,-0.075],[-0.3306,-0.2625,-0.075],[-0.2306,-0.2625,-0.075],[-0.1446,-0.06155,-0.075],
       [0.1454,-0.06155,-0.075],[0.2364,-0.2625,-0.075],[0.3364,-0.2625,-0.075],[-0.004636,0.2735,-0.075],[0.1054,0.02645,-0.075],
@@ -1220,7 +1654,7 @@ class Letter_A (plf_object):
 class Letter_B (plf_object):
 
   def __init__  ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
-    size_scale = 5
+    size_scale = 0.15
     pts = [
       [-0.2006,-0.3332,0],[0.03337,-0.3332,0],[0.0739,-0.3312,0],[0.1101,-0.3255,0],[0.1421,-0.3166,0],[0.17,-0.3047,0],
       [0.1941,-0.2903,0],[0.2145,-0.2737,0],[0.2313,-0.2554,0],[0.2447,-0.2357,0],[0.2549,-0.2151,0],[0.2619,-0.1938,0],
@@ -1325,7 +1759,7 @@ class Letter_B (plf_object):
 class Letter_C (plf_object):
 
   def __init__  ( self, size_x=1.0, size_y=1.0, size_z=1.0 ):
-    size_scale = 5
+    size_scale = 0.15
     pts = [
       [0.2744,0.2927,0],[0.2516,0.302,0],[0.2297,0.3104,0],[0.2085,0.3179,0],[0.188,0.3246,0],[0.1681,0.3304,0],
       [0.1488,0.3353,0],[0.13,0.3395,0],[0.1116,0.3429,0],[0.09346,0.3454,0],[0.07563,0.3473,0],[0.05798,0.3484,0],
@@ -1427,15 +1861,19 @@ class Tetrahedron (plf_object):
 
     # Create a tetrahedron of the requested size
 
+    size_scale = 0.05 * 1.5
+
     self.points = [];
     self.faces = [];
 
-    self.points = self.points + [ point (  size_x,  size_y, -size_z ) ]
-    self.points = self.points + [ point (     0.0, -size_y, -size_z ) ]
-    self.points = self.points + [ point ( -size_x,  size_y, -size_z ) ]
-    self.points = self.points + [ point (     0.0,     0.0,  size_z ) ]
+    z = 1 / math.sqrt(2)
 
-    face_list = [ [ 0, 1, 2 ], [ 0, 3, 1 ], [ 1, 3, 2 ], [ 2, 3, 0 ] ]
+    self.points = self.points + [ point (  -1*size_x*size_scale,  0, -z*size_z*size_scale ) ]
+    self.points = self.points + [ point (   1*size_x*size_scale,  0, -z*size_z*size_scale ) ]
+    self.points = self.points + [ point (  0, -1*size_y*size_scale,   z*size_z*size_scale ) ]
+    self.points = self.points + [ point (  0,  1*size_y*size_scale,   z*size_z*size_scale ) ]
+
+    face_list = [ [ 0, 1, 2 ], [ 0, 2, 3 ], [ 0, 3, 1 ], [ 1, 3, 2 ] ]
 
     for f in face_list:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
@@ -1447,14 +1885,16 @@ class Pyramid (plf_object):
 
     # Create a pyramid of the requested size
 
+    size_scale = 0.05
+
     self.points = [];
     self.faces = [];
 
-    self.points = self.points + [ point (  size_x,  size_y, -size_z ) ]
-    self.points = self.points + [ point (  size_x, -size_y, -size_z ) ]
-    self.points = self.points + [ point ( -size_x, -size_y, -size_z ) ]
-    self.points = self.points + [ point ( -size_x,  size_y, -size_z ) ]
-    self.points = self.points + [ point (     0.0,     0.0,  size_z ) ]
+    self.points = self.points + [ point (  size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point (  size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point ( -size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point ( -size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point (     0.0*size_scale,     0.0*size_scale,  size_z*size_scale ) ]
 
     face_list = [ [ 1, 2, 3 ], [ 0, 1, 3 ], [ 0, 4, 1 ],
                   [ 1, 4, 2 ], [ 2, 4, 3 ], [ 3, 4, 0 ] ]
@@ -1469,17 +1909,19 @@ class BasicBox (plf_object):
 
     # Create a box of the requested size
 
+    size_scale = 0.05
+
     self.points = [];
     self.faces = [];
 
-    self.points = self.points + [ point (  size_x,  size_y, -size_z ) ]
-    self.points = self.points + [ point (  size_x, -size_y, -size_z ) ]
-    self.points = self.points + [ point ( -size_x, -size_y, -size_z ) ]
-    self.points = self.points + [ point ( -size_x,  size_y, -size_z ) ]
-    self.points = self.points + [ point (  size_x,  size_y,  size_z ) ]
-    self.points = self.points + [ point (  size_x, -size_y,  size_z ) ]
-    self.points = self.points + [ point ( -size_x, -size_y,  size_z ) ]
-    self.points = self.points + [ point ( -size_x,  size_y,  size_z ) ]
+    self.points = self.points + [ point (  size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point (  size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point ( -size_x*size_scale, -size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point ( -size_x*size_scale,  size_y*size_scale, -size_z*size_scale ) ]
+    self.points = self.points + [ point (  size_x*size_scale,  size_y*size_scale,  size_z*size_scale ) ]
+    self.points = self.points + [ point (  size_x*size_scale, -size_y*size_scale,  size_z*size_scale ) ]
+    self.points = self.points + [ point ( -size_x*size_scale, -size_y*size_scale,  size_z*size_scale ) ]
+    self.points = self.points + [ point ( -size_x*size_scale,  size_y*size_scale,  size_z*size_scale ) ]
 
     face_list = [ [ 1, 2, 3 ], [ 7, 6, 5 ], [ 4, 5, 1 ], [ 5, 6, 2 ],
                   [ 2, 6, 7 ], [ 0, 3, 7 ], [ 0, 1, 3 ], [ 4, 7, 5 ],
@@ -1487,6 +1929,49 @@ class BasicBox (plf_object):
 
     for f in face_list:
       self.faces.append ( face ( f[0], f[1], f[2] ) )
+
+
+def get_named_shape ( glyph_name, size_x=1.0, size_y=1.0, size_z=1.0 ):
+
+    shape_plf = None
+    if   "Octahedron" == glyph_name:
+        shape_plf = CellBlender_Octahedron  ( size_x, size_y, size_z )
+    elif "Cube" == glyph_name:
+        shape_plf = CellBlender_Cube ( size_x, size_y, size_z )
+    elif "Icosahedron" == glyph_name:
+        shape_plf = CellBlender_Icosahedron ( size_x, size_y, size_z )
+    elif "Cone" == glyph_name:
+        shape_plf = CellBlender_Cone ( size_x, size_y, size_z )
+    elif "Cylinder" == glyph_name:
+        shape_plf = CellBlender_Cylinder ( size_x, size_y, size_z )
+    elif "Torus" == glyph_name:
+        shape_plf = CellBlender_Torus ( size_x, size_y, size_z )
+    elif "Sphere1" == glyph_name:
+        shape_plf = CellBlender_Sphere1 ( size_x, size_y, size_z )
+    elif "Sphere2" == glyph_name:
+        shape_plf = CellBlender_Sphere2 ( size_x, size_y, size_z )
+    elif "Receptor" == glyph_name:
+        shape_plf = CellBlender_Receptor ( size_x, size_y, size_z )
+    elif "Cube" == glyph_name:
+        shape_plf = BasicBox ( size_x, size_y, size_z )
+    elif "Pyramid" == glyph_name:
+        shape_plf = Pyramid ( size_x, size_y, size_z )
+    elif "Tetrahedron" == glyph_name:
+        shape_plf = Tetrahedron ( size_x, size_y, size_z )
+    elif "A" in glyph_name:
+        shape_plf = Letter_A ( size_x, size_y, size_z )
+    elif "B" in glyph_name:
+        shape_plf = Letter_B ( size_x, size_y, size_z )
+    elif "C" in glyph_name:
+        shape_plf = Letter_C ( size_x, size_y, size_z )
+    else:
+        shape_plf = BasicBox ( size_x, size_y, size_z )
+
+    return shape_plf
+
+
+#### End of Molecule Shape Code #### 
+
 
 
 def create_squashed_z_box ( scene, min_len=0.25, max_len=3.5, period_frames=100, frame_num=None ):
@@ -1501,17 +1986,6 @@ def create_squashed_z_box ( scene, min_len=0.25, max_len=3.5, period_frames=100,
 
     return BasicBox ( size_x, size_y, size_z )
 
-"""
-
-add Torus
-rename Torus to 'mol_b_shape'
-
-mbso = bpy.data.objects['mol_b_shape']
-mb = bpy.data.objects['mol_b']
-mb.dupli_type = 'VERTS'
-mbso.parent = mb
-
-"""
 
 
 fixed_points = []
@@ -1551,67 +2025,10 @@ class MolCluster (plf_object):
         for i in range(num):
             self.points.append ( single_point )
 
-        
-
-
-"""
-Generating Letters:
-
-text = "Hello"
-bpy.ops.object.text_add(location=(0,0,0),rotation=(0,0,0))
-text_object = bpy.context.object
-text_object.name = text + "_name"
-text_data = text_object.data
-text_data.name = text + "_data"
-
-text_object_data.body = text
-text_object_data.size = 2
-text_object_data.extrude = 0.2
-
-bpy.ops.object.convert(target=  'MESH')
-bpy.ops.shade_flat()
-
-
-
-
-
-bpy.ops.view3d.snap_cursor_to_center()
-bpy.ops.object.text_add(view_align=False, enter_editmode=False, location=(0, 0, 0), layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
-bpy.ops.object.editmode_toggle()
-bpy.ops.font.delete(type='PREVIOUS_OR_SELECTION')
-bpy.ops.font.delete(type='PREVIOUS_OR_SELECTION')
-bpy.ops.font.delete(type='PREVIOUS_OR_SELECTION')
-bpy.ops.font.delete(type='PREVIOUS_OR_SELECTION')
-bpy.ops.font.text_insert(text="A")
-bpy.ops.object.editmode_toggle()
-bpy.ops.object.convert(target='MESH')
-bpy.ops.object.editmode_toggle()
-bpy.ops.mesh.select_all(action='TOGGLE')
-bpy.ops.mesh.extrude_region_move(MESH_OT_extrude_region={"mirror":False}, TRANSFORM_OT_translate={"value":(0, 0, 0.108318), "constraint_axis":(False, False, True), "constraint_orientation":'GLOBAL', "mirror":False, "proportional":'DISABLED', "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False})
-bpy.ops.object.editmode_toggle()
-
-
-
-
-bpy.ops.view3d.snap_cursor_to_center()
-bpy.ops.object.text_add()
-ob=bpy.context.object
-ob.data.body = "A"
-bpy.ops.object.convert(target='MESH')
-bpy.ops.object.editmode_toggle()
-bpy.ops.mesh.select_all(action='SELECT')
-bpy.ops.mesh.extrude_region_move(MESH_OT_extrude_region={"mirror":False}, TRANSFORM_OT_translate={"value":(0, 0, 0.1), "constraint_axis":(False, False, True), "constraint_orientation":'GLOBAL', "mirror":False, "proportional":'DISABLED', "proportional_edit_falloff":'SMOOTH', "proportional_size":1, "snap":False, "snap_target":'CLOSEST', "snap_point":(0, 0, 0), "snap_align":False, "snap_normal":(0, 0, 0), "gpencil_strokes":False, "texture_space":False, "remove_on_cancel":False, "release_confirm":False})
-bpy.ops.mesh.select_all(action='SELECT')
-bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
-bpy.ops.object.editmode_toggle()
-bpy.ops.transform.resize(value=(0.1, 0.1, 0.1), constraint_axis=(False, False, False), constraint_orientation='GLOBAL', mirror=False, proportional='DISABLED', proportional_edit_falloff='SMOOTH', proportional_size=1)
-bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
-bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
-bpy.ops.object.select_all(action='DESELECT')
-"""
 
 
 def generate_letter_object ( letter ):
+    # Note that this doesn't work properly. Earlier versions of this code had additional experiments in doing this.
     print ( "Creating the letter " + letter )
     bpy.ops.view3d.snap_cursor_to_center()
     bpy.ops.object.text_add()
@@ -1627,27 +2044,6 @@ def generate_letter_object ( letter ):
 
     #   bpy.ops.mesh.extrude_region_move(MESH_OT_extrude_region={"mirror":False}, TRANSFORM_OT_translate={"value":(0, 0, 0.1), "constraint_axis":(False, False, True), "constraint_orientation":'NORMAL', "mirror":False })
 
-    """
-    bpy.ops.mesh.extrude_region_move (
-         MESH_OT_extrude_region={"mirror":False},
-         TRANSFORM_OT_translate={ "value":(0, 0, 0.1), 
-                                  "constraint_axis":(False, False, True), 
-                                  "constraint_orientation":'GLOBAL', 
-                                  "mirror":False, 
-                                  "proportional":'DISABLED', 
-                                  "proportional_edit_falloff":'SMOOTH', 
-                                  "proportional_size":1, 
-                                  "snap":False, 
-                                  "snap_target":'CLOSEST', 
-                                  "snap_point":(0, 0, 0), 
-                                  "snap_align":False, 
-                                  "snap_normal":(0, 0, 0), 
-                                  "gpencil_strokes":False, 
-                                  "texture_space":False, 
-                                  "remove_on_cancel":False, 
-                                  "release_confirm":False } )
-    """
-
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
     bpy.ops.object.editmode_toggle()
@@ -1658,12 +2054,13 @@ def generate_letter_object ( letter ):
     bpy.ops.view3d.snap_selected_to_cursor(use_offset=False)
     bpy.ops.object.select_all(action='DESELECT')
 
-
     print ( "Done creating the letter " + letter )
 
 
 
 def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="", force=False ):
+    # This version can update point clouds (molecules) or regular objects with faces.
+    # However, a new molecule-specific version is being created for CellBlender below
 
     vertex_list = plf.points
     face_list = plf.faces
@@ -1718,21 +2115,9 @@ def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="", force=Fal
             old_shape_name = "old_" + shape_name
             size = 0.1
             print ( "Creating a new glyph for " + obj_name )
-            shape_plf = None
-            if "Cube" == glyph:
-                shape_plf = BasicBox  ( size, size, size )
-            elif "Pyramid" == glyph:
-                shape_plf = Pyramid  ( size, size, size )
-            elif "Tetrahedron" == glyph:
-                shape_plf = Tetrahedron  ( size, size, size )
-            elif "A" in glyph:
-                shape_plf = Letter_A  ( size, size, size )
-            elif "B" in glyph:
-                shape_plf = Letter_B  ( size, size, size )
-            elif "C" in glyph:
-                shape_plf = Letter_C  ( size, size, size )
-            else:
-                shape_plf = BasicBox ( size, size, size )
+
+            shape_plf = get_named_shape ( glyph, size_x=size, size_y=size, size_z=size )
+
             shape_vertices = []
             for point in shape_plf.points:
                 shape_vertices.append ( mathutils.Vector((point.x,point.y,point.z)) )
@@ -1768,12 +2153,106 @@ def update_obj_from_plf ( scene, parent_name, obj_name, plf, glyph="", force=Fal
             scene.objects.link ( shape )
             obj.dupli_type = 'VERTS'
             shape.parent = obj
-            
+
             if old_shape_name in bpy.data.meshes:
                 if bpy.data.meshes[old_shape_name].users <= 0:
                     bpy.data.meshes.remove ( bpy.data.meshes[old_shape_name] )
 
     # Could return the object here if needed
+
+
+def update_mol_from_plf ( scene, parent_name, obj_name, plf, glyph="", force=False ):
+
+    vertex_list = plf.points
+
+    vertices = []
+    for point in vertex_list:
+        vertices.append ( mathutils.Vector((point.x,point.y,point.z)) )
+
+    # Define the mesh name and prefix the current mesh name with "old_" so creating the new mesh doesn't cause a name collision
+    mesh_name = obj_name + "_pos"
+    if mesh_name in bpy.data.meshes:
+        bpy.data.meshes[mesh_name].name = "old_" + mesh_name
+
+    # Create and build the new mesh
+    new_mesh = bpy.data.meshes.new ( mesh_name )
+    new_mesh.from_pydata ( vertices, [], [] )
+    new_mesh.update()
+
+    # Assign the new mesh to the object (deleting any old mesh if the object already exists)
+    obj = None
+    old_mesh = None
+    if obj_name in scene.objects:
+        obj = scene.objects[obj_name]
+        old_mesh = obj.data
+        obj.data = new_mesh
+        if old_mesh.users <= 0:
+            bpy.data.meshes.remove ( old_mesh )
+    else:
+        print ( "Creating a new object named " + obj_name )
+        obj = bpy.data.objects.new ( obj_name, new_mesh )
+        scene.objects.link ( obj )
+        # Assign the parent if requested in the call with a non-none parent_name
+        if parent_name:
+            if parent_name in bpy.data.objects:
+                obj.parent = bpy.data.objects[parent_name]
+
+    if "old_"+mesh_name in bpy.data.meshes:
+        if bpy.data.meshes["old_"+mesh_name].users <= 0:
+            bpy.data.meshes.remove ( bpy.data.meshes["old_"+mesh_name] )
+
+    # These are points only, so create a shape glyph as needed to show the points
+    shape_name = obj_name + "_shape"
+    #if force or not (shape_name in scene.objects):
+    if not (shape_name in scene.objects):
+        old_shape_name = "old_" + shape_name
+        size = 0.1
+        print ( "Creating a new glyph for " + obj_name )
+
+        shape_plf = get_named_shape ( glyph, size_x=size, size_y=size, size_z=size )
+
+        shape_vertices = []
+        for point in shape_plf.points:
+            shape_vertices.append ( mathutils.Vector((point.x,point.y,point.z)) )
+        shape_faces = []
+        for face_element in shape_plf.faces:
+            shape_faces.append ( face_element.verts )
+        # Rename the old mesh shape if it exists
+        if shape_name in bpy.data.meshes:
+            bpy.data.meshes[shape_name].name = old_shape_name
+        # Create and build the new mesh
+        new_mesh = bpy.data.meshes.new ( shape_name )
+        new_mesh.from_pydata ( shape_vertices, [], shape_faces )
+        new_mesh.update()
+
+        shape = bpy.data.objects.new ( shape_name, new_mesh )
+        shape.data.materials.clear()  # New
+        shape.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
+
+        # This didn't work very well
+
+        #if not (shape_name in scene.objects):
+        #    shape = bpy.data.objects.new ( shape_name, new_mesh )
+        ## Create a material specifically for this object
+        #if obj_name+"_mat" in bpy.data.materials:
+        #    shape.data.materials.clear()  # New
+        #    shape.data.materials.append ( bpy.data.materials[obj_name + "_mat"] ) # New
+        ## Remove current children from the target object (otherwise glyphs will be merged ... useful in the future)
+        #while len(obj.children) > 0:
+        #    obj.children[0].parent = None
+
+
+        # Add the shape to the scene as a glyph for the object
+        scene.objects.link ( shape )
+        obj.dupli_type = 'VERTS'
+        shape.parent = obj
+
+        if old_shape_name in bpy.data.meshes:
+            if bpy.data.meshes[old_shape_name].users <= 0:
+                bpy.data.meshes.remove ( bpy.data.meshes[old_shape_name] )
+
+    # Could return the object here if needed
+
 
 
 
