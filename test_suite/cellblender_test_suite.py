@@ -5129,24 +5129,38 @@ class OrganelleTestOp(bpy.types.Operator):
         # Set some shared parameters
         subdiv = 3
 
+        # Set up a transparent material for the cell membranes
+        if len(bpy.data.materials) <= 0:
+            new_mat = bpy.data.materials.new("membrane")
+        bpy.data.materials[0].name = 'membrane'
+        bpy.data.materials['membrane'].use_transparency = True
+        bpy.data.materials['membrane'].alpha = 0.25
 
         # Create Organelle 1
 
         # Create the object and add it to the CellBlender model
-        cb_model.add_icosphere_to_model ( name="Organelle_1", draw_type="WIRE", size=0.3, y=-0.25, subdiv=subdiv+1 )
+        cb_model.add_icosphere_to_model ( name="Organelle_1", draw_type="SOLID", size=0.3, y=-0.25, subdiv=subdiv+1 )
         cb_model.add_surface_region_to_model_object_by_normal ( "Organelle_1", "top", 0, 1, 0, 0.92 )
-
+        bpy.ops.object.material_slot_add()
+        scn.objects['Organelle_1'].material_slots[0].material = bpy.data.materials['membrane']
+        scn.objects['Organelle_1'].show_transparent = True
 
         # Create Organelle 2
 
         # Create the object and add it to the CellBlender model
-        cb_model.add_icosphere_to_model ( name="Organelle_2", draw_type="WIRE", size=0.2, y=0.31, subdiv=subdiv+1 )
+        cb_model.add_icosphere_to_model ( name="Organelle_2", draw_type="SOLID", size=0.2, y=0.31, subdiv=subdiv+1 )
         cb_model.add_surface_region_to_model_object_by_normal ( "Organelle_2", "top", 0, -1, 0, 0.8 )
+        bpy.ops.object.material_slot_add()
+        scn.objects['Organelle_2'].material_slots[0].material = bpy.data.materials['membrane']
+        scn.objects['Organelle_2'].show_transparent = True
 
 
         # Create Cell itself
 
-        cb_model.add_icosphere_to_model ( name="Cell", draw_type="WIRE", size=0.625, subdiv=subdiv )
+        cb_model.add_icosphere_to_model ( name="Cell", draw_type="SOLID", size=0.625, subdiv=subdiv )
+        bpy.ops.object.material_slot_add()
+        scn.objects['Cell'].material_slots[0].material = bpy.data.materials['membrane']
+        scn.objects['Cell'].show_transparent = True
 
 
         # Define the molecule species
@@ -5156,8 +5170,8 @@ class OrganelleTestOp(bpy.types.Operator):
         molc = cb_model.add_molecule_species_to_model ( name="c", mol_type="3D", diff_const_expr="1e-6" )
         mold = cb_model.add_molecule_species_to_model ( name="d", mol_type="3D", diff_const_expr="1e-6" )
 
-        molt1 = cb_model.add_molecule_species_to_model ( name="t1", mol_type="2D", diff_const_expr="1e-6" )
-        molt2 = cb_model.add_molecule_species_to_model ( name="t2", mol_type="2D", diff_const_expr="0" )
+        molt1 = cb_model.add_molecule_species_to_model ( name="t1", mol_type="2D", diff_const_expr="1e-7" )
+        molt2 = cb_model.add_molecule_species_to_model ( name="t2", mol_type="2D", diff_const_expr="1e-8" )
 
         ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
         ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
@@ -5207,7 +5221,7 @@ class OrganelleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=25.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "42fad89b56edcb91af7bf39f401f2524c015b824", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "626574d4409953d7570d67a3b268c2488791cffa", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5266,9 +5280,20 @@ class MinDMinETestOp(bpy.types.Operator):
 
         # Create the capsule object, and define the surface as a membrane
 
-        cb_model.add_capsule_to_model ( name="ecoli", draw_type="WIRE", x=0, y=0, z=0, sigma=0, subdiv=2, radius=0.5, cyl_len=3 )
+        cb_model.add_capsule_to_model ( name="ecoli", draw_type="SOLID", x=0, y=0, z=0, sigma=0, subdiv=2, radius=0.5, cyl_len=3 )
         cb_model.add_surface_region_to_model_object_by_normal ( "ecoli", "membrane" )
 
+        # Set up the material for the cell
+        if len(bpy.data.materials) <= 0:
+            new_mat = bpy.data.materials.new("ecoli")
+        bpy.data.materials[0].name = 'ecoli'
+        bpy.data.materials['ecoli'].use_transparency = True
+        bpy.data.materials['ecoli'].alpha = 0.25
+
+        # Assign the material to the cell
+        bpy.ops.object.material_slot_add()
+        scn.objects['ecoli'].material_slots[0].material = bpy.data.materials['ecoli']
+        scn.objects['ecoli'].show_transparent = True
 
         # Create a surface class and assign it to the membrane
 
@@ -5342,7 +5367,7 @@ class MinDMinETestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='0.8 * 200/dt', time_step='dt', wait_time=5.0 )  # Can use to generate MDL, but SHA1 won't be right: export_format="mcell_mdl_modular", 
 
-        cb_model.compare_mdl_with_sha1 ( "", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "a0f82c8a2356fc46128366057c9c9c5904b6f83c", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
