@@ -3017,7 +3017,7 @@ class SphereSurfaceTestOp(bpy.types.Operator):
 
 ###########################################################################################################
 group_name = "Simple Geometry Tests"
-test_name = "Overlapping Surface Test Mols a,s1,b1"
+test_name = "Overlapping Surface Test"
 operator_name = "cellblender_test.overlapping_surf_test"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
@@ -3074,7 +3074,7 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=5.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "8f1a27ceeeb903abd913d04beb0f269dece38454", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5129,24 +5129,38 @@ class OrganelleTestOp(bpy.types.Operator):
         # Set some shared parameters
         subdiv = 3
 
+        # Set up a transparent material for the cell membranes
+        if len(bpy.data.materials) <= 0:
+            new_mat = bpy.data.materials.new("membrane")
+        bpy.data.materials[0].name = 'membrane'
+        bpy.data.materials['membrane'].use_transparency = True
+        bpy.data.materials['membrane'].alpha = 0.25
 
         # Create Organelle 1
 
         # Create the object and add it to the CellBlender model
-        cb_model.add_icosphere_to_model ( name="Organelle_1", draw_type="WIRE", size=0.3, y=-0.25, subdiv=subdiv+1 )
+        cb_model.add_icosphere_to_model ( name="Organelle_1", draw_type="SOLID", size=0.3, y=-0.25, subdiv=subdiv+1 )
         cb_model.add_surface_region_to_model_object_by_normal ( "Organelle_1", "top", 0, 1, 0, 0.92 )
-
+        bpy.ops.object.material_slot_add()
+        scn.objects['Organelle_1'].material_slots[0].material = bpy.data.materials['membrane']
+        scn.objects['Organelle_1'].show_transparent = True
 
         # Create Organelle 2
 
         # Create the object and add it to the CellBlender model
-        cb_model.add_icosphere_to_model ( name="Organelle_2", draw_type="WIRE", size=0.2, y=0.31, subdiv=subdiv+1 )
+        cb_model.add_icosphere_to_model ( name="Organelle_2", draw_type="SOLID", size=0.2, y=0.31, subdiv=subdiv+1 )
         cb_model.add_surface_region_to_model_object_by_normal ( "Organelle_2", "top", 0, -1, 0, 0.8 )
+        bpy.ops.object.material_slot_add()
+        scn.objects['Organelle_2'].material_slots[0].material = bpy.data.materials['membrane']
+        scn.objects['Organelle_2'].show_transparent = True
 
 
         # Create Cell itself
 
-        cb_model.add_icosphere_to_model ( name="Cell", draw_type="WIRE", size=0.625, subdiv=subdiv )
+        cb_model.add_icosphere_to_model ( name="Cell", draw_type="SOLID", size=0.625, subdiv=subdiv )
+        bpy.ops.object.material_slot_add()
+        scn.objects['Cell'].material_slots[0].material = bpy.data.materials['membrane']
+        scn.objects['Cell'].show_transparent = True
 
 
         # Define the molecule species
@@ -5156,8 +5170,8 @@ class OrganelleTestOp(bpy.types.Operator):
         molc = cb_model.add_molecule_species_to_model ( name="c", mol_type="3D", diff_const_expr="1e-6" )
         mold = cb_model.add_molecule_species_to_model ( name="d", mol_type="3D", diff_const_expr="1e-6" )
 
-        molt1 = cb_model.add_molecule_species_to_model ( name="t1", mol_type="2D", diff_const_expr="1e-6" )
-        molt2 = cb_model.add_molecule_species_to_model ( name="t2", mol_type="2D", diff_const_expr="0" )
+        molt1 = cb_model.add_molecule_species_to_model ( name="t1", mol_type="2D", diff_const_expr="1e-7" )
+        molt2 = cb_model.add_molecule_species_to_model ( name="t2", mol_type="2D", diff_const_expr="1e-8" )
 
         ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
         ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
@@ -5169,13 +5183,13 @@ class OrganelleTestOp(bpy.types.Operator):
         molt1 = cb_model.get_molecule_species_by_name('t1')
         molt2 = cb_model.get_molecule_species_by_name('t2')
         
-        cb_model.change_molecule_display ( mola, glyph='Cube', scale=1.0, red=0.0, green=0.8, blue=0.8 )
-        cb_model.change_molecule_display ( molb, glyph='Cube', scale=1.0, red=0.0, green=0.0, blue=0.8 )
-        cb_model.change_molecule_display ( molc, glyph='Cube', scale=1.0, red=0.8, green=0.0, blue=0.8 )
-        cb_model.change_molecule_display ( mold, glyph='Cube', scale=1.0, red=1.0, green=1.0, blue=1.0 )
+        cb_model.change_molecule_display ( mola, glyph='Letter', letter='A', scale=1.0, red=0.0, green=0.0, blue=0.8, emit=1.0 )
+        cb_model.change_molecule_display ( molb, glyph='Letter', letter='B', scale=1.0, red=0.0, green=0.8, blue=0.8, emit=0.8 )
+        cb_model.change_molecule_display ( molc, glyph='Letter', letter='C', scale=2.0, red=1.0, green=0.2, blue=1.0, emit=2.0 )
+        cb_model.change_molecule_display ( mold, glyph='Cube', scale=2.0, red=1.0, green=1.0, blue=1.0 )
 
-        cb_model.change_molecule_display ( molt1, glyph='Cone', scale=1.0, red=0.0, green=0.8, blue=0.0 )
-        cb_model.change_molecule_display ( molt2, glyph='Cone', scale=1.5, red=0.8, green=0.0, blue=0.0 )
+        cb_model.change_molecule_display ( molt1, glyph='Cone', scale=1.3, red=0.0, green=0.8, blue=0.0 )
+        cb_model.change_molecule_display ( molt2, glyph='Receptor', scale=1.0, red=0.8, green=0.0, blue=0.0 )
 
 
         cb_model.add_molecule_release_site_to_model ( name="rel_a",  mol="a",  shape="OBJECT", obj_expr="Cell[ALL] - (Organelle_1[ALL] + Organelle_2[ALL])", q_expr="1000" )
@@ -5207,7 +5221,7 @@ class OrganelleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=25.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "3003cef2476115267c044801d06486903edef600", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "626574d4409953d7570d67a3b268c2488791cffa", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5266,9 +5280,20 @@ class MinDMinETestOp(bpy.types.Operator):
 
         # Create the capsule object, and define the surface as a membrane
 
-        cb_model.add_capsule_to_model ( name="ecoli", draw_type="WIRE", x=0, y=0, z=0, sigma=0, subdiv=2, radius=0.5, cyl_len=3 )
+        cb_model.add_capsule_to_model ( name="ecoli", draw_type="SOLID", x=0, y=0, z=0, sigma=0, subdiv=2, radius=0.5, cyl_len=3 )
         cb_model.add_surface_region_to_model_object_by_normal ( "ecoli", "membrane" )
 
+        # Set up the material for the cell
+        if len(bpy.data.materials) <= 0:
+            new_mat = bpy.data.materials.new("ecoli")
+        bpy.data.materials[0].name = 'ecoli'
+        bpy.data.materials['ecoli'].use_transparency = True
+        bpy.data.materials['ecoli'].alpha = 0.25
+
+        # Assign the material to the cell
+        bpy.ops.object.material_slot_add()
+        scn.objects['ecoli'].material_slots[0].material = bpy.data.materials['ecoli']
+        scn.objects['ecoli'].show_transparent = True
 
         # Create a surface class and assign it to the membrane
 
@@ -5292,6 +5317,14 @@ class MinDMinETestOp(bpy.types.Operator):
         mine     = cb_model.get_molecule_species_by_name('mine')
         mind_m   = cb_model.get_molecule_species_by_name('mind_m')
         minde_m  = cb_model.get_molecule_species_by_name('minde_m')
+
+        # Set the molecule glyphs
+        cb_model.change_molecule_display ( mind_adp, glyph='Icosahedron', scale=1.0, red=0.8, green=0.0, blue=0.0, emit=0.0 )
+        cb_model.change_molecule_display ( mind_atp, glyph='Icosahedron', scale=1.0, red=0.0, green=0.5, blue=0.0, emit=0.0 )
+        cb_model.change_molecule_display ( mine,     glyph='Icosahedron', scale=1.0, red=0.0, green=0.0, blue=0.5, emit=1.0 )
+        cb_model.change_molecule_display ( mind_m,   glyph='Icosahedron', scale=1.5, red=0.0, green=1.0, blue=0.0, emit=2.0 )
+        cb_model.change_molecule_display ( minde_m,  glyph='Icosahedron', scale=1.5, red=1.0, green=0.0, blue=1.0, emit=2.0 )
+
 
         # Define the release sites
 
@@ -5332,9 +5365,11 @@ class MinDMinETestOp(bpy.types.Operator):
 
         cb_model.set_visualization ( enable_visualization=True, export_all=True, all_iterations=False, start=0, end=6000000, step=1000 )
 
-        cb_model.run_model ( iterations='0.5 * 200/dt', time_step='dt', wait_time=5.0 )  # Can use to generate MDL, but SHA1 won't be right: export_format="mcell_mdl_modular", 
+        cb_model.run_model ( iterations='0.8 * 200/dt', time_step='dt', wait_time=5.0 )  # Can use to generate MDL, but SHA1 won't be right: export_format="mcell_mdl_modular", 
 
-        cb_model.compare_mdl_with_sha1 ( "300a55f3238a33a9cc8349b68f1e385d3712ee8f", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "a0f82c8a2356fc46128366057c9c9c5904b6f83c", test_name=self.self_test_name )
+
+        cb_model.refresh_molecules()
 
         cb_model.set_view_back()
 
@@ -5343,6 +5378,7 @@ class MinDMinETestOp(bpy.types.Operator):
         cb_model.hide_manipulator ( hide=True )
 
         cb_model.play_animation()
+
 
         return { 'FINISHED' }
 
