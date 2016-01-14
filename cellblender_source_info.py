@@ -19,7 +19,7 @@ cellblender_info = {
 
         "cellblender_main.py",
 
-        "githooks"+os.sep+"pre-commit",
+        ## "githooks"+os.sep+"pre-commit",
 
         "parameter_system.py",
         "cellblender_preferences.py",
@@ -113,7 +113,7 @@ cellblender_info = {
         "bng"+os.sep+"treelib3"+os.sep+"__init__.py",
         "bng"+os.sep+"treelib3"+os.sep+"node.py",
         "bng"+os.sep+"treelib3"+os.sep+"tree.py",
-        "bng"+os.sep+"libsbml3"+os.sep+"__init__.py",
+        #        "bng"+os.sep+"libsbml3"+os.sep+"__init__.py",
         ],
 
     "cellblender_source_sha1": "",
