@@ -887,8 +887,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     object_selector = PointerProperty(
         type=MCellObjectSelectorPropertyGroup,
         name="CellBlender Project Settings")
-    molecule_glyphs = PointerProperty(
-        type=cellblender_molecules.MCellMoleculeGlyphsPropertyGroup, name="Molecule Shapes")
+    #molecule_glyphs = PointerProperty(
+    #    type=cellblender_molecules.MCellMoleculeGlyphsPropertyGroup, name="Molecule Shapes")
 
     legacy = PointerProperty(
         type=cellblender_legacy.MCellLegacyGroup, name="Lecacy Support")
@@ -910,7 +910,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all MCell Properties..." )
-        self.molecule_glyphs.remove_properties(context)
+        #self.molecule_glyphs.remove_properties(context)
         self.object_selector.remove_properties(context)
         self.meshalyzer.remove_properties(context)
         self.rxn_output.remove_properties(context)

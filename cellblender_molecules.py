@@ -20,6 +20,35 @@
 """
 This file contains the classes for CellBlender's Molecules.
 
+Molecules (or more properly "Molecule Species") contain two types of data:
+
+  MCell data - Name, diffusion constant, 2D/3D, etc.
+  Blender data - Name, glyph, size, color, position mesh
+
+Note that some items (the name, for example) is considered as both
+MCell data and Blender data.
+
+Molecules (or parts of molecules) can be created from:
+
+  User interface (clicking buttons, and setting values)
+  Data Model (loading from a .blend file or an external data model file)
+  CellBlender API (currently the test suite, but possibly more general)
+  Reading a Visualization file without any molecules defined (CellBlender 0)
+
+One of the key goals of the molecules module is to provide the proper
+class structures and methods to support those different creation modes.
+
+In general, creating the MCell data for a molecule (in CellBlender) will
+also immediately create the Blender data (glyph, empty position mesh,...).
+This allows the "Blender data" (glyph, size, color, mesh) to be created,
+seen, and modified without running any simulations. Similarly, reading
+Visualization data should probably create molecules as needed.
+
+This leads to a "create as needed" mechanism for both MCell data and
+Blender data. The "as needed" part will be based on the molecule name
+as the "key". If that "key" exists in any context, then that data will
+be used or updated. If that "key" does not exist in any context, then
+new data will be created for that key.
 """
 
 # blender imports
@@ -110,7 +139,7 @@ def set_molecule_glyph ( context, glyph_name ):
     new_mol_mesh.name = mol_shape_name
     new_mol_mesh.materials.append(mol_mat)
 
-
+"""
 class MCellMoleculeGlyphsPropertyGroup(bpy.types.PropertyGroup):
     glyph_lib = os.path.join(
         os.path.dirname(__file__), "glyph_library.blend/Mesh/")
@@ -130,6 +159,7 @@ class MCellMoleculeGlyphsPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all Molecule Glyph Properties... no collections to remove." )
+"""
 
 
 
@@ -586,6 +616,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def remove_mol_data ( self, context ):
 
+        print ( "Call to: \"remove_mol_data\"" )
+
         meshes = bpy.data.meshes
         mats = bpy.data.materials
         objs = bpy.data.objects
@@ -681,8 +713,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         # TODO: Add after data model release:   self.maximum_step_length.set_expr ( dm_dict["maximum_step_length"] )
         if "export_viz" in dm_dict: self.export_viz = dm_dict["export_viz"]
 
+
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
+
 
     # Exporting to an MDL file could be done just like this
     def print_details( self ):
@@ -1108,6 +1142,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
 
     def remove_active_molecule ( self, context ):
         """ Remove the active molecule from the list of molecules """
+        print ( "Call to: \"remove_active_molecule\"" )
         if len(self.molecule_list) > 0:
             mol = self.molecule_list[self.active_mol_index]
             if mol:
@@ -1151,6 +1186,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
 
 
     def build_properties_from_data_model ( self, context, dm ):
+        print ( "Call to: \"MCellMoleculesListProperty.build_properties_from_data_model\" with %d molecules" % len(self.molecule_list) )
         # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculesListProperty data model to current version." )
