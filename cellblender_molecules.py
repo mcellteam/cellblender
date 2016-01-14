@@ -251,10 +251,6 @@ def name_change_callback(self, context):
     return
 
 
-#def display_callback(self, context):
-#    #self.display_callback(context)
-#    return
-
 def glyph_visibility_callback(self, context):
     # print ( "Glyph vis change callback for molecule " + self.name )
     ms = context.scene.mcell
@@ -342,6 +338,46 @@ class MCELL_OT_mol_shade_smooth(bpy.types.Operator):
 
 import os
 
+def remove_mol_data_by_name ( mol_name, context ):
+
+    print ( "Call to: \"remove_mol_data_by_name\" to remove " + mol_name )
+
+    meshes = bpy.data.meshes
+    mats = bpy.data.materials
+    objs = bpy.data.objects
+    scn = bpy.context.scene
+    scn_objs = scn.objects
+
+    mol_obj_name        = "mol_" + mol_name
+    mol_shape_obj_name  = mol_obj_name + "_shape"
+    mol_shape_mesh_name = mol_obj_name + "_shape"
+    mol_pos_mesh_name   = mol_obj_name + "_pos"
+    mol_material_name   = mol_obj_name + "_mat"
+
+    mols_obj = objs.get("molecules")
+
+    mol_obj = objs.get(mol_obj_name)
+    mol_shape_obj = objs.get(mol_shape_obj_name)
+    mol_shape_mesh = meshes.get(mol_shape_mesh_name)
+    mol_pos_mesh = meshes.get(mol_pos_mesh_name)
+    mol_material = mats.get(mol_material_name)
+
+    if mol_obj:
+        scn_objs.unlink ( mol_obj )
+
+    if mol_shape_obj:
+        scn_objs.unlink ( mol_shape_obj )
+
+    if mol_obj.users <= 0:
+        objs.remove ( mol_obj )
+        meshes.remove ( mol_pos_mesh )
+
+    if mol_shape_obj.users <= 0:
+        objs.remove ( mol_shape_obj )
+        meshes.remove ( mol_shape_mesh )
+
+    if mol_material.users <= 0:
+        mats.remove ( mol_material )
 
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
@@ -474,6 +510,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all Molecule Properties ... not implemented yet!" )
+        self.remove_mol_data ( context )
 
 
     def initialize ( self, context ):
@@ -615,52 +652,14 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
 
     def remove_mol_data ( self, context ):
-
-        print ( "Call to: \"remove_mol_data\"" )
-
-        meshes = bpy.data.meshes
-        mats = bpy.data.materials
-        objs = bpy.data.objects
-        scn = bpy.context.scene
-        scn_objs = scn.objects
-
-        mol_obj_name        = "mol_" + self.name
-        mol_shape_obj_name  = mol_obj_name + "_shape"
-        mol_shape_mesh_name = mol_obj_name + "_shape"
-        mol_pos_mesh_name   = mol_obj_name + "_pos"
-        mol_material_name   = mol_obj_name + "_mat"
-
-        mols_obj = objs.get("molecules")
-
-        mol_obj = objs.get(mol_obj_name)
-        mol_shape_obj = objs.get(mol_shape_obj_name)
-        mol_shape_mesh = meshes.get(mol_shape_mesh_name)
-        mol_pos_mesh = meshes.get(mol_pos_mesh_name)
-        mol_material = mats.get(mol_material_name)
-
-        if mol_obj:
-            scn_objs.unlink ( mol_obj )
-        if mol_shape_obj:
-            scn_objs.unlink ( mol_shape_obj )
-
-        if mol_obj.users <= 0:
-            objs.remove ( mol_obj )
-            meshes.remove ( mol_pos_mesh )
-
-        if mol_shape_obj.users <= 0:
-            objs.remove ( mol_shape_obj )
-            meshes.remove ( mol_shape_mesh )
-
-        if mol_material.users <= 0:
-            mats.remove ( mol_material )
-
+        remove_mol_data_by_name ( self.name, context )
 
 
     def build_data_model_from_properties ( self ):
         m = self
 
         m_dict = {}
-        m_dict['data_model_version'] = "DM_2015_07_24_1330"
+        m_dict['data_model_version'] = "DM_2016_01_13_1930"
         m_dict['mol_name'] = m.name
         m_dict['mol_bngl_label'] = m.bnglLabel
         m_dict['mol_type'] = str(m.type)
@@ -672,7 +671,17 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         # TODO: Add after data model release:   m_dict['maximum_step_length'] = m.maximum_step_length.get_expr()
         m_dict['maximum_step_length'] = ""  # TODO: Remove this line after data model release
         m_dict['export_viz'] = m.export_viz
-
+        disp_dict = {}
+        disp_dict['glyph'] = str(m.glyph)
+        if m.glyph == 'Letter':
+            disp_dict['letter'] = str(m.letter)
+        mat_name = "mol_" + self.name+"_mat"
+        if mat_name in bpy.data.materials:
+            color = bpy.data.materials[mat_name].diffuse_color
+            disp_dict['color'] = [ color[0], color[1], color[2] ]
+            disp_dict['emit'] = bpy.data.materials[mat_name].emit
+            disp_dict['scale'] = self.scale
+        m_dict['display'] = disp_dict
         return m_dict
 
 
@@ -919,7 +928,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
 
 
-
     def testing_set_mol_glyph (self, context):
 
         ###########################################
@@ -1123,7 +1131,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
                 mol.init_properties(parameter_system)
 
     def remove_properties ( self, context ):
-        print ( "Removing all Molecule List Properties..." )
+        print ( "Removing all %d Molecule List Properties..." % len(self.molecule_list) )
         for item in self.molecule_list:
             item.remove_properties(context)
         self.molecule_list.clear()
@@ -1196,6 +1204,15 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         # Start by removing all molecules from the list
         while len(self.molecule_list) > 0:
             self.remove_active_molecule ( context )
+
+        # For some reason, the length of the molecule list is sometimes 0 which may leave molecule objects ... delete them all
+        if 'molecules' in bpy.data.objects:
+            while len(bpy.data.objects['molecules'].children) > 0:
+                mol_name = bpy.data.objects['molecules'].children[0].name
+                remove_mol_data_by_name ( mol_name[4:], context )
+                print ( "New length of molecule_list = " + str(len(bpy.data.objects['molecules'].children)) )
+
+
 
         # Add molecules from the data model
         if "molecule_list" in dm:

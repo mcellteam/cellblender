@@ -16,7 +16,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 # <pep8 compliant>
- 
+
 """
 This file contains the classes defining and handling the CellBlender Data Model.
 The CellBlender Data Model is intended to be a fairly stable representation of
@@ -103,11 +103,37 @@ def dump_data_model ( name, dm ):
             dump_data_model ( k, v )
             i += 1
         data_model_depth += -1
-#    elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
+    # elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
     elif (type(dm) == type('a1')):  #dm is a string
         print ( str(data_model_depth*"  ") + name + " = " + "\"" + str(dm) + "\"" )
     else:
         print ( str(data_model_depth*"  ") + name + " = " + str(dm) )
+
+
+dm_list_depth = 0
+def list_data_model ( name, dm, dm_list ):
+    global dm_list_depth
+    if type(dm) == type({'a':1}):  #dm is a dictionary
+        dm_list.append ( str(dm_list_depth*"   ") + name + " {}" )
+        dm_list_depth += 1
+        for k,v in sorted(dm.items()):
+            list_data_model ( k, v, dm_list )
+        dm_list_depth += -1
+    elif type(dm) == type(['a',1]):  #dm is a list
+        dm_list.append ( str(dm_list_depth*"   ") + name + " []" )
+        dm_list_depth += 1
+        i = 0
+        for v in dm:
+            k = name + "["+str(i)+"]"
+            list_data_model ( k, v, dm_list )
+            i += 1
+        dm_list_depth += -1
+    # elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
+    elif (type(dm) == type('a1')):  #dm is a string
+        dm_list.append ( str(dm_list_depth*"   ") + name + " = " + "\"" + str(dm) + "\"" )
+    else:
+        dm_list.append ( str(dm_list_depth*"   ") + name + " = " + str(dm) )
+    return dm_list
 
 
 def pickle_data_model ( dm ):
@@ -131,6 +157,25 @@ def save_data_model_to_file ( mcell_dm, file_name ):
     f.close()
     print ( "Done saving CellBlender model." )
 
+
+class MCELL_PT_data_model_browser(bpy.types.Panel):
+    bl_label = "CellBlender - Data Model Browser"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "TOOLS"
+    bl_category = "CellBlender"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+        scn = context.scene
+        mcell = context.scene.mcell
+
+        if 'data_model' in mcell:
+            dm = unpickle_data_model ( mcell['data_model'] )
+            dm_list = list_data_model ( "Data Model", dm, [] )
+            for line in dm_list:
+                row = layout.row()
+                row.label(text=line)
 
 
 class PrintDataModel(bpy.types.Operator):
