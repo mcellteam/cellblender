@@ -1,12 +1,13 @@
+PYTHON_INCLUDE = /usr/include/python3.4m
+
 mcell_main: mcell_main.c libMCell.c libMCell.h libMCell.i makefile
 	gcc -c mcell_main.c libMCell.c
 	gcc -o mcell_main mcell_main.o libMCell.o
 	swig -python libMCell.i
-	gcc -c libMCell.c libMCell_wrap.c -fPIC -I/usr/include/python3.4m
+	gcc -c libMCell.c libMCell_wrap.c -fPIC -I$(PYTHON_INCLUDE)
 	ld -shared libMCell.o libMCell_wrap.o -o _libMCell.so
 
 
-.PHONY: clean
 clean:
 	rm -f libMCell.o
 	rm -f libMCell.py
