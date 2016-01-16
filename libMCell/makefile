@@ -15,4 +15,5 @@ clean:
 	rm -f _libMCell.so
 	rm -f mcell_main.o
 	rm -f mcell_main
+	rm -f *.pyc
 
