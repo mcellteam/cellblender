@@ -66,6 +66,7 @@ import os
 import random
 
 import cellblender
+from . import data_model
 # from . import cellblender_parameters
 from . import parameter_system
 from . import cellblender_mol_viz
@@ -523,6 +524,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def create_mol_data ( self ):
 
+        print ( "Creating mol data for " + self.name )
+
         meshes = bpy.data.meshes
         mats = bpy.data.materials
         objs = bpy.data.objects
@@ -698,19 +701,32 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             dm['mol_bngl_label'] = ""
             dm['data_model_version'] = "DM_2015_07_24_1330"
 
+        if dm['data_model_version'] == "DM_2015_07_24_1330":
+            # Change in mid January, 2016: Add display information previously stored only in the object's materials
+            disp_dict = {}
+            disp_dict['glyph'] = "Icosahedron"
+            if 'mol_type' in dm:
+                if dm['mol_type'] == '2D':
+                    disp_dict['glyph'] = "Cone"
+            disp_dict['letter'] = "A"
+            disp_dict['color'] = [ 0.8, 0.8, 0.8 ]
+            disp_dict['emit'] = 0.0
+            disp_dict['scale'] = 1.0
+            dm['display'] = disp_dict
+            dm['data_model_version'] = "DM_2016_01_13_1930"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_07_24_1330":
-            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
+        if dm['data_model_version'] != "DM_2016_01_13_1930":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
             return None
 
         return dm
 
 
-
     def build_properties_from_data_model ( self, context, dm_dict ):
         # Check that the data model version matches the version for this property group
-        if dm_dict['data_model_version'] != "DM_2015_07_24_1330":
-            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
+        if dm_dict['data_model_version'] != "DM_2016_01_13_1930":
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
         # Now convert the updated Data Model into CellBlender Properties
         self.name = dm_dict["mol_name"]
         if "mol_bngl_label" in dm_dict: self.bnglLabel = dm_dict['mol_bngl_label']
@@ -721,6 +737,25 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         if "custom_space_step" in dm_dict: self.custom_space_step.set_expr ( dm_dict["custom_space_step"] )
         # TODO: Add after data model release:   self.maximum_step_length.set_expr ( dm_dict["maximum_step_length"] )
         if "export_viz" in dm_dict: self.export_viz = dm_dict["export_viz"]
+
+        if "display" in dm_dict:
+            disp_dict = dm_dict['display']
+            if "glyph" in disp_dict: self.glyph = disp_dict["glyph"]
+            if "letter" in disp_dict: self.letter = disp_dict["letter"]
+            if "scale"  in disp_dict: self.scale = disp_dict["scale"]
+
+        self.create_mol_data()
+
+        if "display" in dm_dict:
+            disp_dict = dm_dict['display']
+            if "color" in disp_dict:
+                dm_color = disp_dict['color']
+                mat_name = "mol_" + self.name+"_mat"
+                if mat_name in bpy.data.materials:
+                    color = bpy.data.materials[mat_name].diffuse_color
+                    color[0] = dm_color[0]
+                    color[1] = dm_color[1]
+                    color[2] = dm_color[2]
 
 
     def check_properties_after_building ( self, context ):
