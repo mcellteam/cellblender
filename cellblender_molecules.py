@@ -704,14 +704,30 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         if dm['data_model_version'] == "DM_2015_07_24_1330":
             # Change in mid January, 2016: Add display information previously stored only in the object's materials
             disp_dict = {}
+            # We may not know the glyph used for a molecule because it's set with an operator that builds the mesh.
+            # The old "glyph" variable may be defaulted to "Cone" regardless of how it was displayed in that file.
+            # We could examine the mesh to figure out what it is, but for now just go with volume / surface defaults.
+            # Volume molecules will be Icosahedrons and Surface molecules will be Cones.
             disp_dict['glyph'] = "Icosahedron"
             if 'mol_type' in dm:
                 if dm['mol_type'] == '2D':
                     disp_dict['glyph'] = "Cone"
             disp_dict['letter'] = "A"
+            # Set various defaults to be used if no corresponding material or object is found
             disp_dict['color'] = [ 0.8, 0.8, 0.8 ]
             disp_dict['emit'] = 0.0
             disp_dict['scale'] = 1.0
+            # Look for a material that may exist before the upgrade to replace the defaults
+            mat_name = "mol_" + dm['mol_name'] + "_mat"
+            if mat_name in bpy.data.materials:
+                color = bpy.data.materials[mat_name].diffuse_color
+                disp_dict['color'] = [ color[0], color[1], color[2] ]
+                disp_dict['emit'] = bpy.data.materials[mat_name].emit
+            # Look for an object that may exist before the upgrade to replace the defaults
+            shape_name = "mol_" + dm['mol_name'] + "_shape"
+            if shape_name in bpy.data.objects:
+                scale = bpy.data.objects[shape_name].scale
+                disp_dict['scale'] = ( scale[0] + scale[1] + scale[2] ) / 3.0
             dm['display'] = disp_dict
             dm['data_model_version'] = "DM_2016_01_13_1930"
 
