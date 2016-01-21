@@ -369,16 +369,19 @@ def remove_mol_data_by_name ( mol_name, context ):
     if mol_shape_obj:
         scn_objs.unlink ( mol_shape_obj )
 
-    if mol_obj.users <= 0:
-        objs.remove ( mol_obj )
-        meshes.remove ( mol_pos_mesh )
+    if mol_obj:
+        if mol_obj.users <= 0:
+            objs.remove ( mol_obj )
+            meshes.remove ( mol_pos_mesh )
 
-    if mol_shape_obj.users <= 0:
-        objs.remove ( mol_shape_obj )
-        meshes.remove ( mol_shape_mesh )
+    if mol_shape_obj:
+        if mol_shape_obj.users <= 0:
+            objs.remove ( mol_shape_obj )
+            meshes.remove ( mol_shape_mesh )
 
-    if mol_material.users <= 0:
-        mats.remove ( mol_material )
+    if mol_material:
+        if mol_material.users <= 0:
+            mats.remove ( mol_material )
 
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
