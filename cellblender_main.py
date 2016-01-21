@@ -1101,9 +1101,6 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "define_molecules" in dm:
             print ( "Overwriting the define_molecules properties" )
             self.molecules.build_properties_from_data_model ( context, dm["define_molecules"] )
-        if "define_reactions" in dm:
-            print ( "Overwriting the define_reactions properties" )
-            self.reactions.build_properties_from_data_model ( context, dm["define_reactions"] )
         if "release_sites" in dm:
             print ( "Overwriting the release_sites properties" )
             self.release_sites.build_properties_from_data_model ( context, dm["release_sites"] )
@@ -1113,6 +1110,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "define_surface_classes" in dm:
             print ( "Overwriting the define_surface_classes properties" )
             self.surface_classes.build_properties_from_data_model ( context, dm["define_surface_classes"] )
+        if "define_reactions" in dm:
+            print ( "Overwriting the define_reactions properties" )
+            self.reactions.build_properties_from_data_model ( context, dm["define_reactions"] )
         # Move below model objects?
         #if "modify_surface_regions" in dm:
         #    print ( "Overwriting the modify_surface_regions properties" )
