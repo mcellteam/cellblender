@@ -86,6 +86,31 @@ class MCELL_OT_create_object(bpy.types.Operator):
         return{'FINISHED'}
 
 
+class MCELL_OT_model_obj_add_mat(bpy.types.Operator):
+    bl_idname = "mcell.model_obj_add_mat"
+    bl_label = "Create Material"
+    bl_description = ("Create a new material for this object")
+
+    def execute(self, context):
+        model_objects = context.scene.mcell.model_objects
+        obj_name = str(model_objects.object_list[model_objects.active_obj_index].name)
+        for obj in context.selected_objects:
+            obj.select = False
+        obj = bpy.data.objects[obj_name]
+        obj.select = True
+        context.scene.objects.active = obj
+        mat_name = obj_name + "_mat"
+        if bpy.data.materials.get(mat_name) is not None:
+            mat = bpy.data.materials[mat_name]
+        else:
+            mat = bpy.data.materials.new(name=mat_name)
+        if len(obj.data.materials):
+            obj.data.materials[0] = mat
+        else:
+            obj.data.materials.append(mat)
+        return{'FINISHED'}
+
+
 class MCELL_OT_model_objects_add(bpy.types.Operator):
     bl_idname = "mcell.model_objects_add"
     bl_label = "Model Objects Include"
@@ -461,22 +486,49 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             col.operator("mcell.model_objects_remove", icon='ZOOMOUT', text="")
             
             if len(self.object_list) > 0:
-                layout.label(text="") # Use as a separator
-                layout.box() # Use as a separator
-                layout.label(text="") # Use as a separator
+                obj_name = str(self.object_list[self.active_obj_index].name)
+                # layout.label(text="") # Use as a separator
+                # layout.box() # Use as a separator
+                # layout.label(text="") # Use as a separator
                 box = layout.box()
                 row = box.row()
                 if not self.show_display:
                     row.prop(self, "show_display", icon='TRIA_RIGHT',
-                             text=str(self.object_list[self.active_obj_index].name)+" Display Options", emboss=False)
+                             text=obj_name+" Display Options", emboss=False)
                 else:
                     row.prop(self, "show_display", icon='TRIA_DOWN',
-                             text=str(self.object_list[self.active_obj_index].name)+" Display Options", emboss=False)
+                             text=obj_name+" Display Options", emboss=False)
 
                     row = box.row()
-                    row.prop ( context.scene.objects[self.object_list[self.active_obj_index].name], "draw_type" )
-                    row = box.row()
-                    row.prop ( context.scene.objects[self.object_list[self.active_obj_index].name], "show_transparent" )
+                    col = row.column()
+                    col.prop ( context.scene.objects[obj_name], "draw_type", text="" )
+                    col = row.column()
+                    col.prop ( context.scene.objects[obj_name], "show_name", text="Show Name" )
+                    
+                    has_material = True
+                    if len(context.scene.objects[obj_name].material_slots) <= 0:
+                      has_material = False
+                    else:
+                      if context.scene.objects[obj_name].material_slots[0].material == None:
+                        has_material = False
+                    if not has_material:
+                      row = box.row()
+                      row.operator("mcell.model_obj_add_mat", text="Add a Material")
+                    else:
+                      mat = context.scene.objects[obj_name].material_slots[0].material
+                      row = box.row()
+                      col = row.column()
+                      col.prop ( mat, "diffuse_color", text="" )
+                      col = row.column()
+                      col.prop ( mat, "emit", text="Emit" )
+                      row = box.row()
+                      col = row.column()
+                      col.prop ( context.scene.objects[obj_name], "show_transparent", text="Object Transparent" )
+                      col = row.column()
+                      col.prop ( mat, "use_transparency", text="Material Transparent" )
+                      if context.scene.objects[obj_name].show_transparent and mat.use_transparency:
+                        row = box.row()
+                        row.prop ( mat, "alpha", text="Alpha" )
 
 #           row = layout.row()
 #           sub = row.row(align=True)
