@@ -55,6 +55,37 @@ def unregister():
 
 # Model Object Operators:
 
+class MCELL_OT_snap_cursor_to_center(bpy.types.Operator):
+    bl_idname = "mcell.snap_cursor_to_center"
+    bl_label = "Snap Cursor to Center"
+    bl_description = ("Snap the 3D Cursor to the Center")
+
+    def execute(self, context):
+        bpy.ops.view3d.snap_cursor_to_center()
+        return{'FINISHED'}
+
+
+class MCELL_OT_create_object(bpy.types.Operator):
+    bl_idname = "mcell.model_objects_create"
+    bl_label = "Model Objects Create"
+    bl_description = ("Add a new primitive object")
+
+    def get_object_options(self, context):
+        return [ ("bpy.ops.mesh.primitive_cube_add()","Cube","0"),
+                 ("bpy.ops.mesh.primitive_ico_sphere_add()","IcoSphere","0"),
+                 ("bpy.ops.mesh.primitive_cylinder_add()","Cylinder","0"),
+                 ("bpy.ops.mesh.primitive_cone_add()","Cone","0"),
+                 ("bpy.ops.mesh.primitive_torus_add()","Torus","0") ]
+
+    option_item = bpy.props.EnumProperty(items = get_object_options, name = "NewObjectOptions", description = "New Object Options List")
+
+    def execute(self, context):
+        #print ( "Executing with self.get_object_options = " + str(self.get_object_options(context)) )
+        #print ( "Executing with self.option_list = " + str(self.option_item) )
+        eval ( str(self.option_item) )
+        return{'FINISHED'}
+
+
 class MCELL_OT_model_objects_add(bpy.types.Operator):
     bl_idname = "mcell.model_objects_add"
     bl_label = "Model Objects Include"
@@ -407,6 +438,13 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
         else:
+
+            row = layout.row()
+            col = row.column()
+            col.operator_menu_enum("mcell.model_objects_create", 'option_item', text="Create Object")
+            col = row.column()
+            col.operator("mcell.snap_cursor_to_center", text="Snap Cursor to Center")
+
 
             if context.active_object != None:
                 row = layout.row()
