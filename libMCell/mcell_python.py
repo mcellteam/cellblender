@@ -1,6 +1,7 @@
 import sys
 import os
 import pickle
+import math
 import random
 import array
 import shutil
@@ -77,6 +78,7 @@ if not os.path.exists(viz_seed_dir):
 ##### Use the Data Model to generate output files
 
 iterations = eval(dm['mcell']['initialization']['iterations'])
+time_step = eval(dm['mcell']['initialization']['time_step'])
 mols = dm['mcell']['define_molecules']['molecule_list']
 rels = dm['mcell']['release_sites']['release_site_list']
 
@@ -86,13 +88,37 @@ for m in mols:
 for r in rels:
   print ( "Release " + str(r['quantity']) + " of " + r['molecule'] + " at (" + str(r['location_x']) + "," + str(r['location_y']) + "," + str(r['location_z']) + ")"  )
 
+# Create instances for each molecule that is released (note that release patterns are not handled)
+
+for m in mols:
+  m['instances'] = []
+
+for r in rels:
+  rel_x = eval(r['location_x'])
+  rel_y = eval(r['location_y'])
+  rel_z = eval(r['location_z'])
+  q = eval(r['quantity'])
+  for m in mols:
+    if m['mol_name'] == r['molecule']:
+      for i in range(q):
+        x = rel_x  # +random.gauss(0.0,0.1)
+        y = rel_y  # +random.gauss(0.0,0.1)
+        z = rel_z  # +random.gauss(0.0,0.1)
+        m['instances'].append ( [x,y,z] )
+
+# Figure out the number of digits needed for file names
+
+ndigits = 1 + math.log(iterations+1,10)
+file_name_template = "Scene.cellbin.%%0%dd.dat" % ndigits
+
+# Begin the simulation
+
 for i in range(iterations+1):
-  viz_file_name = "Scene.cellbin.%02d.dat" % i
+  viz_file_name = file_name_template % i
   viz_file_name = os.path.join(viz_seed_dir,viz_file_name)
   print ( "File = " + viz_file_name )
   f = open(viz_file_name,"wb")
-  #f.write(bytearray([1,0,0,0]))           # Marker indicating a binary file
-  int_array = array.array("I")
+  int_array = array.array("I")   # Marker indicating a binary file
   int_array.fromlist([1])
   int_array.tofile(f)
   for m in mols:
@@ -101,24 +127,24 @@ for i in range(iterations+1):
     for i in range(len(name)):
       f.write(bytearray([ord(name[i])]))  # Each byte of the name
     f.write(bytearray([0]))               # Molecule Type, 1=Surface, 0=Volume?
-    for r in rels:
-      if r['molecule'] == name:
-        rel_x = eval(r['location_x'])
-        rel_y = eval(r['location_y'])
-        rel_z = eval(r['location_z'])
-        q = eval(r['quantity'])
-        #f.write(bytearray([0,0,0,0]))         # Number of instances of this molecule in this frame
-        int_array = array.array("I")
-        int_array.fromlist([3*q])
-        int_array.tofile(f)
-        for i in range(q):
-          mol_pos = array.array("f")
-          mol_pos.fromlist ( [ rel_x+random.gauss(0.0,0.1), rel_y+random.gauss(0.0,0.1), rel_z+random.gauss(0.0,0.1) ] )
-          mol_pos.tofile(f)
 
+    # Write out the total number of values for this molecule species
+    int_array = array.array("I")
+    int_array.fromlist([3*len(m['instances'])])
+    int_array.tofile(f)
+    
+    dc = eval(m['diffusion_constant'])
+    ds = 6000 * math.sqrt( 6 * dc * time_step )   # N O T E:  This is a guess!!!!
+
+    for i in m['instances']:
+      x = i[0]
+      y = i[1]
+      z = i[2]
+      mol_pos = array.array("f")
+      mol_pos.fromlist ( [ x, y, z ] )
+      mol_pos.tofile(f)
+      i[0] += random.gauss(0.0,ds)
+      i[1] += random.gauss(0.0,ds)
+      i[2] += random.gauss(0.0,ds)
   f.close()
-
-
-for i in range(iterations):
-  print ( "x = " + str(random.gauss(0.0,1.0)) )
 
