@@ -293,6 +293,7 @@ class MCELL_OT_save_preferences(AddPresetBase, bpy.types.Operator):
         "scene.mcell.cellblender_preferences.python_binary",
         "scene.mcell.cellblender_preferences.decouple_export_run",
         "scene.mcell.cellblender_preferences.invalid_policy",
+        "scene.mcell.cellblender_preferences.show_sim_runner_options",
     ]
 
     # This needs to be the same as what's in the menu class
@@ -314,6 +315,7 @@ class MCELL_OT_reset_preferences(bpy.types.Operator):
         mcell.cellblender_preferences.bionetgen_location = ""
         mcell.cellblender_preferences.invalid_policy = 'dont_run'
         mcell.cellblender_preferences.decouple_export_run = False
+        mcell.cellblender_preferences.show_sim_runner_options = False
 
         return {'FINISHED'}
 
