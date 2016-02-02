@@ -466,9 +466,21 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
             col = row.column()
-            col.operator_menu_enum("mcell.model_objects_create", 'option_item', text="Create Object")
+            col.operator("mcell.snap_cursor_to_center", text="Center Cursor")
+            #col = row.column()
+            #col.label(text="Add:")
             col = row.column()
-            col.operator("mcell.snap_cursor_to_center", text="Snap Cursor to Center")
+            col.operator("mesh.primitive_cube_add", text="", icon='MESH_CUBE')
+            col = row.column()
+            col.operator("mesh.primitive_ico_sphere_add", text="", icon='MESH_ICOSPHERE')
+            col = row.column()
+            col.operator("mesh.primitive_cylinder_add", text="", icon='MESH_CYLINDER')
+            col = row.column()
+            col.operator("mesh.primitive_cone_add", text="", icon='MESH_CONE')
+            col = row.column()
+            col.operator("mesh.primitive_torus_add", text="", icon='MESH_TORUS')
+            #col = row.column()
+            #col.operator_menu_enum("mcell.model_objects_create", 'option_item', text="Create Object")
 
 
             if context.active_object != None:
