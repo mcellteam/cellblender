@@ -1291,9 +1291,9 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     #  Queue control is currently the only option which properly disables the
                     #  run_simulation operator while simulations are currenlty running or queued
                     # Only show this option it when specifically requested
-                    if mcell.cellblender_preferences.show_sim_runner_options:
-                        col = row.column()
-                        col.prop(self, "simulation_run_control")
+                    #if mcell.cellblender_preferences.show_sim_runner_options:
+                    col = row.column()
+                    col.prop(self, "simulation_run_control")
 
                     #row = box.row()
                     #col = row.column()
