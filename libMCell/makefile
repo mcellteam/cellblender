@@ -19,6 +19,7 @@ clean:
 	rm -f libMCell_wrap.o
 	rm -f _libMCell.so
 	rm -f mcell_main.o
+	rm -f JSON.o
 	rm -f mcell_main
 	rm -f *.pyc
 

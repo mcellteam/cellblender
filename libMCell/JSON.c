@@ -443,7 +443,7 @@ void move_to_next_segment() {
 json_element *recurse_json_tree_from_segments ( char *text, char *name_of_next_object, int current_depth ) {
   json_element *this_element = NULL;
   while (this_segment != NULL) {
-    printf ( "D:%d ", current_depth ); print_indent ( 2*this_segment->depth ); print_segment ( this_segment );
+    // printf ( "D:%d ", current_depth ); print_indent ( 2*this_segment->depth ); print_segment ( this_segment );
     if        (this_segment->type == JSON_VAL_UNDEF) {
       printf ( "\n\nError: Got JSON_VAL_UNDEF\n\n" );
       exit ( 2 );
@@ -576,9 +576,42 @@ json_element *build_test_tree ()
 
 
 ////////////////////////////////////////
-////////  Main Parsing Function  ///////
+/////  Functions for External Use  /////
 ////////////////////////////////////////
 
+int json_get_int_value ( json_element *je ) {
+  if (je->type != JSON_VAL_NUMBER) {
+    exit(94327);
+  }
+  int val;
+  sscanf ( je->uv.string_value, "%d", &val );
+  return ( val );
+}
+
+double json_get_float_value ( json_element *je ) {
+  if (je->type != JSON_VAL_NUMBER) {
+    exit(7781546);
+  }
+  return ( je->uv.float_value );
+}
+
+int json_get_bool_value ( json_element *je ) {
+  if ( (je->type != JSON_VAL_TRUE) && (je->type != JSON_VAL_FALSE) ) {
+    exit(623230);
+  }
+  if (je->type == JSON_VAL_TRUE) {
+    return ( 1 );
+  } else {
+    return ( 0 );
+  }
+}
+
+char *json_get_string_value ( json_element *je ) {
+  if (je->type != JSON_VAL_STRING) {
+    exit(7172365);
+  }
+  return ( je->uv.string_value );
+}
 
 
 json_element *parse_json_text ( char *text_to_parse )
@@ -606,28 +639,86 @@ json_element *parse_json_text ( char *text_to_parse )
   text_length = strlen(text);
 
   printf ( "Parsing text of length %d\n", text_length );
-  printf ( "Text:\n%s\n", text );
 
   parse_segment ( 0, 0 ); // This builds a linked list of segments stored in "first_segment"
 
-  printf ( "ssssssssssssssssssssssssssssssssssss\n" );
-  dump_segments();
-  printf ( "ssssssssssssssssssssssssssssssssssss\n" );
-
   json_element *root;
 
-#if 0
-  root = build_test_tree ();
-#else
-  printf ( "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\n" );
-  printf ( "Text:\n%s\n", text );
-  printf ( "=========================================\n" );
   root = new_empty_json_object("root");
   root = build_json_tree_from_segments ( text, first_segment, root );
-  printf ( "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\n" );
-#endif
 
   return ( root );
 }
 
+json_element *json_get_element_with_key ( json_element *tree, char *key ) {
+  // printf ( "Top of json_get_element_with_key with key = %s\n", key );
 
+  if (tree == NULL) {
+    printf ( "Error: can't call json_get_element_with_key on NULL object\n" );
+    exit( 72342 );
+  }
+  if (tree->type != JSON_VAL_OBJECT) {
+    printf ( "Error: can't call json_get_element_with_key on non-dictionary object\n" );
+    exit( 23239 );
+  }
+
+  json_element *e;
+  int sub_num = 0;
+  e = tree->uv.sub_element_list[sub_num];
+  while ( (e != NULL) && (strcmp(e->key_name,key) != 0) ) {
+    sub_num += 1;
+    e = tree->uv.sub_element_list[sub_num];
+  }
+
+  //if (e != NULL) {
+  //  printf ( "Found %s of type %s\n", key, get_json_name(e->type) );
+  //}
+  return ( e );
+}
+
+
+/*
+json_element *get_element_from_path ( json_element *tree, char *json_path ) {
+  printf ( "Top of get_element_from_path with path = %s\n", json_path );
+
+  return json_get_element_with_key ( tree, json_path );
+
+
+  char *path = copy_string ( json_path );
+  int first_dot = strchr ( path, '/' );
+  if (first_dot < 0) {
+  }
+  path[first_dot] = '\0';
+
+  json_element *e;
+  int sub_num = 0;
+  e = tree->uv.sub_element_list[sub_num];
+  while ( (e != NULL) && (strcmp(e->key_name,path) != 0) ) {
+    sub_num += 1;
+    e = tree->uv.sub_element_list[sub_num];
+  }
+
+  if (e == NULL) return ( e );
+  
+  path = &path[first_dot+1];
+  while ( (e!=NULL) && (strcmp(e->key_name,path) != 0) ) {
+  free ( path );
+
+  if (tree->key_name != NULL) {
+    printf ( "Key = %d\n", tree->key_name );
+  } else {
+  }
+
+  return ( NULL );
+}
+*/
+
+/*
+int json_tree_get_int ( json_element *tree, char *json_path ) {
+  get_element_from_path ( tree, json_path );
+  json_element *mcell = json_get_element_with_key ( tree, "mcell" );
+  json_element *api_ver = json_get_element_with_key ( mcell, "api_version" );
+  
+  return ( 1234 );
+}
+*/

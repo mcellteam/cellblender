@@ -36,15 +36,34 @@ int main ( void ) {
 
   file_text[file_length] = '\0'; // Be sure to null terminate!!
   
-  json_element *json_tree;
-  json_tree = parse_json_text ( file_text );
-  
-  dump_json_tree ( json_tree, 80, 0 );
-  
-  free_json_tree ( json_tree );
-  free ( file_text );
+  // ##### Read in the data model itself
 
+  json_element *dm; // Data Model Tree
+  dm = parse_json_text ( file_text );
+
+  // dump_json_tree ( dm, 80, 0 );
   
+
+  json_element *mcell = json_get_element_with_key ( dm, "mcell" );
+
+  // API version = ['mcell']['api_version']
+  json_element *api_ver = json_get_element_with_key ( mcell, "api_version" );
+
+  printf ( "API int version = %d\n", json_get_int_value ( api_ver ) );
+
+  // iterations = ['mcell']['initialization']['iterations']
+  json_element *init = json_get_element_with_key ( mcell, "initialization" );
+  json_element *iters = json_get_element_with_key ( init, "iterations" );
+
+  printf ( "Iterations = %s\n", json_get_string_value ( iters ) );
+
+  json_element *reaction_data_output = json_get_element_with_key ( mcell, "reaction_data_output" );
+  json_element *plot_layout = json_get_element_with_key ( reaction_data_output, "plot_layout" );
+
+  printf ( "Plot Layout = \"%s\"\n", json_get_string_value ( plot_layout ) );
+
+  free_json_tree ( dm );
+  free ( file_text );
 
   return ( 0 );
 }
