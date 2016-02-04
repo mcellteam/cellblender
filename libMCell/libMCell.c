@@ -2,6 +2,11 @@
 
 #include <time.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "JSON.h"
 
 double My_variable = 3.0;
 
