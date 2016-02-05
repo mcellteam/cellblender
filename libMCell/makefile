@@ -24,8 +24,10 @@ clean:
 	rm -f *.pyc
 
 
-test: mcell_main
+test_c: mcell_main
 	./mcell_main
-	# python3 mcell_python.py
+
+test_py: mcell_python.py mcell_main
+	python3 mcell_python.py data_model=dm.txt
 
 

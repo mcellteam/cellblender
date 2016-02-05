@@ -10,11 +10,13 @@ int main ( void ) {
 
   printf ( "Hello World from Main!!\n" );
   
+  /*
   printf ( "My variable = %g\n", My_variable );
   printf ( "5 factorial = %d\n", fact(5) );
   printf ( "25 mod 7 = %d\n", my_mod(25,7) );
   printf ( "sin(1.234) = %g\n", my_sin(1.234) );
   printf ( "Time = %s\n", get_time() );
+  */
   
 
   char *file_name = "dm.json";
@@ -41,7 +43,7 @@ int main ( void ) {
   data_model_element *dm; // Data Model Tree
   dm = parse_json_text ( file_text );
 
-  // dump_json_tree ( dm, 80, 0 );
+  dump_json_tree ( dm, 80, 0 );
   
 
   data_model_element *mcell = json_get_element_with_key ( dm, "mcell" );
@@ -52,10 +54,21 @@ int main ( void ) {
   printf ( "API int version = %d\n", json_get_int_value ( api_ver ) );
 
   // iterations = ['mcell']['initialization']['iterations']
-  data_model_element *init = json_get_element_with_key ( mcell, "initialization" );
-  data_model_element *iters = json_get_element_with_key ( init, "iterations" );
+  data_model_element *dm_init = json_get_element_with_key ( mcell, "initialization" );
+  data_model_element *dm_iters = json_get_element_with_key ( dm_init, "iterations" );
+  data_model_element *dm_time_step = json_get_element_with_key ( dm_init, "time_step" );
+  
+  char *str_val;
 
-  printf ( "Iterations = %s\n", json_get_string_value ( iters ) );
+  int iters;
+  str_val = json_get_string_value ( dm_iters );
+  sscanf ( str_val, " %ld", &iters );
+  mcell_set_iterations ( iters );
+
+  double time_step;
+  str_val = json_get_string_value ( dm_time_step );
+  sscanf ( str_val, " %lg", &time_step );
+  mcell_set_time_step ( time_step );
 
   data_model_element *reaction_data_output = json_get_element_with_key ( mcell, "reaction_data_output" );
   data_model_element *plot_layout = json_get_element_with_key ( reaction_data_output, "plot_layout" );

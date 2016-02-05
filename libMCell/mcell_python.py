@@ -42,15 +42,17 @@ if dm is None:
   print ( "ERROR: Unable to use data model" )
   sys.exit(1)
 
-print ( str(dm) )
+#print ( str(dm) )
 
 ##### These are some test calls to the currently incomplete libMCell
 
+"""
 #print ( "My variable = %f" % libMCell.My_variable )  # This doesn't work yet
 print ( "5 factorial = %d" % libMCell.fact(5) )
 print ( "25 mod 7 = %d" % libMCell.my_mod(25,7) )
 print ( "sin(1.234) = %g" % libMCell.my_sin(1.234) )
 print ( "Time = %s" % libMCell.get_time() )
+"""
 
 ##### Clear out the old data
 
@@ -78,7 +80,9 @@ if not os.path.exists(viz_seed_dir):
 ##### Use the Data Model to generate output files
 
 iterations = eval(dm['mcell']['initialization']['iterations'])
+libMCell.mcell_set_iterations ( iterations );
 time_step = eval(dm['mcell']['initialization']['time_step'])
+libMCell.mcell_set_time_step ( time_step );
 mols = dm['mcell']['define_molecules']['molecule_list']
 rels = dm['mcell']['release_sites']['release_site_list']
 

@@ -29,5 +29,6 @@ extern void dump_json_tree ( json_element *, int, int );
 extern void free_json_tree ( json_element * );
 extern int json_tree_get_int ( json_element *, char * );
 extern json_element *json_get_element_with_key ( json_element *, char * );
+extern char *json_get_string_value ( json_element * );
 
 #endif
