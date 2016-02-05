@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "libMCell.h"
-
 #include "JSON.h"
+
+#include "libMCell.h"
 
 int main ( void ) {
 
@@ -38,27 +38,27 @@ int main ( void ) {
   
   // ##### Read in the data model itself
 
-  json_element *dm; // Data Model Tree
+  data_model_element *dm; // Data Model Tree
   dm = parse_json_text ( file_text );
 
   // dump_json_tree ( dm, 80, 0 );
   
 
-  json_element *mcell = json_get_element_with_key ( dm, "mcell" );
+  data_model_element *mcell = json_get_element_with_key ( dm, "mcell" );
 
   // API version = ['mcell']['api_version']
-  json_element *api_ver = json_get_element_with_key ( mcell, "api_version" );
+  data_model_element *api_ver = json_get_element_with_key ( mcell, "api_version" );
 
   printf ( "API int version = %d\n", json_get_int_value ( api_ver ) );
 
   // iterations = ['mcell']['initialization']['iterations']
-  json_element *init = json_get_element_with_key ( mcell, "initialization" );
-  json_element *iters = json_get_element_with_key ( init, "iterations" );
+  data_model_element *init = json_get_element_with_key ( mcell, "initialization" );
+  data_model_element *iters = json_get_element_with_key ( init, "iterations" );
 
   printf ( "Iterations = %s\n", json_get_string_value ( iters ) );
 
-  json_element *reaction_data_output = json_get_element_with_key ( mcell, "reaction_data_output" );
-  json_element *plot_layout = json_get_element_with_key ( reaction_data_output, "plot_layout" );
+  data_model_element *reaction_data_output = json_get_element_with_key ( mcell, "reaction_data_output" );
+  data_model_element *plot_layout = json_get_element_with_key ( reaction_data_output, "plot_layout" );
 
   printf ( "Plot Layout = \"%s\"\n", json_get_string_value ( plot_layout ) );
 
