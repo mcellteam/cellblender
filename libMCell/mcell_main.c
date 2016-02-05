@@ -8,17 +8,8 @@
 
 int main ( void ) {
 
-  printf ( "Hello World from Main!!\n" );
+  printf ( "\n\nMCell C prototype using libMCell\n\n\n" );
   
-  /*
-  printf ( "My variable = %g\n", My_variable );
-  printf ( "5 factorial = %d\n", fact(5) );
-  printf ( "25 mod 7 = %d\n", my_mod(25,7) );
-  printf ( "sin(1.234) = %g\n", my_sin(1.234) );
-  printf ( "Time = %s\n", get_time() );
-  */
-  
-
   char *file_name = "dm.json";
 
   printf ( "JSON Parsing of \"%s\":\n", file_name );
@@ -43,7 +34,7 @@ int main ( void ) {
   data_model_element *dm; // Data Model Tree
   dm = parse_json_text ( file_text );
 
-  dump_json_tree ( dm, 80, 0 );
+  // dump_json_tree ( dm, 80, 0 );
   
 
   data_model_element *mcell = json_get_element_with_key ( dm, "mcell" );

@@ -9,7 +9,7 @@ import libMCell
 
 ##### Start by reading the command line parameters which includes the data model file name
 
-print ( "\n\nmcell_python.py is running with %d arguments\n" % len(sys.argv) )
+print ( "\n\nMCell Python Prototype using libMCell %d arguments:\n" % len(sys.argv) )
 proj_path = ""
 data_model_file_name = ""
 data_model_full_path = ""
