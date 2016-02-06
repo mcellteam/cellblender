@@ -25,6 +25,12 @@ clean:
 	rm -f *~
 	rm -f __pycache__/*
 	rmdir __pycache__
+	rm -f react_data/*
+	rmdir react_data
+	rm -f viz_data/seed_00001/*
+	rmdir viz_data/seed_00001
+	rm -f viz_data/*
+	rmdir viz_data
 
 
 test_c: mcell_main
