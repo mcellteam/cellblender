@@ -123,13 +123,12 @@ int main ( int argc, char *argv[] ) {
   // iterations = ['mcell']['initialization']['iterations']
   data_model_element *dm_init = json_get_element_with_key ( mcell, "initialization" );
 
-  data_model_element *dm_iters = json_get_element_with_key ( dm_init, "iterations" );
-  int iterations = json_get_int_value ( dm_iters );
+  int iterations = json_get_int_value ( json_get_element_with_key ( dm_init, "iterations" ) );
   mcell_set_iterations ( iterations );
 
-  data_model_element *dm_time_step = json_get_element_with_key ( dm_init, "time_step" );
-  double time_step = json_get_float_value ( dm_time_step );
+  double time_step = json_get_float_value ( json_get_element_with_key ( dm_init, "time_step" ) );
   mcell_set_time_step ( time_step );
+
   
   data_model_element *dm_define_molecules = json_get_element_with_key ( mcell, "define_molecules" );
   data_model_element *mols = json_get_element_with_key ( dm_define_molecules, "molecule_list" );
@@ -137,27 +136,67 @@ int main ( int argc, char *argv[] ) {
   data_model_element *dm_release_sites = json_get_element_with_key ( mcell, "release_sites" );
   data_model_element *rels = json_get_element_with_key ( dm_release_sites, "release_site_list" );
   
+
+  typedef struct mol_species_struct {
+    char *name;
+    char *type;
+    double diffusion_const;
+    struct mol_species_struct *next;
+  } mol_species;
+
+  mol_species *mol_species_list = NULL;
+
   int mol_num = 0;
   data_model_element *this_mol;
   while ((this_mol=json_get_element_by_index(mols,mol_num)) != NULL) {
+    mol_species *new_mol = (mol_species *) malloc ( sizeof(mol_species) );
+    new_mol->next = mol_species_list;
+    new_mol->name = json_get_string_value ( json_get_element_with_key ( this_mol, "mol_name" ) );
+    new_mol->type = json_get_string_value ( json_get_element_with_key ( this_mol, "mol_type" ) );
+    new_mol->diffusion_const = json_get_float_value ( json_get_element_with_key ( this_mol, "diffusion_constant" ) );
+    mol_species_list = new_mol;
     printf ( "Molecule:\n" );
-    printf ( "  name = %s\n", json_get_string_value ( json_get_element_with_key ( this_mol, "mol_name" ) ) );
-    printf ( "  type = %s\n", json_get_string_value ( json_get_element_with_key ( this_mol, "mol_type" ) ) );
-    printf ( "  dc = %s\n", json_get_string_value ( json_get_element_with_key ( this_mol, "diffusion_constant" ) ) );
+    printf ( "  name = %s\n", new_mol->name );
+    printf ( "  type = %s\n", new_mol->type );
+    printf ( "  dc = %g\n", new_mol->diffusion_const );
     mol_num++;
   }
+  int total_mols = mol_num;
+  printf ( "Total molecules = %d\n", total_mols );
   
+  typedef struct rel_site_struct {
+    char *molecule;
+    double loc_x;
+    double loc_y;
+    double loc_z;
+    double quantity;
+    struct rel_site_struct *next;
+  } rel_site;
+
+  rel_site *rel_site_list = NULL;
+
   int rel_num = 0;
   data_model_element *this_rel;
   while ((this_rel=json_get_element_by_index(rels,rel_num)) != NULL) {
+    rel_site *new_rel = (rel_site *) malloc ( sizeof(rel_site) );
+    new_rel->next = rel_site_list;
+    new_rel->molecule = json_get_string_value ( json_get_element_with_key ( this_rel, "molecule" ) );
+    new_rel->loc_x = json_get_float_value ( json_get_element_with_key ( this_rel, "location_x" ) );
+    new_rel->loc_y = json_get_float_value ( json_get_element_with_key ( this_rel, "location_y" ) );
+    new_rel->loc_z = json_get_float_value ( json_get_element_with_key ( this_rel, "location_z" ) );
+    new_rel->quantity = json_get_float_value ( json_get_element_with_key ( this_rel, "quantity" ) );
+    rel_site_list = new_rel;
     printf ( "Release Site:\n" );
-    printf ( "  quantity = %s\n", json_get_string_value ( json_get_element_with_key ( this_rel, "quantity" ) ) );
-    printf ( "  molecule = %s\n", json_get_string_value ( json_get_element_with_key ( this_rel, "molecule" ) ) );
-    printf ( "  at x = %s\n", json_get_string_value ( json_get_element_with_key ( this_rel, "location_x" ) ) );
-    printf ( "  at y = %s\n", json_get_string_value ( json_get_element_with_key ( this_rel, "location_y" ) ) );
-    printf ( "  at z = %s\n", json_get_string_value ( json_get_element_with_key ( this_rel, "location_z" ) ) );
+    printf ( "  molecule = %s\n", new_rel->molecule );
+    printf ( "  at x = %g\n", new_rel->loc_x );
+    printf ( "  at y = %g\n", new_rel->loc_y );
+    printf ( "  at z = %g\n", new_rel->loc_z );
+    printf ( "  quantity = %g\n", new_rel->quantity );
     rel_num++;
   }
+  int total_rels = rel_num;
+  printf ( "Total release sites = %d\n", total_rels );
+  
   
   
   //data_model_element *reaction_data_output = json_get_element_with_key ( mcell, "reaction_data_output" );
