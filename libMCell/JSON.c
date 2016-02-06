@@ -123,6 +123,7 @@ void dump_segments() {
     substring[n] = '\0';
     print_indent ( 1*s->depth );
     printf ( "Segment: type=%s, start=%d, end=%d, depth=%d, s=%s\n", get_json_name(s->type), s->start, s->end, s->depth, substring );
+    free ( substring );
     s = s->next;
   }
 }
@@ -406,6 +407,23 @@ int length_of_json_object( json_element *object ) {
   return ( length_of_json_collection(object) );
 }
 
+/* Collections:
+    This code contains two kinds of collections: objects (dictionaries) and arrays.
+    They are both stored in the json_element.uv.sub_element_list. In fact, they both
+    use the same structure. The only difference is that an object (dictionary entry)
+    is expected to have a non-null key_name stored in each item while an array does
+    not. This means that the entries in an object can be accessed as if they were
+    array entries.
+    
+    The storage layout is:
+    
+      sub_element_list: [ ptr0, ptr1, ptr2, ptr3, ptr4, .... ptrN ]
+      
+    Each "ptrX" in that list points to a json_element structure which contains its
+    own name (key_name) which may be NULL or not. In a JSON object (dictionary)
+    these values should not generally be NULL. Similarly, in a JSON array, these
+    are expected to be NULL.
+*/
 
 int add_item_to_json_collection ( json_element *item, json_element *collection )
 {
@@ -580,19 +598,31 @@ json_element *build_test_tree ()
 ////////////////////////////////////////
 
 int json_get_int_value ( json_element *je ) {
-  if (je->type != JSON_VAL_NUMBER) {
-    exit(94327);
+  int return_value = 0;
+  if (je->type == JSON_VAL_NUMBER) {
+    sscanf ( je->uv.string_value, " %d", &return_value );
+  } else if (je->type == JSON_VAL_STRING) {
+    // printf ( "Warning: Expected a JSON Number, but got %s\n", get_json_name(je->type) );
+    sscanf ( je->uv.string_value, " %d", &return_value );
+  } else {
+    printf ( "Error: Expected a JSON Number or String, but got %s\n", get_json_name(je->type) );
+    exit(1);
   }
-  int val;
-  sscanf ( je->uv.string_value, "%d", &val );
-  return ( val );
+  return ( return_value );
 }
 
 double json_get_float_value ( json_element *je ) {
-  if (je->type != JSON_VAL_NUMBER) {
-    exit(7781546);
+  double return_value = 0;
+  if (je->type == JSON_VAL_NUMBER) {
+    sscanf ( je->uv.string_value, "%lg", &return_value );
+  } else if (je->type == JSON_VAL_STRING) {
+    // printf ( "Warning: Expected a JSON Number, but got %s\n", get_json_name(je->type) );
+    sscanf ( je->uv.string_value, "%lg", &return_value );
+  } else {
+    printf ( "Error: Expected a JSON Number or String, but got %s\n", get_json_name(je->type) );
+    exit(1);
   }
-  return ( je->uv.float_value );
+  return ( return_value );
 }
 
 int json_get_bool_value ( json_element *je ) {
@@ -669,6 +699,27 @@ json_element *json_get_element_with_key ( json_element *tree, char *key ) {
     sub_num += 1;
     e = tree->uv.sub_element_list[sub_num];
   }
+
+  //if (e != NULL) {
+  //  printf ( "Found %s of type %s\n", key, get_json_name(e->type) );
+  //}
+  return ( e );
+}
+
+json_element *json_get_element_by_index ( json_element *tree, int index ) {
+  // printf ( "Top of json_get_element_by_index with index = %d\n", index );
+
+  if (tree == NULL) {
+    printf ( "Error: can't call json_get_element_by_index on NULL object\n" );
+    exit( 747442 );
+  }
+  if ((tree->type != JSON_VAL_ARRAY) && (tree->type != JSON_VAL_OBJECT)) {
+    printf ( "Error: can't call json_get_element_by_index on non-collection object\n" );
+    exit( 29230 );
+  }
+
+  json_element *e;
+  e = tree->uv.sub_element_list[index];
 
   //if (e != NULL) {
   //  printf ( "Found %s of type %s\n", key, get_json_name(e->type) );

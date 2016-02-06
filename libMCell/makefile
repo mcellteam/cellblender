@@ -22,12 +22,15 @@ clean:
 	rm -f JSON.o
 	rm -f mcell_main
 	rm -f *.pyc
+	rm -f *~
+	rm -f __pycache__/*
+	rmdir __pycache__
 
 
 test_c: mcell_main
-	./mcell_main
+	./mcell_main proj_path=. data_model=dm.json
 
 test_py: mcell_python.py mcell_main
-	python3 mcell_python.py data_model=dm.txt
+	python3 mcell_python.py proj_path=. data_model=dm.txt
 
 
