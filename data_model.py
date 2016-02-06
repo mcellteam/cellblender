@@ -149,6 +149,13 @@ def data_model_from_json ( dmp ):
     return ( json.loads ( dmp ) )
 
 
+def save_data_model_to_json_file ( mcell_dm, file_name ):
+    print ( "Saving CellBlender model to JSON file: " + file_name )
+    f = open ( file_name, 'w' )
+    f.write ( json_from_data_model ( {"mcell": mcell_dm} ) )
+    f.close()
+
+
 def save_data_model_to_file ( mcell_dm, file_name ):
     print ( "Saving CellBlender model to file: " + file_name )
     dm = { 'mcell': mcell_dm }
@@ -249,9 +256,7 @@ class ExportDataModelAllJSON(bpy.types.Operator, ExportHelper):
 
     def execute(self, context):
         mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
-        f = open ( self.filepath, 'w' )
-        f.write ( json_from_data_model ( {"mcell": mcell_dm} ) )
-        f.close()
+        save_data_model_to_json_file ( mcell_dm, self.filepath )
         return {'FINISHED'}
 
 

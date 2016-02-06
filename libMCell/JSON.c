@@ -164,24 +164,29 @@ void update_segment(int what, int start, int end, int depth, json_segment *js) {
 
 
 int parse_number ( int index, int depth ) {
+  printf ( "parse_number (%d, %d)\n", index, depth );
   int end = index;
   while (strchr("0123456789.-+eE",text[end]) != NULL) {
     end++;
   }
   store_new_segment ( JSON_VAL_NUMBER, index, end, depth );
+  printf ( "done parse_number (%d, %d) -> %d\n", index, depth, end );
   return (end);
 }
 
 int parse_string ( int index, int depth ) {
+  printf ( "parse_string (%d, %d)\n", index, depth );
   int end = index+1;
   while (text[end] != '\"') {
     end++;
   }
   store_new_segment ( JSON_VAL_STRING, index, end+1, depth );
+  printf ( "done parse_string (%d, %d) -> %d\n", index, depth, end+1 );
   return (end + 1);
 }
 
 int parse_keyval ( int index, int depth ) {
+  printf ( "parse_keyval (%d, %d)\n", index, depth );
   json_segment *js = store_new_segment ( JSON_VAL_KEYVAL, index, index, depth );
   index = skip_whitespace ( index, depth );
   int end = index;
@@ -190,38 +195,46 @@ int parse_keyval ( int index, int depth ) {
   end = end + 1;  // This is the colon separator (:)
   end = parse_segment ( end, depth );
   update_segment ( JSON_VAL_KEYVAL, index, end, depth, js );
+  printf ( "done parse_keyval (%d, %d) -> %d\n", index, depth, end );
   return (end);
 }
 
 
 int parse_object ( int index, int depth ) {
+  printf ( "parse_object (%d, %d)\n", index, depth );
   json_segment *js = store_new_segment ( JSON_VAL_OBJECT, index, index, depth );
   int end = index+1;
   depth += 1;
+  end = skip_whitespace ( end, depth );
   while (text[end] != '}') {
     end = parse_keyval ( end, depth );
     end = skip_sepspace ( end, depth );
   }
   depth += -1;
   update_segment ( JSON_VAL_OBJECT, index, end+1, depth, js );
+  printf ( "done parse_object (%d, %d) -> %d\n", index, depth, end+1 );
   return (end + 1);
 }
 
 int parse_array ( int index, int depth ) {
+  printf ( "parse_array (%d, %d)\n", index, depth );
   json_segment *js = store_new_segment ( JSON_VAL_ARRAY, index, index, depth );
   int end = index+1;
   depth += 1;
+  end = skip_whitespace ( end, depth );
   while (text[end] != ']') {
     end = parse_segment ( end, depth );
     end = skip_sepspace ( end, depth );
   }
   depth += -1;
   update_segment ( JSON_VAL_ARRAY, index, end+1, depth, js );
+  printf ( "done parse_array (%d, %d) -> %d\n", index, depth, end+1 );
   return (end + 1);
 }
 
 
 int parse_segment ( int index, int depth ) {
+  printf ( "parse_segment (%d, %d)\n", index, depth );
   int start = skip_whitespace ( index, depth );
   if (start >= 0) {
     if ( text[start] == '{' ) {
@@ -247,6 +260,7 @@ int parse_segment ( int index, int depth ) {
       exit(1);
     }
   }
+  printf ( "done parse_segment (%d, %d) -> %d\n", index, depth, start );
   return start;
 }
 
@@ -461,7 +475,7 @@ void move_to_next_segment() {
 json_element *recurse_json_tree_from_segments ( char *text, char *name_of_next_object, int current_depth ) {
   json_element *this_element = NULL;
   while (this_segment != NULL) {
-    // printf ( "D:%d ", current_depth ); print_indent ( 2*this_segment->depth ); print_segment ( this_segment );
+    printf ( "D:%d ", current_depth ); print_indent ( 2*this_segment->depth ); print_segment ( this_segment );
     if        (this_segment->type == JSON_VAL_UNDEF) {
       printf ( "\n\nError: Got JSON_VAL_UNDEF\n\n" );
       exit ( 2 );
@@ -493,6 +507,7 @@ json_element *recurse_json_tree_from_segments ( char *text, char *name_of_next_o
       int array_depth = this_segment->depth;
       json_element *array_element;
       move_to_next_segment();
+      if (this_segment == NULL) return ( array );
       while (this_segment->depth > array_depth) {
         array_element = recurse_json_tree_from_segments ( text, name_of_next_object, current_depth+1 );
         add_item_to_json_collection ( array_element, array );
@@ -506,6 +521,7 @@ json_element *recurse_json_tree_from_segments ( char *text, char *name_of_next_o
       json_element *object_element;
       move_to_next_segment();
       char *this_name = NULL;
+      if (this_segment == NULL) return ( object );
       while (this_segment->depth > object_depth) {
         if (this_segment->type != JSON_VAL_KEYVAL) {
           printf ( "Error: Object elements must be key/value pairs, got %s.\n", get_json_name(this_segment->type) );
@@ -665,17 +681,29 @@ json_element *parse_json_text ( char *text_to_parse )
 	    //text = " { \"ALL\" : [\n 2, -1, {\"a\":1,\"b\":2,\"c\":3},\n { \"mc\":[ { \"a\":0 },\n 2, true, [9,[0,3],\"a\",3],\n false, null, 5, [1,2,3], \"xyz\" ],\n \"x\":\"y\" }, -3, 7 ] }  ";
 	    //text = "{\"mc\":[{\"a\":0},2,true,[9,[0,3],\"a\",3],false,null,5,[1,2,3],\"xyz\"],\"x\":\"y\"}";
 	    //text = "{\"mcell\": {\"blender_version\": [2, 68, 0], \"api_version\": 0, \"reaction_data_output\": {\"mol_colors\": false, \"reaction_output_list\": [], \"plot_legend\": \"0\", \"combine_seeds\": true, \"plot_layout\": \" plot \"}, \"define_molecules\": {\"molecule_list\": [{\"export_viz\": false, \"diffusion_constant\": \"1e-7\", \"data_model_version\": \"DM_2014_10_24_1638\", \"custom_space_step\": \"\", \"maximum_step_length\": \"\", \"mol_name\": \"a\", \"mol_type\": \"3D\", \"custom_time_step\": \"\", \"target_only\": false}, {\"export_viz\": false, \"diffusion_constant\": \"1e-7\", \"data_model_version\": \"DM_2014_10_24_1638\", \"custom_space_step\": \"\", \"maximum_step_length\": \"\", \"mol_name\": \"b\", \"mol_type\": \"3D\", \"custom_time_step\": \"\", \"target_only\": false}], \"data_model_version\": \"DM_2014_10_24_1638\"}, \"define_reactions\": {\"reaction_list\": []}, \"data_model_version\": \"DM_2014_10_24_1638\", \"define_surface_classes\": {\"surface_class_list\": []}, \"parameter_system\": {\"model_parameters\": []}, \"define_release_patterns\": {\"release_pattern_list\": []}, \"release_sites\": {\"release_site_list\": [{\"object_expr\": \"\", \"location_x\": \"0\", \"location_y\": \"0\", \"release_probability\": \"1\", \"stddev\": \"0\", \"quantity\": \"100\", \"pattern\": \"\", \"site_diameter\": \"0\", \"orient\": \"'\", \"name\": \"ra\", \"shape\": \"CUBIC\", \"quantity_type\": \"NUMBER_TO_RELEASE\", \"molecule\": \"a\", \"location_z\": \"0\"}, {\"object_expr\": \"\", \"location_x\": \"0\", \"location_y\": \".2\", \"release_probability\": \"1\", \"stddev\": \"0\", \"quantity\": \"100\", \"pattern\": \"\", \"site_diameter\": \"0\", \"orient\": \"'\", \"name\": \"rb\", \"shape\": \"CUBIC\", \"quantity_type\": \"NUMBER_TO_RELEASE\", \"molecule\": \"b\", \"location_z\": \"0\"}]}, \"modify_surface_regions\": {\"modify_surface_regions_list\": []}, \"initialization\": {\"center_molecules_on_grid\": false, \"iterations\": \"10\", \"warnings\": {\"missing_surface_orientation\": \"ERROR\", \"high_probability_threshold\": \"1.0\", \"negative_diffusion_constant\": \"WARNING\", \"degenerate_polygons\": \"WARNING\", \"lifetime_too_short\": \"WARNING\", \"negative_reaction_rate\": \"WARNING\", \"high_reaction_probability\": \"IGNORED\", \"missed_reactions\": \"WARNING\", \"lifetime_threshold\": \"50\", \"useless_volume_orientation\": \"WARNING\", \"missed_reaction_threshold\": \"0.0010000000474974513\", \"all_warnings\": \"INDIVIDUAL\"}, \"space_step\": \"\", \"radial_directions\": \"\", \"radial_subdivisions\": \"\", \"vacancy_search_distance\": \"\", \"time_step_max\": \"\", \"accurate_3d_reactions\": true, \"notifications\": {\"probability_report_threshold\": \"0.0\", \"varying_probability_report\": true, \"probability_report\": \"ON\", \"iteration_report\": true, \"progress_report\": true, \"molecule_collision_report\": false, \"box_triangulation_report\": false, \"release_event_report\": true, \"file_output_report\": false, \"partition_location_report\": false, \"all_notifications\": \"INDIVIDUAL\", \"diffusion_constant_report\": \"BRIEF\", \"final_summary\": true}, \"time_step\": \"5e-6\", \"interaction_radius\": \"\", \"surface_grid_density\": \"10000\", \"microscopic_reversibility\": \"OFF\", \"partitions\": {\"x_start\": \"-1.0\", \"x_step\": \"0.019999999552965164\", \"y_step\": \"0.019999999552965164\", \"y_end\": \"1.0\", \"recursion_flag\": false, \"z_end\": \"1.0\", \"x_end\": \"1.0\", \"z_step\": \"0.019999999552965164\", \"include\": false, \"y_start\": \"-1.0\"}}, \"model_objects\": {\"model_object_list\": [{\"name\": \"Cube\"}]}, \"geometrical_objects\": {\"object_list\": [{\"element_connections\": [[4, 5, 0], [5, 6, 1], [6, 7, 2], [7, 4, 3], [0, 1, 3], [7, 6, 4], [6, 2, 1], [6, 5, 4], [5, 1, 0], [7, 3, 2], [1, 2, 3], [4, 0, 3]], \"name\": \"Cube\", \"vertex_list\": [[-0.25, -0.25, -0.25], [-0.25, 0.25, -0.25], [0.25, 0.25, -0.25], [0.25, -0.25, -0.25], [-0.25, -0.25, 0.25], [-0.25, 0.25, 0.25], [0.25, 0.25, 0.25], [0.25, -0.25, 0.25]], \"location\": [0.0, 0.0, 0.0]}]}, \"viz_output\": {\"all_iterations\": true, \"step\": \"1\", \"end\": \"1\", \"export_all\": true, \"start\": \"0\"}, \"materials\": {\"material_dict\": {}}, \"cellblender_version\": \"0.1.54\", \"cellblender_source_sha1\": \"6a572dab58fa0f770c46ce3ac26b01f3a66f2096\"}}";
+              //	char *text = "{\"mcell\": [3]}";        // OK
+              //	char *text = "{\"mcell\": \"\"}";       // OK
+              // 	char *text = "{\"mcell\": [ ]}";        // Fails with: Unexpected char (]) at 12 in {"mcell": [ ]}
+              // 	char *text = "{\"mcell\": { }}";        // Fails with: Unexpected char (s) at 714 in {"mcell": { }}
+              // 	char *text = "{\"mcell\": []}";         // Fails with segment fault
 
   text_length = strlen(text);
 
   printf ( "Parsing text of length %d\n", text_length );
+  printf ( "Text: %s\n", text );
 
   parse_segment ( 0, 0 ); // This builds a linked list of segments stored in "first_segment"
+
+  printf ( "Return from parse_segment\n" );
+
+  dump_segments();
 
   json_element *root;
 
   root = new_empty_json_object("root");
+  printf ( "Building JSON tree from segments ...\n" );
   root = build_json_tree_from_segments ( text, first_segment, root );
+  printf ( "Back from building JSON tree from segments ...\n" );
 
   return ( root );
 }

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <math.h>
 
 #include "JSON.h"
 
@@ -77,20 +78,26 @@ int main ( int argc, char *argv[] ) {
 
   fclose(f);
   
-  printf ( "Done loading CellBlender model." );
+  printf ( "Done loading CellBlender model.\n" );
 
   file_text[file_length] = '\0'; // Be sure to null terminate!!
   
   // ##### Parse the data model text into convenient structures
 
+  printf ( "Parsing the JSON data model ...\n" );
+
   data_model_element *dm; // Data Model Tree
   dm = parse_json_text ( file_text );
+
+  printf ( "Done parsing the JSON data model ...\n" );
 
   if (dump_data_model != 0) {
     dump_json_tree ( dm, 80, 0 ); printf ( "\n\n" );
   }
   
   // ##### Clear out the old data
+
+  printf ( "Creating directories ...\n" );
 
   char *react_dir = join_path ( proj_path, '/', "react_data" );
   mkdir ( react_dir, 0777 );
@@ -101,6 +108,8 @@ int main ( int argc, char *argv[] ) {
   char *viz_seed_dir = join_path ( viz_dir, '/', "seed_00001" );
   mkdir ( viz_seed_dir, 0777 );
 
+
+  printf ( "Generating Data ...\n" );
 
   // ##### Use the Data Model to generate output files
   
@@ -137,10 +146,15 @@ int main ( int argc, char *argv[] ) {
   data_model_element *rels = json_get_element_with_key ( dm_release_sites, "release_site_list" );
   
 
+  // Create structures to hold the molecules and fill them
+
   typedef struct mol_species_struct {
     char *name;
     char *type;
+    char type_code;
     double diffusion_const;
+    void *instance_list;
+    int num_instances;
     struct mol_species_struct *next;
   } mol_species;
 
@@ -151,8 +165,15 @@ int main ( int argc, char *argv[] ) {
   while ((this_mol=json_get_element_by_index(mols,mol_num)) != NULL) {
     mol_species *new_mol = (mol_species *) malloc ( sizeof(mol_species) );
     new_mol->next = mol_species_list;
+    new_mol->instance_list = NULL;
+    new_mol->num_instances = 0;
     new_mol->name = json_get_string_value ( json_get_element_with_key ( this_mol, "mol_name" ) );
     new_mol->type = json_get_string_value ( json_get_element_with_key ( this_mol, "mol_type" ) );
+    if (new_mol->type[0] == '3') {
+      new_mol->type_code = 0;
+    } else {
+      new_mol->type_code = 1;
+    }
     new_mol->diffusion_const = json_get_float_value ( json_get_element_with_key ( this_mol, "diffusion_constant" ) );
     mol_species_list = new_mol;
     printf ( "Molecule:\n" );
@@ -163,9 +184,11 @@ int main ( int argc, char *argv[] ) {
   }
   int total_mols = mol_num;
   printf ( "Total molecules = %d\n", total_mols );
-  
+
+  // Create structures to hold the release sites and fill them
+
   typedef struct rel_site_struct {
-    char *molecule;
+    mol_species *molecule_species;
     double loc_x;
     double loc_y;
     double loc_z;
@@ -180,14 +203,19 @@ int main ( int argc, char *argv[] ) {
   while ((this_rel=json_get_element_by_index(rels,rel_num)) != NULL) {
     rel_site *new_rel = (rel_site *) malloc ( sizeof(rel_site) );
     new_rel->next = rel_site_list;
-    new_rel->molecule = json_get_string_value ( json_get_element_with_key ( this_rel, "molecule" ) );
+    char *mname = json_get_string_value ( json_get_element_with_key ( this_rel, "molecule" ) );
+    mol_species *ms = mol_species_list;
+    while ( (ms != NULL) && (strcmp(mname,ms->name)!=0) ) {
+      ms = ms->next;
+    }
+    new_rel->molecule_species = ms;
     new_rel->loc_x = json_get_float_value ( json_get_element_with_key ( this_rel, "location_x" ) );
     new_rel->loc_y = json_get_float_value ( json_get_element_with_key ( this_rel, "location_y" ) );
     new_rel->loc_z = json_get_float_value ( json_get_element_with_key ( this_rel, "location_z" ) );
     new_rel->quantity = json_get_float_value ( json_get_element_with_key ( this_rel, "quantity" ) );
     rel_site_list = new_rel;
     printf ( "Release Site:\n" );
-    printf ( "  molecule = %s\n", new_rel->molecule );
+    printf ( "  molecule_name = %s\n", new_rel->molecule_species->name );
     printf ( "  at x = %g\n", new_rel->loc_x );
     printf ( "  at y = %g\n", new_rel->loc_y );
     printf ( "  at z = %g\n", new_rel->loc_z );
@@ -196,16 +224,103 @@ int main ( int argc, char *argv[] ) {
   }
   int total_rels = rel_num;
   printf ( "Total release sites = %d\n", total_rels );
-  
-  
-  
-  //data_model_element *reaction_data_output = json_get_element_with_key ( mcell, "reaction_data_output" );
-  //data_model_element *plot_layout = json_get_element_with_key ( reaction_data_output, "plot_layout" );
 
-  // printf ( "Plot Layout = \"%s\"\n", json_get_string_value ( plot_layout ) );
+  // # Create structures and instances for each molecule that is released (note that release patterns are not handled)
 
+  typedef struct mol_instance_struct {
+    mol_species *molecule_species;
+    double x;
+    double y;
+    double z;
+    struct mol_instance_struct *next;
+  } mol_instance;
+  
+  mol_instance *mol_instances_list = NULL;
+  
+  rel_site *this_site = rel_site_list;
+  while (this_site != NULL) {
+    int i;
+    for (i=0; i<this_site->quantity; i++) {
+      mol_instance *new_mol_instance = (mol_instance *) malloc ( sizeof(mol_instance) );
+      new_mol_instance->next = this_site->molecule_species->instance_list;
+      this_site->molecule_species->instance_list = new_mol_instance;
+      this_site->molecule_species->num_instances += 1;
+      new_mol_instance->molecule_species = this_site->molecule_species;
+      new_mol_instance->x = this_site->loc_x;
+      new_mol_instance->y = this_site->loc_y;
+      new_mol_instance->z = this_site->loc_z;
+    }
+    this_site = this_site->next;
+  }
+  
+  // # Figure out the number of digits needed for file names and allocate strings as file name templates
+
+  int ndigits = 1 + log10(iterations+1);
+  printf ( "File names will require %d digits\n", ndigits );
+  char *template_template = "seed_00001/Scene.cellbin.%%0%dd.dat";
+  char *file_template = (char *) malloc ( strlen(template_template) + (ndigits*sizeof(char)) + 10 );
+  sprintf ( file_template, template_template, ndigits );
+  printf ( "File Template = %s\n", file_template );
+  char *template =  (char *) malloc ( strlen(template_template) + (ndigits*sizeof(char)) + 10 );
+  sprintf ( template, "%s/%s", viz_dir, file_template );
+  printf ( "Full Template = %s\n", template );
+
+  char *sim_step_mol_name = (char *) malloc ( strlen(template) + 10 );
+
+  // Run the actual simulation
+
+  int iteration;
+  for (iteration=0; iteration<=iterations; iteration++) {
+    sprintf ( sim_step_mol_name, template, iteration );
+    printf ( "Creating file: \"%s\"\n", sim_step_mol_name );
+    FILE *f = fopen ( sim_step_mol_name, "w" );
+    // Write the binary marker for this file
+    int binary_marker = 1;
+    fwrite ( &binary_marker, sizeof(int), 1, f );
+    
+    // Write out the molecules from each species
+    mol_species *this_species = mol_species_list;
+    while (this_species != NULL) {
+      unsigned char name_len = 0x0ff & strlen(this_species->name);
+      fwrite ( &name_len, sizeof(unsigned char), 1, f );
+      fwrite ( this_species->name, sizeof(unsigned char), strlen(this_species->name), f );
+      unsigned char type_code = 0x0ff & (int)(this_species->type_code);
+      fwrite ( &type_code, sizeof(unsigned char), 1, f );
+      int total_values = 3 * this_species->num_instances;
+      fwrite ( &total_values, sizeof(int), 1, f );
+      
+      printf ( "length of name = %d\n", (int)name_len );
+      printf ( "molecule name  = %s\n", this_species->name );
+      printf ( "mol type = %s\n", this_species->type );
+      printf ( "type code = %d\n", (int)(this_species->type_code) );
+      printf ( "num mols = %d\n", this_species->num_instances );
+      printf ( "num values = %d\n", 3*this_species->num_instances );
+
+      mol_instance *this_mol_instance = this_species->instance_list;
+      float float_val;
+      while (this_mol_instance != NULL) {
+        float_val = this_mol_instance->x;
+        fwrite ( &float_val, sizeof(float), 1, f );
+        float_val = this_mol_instance->y;
+        fwrite ( &float_val, sizeof(float), 1, f );
+        float_val = this_mol_instance->z;
+        fwrite ( &float_val, sizeof(float), 1, f );
+        this_mol_instance->x += 0.1 * (drand48()-0.5);
+        this_mol_instance->y += 0.1 * (drand48()-0.5);
+        this_mol_instance->z += 0.1 * (drand48()-0.5);
+        this_mol_instance = this_mol_instance->next;
+      }
+      
+      this_species = this_species->next;
+    }
+    
+    fclose(f);
+  }
+  
   free_json_tree ( dm );
   free ( file_text );
+  
+  printf ( "Still need to free lots of stuff!!\n\n" );
 
   return ( 0 );
 }
