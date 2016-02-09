@@ -270,11 +270,16 @@ int main ( int argc, char *argv[] ) {
   char *sim_step_mol_name = (char *) malloc ( strlen(template) + 10 );
 
   // Run the actual simulation
+  printf ( "Begin simulation.\n" );
 
   int iteration;
+  int print_every = exp10(floor(log10((iterations/10))));
+  if (print_every < 1) print_every = 1;
   for (iteration=0; iteration<=iterations; iteration++) {
     sprintf ( sim_step_mol_name, template, iteration );
-    printf ( "Creating mol viz file: \"%s\"\n", sim_step_mol_name );
+    if ((iteration%print_every) == 0) {
+      printf ( "Creating mol viz file: \"%s\"\n", sim_step_mol_name );
+    }
     FILE *f = fopen ( sim_step_mol_name, "w" );
     // Write the binary marker for this file
     int binary_marker = 1;
@@ -291,15 +296,20 @@ int main ( int argc, char *argv[] ) {
       int total_values = 3 * this_species->num_instances;
       fwrite ( &total_values, sizeof(int), 1, f );
       
+      /*
       printf ( "length of name = %d\n", (int)name_len );
       printf ( "molecule name  = %s\n", this_species->name );
       printf ( "mol type = %s\n", this_species->type );
       printf ( "type code = %d\n", (int)(this_species->type_code) );
       printf ( "num mols = %d\n", this_species->num_instances );
       printf ( "num values = %d\n", 3*this_species->num_instances );
+      */
 
       mol_instance *this_mol_instance = this_species->instance_list;
       float float_val;
+      double dc = this_species->diffusion_const;
+      double ds = 6000 * sqrt( 6 * dc * time_step );    /// N O T E:  This is a guess!!!!  (TODO: Make this realistic)
+
       while (this_mol_instance != NULL) {
         float_val = this_mol_instance->x;
         fwrite ( &float_val, sizeof(float), 1, f );
@@ -307,19 +317,21 @@ int main ( int argc, char *argv[] ) {
         fwrite ( &float_val, sizeof(float), 1, f );
         float_val = this_mol_instance->z;
         fwrite ( &float_val, sizeof(float), 1, f );
-        this_mol_instance->x += 0.1 * (drand48()-0.5);
-        this_mol_instance->y += 0.1 * (drand48()-0.5);
-        this_mol_instance->z += 0.1 * (drand48()-0.5);
+        // NOTE: The following equations are just guesses to approximate the look of MCell for now (TODO: Make this realistic)
+        this_mol_instance->x += 2.0 * ds * (((drand48()+drand48()+drand48())-1.5));
+        this_mol_instance->y += 2.0 * ds * (((drand48()+drand48()+drand48())-1.5));
+        this_mol_instance->z += 2.0 * ds * (((drand48()+drand48()+drand48())-1.5));
         this_mol_instance = this_mol_instance->next;
       }
       
-      printf ( "Move to next_species\n" );
+      // printf ( "Move to next_species\n" );
       this_species = this_species->next;
     }
     
-    printf ( "Done simulating.\n" );
-    // fclose(f);
+    fclose(f);
   }
+
+  printf ( "Done simulation.\n" );
   
   //free_json_tree ( dm );
   //free ( file_text );
