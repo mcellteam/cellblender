@@ -92,7 +92,7 @@ int main ( int argc, char *argv[] ) {
   printf ( "Done parsing the JSON data model ...\n" );
 
   if (dump_data_model != 0) {
-    dump_json_tree ( dm, 80, 0 ); printf ( "\n\n" );
+    dump_json_element_tree ( dm, 80, 0 ); printf ( "\n\n" );
   }
   
   // ##### Clear out the old data
@@ -113,7 +113,9 @@ int main ( int argc, char *argv[] ) {
 
   // ##### Use the Data Model to generate output files
   
-  data_model_element *mcell = json_get_element_with_key ( dm, "mcell" );
+  // data_model_element *mcell = json_get_element_with_key ( dm, "mcell" );
+  data_model_element *top_array = json_get_element_by_index ( dm, 0 );
+  data_model_element *mcell = json_get_element_with_key ( top_array, "mcell" );
 
   // Blender version = ['mcell']['blender_version']
   data_model_element *blender_ver = json_get_element_with_key ( mcell, "blender_version" );
@@ -261,7 +263,7 @@ int main ( int argc, char *argv[] ) {
   char *file_template = (char *) malloc ( strlen(template_template) + (ndigits*sizeof(char)) + 10 );
   sprintf ( file_template, template_template, ndigits );
   printf ( "File Template = %s\n", file_template );
-  char *template =  (char *) malloc ( strlen(template_template) + (ndigits*sizeof(char)) + 10 );
+  char *template =  (char *) malloc ( ( strlen(viz_dir) + 1 + strlen(file_template) + ndigits + 10 ) *sizeof(char));
   sprintf ( template, "%s/%s", viz_dir, file_template );
   printf ( "Full Template = %s\n", template );
 
@@ -272,7 +274,7 @@ int main ( int argc, char *argv[] ) {
   int iteration;
   for (iteration=0; iteration<=iterations; iteration++) {
     sprintf ( sim_step_mol_name, template, iteration );
-    printf ( "Creating file: \"%s\"\n", sim_step_mol_name );
+    printf ( "Creating mol viz file: \"%s\"\n", sim_step_mol_name );
     FILE *f = fopen ( sim_step_mol_name, "w" );
     // Write the binary marker for this file
     int binary_marker = 1;
@@ -311,14 +313,16 @@ int main ( int argc, char *argv[] ) {
         this_mol_instance = this_mol_instance->next;
       }
       
+      printf ( "Move to next_species\n" );
       this_species = this_species->next;
     }
     
-    fclose(f);
+    printf ( "Done simulating.\n" );
+    // fclose(f);
   }
   
-  free_json_tree ( dm );
-  free ( file_text );
+  //free_json_tree ( dm );
+  //free ( file_text );
   
   printf ( "Still need to free lots of stuff!!\n\n" );
 

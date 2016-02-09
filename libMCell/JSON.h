@@ -1,7 +1,7 @@
 #ifndef JSON_H
 #define JSON_H
 
-enum json_type_enum {
+typedef enum json_type_enum {
   JSON_VAL_UNDEF,
   JSON_VAL_NULL,
   JSON_VAL_TRUE,
@@ -11,8 +11,18 @@ enum json_type_enum {
   JSON_VAL_ARRAY,
   JSON_VAL_OBJECT,
   JSON_VAL_KEYVAL
-};
+} json_type;
 
+typedef struct json_element_struct {
+  enum json_type_enum type;  // This tells what's in this block
+  char *name;                // This is the key value when the type is in a dictionary
+  int start;                 // Index of first char in this element
+  int end;                   // Index of first char NOT in this element
+  struct json_element_struct **subs; // Contains the array or object (dictionary) with last NULL
+} json_element;
+
+
+/*
 typedef struct json_element_struct {
   enum json_type_enum type;  // This tells what's in this block
   char *key_name;            // This is the key value when the type is in a dictionary
@@ -23,6 +33,7 @@ typedef struct json_element_struct {
     struct json_element_struct **sub_element_list;  // Contains the array or object (dictionary) with last NULL
   } uv; // Union Values
 } json_element;
+*/
 
 extern json_element *parse_json_text ( char * );
 extern void dump_json_tree ( json_element *, int, int );
