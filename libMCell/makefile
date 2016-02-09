@@ -32,6 +32,13 @@ clean:
 	rm -f viz_data/*
 	rmdir viz_data
 
+install: libMCell.py mcell_python.py mcell_main _libMCell.so makefile 
+	cp libMCell.py ~/.config/blender/2.76/scripts/addons/cellblender/libMCell/
+	cp mcell_python.py ~/.config/blender/2.76/scripts/addons/cellblender/libMCell/
+	cp mcell_main ~/.config/blender/2.76/scripts/addons/cellblender/libMCell/
+	cp _libMCell.so ~/.config/blender/2.76/scripts/addons/cellblender/libMCell/
+	cp makefile ~/.config/blender/2.76/scripts/addons/cellblender/libMCell/
+
 
 test_c: mcell_main
 	./mcell_main proj_path=. data_model=dm.json

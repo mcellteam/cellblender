@@ -1195,8 +1195,8 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         ('JAVA', "Java Control", ""),
         ('OPENGL', "OpenGL Control", ""),
         ('QUEUE', "Queue Control", ""),
-        ('libMCell', "Lib MCell", ""),
-        ('libMCellPy', "Lib MCell Python", "")]
+        ('libMCell', "Prototype Lib MCell", ""),
+        ('libMCellPy', "Prototype Lib MCell Python", "")]
 
 
     simulation_run_control = EnumProperty(

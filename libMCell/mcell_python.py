@@ -117,10 +117,13 @@ file_name_template = "Scene.cellbin.%%0%dd.dat" % ndigits
 
 # Begin the simulation
 
+print_every = math.pow(10,math.floor(math.log10((iterations/10))));
+if print_every < 1: print_every = 1;
 for i in range(iterations+1):
   viz_file_name = file_name_template % i
   viz_file_name = os.path.join(viz_seed_dir,viz_file_name)
-  print ( "File = " + viz_file_name )
+  if (i % print_every) == 0:
+    print ( "File = " + viz_file_name )
   f = open(viz_file_name,"wb")
   int_array = array.array("I")   # Marker indicating a binary file
   int_array.fromlist([1])
