@@ -178,9 +178,9 @@ def save_wrapper(context, out_file, filedir):
 
     scripting = mcell.scripting
 
-    # scripting.write_scripting_output ( 'before', 'everything', context, out_file, filedir )
+    scripting.write_scripting_output ( 'before', 'everything', context, out_file, filedir )
     
-    # scripting.write_scripting_output ( 'before', 'parameters', context, out_file, filedir )
+    scripting.write_scripting_output ( 'before', 'parameters', context, out_file, filedir )
 
     # Export parameters: 
     if ps and ps.general_parameter_list:
@@ -188,8 +188,8 @@ def save_wrapper(context, out_file, filedir):
         save_modular_or_allinone(
             filedir, out_file, 'parameters', save_general_parameters, args)
 
-    # scripting.write_scripting_output ( 'after', 'parameters', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'initialization', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'parameters', context, out_file, filedir )
+    scripting.write_scripting_output ( 'before', 'initialization', context, out_file, filedir )
 
     # Export model initialization:
     out_file.write("ITERATIONS = %s\n" % (mcell.initialization.iterations.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
@@ -206,20 +206,20 @@ def save_wrapper(context, out_file, filedir):
 
     save_modular_or_allinone(filedir, out_file, 'initialization', save_initialization_commands, args)
     
-    # scripting.write_scripting_output ( 'after', 'initialization', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'partitions', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'initialization', context, out_file, filedir )
+    scripting.write_scripting_output ( 'before', 'partitions', context, out_file, filedir )
 
     save_partitions(context, out_file)
 
-    # scripting.write_scripting_output ( 'after', 'partitions', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'molecules', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'partitions', context, out_file, filedir )
+    scripting.write_scripting_output ( 'before', 'molecules', context, out_file, filedir )
 
     # Export molecules:
     unfiltered_mol_list = mcell.molecules.molecule_list
     save_general('molecules', save_molecules, save_state, unfiltered_mol_list)
 
-    # scripting.write_scripting_output ( 'after', 'molecules', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'surface_classes', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'molecules', context, out_file, filedir )
+    scripting.write_scripting_output ( 'before', 'surface_classes', context, out_file, filedir )
 
     # Export surface classes:
     unfiltered_surf_class_list = mcell.surface_classes.surf_class_list
@@ -227,23 +227,23 @@ def save_wrapper(context, out_file, filedir):
         'surface_classes', save_surface_classes, save_state,
         unfiltered_surf_class_list)
 
-    # scripting.write_scripting_output ( 'after', 'surface_classes', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'reactions', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'surface_classes', context, out_file, filedir )
+    scripting.write_scripting_output ( 'before', 'reactions', context, out_file, filedir )
 
     # Export reactions:
     unfiltered_rxn_list = mcell.reactions.reaction_list
     save_general('reactions', save_reactions, save_state, unfiltered_rxn_list)
 
-    # scripting.write_scripting_output ( 'after', 'reactions', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'geometry', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'reactions', context, out_file, filedir )
+    scripting.write_scripting_output ( 'before', 'geometry', context, out_file, filedir )
 
     # Export model geometry:
     unfiltered_object_list = context.scene.mcell.model_objects.object_list
     object_list = save_general(
         'geometry', save_geometry, save_state, unfiltered_object_list)
 
-    # scripting.write_scripting_output ( 'after', 'geometry', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'mod_surf_regions', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'geometry', context, out_file, filedir )
+    scripting.write_scripting_output ( 'before', 'mod_surf_regions', context, out_file, filedir )
 
     # Export modify surface regions:
     if surf_class_list:
@@ -251,16 +251,16 @@ def save_wrapper(context, out_file, filedir):
         save_general('mod_surf_regions', save_mod_surf_regions, save_state,
                      unfiltered_msr_list)
 
-    # scripting.write_scripting_output ( 'after', 'mod_surf_regions', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'release_patterns', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'mod_surf_regions', context, out_file, filedir )
+    scripting.write_scripting_output ( 'before', 'release_patterns', context, out_file, filedir )
 
     # Export release patterns:
     unfiltered_rel_pattern_list = mcell.release_patterns.release_pattern_list
     save_general('release_patterns', save_rel_patterns, save_state,
                  unfiltered_rel_pattern_list)
 
-    # scripting.write_scripting_output ( 'after', 'release_patterns', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'instantiate', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'release_patterns', context, out_file, filedir )
+    scripting.write_scripting_output ( 'before', 'instantiate', context, out_file, filedir )
 
     # Instantiate Model Geometry and Release sites:
     unfiltered_release_site_list = mcell.release_sites.mol_release_list
@@ -278,13 +278,13 @@ def save_wrapper(context, out_file, filedir):
 
         out_file.write("}\n\n")
 
-    # scripting.write_scripting_output ( 'after', 'instantiate', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'seed', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'instantiate', context, out_file, filedir )
+    scripting.write_scripting_output ( 'before', 'seed', context, out_file, filedir )
 
     out_file.write("sprintf(seed,\"%05g\",SEED)\n\n")
 
-    # scripting.write_scripting_output ( 'after', 'seed', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'viz_output', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'seed', context, out_file, filedir )
+    scripting.write_scripting_output ( 'before', 'viz_output', context, out_file, filedir )
 
     # Export viz output:
 
@@ -300,8 +300,8 @@ def save_wrapper(context, out_file, filedir):
         save_modular_or_allinone(
             filedir, out_file, 'viz_output', save_viz_output_mdl, args)
 
-    # scripting.write_scripting_output ( 'after', 'viz_output', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'rxn_output', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'viz_output', context, out_file, filedir )
+    scripting.write_scripting_output ( 'before', 'rxn_output', context, out_file, filedir )
 
     # Export reaction output:
     settings = mcell.project_settings
@@ -310,9 +310,9 @@ def save_wrapper(context, out_file, filedir):
     save_general('rxn_output', save_rxn_output_mdl, save_state,
                  unfiltered_rxn_output_list)
 
-    # scripting.write_scripting_output ( 'after', 'rxn_output', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'rxn_output', context, out_file, filedir )
 
-    # scripting.write_scripting_output ( 'after', 'everything', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'everything', context, out_file, filedir )
                  
     """
     #deprecated

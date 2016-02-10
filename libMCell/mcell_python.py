@@ -141,7 +141,7 @@ for i in range(iterations+1):
     int_array.tofile(f)
     
     dc = eval(m['diffusion_constant'])
-    ds = 6000 * math.sqrt( 6 * dc * time_step )   # N O T E:  This is a guess!!!!
+    ds = 6000 * math.sqrt( 6 * dc * time_step )    # N O T E:  This is a guess!!!!  (TODO: Make this realistic)
 
     for i in m['instances']:
       x = i[0]
@@ -154,4 +154,6 @@ for i in range(iterations+1):
       i[1] += random.gauss(0.0,ds)
       i[2] += random.gauss(0.0,ds)
   f.close()
+
+print ( "Done simulation.\n" );
 
