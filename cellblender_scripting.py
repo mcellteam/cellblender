@@ -383,20 +383,20 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         self.draw_layout ( context, layout )
 
 
-    def write_scripting_output ( self, before_after, section, context, out_file, filedir ):
+    def write_scripting_output ( self, before_after, section, context, mdl_file, filedir ):
         print ( "################### Write Scripting Ouptut " + before_after + " " + section )
-        out_file.write("\n\n/* Begin Custom MDL Inserted %s %s */\n" % (before_after, section))
+        mdl_file.write("\n\n/* Begin Custom MDL Inserted %s %s */\n" % (before_after, section))
         for script in self.scripting_list:
             if (script.include_where == before_after) and (script.include_section == section):
-                out_file.write ( "\n/* Begin file %s */\n\n" % (script.internal_file_name))
+                mdl_file.write ( "\n/* Begin file %s */\n\n" % (script.internal_file_name))
                 if script.mdl_python == 'mdl':
-                    out_file.write ( bpy.data.texts[script.internal_file_name].as_string() )
+                    mdl_file.write ( bpy.data.texts[script.internal_file_name].as_string() )
                 if script.mdl_python == 'python':
-                    out_file.write ( "\n/* Before Executing Python %s */\n\n" % (script.internal_file_name))
+                    mdl_file.write ( "\n/* Before Executing Python %s */\n\n" % (script.internal_file_name))
                     exec ( bpy.data.texts[script.internal_file_name].as_string(), globals(), locals() )
-                    out_file.write ( "\n/* After Executing Python %s */\n\n" % (script.internal_file_name))
-                out_file.write ( "\n\n/* End file %s */\n\n" % (script.internal_file_name))
-        out_file.write("\n\n/* End Custom MDL Inserted %s %s */\n\n" % (before_after, section))
+                    mdl_file.write ( "\n/* After Executing Python %s */\n\n" % (script.internal_file_name))
+                mdl_file.write ( "\n\n/* End file %s */\n\n" % (script.internal_file_name))
+        mdl_file.write("\n\n/* End Custom MDL Inserted %s %s */\n\n" % (before_after, section))
 
 
 
