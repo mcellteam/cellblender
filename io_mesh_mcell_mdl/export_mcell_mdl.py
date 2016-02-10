@@ -273,8 +273,12 @@ def save_wrapper(context, out_file, filedir):
         if object_list:
             save_object_list(context, out_file, object_list)
 
+        scripting.write_scripting_output ( 'before', 'release_sites', context, out_file, filedir )
+
         if release_site_list:
             save_release_site_list(context, out_file, release_site_list, mcell)
+
+        scripting.write_scripting_output ( 'after', 'release_sites', context, out_file, filedir )
 
         out_file.write("}\n\n")
 

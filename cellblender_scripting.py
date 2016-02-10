@@ -224,6 +224,7 @@ class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
         ("mod_surf_regions", "Modify Surface Regions",  ""),
         ("release_patterns", "Release Patterns",  ""),
         ("instantiate",      "Instantiate Objects",  ""),
+        ("release_sites",    "Release Sites",  ""),
         ("seed",             "Seed",  ""),
         ("viz_output",       "Visualization Output",  ""),
         ("rxn_output",       "Reaction Output",  "")]
