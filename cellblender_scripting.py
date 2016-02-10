@@ -389,7 +389,14 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         for script in self.scripting_list:
             if (script.include_where == before_after) and (script.include_section == section):
                 out_file.write ( "\n/* Begin file %s */\n\n" % (script.internal_file_name))
-                out_file.write ( bpy.data.texts[script.internal_file_name].as_string() )
+                if script.mdl_python == 'mdl':
+                    out_file.write ( bpy.data.texts[script.internal_file_name].as_string() )
+                if script.mdl_python == 'python':
+                    out_file.write ( "\n/* Before Executing Python %s */\n\n" % (script.internal_file_name))
+                    exec ( bpy.data.texts[script.internal_file_name].as_string(), globals(), locals() )
+                    out_file.write ( "\n/* After Executing Python %s */\n\n" % (script.internal_file_name))
                 out_file.write ( "\n\n/* End file %s */\n\n" % (script.internal_file_name))
         out_file.write("\n\n/* End Custom MDL Inserted %s %s */\n\n" % (before_after, section))
-        pass
+
+
+
