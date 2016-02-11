@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 
+/*
 void Shape::setPosition(int nx, int ny) {
   x = nx;
   y = ny;
@@ -52,5 +53,21 @@ void CoordDebug(Coord<int> *c) {
 
 void CoordDebug(Coord<double> *c) {
   printf("Coord<int>(%f,%f)\n",c->x, c->y);
+}
+*/
+
+
+int mcell_iterations = 0;
+int mcell_set_iterations(int iters) {
+  printf ( "  * ** *** libMCell.mcell_set_mcell_iterations called with %d\n", iters );
+  mcell_iterations = iters;
+  return ( mcell_iterations );
+}
+
+double mcell_time_step = 0;
+double mcell_set_time_step(double dt) {
+  printf ( "  * ** *** libMCell.mcell_set_mcell_time_step called with %g\n", dt );
+  mcell_time_step = dt;
+  return ( mcell_time_step );
 }
 

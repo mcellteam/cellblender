@@ -1,3 +1,6 @@
+#include <iostream>
+#include <string>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,9 +39,12 @@ char *join_path ( char *p1, char sep, char *p2 ) {
 
 int main ( int argc, char *argv[] ) {
 
-  printf ( "Hello World!!\n" );
-  Circle c = Circle(2);
-  printf ( "Area = %g\n", c.area() );
+  // Use a few C++ features
+  string greeting = "Hello from C++!!\n";
+  cout << greeting;
+
+  //Circle c = Circle(2);
+  //printf ( "Area = %g\n", c.area() );
 
   // ##### Start by reading the command line parameters which includes the data model file name
 

@@ -35,10 +35,15 @@ class MolInstance {
   MolInstance *next;
 };
 
+#include "JSON.h"
 
 
+typedef json_element data_model_element;
 
+int mcell_set_iterations(int iters);
+double mcell_set_time_step(double dt);
 
+/*
 class Shape {
  public:
   int x,y;
@@ -100,7 +105,7 @@ template<class T> class Coord {
 extern void CoordDebug(Coord<int> *c);
 extern void CoordDebug(Coord<double> *c);
 
-
+*/
 
 
 

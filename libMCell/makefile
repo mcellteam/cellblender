@@ -66,5 +66,6 @@ test_cpp: mcell_main_cpp
 
 #test_cpp_py: mcell_main_cpp.py _libMCell_cpp.so _libMCell.so
 test_cpp_py: mcell_main_cpp.py _libMCell_cpp.so
+	python setup.py build_ext --inplace
 	python mcell_main_cpp.py proj_path=. data_model=dm.txt
 

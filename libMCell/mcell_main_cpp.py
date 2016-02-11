@@ -9,12 +9,12 @@ import shutil
 
 import libMCell_cpp
 
+
 print ( "Hello World!!\n" );
-c = libMCell_cpp.Circle(2)
-print ( "Area = %g\n" % c.area() );
+#c = libMCell_cpp.Circle(2)
+#print ( "Area = %g\n" % c.area() );
 
 
-"""
 ##### Start by reading the command line parameters which includes the data model file name
 
 print ( "\n\nMCell Python Prototype using libMCell %d arguments:\n" % len(sys.argv) )
@@ -87,9 +87,9 @@ if not os.path.exists(viz_seed_dir):
 ##### Use the Data Model to generate output files
 
 iterations = eval(dm['mcell']['initialization']['iterations'])
-libMCell.mcell_set_iterations ( iterations );
+libMCell_cpp.mcell_set_iterations ( iterations );
 time_step = eval(dm['mcell']['initialization']['time_step'])
-libMCell.mcell_set_time_step ( time_step );
+libMCell_cpp.mcell_set_time_step ( time_step );
 mols = dm['mcell']['define_molecules']['molecule_list']
 rels = dm['mcell']['release_sites']['release_site_list']
 
@@ -164,5 +164,4 @@ for i in range(iterations+1):
 
 print ( "Done simulation.\n" );
 
-"""
 
