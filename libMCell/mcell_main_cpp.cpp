@@ -106,7 +106,12 @@ int main ( int argc, char *argv[] ) {
   if (dump_data_model != 0) {
     dump_json_element_tree ( dm, 80, 0 ); printf ( "\n\n" );
   }
+
+  Simulation *sim = new Simulation;
   
+  sim->run ( proj_path, dm );
+
+/*
   // ##### Clear out the old data
 
   printf ( "Creating directories ...\n" );
@@ -125,8 +130,6 @@ int main ( int argc, char *argv[] ) {
 
   // ##### Use the Data Model to build a simulation and generate output files
 
-  Simulation *sim = new Simulation;
-  
   // data_model_element *mcell = json_get_element_with_key ( dm, "mcell" );
   data_model_element *top_array = json_get_element_by_index ( dm, 0 );
   data_model_element *mcell = json_get_element_with_key ( top_array, "mcell" );
@@ -239,7 +242,7 @@ int main ( int argc, char *argv[] ) {
     }
     this_site = this_site->next;
   }
-  
+
   // # Figure out the number of digits needed for file names and allocate strings as file name templates
 
   int ndigits = 1 + log10(iterations+1);
@@ -281,14 +284,12 @@ int main ( int argc, char *argv[] ) {
       int total_values = 3 * this_species->num_instances;
       fwrite ( &total_values, sizeof(int), 1, f );
       
-      /*
-      printf ( "length of name = %d\n", (int)name_len );
-      printf ( "molecule name  = %s\n", this_species->name );
-      printf ( "mol type = %s\n", this_species->type );
-      printf ( "type code = %d\n", (int)(this_species->type_code) );
-      printf ( "num mols = %d\n", this_species->num_instances );
-      printf ( "num values = %d\n", 3*this_species->num_instances );
-      */
+      // printf ( "length of name = %d\n", (int)name_len );
+      // printf ( "molecule name  = %s\n", this_species->name );
+      // printf ( "mol type = %s\n", this_species->type );
+      // printf ( "type code = %d\n", (int)(this_species->type_code) );
+      // printf ( "num mols = %d\n", this_species->num_instances );
+      // printf ( "num values = %d\n", 3*this_species->num_instances );
 
       MolInstance *this_mol_instance = this_species->instance_list;
       float float_val;
@@ -317,6 +318,8 @@ int main ( int argc, char *argv[] ) {
   }
 
   printf ( "Done C++ simulation.\n" );
+
+*/
 
   //free_json_tree ( dm );
   //free ( file_text );

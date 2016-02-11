@@ -1,4 +1,14 @@
+#ifndef LIBMCELL_CPP_H
+#define LIBMCELL_CPP_H
+
 // libMCell_cpp.h
+
+extern "C" {
+#include "JSON.h"
+}
+
+typedef json_element data_model_element;
+
 
 class MolInstance;
 
@@ -36,19 +46,18 @@ class MolInstance {
 };
 
 class Simulation {
+  private:
+    char *join_path ( char *, char, char * );
   public:
     MolSpecies *mol_species_list;
     ReleaseSite *rel_site_list;
     MolInstance *mol_instances_list;
+    int run ( char *, data_model_element * );
 };
 
 
-#include "JSON.h"
-
-typedef json_element data_model_element;
-
-extern int mcell_set_iterations(int iters);
-extern double mcell_set_time_step(double dt);
+int mcell_set_iterations(int);
+double mcell_set_time_step(double);
 
 /*
 class Shape {
@@ -115,8 +124,5 @@ extern void CoordDebug(Coord<double> *c);
 */
 
 
+#endif
 
-
-
-
-  

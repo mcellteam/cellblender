@@ -5,7 +5,7 @@ import math
 import random
 import array
 import shutil
-#import libMCell
+# import libMCell
 
 import libMCell_cpp
 

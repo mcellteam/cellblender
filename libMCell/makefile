@@ -55,8 +55,8 @@ mcell_main_cpp.o: mcell_main_cpp.cpp libMCell_cpp.h makefile
 libMCell_cpp.o: libMCell_cpp.cpp libMCell_cpp.h makefile
 	g++ -o libMCell_cpp.o -c libMCell_cpp.cpp
 
-mcell_main_cpp: mcell_main_cpp.o libMCell_cpp.o libMCell.o JSON.o makefile
-	g++ -o mcell_main_cpp mcell_main_cpp.o libMCell.o libMCell_cpp.o JSON.o
+mcell_main_cpp: mcell_main_cpp.o libMCell_cpp.o JSON.o makefile
+	g++ -o mcell_main_cpp mcell_main_cpp.o libMCell_cpp.o JSON.o
 
 _libMCell_cpp.so: setup.py libMCell_cpp.i libMCell_cpp.h libMCell_cpp.cpp makefile
 	python setup.py build_ext --inplace
@@ -65,7 +65,7 @@ test_cpp: mcell_main_cpp
 	./mcell_main_cpp proj_path=. data_model=dm.json
 
 #test_cpp_py: mcell_main_cpp.py _libMCell_cpp.so _libMCell.so
-test_cpp_py: mcell_main_cpp.py _libMCell_cpp.so
+test_cpp_py: mcell_main_cpp.py
 	python setup.py build_ext --inplace
 	python mcell_main_cpp.py proj_path=. data_model=dm.txt
 
