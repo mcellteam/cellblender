@@ -10,7 +10,7 @@
 
 extern "C" {
 #include "JSON.h"
-#include "libMCell.h"
+// #include "libMCell.h"
 }
 
 #include "libMCell_cpp.h"
@@ -71,7 +71,7 @@ void CoordDebug(Coord<double> *c) {
 }
 */
 
-
+/*
 int mcell_iterations = 0;
 int mcell_set_iterations(int iters) {
   printf ( "  * ** *** libMCell.mcell_set_mcell_iterations called with %d\n", iters );
@@ -85,7 +85,7 @@ double mcell_set_time_step(double dt) {
   mcell_time_step = dt;
   return ( mcell_time_step );
 }
-
+*/
 
 char *Simulation::join_path ( char *p1, char sep, char *p2 ) {
   char *joined_path;
@@ -150,10 +150,10 @@ int Simulation::run ( char *proj_path, data_model_element *dm ) {
   data_model_element *dm_init = json_get_element_with_key ( mcell, "initialization" );
 
   int iterations = json_get_int_value ( json_get_element_with_key ( dm_init, "iterations" ) );
-  mcell_set_iterations ( iterations );
+  // mcell_set_iterations ( iterations );
 
   double time_step = json_get_float_value ( json_get_element_with_key ( dm_init, "time_step" ) );
-  mcell_set_time_step ( time_step );
+  // mcell_set_time_step ( time_step );
 
 
   data_model_element *dm_define_molecules = json_get_element_with_key ( mcell, "define_molecules" );

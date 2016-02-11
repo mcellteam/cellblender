@@ -56,8 +56,8 @@ class Simulation {
 };
 
 
-int mcell_set_iterations(int);
-double mcell_set_time_step(double);
+// int mcell_set_iterations(int);
+// double mcell_set_time_step(double);
 
 /*
 class Shape {

@@ -87,9 +87,9 @@ if not os.path.exists(viz_seed_dir):
 ##### Use the Data Model to generate output files
 
 iterations = eval(dm['mcell']['initialization']['iterations'])
-libMCell_cpp.mcell_set_iterations ( iterations );
+#libMCell_cpp.mcell_set_iterations ( iterations );
 time_step = eval(dm['mcell']['initialization']['time_step'])
-libMCell_cpp.mcell_set_time_step ( time_step );
+#libMCell_cpp.mcell_set_time_step ( time_step );
 mols = dm['mcell']['define_molecules']['molecule_list']
 rels = dm['mcell']['release_sites']['release_site_list']
 
