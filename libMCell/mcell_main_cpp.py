@@ -5,7 +5,7 @@ import math
 import random
 import array
 import shutil
-import libMCell
+#import libMCell
 
 import libMCell_cpp
 
@@ -14,6 +14,7 @@ c = libMCell_cpp.Circle(2)
 print ( "Area = %g\n" % c.area() );
 
 
+"""
 ##### Start by reading the command line parameters which includes the data model file name
 
 print ( "\n\nMCell Python Prototype using libMCell %d arguments:\n" % len(sys.argv) )
@@ -53,13 +54,12 @@ if dm is None:
 
 ##### These are some test calls to the currently incomplete libMCell
 
-"""
-#print ( "My variable = %f" % libMCell.My_variable )  # This doesn't work yet
-print ( "5 factorial = %d" % libMCell.fact(5) )
-print ( "25 mod 7 = %d" % libMCell.my_mod(25,7) )
-print ( "sin(1.234) = %g" % libMCell.my_sin(1.234) )
-print ( "Time = %s" % libMCell.get_time() )
-"""
+
+### #print ( "My variable = %f" % libMCell.My_variable )  # This doesn't work yet
+### print ( "5 factorial = %d" % libMCell.fact(5) )
+### print ( "25 mod 7 = %d" % libMCell.my_mod(25,7) )
+### print ( "sin(1.234) = %g" % libMCell.my_sin(1.234) )
+### print ( "Time = %s" % libMCell.get_time() )
 
 ##### Clear out the old data
 
@@ -163,4 +163,6 @@ for i in range(iterations+1):
   f.close()
 
 print ( "Done simulation.\n" );
+
+"""
 

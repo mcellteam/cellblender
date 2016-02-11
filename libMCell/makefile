@@ -64,6 +64,7 @@ _libMCell_cpp.so: setup.py libMCell_cpp.i libMCell_cpp.h libMCell_cpp.cpp makefi
 test_cpp: mcell_main_cpp
 	./mcell_main_cpp proj_path=. data_model=dm.json
 
-test_cpp_py: mcell_main_cpp.py _libMCell_cpp.so _libMCell.so
+#test_cpp_py: mcell_main_cpp.py _libMCell_cpp.so _libMCell.so
+test_cpp_py: mcell_main_cpp.py _libMCell_cpp.so
 	python mcell_main_cpp.py proj_path=. data_model=dm.txt
 
