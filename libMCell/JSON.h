@@ -42,6 +42,8 @@ extern int json_tree_get_int ( json_element *, char * );
 extern json_element *json_get_element_with_key ( json_element *, char * );
 extern json_element *json_get_element_by_index ( json_element *, int );
 extern char *json_get_string_value ( json_element * );
+extern int json_get_int_value ( json_element * );
 extern double json_get_float_value ( json_element * );
+extern void dump_json_element_tree ( json_element *, int, int );
 
 #endif

@@ -13,20 +13,14 @@ JSON.o: JSON.c JSON.h makefile
 	gcc -o JSON.o -c JSON.c -fPIC -I$(PYTHON_INCLUDE)
 
 clean:
-	rm -f libMCell.o
 	rm -f libMCell.py
 	rm -f libMCell_wrap.c
-	rm -f libMCell_wrap.o
-	rm -f _libMCell.so
-	rm -f mcell_main.o
-	rm -f JSON.o
 	rm -f mcell_main
 	rm -f mcell_main_cpp
 	rm -f libMCell_cpp.py
 	rm -f libMCell_cpp_wrap.cpp
 	rm -f *.o
 	rm -f *.so
-	rm -f *.pyc
 	rm -f *.pyc
 	rm -f *~
 	rm -f __pycache__/*
@@ -61,15 +55,15 @@ mcell_main_cpp.o: mcell_main_cpp.cpp libMCell_cpp.h makefile
 libMCell_cpp.o: libMCell_cpp.cpp libMCell_cpp.h makefile
 	g++ -o libMCell_cpp.o -c libMCell_cpp.cpp
 
-mcell_main_cpp: mcell_main_cpp.o libMCell_cpp.o makefile
-	g++ -o mcell_main_cpp mcell_main_cpp.o libMCell_cpp.o
+mcell_main_cpp: mcell_main_cpp.o libMCell_cpp.o libMCell.o JSON.o makefile
+	g++ -o mcell_main_cpp mcell_main_cpp.o libMCell.o libMCell_cpp.o JSON.o
 
 _libMCell_cpp.so: setup.py libMCell_cpp.i libMCell_cpp.h libMCell_cpp.cpp makefile
 	python setup.py build_ext --inplace
 
 test_cpp: mcell_main_cpp
-	./mcell_main_cpp
+	./mcell_main_cpp proj_path=. data_model=dm.json
 
-test_cpp_py: mcell_main_cpp.py _libMCell_cpp.so
-	python mcell_main_cpp.py
+test_cpp_py: mcell_main_cpp.py _libMCell_cpp.so _libMCell.so
+	python mcell_main_cpp.py proj_path=. data_model=dm.txt
 
