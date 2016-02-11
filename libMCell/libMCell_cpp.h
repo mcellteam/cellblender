@@ -1,5 +1,44 @@
 // libMCell_cpp.h
 
+class MolInstance;
+
+
+class MolSpecies {
+ public:
+  char *name;
+  char *type;
+  char type_code;
+  double diffusion_const;
+  MolInstance *instance_list;
+  int num_instances;
+  MolSpecies *next;
+};
+
+
+class ReleaseSite {
+ public:
+  MolSpecies *molecule_species;
+  double loc_x;
+  double loc_y;
+  double loc_z;
+  double quantity;
+  ReleaseSite *next;
+};
+
+
+class MolInstance {
+ public:
+  MolSpecies *molecule_species;
+  double x;
+  double y;
+  double z;
+  MolInstance *next;
+};
+
+
+
+
+
 class Shape {
  public:
   int x,y;
