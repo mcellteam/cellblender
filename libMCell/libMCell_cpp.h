@@ -35,13 +35,20 @@ class MolInstance {
   MolInstance *next;
 };
 
-#include "JSON.h"
+class Simulation {
+  public:
+    MolSpecies *mol_species_list;
+    ReleaseSite *rel_site_list;
+    MolInstance *mol_instances_list;
+};
 
+
+#include "JSON.h"
 
 typedef json_element data_model_element;
 
-int mcell_set_iterations(int iters);
-double mcell_set_time_step(double dt);
+extern int mcell_set_iterations(int iters);
+extern double mcell_set_time_step(double dt);
 
 /*
 class Shape {

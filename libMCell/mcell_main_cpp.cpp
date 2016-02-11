@@ -43,9 +43,6 @@ int main ( int argc, char *argv[] ) {
   string greeting = "Hello from C++!!\n";
   cout << greeting;
 
-  //Circle c = Circle(2);
-  //printf ( "Area = %g\n", c.area() );
-
   // ##### Start by reading the command line parameters which includes the data model file name
 
   printf ( "\n\nMCell C++ prototype using libMCell with %d arguments:\n\n", argc-1 );
@@ -126,7 +123,9 @@ int main ( int argc, char *argv[] ) {
 
   printf ( "Generating C++ Data ...\n" );
 
-  // ##### Use the Data Model to generate output files
+  // ##### Use the Data Model to build a simulation and generate output files
+
+  Simulation *sim = new Simulation;
   
   // data_model_element *mcell = json_get_element_with_key ( dm, "mcell" );
   data_model_element *top_array = json_get_element_by_index ( dm, 0 );
@@ -165,13 +164,13 @@ int main ( int argc, char *argv[] ) {
 
   // Create structures to hold the molecules and fill them
 
-  MolSpecies *mol_species_list = NULL;
+  sim->mol_species_list = NULL;
 
   int mol_num = 0;
   data_model_element *this_mol;
   while ((this_mol=json_get_element_by_index(mols,mol_num)) != NULL) {
     MolSpecies *new_mol = new MolSpecies;
-    new_mol->next = mol_species_list;
+    new_mol->next = sim->mol_species_list;
     new_mol->instance_list = NULL;
     new_mol->num_instances = 0;
     new_mol->name = json_get_string_value ( json_get_element_with_key ( this_mol, "mol_name" ) );
@@ -182,7 +181,7 @@ int main ( int argc, char *argv[] ) {
       new_mol->type_code = 1;
     }
     new_mol->diffusion_const = json_get_float_value ( json_get_element_with_key ( this_mol, "diffusion_constant" ) );
-    mol_species_list = new_mol;
+    sim->mol_species_list = new_mol;
     printf ( "Molecule:\n" );
     printf ( "  name = %s\n", new_mol->name );
     printf ( "  type = %s\n", new_mol->type );
@@ -194,15 +193,15 @@ int main ( int argc, char *argv[] ) {
 
   // Create structures to hold the release sites and fill them
 
-  ReleaseSite *rel_site_list = NULL;
+  sim->rel_site_list = NULL;
 
   int rel_num = 0;
   data_model_element *this_rel;
   while ((this_rel=json_get_element_by_index(rels,rel_num)) != NULL) {
     ReleaseSite *new_rel = new ReleaseSite;
-    new_rel->next = rel_site_list;
+    new_rel->next = sim->rel_site_list;
     char *mname = json_get_string_value ( json_get_element_with_key ( this_rel, "molecule" ) );
-    MolSpecies *ms = mol_species_list;
+    MolSpecies *ms = sim->mol_species_list;
     while ( (ms != NULL) && (strcmp(mname,ms->name)!=0) ) {
       ms = ms->next;
     }
@@ -211,7 +210,7 @@ int main ( int argc, char *argv[] ) {
     new_rel->loc_y = json_get_float_value ( json_get_element_with_key ( this_rel, "location_y" ) );
     new_rel->loc_z = json_get_float_value ( json_get_element_with_key ( this_rel, "location_z" ) );
     new_rel->quantity = json_get_float_value ( json_get_element_with_key ( this_rel, "quantity" ) );
-    rel_site_list = new_rel;
+    sim->rel_site_list = new_rel;
     printf ( "Release Site:\n" );
     printf ( "  molecule_name = %s\n", new_rel->molecule_species->name );
     printf ( "  at x = %g\n", new_rel->loc_x );
@@ -225,9 +224,7 @@ int main ( int argc, char *argv[] ) {
 
   // # Create structures and instances for each molecule that is released (note that release patterns are not handled)
 
-  MolInstance *mol_instances_list = NULL;
-  
-  ReleaseSite *this_site = rel_site_list;
+  ReleaseSite *this_site = sim->rel_site_list;
   while (this_site != NULL) {
     int i;
     for (i=0; i<this_site->quantity; i++) {
@@ -274,7 +271,7 @@ int main ( int argc, char *argv[] ) {
     fwrite ( &binary_marker, sizeof(int), 1, f );
     
     // Write out the molecules from each species
-    MolSpecies *this_species = mol_species_list;
+    MolSpecies *this_species = sim->mol_species_list;
     while (this_species != NULL) {
       unsigned char name_len = 0x0ff & strlen(this_species->name);
       fwrite ( &name_len, sizeof(unsigned char), 1, f );
