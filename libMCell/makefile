@@ -1,6 +1,6 @@
 PYTHON_INCLUDE = /usr/include/python3.4m
 
-all: mcell_main
+all: mcell_main mcell_main_cpp _libMCell_cpp.so
 
 mcell_main: mcell_main.c libMCell.c libMCell.h libMCell.i JSON.o makefile
 	gcc -c mcell_main.c libMCell.c
@@ -21,6 +21,12 @@ clean:
 	rm -f mcell_main.o
 	rm -f JSON.o
 	rm -f mcell_main
+	rm -f mcell_main_cpp
+	rm -f libMCell_cpp.py
+	rm -f libMCell_cpp_wrap.cpp
+	rm -f *.o
+	rm -f *.so
+	rm -f *.pyc
 	rm -f *.pyc
 	rm -f *~
 	rm -f __pycache__/*
@@ -46,4 +52,24 @@ test_c: mcell_main
 test_py: mcell_python.py mcell_main
 	python3 mcell_python.py proj_path=. data_model=dm.txt
 
+
+# These are the C++ versions being added
+
+mcell_main_cpp.o: mcell_main_cpp.cpp libMCell_cpp.h makefile
+	g++ -o mcell_main_cpp.o -c mcell_main_cpp.cpp
+
+libMCell_cpp.o: libMCell_cpp.cpp libMCell_cpp.h makefile
+	g++ -o libMCell_cpp.o -c libMCell_cpp.cpp
+
+mcell_main_cpp: mcell_main_cpp.o libMCell_cpp.o makefile
+	g++ -o mcell_main_cpp mcell_main_cpp.o libMCell_cpp.o
+
+_libMCell_cpp.so: setup.py libMCell_cpp.i libMCell_cpp.h libMCell_cpp.cpp makefile
+	python setup.py build_ext --inplace
+
+test_cpp: mcell_main_cpp
+	./mcell_main_cpp
+
+test_cpp_py: mcell_main_cpp.py _libMCell_cpp.so
+	python mcell_main_cpp.py
 
