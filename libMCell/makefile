@@ -1,18 +1,20 @@
 PYTHON_INCLUDE = /usr/include/python3.4m
 
+CPPOPTS = -Wno-write-strings
+
 all: _libMCell.so mcell_main
 
 _libMCell.so: libMCell.cpp libMCell.h libMCell.i makefile
 	swig -python -c++ -o libMCell_wrap.cpp libMCell.i
-	g++ -c -fpic -I. -I/usr/include libMCell_wrap.cpp libMCell.cpp -I/usr/include/python2.7 -I/usr/lib/python2.7/config
+	g++ $(CPPOPTS) -c -fpic -I. -I/usr/include libMCell_wrap.cpp libMCell.cpp -I/usr/include/python2.7 -I/usr/lib/python2.7/config
 	g++ -shared -I/usr/include libMCell.o libMCell_wrap.o -o _libMCell.so
 	rm -f *.o
 
 libMCell.o: libMCell.cpp libMCell.h makefile
-	g++ -c libMCell.cpp -o libMCell.o
+	g++ $(CPPOPTS) -c libMCell.cpp -o libMCell.o
 
 mcell_main.o: mcell_main.cpp libMCell.h makefile
-	g++ -c mcell_main.cpp -o mcell_main.o
+	g++ $(CPPOPTS) -c mcell_main.cpp -o mcell_main.o
 
 mcell_main: mcell_main.o libMCell.o makefile
 	g++ -lm -o mcell_main mcell_main.o libMCell.o

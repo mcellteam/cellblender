@@ -3,7 +3,7 @@
 # This file illustrates the proxy class C++ interface generated
 # by SWIG.
 
-print ( "\n-------- Python -------- Python -------- Python -------- Python -------- Python -------- Python -------- Python\n" )
+print ( "\n-------- Python -------- Python -------- Python -------- Python -------- Python -------- Python -------- Python --------\n" )
 
 import libMCell
 
@@ -52,5 +52,5 @@ del s
 print libMCell.cvar.Shape_nshapes, "shapes remain"
 print "Goodbye"
 
-print ( "\n-------- Python -------- Python -------- Python -------- Python -------- Python -------- Python -------- Python\n" )
+print ( "\n-------- Python -------- Python -------- Python -------- Python -------- Python -------- Python -------- Python --------\n" )
 

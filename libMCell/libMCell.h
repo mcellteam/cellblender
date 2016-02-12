@@ -1,3 +1,9 @@
+#ifndef LIBMCELL_H
+#define LIBMCELL_H
+
+#include <stdlib.h>
+#include <string.h>
+
 /* File : libMCell.h */
 
 #define JSON_VAL_UNDEF -1
@@ -13,13 +19,24 @@
 
 class JSON_Element {
  public:
-  int type;              // This tells what's in this block
-  char *name;            // This is the key value when the type is in a dictionary
-  int start;             // Index of first char in this element
-  int end;               // Index of first char NOT in this element
+  int type;            // This tells what's in this block
+  char *name;          // This is the key value when the type is in a dictionary
+  int start;           // Index of first char in this element
+  int end;             // Index of first char NOT in this element
   JSON_Element **subs; // Contains the array or object (dictionary) with last NULL
 
+  JSON_Element() {     // Constructor for all new JSON_Elements
+    type = JSON_VAL_UNDEF;
+    name = NULL;
+    start = -1;
+    end = -1;
+    subs = NULL;
+  };
+
+  int count_subs();
+  int append_element ( JSON_Element *je );
   static char *get_json_name ( int type );
+  static JSON_Element *build_test_case ( int case_num );
 };
 
 
@@ -55,3 +72,7 @@ public:
   virtual double area();
   virtual double perimeter();
 };
+
+
+#endif
+
