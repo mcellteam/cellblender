@@ -8,12 +8,15 @@ _libMCell.so: libMCell.cpp libMCell.h libMCell.i makefile
 	g++ -shared -I/usr/include libMCell.o libMCell_wrap.o -o _libMCell.so
 	rm -f *.o
 
-mcell_main: mcell_main.cpp libMCell.o makefile
+libMCell.o: libMCell.cpp libMCell.h makefile
 	g++ -c libMCell.cpp -o libMCell.o
+
+mcell_main.o: mcell_main.cpp libMCell.h makefile
 	g++ -c mcell_main.cpp -o mcell_main.o
+
+mcell_main: mcell_main.o libMCell.o makefile
 	g++ -lm -o mcell_main mcell_main.o libMCell.o
 	rm -f *.o
-
 
 clean:
 	rm -rf __pycache__
@@ -27,5 +30,9 @@ test_py: mcell_main.py _libMCell.so
 	python mcell_main.py
 
 test_c: mcell_main
+	./mcell_main
+
+test: mcell_main mcell_main.py _libMCell.so
+	python mcell_main.py
 	./mcell_main
 
