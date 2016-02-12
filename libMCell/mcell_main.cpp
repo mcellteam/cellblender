@@ -20,6 +20,18 @@ int main ( int argc, char *argv[] ) {
   
   cout << "JSON_VAL_NUMBER = " << JSON_VAL_NUMBER << " is a " << JSON_Element::get_json_name(JSON_VAL_NUMBER) << endl;
 
+  JSON_List_Element *root = new JSON_List_Element;
+  JSON_Element *child;
+
+  child = new JSON_Number_Element(111);
+  root->append_element ( child );
+
+  child = new JSON_Number_Element(2.222);
+  root->append_element ( child );
+
+  child = new JSON_Element;
+  root->append_element ( child );
+
   printf ( "Still need to free lots of stuff!!\n" );
 
   cout << endl << "C ++++++++++++ C ++++++++++++ C ++++++++++++ C ++++++++++++ C ++++++++++++ C ++++++++++++ C ++++++++++++ C" << endl;

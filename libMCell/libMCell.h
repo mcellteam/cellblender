@@ -23,21 +23,50 @@ class JSON_Element {
   char *name;          // This is the key value when the type is in a dictionary
   int start;           // Index of first char in this element
   int end;             // Index of first char NOT in this element
-  JSON_Element **subs; // Contains the array or object (dictionary) with last NULL
-
+ public:   // Would like protected
   JSON_Element() {     // Constructor for all new JSON_Elements
     type = JSON_VAL_UNDEF;
     name = NULL;
     start = -1;
     end = -1;
-    subs = NULL;
   };
 
-  int count_subs();
-  int append_element ( JSON_Element *je );
+ public:
   static char *get_json_name ( int type );
   static JSON_Element *build_test_case ( int case_num );
 };
+
+
+class JSON_List_Element : public JSON_Element {
+ public:
+  JSON_Element **subs; // Contains the array or object (dictionary) with last NULL
+  JSON_List_Element() {
+    type = JSON_VAL_ARRAY;
+    subs = NULL;
+  };
+  int count_subs();
+  int append_element ( JSON_Element *je );
+};
+
+
+class JSON_Number_Element : public JSON_Element {
+ public:
+  int int_val=0;
+  double double_val=0;
+  JSON_Number_Element() : JSON_Element() {
+    type = JSON_VAL_NUMBER;
+  };
+  JSON_Number_Element( int v ) : JSON_Number_Element() {
+    int_val = v;
+  };
+  JSON_Number_Element( double v ) : JSON_Number_Element() {
+    double_val = v;
+  };
+};
+
+
+
+
 
 
 class Shape {

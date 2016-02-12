@@ -16,7 +16,7 @@ char *JSON_Element::get_json_name ( int type ) {
 }
 
 
-int JSON_Element::count_subs() {
+int JSON_List_Element::count_subs() {
   if ( (this->type != JSON_VAL_ARRAY) && (this->type != JSON_VAL_OBJECT) ) {
     return ( -1 );
   }
@@ -31,7 +31,7 @@ int JSON_Element::count_subs() {
 }
 
 
-int JSON_Element::append_element ( JSON_Element *je ) {
+int JSON_List_Element::append_element ( JSON_Element *je ) {
   if ( (this->type != JSON_VAL_ARRAY) && (this->type != JSON_VAL_OBJECT) ) {
     return ( -1 );
   }

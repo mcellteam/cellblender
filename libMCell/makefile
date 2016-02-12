@@ -1,6 +1,6 @@
 PYTHON_INCLUDE = /usr/include/python3.4m
 
-CPPOPTS = -Wno-write-strings
+CPPOPTS = -Wno-write-strings -std=c++11
 
 all: _libMCell.so mcell_main
 
