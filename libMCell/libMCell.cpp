@@ -2,6 +2,8 @@
 
 #include "libMCell.h"
 
+using namespace std;
+
 char *JSON_Element::get_json_name ( int type ) {
   if (type == JSON_VAL_UNDEF)  return ( "Undefined" );
   if (type == JSON_VAL_NULL)   return ( "Null" );

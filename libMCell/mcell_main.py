@@ -50,7 +50,40 @@ del c
 del s
 
 print libMCell.cvar.Shape_nshapes, "shapes remain"
-print "Goodbye"
+print "Done with shapes!!"
+
+root = libMCell.JSON_List_Element()
+
+child = libMCell.JSON_Number_Element(111)
+root.append_element ( child )
+
+child = libMCell.JSON_Number_Element(2.222)
+root.append_element ( child )
+
+child = libMCell.JSON_Element()
+root.append_element ( child )
+
+rootsub1 = libMCell.JSON_List_Element()
+
+grandchild = libMCell.JSON_Number_Element(0.1)
+rootsub1.append_element ( grandchild );
+
+grandchild = libMCell.JSON_Number_Element(0.2)
+rootsub1.append_element ( grandchild )
+
+grandchild = libMCell.JSON_Number_Element(0.3)
+rootsub1.append_element ( grandchild )
+
+root.append_element ( rootsub1 )
+
+child = libMCell.JSON_Number_Element(99)
+root.append_element ( child )
+
+#print ( "List = " + libMCell.JSON_Element.chars_from_string(root.to_string()) )
+root.print_self()
+
+
+
 
 print ( "\n-------- Python -------- Python -------- Python -------- Python -------- Python -------- Python -------- Python --------\n" )
 
