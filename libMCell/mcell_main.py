@@ -79,7 +79,9 @@ root.append_element ( rootsub1 )
 child = libMCell.JSON_Number_Element(99)
 root.append_element ( child )
 
-#print ( "List = " + libMCell.JSON_Element.chars_from_string(root.to_string()) )
+print ( "Prepare to print list" )
+# print ( "List = " + root.as_c_string() )
+print ( "Length of List = " + str(root.list_length()) )
 root.print_self()
 
 

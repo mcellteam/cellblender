@@ -74,6 +74,21 @@ class JSON_List_Element : public JSON_Element {
     str += " ]";
     return ( str );
   };
+  const char *as_c_string() {
+    string s = to_string();
+    printf ( "\n\nAbout to return\n\n" );
+    return ( s.c_str() );
+  }
+  int list_length() {
+    int sub_num = 0;
+    JSON_Element *s = subs[sub_num];
+    while ( s != NULL ) {
+      sub_num += 1;
+      s = subs[sub_num];
+    }
+    printf ( "\n\nAbout to return\n\n" );
+    return ( sub_num );
+  }
   int count_subs();
   int append_element ( JSON_Element *je );
 };
