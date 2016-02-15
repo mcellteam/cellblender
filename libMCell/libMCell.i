@@ -1,9 +1,11 @@
-/* File : libMCell.i */
+/* File : /* libMCell.i */
 %module libMCell
-
 %{
-#include "libMCell.h"
+/* Put header files here or function declarations like below */
+extern double mcell_set_iterations(int iters);
+extern double mcell_set_time_step(double dt);
 %}
+ 
+extern int mcell_set_iterations(int iters);
+extern double mcell_set_time_step(double dt);
 
-/* Use the original header file here */
-%include "libMCell.h"
