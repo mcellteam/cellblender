@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <typeinfo>
 
 using namespace std;
 
@@ -162,18 +163,38 @@ class json_parser {
 ////////////////   Internal Representation of Data after Parsing   /////////////////
 
 
+//--> This was an attempt to get the typeid just one time for each object:  type_info json_object_type = typeid(new json_object());
+
+
 class json_object : public unordered_map<string,void *> {
  public:
   virtual void print_self() {
-    cout << "json_array" << endl;
+    cout << "json_object" << endl;
+    cout << "type = " << typeid(this).name() << endl;
   }
 };
 
+int global_depth = 0;
 
 class json_array : public vector<void *> {
  public:
   virtual void print_self() {
-    cout << "json_array" << endl;
+    global_depth += 1;
+    cout << "json_array is at " << this << endl;
+    cout << "json_array contains " << this->size() << " elements" << endl;
+    for (int i=0; i<this->size(); i++) {
+      cout << "SUB OBJECT " << i << " at depth " << global_depth << " is a " << typeid(this[i]).name() << " at " << (void *)this << endl;
+      this[i].print_self();
+    }
+    global_depth += -1;
+    
+    
+    cout << "type.name = " << typeid(this).name() << endl;
+    bool match = (typeid(this) == typeid(new json_array()));
+    cout << "match = " << match << endl;
+    match = (typeid(this) == typeid(new json_object()));
+    cout << "match = " << match << endl;
+    //cout << "type = " << typeid(this) << endl;
   }
 };
 
@@ -182,7 +203,7 @@ class json_primitive {
  public:
   string text;
   virtual void print_self() {
-    cout << "json_array" << endl;
+    cout << "json_primitive" << endl;
   }
 };
 
@@ -202,7 +223,7 @@ class json_number : public json_primitive {
     this->as_int = false;
   }
   virtual void print_self() {
-    cout << "json_array" << endl;
+    cout << "json_number" << endl;
   }
 };
 
@@ -213,7 +234,7 @@ class json_string : public json_primitive {
     this->text = s;
   }
   virtual void print_self() {
-    cout << "json_array" << endl;
+    cout << "json_string" << endl;
   }
 };
 
@@ -224,7 +245,7 @@ class json_true : public json_primitive {
     this->text = s;
   }
   virtual void print_self() {
-    cout << "json_array" << endl;
+    cout << "json_true" << endl;
   }
 };
 
@@ -235,7 +256,7 @@ class json_false : public json_primitive {
     this->text = s;
   }
   virtual void print_self() {
-    cout << "json_array" << endl;
+    cout << "json_false" << endl;
   }
 };
 
@@ -246,7 +267,7 @@ class json_null : public json_primitive {
     this->text = s;
   }
   virtual void print_self() {
-    cout << "json_array" << endl;
+    cout << "json_null" << endl;
   }
 };
 
@@ -275,6 +296,7 @@ int json_parser::parse_element ( void *parent, int index, int depth ) {
         // Add a null object to the parent
         json_array *p = (json_array *)parent;
         json_null *val = new json_null;
+        cout << "Created a json_null at " << (void *)val << " with parent at " << parent << endl;
         p->push_back( (void *)val );
         start += 4;
       } else if ( strncmp ( true_template, &text[start], 4) == 0 ) {
@@ -283,6 +305,7 @@ int json_parser::parse_element ( void *parent, int index, int depth ) {
         json_array *p = (json_array *)parent;
         json_true *val = new json_true;
         p->push_back( (void *)val );
+        cout << "Created a json_true at " << (void *)val << " with parent at " << parent << endl;
         start += 4;
       } else if ( strncmp ( false_template, &text[start], 5) == 0 ) {
         post_store_skipped ( JSON_VAL_FALSE, start, start+5, depth );
@@ -290,6 +313,7 @@ int json_parser::parse_element ( void *parent, int index, int depth ) {
         json_array *p = (json_array *)parent;
         json_false *val = new json_false;
         p->push_back( (void *)val );
+        cout << "Created a json_false at " << (void *)val << " with parent at " << parent << endl;
         start += 5;
       } else {
         cout << "Unexpected char (" << text[start] << ") in " << text << endl;
@@ -303,6 +327,9 @@ int json_parser::parse_element ( void *parent, int index, int depth ) {
 
 
 int json_parser::parse_keyval ( void *parent, int index, int depth ) {
+
+//////////////// NOTE: Should probably use std::pair to store these key/value pairs!!!!
+
     json_array *key_val = new json_array();
 
     json_element *je = pre_store_skipped ( JSON_VAL_KEYVAL, index, index, depth );
@@ -317,8 +344,11 @@ int json_parser::parse_keyval ( void *parent, int index, int depth ) {
 
     json_object *p = (json_object *)parent;
     json_string *s = (json_string *)(key_val->at(0));
-    cout << "Key = " << s->text << endl;
+    // cout << "Key = " << s->text << endl;
     p->insert ( { s->text, (void *)(key_val->at(1)) } );
+
+    cout << "Created a json_keyval with parent at " << parent << endl;
+
     return (end);
   }
 
@@ -334,6 +364,8 @@ int json_parser::parse_object ( void *parent, int index, int depth ) {
     json_object *o = new json_object();
     p->push_back ( (void *)o );
 
+    cout << "Created a json_object at " << (void *)o << " with parent at " << parent << endl;
+
     while (text[end] != '}') {
       end = parse_keyval ( o, end, depth );
       end = skip_sepspace ( end, depth );
@@ -347,6 +379,7 @@ int json_parser::parse_object ( void *parent, int index, int depth ) {
 
 
 int json_parser::parse_array ( void *parent, int index, int depth ) {
+
     json_element *je = pre_store_skipped ( JSON_VAL_ARRAY, index, index, depth );
     int end = index+1;
     depth += 1;
@@ -354,6 +387,8 @@ int json_parser::parse_array ( void *parent, int index, int depth ) {
     json_array *p = (json_array *)parent;
     json_array *child = new json_array();
     p->push_back ( (void *)child );
+
+    cout << "Created a json_array at " << (void *)child << " with parent at " << parent << endl;
 
     while (text[end] != ']') {
       end = parse_element ( child, end, depth );
@@ -382,6 +417,8 @@ int json_parser::parse_string ( void *parent, int index, int depth ) {
     json_string *val = new json_string(sub_string);
     p->push_back( (void *)val );
 
+    cout << "Created a json_string at " << (void *)val << " with parent at " << parent << endl;
+
     return (end + 1);
   }
 
@@ -404,6 +441,8 @@ int json_parser::parse_number ( void *parent, int index, int depth ) {
     json_number *val = new json_number(sub_string);
     p->push_back( (void *)val );
 
+    cout << "Created a json_string at " << (void *)val << " with parent at " << parent << endl;
+
     return (end);
   }
 
@@ -411,8 +450,8 @@ int json_parser::parse_number ( void *parent, int index, int depth ) {
 int main() {
   cout << "JSON C++ Parser" << endl;
 
-  char *text = "{\"A\":true,\"mc\":[{\"a\":0.01},1e-5,2,true,[9,[0,3],\"a\",345],false,null,5,[1,2,3],\"xyz\"],\"x\":\"y\"}";
-  // char *text = "[9,[0,3],{\"a\":5}]";
+  //char *text = "{\"A\":true,\"mc\":[{\"a\":0.01},1e-5,2,true,[9,[0,3],\"a\",345],false,null,5,[1,2,3],\"xyz\"],\"x\":\"y\"}";
+  char *text = "[9,[0,3],{\"a\":5}]";
 
   json_array top;
   json_parser p = json_parser(text);
