@@ -113,15 +113,15 @@ class json_parser {
       for (int d=0; d<j->depth; d++) {
         cout << "    ";
       }
-      string text;
-      text.assign (this->text);
+      string local_text;
+      local_text.assign (text);
       string display;
       if ( (j->end - j->start) <= max_len ) {
-        display = text.substr(j->start,j->end-j->start);
+        display = local_text.substr(j->start,j->end-j->start);
       } else {
-        display = text.substr(j->start,max_len-4);
+        display = local_text.substr(j->start,max_len-4);
       }
-      // System.out.println ( "|-" + j.get_name() + " at depth " + j.depth + " from " + j.start + " to " + (j.end-1) + " = " + display );
+      cout << "|-" << j->get_name() << " at depth " << j->depth << " from " << j->start << " to " << (j->end-1) << " = " << display << endl;
     }
   }
 
@@ -149,8 +149,113 @@ class json_parser {
     return i;
   }
 
+  int parse_element ( void *parent, int index, int depth );
+  int parse_keyval ( void *parent, int index, int depth );
+  int parse_object ( void *parent, int index, int depth );
+  int parse_array ( void *parent, int index, int depth );
+  int parse_string ( void *parent, int index, int depth );
+  int parse_number ( void *parent, int index, int depth );
 
-  int parse_element ( void *parent, int index, int depth ) {
+};
+
+
+////////////////   Internal Representation of Data after Parsing   /////////////////
+
+
+class json_object : public unordered_map<string,void *> {
+ public:
+  virtual void print_self() {
+    cout << "json_array" << endl;
+  }
+};
+
+
+class json_array : public vector<void *> {
+ public:
+  virtual void print_self() {
+    cout << "json_array" << endl;
+  }
+};
+
+
+class json_primitive {
+ public:
+  string text;
+  virtual void print_self() {
+    cout << "json_array" << endl;
+  }
+};
+
+class json_number : public json_primitive {
+ public:
+  double value = 0.0;
+  bool as_int = false;
+  json_number ( string s ) {
+    this->text = s;
+  }
+  json_number ( int v ) {
+    this->value = v;
+    this->as_int = true;
+  }
+  json_number ( double v ) {
+    this->value = v;
+    this->as_int = false;
+  }
+  virtual void print_self() {
+    cout << "json_array" << endl;
+  }
+};
+
+
+class json_string : public json_primitive {
+ public:
+  json_string ( string s ) {
+    this->text = s;
+  }
+  virtual void print_self() {
+    cout << "json_array" << endl;
+  }
+};
+
+class json_true : public json_primitive {
+ public:
+  json_true () { }
+  json_true ( string s ) {
+    this->text = s;
+  }
+  virtual void print_self() {
+    cout << "json_array" << endl;
+  }
+};
+
+class json_false : public json_primitive {
+ public:
+  json_false () { }
+  json_false ( string s ) {
+    this->text = s;
+  }
+  virtual void print_self() {
+    cout << "json_array" << endl;
+  }
+};
+
+class json_null : public json_primitive {
+ public:
+  json_null () { }
+  json_null ( string s ) {
+    this->text = s;
+  }
+  virtual void print_self() {
+    cout << "json_array" << endl;
+  }
+};
+
+
+////////////////////
+// These are currently down here because I couldn't figure out how to forward reference the various json_type classes directly above
+////////////////////
+
+int json_parser::parse_element ( void *parent, int index, int depth ) {
     int start = skip_whitespace ( index, depth );
     if (start >= 0) {
       if ( text[start] == '{' ) {
@@ -169,19 +274,22 @@ class json_parser {
         post_store_skipped ( JSON_VAL_NULL, start, start+4, depth );
         // Add a null object to the parent
         json_array *p = (json_array *)parent;
-//fix        p.add ( new json_null() );
+        json_null *val = new json_null;
+        p->push_back( (void *)val );
         start += 4;
       } else if ( strncmp ( true_template, &text[start], 4) ) {
         post_store_skipped ( JSON_VAL_TRUE, start, start+4, depth );
         // Add a true object to the parent
         json_array *p = (json_array *)parent;
-//fix        p.add ( new json_true() );
+        json_true *val = new json_true;
+        p->push_back( (void *)val );
         start += 4;
       } else if ( strncmp ( false_template, &text[start], 5) ) {
         post_store_skipped ( JSON_VAL_FALSE, start, start+5, depth );
         // Add a false object to the parent
         json_array *p = (json_array *)parent;
-//fix        p.add ( new json_false() );
+        json_false *val = new json_false;
+        p->push_back( (void *)val );
         start += 5;
       } else {
         cout << "Unexpected char (" << text[start] << ") in " << text << endl;
@@ -191,178 +299,127 @@ class json_parser {
   }
 
 
-  int parse_keyval ( void *parent, int index, int depth ) {
-/*
-    json_array key_val = new json_array();
 
-    json_element je = pre_store_skipped ( json_element.JSON_VAL_KEYVAL, index, index, depth );
+
+
+int json_parser::parse_keyval ( void *parent, int index, int depth ) {
+    json_array *key_val = new json_array();
+
+    json_element *je = pre_store_skipped ( JSON_VAL_KEYVAL, index, index, depth );
     index = skip_whitespace ( index, depth );
     int end = index;
     end = parse_string ( key_val, end, depth );
 
-
     end = skip_whitespace ( end, depth );
     end = end + 1;  // This is the colon separator (:)
     end = parse_element ( key_val, end, depth );
-    post_store_skipped ( json_element.JSON_VAL_KEYVAL, index, end, depth, je );
+    post_store_skipped ( JSON_VAL_KEYVAL, index, end, depth, je );
 
-    json_object p = (json_object)parent;
-    json_string s = (json_string)(key_val.get(0));
-    p.put ( s.text, key_val.get(1) );
-
+    json_object *p = (json_object *)parent;
+    json_string *s = (json_string *)(key_val->at(0));
+    cout << "Key = " << s->text << endl;
+    p->insert ( { s->text, (void *)(key_val->at(1)) } );
     return (end);
-*/ return ( index + 1 );
   }
 
-  int parse_object ( void *parent, int index, int depth ) {
-/*
-    json_element je = pre_store_skipped ( json_element.JSON_VAL_OBJECT, index, index, depth );
+
+
+
+int json_parser::parse_object ( void *parent, int index, int depth ) {
+    json_element *je = pre_store_skipped ( JSON_VAL_OBJECT, index, index, depth );
     int end = index+1;
     depth += 1;
 
-    json_array p = (json_array)parent;
-    json_object o = new json_object();
-    p.add ( o );
+    json_array *p = (json_array *)parent;
+    json_object *o = new json_object();
+    p->push_back ( (void *)o );
 
-    while (text.charAt(end) != '}') {
+    while (text[end] != '}') {
       end = parse_keyval ( o, end, depth );
       end = skip_sepspace ( end, depth );
     }
     depth += -1;
-    post_store_skipped ( json_element.JSON_VAL_OBJECT, index, end+1, depth, je );
+    post_store_skipped ( JSON_VAL_OBJECT, index, end+1, depth, je );
+
     return (end + 1);
-*/ return ( index + 1 );
   }
 
-  int parse_array ( void *parent, int index, int depth ) {
-/*
-    json_element je = pre_store_skipped ( json_element.JSON_VAL_ARRAY, index, index, depth );
+
+
+int json_parser::parse_array ( void *parent, int index, int depth ) {
+    json_element *je = pre_store_skipped ( JSON_VAL_ARRAY, index, index, depth );
     int end = index+1;
     depth += 1;
 
-    json_array p = (json_array)parent;
-    json_array child = new json_array();
-    p.add ( child );
+    json_array *p = (json_array *)parent;
+    json_array *child = new json_array();
+    p->push_back ( (void *)child );
 
-    while (text.charAt(end) != ']') {
+    while (text[end] != ']') {
       end = parse_element ( child, end, depth );
       end = skip_sepspace ( end, depth );
     }
     depth += -1;
-    post_store_skipped ( json_element.JSON_VAL_ARRAY, index, end+1, depth, je );
+    post_store_skipped ( JSON_VAL_ARRAY, index, end+1, depth, je );
     return (end + 1);
-*/ return ( index + 1 );
   }
 
-  int parse_string ( void *parent, int index, int depth ) {
-/*
+
+int json_parser::parse_string ( void *parent, int index, int depth ) {
     int end = index+1;
-    while (text.charAt(end) != '"') {
+    while (text[end] != '"') {
       end++;
     }
-    post_store_skipped ( json_element.JSON_VAL_STRING, index, end+1, depth );
+    post_store_skipped ( JSON_VAL_STRING, index, end+1, depth );
 
-    json_array p = (json_array)parent;
-    p.add ( new json_string(text.substring(index+1,end)) );
+    json_array *p = (json_array *)parent;
+
+    string local_text;
+    local_text.assign (text);
+
+    string sub_string = local_text.substr(index+1,end-index);
+    
+    json_string *val = new json_string(sub_string);
+    p->push_back( (void *)val );
 
     return (end + 1);
-*/ return ( index + 1 );
   }
 
-  int parse_number ( void *parent, int index, int depth ) {
-/*
+
+int json_parser::parse_number ( void *parent, int index, int depth ) {
     int end = index;
-    String number_chars = "0123456789.-+eE";
-    while (number_chars.indexOf(text.charAt(end)) >= 0 ) {
+    const char *number_chars = "0123456789.-+eE";
+    while ( strchr(number_chars,text[end]) != NULL ) {
       end++;
     }
-    post_store_skipped ( json_element.JSON_VAL_NUMBER, index, end, depth );
+    post_store_skipped ( JSON_VAL_NUMBER, index, end, depth );
 
-    json_array p = (json_array)parent;
-    p.add ( new json_number(text.substring(index,end)) );
+    json_array *p = (json_array *)parent;
+
+    string local_text;
+    local_text.assign (text);
+
+    string sub_string = local_text.substr(index,end-index);
+    
+    json_number *val = new json_number(sub_string);
+    p->push_back( (void *)val );
 
     return (end);
-*/ return ( index + 1 );
   }
-
-
-};
-
-
-////////////////   Internal Representation of Data after Parsing   /////////////////
-
-
-class json_object : unordered_map<string,void *> {
-};
-
-
-class json_array : vector<void *> {
-};
-
-
-class json_primitive {
- public:
-  string text;
-};
-
-class json_number : json_primitive {
- public:
-  double value = 0.0;
-  bool as_int = false;
-  json_number ( string s ) {
-    this->text = s;
-  }
-  json_number ( int v ) {
-    this->value = v;
-    this->as_int = true;
-  }
-  json_number ( double v ) {
-    this->value = v;
-    this->as_int = false;
-  }
-};
-
-
-class json_string : json_primitive {
- public:
-  json_string ( string s ) {
-    this->text = s;
-  }
-};
-
-class json_true : json_primitive {
- public:
-  json_true () { }
-  json_true ( string s ) {
-    this->text = s;
-  }
-};
-
-class json_false : json_primitive {
- public:
-  json_false () { }
-  json_false ( string s ) {
-    this->text = s;
-  }
-};
-
-class json_null : json_primitive {
- public:
-  json_null () { }
-  json_null ( string s ) {
-    this->text = s;
-  }
-};
 
 
 int main() {
   cout << "JSON C++ Parser" << endl;
 
-  char *text = "{\"A\":true,\"mc\":[{\"a\":0.01},1e-5,2,true,[9,[0,3],\"a\",345],false,null,5,[1,2,3],\"xyz\"],\"x\":\"y\"}";
+  // char *text = "{\"A\":true,\"mc\":[{\"a\":0.01},1e-5,2,true,[9,[0,3],\"a\",345],false,null,5,[1,2,3],\"xyz\"],\"x\":\"y\"}";
+  char *text = "[9,[0,3],{\"a\":5}]";
 
   json_array top;
   json_parser p = json_parser(text);
   p.parse ( &top );
+  p.dump(50);
+
+  top.print_self();
 
   json_element *je = new json_element(0,0,0,0);
   cout << "Hello!! " << JSON_VAL_ARRAY << endl;
