@@ -1,16 +1,21 @@
 PYTHON_INCLUDE = /usr/include/python3.4m
 
-all: mcell_main mcell_main_cpp _libMCell_cpp.so
+all: mcell_main mcell_main_cpp _libMCell_cpp.so JSON.jar
 
 mcell_main: mcell_main.c libMCell.c libMCell.h libMCell.i JSON.o makefile
 	gcc -c mcell_main.c libMCell.c
 	gcc -lm -o mcell_main mcell_main.o libMCell.o JSON.o
-	swig -python libMCell.i
+	swig -python -py3 libMCell.i
 	gcc -c libMCell.c libMCell_wrap.c -fPIC -I$(PYTHON_INCLUDE)
 	ld -lm -shared libMCell.o libMCell_wrap.o JSON.o -o _libMCell.so
 
 JSON.o: JSON.c JSON.h makefile
 	gcc -o JSON.o -c JSON.c -fPIC -I$(PYTHON_INCLUDE)
+
+JSON.jar: JSON.java makefile
+	javac JSON.java
+	jar -cfe JSON.jar JSON *.class
+	rm -f *.class
 
 clean:
 	rm -f libMCell.py
@@ -23,6 +28,8 @@ clean:
 	rm -f *.so
 	rm -f *.pyc
 	rm -f *~
+	rm -f *.class
+	rm -f *.jar
 	rm -f __pycache__/*
 	rmdir __pycache__
 	rm -f react_data/*
@@ -59,13 +66,18 @@ mcell_main_cpp: mcell_main_cpp.o libMCell_cpp.o JSON.o makefile
 	g++ -o mcell_main_cpp mcell_main_cpp.o libMCell_cpp.o JSON.o
 
 _libMCell_cpp.so: setup.py libMCell_cpp.i libMCell_cpp.h libMCell_cpp.cpp makefile
-	python setup.py build_ext --inplace
+	python3 setup.py build_ext --inplace
 
 test_cpp: mcell_main_cpp
 	./mcell_main_cpp proj_path=. data_model=dm.json
 
-#test_cpp_py: mcell_main_cpp.py _libMCell_cpp.so _libMCell.so
-test_cpp_py: mcell_main_cpp.py
-	python setup.py build_ext --inplace
-	python mcell_main_cpp.py proj_path=. data_model=dm.txt
+#test_cpp_py: mcell_main_cpp.py
+test_cpp_py: mcell_main_cpp.py _libMCell_cpp.so
+	#python setup.py build_ext --inplace
+	python3 mcell_main_cpp.py proj_path=. data_model=dm.txt
+
+test_json: JSON.cpp makefile
+	g++ -o JSON_cpp.o -c -std=c++11 -Wwrite-strings JSON.cpp
+	g++ -o JSON_cpp JSON_cpp.o
+	./JSON_cpp
 
