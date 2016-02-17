@@ -270,21 +270,21 @@ int json_parser::parse_element ( void *parent, int index, int depth ) {
       } else if ( strchr(leading_number_chars,text[start]) != NULL ) {
         // This will add a number object to the parent
         start = parse_number ( parent, start, depth );
-      } else if ( strncmp ( null_template, &text[start], 4) ) {
+      } else if ( strncmp ( null_template, &text[start], 4) == 0 ) {
         post_store_skipped ( JSON_VAL_NULL, start, start+4, depth );
         // Add a null object to the parent
         json_array *p = (json_array *)parent;
         json_null *val = new json_null;
         p->push_back( (void *)val );
         start += 4;
-      } else if ( strncmp ( true_template, &text[start], 4) ) {
+      } else if ( strncmp ( true_template, &text[start], 4) == 0 ) {
         post_store_skipped ( JSON_VAL_TRUE, start, start+4, depth );
         // Add a true object to the parent
         json_array *p = (json_array *)parent;
         json_true *val = new json_true;
         p->push_back( (void *)val );
         start += 4;
-      } else if ( strncmp ( false_template, &text[start], 5) ) {
+      } else if ( strncmp ( false_template, &text[start], 5) == 0 ) {
         post_store_skipped ( JSON_VAL_FALSE, start, start+5, depth );
         // Add a false object to the parent
         json_array *p = (json_array *)parent;
@@ -411,13 +411,13 @@ int json_parser::parse_number ( void *parent, int index, int depth ) {
 int main() {
   cout << "JSON C++ Parser" << endl;
 
-  // char *text = "{\"A\":true,\"mc\":[{\"a\":0.01},1e-5,2,true,[9,[0,3],\"a\",345],false,null,5,[1,2,3],\"xyz\"],\"x\":\"y\"}";
-  char *text = "[9,[0,3],{\"a\":5}]";
+  char *text = "{\"A\":true,\"mc\":[{\"a\":0.01},1e-5,2,true,[9,[0,3],\"a\",345],false,null,5,[1,2,3],\"xyz\"],\"x\":\"y\"}";
+  // char *text = "[9,[0,3],{\"a\":5}]";
 
   json_array top;
   json_parser p = json_parser(text);
   p.parse ( &top );
-  p.dump(50);
+  p.dump(90);
 
   top.print_self();
 
