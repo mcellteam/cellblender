@@ -10,7 +10,7 @@ class MCellMoleculeInstance; // Forward declaration needed
 
 class MCellMoleculeSpecies {
  public:
-  char *name;
+  string name;
   string type;
   char type_code;
   double diffusion_constant;
@@ -26,6 +26,10 @@ class MCellMoleculeSpecies {
     diffusion_constant = 0.0;
     instance_list = NULL;
     num_instances = 0;
+  }
+
+  void set_name ( char *name ) {
+    this->name = string(name);
   }
 
 };
