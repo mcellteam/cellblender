@@ -11,7 +11,6 @@
 #include <string>
 #include <vector>
 
-
 #include "libMCell.h"
 
 using namespace std;
@@ -47,39 +46,6 @@ void MCellSimulation::add_molecule_release_site ( MCellReleaseSite *site ) {
 
 void MCellSimulation::run_simulation ( char *proj_path ) {
   int iteration;
-
-  // ##### Start by reading the command line parameters which includes the data model file name
-
-/*
-  printf ( "\n\nMCell C prototype using libMCell with %d arguments:\n\n", argc-1 );
-
-  char *proj_path = NULL;
-  char *data_model_file_name = NULL;
-  char *data_model_full_path = "dm.json";
-  
-  int dump_data_model = 0;
-
-  { // Keep Loop Var Local
-    int i;
-    for (i=1; i<argc; i++) {
-      printf ( "   Arg: %s\n", argv[i] );
-      if (strncmp("proj_path=",argv[i],10) == 0) {
-        proj_path = &argv[i][10];
-      }
-      if (strncmp("data_model=",argv[i],11) == 0) {
-        data_model_file_name = &argv[i][11];
-      }
-      if (strcmp("dump",argv[i]) == 0) {
-        dump_data_model = 1;
-      }
-    }
-  }  
-  printf ( "\n" );
-  
-  data_model_full_path = join_path ( proj_path, '/', data_model_file_name );
-  
-  printf ( "Project path = \"%s\", data_model_file_name = \"%s\"\n", proj_path, data_model_full_path );
-*/
 
   printf ( "Project path = \"%s\"\n", proj_path );
 
@@ -190,44 +156,3 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define M_PI 3.14159265358979323846
-
-/* Move the shape to a new location */
-void Shape::move(double dx, double dy) {
-  x += dx;
-  y += dy;
-}
-
-int Shape::nshapes = 0;
-
-double Circle::area() {
-  return M_PI*radius*radius;
-}
-
-double Circle::perimeter() {
-  return 2*M_PI*radius;
-}
-
-double Square::area() {
-  return width*width;
-}
-
-double Square::perimeter() {
-  return 4*width;
-}
