@@ -20,13 +20,13 @@ print ( "\n\n" )
 mcell = MCellSimulation()
 
 mol_a = MCellMoleculeSpecies();
-#mol_a.name = "A";  // TODO There seems to be a conflict between C++ string and char * that needs to be resolved!!
-mol_a.diffusion_constant = 1e-7;
+#mol_a.name = "A";  #// TODO There seems to be a conflict between C++ string and char * that needs to be resolved!!
+mol_a.diffusion_constant = 1e-6;
 mcell.add_molecule_species ( mol_a );
 
 mol_b = MCellMoleculeSpecies();
-#mol_b.name = "B";  // TODO There seems to be a conflict between C++ string and char * that needs to be resolved!!
-mol_b.diffusion_constant = 2e-7;
+#mol_b.name = "B";  #// TODO There seems to be a conflict between C++ string and char * that needs to be resolved!!
+mol_b.diffusion_constant = 2e-6;
 mcell.add_molecule_species ( mol_b );
 
 rel_a = MCellReleaseSite();

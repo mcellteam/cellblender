@@ -122,9 +122,9 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
       this_species = this->molecule_species[sp_num];
       cout << "Simulating for species " << this_species->name << endl;
 
-      unsigned char name_len = 0x0ff & this_species->name.length();
+      unsigned char name_len = 0x0ff & strlen(this_species->name);
       fwrite ( &name_len, sizeof(unsigned char), 1, f );
-      fwrite ( this_species->name.c_str(), sizeof(unsigned char), this_species->name.length(), f );
+      fwrite ( this_species->name, sizeof(unsigned char), strlen(this_species->name), f );
       unsigned char type_code = 0x0ff & (int)(this_species->type_code);
       fwrite ( &type_code, sizeof(unsigned char), 1, f );
       int total_values = 3 * this_species->num_instances;
