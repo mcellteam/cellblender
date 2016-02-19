@@ -24,8 +24,8 @@ libMCell.o: libMCell.cpp libMCell.h makefile
 mcell_main.o: mcell_main.cpp libMCell.h makefile
 	g++ -c -Wno-write-strings mcell_main.cpp -o mcell_main.o
 
-mcell_main: mcell_main.o libMCell.o makefile
-	g++ -lm -o mcell_main mcell_main.o libMCell.o
+mcell_main: mcell_main.o JSON.o libMCell.o makefile
+	g++ -lm -o mcell_main mcell_main.o JSON.o libMCell.o
 
 clean:
 	rm -f mcell_main
@@ -34,6 +34,7 @@ clean:
 	rm -f core
 	rm -f *.o *.so
 	rm -f libMCell.py
+	rm -f *.class *.jar
 	rm -f *~
 
 cleansubs:
