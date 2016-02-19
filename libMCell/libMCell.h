@@ -9,8 +9,11 @@ using namespace std;
 class MCellMoleculeInstance; // Forward declaration needed
 
 class MCellMoleculeSpecies {
+ private:
+  static int next_species_id;
  public:
   string name;
+  int species_id;
   string type;
   char type_code;
   double diffusion_constant;
@@ -20,9 +23,11 @@ class MCellMoleculeSpecies {
   int num_instances;
 
   MCellMoleculeSpecies() {
-    name = "X";
+    species_id = next_species_id++;
+    cout << "Constructed a new molecule species " << species_id << endl;
+    name = "";
     type = 'v';
-    type_code = 0;
+    type_code = '\0';
     diffusion_constant = 0.0;
     instance_list = NULL;
     num_instances = 0;
@@ -44,9 +49,17 @@ class MCellMoleculeInstance {
 class MCellReleaseSite {
  public:
   MCellMoleculeSpecies *molecule_species;
+  int mol_id;
   double x, y, z;
   double quantity;
   MCellReleaseSite *next;
+  MCellReleaseSite() {
+    molecule_species = NULL;
+    mol_id = 0;
+    x = y = z = quantity = 0;
+    next = NULL;
+  }
+
 };
 
 
@@ -70,11 +83,33 @@ class MCellSimulation {
   virtual ~MCellSimulation() {
     num_simulations--;
   }
-  
+
+  void dump() {
+    cout << endl << "<> <> <> MCell Data <> <> <>" << endl;
+    MCellMoleculeSpecies *this_species = NULL;
+    for (int sp_num=0; sp_num<this->molecule_species.size(); sp_num++) {
+      this_species = this->molecule_species[sp_num];
+      cout << "Simulation contains molecule with species = " << this_species->species_id << endl;
+    }
+    cout << endl;
+    MCellReleaseSite *this_site = NULL;
+    for (int sp_num=0; sp_num<this->molecule_release_sites.size(); sp_num++) {
+      this_site = this->molecule_release_sites[sp_num];
+      if (this_site->mol_id > 0) {
+        cout << "Simulation contains release site releasing species = " << this_site->mol_id << endl;
+      } else {
+        cout << "Simulation contains release site releasing species = " << this_site->molecule_species->name << endl;
+      }
+    }
+    cout << endl;
+  }
+
   void add_molecule_species ( MCellMoleculeSpecies *species );
   void add_molecule_release_site ( MCellReleaseSite *site );
+  // MCellMoleculeSpecies *get_molecule_species_by_name ( char *species_name );
+  MCellMoleculeSpecies *get_molecule_species_by_id ( int species_id );
 
   void run_simulation ( char *proj_path );
 };
 
-
+  

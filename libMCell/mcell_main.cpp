@@ -68,6 +68,8 @@ int main ( int argc, char *argv[] ) {
   mcell->num_iterations = 200;
   mcell->time_step = 1e-7;
 
+  mcell->dump();
+
   mcell->run_simulation(proj_path);
 
   printf ( "\nMay need to free some things ...\n\n" );
