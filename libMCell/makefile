@@ -1,6 +1,16 @@
 PYTHON_INCLUDE = /usr/include/python3.4m
 
-all: _libMCell.so mcell_main
+all: mcell_main_c _libMCell.so mcell_main
+
+mcell_main_c: mcell_main_c.o JSON.o makefile
+	gcc -lm -o mcell_main_c mcell_main_c.o JSON.o
+
+mcell_main_c.o: mcell_main_c.c JSON.h makefile
+	gcc -c mcell_main_c.c
+
+JSON.o: JSON.c JSON.h makefile
+	gcc -o JSON.o -c JSON.c -fPIC -I$(PYTHON_INCLUDE)
+
 
 _libMCell.so: libMCell.cpp libMCell.h libMCell.i makefile
 	swig -python -c++ -o libMCell_wrap.cpp libMCell.i
@@ -18,18 +28,36 @@ mcell_main: mcell_main.o libMCell.o makefile
 	g++ -lm -o mcell_main mcell_main.o libMCell.o
 
 clean:
-	rm -rf __pycache__
+	rm -f mcell_main
+	rm -f mcell_main_c
 	rm -f *_wrap* *.pyc
 	rm -f core
 	rm -f *.o *.so
 	rm -f libMCell.py
-	rm -f mcell_main
+	rm -f *~
+
+cleansubs:
+	rm -f react_data/*
+	rmdir react_data
+	rm -f viz_data/seed_00001/*
+	rmdir viz_data/seed_00001
+	rm -f viz_data/*
+	rmdir viz_data
+	rm -f __pycache__/*
+	rmdir __pycache__
+
+
 
 test_py: mcell_main.py _libMCell.so
 	python mcell_main.py
 
-test_c: mcell_main
-	#./mcell_main proj_path=/home/bobkuczewski/proj/SWIG/downloads/swig.org/swig-3.0.8/Examples/python/class/libMCell/mcell_output data_model=dm.json
+test_cpp: mcell_main
 	./mcell_main data_model=dm.json
+
+test_c: mcell_main_c
+	./mcell_main_c proj_path=. data_model=dm.json
+
+test_ppy: pure_python_sim.py
+	python pure_python_sim.py proj_path=. data_model=dm.txt
 
 

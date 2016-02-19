@@ -3,11 +3,12 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+// This was an attempt to correct the exp10 warning that didn't work: #define _GNU_SOURCE
 #include <math.h>
 
 #include "JSON.h"
 
-#include "libMCell.h"
+typedef json_element data_model_element;
 
 char *join_path ( char *p1, char sep, char *p2 ) {
   char *joined_path;
@@ -135,10 +136,10 @@ int main ( int argc, char *argv[] ) {
   data_model_element *dm_init = json_get_element_with_key ( mcell, "initialization" );
 
   int iterations = json_get_int_value ( json_get_element_with_key ( dm_init, "iterations" ) );
-  mcell_set_iterations ( iterations );
+  //mcell_set_iterations ( iterations );
 
   double time_step = json_get_float_value ( json_get_element_with_key ( dm_init, "time_step" ) );
-  mcell_set_time_step ( time_step );
+  //mcell_set_time_step ( time_step );
 
   
   data_model_element *dm_define_molecules = json_get_element_with_key ( mcell, "define_molecules" );
@@ -273,7 +274,7 @@ int main ( int argc, char *argv[] ) {
   printf ( "Begin simulation.\n" );
 
   int iteration;
-  int print_every = exp10(floor(log10((iterations/10))));
+  int print_every = (int)(exp10(floor(log10((iterations/10)))));
   if (print_every < 1) print_every = 1;
   for (iteration=0; iteration<=iterations; iteration++) {
     sprintf ( sim_step_mol_name, template, iteration );
