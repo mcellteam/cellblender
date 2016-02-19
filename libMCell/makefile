@@ -26,9 +26,10 @@ clean:
 	rm -f mcell_main
 
 test_py: mcell_main.py _libMCell.so
-	python mcell_main.py data_model=dm.txt
+	python mcell_main.py
 
 test_c: mcell_main
-	./mcell_main proj_path=/home/bobkuczewski/proj/SWIG/downloads/swig.org/swig-3.0.8/Examples/python/class/libMCell/mcell_output data_model=dm.json
+	#./mcell_main proj_path=/home/bobkuczewski/proj/SWIG/downloads/swig.org/swig-3.0.8/Examples/python/class/libMCell/mcell_output data_model=dm.json
+	./mcell_main data_model=dm.json
 
 

@@ -38,14 +38,12 @@ int main ( int argc, char *argv[] ) {
   MCellSimulation *mcell = new MCellSimulation();
   
   MCellMoleculeSpecies *mol_a = new MCellMoleculeSpecies();
-  //mol_a->name = "A";
-  mol_a->set_name("A");
+  mol_a->name = "A";
   mol_a->diffusion_constant = 1e-7;
   mcell->molecule_species.push_back ( mol_a );
 
   MCellMoleculeSpecies *mol_b = new MCellMoleculeSpecies();
-  //mol_b->name = "B";
-  mol_b->set_name("B");
+  mol_b->name = "B";
   mol_b->diffusion_constant = 2e-7;
   mcell->molecule_species.push_back ( mol_b );
 
@@ -67,8 +65,6 @@ int main ( int argc, char *argv[] ) {
 
   mcell->num_iterations = 200;
   mcell->time_step = 1e-7;
-
-  mcell->dump();
 
   mcell->run_simulation(proj_path);
 

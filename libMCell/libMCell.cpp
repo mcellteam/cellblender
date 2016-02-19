@@ -15,10 +15,7 @@
 
 using namespace std;
 
-
 int MCellSimulation::num_simulations = 0;
-int MCellMoleculeSpecies::next_species_id = 1;
-
 
 char *MCellSimulation::join_path ( char *p1, char sep, char *p2 ) {
   char *joined_path;
@@ -39,48 +36,13 @@ char *MCellSimulation::join_path ( char *p1, char sep, char *p2 ) {
   return ( joined_path );
 }
 
-
 void MCellSimulation::add_molecule_species ( MCellMoleculeSpecies *species ) {
   molecule_species.push_back ( species );
 }
 
-
 void MCellSimulation::add_molecule_release_site ( MCellReleaseSite *site ) {
   molecule_release_sites.push_back ( site );
 }
-
-/*
-MCellMoleculeSpecies *MCellSimulation::get_molecule_species_by_name ( char *species_name ) {
-  cout << "Looking for molecule: " << species_name << endl;
-  MCellMoleculeSpecies *this_species = NULL;
-  for (int sp_num=0; sp_num<this->molecule_species.size(); sp_num++) {
-    this_species = this->molecule_species[sp_num];
-    if (this_species->name == species_name) {
-      cout << "Found molecule: " << species_name << endl;
-      return (this_species);
-    }
-  }
-  cout << "Error: Unable to find requested molecule: " << species_name << endl;
-  return ( this_species );
-}
-*/
-
-MCellMoleculeSpecies *MCellSimulation::get_molecule_species_by_id ( int species_id ) {
-  cout << "Looking for molecule: " << species_id << endl;
-  MCellMoleculeSpecies *this_species = NULL;
-  for (int sp_num=0; sp_num<this->molecule_species.size(); sp_num++) {
-    this_species = this->molecule_species[sp_num];
-    cout << "Checking molecule with species = " << this_species->species_id << endl;
-    if (this_species->species_id == species_id) {
-      cout << "Found molecule: " << species_id << endl;
-      return (this_species);
-    }
-  }
-  cout << "Error: Unable to find requested molecule: " << species_id << endl;
-  return ( this_species );
-}
-
-
 
 void MCellSimulation::run_simulation ( char *proj_path ) {
   int iteration;
@@ -111,12 +73,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
     cout << "Release Site " << rs_num << endl;
     this_site = this->molecule_release_sites[rs_num];
     for (int i=0; i<this_site->quantity; i++) {
-      cout << "Releasing" << endl;
-      if (this_site->mol_id <= 0) {
-        cout << "  Releasing a molecule of type " << this_site->molecule_species->name << endl;
-      } else {
-        cout << "  Releasing a molecule of id " << this_site->mol_id << endl;
-      }
+      cout << "  Releasing a molecule of type " << this_site->molecule_species->name << endl;
       MCellMoleculeInstance *new_mol_instance = new MCellMoleculeInstance();
       new_mol_instance->next = this_site->molecule_species->instance_list;
       this_site->molecule_species->instance_list = new_mol_instance;
@@ -161,7 +118,6 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
     fwrite ( &binary_marker, sizeof(int), 1, f );
 
     MCellMoleculeSpecies *this_species;
-    cout << "Num species = " << this->molecule_species.size() << endl;
     for (int sp_num=0; sp_num<this->molecule_species.size(); sp_num++) {
       this_species = this->molecule_species[sp_num];
       cout << "Simulating for species " << this_species->name << endl;
