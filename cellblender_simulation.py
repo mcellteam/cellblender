@@ -121,8 +121,8 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
                 bpy.ops.mcell.run_simulation_normal()
             elif str(mcell.run_simulation.simulation_run_control) == 'libMCell':
                 bpy.ops.mcell.run_simulation_libmcell()
-            elif str(mcell.run_simulation.simulation_run_control) == 'libMCellPy':
-                bpy.ops.mcell.run_simulation_libmcell_py()
+            elif str(mcell.run_simulation.simulation_run_control) == 'PurePython':
+                bpy.ops.mcell.run_simulation_pure_python()
             else:
                 bpy.ops.mcell.run_simulation_control_queue()
         return {'FINISHED'}
@@ -662,56 +662,61 @@ class MCELL_OT_run_simulation_libmcell(bpy.types.Operator):
             log_file_option = mcell.run_simulation.log_file
             script_dir_path = os.path.dirname(os.path.realpath(__file__))
             script_file_path = os.path.join(script_dir_path, "libMCell")
+            final_script_path = os.path.join(script_file_path,"mcell_main")
 
-            processes_list = mcell.run_simulation.processes_list
-            processes_list.add()
-            mcell.run_simulation.active_process_index = len(mcell.run_simulation.processes_list) - 1
-            simulation_process = processes_list[mcell.run_simulation.active_process_index]
-
-            print("Starting MCell ... create start_time.txt file:")
-            with open(os.path.join(os.path.dirname(bpy.data.filepath), "start_time.txt"), "w") as start_time_file:
-                start_time_file.write("Started MCell at: " + (str(time.ctime())) + "\n")
-
-            # Create a subprocess for each simulation
-
-            window_num = 0
-
-            for sim_seed in range(start,end+1):
-                print ("Running with seed " + str(sim_seed) )
-
-                command_list = [ os.path.join(script_file_path,"mcell_main"), "proj_path="+project_dir, "data_model=dm.json" ]
-
-                dm = mcell.build_data_model_from_properties ( context, geometry=True )
-
-                print ( "Data Model = " + str(dm) )
-
-                data_model.save_data_model_to_json_file ( dm, os.path.join(project_dir,"dm.json") )
-
-                command_string = "Command:";
-                for s in command_list:
-                  command_string += " " + s
-                print ( command_string )
-
-                sp = subprocess.Popen ( command_list, cwd=script_file_path, stdout=None, stderr=None )
-
-                self.report({'INFO'}, "Simulation Running")
-
-                # This is a hackish workaround since we can't return arbitrary
-                # objects from operators or store arbitrary objects in collection
-                # properties, and we need to keep track of the progress of the
-                # subprocess objects for the panels.
-                cellblender.simulation_popen_list.append(sp)
-                window_num += 1
-
-
-            if ((end - start) == 0):
-                simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                           "Seed: %d" % (sp.pid, base_name,
-                                                         start))
+            if not os.path.exists(final_script_path):
+                print ( "\n\nUnable to run " + final_script_path + "\n\n" )
             else:
-                simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                           "Seeds: %d-%d" % (sp.pid, base_name,
-                                                             start, end))
+
+                processes_list = mcell.run_simulation.processes_list
+                processes_list.add()
+                mcell.run_simulation.active_process_index = len(mcell.run_simulation.processes_list) - 1
+                simulation_process = processes_list[mcell.run_simulation.active_process_index]
+
+                print("Starting MCell ... create start_time.txt file:")
+                with open(os.path.join(os.path.dirname(bpy.data.filepath), "start_time.txt"), "w") as start_time_file:
+                    start_time_file.write("Started MCell at: " + (str(time.ctime())) + "\n")
+
+                # Create a subprocess for each simulation
+
+                window_num = 0
+
+                for sim_seed in range(start,end+1):
+                    print ("Running with seed " + str(sim_seed) )
+
+                    command_list = [ final_script_path, "proj_path="+project_dir, "data_model=dm.json" ]
+
+                    dm = mcell.build_data_model_from_properties ( context, geometry=True )
+
+                    print ( "Data Model = " + str(dm) )
+
+                    data_model.save_data_model_to_json_file ( dm, os.path.join(project_dir,"dm.json") )
+
+                    command_string = "Command:";
+                    for s in command_list:
+                      command_string += " " + s
+                    print ( command_string )
+
+                    sp = subprocess.Popen ( command_list, cwd=script_file_path, stdout=None, stderr=None )
+
+                    self.report({'INFO'}, "Simulation Running")
+
+                    # This is a hackish workaround since we can't return arbitrary
+                    # objects from operators or store arbitrary objects in collection
+                    # properties, and we need to keep track of the progress of the
+                    # subprocess objects for the panels.
+                    cellblender.simulation_popen_list.append(sp)
+                    window_num += 1
+
+
+                if ((end - start) == 0):
+                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
+                                               "Seed: %d" % (sp.pid, base_name,
+                                                             start))
+                else:
+                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
+                                               "Seeds: %d-%d" % (sp.pid, base_name,
+                                                                 start, end))
 
         mcell.run_simulation.status = status
 
@@ -719,8 +724,8 @@ class MCELL_OT_run_simulation_libmcell(bpy.types.Operator):
 
 
 
-class MCELL_OT_run_simulation_libmcell_py(bpy.types.Operator):
-    bl_idname = "mcell.run_simulation_libmcell_py"
+class MCELL_OT_run_simulation_pure_python(bpy.types.Operator):
+    bl_idname = "mcell.run_simulation_pure_python"
     bl_label = "Run MCell Simulation Control libmcell Python"
     bl_description = "Run MCell Simulation Control libmcell Python"
     bl_options = {'REGISTER'}
@@ -765,56 +770,61 @@ class MCELL_OT_run_simulation_libmcell_py(bpy.types.Operator):
             log_file_option = mcell.run_simulation.log_file
             script_dir_path = os.path.dirname(os.path.realpath(__file__))
             script_file_path = os.path.join(script_dir_path, "libMCell")
+            final_script_path = os.path.join(script_file_path,"pure_python_sim.py")
 
-            processes_list = mcell.run_simulation.processes_list
-            processes_list.add()
-            mcell.run_simulation.active_process_index = len(mcell.run_simulation.processes_list) - 1
-            simulation_process = processes_list[mcell.run_simulation.active_process_index]
-
-            print("Starting MCell ... create start_time.txt file:")
-            with open(os.path.join(os.path.dirname(bpy.data.filepath), "start_time.txt"), "w") as start_time_file:
-                start_time_file.write("Started MCell at: " + (str(time.ctime())) + "\n")
-
-            # Create a subprocess for each simulation
-
-            window_num = 0
-
-            for sim_seed in range(start,end+1):
-                print ("Running with seed " + str(sim_seed) )
-
-                command_list = [ 'python3', os.path.join(script_file_path,"mcell_python.py"), "proj_path="+project_dir, "data_model=dm.txt" ]
-
-                dm = mcell.build_data_model_from_properties ( context, geometry=True )
-
-                print ( "Data Model = " + str(dm) )
-
-                data_model.save_data_model_to_file ( dm, os.path.join(project_dir,"dm.txt") )
-
-                command_string = "Command:";
-                for s in command_list:
-                  command_string += " " + s
-                print ( command_string )
-
-                sp = subprocess.Popen ( command_list, cwd=script_file_path, stdout=None, stderr=None )
-
-                self.report({'INFO'}, "Simulation Running")
-
-                # This is a hackish workaround since we can't return arbitrary
-                # objects from operators or store arbitrary objects in collection
-                # properties, and we need to keep track of the progress of the
-                # subprocess objects for the panels.
-                cellblender.simulation_popen_list.append(sp)
-                window_num += 1
-
-
-            if ((end - start) == 0):
-                simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                           "Seed: %d" % (sp.pid, base_name,
-                                                         start))
+            if not os.path.exists(final_script_path):
+                print ( "\n\nUnable to run " + final_script_path + "\n\n" )
             else:
-                simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                           "Seeds: %d-%d" % (sp.pid, base_name,
-                                                             start, end))
+
+                processes_list = mcell.run_simulation.processes_list
+                processes_list.add()
+                mcell.run_simulation.active_process_index = len(mcell.run_simulation.processes_list) - 1
+                simulation_process = processes_list[mcell.run_simulation.active_process_index]
+
+                print("Starting MCell ... create start_time.txt file:")
+                with open(os.path.join(os.path.dirname(bpy.data.filepath), "start_time.txt"), "w") as start_time_file:
+                    start_time_file.write("Started MCell at: " + (str(time.ctime())) + "\n")
+
+                # Create a subprocess for each simulation
+
+                window_num = 0
+
+                for sim_seed in range(start,end+1):
+                    print ("Running with seed " + str(sim_seed) )
+
+                    command_list = [ 'python3', final_script_path, "proj_path="+project_dir, "data_model=dm.txt" ]
+
+                    dm = mcell.build_data_model_from_properties ( context, geometry=True )
+
+                    print ( "Data Model = " + str(dm) )
+
+                    data_model.save_data_model_to_file ( dm, os.path.join(project_dir,"dm.txt") )
+
+                    command_string = "Command:";
+                    for s in command_list:
+                      command_string += " " + s
+                    print ( command_string )
+
+                    sp = subprocess.Popen ( command_list, cwd=script_file_path, stdout=None, stderr=None )
+
+                    self.report({'INFO'}, "Simulation Running")
+
+                    # This is a hackish workaround since we can't return arbitrary
+                    # objects from operators or store arbitrary objects in collection
+                    # properties, and we need to keep track of the progress of the
+                    # subprocess objects for the panels.
+                    cellblender.simulation_popen_list.append(sp)
+                    window_num += 1
+
+
+                if ((end - start) == 0):
+                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
+                                               "Seed: %d" % (sp.pid, base_name,
+                                                             start))
+                else:
+                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
+                                               "Seeds: %d-%d" % (sp.pid, base_name,
+                                                                 start, end))
 
         mcell.run_simulation.status = status
 
@@ -1196,7 +1206,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         ('OPENGL', "OpenGL Control", ""),
         ('QUEUE', "Queue Control", ""),
         ('libMCell', "Prototype Lib MCell", ""),
-        ('libMCellPy', "Prototype Lib MCell Python", "")]
+        ('PurePython', "Prototype Pure Python", "")]
 
 
     simulation_run_control = EnumProperty(

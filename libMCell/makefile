@@ -1,6 +1,6 @@
 PYTHON_INCLUDE = /usr/include/python3.4m
 
-all: mcell_main_c _libMCell.so mcell_main
+all: mcell_main_c _libMCell.so mcell_main mcell_main_c
 
 mcell_main_c: mcell_main_c.o JSON.o makefile
 	gcc -lm -o mcell_main_c mcell_main_c.o JSON.o
@@ -16,7 +16,6 @@ _libMCell.so: libMCell.cpp libMCell.h libMCell.i makefile
 	swig -python -c++ -o libMCell_wrap.cpp libMCell.i
 	g++ -c -Wno-write-strings -fpic -I. -I/usr/include libMCell_wrap.cpp libMCell.cpp -I/usr/include/python2.7 -I/usr/lib/python2.7/config
 	g++ -shared -I/usr/include libMCell.o libMCell_wrap.o -o _libMCell.so
-	rm -f *.o
 
 libMCell.o: libMCell.cpp libMCell.h makefile
 	g++ -c -Wno-write-strings libMCell.cpp -o libMCell.o

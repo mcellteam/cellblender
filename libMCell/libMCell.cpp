@@ -44,6 +44,20 @@ void MCellSimulation::add_molecule_release_site ( MCellReleaseSite *site ) {
   molecule_release_sites.push_back ( site );
 }
 
+MCellMoleculeSpecies *MCellSimulation::get_molecule_species_by_name ( char *mol_name ) {
+  MCellMoleculeSpecies *found = NULL;
+  for (int sp_num=0; sp_num<this->molecule_species.size(); sp_num++) {
+    MCellMoleculeSpecies *this_species = this->molecule_species[sp_num];
+    cout << "Checking mol species " << this_species->name << endl;
+    if (strcmp(this_species->name.c_str(), mol_name) == 0) {
+      found = this_species;
+      cout << "Found mol species " << found->name << endl;
+      break;
+    }
+  }
+  return ( found );
+}
+
 void MCellSimulation::run_simulation ( char *proj_path ) {
   int iteration;
 
@@ -72,8 +86,9 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
   for (int rs_num=0; rs_num<this->molecule_release_sites.size(); rs_num++) {
     cout << "Release Site " << rs_num << endl;
     this_site = this->molecule_release_sites[rs_num];
+    cout << "  Releasing " << this_site->quantity << " molecules of type " << this_site->molecule_species->name << endl;
     for (int i=0; i<this_site->quantity; i++) {
-      cout << "  Releasing a molecule of type " << this_site->molecule_species->name << endl;
+      // cout << "  Releasing a molecule of type " << this_site->molecule_species->name << endl;
       MCellMoleculeInstance *new_mol_instance = new MCellMoleculeInstance();
       new_mol_instance->next = this_site->molecule_species->instance_list;
       this_site->molecule_species->instance_list = new_mol_instance;
@@ -120,7 +135,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
     MCellMoleculeSpecies *this_species;
     for (int sp_num=0; sp_num<this->molecule_species.size(); sp_num++) {
       this_species = this->molecule_species[sp_num];
-      cout << "Simulating for species " << this_species->name << endl;
+      // cout << "Simulating for species " << this_species->name << endl;
 
       unsigned char name_len = 0x0ff & this_species->name.length();
       fwrite ( &name_len, sizeof(unsigned char), 1, f );

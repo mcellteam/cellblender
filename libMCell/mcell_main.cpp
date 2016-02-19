@@ -41,6 +41,12 @@ char *join_path ( char *p1, char sep, char *p2 ) {
 
 int main ( int argc, char *argv[] ) {
 
+  cout << "\n\n" << endl;
+  cout << "******************************************" << endl;
+  cout << "*   MCell C++ Prototype using libMCell   *" << endl;
+  cout << "******************************************" << endl;
+  cout << "\n" << endl;
+
   // Define data items to come from the command line arguments
 
   char *proj_path = NULL;
@@ -170,9 +176,11 @@ int main ( int argc, char *argv[] ) {
     rel = new MCellReleaseSite();
     rel->x = json_get_float_value ( json_get_element_with_key ( this_rel, "location_x" ) );
     rel->y = json_get_float_value ( json_get_element_with_key ( this_rel, "location_y" ) );
-    rel->z = json_get_float_value ( json_get_element_with_key ( this_rel, "location_x" ) );
+    rel->z = json_get_float_value ( json_get_element_with_key ( this_rel, "location_z" ) );
     rel->quantity = json_get_float_value ( json_get_element_with_key ( this_rel, "quantity" ) );
-    rel->molecule_species = mol;
+    cout << "Should be releasing molecule " << mname << endl;
+    // Search for this molecule name in the molecules list
+    rel->molecule_species = mcell_sim->get_molecule_species_by_name ( mname );
     mcell_sim->molecule_release_sites.push_back ( rel );
     rel_num++;
   }
