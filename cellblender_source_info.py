@@ -63,10 +63,12 @@ cellblender_info = {
         "libMCell"+os.sep+"libMCell.cpp",
         "libMCell"+os.sep+"libMCell.h",
         "libMCell"+os.sep+"libMCell.i",
-        "libMCell"+os.sep+"mcell_main_c.c",
         "libMCell"+os.sep+"mcell_main.cpp",
         "libMCell"+os.sep+"mcell_main.py",
+        "libMCell"+os.sep+"mcell_main_c.c",
         "libMCell"+os.sep+"pure_python_sim.py",
+        "libMCell"+os.sep+"StorageClasses.cpp",
+        "libMCell"+os.sep+"StorageClasses.h",
 
         "SimControl.java",
         "META-INF"+os.sep+"MANIFEST.MF",
