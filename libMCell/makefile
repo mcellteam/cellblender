@@ -60,13 +60,10 @@ cleansubs:
 	rm -f __pycache__/*
 	rmdir __pycache__
 
+test_storage: StorageClasses
+	./StorageClasses
 
-
-test_py: mcell_main.py _libMCell.so
-	python mcell_main.py
-
-test_cpp: mcell_main
-	./mcell_main data_model=dm.json
+# Alternate Implementation Test Cases (may not be part of final libMCell)
 
 test_c: mcell_main_c
 	./mcell_main_c proj_path=. data_model=dm.json
@@ -74,5 +71,14 @@ test_c: mcell_main_c
 test_ppy: pure_python_sim.py
 	python pure_python_sim.py proj_path=. data_model=dm.txt
 
-test_storage: StorageClasses
-	./StorageClasses
+# Primary Usage Test Cases - These should work with libMCell
+
+# Note: the Python version accepts a Python data model,
+#       and the C++ version accepts a JSON data model.
+
+test_cpp: mcell_main
+	./mcell_main proj_path=. data_model=dm.json
+
+test_py: mcell_main.py _libMCell.so
+	python mcell_main.py proj_path=. data_model=dm.txt
+

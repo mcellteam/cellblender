@@ -155,6 +155,8 @@ int main ( int argc, char *argv[] ) {
   MCellSimulation *mcell_sim = new MCellSimulation();
 
 
+  // Define the molecules for this simulation
+
   int mol_num = 0;
   data_model_element *this_mol;
   MCellMoleculeSpecies *mol;
@@ -174,6 +176,8 @@ int main ( int argc, char *argv[] ) {
   int total_mols = mol_num;
   printf ( "Total molecules = %d\n", total_mols );
 
+
+  // Define the release sites for this simulation
 
   int rel_num = 0;
   data_model_element *this_rel;
@@ -201,73 +205,22 @@ int main ( int argc, char *argv[] ) {
   int total_rels = rel_num;
   printf ( "Total release sites = %d\n", total_rels );
 
+
+  // Set final parameters needed to run simulation and Run it
+
   mcell_sim->num_iterations = iterations;
   mcell_sim->time_step = time_step;
 
-  // Run the simulation
-
   mcell_sim->run_simulation(proj_path);
 
-
-  /* This is a hard-coded simulation as a simple example
-
-  MCellSimulation *mcell = new MCellSimulation();
-  
-  MCellMoleculeSpecies *mol_a = new MCellMoleculeSpecies();
-  mol_a->name = "A";
-  mol_a->diffusion_constant = 1e-7;
-  mcell->molecule_species.push_back ( mol_a );
-
-  MCellMoleculeSpecies *mol_b = new MCellMoleculeSpecies();
-  mol_b->name = "B";
-  mol_b->diffusion_constant = 2e-7;
-  mcell->molecule_species.push_back ( mol_b );
-
-  MCellReleaseSite *rel_a = new MCellReleaseSite();
-  rel_a->x = 0.0;
-  rel_a->y = 0.0;
-  rel_a->z = 0.0;
-  rel_a->molecule_species = mol_a;
-  rel_a->quantity = 3;
-  mcell->molecule_release_sites.push_back ( rel_a );
-
-  MCellReleaseSite *rel_b = new MCellReleaseSite();
-  rel_b->x = 0.3;
-  rel_b->y = 0.2;
-  rel_b->z = 0.1;
-  rel_b->molecule_species = mol_b;
-  rel_b->quantity = 7;
-  mcell->molecule_release_sites.push_back ( rel_b );
-
-  mcell->num_iterations = 200;
-  mcell->time_step = 1e-7;
-
-  mcell->run_simulation(proj_path);
-  */
-
   printf ( "\nMay need to free some things ...\n\n" );
+
 #if USE_NEW_TEMPLATE_CLASSES
   printf ( "\nRan with new classes, and append!!\n" );
 #else
   printf ( "\nRan with old classes\n" );
 #endif
 
-
-/*
-        cout << "Testing ArrayStore<double>" << endl;
-        ArrayStore<double> AD;
-        for (int i=0; i<11; i++) {
-          AD[i] = 0.1 + (double)i*i;
-        }
-        AD[13] = 3.14159;
-        AD[16] = 0.1 + (double)16*16;
-
-        AD.dump();
-        
-        cout << "Try getting 20: " << AD[20] << endl;
-        
-        AD.dump();
-*/
   return ( 0 );
 }
 
