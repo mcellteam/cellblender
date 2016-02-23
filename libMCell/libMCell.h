@@ -14,6 +14,7 @@ class MCellMoleculeInstance; // Forward declaration needed
 class MCellMoleculeSpecies {
  public:
   string name;
+  // char * new_name;
   string type;
   char type_code;
   double diffusion_constant;
