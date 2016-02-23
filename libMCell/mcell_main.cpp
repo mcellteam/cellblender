@@ -165,12 +165,7 @@ int main ( int argc, char *argv[] ) {
     mol->name = json_get_string_value ( json_get_element_with_key ( this_mol, "mol_name" ) );
     mol->diffusion_constant = json_get_float_value ( json_get_element_with_key ( this_mol, "diffusion_constant" ) );
     // This allows the molecule to be referenced by name when needed:
-    #if USE_NEW_TEMPLATE_CLASSES
-      // It could be an error to write over an existing molecule name, so it might be good to check here:
-      mcell_sim->molecule_species[mol->name.c_str()] = mol;
-    #else
-      mcell_sim->molecule_species.push_back ( mol );
-    #endif
+    mcell_sim->molecule_species[mol->name.c_str()] = mol;
     mol_num++;
   }
   int total_mols = mol_num;
@@ -189,17 +184,8 @@ int main ( int argc, char *argv[] ) {
     rel->y = json_get_float_value ( json_get_element_with_key ( this_rel, "location_y" ) );
     rel->z = json_get_float_value ( json_get_element_with_key ( this_rel, "location_z" ) );
     rel->quantity = json_get_float_value ( json_get_element_with_key ( this_rel, "quantity" ) );
-    cout << "Should be releasing molecule " << mname << endl;
-    // Search for this molecule name in the molecules list
-    #if USE_NEW_TEMPLATE_CLASSES
-      rel->molecule_species = mcell_sim->molecule_species[mname];
-      // Need an "append" method for Array implementation here:  mcell_sim->molecule_release_sites.push_back ( rel );
-      mcell_sim->molecule_release_sites.append ( rel );
-      //mcell_sim->molecule_release_sites[mcell_sim->molecule_release_sites.get_size()] = rel;
-    #else
-      rel->molecule_species = mcell_sim->get_molecule_species_by_name ( mname );
-      mcell_sim->molecule_release_sites.push_back ( rel );
-    #endif
+    rel->molecule_species = mcell_sim->molecule_species[mname];
+    mcell_sim->molecule_release_sites.append ( rel );
     rel_num++;
   }
   int total_rels = rel_num;
@@ -214,12 +200,6 @@ int main ( int argc, char *argv[] ) {
   mcell_sim->run_simulation(proj_path);
 
   printf ( "\nMay need to free some things ...\n\n" );
-
-#if USE_NEW_TEMPLATE_CLASSES
-  printf ( "\nRan with new classes, and append!!\n" );
-#else
-  printf ( "\nRan with old classes\n" );
-#endif
 
   return ( 0 );
 }

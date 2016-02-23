@@ -38,38 +38,16 @@ char *MCellSimulation::join_path ( char *p1, char sep, char *p2 ) {
 }
 
 void MCellSimulation::add_molecule_species ( MCellMoleculeSpecies *species ) {
-  #if USE_NEW_TEMPLATE_CLASSES
-    molecule_species[species->name.c_str()] = species;
-  #else
-    molecule_species.push_back ( species );
-  #endif
+  molecule_species[species->name.c_str()] = species;
 }
 
 void MCellSimulation::add_molecule_release_site ( MCellReleaseSite *site ) {
-  #if USE_NEW_TEMPLATE_CLASSES
-    // Need an "append" method for Array implementation here:  mcell_sim->molecule_release_sites.push_back ( rel );
-    molecule_release_sites.append ( site );
-    //molecule_release_sites[molecule_release_sites.get_size()] = site;
-  #else
-    molecule_release_sites.push_back ( site );
-  #endif
+  molecule_release_sites.append ( site );
 }
 
 MCellMoleculeSpecies *MCellSimulation::get_molecule_species_by_name ( char *mol_name ) {
   MCellMoleculeSpecies *found = NULL;
-  #if USE_NEW_TEMPLATE_CLASSES
   found = this->molecule_species[mol_name];
-  #else
-  for (int sp_num=0; sp_num<this->molecule_species.size(); sp_num++) {
-    MCellMoleculeSpecies *this_species = this->molecule_species[sp_num];
-    cout << "Checking mol species " << this_species->name << endl;
-    if (strcmp(this_species->name.c_str(), mol_name) == 0) {
-      found = this_species;
-      cout << "Found mol species " << found->name << endl;
-      break;
-    }
-  }
-  #endif
   return ( found );
 }
 
@@ -99,12 +77,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
 
   MCellReleaseSite *this_site;
 
-
-  #if USE_NEW_TEMPLATE_CLASSES
   for (int rs_num=0; rs_num<this->molecule_release_sites.get_size(); rs_num++) {
-  #else
-  for (int rs_num=0; rs_num<this->molecule_release_sites.size(); rs_num++) {
-  #endif
     cout << "Release Site " << rs_num << endl;
     this_site = this->molecule_release_sites[rs_num];
     cout << "  Releasing " << this_site->quantity << " molecules of type " << this_site->molecule_species->name << endl;
@@ -154,13 +127,8 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
     fwrite ( &binary_marker, sizeof(int), 1, f );
 
     MCellMoleculeSpecies *this_species;
-    #if USE_NEW_TEMPLATE_CLASSES
     for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
       this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
-    #else
-    for (int sp_num=0; sp_num<this->molecule_species.size(); sp_num++) {
-      this_species = this->molecule_species[sp_num];
-    #endif
       // cout << "Simulating for species " << this_species->name << endl;
 
       unsigned char name_len = 0x0ff & this_species->name.length();
