@@ -70,19 +70,20 @@ if not os.path.exists(viz_seed_dir):
 
 ##### Use the Data Model to initialize a libMCell model
 
-mcell = MCellSimulation()
+mcell_sim = MCellSimulation()
 
-mcell.num_iterations = eval(dm['mcell']['initialization']['iterations'])
-mcell.time_step = eval(dm['mcell']['initialization']['time_step'])
+mcell_sim.num_iterations = eval(dm['mcell']['initialization']['iterations'])
+mcell_sim.time_step = eval(dm['mcell']['initialization']['time_step'])
 
 mol_defs = dm['mcell']['define_molecules']['molecule_list']
 mols = {}
 
 for m in mol_defs:
   print ( "Molecule " + m['mol_name'] + " is a " + m['mol_type'] + " molecule diffusing with " + str(m['diffusion_constant']) )
-  mol = MCellMoleculeSpecies
+  mol = MCellMoleculeSpecies()
   mol.name = m['mol_name']
   mol.diffusion_constant = m['diffusion_constant']
+  mcell_sim.add_molecule_species(mol)
   mols[mol.name] = mol
 
 rel_defs = dm['mcell']['release_sites']['release_site_list']
@@ -97,7 +98,7 @@ for r in rel_defs:
   rel.quantity = eval(r['quantity'])
   rel.molecule_species = mols[r['molecule']]
 
-mcell.run_simulation(proj_path)
+mcell_sim.run_simulation(proj_path)
 
 print ( "\nPython simulation using libMCell is complete.\n" )
 

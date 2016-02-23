@@ -11,6 +11,9 @@ mcell_main_c.o: mcell_main_c.c JSON.h makefile
 JSON.o: JSON.c JSON.h makefile
 	gcc -o JSON.o -c JSON.c -fPIC -I$(PYTHON_INCLUDE)
 
+rng.o: rng.cpp rng.h makefile
+	g++ -o rng.o -c rng.cpp -fPIC -I$(PYTHON_INCLUDE)
+
 StorageClasses.o: StorageClasses.cpp makefile
 	g++ -g -c StorageClasses.cpp -o StorageClasses.o
 
@@ -18,10 +21,10 @@ StorageClasses: StorageClasses.o makefile
 	g++ -g -lm -o StorageClasses StorageClasses.o
 
 
-_libMCell.so: libMCell.cpp libMCell.h libMCell.i makefile
+_libMCell.so: libMCell.cpp rng.cpp libMCell.h rng.h libMCell.i makefile
 	swig -python -c++ -o libMCell_wrap.cpp libMCell.i
-	g++ -c -Wno-write-strings -fpic -I. -I/usr/include libMCell_wrap.cpp libMCell.cpp -I/usr/include/python2.7 -I/usr/lib/python2.7/config
-	g++ -shared -I/usr/include libMCell.o libMCell_wrap.o -o _libMCell.so
+	g++ -c -Wno-write-strings -fpic -I. -I/usr/include libMCell_wrap.cpp rng.cpp libMCell.cpp -I/usr/include/python2.7 -I/usr/lib/python2.7/config
+	g++ -shared -I/usr/include rng.o libMCell.o libMCell_wrap.o -o _libMCell.so
 
 libMCell.o: libMCell.cpp libMCell.h makefile
 	g++ -c -Wno-write-strings libMCell.cpp -o libMCell.o
@@ -29,8 +32,8 @@ libMCell.o: libMCell.cpp libMCell.h makefile
 mcell_main.o: mcell_main.cpp libMCell.h makefile
 	g++ -c -Wno-write-strings mcell_main.cpp -o mcell_main.o
 
-mcell_main: mcell_main.o JSON.o libMCell.o makefile
-	g++ -lm -o mcell_main mcell_main.o JSON.o libMCell.o
+mcell_main: mcell_main.o rng.o JSON.o libMCell.o makefile
+	g++ -lm -o mcell_main mcell_main.o rng.o JSON.o libMCell.o
 
 mcell_simple.o: mcell_simple.cpp libMCell.h makefile
 	g++ -c -Wno-write-strings mcell_simple.cpp -o mcell_simple.o

@@ -51,6 +51,7 @@ class MCellReleaseSite {
 class MCellSimulation {
  private:
   char *join_path ( char *p1, char sep, char *p2 );
+  //void pick_displacement( MCellMoleculeInstance *mol, double scale /*, struct rng_state *rng */ );
  public:
   static int num_simulations;
 

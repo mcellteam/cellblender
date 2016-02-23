@@ -14,6 +14,8 @@
 #include "StorageClasses.h"
 #include "libMCell.h"
 
+#include "rng.h"
+
 using namespace std;
 
 int MCellSimulation::num_simulations = 0;
@@ -50,6 +52,14 @@ MCellMoleculeSpecies *MCellSimulation::get_molecule_species_by_name ( char *mol_
   found = this->molecule_species[mol_name];
   return ( found );
 }
+
+/*
+void MCellSimulation::pick_displacement( MCellMoleculeInstance *mol, double scale, struct rng_state *rng ) {
+  mol->x = scale * rng_gauss(rng) * .70710678118654752440;
+  mol->y = scale * rng_gauss(rng) * .70710678118654752440;
+  mol->z = scale * rng_gauss(rng) * .70710678118654752440;
+}
+*/
 
 void MCellSimulation::run_simulation ( char *proj_path ) {
   int iteration;
@@ -110,12 +120,15 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
   char *sim_step_mol_name = (char *) malloc ( strlen(f_template) + 10 );
 
   // Run the actual simulation
-  printf ( "Begin simulation.\n" );
+  printf ( "Begin libMCell simulation (printf).\n" );
+  cout << "Begin libMCell simulation (cout)." << endl;
+  
+  MCellRandomNumber *mcell_random = new MCellRandomNumber();
 
   int print_every = exp10(floor(log10((num_iterations/10))));
   if (print_every < 1) print_every = 1;
   for (iteration=0; iteration<=num_iterations; iteration++) {
-    // cout << "Iteration " << iteration << ", t=" << (time_step*iteration) << endl;
+    cout << "Iteration " << iteration << ", t=" << (time_step*iteration) << endl;
 
     sprintf ( sim_step_mol_name, f_template, iteration );
     if ((iteration%print_every) == 0) {
@@ -127,9 +140,10 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
     fwrite ( &binary_marker, sizeof(int), 1, f );
 
     MCellMoleculeSpecies *this_species;
+    cout << "Iterate over " << this->molecule_species.get_num_items() << " species." << endl;
     for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
       this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
-      // cout << "Simulating for species " << this_species->name << endl;
+      cout << "Simulating for species " << this_species->name << endl;
 
       unsigned char name_len = 0x0ff & this_species->name.length();
       fwrite ( &name_len, sizeof(unsigned char), 1, f );
@@ -152,9 +166,15 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
         float_val = this_mol_instance->z;
         fwrite ( &float_val, sizeof(float), 1, f );
         // NOTE: The following equations are just guesses to approximate the look of MCell for now (TODO: Make this realistic)
+#if 0
         this_mol_instance->x += 2.0 * ds * (((drand48()+drand48()+drand48())-1.5));
         this_mol_instance->y += 2.0 * ds * (((drand48()+drand48()+drand48())-1.5));
         this_mol_instance->z += 2.0 * ds * (((drand48()+drand48()+drand48())-1.5));
+#else
+        this_mol_instance->x += 2.0 * ds * mcell_random->rng_gauss();
+        this_mol_instance->y += 2.0 * ds * mcell_random->rng_gauss();
+        this_mol_instance->z += 2.0 * ds * mcell_random->rng_gauss();
+#endif
         this_mol_instance = this_mol_instance->next;
       }
 
