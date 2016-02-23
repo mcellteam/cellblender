@@ -10,6 +10,7 @@
 #include <math.h>
 
 #include "libMCell.h"
+#include "StorageClasses.h"
 
 extern "C" {
 #include "JSON.h"
@@ -161,7 +162,13 @@ int main ( int argc, char *argv[] ) {
     mol = new MCellMoleculeSpecies();
     mol->name = json_get_string_value ( json_get_element_with_key ( this_mol, "mol_name" ) );
     mol->diffusion_constant = json_get_float_value ( json_get_element_with_key ( this_mol, "diffusion_constant" ) );
-    mcell_sim->molecule_species.push_back ( mol );
+    // This allows the molecule to be referenced by name when needed:
+    #if USE_NEW_TEMPLATE_CLASSES
+      // It could be an error to write over an existing molecule name, so it might be good to check here:
+      mcell_sim->molecule_species[mol->name.c_str()] = mol;
+    #else
+      mcell_sim->molecule_species.push_back ( mol );
+    #endif
     mol_num++;
   }
   int total_mols = mol_num;
@@ -180,8 +187,15 @@ int main ( int argc, char *argv[] ) {
     rel->quantity = json_get_float_value ( json_get_element_with_key ( this_rel, "quantity" ) );
     cout << "Should be releasing molecule " << mname << endl;
     // Search for this molecule name in the molecules list
-    rel->molecule_species = mcell_sim->get_molecule_species_by_name ( mname );
-    mcell_sim->molecule_release_sites.push_back ( rel );
+    #if USE_NEW_TEMPLATE_CLASSES
+      rel->molecule_species = mcell_sim->molecule_species[mname];
+      // Need an "append" method for Array implementation here:  mcell_sim->molecule_release_sites.push_back ( rel );
+      mcell_sim->molecule_release_sites.append ( rel );
+      //mcell_sim->molecule_release_sites[mcell_sim->molecule_release_sites.get_size()] = rel;
+    #else
+      rel->molecule_species = mcell_sim->get_molecule_species_by_name ( mname );
+      mcell_sim->molecule_release_sites.push_back ( rel );
+    #endif
     rel_num++;
   }
   int total_rels = rel_num;
@@ -232,7 +246,28 @@ int main ( int argc, char *argv[] ) {
   */
 
   printf ( "\nMay need to free some things ...\n\n" );
+#if USE_NEW_TEMPLATE_CLASSES
+  printf ( "\nRan with new classes, and append!!\n" );
+#else
+  printf ( "\nRan with old classes\n" );
+#endif
 
+
+/*
+        cout << "Testing ArrayStore<double>" << endl;
+        ArrayStore<double> AD;
+        for (int i=0; i<11; i++) {
+          AD[i] = 0.1 + (double)i*i;
+        }
+        AD[13] = 3.14159;
+        AD[16] = 0.1 + (double)16*16;
+
+        AD.dump();
+        
+        cout << "Try getting 20: " << AD[20] << endl;
+        
+        AD.dump();
+*/
   return ( 0 );
 }
 

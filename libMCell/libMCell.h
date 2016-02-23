@@ -3,8 +3,11 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "StorageClasses.h"
 
 using namespace std;
+
+#define USE_NEW_TEMPLATE_CLASSES 1
 
 class MCellMoleculeInstance; // Forward declaration needed
 
@@ -55,8 +58,13 @@ class MCellSimulation {
   int num_iterations;
   double time_step;
 
-  vector<MCellMoleculeSpecies *> molecule_species;
-  vector<MCellReleaseSite *> molecule_release_sites;
+  #if USE_NEW_TEMPLATE_CLASSES
+    MapStore<MCellMoleculeSpecies *> molecule_species;
+    ArrayStore<MCellReleaseSite *> molecule_release_sites;
+  #else
+    vector<MCellMoleculeSpecies *> molecule_species;
+    vector<MCellReleaseSite *> molecule_release_sites;
+  #endif
 
   MCellSimulation() {
     num_simulations++;

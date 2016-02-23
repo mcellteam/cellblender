@@ -1,6 +1,6 @@
 PYTHON_INCLUDE = /usr/include/python3.4m
 
-all: mcell_main_c _libMCell.so mcell_main mcell_main_c
+all: mcell_main_c _libMCell.so mcell_main mcell_main_c StorageClasses mcell_simple
 
 mcell_main_c: mcell_main_c.o JSON.o makefile
 	gcc -lm -o mcell_main_c mcell_main_c.o JSON.o
@@ -10,6 +10,12 @@ mcell_main_c.o: mcell_main_c.c JSON.h makefile
 
 JSON.o: JSON.c JSON.h makefile
 	gcc -o JSON.o -c JSON.c -fPIC -I$(PYTHON_INCLUDE)
+
+StorageClasses.o: StorageClasses.cpp makefile
+	g++ -g -c StorageClasses.cpp -o StorageClasses.o
+
+StorageClasses: StorageClasses.o makefile
+	g++ -g -lm -o StorageClasses StorageClasses.o
 
 
 _libMCell.so: libMCell.cpp libMCell.h libMCell.i makefile
@@ -26,9 +32,17 @@ mcell_main.o: mcell_main.cpp libMCell.h makefile
 mcell_main: mcell_main.o JSON.o libMCell.o makefile
 	g++ -lm -o mcell_main mcell_main.o JSON.o libMCell.o
 
+mcell_simple.o: mcell_simple.cpp libMCell.h makefile
+	g++ -c -Wno-write-strings mcell_simple.cpp -o mcell_simple.o
+
+mcell_simple: mcell_simple.o JSON.o libMCell.o makefile
+	g++ -lm -o mcell_simple mcell_simple.o JSON.o libMCell.o
+
 clean:
 	rm -f mcell_main
 	rm -f mcell_main_c
+	rm -f StorageClasses
+	rm -f mcell_simple
 	rm -f *_wrap* *.pyc
 	rm -f core
 	rm -f *.o *.so
@@ -60,4 +74,5 @@ test_c: mcell_main_c
 test_ppy: pure_python_sim.py
 	python pure_python_sim.py proj_path=. data_model=dm.txt
 
-
+test_storage: StorageClasses
+	./StorageClasses
