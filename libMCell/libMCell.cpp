@@ -123,7 +123,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
   printf ( "Begin libMCell simulation (printf).\n" );
   cout << "Begin libMCell simulation (cout)." << endl;
   
-  MCellRandomNumber *mcell_random = new MCellRandomNumber();
+  MCellRandomNumber_mrng *mcell_random = new MCellRandomNumber_mrng((uint32_t)12345);
 
   int print_every = exp10(floor(log10((num_iterations/10))));
   if (print_every < 1) print_every = 1;
@@ -156,7 +156,9 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
       MCellMoleculeInstance *this_mol_instance = this_species->instance_list;
       float float_val;
       double dc = this_species->diffusion_constant;
-      double ds = 6000 * sqrt( 6 * dc * time_step );    /// N O T E:  This is a guess!!!!  (TODO: Make this realistic)
+      // From one branch of mcell_species.c ...  Determine the actual space step and time step
+      double ds = sqrt(16.0 * 1.0e8 * dc * time_step);
+
 
       while (this_mol_instance != NULL) {
         float_val = this_mol_instance->x;
@@ -165,16 +167,10 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
         fwrite ( &float_val, sizeof(float), 1, f );
         float_val = this_mol_instance->z;
         fwrite ( &float_val, sizeof(float), 1, f );
-        // NOTE: The following equations are just guesses to approximate the look of MCell for now (TODO: Make this realistic)
-#if 0
-        this_mol_instance->x += 2.0 * ds * (((drand48()+drand48()+drand48())-1.5));
-        this_mol_instance->y += 2.0 * ds * (((drand48()+drand48()+drand48())-1.5));
-        this_mol_instance->z += 2.0 * ds * (((drand48()+drand48()+drand48())-1.5));
-#else
-        this_mol_instance->x += 2.0 * ds * mcell_random->rng_gauss();
-        this_mol_instance->y += 2.0 * ds * mcell_random->rng_gauss();
-        this_mol_instance->z += 2.0 * ds * mcell_random->rng_gauss();
-#endif
+        // NOTE: The following equations are from pick_displacement in diffuse.c
+        this_mol_instance->x += ds * mcell_random->rng_gauss() * 0.70710678118654752440;
+        this_mol_instance->y += ds * mcell_random->rng_gauss() * 0.70710678118654752440;
+        this_mol_instance->z += ds * mcell_random->rng_gauss() * 0.70710678118654752440;
         this_mol_instance = this_mol_instance->next;
       }
 
