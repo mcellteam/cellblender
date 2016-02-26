@@ -382,8 +382,10 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         layout = panel.layout
         self.draw_layout ( context, layout )
 
+    def needs_a_data_model ( self ):
+        return True
 
-    def write_scripting_output ( self, before_after, section, context, mdl_file, filedir ):
+    def write_scripting_output ( self, before_after, section, context, mdl_file, filedir, data_model ):
         print ( "################### Write Scripting Ouptut " + before_after + " " + section )
         mdl_file.write("\n\n/* Begin Custom MDL Inserted %s %s */\n" % (before_after, section))
         for script in self.scripting_list:
