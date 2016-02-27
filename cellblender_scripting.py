@@ -468,7 +468,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
 
     def write_scripting_output ( self, before_after, section, context, mdl_file, filedir, data_model ):
         print ( "################### Write Scripting Ouptut " + before_after + " " + section )
-        mdl_file.write("\n\n/* Begin Custom MDL Inserted %s %s */\n" % (before_after, section))
+        # mdl_file.write("\n\n/* Begin Custom MDL Inserted %s %s */\n" % (before_after, section))
         for script in self.scripting_list:
             if (script.include_where == before_after) and (script.include_section == section):
                 mdl_file.write ( "\n/* Begin file %s */\n\n" % (script.internal_file_name))
@@ -479,7 +479,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                     exec ( bpy.data.texts[script.internal_file_name].as_string(), globals(), locals() )
                     mdl_file.write ( "\n/* After Executing Python %s */\n\n" % (script.internal_file_name))
                 mdl_file.write ( "\n\n/* End file %s */\n\n" % (script.internal_file_name))
-        mdl_file.write("\n\n/* End Custom MDL Inserted %s %s */\n\n" % (before_after, section))
+        # mdl_file.write("\n\n/* End Custom MDL Inserted %s %s */\n\n" % (before_after, section))
 
 
 
