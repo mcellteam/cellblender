@@ -131,11 +131,12 @@ class MCELL_OT_release_site_add(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
+        rel_id = mcell.release_sites.allocate_available_id()  # Get the ID before allocating to allow it to reset
         mcell.release_sites.mol_release_list.add()
         mcell.release_sites.active_release_index = len(
             mcell.release_sites.mol_release_list)-1
         mcell.release_sites.mol_release_list[
-            mcell.release_sites.active_release_index].name = "Release_Site"
+            mcell.release_sites.active_release_index].name = "Release_Site_"+str(rel_id)
 
         relsite = mcell.release_sites.mol_release_list[mcell.release_sites.active_release_index]
 
@@ -658,7 +659,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
 
 
     def init_properties ( self, parameter_system ):
-        self.name = "Release_Site"
+        # self.name = "Release_Site_"+str(mcell.release_sites.allocate_available_id())
         self.molecule = ""
         self.shape = 'CUBIC'
         self.orient = '\''
@@ -778,6 +779,18 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
     mol_release_list = CollectionProperty(
         type=MCellMoleculeReleaseProperty, name="Molecule Release List")
     active_release_index = IntProperty(name="Active Release Index", default=0)
+    next_id = IntProperty(name="Counter for Unique Release Site IDs", default=1)  # Start ID's at 1 to confirm initialization
+
+
+    def allocate_available_id ( self ):
+        """ Return a unique release ID for a new release site """
+        if len(self.mol_release_list) <= 0:
+            # Reset the ID to 1 when there are no more sites
+            self.next_id = 1
+        self.next_id += 1
+        return ( self.next_id - 1 )
+
+
 
     def build_data_model_from_properties ( self, context ):
         print ( "Release Site List building Data Model" )
