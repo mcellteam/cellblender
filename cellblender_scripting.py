@@ -378,10 +378,12 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         update=check_scripting)
 
     def execute_selected_script ( self, context ):
-        dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
+        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
         if (self.dm_internal_external == "internal"):
             print ( "Executing internal script" )
+            dm = { 'mcell' : mcell_dm }
             exec ( bpy.data.texts[self.dm_internal_file_name].as_string(), globals(), locals() )
+            dm = dm['mcell']
             context.scene.mcell.upgrade_data_model ( dm )
             context.scene.mcell.build_properties_from_data_model ( context, dm, geometry=True )
         else:
