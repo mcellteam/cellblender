@@ -127,6 +127,17 @@ class MCELL_OT_scripting_refresh(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_scripting_execute(bpy.types.Operator):
+    bl_idname = "mcell.scripting_execute"
+    bl_label = "Execute Script on Current Data Model"
+    bl_description = "Execute the selected script to REPLACE the current data model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        scripting = context.scene.mcell.scripting
+        print ( "Executing Script" )
+        scripting.execute_selected_script(context)
+        return {'FINISHED'}
 
 
 # Scripting callback functions
@@ -135,7 +146,8 @@ class MCELL_OT_scripting_refresh(bpy.types.Operator):
 def check_scripting(self, context):
     mcell = context.scene.mcell
     scripting_list = mcell.scripting.scripting_list
-    scripting = scripting_list[mcell.scripting.active_scripting_index]
+    if len(scripting_list) > 0:
+        scripting = scripting_list[mcell.scripting.active_scripting_index]
     return
 
 
@@ -146,7 +158,7 @@ def check_scripting(self, context):
 class MCELL_UL_scripting_item(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         desc = item.get_description()
-        if item.include_where == "Don't Include":
+        if item.include_where == "dont_include":
             layout.label ( icon='ERROR', text=desc )
         else:
             layout.label ( icon='FILE_TICK', text=desc )
@@ -349,6 +361,32 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
     internal_python_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="Python Internal Scripts")
     external_python_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="Python External Scripts")
 
+    show_simulation_scripting = BoolProperty(name="Simulation Scripting", default=False)
+    show_data_model_scripting = BoolProperty(name="Data Model Scripting", default=False)
+
+    dm_internal_file_name = StringProperty ( name = "Internal File Name" )
+    dm_external_file_name = StringProperty ( name = "External File Name", subtype='FILE_PATH', default="" )
+
+
+    dm_internal_external_enum = [
+        ('internal', "Internal", ""),
+        ("external", "External",  "")]
+    dm_internal_external = bpy.props.EnumProperty(
+        items=dm_internal_external_enum, name="Internal/External",
+        default='internal',
+        description="Choose location of file (internal text or external file).",
+        update=check_scripting)
+
+    def execute_selected_script ( self, context ):
+        dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
+        if (self.dm_internal_external == "internal"):
+            print ( "Executing internal script" )
+            exec ( bpy.data.texts[self.dm_internal_file_name].as_string(), globals(), locals() )
+            context.scene.mcell.upgrade_data_model ( dm )
+            context.scene.mcell.build_properties_from_data_model ( context, dm, geometry=True )
+        else:
+            print ( "Executing external script ... not implemented yet!!" )
+
     def draw_layout ( self, context, layout ):
         """ Draw the scripting "panel" within the layout """
         mcell = context.scene.mcell
@@ -357,25 +395,68 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
         else:
-            row = layout.row()
-            col = row.column()
-            col.template_list("MCELL_UL_scripting_item", "scripting",
-                              self, "scripting_list",
-                              self, "active_scripting_index", rows=2)
-            col = row.column(align=True)
-            col.operator("mcell.scripting_add", icon='ZOOMIN', text="")
-            # col.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
-            col.operator("mcell.scripting_remove", icon='ZOOMOUT', text="")
-            
-            if self.scripting_list:
-                selected_script = self.scripting_list[self.active_scripting_index]
-                selected_script.draw_layout ( context, layout )
 
-            #layout.label ( "Texts:" )
-            #for txt in bpy.data.texts:
-            #  box = layout.box()
-            #  box.label ( txt.name )
-            #  box.label ( txt.as_string() )
+            box = layout.box()
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
+
+            #row = layout.row()
+
+            #col = row.column()
+            #col.label ( "Simulation Scripting" )
+            #col.prop ( self, "show_simulation_scripting" )
+
+            if self.show_simulation_scripting:
+                row.prop(self, "show_simulation_scripting", icon='TRIA_DOWN', emboss=False)
+
+                row = box.row()
+                col = row.column()
+                col.template_list("MCELL_UL_scripting_item", "scripting",
+                                  self, "scripting_list",
+                                  self, "active_scripting_index", rows=2)
+                col = row.column(align=True)
+                col.operator("mcell.scripting_add", icon='ZOOMIN', text="")
+                # col.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+                col.operator("mcell.scripting_remove", icon='ZOOMOUT', text="")
+
+                if self.scripting_list:
+                    selected_script = self.scripting_list[self.active_scripting_index]
+                    selected_script.draw_layout ( context, box )
+
+            else:
+                row.prop(self, "show_simulation_scripting", icon='TRIA_RIGHT', emboss=False)
+
+
+            box = layout.box()
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
+
+            if self.show_data_model_scripting:
+                row.prop(self, "show_data_model_scripting", icon='TRIA_DOWN', emboss=False)
+
+                row = box.row()
+                row.prop ( self, "dm_internal_external", text="" )
+                row = box.row()
+
+                if (self.dm_internal_external == "internal"):
+
+                    row.prop_search ( self, "dm_internal_file_name",
+                                      context.scene.mcell.scripting, "internal_python_scripts_list",
+                                      text="File:", icon='TEXT' )
+                    row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+
+                if (self.dm_internal_external == "external"):
+
+                    row.prop ( self, "dm_external_file_name" )
+                    row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+
+                row = box.row()
+                row.operator("mcell.scripting_execute", icon='COLOR_RED')
+
+            else:
+                row.prop(self, "show_data_model_scripting", icon='TRIA_RIGHT', emboss=False)
+
+
 
     def draw_panel ( self, context, panel ):
         """ Create a layout from the panel and draw into it """
