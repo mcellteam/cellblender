@@ -366,6 +366,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
 
     dm_internal_file_name = StringProperty ( name = "Internal File Name" )
     dm_external_file_name = StringProperty ( name = "External File Name", subtype='FILE_PATH', default="" )
+    # upgrade_data_model_for_script = BoolProperty(name="Upgrade Script", default=False)
 
 
     dm_internal_external_enum = [
@@ -381,11 +382,19 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
         if (self.dm_internal_external == "internal"):
             print ( "Executing internal script" )
+            # Wrap the internal data model in a dictionary with an "mcell" key to make it an external data model
             dm = { 'mcell' : mcell_dm }
             exec ( bpy.data.texts[self.dm_internal_file_name].as_string(), globals(), locals() )
-            dm = dm['mcell']
-            context.scene.mcell.upgrade_data_model ( dm )
-            context.scene.mcell.build_properties_from_data_model ( context, dm, geometry=True )
+            # Strip off the outer dictionary wrapper because the internal data model does not have the "mcell" key layer
+            # dm = dm['mcell']
+            # Upgrade the data model if requested.
+            # This requires the data model to contain our internal data model versioning keys.
+            # An unversioned data model will be upgraded as if it were a pre-1.0 data model when this is set
+            # If this is NOT set, then the data model will be assumed to match the current version
+            #if (self.upgrade_data_model_for_script):
+            dm['mcell'] = context.scene.mcell.upgrade_data_model ( dm['mcell'] )
+            # Regenerate the Blender properties to reflect this data model ... including geometry
+            context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
         else:
             print ( "Executing external script ... not implemented yet!!" )
 
