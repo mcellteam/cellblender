@@ -102,6 +102,7 @@ def save_modular_or_allinone(filedir, main_mdl_file, mdl_filename,
 
     # Save modular (e.g. Scene.molecules.mdl, Scene.reactions.mdl)
     if mcell.export_project.export_format == 'mcell_mdl_modular':
+        print ( "Saving as modular MDL files" )
         main_mdl_file.write("INCLUDE_FILE = \"%s.%s.mdl\"\n\n" %
                        (settings.base_name, mdl_filename))
         filepath = ("%s/%s.%s.mdl" %
@@ -112,6 +113,7 @@ def save_modular_or_allinone(filedir, main_mdl_file, mdl_filename,
             save_function(*args)
     # Or save everything in main mdl (e.g. Scene.main.mdl)
     else:
+        print ( "Saving as one unified MDL file" )
         args.insert(1, main_mdl_file)
         save_function(*args)
 

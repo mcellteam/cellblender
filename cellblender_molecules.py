@@ -655,6 +655,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         mol_obj.dupli_type = 'VERTS'
         mol_shape_obj.parent = mol_obj
 
+        print ( "Done creating mol data for " + self.name )
+
 
 
     def remove_mol_data ( self, context ):

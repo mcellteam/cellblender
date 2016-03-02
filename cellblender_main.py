@@ -1092,6 +1092,25 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Overwriting the parameter_system properties" )
             self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"] )
         
+
+        # Move below model objects?
+        #if "modify_surface_regions" in dm:
+        #    print ( "Overwriting the modify_surface_regions properties" )
+        #    self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
+        if geometry:
+            print ( "Deleting all mesh objects" )
+            self.model_objects.delete_all_mesh_objects(context)
+            if "materials" in dm:
+                print ( "Overwriting the materials properties" )
+                print ( "Building Materials from Data Model Materials" )
+                self.model_objects.build_materials_from_data_model_materials ( context, dm['materials'] )
+            if "geometrical_objects" in dm:
+                print ( "Overwriting the geometrical_objects properties" )
+                print ( "Building Mesh Geometry from Data Model Geometry" )
+                self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"] )
+            print ( "Not fully implemented yet!!!!" )
+
+
         if "initialization" in dm:
             print ( "Overwriting the initialization properties" )
             self.initialization.build_properties_from_data_model ( context, dm["initialization"] )
@@ -1113,22 +1132,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "define_reactions" in dm:
             print ( "Overwriting the define_reactions properties" )
             self.reactions.build_properties_from_data_model ( context, dm["define_reactions"] )
-        # Move below model objects?
-        #if "modify_surface_regions" in dm:
-        #    print ( "Overwriting the modify_surface_regions properties" )
-        #    self.mod_surf_regions.build_properties_from_data_model ( context, dm["modify_surface_regions"] )
-        if geometry:
-            print ( "Deleting all mesh objects" )
-            self.model_objects.delete_all_mesh_objects(context)
-            if "materials" in dm:
-                print ( "Overwriting the materials properties" )
-                print ( "Building Materials from Data Model Materials" )
-                self.model_objects.build_materials_from_data_model_materials ( context, dm['materials'] )
-            if "geometrical_objects" in dm:
-                print ( "Overwriting the geometrical_objects properties" )
-                print ( "Building Mesh Geometry from Data Model Geometry" )
-                self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"] )
-            print ( "Not fully implemented yet!!!!" )
+
+        # Building geometry was here ... moved above to keep it from deleting molecule objects and meshes
         if "model_objects" in dm:
             print ( "Overwriting the model_objects properties" )
             self.model_objects.build_properties_from_data_model ( context, dm["model_objects"] )
