@@ -177,12 +177,29 @@ class MCELL_PT_data_model_browser(bpy.types.Panel):
         scn = context.scene
         mcell = context.scene.mcell
 
+        row = layout.row()
+        row.operator ( "cb.regenerate_data_model" )
+
         if 'data_model' in mcell:
             dm = unpickle_data_model ( mcell['data_model'] )
             dm_list = list_data_model ( "Data Model", dm, [] )
             for line in dm_list:
                 row = layout.row()
                 row.label(text=line)
+
+
+class RegenerateDataModelFromProps(bpy.types.Operator):
+    '''Regenerate the data model from the properties'''
+    bl_idname = "cb.regenerate_data_model"
+    bl_label = "Regenerate Data Model"
+    bl_description = "Regenerate the data model from the Blender Properties"
+
+    def execute(self, context):
+        print ( "Printing CellBlender Data Model:" )
+        mcell = context.scene.mcell
+        mcell_dm = mcell.build_data_model_from_properties ( context )
+        mcell['data_model'] = pickle_data_model ( mcell_dm )
+        return {'FINISHED'}
 
 
 class PrintDataModel(bpy.types.Operator):
