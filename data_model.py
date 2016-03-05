@@ -182,7 +182,7 @@ class MCELL_PT_data_model_browser(bpy.types.Panel):
 
         if 'data_model' in mcell:
             dm = unpickle_data_model ( mcell['data_model'] )
-            dm_list = list_data_model ( "Data Model", dm, [] )
+            dm_list = list_data_model ( "Data Model", { "mcell": dm }, [] )
             for line in dm_list:
                 row = layout.row()
                 row.label(text=line)
