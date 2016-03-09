@@ -179,6 +179,15 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
           create_color_list()
           set_viz_boundaries(context)
 
+          # Set the mol_file_index to match the cursor as closely as possible
+          cursor_index = context.scene.frame_current
+          if len(mol_file_list) > cursor_index:
+            mcell.mol_viz.mol_file_index = cursor_index
+          elif len(mol_file_list) >= 1:
+            mcell.mol_viz.mol_file_index = len(mol_file_list) - 1
+          else:
+            mcell.mol_viz.mol_file_index = 0
+
           try:
               mol_viz_clear(mcell, force_clear=True)
               mol_viz_update(self, context)
