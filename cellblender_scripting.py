@@ -15,7 +15,6 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-# <pep8 compliant>
 
 """
 This file contains the classes for CellBlender's Scripting.
@@ -384,7 +383,8 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
             print ( "Executing internal script" )
             # Wrap the internal data model in a dictionary with an "mcell" key to make it an external data model
             dm = { 'mcell' : mcell_dm }
-            exec ( bpy.data.texts[self.dm_internal_file_name].as_string(), globals(), locals() )
+            #exec ( bpy.data.texts[self.dm_internal_file_name].as_string(), globals(), locals() )
+            exec ( bpy.data.texts[self.dm_internal_file_name].as_string(), locals() )
             # Strip off the outer dictionary wrapper because the internal data model does not have the "mcell" key layer
             # dm = dm['mcell']
             # Upgrade the data model if requested.
