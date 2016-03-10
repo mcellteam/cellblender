@@ -487,7 +487,8 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                     mdl_file.write ( bpy.data.texts[script.internal_file_name].as_string() )
                 if script.mdl_python == 'python':
                     mdl_file.write ( "\n/* Before Executing Python %s */\n\n" % (script.internal_file_name))
-                    exec ( bpy.data.texts[script.internal_file_name].as_string(), globals(), locals() )
+                    #exec ( bpy.data.texts[script.internal_file_name].as_string(), globals(), locals() )
+                    exec ( bpy.data.texts[script.internal_file_name].as_string(), locals() )
                     mdl_file.write ( "\n/* After Executing Python %s */\n\n" % (script.internal_file_name))
                 mdl_file.write ( "\n\n/* End file %s */\n\n" % (script.internal_file_name))
         # mdl_file.write("\n\n/* End Custom MDL Inserted %s %s */\n\n" % (before_after, section))
