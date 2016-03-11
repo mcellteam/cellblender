@@ -11,12 +11,19 @@ class FieldReader {
   //   Non-Empty String: trimmed next field string if it exists in this line
   //   Empty String: "" is returned for each end of line
   //   null: end of file or error
-  
+
   BufferedReader r = null;
   String line = null;
-  
+
   FieldReader ( BufferedReader f ) {
     r = f;
+  }
+
+  void close () {
+    try {
+      r.close();
+    } catch ( Exception e ) {
+    }
   }
 
 	String next_field () {
@@ -50,7 +57,7 @@ class FieldReader {
 	    line = "";
 	  }
 	  return ( field );
-	}	
+	}
 }
 
 
@@ -68,6 +75,7 @@ abstract class data_file {
 	public boolean valid_data = false;
 
 	String name = "Identity";
+	String file_name = "";
 	Color color = Color.red;
 	boolean continuous = true;
 	int num_samples = -1;     // Use -1 to indicate that there are no samples
@@ -161,13 +169,16 @@ class file_x extends data_file {
   public file_x ( String file_name, double epsilon ) {
     eps = epsilon;
     // Read the values
-    name = "File=\"" + file_name + "\"";
+    this.file_name = file_name;
+    this.name = "File=\"" + this.file_name + "\"";
     int num_values = 0;
+    BufferedReader br=null;
+	  FieldReader fr=null;
     for (int pass=0; pass<=1; pass++) {
       num_values = 0;
 		  try {
-		    BufferedReader br = get_reader ( file_name );
-			  FieldReader fr = new FieldReader ( br );
+		    br = get_reader ( this.file_name );
+			  fr = new FieldReader ( br );
 			  String xfield = null;
 			  do {
 				  xfield = fr.next_field();
@@ -185,6 +196,8 @@ class file_x extends data_file {
 		    x_values = new double[num_values];
 		  }
 		}
+    try { fr.close(); } catch ( Exception e ) {}
+    try { br.close(); } catch ( Exception e ) {}
 		// Print the values (debugging)
 		for (int i=0; i<x_values.length; i++) {
 		  System.out.println ( "x[" + i + "] = " + x_values[i] );
@@ -209,13 +222,16 @@ class file_y extends data_file {
     x0 = start_x;
     dx = delta_x;
     // Read the values
-    name = "File=\"" + file_name + "\"";
+    this.file_name = file_name;
+    this.name = "File=\"" + this.file_name + "\"";
     int num_values = 0;
+    BufferedReader br=null;
+	  FieldReader fr=null;
     for (int pass=0; pass<=1; pass++) {
       num_values = 0;
 		  try {
-		    BufferedReader br = get_reader ( file_name );
-			  FieldReader fr = new FieldReader ( br );
+		    br = get_reader ( this.file_name );
+			  fr = new FieldReader ( br );
 			  String yfield = null;
 			  do {
 				  yfield = fr.next_field();
@@ -233,6 +249,8 @@ class file_y extends data_file {
 		    y_values = new double[num_values];
 		  }
 		}
+    try { fr.close(); } catch ( Exception e ) {}
+    try { br.close(); } catch ( Exception e ) {}
 		// Print the values (debugging)
 		for (int i=0; i<y_values.length; i++) {
 		  //System.out.println ( "x=" + (x0+(i*dx)) + ", y=" + y_values[i] );
@@ -330,10 +348,12 @@ class file_xy extends data_file {
     int total_values = 0;
     int num_values = 0;
 
-    name = "File=\"" + file_name + "\"";
+    this.file_name = file_name;
+    this.name = "File=\"" + this.file_name + "\"";
 
+    BufferedReader in = null;
     try {
-      BufferedReader in = new BufferedReader(new FileReader(file_name));
+      in = new BufferedReader(new FileReader(this.file_name));
       String s;
       while ( (s = in.readLine()) != null ) {
         String ss[] = s.split(" ");
@@ -383,17 +403,18 @@ class file_xy extends data_file {
 
 
 	  } catch ( IOException ie ) {
-	    System.out.println ( "Error reading file " + file_name );
+	    System.out.println ( "Error reading file " + this.file_name );
 	    ie.printStackTrace();
 	  } catch ( Exception e ) {
-	    System.out.println ( "Exception reading file " + file_name + ": " + e );
+	    System.out.println ( "Exception reading file " + this.file_name + ": " + e );
 	    e.printStackTrace();
     }
+    try { in.close(); } catch ( Exception e ) {}
 
 
     /* Uncomment for debugging
     try {
-      PrintStream dumpfile = new PrintStream ( file_name + ".dump.txt" );
+      PrintStream dumpfile = new PrintStream ( this.file_name + ".dump.txt" );
       for (int i=0; i<num_values; i++) {
         dumpfile.println ( x_values[i] + " " + y_values[i] );
       }
@@ -412,7 +433,7 @@ class file_xy extends data_file {
     int blockindex = 0;
     int total_values = 0;
     try {
-      BufferedReader in = new BufferedReader(new FileReader(file_name));
+      BufferedReader in = new BufferedReader(new FileReader(this.file_name));
       String s;
       while ( (s = in.readLine()) != null ) {
         String ss[] = s.split(" ");
@@ -451,7 +472,7 @@ class file_xy extends data_file {
         y_values[i] = (double)(i*i);
 	    }
 	  } catch ( IOException e ) {
-	    System.out.println ( "Error reading file " + file_name );
+	    System.out.println ( "Error reading file " + this.file_name );
     }
 
 
@@ -459,9 +480,11 @@ class file_xy extends data_file {
     Vector values = new Vector();
     // Read the values
     name = "File=\"" + file_name + "\"";
+//    this.file_name = file_name;
+//    this.name = "File=\"" + this.file_name + "\"";
     int num_values = 0;
 	  try {
-	    BufferedReader br = get_reader ( file_name );
+	    BufferedReader br = get_reader ( this.file_name );
 		  FieldReader fr = new FieldReader ( br );
 		  String xfield = null;
 		  String yfield = null;
@@ -477,7 +500,7 @@ class file_xy extends data_file {
 			  }
 		  } while ( (xfield != null) && (yfield != null) );
 	  } catch (Exception e) {
-	    System.out.println ( "Error reading from file: " + file_name );
+	    System.out.println ( "Error reading from file: " + this.file_name );
 	    valid_data = false;
 	    return;
 	  }
@@ -493,12 +516,12 @@ class file_xy extends data_file {
 
     /* Old two pass code reads twice to use an array:
     // Read the values
-    name = "File=\"" + file_name + "\"";
+    name = "File=\"" + this.file_name + "\"";
     int num_values = 0;
     for (int pass=0; pass<=1; pass++) {
       num_values = 0;
 		  try {
-		    BufferedReader br = get_reader ( file_name );
+		    BufferedReader br = get_reader ( this.file_name );
 			  FieldReader fr = new FieldReader ( br );
 			  String xfield = null;
 			  String yfield = null;
@@ -519,7 +542,7 @@ class file_xy extends data_file {
 				  }
 			  } while ( (xfield != null) && (yfield != null) );
 		  } catch (Exception e) {
-		    System.out.println ( "Error reading from file: " + file_name );
+		    System.out.println ( "Error reading from file: " + this.file_name );
 		    valid_data = false;
 		    return;
 		  }
@@ -880,6 +903,38 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		}
 	}
 	
+	public String[] get_file_names () {
+		if ( func_set == null ) {
+		  return ( new String[0] );
+		} else {
+		  int n = func_set.flist.length;
+			String file_names[] = new String[n];
+      for (int i=0; i<n; i++) {
+        file_names[i] = func_set.flist[i].file_name;
+			}
+		  return ( file_names );
+		}
+	}
+
+	public void remove_file_by_number ( int n ) {
+	  String old_strings[] = get_file_names();
+	  if (old_strings.length <= 0) {
+	    set_files ( null );
+	  } else if ( (n >= 0) && (n < old_strings.length) ) {
+	    String new_strings[] = new String[old_strings.length-1];
+	    int new_index = 0;
+	    for (int old_index=0; old_index<old_strings.length; old_index++) {
+	      if (old_index != n) {
+	        new_strings[new_index] = old_strings[old_index];
+	        new_index += 1;
+	      }
+	    }
+	    set_files ( new_strings );
+	  } else {
+	    // Don't do anything
+	  }
+	}
+
 	public void save_and_exit() {
 		save_settings();
 		System.exit(0);
@@ -999,8 +1054,9 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 
 	public void save_settings() {
 		System.out.println ( "Saving persistent settings to: \"" + settings_file_name + "\"" );
+		OutputStreamWriter o = null;
 		try {
-			OutputStreamWriter o = new OutputStreamWriter ( new FileOutputStream ( settings_file_name ) );
+			o = new OutputStreamWriter ( new FileOutputStream ( settings_file_name ) );
 			o.write ( "CurrentBasePath: " + current_base_path + "\n" );
 			o.write ( "InputFile: " + current_file_name + "\n" );
 			o.write ( "Scale: " + x_scale + "\n" );
@@ -1033,6 +1089,7 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 			o.close();
 		} catch (Exception e) {
 			System.out.println ( "Unable to create a new settings file: \"" + settings_file_name + "\" to store persistent settings." );
+			try { o.close(); } catch ( Exception e2 ) { }
 		}
 	}
 
@@ -1058,8 +1115,14 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 	    JMenu file_menu = new JMenu("File");
 	    	file_menu.add ( mi = new JMenuItem("Add") );
 	    	mi.addActionListener(this);
-	    	file_menu.add ( mi = new JMenuItem("Clear") );
-	    	mi.addActionListener(this);
+        JMenu file_clear_menu = new JMenu("Clear");
+          file_clear_menu.add ( mi = new JMenuItem("Clear All") );
+          mi.addActionListener(this);
+          for (int i=1; i<=25; i++) {
+            file_clear_menu.add ( mi = new JMenuItem("Clear "+i) );
+            mi.addActionListener(this);
+          }
+          file_menu.add ( file_clear_menu );
 	    	file_menu.addSeparator();
 	    	file_menu.add ( mi = new JMenuItem("Exit") );
 	    	mi.addActionListener(this);
@@ -1144,11 +1207,13 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 
 			if (fd == null) {
         System.out.println ( "Creating a file dialog." );
-				fd = new FileDialog ( frame, "Choose a file" );
+				fd = new FileDialog ( frame, "Choose a file", FileDialog.LOAD );
+        fd.setModal ( true );
 				if (working_directory.length() > 0) {
 				  System.out.println ( "Setting Working Directory to: " + working_directory );
 				  fd.setDirectory ( working_directory );
 				}
+				// fd.setModalityType ( Dialog.APPLICATION_MODAL );
 			}
 			fd.setTitle ( "Open a Reaction File" );
 			// fd.setFilenameFilter ( this );
@@ -1159,6 +1224,7 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 			//	fd.setFile ( "*" + fd_file_types );
 			//}
 			//fd.show();
+      fd.setModal ( true );
 			fd.setVisible(true);
 			fd.toFront();
 			
@@ -1177,8 +1243,11 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 			}
 			//gdata.display_histogram = true;
 			
-		} else if (cmd.equalsIgnoreCase("Clear")) {
+		} else if (cmd.equalsIgnoreCase("Clear All")) {
       set_files ( null );
+		} else if (cmd.startsWith("Clear ")) {
+		  int n = Integer.parseInt ( cmd.substring(6) );
+      remove_file_by_number ( n-1 );
 		} else if (cmd.equalsIgnoreCase("Combined")) {
 			JCheckBoxMenuItem mi = (JCheckBoxMenuItem)(e.getSource());
 			if (mi.isSelected()) {

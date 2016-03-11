@@ -320,8 +320,7 @@ def save_wrapper(context, out_file, filedir):
     settings = mcell.project_settings
     unfiltered_rxn_output_list = mcell.rxn_output.rxn_output_list
 
-    save_general('rxn_output', save_rxn_output_mdl, save_state,
-                 unfiltered_rxn_output_list)
+    save_general('rxn_output', save_rxn_output_mdl, save_state, unfiltered_rxn_output_list)
 
     scripting.write_scripting_output ( 'after', 'rxn_output', context, out_file, filedir, dm )
 
@@ -887,7 +886,7 @@ def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all):
 
 def save_rxn_output_mdl(context, out_file, rxn_output_list):
     """ Saves reaction output info to mdl output file. """
-    
+
     mcell = context.scene.mcell
     ps = mcell.parameter_system
 
@@ -903,38 +902,40 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
             ps.panel_parameter_list, ps.export_as_expressions)
     out_file.write("  STEP=%s\n" % rxn_step)
 
+    always_generate = mcell.rxn_output.always_generate
     for rxn_output in rxn_output_list:
-        if rxn_output.rxn_or_mol == 'Reaction':
-            count_name = rxn_output.reaction_name
-        elif rxn_output.rxn_or_mol == 'Molecule':
-            count_name = rxn_output.molecule_name
-        elif rxn_output.rxn_or_mol == 'MDLString':
-            outputStr = rxn_output.mdl_string
-            output_file = rxn_output.mdl_file_prefix
-            if outputStr not in ['', None]:
-                outputStr = '  {%s} =>  "./react_data/seed_" & seed & \"/%s_MDLString.dat\"\n' % (outputStr, output_file)
-                out_file.write(outputStr)
-            else:
-                print('Found invalid reaction output {0}'.format(rxn_output.name))
-            continue
+        if always_generate or rxn_output.plotting_enabled:
+            if rxn_output.rxn_or_mol == 'Reaction':
+                count_name = rxn_output.reaction_name
+            elif rxn_output.rxn_or_mol == 'Molecule':
+                count_name = rxn_output.molecule_name
+            elif rxn_output.rxn_or_mol == 'MDLString':
+                outputStr = rxn_output.mdl_string
+                output_file = rxn_output.mdl_file_prefix
+                if outputStr not in ['', None]:
+                    outputStr = '  {%s} =>  "./react_data/seed_" & seed & \"/%s_MDLString.dat\"\n' % (outputStr, output_file)
+                    out_file.write(outputStr)
+                else:
+                    print('Found invalid reaction output {0}'.format(rxn_output.name))
+                continue
 
-        object_name = rxn_output.object_name
-        region_name = rxn_output.region_name
-        if rxn_output.count_location == 'World':
-            out_file.write(
-                "  {COUNT[%s,WORLD]}=> \"./react_data/seed_\" & seed & "
-                "\"/%s.World.dat\"\n" % (count_name, count_name,))
-        elif rxn_output.count_location == 'Object':
-            out_file.write(
-                "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
-                "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,
-                                      object_name, count_name, object_name))
-        elif rxn_output.count_location == 'Region':
-            out_file.write(
-                "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
-                "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,
-                object_name, region_name, count_name, object_name, region_name))
-                
+            object_name = rxn_output.object_name
+            region_name = rxn_output.region_name
+            if rxn_output.count_location == 'World':
+                out_file.write(
+                    "  {COUNT[%s,WORLD]}=> \"./react_data/seed_\" & seed & "
+                    "\"/%s.World.dat\"\n" % (count_name, count_name,))
+            elif rxn_output.count_location == 'Object':
+                out_file.write(
+                    "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
+                    "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,
+                                          object_name, count_name, object_name))
+            elif rxn_output.count_location == 'Region':
+                out_file.write(
+                    "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
+                    "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,
+                    object_name, region_name, count_name, object_name, region_name))
+
     out_file.write("}\n\n")
 
 """
