@@ -207,21 +207,29 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                 elif rxn_output.rxn_or_mol == 'MDLString':
                     file_name = rxn_output.mdl_file_prefix + "_MDLString.dat"
 
+                elif rxn_output.rxn_or_mol == 'File':
+                    file_name = rxn_output.data_file_name
+
                 if file_name:
-                    file_name = os.path.join("seed_*", file_name)
-                    candidate_file_list = glob.glob(os.path.join(data_path, file_name))
-                    # Without sorting, the seeds may not be increasing
-                    candidate_file_list.sort()
-                    #print("Candidate file list for %s:" % (file_name))
-                    #print("  ", candidate_file_list)
                     first_pass = True
-                    # Use the start_time.txt file to find files modified since
-                    # MCell was started
-                    start_time = os.stat(os.path.join(os.path.dirname(
-                        bpy.data.filepath), "start_time.txt")).st_mtime
-                    # This file is both in the list and newer
-                    # than the run time for MCell
-                    candidate_file_list = [ffn for ffn in candidate_file_list if os.stat(ffn).st_mtime >= start_time]
+
+                    if rxn_output.rxn_or_mol == 'File':
+                        # Use the file name as it is
+                        candidate_file_list = [ file_name ]
+                    else:
+                        # Prepend a search across all seeds for this file
+                        file_name = os.path.join("seed_*", file_name)
+                        candidate_file_list = glob.glob(os.path.join(data_path, file_name))
+                        # Without sorting, the seeds may not be increasing
+                        candidate_file_list.sort()
+                        #print("Candidate file list for %s:" % (file_name))
+                        #print("  ", candidate_file_list)
+                        # Use the start_time.txt file to find files modified since MCell was started
+                        start_time = os.stat(os.path.join(os.path.dirname(
+                            bpy.data.filepath), "start_time.txt")).st_mtime
+                        # This file is both in the list and newer than the run time for MCell
+                        candidate_file_list = [ffn for ffn in candidate_file_list if os.stat(ffn).st_mtime >= start_time]
+
                     for ffn in candidate_file_list:
 
                         # Create f as a relative path containing seed/file
@@ -300,20 +308,30 @@ def check_rxn_output(self, context):
     rxn_output_name = ""
 
     status = ""
+    count_name = ""
     if rxn_output.rxn_or_mol == 'Reaction':
         count_name = reaction_name
         name_list = reaction_list
     elif rxn_output.rxn_or_mol == 'Molecule':
         count_name = molecule_name
         name_list = mol_list
-    else:
+    elif rxn_output.rxn_or_mol == 'MDLString':
         count_name = molecule_name
         rxn_output.status = ""
         # Can't do these here because this causes another check_rxn_output call (infinite recursion)
         #rxn_output.name = rxn_output.mdl_string
         #rxn_output.name = "MDL: " + rxn_output.mdl_string
-
         return
+    elif rxn_output.rxn_or_mol == 'File':
+        rxn_output.status = ""
+        # Can't do these here because this causes another check_rxn_output call (infinite recursion)
+        #rxn_output.name = rxn_output.mdl_string
+        rxn_output_name = "FILE: " + rxn_output.data_file_name
+        if rxn_output.name != rxn_output_name:
+            rxn_output.name = rxn_output_name
+        return
+    else:
+        pass
 
     try:
         region_list = bpy.data.objects[object_name].mcell.regions.region_list
@@ -372,6 +390,8 @@ def update_name_and_check_rxn_output(self, context):
     rxn_output = rxn_output_list[mcell.rxn_output.active_rxn_output_index]
     if rxn_output.rxn_or_mol == 'MDLString':
         rxn_output.name = "MDL: " + rxn_output.mdl_string
+    elif rxn_output.rxn_or_mol == 'File':
+        rxn_output.name = "FILE: " + rxn_output.data_file_name
 
     # Now perform the normal reaction output check:
     check_rxn_output(self, context)
@@ -434,6 +454,8 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     mdl_file_prefix = StringProperty(
         name="MDL File Prefix",
         description="Prefix name for this file." )
+    data_file_name = StringProperty ( name = "Data File Name", subtype='FILE_PATH', default="", description="Data File to Plot.", update=check_rxn_output )
+
     object_name = StringProperty(
         name="Object", update=check_rxn_output)
     region_name = StringProperty(
@@ -449,7 +471,8 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     rxn_or_mol_enum = [
         ('Reaction', "Reaction", ""),
         ('Molecule', "Molecule", ""),
-        ('MDLString', "MDLString", "")]
+        ('MDLString', "MDLString", ""),
+        ('File', "File", "")]
     rxn_or_mol = bpy.props.EnumProperty(
         items=rxn_or_mol_enum, name="Count Reaction or Molecule",
         default='Molecule',
@@ -755,8 +778,10 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                                    "See MCell Quick Reference Guide for more details."
                         ps.draw_prop_with_help ( layout, "MDL File Prefix", rxn_output, "mdl_file_prefix", "mdl_file_prefix_show_help", rxn_output.mdl_file_prefix_show_help, helptext )
 
+                    elif rxn_output.rxn_or_mol =='File':
+                        layout.prop ( rxn_output, "data_file_name" )
 
-                    if rxn_output.rxn_or_mol != 'MDLString':
+                    if (rxn_output.rxn_or_mol == 'Molecule') or (rxn_output.rxn_or_mol == 'Reaction'):
                         layout.prop(rxn_output, "count_location", expand=True)
                         # Show the object selector if Object or Region is selected
                         if rxn_output.count_location != "World":

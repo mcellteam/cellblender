@@ -917,7 +917,10 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
                     out_file.write(outputStr)
                 else:
                     print('Found invalid reaction output {0}'.format(rxn_output.name))
-                continue
+                continue  ####   <=====-----  C O N T I N U E     H E R E  !!!!!
+            elif rxn_output.rxn_or_mol == 'File':
+                # No MDL is generated for plot items that are plain files
+                continue  ####   <=====-----  C O N T I N U E     H E R E  !!!!!
 
             object_name = rxn_output.object_name
             region_name = rxn_output.region_name
