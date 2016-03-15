@@ -209,13 +209,16 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
 
                 elif rxn_output.rxn_or_mol == 'File':
                     file_name = rxn_output.data_file_name
+                    print ( "Preparing to plot a File with file_name = " + file_name )
 
                 if file_name:
                     first_pass = True
 
                     if rxn_output.rxn_or_mol == 'File':
-                        # Use the file name as it is
-                        candidate_file_list = [ file_name ]
+                        # Assume that the file path is blend file relative (begins with "//")
+                        if file_name.startswith ( "//" ):
+                            # Convert the file name from blend file relative to react_data folder relative:
+                            candidate_file_list = [ os.path.pardir + os.path.sep + os.path.pardir + os.path.sep + os.path.pardir + os.path.sep + file_name[2:] ]
                     else:
                         # Prepend a search across all seeds for this file
                         file_name = os.path.join("seed_*", file_name)
@@ -232,10 +235,15 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
 
                     for ffn in candidate_file_list:
 
-                        # Create f as a relative path containing seed/file
-                        split1 = os.path.split(ffn)
-                        split2 = os.path.split(split1[0])
-                        f = os.path.join(split2[1], split1[1])
+                        f = None
+                        if rxn_output.rxn_or_mol == 'File':
+                          # Use the file name as it is
+                          f = ffn
+                        else:
+                          # Create f as a relative path containing seed/file
+                          split1 = os.path.split(ffn)
+                          split2 = os.path.split(split1[0])
+                          f = os.path.join(split2[1], split1[1])
 
                         color_string = ""
                         if rxn_output.rxn_or_mol == 'Molecule' and mol_colors:
@@ -484,6 +492,7 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
 
     mdl_string_show_help = BoolProperty ( default=False, description="Toggle more information about this item" )
     mdl_file_prefix_show_help = BoolProperty ( default=False, description="Toggle more information about this item" )
+    data_file_name_show_help = BoolProperty ( default=False, description="Toggle more information about this item" )
 
     # plot_command = StringProperty(name="Command")  # , update=check_rxn_output)
     status = StringProperty(name="Status")
@@ -780,7 +789,14 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                         ps.draw_prop_with_help ( layout, "MDL File Prefix", rxn_output, "mdl_file_prefix", "mdl_file_prefix_show_help", rxn_output.mdl_file_prefix_show_help, helptext )
 
                     elif rxn_output.rxn_or_mol =='File':
-                        layout.prop ( rxn_output, "data_file_name" )
+                        ## layout.prop ( rxn_output, "data_file_name" )
+                        helptext = "File:\n" + \
+                                   "  Specifies the File to Plot.\n" + \
+                                   "  This Plot Specification does not generate any data.\n" + \
+                                   "  The file path may be either relative or absolute.\n" + \
+                                   "  Blender's convention for relative paths start with \"//\".\n" + \
+                                   "  Relative paths are relative to the location of the .blend file."
+                        ps.draw_prop_with_help ( layout, "File", rxn_output, "data_file_name", "data_file_name_show_help", rxn_output.data_file_name_show_help, helptext )
 
                     if (rxn_output.rxn_or_mol == 'Molecule') or (rxn_output.rxn_or_mol == 'Reaction'):
                         layout.prop(rxn_output, "count_location", expand=True)
