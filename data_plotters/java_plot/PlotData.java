@@ -356,12 +356,17 @@ class file_xy extends data_file {
       in = new BufferedReader(new FileReader(this.file_name));
       String s;
       while ( (s = in.readLine()) != null ) {
+        // Convert all contiguous white space to a single space
+        //System.out.println ( "Read line: \"" + s + "\"" );
+        s = s.replaceAll ("\\s+", " ");
+        //System.out.println ( "Proc line: \"" + s + "\"" );
         String ss[] = s.split(" ");
         for (int i=0; i<ss.length; i++) {
           if (block == null) {
             block = new double[blocksize];
             blockindex = 0;
           }
+          //System.out.println ( "Parsing \"" + ss[i] + "\"" );
           block[blockindex] = Double.parseDouble(ss[i]);
           blockindex += 1;
           if (blockindex >= blocksize) {
