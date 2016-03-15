@@ -46,7 +46,7 @@ import cellblender
 from . import parameter_system
 from . import cellblender_release
 from . import cellblender_utils
-from cellblender.cellblender_utils import project_files_path, get_python_path
+from cellblender.cellblender_utils import mcell_files_path, get_python_path
 
 
 # We use per module class registration/unregistration
@@ -168,8 +168,8 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
 
         # Plot the data via this module
         # print("Preparing to call %s" % (mod_name))
-        # The project_files_path is now where the MDL lives:
-        data_path = project_files_path()
+        # The mcell_files_path is now where the MDL lives:
+        data_path = mcell_files_path()
         data_path = os.path.join(data_path, "react_data")
         create_reactdata_tmpfile(data_path)
 

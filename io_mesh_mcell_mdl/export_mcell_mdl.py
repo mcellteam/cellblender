@@ -39,7 +39,7 @@ import bpy
 # from cellblender import cellblender_operators  # Shouldn't need this anymore!!
 
 from cellblender import object_surface_regions
-from cellblender.cellblender_utils import project_files_path
+from cellblender.cellblender_utils import mcell_files_path
 
 
 def save(context, filepath=""):
@@ -337,7 +337,7 @@ def save_wrapper(context, out_file, filedir):
 
     if error_list and invalid_policy == 'dont_run':
         # If anything is invalid, delete all the MDLs.
-        project_dir = project_files_path()
+        project_dir = mcell_files_path()
         try:
             shutil.rmtree(project_dir)
         except:

@@ -51,7 +51,7 @@ from . import parameter_system
 from . import cellblender_utils
 from . import data_model
 
-from cellblender.cellblender_utils import project_files_path
+from cellblender.cellblender_utils import mcell_files_path
 
 from multiprocessing import cpu_count
 
@@ -148,7 +148,7 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
-        project_dir = project_files_path()
+        project_dir = mcell_files_path()
         status = ""
 
         python_path = cellblender.cellblender_utils.get_python_path ( mcell )
@@ -246,7 +246,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
         mcell_processes = mcell.run_simulation.mcell_processes
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         # Force the project directory to be where the .blend file lives
-        project_dir = project_files_path()
+        project_dir = mcell_files_path()
         status = ""
 
         python_path = cellblender.cellblender_utils.get_python_path ( mcell )
@@ -409,7 +409,7 @@ class MCELL_OT_run_simulation_control_opengl(bpy.types.Operator):
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
-        project_dir = project_files_path()
+        project_dir = mcell_files_path()
         status = ""
 
         if not mcell.cellblender_preferences.decouple_export_run:
@@ -521,7 +521,7 @@ class MCELL_OT_run_simulation_control_java(bpy.types.Operator):
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
-        project_dir = project_files_path()
+        project_dir = mcell_files_path()
         status = ""
 
         if not mcell.cellblender_preferences.decouple_export_run:
@@ -636,7 +636,7 @@ class MCELL_OT_run_simulation_libmcell(bpy.types.Operator):
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
-        project_dir = project_files_path()
+        project_dir = mcell_files_path()
         status = ""
 
         if not mcell.cellblender_preferences.decouple_export_run:
@@ -744,7 +744,7 @@ class MCELL_OT_run_simulation_libmcellpy(bpy.types.Operator):
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
-        project_dir = project_files_path()
+        project_dir = mcell_files_path()
         status = ""
 
         if not mcell.cellblender_preferences.decouple_export_run:
@@ -851,7 +851,7 @@ class MCELL_OT_run_simulation_pure_python(bpy.types.Operator):
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
-        project_dir = project_files_path()
+        project_dir = mcell_files_path()
         status = ""
 
         if not mcell.cellblender_preferences.decouple_export_run:
@@ -1393,7 +1393,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
             # be removed
             #mcell.project_settings.base_name = scene_name
 
-            main_mdl = project_files_path()
+            main_mdl = mcell_files_path()
             main_mdl = os.path.join(main_mdl, scene_name + ".main.mdl")
 
 

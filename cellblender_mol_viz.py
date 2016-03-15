@@ -50,7 +50,7 @@ from . import cellblender_release
 from . import cellblender_utils
 
 from cellblender.cellblender_utils import timeline_view_all
-from cellblender.cellblender_utils import project_files_path
+from cellblender.cellblender_utils import mcell_files_path
 
 
 # We use per module class registration/unregistration
@@ -127,7 +127,7 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
         else:
           # Force the top level mol_viz directory to be where the .blend file
           # lives plus "viz_data". The seed directories will live underneath it.
-          mol_viz_top_level_dir = os.path.join(project_files_path(), "viz_data", "")
+          mol_viz_top_level_dir = os.path.join(mcell_files_path(), "viz_data", "")
           mol_viz_top_level_dir = os.path.relpath(mol_viz_top_level_dir)
           mol_viz_seed_list = glob.glob(os.path.join(mol_viz_top_level_dir, "*"))
           mol_viz_seed_list.sort()
@@ -360,7 +360,7 @@ def get_mol_file_dir():
         mcell.mol_viz.active_mol_viz_seed_index = 0
         active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[0]
     filepath = os.path.join(
-        project_files_path(), "viz_data/%s" % active_mol_viz_seed.name)
+        mcell_files_path(), "viz_data/%s" % active_mol_viz_seed.name)
     filepath = os.path.relpath(filepath)
 
     return filepath

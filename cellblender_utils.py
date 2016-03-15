@@ -18,7 +18,7 @@ def timeline_view_all ( context ):
                             break  # It's not clear if this should break or continue ... breaking for now
 
 
-def project_files_path():
+def mcell_files_path():
     ''' Consolidate the creation of the path to the project files'''
 
     filepath = os.path.dirname(bpy.data.filepath)

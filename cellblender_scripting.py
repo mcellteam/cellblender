@@ -43,7 +43,7 @@ import re
 import cellblender
 from . import parameter_system
 from . import cellblender_utils
-from cellblender.cellblender_utils import project_files_path
+from cellblender.cellblender_utils import mcell_files_path
 
 
 # We use per module class registration/unregistration

@@ -85,8 +85,8 @@ def unregister():
 # Two callbacks that had been in the cellblender operators file:
 
 from . import cellblender_utils
-#from cellblender.cellblender_utils import project_files_path
-from cellblender.cellblender_utils import project_files_path
+#from cellblender.cellblender_utils import mcell_files_path
+from cellblender.cellblender_utils import mcell_files_path
 from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
 
 @persistent
