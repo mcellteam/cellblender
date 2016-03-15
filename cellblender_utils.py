@@ -18,14 +18,22 @@ def timeline_view_all ( context ):
                             break  # It's not clear if this should break or continue ... breaking for now
 
 
-def mcell_files_path():
+def project_files_path():
     ''' Consolidate the creation of the path to the project files'''
 
     filepath = os.path.dirname(bpy.data.filepath)
     filepath, dot, blend = bpy.data.filepath.rpartition(os.path.extsep)
     filepath = filepath + "_files"
+    return filepath
+
+
+def mcell_files_path():
+    ''' Consolidate the creation of the path to the mcell files'''
+
+    filepath = project_files_path()
     filepath = os.path.join(filepath, "mcell")
     return filepath
+
 
 
 def preserve_selection_use_operator(operator, new_obj):

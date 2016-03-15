@@ -323,6 +323,7 @@ def check_rxn_output(self, context):
         #rxn_output.name = "MDL: " + rxn_output.mdl_string
         return
     elif rxn_output.rxn_or_mol == 'File':
+        print ( "Checked file name and got " + rxn_output.name )
         rxn_output.status = ""
         # Can't do these here because this causes another check_rxn_output call (infinite recursion)
         #rxn_output.name = rxn_output.mdl_string
