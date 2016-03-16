@@ -499,7 +499,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     row = col.row(align=True)
 
                     if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "preferences_select", icon='PREFERENCES', text="" )
-                    if mcell.cellblender_preferences.show_button_num[1]: row.prop ( self, "scripting_select", icon='TEXT', text="" )
+                    if mcell.cellblender_preferences.show_button_num[1]: row.prop ( self, "scripting_select", icon='SCRIPT', text="" )
                     if mcell.cellblender_preferences.show_button_num[2]: row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="" )
 
                     if mcell.cellblender_preferences.use_stock_icons:
@@ -558,7 +558,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol = brow.column()
                     bcol.prop ( self, "preferences_select", icon='PREFERENCES', text="Settings & Preferences" )
                     bcol = brow.column()
-                    bcol.prop ( self, "scripting_select", icon='TEXT', text="Scripting" )
+                    bcol.prop ( self, "scripting_select", icon='SCRIPT', text="Scripting" )
 
                     current_marker = "After drawing preferences_select"
 
@@ -713,7 +713,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                 if self.scripting_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Scripting", icon='TEXT' )
+                    layout.label ( "Scripting", icon='SCRIPT' )
                     context.scene.mcell.scripting.draw_layout ( context, layout )
 
                 if self.parameters_select:

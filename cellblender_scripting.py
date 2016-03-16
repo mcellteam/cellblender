@@ -570,7 +570,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                 row.prop ( self, "force_property_update" )
 
                 row = box.row()
-                row.operator("mcell.scripting_execute", icon='COLOR_RED')
+                row.operator("mcell.scripting_execute", icon='SCRIPTWIN')
 
             else:
                 row.prop(self, "show_data_model_scripting", icon='TRIA_RIGHT', emboss=False)
