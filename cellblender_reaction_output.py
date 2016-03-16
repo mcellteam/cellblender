@@ -43,6 +43,7 @@ import re
 
 # CellBlender imports
 import cellblender
+from . import data_model
 from . import parameter_system
 from . import cellblender_release
 from . import cellblender_utils
@@ -500,16 +501,18 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output building Data Model" )
         ro_dm = {}
-        ro_dm['data_model_version'] = "DM_2015_10_07_1500"
+        ro_dm['data_model_version'] = "DM_2016_03_15_1800"
         ro_dm['name'] = self.name
         ro_dm['molecule_name'] = self.molecule_name
         ro_dm['reaction_name'] = self.reaction_name
         ro_dm['mdl_string'] = self.mdl_string
         ro_dm['mdl_file_prefix'] = self.mdl_file_prefix
+        ro_dm['data_file_name'] = self.data_file_name
         ro_dm['object_name'] = self.object_name
         ro_dm['region_name'] = self.region_name
         ro_dm['count_location'] = self.count_location
         ro_dm['rxn_or_mol'] = self.rxn_or_mol
+        ro_dm['plotting_enabled'] = self.plotting_enabled
         return ro_dm
 
 
@@ -534,8 +537,16 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
                 dm['mdl_file_prefix'] = ""
             dm['data_model_version'] = "DM_2015_10_07_1500"
 
+        if dm['data_model_version'] == "DM_2015_10_07_1500":
+            # Add the plotting_enabled flag with a default of true (since previous versions plotted everything)
+            dm['plotting_enabled'] = True
+            # Add the data file name with the default of an empty string
+            dm['data_file_name'] = ""
+            # Update the data model version for this item
+            dm['data_model_version'] = "DM_2016_03_15_1800"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_10_07_1500":
+        if dm['data_model_version'] != "DM_2016_03_15_1800":
             data_model.flag_incompatible_data_model ( "Upgrade Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
             return None
 
@@ -544,17 +555,19 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
         # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_10_07_1500":
+        if dm['data_model_version'] != "DM_2016_03_15_1800":
             data_model.handle_incompatible_data_model ( "Build Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
         self.name = dm["name"]
         self.molecule_name = dm["molecule_name"]
         self.reaction_name = dm["reaction_name"]
         self.mdl_string = dm['mdl_string']
         self.mdl_file_prefix = dm['mdl_file_prefix']
+        self.data_file_name = dm['data_file_name']
         self.object_name = dm["object_name"]
         self.region_name = dm["region_name"]
         self.count_location = dm["count_location"]
         self.rxn_or_mol = dm["rxn_or_mol"]
+        self.plotting_enabled = dm["plotting_enabled"]
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -649,12 +662,13 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output Panel building Data Model" )
         ro_dm = {}
-        ro_dm['data_model_version'] = "DM_2014_10_24_1638"
+        ro_dm['data_model_version'] = "DM_2016_03_15_1800"
         ro_dm['rxn_step'] = self.rxn_step.get_expr()
         ro_dm['plot_layout'] = self.plot_layout
         ro_dm['plot_legend'] = self.plot_legend
         ro_dm['combine_seeds'] = self.combine_seeds
         ro_dm['mol_colors'] = self.mol_colors
+        ro_dm['always_generate'] = self.always_generate
         ro_list = []
         for ro in self.rxn_output_list:
             ro_list.append ( ro.build_data_model_from_properties(context) )
@@ -675,8 +689,13 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             dm['rxn_step'] = ""
             dm['data_model_version'] = "DM_2015_05_15_1214"
 
+        if dm['data_model_version'] == "DM_2015_05_15_1214":
+            # Set "always_generate" to true to be consistent with previous behavior which generated all files
+            dm['always_generate'] = True
+            dm['data_model_version'] = "DM_2016_03_15_1800"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_05_15_1214":
+        if dm['data_model_version'] != "DM_2016_03_15_1800":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellReactionOutputPropertyGroup data model to current version." )
             return None
 
@@ -689,7 +708,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
         # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_05_15_1214":
+        if dm['data_model_version'] != "DM_2016_03_15_1800":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReactionOutputPropertyGroup data model to current version." )
         self.init_properties(context.scene.mcell.parameter_system)
         self.plot_layout = dm["plot_layout"]
@@ -697,6 +716,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         self.rxn_step.set_expr ( dm["rxn_step"] )
         self.combine_seeds = dm["combine_seeds"]
         self.mol_colors = dm["mol_colors"]
+        self.always_generate = dm["always_generate"]
         while len(self.rxn_output_list) > 0:
             self.rxn_output_list.remove(0)
         if "reaction_output_list" in dm:
