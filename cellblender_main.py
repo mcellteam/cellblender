@@ -961,6 +961,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm['simulation_control'] = self.run_simulation.build_data_model_from_properties(context)
         dm['mol_viz'] = self.mol_viz.build_data_model_from_properties(context)
         dm['reaction_data_output'] = self.rxn_output.build_data_model_from_properties(context)
+        dm['scripting'] = self.scripting.build_data_model_from_properties(context)
         if geometry:
             print ( "Adding Geometry to Data Model" )
             dm['geometrical_objects'] = self.model_objects.build_data_model_geometry_from_mesh(context)
@@ -1071,6 +1072,12 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             if dm[group_name] == None:
                 return None
 
+        group_name = "scripting"
+        if group_name in dm:
+            dm[group_name] = cellblender_scripting.CellBlenderScriptingPropertyGroup.upgrade_data_model ( dm[group_name] )
+            if dm[group_name] == None:
+                return None
+
         return dm
 
 
@@ -1153,6 +1160,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "reaction_data_output" in dm:
             print ( "Overwriting the reaction_data_output properties" )
             self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
+        if "scripting" in dm:
+            print ( "Overwriting the scripting properties" )
+            self.scripting.build_properties_from_data_model ( context, dm["scripting"] )
 
 
         # Now call the various "check" routines to clean up any unresolved references

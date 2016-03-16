@@ -175,35 +175,6 @@ class MCELL_PT_scripting_settings(bpy.types.Panel):
 
 # Scripting Property Groups
 
-################### Write Scripting Ouptut before everything
-################### Write Scripting Ouptut before parameters
-################### Write Scripting Ouptut after parameters
-################### Write Scripting Ouptut before initialization
-################### Write Scripting Ouptut after initialization
-################### Write Scripting Ouptut before partitions
-################### Write Scripting Ouptut after partitions
-################### Write Scripting Ouptut before molecules
-################### Write Scripting Ouptut after molecules
-################### Write Scripting Ouptut before surface_classes
-################### Write Scripting Ouptut after surface_classes
-################### Write Scripting Ouptut before reactions
-################### Write Scripting Ouptut after reactions
-################### Write Scripting Ouptut before geometry
-################### Write Scripting Ouptut after geometry
-################### Write Scripting Ouptut before mod_surf_regions
-################### Write Scripting Ouptut after mod_surf_regions
-################### Write Scripting Ouptut before release_patterns
-################### Write Scripting Ouptut after release_patterns
-################### Write Scripting Ouptut before instantiate
-################### Write Scripting Ouptut after instantiate
-################### Write Scripting Ouptut before seed
-################### Write Scripting Ouptut after seed
-################### Write Scripting Ouptut before viz_output
-################### Write Scripting Ouptut after viz_output
-################### Write Scripting Ouptut before rxn_output
-################### Write Scripting Ouptut after rxn_output
-################### Write Scripting Ouptut after everything
-
 
 class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Scripting", update=check_scripting)
@@ -261,6 +232,54 @@ class CellBlenderScriptingProperty(bpy.types.PropertyGroup):
         default='mdl',
         description="Choose type of scripting (MDL or Python).",
         update=check_scripting)
+
+    def init_properties ( self, parameter_system ):
+        pass
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Scripting Item building Data Model" )
+        dm = {}
+        dm['data_model_version'] = "DM_2016_03_15_1900"
+        dm['name'] = self.name
+        dm['internal_file_name'] = self.internal_file_name
+        dm['external_file_name'] = self.external_file_name
+        dm['include_where'] = self.include_where
+        dm['include_section'] = self.include_section
+        dm['internal_external'] = self.internal_external
+        dm['mdl_python'] = self.mdl_python
+        return dm
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading CellBlenderScriptingProperty Data Model" )
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2016_03_15_1900
+            dm['data_model_version'] = "DM_2016_03_15_1900"
+
+        # Check that the upgraded data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2016_03_15_1900":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade CellBlenderScriptingProperty data model to current version." )
+            return None
+
+        return dm
+
+    def build_properties_from_data_model ( self, context, dm ):
+        # Check that the data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2016_03_15_1900":
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade CellBlenderScriptingProperty data model to current version." )
+        self.init_properties(context.scene.mcell.parameter_system)
+
+        self.name = dm["name"]
+        self.internal_file_name = dm["internal_file_name"]
+        self.external_file_name = dm["external_file_name"]
+        self.include_where = dm["include_where"]
+        self.include_section = dm["include_section"]
+        self.internal_external = dm["internal_external"]
+        self.mdl_python = dm["mdl_python"]
+
+
 
     def get_description ( self ):
         desc = ""
@@ -376,6 +395,88 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         default='internal',
         description="Choose location of file (internal text or external file).",
         update=check_scripting)
+
+    def init_properties ( self, parameter_system ):
+        pass
+
+    def build_data_model_from_properties ( self, context ):
+        print ( "Scripting Panel building Data Model" )
+        dm = {}
+        dm['data_model_version'] = "DM_2016_03_15_1900"
+        dm['show_simulation_scripting'] = self.show_simulation_scripting
+        dm['show_data_model_scripting'] = self.show_data_model_scripting
+        dm['dm_internal_file_name'] = self.dm_internal_file_name
+        dm['dm_external_file_name'] = self.dm_external_file_name
+        dm['force_property_update'] = self.force_property_update
+        s_list = []
+        for s in self.scripting_list:
+            s_list.append ( s.build_data_model_from_properties(context) )
+        dm['scripting_list'] = s_list
+
+        # Don't: Store the scripts lists in the data model for now - they are regenerated with refresh anyway
+
+        # Do: Store all .mdl text files and all .py text files
+
+        texts = {}
+        for txt in bpy.data.texts:
+           if (txt.name[-4:] == ".mdl") or (txt.name[-3:] == ".py"):
+              texts[txt.name] = txt.as_string()
+        dm['script_texts'] = texts
+
+        return dm
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading CellBlenderScriptingPropertyGroup Data Model" )
+        # Upgrade the data model as needed
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2016_03_15_1900
+            dm['data_model_version'] = "DM_2016_03_15_1900"
+
+        # Check that the upgraded data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2016_03_15_1900":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade CellBlenderScriptingPropertyGroup data model to current version." )
+            return None
+
+        return dm
+
+
+    def build_properties_from_data_model ( self, context, dm ):
+        # Check that the data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2016_03_15_1900":
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade CellBlenderScriptingPropertyGroup data model to current version." )
+        self.init_properties(context.scene.mcell.parameter_system)
+
+        self.show_simulation_scripting = dm["show_simulation_scripting"]
+        self.show_data_model_scripting = dm["show_data_model_scripting"]
+        self.dm_internal_file_name = dm["dm_internal_file_name"]
+        self.dm_external_file_name = dm["dm_external_file_name"]
+        self.force_property_update = dm["force_property_update"]
+
+        while len(self.scripting_list) > 0:
+            self.scripting_list.remove(0)
+        if "scripting_list" in dm:
+            for dm_s in dm["scripting_list"]:
+                self.scripting_list.add()
+                self.active_scripting_index = len(self.scripting_list)-1
+                s = self.scripting_list[self.active_scripting_index]
+                # s.init_properties(context.scene.mcell.parameter_system)
+                s.build_properties_from_data_model ( context, dm_s )
+
+        # Don't: Load the scripts lists from the data model for now - they are regenerated with refresh anyway
+
+        # Do: Load all .mdl text files and all .py text files
+
+        if 'script_texts' in dm:
+          for key_name in dm['script_texts'].keys():
+            if key_name in bpy.data.texts:
+              bpy.data.texts[key_name].clear()
+            else:
+              bpy.data.texts.new(key_name)
+            bpy.data.texts[key_name].write ( dm['script_texts'][key_name] )
+
+
 
     def execute_selected_script ( self, context ):
         mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
