@@ -43,7 +43,6 @@ import re
 import cellblender
 from . import parameter_system
 from . import cellblender_utils
-from cellblender.cellblender_utils import mcell_files_path
 
 
 # We use per module class registration/unregistration
@@ -365,6 +364,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
 
     dm_internal_file_name = StringProperty ( name = "Internal File Name" )
     dm_external_file_name = StringProperty ( name = "External File Name", subtype='FILE_PATH', default="" )
+    force_property_update = BoolProperty(name="Update CellBlender from Data Model", default=True)
     # upgrade_data_model_for_script = BoolProperty(name="Upgrade Script", default=False)
 
 
@@ -384,7 +384,10 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
             # Wrap the internal data model in a dictionary with an "mcell" key to make it an external data model
             dm = { 'mcell' : mcell_dm }
             #exec ( bpy.data.texts[self.dm_internal_file_name].as_string(), globals(), locals() )
+            original_cwd = os.getcwd()
+            os.chdir ( cellblender_utils.project_files_path() )
             exec ( bpy.data.texts[self.dm_internal_file_name].as_string(), locals() )
+            os.chdir ( original_cwd )
             # Strip off the outer dictionary wrapper because the internal data model does not have the "mcell" key layer
             # dm = dm['mcell']
             # Upgrade the data model if requested.
@@ -392,9 +395,10 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
             # An unversioned data model will be upgraded as if it were a pre-1.0 data model when this is set
             # If this is NOT set, then the data model will be assumed to match the current version
             #if (self.upgrade_data_model_for_script):
-            dm['mcell'] = context.scene.mcell.upgrade_data_model ( dm['mcell'] )
-            # Regenerate the Blender properties to reflect this data model ... including geometry
-            context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
+            if self.force_property_update:
+                dm['mcell'] = context.scene.mcell.upgrade_data_model ( dm['mcell'] )
+                # Regenerate the Blender properties to reflect this data model ... including geometry
+                context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
         else:
             print ( "Executing external script ... not implemented yet!!" )
 
@@ -460,6 +464,9 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
 
                     row.prop ( self, "dm_external_file_name" )
                     row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+
+                row = box.row()
+                row.prop ( self, "force_property_update" )
 
                 row = box.row()
                 row.operator("mcell.scripting_execute", icon='COLOR_RED')
