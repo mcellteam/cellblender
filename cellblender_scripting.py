@@ -378,7 +378,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
     internal_python_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="Python Internal Scripts")
     external_python_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="Python External Scripts")
 
-    show_simulation_scripting = BoolProperty(name="Simulation Scripting", default=False)
+    show_simulation_scripting = BoolProperty(name="Export Scripting", default=False)
     show_data_model_scripting = BoolProperty(name="Data Model Scripting", default=False)
 
     dm_internal_file_name = StringProperty ( name = "Internal File Name" )
@@ -519,7 +519,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
             #row = layout.row()
 
             #col = row.column()
-            #col.label ( "Simulation Scripting" )
+            #col.label ( "Export Scripting" )
             #col.prop ( self, "show_simulation_scripting" )
 
             if self.show_simulation_scripting:
