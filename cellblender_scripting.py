@@ -486,8 +486,13 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
             dm = { 'mcell' : mcell_dm }
             #exec ( bpy.data.texts[self.dm_internal_file_name].as_string(), globals(), locals() )
             original_cwd = os.getcwd()
+            os.makedirs ( cellblender_utils.project_files_path(), exist_ok=True )
             os.chdir ( cellblender_utils.project_files_path() )
-            exec ( bpy.data.texts[self.dm_internal_file_name].as_string(), locals() )
+            script_text = bpy.data.texts[self.dm_internal_file_name].as_string()
+            print ( 80*"=" )
+            print ( script_text )
+            print ( 80*"=" )
+            exec ( script_text, locals() )
             os.chdir ( original_cwd )
             # Strip off the outer dictionary wrapper because the internal data model does not have the "mcell" key layer
             # dm = dm['mcell']
