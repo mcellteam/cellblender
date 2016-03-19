@@ -1303,7 +1303,6 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     active_err_index = IntProperty(
         name="Active Error Index", default=0)
 
-
     show_output_options = BoolProperty ( name='Output Options', default=False )
     python_scripting_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     python_initialize_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
@@ -1478,6 +1477,32 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                                           self, "processes_list",
                                           self, "active_process_index",
                                           rows=2)
+
+
+                        # Check to see if there are any errors for the selected item and display if non-empty
+                        processes_list = mcell.run_simulation.processes_list
+                        proc_list_length = len(processes_list)
+                        if proc_list_length > 0:
+                            active_process_index = mcell.run_simulation.active_process_index
+                            simulation_queue = cellblender.simulation_queue
+                            pid = int(processes_list[active_process_index].name.split(',')[0].split(':')[1])
+                            q_item = cellblender.simulation_queue.task_dict[pid]
+
+                            serr = str(q_item['stderr'])
+                            if len(serr) > 0:
+                                row = layout.row()
+                                row.label ( "Error from task " + str(pid), icon="ERROR" )
+                                serr_list = serr.split('\n')
+                                for l in serr_list:
+                                    row = layout.row()
+                                    row.label ( "  " + l, icon="BLANK1" )
+
+                            sout = str(q_item['stdout'])
+                            if False and (len(sout) > 0):
+                                row = layout.row()
+                                row.label ( "Out: " + sout )
+
+
                         row = layout.row()
                         row.operator("mcell.clear_simulation_queue")
                         row = layout.row()
