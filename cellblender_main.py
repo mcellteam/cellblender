@@ -835,6 +835,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     #cellblender_source_hash = StringProperty(
     #    name="CellBlender Source Hash", default="unknown")
 
+    # The following property probably belongs somewhere else, but it doesn't seem worth creating a new property group
+    show_dm_flag = bpy.props.BoolProperty ( name = "Show Data Model", description = "Show the Data Model", default = False )
+
 
     cellblender_main_panel = PointerProperty(
         type=CellBlenderMainPanelPropertyGroup,

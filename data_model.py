@@ -180,12 +180,249 @@ class MCELL_PT_data_model_browser(bpy.types.Panel):
         row = layout.row()
         row.operator ( "cb.regenerate_data_model" )
 
+        try:
+            # Try to import tkinter to see if it is installed in this version of Blender
+            import tkinter as tk
+            row = layout.row()
+            row.operator ( "cb.tk_edit_data_model" )
+
+        except ( ImportError ):
+            # Unable to import needed libraries so don't draw
+            print ( "Unable to import libraries needed for Data Model Editor ... most likely tkinter" )
+            pass
+
         if 'data_model' in mcell:
-            dm = unpickle_data_model ( mcell['data_model'] )
-            dm_list = list_data_model ( "Data Model", { "mcell": dm }, [] )
-            for line in dm_list:
-                row = layout.row()
-                row.label(text=line)
+            row = layout.row()
+            if not mcell.show_dm_flag:
+                row.prop ( mcell, "show_dm_flag", icon='TRIA_RIGHT', text="Show Data Model", emboss=False)
+            else:
+                row.prop ( mcell, "show_dm_flag", icon='TRIA_DOWN', text="Show Data Model", emboss=False)
+                dm = unpickle_data_model ( mcell['data_model'] )
+                dm_list = list_data_model ( "Data Model", { "mcell": dm }, [] )
+                for line in dm_list:
+                    row = layout.row()
+                    row.label(text=line)
+
+
+# Set up to run tkinter code in another thread
+
+try:
+    import tkinter as tk
+    from tkinter import ttk as ttk
+    from tkinter import messagebox
+    import threading
+    import random
+    import pickle
+
+    import bpy
+
+    class App(threading.Thread):
+
+        def build_tree_from_data_model ( self, parent_id, name, dm ):
+            print ( "Top of build_tree_from_data_model" )
+            if type(dm) == type({'a':1}):  #dm is a dictionary
+              name_str = name + " {} (" + str(len(dm)) + ")"
+              if 'name' in dm:
+                name_str += " = " + dm['name']
+              else:
+                name_keys = [k for k in dm.keys() if k.endswith('_name')]
+                if len(name_keys) == 1:
+                  name_str += " = " + str(dm[name_keys[0]])
+              # name_str += " " + str(len(dm)) + " item(s)"
+              new_parent = self.tree.insert(parent_id, 'end', text=name_str, open=False)
+              for k,v in sorted(dm.items()):
+                self.build_tree_from_data_model ( new_parent, k, v )
+            elif type(dm) == type(['a',1]):  #dm is a list
+              i = 0
+              new_parent = self.tree.insert(parent_id, 'end', text = name+" [] ("+str(len(dm))+")", open=False)
+              for v in dm:
+                self.build_tree_from_data_model ( new_parent, name + "["+str(i)+"]", v )
+                i += 1
+            elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
+              new_parent = self.tree.insert(parent_id, 'end', text = name + " = " + "\"" + str(dm) + "\"", open=False)
+            else:
+              new_parent = self.tree.insert(parent_id, 'end', text = name + " = " + str(dm), open=False)
+
+            print ( "Bottom of build_tree_from_data_model" )
+
+            """
+            if type(dm) == type({'a':1}):  #dm is a dictionary
+              name_str = name + " {} (" + str(len(dm)) + ")"
+              if 'name' in dm:
+                name_str += " = " + dm['name']
+              else:
+                name_keys = [k for k in dm.keys() if k.endswith('_name')]
+                if len(name_keys) == 1:
+                  name_str += " = " + str(dm[name_keys[0]])
+              # name_str += " " + str(len(dm)) + " item(s)"
+              new_parent = self.treestore.append(parent,[name_str,str(type(dm))])
+              for k,v in sorted(dm.items()):
+                self.build_tree_from_data_model ( new_parent, k, v )
+            elif type(dm) == type(['a',1]):  #dm is a list
+              i = 0
+              new_parent = self.treestore.append(parent,[name+" [] ("+str(len(dm))+")",str(type(dm))])
+              for v in dm:
+                self.build_tree_from_data_model ( new_parent, name + "["+str(i)+"]", v )
+                i += 1
+            elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
+              new_parent = self.treestore.append(parent,[name + " = " + "\"" + str(dm) + "\"",str(type(dm))])
+            else:
+              new_parent = self.treestore.append(parent,[name + " = " + str(dm),str(type(dm))])
+            """
+
+        w = 600
+        h = 100
+
+        def __init__(self):
+            threading.Thread.__init__(self)
+            self.start()
+
+        def load_data_model(self):
+            print ( "Hello from inside Blender" )
+            if 'mcell' in bpy.context.scene:
+                print ( "  mcell = " + str(bpy.context.scene.mcell) )
+                if "data_model" in bpy.context.scene.mcell.keys():
+                    dm = { 'mcell' : pickle.loads ( bpy.context.scene.mcell['data_model'].encode('latin1') ) }
+                    print ( "Data Model = " + str(dm) )
+                    #print ( "Data Model = " + str(bpy.context.scene.mcell['data_model']) )
+                    #self.tree = ttk.Treeview(self.root)
+                    root_id = self.tree.insert ( '', 'end', text='root', values=[""] )
+                    self.build_tree_from_data_model ( root_id, "Data Model", dm )
+                    #self.tree.pack(fill=tk.BOTH,expand=1)
+
+
+        def random_color_string(self):
+            red = hex(int(random.uniform(16,256)))[2:4]
+            grn = hex(int(random.uniform(16,256)))[2:4]
+            blu = hex(int(random.uniform(16,256)))[2:4]
+            return ( "#"+red+grn+blu )
+
+        def random_ends(self):
+            x0 = int(self.w*random.random())
+            y0 = int(self.h*random.random())
+            x1 = int(self.w*random.random())
+            y1 = int(self.h*random.random())
+            ends = (x0, y0, x1, y1)
+            return ends
+
+        def random_line(self):
+            print ( "Draw a random line" )
+            e = self.random_ends()
+            self.c.create_line(e[0],e[1],e[2],e[3],fill=self.random_color_string())
+
+        def random_box(self):
+            print ( "Draw a random box" )
+            e = self.random_ends()
+            self.c.create_rectangle(e[0],e[1],e[2],e[3],fill=self.random_color_string())
+
+        def resize_window(self, event):
+            if str(event.widget) == '.':
+                print ( "Resizing widget " + str(event.widget) + " to " + str(event.width) + "," + str(event.height) )
+                self.w = event.width
+
+        def destroy(self):
+            if messagebox.askyesno("Exit", "Do you want to close the data model viewer?"):
+                print ( "Destroying Tk" )
+                self.root.destroy()
+
+        def run(self):
+            self.root = tk.Tk()
+            self.root.protocol("WM_DELETE_WINDOW", self.destroy)
+
+            self.top = self.root.winfo_toplevel()
+            self.menuBar = tk.Menu(self.top)
+            self.top['menu'] = self.menuBar
+
+            self.subMenu = tk.Menu ( self.menuBar )
+            self.subMenu.add_command ( label='Line', command = self.random_line )
+            self.subMenu.add_command ( label='Box', command = self.random_box )
+            self.menuBar.add_cascade(label="Draw", menu=self.subMenu)
+
+            self.menuBar.add_command ( label='Line', command = self.random_line )
+            self.menuBar.add_command ( label='Box', command = self.random_box )
+            self.menuBar.add_command ( label='DM', command = self.load_data_model )
+            self.menuBar.add_command ( label='Quit', command = self.destroy )
+
+            #//self.f = tk.Frame(self.root)
+            #self.root.bind ( '<Configure>', self.resize_window )
+            self.root.bind_all ( '<Configure>', self.resize_window )
+            #self.root.bind_all ( '<Destroy>', self.destroy_event )
+
+            self.tree = ttk.Treeview(self.root)
+            vscroll = ttk.Scrollbar(self.root, orient='vertical', command=self.tree.yview)
+            self.tree.configure(yscroll=vscroll.set)
+
+            print ( "t.keys() = " + str ( self.tree.keys() ) )
+            self.tree['columns'] = ("Value")
+            self.tree.column('Value', width=100)
+            self.tree.heading('Value', text="Value")
+            """
+            id = self.tree.insert ( '', 'end', text='Tutorials', values=[""] )
+            for i in range(3):
+                self.tree.insert ( id, 'end', text='Tutorial'+str(1+i), values=["v" + str(1+i)] )
+            #self.t.grid(column=0, columnspan=1, row=0, rowspan=1, sticky=tk.N+tk.E+tk.S+tk.W )
+            """
+            self.tree.pack(fill=tk.BOTH,expand=1)
+            """
+            self.canvas = tk.Canvas(self.root,width=self.w, height=self.h)
+            self.canvas.config(bg="#000000")
+            self.canvas.pack(fill=tk.BOTH, expand=1)
+            """
+            #self.c.create_line(0,0,600,400,fill="red")
+            #self.c.create_rectangle(50,25, 200, 100, fill="blue")
+
+            """
+            b = tk.Button(self.f)
+            b['text'] = "DM"
+            b['command'] = self.load_data_model
+            b.pack(side=tk.LEFT)
+
+            rl = tk.Button(self.f)        # Parent is Frame f
+            rl['text'] = "Line"
+            rl['command'] = self.random_line
+            rl.pack(side=tk.LEFT)
+
+            rr = tk.Button(self.f)     # Parent is root
+            rr['text'] = "Box"
+            rr['command'] = self.random_box
+            rr.pack(side=tk.LEFT)
+
+            d = tk.Button(self.f)     # Parent is root
+            d['text'] = "Quit"
+            d['command'] = self.destroy
+            d.pack(side=tk.LEFT)
+            """
+
+            #self.f.pack()
+
+            self.root.mainloop()
+
+    #app = App()
+    #print('Now we can continue running code while mainloop runs!')
+
+    #for i in range(100000):
+    #    print(i)
+
+
+except ( ImportError ):
+    # Unable to import needed libraries so don't draw
+    print ( "Unable to import libraries needed for Data Model Editor ... most likely tkinter" )
+    pass
+
+
+class TkEditDataModelFromProps(bpy.types.Operator):
+    '''Edit the data model with a Tk Application (requires tkinter installation)'''
+    bl_idname = "cb.tk_edit_data_model"
+    bl_label = "Edit Data Model"
+    bl_description = "Edit the data model with a Tk Application (requires tkinter installation)"
+
+    def execute(self, context):
+        print ( "Editing CellBlender Data Model:" )
+        mcell = context.scene.mcell
+        mcell_dm = mcell.build_data_model_from_properties ( context )
+        mcell['data_model'] = pickle_data_model ( mcell_dm )
+        app = App()
+        return {'FINISHED'}
 
 
 class RegenerateDataModelFromProps(bpy.types.Operator):
@@ -195,7 +432,7 @@ class RegenerateDataModelFromProps(bpy.types.Operator):
     bl_description = "Regenerate the data model from the Blender Properties"
 
     def execute(self, context):
-        print ( "Printing CellBlender Data Model:" )
+        print ( "Showing CellBlender Data Model:" )
         mcell = context.scene.mcell
         mcell_dm = mcell.build_data_model_from_properties ( context )
         mcell['data_model'] = pickle_data_model ( mcell_dm )
