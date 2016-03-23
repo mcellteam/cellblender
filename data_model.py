@@ -221,7 +221,11 @@ try:
 
     class CellBlenderDataModelBrowser(threading.Thread):
 
+        depth = 0
+
         def build_tree_from_data_model ( self, parent_id, name, dm ):
+            self.depth += 1
+            draw_as_open = self.depth <= 1
             if type(dm) == type({'a':1}):  #dm is a dictionary
               name_str = name + " {} (" + str(len(dm)) + ")"
               if 'name' in dm:
@@ -231,19 +235,20 @@ try:
                 if len(name_keys) == 1:
                   name_str += " = " + str(dm[name_keys[0]])
               # name_str += " " + str(len(dm)) + " item(s)"
-              new_parent = self.tree.insert(parent_id, 'end', text=name_str, open=False)
+              new_parent = self.tree.insert(parent_id, 'end', text=name_str, open=draw_as_open)
               for k,v in sorted(dm.items()):
                 self.build_tree_from_data_model ( new_parent, k, v )
             elif type(dm) == type(['a',1]):  #dm is a list
               i = 0
-              new_parent = self.tree.insert(parent_id, 'end', text=name+" [] ("+str(len(dm))+")", open=False)
+              new_parent = self.tree.insert(parent_id, 'end', text=name+" [] ("+str(len(dm))+")", open=draw_as_open)
               for v in dm:
                 self.build_tree_from_data_model ( new_parent, name + "["+str(i)+"]", v )
                 i += 1
             elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
-              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + "\"" + str(dm) + "\"", open=False)
+              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + "\"" + str(dm) + "\"", open=draw_as_open)
             else:
-              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + str(dm), open=False)
+              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + str(dm), open=draw_as_open)
+            self.depth += -1
 
         w = 800
         h = 800
@@ -261,7 +266,7 @@ try:
 
                     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-                    root_id = self.tree.insert ( '', 'end', text='Data Model', values=[""] )
+                    root_id = self.tree.insert ( '', 'end', text='Data Model', values=[""], open=True )
                     self.build_tree_from_data_model ( root_id, "mcell", dm )
 
 
