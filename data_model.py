@@ -185,13 +185,13 @@ class MCELL_PT_data_model_browser(bpy.types.Panel):
             import tkinter as tk
             row = layout.row()
             col = row.column()
-            col.operator ( "cb.tk_edit_data_model" )
+            col.operator ( "cb.tk_browse_data_model" )
             col = row.column()
             col.prop ( mcell, "include_geometry_in_dm" )
 
         except ( ImportError ):
             # Unable to import needed libraries so don't draw
-            print ( "Unable to import libraries needed for Data Model Editor ... most likely tkinter" )
+            print ( "Unable to import libraries needed for Data Model Browser ... most likely tkinter" )
             pass
 
         if 'data_model' in mcell:
@@ -223,31 +223,42 @@ try:
 
         depth = 0
 
+        copy_as_python = False
+
         def build_tree_from_data_model ( self, parent_id, name, dm ):
             self.depth += 1
             draw_as_open = self.depth <= 1
-            if type(dm) == type({'a':1}):  #dm is a dictionary
+            if type(dm) == type({'a':1}):  # dm is a dictionary
               name_str = name + " {} (" + str(len(dm)) + ")"
               if 'name' in dm:
-                name_str += " = " + dm['name']
+                if len(dm['name']) > 0:
+                  name_str += " = " + dm['name']
               else:
                 name_keys = [k for k in dm.keys() if k.endswith('_name')]
                 if len(name_keys) == 1:
-                  name_str += " = " + str(dm[name_keys[0]])
+                  if len(str(dm[name_keys[0]])) > 0:
+                    name_str += " = " + str(dm[name_keys[0]])
               # name_str += " " + str(len(dm)) + " item(s)"
-              new_parent = self.tree.insert(parent_id, 'end', text=name_str, open=draw_as_open)
+              new_parent = self.tree.insert(parent_id, 'end', text=name_str, open=draw_as_open, tags='d:'+name)
               for k,v in sorted(dm.items()):
                 self.build_tree_from_data_model ( new_parent, k, v )
-            elif type(dm) == type(['a',1]):  #dm is a list
+            elif type(dm) == type(['a',1]):  # dm is a list
               i = 0
-              new_parent = self.tree.insert(parent_id, 'end', text=name+" [] ("+str(len(dm))+")", open=draw_as_open)
+              new_parent = self.tree.insert(parent_id, 'end', text=name+" [] ("+str(len(dm))+")", open=draw_as_open, tags='l:'+name)
               for v in dm:
-                self.build_tree_from_data_model ( new_parent, name + "["+str(i)+"]", v )
+                #self.build_tree_from_data_model ( new_parent, name + "["+str(i)+"]", v )
+                self.build_tree_from_data_model ( new_parent, str(i), v )
                 i += 1
             elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
-              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + "\"" + str(dm) + "\"", open=draw_as_open)
-            else:
-              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + str(dm), open=draw_as_open)
+              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + "\"" + str(dm) + "\"", open=draw_as_open, tags='s:'+name)
+            elif type(dm) == type(True):  # dm is a boolean
+              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + str(dm), open=draw_as_open, tags='b:'+name)
+            elif type(dm) == type(1.0):  # dm is a float
+              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + str(dm), open=draw_as_open, tags='f:'+name)
+            elif type(dm) == type(1):  # dm is an integer
+              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + str(dm), open=draw_as_open, tags='i:'+name)
+            else: # dm is unknown
+              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + str(dm), open=draw_as_open, tags='?:'+name)
             self.depth += -1
 
         w = 800
@@ -256,6 +267,9 @@ try:
         def __init__(self):
             threading.Thread.__init__(self)
             self.start()
+
+
+        current_data_model = None
 
         def load_data_model(self):
             if 'mcell' in bpy.context.scene:
@@ -266,8 +280,16 @@ try:
 
                     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-                    root_id = self.tree.insert ( '', 'end', text='Data Model', values=[""], open=True )
+                    root_id = self.tree.insert ( '', 'end', text='Data_Model', values=[""], open=True, tags='d')
                     self.build_tree_from_data_model ( root_id, "mcell", dm )
+                    self.current_data_model = { 'mcell' : dm }
+
+
+        def set_copy_as_text(self):
+            self.copy_as_python = False
+
+        def set_copy_as_python(self):
+            self.copy_as_python = True
 
 
         def random_color_string(self):
@@ -302,8 +324,67 @@ try:
         def item_select(self, event):
             #print ( "Selected event " + str(event) + "\n  " + str(dir(event)) )
             selected_item = event.widget.item(event.widget.selection()[0])
-            self.copy_selected()
+            # self.copy_selected()
+
+            # Build an expression to reference this item from inside the data model
+
             #print ( "Selected item: " + str ( selected_item ) )
+            #print ( "Selected item parents: " + str ( selected_item ) )
+            expr = ""
+            iid_expr = ""
+            selected_iid = event.widget.selection()[0]
+            while len(selected_iid) > 0:
+                item = self.tree.item(selected_iid)
+                type_tag = item['tags'][0]
+                parent = self.tree.parent(selected_iid)
+                parent_type_tags = self.tree.item(parent)['tags']
+                #print ( "\nparent_type_tags = " + str(parent_type_tags) )
+                parent_type_tag = ""
+                if len(parent_type_tags) > 0:
+                    parent_type_tag = parent_type_tags[0][0]
+                #print ( " Item: " + str(item) + " has parent: " + str(self.tree.item(parent)) )
+                if ('tags' in item) and (len(item['tags']) > 0):
+                    if len(parent) == 0:
+                        expr = 'dm' + expr
+                    elif parent_type_tag == 'l':
+                        expr = '[' + item['text'].split()[0] + ']' + expr
+                    else:
+                        expr = '[\'' + item['text'].split()[0] + '\']' + expr
+                else:
+                    expr = " /* " + item['text'] + " /* " + expr
+                iid_expr = selected_iid + "/" + iid_expr
+                selected_iid = self.tree.parent(selected_iid)
+            #print ( "Selected iid = " + iid_expr )
+
+            value = ""
+            try:
+                dm = self.current_data_model   # Copy to local name "dm" since that's what's used in expr
+                value = eval(expr)
+                if not self.copy_as_python:
+                    dm_list = list_data_model ( "Data_Model", value, [] )
+                    value = ""
+                    for line in dm_list:
+                        value += line + "\n"
+            except:
+                pass
+
+            self.root.clipboard_clear()
+            self.root.clipboard_append ( expr + " = " + str(value) + "\n" )
+
+
+            # print ( expr + " = " + str(value) )
+
+            # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+            """
+              Turn this:
+                 Data Model(d) / mcell {} (21)(d:mcell) / geometrical_objects {} (1)(d:geometrical_objects) / object_list [] (2)(l:object_list) / object_list[0] {} (4) = Cube.001(d:object_list[0]) / location [] (3)(l:location) / location[2] = 0.0(f:location[2])
+              Into this:
+                 dm['mcell']['geometrical_objects']['object_list'][0]['location'][2] = 0.0
+            """
+
+
+
+
             #print ( "Selected item ['text']: " + str ( selected_item['text'] ) )
             #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -317,7 +398,7 @@ try:
                 self.root.clipboard_append(str(selected_item['text']))
 
         def destroy(self):
-            if messagebox.askyesno("Exit", "Do you want to close the data model viewer?"):
+            if messagebox.askyesno("Exit", "Do you want to close the Data Model Browser?"):
                 # print ( "Destroying Tk" )
                 self.root.destroy()
 
@@ -326,6 +407,7 @@ try:
 
         def run(self):
             self.root = tk.Tk()
+            self.root.wm_title("CellBlender Data Model Browser")
             self.root.protocol("WM_DELETE_WINDOW", self.destroy)
 
             self.top = self.root.winfo_toplevel()
@@ -334,7 +416,9 @@ try:
 
             self.dmMenu = tk.Menu ( self.menuBar )
             self.dmMenu.add_command ( label='Reload', command = self.load_data_model )
-            self.dmMenu.add_command ( label='Copy Item', command = self.copy_selected )
+            self.dmMenu.add_command ( label='Copy as Python', command = self.set_copy_as_python )
+            self.dmMenu.add_command ( label='Copy as Text', command = self.set_copy_as_text )
+            # self.dmMenu.add_command ( label='Copy Item', command = self.copy_selected )
             self.menuBar.add_cascade(label="Data Model", menu=self.dmMenu)
 
             """
@@ -370,22 +454,21 @@ try:
 
             self.root.mainloop()
 
-
-
 except ( ImportError ):
     # Unable to import needed libraries so don't draw
     print ( "Unable to import libraries needed for Data Model Editor ... most likely tkinter" )
     pass
 
 
+
 class TkEditDataModelFromProps(bpy.types.Operator):
-    '''Edit the data model with a Tk Application (requires tkinter installation)'''
-    bl_idname = "cb.tk_edit_data_model"
-    bl_label = "Edit Data Model"
-    bl_description = "Edit the data model with a Tk Application (requires tkinter installation)"
+    '''Browse/Copy the data model with a Tk Application (requires tkinter installation)'''
+    bl_idname = "cb.tk_browse_data_model"
+    bl_label = "Browse Data Model"
+    bl_description = "Browse/Copy the data model with a Tk Application (requires tkinter installation)"
 
     def execute(self, context):
-        print ( "Editing CellBlender Data Model:" )
+        print ( "Browsing CellBlender Data Model:" )
         mcell = context.scene.mcell
         mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.include_geometry_in_dm )
         mcell['data_model'] = pickle_data_model ( mcell_dm )
