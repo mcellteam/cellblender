@@ -216,6 +216,7 @@ try:
     import threading
     import random
     import pickle
+    import pprint
 
     import bpy
 
@@ -223,7 +224,7 @@ try:
 
         depth = 0
 
-        copy_as_python = False
+        copy_with_pretty_print = True
 
         def build_tree_from_data_model ( self, parent_id, name, dm ):
             self.depth += 1
@@ -238,7 +239,6 @@ try:
                 if len(name_keys) == 1:
                   if len(str(dm[name_keys[0]])) > 0:
                     name_str += " = " + str(dm[name_keys[0]])
-              # name_str += " " + str(len(dm)) + " item(s)"
               new_parent = self.tree.insert(parent_id, 'end', text=name_str, open=draw_as_open, tags='d:'+name)
               for k,v in sorted(dm.items()):
                 self.build_tree_from_data_model ( new_parent, k, v )
@@ -246,7 +246,6 @@ try:
               i = 0
               new_parent = self.tree.insert(parent_id, 'end', text=name+" [] ("+str(len(dm))+")", open=draw_as_open, tags='l:'+name)
               for v in dm:
-                #self.build_tree_from_data_model ( new_parent, name + "["+str(i)+"]", v )
                 self.build_tree_from_data_model ( new_parent, str(i), v )
                 i += 1
             elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
@@ -277,19 +276,16 @@ try:
                     dm = pickle.loads ( bpy.context.scene.mcell['data_model'].encode('latin1') )
                     if len(self.tree.get_children()) > 0:
                         self.tree.delete ( self.tree.get_children() )
-
-                    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
                     root_id = self.tree.insert ( '', 'end', text='Data_Model', values=[""], open=True, tags='d')
                     self.build_tree_from_data_model ( root_id, "mcell", dm )
                     self.current_data_model = { 'mcell' : dm }
 
 
-        def set_copy_as_text(self):
-            self.copy_as_python = False
+        def set_copy_as_one_line(self):
+            self.copy_with_pretty_print = False
 
-        def set_copy_as_python(self):
-            self.copy_as_python = True
+        def set_copy_as_pretty_print(self):
+            self.copy_with_pretty_print = True
 
 
         def random_color_string(self):
@@ -318,18 +314,13 @@ try:
 
         def resize_window(self, event):
             if str(event.widget) == '.':
-                # print ( "Resizing widget " + str(event.widget) + " to " + str(event.width) + "," + str(event.height) )
                 self.w = event.width
 
         def item_select(self, event):
-            #print ( "Selected event " + str(event) + "\n  " + str(dir(event)) )
             selected_item = event.widget.item(event.widget.selection()[0])
-            # self.copy_selected()
 
             # Build an expression to reference this item from inside the data model
 
-            #print ( "Selected item: " + str ( selected_item ) )
-            #print ( "Selected item parents: " + str ( selected_item ) )
             expr = ""
             iid_expr = ""
             selected_iid = event.widget.selection()[0]
@@ -338,11 +329,9 @@ try:
                 type_tag = item['tags'][0]
                 parent = self.tree.parent(selected_iid)
                 parent_type_tags = self.tree.item(parent)['tags']
-                #print ( "\nparent_type_tags = " + str(parent_type_tags) )
                 parent_type_tag = ""
                 if len(parent_type_tags) > 0:
                     parent_type_tag = parent_type_tags[0][0]
-                #print ( " Item: " + str(item) + " has parent: " + str(self.tree.item(parent)) )
                 if ('tags' in item) and (len(item['tags']) > 0):
                     if len(parent) == 0:
                         expr = 'dm' + expr
@@ -354,46 +343,22 @@ try:
                     expr = " /* " + item['text'] + " /* " + expr
                 iid_expr = selected_iid + "/" + iid_expr
                 selected_iid = self.tree.parent(selected_iid)
-            #print ( "Selected iid = " + iid_expr )
 
             value = ""
             try:
                 dm = self.current_data_model   # Copy to local name "dm" since that's what's used in expr
                 value = eval(expr)
-                if not self.copy_as_python:
-                    dm_list = list_data_model ( "Data_Model", value, [] )
-                    value = ""
-                    for line in dm_list:
-                        value += line + "\n"
+                if self.copy_with_pretty_print:
+                    value = pprint.pformat ( value, indent=4, width=40 ) + "\n"
             except:
                 pass
 
             self.root.clipboard_clear()
             self.root.clipboard_append ( expr + " = " + str(value) + "\n" )
 
-
-            # print ( expr + " = " + str(value) )
-
-            # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-            """
-              Turn this:
-                 Data Model(d) / mcell {} (21)(d:mcell) / geometrical_objects {} (1)(d:geometrical_objects) / object_list [] (2)(l:object_list) / object_list[0] {} (4) = Cube.001(d:object_list[0]) / location [] (3)(l:location) / location[2] = 0.0(f:location[2])
-              Into this:
-                 dm['mcell']['geometrical_objects']['object_list'][0]['location'][2] = 0.0
-            """
-
-
-
-
-            #print ( "Selected item ['text']: " + str ( selected_item['text'] ) )
-            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
         def copy_selected(self):
-            #print ( "Copy Selected to Clipboard" )
             if len(self.tree.selection()) > 0:
                 selected_item = self.tree.item(self.tree.selection()[0])
-                #print ( "Selected item: " + str ( selected_item ) )
-                #print ( "Selected item ['text']: " + str ( selected_item['text'] ) )
                 self.root.clipboard_clear()
                 self.root.clipboard_append(str(selected_item['text']))
 
@@ -416,38 +381,17 @@ try:
 
             self.dmMenu = tk.Menu ( self.menuBar )
             self.dmMenu.add_command ( label='Reload', command = self.load_data_model )
-            self.dmMenu.add_command ( label='Copy as Python', command = self.set_copy_as_python )
-            self.dmMenu.add_command ( label='Copy as Text', command = self.set_copy_as_text )
-            # self.dmMenu.add_command ( label='Copy Item', command = self.copy_selected )
+            self.dmMenu.add_command ( label='Copy with Pretty Print', command = self.set_copy_as_pretty_print )
+            self.dmMenu.add_command ( label='Copy as One Line', command = self.set_copy_as_one_line )
             self.menuBar.add_cascade(label="Data Model", menu=self.dmMenu)
 
-            """
-            self.subMenu = tk.Menu ( self.menuBar )
-            self.subMenu.add_command ( label='Line', command = self.random_line )
-            self.subMenu.add_command ( label='Box', command = self.random_box )
-            self.menuBar.add_cascade(label="Draw", menu=self.subMenu)
-
-            self.menuBar.add_command ( label='Line', command = self.random_line )
-            self.menuBar.add_command ( label='Box', command = self.random_box )
-
-            self.menuBar.add_command ( label='Reload Data Model', command = self.load_data_model )
-            self.menuBar.add_command ( label='Quit', command = self.destroy )
-            self.menuBar.add_command ( label='Debug', command = self.debug )
-            """
-
-            #//self.f = tk.Frame(self.root)
-            #self.root.bind ( '<Configure>', self.resize_window )
             self.root.bind_all ( '<Configure>', self.resize_window )
-            #self.root.bind_all ( '<Destroy>', self.destroy_event )
 
             self.tree = ttk.Treeview(self.root, show='tree', selectmode='browse' )
             self.tree.bind ( '<<TreeviewSelect>>', self.item_select )
             vscroll = ttk.Scrollbar(self.root, orient='vertical', command=self.tree.yview)
             self.tree.configure(yscroll=vscroll.set)
 
-            #self.tree['columns'] = ("Value")
-            #self.tree.column('Value', width=100)
-            #self.tree.heading('Value', text="Value")
             self.tree.pack(fill=tk.BOTH,expand=1)
 
             self.load_data_model()
