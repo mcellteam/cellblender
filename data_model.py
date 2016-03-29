@@ -55,6 +55,7 @@ from bpy.app.handlers import persistent
 
 # python imports
 import pickle
+import pprint
 import json
 import os
 
@@ -112,6 +113,7 @@ def dump_data_model ( name, dm ):
 
 dm_list_depth = 0
 def list_data_model ( name, dm, dm_list ):
+    """Generate a list of the data model elements one line per item"""
     global dm_list_depth
     if type(dm) == type({'a':1}):  #dm is a dictionary
         dm_list.append ( str(dm_list_depth*"   ") + name + " {}" )
@@ -134,6 +136,72 @@ def list_data_model ( name, dm, dm_list ):
     else:
         dm_list.append ( str(dm_list_depth*"   ") + name + " = " + str(dm) )
     return dm_list
+
+
+dm_indent_by = 2
+dm_text_depth = 0
+def text_data_model ( name, dm, dm_list, comma ):
+    """Generate a list of the data model elements with indenting"""
+    global dm_text_depth
+    indent = dm_indent_by*" "
+    dict_type = type({'a':1})
+    list_type = type(['a',1])
+    if type(dm) == dict_type:  #dm is a dictionary
+        num_items = len(dm.keys())
+        if num_items == 0:
+            dm_list.append ( str(dm_text_depth*indent) + name + "{}" + comma )
+        else:
+            dm_list.append ( str(dm_text_depth*indent) + name + "{" )
+            dm_text_depth += 1
+            item_num = 0
+            for k,v in sorted(dm.items()):
+                subcomma = ','
+                if item_num > num_items-2:
+                  subcomma = ''
+                text_data_model ( "\'"+k+"\'"+" : ", v, dm_list, subcomma )
+                item_num += 1
+            dm_text_depth += -1
+            dm_list.append ( str(dm_text_depth*indent) + "}" + comma )
+    elif type(dm) == list_type:  #dm is a list
+        num_items = len(dm)
+        if num_items == 0:
+            dm_list.append ( str(dm_text_depth*indent) + name + "[]" + comma )
+        else:
+            one_liner = True
+            if num_items > 4:
+                one_liner = False
+            for v in dm:
+                if type(v) in [dict_type, list_type]:
+                  one_liner = False
+                  break
+            if one_liner:
+                dm_list.append ( str(dm_text_depth*indent) + name + str(dm) + comma )
+            else:
+                dm_list.append ( str(dm_text_depth*indent) + name + "[" )
+                dm_text_depth += 1
+                i = 0
+                for v in dm:
+                    k = name + "["+str(i)+"]"
+                    subcomma = ','
+                    if i > num_items-2:
+                      subcomma = ''
+                    text_data_model ( "", v, dm_list, subcomma )
+                    i += 1
+                dm_text_depth += -1
+                dm_list.append ( str(dm_text_depth*indent) + "]" + comma )
+    elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
+        dm_list.append ( str(dm_text_depth*indent) + name + "\"" + str(dm) + "\"" + comma )
+    else:
+        dm_list.append ( str(dm_text_depth*indent) + name + str(dm) + comma )
+    return dm_list
+
+
+def data_model_as_text ( dm ):
+    dm_list = text_data_model ( "", dm, [], "" )
+    s = ""
+    for l in dm_list:
+        s += l + "\n"
+    return s
 
 
 def pickle_data_model ( dm ):
@@ -184,27 +252,96 @@ class MCELL_PT_data_model_browser(bpy.types.Panel):
             # Try to import tkinter to see if it is installed in this version of Blender
             import tkinter as tk
             row = layout.row()
-            col = row.column()
-            col.operator ( "cb.tk_browse_data_model" )
-            col = row.column()
-            col.prop ( mcell, "include_geometry_in_dm" )
+            row.operator ( "cb.tk_browse_data_model" )
 
         except ( ImportError ):
             # Unable to import needed libraries so don't draw
-            print ( "Unable to import libraries needed for Data Model Browser ... most likely tkinter" )
+            print ( "Unable to import tkinter for TK Data Model Browser" )
+            row = layout.row()
+            col = row.column()
+            col.operator ( "cb.copy_data_model_to_cbd" )
+            col = row.column()
+            col.prop ( mcell.scripting, "include_geometry_in_dm" )
             pass
 
         if 'data_model' in mcell:
             row = layout.row()
-            if not mcell.show_dm_flag:
-                row.prop ( mcell, "show_dm_flag", icon='TRIA_RIGHT', text="Show Data Model", emboss=False)
+            col = row.column()
+            if not mcell.scripting.show_dm_flag:
+                col.prop ( mcell.scripting, "show_dm_flag", icon='TRIA_RIGHT', text="Copy Data Model", emboss=False)
+                col = row.column()
+                col.prop ( mcell.scripting, "include_geometry_in_dm" )
+                col = row.column()
+                col.prop ( mcell.scripting, "include_scripts_in_dm" )
             else:
-                row.prop ( mcell, "show_dm_flag", icon='TRIA_DOWN', text="Show Data Model", emboss=False)
+                col.prop ( mcell.scripting, "show_dm_flag", icon='TRIA_DOWN', text="Copy Data Model", emboss=False)
+                col = row.column()
+                col.prop ( mcell.scripting, "include_geometry_in_dm" )
+                col = row.column()
+                col.prop ( mcell.scripting, "include_scripts_in_dm" )
+                row = layout.row()
+                row.operator ( "cb.copy_data_model_to_cbd", icon='COPYDOWN' )
+                row = layout.row()
+                row.operator ( "cb.copy_mols_to_cbd", icon='COPYDOWN' )
+                row = layout.row()
+                row.operator ( "cb.copy_rels_to_cbd", icon='COPYDOWN' )
+
+                """
+                # This created the line by line labels - locked up Blender when too many labels were created
                 dm = unpickle_data_model ( mcell['data_model'] )
                 dm_list = list_data_model ( "Data Model", { "mcell": dm }, [] )
                 for line in dm_list:
                     row = layout.row()
                     row.label(text=line)
+                """
+
+class CopyDataModelFromProps(bpy.types.Operator):
+    '''Copy the data model to the Clipboard'''
+    bl_idname = "cb.copy_data_model_to_cbd"
+    bl_label = "Copy Entire Data Model"
+    bl_description = "Copy the data model to the Clipboard"
+
+    def execute(self, context):
+        print ( "Copying CellBlender Data Model:" )
+        mcell = context.scene.mcell
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm, scripts=mcell.scripting.include_scripts_in_dm )
+        #s = "dm['mcell'] = " + pprint.pformat ( mcell_dm, indent=4, width=40 ) + "\n"
+        s = "dm['mcell'] = " + data_model_as_text ( mcell_dm ) + "\n"
+        #s = "dm['mcell'] = " + str(mcell_dm) + "\n"
+        bpy.context.window_manager.clipboard = s
+        return {'FINISHED'}
+
+
+class CopyDataModelFromMols(bpy.types.Operator):
+    '''Copy the molecules data model to the Clipboard'''
+    bl_idname = "cb.copy_mols_to_cbd"
+    bl_label = "Copy Molecules Data Model"
+    bl_description = "Copy the molecules data model to the Clipboard"
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=False )
+        # s = "dm['mcell']['define_molecules'] = " + pprint.pformat ( mcell_dm['define_molecules'], indent=4, width=40 ) + "\n"
+        s = "dm['mcell']['define_molecules'] = " + data_model_as_text ( mcell_dm['define_molecules'] ) + "\n"
+        bpy.context.window_manager.clipboard = s
+        return {'FINISHED'}
+
+
+class CopyDataModelFromRels(bpy.types.Operator):
+    '''Copy the release site data model to the Clipboard'''
+    bl_idname = "cb.copy_rels_to_cbd"
+    bl_label = "Copy Release Site Data Model"
+    bl_description = "Copy the release site data model to the Clipboard"
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=False )
+        # s = "dm['mcell']['release_sites'] = " + pprint.pformat ( mcell_dm['release_sites'], indent=4, width=40 ) + "\n"
+        s = "dm['mcell']['release_sites'] = " + data_model_as_text ( mcell_dm['release_sites'] ) + "\n"
+        bpy.context.window_manager.clipboard = s
+        
+        return {'FINISHED'}
+
 
 
 # Set up to run tkinter code in another thread
@@ -215,8 +352,6 @@ try:
     from tkinter import messagebox
     import threading
     import random
-    import pickle
-    import pprint
 
     import bpy
 
@@ -405,16 +540,16 @@ except ( ImportError ):
 
 
 
-class TkEditDataModelFromProps(bpy.types.Operator):
+class TkBrowseDataModelFromProps(bpy.types.Operator):
     '''Browse/Copy the data model with a Tk Application (requires tkinter installation)'''
     bl_idname = "cb.tk_browse_data_model"
-    bl_label = "Browse Data Model"
+    bl_label = "Browse Data Model with Tk"
     bl_description = "Browse/Copy the data model with a Tk Application (requires tkinter installation)"
 
     def execute(self, context):
         print ( "Browsing CellBlender Data Model:" )
         mcell = context.scene.mcell
-        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.include_geometry_in_dm )
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm )
         mcell['data_model'] = pickle_data_model ( mcell_dm )
         app = CellBlenderDataModelBrowser()
         return {'FINISHED'}
@@ -429,7 +564,7 @@ class RegenerateDataModelFromProps(bpy.types.Operator):
     def execute(self, context):
         print ( "Showing CellBlender Data Model:" )
         mcell = context.scene.mcell
-        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.include_geometry_in_dm )
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm )
         mcell['data_model'] = pickle_data_model ( mcell_dm )
         return {'FINISHED'}
 

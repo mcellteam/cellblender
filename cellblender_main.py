@@ -835,11 +835,6 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     #cellblender_source_hash = StringProperty(
     #    name="CellBlender Source Hash", default="unknown")
 
-    # The following properties probably belong somewhere else, but it doesn't seem worth creating a new property group at this time
-    show_dm_flag = bpy.props.BoolProperty ( name = "Show Data Model", description = "Show the Data Model", default = False )
-    include_geometry_in_dm = bpy.props.BoolProperty ( name = "Include Geometry", description = "Include Geometry in the Data Model", default = False )
-
-
     cellblender_main_panel = PointerProperty(
         type=CellBlenderMainPanelPropertyGroup,
         name="CellBlender Main Panel")
@@ -939,7 +934,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
 
 
-    def build_data_model_from_properties ( self, context, geometry=False ):
+    def build_data_model_from_properties ( self, context, geometry=False, scripts=False ):
         print ( "build_data_model_from_properties: Constructing a data_model dictionary from current properties" )
         dm = {}
         dm['data_model_version'] = "DM_2014_10_24_1638"
@@ -965,7 +960,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm['simulation_control'] = self.run_simulation.build_data_model_from_properties(context)
         dm['mol_viz'] = self.mol_viz.build_data_model_from_properties(context)
         dm['reaction_data_output'] = self.rxn_output.build_data_model_from_properties(context)
-        dm['scripting'] = self.scripting.build_data_model_from_properties(context)
+        if scripts:
+            print ( "Adding Scripts to Data Model" )
+            dm['scripting'] = self.scripting.build_data_model_from_properties(context,scripts)
         if geometry:
             print ( "Adding Geometry to Data Model" )
             dm['geometrical_objects'] = self.model_objects.build_data_model_geometry_from_mesh(context)
@@ -1086,7 +1083,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
 
 
-    def build_properties_from_data_model ( self, context, dm, geometry=False ):
+    def build_properties_from_data_model ( self, context, dm, geometry=False, scripts=False ):
         print ( "build_properties_from_data_model: Data Model Keys = " + str(dm.keys()) )
 
         # Check that the data model version matches the version for this property group
@@ -1121,6 +1118,10 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
                 self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"] )
             print ( "Not fully implemented yet!!!!" )
 
+        if scripts:
+            if "scripting" in dm:
+                print ( "Overwriting the scripting properties" )
+                self.scripting.build_properties_from_data_model ( context, dm["scripting"], scripts )
 
         if "initialization" in dm:
             print ( "Overwriting the initialization properties" )
@@ -1164,10 +1165,6 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "reaction_data_output" in dm:
             print ( "Overwriting the reaction_data_output properties" )
             self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
-        if "scripting" in dm:
-            print ( "Overwriting the scripting properties" )
-            self.scripting.build_properties_from_data_model ( context, dm["scripting"] )
-
 
         # Now call the various "check" routines to clean up any unresolved references
         print ( "Checking the initialization and partitions properties" )

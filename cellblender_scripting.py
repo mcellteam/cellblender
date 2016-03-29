@@ -380,11 +380,19 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
 
     show_simulation_scripting = BoolProperty(name="Export Scripting", default=False)
     show_data_model_scripting = BoolProperty(name="Data Model Scripting", default=False)
+    show_data_model_script_make = BoolProperty(name="Make Script", default=False)
+    show_data_model_script_run = BoolProperty(name="Run Script", default=False)
 
     dm_internal_file_name = StringProperty ( name = "Internal File Name" )
     dm_external_file_name = StringProperty ( name = "External File Name", subtype='FILE_PATH', default="" )
     force_property_update = BoolProperty(name="Update CellBlender from Data Model", default=True)
     # upgrade_data_model_for_script = BoolProperty(name="Upgrade Script", default=False)
+
+    # The following properties are associated with Data Model Scripting
+    show_dm_flag = bpy.props.BoolProperty ( name = "Show Data Model", description = "Show the Data Model", default = False )
+    include_geometry_in_dm = bpy.props.BoolProperty ( name = "Include Geometry", description = "Include Geometry in the Data Model", default = False )
+    include_scripts_in_dm = bpy.props.BoolProperty ( name = "Include Scripts", description = "Include Scripts in the Data Model", default = False )
+
 
 
     dm_internal_external_enum = [
@@ -399,7 +407,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
     def init_properties ( self, parameter_system ):
         pass
 
-    def build_data_model_from_properties ( self, context ):
+    def build_data_model_from_properties ( self, context, scripts ):
         print ( "Scripting Panel building Data Model" )
         dm = {}
         dm['data_model_version'] = "DM_2016_03_15_1900"
@@ -418,9 +426,10 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         # Do: Store all .mdl text files and all .py text files
 
         texts = {}
-        for txt in bpy.data.texts:
-           if (txt.name[-4:] == ".mdl") or (txt.name[-3:] == ".py"):
-              texts[txt.name] = txt.as_string()
+        if scripts:
+          for txt in bpy.data.texts:
+             if (txt.name[-4:] == ".mdl") or (txt.name[-3:] == ".py"):
+                texts[txt.name] = txt.as_string()
         dm['script_texts'] = texts
 
         return dm
@@ -442,7 +451,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         return dm
 
 
-    def build_properties_from_data_model ( self, context, dm ):
+    def build_properties_from_data_model ( self, context, dm, scripts=False ):
         # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2016_03_15_1900":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade CellBlenderScriptingPropertyGroup data model to current version." )
@@ -468,13 +477,14 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
 
         # Do: Load all .mdl text files and all .py text files
 
-        if 'script_texts' in dm:
-          for key_name in dm['script_texts'].keys():
-            if key_name in bpy.data.texts:
-              bpy.data.texts[key_name].clear()
-            else:
-              bpy.data.texts.new(key_name)
-            bpy.data.texts[key_name].write ( dm['script_texts'][key_name] )
+        if scripts:
+          if 'script_texts' in dm:
+            for key_name in dm['script_texts'].keys():
+              if key_name in bpy.data.texts:
+                bpy.data.texts[key_name].clear()
+              else:
+                bpy.data.texts.new(key_name)
+              bpy.data.texts[key_name].write ( dm['script_texts'][key_name] )
 
 
 
@@ -548,34 +558,77 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                 row.prop(self, "show_simulation_scripting", icon='TRIA_RIGHT', emboss=False)
 
 
-            box = layout.box()
-            row = box.row(align=True)
+            parent_box = layout.box()
+            row = parent_box.row(align=True)
             row.alignment = 'LEFT'
 
             if self.show_data_model_scripting:
                 row.prop(self, "show_data_model_scripting", icon='TRIA_DOWN', emboss=False)
 
-                row = box.row()
-                row.prop ( self, "dm_internal_external", text="" )
-                row = box.row()
+                box = parent_box.box()
+                row = box.row(align=True)
+                row.alignment = 'LEFT'
 
-                if (self.dm_internal_external == "internal"):
+                if self.show_data_model_script_make:
+                    row.prop(self, "show_data_model_script_make", icon='TRIA_DOWN', emboss=False)
 
-                    row.prop_search ( self, "dm_internal_file_name",
-                                      context.scene.mcell.scripting, "internal_python_scripts_list",
-                                      text="File:", icon='TEXT' )
-                    row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+                    row = box.row()
+                    row.prop ( self, "dm_internal_external", text="" )
+                    row = box.row()
 
-                if (self.dm_internal_external == "external"):
+                    if (self.dm_internal_external == "internal"):
 
-                    row.prop ( self, "dm_external_file_name" )
-                    row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+                        row.prop_search ( self, "dm_internal_file_name",
+                                          context.scene.mcell.scripting, "internal_python_scripts_list",
+                                          text="File:", icon='TEXT' )
+                        row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
 
-                row = box.row()
-                row.prop ( self, "force_property_update" )
+                    if (self.dm_internal_external == "external"):
 
-                row = box.row()
-                row.operator("mcell.scripting_execute", icon='SCRIPTWIN')
+                        row.prop ( self, "dm_external_file_name" )
+                        row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+
+                    row = box.row()
+                    row.prop ( self, "force_property_update" )
+
+                    row = box.row()
+                    row.operator("mcell.scripting_execute", icon='SCRIPTWIN')
+
+                else:
+                    row.prop(self, "show_data_model_script_make", icon='TRIA_RIGHT', emboss=False)
+
+
+                box = parent_box.box()
+                row = box.row(align=True)
+                row.alignment = 'LEFT'
+
+                if self.show_data_model_script_run:
+                    row.prop(self, "show_data_model_script_run", icon='TRIA_DOWN', emboss=False)
+
+                    row = box.row()
+                    row.prop ( self, "dm_internal_external", text="" )
+                    row = box.row()
+
+                    if (self.dm_internal_external == "internal"):
+
+                        row.prop_search ( self, "dm_internal_file_name",
+                                          context.scene.mcell.scripting, "internal_python_scripts_list",
+                                          text="File:", icon='TEXT' )
+                        row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+
+                    if (self.dm_internal_external == "external"):
+
+                        row.prop ( self, "dm_external_file_name" )
+                        row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+
+                    row = box.row()
+                    row.prop ( self, "force_property_update" )
+
+                    row = box.row()
+                    row.operator("mcell.scripting_execute", icon='SCRIPTWIN')
+
+                else:
+                    row.prop(self, "show_data_model_script_run", icon='TRIA_RIGHT', emboss=False)
 
             else:
                 row.prop(self, "show_data_model_scripting", icon='TRIA_RIGHT', emboss=False)
