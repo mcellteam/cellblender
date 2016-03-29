@@ -41,6 +41,7 @@ import re
 
 # CellBlender imports
 import cellblender
+from . import data_model
 from . import parameter_system
 from . import cellblender_utils
 
@@ -136,6 +137,88 @@ class MCELL_OT_scripting_execute(bpy.types.Operator):
         print ( "Executing Script" )
         scripting.execute_selected_script(context)
         return {'FINISHED'}
+
+
+
+
+class CopyDataModelFromSelectedProps(bpy.types.Operator):
+    '''Copy the selected data model section to the Clipboard'''
+    bl_idname = "cb.copy_sel_data_model_to_cbd"
+    bl_label = "Copy"
+    bl_description = "Copy the selected data model section to the Clipboard"
+
+    def execute(self, context):
+        print ( "Copying CellBlender Data Model:" )
+        mcell = context.scene.mcell
+        scripting = mcell.scripting
+        section = str(mcell.scripting.dm_section)
+        print ( "Copying section " + section )
+        full_dm = mcell.build_data_model_from_properties ( context, geometry=scripting.include_geometry_in_dm, scripts=scripting.include_scripts_in_dm )
+        selected_dm = full_dm
+        selected_key = "dm['mcell']"
+        if section != 'ALL':
+            if section in full_dm:
+                selected_dm = full_dm[section]
+            else:
+                selected_dm = ""
+            selected_key += '[\'' + section + '\']'
+        #s = "dm['mcell'] = " + pprint.pformat ( selected_dm, indent=4, width=40 ) + "\n"
+        s = selected_key + " = " + data_model.data_model_as_text ( selected_dm ) + "\n"
+        #s = "dm['mcell'] = " + str(selected_dm) + "\n"
+        bpy.context.window_manager.clipboard = s
+        return {'FINISHED'}
+
+
+
+"""
+class CopyDataModelFromProps(bpy.types.Operator):
+    '''Copy the data model to the Clipboard'''
+    bl_idname = "cb.copy_data_model_to_cbd"
+    bl_label = "Copy Entire Data Model"
+    bl_description = "Copy the data model to the Clipboard"
+
+    def execute(self, context):
+        print ( "Copying CellBlender Data Model:" )
+        mcell = context.scene.mcell
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm, scripts=mcell.scripting.include_scripts_in_dm )
+        #s = "dm['mcell'] = " + pprint.pformat ( mcell_dm, indent=4, width=40 ) + "\n"
+        s = "dm['mcell'] = " + data_model.data_model_as_text ( mcell_dm ) + "\n"
+        #s = "dm['mcell'] = " + str(mcell_dm) + "\n"
+        bpy.context.window_manager.clipboard = s
+        return {'FINISHED'}
+
+
+class CopyDataModelFromMols(bpy.types.Operator):
+    '''Copy the molecules data model to the Clipboard'''
+    bl_idname = "cb.copy_mols_to_cbd"
+    bl_label = "Copy Molecules Data Model"
+    bl_description = "Copy the molecules data model to the Clipboard"
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=False )
+        # s = "dm['mcell']['define_molecules'] = " + pprint.pformat ( mcell_dm['define_molecules'], indent=4, width=40 ) + "\n"
+        s = "dm['mcell']['define_molecules'] = " + data_model.data_model_as_text ( mcell_dm['define_molecules'] ) + "\n"
+        bpy.context.window_manager.clipboard = s
+        return {'FINISHED'}
+
+
+class CopyDataModelFromRels(bpy.types.Operator):
+    '''Copy the release site data model to the Clipboard'''
+    bl_idname = "cb.copy_rels_to_cbd"
+    bl_label = "Copy Release Site Data Model"
+    bl_description = "Copy the release site data model to the Clipboard"
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=False )
+        # s = "dm['mcell']['release_sites'] = " + pprint.pformat ( mcell_dm['release_sites'], indent=4, width=40 ) + "\n"
+        s = "dm['mcell']['release_sites'] = " + data_model.data_model_as_text ( mcell_dm['release_sites'] ) + "\n"
+        bpy.context.window_manager.clipboard = s
+        
+        return {'FINISHED'}
+"""
+
 
 
 # Scripting callback functions
@@ -389,11 +472,30 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
     # upgrade_data_model_for_script = BoolProperty(name="Upgrade Script", default=False)
 
     # The following properties are associated with Data Model Scripting
-    show_dm_flag = bpy.props.BoolProperty ( name = "Show Data Model", description = "Show the Data Model", default = False )
     include_geometry_in_dm = bpy.props.BoolProperty ( name = "Include Geometry", description = "Include Geometry in the Data Model", default = False )
     include_scripts_in_dm = bpy.props.BoolProperty ( name = "Include Scripts", description = "Include Scripts in the Data Model", default = False )
 
-
+    dm_section_enum = [
+        ('ALL',                     "All", ""),
+        ('define_molecules',        "Molecules", ""),
+        ('define_reactions',        "Reactions",  ""),
+        ('define_release_patterns', "Release Time Patterns",  ""),
+        ('define_surface_classes',  "Surface Classes",  ""),
+        ('geometrical_objects',     "Geometrical Objects",  ""),
+        ('initialization',          "Initialization",  ""),
+        ('materials',               "Materials",  ""),
+        ('model_objects',           "Model Objects",  ""),
+        ('modify_surface_regions',  "Surface Regions",  ""),
+        ('mol_viz',                 "Molecule Visualization",  ""),
+        ('parameter_system',        "Parameters",  ""),
+        ('reaction_data_output',    "Plot Data",  ""),
+        ('release_sites',           "Release Sites",  ""),
+        ('simulation_control',      "Simulation Control",  ""),
+        ('viz_output',              "Visualization Data",  "")]
+    dm_section = bpy.props.EnumProperty(
+        items=dm_section_enum, name="Data Model Section",
+        default='define_molecules',
+        description="Data Model Section to copy to the Clipboard" )
 
     dm_internal_external_enum = [
         ('internal', "Internal", ""),
@@ -492,29 +594,32 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
         if (self.dm_internal_external == "internal"):
             print ( "Executing internal script" )
-            # Wrap the internal data model in a dictionary with an "mcell" key to make it an external data model
-            dm = { 'mcell' : mcell_dm }
-            #exec ( bpy.data.texts[self.dm_internal_file_name].as_string(), globals(), locals() )
-            original_cwd = os.getcwd()
-            os.makedirs ( cellblender_utils.project_files_path(), exist_ok=True )
-            os.chdir ( cellblender_utils.project_files_path() )
-            script_text = bpy.data.texts[self.dm_internal_file_name].as_string()
-            print ( 80*"=" )
-            print ( script_text )
-            print ( 80*"=" )
-            exec ( script_text, locals() )
-            os.chdir ( original_cwd )
-            # Strip off the outer dictionary wrapper because the internal data model does not have the "mcell" key layer
-            # dm = dm['mcell']
-            # Upgrade the data model if requested.
-            # This requires the data model to contain our internal data model versioning keys.
-            # An unversioned data model will be upgraded as if it were a pre-1.0 data model when this is set
-            # If this is NOT set, then the data model will be assumed to match the current version
-            #if (self.upgrade_data_model_for_script):
-            if self.force_property_update:
-                dm['mcell'] = context.scene.mcell.upgrade_data_model ( dm['mcell'] )
-                # Regenerate the Blender properties to reflect this data model ... including geometry
-                context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
+            if not self.dm_internal_file_name in bpy.data.texts:
+                print ( "Error: Specify a script name. Name \"" + self.dm_internal_file_name + "\" is not an internal script name. Try refreshing the scripts list." )
+            else:
+                # Wrap the internal data model in a dictionary with an "mcell" key to make it an external data model
+                dm = { 'mcell' : mcell_dm }
+                #exec ( bpy.data.texts[self.dm_internal_file_name].as_string(), globals(), locals() )
+                original_cwd = os.getcwd()
+                os.makedirs ( cellblender_utils.project_files_path(), exist_ok=True )
+                os.chdir ( cellblender_utils.project_files_path() )
+                script_text = bpy.data.texts[self.dm_internal_file_name].as_string()
+                print ( 80*"=" )
+                print ( script_text )
+                print ( 80*"=" )
+                exec ( script_text, locals() )
+                os.chdir ( original_cwd )
+                # Strip off the outer dictionary wrapper because the internal data model does not have the "mcell" key layer
+                # dm = dm['mcell']
+                # Upgrade the data model if requested.
+                # This requires the data model to contain our internal data model versioning keys.
+                # An unversioned data model will be upgraded as if it were a pre-1.0 data model when this is set
+                # If this is NOT set, then the data model will be assumed to match the current version
+                #if (self.upgrade_data_model_for_script):
+                if self.force_property_update:
+                    dm['mcell'] = context.scene.mcell.upgrade_data_model ( dm['mcell'] )
+                    # Regenerate the Blender properties to reflect this data model ... including geometry
+                    context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
         else:
             print ( "Executing external script ... not implemented yet!!" )
 
@@ -551,8 +656,9 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                 col.operator("mcell.scripting_remove", icon='ZOOMOUT', text="")
 
                 if self.scripting_list:
-                    selected_script = self.scripting_list[self.active_scripting_index]
-                    selected_script.draw_layout ( context, box )
+                    if len(self.scripting_list) > 0:
+                        selected_script = self.scripting_list[self.active_scripting_index]
+                        selected_script.draw_layout ( context, box )
 
             else:
                 row.prop(self, "show_simulation_scripting", icon='TRIA_RIGHT', emboss=False)
@@ -573,26 +679,48 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                     row.prop(self, "show_data_model_script_make", icon='TRIA_DOWN', emboss=False)
 
                     row = box.row()
-                    row.prop ( self, "dm_internal_external", text="" )
-                    row = box.row()
+                    row.operator ( "cb.regenerate_data_model", icon='FILE_REFRESH' )
 
-                    if (self.dm_internal_external == "internal"):
+                    try:
+                        # Try to import tkinter to see if it is installed in this version of Blender
+                        import tkinter as tk
+                        row = box.row()
+                        row.operator ( "cb.tk_browse_data_model", icon='ZOOM_ALL' )
 
-                        row.prop_search ( self, "dm_internal_file_name",
-                                          context.scene.mcell.scripting, "internal_python_scripts_list",
-                                          text="File:", icon='TEXT' )
-                        row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+                    except ( ImportError ):
+                        # Unable to import needed libraries so don't draw
+                        print ( "Unable to import tkinter for TK Data Model Browser" )
+                        row = box.row()
+                        col = row.column()
+                        col.operator ( "cb.copy_data_model_to_cbd" )
+                        col = row.column()
+                        col.prop ( self, "include_geometry_in_dm" )
+                        pass
 
-                    if (self.dm_internal_external == "external"):
+                    if 'data_model' in mcell:
+                        row = box.row()
+                        col = row.column()
+                        col.prop ( self, "include_geometry_in_dm" )
+                        col = row.column()
+                        col.prop ( self, "include_scripts_in_dm" )
 
-                        row.prop ( self, "dm_external_file_name" )
-                        row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+                        row = box.row()
+                        col = row.column()
+                        col.prop ( self, "dm_section", text="" )
+                        col = row.column()
+                        col.operator ( "cb.copy_sel_data_model_to_cbd", icon='COPYDOWN' )
 
-                    row = box.row()
-                    row.prop ( self, "force_property_update" )
 
-                    row = box.row()
-                    row.operator("mcell.scripting_execute", icon='SCRIPTWIN')
+
+                        """
+                        # This created the line by line labels - locked up Blender when too many labels were created
+                        dm = unpickle_data_model ( mcell['data_model'] )
+                        dm_list = list_data_model ( "Data Model", { "mcell": dm }, [] )
+                        for line in dm_list:
+                            row = box.row()
+                            row.label(text=line)
+                        """
+
 
                 else:
                     row.prop(self, "show_data_model_script_make", icon='TRIA_RIGHT', emboss=False)
