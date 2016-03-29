@@ -244,7 +244,7 @@ class MCELL_UL_scripting_item(bpy.types.UIList):
         else:
             layout.label ( icon='FILE_TICK', text=desc )
 
-
+"""
 class MCELL_PT_scripting_settings(bpy.types.Panel):
     bl_label = "CellBlender - Scripting Settings"
     bl_space_type = "PROPERTIES"
@@ -254,7 +254,7 @@ class MCELL_PT_scripting_settings(bpy.types.Panel):
 
     def draw(self, context):
         context.scene.mcell.scripting.draw_panel ( context, self )
-
+"""
 
 # Scripting Property Groups
 
