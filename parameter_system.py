@@ -1626,7 +1626,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
 
     def remove_properties ( self, context ):
-        print ( "Removing all Parameter System Properties ... not implemented yet!" )
+        print ( "Removing all Parameter System Properties ... " )
+        while len(self.general_parameter_list) > 0:
+            self.general_parameter_list.remove(0)
+        self['gname_to_id_dict'] = {}
 
 
     #@profile('ParameterSystem.allocate_available_gid')

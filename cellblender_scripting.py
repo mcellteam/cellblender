@@ -753,7 +753,10 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                     row.prop ( self, "force_property_update" )
 
                     row = box.row()
-                    row.operator("mcell.scripting_execute", icon='SCRIPTWIN')
+                    col = row.column()
+                    col.operator("mcell.scripting_execute", text="Run Script", icon='SCRIPTWIN')
+                    col = row.column()
+                    col.operator("mcell.delete", text="Clear Project", icon='RADIO')   # or use 'X'
 
                 else:
                     row.prop(self, "show_data_model_script_run", icon='TRIA_RIGHT', emboss=False)

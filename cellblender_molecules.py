@@ -777,6 +777,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                     color[0] = dm_color[0]
                     color[1] = dm_color[1]
                     color[2] = dm_color[2]
+            if "emit" in disp_dict:
+                mat_name = "mol_" + self.name+"_mat"
+                bpy.data.materials[mat_name].emit = disp_dict['emit']
 
 
     def check_properties_after_building ( self, context ):
