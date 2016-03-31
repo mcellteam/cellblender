@@ -371,17 +371,22 @@ def remove_mol_data_by_name ( mol_name, context ):
 
     if mol_obj:
         if mol_obj.users <= 0:
-            objs.remove ( mol_obj )
-            meshes.remove ( mol_pos_mesh )
+            try: objs.remove ( mol_obj )
+            except: pass
+            try: meshes.remove ( mol_pos_mesh )
+            except: pass
 
     if mol_shape_obj:
         if mol_shape_obj.users <= 0:
-            objs.remove ( mol_shape_obj )
-            meshes.remove ( mol_shape_mesh )
+            try: objs.remove ( mol_shape_obj )
+            except: pass
+            try: meshes.remove ( mol_shape_mesh )
+            except: pass
 
     if mol_material:
         if mol_material.users <= 0:
-            mats.remove ( mol_material )
+            try: mats.remove ( mol_material )
+            except: pass
 
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):

@@ -596,7 +596,8 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
             print ( "Executing internal script" )
             if not self.dm_internal_file_name in bpy.data.texts:
                 print ( "Error: Specify a script name. Name \"" + self.dm_internal_file_name + "\" is not an internal script name. Try refreshing the scripts list." )
-            else:
+            elif False:
+                # This was the run code before adding cb.get_data_model and cb.replace_data_model to the user's API
                 # Wrap the internal data model in a dictionary with an "mcell" key to make it an external data model
                 dm = { 'mcell' : mcell_dm }
                 #exec ( bpy.data.texts[self.dm_internal_file_name].as_string(), globals(), locals() )
@@ -620,8 +621,27 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                     dm['mcell'] = context.scene.mcell.upgrade_data_model ( dm['mcell'] )
                     # Regenerate the Blender properties to reflect this data model ... including geometry
                     context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
+            elif False:
+                # This version runs the script from the project directory
+                original_cwd = os.getcwd()
+                os.makedirs ( cellblender_utils.project_files_path(), exist_ok=True )
+                os.chdir ( cellblender_utils.project_files_path() )
+                script_text = bpy.data.texts[self.dm_internal_file_name].as_string()
+                print ( 80*"=" )
+                print ( script_text )
+                print ( 80*"=" )
+                exec ( script_text, locals() )
+                os.chdir ( original_cwd )
+            else:
+                # This version just runs the script
+                script_text = bpy.data.texts[self.dm_internal_file_name].as_string()
+                print ( 80*"=" )
+                print ( script_text )
+                print ( 80*"=" )
+                exec ( script_text, locals() )
         else:
             print ( "Executing external script ... not implemented yet!!" )
+
 
     def draw_layout ( self, context, layout ):
         """ Draw the scripting "panel" within the layout """
@@ -690,11 +710,13 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                     except ( ImportError ):
                         # Unable to import needed libraries so don't draw
                         print ( "Unable to import tkinter for TK Data Model Browser" )
+                        """
                         row = box.row()
                         col = row.column()
                         col.operator ( "cb.copy_data_model_to_cbd" )
                         col = row.column()
                         col.prop ( self, "include_geometry_in_dm" )
+                        """
                         pass
 
                     if 'data_model' in mcell:
@@ -749,12 +771,16 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                         row.prop ( self, "dm_external_file_name" )
                         row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
 
-                    row = box.row()
-                    row.prop ( self, "force_property_update" )
+                    # This is now part of the code's API
+                    #row = box.row()
+                    #row.prop ( self, "force_property_update" )
 
                     row = box.row()
                     col = row.column()
                     col.operator("mcell.scripting_execute", text="Run Script", icon='SCRIPTWIN')
+                    # TODO: The following operator is not enabled (probably in the wrong context in the 3D view rather than text editor)
+                    #col = row.column()
+                    #col.operator("text.run_script", text="Run Script", icon='SCRIPTWIN')
                     col = row.column()
                     col.operator("mcell.delete", text="Clear Project", icon='RADIO')   # or use 'X'
 
