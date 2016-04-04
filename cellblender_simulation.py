@@ -315,7 +315,8 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
 
                   mdl_filename = '%s.main.mdl' % (base_name)
                   mcell_args = '-seed %d %s' % (seed, mdl_filename)
-                  proc = cellblender.simulation_queue.add_task(mcell_binary, mcell_args, project_dir)
+                  make_texts = mcell.run_simulation.save_text_logs
+                  proc = cellblender.simulation_queue.add_task(mcell_binary, mcell_args, project_dir, make_texts)
 
                   self.report({'INFO'}, "Simulation Running")
 
@@ -940,6 +941,20 @@ class MCELL_OT_run_simulation_pure_python(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_remove_text_logs(bpy.types.Operator):
+    bl_idname = "mcell.remove_text_logs"
+    bl_label = "Remove Task Output Texts"
+    bl_description = ("Remove all text files of name \"task_*_output\".")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        for k in bpy.data.texts.keys():
+            if (k[0:5] == "task_") and (k[-7:] == "_output"):
+                print ( "Removing text: " + str(k) )
+                bpy.data.texts.remove ( bpy.data.texts[k] )
+        return {'FINISHED'}
+
+
 class MCELL_OT_clear_run_list(bpy.types.Operator):
     bl_idname = "mcell.clear_run_list"
     bl_label = "Clear Completed MCell Runs"
@@ -1307,6 +1322,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     python_scripting_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     python_initialize_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
+    save_text_logs = BoolProperty ( name='Save Text Logs', default=False, description="Create a text log for each run" )
 
     simulation_run_control_enum = [
         ('COMMAND', "Command Line", ""),
@@ -1544,6 +1560,12 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     #if mcell.cellblender_preferences.show_sim_runner_options:
                     col = row.column()
                     col.prop(self, "simulation_run_control")
+
+                    if self.simulation_run_control == "QUEUE":
+                        row = box.row()
+                        row.prop ( self, "save_text_logs" )
+                        row.operator("mcell.remove_text_logs")
+
 
                     #row = box.row()
                     #col = row.column()
