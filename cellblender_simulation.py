@@ -1504,14 +1504,15 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                             pid = int(processes_list[active_process_index].name.split(',')[0].split(':')[1])
                             q_item = cellblender.simulation_queue.task_dict[pid]
 
-                            serr = str(q_item['stderr'])
-                            if len(serr) > 0:
-                                row = layout.row()
-                                row.label ( "Error from task " + str(pid), icon="ERROR" )
-                                serr_list = serr.split('\n')
-                                for l in serr_list:
+                            if q_item['stderr'] != b'':
+                                serr = str(q_item['stderr'])
+                                if len(serr) > 0:
                                     row = layout.row()
-                                    row.label ( "  " + l, icon="BLANK1" )
+                                    row.label ( "Error from task " + str(pid), icon="ERROR" )
+                                    serr_list = serr.split('\n')
+                                    for l in serr_list:
+                                        row = layout.row()
+                                        row.label ( "  " + l, icon="BLANK1" )
 
                             sout = str(q_item['stdout'])
                             if False and (len(sout) > 0):
