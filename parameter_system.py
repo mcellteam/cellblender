@@ -1040,6 +1040,7 @@ def update_parameter_name ( self, context ):
     if not self.disable_parse:
         self.par_name_changed ( context )
     stop_timer('update_parameter_name')
+    context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
 #@profile('update_parameter_expression')
 def update_parameter_expression ( self, context ):
@@ -1048,6 +1049,7 @@ def update_parameter_expression ( self, context ):
     if not self.disable_parse:
         self.expression_changed ( context )
     stop_timer('update_parameter_expression')
+    context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
 #@profile('update_parameter_parsed_expression')
 def update_parameter_parsed_expression ( self, context ):
@@ -1056,6 +1058,7 @@ def update_parameter_parsed_expression ( self, context ):
     if not self.disable_parse:
         self.parsed_expression_changed ( context )
     stop_timer('update_parameter_parsed_expression')
+    context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
 #@profile('update_parameter_value')
 def update_parameter_value ( self, context ):
@@ -1064,6 +1067,7 @@ def update_parameter_value ( self, context ):
     if not self.disable_parse:
         self.value_changed ( context )
     stop_timer('update_parameter_value')
+    context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
 #@profile('print_parameter_details')
 def print_parameter_details ( self, context ):
@@ -1618,6 +1622,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     currently_updating = BoolProperty(name="Currently Updating", default=False)
     suspend_evaluation = BoolProperty(name="Suspend Evaluation", default=False)
     auto_update = BoolProperty ( name="Auto Update", default=True )
+
+    # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
+    last_parameter_update_time = StringProperty ( default="-1.0", description="Time that the last parameter was updated" )
 
     #@profile('ParameterSystem.init_properties')
     def init_properties ( self ):

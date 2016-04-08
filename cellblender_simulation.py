@@ -95,6 +95,7 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
+        mcell.run_simulation.last_simulation_run_time = str(time.time())
 
         if mcell.cellblender_preferences.lockout_export and (not mcell.cellblender_preferences.decouple_export_run):
             print ( "Exporting is currently locked out. See the Preferences/ExtraOptions panel." )
@@ -139,6 +140,7 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
+        mcell.run_simulation.last_simulation_run_time = str(time.time())
 
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
@@ -238,6 +240,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
+        mcell.run_simulation.last_simulation_run_time = str(time.time())
 
         mcell_binary = cellblender_utils.get_mcell_path(mcell)
 
@@ -401,6 +404,7 @@ class MCELL_OT_run_simulation_control_opengl(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
+        mcell.run_simulation.last_simulation_run_time = str(time.time())
 
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
@@ -513,6 +517,7 @@ class MCELL_OT_run_simulation_control_java(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
+        mcell.run_simulation.last_simulation_run_time = str(time.time())
 
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
@@ -628,6 +633,7 @@ class MCELL_OT_run_simulation_libmcell(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
+        mcell.run_simulation.last_simulation_run_time = str(time.time())
 
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
@@ -736,6 +742,7 @@ class MCELL_OT_run_simulation_libmcellpy(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
+        mcell.run_simulation.last_simulation_run_time = str(time.time())
 
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
@@ -843,6 +850,7 @@ class MCELL_OT_run_simulation_pure_python(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
+        mcell.run_simulation.last_simulation_run_time = str(time.time())
 
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
@@ -1323,6 +1331,9 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     python_initialize_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
     save_text_logs = BoolProperty ( name='Save Text Logs', default=False, description="Create a text log for each run" )
+
+    # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
+    last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
 
     simulation_run_control_enum = [
         ('COMMAND', "Command Line", ""),
