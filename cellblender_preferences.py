@@ -520,16 +520,17 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
             row.prop ( context.user_preferences.inputs, "view_rotate_method" )
-            
+
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "use_long_menus")
 
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "use_stock_icons")
 
-            row = layout.row()
-            row.prop ( context.user_preferences.system, "use_vertex_buffer_objects", text="Enable Vertex Buffer Objects" )
-            
+            if "use_vertex_buffer_objects" in dir(context.user_preferences.system):
+                row = layout.row()
+                row.prop ( context.user_preferences.system, "use_vertex_buffer_objects", text="Enable Vertex Buffer Objects" )
+
             row = layout.row()
             row.prop ( mcell.cellblender_preferences, "backface_culling", text="Enable Backface Culling" )
 
@@ -568,9 +569,6 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
             else:
                 row.prop(self, "show_extra_options", icon='TRIA_RIGHT', emboss=False)
-                
-
-            
 
 
             #row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')
