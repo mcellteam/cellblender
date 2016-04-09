@@ -689,6 +689,11 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol.operator ( "cbm.refresh_operator",icon='FILE_REFRESH', text="Reload Visualization Data")
 
 
+                # Check for modifications to the model since the last run
+
+                if eval(mcell.parameter_system.last_parameter_update_time) > eval(mcell.run_simulation.last_simulation_run_time):
+                    row = layout.row()
+                    row.label ( "Warning: Model change since last run", icon="INFO" )  # Information might be better than "ERROR" since this is not really an error
 
                 current_marker = "After drawing all buttons"
 

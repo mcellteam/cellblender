@@ -749,9 +749,6 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
         else:
-            if eval(mcell.parameter_system.last_parameter_update_time) > eval(mcell.run_simulation.last_simulation_run_time):
-                row = layout.row()
-                row.label ( "Possible Parameter Change Since Last Run", icon="ERROR" )
 
             self.rxn_step.draw(layout,ps)
             row = layout.row()
