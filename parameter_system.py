@@ -1215,7 +1215,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         extras_dict['par_value'] = p.value
         extras_dict['par_valid'] = p.isvalid
 
-        par_dict['extras'] = extras_dict
+        par_dict['_extras'] = extras_dict
 
         return par_dict
 

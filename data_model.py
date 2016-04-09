@@ -155,11 +155,12 @@ def text_data_model ( name, dm, dm_list, comma ):
             dm_text_depth += 1
             item_num = 0
             for k,v in sorted(dm.items()):
-                subcomma = ','
-                if item_num > num_items-2:
-                  subcomma = ''
-                text_data_model ( "\'"+k+"\'"+" : ", v, dm_list, subcomma )
-                item_num += 1
+                if not k.startswith("_"):
+                    subcomma = ','
+                    if item_num > num_items-2:
+                      subcomma = ''
+                    text_data_model ( "\'"+k+"\'"+" : ", v, dm_list, subcomma )
+                    item_num += 1
             dm_text_depth += -1
             dm_list.append ( str(dm_text_depth*indent) + "}" + comma )
     elif type(dm) == list_type:  #dm is a list
