@@ -435,30 +435,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
 
     def draw_self (self, context, layout):
-        # print ( "Top of CellBlenderMainPanelPropertyGroup.draw_self" )
 
-        #######################################################################################
-        """
-        #######################################################################################
-        def draw_panel_code_worked_out_with_Tom_on_Feb_18_2015:
-            if not scn.mcell.get('CB_ID'):
-                # This .blend file has no CellBlender data or was created with CellBlender RC3
-                if not scn.mcell['initialized']:
-                    # This .blend file has no CellBlender data (never saved with CellBlender enabled)
-                    display "Initialize"
-                else:
-                    # This is a CellBlender RC3 or RC4 file
-                    display "Update"
-            else:
-                # This is a CellBlender .blend file >= 1.0
-                CB_ID = scn.mcell['CB_ID']
-                if CB_ID != cb.cellblender_source_info['cb_src_sha1']
-                    display "Update"
-                else:
-                    display normal panel
-        #######################################################################################
-        """
-        #######################################################################################
 
         mcell = context.scene.mcell
         
@@ -549,9 +526,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                         
                 else:
 
-
-                    current_marker = "Before drawing any buttons"
-
                     # Draw all the selection buttons with labels in 2 columns:
 
                     brow = layout.row()
@@ -560,15 +534,12 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol = brow.column()
                     bcol.prop ( self, "scripting_select", icon='SCRIPT', text="Scripting" )
 
-                    current_marker = "After drawing preferences_select"
 
                     brow = layout.row()
                     bcol = brow.column()
                     bcol.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="Parameters" )
                     bcol = brow.column()
                     
-                    current_marker = "After drawing parameters_select"
-
 
                     if mcell.cellblender_preferences.use_stock_icons:
                         # Use "stock" icons to check on drawing speed problem
@@ -615,16 +586,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                                 bcol.prop ( self, "reaction_select", icon_value=reaction_u, text="Reactions" )
 
 
-                    current_marker = "After drawing molecules and reactions"
-
-
-                    ## Drawing is fast when exiting here
-
                     bcol = brow.column()
                     bcol.prop ( self, "placement_select", icon='GROUP_VERTEX', text=" Molecule Placement" )
-
-                    current_marker = "After drawing placement_select"
-                    ## Drawing is a little slower when exiting here
 
 
                     brow = layout.row()
@@ -633,7 +596,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol = brow.column()
                     bcol.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="Model Objects" )
 
-                    current_marker = "After drawing release patterns"
 
                     brow = layout.row()
                     bcol = brow.column()
@@ -642,12 +604,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="Assign Surface Classes" )
                     
 
-                    current_marker = "After drawing surface selections"
-
-
-                    ## Drawing is slower when exiting here
-
-
                     brow = layout.row()
                     bcol = brow.column()
                     bcol.prop ( self, "partitions_select", icon='GRID', text="Partitions" )
@@ -655,28 +611,11 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol.prop ( self, "graph_select", icon='FCURVE', text="Plot Output Settings" )
 
 
-                    current_marker = "After drawing partition and graph buttons"
-
-
                     brow = layout.row()
                     bcol = brow.column()
                     bcol.prop ( self, "viz_select", icon='SEQUENCE', text="Visualization Settings" )
                     bcol = brow.column()
                     bcol.prop ( self, "init_select", icon='COLOR_RED', text="Run Simulation" )
-
-
-                    current_marker = "After drawing the viz and run buttons buttons"
-
-
-
-
-                    ############################################
-                    ############################################
-                    #print ( "Exiting ... " + current_marker )
-                    #return
-                    ############################################
-                    ############################################
-
 
 
                     brow = layout.row()
@@ -693,10 +632,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                 if eval(mcell.parameter_system.last_parameter_update_time) > eval(mcell.run_simulation.last_simulation_run_time):
                     row = layout.row()
-                    row.label ( "Warning: Model change since last run", icon="INFO" )  # Information might be better than "ERROR" since this is not really an error
-
-                current_marker = "After drawing all buttons"
-
+                    row.label ( "Warning: Possible model change since last run", icon="INFO" )  # Information might be better than "ERROR" since this is not really an error
 
 
                 # Draw each panel only if it is selected
@@ -709,12 +645,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     layout.box() # Use as a separator
                     layout.label ( "Preferences", icon='PREFERENCES' )
                     context.scene.mcell.cellblender_preferences.draw_layout ( context, layout )
-
-                # Combine settings and preferences above
-                # if self.settings_select:
-                #     layout.box() # Use as a separator
-                #     layout.label ( "Project Settings", icon='SETTINGS' )
-                #     context.scene.mcell.project_settings.draw_layout ( context, layout )
 
                 if self.scripting_select:
                     layout.box() # Use as a separator
@@ -780,11 +710,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     layout.label ( "Reaction Data Output", icon='FCURVE' )
                     context.scene.mcell.rxn_output.draw_layout ( context, layout )
 
-                #if self.mol_viz_select:
-                #    layout.box()
-                #    layout.label ( "Visualization Output Settings", icon='SEQUENCE' )
-                #    context.scene.mcell.mol_viz.draw_layout ( context, layout )
-                    
                 if self.viz_select:
                     layout.box()
                     layout.label ( "Visualization", icon='SEQUENCE' )
@@ -796,15 +721,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     layout.label ( "Run Simulation", icon='COLOR_RED' )
                     context.scene.mcell.initialization.draw_layout ( context, layout )
                     
-                #if self.run_select:
-                #    layout.box() # Use as a separator
-                #    layout.label ( "Run Simulation", icon='COLOR_RED' )
-                #    context.scene.mcell.run_simulation.draw_layout ( context, layout )
-                    
-                # The reload_viz button refreshes rather than brings up a panel
-                #if self.reload_viz:
-                #    layout.box()
-                #    layout.label ( "Reload Simulation Data", icon='FILE_REFRESH' )
         # print ( "Bottom of CellBlenderMainPanelPropertyGroup.draw_self" )
 
 
