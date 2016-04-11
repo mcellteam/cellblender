@@ -819,6 +819,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         print ( "  Done deleting objects" )
         print ( "  Create new objects" )
 
+        most_recent_object = None
         # Now create all the object meshes from the data model
         for model_object in dm['object_list']:
 
@@ -862,6 +863,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             #bpy.ops.object.select_all ( action = "DESELECT" )
             #new_obj.select = True
             #context.scene.objects.active = new_obj
+            most_recent_object = new_obj
 
             #print ( "    Add surface regions for " + model_object['name'] )
 
@@ -870,10 +872,20 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             if model_object.get('define_surface_regions'):
                 for rgn in model_object['define_surface_regions']:
                     print ( "  Building region[" + rgn['name'] + "]" )
+
+                    bpy.ops.object.select_all ( action = "DESELECT" )
+                    new_obj.select = True
+                    context.scene.objects.active = new_obj
+
                     new_obj.mcell.regions.add_region_by_name ( context, rgn['name'] )
                     reg = new_obj.mcell.regions.region_list[rgn['name']]
                     reg.set_region_faces ( new_mesh, set(rgn['include_elements']) )
 
+        if most_recent_object != None:
+
+            bpy.ops.object.select_all ( action = "DESELECT" )
+            most_recent_object.select = True
+            context.scene.objects.active = most_recent_object
 
         print ( "  Done creating new objects" )
 
