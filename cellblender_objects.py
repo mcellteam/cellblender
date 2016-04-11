@@ -778,10 +778,13 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
 
 
     def delete_all_mesh_objects ( self, context ):
+        print ( "Inside \"delete_all_mesh_objects\"" )
+        # TODO This function is VERY slow for large numbers of objects
+        # TODO There should be a faster way since Blender can do this quicly
         bpy.ops.object.select_all(action='DESELECT')
         for scene_object in context.scene.objects:
             if scene_object.type == 'MESH':
-                print ( "Deleting Mesh object: " + scene_object.name )
+                # print ( "Deleting Mesh object: " + scene_object.name )
                 scene_object.hide = False
                 scene_object.select = True
                 bpy.ops.object.delete()
@@ -796,7 +799,9 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         
         # Start by creating a list of named objects in the data model
         model_names = [ o['name'] for o in dm['object_list'] ]
-        print ( "Model names = " + str(model_names) )
+        # print ( "Model names = " + str(model_names) )
+
+        print ( "  Delete objects with matching names" )
 
         # Delete all objects with identical names to model objects in the data model
         bpy.ops.object.select_all(action='DESELECT')
@@ -811,8 +816,13 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     bpy.ops.object.delete()
                     # TODO Need to delete the mesh for this object as well!!!
 
+        print ( "  Done deleting objects" )
+        print ( "  Create new objects" )
+
         # Now create all the object meshes from the data model
         for model_object in dm['object_list']:
+
+            # print ( "    Create object " + model_object['name'] )
 
             vertices = []
             for vertex in model_object['vertex_list']:
@@ -826,6 +836,8 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             new_obj = bpy.data.objects.new ( model_object['name'], new_mesh )
             if 'location' in model_object:
                 new_obj.location = mathutils.Vector((model_object['location'][0],model_object['location'][1],model_object['location'][2]))
+
+            #print ( "    Add materials to " + model_object['name'] )
 
             # Add the materials to the object
             if 'material_names' in model_object:
@@ -843,11 +855,15 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                         f.material_index = model_object['element_material_indices'][index % dm_count]
                         index += 1
 
+            #print ( "    Add " + model_object['name'] + " to scene.objects" )
+
             context.scene.objects.link ( new_obj )
-            bpy.ops.object.select_all ( action = "DESELECT" )
-            new_obj.select = True
-            context.scene.objects.active = new_obj
-            
+            # The following code slowed the creation process to a crawl!!!
+            #bpy.ops.object.select_all ( action = "DESELECT" )
+            #new_obj.select = True
+            #context.scene.objects.active = new_obj
+
+            #print ( "    Add surface regions for " + model_object['name'] )
 
             # Add the surface regions to new_obj.mcell
             
@@ -859,5 +875,6 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     reg.set_region_faces ( new_mesh, set(rgn['include_elements']) )
 
 
+        print ( "  Done creating new objects" )
 
 
