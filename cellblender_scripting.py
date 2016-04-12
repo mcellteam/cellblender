@@ -509,8 +509,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
     def init_properties ( self, parameter_system ):
         pass
 
-    def build_data_model_from_properties ( self, context, scripts ):
-        print ( "Scripting Panel building Data Model" )
+    def build_data_model_from_properties ( self, context, scripts=False ):
         dm = {}
         dm['data_model_version'] = "DM_2016_03_15_1900"
         dm['show_simulation_scripting'] = self.show_simulation_scripting
@@ -525,7 +524,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
 
         # Don't: Store the scripts lists in the data model for now - they are regenerated with refresh anyway
 
-        # Do: Store all .mdl text files and all .py text files
+        # Do: Store all .mdl text files and all .py text files if scripts flag is True (defaults to false)
 
         texts = {}
         if scripts:

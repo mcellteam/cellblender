@@ -881,9 +881,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm['simulation_control'] = self.run_simulation.build_data_model_from_properties(context)
         dm['mol_viz'] = self.mol_viz.build_data_model_from_properties(context)
         dm['reaction_data_output'] = self.rxn_output.build_data_model_from_properties(context)
-        if scripts:
-            print ( "Adding Scripts to Data Model" )
-            dm['scripting'] = self.scripting.build_data_model_from_properties(context,scripts)
+        dm['scripting'] = self.scripting.build_data_model_from_properties(context,scripts)
         if geometry:
             print ( "Adding Geometry to Data Model" )
             dm['geometrical_objects'] = self.model_objects.build_data_model_geometry_from_mesh(context)
@@ -1039,10 +1037,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
                 self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"] )
             print ( "Not fully implemented yet!!!!" )
 
-        if scripts:
-            if "scripting" in dm:
-                print ( "Overwriting the scripting properties" )
-                self.scripting.build_properties_from_data_model ( context, dm["scripting"], scripts )
+        if "scripting" in dm:
+            print ( "Overwriting the scripting properties" )
+            self.scripting.build_properties_from_data_model ( context, dm["scripting"], scripts )
 
         if "initialization" in dm:
             print ( "Overwriting the initialization properties" )
