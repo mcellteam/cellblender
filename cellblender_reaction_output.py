@@ -257,9 +257,9 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                             mol_color = mats.get(mol_mat_name).diffuse_color
                             #print("Molecule color = ", mol_mat.diffuse_color)
 
-                            mol_color_red = 255 * mol_color.r
-                            mol_color_green = 255 * mol_color.g
-                            mol_color_blue = 255 * mol_color.b
+                            mol_color_red = int(255 * mol_color.r)
+                            mol_color_green = int(255 * mol_color.g)
+                            mol_color_blue = int(255 * mol_color.b)
                             color_string = " color=#%2.2x%2.2x%2.2x " % (
                                 mol_color_red, mol_color_green, mol_color_blue)
 
