@@ -130,7 +130,7 @@ def get_data_model ( geometry=True ):
     import bpy
     import cellblender
     context = bpy.context
-    mdm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
+    mdm = context.scene.mcell.build_data_model_from_properties ( context, geometry=geometry )
     dm = { 'mcell' : mdm }
     return dm
 
@@ -139,7 +139,7 @@ def replace_data_model ( dm, geometry=True ):
     import cellblender
     context = bpy.context
     dm['mcell'] = context.scene.mcell.upgrade_data_model ( dm['mcell'] )
-    context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
+    context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=geometry )
 
 def cd_to_project():
     import os
