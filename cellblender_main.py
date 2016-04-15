@@ -1044,7 +1044,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "initialization" in dm:
             print ( "Overwriting the initialization properties" )
             self.initialization.build_properties_from_data_model ( context, dm["initialization"] )
-            if "partitions" in dm:
+            if "partitions" in dm["initialization"]:
                 print ( "Overwriting the partitions properties" )
                 self.partitions.build_properties_from_data_model ( context, dm["initialization"]["partitions"] )
         if "define_molecules" in dm:
