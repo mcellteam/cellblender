@@ -126,7 +126,7 @@ else:
 ###############################################################
 ### These functions support data model scripting
 
-def get_data_model ( geometry=True ):
+def get_data_model ( geometry=False ):
     import bpy
     import cellblender
     context = bpy.context
@@ -134,7 +134,7 @@ def get_data_model ( geometry=True ):
     dm = { 'mcell' : mdm }
     return dm
 
-def replace_data_model ( dm, geometry=True ):
+def replace_data_model ( dm, geometry=False ):
     import bpy
     import cellblender
     context = bpy.context
