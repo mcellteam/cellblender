@@ -960,9 +960,9 @@ class CellBlender_Model:
 
     def set_sim_seed ( self, seed=1 ):
         # This is a bit tricky since CellBlender won't allow a start seed greater than the end seed
-        self.mcell.run_simulation.end_seed = seed
-        self.mcell.run_simulation.start_seed = seed
-        self.mcell.run_simulation.end_seed = seed
+        self.mcell.run_simulation.end_seed.expr = str(seed)
+        self.mcell.run_simulation.start_seed.expr = str(seed)
+        self.mcell.run_simulation.end_seed.expr = str(seed)
 
 
     def export_model ( self, iterations="100", time_step="1e-6", export_format="mcell_mdl_unified", seed=1 ):

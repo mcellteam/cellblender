@@ -114,8 +114,7 @@ class MCELL_OT_model_obj_add_mat(bpy.types.Operator):
 class MCELL_OT_model_objects_add(bpy.types.Operator):
     bl_idname = "mcell.model_objects_add"
     bl_label = "Model Objects Include"
-    bl_description = ("Include objects selected in 3D View Window in Model "
-                      "Objects export list")
+    bl_description = ("Include objects selected in 3D View Window in Model Objects export list")
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -171,6 +170,29 @@ class MCELL_OT_model_objects_remove(bpy.types.Operator):
         model_objects_update(context)
 
         return {'FINISHED'}
+
+
+class MCELL_OT_model_objects_remove_sel(bpy.types.Operator):
+    bl_idname = "mcell.model_objects_remove_sel"
+    bl_label = "Model Objects Remove Selected"
+    bl_description = ("Remove objects selected in 3D View Window from Model Objects export list")
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        mcell = context.scene.mcell
+        mobjs = mcell.model_objects
+        sobjs = context.scene.objects
+
+        # From the list of selected objects, only remove MESH objects.
+        objs = [obj for obj in context.selected_objects if obj.type == 'MESH']
+        for obj in objs:
+            obj.mcell.include = False
+
+        model_objects_update(context)
+
+        return {'FINISHED'}
+
 
 
 
@@ -321,7 +343,13 @@ def model_objects_update(context):
                     mobjs.object_list[mobjs.active_obj_index].status = status
                     break
 
-        mobjs.active_obj_index = active_index
+        if len(mobjs.object_list) <= 0:
+            mobjs.active_obj_index = 0
+        else:
+            if active_index < len(mobjs.object_list):
+                mobjs.active_obj_index = active_index
+            else:
+                mobjs.active_obj_index = len(mobjs.object_list) - 1
 
         # We check release sites are valid here in case a user adds an object
         # referenced in a release site after adding the release site itself.
@@ -496,6 +524,8 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
 #           col.active = (len(context.selected_objects) == 1)
             col.operator("mcell.model_objects_add", icon='ZOOMIN', text="")
             col.operator("mcell.model_objects_remove", icon='ZOOMOUT', text="")
+
+            col.operator("mcell.model_objects_remove_sel", icon='X', text="")
             
             if len(self.object_list) > 0:
                 obj_name = str(self.object_list[self.active_obj_index].name)
