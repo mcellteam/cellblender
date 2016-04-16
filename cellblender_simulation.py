@@ -145,8 +145,8 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
-        start = mcell.run_simulation.start_seed
-        end = mcell.run_simulation.end_seed
+        start = int(mcell.run_simulation.start_seed.get_value())
+        end = int(mcell.run_simulation.end_seed)
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
@@ -244,8 +244,8 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
 
         mcell_binary = cellblender_utils.get_mcell_path(mcell)
 
-        start_seed = mcell.run_simulation.start_seed
-        end_seed = mcell.run_simulation.end_seed
+        start_seed = int(mcell.run_simulation.start_seed.get_value())
+        end_seed = int(mcell.run_simulation.end_seed.get_value())
         mcell_processes = mcell.run_simulation.mcell_processes
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         # Force the project directory to be where the .blend file lives
@@ -409,8 +409,8 @@ class MCELL_OT_run_simulation_control_opengl(bpy.types.Operator):
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
-        start = mcell.run_simulation.start_seed
-        end = mcell.run_simulation.end_seed
+        start = int(mcell.run_simulation.start_seed.get_value())
+        end = int(mcell.run_simulation.end_seed.get_value())
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
@@ -522,8 +522,8 @@ class MCELL_OT_run_simulation_control_java(bpy.types.Operator):
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
-        start = mcell.run_simulation.start_seed
-        end = mcell.run_simulation.end_seed
+        start = int(mcell.run_simulation.start_seed.get_value())
+        end = int(mcell.run_simulation.end_seed.get_value())
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
@@ -638,8 +638,8 @@ class MCELL_OT_run_simulation_libmcell(bpy.types.Operator):
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
-        start = mcell.run_simulation.start_seed
-        end = mcell.run_simulation.end_seed
+        start = int(mcell.run_simulation.start_seed.get_value())
+        end = int(mcell.run_simulation.end_seed.get_value())
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
@@ -747,8 +747,8 @@ class MCELL_OT_run_simulation_libmcellpy(bpy.types.Operator):
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
-        start = mcell.run_simulation.start_seed
-        end = mcell.run_simulation.end_seed
+        start = int(mcell.run_simulation.start_seed.get_value())
+        end = int(mcell.run_simulation.end_seed.get_value())
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
@@ -855,8 +855,8 @@ class MCELL_OT_run_simulation_pure_python(bpy.types.Operator):
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
-        start = mcell.run_simulation.start_seed
-        end = mcell.run_simulation.end_seed
+        start = int(mcell.run_simulation.start_seed.get_value())
+        end = int(mcell.run_simulation.end_seed.get_value())
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
@@ -1131,21 +1131,22 @@ def check_start_seed(self, context):
     """ Ensure start seed is always lte to end seed. """
 
     run_sim = context.scene.mcell.run_simulation
-    start_seed = run_sim.start_seed
-    end_seed = run_sim.end_seed
+
+    start_seed = int(run_sim.start_seed.get_value())
+    end_seed = int(run_sim.end_seed.get_value())
 
     if start_seed > end_seed:
-        run_sim.start_seed = end_seed
+        run_sim.start_seed.expr = str(end_seed)
 
 def check_end_seed(self, context):
     """ Ensure end seed is always gte to start seed. """
     
     run_sim = context.scene.mcell.run_simulation
-    start_seed = run_sim.start_seed
-    end_seed = run_sim.end_seed
+    start_seed = int(run_sim.start_seed.get_value())
+    end_seed = int(run_sim.end_seed.get_value())
 
     if end_seed < start_seed:
-        run_sim.end_seed = start_seed
+        run_sim.end_seed.expr = str(start_seed)
 
 
 
@@ -1278,14 +1279,8 @@ class MCellSimStringProperty(bpy.types.PropertyGroup):
 class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     enable_python_scripting = BoolProperty ( name='Enable Python Scripting', default=False )  # Intentionally not in the data model
 
-    start_seed = IntProperty(
-        name="Start Seed", default=1, min=1,
-        description="The starting value of the random number generator seed",
-        update=check_start_seed)
-    end_seed = IntProperty(
-        name="End Seed", default=1, min=1,
-        description="The ending value of the random number generator seed",
-        update=check_end_seed)
+    start_seed = PointerProperty ( name="Start Seed", type=parameter_system.Parameter_Reference )
+    end_seed   = PointerProperty ( name="End Seed", type=parameter_system.Parameter_Reference )
     mcell_processes = IntProperty(
         name="Number of Processes",
         default=cpu_count(),
@@ -1351,6 +1346,19 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         default='QUEUE', update=sim_runner_changed_callback)
 
 
+    def init_properties ( self, parameter_system ):
+        helptext = "Start Seed\n" + \
+                   "The first seed used in running a series of simulations.\n" + \
+                   "The number of simulations depends on the start and end seeds."
+        self.start_seed.init_ref   ( parameter_system, "Sim_Start_Seed_Type", user_name="Start Seed",   user_expr="1", user_units="", user_descr=helptext )
+
+        helptext = "End Seed\n" + \
+                   "The last seed used in running a series of simulations.\n" + \
+                   "The number of simulations depends on the start and end seeds."
+        self.end_seed.init_ref   ( parameter_system, "Sim_End_Seed_Type", user_name="End Seed",   user_expr="1", user_units="", user_descr=helptext )
+
+
+
     def remove_properties ( self, context ):
         print ( "Removing all Run Simulation Properties..." )
         for item in self.processes_list:
@@ -1363,11 +1371,14 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         self.active_err_index = 0
         print ( "Done removing all Run Simulation Properties." )
 
+
     def build_data_model_from_properties ( self, context ):
         print ( "MCellRunSimulationPropertyGroup building Data Model" )
         dm = {}
-        dm['data_model_version'] = "DM_2015_04_23_1753"
+        dm['data_model_version'] = "DM_2016_04_15_1430"
         dm['name'] = self.name
+        dm['start_seed'] = self.start_seed.get_expr()
+        dm['end_seed'] = self.end_seed.get_expr()
         p_list = []
         for p in self.processes_list:
             p_list.append ( p.build_data_model_from_properties(context) )
@@ -1383,7 +1394,13 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
             # Make changes to move from unversioned to DM_2015_04_23_1753
             dm['data_model_version'] = "DM_2015_04_23_1753"
 
-        if dm['data_model_version'] != "DM_2015_04_23_1753":
+        if dm['data_model_version'] == "DM_2015_04_23_1753":
+            # Add the start_seed and end_seed to the data model with default values
+            dm['start_seed'] = "1"
+            dm['end_seed'] = "1"
+            dm['data_model_version'] = "DM_2016_04_15_1430"
+
+        if dm['data_model_version'] != "DM_2016_04_15_1430":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationPropertyGroup data model to current version." )
             return None
         return dm
@@ -1391,16 +1408,23 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
 
-        if dm['data_model_version'] != "DM_2015_04_23_1753":
+        if dm['data_model_version'] != "DM_2016_04_15_1430":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationPropertyGroup data model to current version." )
 
         self.enable_python_scripting = False  # Explicitly disable this when building from a data model
-        self.name = dm["name"]
+        if 'name' in dm:
+            self.name = dm["name"]
+        print ( "Setting start and end seeds to " + dm['start_seed'] + " and " + dm['end_seed'] )
+        self.start_seed.set_expr ( dm["start_seed"] )
+        self.end_seed.set_expr ( dm["end_seed"] )
         self.processes_list.clear()
-        for p in dm['processes_list']:
-            self.processes_list.add()
-            self.active_process_index = len(self.processes_list) - 1
-            self.processes_list[self.active_process_index].build_properties_from_data_model(context, p)
+
+        # The processes_list should not be restored from the data model
+        #if 'processes_list' in dm:
+        #    for p in dm['processes_list']:
+        #        self.processes_list.add()
+        #        self.active_process_index = len(self.processes_list) - 1
+        #        self.processes_list[self.active_process_index].build_properties_from_data_model(context, p)
 
 
 
@@ -1546,9 +1570,9 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row.prop(self, "show_output_options", icon='TRIA_DOWN',
                              text="Output / Control Options", emboss=False)
 
-                    row = box.row(align=True)
-                    row.prop(self, "start_seed")
-                    row.prop(self, "end_seed")
+                    self.start_seed.draw(box,ps)
+                    self.end_seed.draw(box,ps)
+
                     row = box.row()
                     row.prop(self, "mcell_processes")
                     #row = box.row()
