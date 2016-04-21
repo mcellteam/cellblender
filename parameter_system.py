@@ -1893,7 +1893,7 @@ class NewParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Hand
         new_name = "Parameter_" + str(self.next_par_id)
         new_expr = "0"
         new_units = ""
-        new_desc = ""
+        new_desc = "P" + str(self.next_par_id) + " Description"
         new_exprlist = ""
         global_params[new_id] = {
             'name': new_name,
@@ -1910,9 +1910,9 @@ class NewParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Hand
         self.next_par_id += 1
         self.active_par_index = len(self.parameter_list)-1
         self.active_name = new_par.name
-        self.active_expr = "0"
-        self.active_units = ""
-        self.active_desc = ""
+        self.active_expr = new_expr
+        self.active_units = new_units
+        self.active_desc = new_desc
 
     def remove_active_parameter ( self, context ):
         """ Remove the active parameter from the list of parameters if not needed by others """
@@ -2640,12 +2640,64 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
 
 
+
+
+from bpy.app.handlers import persistent
+
+def add_handler ( handler_list, handler_function ):
+    """ Only add a handler if it's not already in the list """
+    if not (handler_function in handler_list):
+        handler_list.append ( handler_function )
+
+
+def remove_handler ( handler_list, handler_function ):
+    """ Only remove a handler if it's in the list """
+    if handler_function in handler_list:
+        handler_list.remove ( handler_function )
+
+import pickle
+
+@persistent
+def save_pre(context):
+    """ Pack the parameter system into a pickle property before saving """
+    global global_params
+    # The context appears to always be "None"?
+    print ( "save pre handler: parameter_system.save_pre() called" )
+    if not context:
+        # The context appears to always be "None", so use bpy.context
+        context = bpy.context
+    if hasattr ( context.scene, 'mcell' ):
+        print ( "Pickling the parameter system before saving" )
+        global_parameters = pickle.dumps(global_params,protocol=0).decode('latin1')
+        context.scene.mcell['global_parameters'] = global_parameters
+
+
+@persistent
+def load_post(context):
+    """ Unpack the parameter system from the pickle property """
+    global global_params
+    print ( "load post handler: parameter_system.load_post() called" )
+    if not context:
+        context = bpy.context
+    if hasattr ( context.scene, 'mcell' ):
+        if 'global_parameters' in context.scene['mcell']:
+            print ( "Unpickling the parameter system after loading" )
+            global_params = pickle.loads(context.scene['mcell']['global_parameters'].encode('latin1'))
+
+
+
 def register():
     print ("Registering ", __name__)
     bpy.utils.register_module(__name__)
+    # Handlers now done in __init__
+    #add_handler ( bpy.app.handlers.load_post, load_post )
+    #add_handler ( bpy.app.handlers.save_pre, save_pre )
 
 def unregister():
     print ("Unregistering ", __name__)
+    # Handlers now done in __init__
+    #remove_handler ( bpy.app.handlers.save_pre, save_pre )
+    #remove_handler ( bpy.app.handlers.load_post, load_post )
     bpy.utils.unregister_module(__name__)
 
 
