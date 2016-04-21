@@ -1758,7 +1758,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
 global_params = { }
 
 class MCELL_OT_NEW_add_parameter(bpy.types.Operator):
-    bl_idname = "app.add_parameter"
+    bl_idname = "newpar.add_parameter"
     bl_label = "Add Parameter"
     bl_description = "Add a new parameter"
     bl_options = {'REGISTER', 'UNDO'}
@@ -1769,7 +1769,7 @@ class MCELL_OT_NEW_add_parameter(bpy.types.Operator):
 
 
 class MCELL_OT_NEW_remove_parameter(bpy.types.Operator):
-    bl_idname = "app.remove_parameter"
+    bl_idname = "newpar.remove_parameter"
     bl_label = "Remove Parameter"
     bl_description = "Remove selected parameter"
     bl_options = {'REGISTER', 'UNDO'}
@@ -1781,23 +1781,85 @@ class MCELL_OT_NEW_remove_parameter(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_NEW_clear_parameters(bpy.types.Operator):
+    bl_idname = "newpar.clear_parameters"
+    bl_label = "Clear Global Parameters"
+    bl_description = "Clear All Parameters"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        global global_params
+
+        mcell = context.scene.mcell
+        ps = mcell.new_parameter_system
+
+        # First clear all of the shared fields
+        ps.next_par_id = 0
+        ps.active_par_index = 0
+        ps.active_name = "Par"
+        ps.active_expr = "0"
+        ps.active_units = ""
+        ps.active_desc = ""
+        ps.last_selected_id = ""
+
+        # Next clear all the property parameters
+        ps.parameter_list.clear()
+
+        # Finally clear all of the global parameters
+        global_params.clear()
+        return {'FINISHED'}
+
+
+class MCELL_OT_NEW_gen_parameters(bpy.types.Operator):
+    bl_idname = "newpar.gen_parameters"
+    bl_label = "Generate Global Parameters"
+    bl_description = "Generate Some Parameters"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        global global_params
+        mcell = context.scene.mcell
+        ps = mcell.new_parameter_system
+        # First clear all the property parameters
+        ps.parameter_list.clear()
+        # Next clear all of the global parameters
+        global_params.clear()
+
+        # Now add some new parameters
+        for n in range(5):
+            ps.add_parameter(context)
+            ps.active_name = chr(ord('a')+n)
+            ps.active_units = "mm"
+            ps.active_desc = "Parameter " + ps.active_name
+            el = ['1']
+            for i in range(n):
+                el.append ( '+' )
+                el.append ( i )
+            ps.active_expr = str(el)
+            print ( str(el) )
+
+        return {'FINISHED'}
+
+
 class MCELL_OT_NEW_dump_parameters(bpy.types.Operator):
-    bl_idname = "app.dump_parameters"
+    bl_idname = "newpar.dump_parameters"
     bl_label = "Dump Global Parameters"
     bl_description = "Dump All Parameters"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
         global global_params
-        print ( "global_params = {" )
-        for k in sorted(global_params.keys()):
-          print ( "  " + str(k) + " : " + str(global_params[k]) )
-        print ( " }" )
+        mcell = context.scene.mcell
+        ps = mcell.new_parameter_system
+        # First clear all the property parameters
+        ps.parameter_list.clear()
+        # Next clear all of the global parameters
+        global_params.clear()
         return {'FINISHED'}
 
 
 class MCELL_OT_NEW_eval_expr(bpy.types.Operator):
-    bl_idname = "app.eval_expr"
+    bl_idname = "newpar.eval_expr"
     bl_label = "Evaluate Expression"
     bl_description = "Evaluate the selected Expression"
     bl_options = {'REGISTER', 'UNDO'}
@@ -2026,8 +2088,8 @@ class NewParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Hand
                               ps, "parameter_list",
                               ps, "active_par_index", rows=5)
             col = row.column(align=True)
-            col.operator("app.add_parameter", icon='ZOOMIN', text="")
-            col.operator("app.remove_parameter", icon='ZOOMOUT', text="")
+            col.operator("newpar.add_parameter", icon='ZOOMIN', text="")
+            col.operator("newpar.remove_parameter", icon='ZOOMOUT', text="")
 
             mcell.new_parameter_system.draw ( context, layout )
 
@@ -2040,8 +2102,11 @@ class NewParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Hand
                 layout.prop(par_map_item, "par_id")
 
             row = layout.row()
-            row.operator("app.dump_parameters")
-            row.operator("app.eval_expr")
+            row.operator("newpar.gen_parameters")
+            row.operator("newpar.clear_parameters")
+            row = layout.row()
+            row.operator("newpar.dump_parameters")
+            row.operator("newpar.eval_expr")
 
 
 class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
@@ -2458,7 +2523,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             col = row.column()
             col.template_list("MCELL_UL_draw_parameter", "parameter_system",
                               ps, "general_parameter_list",
-                              ps, "active_par_index", rows=5)
+                              ps, "active_par_index", rows=2)
 
             col = row.column(align=True)
 
