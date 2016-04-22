@@ -342,7 +342,7 @@ def register():
     # Add the load_post handlers
     add_handler ( bpy.app.handlers.load_post, cellblender_simulation.disable_python )
     add_handler ( bpy.app.handlers.load_post, data_model.load_post )
-    add_handler ( bpy.app.handlers.load_post, parameter_system.load_post )
+    #add_handler ( bpy.app.handlers.load_post, parameter_system.load_post )
     add_handler ( bpy.app.handlers.load_post, cellblender_simulation.clear_run_list )
     add_handler ( bpy.app.handlers.load_post, cellblender_objects.model_objects_update )
     add_handler ( bpy.app.handlers.load_post, object_surface_regions.object_regions_format_update )
@@ -356,7 +356,7 @@ def register():
 
     # Add the save_pre handlers
     add_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
-    add_handler ( bpy.app.handlers.save_pre, parameter_system.save_pre )
+    #add_handler ( bpy.app.handlers.save_pre, parameter_system.save_pre )
     add_handler ( bpy.app.handlers.save_pre, cellblender_objects.model_objects_update )
 
     # Register atexit function to shutdown simulation queue before quitting Blender
@@ -370,7 +370,7 @@ def unregister():
     remove_handler ( bpy.app.handlers.frame_change_pre, cellblender_mol_viz.frame_change_handler )
     remove_handler ( bpy.app.handlers.load_pre,         cellblender_main.report_load_pre )
     remove_handler ( bpy.app.handlers.load_post, data_model.load_post )
-    remove_handler ( bpy.app.handlers.load_post, parameter_system.load_post )
+    #remove_handler ( bpy.app.handlers.load_post, parameter_system.load_post )
     remove_handler ( bpy.app.handlers.load_post, cellblender_simulation.clear_run_list )
     remove_handler ( bpy.app.handlers.load_post, cellblender_objects.model_objects_update )
     remove_handler ( bpy.app.handlers.load_post, object_surface_regions.object_regions_format_update )
@@ -380,7 +380,7 @@ def unregister():
     remove_handler ( bpy.app.handlers.load_post, cellblender_mol_viz.read_viz_data_load_post )
     remove_handler ( bpy.app.handlers.scene_update_pre, cellblender_main.scene_loaded )
     remove_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
-    remove_handler ( bpy.app.handlers.load_post, parameter_system.save_pre )
+    #remove_handler ( bpy.app.handlers.load_post, parameter_system.save_pre )
     remove_handler ( bpy.app.handlers.save_pre, cellblender_objects.model_objects_update )
     remove_handler ( bpy.app.handlers.load_post, cellblender_simulation.disable_python )
 
