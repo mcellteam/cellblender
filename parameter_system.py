@@ -1788,7 +1788,7 @@ class MCELL_OT_SORTED_remove_parameter(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        context.scene.mcell.parameter_system.active_par_index = context.scene.mcell.sorted_parameter_system.active_par_index
+        # This didn't really work: context.scene.mcell.parameter_system.active_par_index = context.scene.mcell.sorted_parameter_system.active_par_index
         status = context.scene.mcell.parameter_system.remove_active_parameter(context)
         status = context.scene.mcell.sorted_parameter_system.remove_active_parameter(context)
         if status != "":
@@ -1817,7 +1817,7 @@ def active_sorted_par_index_changed ( self, context ):
     """ The "self" passed in is a ParametersPropertyGroup object. """
     print ( "Type of self = " + str ( type(self) ) )
     mcell = context.scene.mcell
-    #ps = mcell.parameter_system
+    ps = mcell.parameter_system
     sorted_ps = mcell.sorted_parameter_system
 
     par_num = self.active_par_index  # self.active_par_index is what gets changed when the user selects an item
@@ -1827,6 +1827,7 @@ def active_sorted_par_index_changed ( self, context ):
         par_id = self.parameter_list[par_num].par_id
         self.last_selected_id = "" + par_id    # Does this need a copy to be sure that it's different from the par_id in the list?
         self.active_name = "" + par_name       # Does this need a copy to be sure that it's different from the par_id in the list?
+        mcell.parameter_system.active_par_index = mcell.sorted_parameter_system.active_par_index
         print ( "Active sorted parameter index changed to " + str(par_num) + " for par_id=" + str(par_id) )
 
 
@@ -2711,7 +2712,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             col = row.column()
             col.template_list("MCELL_UL_draw_parameter", "parameter_system",
                               ps, "general_parameter_list",
-                              ps, "active_par_index", rows=2)
+                              ps, "active_par_index", rows=5)
 
             col = row.column(align=True)
 
