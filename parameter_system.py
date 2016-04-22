@@ -1933,7 +1933,8 @@ class ParameterMappingProperty(bpy.types.PropertyGroup):
 
 class NewParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler ):
     """This is the class that encapsulates a group (or list) of general purpose parameters"""
-    show_experimental = BoolProperty(name="Show Experimental", default=False)
+    show_global_dict = BoolProperty(name="Show Global Dictionary Parameters", default=False)
+    show_sortable_prop = BoolProperty(name="Show Sortable Property Parameters", default=False)
 
     parameter_list = CollectionProperty(type=ParameterMappingProperty, name="Parameters List")
     next_par_id = IntProperty(name="Next_Par_ID", default=0)
@@ -2070,43 +2071,69 @@ class NewParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Hand
         mcell = context.scene.mcell
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
-        elif not self.show_experimental:
-            row = layout.row(align=True)
-            row.alignment = 'LEFT'
-            row.prop(self, "show_experimental", icon='TRIA_RIGHT', emboss=False)
         else:
-            row = layout.row(align=True)
-            row.alignment = 'LEFT'
-            row.prop(self, "show_experimental", icon='TRIA_DOWN', emboss=False)
+        
+            if not self.show_sortable_prop:
+                row = layout.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(self, "show_sortable_prop", icon='TRIA_RIGHT', emboss=False)
+            else:
+                row = layout.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(self, "show_sortable_prop", icon='TRIA_DOWN', emboss=False)
 
 
-            ps = mcell.new_parameter_system
+                ps = mcell.new_parameter_system
 
-            row = layout.row()
-            col = row.column()
-            col.template_list("MCELL_UL_draw_new_parameter", "",
-                              ps, "parameter_list",
-                              ps, "active_par_index", rows=5)
-            col = row.column(align=True)
-            col.operator("newpar.add_parameter", icon='ZOOMIN', text="")
-            col.operator("newpar.remove_parameter", icon='ZOOMOUT', text="")
+                row = layout.row()
+                col = row.column()
+                col.template_list("MCELL_UL_draw_new_parameter", "",
+                                  ps, "parameter_list",
+                                  ps, "active_par_index", rows=5)
+                col = row.column(align=True)
+                col.operator("newpar.add_parameter", icon='ZOOMIN', text="")
+                col.operator("newpar.remove_parameter", icon='ZOOMOUT', text="")
 
-            mcell.new_parameter_system.draw ( context, layout )
+                mcell.new_parameter_system.draw ( context, layout )
 
-            layout.label ( "- - - - - - - - - - - -  Debug  - - - - - - - - - - - -" )
 
-            if len(mcell.new_parameter_system.parameter_list) > 0:
-                par_map_item = mcell.new_parameter_system.parameter_list[mcell.new_parameter_system.active_par_index]
-                layout.prop(mcell.new_parameter_system, "last_selected_id")
-                layout.prop(par_map_item, "name")
-                layout.prop(par_map_item, "par_id")
+            if not self.show_global_dict:
+                row = layout.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(self, "show_global_dict", icon='TRIA_RIGHT', emboss=False)
+            else:
+                row = layout.row(align=True)
+                row.alignment = 'LEFT'
+                row.prop(self, "show_global_dict", icon='TRIA_DOWN', emboss=False)
 
-            row = layout.row()
-            row.operator("newpar.gen_parameters")
-            row.operator("newpar.clear_parameters")
-            row = layout.row()
-            row.operator("newpar.dump_parameters")
-            row.operator("newpar.eval_expr")
+
+                ps = mcell.new_parameter_system
+
+                row = layout.row()
+                col = row.column()
+                col.template_list("MCELL_UL_draw_new_parameter", "",
+                                  ps, "parameter_list",
+                                  ps, "active_par_index", rows=5)
+                col = row.column(align=True)
+                col.operator("newpar.add_parameter", icon='ZOOMIN', text="")
+                col.operator("newpar.remove_parameter", icon='ZOOMOUT', text="")
+
+                mcell.new_parameter_system.draw ( context, layout )
+
+                layout.label ( "- - - - - - - - - - - -  Debug  - - - - - - - - - - - -" )
+
+                if len(mcell.new_parameter_system.parameter_list) > 0:
+                    par_map_item = mcell.new_parameter_system.parameter_list[mcell.new_parameter_system.active_par_index]
+                    layout.prop(mcell.new_parameter_system, "last_selected_id")
+                    layout.prop(par_map_item, "name")
+                    layout.prop(par_map_item, "par_id")
+
+                row = layout.row()
+                row.operator("newpar.gen_parameters")
+                row.operator("newpar.clear_parameters")
+                row = layout.row()
+                row.operator("newpar.dump_parameters")
+                row.operator("newpar.eval_expr")
 
 
 class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
