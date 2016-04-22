@@ -1761,7 +1761,7 @@ class ParameterMappingProperty(bpy.types.PropertyGroup):
 
     """An instance of this class exists for every general parameter"""
 
-    # name = StringProperty(name="Name", default="", description="Unique name for this parameter")
+    # This is implicit with the Property Group:   name = StringProperty(name="Name", default="", description="Unique name for this parameter")
     par_id = StringProperty(name="Par_ID", default="", description="Unique ID for each parameter used as a key into the Python Dictionary")
 
 
@@ -1795,16 +1795,6 @@ class MCELL_OT_SORTED_remove_parameter(bpy.types.Operator):
             self.report({'ERROR'}, status)
         return {'FINISHED'}
 
-class MCELL_OT_SORTED_eval_expr(bpy.types.Operator):
-    bl_idname = "sorted.eval_expr"
-    bl_label = "Evaluate Expression"
-    bl_description = "Evaluate the selected Expression"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        context.scene.mcell.sorted_parameter_system.evaluate_expression(context)
-        return {'FINISHED'}
-
 
 class MCELL_UL_SORTED_draw_parameter(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
@@ -1825,42 +1815,42 @@ class MCELL_UL_SORTED_draw_parameter(bpy.types.UIList):
 
 def active_sorted_par_index_changed ( self, context ):
     """ The "self" passed in is a ParametersPropertyGroup object. """
-    #global global_params
     print ( "Type of self = " + str ( type(self) ) )
+    mcell = context.scene.mcell
+    #ps = mcell.parameter_system
+    sorted_ps = mcell.sorted_parameter_system
+
     par_num = self.active_par_index  # self.active_par_index is what gets changed when the user selects an item
     print ( "sorted par_num = " + str(par_num) )
     if (par_num >= 0) and (len(self.parameter_list) > 0):
+        par_name = self.parameter_list[par_num].name
         par_id = self.parameter_list[par_num].par_id
-        self.last_selected_id = "" + par_id  # Does this need a copy to be sure that it's different from the par_id in the list?
+        self.last_selected_id = "" + par_id    # Does this need a copy to be sure that it's different from the par_id in the list?
+        self.active_name = "" + par_name       # Does this need a copy to be sure that it's different from the par_id in the list?
         print ( "Active sorted parameter index changed to " + str(par_num) + " for par_id=" + str(par_id) )
 
 
 def update_sorted_parameter_name ( self, context ):
     """ The "self" passed in is a ParametersPropertyGroup object. """
     print ( "Type of self = " + str ( type(self) ) )
-    self.update_name ( context )
 
-def update_sorted_parameter_expression ( self, context ):
-    """ The "self" passed in is a ParametersPropertyGroup object. """
-    print ( "Type of self = " + str ( type(self) ) )
-    print ("Parameter value changed")
-    self.update_expression ( context )
+    pid = self.last_selected_id
+    #old_name = str(global_params[pid]['name'])
 
-def update_sorted_parameter_units ( self, context ):
-    """ The "self" passed in is a ParametersPropertyGroup object. """
-    print ("Parameter units changed")
-    self.update_units ( context )
+    mcell = context.scene.mcell
+    ps = mcell.parameter_system
+    new_name = self.active_name
+    self.parameter_list[self.active_par_index].name = new_name
+    ps.general_parameter_list[self.parameter_list[self.active_par_index].par_id].par_name = new_name
+    
+    #print ("Parameter name changed from " + old_name + " to " + new_name )
+    #if pid in global_params:
+    #    global_params[pid]['name'] = new_name
+    #    self.parameter_list[old_name].name = new_name
+    #else:
+    #    print ( "Unexpected error: " + str(self.last_selected_id) + " not in global_params" )
 
-def update_sorted_parameter_desc ( self, context ):
-    """ The "self" passed in is a ParametersPropertyGroup object. """
-    print ("Parameter description changed")
-    self.update_desc ( context )
-
-
-def update_sorted_parameter_exprlist ( self, context ):
-    """ The "self" passed in is a ParametersPropertyGroup object. """
-    print ("Parameter expression list changed")
-
+    #self.update_name ( context )
 
 
 class SortedParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler ):
@@ -1870,11 +1860,8 @@ class SortedParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_H
     parameter_list = CollectionProperty(type=ParameterMappingProperty, name="Parameters List")
     next_par_id = IntProperty(name="Next_Par_ID", default=0)
 
-    active_par_index = IntProperty(name="Active Parameter", default=0,                                                                  update=active_sorted_par_index_changed)
-    active_name  = StringProperty(name="Parameter Name",    default="Par", description="Unique name for this parameter",                update=update_sorted_parameter_name)
-    #active_expr  = StringProperty(name="Expression",        default="0",   description="Expression to be evaluated for this parameter", update=update_sorted_parameter_expression)
-    #active_units = StringProperty(name="Units",             default="",    description="Units for this parameter",                      update=update_sorted_parameter_units)
-    #active_desc  = StringProperty(name="Description",       default="",    description="Description of this parameter",                 update=update_sorted_parameter_desc)
+    active_par_index = IntProperty(name="Active Parameter", default=0,                                                    update=active_sorted_par_index_changed)
+    active_name  = StringProperty(name="Parameter Name",    default="Par", description="Unique name for this parameter",  update=update_sorted_parameter_name)
 
     last_selected_id = StringProperty(name="Last", default="")
 
@@ -1901,50 +1888,6 @@ class SortedParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_H
             if self.active_par_index < 0:
                 self.active_par_index = 0
         return ( status )
-
-    def update_name (self, context):
-        #global global_params
-        pid = self.last_selected_id
-        #old_name = str(global_params[pid]['name'])
-        new_name = self.active_name
-        #print ("Parameter name changed from " + old_name + " to " + new_name )
-        #if pid in global_params:
-        #    global_params[pid]['name'] = new_name
-        #    self.parameter_list[old_name].name = new_name
-        #else:
-        #    print ( "Unexpected error: " + str(self.last_selected_id) + " not in global_params" )
-
-    """
-    def update_expression (self, context):
-        pass
-        global global_params
-        print ("Parameter value changed from " + str(global_params[self.last_selected_id]['expr']) + " to " + self.active_expr )
-
-    def update_units (self, context):
-        global global_params
-        print ("Parameter units changed from " + str(global_params[self.last_selected_id]['units']) + " to " + self.active_units )
-        if self.last_selected_id in global_params:
-            global_params[self.last_selected_id]['units'] = self.active_units
-        else:
-            print ( "Unexpected error: " + str(self.last_selected_id) + " not in global_params" )
-
-    def update_desc (self, context):
-        global global_params
-        print ("Parameter description changed from " + str(global_params[self.last_selected_id]['desc']) + " to " + self.active_desc )
-        if self.last_selected_id in global_params:
-            global_params[self.last_selected_id]['desc'] = self.active_desc
-        else:
-            print ( "Unexpected error: " + str(self.last_selected_id) + " not in global_params" )
-    """
-
-    """
-    def draw(self, context, layout):
-        if len(self.parameter_list) > 0:
-            layout.prop(self, "active_name")
-            layout.prop(self, "active_expr")
-            layout.prop(self, "active_units")
-            layout.prop(self, "active_desc")
-    """
 
 
     def draw_layout (self, context, layout):
@@ -1982,19 +1925,14 @@ class SortedParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_H
                 if len(self.parameter_list) > 0:
                     row = layout.row()
                     row.prop ( self, 'active_name' )
-                    row = layout.row()
-                    row.prop ( self.parameter_list[self.active_par_index], 'name' )
+                    #row = layout.row()
+                    #row.prop ( self.parameter_list[self.active_par_index], 'name' )
                     row = layout.row()
                     row.prop ( ps.general_parameter_list[self.parameter_list[self.active_par_index].par_id], 'expr' )
                     row = layout.row()
                     row.prop ( ps.general_parameter_list[self.parameter_list[self.active_par_index].par_id], 'units' )
                     row = layout.row()
                     row.prop ( ps.general_parameter_list[self.parameter_list[self.active_par_index].par_id], 'descr' )
-
-                #layout.label ( "- - - - - - - - - - - - End  - - - - - - - - - - - -" )
-
-                # mcell.sorted_parameter_system.draw ( context, layout )
-
 
 
 
