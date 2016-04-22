@@ -656,12 +656,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     layout.label ( "Model Parameters", icon='SEQ_SEQUENCER' )
                     context.scene.mcell.parameter_system.draw_layout ( context, layout )
 
-
-                    #layout.box() # Use as a separator
-                    #context.scene.mcell.new_parameter_system.draw_layout ( context, layout )
-
-
-
                 if self.molecule_select:
                     layout.box() # Use as a separator
                     layout.label(text="Defined Molecules", icon='FORCE_LENNARDJONES')
@@ -790,8 +784,10 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     #    type=MCellParametersPropertyGroup, name="Defined Parameters")
     parameter_system = PointerProperty(
         type=parameter_system.ParameterSystemPropertyGroup, name="Parameter System")
-    new_parameter_system = PointerProperty(
-        type=cellblender.parameter_system.NewParameterSystemPropertyGroup, name="New Parameter System")
+    pydict_parameter_system = PointerProperty(
+        type=cellblender.parameter_system.PyDictParameterSystemPropertyGroup, name="PyDict Parameter System")
+    sorted_parameter_system = PointerProperty(
+        type=cellblender.parameter_system.SortedParameterSystemPropertyGroup, name="Sorted Parameter System")
     molecules = PointerProperty(
         type=cellblender_molecules.MCellMoleculesListProperty, name="Defined Molecules")
     reactions = PointerProperty(
