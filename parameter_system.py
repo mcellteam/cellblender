@@ -373,8 +373,9 @@ class MCELL_OT_remove_parameter(bpy.types.Operator):
     #@profile('MCELL_OT_remove_parameter.execute')
     def execute(self, context):
         start_timer('MCELL_OT_remove_parameter.execute')
-        status = context.scene.mcell.sorted_parameter_system.remove_active_parameter(context)
         status = context.scene.mcell.parameter_system.remove_active_parameter(context)
+        if status == "":
+            status = context.scene.mcell.sorted_parameter_system.remove_active_parameter(context)
         if status != "":
             # One of: 'DEBUG', 'INFO', 'OPERATOR', 'PROPERTY', 'WARNING', 'ERROR', 'ERROR_INVALID_INPUT', 'ERROR_INVALID_CONTEXT', 'ERROR_OUT_OF_MEMORY'
             self.report({'ERROR'}, status)
@@ -1790,17 +1791,19 @@ class MCELL_OT_SORTED_remove_parameter(bpy.types.Operator):
     def execute(self, context):
         # This didn't really work: context.scene.mcell.parameter_system.active_par_index = context.scene.mcell.sorted_parameter_system.active_par_index
         status = context.scene.mcell.parameter_system.remove_active_parameter(context)
-        status = context.scene.mcell.sorted_parameter_system.remove_active_parameter(context)
+        if status == "":
+            status = context.scene.mcell.sorted_parameter_system.remove_active_parameter(context)
         if status != "":
+            # One of: 'DEBUG', 'INFO', 'OPERATOR', 'PROPERTY', 'WARNING', 'ERROR', 'ERROR_INVALID_INPUT', 'ERROR_INVALID_CONTEXT', 'ERROR_OUT_OF_MEMORY'
             self.report({'ERROR'}, status)
         return {'FINISHED'}
-
 
 class MCELL_UL_SORTED_draw_parameter(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         mcell = context.scene.mcell
         ps = mcell.parameter_system
         sorted_ps = mcell.sorted_parameter_system
+        # sorted_ps.dump()
         sorted_par = sorted_ps.parameter_list[index]
         par = ps.general_parameter_list[sorted_par.par_id]
         disp = str(sorted_par.name) + " = " + str(par.expr) + " = "
@@ -1814,8 +1817,7 @@ class MCELL_UL_SORTED_draw_parameter(bpy.types.UIList):
 
 
 def active_sorted_par_index_changed ( self, context ):
-    """ The "self" passed in is a ParametersPropertyGroup object. """
-    print ( "Type of self = " + str ( type(self) ) )
+    """ The "self" passed in is a SortedParameterSystemPropertyGroup object. """
     mcell = context.scene.mcell
     ps = mcell.parameter_system
     sorted_ps = mcell.sorted_parameter_system
@@ -1832,27 +1834,13 @@ def active_sorted_par_index_changed ( self, context ):
 
 
 def update_sorted_parameter_name ( self, context ):
-    """ The "self" passed in is a ParametersPropertyGroup object. """
-    print ( "Type of self = " + str ( type(self) ) )
-
-    pid = self.last_selected_id
-    #old_name = str(global_params[pid]['name'])
-
+    """ The "self" passed in is a SortedParameterSystemPropertyGroup object. """
     mcell = context.scene.mcell
     ps = mcell.parameter_system
     new_name = self.active_name
     self.parameter_list[self.active_par_index].name = new_name
     ps.general_parameter_list[self.parameter_list[self.active_par_index].par_id].par_name = new_name
     
-    #print ("Parameter name changed from " + old_name + " to " + new_name )
-    #if pid in global_params:
-    #    global_params[pid]['name'] = new_name
-    #    self.parameter_list[old_name].name = new_name
-    #else:
-    #    print ( "Unexpected error: " + str(self.last_selected_id) + " not in global_params" )
-
-    #self.update_name ( context )
-
 
 class SortedParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler ):
     """This is the class that encapsulates a group (or list) of general purpose parameters"""
@@ -1864,6 +1852,15 @@ class SortedParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_H
     active_name  = StringProperty(name="Parameter Name",    default="Par", description="Unique name for this parameter",  update=update_sorted_parameter_name)
 
     last_selected_id = StringProperty(name="Last", default="")
+
+    def dump ( self ):
+        print ( "next_par_id = " + str(self.next_par_id) )
+        print ( "active_par_index = " + str(self.active_par_index) )
+        print ( "active_name = " + str(self.active_name) )
+        print ( "last_selected_id = " + str(self.last_selected_id) )
+        for p in self.parameter_list:
+            print ( "  p.name = " + str(p.name) + ", p.par_id = " + str(p.par_id) )
+
 
     def add_parameter ( self, context, name_key ):
         """ Add a new parameter with name_key to the list of parameters and set as the active parameter """
@@ -2423,6 +2420,13 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     def add_general_parameter_with_values ( self, name, expression, units, description ):
         """ Add a new parameter to the list of parameters """
         p = self.new_parameter ( new_name=name, pp=False, new_expr=expression, new_units=units, new_desc=description )
+        # With sorted parameters, need to update the sorted list
+        mcell = bpy.context.scene.mcell
+        if "sorted_parameter_system" in mcell:
+            sps = mcell.sorted_parameter_system
+            sp = sps.parameter_list.add()
+            sp.name = p.par_name
+            sp.par_id = p.name
         return p
 
 
@@ -2674,6 +2678,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         print ( "Parameter System building Properties from Data Model ..." )
         while len(self.general_parameter_list) > 0:
             self.general_parameter_list.remove(0)
+        # Deal with the sorted parameter overlay
+        sps = context.scene.mcell.sorted_parameter_system
+        while len(sps.parameter_list) > 0:
+            sps.parameter_list.remove[0]
         self['gname_to_id_dict'] = {}
         self.next_gid = 1
         if 'model_parameters' in par_sys_dm:
@@ -2699,7 +2707,6 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 if num_invalid == last_num_invalid:
                     # No parameters have been updated, so exit (even if there are some remaining invalid)
                     keep_checking = False
-
 
 
     #@profile('ParameterSystem.print_name_id_map')
