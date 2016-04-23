@@ -177,162 +177,6 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
         layout.label(disp, icon=icon)
         stop_timer('MCELL_UL_draw_parameter.draw_item')
 
-    """
-    https://www.blender.org/api/blender_python_api_2_77a_release/bpy.types.UIList.html
-
-
-    def filter_items(self, context, data, propname):
-        print ( str( dir(self) ) )
-        #for k in dir(self):
-        #  if not str(k).startswith("_"):
-        #    print ( str(k) + " = " + str(self[k]) )
-        pl = data.general_parameter_list
-        print ( "Filter_items called with self.keys() = " + str(type(self)) + ", " + str(type(data)) + ", " + str((propname)) )
-        #for p in data[propname]:
-        #    print ( str(p) )
-        for p in pl:
-            print ( str(p) + " " + str(p.par_name) )
-        #par_key_list = sorted ( [ (p.par_name,pl.index[p]) for p in pl ] )
-        par_list = sorted([ (pl[i].par_name,i) for i in range(len(pl)) ])
-        new_order = [ p[1] for p in par_list ]
-        print ( "New order = " + str(new_order) )
-        print ( "Names = " + str( [ pl[k].par_name for k in new_order ] ) )
-        return [self.bitflag_filter_item]*len(pl), new_order
-    """
-
-    """
-    # Constants (flags)
-    # Be careful not to shadow FILTER_ITEM!
-    VGROUP_EMPTY = 1 << 0
-
-    # Custom properties, saved with .blend file.
-    use_filter_empty = bpy.props.BoolProperty(name="Filter Empty", default=False, options=set(),
-                                              description="Whether to filter empty vertex groups")
-    use_filter_empty_reverse = bpy.props.BoolProperty(name="Reverse Empty", default=False, options=set(),
-                                                      description="Reverse empty filtering")
-    use_filter_name_reverse = bpy.props.BoolProperty(name="Reverse Name", default=False, options=set(),
-                                                     description="Reverse name filtering")
-
-    # This allows us to have mutually exclusive options, which are also all disable-able!
-    def _gen_order_update(name1, name2):
-        def _u(self, ctxt):
-            if (getattr(self, name1)):
-                setattr(self, name2, False)
-        return _u
-    use_order_name = bpy.props.BoolProperty(name="Name", default=False, options=set(),
-                                            description="Sort groups by their name (case-insensitive)",
-                                            update=_gen_order_update("use_order_name", "use_order_importance"))
-    use_order_importance = bpy.props.BoolProperty(name="Importance", default=False, options=set(),
-                                                  description="Sort groups by their average weight in the mesh",
-                                                  update=_gen_order_update("use_order_importance", "use_order_name"))
-    """
-
-    """
-    def draw_filter(self, context, layout):
-        # Nothing much to say here, it's usual UI code...
-        row = layout.row()
-
-        subrow = row.row(align=True)
-        subrow.prop(self, "filter_name", text="")
-        icon = 'ZOOM_OUT' if self.use_filter_name_reverse else 'ZOOM_IN'
-        subrow.prop(self, "use_filter_name_reverse", text="", icon=icon)
-
-        subrow = row.row(align=True)
-        subrow.prop(self, "use_filter_empty", toggle=True)
-        icon = 'ZOOM_OUT' if self.use_filter_empty_reverse else 'ZOOM_IN'
-        subrow.prop(self, "use_filter_empty_reverse", text="", icon=icon)
-
-        row = layout.row(align=True)
-        row.label("Order by:")
-        row.prop(self, "use_order_name", toggle=True)
-        row.prop(self, "use_order_importance", toggle=True)
-        icon = 'TRIA_UP' if self.use_filter_orderby_invert else 'TRIA_DOWN'
-        row.prop(self, "use_filter_orderby_invert", text="", icon=icon)
-    """
-
-    """
-    def filter_items_empty_vgroups(self, context, vgroups):
-        # This helper function checks vgroups to find out whether they are empty, and what's their average weights.
-        # TODO: This should be RNA helper actually (a vgroup prop like "raw_data: ((vidx, vweight), etc.)").
-        #       Too slow for python!
-        obj_data = context.active_object.data
-        ret = {vg.index: [True, 0.0] for vg in vgroups}
-        if hasattr(obj_data, "vertices"):  # Mesh data
-            if obj_data.is_editmode:
-                import bmesh
-                bm = bmesh.from_edit_mesh(obj_data)
-                # only ever one deform weight layer
-                dvert_lay = bm.verts.layers.deform.active
-                fact = 1 / len(bm.verts)
-                if dvert_lay:
-                    for v in bm.verts:
-                        for vg_idx, vg_weight in v[dvert_lay].items():
-                            ret[vg_idx][0] = False
-                            ret[vg_idx][1] += vg_weight * fact
-            else:
-                fact = 1 / len(obj_data.vertices)
-                for v in obj_data.vertices:
-                    for vg in v.groups:
-                        ret[vg.group][0] = False
-                        ret[vg.group][1] += vg.weight * fact
-        elif hasattr(obj_data, "points"):  # Lattice data
-            # XXX no access to lattice editdata?
-            fact = 1 / len(obj_data.points)
-            for v in obj_data.points:
-                for vg in v.groups:
-                    ret[vg.group][0] = False
-                    ret[vg.group][1] += vg.weight * fact
-        return ret
-
-    """
-
-    """
-    def filter_items(self, context, data, propname):
-        # This function gets the collection property (as the usual tuple (data, propname)), and must return two lists:
-        # * The first one is for filtering, it must contain 32bit integers were self.bitflag_filter_item marks the
-        #   matching item as filtered (i.e. to be shown), and 31 other bits are free for custom needs. Here we use the
-        #   first one to mark VGROUP_EMPTY.
-        # * The second one is for reordering, it must return a list containing the new indices of the items (which
-        #   gives us a mapping org_idx -> new_idx).
-        # Please note that the default UI_UL_list defines helper functions for common tasks (see its doc for more info).
-        # If you do not make filtering and/or ordering, return empty list(s) (this will be more efficient than
-        # returning full lists doing nothing!).
-        vgroups = getattr(data, propname)
-        helper_funcs = bpy.types.UI_UL_list
-
-        # Default return values.
-        flt_flags = []
-        flt_neworder = []
-
-        # Pre-compute of vgroups data, CPU-intensive. :/
-        vgroups_empty = self.filter_items_empty_vgroups(context, vgroups)
-
-        # Filtering by name
-        if self.filter_name:
-            flt_flags = helper_funcs.filter_items_by_name(self.filter_name, self.bitflag_filter_item, vgroups, "name",
-                                                          reverse=self.use_filter_name_reverse)
-        if not flt_flags:
-            flt_flags = [self.bitflag_filter_item] * len(vgroups)
-
-        # Filter by emptiness.
-        for idx, vg in enumerate(vgroups):
-            if vgroups_empty[vg.index][0]:
-                flt_flags[idx] |= self.VGROUP_EMPTY
-                if self.use_filter_empty and self.use_filter_empty_reverse:
-                    flt_flags[idx] &= ~self.bitflag_filter_item
-            elif self.use_filter_empty and not self.use_filter_empty_reverse:
-                flt_flags[idx] &= ~self.bitflag_filter_item
-
-        # Reorder by name or average weight.
-        if self.use_order_name:
-            flt_neworder = helper_funcs.sort_items_by_name(vgroups, "name")
-        elif self.use_order_importance:
-            _sort = [(idx, vgroups_empty[vg.index][1]) for idx, vg in enumerate(vgroups)]
-            flt_neworder = helper_funcs.sort_items_helper(_sort, lambda e: e[1], True)
-
-        return flt_flags, flt_neworder
-    """
-
 
 class MCELL_PT_parameter_system(bpy.types.Panel):
     bl_label = "CellBlender - Model Parameters"
@@ -1766,210 +1610,6 @@ class ParameterMappingProperty(bpy.types.PropertyGroup):
     par_id = StringProperty(name="Par_ID", default="", description="Unique ID for each parameter used as a key into the Python Dictionary")
 
 
-###########################################
-######### Sorted Parameter System #########
-###########################################
-
-class MCELL_OT_SORTED_add_parameter(bpy.types.Operator):
-    bl_idname = "sorted.add_parameter"
-    bl_label = "Add Parameter"
-    bl_description = "Add a new parameter"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        p = context.scene.mcell.parameter_system.add_parameter(context)
-        context.scene.mcell.sorted_parameter_system.add_parameter(context, p.name)
-        return {'FINISHED'}
-
-
-class MCELL_OT_SORTED_remove_parameter(bpy.types.Operator):
-    bl_idname = "sorted.remove_parameter"
-    bl_label = "Remove Parameter"
-    bl_description = "Remove selected parameter"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        # This didn't really work: context.scene.mcell.parameter_system.active_par_index = context.scene.mcell.sorted_parameter_system.active_par_index
-        status = context.scene.mcell.parameter_system.remove_active_parameter(context)
-        if status == "":
-            status = context.scene.mcell.sorted_parameter_system.remove_active_parameter(context)
-        if status != "":
-            # One of: 'DEBUG', 'INFO', 'OPERATOR', 'PROPERTY', 'WARNING', 'ERROR', 'ERROR_INVALID_INPUT', 'ERROR_INVALID_CONTEXT', 'ERROR_OUT_OF_MEMORY'
-            self.report({'ERROR'}, status)
-        return {'FINISHED'}
-
-class MCELL_UL_SORTED_draw_parameter(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
-        mcell = context.scene.mcell
-        ps = mcell.parameter_system
-        sorted_ps = mcell.sorted_parameter_system
-        # sorted_ps.dump()
-        sorted_par = sorted_ps.parameter_list[index]
-        par = ps.general_parameter_list[sorted_par.par_id]
-        disp = str(sorted_par.name) + " = " + str(par.expr) + " = "
-        if par.isvalid:
-            disp = disp + str(ps.param_display_format%par.value)
-            icon = 'FILE_TICK'
-        else:
-            disp = disp + " ?"
-            icon = 'ERROR'
-        layout.label(disp, icon=icon)
-
-
-def active_sorted_par_index_changed ( self, context ):
-    """ The "self" passed in is a SortedParameterSystemPropertyGroup object. """
-    mcell = context.scene.mcell
-    ps = mcell.parameter_system
-    sorted_ps = mcell.sorted_parameter_system
-
-    par_num = self.active_par_index  # self.active_par_index is what gets changed when the user selects an item
-    print ( "sorted par_num = " + str(par_num) )
-    if (par_num >= 0) and (len(self.parameter_list) > 0):
-        par_name = self.parameter_list[par_num].name
-        par_id = self.parameter_list[par_num].par_id
-        self.last_selected_id = "" + par_id    # Does this need a copy to be sure that it's different from the par_id in the list?
-        self.active_name = "" + par_name       # Does this need a copy to be sure that it's different from the par_id in the list?
-        mcell.parameter_system.active_par_index = mcell.sorted_parameter_system.active_par_index
-        print ( "Active sorted parameter index changed to " + str(par_num) + " for par_id=" + str(par_id) )
-
-
-def update_sorted_parameter_name ( self, context ):
-    """ The "self" passed in is a SortedParameterSystemPropertyGroup object. """
-    mcell = context.scene.mcell
-    ps = mcell.parameter_system
-    new_name = self.active_name
-    self.parameter_list[self.active_par_index].name = new_name
-    ps.general_parameter_list[self.parameter_list[self.active_par_index].par_id].par_name = new_name
-    
-
-class SortedParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler ):
-    """This is the class that encapsulates a group (or list) of general purpose parameters"""
-
-    parameter_list = CollectionProperty(type=ParameterMappingProperty, name="Parameters List")
-    next_par_id = IntProperty(name="Next_Par_ID", default=0)
-
-    active_par_index = IntProperty(name="Active Parameter", default=0,                                                    update=active_sorted_par_index_changed)
-    active_name  = StringProperty(name="Parameter Name",    default="Par", description="Unique name for this parameter",  update=update_sorted_parameter_name)
-
-    last_selected_id = StringProperty(name="Last", default="")
-
-    def dump ( self ):
-        print ( "next_par_id = " + str(self.next_par_id) )
-        print ( "active_par_index = " + str(self.active_par_index) )
-        print ( "active_name = " + str(self.active_name) )
-        print ( "last_selected_id = " + str(self.last_selected_id) )
-        for p in self.parameter_list:
-            print ( "  p.name = " + str(p.name) + ", p.par_id = " + str(p.par_id) )
-
-
-    def add_parameter ( self, context, name_key ):
-        """ Add a new parameter with name_key to the list of parameters and set as the active parameter """
-        print ( "%%%%%% SORTED Add Parameter" )
-        if len(self.parameter_list) <= 0:
-            self.next_par_id = 0
-        new_id = "" + str(name_key)
-        new_name = "P" + str(1+self.next_par_id)
-        new_par = self.parameter_list.add()
-        new_par.par_id = new_id
-        new_par.name = new_name
-        self.next_par_id += 1
-        self.active_par_index = len(self.parameter_list)-1
-
-    def remove_active_parameter ( self, context ):
-        """ Remove the active parameter from the list of parameters if not needed by others """
-        status = ""
-        if len(self.parameter_list) > 0:
-            par_map_item = self.parameter_list[self.active_par_index]
-            self.parameter_list.remove ( self.active_par_index )
-            self.active_par_index += -1
-            if self.active_par_index < 0:
-                self.active_par_index = 0
-        return ( status )
-
-
-    def draw_layout (self, context, layout):
-        mcell = context.scene.mcell
-        if not mcell.initialized:
-            mcell.draw_uninitialized ( layout )
-        else:
-
-            ps  = mcell.parameter_system
-            sps = self
-
-            if ps.param_error_list != "":
-                row = layout.row()
-                row.label(text="Error with: " + ps.translated_param_name_list(ps.param_error_list), icon='ERROR')
-
-            row = layout.row()
-            col = row.column()
-            col.template_list("MCELL_UL_SORTED_draw_parameter", "",
-                              sps, "parameter_list",
-                              sps, "active_par_index", rows=5)
-            col = row.column(align=True)
-            col.operator("sorted.add_parameter", icon='ZOOMIN', text="")
-            col.operator("sorted.remove_parameter", icon='ZOOMOUT', text="")
-
-
-            if len(self.parameter_list) > 0:
-                row = layout.row()
-                row.prop ( self, 'active_name' )
-                #row = layout.row()
-                #row.prop ( self.parameter_list[self.active_par_index], 'name' )
-                row = layout.row()
-                row.prop ( ps.general_parameter_list[self.parameter_list[self.active_par_index].par_id], 'expr' )
-                row = layout.row()
-                row.prop ( ps.general_parameter_list[self.parameter_list[self.active_par_index].par_id], 'units' )
-                row = layout.row()
-                row.prop ( ps.general_parameter_list[self.parameter_list[self.active_par_index].par_id], 'descr' )
-
-
-
-            box = layout.box()
-            row = box.row(align=True)
-            row.alignment = 'LEFT'
-            if not ps.show_panel:
-                row.prop(ps, "show_panel", text="Parameter Options", icon='TRIA_RIGHT', emboss=False)
-            else:
-                col = row.column()
-                col.alignment = 'LEFT'
-                col.prop(ps, "show_panel", text="Parameter Options", icon='TRIA_DOWN', emboss=False)
-                col = row.column()
-                col.prop(ps, "show_all_details", text="Show Internal Details for All")
-
-                if ps.show_all_details:
-                    col = row.column()
-                    #detail_box = None
-                    if len(ps.general_parameter_list) > 0:
-                        par = ps.general_parameter_list[ps.active_par_index]
-                        col.prop(par,"print_info", text="Print to Console", icon='LONGDISPLAY' )
-                        detail_box = box.box()
-                        par.draw_details(detail_box)
-                    else:
-                        detail_box = box.box()
-                        detail_box.label(text="No General Parameters Defined")
-                    if len(ps.param_error_list) > 0:
-                        error_names_box = box.box()
-                        param_error_names = ps.param_error_list.split()
-                        for name in param_error_names:
-                            error_names_box.label(text="Parameter Error for: " + name, icon='ERROR')
-
-                row = box.row()
-                row.prop(ps, "param_display_mode", text="Parameter Display Mode")
-                row = box.row()
-                row.prop(ps, "param_display_format", text="Parameter Display Format")
-                row = box.row()
-                row.prop(ps, "param_label_fraction", text="Parameter Label Fraction")
-
-                row = box.row()
-                row.prop(ps, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
-
-                row = box.row()
-                row.operator("mcell.print_profiling", text="Print Profiling")
-                row.operator("mcell.clear_profiling", text="Clear Profiling")
-
-
-
-
 
 ###########################################
 ######### PyDict Parameter System #########
@@ -2321,6 +1961,210 @@ class PyDictParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_H
                 row = layout.row()
                 row.operator("pydict.dump_parameters")
                 row.operator("pydict.eval_expr")
+
+
+
+
+
+###########################################
+######### Sorted Parameter System #########
+###########################################
+
+class MCELL_OT_SORTED_add_parameter(bpy.types.Operator):
+    bl_idname = "sorted.add_parameter"
+    bl_label = "Add Parameter"
+    bl_description = "Add a new parameter"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        p = context.scene.mcell.parameter_system.add_parameter(context)
+        context.scene.mcell.sorted_parameter_system.add_parameter(context, p.name)
+        return {'FINISHED'}
+
+
+class MCELL_OT_SORTED_remove_parameter(bpy.types.Operator):
+    bl_idname = "sorted.remove_parameter"
+    bl_label = "Remove Parameter"
+    bl_description = "Remove selected parameter"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        status = context.scene.mcell.parameter_system.remove_active_parameter(context)
+        if status == "":
+            status = context.scene.mcell.sorted_parameter_system.remove_active_parameter(context)
+        if status != "":
+            # One of: 'DEBUG', 'INFO', 'OPERATOR', 'PROPERTY', 'WARNING', 'ERROR', 'ERROR_INVALID_INPUT', 'ERROR_INVALID_CONTEXT', 'ERROR_OUT_OF_MEMORY'
+            self.report({'ERROR'}, status)
+        return {'FINISHED'}
+
+class MCELL_UL_SORTED_draw_parameter(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        mcell = context.scene.mcell
+        ps = mcell.parameter_system
+        sorted_ps = mcell.sorted_parameter_system
+        # sorted_ps.dump()
+        sorted_par = sorted_ps.parameter_list[index]
+        par = ps.general_parameter_list[sorted_par.par_id]
+        disp = str(sorted_par.name) + " = " + str(par.expr) + " = "
+        if par.isvalid:
+            disp = disp + str(ps.param_display_format%par.value)
+            icon = 'FILE_TICK'
+        else:
+            disp = disp + " ?"
+            icon = 'ERROR'
+        layout.label(disp, icon=icon)
+
+
+def active_sorted_par_index_changed ( self, context ):
+    """ The "self" passed in is a SortedParameterSystemPropertyGroup object. """
+    mcell = context.scene.mcell
+    ps = mcell.parameter_system
+    sorted_ps = mcell.sorted_parameter_system
+
+    par_num = self.active_par_index  # self.active_par_index is what gets changed when the user selects an item
+    print ( "sorted par_num = " + str(par_num) )
+    if (par_num >= 0) and (len(self.parameter_list) > 0):
+        par_name = self.parameter_list[par_num].name
+        par_id = self.parameter_list[par_num].par_id
+        self.last_selected_id = "" + par_id    # Does this need a copy to be sure that it's different from the par_id in the list?
+        self.active_name = "" + par_name       # Does this need a copy to be sure that it's different from the par_id in the list?
+        mcell.parameter_system.active_par_index = mcell.sorted_parameter_system.active_par_index
+        print ( "Active sorted parameter index changed to " + str(par_num) + " for par_id=" + str(par_id) )
+
+
+def update_sorted_parameter_name ( self, context ):
+    """ The "self" passed in is a SortedParameterSystemPropertyGroup object. """
+    mcell = context.scene.mcell
+    ps = mcell.parameter_system
+    new_name = self.active_name
+    self.parameter_list[self.active_par_index].name = new_name
+    ps.general_parameter_list[self.parameter_list[self.active_par_index].par_id].par_name = new_name
+    
+
+class SortedParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler ):
+    """This is the class that encapsulates a group (or list) of general purpose parameters"""
+
+    parameter_list = CollectionProperty(type=ParameterMappingProperty, name="Parameters List")
+    next_par_id = IntProperty(name="Next_Par_ID", default=0)
+
+    active_par_index = IntProperty(name="Active Parameter", default=0,                                                    update=active_sorted_par_index_changed)
+    active_name  = StringProperty(name="Parameter Name",    default="Par", description="Unique name for this parameter",  update=update_sorted_parameter_name)
+
+    last_selected_id = StringProperty(name="Last", default="")
+
+    def dump ( self ):
+        print ( "next_par_id = " + str(self.next_par_id) )
+        print ( "active_par_index = " + str(self.active_par_index) )
+        print ( "active_name = " + str(self.active_name) )
+        print ( "last_selected_id = " + str(self.last_selected_id) )
+        for p in self.parameter_list:
+            print ( "  p.name = " + str(p.name) + ", p.par_id = " + str(p.par_id) )
+
+
+    def add_parameter ( self, context, name_key ):
+        """ Add a new parameter with name_key to the list of parameters and set as the active parameter """
+        print ( "%%%%%% SORTED Add Parameter" )
+        if len(self.parameter_list) <= 0:
+            self.next_par_id = 0
+        new_id = "" + str(name_key)
+        new_name = "P" + str(1+self.next_par_id)
+        new_par = self.parameter_list.add()
+        new_par.par_id = new_id
+        new_par.name = new_name
+        self.next_par_id += 1
+        self.active_par_index = len(self.parameter_list)-1
+
+    def remove_active_parameter ( self, context ):
+        """ Remove the active parameter from the list of parameters if not needed by others """
+        status = ""
+        if len(self.parameter_list) > 0:
+            par_map_item = self.parameter_list[self.active_par_index]
+            self.parameter_list.remove ( self.active_par_index )
+            self.active_par_index += -1
+            if self.active_par_index < 0:
+                self.active_par_index = 0
+        return ( status )
+
+
+    def draw_layout (self, context, layout):
+        mcell = context.scene.mcell
+        if not mcell.initialized:
+            mcell.draw_uninitialized ( layout )
+        else:
+
+            ps  = mcell.parameter_system
+            sps = self
+
+            if ps.param_error_list != "":
+                row = layout.row()
+                row.label(text="Error with: " + ps.translated_param_name_list(ps.param_error_list), icon='ERROR')
+
+            row = layout.row()
+            col = row.column()
+            col.template_list("MCELL_UL_SORTED_draw_parameter", "",
+                              sps, "parameter_list",
+                              sps, "active_par_index", rows=5)
+            col = row.column(align=True)
+            col.operator("sorted.add_parameter", icon='ZOOMIN', text="")
+            col.operator("sorted.remove_parameter", icon='ZOOMOUT', text="")
+
+
+            if len(self.parameter_list) > 0:
+                row = layout.row()
+                row.prop ( self, 'active_name' )
+                #row = layout.row()
+                #row.prop ( self.parameter_list[self.active_par_index], 'name' )
+                row = layout.row()
+                row.prop ( ps.general_parameter_list[self.parameter_list[self.active_par_index].par_id], 'expr' )
+                row = layout.row()
+                row.prop ( ps.general_parameter_list[self.parameter_list[self.active_par_index].par_id], 'units' )
+                row = layout.row()
+                row.prop ( ps.general_parameter_list[self.parameter_list[self.active_par_index].par_id], 'descr' )
+
+
+
+            box = layout.box()
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
+            if not ps.show_panel:
+                row.prop(ps, "show_panel", text="Parameter Options", icon='TRIA_RIGHT', emboss=False)
+            else:
+                col = row.column()
+                col.alignment = 'LEFT'
+                col.prop(ps, "show_panel", text="Parameter Options", icon='TRIA_DOWN', emboss=False)
+                col = row.column()
+                col.prop(ps, "show_all_details", text="Show Internal Details for All")
+
+                if ps.show_all_details:
+                    col = row.column()
+                    #detail_box = None
+                    if len(ps.general_parameter_list) > 0:
+                        par = ps.general_parameter_list[ps.active_par_index]
+                        col.prop(par,"print_info", text="Print to Console", icon='LONGDISPLAY' )
+                        detail_box = box.box()
+                        par.draw_details(detail_box)
+                    else:
+                        detail_box = box.box()
+                        detail_box.label(text="No General Parameters Defined")
+                    if len(ps.param_error_list) > 0:
+                        error_names_box = box.box()
+                        param_error_names = ps.param_error_list.split()
+                        for name in param_error_names:
+                            error_names_box.label(text="Parameter Error for: " + name, icon='ERROR')
+
+                row = box.row()
+                row.prop(ps, "param_display_mode", text="Parameter Display Mode")
+                row = box.row()
+                row.prop(ps, "param_display_format", text="Parameter Display Format")
+                row = box.row()
+                row.prop(ps, "param_label_fraction", text="Parameter Label Fraction")
+
+                row = box.row()
+                row.prop(ps, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
+
+                row = box.row()
+                row.operator("mcell.print_profiling", text="Print Profiling")
+                row.operator("mcell.clear_profiling", text="Clear Profiling")
 
 
 
