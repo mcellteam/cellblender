@@ -177,6 +177,26 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
         layout.label(disp, icon=icon)
         stop_timer('MCELL_UL_draw_parameter.draw_item')
 
+class MCELL_UL_draw_par_sort(bpy.types.UIList):
+    #@profile('MCELL_UL_draw_par_sort.draw_item')
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        start_timer('MCELL_UL_draw_par_sort.draw_item')
+        mcell = context.scene.mcell
+        parsys = mcell.parameter_system
+        par = parsys.general_parameter_list[index]
+        spar = parsys.general_parameter_sort_list[index]
+        #disp = str(spar.name) + " = " + str(spar.par_id) + " = " + str(par.expr) + " = "
+        disp = str(spar.name) + " = " + str(par.expr) + " = "
+        if par.isvalid:
+            disp = disp + str(parsys.param_display_format%par.value)
+            icon = 'FILE_TICK'
+        else:
+            disp = disp + " ?"
+            icon = 'ERROR'
+        icon = 'FILE_TICK'
+        layout.label(disp, icon=icon)
+        stop_timer('MCELL_UL_draw_par_sort.draw_item')
+
 
 class MCELL_PT_parameter_system(bpy.types.Panel):
     bl_label = "CellBlender - Model Parameters"
@@ -1288,12 +1308,12 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         This parameter's user name string has been changed.
 
         Update the entire parameter system based on a parameter's name being changed.
-        This function is called with a "self" which is a GeneralParameterProperty
+        This function is called with a "self" which is a ParameterData
         whenever the name is changed (either programatically or via the GUI).
         This function needs to force the redraw of all parameters that depend
         on this one so their expressions show the new name as needed.
 
-        The "self" passed in is a GeneralParameterProperty object.
+        The "self" passed in is a ParameterData object.
         """
 
         if self.old_par_name == self.par_name:
@@ -1306,6 +1326,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         mcell = context.scene.mcell
         params = mcell.parameter_system
         general_param_list = params.general_parameter_list
+        general_sort_list = params.general_parameter_sort_list
         panel_param_list = params.panel_parameter_list
 
         #if params.suspend_evaluation:
@@ -1339,6 +1360,10 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
                 print ( self.name_status )
                 return
             params.update_name_ID_dictionary(self)
+
+        # The name can be changed so change the sort name first while both old and new are available
+        # print ( "Rename " + self.old_par_name + " to " + self.par_name )
+        general_sort_list[self.old_par_name].name = self.par_name
 
         self.name_status = ""
         self.old_par_name = self.par_name
@@ -1645,6 +1670,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         print ( "Removing all Parameter System Properties ... " )
         while len(self.general_parameter_list) > 0:
             self.general_parameter_list.remove(0)
+            self.general_parameter_sort_list.remove(0)
         self['gname_to_id_dict'] = {}
 
 
@@ -1704,6 +1730,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         par_num = -1
         par_name = "undefinded"
         par_user_name = "undefined"
+        new_par = None
+        sort_par = None
         if pp:
             # Set up a panel parameter
             par_num = self.allocate_available_pid()
@@ -1724,6 +1752,11 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         else:
             # Create the parameter in the general parameter list
             new_par = self.general_parameter_list.add()
+            # Also create a name/id pair in the sorting list
+            sort_par = self.general_parameter_sort_list.add()
+            sort_par.name = par_user_name
+            sort_par.par_id = par_name
+
 
         new_par.disable_parse = True
 
@@ -1812,6 +1845,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                     
                     # Remove this parameter from the general parameter list and move the pointer
                     self.general_parameter_list.remove ( self.active_par_index )
+                    self.general_parameter_sort_list.remove ( self.active_par_index )
                     self.active_par_index -= 1
                     if self.active_par_index < 0:
                         self.active_par_index = 0
@@ -1939,6 +1973,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         print ( "Parameter System building Properties from Data Model ..." )
         while len(self.general_parameter_list) > 0:
             self.general_parameter_list.remove(0)
+            self.general_parameter_sort_list.remove(0)
         self['gname_to_id_dict'] = {}
         self.next_gid = 1
         if 'model_parameters' in par_sys_dm:
@@ -2012,11 +2047,22 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 row = layout.row()
                 row.label(text="Error with: " + ps.translated_param_name_list(ps.param_error_list), icon='ERROR')
 
+            """
             row = layout.row()
+            row.template_list("MCELL_UL_draw_par_sort", "parameter_system",
+                              ps, "general_parameter_sort_list",
+                              ps, "active_par_index", rows=5)
 
-            col = row.column()
-            col.template_list("MCELL_UL_draw_parameter", "parameter_system",
+            row = layout.row()
+            row.template_list("MCELL_UL_draw_parameter", "parameter_system",
                               ps, "general_parameter_list",
+                              ps, "active_par_index", rows=5)
+            """
+
+            row = layout.row()
+            col = row.column()
+            col.template_list("MCELL_UL_draw_par_sort", "parameter_system",
+                              ps, "general_parameter_sort_list",
                               ps, "active_par_index", rows=5)
 
             col = row.column(align=True)
