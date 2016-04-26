@@ -522,7 +522,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
             s_list.append ( s.build_data_model_from_properties(context) )
         dm['scripting_list'] = s_list
 
-        # Don't: Store the scripts lists in the data model for now - they are regenerated with refresh anyway
+        # Don't: Store the scripts lists in the data model for now - they are regenerated when rebuilding properties
 
         # Do: Store all .mdl text files and all .py text files if scripts flag is True (defaults to false)
 
@@ -574,7 +574,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                 # s.init_properties(context.scene.mcell.parameter_system)
                 s.build_properties_from_data_model ( context, dm_s )
 
-        # Don't: Load the scripts lists from the data model for now - they are regenerated with refresh anyway
+        # Don't: Load the scripts lists from the data model for now - they are regenerated with update below
 
         # Do: Load all .mdl text files and all .py text files
 
@@ -587,6 +587,8 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                 bpy.data.texts.new(key_name)
               bpy.data.texts[key_name].write ( dm['script_texts'][key_name] )
 
+        # Update the list of available scripts (for the user interface list)
+        update_available_scripts ( self )
 
 
     def execute_selected_script ( self, context ):
