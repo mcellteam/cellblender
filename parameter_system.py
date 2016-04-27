@@ -168,7 +168,8 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
         parsys = mcell.parameter_system
         par = parsys.general_parameter_list[index]
         disp = str(par.par_name) + " = " + str(par.expr) + " = "
-        if par.isvalid:
+        icon = 'FILE_TICK'
+        if par.isvalid and (not par.inloop):
             disp = disp + str(parsys.param_display_format%par.value)
             icon = 'FILE_TICK'
         else:
@@ -187,13 +188,13 @@ class MCELL_UL_draw_par_sort(bpy.types.UIList):
         spar = parsys.general_parameter_sort_list[index]
         #disp = str(spar.name) + " = " + str(spar.par_id) + " = " + str(par.expr) + " = "
         disp = str(spar.name) + " = " + str(par.expr) + " = "
-        if par.isvalid:
+        icon = 'FILE_TICK'
+        if par.isvalid and (not par.inloop):
             disp = disp + str(parsys.param_display_format%par.value)
             icon = 'FILE_TICK'
         else:
             disp = disp + " ?"
             icon = 'ERROR'
-        icon = 'FILE_TICK'
         layout.label(disp, icon=icon)
         stop_timer('MCELL_UL_draw_par_sort.draw_item')
 
@@ -981,6 +982,7 @@ class Expression_Handler:
     #@profile('Expression_Handler.recurse_tree_symbols')
     def recurse_tree_symbols ( self, local_name_ID_dict, pt, current_expr ):
         """ Recurse through the parse tree looking for "terminal" items which are added to the list """
+        # print ( "Top of recurse_tree_symbols" )
         self.count_stub()
 
         if type(pt) == tuple:
@@ -997,6 +999,7 @@ class Expression_Handler:
                     expression_keywords = self.get_expression_keywords()
                     if pt[1] in expression_keywords:
                         # This is a recognized name and not a user-defined symbol, so append the string itself
+                        # print ( "Return from recurse_tree_symbols" )
                         return current_expr + [ pt[1] ]
                     else:
                         # This must be a user-defined symbol, so check if it's in the dictionary
@@ -1004,12 +1007,15 @@ class Expression_Handler:
                         #if pt[1] in local_name_ID_dict:
                         if pt1_str in local_name_ID_dict:
                             # Append the integer ID to the list after stripping off the leading "g"
+                            # print ( "Return from recurse_tree_symbols" )
                             return current_expr + [ int(local_name_ID_dict[pt1_str][1:]) ]
                         else:
                             # Not in the dictionary, so append a None flag followed by the undefined name
+                            # print ( "Return from recurse_tree_symbols" )
                             return current_expr + [ None, pt[1] ]
                 else:
                     # This is a non-name part of the expression
+                    # print ( "Return from recurse_tree_symbols" )
                     return current_expr + [ pt[1] ]
             else:
                 # Break it down further
@@ -1017,27 +1023,30 @@ class Expression_Handler:
                     next_segment = self.recurse_tree_symbols ( local_name_ID_dict, pt[i], current_expr )
                     if next_segment != None:
                         current_expr = next_segment
+                # print ( "Return from recurse_tree_symbols" )
                 return current_expr
+        # print ( "Return from recurse_tree_symbols" )
         return None
 
 
     #@profile('Expression_Handler.evaluate_parsed_expr_py')
     def evaluate_parsed_expr_py ( self, param_sys ):
         self.updating = True        # Set flag to check for self-references
-        param_sys.recursion_depth += 1
+        print ( "Top of evaluate_parsed_expr_py with recursion_depth = " + str(param_sys.recursion_depth) )
+        #param_sys.recursion_depth += 1
 
         self.isvalid = False        # Mark as invalid and return None on any failure
 
         general_parameter_list = param_sys.general_parameter_list
         who_I_depend_on_list = self.who_I_depend_on.split()
         for I_depend_on in who_I_depend_on_list:
-            if not general_parameter_list[I_depend_on].isvalid:
+            if (not general_parameter_list[I_depend_on].isvalid) or general_parameter_list[I_depend_on].inloop:
                 print ( "Cannot evaluate " + self.name + " because " + general_parameter_list[I_depend_on].name + " is not valid." )
                 self.isvalid = False
                 self.pending_expr = self.expr
                 param_sys.register_validity ( self.name, False )
                 # Might want to propagate invalidity here as well ???
-                param_sys.recursion_depth += -1
+                #param_sys.recursion_depth += -1
                 self.updating = False
                 print ( "Return from evaluate_parsed_expr_py with depth = " + str(param_sys.recursion_depth) )
                 return None
@@ -1066,6 +1075,8 @@ def update_parameter_name ( self, context ):
 def update_parameter_expression ( self, context ):
     start_timer('update_parameter_expression')
     """ The "self" passed in is a Parameter_Data object. """
+    print ( "\n\nIn update_parameter_expression, setting recursion_depth to 0" )
+    context.scene.mcell.parameter_system.recursion_depth = 0
     if not self.disable_parse:
         self.expression_changed ( context )
     stop_timer('update_parameter_expression')
@@ -1116,6 +1127,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
     parsed_expr_py = StringProperty ( name="Parsed_Python", default="" )
     value = FloatProperty ( name="Value", default=0.0, description="Current evaluated value for this parameter", update=update_parameter_value )
     isvalid = BoolProperty ( default=True )   # Boolean flag to signify that the value and float_value are accurate
+    inloop = BoolProperty ( default=False )   # Boolean flag to signify that this parameter is part of a loop
     name_status = StringProperty ( name="Name Status", default="" )
 
     who_I_depend_on = StringProperty ( name="who_I_depend_on", default="" )
@@ -1462,6 +1474,23 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         mcell = context.scene.mcell
         params = mcell.parameter_system
         gen_param_list = params.general_parameter_list
+
+        params.recursion_depth += 1
+        print ( "Top of parsed_expression_changed, depth = " + str(params.recursion_depth) )
+        print ( "Top of parsed_expression_changed, num_pars = " + str(len(params.general_parameter_list)) )
+
+        if params.recursion_depth < (2 + len(params.general_parameter_list)):
+            # Start by assuming that everything is NOT in a loop
+            self.inloop = False
+            params.circular_reference = False
+        elif params.recursion_depth > (3 * len(params.general_parameter_list)):
+            print ( "Circular reference detected for " + self.name + ": Depth of " + str(params.recursion_depth) + " far exceeds parameter count of " + str(len(params.general_parameter_list)) )
+            params.circular_reference = True
+            return
+        elif params.recursion_depth >= (2 + len(params.general_parameter_list)):
+            self.inloop = True
+            self.isvalid = False
+            params.circular_reference = True
         
         #if params.suspend_evaluation:
         #    return
@@ -1517,10 +1546,10 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
 
                 count_down = 3
                 done = False
-                params.recursion_depth = 0
+                #params.recursion_depth = 0
                 while not done:
                     try:
-                        params.recursion_depth = 0
+                        #params.recursion_depth = 0
                         value = self.evaluate_parsed_expr_py(params)
                         if value != None:
                             if self.value != value:
@@ -1542,7 +1571,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
                             self.isvalid = False
                             self.pending_expr = self.expr
                             done = True
-                params.recursion_depth = 0
+                #params.recursion_depth = 0
 
 
     #@profile('Parameter_Data.value_changed')
@@ -1564,7 +1593,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         #    return
 
         # Force a redraw of the expression itself
-        self.expr = self.expr
+        #####  COMMENTED on April 16th, 2016 TO SEE IF THIS IS NEEDED:   self.expr = self.expr
 
         # Propagate forward ...
         who_depends_on_me_list = []
@@ -1640,7 +1669,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     next_gid = IntProperty(name="Counter for Unique General Parameter IDs", default=1)  # Start ID's at 1 to confirm initialization
     next_pid = IntProperty(name="Counter for Unique Panel Parameter IDs", default=1)  # Start ID's at 1 to confirm initialization
     
+    in_recursion = BoolProperty(default=False)  # Signals inside recursion
     recursion_depth = IntProperty(default=0)  # Counts recursion depth
+    circular_reference = BoolProperty(default=False)
 
     param_display_mode_enum = [ ('one_line',  "One line per parameter", ""), ('two_line',  "Two lines per parameter", "") ]
     param_display_mode = bpy.props.EnumProperty ( items=param_display_mode_enum, default='one_line', name="Parameter Display Mode", description="Display layout for each parameter" )
@@ -1865,6 +1896,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             while len(gs) > len(ol):
                 defined_set = set(ol)
                 print ( "  In while with already defined_set = " + str(defined_set) )
+                added = False
                 for n in gs:
                     print ( n + " is " + gl[n].par_name + ", depends on (" + gl[n].who_I_depend_on + "), and depended on by (" + gl[n].who_depends_on_me + ")" )
                     print ( "   Checking for " + n + " in the defined set" )
@@ -1875,6 +1907,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                             print ( "       " + n + " is now defined since all its dependencies are defined." )
                             ol.append ( n );
                             defined_set = set(ol)
+                            added = True
+                if not added:
+                    return None
         return ol
 
 
@@ -1891,16 +1926,16 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 self.param_error_list = spaced_strings_from_list(param_error_names)  # Rebuild the string
         else:
             # Check to see if it's in the list and add it
-            if not (name in self.param_error_list):
+            if not (name in self.param_error_list.split()):
                 self.param_error_list = self.param_error_list + " " + name
 
     #@profile('ParameterSystem.translated_param_name_list')
-    def translated_param_name_list ( self, param_name_string ):
+    def translated_param_name_list ( self, param_name_string, sep=" " ):
         param_list = param_name_string.split()
         name_list = ""
         for name in param_list:
             if len(name_list) > 0:
-                name_list = name_list + " "
+                name_list = name_list + sep
             if name[0] == 'g':
                 name_list = name_list + self.general_parameter_list[name].par_name
             else:
@@ -1937,10 +1972,15 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         # New method saves the list in dependency order so they can be exported to MDL in dependency order
 
         ordered_names = self.build_dependency_ordered_name_list()
-        # Output as expressions where order matters
-        for pn in ordered_names:
-            p = self.general_parameter_list[pn]
-            gen_par_list.append ( p.build_data_model_from_properties() )
+        if ordered_names == None:
+            # Must contain circular references ... Output as expressions without ordering
+            for p in self.general_parameter_list:
+                gen_par_list.append ( p.build_data_model_from_properties() )
+        else:
+            # Output as expressions where order matters
+            for pn in ordered_names:
+                p = self.general_parameter_list[pn]
+                gen_par_list.append ( p.build_data_model_from_properties() )
 
         par_sys_dm['model_parameters'] = gen_par_list
         return par_sys_dm
@@ -1984,7 +2024,12 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 if 'par_units' in p: units = p['par_units']
                 if 'par_description' in p: descr = p['par_description']
                 print ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + units + ") ... " + descr )
-                self.add_general_parameter_with_values ( p['par_name'], p['par_expression'], units, descr )
+                new_par = self.add_general_parameter_with_values ( p['par_name'], p['par_expression'], units, descr )
+                # Set the initial value if available ... this preserves values of parameters with circular dependencies
+                if '_extras' in p:
+                    if 'par_value' in p['_extras']:
+                        new_par.value = p['_extras']['par_value']
+                        print ( "  Setting value of " + p['par_name'] + " to " + str(p['_extras']['par_value']) )
 
             # Update the parameter expressions for any that were invalid after all have been added
             last_num_invalid = 0
@@ -2043,9 +2088,19 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         else:
             ps = mcell.parameter_system
             
+            circular_reference = False
+            if len(ps.general_parameter_list) > 0:
+                for p in ps.general_parameter_list:
+                    if p.inloop:
+                        circular_reference = True
+                        break
+
+            if circular_reference:
+                row = layout.row()
+                row.label(text="Circular Reference", icon='ERROR')
             if ps.param_error_list != "":
                 row = layout.row()
-                row.label(text="Error with: " + ps.translated_param_name_list(ps.param_error_list), icon='ERROR')
+                row.label(text="Error with: " + ps.translated_param_name_list(ps.param_error_list, sep=", "), icon='ERROR')
 
             """
             row = layout.row()
@@ -2092,6 +2147,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                         layout.prop(par, "expr", icon='ERROR')
                         row = layout.row()
                         row.label(text="Invalid Expression: " + str(par.pending_expr), icon='ERROR')
+                    elif par.inloop:
+                        layout.prop(par, "expr", icon='ERROR')
+                        row = layout.row()
+                        row.label(text="Circular Reference", icon='ERROR')
                     else:
                         layout.prop(par, "expr")
                     layout.prop(par, "units")

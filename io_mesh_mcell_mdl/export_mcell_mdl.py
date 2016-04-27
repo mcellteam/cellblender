@@ -642,12 +642,20 @@ def save_general_parameters(ps, out_file):
 
             ordered_names = ps.build_dependency_ordered_name_list()
             print ( "Ordered names = " + str(ordered_names) )
-            # Output as expressions where order matters
-            out_file.write("/* DEFINE PARAMETERS */\n")
-            for pn in ordered_names:
-                p = ps.general_parameter_list[pn]
-                write_parameter_as_mdl ( p, out_file, ps.export_as_expressions )
-            out_file.write("\n")
+            if ordered_names == None:
+                print ( "Warning: Unable to export as expressions due to circular dependency" )
+                # Output as values ... order doesn't matter
+                out_file.write("/* DEFINE PARAMETERS */\n")
+                for p in ps.general_parameter_list:
+                    write_parameter_as_mdl ( p, out_file, False )
+                out_file.write("\n")
+            else:
+                # Output as expressions where order matters
+                out_file.write("/* DEFINE PARAMETERS */\n")
+                for pn in ordered_names:
+                    p = ps.general_parameter_list[pn]
+                    write_parameter_as_mdl ( p, out_file, ps.export_as_expressions )
+                out_file.write("\n")
 
 
 def save_molecules(context, out_file, mol_list):
