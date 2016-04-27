@@ -253,46 +253,50 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellInitializationPropertyGroup data model to current version." )
 
-        self.iterations.set_expr ( dm_dict["iterations"] )
-        self.time_step.set_expr ( dm_dict["time_step"] )
-        self.time_step_max.set_expr ( dm_dict["time_step_max"] )
-        self.space_step.set_expr ( dm_dict["space_step"] )
-        self.interaction_radius.set_expr ( dm_dict["interaction_radius"] )
-        self.radial_directions.set_expr ( dm_dict["radial_directions"] )
-        self.radial_subdivisions.set_expr ( dm_dict["radial_subdivisions"] )
-        self.vacancy_search_distance.set_expr ( dm_dict["vacancy_search_distance"] )
-        self.surface_grid_density.set_expr ( dm_dict["surface_grid_density"] )
-        self.microscopic_reversibility = dm_dict["microscopic_reversibility"]
-        self.accurate_3d_reactions = dm_dict["accurate_3d_reactions"]
-        self.center_molecules_grid = dm_dict["center_molecules_on_grid"]
+        if "iterations" in dm_dict: self.iterations.set_expr ( dm_dict["iterations"] )
+        if "time_step" in dm_dict: self.time_step.set_expr ( dm_dict["time_step"] )
+        if "time_step_max" in dm_dict: self.time_step_max.set_expr ( dm_dict["time_step_max"] )
+        if "space_step" in dm_dict: self.space_step.set_expr ( dm_dict["space_step"] )
+        if "interaction_radius" in dm_dict: self.interaction_radius.set_expr ( dm_dict["interaction_radius"] )
+        if "radial_directions" in dm_dict: self.radial_directions.set_expr ( dm_dict["radial_directions"] )
+        if "radial_subdivisions" in dm_dict: self.radial_subdivisions.set_expr ( dm_dict["radial_subdivisions"] )
+        if "vacancy_search_distance" in dm_dict: self.vacancy_search_distance.set_expr ( dm_dict["vacancy_search_distance"] )
+        if "surface_grid_density" in dm_dict: self.surface_grid_density.set_expr ( dm_dict["surface_grid_density"] )
+        if "microscopic_reversibility" in dm_dict: self.microscopic_reversibility = dm_dict["microscopic_reversibility"]
+        if "accurate_3d_reactions" in dm_dict: self.accurate_3d_reactions = dm_dict["accurate_3d_reactions"]
+        if "center_molecules_on_grid" in dm_dict: self.center_molecules_grid = dm_dict["center_molecules_on_grid"]
 
-        self.all_notifications = dm_dict['notifications']['all_notifications']
-        self.diffusion_constant_report = dm_dict['notifications']['diffusion_constant_report']
-        self.file_output_report = dm_dict['notifications']['file_output_report']
-        self.final_summary = dm_dict['notifications']['final_summary']
-        self.iteration_report = dm_dict['notifications']['iteration_report']
-        self.partition_location_report = dm_dict['notifications']['partition_location_report']
-        self.probability_report = dm_dict['notifications']['probability_report']
-        self.probability_report_threshold = float(dm_dict['notifications']['probability_report_threshold'])
-        self.varying_probability_report = dm_dict['notifications']['varying_probability_report']
-        self.progress_report = dm_dict['notifications']['progress_report']
-        self.release_event_report = dm_dict['notifications']['release_event_report']
-        self.molecule_collision_report = dm_dict['notifications']['molecule_collision_report']
+        if "notifications" in dm_dict:
+            note_dict = dm_dict['notifications']
+            if "all_notifications" in note_dict: self.all_notifications = note_dict['all_notifications']
+            if "diffusion_constant_report" in note_dict: self.diffusion_constant_report = note_dict['diffusion_constant_report']
+            if "file_output_report" in note_dict: self.file_output_report = note_dict['file_output_report']
+            if "final_summary" in note_dict: self.final_summary = note_dict['final_summary']
+            if "iteration_report" in note_dict: self.iteration_report = note_dict['iteration_report']
+            if "partition_location_report" in note_dict: self.partition_location_report = note_dict['partition_location_report']
+            if "probability_report" in note_dict: self.probability_report = note_dict['probability_report']
+            if "probability_report_threshold" in note_dict: self.probability_report_threshold = float(note_dict['probability_report_threshold'])
+            if "varying_probability_report" in note_dict: self.varying_probability_report = note_dict['varying_probability_report']
+            if "progress_report" in note_dict: self.progress_report = note_dict['progress_report']
+            if "release_event_report" in note_dict: self.release_event_report = note_dict['release_event_report']
+            if "molecule_collision_report" in note_dict: self.molecule_collision_report = note_dict['molecule_collision_report']
 
         ##notify_dict[box_triangulation_report'] = False
 
-        self.all_warnings = dm_dict['warnings']['all_warnings']
-        self.degenerate_polygons = dm_dict['warnings']['degenerate_polygons']
-        self.high_reaction_probability = dm_dict['warnings']['high_reaction_probability']
-        self.high_probability_threshold = float(dm_dict['warnings']['high_probability_threshold'])
-        self.lifetime_too_short = dm_dict['warnings']['lifetime_too_short']
-        self.lifetime_threshold = float(dm_dict['warnings']['lifetime_threshold'])
-        self.missed_reactions = dm_dict['warnings']['missed_reactions']
-        self.missed_reaction_threshold = float(dm_dict['warnings']['missed_reaction_threshold'])
-        self.negative_diffusion_constant = dm_dict['warnings']['negative_diffusion_constant']
-        self.missing_surface_orientation = dm_dict['warnings']['missing_surface_orientation']
-        self.negative_reaction_rate = dm_dict['warnings']['negative_reaction_rate']
-        self.useless_volume_orientation = dm_dict['warnings']['useless_volume_orientation']
+        if "warnings" in dm_dict:
+            warn_dict = dm_dict['warnings']
+            if "all_warnings" in warn_dict: self.all_warnings = warn_dict['all_warnings']
+            if "degenerate_polygons" in warn_dict: self.degenerate_polygons = warn_dict['degenerate_polygons']
+            if "high_reaction_probability" in warn_dict: self.high_reaction_probability = warn_dict['high_reaction_probability']
+            if "high_probability_threshold" in warn_dict: self.high_probability_threshold = float(warn_dict['high_probability_threshold'])
+            if "lifetime_too_short" in warn_dict: self.lifetime_too_short = warn_dict['lifetime_too_short']
+            if "lifetime_threshold" in warn_dict: self.lifetime_threshold = float(warn_dict['lifetime_threshold'])
+            if "missed_reactions" in warn_dict: self.missed_reactions = warn_dict['missed_reactions']
+            if "missed_reaction_threshold" in warn_dict: self.missed_reaction_threshold = float(warn_dict['missed_reaction_threshold'])
+            if "negative_diffusion_constant" in warn_dict: self.negative_diffusion_constant = warn_dict['negative_diffusion_constant']
+            if "missing_surface_orientation" in warn_dict: self.missing_surface_orientation = warn_dict['missing_surface_orientation']
+            if "negative_reaction_rate" in warn_dict: self.negative_reaction_rate = warn_dict['negative_reaction_rate']
+            if "useless_volume_orientation" in warn_dict: self.useless_volume_orientation = warn_dict['useless_volume_orientation']
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )

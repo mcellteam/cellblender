@@ -293,6 +293,7 @@ class MCELL_OT_save_preferences(AddPresetBase, bpy.types.Operator):
         "scene.mcell.cellblender_preferences.python_binary",
         "scene.mcell.cellblender_preferences.decouple_export_run",
         "scene.mcell.cellblender_preferences.invalid_policy",
+        "scene.mcell.cellblender_preferences.show_sim_runner_options",
     ]
 
     # This needs to be the same as what's in the menu class
@@ -314,6 +315,7 @@ class MCELL_OT_reset_preferences(bpy.types.Operator):
         mcell.cellblender_preferences.bionetgen_location = ""
         mcell.cellblender_preferences.invalid_policy = 'dont_run'
         mcell.cellblender_preferences.decouple_export_run = False
+        mcell.cellblender_preferences.show_sim_runner_options = False
 
         return {'FINISHED'}
 
@@ -518,16 +520,17 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
             row.prop ( context.user_preferences.inputs, "view_rotate_method" )
-            
+
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "use_long_menus")
 
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "use_stock_icons")
 
-            row = layout.row()
-            row.prop ( context.user_preferences.system, "use_vertex_buffer_objects", text="Enable Vertex Buffer Objects" )
-            
+            if "use_vertex_buffer_objects" in dir(context.user_preferences.system):
+                row = layout.row()
+                row.prop ( context.user_preferences.system, "use_vertex_buffer_objects", text="Enable Vertex Buffer Objects" )
+
             row = layout.row()
             row.prop ( mcell.cellblender_preferences, "backface_culling", text="Enable Backface Culling" )
 
@@ -566,9 +569,6 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
             else:
                 row.prop(self, "show_extra_options", icon='TRIA_RIGHT', emboss=False)
-                
-
-            
 
 
             #row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')

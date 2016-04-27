@@ -43,10 +43,11 @@ import re
 
 # CellBlender imports
 import cellblender
+from . import data_model
 from . import parameter_system
 from . import cellblender_release
 from . import cellblender_utils
-from cellblender.cellblender_utils import project_files_path, get_python_path
+from cellblender.cellblender_utils import mcell_files_path, get_python_path
 
 
 # We use per module class registration/unregistration
@@ -97,6 +98,32 @@ class MCELL_OT_rxn_output_remove(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_rxn_output_disable_all(bpy.types.Operator):
+    bl_idname = "mcell.rxn_output_disable_all"
+    bl_label = "Disable All Plotting"
+    bl_description = "Disable All Items for Plotting"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        for rxn_output in mcell.rxn_output.rxn_output_list:
+            rxn_output.plotting_enabled = False
+        return {'FINISHED'}
+
+
+class MCELL_OT_rxn_output_enable_all(bpy.types.Operator):
+    bl_idname = "mcell.rxn_output_enable_all"
+    bl_label = "Enable All Plotting"
+    bl_description = "Enable All Items for Plotting"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        for rxn_output in mcell.rxn_output.rxn_output_list:
+            rxn_output.plotting_enabled = True
+        return {'FINISHED'}
+
+
 # This is just a means to store a temporary file path for the duration of a
 # Blender session.
 class ReactionDataTmpFile:
@@ -142,8 +169,8 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
 
         # Plot the data via this module
         # print("Preparing to call %s" % (mod_name))
-        # The project_files_path is now where the MDL lives:
-        data_path = project_files_path()
+        # The mcell_files_path is now where the MDL lives:
+        data_path = mcell_files_path()
         data_path = os.path.join(data_path, "react_data")
         create_reactdata_tmpfile(data_path)
 
@@ -152,97 +179,114 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
             plot_spec_string = plot_spec_string + "legend=" + plot_legend
 
         for rxn_output in mcell.rxn_output.rxn_output_list:
-            molecule_name = rxn_output.molecule_name
-            object_name = rxn_output.object_name
-            region_name = rxn_output.region_name
-            file_name = None
 
-            if rxn_output.rxn_or_mol == 'Molecule':
-                if rxn_output.count_location == 'World':
-                    file_name = "%s.World.dat" % (molecule_name)
-                elif rxn_output.count_location == 'Object':
-                    file_name = "%s.%s.dat" % (molecule_name, object_name)
-                elif rxn_output.count_location == 'Region':
-                    file_name = "%s.%s.%s.dat" % (molecule_name,
-                                           object_name, region_name)
-            elif rxn_output.rxn_or_mol == 'Reaction':
-                rxn_name = rxn_output.reaction_name
-                if rxn_output.count_location == 'World':
-                    file_name = "%s.World.dat" % (rxn_name)
-                elif rxn_output.count_location == 'Object':
-                    file_name = "%s.%s.dat" % (rxn_name, object_name)
-                elif rxn_output.count_location == 'Region':
-                    file_name = "%s.%s.%s.dat" % (rxn_name,
-                                           object_name, region_name)
+            if rxn_output.plotting_enabled:
 
-            elif rxn_output.rxn_or_mol == 'MDLString':
-                file_name = rxn_output.mdl_file_prefix + "_MDLString.dat"
+                molecule_name = rxn_output.molecule_name
+                object_name = rxn_output.object_name
+                region_name = rxn_output.region_name
+                file_name = None
 
-            if file_name:
-                file_name = os.path.join("seed_*", file_name)
-                candidate_file_list = glob.glob(
-                    os.path.join(data_path, file_name))
-                # Without sorting, the seeds may not be increasing
-                candidate_file_list.sort()
-                #print("Candidate file list for %s:" % (file_name))
-                #print("  ", candidate_file_list)
-                first_pass = True
-                # Use the start_time.txt file to find files modified since
-                # MCell was started
-                start_time = os.stat(os.path.join(os.path.dirname(
-                    bpy.data.filepath), "start_time.txt")).st_mtime
-                # This file is both in the list and newer
-                # than the run time for MCell
-                candidate_file_list = [
-                    ffn for ffn in candidate_file_list if os.stat(ffn).st_mtime >= start_time]
-                for ffn in candidate_file_list:
+                if rxn_output.rxn_or_mol == 'Molecule':
+                    if rxn_output.count_location == 'World':
+                        file_name = "%s.World.dat" % (molecule_name)
+                    elif rxn_output.count_location == 'Object':
+                        file_name = "%s.%s.dat" % (molecule_name, object_name)
+                    elif rxn_output.count_location == 'Region':
+                        file_name = "%s.%s.%s.dat" % (molecule_name,
+                                               object_name, region_name)
+                elif rxn_output.rxn_or_mol == 'Reaction':
+                    rxn_name = rxn_output.reaction_name
+                    if rxn_output.count_location == 'World':
+                        file_name = "%s.World.dat" % (rxn_name)
+                    elif rxn_output.count_location == 'Object':
+                        file_name = "%s.%s.dat" % (rxn_name, object_name)
+                    elif rxn_output.count_location == 'Region':
+                        file_name = "%s.%s.%s.dat" % (rxn_name,
+                                               object_name, region_name)
 
-                    # Create f as a relative path containing seed/file
-                    split1 = os.path.split(ffn)
-                    split2 = os.path.split(split1[0])
-                    f = os.path.join(split2[1], split1[1])
-                    
-                    color_string = ""
-                    if rxn_output.rxn_or_mol == 'Molecule' and mol_colors:
-                        # Use molecule colors for graphs
-                        # Should be standardized!!
-                        mol_mat_name = "mol_%s_mat" % (molecule_name)
-                        #print ("Molecule Material Name = ", mol_mat_name)
-                        #Look up the material
-                        mats = bpy.data.materials
-                        mol_color = mats.get(mol_mat_name).diffuse_color
-                        #print("Molecule color = ", mol_mat.diffuse_color)
+                elif rxn_output.rxn_or_mol == 'MDLString':
+                    file_name = rxn_output.mdl_file_prefix + "_MDLString.dat"
 
-                        mol_color_red = 255 * mol_color.r
-                        mol_color_green = 255 * mol_color.g
-                        mol_color_blue = 255 * mol_color.b
-                        color_string = " color=#%2.2x%2.2x%2.2x " % (
-                            mol_color_red, mol_color_green, mol_color_blue)
+                elif rxn_output.rxn_or_mol == 'File':
+                    file_name = rxn_output.data_file_name
+                    print ( "Preparing to plot a File with file_name = " + file_name )
 
-                    base_name = os.path.basename(f)
+                if file_name:
+                    first_pass = True
 
-                    if combine_seeds:
-                        title_string = " title=" + base_name
+                    if rxn_output.rxn_or_mol == 'File':
+                        # Assume that the file path is blend file relative (begins with "//")
+                        if file_name.startswith ( "//" ):
+                            # Convert the file name from blend file relative to react_data folder relative:
+                            candidate_file_list = [ os.path.pardir + os.path.sep + os.path.pardir + os.path.sep + os.path.pardir + os.path.sep + file_name[2:] ]
                     else:
-                        title_string = " title=" + f
-                    
-                    if plot_sep == ' ':
-                        # No title when all are on the same plot since only
-                        # last will show
-                        title_string = ""
+                        # Prepend a search across all seeds for this file
+                        file_name = os.path.join("seed_*", file_name)
+                        candidate_file_list = glob.glob(os.path.join(data_path, file_name))
+                        # Without sorting, the seeds may not be increasing
+                        candidate_file_list.sort()
+                        #print("Candidate file list for %s:" % (file_name))
+                        #print("  ", candidate_file_list)
+                        # Use the start_time.txt file to find files modified since MCell was started
+                        start_time = os.stat(os.path.join(os.path.dirname(
+                            bpy.data.filepath), "start_time.txt")).st_mtime
+                        # This file is both in the list and newer than the run time for MCell
+                        candidate_file_list = [ffn for ffn in candidate_file_list if os.stat(ffn).st_mtime >= start_time]
 
-                    if combine_seeds:
-                        psep = " "
-                        if first_pass:
-                            psep = plot_sep
-                            first_pass = False
-                        plot_spec_string = (
-                            plot_spec_string + psep + color_string +
-                            title_string + " f=" + f)
-                    else:
-                        plot_spec_string = (
-                            plot_spec_string + plot_sep + color_string +
-                            title_string + " f=" + f)
+                    for ffn in candidate_file_list:
+
+                        f = None
+                        if rxn_output.rxn_or_mol == 'File':
+                          # Use the file name as it is
+                          f = ffn
+                        else:
+                          # Create f as a relative path containing seed/file
+                          split1 = os.path.split(ffn)
+                          split2 = os.path.split(split1[0])
+                          f = os.path.join(split2[1], split1[1])
+
+                        color_string = ""
+                        if rxn_output.rxn_or_mol == 'Molecule' and mol_colors:
+                            # Use molecule colors for graphs
+                            # Should be standardized!!
+                            mol_mat_name = "mol_%s_mat" % (molecule_name)
+                            #print ("Molecule Material Name = ", mol_mat_name)
+                            #Look up the material
+                            mats = bpy.data.materials
+                            mol_color = mats.get(mol_mat_name).diffuse_color
+                            #print("Molecule color = ", mol_mat.diffuse_color)
+
+                            mol_color_red = int(255 * mol_color.r)
+                            mol_color_green = int(255 * mol_color.g)
+                            mol_color_blue = int(255 * mol_color.b)
+                            color_string = " color=#%2.2x%2.2x%2.2x " % (
+                                mol_color_red, mol_color_green, mol_color_blue)
+
+                        base_name = os.path.basename(f)
+
+                        if combine_seeds:
+                            title_string = " title=" + base_name
+                        else:
+                            title_string = " title=" + f
+
+                        if plot_sep == ' ':
+                            # No title when all are on the same plot since only
+                            # last will show
+                            title_string = ""
+
+                        if combine_seeds:
+                            psep = " "
+                            if first_pass:
+                                psep = plot_sep
+                                first_pass = False
+                            plot_spec_string = (
+                                plot_spec_string + psep + color_string +
+                                title_string + " f=" + f)
+                        else:
+                            plot_spec_string = (
+                                plot_spec_string + plot_sep + color_string +
+                                title_string + " f=" + f)
 
         plot_spec_string += " tf="+ReactionDataTmpFile.reactdata_tmpfile
         print("Plotting from", data_path)
@@ -273,20 +317,31 @@ def check_rxn_output(self, context):
     rxn_output_name = ""
 
     status = ""
+    count_name = ""
     if rxn_output.rxn_or_mol == 'Reaction':
         count_name = reaction_name
         name_list = reaction_list
     elif rxn_output.rxn_or_mol == 'Molecule':
         count_name = molecule_name
         name_list = mol_list
-    else:
+    elif rxn_output.rxn_or_mol == 'MDLString':
         count_name = molecule_name
         rxn_output.status = ""
         # Can't do these here because this causes another check_rxn_output call (infinite recursion)
         #rxn_output.name = rxn_output.mdl_string
         #rxn_output.name = "MDL: " + rxn_output.mdl_string
-
         return
+    elif rxn_output.rxn_or_mol == 'File':
+        print ( "Checked file name and got " + rxn_output.name )
+        rxn_output.status = ""
+        # Can't do these here because this causes another check_rxn_output call (infinite recursion)
+        #rxn_output.name = rxn_output.mdl_string
+        rxn_output_name = "FILE: " + rxn_output.data_file_name
+        if rxn_output.name != rxn_output_name:
+            rxn_output.name = rxn_output_name
+        return
+    else:
+        pass
 
     try:
         region_list = bpy.data.objects[object_name].mcell.regions.region_list
@@ -345,6 +400,8 @@ def update_name_and_check_rxn_output(self, context):
     rxn_output = rxn_output_list[mcell.rxn_output.active_rxn_output_index]
     if rxn_output.rxn_or_mol == 'MDLString':
         rxn_output.name = "MDL: " + rxn_output.mdl_string
+    elif rxn_output.rxn_or_mol == 'File':
+        rxn_output.name = "FILE: " + rxn_output.data_file_name
 
     # Now perform the normal reaction output check:
     check_rxn_output(self, context)
@@ -356,12 +413,20 @@ def update_name_and_check_rxn_output(self, context):
 
 
 class MCELL_UL_check_reaction_output_settings(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data,
-                  active_propname, index):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         if item.status:
             layout.label(item.status, icon='ERROR')
         else:
-            layout.label(item.name, icon='FILE_TICK')
+            col = layout.column()
+            if item.plotting_enabled:
+                col.label(item.name, icon='FILE_TICK')
+            else:
+                col.label(item.name, icon='BLANK1')
+            col = layout.column()
+            if item.plotting_enabled:
+                col.prop(item, "plotting_enabled", text="", icon='RESTRICT_VIEW_OFF')
+            else:
+                col.prop(item, "plotting_enabled", text="", icon='RESTRICT_VIEW_ON')
 
 
 class MCELL_PT_reaction_output_settings(bpy.types.Panel):
@@ -399,6 +464,8 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     mdl_file_prefix = StringProperty(
         name="MDL File Prefix",
         description="Prefix name for this file." )
+    data_file_name = StringProperty ( name = "Data File Name", subtype='FILE_PATH', default="", description="Data File to Plot.", update=check_rxn_output )
+
     object_name = StringProperty(
         name="Object", update=check_rxn_output)
     region_name = StringProperty(
@@ -414,15 +481,19 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     rxn_or_mol_enum = [
         ('Reaction', "Reaction", ""),
         ('Molecule', "Molecule", ""),
-        ('MDLString', "MDLString", "")]
+        ('MDLString', "MDLString", ""),
+        ('File', "File", "")]
     rxn_or_mol = bpy.props.EnumProperty(
         items=rxn_or_mol_enum, name="Count Reaction or Molecule",
         default='Molecule',
         description="Select between counting a reaction or molecule.",
         update=update_name_and_check_rxn_output)
 
+    plotting_enabled = BoolProperty ( default=True, description="Enable this item in plotting output" )
+
     mdl_string_show_help = BoolProperty ( default=False, description="Toggle more information about this item" )
     mdl_file_prefix_show_help = BoolProperty ( default=False, description="Toggle more information about this item" )
+    data_file_name_show_help = BoolProperty ( default=False, description="Toggle more information about this item" )
 
     # plot_command = StringProperty(name="Command")  # , update=check_rxn_output)
     status = StringProperty(name="Status")
@@ -430,16 +501,18 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output building Data Model" )
         ro_dm = {}
-        ro_dm['data_model_version'] = "DM_2015_10_07_1500"
+        ro_dm['data_model_version'] = "DM_2016_03_15_1800"
         ro_dm['name'] = self.name
         ro_dm['molecule_name'] = self.molecule_name
         ro_dm['reaction_name'] = self.reaction_name
         ro_dm['mdl_string'] = self.mdl_string
         ro_dm['mdl_file_prefix'] = self.mdl_file_prefix
+        ro_dm['data_file_name'] = self.data_file_name
         ro_dm['object_name'] = self.object_name
         ro_dm['region_name'] = self.region_name
         ro_dm['count_location'] = self.count_location
         ro_dm['rxn_or_mol'] = self.rxn_or_mol
+        ro_dm['plotting_enabled'] = self.plotting_enabled
         return ro_dm
 
 
@@ -464,8 +537,16 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
                 dm['mdl_file_prefix'] = ""
             dm['data_model_version'] = "DM_2015_10_07_1500"
 
+        if dm['data_model_version'] == "DM_2015_10_07_1500":
+            # Add the plotting_enabled flag with a default of true (since previous versions plotted everything)
+            dm['plotting_enabled'] = True
+            # Add the data file name with the default of an empty string
+            dm['data_file_name'] = ""
+            # Update the data model version for this item
+            dm['data_model_version'] = "DM_2016_03_15_1800"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_10_07_1500":
+        if dm['data_model_version'] != "DM_2016_03_15_1800":
             data_model.flag_incompatible_data_model ( "Upgrade Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
             return None
 
@@ -474,17 +555,19 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
         # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_10_07_1500":
+        if dm['data_model_version'] != "DM_2016_03_15_1800":
             data_model.handle_incompatible_data_model ( "Build Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
         self.name = dm["name"]
         self.molecule_name = dm["molecule_name"]
         self.reaction_name = dm["reaction_name"]
         self.mdl_string = dm['mdl_string']
         self.mdl_file_prefix = dm['mdl_file_prefix']
+        self.data_file_name = dm['data_file_name']
         self.object_name = dm["object_name"]
         self.region_name = dm["region_name"]
         self.count_location = dm["count_location"]
         self.rxn_or_mol = dm["rxn_or_mol"]
+        self.plotting_enabled = dm["plotting_enabled"]
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -565,6 +648,11 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         description="Plotter to use.",
         items=get_plotters_as_items )
 
+    always_generate = BoolProperty(
+        name="Always Generate All Plot Data",
+        description="Generate All Plot Data Regardless of Current View Setting",
+        default=True)
+
     def init_properties ( self, parameter_system ):
         self.rxn_step.init_ref (
             parameter_system, "Rxn_Output_Step", user_name="Step", 
@@ -574,12 +662,13 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output Panel building Data Model" )
         ro_dm = {}
-        ro_dm['data_model_version'] = "DM_2014_10_24_1638"
+        ro_dm['data_model_version'] = "DM_2016_03_15_1800"
         ro_dm['rxn_step'] = self.rxn_step.get_expr()
         ro_dm['plot_layout'] = self.plot_layout
         ro_dm['plot_legend'] = self.plot_legend
         ro_dm['combine_seeds'] = self.combine_seeds
         ro_dm['mol_colors'] = self.mol_colors
+        ro_dm['always_generate'] = self.always_generate
         ro_list = []
         for ro in self.rxn_output_list:
             ro_list.append ( ro.build_data_model_from_properties(context) )
@@ -600,8 +689,13 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             dm['rxn_step'] = ""
             dm['data_model_version'] = "DM_2015_05_15_1214"
 
+        if dm['data_model_version'] == "DM_2015_05_15_1214":
+            # Set "always_generate" to true to be consistent with previous behavior which generated all files
+            dm['always_generate'] = True
+            dm['data_model_version'] = "DM_2016_03_15_1800"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_05_15_1214":
+        if dm['data_model_version'] != "DM_2016_03_15_1800":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellReactionOutputPropertyGroup data model to current version." )
             return None
 
@@ -614,7 +708,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
         # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_05_15_1214":
+        if dm['data_model_version'] != "DM_2016_03_15_1800":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReactionOutputPropertyGroup data model to current version." )
         self.init_properties(context.scene.mcell.parameter_system)
         self.plot_layout = dm["plot_layout"]
@@ -622,6 +716,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         self.rxn_step.set_expr ( dm["rxn_step"] )
         self.combine_seeds = dm["combine_seeds"]
         self.mol_colors = dm["mol_colors"]
+        self.always_generate = dm["always_generate"]
         while len(self.rxn_output_list) > 0:
             self.rxn_output_list.remove(0)
         if "reaction_output_list" in dm:
@@ -654,6 +749,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
         else:
+
             self.rxn_step.draw(layout,ps)
             row = layout.row()
 
@@ -664,14 +760,25 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                                   "reaction_output", self,
                                   "rxn_output_list", self,
                                   "active_rxn_output_index", rows=2)
-                col = row.column(align=True)
-                col.operator("mcell.rxn_output_add", icon='ZOOMIN', text="")
-                col.operator("mcell.rxn_output_remove", icon='ZOOMOUT', text="")
+
+                col = row.column(align=False)
+                # Use subcolumns to group logically related buttons together
+                subcol = col.column(align=True)
+                subcol.operator("mcell.rxn_output_add", icon='ZOOMIN', text="")
+                subcol.operator("mcell.rxn_output_remove", icon='ZOOMOUT', text="")
+                subcol = col.column(align=True)
+                subcol.operator("mcell.rxn_output_enable_all", icon='RESTRICT_VIEW_OFF', text="")
+                subcol.operator("mcell.rxn_output_disable_all", icon='RESTRICT_VIEW_ON', text="")
+                subcol = col.column(align=True)
+                if self.always_generate:
+                    subcol.prop ( self, "always_generate", icon='EXPORT', text="" )
+                else:
+                    subcol.prop ( self, "always_generate", icon='BLANK1', text="" )
+
                 # Show molecule, object, and region options only if there is at
                 # least one count statement.
                 if self.rxn_output_list:
-                    rxn_output = self.rxn_output_list[
-                        self.active_rxn_output_index]
+                    rxn_output = self.rxn_output_list [ self.active_rxn_output_index ]
                     layout.prop(rxn_output, "rxn_or_mol", expand=True)
                     if rxn_output.rxn_or_mol == 'Molecule':
                         layout.prop_search(
@@ -702,8 +809,17 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                                    "See MCell Quick Reference Guide for more details."
                         ps.draw_prop_with_help ( layout, "MDL File Prefix", rxn_output, "mdl_file_prefix", "mdl_file_prefix_show_help", rxn_output.mdl_file_prefix_show_help, helptext )
 
+                    elif rxn_output.rxn_or_mol =='File':
+                        ## layout.prop ( rxn_output, "data_file_name" )
+                        helptext = "File:\n" + \
+                                   "  Specifies the File to Plot.\n" + \
+                                   "  This Plot Specification does not generate any data.\n" + \
+                                   "  The file path may be either relative or absolute.\n" + \
+                                   "  Blender's convention for relative paths start with \"//\".\n" + \
+                                   "  Relative paths are relative to the location of the .blend file."
+                        ps.draw_prop_with_help ( layout, "File", rxn_output, "data_file_name", "data_file_name_show_help", rxn_output.data_file_name_show_help, helptext )
 
-                    if rxn_output.rxn_or_mol != 'MDLString':
+                    if (rxn_output.rxn_or_mol == 'Molecule') or (rxn_output.rxn_or_mol == 'Reaction'):
                         layout.prop(rxn_output, "count_location", expand=True)
                         # Show the object selector if Object or Region is selected
                         if rxn_output.count_location != "World":

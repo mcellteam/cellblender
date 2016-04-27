@@ -122,6 +122,40 @@ else:
     except:
         print("cellblender.data_plotters was not imported")
 
+
+###############################################################
+### These functions support data model scripting
+
+def get_data_model ( geometry=False ):
+    import bpy
+    import cellblender
+    context = bpy.context
+    mdm = context.scene.mcell.build_data_model_from_properties ( context, geometry=geometry )
+    dm = { 'mcell' : mdm }
+    return dm
+
+def replace_data_model ( dm, geometry=False ):
+    import bpy
+    import cellblender
+    context = bpy.context
+    dm['mcell'] = context.scene.mcell.upgrade_data_model ( dm['mcell'] )
+    context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=geometry )
+
+def cd_to_project():
+    import os
+    original_cwd = os.getcwd()
+    os.makedirs ( cellblender_utils.project_files_path(), exist_ok=True )
+    os.chdir ( cellblender_utils.project_files_path() )
+    return original_cwd
+
+def cd_to_location ( location ):
+    import os
+    os.chdir ( location )
+
+###############################################################
+
+
+
 # XXX: bpy.context.mcell isn't available here, so we can't use get_python_path
 # as intended. It will always use Blender's python or the system version of
 # python. Maybe this is good enough, but we might want to revisit this and

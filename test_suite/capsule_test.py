@@ -85,7 +85,7 @@ import cellblender.cellblender_utils
 
 def copy_cellblender_data(self, context):
     # Copy the values from CellBlender
-    self.path_to_mdl = cellblender.cellblender_utils.project_files_path()
+    self.path_to_mdl = cellblender.cellblender_utils.mcell_files_path()
     self.time_step = context.scene.mcell.initialization.time_step.get_value()
     self.num_frames = context.scene.mcell.initialization.iterations.get_value()
     return

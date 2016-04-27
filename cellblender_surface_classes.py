@@ -42,6 +42,7 @@ import cellblender
 from . import parameter_system
 from . import cellblender_release
 from . import cellblender_utils
+from . import data_model
 
 
 # We use per module class registration/unregistration

@@ -55,11 +55,66 @@ def unregister():
 
 # Model Object Operators:
 
+class MCELL_OT_snap_cursor_to_center(bpy.types.Operator):
+    bl_idname = "mcell.snap_cursor_to_center"
+    bl_label = "Snap Cursor to Center"
+    bl_description = ("Snap the 3D Cursor to the Center")
+
+    def execute(self, context):
+        bpy.ops.view3d.snap_cursor_to_center()
+        return{'FINISHED'}
+
+
+class MCELL_OT_create_object(bpy.types.Operator):
+    bl_idname = "mcell.model_objects_create"
+    bl_label = "Model Objects Create"
+    bl_description = ("Add a new primitive object")
+
+    def get_object_options(self, context):
+        return [ ("bpy.ops.mesh.primitive_cube_add()","Cube","0"),
+                 ("bpy.ops.mesh.primitive_ico_sphere_add()","IcoSphere","0"),
+                 ("bpy.ops.mesh.primitive_cylinder_add()","Cylinder","0"),
+                 ("bpy.ops.mesh.primitive_cone_add()","Cone","0"),
+                 ("bpy.ops.mesh.primitive_torus_add()","Torus","0") ]
+
+    option_item = bpy.props.EnumProperty(items = get_object_options, name = "NewObjectOptions", description = "New Object Options List")
+
+    def execute(self, context):
+        #print ( "Executing with self.get_object_options = " + str(self.get_object_options(context)) )
+        #print ( "Executing with self.option_list = " + str(self.option_item) )
+        eval ( str(self.option_item) )
+        return{'FINISHED'}
+
+
+class MCELL_OT_model_obj_add_mat(bpy.types.Operator):
+    bl_idname = "mcell.model_obj_add_mat"
+    bl_label = "Create Material"
+    bl_description = ("Create a new material for this object")
+
+    def execute(self, context):
+        model_objects = context.scene.mcell.model_objects
+        obj_name = str(model_objects.object_list[model_objects.active_obj_index].name)
+        for obj in context.selected_objects:
+            obj.select = False
+        obj = bpy.data.objects[obj_name]
+        obj.select = True
+        context.scene.objects.active = obj
+        mat_name = obj_name + "_mat"
+        if bpy.data.materials.get(mat_name) is not None:
+            mat = bpy.data.materials[mat_name]
+        else:
+            mat = bpy.data.materials.new(name=mat_name)
+        if len(obj.data.materials):
+            obj.data.materials[0] = mat
+        else:
+            obj.data.materials.append(mat)
+        return{'FINISHED'}
+
+
 class MCELL_OT_model_objects_add(bpy.types.Operator):
     bl_idname = "mcell.model_objects_add"
     bl_label = "Model Objects Include"
-    bl_description = ("Include objects selected in 3D View Window in Model "
-                      "Objects export list")
+    bl_description = ("Include objects selected in 3D View Window in Model Objects export list")
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -115,6 +170,29 @@ class MCELL_OT_model_objects_remove(bpy.types.Operator):
         model_objects_update(context)
 
         return {'FINISHED'}
+
+
+class MCELL_OT_model_objects_remove_sel(bpy.types.Operator):
+    bl_idname = "mcell.model_objects_remove_sel"
+    bl_label = "Model Objects Remove Selected"
+    bl_description = ("Remove objects selected in 3D View Window from Model Objects export list")
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        mcell = context.scene.mcell
+        mobjs = mcell.model_objects
+        sobjs = context.scene.objects
+
+        # From the list of selected objects, only remove MESH objects.
+        objs = [obj for obj in context.selected_objects if obj.type == 'MESH']
+        for obj in objs:
+            obj.mcell.include = False
+
+        model_objects_update(context)
+
+        return {'FINISHED'}
+
 
 
 
@@ -265,7 +343,13 @@ def model_objects_update(context):
                     mobjs.object_list[mobjs.active_obj_index].status = status
                     break
 
-        mobjs.active_obj_index = active_index
+        if len(mobjs.object_list) <= 0:
+            mobjs.active_obj_index = 0
+        else:
+            if active_index < len(mobjs.object_list):
+                mobjs.active_obj_index = active_index
+            else:
+                mobjs.active_obj_index = len(mobjs.object_list) - 1
 
         # We check release sites are valid here in case a user adds an object
         # referenced in a release site after adding the release site itself.
@@ -408,6 +492,25 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( layout )
         else:
 
+            row = layout.row()
+            col = row.column()
+            col.operator("mcell.snap_cursor_to_center", text="Center Cursor")
+            #col = row.column()
+            #col.label(text="Add:")
+            col = row.column()
+            col.operator("mesh.primitive_cube_add", text="", icon='MESH_CUBE')
+            col = row.column()
+            col.operator("mesh.primitive_ico_sphere_add", text="", icon='MESH_ICOSPHERE')
+            col = row.column()
+            col.operator("mesh.primitive_cylinder_add", text="", icon='MESH_CYLINDER')
+            col = row.column()
+            col.operator("mesh.primitive_cone_add", text="", icon='MESH_CONE')
+            col = row.column()
+            col.operator("mesh.primitive_torus_add", text="", icon='MESH_TORUS')
+            #col = row.column()
+            #col.operator_menu_enum("mcell.model_objects_create", 'option_item', text="Create Object")
+
+
             if context.active_object != None:
                 row = layout.row()
                 row.prop ( context.active_object, "name", text="Active:" )
@@ -421,24 +524,53 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
 #           col.active = (len(context.selected_objects) == 1)
             col.operator("mcell.model_objects_add", icon='ZOOMIN', text="")
             col.operator("mcell.model_objects_remove", icon='ZOOMOUT', text="")
+
+            col.operator("mcell.model_objects_remove_sel", icon='X', text="")
             
             if len(self.object_list) > 0:
-                layout.label(text="") # Use as a separator
-                layout.box() # Use as a separator
-                layout.label(text="") # Use as a separator
+                obj_name = str(self.object_list[self.active_obj_index].name)
+                # layout.label(text="") # Use as a separator
+                # layout.box() # Use as a separator
+                # layout.label(text="") # Use as a separator
                 box = layout.box()
                 row = box.row()
                 if not self.show_display:
                     row.prop(self, "show_display", icon='TRIA_RIGHT',
-                             text=str(self.object_list[self.active_obj_index].name)+" Display Options", emboss=False)
+                             text=obj_name+" Display Options", emboss=False)
                 else:
                     row.prop(self, "show_display", icon='TRIA_DOWN',
-                             text=str(self.object_list[self.active_obj_index].name)+" Display Options", emboss=False)
+                             text=obj_name+" Display Options", emboss=False)
 
                     row = box.row()
-                    row.prop ( context.scene.objects[self.object_list[self.active_obj_index].name], "draw_type" )
-                    row = box.row()
-                    row.prop ( context.scene.objects[self.object_list[self.active_obj_index].name], "show_transparent" )
+                    col = row.column()
+                    col.prop ( context.scene.objects[obj_name], "draw_type", text="" )
+                    col = row.column()
+                    col.prop ( context.scene.objects[obj_name], "show_name", text="Show Name" )
+                    
+                    has_material = True
+                    if len(context.scene.objects[obj_name].material_slots) <= 0:
+                      has_material = False
+                    else:
+                      if context.scene.objects[obj_name].material_slots[0].material == None:
+                        has_material = False
+                    if not has_material:
+                      row = box.row()
+                      row.operator("mcell.model_obj_add_mat", text="Add a Material")
+                    else:
+                      mat = context.scene.objects[obj_name].material_slots[0].material
+                      row = box.row()
+                      col = row.column()
+                      col.prop ( mat, "diffuse_color", text="" )
+                      col = row.column()
+                      col.prop ( mat, "emit", text="Emit" )
+                      row = box.row()
+                      col = row.column()
+                      col.prop ( context.scene.objects[obj_name], "show_transparent", text="Object Transparent" )
+                      col = row.column()
+                      col.prop ( mat, "use_transparency", text="Material Transparent" )
+                      if context.scene.objects[obj_name].show_transparent and mat.use_transparency:
+                        row = box.row()
+                        row.prop ( mat, "alpha", text="Alpha" )
 
 #           row = layout.row()
 #           sub = row.row(align=True)
@@ -676,10 +808,13 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
 
 
     def delete_all_mesh_objects ( self, context ):
+        print ( "Inside \"delete_all_mesh_objects\"" )
+        # TODO This function is VERY slow for large numbers of objects
+        # TODO There should be a faster way since Blender can do this quicly
         bpy.ops.object.select_all(action='DESELECT')
         for scene_object in context.scene.objects:
             if scene_object.type == 'MESH':
-                print ( "Deleting Mesh object: " + scene_object.name )
+                # print ( "Deleting Mesh object: " + scene_object.name )
                 scene_object.hide = False
                 scene_object.select = True
                 bpy.ops.object.delete()
@@ -694,7 +829,9 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         
         # Start by creating a list of named objects in the data model
         model_names = [ o['name'] for o in dm['object_list'] ]
-        print ( "Model names = " + str(model_names) )
+        # print ( "Model names = " + str(model_names) )
+
+        print ( "  Delete objects with matching names" )
 
         # Delete all objects with identical names to model objects in the data model
         bpy.ops.object.select_all(action='DESELECT')
@@ -709,8 +846,14 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     bpy.ops.object.delete()
                     # TODO Need to delete the mesh for this object as well!!!
 
+        print ( "  Done deleting objects" )
+        print ( "  Create new objects" )
+
+        most_recent_object = None
         # Now create all the object meshes from the data model
         for model_object in dm['object_list']:
+
+            # print ( "    Create object " + model_object['name'] )
 
             vertices = []
             for vertex in model_object['vertex_list']:
@@ -724,6 +867,8 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             new_obj = bpy.data.objects.new ( model_object['name'], new_mesh )
             if 'location' in model_object:
                 new_obj.location = mathutils.Vector((model_object['location'][0],model_object['location'][1],model_object['location'][2]))
+
+            #print ( "    Add materials to " + model_object['name'] )
 
             # Add the materials to the object
             if 'material_names' in model_object:
@@ -741,21 +886,37 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                         f.material_index = model_object['element_material_indices'][index % dm_count]
                         index += 1
 
+            #print ( "    Add " + model_object['name'] + " to scene.objects" )
+
             context.scene.objects.link ( new_obj )
-            bpy.ops.object.select_all ( action = "DESELECT" )
-            new_obj.select = True
-            context.scene.objects.active = new_obj
-            
+            # The following code slowed the creation process to a crawl!!!
+            #bpy.ops.object.select_all ( action = "DESELECT" )
+            #new_obj.select = True
+            #context.scene.objects.active = new_obj
+            most_recent_object = new_obj
+
+            #print ( "    Add surface regions for " + model_object['name'] )
 
             # Add the surface regions to new_obj.mcell
             
             if model_object.get('define_surface_regions'):
                 for rgn in model_object['define_surface_regions']:
                     print ( "  Building region[" + rgn['name'] + "]" )
+
+                    bpy.ops.object.select_all ( action = "DESELECT" )
+                    new_obj.select = True
+                    context.scene.objects.active = new_obj
+
                     new_obj.mcell.regions.add_region_by_name ( context, rgn['name'] )
                     reg = new_obj.mcell.regions.region_list[rgn['name']]
                     reg.set_region_faces ( new_mesh, set(rgn['include_elements']) )
 
+        if most_recent_object != None:
 
+            bpy.ops.object.select_all ( action = "DESELECT" )
+            most_recent_object.select = True
+            context.scene.objects.active = most_recent_object
+
+        print ( "  Done creating new objects" )
 
 

@@ -24,8 +24,16 @@ def project_files_path():
     filepath = os.path.dirname(bpy.data.filepath)
     filepath, dot, blend = bpy.data.filepath.rpartition(os.path.extsep)
     filepath = filepath + "_files"
+    return filepath
+
+
+def mcell_files_path():
+    ''' Consolidate the creation of the path to the mcell files'''
+
+    filepath = project_files_path()
     filepath = os.path.join(filepath, "mcell")
     return filepath
+
 
 
 def preserve_selection_use_operator(operator, new_obj):

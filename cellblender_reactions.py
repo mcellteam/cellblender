@@ -112,8 +112,7 @@ class MCELL_OT_add_variable_rate_constant(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
-        rxn = mcell.reactions.reaction_list[
-            mcell.reactions.active_rxn_index]
+        rxn = mcell.reactions.reaction_list[mcell.reactions.active_rxn_index]
 
         rxn.load_variable_rate_file ( context, self.filepath )
 
@@ -329,8 +328,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         update=check_reaction)
     products = StringProperty(
         name="Products",
-        description="Specify zero(NULL) or more products separated by a + "
-                    "symbol.",
+        description="Specify zero(NULL) or more products separated by a + symbol.",
         update=check_reaction)
     type_enum = [
         ('irreversible', "->", ""),
@@ -454,7 +452,8 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
                 self.store_variable_rate_text ( context, self.variable_rate, dm_dict["variable_rate_text"] )
 
     def check_properties_after_building ( self, context ):
-        print ( "check_properties_after_building not implemented for " + str(self) )
+        print ( "Implementing check_properties_after_building for " + str(self) )
+        check_reaction ( self, context )
 
 
     def store_variable_rate_text ( self, context, text_name, rate_string ):
@@ -592,7 +591,9 @@ class MCellReactionsListProperty(bpy.types.PropertyGroup):
                 rxn.build_properties_from_data_model ( context, r )
 
     def check_properties_after_building ( self, context ):
-        print ( "check_properties_after_building not implemented for " + str(self) )
+        print ( "Implementing check_properties_after_building for " + str(self) )
+        for r in self.reaction_list:
+            r.check_properties_after_building(context)
 
     def remove_properties ( self, context ):
         print ( "Removing all Reaction Properties..." )

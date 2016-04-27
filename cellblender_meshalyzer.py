@@ -63,6 +63,48 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
     bl_description = "Analyze Geometric Properties of Mesh"
     bl_options = {'REGISTER', 'UNDO'}
 
+    def count_components(self,context):
+        bpy.ops.object.mode_set(mode='OBJECT')
+        obj = context.active_object
+        mesh = obj.data
+
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.reveal()
+        bpy.ops.mesh.select_mode(type='VERT')
+        bpy.ops.mesh.select_all(action='DESELECT')
+
+        # Count total vertices and number of vertices contiguous with vertex 0
+        bpy.ops.object.mode_set(mode='OBJECT')
+        mesh.vertices[0].select = True
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_linked()
+        n_v_tot = len(mesh.vertices)
+        n_v_sel = mesh.total_vert_sel
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        # Loop over disjoint components
+        n_components = 1
+        while (n_v_sel < n_v_tot):
+            n_components += 1
+            # make list of selected indices
+            vl1 = [v.index for v in mesh.vertices if v.select == True]
+            # make list of indices of remaining component(s)
+            vl2 = [v.index for v in mesh.vertices if v.select == False]
+            # Grow selection with vertices contiguous with first vertex of remainder
+            mesh.vertices[vl2[0]].select = True
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.mesh.select_linked()
+
+            # Count number of vertices now selected and loop again if necessary
+            n_v_sel = mesh.total_vert_sel
+            bpy.ops.object.mode_set(mode='OBJECT')
+
+        bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_mode(type='FACE')
+        bpy.ops.object.mode_set(mode='OBJECT')
+        return n_components
+
+
     def execute(self, context):
 
         mcell = context.scene.mcell
@@ -75,6 +117,7 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
         mcell.meshalyzer.watertight = ""
         mcell.meshalyzer.manifold = ""
         mcell.meshalyzer.normal_status = ""
+        mcell.meshalyzer.components = 0
         mcell.meshalyzer.genus_string = ""
         mcell.meshalyzer.area = 0
         mcell.meshalyzer.volume = 0
@@ -99,8 +142,11 @@ class MCELL_OT_meshalyzer(bpy.types.Operator):
         mcell.meshalyzer.edges = len(mesh.edges)
         mcell.meshalyzer.faces = len(mesh.polygons)
         
-        mcell.meshalyzer.genus = 1 - ( (mcell.meshalyzer.vertices + mcell.meshalyzer.faces - mcell.meshalyzer.edges) / 2 )
-        mcell.meshalyzer.genus_string = "      Genus = %d" % (mcell.meshalyzer.genus)
+        
+        mcell.meshalyzer.components = self.count_components(context)
+        mcell.meshalyzer.genus = mcell.meshalyzer.components - ( (mcell.meshalyzer.vertices + mcell.meshalyzer.faces - mcell.meshalyzer.edges) / 2 )
+        mcell.meshalyzer.genus_string = "Genus = %d" % (mcell.meshalyzer.genus)
+
 
         area = 0
         for f in mesh.polygons:
@@ -399,6 +445,8 @@ class MCELL_PT_meshalyzer(bpy.types.Panel):
             row = layout.row()
             row.label(text="      %s" % (mcell.meshalyzer.normal_status))
             row = layout.row()
+            row.label(text="      Components = %d" % (mcell.meshalyzer.components))
+            row = layout.row()
             row.label(text="      %s" % (mcell.meshalyzer.genus_string))
 
 
@@ -413,6 +461,7 @@ class MCellMeshalyzerPropertyGroup(bpy.types.PropertyGroup):
     watertight = StringProperty(name="Watertight")
     manifold = StringProperty(name="Manifold")
     normal_status = StringProperty(name="Surface Normals")
+    components = IntProperty(name="Components", default=0)
     genus = IntProperty(name="Genus", default=0)
     genus_string = StringProperty(name="", default="")
     area = FloatProperty(name="Area", default=0)

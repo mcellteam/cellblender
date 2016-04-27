@@ -20,6 +20,35 @@
 """
 This file contains the classes for CellBlender's Molecules.
 
+Molecules (or more properly "Molecule Species") contain two types of data:
+
+  MCell data - Name, diffusion constant, 2D/3D, etc.
+  Blender data - Name, glyph, size, color, position mesh
+
+Note that some items (the name, for example) is considered as both
+MCell data and Blender data.
+
+Molecules (or parts of molecules) can be created from:
+
+  User interface (clicking buttons, and setting values)
+  Data Model (loading from a .blend file or an external data model file)
+  CellBlender API (currently the test suite, but possibly more general)
+  Reading a Visualization file without any molecules defined (CellBlender 0)
+
+One of the key goals of the molecules module is to provide the proper
+class structures and methods to support those different creation modes.
+
+In general, creating the MCell data for a molecule (in CellBlender) will
+also immediately create the Blender data (glyph, empty position mesh,...).
+This allows the "Blender data" (glyph, size, color, mesh) to be created,
+seen, and modified without running any simulations. Similarly, reading
+Visualization data should probably create molecules as needed.
+
+This leads to a "create as needed" mechanism for both MCell data and
+Blender data. The "as needed" part will be based on the molecule name
+as the "key". If that "key" exists in any context, then that data will
+be used or updated. If that "key" does not exist in any context, then
+new data will be created for that key.
 """
 
 # blender imports
@@ -37,6 +66,7 @@ import os
 import random
 
 import cellblender
+from . import data_model
 # from . import cellblender_parameters
 from . import parameter_system
 from . import cellblender_mol_viz
@@ -110,7 +140,7 @@ def set_molecule_glyph ( context, glyph_name ):
     new_mol_mesh.name = mol_shape_name
     new_mol_mesh.materials.append(mol_mat)
 
-
+"""
 class MCellMoleculeGlyphsPropertyGroup(bpy.types.PropertyGroup):
     glyph_lib = os.path.join(
         os.path.dirname(__file__), "glyph_library.blend/Mesh/")
@@ -130,6 +160,7 @@ class MCellMoleculeGlyphsPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all Molecule Glyph Properties... no collections to remove." )
+"""
 
 
 
@@ -221,10 +252,6 @@ def name_change_callback(self, context):
     return
 
 
-#def display_callback(self, context):
-#    #self.display_callback(context)
-#    return
-
 def glyph_visibility_callback(self, context):
     # print ( "Glyph vis change callback for molecule " + self.name )
     ms = context.scene.mcell
@@ -312,6 +339,54 @@ class MCELL_OT_mol_shade_smooth(bpy.types.Operator):
 
 import os
 
+def remove_mol_data_by_name ( mol_name, context ):
+
+    print ( "Call to: \"remove_mol_data_by_name\" to remove " + mol_name )
+
+    meshes = bpy.data.meshes
+    mats = bpy.data.materials
+    objs = bpy.data.objects
+    scn = bpy.context.scene
+    scn_objs = scn.objects
+
+    mol_obj_name        = "mol_" + mol_name
+    mol_shape_obj_name  = mol_obj_name + "_shape"
+    mol_shape_mesh_name = mol_obj_name + "_shape"
+    mol_pos_mesh_name   = mol_obj_name + "_pos"
+    mol_material_name   = mol_obj_name + "_mat"
+
+    mols_obj = objs.get("molecules")
+
+    mol_obj = objs.get(mol_obj_name)
+    mol_shape_obj = objs.get(mol_shape_obj_name)
+    mol_shape_mesh = meshes.get(mol_shape_mesh_name)
+    mol_pos_mesh = meshes.get(mol_pos_mesh_name)
+    mol_material = mats.get(mol_material_name)
+
+    if mol_obj:
+        scn_objs.unlink ( mol_obj )
+
+    if mol_shape_obj:
+        scn_objs.unlink ( mol_shape_obj )
+
+    if mol_obj:
+        if mol_obj.users <= 0:
+            try: objs.remove ( mol_obj )
+            except: pass
+            try: meshes.remove ( mol_pos_mesh )
+            except: pass
+
+    if mol_shape_obj:
+        if mol_shape_obj.users <= 0:
+            try: objs.remove ( mol_shape_obj )
+            except: pass
+            try: meshes.remove ( mol_shape_mesh )
+            except: pass
+
+    if mol_material:
+        if mol_material.users <= 0:
+            try: mats.remove ( mol_material )
+            except: pass
 
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
@@ -444,6 +519,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all Molecule Properties ... not implemented yet!" )
+        self.remove_mol_data ( context )
 
 
     def initialize ( self, context ):
@@ -455,6 +531,8 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
 
     def create_mol_data ( self ):
+
+        print ( "Creating mol data for " + self.name )
 
         meshes = bpy.data.meshes
         mats = bpy.data.materials
@@ -582,53 +660,19 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         mol_obj.dupli_type = 'VERTS'
         mol_shape_obj.parent = mol_obj
 
+        print ( "Done creating mol data for " + self.name )
+
 
 
     def remove_mol_data ( self, context ):
-
-        meshes = bpy.data.meshes
-        mats = bpy.data.materials
-        objs = bpy.data.objects
-        scn = bpy.context.scene
-        scn_objs = scn.objects
-
-        mol_obj_name        = "mol_" + self.name
-        mol_shape_obj_name  = mol_obj_name + "_shape"
-        mol_shape_mesh_name = mol_obj_name + "_shape"
-        mol_pos_mesh_name   = mol_obj_name + "_pos"
-        mol_material_name   = mol_obj_name + "_mat"
-
-        mols_obj = objs.get("molecules")
-
-        mol_obj = objs.get(mol_obj_name)
-        mol_shape_obj = objs.get(mol_shape_obj_name)
-        mol_shape_mesh = meshes.get(mol_shape_mesh_name)
-        mol_pos_mesh = meshes.get(mol_pos_mesh_name)
-        mol_material = mats.get(mol_material_name)
-
-        if mol_obj:
-            scn_objs.unlink ( mol_obj )
-        if mol_shape_obj:
-            scn_objs.unlink ( mol_shape_obj )
-
-        if mol_obj.users <= 0:
-            objs.remove ( mol_obj )
-            meshes.remove ( mol_pos_mesh )
-
-        if mol_shape_obj.users <= 0:
-            objs.remove ( mol_shape_obj )
-            meshes.remove ( mol_shape_mesh )
-
-        if mol_material.users <= 0:
-            mats.remove ( mol_material )
-
+        remove_mol_data_by_name ( self.name, context )
 
 
     def build_data_model_from_properties ( self ):
         m = self
 
         m_dict = {}
-        m_dict['data_model_version'] = "DM_2015_07_24_1330"
+        m_dict['data_model_version'] = "DM_2016_01_13_1930"
         m_dict['mol_name'] = m.name
         m_dict['mol_bngl_label'] = m.bnglLabel
         m_dict['mol_type'] = str(m.type)
@@ -640,7 +684,17 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         # TODO: Add after data model release:   m_dict['maximum_step_length'] = m.maximum_step_length.get_expr()
         m_dict['maximum_step_length'] = ""  # TODO: Remove this line after data model release
         m_dict['export_viz'] = m.export_viz
-
+        disp_dict = {}
+        disp_dict['glyph'] = str(m.glyph)
+        if m.glyph == 'Letter':
+            disp_dict['letter'] = str(m.letter)
+        mat_name = "mol_" + self.name+"_mat"
+        if mat_name in bpy.data.materials:
+            color = bpy.data.materials[mat_name].diffuse_color
+            disp_dict['color'] = [ color[0], color[1], color[2] ]
+            disp_dict['emit'] = bpy.data.materials[mat_name].emit
+            disp_dict['scale'] = self.scale
+        m_dict['display'] = disp_dict
         return m_dict
 
 
@@ -657,19 +711,48 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             dm['mol_bngl_label'] = ""
             dm['data_model_version'] = "DM_2015_07_24_1330"
 
+        if dm['data_model_version'] == "DM_2015_07_24_1330":
+            # Change in mid January, 2016: Add display information previously stored only in the object's materials
+            disp_dict = {}
+            # We may not know the glyph used for a molecule because it's set with an operator that builds the mesh.
+            # The old "glyph" variable may be defaulted to "Cone" regardless of how it was displayed in that file.
+            # We could examine the mesh to figure out what it is, but for now just go with volume / surface defaults.
+            # Volume molecules will be Icosahedrons and Surface molecules will be Cones.
+            disp_dict['glyph'] = "Icosahedron"
+            if 'mol_type' in dm:
+                if dm['mol_type'] == '2D':
+                    disp_dict['glyph'] = "Cone"
+            disp_dict['letter'] = "A"
+            # Set various defaults to be used if no corresponding material or object is found
+            disp_dict['color'] = [ 0.8, 0.8, 0.8 ]
+            disp_dict['emit'] = 0.0
+            disp_dict['scale'] = 1.0
+            # Look for a material that may exist before the upgrade to replace the defaults
+            mat_name = "mol_" + dm['mol_name'] + "_mat"
+            if mat_name in bpy.data.materials:
+                color = bpy.data.materials[mat_name].diffuse_color
+                disp_dict['color'] = [ color[0], color[1], color[2] ]
+                disp_dict['emit'] = bpy.data.materials[mat_name].emit
+            # Look for an object that may exist before the upgrade to replace the defaults
+            shape_name = "mol_" + dm['mol_name'] + "_shape"
+            if shape_name in bpy.data.objects:
+                scale = bpy.data.objects[shape_name].scale
+                disp_dict['scale'] = ( scale[0] + scale[1] + scale[2] ) / 3.0
+            dm['display'] = disp_dict
+            dm['data_model_version'] = "DM_2016_01_13_1930"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_07_24_1330":
-            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
+        if dm['data_model_version'] != "DM_2016_01_13_1930":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
             return None
 
         return dm
 
 
-
     def build_properties_from_data_model ( self, context, dm_dict ):
         # Check that the data model version matches the version for this property group
-        if dm_dict['data_model_version'] != "DM_2015_07_24_1330":
-            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
+        if dm_dict['data_model_version'] != "DM_2016_01_13_1930":
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
         # Now convert the updated Data Model into CellBlender Properties
         self.name = dm_dict["mol_name"]
         if "mol_bngl_label" in dm_dict: self.bnglLabel = dm_dict['mol_bngl_label']
@@ -681,8 +764,32 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         # TODO: Add after data model release:   self.maximum_step_length.set_expr ( dm_dict["maximum_step_length"] )
         if "export_viz" in dm_dict: self.export_viz = dm_dict["export_viz"]
 
+        if "display" in dm_dict:
+            disp_dict = dm_dict['display']
+            if "glyph" in disp_dict: self.glyph = disp_dict["glyph"]
+            if "letter" in disp_dict: self.letter = disp_dict["letter"]
+            if "scale"  in disp_dict: self.scale = disp_dict["scale"]
+
+        self.create_mol_data()
+
+        if "display" in dm_dict:
+            disp_dict = dm_dict['display']
+            if "color" in disp_dict:
+                dm_color = disp_dict['color']
+                mat_name = "mol_" + self.name+"_mat"
+                if mat_name in bpy.data.materials:
+                    color = bpy.data.materials[mat_name].diffuse_color
+                    color[0] = dm_color[0]
+                    color[1] = dm_color[1]
+                    color[2] = dm_color[2]
+            if "emit" in disp_dict:
+                mat_name = "mol_" + self.name+"_mat"
+                bpy.data.materials[mat_name].emit = disp_dict['emit']
+
+
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
+
 
     # Exporting to an MDL file could be done just like this
     def print_details( self ):
@@ -882,7 +989,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             set_molecule_glyph ( context, self.glyph )
 
         return
-
 
 
 
@@ -1089,7 +1195,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
                 mol.init_properties(parameter_system)
 
     def remove_properties ( self, context ):
-        print ( "Removing all Molecule List Properties..." )
+        print ( "Removing all %d Molecule List Properties..." % len(self.molecule_list) )
         for item in self.molecule_list:
             item.remove_properties(context)
         self.molecule_list.clear()
@@ -1108,6 +1214,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
 
     def remove_active_molecule ( self, context ):
         """ Remove the active molecule from the list of molecules """
+        print ( "Call to: \"remove_active_molecule\"" )
         if len(self.molecule_list) > 0:
             mol = self.molecule_list[self.active_mol_index]
             if mol:
@@ -1151,6 +1258,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
 
 
     def build_properties_from_data_model ( self, context, dm ):
+        print ( "Call to: \"MCellMoleculesListProperty.build_properties_from_data_model\" with %d molecules" % len(self.molecule_list) )
         # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculesListProperty data model to current version." )
@@ -1160,6 +1268,15 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         # Start by removing all molecules from the list
         while len(self.molecule_list) > 0:
             self.remove_active_molecule ( context )
+
+        # For some reason, the length of the molecule list is sometimes 0 which may leave molecule objects ... delete them all
+        if 'molecules' in bpy.data.objects:
+            while len(bpy.data.objects['molecules'].children) > 0:
+                mol_name = bpy.data.objects['molecules'].children[0].name
+                remove_mol_data_by_name ( mol_name[4:], context )
+                print ( "New length of molecule_list = " + str(len(bpy.data.objects['molecules'].children)) )
+
+
 
         # Add molecules from the data model
         if "molecule_list" in dm:

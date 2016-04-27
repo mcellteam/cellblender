@@ -960,9 +960,9 @@ class CellBlender_Model:
 
     def set_sim_seed ( self, seed=1 ):
         # This is a bit tricky since CellBlender won't allow a start seed greater than the end seed
-        self.mcell.run_simulation.end_seed = seed
-        self.mcell.run_simulation.start_seed = seed
-        self.mcell.run_simulation.end_seed = seed
+        self.mcell.run_simulation.end_seed.expr = str(seed)
+        self.mcell.run_simulation.start_seed.expr = str(seed)
+        self.mcell.run_simulation.end_seed.expr = str(seed)
 
 
     def export_model ( self, iterations="100", time_step="1e-6", export_format="mcell_mdl_unified", seed=1 ):
@@ -5381,6 +5381,113 @@ class MinDMinETestOp(bpy.types.Operator):
 
 
         return { 'FINISHED' }
+
+
+
+###########################################################################################################
+group_name = "Complete Model Tests"
+test_name = "Simple Synapse Model"
+operator_name = "cellblender_test.simple_synapse_model"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class SimpleSynapseTestOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+    self_test_name = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
+        cb_model = CellBlender_Model (  context, self.self_test_name )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        # Create a synapse
+
+        gap = 0.07  # A 300nm active area might have a 20nm gap
+
+        spine_head_shape = [ (3.5,0), (3.5,0.45), (1.45,0.45), (1.2,0.5), (1.0,0.6), (0.7,0.8), (0.5,0.9), (0.3,0.9), (0.15,0.82), (0.048,0.7), (0.0,0.5), (0.0,0.45), (0.0,0.3), (0.0,0.15), (0.0,0.0) ]
+        spine_head_pre_shape = []
+        for p in spine_head_shape:
+            # Append to the end to get the correct order for outward facing normals
+            spine_head_pre_shape.append ( (-p[0]-(gap/2),p[1] ) )
+        spine_head_post_shape = []
+        for p in spine_head_shape:
+            # Prepend to the front to get the correct order for outward facing normals
+            spine_head_post_shape.insert ( 0, (p[0]+(gap/2),p[1] ) )
+
+        cb_model.add_shaped_cylinder_to_model ( name="neuron_pre", draw_type="WIRE", x=0, y=0, z=0, sigma=0, numsect=10, z_profile=spine_head_pre_shape )
+        cb_model.add_surface_region_to_model_object_by_normal ( "neuron_pre", "synapse_pre", 0, 0, 1, 0.99 )
+
+        cb_model.add_shaped_cylinder_to_model ( name="neuron_post", draw_type="WIRE", x=0, y=0, z=0, sigma=0, numsect=10, z_profile=spine_head_post_shape )
+        cb_model.add_surface_region_to_model_object_by_normal ( "neuron_post", "synapse_post", 0, 0, -1, 0.99 )
+
+
+        mol_a       = cb_model.add_molecule_species_to_model ( name="a",      mol_type="3D", diff_const_expr="1e-5" )
+        mol_nt      = cb_model.add_molecule_species_to_model ( name="nt",     mol_type="3D", diff_const_expr="2e-7" )
+        mol_s_pre   = cb_model.add_molecule_species_to_model ( name="s_pre",  mol_type="2D", diff_const_expr="0" )
+        mol_s_post  = cb_model.add_molecule_species_to_model ( name="s_post", mol_type="2D", diff_const_expr="0" )
+
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mol_a       = cb_model.get_molecule_species_by_name("a")
+        mol_nt      = cb_model.get_molecule_species_by_name("nt")
+        mol_s_pre   = cb_model.get_molecule_species_by_name("s_pre")
+        mol_s_post  = cb_model.get_molecule_species_by_name("s_post")
+
+
+        cb_model.change_molecule_display ( mol_a,      glyph='Cube',        scale=3.0, red=0.96, green=1.0,  blue=0.3,  emit=2.0 )
+        cb_model.change_molecule_display ( mol_nt,     glyph='Icosahedron', scale=3.0, red=1.0,  green=0.03, blue=0.47, emit=2.0 )
+        cb_model.change_molecule_display ( mol_s_pre,  glyph='Cone',        scale=3.0, red=0.0,  green=0.8,  blue=0.0,  emit=1.0 )
+        cb_model.change_molecule_display ( mol_s_post, glyph='Cone',        scale=3.0, red=0.0,  green=0.26, blue=0.8,  emit=1.0 )
+
+
+        cb_model.add_surface_class_to_model ( "pre_surf" )
+        cb_model.add_surface_class_to_model ( "post_surf" )
+
+        cb_model.assign_surface_class_to_region ( "pre_surf", "neuron_pre", "synapse_pre" )
+        cb_model.assign_surface_class_to_region ( "post_surf", "neuron_post", "synapse_post" )
+
+
+        cb_model.add_reaction_to_model ( rin="a; @ pre_surf,",    rtype="irreversible", rout="s_pre,",   fwd_rate="1e19", bkwd_rate="" )
+        cb_model.add_reaction_to_model ( rin="s_pre,",            rtype="irreversible", rout="nt,",      fwd_rate="1e4",  bkwd_rate="" )
+        cb_model.add_reaction_to_model ( rin="nt; @ post_surf'",  rtype="irreversible", rout="s_post,",  fwd_rate="1e19", bkwd_rate="" )
+        cb_model.add_reaction_to_model ( rin="s_post'",           rtype="irreversible", rout="a'",       fwd_rate="1e4",  bkwd_rate="" )
+
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="neuron_pre", q_expr="1000" )
+
+        cb_model.set_visualization ( enable_visualization=True, export_all=True, all_iterations=False, start=0, end=100000, step=1 )
+
+        cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=10.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "09f79e0582d08b461b955004ff930f56dd168172", test_name=self.self_test_name )
+
+        cb_model.refresh_molecules()
+
+        scn.frame_current = 1
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.25 )
+        cb_model.switch_to_orthographic()
+        cb_model.set_axis_angle ( [0.0, -1.0, 0.0], math.pi/2 )
+
+        cb_model.hide_manipulator ( hide=True )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
 
 
 

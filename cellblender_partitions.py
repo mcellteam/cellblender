@@ -41,6 +41,7 @@ import re
 import cellblender
 from . import parameter_system
 from . import cellblender_utils
+from . import data_model
 
 
 # We use per module class registration/unregistration
@@ -354,7 +355,7 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Partitions building Data Model" )
         dm_dict = {}
-        dm_dict['data_model_version'] = "DM_2014_10_24_1638"
+        dm_dict['data_model_version'] = "DM_2016_04_15_1600"
         dm_dict['include'] = self.include==True
         dm_dict['recursion_flag'] = self.recursion_flag==True
         dm_dict['x_start'] = "%g" % (self.x_start)
@@ -392,19 +393,21 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
             # Update the data model version to mark that this patch has been applied
             dm['data_model_version'] = "DM_2015_10_20_1446"
 
-        if dm['data_model_version'] != "DM_2015_10_20_1446":
+        if dm['data_model_version'] == "DM_2015_10_20_1446":
+            # Earlier versions were exporting the partitions but not importing them at all
+            # This version doesn't really change the data model but just marks the change
+            dm['data_model_version'] = "DM_2016_04_15_1600"
+
+        if dm['data_model_version'] != "DM_2016_04_15_1600":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellPartitionsPropertyGroup data model to current version." )
             return None
 
         return dm
 
 
-
-
-
     def build_properties_from_data_model ( self, context, dm ):
 
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] != "DM_2016_04_15_1600":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellPartitionsPropertyGroup data model to current version." )
 
         self.include = dm["include"]
@@ -418,6 +421,7 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
         self.z_start = float(dm["z_start"])
         self.z_end = float(dm["z_end"])
         self.z_step = float(dm["z_step"])
+
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )

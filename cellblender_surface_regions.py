@@ -66,8 +66,8 @@ from . import cellblender_utils
 import cellblender.data_model as data_model
 # import cellblender_source_info
 from . import cellblender_utils
-#from cellblender.cellblender_utils import project_files_path
-from cellblender.cellblender_utils import project_files_path
+#from cellblender.cellblender_utils import mcell_files_path
+from cellblender.cellblender_utils import mcell_files_path
 from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
 
 # We use per module class registration/unregistration

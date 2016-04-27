@@ -85,8 +85,8 @@ def unregister():
 # Two callbacks that had been in the cellblender operators file:
 
 from . import cellblender_utils
-#from cellblender.cellblender_utils import project_files_path
-from cellblender.cellblender_utils import project_files_path
+#from cellblender.cellblender_utils import mcell_files_path
+from cellblender.cellblender_utils import mcell_files_path
 from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
 
 @persistent
@@ -435,30 +435,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
 
     def draw_self (self, context, layout):
-        # print ( "Top of CellBlenderMainPanelPropertyGroup.draw_self" )
 
-        #######################################################################################
-        """
-        #######################################################################################
-        def draw_panel_code_worked_out_with_Tom_on_Feb_18_2015:
-            if not scn.mcell.get('CB_ID'):
-                # This .blend file has no CellBlender data or was created with CellBlender RC3
-                if not scn.mcell['initialized']:
-                    # This .blend file has no CellBlender data (never saved with CellBlender enabled)
-                    display "Initialize"
-                else:
-                    # This is a CellBlender RC3 or RC4 file
-                    display "Update"
-            else:
-                # This is a CellBlender .blend file >= 1.0
-                CB_ID = scn.mcell['CB_ID']
-                if CB_ID != cb.cellblender_source_info['cb_src_sha1']
-                    display "Update"
-                else:
-                    display normal panel
-        #######################################################################################
-        """
-        #######################################################################################
 
         mcell = context.scene.mcell
         
@@ -499,7 +476,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     row = col.row(align=True)
 
                     if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "preferences_select", icon='PREFERENCES', text="" )
-                    if mcell.cellblender_preferences.show_button_num[1]: row.prop ( self, "scripting_select", icon='TEXT', text="" )
+                    if mcell.cellblender_preferences.show_button_num[1]: row.prop ( self, "scripting_select", icon='SCRIPT', text="" )
                     if mcell.cellblender_preferences.show_button_num[2]: row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="" )
 
                     if mcell.cellblender_preferences.use_stock_icons:
@@ -549,26 +526,20 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                         
                 else:
 
-
-                    current_marker = "Before drawing any buttons"
-
                     # Draw all the selection buttons with labels in 2 columns:
 
                     brow = layout.row()
                     bcol = brow.column()
                     bcol.prop ( self, "preferences_select", icon='PREFERENCES', text="Settings & Preferences" )
                     bcol = brow.column()
-                    bcol.prop ( self, "scripting_select", icon='TEXT', text="Scripting" )
+                    bcol.prop ( self, "scripting_select", icon='SCRIPT', text="Scripting" )
 
-                    current_marker = "After drawing preferences_select"
 
                     brow = layout.row()
                     bcol = brow.column()
                     bcol.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="Parameters" )
                     bcol = brow.column()
                     
-                    current_marker = "After drawing parameters_select"
-
 
                     if mcell.cellblender_preferences.use_stock_icons:
                         # Use "stock" icons to check on drawing speed problem
@@ -615,16 +586,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                                 bcol.prop ( self, "reaction_select", icon_value=reaction_u, text="Reactions" )
 
 
-                    current_marker = "After drawing molecules and reactions"
-
-
-                    ## Drawing is fast when exiting here
-
                     bcol = brow.column()
                     bcol.prop ( self, "placement_select", icon='GROUP_VERTEX', text=" Molecule Placement" )
-
-                    current_marker = "After drawing placement_select"
-                    ## Drawing is a little slower when exiting here
 
 
                     brow = layout.row()
@@ -633,7 +596,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol = brow.column()
                     bcol.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="Model Objects" )
 
-                    current_marker = "After drawing release patterns"
 
                     brow = layout.row()
                     bcol = brow.column()
@@ -642,12 +604,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="Assign Surface Classes" )
                     
 
-                    current_marker = "After drawing surface selections"
-
-
-                    ## Drawing is slower when exiting here
-
-
                     brow = layout.row()
                     bcol = brow.column()
                     bcol.prop ( self, "partitions_select", icon='GRID', text="Partitions" )
@@ -655,28 +611,11 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol.prop ( self, "graph_select", icon='FCURVE', text="Plot Output Settings" )
 
 
-                    current_marker = "After drawing partition and graph buttons"
-
-
                     brow = layout.row()
                     bcol = brow.column()
                     bcol.prop ( self, "viz_select", icon='SEQUENCE', text="Visualization Settings" )
                     bcol = brow.column()
                     bcol.prop ( self, "init_select", icon='COLOR_RED', text="Run Simulation" )
-
-
-                    current_marker = "After drawing the viz and run buttons buttons"
-
-
-
-
-                    ############################################
-                    ############################################
-                    #print ( "Exiting ... " + current_marker )
-                    #return
-                    ############################################
-                    ############################################
-
 
 
                     brow = layout.row()
@@ -689,9 +628,11 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol.operator ( "cbm.refresh_operator",icon='FILE_REFRESH', text="Reload Visualization Data")
 
 
+                # Check for modifications to the model since the last run
 
-                current_marker = "After drawing all buttons"
-
+                if eval(mcell.parameter_system.last_parameter_update_time) > eval(mcell.run_simulation.last_simulation_run_time):
+                    row = layout.row()
+                    row.label ( "Warning: Possible model change since last run", icon="INFO" )  # Information might be better than "ERROR" since this is not really an error
 
 
                 # Draw each panel only if it is selected
@@ -705,15 +646,9 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     layout.label ( "Preferences", icon='PREFERENCES' )
                     context.scene.mcell.cellblender_preferences.draw_layout ( context, layout )
 
-                # Combine settings and preferences above
-                # if self.settings_select:
-                #     layout.box() # Use as a separator
-                #     layout.label ( "Project Settings", icon='SETTINGS' )
-                #     context.scene.mcell.project_settings.draw_layout ( context, layout )
-
                 if self.scripting_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Scripting", icon='TEXT' )
+                    layout.label ( "Scripting", icon='SCRIPT' )
                     context.scene.mcell.scripting.draw_layout ( context, layout )
 
                 if self.parameters_select:
@@ -775,11 +710,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     layout.label ( "Reaction Data Output", icon='FCURVE' )
                     context.scene.mcell.rxn_output.draw_layout ( context, layout )
 
-                #if self.mol_viz_select:
-                #    layout.box()
-                #    layout.label ( "Visualization Output Settings", icon='SEQUENCE' )
-                #    context.scene.mcell.mol_viz.draw_layout ( context, layout )
-                    
                 if self.viz_select:
                     layout.box()
                     layout.label ( "Visualization", icon='SEQUENCE' )
@@ -791,15 +721,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     layout.label ( "Run Simulation", icon='COLOR_RED' )
                     context.scene.mcell.initialization.draw_layout ( context, layout )
                     
-                #if self.run_select:
-                #    layout.box() # Use as a separator
-                #    layout.label ( "Run Simulation", icon='COLOR_RED' )
-                #    context.scene.mcell.run_simulation.draw_layout ( context, layout )
-                    
-                # The reload_viz button refreshes rather than brings up a panel
-                #if self.reload_viz:
-                #    layout.box()
-                #    layout.label ( "Reload Simulation Data", icon='FILE_REFRESH' )
         # print ( "Bottom of CellBlenderMainPanelPropertyGroup.draw_self" )
 
 
@@ -834,7 +755,6 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     refresh_source_id = BoolProperty ( default=False, description="Recompute the Source ID from actual files", update=refresh_source_id_callback )
     #cellblender_source_hash = StringProperty(
     #    name="CellBlender Source Hash", default="unknown")
-
 
     cellblender_main_panel = PointerProperty(
         type=CellBlenderMainPanelPropertyGroup,
@@ -887,8 +807,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     object_selector = PointerProperty(
         type=MCellObjectSelectorPropertyGroup,
         name="CellBlender Project Settings")
-    molecule_glyphs = PointerProperty(
-        type=cellblender_molecules.MCellMoleculeGlyphsPropertyGroup, name="Molecule Shapes")
+    #molecule_glyphs = PointerProperty(
+    #    type=cellblender_molecules.MCellMoleculeGlyphsPropertyGroup, name="Molecule Shapes")
 
     legacy = PointerProperty(
         type=cellblender_legacy.MCellLegacyGroup, name="Lecacy Support")
@@ -902,6 +822,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         self.cellblender_data_model_version = "0"
         self.parameter_system.init_properties()
         self.initialization.init_properties ( self.parameter_system )
+        self.run_simulation.init_properties ( self.parameter_system )
         self.molecules.init_properties ( self.parameter_system )
         # Don't forget to update the "saved_by_source_id" to match the current version of the addon
         self['saved_by_source_id'] = cellblender.cellblender_info['cellblender_source_sha1']
@@ -910,7 +831,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all MCell Properties..." )
-        self.molecule_glyphs.remove_properties(context)
+        #self.molecule_glyphs.remove_properties(context)
         self.object_selector.remove_properties(context)
         self.meshalyzer.remove_properties(context)
         self.rxn_output.remove_properties(context)
@@ -935,7 +856,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
 
 
-    def build_data_model_from_properties ( self, context, geometry=False ):
+    def build_data_model_from_properties ( self, context, geometry=False, scripts=False ):
         print ( "build_data_model_from_properties: Constructing a data_model dictionary from current properties" )
         dm = {}
         dm['data_model_version'] = "DM_2014_10_24_1638"
@@ -961,6 +882,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm['simulation_control'] = self.run_simulation.build_data_model_from_properties(context)
         dm['mol_viz'] = self.mol_viz.build_data_model_from_properties(context)
         dm['reaction_data_output'] = self.rxn_output.build_data_model_from_properties(context)
+        dm['scripting'] = self.scripting.build_data_model_from_properties(context,scripts)
         if geometry:
             print ( "Adding Geometry to Data Model" )
             dm['geometrical_objects'] = self.model_objects.build_data_model_geometry_from_mesh(context)
@@ -1071,11 +993,17 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             if dm[group_name] == None:
                 return None
 
+        group_name = "scripting"
+        if group_name in dm:
+            dm[group_name] = cellblender_scripting.CellBlenderScriptingPropertyGroup.upgrade_data_model ( dm[group_name] )
+            if dm[group_name] == None:
+                return None
+
         return dm
 
 
 
-    def build_properties_from_data_model ( self, context, dm, geometry=False ):
+    def build_properties_from_data_model ( self, context, dm, geometry=False, scripts=False ):
         print ( "build_properties_from_data_model: Data Model Keys = " + str(dm.keys()) )
 
         # Check that the data model version matches the version for this property group
@@ -1092,27 +1020,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             print ( "Overwriting the parameter_system properties" )
             self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"] )
         
-        if "initialization" in dm:
-            print ( "Overwriting the initialization properties" )
-            self.initialization.build_properties_from_data_model ( context, dm["initialization"] )
-            if "partitions" in dm:
-                print ( "Overwriting the partitions properties" )
-                self.partitions.build_properties_from_data_model ( context, dm["initialization"]["partitions"] )
-        if "define_molecules" in dm:
-            print ( "Overwriting the define_molecules properties" )
-            self.molecules.build_properties_from_data_model ( context, dm["define_molecules"] )
-        if "define_reactions" in dm:
-            print ( "Overwriting the define_reactions properties" )
-            self.reactions.build_properties_from_data_model ( context, dm["define_reactions"] )
-        if "release_sites" in dm:
-            print ( "Overwriting the release_sites properties" )
-            self.release_sites.build_properties_from_data_model ( context, dm["release_sites"] )
-        if "define_release_patterns" in dm:
-            print ( "Overwriting the define_release_patterns properties" )
-            self.release_patterns.build_properties_from_data_model ( context, dm["define_release_patterns"] )
-        if "define_surface_classes" in dm:
-            print ( "Overwriting the define_surface_classes properties" )
-            self.surface_classes.build_properties_from_data_model ( context, dm["define_surface_classes"] )
+
         # Move below model objects?
         #if "modify_surface_regions" in dm:
         #    print ( "Overwriting the modify_surface_regions properties" )
@@ -1129,6 +1037,34 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
                 print ( "Building Mesh Geometry from Data Model Geometry" )
                 self.model_objects.build_mesh_from_data_model_geometry ( context, dm["geometrical_objects"] )
             print ( "Not fully implemented yet!!!!" )
+
+        if "scripting" in dm:
+            print ( "Overwriting the scripting properties" )
+            self.scripting.build_properties_from_data_model ( context, dm["scripting"], scripts )
+
+        if "initialization" in dm:
+            print ( "Overwriting the initialization properties" )
+            self.initialization.build_properties_from_data_model ( context, dm["initialization"] )
+            if "partitions" in dm["initialization"]:
+                print ( "Overwriting the partitions properties" )
+                self.partitions.build_properties_from_data_model ( context, dm["initialization"]["partitions"] )
+        if "define_molecules" in dm:
+            print ( "Overwriting the define_molecules properties" )
+            self.molecules.build_properties_from_data_model ( context, dm["define_molecules"] )
+        if "release_sites" in dm:
+            print ( "Overwriting the release_sites properties" )
+            self.release_sites.build_properties_from_data_model ( context, dm["release_sites"] )
+        if "define_release_patterns" in dm:
+            print ( "Overwriting the define_release_patterns properties" )
+            self.release_patterns.build_properties_from_data_model ( context, dm["define_release_patterns"] )
+        if "define_surface_classes" in dm:
+            print ( "Overwriting the define_surface_classes properties" )
+            self.surface_classes.build_properties_from_data_model ( context, dm["define_surface_classes"] )
+        if "define_reactions" in dm:
+            print ( "Overwriting the define_reactions properties" )
+            self.reactions.build_properties_from_data_model ( context, dm["define_reactions"] )
+
+        # Building geometry was here ... moved above to keep it from deleting molecule objects and meshes
         if "model_objects" in dm:
             print ( "Overwriting the model_objects properties" )
             self.model_objects.build_properties_from_data_model ( context, dm["model_objects"] )
@@ -1141,14 +1077,15 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         if "mol_viz" in dm:
             print ( "Overwriting the mol_viz properties" )
             self.mol_viz.build_properties_from_data_model ( context, dm["mol_viz"] )
-        # This is commented out because it's not clear how it should work yet...
-        #if "simulation_control" in dm:
-        #    print ( "Overwriting the simulation_control properties" )
-        #    self.run_simulation.build_properties_from_data_model ( context, dm["simulation_control"] )
+
+        # This had been commented out because it's not clear how it should work yet...
+        if "simulation_control" in dm:
+            print ( "Overwriting the simulation_control properties" )
+            self.run_simulation.build_properties_from_data_model ( context, dm["simulation_control"] )
+
         if "reaction_data_output" in dm:
             print ( "Overwriting the reaction_data_output properties" )
             self.rxn_output.build_properties_from_data_model ( context, dm["reaction_data_output"] )
-
 
         # Now call the various "check" routines to clean up any unresolved references
         print ( "Checking the initialization and partitions properties" )

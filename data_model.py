@@ -16,7 +16,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 # <pep8 compliant>
- 
+
 """
 This file contains the classes defining and handling the CellBlender Data Model.
 The CellBlender Data Model is intended to be a fairly stable representation of
@@ -55,6 +55,7 @@ from bpy.app.handlers import persistent
 
 # python imports
 import pickle
+import pprint
 import json
 import os
 
@@ -103,11 +104,105 @@ def dump_data_model ( name, dm ):
             dump_data_model ( k, v )
             i += 1
         data_model_depth += -1
-#    elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
+    # elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
     elif (type(dm) == type('a1')):  #dm is a string
         print ( str(data_model_depth*"  ") + name + " = " + "\"" + str(dm) + "\"" )
     else:
         print ( str(data_model_depth*"  ") + name + " = " + str(dm) )
+
+
+dm_list_depth = 0
+def list_data_model ( name, dm, dm_list ):
+    """Generate a list of the data model elements one line per item"""
+    global dm_list_depth
+    if type(dm) == type({'a':1}):  #dm is a dictionary
+        dm_list.append ( str(dm_list_depth*"   ") + name + " {}" )
+        dm_list_depth += 1
+        for k,v in sorted(dm.items()):
+            list_data_model ( k, v, dm_list )
+        dm_list_depth += -1
+    elif type(dm) == type(['a',1]):  #dm is a list
+        dm_list.append ( str(dm_list_depth*"   ") + name + " []" )
+        dm_list_depth += 1
+        i = 0
+        for v in dm:
+            k = name + "["+str(i)+"]"
+            list_data_model ( k, v, dm_list )
+            i += 1
+        dm_list_depth += -1
+    # elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
+    elif (type(dm) == type('a1')):  #dm is a string
+        dm_list.append ( str(dm_list_depth*"   ") + name + " = " + "\"" + str(dm) + "\"" )
+    else:
+        dm_list.append ( str(dm_list_depth*"   ") + name + " = " + str(dm) )
+    return dm_list
+
+
+dm_indent_by = 2
+dm_text_depth = 0
+def text_data_model ( name, dm, dm_list, comma ):
+    """Generate a list of the data model elements with indenting"""
+    global dm_text_depth
+    indent = dm_indent_by*" "
+    dict_type = type({'a':1})
+    list_type = type(['a',1])
+    if type(dm) == dict_type:  #dm is a dictionary
+        num_items = len(dm.keys())
+        if num_items == 0:
+            dm_list.append ( str(dm_text_depth*indent) + name + "{}" + comma )
+        else:
+            dm_list.append ( str(dm_text_depth*indent) + name + "{" )
+            dm_text_depth += 1
+            item_num = 0
+            for k,v in sorted(dm.items()):
+                if not k.startswith("_"):
+                    subcomma = ','
+                    if item_num > num_items-2:
+                      subcomma = ''
+                    text_data_model ( "\'"+k+"\'"+" : ", v, dm_list, subcomma )
+                    item_num += 1
+            dm_text_depth += -1
+            dm_list.append ( str(dm_text_depth*indent) + "}" + comma )
+    elif type(dm) == list_type:  #dm is a list
+        num_items = len(dm)
+        if num_items == 0:
+            dm_list.append ( str(dm_text_depth*indent) + name + "[]" + comma )
+        else:
+            one_liner = True
+            if num_items > 4:
+                one_liner = False
+            for v in dm:
+                if type(v) in [dict_type, list_type]:
+                  one_liner = False
+                  break
+            if one_liner:
+                dm_list.append ( str(dm_text_depth*indent) + name + str(dm) + comma )
+            else:
+                dm_list.append ( str(dm_text_depth*indent) + name + "[" )
+                dm_text_depth += 1
+                i = 0
+                for v in dm:
+                    k = name + "["+str(i)+"]"
+                    subcomma = ','
+                    if i > num_items-2:
+                      subcomma = ''
+                    text_data_model ( "", v, dm_list, subcomma )
+                    i += 1
+                dm_text_depth += -1
+                dm_list.append ( str(dm_text_depth*indent) + "]" + comma )
+    elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
+        dm_list.append ( str(dm_text_depth*indent) + name + "\"" + str(dm) + "\"" + comma )
+    else:
+        dm_list.append ( str(dm_text_depth*indent) + name + str(dm) + comma )
+    return dm_list
+
+
+def data_model_as_text ( dm ):
+    dm_list = text_data_model ( "", dm, [], "" )
+    s = ""
+    for l in dm_list:
+        s += l + "\n"
+    return s
 
 
 def pickle_data_model ( dm ):
@@ -123,6 +218,13 @@ def data_model_from_json ( dmp ):
     return ( json.loads ( dmp ) )
 
 
+def save_data_model_to_json_file ( mcell_dm, file_name ):
+    print ( "Saving CellBlender model to JSON file: " + file_name )
+    f = open ( file_name, 'w' )
+    f.write ( json_from_data_model ( {"mcell": mcell_dm} ) )
+    f.close()
+
+
 def save_data_model_to_file ( mcell_dm, file_name ):
     print ( "Saving CellBlender model to file: " + file_name )
     dm = { 'mcell': mcell_dm }
@@ -131,6 +233,231 @@ def save_data_model_to_file ( mcell_dm, file_name ):
     f.close()
     print ( "Done saving CellBlender model." )
 
+
+
+# Set up to run tkinter code in another thread
+
+try:
+    import tkinter as tk
+    from tkinter import ttk as ttk
+    from tkinter import messagebox
+    import threading
+    import random
+
+    import bpy
+
+    class CellBlenderDataModelBrowser(threading.Thread):
+
+        depth = 0
+
+        copy_with_pretty_print = True
+
+        def build_tree_from_data_model ( self, parent_id, name, dm ):
+            self.depth += 1
+            draw_as_open = self.depth <= 1
+            if type(dm) == type({'a':1}):  # dm is a dictionary
+              name_str = name + " {} (" + str(len(dm)) + ")"
+              if 'name' in dm:
+                if len(dm['name']) > 0:
+                  name_str += " = " + dm['name']
+              else:
+                name_keys = [k for k in dm.keys() if k.endswith('_name')]
+                if len(name_keys) == 1:
+                  if len(str(dm[name_keys[0]])) > 0:
+                    name_str += " = " + str(dm[name_keys[0]])
+              new_parent = self.tree.insert(parent_id, 'end', text=name_str, open=draw_as_open, tags='d:'+name)
+              for k,v in sorted(dm.items()):
+                self.build_tree_from_data_model ( new_parent, k, v )
+            elif type(dm) == type(['a',1]):  # dm is a list
+              i = 0
+              new_parent = self.tree.insert(parent_id, 'end', text=name+" [] ("+str(len(dm))+")", open=draw_as_open, tags='l:'+name)
+              for v in dm:
+                self.build_tree_from_data_model ( new_parent, str(i), v )
+                i += 1
+            elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
+              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + "\"" + str(dm) + "\"", open=draw_as_open, tags='s:'+name)
+            elif type(dm) == type(True):  # dm is a boolean
+              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + str(dm), open=draw_as_open, tags='b:'+name)
+            elif type(dm) == type(1.0):  # dm is a float
+              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + str(dm), open=draw_as_open, tags='f:'+name)
+            elif type(dm) == type(1):  # dm is an integer
+              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + str(dm), open=draw_as_open, tags='i:'+name)
+            else: # dm is unknown
+              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + str(dm), open=draw_as_open, tags='?:'+name)
+            self.depth += -1
+
+        w = 800
+        h = 800
+
+        def __init__(self):
+            threading.Thread.__init__(self)
+            self.start()
+
+
+        current_data_model = None
+
+        def load_data_model(self):
+            if 'mcell' in bpy.context.scene:
+                if "data_model" in bpy.context.scene.mcell.keys():
+                    dm = pickle.loads ( bpy.context.scene.mcell['data_model'].encode('latin1') )
+                    if len(self.tree.get_children()) > 0:
+                        self.tree.delete ( self.tree.get_children() )
+                    root_id = self.tree.insert ( '', 'end', text='Data_Model', values=[""], open=True, tags='d')
+                    self.build_tree_from_data_model ( root_id, "mcell", dm )
+                    self.current_data_model = { 'mcell' : dm }
+
+
+        def set_copy_as_one_line(self):
+            self.copy_with_pretty_print = False
+
+        def set_copy_as_pretty_print(self):
+            self.copy_with_pretty_print = True
+
+
+        def random_color_string(self):
+            red = hex(int(random.uniform(16,256)))[2:4]
+            grn = hex(int(random.uniform(16,256)))[2:4]
+            blu = hex(int(random.uniform(16,256)))[2:4]
+            return ( "#"+red+grn+blu )
+
+        def random_ends(self):
+            x0 = int(self.w*random.random())
+            y0 = int(self.h*random.random())
+            x1 = int(self.w*random.random())
+            y1 = int(self.h*random.random())
+            ends = (x0, y0, x1, y1)
+            return ends
+
+        def random_line(self):
+            print ( "Draw a random line" )
+            e = self.random_ends()
+            self.c.create_line(e[0],e[1],e[2],e[3],fill=self.random_color_string())
+
+        def random_box(self):
+            print ( "Draw a random box" )
+            e = self.random_ends()
+            self.c.create_rectangle(e[0],e[1],e[2],e[3],fill=self.random_color_string())
+
+        def resize_window(self, event):
+            if str(event.widget) == '.':
+                self.w = event.width
+
+        def item_select(self, event):
+            selected_item = event.widget.item(event.widget.selection()[0])
+
+            # Build an expression to reference this item from inside the data model
+
+            expr = ""
+            iid_expr = ""
+            selected_iid = event.widget.selection()[0]
+            while len(selected_iid) > 0:
+                item = self.tree.item(selected_iid)
+                type_tag = item['tags'][0]
+                parent = self.tree.parent(selected_iid)
+                parent_type_tags = self.tree.item(parent)['tags']
+                parent_type_tag = ""
+                if len(parent_type_tags) > 0:
+                    parent_type_tag = parent_type_tags[0][0]
+                if ('tags' in item) and (len(item['tags']) > 0):
+                    if len(parent) == 0:
+                        expr = 'dm' + expr
+                    elif parent_type_tag == 'l':
+                        expr = '[' + item['text'].split()[0] + ']' + expr
+                    else:
+                        expr = '[\'' + item['text'].split()[0] + '\']' + expr
+                else:
+                    expr = " /* " + item['text'] + " /* " + expr
+                iid_expr = selected_iid + "/" + iid_expr
+                selected_iid = self.tree.parent(selected_iid)
+
+            value = ""
+            try:
+                dm = self.current_data_model   # Copy to local name "dm" since that's what's used in expr
+                value = eval(expr)
+                if self.copy_with_pretty_print:
+                    value = pprint.pformat ( value, indent=4, width=40 ) + "\n"
+            except:
+                pass
+
+            self.root.clipboard_clear()
+            self.root.clipboard_append ( expr + " = " + str(value) + "\n" )
+
+        def copy_selected(self):
+            if len(self.tree.selection()) > 0:
+                selected_item = self.tree.item(self.tree.selection()[0])
+                self.root.clipboard_clear()
+                self.root.clipboard_append(str(selected_item['text']))
+
+        def destroy(self):
+            if messagebox.askyesno("Exit", "Do you want to close the Data Model Browser?"):
+                # print ( "Destroying Tk" )
+                self.root.destroy()
+
+        def debug(self):
+            __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+        def run(self):
+            self.root = tk.Tk()
+            self.root.wm_title("CellBlender Data Model Browser")
+            self.root.protocol("WM_DELETE_WINDOW", self.destroy)
+
+            self.top = self.root.winfo_toplevel()
+            self.menuBar = tk.Menu(self.top)
+            self.top['menu'] = self.menuBar
+
+            self.dmMenu = tk.Menu ( self.menuBar )
+            self.dmMenu.add_command ( label='Reload', command = self.load_data_model )
+            self.dmMenu.add_command ( label='Copy with Pretty Print', command = self.set_copy_as_pretty_print )
+            self.dmMenu.add_command ( label='Copy as One Line', command = self.set_copy_as_one_line )
+            self.menuBar.add_cascade(label="Data Model", menu=self.dmMenu)
+
+            self.root.bind_all ( '<Configure>', self.resize_window )
+
+            self.tree = ttk.Treeview(self.root, show='tree', selectmode='browse' )
+            self.tree.bind ( '<<TreeviewSelect>>', self.item_select )
+            vscroll = ttk.Scrollbar(self.root, orient='vertical', command=self.tree.yview)
+            self.tree.configure(yscroll=vscroll.set)
+
+            self.tree.pack(fill=tk.BOTH,expand=1)
+
+            self.load_data_model()
+
+            self.root.mainloop()
+
+except ( ImportError ):
+    # Unable to import needed libraries so don't draw
+    print ( "Unable to import libraries needed for Data Model Editor ... most likely tkinter" )
+    pass
+
+
+
+class TkBrowseDataModelFromProps(bpy.types.Operator):
+    '''Browse/Copy the data model with a Tk Application (requires tkinter installation)'''
+    bl_idname = "cb.tk_browse_data_model"
+    bl_label = "Browse Data Model with Tk"
+    bl_description = "Browse/Copy the data model with a Tk Application (requires tkinter installation)"
+
+    def execute(self, context):
+        print ( "Browsing CellBlender Data Model:" )
+        mcell = context.scene.mcell
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm )
+        mcell['data_model'] = pickle_data_model ( mcell_dm )
+        app = CellBlenderDataModelBrowser()
+        return {'FINISHED'}
+
+
+class RegenerateDataModelFromProps(bpy.types.Operator):
+    '''Regenerate the data model from the properties'''
+    bl_idname = "cb.regenerate_data_model"
+    bl_label = "Regenerate Data Model"
+    bl_description = "Regenerate the data model from the Blender Properties"
+
+    def execute(self, context):
+        print ( "Showing CellBlender Data Model:" )
+        mcell = context.scene.mcell
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm )
+        mcell['data_model'] = pickle_data_model ( mcell_dm )
+        return {'FINISHED'}
 
 
 class PrintDataModel(bpy.types.Operator):
@@ -204,9 +531,7 @@ class ExportDataModelAllJSON(bpy.types.Operator, ExportHelper):
 
     def execute(self, context):
         mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
-        f = open ( self.filepath, 'w' )
-        f.write ( json_from_data_model ( {"mcell": mcell_dm} ) )
-        f.close()
+        save_data_model_to_json_file ( mcell_dm, self.filepath )
         return {'FINISHED'}
 
 

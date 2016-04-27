@@ -19,7 +19,7 @@ cellblender_info = {
 
         "cellblender_main.py",
 
-        "githooks"+os.sep+"pre-commit",
+        ## "githooks"+os.sep+"pre-commit",
 
         "parameter_system.py",
         "cellblender_preferences.py",
@@ -54,6 +54,21 @@ cellblender_info = {
         "developer_utilities"+os.sep+"data_model_print.py",
         "developer_utilities"+os.sep+"data_model_pyedit.py",
         "developer_utilities"+os.sep+"data_model_tree.py",
+
+        "libMCell"+os.sep+"makefile",
+        "libMCell"+os.sep+"JSON.c",
+        "libMCell"+os.sep+"JSON.cpp",
+        "libMCell"+os.sep+"JSON.h",
+        "libMCell"+os.sep+"JSON.java",
+        "libMCell"+os.sep+"libMCell.cpp",
+        "libMCell"+os.sep+"libMCell.h",
+        "libMCell"+os.sep+"libMCell.i",
+        "libMCell"+os.sep+"mcell_main.cpp",
+        "libMCell"+os.sep+"mcell_main.py",
+        "libMCell"+os.sep+"mcell_main_c.c",
+        "libMCell"+os.sep+"pure_python_sim.py",
+        "libMCell"+os.sep+"StorageClasses.cpp",
+        "libMCell"+os.sep+"StorageClasses.h",
 
         "SimControl.java",
         "META-INF"+os.sep+"MANIFEST.MF",
@@ -113,7 +128,7 @@ cellblender_info = {
         "bng"+os.sep+"treelib3"+os.sep+"__init__.py",
         "bng"+os.sep+"treelib3"+os.sep+"node.py",
         "bng"+os.sep+"treelib3"+os.sep+"tree.py",
-        "bng"+os.sep+"libsbml3"+os.sep+"__init__.py",
+        #        "bng"+os.sep+"libsbml3"+os.sep+"__init__.py",
         ],
 
     "cellblender_source_sha1": "",

@@ -39,7 +39,7 @@ import bpy
 # from cellblender import cellblender_operators  # Shouldn't need this anymore!!
 
 from cellblender import object_surface_regions
-from cellblender.cellblender_utils import project_files_path
+from cellblender.cellblender_utils import mcell_files_path
 
 
 def save(context, filepath=""):
@@ -102,6 +102,7 @@ def save_modular_or_allinone(filedir, main_mdl_file, mdl_filename,
 
     # Save modular (e.g. Scene.molecules.mdl, Scene.reactions.mdl)
     if mcell.export_project.export_format == 'mcell_mdl_modular':
+        print ( "Saving as modular MDL files" )
         main_mdl_file.write("INCLUDE_FILE = \"%s.%s.mdl\"\n\n" %
                        (settings.base_name, mdl_filename))
         filepath = ("%s/%s.%s.mdl" %
@@ -112,6 +113,7 @@ def save_modular_or_allinone(filedir, main_mdl_file, mdl_filename,
             save_function(*args)
     # Or save everything in main mdl (e.g. Scene.main.mdl)
     else:
+        print ( "Saving as one unified MDL file" )
         args.insert(1, main_mdl_file)
         save_function(*args)
 
@@ -178,9 +180,16 @@ def save_wrapper(context, out_file, filedir):
 
     scripting = mcell.scripting
 
-    # scripting.write_scripting_output ( 'before', 'everything', context, out_file, filedir )
+    dm = None
+
+    if scripting.needs_a_data_model():
+      # Only build a data model if running Python code?
+      dm = { 'mcell': mcell.build_data_model_from_properties ( context ) }
+
+
+    scripting.write_scripting_output ( 'before', 'everything', context, out_file, filedir, dm )
     
-    # scripting.write_scripting_output ( 'before', 'parameters', context, out_file, filedir )
+    scripting.write_scripting_output ( 'before', 'parameters', context, out_file, filedir, dm )
 
     # Export parameters: 
     if ps and ps.general_parameter_list:
@@ -188,8 +197,8 @@ def save_wrapper(context, out_file, filedir):
         save_modular_or_allinone(
             filedir, out_file, 'parameters', save_general_parameters, args)
 
-    # scripting.write_scripting_output ( 'after', 'parameters', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'initialization', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'parameters', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'initialization', context, out_file, filedir, dm )
 
     # Export model initialization:
     out_file.write("ITERATIONS = %s\n" % (mcell.initialization.iterations.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
@@ -206,20 +215,20 @@ def save_wrapper(context, out_file, filedir):
 
     save_modular_or_allinone(filedir, out_file, 'initialization', save_initialization_commands, args)
     
-    # scripting.write_scripting_output ( 'after', 'initialization', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'partitions', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'initialization', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'partitions', context, out_file, filedir, dm )
 
     save_partitions(context, out_file)
 
-    # scripting.write_scripting_output ( 'after', 'partitions', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'molecules', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'partitions', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'molecules', context, out_file, filedir, dm )
 
     # Export molecules:
     unfiltered_mol_list = mcell.molecules.molecule_list
     save_general('molecules', save_molecules, save_state, unfiltered_mol_list)
 
-    # scripting.write_scripting_output ( 'after', 'molecules', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'surface_classes', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'molecules', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'surface_classes', context, out_file, filedir, dm )
 
     # Export surface classes:
     unfiltered_surf_class_list = mcell.surface_classes.surf_class_list
@@ -227,23 +236,23 @@ def save_wrapper(context, out_file, filedir):
         'surface_classes', save_surface_classes, save_state,
         unfiltered_surf_class_list)
 
-    # scripting.write_scripting_output ( 'after', 'surface_classes', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'reactions', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'surface_classes', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'reactions', context, out_file, filedir, dm )
 
     # Export reactions:
     unfiltered_rxn_list = mcell.reactions.reaction_list
     save_general('reactions', save_reactions, save_state, unfiltered_rxn_list)
 
-    # scripting.write_scripting_output ( 'after', 'reactions', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'geometry', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'reactions', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'geometry', context, out_file, filedir, dm )
 
     # Export model geometry:
     unfiltered_object_list = context.scene.mcell.model_objects.object_list
     object_list = save_general(
         'geometry', save_geometry, save_state, unfiltered_object_list)
 
-    # scripting.write_scripting_output ( 'after', 'geometry', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'mod_surf_regions', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'geometry', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'mod_surf_regions', context, out_file, filedir, dm )
 
     # Export modify surface regions:
     if surf_class_list:
@@ -251,16 +260,16 @@ def save_wrapper(context, out_file, filedir):
         save_general('mod_surf_regions', save_mod_surf_regions, save_state,
                      unfiltered_msr_list)
 
-    # scripting.write_scripting_output ( 'after', 'mod_surf_regions', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'release_patterns', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'mod_surf_regions', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'release_patterns', context, out_file, filedir, dm )
 
     # Export release patterns:
     unfiltered_rel_pattern_list = mcell.release_patterns.release_pattern_list
     save_general('release_patterns', save_rel_patterns, save_state,
                  unfiltered_rel_pattern_list)
 
-    # scripting.write_scripting_output ( 'after', 'release_patterns', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'instantiate', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'release_patterns', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'instantiate', context, out_file, filedir, dm )
 
     # Instantiate Model Geometry and Release sites:
     unfiltered_release_site_list = mcell.release_sites.mol_release_list
@@ -273,18 +282,22 @@ def save_wrapper(context, out_file, filedir):
         if object_list:
             save_object_list(context, out_file, object_list)
 
+        scripting.write_scripting_output ( 'before', 'release_sites', context, out_file, filedir, dm )
+
         if release_site_list:
             save_release_site_list(context, out_file, release_site_list, mcell)
 
+        scripting.write_scripting_output ( 'after', 'release_sites', context, out_file, filedir, dm )
+
         out_file.write("}\n\n")
 
-    # scripting.write_scripting_output ( 'after', 'instantiate', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'seed', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'instantiate', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'seed', context, out_file, filedir, dm )
 
     out_file.write("sprintf(seed,\"%05g\",SEED)\n\n")
 
-    # scripting.write_scripting_output ( 'after', 'seed', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'viz_output', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'seed', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'viz_output', context, out_file, filedir, dm )
 
     # Export viz output:
 
@@ -300,19 +313,18 @@ def save_wrapper(context, out_file, filedir):
         save_modular_or_allinone(
             filedir, out_file, 'viz_output', save_viz_output_mdl, args)
 
-    # scripting.write_scripting_output ( 'after', 'viz_output', context, out_file, filedir )
-    # scripting.write_scripting_output ( 'before', 'rxn_output', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'viz_output', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'rxn_output', context, out_file, filedir, dm )
 
     # Export reaction output:
     settings = mcell.project_settings
     unfiltered_rxn_output_list = mcell.rxn_output.rxn_output_list
 
-    save_general('rxn_output', save_rxn_output_mdl, save_state,
-                 unfiltered_rxn_output_list)
+    save_general('rxn_output', save_rxn_output_mdl, save_state, unfiltered_rxn_output_list)
 
-    # scripting.write_scripting_output ( 'after', 'rxn_output', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'rxn_output', context, out_file, filedir, dm )
 
-    # scripting.write_scripting_output ( 'after', 'everything', context, out_file, filedir )
+    scripting.write_scripting_output ( 'after', 'everything', context, out_file, filedir, dm )
                  
     """
     #deprecated
@@ -325,7 +337,7 @@ def save_wrapper(context, out_file, filedir):
 
     if error_list and invalid_policy == 'dont_run':
         # If anything is invalid, delete all the MDLs.
-        project_dir = project_files_path()
+        project_dir = mcell_files_path()
         try:
             shutil.rmtree(project_dir)
         except:
@@ -630,12 +642,20 @@ def save_general_parameters(ps, out_file):
 
             ordered_names = ps.build_dependency_ordered_name_list()
             print ( "Ordered names = " + str(ordered_names) )
-            # Output as expressions where order matters
-            out_file.write("/* DEFINE PARAMETERS */\n")
-            for pn in ordered_names:
-                p = ps.general_parameter_list[pn]
-                write_parameter_as_mdl ( p, out_file, ps.export_as_expressions )
-            out_file.write("\n")
+            if ordered_names == None:
+                print ( "Warning: Unable to export as expressions due to circular dependency" )
+                # Output as values ... order doesn't matter
+                out_file.write("/* DEFINE PARAMETERS */\n")
+                for p in ps.general_parameter_list:
+                    write_parameter_as_mdl ( p, out_file, False )
+                out_file.write("\n")
+            else:
+                # Output as expressions where order matters
+                out_file.write("/* DEFINE PARAMETERS */\n")
+                for pn in ordered_names:
+                    p = ps.general_parameter_list[pn]
+                    write_parameter_as_mdl ( p, out_file, ps.export_as_expressions )
+                out_file.write("\n")
 
 
 def save_molecules(context, out_file, mol_list):
@@ -874,7 +894,7 @@ def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all):
 
 def save_rxn_output_mdl(context, out_file, rxn_output_list):
     """ Saves reaction output info to mdl output file. """
-    
+
     mcell = context.scene.mcell
     ps = mcell.parameter_system
 
@@ -890,38 +910,43 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
             ps.panel_parameter_list, ps.export_as_expressions)
     out_file.write("  STEP=%s\n" % rxn_step)
 
+    always_generate = mcell.rxn_output.always_generate
     for rxn_output in rxn_output_list:
-        if rxn_output.rxn_or_mol == 'Reaction':
-            count_name = rxn_output.reaction_name
-        elif rxn_output.rxn_or_mol == 'Molecule':
-            count_name = rxn_output.molecule_name
-        elif rxn_output.rxn_or_mol == 'MDLString':
-            outputStr = rxn_output.mdl_string
-            output_file = rxn_output.mdl_file_prefix
-            if outputStr not in ['', None]:
-                outputStr = '  {%s} =>  "./react_data/seed_" & seed & \"/%s_MDLString.dat\"\n' % (outputStr, output_file)
-                out_file.write(outputStr)
-            else:
-                print('Found invalid reaction output {0}'.format(rxn_output.name))
-            continue
+        if always_generate or rxn_output.plotting_enabled:
+            if rxn_output.rxn_or_mol == 'Reaction':
+                count_name = rxn_output.reaction_name
+            elif rxn_output.rxn_or_mol == 'Molecule':
+                count_name = rxn_output.molecule_name
+            elif rxn_output.rxn_or_mol == 'MDLString':
+                outputStr = rxn_output.mdl_string
+                output_file = rxn_output.mdl_file_prefix
+                if outputStr not in ['', None]:
+                    outputStr = '  {%s} =>  "./react_data/seed_" & seed & \"/%s_MDLString.dat\"\n' % (outputStr, output_file)
+                    out_file.write(outputStr)
+                else:
+                    print('Found invalid reaction output {0}'.format(rxn_output.name))
+                continue  ####   <=====-----  C O N T I N U E     H E R E  !!!!!
+            elif rxn_output.rxn_or_mol == 'File':
+                # No MDL is generated for plot items that are plain files
+                continue  ####   <=====-----  C O N T I N U E     H E R E  !!!!!
 
-        object_name = rxn_output.object_name
-        region_name = rxn_output.region_name
-        if rxn_output.count_location == 'World':
-            out_file.write(
-                "  {COUNT[%s,WORLD]}=> \"./react_data/seed_\" & seed & "
-                "\"/%s.World.dat\"\n" % (count_name, count_name,))
-        elif rxn_output.count_location == 'Object':
-            out_file.write(
-                "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
-                "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,
-                                      object_name, count_name, object_name))
-        elif rxn_output.count_location == 'Region':
-            out_file.write(
-                "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
-                "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,
-                object_name, region_name, count_name, object_name, region_name))
-                
+            object_name = rxn_output.object_name
+            region_name = rxn_output.region_name
+            if rxn_output.count_location == 'World':
+                out_file.write(
+                    "  {COUNT[%s,WORLD]}=> \"./react_data/seed_\" & seed & "
+                    "\"/%s.World.dat\"\n" % (count_name, count_name,))
+            elif rxn_output.count_location == 'Object':
+                out_file.write(
+                    "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
+                    "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,
+                                          object_name, count_name, object_name))
+            elif rxn_output.count_location == 'Region':
+                out_file.write(
+                    "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
+                    "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,
+                    object_name, region_name, count_name, object_name, region_name))
+
     out_file.write("}\n\n")
 
 """

@@ -164,7 +164,7 @@ class SimQueue:
     with self.work_q.mutex:
       self.work_q.queue.clear()
 
-  def add_task(self,cmd,args,wd):
+  def add_task(self,cmd,args,wd,make_texts=True):
     import bpy
     process = sp.Popen([self.python_exec, self.run_wrapper, wd], bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
     pid = process.pid
@@ -175,10 +175,13 @@ class SimQueue:
     self.task_dict[pid]['status'] = 'queued'
     self.task_dict[pid]['stdout'] = b''
     self.task_dict[pid]['stderr'] = b''
-    bpy.ops.text.new()
-    bl_t = bpy.data.texts[-1]
-    bl_t.name = 'task_%d_output' % pid
-    self.task_dict[pid]['bl_text'] = bl_t
+    if make_texts:
+      bpy.ops.text.new()
+      bl_t = bpy.data.texts[-1]
+      bl_t.name = 'task_%d_output' % pid
+      self.task_dict[pid]['bl_text'] = bl_t
+    else:
+      self.task_dict[pid]['bl_text'] = None
     self.work_q.put(self.task_dict[pid])
     return process
 
@@ -200,8 +203,11 @@ class SimQueue:
   def clear_task(self,pid):
     import bpy
     if self.task_dict.get(pid):
-      if bpy.data.texts.get(self.task_dict[pid]['bl_text'].name):
-        bpy.data.texts.remove(self.task_dict[pid]['bl_text'])
+      # if bpy.data.texts.get(self.task_dict[pid]['bl_text'].name):
+      if self.task_dict[pid]['bl_text']:
+        if self.task_dict[pid]['bl_text'].name:
+          if self.task_dict[pid]['bl_text'].name in bpy.data.texts:
+            bpy.data.texts.remove(self.task_dict[pid]['bl_text'])
       self.task_dict.pop(pid)
 
   def shutdown(self):
