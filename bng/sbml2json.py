@@ -242,7 +242,8 @@ class SBML2JSON:
                     removeList.append(element)
             for element in removeList:
                 c2.pop(element)
-        removeMembranes(tree,tree.root)
+        if tree.root:
+            removeMembranes(tree,tree.root)
         return tree
         
     def standardizeName(self,name):
@@ -288,12 +289,14 @@ class SBML2JSON:
         for idx,species in enumerate(self.model.getListOfSpecies()):
             compartment = species.getCompartment()
             outside,inside = self.getOutsideInsideCompartment(compartmentList, compartment)
+            subunits = species.getName().count('.')
+            subunits = subunits + 1
             if compartmentList[compartment][0] == 3:
                 typeD = '3D'
-                diffusion = 'KB*T/(6*PI*mu_{0}*Rs)'.format(compartment)
+                diffusion = 'KB*T/(6*PI*mu_{0}*Rs*{1}^(1/3))'.format(compartment, subunits)
             else:
                 typeD = '2D'
-                diffusion = 'KB*T*LOG((mu_{0}*h/(SQRT(4)*Rc*(mu_{1}+mu_{2})/2))-gamma)/(4*PI*mu_{0}*h)'.format(compartment,outside,inside)
+                diffusion = 'KB*T*LOG((mu_{0}*h/(SQRT({3})*Rc*(mu_{1}+mu_{2})/2))-gamma)/(4*PI*mu_{0}*h)'.format(compartment,outside,inside, subunits)
             self.moleculeData[species.getId()] = [compartmentList[compartment][0]]
             self.compartmentMapping[species.getId()] = compartment
             
