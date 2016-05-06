@@ -1476,18 +1476,24 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         gen_param_list = params.general_parameter_list
 
         params.recursion_depth += 1
-        print ( "Top of parsed_expression_changed, depth = " + str(params.recursion_depth) )
-        print ( "Top of parsed_expression_changed, num_pars = " + str(len(params.general_parameter_list)) )
+        num_pars = len(params.general_parameter_list)
+        print ( "Top of parsed_expression_changed for " + self.name + ", depth = " + str(params.recursion_depth) )
+        print ( "Top of parsed_expression_changed, num_pars = " + str(num_pars) )
 
-        if params.recursion_depth < (2 + len(params.general_parameter_list)):
+        # TODO: Using the recursion depth to check for loops is not appropriate due to callback nature of the current parameter system
+        # TODO: A more explicit check should be made.
+
+        if self.name.startswith('p') or (params.recursion_depth < (2 + num_pars)):
+            # "Panel" parameters (start with "p") cannot be referenced and cannot participate in loops.
             # Start by assuming that everything is NOT in a loop
             self.inloop = False
             params.circular_reference = False
-        elif params.recursion_depth > (3 * len(params.general_parameter_list)):
+        elif params.recursion_depth > 3 * num_pars:
             print ( "Circular reference detected for " + self.name + ": Depth of " + str(params.recursion_depth) + " far exceeds parameter count of " + str(len(params.general_parameter_list)) )
             params.circular_reference = True
             return
-        elif params.recursion_depth >= (2 + len(params.general_parameter_list)):
+        elif params.recursion_depth >= (2 + num_pars):
+            print ( "Circular reference likely for " + self.name + ": Depth of " + str(params.recursion_depth) + " far exceeds parameter count of " + str(len(params.general_parameter_list)) )
             self.inloop = True
             self.isvalid = False
             params.circular_reference = True
@@ -1572,6 +1578,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
                             self.pending_expr = self.expr
                             done = True
                 #params.recursion_depth = 0
+        params.recursion_depth += -1
 
 
     #@profile('Parameter_Data.value_changed')
