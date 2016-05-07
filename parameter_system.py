@@ -1032,7 +1032,7 @@ class Expression_Handler:
     #@profile('Expression_Handler.evaluate_parsed_expr_py')
     def evaluate_parsed_expr_py ( self, param_sys ):
         self.updating = True        # Set flag to check for self-references
-        print ( "Top of evaluate_parsed_expr_py with recursion_depth = " + str(param_sys.recursion_depth) )
+        #print ( "Top of evaluate_parsed_expr_py with recursion_depth = " + str(param_sys.recursion_depth) + ", max depth = " + str(sys.getrecursionlimit()) )
         #param_sys.recursion_depth += 1
 
         self.isvalid = False        # Mark as invalid and return None on any failure
@@ -1477,8 +1477,8 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
 
         params.recursion_depth += 1
         num_pars = len(params.general_parameter_list)
-        print ( "Top of parsed_expression_changed for " + self.name + ", depth = " + str(params.recursion_depth) )
-        print ( "Top of parsed_expression_changed, num_pars = " + str(num_pars) )
+        #print ( "Top of parsed_expression_changed for " + self.name + ", depth = " + str(params.recursion_depth) )
+        #print ( "Top of parsed_expression_changed, num_pars = " + str(num_pars) )
 
         # TODO: Using the recursion depth to check for loops is not appropriate due to callback nature of the current parameter system
         # TODO: A more explicit check should be made.
@@ -1794,6 +1794,18 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             sort_par = self.general_parameter_sort_list.add()
             sort_par.name = par_user_name
             sort_par.par_id = par_name
+
+            # Check the recursion depth and increase as needed
+            current_recursion_limit = sys.getrecursionlimit()
+            current_num_parameters = len(self.general_parameter_list)
+            max_expected_recursion_depth = current_num_parameters * 15  # Each parameter can require several calls, 15 seems to work
+            while current_recursion_limit < max_expected_recursion_depth:
+                if current_recursion_limit <= 0:
+                    current_recursion_limit = 1
+                # Double it to be sure there's enough room
+                current_recursion_limit = 2 * current_recursion_limit
+                sys.setrecursionlimit ( current_recursion_limit )
+                print ( "Set recursion limit to " + str(current_recursion_limit) )
 
 
         new_par.disable_parse = True
