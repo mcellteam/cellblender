@@ -159,8 +159,20 @@ def print_statistics(app):
     f.close()
 
 
-def print_ordered(app):
-    ordered_names = app.parameter_system.build_dependency_ordered_name_list()
+def print_updated(parsys):
+    circular_names = parsys.update_dependency_ordered_name_list()
+    if len(circular_names) > 0:
+        # Must contain circular references ... Output as expressions without ordering
+        for pn in parsys.general_parameter_ordered_list:
+            print ( "  OK: " + pn.par_id )
+        print ( "Error: Circular Reference for " + str(circular_names) )
+    else:
+        for pn in parsys.general_parameter_ordered_list:
+            print ( "  OK: " + pn.par_id )
+        print ( "Good: No Circular Reference" )
+
+def print_ordered(parsys):
+    ordered_names = parsys.build_dependency_ordered_name_list()
     if ordered_names == None:
         # Must contain circular references ... Output as expressions without ordering
         print ( "Error: Circular Reference" )
@@ -171,6 +183,22 @@ def print_ordered(app):
             print ( "  " + pn )
 
 
+class MCELL_OT_print_updated(bpy.types.Operator):
+    bl_idname = "mcell.print_updated"
+    bl_label = "Print Ordered"
+    bl_description = ("Print Dependency Ordered Parameters")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        parsys = context.scene.mcell.parameter_system
+        print_updated(parsys)
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        parsys = context.scene.mcell.parameter_system
+        print_updated(parsys)
+        return {'RUNNING_MODAL'}
+
 class MCELL_OT_print_ordered(bpy.types.Operator):
     bl_idname = "mcell.print_ordered"
     bl_label = "Print Ordered"
@@ -178,13 +206,13 @@ class MCELL_OT_print_ordered(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        app = context.scene.mcell
-        print_ordered(app)
+        parsys = context.scene.mcell.parameter_system
+        print_ordered(parsys)
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        app = context.scene.mcell
-        print_ordered(app)
+        parsys = context.scene.mcell.parameter_system
+        print_ordered(parsys)
         return {'RUNNING_MODAL'}
 
 class MCELL_OT_print_profiling(bpy.types.Operator):
@@ -194,13 +222,13 @@ class MCELL_OT_print_profiling(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        app = context.scene.mcell
-        print_statistics(app)
+        mcell = context.scene.mcell
+        print_statistics(mcell)
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        app = context.scene.mcell
-        print_statistics(app)
+        mcell = context.scene.mcell
+        print_statistics(mcell)
         return {'RUNNING_MODAL'}
 
 
@@ -1741,7 +1769,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     """ Master list of all existing Parameters throughout the application """
     general_parameter_list = CollectionProperty ( type=Parameter_Data, name="GP List" )
     general_parameter_sort_list = CollectionProperty(type=ParameterMappingProperty, name="GP Sort")        # This controls how parameters are displayed in the list
-    #general_parameter_ordered_list = CollectionProperty(type=ParameterMappingProperty, name="GP Ordered")  # This is the dependency order for quick evaluation
+    general_parameter_ordered_list = CollectionProperty(type=ParameterMappingProperty, name="GP Ordered")  # This is the dependency order for quick evaluation
     panel_parameter_list = CollectionProperty ( type=Parameter_Data, name="PP List" )
 
     
@@ -1985,7 +2013,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         print ( "Building Dependency Ordered Name List" )
         ol = []
         if len(self.general_parameter_list) > 0:
-            gl = self.general_parameter_list;
+            gl = self.general_parameter_list
             gs = set(gl.keys())
             print ( " general parameter set (gs) = " + str(gs) )
             while len(gs) > len(ol):
@@ -2000,13 +2028,84 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                         dep_set = set(gl[n].who_I_depend_on.split())
                         if dep_set.issubset(defined_set):
                             print ( "       " + n + " is now defined since all its dependencies are defined." )
-                            ol.append ( n );
+                            ol.append ( n )
                             defined_set = set(ol)
                             added = True
                 if not added:
                     return None
         return ol
 
+
+    def update_dependency_ordered_name_list ( self ):
+        """ Update the dependency order list. Return a list containing items in a loop. """
+        print ( "Updating Dependency Ordered Name List" )
+        ol = []
+        if len(self.general_parameter_list) > 0:
+            gpl = self.general_parameter_list
+            gpl_keys = gpl.keys()
+            gpol = self.general_parameter_ordered_list
+            gpol_keys = [ i.par_id for i in gpol ]
+
+            # Ensure that the starting ordered name list contains exactly all the names from the dictionary
+            items_not_in_gpl = set(gpol_keys) - set(gpl_keys)
+            if len(items_not_in_gpl) > 0:
+                print ( "# There are some items in the ordered list that are no longer in the parameter system. Remove them." )
+                for k in items_not_in_gpl:
+                    gpol_keys.remove(k)
+
+            items_not_in_gpol = set(gpl_keys) - set(gpol_keys)
+            if len(items_not_in_gpol) > 0:
+                print ( "# There are some items in the general parameters list that are not yet in the ordered list. Add them." )
+                for k in items_not_in_gpol:
+                    gpol_keys.append(k)
+                    h = gpol.add()
+                    h.par_id = k
+            assert len(gpol) == len(gpl)
+
+            # Continually loop through all parameters until they're either all in order or a loop is detected
+            double_check_count = 0
+            gs = set(gpl_keys)
+            print ( " general parameter ordered list before update (gs) = " + str(gs) )
+            while len(gs) > 0:
+                defined_set = set(ol)
+                print ( "  In while with already defined_set = " + str(defined_set) )
+                added = set()
+                for n in gs:
+                    print ( "gpl[n] = " + str(gpl[n]) )
+                    print ( gpl[n]['name'] + " is " + n + ", depends on (" + str(gpl[n]['who_I_depend_on']) + "), and depended on by (" + str(gpl[n]['who_depends_on_me']) + ")" )
+                    print ( "   Checking for " + gpl[n]['name'] + " in the defined set" )
+                    if not (n in defined_set):
+                        print ( "     " + gpl[n]['name'] + " is not defined yet, check if it can be" )
+                        dep_set = set(gpl[n].who_I_depend_on.split())
+                        if dep_set.issubset(defined_set):
+                            print ( "       " + gpl[n]['name'] + " is now defined since all its dependencies are defined." )
+                            ol.append ( n )
+                            added.add ( n )
+                            defined_set.add ( n )
+                        else:
+                            print ( "     " + gpl[n]['name'] + " cannot be defined yet" )
+                if len(added) > 0:
+                    # Remove all that are in od from gs to speed up subsequent searching
+                    for r in added:
+                        gs.remove ( r )
+                else:
+                    # Getting here indicates a loop, but continue anyway to remove those that aren't in the loop for flagging
+                    double_check_count += 1
+                    if double_check_count > len(gpl):
+                        print ( "Cannot Order Name List: " + str(gs) )
+                        # Add the names that can be added
+                        gpol.clear()
+                        for i in ol:
+                            h = gpol.add()
+                            h.par_id = i
+                        return (gs)
+        print ( "Final dependency ordered name list = " + str(ol) )
+        # Add all the names
+        gpol.clear()
+        for i in ol:
+            h = gpol.add()
+            h.par_id = i
+        return ([])
 
 
     #@profile('ParameterSystem.register_validity')
@@ -2292,6 +2391,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 row.prop(ps, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
 
                 row = box.row()
+                row.operator("mcell.print_updated", text="Print Updated")
                 row.operator("mcell.print_ordered", text="Print Ordered")
                 row.operator("mcell.print_profiling", text="Print Profiling")
                 row.operator("mcell.clear_profiling", text="Clear Profiling")
