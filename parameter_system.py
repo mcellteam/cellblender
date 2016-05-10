@@ -1,5 +1,52 @@
 """
 This module supports parameters and evaluation of expressions.
+
+##################################################################################
+## The following Data Model Script can be used to generate testing parameters:
+##################################################################################
+
+num_pars_to_gen = 7
+num_back = 2
+make_loop = False
+
+import cellblender as cb
+
+dm = cb.get_data_model()
+
+def make_par_name ( n ):
+    name = None
+    if n < 26:
+        name = chr(ord('a')+n)
+    else:
+        name = "P_" + str(n)
+    return name
+
+pars = []
+for n in range(num_pars_to_gen):
+    pname = make_par_name ( n )
+    par = {}
+    par['par_name'] = pname
+    par['par_description'] = "Description for " + pname
+    par['par_units'] = "u"
+    par['par_expression'] = "1"
+    for i in range(max(n-num_back,0),n):
+        par['par_expression'] += " + "
+        par['par_expression'] += make_par_name ( i )
+    pars.append ( par )
+
+if make_loop:
+    mid = round(num_pars_to_gen / 2)
+    print ( " mid = " + str(mid) )
+    if (mid-1) >= 0:
+        # There are enough parameters to make a loop
+        pars[mid-1]['par_expression'] += " + " + pars[mid]['par_name']
+
+dm['mcell']['parameter_system'] = { 'model_parameters':pars }
+
+cb.replace_data_model ( dm )
+
+##################################################################################
+
 """
 
 import bpy
@@ -111,6 +158,34 @@ def print_statistics(app):
     f.flush()
     f.close()
 
+
+def print_ordered(app):
+    ordered_names = app.parameter_system.build_dependency_ordered_name_list()
+    if ordered_names == None:
+        # Must contain circular references ... Output as expressions without ordering
+        print ( "Error: Circular Reference" )
+    else:
+        # Output as expressions where order matters
+        print ( "Good: No Circular Reference" )
+        for pn in ordered_names:
+            print ( "  " + pn )
+
+
+class MCELL_OT_print_ordered(bpy.types.Operator):
+    bl_idname = "mcell.print_ordered"
+    bl_label = "Print Ordered"
+    bl_description = ("Print Dependency Ordered Parameters")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        app = context.scene.mcell
+        print_ordered(app)
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        app = context.scene.mcell
+        print_ordered(app)
+        return {'RUNNING_MODAL'}
 
 class MCELL_OT_print_profiling(bpy.types.Operator):
     bl_idname = "mcell.print_profiling"
@@ -1665,7 +1740,8 @@ class ParameterMappingProperty(bpy.types.PropertyGroup):
 class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     """ Master list of all existing Parameters throughout the application """
     general_parameter_list = CollectionProperty ( type=Parameter_Data, name="GP List" )
-    general_parameter_sort_list = CollectionProperty(type=ParameterMappingProperty, name="GP Sort")
+    general_parameter_sort_list = CollectionProperty(type=ParameterMappingProperty, name="GP Sort")        # This controls how parameters are displayed in the list
+    #general_parameter_ordered_list = CollectionProperty(type=ParameterMappingProperty, name="GP Ordered")  # This is the dependency order for quick evaluation
     panel_parameter_list = CollectionProperty ( type=Parameter_Data, name="PP List" )
 
     
@@ -2216,6 +2292,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 row.prop(ps, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
 
                 row = box.row()
+                row.operator("mcell.print_ordered", text="Print Ordered")
                 row.operator("mcell.print_profiling", text="Print Profiling")
                 row.operator("mcell.clear_profiling", text="Clear Profiling")
 
