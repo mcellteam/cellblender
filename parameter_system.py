@@ -19,6 +19,10 @@ def make_par_name ( n ):
         name = chr(ord('a')+n)
     else:
         name = "P_" + str(n)
+    if (n % 3) == 0:
+        name += 'x'
+    if (n % 3) == 1:
+        name += 'y'
     return name
 
 pars = []
@@ -1812,8 +1816,13 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         print ( "Removing all Parameter System Properties ... " )
         while len(self.general_parameter_list) > 0:
             self.general_parameter_list.remove(0)
+        while len(self.general_parameter_sort_list) > 0:
             self.general_parameter_sort_list.remove(0)
+        while len(self.general_parameter_ordered_list) > 0:
+            self.general_parameter_ordered_list.remove(0)
+        self.active_par_index = 0
         self['gname_to_id_dict'] = {}
+        
 
 
     #@profile('ParameterSystem.allocate_available_gid')
