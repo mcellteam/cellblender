@@ -2680,7 +2680,7 @@ class ReleaseShapeTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=5.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "c622d3e5c9eaf20911b95ae006eb197401d0e982", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "697e969c9b694df6cdc5d284afd55847f35ea7f5", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3010,7 +3010,7 @@ class CubeTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "c32241a2f97ace100f1af7a711a6a970c6b9a135", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "a859956908f4f04b331a5b170d2c8fe6cff09c54", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3076,7 +3076,7 @@ class CubeSurfaceTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=6.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "30e124487f8cbd63281c3c8cc2b8215bc1637193", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "d7b48e482d74baa12fffd0a93157e0358f812e98", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
         
@@ -3358,7 +3358,7 @@ class SurfaceClassesTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='5000', time_step='1e-6', wait_time=40.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "cce6f22d7a48e6c513c670a5917909c0129fbf4c", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "ea72cb97afda9b90730b82aeed8c4c72639d6eac", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5212,7 +5212,7 @@ class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="5b7ea646b35cc54eb56a36a08a34217e2900c928", test_name=self.self_test_name, wait_time=15.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="b2bad86aa95c411e79f20962c2b57aea0b8178ce", test_name=self.self_test_name, wait_time=15.0 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -5240,7 +5240,7 @@ class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="4be2236905c76aa47d1f2b76904ef76bdc025c01", test_name=self.self_test_name, wait_time=60.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="3a5ef12828391185147e706983981160554fa955", test_name=self.self_test_name, wait_time=60.0 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
