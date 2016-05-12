@@ -484,22 +484,17 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
 
     def add_region_by_name(self, context, reg_name):
         """ Add a new region to the list of regions and set as the active region """
-        curr_reg_name = reg_name
-        try:
-            curr_reg = self.get_active_region()
-            curr_reg_name = curr_reg.name
-        except AttributeError:
-            # This will happen when using the geometry importer, since there
-            # are no regions to get yet.
-            pass
+        curr_reg = self.get_active_region()
 
         id = self.allocate_id()
         new_reg=self.region_list.add()
         new_reg.init_region(context, id)
-# FIXME: CHECK FOR NAME COLLISION HERE: FIX BY ALLOCATING NEXT ID...
+        # FIXME: CHECK FOR NAME COLLISION HERE: FIX BY ALLOCATING NEXT ID...
         new_reg.name = reg_name
 
-        idx = self.region_list.find(curr_reg_name)
+        if not curr_reg:
+          curr_reg = new_reg
+        idx = self.region_list.find(curr_reg.name)
         self.active_reg_index = idx
 
 
