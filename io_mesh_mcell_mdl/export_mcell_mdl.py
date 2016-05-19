@@ -602,13 +602,13 @@ def write_parameter_as_mdl ( p, out_file, as_expr ):
         # Note that some expressions are allowed to be blank which indicates use of the default VALUE
         if len(p.expr.strip()) <= 0:
             # The expression is blank, so use the value which should be the default
-            out_file.write("%s = %.g" % (p.par_name, p.value))
+            out_file.write("%s = %.15g" % (p.par_name, p.value))
         else:
             # The expression is not blank, so use it
             out_file.write("%s = %s" % (p.par_name, p.expr))
     else:
         # Output the value rather than the expression
-        out_file.write("%s = %.g" % (p.par_name, p.value))
+        out_file.write("%s = %.15g" % (p.par_name, p.value))
 
     if ((p.descr != "") | (p.units != "")):
         out_file.write("    /* ")
