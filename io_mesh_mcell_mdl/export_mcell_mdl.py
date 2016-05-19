@@ -148,13 +148,13 @@ def save_partitions(context, out_file):
     mcell = context.scene.mcell
 
     if mcell.partitions.include:
-        out_file.write("PARTITION_X = [[%g TO %g STEP %g]]\n" % (
+        out_file.write("PARTITION_X = [[%.15g TO %.15g STEP %.15g]]\n" % (
             mcell.partitions.x_start, mcell.partitions.x_end,
             mcell.partitions.x_step))
-        out_file.write("PARTITION_Y = [[%g TO %g STEP %g]]\n" % (
+        out_file.write("PARTITION_Y = [[%.15g TO %.15g STEP %.15g]]\n" % (
             mcell.partitions.y_start, mcell.partitions.y_end,
             mcell.partitions.y_step))
-        out_file.write("PARTITION_Z = [[%g TO %g STEP %g]]\n\n" % (
+        out_file.write("PARTITION_Z = [[%.15g TO %.15g STEP %.15g]]\n\n" % (
             mcell.partitions.z_start, mcell.partitions.z_end,
             mcell.partitions.z_step))
 
@@ -389,7 +389,6 @@ def save_initialization_commands(context, out_file):
     if init.vacancy_search_distance.get_expr(ps.panel_parameter_list) != '':
         out_file.write("VACANCY_SEARCH_DISTANCE = %s\n" % (init.vacancy_search_distance.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
     # Surface Grid Density
-    ##### TODO: If surface_grid_density is an integer (as it is) why output it as %g format?
     out_file.write("SURFACE_GRID_DENSITY = %s\n" % (init.surface_grid_density.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)))
     # Accurate 3D Reactions
     if init.accurate_3d_reactions:
@@ -411,7 +410,7 @@ def save_initialization_commands(context, out_file):
 
         # Probability Report
         if init.probability_report == 'THRESHOLD':
-            out_file.write("   PROBABILITY_REPORT_THRESHOLD = %g\n" % (
+            out_file.write("   PROBABILITY_REPORT_THRESHOLD = %.15g\n" % (
                 init.probability_report_threshold))
         else:
             out_file.write("   PROBABILITY_REPORT = %s\n" % (
@@ -496,7 +495,7 @@ def save_initialization_commands(context, out_file):
         # Missed Reactions
         out_file.write("   MISSED_REACTIONS = %s\n" % init.missed_reactions)
         if init.missed_reactions == 'WARNING':
-            out_file.write("   MISSED_REACTION_THRESHOLD = %g\n"
+            out_file.write("   MISSED_REACTION_THRESHOLD = %.15g\n"
                            % init.missed_reaction_threshold)
     else:
         out_file.write(
