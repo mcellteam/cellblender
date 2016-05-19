@@ -972,7 +972,7 @@ class SingleMoleculeTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
         
-        cb_model.compare_mdl_with_sha1 ( "19fd01beddf82da6026810b52d6955638674f556", test_name="Single Molecule Test" )
+        cb_model.compare_mdl_with_sha1 ( "e14222dc99f16900bcaf3d2198e934b304a09a73", test_name="Single Molecule Test" )
 
         cb_model.refresh_molecules()
 
@@ -1017,7 +1017,7 @@ class DoubleSphereTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "4410b18c1530f79c07cc2aebec52a7eabc4aded4", test_name="Double Sphere Test" )
+        cb_model.compare_mdl_with_sha1 ( "e9fa4703bb71ffbf2729d8c97fcbb2939975e7d4", test_name="Double Sphere Test" )
 
         cb_model.refresh_molecules()
 
