@@ -89,7 +89,7 @@ def readSBMLFileParametricObject(filepath):
             print("vertices: " + vertices)
                 '''
             if not faces or not vertices:
-                print 'this geometry file contains invalid polygon object entries'
+                print ( 'this geometry file contains invalid polygon object entries' )
                 continue
 
             faces = faces[1:-1]
