@@ -89,6 +89,8 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
     exit_on_error = bpy.props.BoolProperty(name="Exit on Error", default=True)
     run_mcell = bpy.props.BoolProperty(name="Run MCell", default=True)
     run_with_queue = bpy.props.BoolProperty(name="Run with Queue", default=True)
+    update_soure_file = bpy.props.BoolProperty(name="Update Source", default=False)
+    source_file_to_update = bpy.props.StringProperty(name="Source File to Update", default="")
     test_status = bpy.props.StringProperty(name="TestStatus", default="?")
 
     
@@ -208,6 +210,13 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
         row.prop(app, "exit_on_error")
         row.prop(app, "run_mcell")
         row.prop(app, "run_with_queue")
+        row.prop(app, "update_soure_file")
+        if app.update_soure_file:
+            row = self.layout.row()
+            col = row.column()
+            col.prop ( app, "source_file_to_update" )
+            col = row.column()
+            col.operator("cellblender_test.set_source_file", text="", icon='FILESEL')
 
         for group_num in range(next_test_group_num):
             # print ( "Drawing Group " + str(group_num) )
@@ -289,6 +298,24 @@ class SetBlendPath(bpy.types.Operator):
     def execute(self, context):
         app = context.scene.cellblender_test_suite
         app.path_to_blend = self.filepath
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
+class SetSourceFile(bpy.types.Operator):
+    bl_idname = "cellblender_test.set_source_file"
+    bl_label = "Set Source File"
+    bl_description = ("Set Source File. Select a file for updating hash results. Be sure results are correct first!!")
+    bl_options = {'REGISTER'}
+
+    filepath = bpy.props.StringProperty(subtype='FILE_PATH', default="")
+
+    def execute(self, context):
+        app = context.scene.cellblender_test_suite
+        app.source_file_to_update = self.filepath
         return {'FINISHED'}
 
     def invoke(self, context, event):
@@ -1156,7 +1183,16 @@ class CellBlender_Model:
                     app.test_status = "F"
 
                     if app.exit_on_error:
-                        bpy.ops.wm.quit_blender() 
+                        bpy.ops.wm.quit_blender()
+                    if app.update_soure_file and (len(app.source_file_to_update) > 0):
+                        print ( "Updating source file to change " + good_hash + " into " + file_hash )
+                        f = open ( app.source_file_to_update, mode='r' )
+                        fstring = f.read()
+                        f.close()
+                        new_string = fstring.replace ( good_hash, file_hash )
+                        f = open ( app.source_file_to_update, mode='w' )
+                        f.write(new_string)
+                        f.close()
 
         else:
 
