@@ -82,33 +82,36 @@ def readSBMLFileParametricObject(filepath):
             faces        = polygonObject.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}faces')
             vertices     = polygonObject.get('{http://www.sbml.org/sbml/level3/version1/spatial/version1}pointIndex')
         
-        '''
-        print("id: "       + id)
-        
-        print("faces: "    + faces)
-        print("vertices: " + vertices)
             '''
-        faces = faces[1:-1]
-        faces = faces.split(";")
-        temp = []
-        for element in faces:
-            face = element.split()
-            for i in range(0,len(face)):
-                face[i] = int(face[i])-1
-            temp += [face]
-        faces = temp
-    
-        vertices = vertices[1:-1]
-        vertices = vertices.split(";")
-        temp = []
-        for element in vertices:
-            vertice = element.split()
-            for i in range(0, len(vertice)):
-                vertice[i] = float(vertice[i])
-            temp += [vertice]
-        vertices = temp
-    
-        objects += [[id, faces, vertices]]
+            print("id: "       + id)
+            
+            print("faces: "    + faces)
+            print("vertices: " + vertices)
+                '''
+            if not faces or not vertices:
+                print 'this geometry file contains invalid polygon object entries'
+                continue
+
+            faces = faces[1:-1]
+            faces = faces.split(";")
+            temp = []
+            for element in faces:
+                face = element.split()
+                for i in range(0,len(face)):
+                    face[i] = int(face[i])-1
+                temp += [face]
+            faces = temp
+            vertices = vertices[1:-1]
+            vertices = vertices.split(";")
+            temp = []
+            for element in vertices:
+                vertice = element.split()
+                for i in range(0, len(vertice)):
+                    vertice[i] = float(vertice[i])
+                temp += [vertice]
+            vertices = temp
+        
+            objects += [[id, faces, vertices]]
     return objects
 
 # all objects in blender scene are deleted. Should leave empty blender scene.
