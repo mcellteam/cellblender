@@ -1,56 +1,5 @@
 """
 This module supports parameters and evaluation of expressions.
-
-##################################################################################
-## The following Data Model Script can be used to generate testing parameters:
-##################################################################################
-
-num_pars_to_gen = 7
-num_back = 2
-make_loop = False
-
-import cellblender as cb
-
-dm = cb.get_data_model()
-
-def make_par_name ( n ):
-    name = None
-    if n < 26:
-        name = chr(ord('a')+n)
-    else:
-        name = "P_" + str(n)
-    if (n % 3) == 0:
-        name += 'x'
-    if (n % 3) == 1:
-        name += 'y'
-    return name
-
-pars = []
-for n in range(num_pars_to_gen):
-    pname = make_par_name ( n )
-    par = {}
-    par['par_name'] = pname
-    par['par_description'] = "Description for " + pname
-    par['par_units'] = "u"
-    par['par_expression'] = "1"
-    for i in range(max(n-num_back,0),n):
-        par['par_expression'] += " + "
-        par['par_expression'] += make_par_name ( i )
-    pars.append ( par )
-
-if make_loop:
-    mid = round(num_pars_to_gen / 2)
-    print ( " mid = " + str(mid) )
-    if (mid-1) >= 0:
-        # There are enough parameters to make a loop
-        pars[mid-1]['par_expression'] += " + " + pars[mid]['par_name']
-
-dm['mcell']['parameter_system'] = { 'model_parameters':pars }
-
-cb.replace_data_model ( dm )
-
-##################################################################################
-
 """
 
 import bpy
@@ -163,62 +112,6 @@ def print_statistics(app):
     f.close()
 
 
-def print_updated(parsys):
-    circular_names = parsys.update_dependency_ordered_name_list()
-    if len(circular_names) > 0:
-        # Must contain circular references ... Output as expressions without ordering
-        for pn in parsys.general_parameter_ordered_list:
-            print ( "  OK: " + pn.par_id )
-        print ( "Error: Circular Reference for " + str(circular_names) )
-    else:
-        for pn in parsys.general_parameter_ordered_list:
-            print ( "  OK: " + pn.par_id )
-        print ( "Good: No Circular Reference" )
-
-def print_ordered(parsys):
-    ordered_names = parsys.build_dependency_ordered_name_list()
-    if ordered_names == None:
-        # Must contain circular references ... Output as expressions without ordering
-        print ( "Error: Circular Reference" )
-    else:
-        # Output as expressions where order matters
-        print ( "Good: No Circular Reference" )
-        for pn in ordered_names:
-            print ( "  " + pn )
-
-
-class MCELL_OT_print_updated(bpy.types.Operator):
-    bl_idname = "mcell.print_updated"
-    bl_label = "Print Ordered"
-    bl_description = ("Print Dependency Ordered Parameters")
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-        parsys = context.scene.mcell.parameter_system
-        print_updated(parsys)
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        parsys = context.scene.mcell.parameter_system
-        print_updated(parsys)
-        return {'RUNNING_MODAL'}
-
-class MCELL_OT_print_ordered(bpy.types.Operator):
-    bl_idname = "mcell.print_ordered"
-    bl_label = "Print Ordered"
-    bl_description = ("Print Dependency Ordered Parameters")
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-        parsys = context.scene.mcell.parameter_system
-        print_ordered(parsys)
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        parsys = context.scene.mcell.parameter_system
-        print_ordered(parsys)
-        return {'RUNNING_MODAL'}
-
 class MCELL_OT_print_profiling(bpy.types.Operator):
     bl_idname = "mcell.print_profiling"
     bl_label = "Print Profiling"
@@ -226,13 +119,13 @@ class MCELL_OT_print_profiling(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        mcell = context.scene.mcell
-        print_statistics(mcell)
+        app = context.scene.mcell
+        print_statistics(app)
         return {'FINISHED'}
 
     def invoke(self, context, event):
-        mcell = context.scene.mcell
-        print_statistics(mcell)
+        app = context.scene.mcell
+        print_statistics(app)
         return {'RUNNING_MODAL'}
 
 
@@ -314,6 +207,7 @@ class MCELL_PT_parameter_system(bpy.types.Panel):
     bl_options = {'DEFAULT_CLOSED'}
 
     #@profile('MCELL_PT_parameter_system.draw')
+
     def draw ( self, context ):
         # Call the draw function of the object itself
         start_timer('MCELL_PT_parameter_system.draw_panel')
@@ -879,7 +773,7 @@ class Expression_Handler:
                     "fopen",
                     "fclose" ] )
 
-    @profile('encode_expr_list_to_str')
+    #@profile('encode_expr_list_to_str')
     def encode_expr_list_to_str ( self, expr_list ):
         """ Turns an expression list into a string that can be stored as a Blender StringProperty """
         term_sep = self.get_term_sep()
@@ -905,7 +799,7 @@ class Expression_Handler:
         return expr_str
 
 
-    @profile('Expression_Handler.decode_str_to_expr_list')
+    #@profile('Expression_Handler.decode_str_to_expr_list')
     def decode_str_to_expr_list ( self, expr_str ):
         """ Recovers an expression list from a string that has been stored as a Blender StringProperty """
         expr_list = []
@@ -923,7 +817,7 @@ class Expression_Handler:
         return expr_list
 
 
-    @profile('Expression_Handler.build_mdl_expr')
+    #@profile('Expression_Handler.build_mdl_expr')
     def build_mdl_expr ( self, expr_list, gen_param_list ):
         """ Converts an MDL expression list into an MDL expression using user names for parameters"""
         expr = ""
@@ -947,7 +841,7 @@ class Expression_Handler:
                     expr = expr + token
         return expr
 
-    @profile('Expression_Handler.build_py_expr_using_names')
+    #@profile('Expression_Handler.build_py_expr_using_names')
     def build_py_expr_using_names ( self, expr_list, gen_param_list ):
         """ Converts an MDL expression list into a python expression using user names for parameters"""
         expr = ""
@@ -975,7 +869,7 @@ class Expression_Handler:
                         expr = expr + token
         return expr
 
-    @profile('Expression_Handler.build_py_expr_using_ids')
+    #@profile('Expression_Handler.build_py_expr_using_ids')
     def build_py_expr_using_ids ( self, expr_list, gen_param_list ):
         """ Converts an MDL expression list into a python expression using unique names for parameters"""
         expr = ""
@@ -1004,7 +898,7 @@ class Expression_Handler:
         return expr
 
 
-    @profile('Expression_Handler.parse_param_expr')
+    #@profile('Expression_Handler.parse_param_expr')
     def parse_param_expr ( self, param_expr, parameter_system ):
         """ Converts a string expression into a list expression with:
                  variable id's as integers,
@@ -1085,7 +979,7 @@ class Expression_Handler:
     def count_stub ( self ):
         pass
 
-    @profile('Expression_Handler.recurse_tree_symbols')
+    #@profile('Expression_Handler.recurse_tree_symbols')
     def recurse_tree_symbols ( self, local_name_ID_dict, pt, current_expr ):
         """ Recurse through the parse tree looking for "terminal" items which are added to the list """
         # print ( "Top of recurse_tree_symbols" )
@@ -1135,7 +1029,7 @@ class Expression_Handler:
         return None
 
 
-    @profile('Expression_Handler.evaluate_parsed_expr_py')
+    #@profile('Expression_Handler.evaluate_parsed_expr_py')
     def evaluate_parsed_expr_py ( self, param_sys ):
         self.updating = True        # Set flag to check for self-references
         #print ( "Top of evaluate_parsed_expr_py with recursion_depth = " + str(param_sys.recursion_depth) + ", max depth = " + str(sys.getrecursionlimit()) )
@@ -1771,8 +1665,7 @@ class ParameterMappingProperty(bpy.types.PropertyGroup):
 class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     """ Master list of all existing Parameters throughout the application """
     general_parameter_list = CollectionProperty ( type=Parameter_Data, name="GP List" )
-    general_parameter_sort_list = CollectionProperty(type=ParameterMappingProperty, name="GP Sort")        # This controls how parameters are displayed in the list
-    general_parameter_ordered_list = CollectionProperty(type=ParameterMappingProperty, name="GP Ordered")  # This is the dependency order for quick evaluation
+    general_parameter_sort_list = CollectionProperty(type=ParameterMappingProperty, name="GP Sort")
     panel_parameter_list = CollectionProperty ( type=Parameter_Data, name="PP List" )
 
     
@@ -1805,7 +1698,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
     last_parameter_update_time = StringProperty ( default="-1.0", description="Time that the last parameter was updated" )
 
-    @profile('ParameterSystem.init_properties')
+    #@profile('ParameterSystem.init_properties')
     def init_properties ( self ):
         if not ('gname_to_id_dict' in self):
             self['gname_to_id_dict'] = {}
@@ -1815,16 +1708,11 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         print ( "Removing all Parameter System Properties ... " )
         while len(self.general_parameter_list) > 0:
             self.general_parameter_list.remove(0)
-        while len(self.general_parameter_sort_list) > 0:
             self.general_parameter_sort_list.remove(0)
-        while len(self.general_parameter_ordered_list) > 0:
-            self.general_parameter_ordered_list.remove(0)
-        self.active_par_index = 0
         self['gname_to_id_dict'] = {}
-        
 
 
-    @profile('ParameterSystem.allocate_available_gid')
+    #@profile('ParameterSystem.allocate_available_gid')
     def allocate_available_gid ( self ):
         """ Return a unique parameter ID for a new parameter """
         if (len(self.general_parameter_list) <= 0) and (len(self.panel_parameter_list) <= 0):
@@ -1834,7 +1722,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         return ( self.next_gid - 1 )
 
 
-    @profile('ParameterSystem.allocate_available_pid')
+    #@profile('ParameterSystem.allocate_available_pid')
     def allocate_available_pid ( self ):
         """ Return a unique parameter ID for a new parameter """
         if (len(self.general_parameter_list) <= 0) and (len(self.panel_parameter_list) <= 0):
@@ -1844,7 +1732,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         return ( self.next_pid - 1 )
 
 
-    @profile('ParameterSystem.get_parameter')
+    #@profile('ParameterSystem.get_parameter')
     def get_parameter ( self, unique_name, pp=False ):
         if pp:
             # Look for this name in the list of panel parameter references
@@ -1860,14 +1748,14 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 return None
 
 
-    @profile('ParameterSystem.add_general_parameter_with_values')
+    #@profile('ParameterSystem.add_general_parameter_with_values')
     def add_general_parameter_with_values ( self, name, expression, units, description ):
         """ Add a new parameter to the list of parameters """
         p = self.new_parameter ( new_name=name, pp=False, new_expr=expression, new_units=units, new_desc=description )
         return p
 
 
-    @profile('ParameterSystem.new_parameter')
+    #@profile('ParameterSystem.new_parameter')
     def new_parameter ( self, new_name=None, pp=False, new_expr=None, new_units=None, new_desc=None ):
         """ Add a new parameter to the list of parameters """
         if new_name != None:
@@ -1902,15 +1790,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         else:
             # Create the parameter in the general parameter list
             new_par = self.general_parameter_list.add()
-
             # Also create a name/id pair in the sorting list
             sort_par = self.general_parameter_sort_list.add()
             sort_par.name = par_user_name
             sort_par.par_id = par_name
-
-            # Also add the name to the ordered list (helps give an initial order if the parameters are added in dependency order)
-            ord_par = self.general_parameter_ordered_list.add()
-            ord_par.par_id = par_name
 
             # Check the recursion depth and increase as needed
             current_recursion_limit = sys.getrecursionlimit()
@@ -1948,7 +1831,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         return new_par
 
 
-    @profile('ParameterSystem.del_panel_parameter')
+    #@profile('ParameterSystem.del_panel_parameter')
     def del_panel_parameter ( self, unique_name ):
 
         if unique_name[0] == 'p':
@@ -1975,14 +1858,14 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             #    self['gname_to_id_dict'].pop(unique_name)
 
 
-    @profile('ParameterSystem.add_parameter')
+    #@profile('ParameterSystem.add_parameter')
     def add_parameter ( self, context ):
         """ Add a new parameter to the list of general parameters and set as the active parameter """
         p = self.new_parameter()
         self.active_par_index = len(self.general_parameter_list)-1
         return p
 
-    @profile('ParameterSystem.remove_active_parameter')
+    #@profile('ParameterSystem.remove_active_parameter')
     def remove_active_parameter ( self, context ):
         """ Remove the active parameter from the list of parameters if not needed by others """
         status = ""
@@ -2021,12 +1904,12 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
 
 
-    @profile('ParameterSystem.build_dependency_ordered_name_list')
+    #@profile('ParameterSystem.build_dependency_ordered_name_list')
     def build_dependency_ordered_name_list ( self ):
         print ( "Building Dependency Ordered Name List" )
         ol = []
         if len(self.general_parameter_list) > 0:
-            gl = self.general_parameter_list
+            gl = self.general_parameter_list;
             gs = set(gl.keys())
             print ( " general parameter set (gs) = " + str(gs) )
             while len(gs) > len(ol):
@@ -2041,7 +1924,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                         dep_set = set(gl[n].who_I_depend_on.split())
                         if dep_set.issubset(defined_set):
                             print ( "       " + n + " is now defined since all its dependencies are defined." )
-                            ol.append ( n )
+                            ol.append ( n );
                             defined_set = set(ol)
                             added = True
                 if not added:
@@ -2049,85 +1932,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         return ol
 
 
-    def dbprint ( self, s ):
-        ## print ( s )
-        pass
 
-    @profile('ParameterSystem.update_dependency_ordered_name_list')
-    def update_dependency_ordered_name_list ( self ):
-        """ Update the dependency order list. Return a list containing items in a loop. """
-        print ( "Updating Dependency Ordered Name List" )
-        ol = []
-        gpol = self.general_parameter_ordered_list
-        gpol_keys = [ i.par_id for i in gpol ]
-        if len(self.general_parameter_list) > 0:
-            gpl = self.general_parameter_list
-            gpl_keys = gpl.keys()
-
-            # Ensure that the starting ordered name list contains exactly all the names from the dictionary
-            items_not_in_gpl = set(gpol_keys) - set(gpl_keys)
-            if len(items_not_in_gpl) > 0:
-                self.dbprint ( "# There are some items in the ordered list that are no longer in the parameter system. Remove them." )
-                for k in items_not_in_gpl:
-                    gpol_keys.remove(k)
-
-            items_not_in_gpol = set(gpl_keys) - set(gpol_keys)
-            if len(items_not_in_gpol) > 0:
-                self.dbprint ( "# There are some items in the general parameters list that are not yet in the ordered list. Add them." )
-                for k in items_not_in_gpol:
-                    gpol_keys.append(k)
-                    h = gpol.add()
-                    h.par_id = k
-            assert len(gpol) == len(gpl)
-
-            # Continually loop through all parameters until they're either all in order or a loop is detected
-            double_check_count = 0
-            #gs = set(gpol_keys)
-            gs = [ k for k in gpol_keys ]
-            print ( " general parameter ordered list before update (gs) = " + str(gs) )
-            while len(gs) > 0:
-                defined_set = set(ol)
-                self.dbprint ( "  In while with already defined_set = " + str(defined_set) )
-                added = set()
-                for n in gs:
-                    self.dbprint ( "gpl[n] = " + str(gpl[n]) )
-                    self.dbprint ( gpl[n]['name'] + " is " + n + ", depends on (" + str(gpl[n]['who_I_depend_on']) + "), and depended on by (" + str(gpl[n]['who_depends_on_me']) + ")" )
-                    self.dbprint ( "   Checking for " + gpl[n]['name'] + " in the defined set" )
-                    if not (n in defined_set):
-                        self.dbprint ( "     " + gpl[n]['name'] + " is not defined yet, check if it can be" )
-                        dep_set = set(gpl[n].who_I_depend_on.split())
-                        if dep_set.issubset(defined_set):
-                            self.dbprint ( "       " + gpl[n]['name'] + " is now defined since all its dependencies are defined." )
-                            ol.append ( n )
-                            added.add ( n )
-                            defined_set.add ( n )
-                        else:
-                            self.dbprint ( "     " + gpl[n]['name'] + " cannot be defined yet" )
-                if len(added) > 0:
-                    # Remove all that are in od from gs to speed up subsequent searching
-                    for r in added:
-                        gs.remove ( r )
-                else:
-                    # Getting here indicates a loop, but continue anyway to remove those that aren't in the loop for flagging
-                    double_check_count += 1
-                    if double_check_count > len(gpl):
-                        print ( "Cannot Order Name List: " + str(gs) )
-                        # Add the names that can be added
-                        gpol.clear()
-                        for i in ol:
-                            h = gpol.add()
-                            h.par_id = i
-                        return (gs)
-        print ( "Final dependency ordered name list = " + str(ol) )
-        # Add all the names
-        gpol.clear()
-        for i in ol:
-            h = gpol.add()
-            h.par_id = i
-        return ([])
-
-
-    @profile('ParameterSystem.register_validity')
+    #@profile('ParameterSystem.register_validity')
     def register_validity ( self, name, valid ):
         """ Register the global validity or invalidity of a parameter """
         if valid:
@@ -2142,7 +1948,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             if not (name in self.param_error_list.split()):
                 self.param_error_list = self.param_error_list + " " + name
 
-    @profile('ParameterSystem.translated_param_name_list')
+    #@profile('ParameterSystem.translated_param_name_list')
     def translated_param_name_list ( self, param_name_string, sep=" " ):
         param_list = param_name_string.split()
         name_list = ""
@@ -2155,24 +1961,24 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 name_list = name_list + self.panel_parameter_list[name].par_name
         return name_list
 
-    @profile('ParameterSystem.draw')
+    #@profile('ParameterSystem.draw')
     def draw ( self, layout ):
         pass
 
-    @profile('ParameterSystem.print_general_parameter_list')
+    #@profile('ParameterSystem.print_general_parameter_list')
     def print_general_parameter_list ( self ):
         print ( "General Parameters:" )
         for p in self.general_parameter_list:
             p.print_parameter()
 
-    @profile('ParameterSystem.print_panel_parameter_list')
+    #@profile('ParameterSystem.print_panel_parameter_list')
     def print_panel_parameter_list ( self ):
         print ( "Panel Parameters:" )
         for p in self.panel_parameter_list:
             p.print_parameter()
 
 
-    @profile('ParameterSystem.build_data_model_from_properties')
+    #@profile('ParameterSystem.build_data_model_from_properties')
     def build_data_model_from_properties ( self, context ):
         print ( "Parameter System building Data Model" )
         par_sys_dm = {}
@@ -2217,7 +2023,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
 
 
-    @profile('ParameterSystem.build_data_model_from_properties')
+    #@profile('ParameterSystem.build_data_model_from_properties')
     def build_properties_from_data_model ( self, context, par_sys_dm ):
         # Check that the data model version matches the version for this property group
         if par_sys_dm['data_model_version'] != "DM_2014_10_24_1638":
@@ -2260,7 +2066,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
 
 
-    @profile('ParameterSystem.print_name_id_map')
+    #@profile('ParameterSystem.print_name_id_map')
     def print_name_id_map ( self ):
         gname_dict = self['gname_to_id_dict']
         print ( "Name to ID Map:" )
@@ -2268,12 +2074,12 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             print ( "  gname: " + str(k) + " = " + str(v) )
 
 
-    @profile('ParameterSystem.par_name_already_in_use')
+    #@profile('ParameterSystem.par_name_already_in_use')
     def par_name_already_in_use ( self, par_name ):
         return par_name in self['gname_to_id_dict']
 
 
-    @profile('ParameterSystem.update_name_ID_dictionary')
+    #@profile('ParameterSystem.update_name_ID_dictionary')
     def update_name_ID_dictionary ( self, param ):
         gname_dict = self['gname_to_id_dict']
 
@@ -2293,7 +2099,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         #gname_dict[param.par_name] = param.name
 
 
-    @profile('MCELL_PT_parameter_system.draw_layout')
+    #@profile('MCELL_PT_parameter_system.draw_layout')
     def draw_layout (self, context, layout):
         mcell = context.scene.mcell
         if not mcell.initialized:
@@ -2410,8 +2216,6 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 row.prop(ps, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
 
                 row = box.row()
-                row.operator("mcell.print_updated", text="Print Updated")
-                row.operator("mcell.print_ordered", text="Print Ordered")
                 row.operator("mcell.print_profiling", text="Print Profiling")
                 row.operator("mcell.clear_profiling", text="Clear Profiling")
 
