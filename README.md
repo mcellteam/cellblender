@@ -1,8 +1,11 @@
-README for CellBlender version 1.0.1,  7/9/2015
+CellBlender 1.0.1
 ===============================================================================
 
 Introduction:
 -------------------------------------------------------------------------------
+
+CellBlender development is supported by the NIGMS-funded (P41GM103712) National
+Center for Multiscale Modeling of Biological Systems (MMBioS).
 
 CellBlender is an addon for Blender (2.6x-2.7x) to create computational cell
 biology models for use in MCell and potentially other cell simulation
