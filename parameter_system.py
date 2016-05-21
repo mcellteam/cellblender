@@ -12,12 +12,141 @@ import token
 import symbol
 import sys
 import pickle
+import time
+import io
+
+####################### Start of Profiling Code #######################
+
+# From: http://wiki.blender.org/index.php/User:Z0r/PyDevAndProfiling
+
+prof = {}
+
+# Defines a dictionary associating a call name with a list of 3 (now 4) entries:
+#  0: Name
+#  1: Duration
+#  2: Count
+#  3: Start Time (for non-decorated version)
+
+class profile:
+    ''' Function decorator for code profiling.'''
+
+    def __init__(self,name):
+        self.name = name
+
+    def __call__(self,fun):
+        def profile_fun(*args, **kwargs):
+            start = time.clock()
+            try:
+                return fun(*args, **kwargs)
+            finally:
+                duration = time.clock() - start
+                if fun in prof:
+                    prof[fun][1] += duration
+                    prof[fun][2] += 1
+                else:
+                    prof[fun] = [self.name, duration, 1, 0]
+        return profile_fun
+
+# Builds on the previous profiling code with non-decorated versions (needed by some Blender functions):
+#  0: Name
+#  1: Duration
+#  2: Count
+#  3: Start Time (for non-decorated version)
+
+def start_timer(fun):
+    start = time.clock()
+    if fun in prof:
+        prof[fun][2] += 1
+        prof[fun][3] = start
+    else:
+        prof[fun] = [fun, 0, 1, start]
+
+def stop_timer(fun):
+    stop = time.clock()
+    if fun in prof:
+        prof[fun][1] += stop - prof[fun][3]   # Stop - Start
+        # prof[fun][2] += 1
+    else:
+        print ( "Timing Error: stop called without start!!" )
+        pass
+
+
+def print_statistics(app):
+    '''Prints profiling results to the console,
+       appends to plot files,
+       and generates plotting and deleting scripts.'''
+
+    print ( "=== Execution Statistics with " + str(len(app.parameter_system.general_parameter_list)) + " general parameters and " + str(len(app.parameter_system.panel_parameter_list)) + " panel parameters ===" )
+
+    def timekey(stat):
+        return stat[1] / float(stat[2])
+
+    stats = sorted(prof.values(), key=timekey, reverse=True)
+
+    print ( '{:<55} {:>7} {:>7} {:>8}'.format('FUNCTION', 'CALLS', 'SUM(ms)', 'AV(ms)'))
+    for stat in stats:
+        print ( '{:<55} {:>7} {:>7.0f} {:>8.2f}'.format(stat[0],stat[2],stat[1]*1000,(stat[1]/float(stat[2]))*1000))
+        f = io.open(stat[0]+"_plot.txt",'a')
+        #f.write ( str(len(app.parameter_system.general_parameter_list)) + " " + str((stat[1]/float(stat[2]))*1000) + "\n" )
+        f.write ( str(len(app.parameter_system.general_parameter_list)) + " " + str(float(stat[1])*1000) + "\n" )
+        f.flush()
+        f.close()
+
+    f = io.open("plot_command.bat",'w')
+    f.write ( "java -jar data_plotters/java_plot/PlotData.jar" )
+    for stat in stats:
+        f.write ( " fxy=" + stat[0]+"_plot.txt" )
+    f.flush()
+    f.close()
+
+    f = io.open("delete_command.bat",'w')
+    for stat in stats:
+        f.write ( "rm -f " + stat[0]+"_plot.txt\n" )
+    f.flush()
+    f.close()
+
+
+class MCELL_OT_print_profiling(bpy.types.Operator):
+    bl_idname = "mcell.print_profiling"
+    bl_label = "Print Profiling"
+    bl_description = ("Print Profiling Information")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        app = context.scene.mcell
+        print_statistics(app)
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        app = context.scene.mcell
+        print_statistics(app)
+        return {'RUNNING_MODAL'}
+
+
+class MCELL_OT_clear_profiling(bpy.types.Operator):
+    bl_idname = "mcell.clear_profiling"
+    bl_label = "Clear Profiling"
+    bl_description = ("Clear Profiling Information")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        prof.clear()
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        prof.clear()
+        return {'RUNNING_MODAL'}
+
+
+
+####################### End of Profiling Code #######################
+
 
 
 def dbprint ( s, thresh=1 ):
-    mcell = bpy.context.scene.mcell
-    if mcell.debug_level >= thresh:
-        print ( s )
+    #mcell = bpy.context.scene.mcell
+    #if mcell.debug_level >= thresh:
+    print ( s )
 
 
 class Expression_Handler:
@@ -517,7 +646,7 @@ class Expression_Handler:
 
 
 
-class APP_OT_update_general(bpy.types.Operator):
+class MCELL_OT_update_general(bpy.types.Operator):
     bl_idname = "mcell.update_general"
     bl_label = "Update General Parameters"
     bl_description = "Update all General Parameters"
@@ -531,7 +660,7 @@ class APP_OT_update_general(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class APP_OT_update_panel(bpy.types.Operator):
+class MCELL_OT_update_panel(bpy.types.Operator):
     bl_idname = "mcell.update_panel"
     bl_label = "Update Panel Parameters"
     bl_description = "Update all Panel Parameters"
@@ -546,10 +675,10 @@ class APP_OT_update_panel(bpy.types.Operator):
 
 
 
-class APP_OT_dump_parameters(bpy.types.Operator):
-    bl_idname = "mcell.dump_parameters"
-    bl_label = "Dump ID Parameters"
-    bl_description = "Dump All Parameters"
+class MCELL_OT_print_gen_parameters(bpy.types.Operator):
+    bl_idname = "mcell.print_gen_parameters"
+    bl_label = "Print General Parameters"
+    bl_description = "Print All General Parameters"
     #bl_options = {'REGISTER', 'UNDO'}
     bl_options = {'REGISTER' }
     
@@ -600,6 +729,23 @@ class APP_OT_dump_parameters(bpy.types.Operator):
           for k in ps['gp_ordered_list']:
             dbprint ( "    " + k, thresh=-1 )
 
+        return {'FINISHED'}
+
+
+
+class MCELL_OT_print_pan_parameters(bpy.types.Operator):
+    bl_idname = "mcell.print_pan_parameters"
+    bl_label = "Print Panel Parameters"
+    bl_description = "Print All Panel Parameters"
+    bl_options = {'REGISTER' }
+
+    def execute(self, context):
+        #global global_params
+        mcell = context.scene.mcell
+        ps = mcell.parameter_system
+        fw = ps.max_field_width
+        # ps.init_parameter_system()
+
         dbprint ( "  = RNA Panel Parameters =", thresh=-1 )
 
         ppl = ps.panel_parameter_list
@@ -607,18 +753,19 @@ class APP_OT_dump_parameters(bpy.types.Operator):
             pp = ppl[k]
             # pp is an RNA property, so the ID properties (and keys) might not exist yet ... use RNA references
             s  = "    "
-            s += "  name : \"" + str(pp.name) + "\""
-            s += "  expr : \"" + str(pp.expr) + "\""
+            s += "  name : \"" + ps.shorten_string(str(pp.name),fw) + "\""
+            s += "  user_name : \"" + ps.shorten_string(str(pp['user_name']),fw) + "\""
+            s += "  expr : \"" + ps.shorten_string(str(pp.expr),fw) + "\""
             elist = pickle.loads(pp.elist.encode('latin1'))
-            s += "  elist : \"" + str(elist) + "\""
+            s += "  elist : \"" + ps.shorten_string(str(elist),fw) + "\""
             v = "??"
             if 'value' in pp:
                 v = str(pp['value'])
             s += "  value : " + v + ""
             for pk in pp.keys():
-                if not (pk in ['name', 'expr', 'elist', 'value']):
-                    s += "  " + str(pk) + " : \"" + str(pp[pk]) + "\""
-            s += "  elistp : \"" + str(pp.elist) + "\""
+                if not (pk in ['name', 'user_name', 'expr', 'elist', 'value']):
+                    s += "  " + str(pk) + " : \"" + ps.shorten_string(str(pp[pk]),fw) + "\""
+            s += "  elistp : \"" + ps.shorten_string(str(pp.elist),fw) + "\""
             print ( s.replace('\n',' ') )
 
         return {'FINISHED'}
@@ -784,7 +931,10 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
                 self['value'] = None
             else:
                 py_expr = parameter_system.build_expression ( parameterized_expr, as_python=True )
-                self['value'] = float(eval(py_expr,globals(),gl))
+                if (len(py_expr.strip()) > 0):
+                    self['value'] = float(eval(py_expr,globals(),gl))
+                else:
+                    self['value'] = 0.0
 
 
 class Parameter_Reference ( bpy.types.PropertyGroup ):
@@ -820,17 +970,26 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         if (len(user_expr.strip()) > 0):
             new_rna_par['value'] = eval(user_expr)
         else:
-            new_rna_par['value'] = 0
+            new_rna_par['value'] = 0.0
 
+    ## There are a lot of Parameter_Reference functions from the old version that may not be used
+    ## For now, have them flag when they're called by exiting Blender.
 
     def get_value ( self ):
+        print ( "%%%%%%%%%%%%%%%\n  get_value Error!!!\n%%%%%%%%%%%%%%\n" )
+        bpy.ops.wm.quit_blender()
         return 123.456
 
     def get_expr ( self ):
+        print ( "%%%%%%%%%%%%%%%\n  get_expr Error!!!\n%%%%%%%%%%%%%%\n" )
+        bpy.ops.wm.quit_blender()
         return "123.456"
 
     def set_expr ( self, expr ):
+        print ( "%%%%%%%%%%%%%%%\n  set_expr Error!!!\n%%%%%%%%%%%%%%\n" )
+        bpy.ops.wm.quit_blender()
         return
+
 
     def draw ( self, layout, parameter_system, label=None ):
 
@@ -889,12 +1048,15 @@ def active_par_index_changed ( self, context ):
 
 def update_parameter_name ( self, context ):
     self.update_parameter_name ( context )
+    context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
 def update_parameter_elist ( self, context ):
     self.update_parameter_elist ( context )
+    context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
 def update_parameter_expression ( self, context ):
     self.update_parameter_expression ( context )
+    context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
 def update_parameter_units ( self, context ):
     self.update_parameter_units ( context )
@@ -930,11 +1092,63 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     status = StringProperty ( name="status", default="" )
 
     show_all_details = BoolProperty(name="Show All Details", default=False)
+    max_field_width = IntProperty(name="Max Field Width", default=20)
 
     param_display_mode_enum = [ ('one_line',  "One line per parameter", ""), ('two_line',  "Two lines per parameter", "") ]
     param_display_mode = bpy.props.EnumProperty ( items=param_display_mode_enum, default='one_line', name="Parameter Display Mode", description="Display layout for each parameter" )
     param_display_format = StringProperty ( default='%.6g', description="Formatting string for each parameter" )
     param_label_fraction = FloatProperty(precision=4, min=0.0, max=1.0, default=0.35, description="Width (0 to 1) of parameter's label")
+
+    # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
+    last_parameter_update_time = StringProperty ( default="-1.0", description="Time that the last parameter was updated" )
+
+
+
+    #@profile('ParameterSystem.build_data_model_from_properties')
+    def build_data_model_from_properties ( self, context ):
+        print ( "Parameter System building Data Model" )
+        par_sys_dm = {}
+        gen_par_list = []
+        """
+        # Old method just saved the parameters in the list with no order dependency
+        for p in self.general_parameter_list:
+            gen_par_list.append ( p.build_data_model_from_properties() )
+        """
+        # New method saves the list in dependency order so they can be exported to MDL in dependency order
+        ordered_names = [ p for p in self['gp_ordered_list'] ]
+        print ( "Ordered names = " + str ( ordered_names ) )
+
+        # ordered_names = self.build_dependency_ordered_name_list()
+        if ordered_names == None:
+            # Must contain circular references ... Output as expressions without ordering
+            for p in self.general_parameter_list:
+                gen_par_list.append ( p.build_data_model_from_properties() )
+        else:
+            # Output as expressions where order matters
+            for pn in ordered_names:
+                p = self.general_parameter_list[pn]
+                gen_par_list.append ( p.build_data_model_from_properties() )
+
+        par_sys_dm['model_parameters'] = gen_par_list
+        return par_sys_dm
+
+
+
+    @staticmethod
+    def upgrade_data_model ( dm ):
+        # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
+        print ( "------------------------->>> Upgrading ParameterSystemPropertyGroup Data Model" )
+        if not ('data_model_version' in dm):
+            # Make changes to move from unversioned to DM_2014_10_24_1638
+            dm['data_model_version'] = "DM_2014_10_24_1638"
+
+        # Check that the upgraded data model version matches the version for this property group
+        if dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.flag_incompatible_data_model ( "Error: Unable to upgrade ParameterSystemPropertyGroup data model to current version." )
+            return None
+
+        return dm
+
 
 
     def clear_all_parameters ( self, context ):
@@ -1501,7 +1715,35 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             for desc_line in desc_list:
                 box.label (text=desc_line)
 
-    def draw_panel ( self, context, layout ):
+
+
+    def draw_prop_search_with_help ( self, layout, prop_label, prop_group, prop, prop_parent, prop_list_name, show, show_help, help_string, icon='FORCE_LENNARDJONES' ):
+        """ This function helps draw non-parameter properties with help (info) button functionality """
+        row = layout.row()
+        split = row.split(self.param_label_fraction)
+        col = split.column()
+        col.label ( text=prop_label )
+        col = split.column()
+        #col.prop ( prop_group, prop, text="" )
+
+        #layout.prop_search(rel, "molecule", mcell.molecules, "molecule_list", text="Molecule", icon='FORCE_LENNARDJONES')
+        col.prop_search( prop_group, prop, prop_parent, prop_list_name, text="", icon=icon)
+
+        col = row.column()
+        col.prop ( prop_group, show, icon='INFO', text="" )
+        if show_help:
+            row = layout.row()
+            # Use a split with two columns to indent the box
+            split = row.split(0.03)
+            col = split.column()
+            col = split.column()
+            box = col.box()
+            desc_list = help_string.split("\n")
+            for desc_line in desc_list:
+                box.label (text=desc_line)
+
+
+    def draw_layout ( self, context, layout ):
 
         errors = set()
         if 'gp_dict' in self:
@@ -1650,6 +1892,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
 
 
+
                 """
                 if len(ps.param_error_list) > 0:
                     error_names_box = box.box()
@@ -1691,6 +1934,13 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             row.operator("mcell.clear_profiling", text="Clear Profiling")
             """
 
+            row = box.row()
+            col = row.column()
+            col.operator ( "mcell.print_gen_parameters" )
+            col = row.column()
+            col.operator ( "mcell.print_pan_parameters" )
+            col = row.column()
+            col.prop ( self, "max_field_width" )
 
 
         """
@@ -1728,6 +1978,18 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             row = layout.row()
             row.operator("mcell.dump_parameters")
         """
+
+    def draw_panel ( self, context, panel ):
+        """ Create a layout from the panel and draw into it """
+        layout = panel.layout
+        self.draw_layout ( context, layout )
+
+
+    def shorten_string ( self, s, fw ):
+        if (fw<=0):
+            return s[:]
+        else:
+            return s[0:fw]
 
 
 
