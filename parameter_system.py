@@ -1198,66 +1198,6 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         return par_sys_dm
 
 
-    """
-    class MCELL_OT_print_gen_parameters(bpy.types.Operator):
-        bl_idname = "mcell.print_gen_parameters"
-        bl_label = "Print General Parameters"
-        bl_description = "Print All General Parameters"
-        #bl_options = {'REGISTER', 'UNDO'}
-        bl_options = {'REGISTER' }
-        
-        def print_subdict ( self, pname, item, depth ):
-            if len(item.keys()) <= 0:
-                print ( "  " + ("  "*depth) + pname + " = {}" )
-            else:
-                for k in item.keys():
-                    if str(type(item[k])) == "<class 'IDPropertyGroup'>":
-                        self.print_subdict ( pname + "." + str(k), item[k], depth+1 )
-                    else:
-                        print ( "  " + ("  "*depth) + pname + "." + str(k) + " = " + str(item[k]) )
-
-
-        def print_items (self, d):
-            #self.print_subdict ( 'gp_dict', d, 0 )
-            for k in d.keys():
-                output = "  " + str(k) + " = "
-                item = d[k]
-
-                if 'name' in item:
-                    output += str(item['name']) + " = "
-
-                if 'elist' in item:
-                    elist = pickle.loads(item['elist'].encode('latin1'))
-                    output += str(elist) + " = "
-
-                if str(type(item)) == "<class 'IDPropertyGroup'>":
-                    output += str(item.to_dict())
-                else:
-                    output += str(item)
-                print ( output )
-
-        def execute(self, context):
-            #global global_params
-            mcell = context.scene.mcell
-            ps = mcell.parameter_system
-            # ps.init_parameter_system()
-
-            print ( "=== ID Parameters ===" )
-
-            if 'gp_dict' in ps:
-                self.print_items ( ps['gp_dict'] )
-
-            print ( "  = Ordered List =" )
-
-            if 'gp_ordered_list' in ps:
-              for k in ps['gp_ordered_list']:
-                print ( "    " + k )
-
-            return {'FINISHED'}
-    """
-
-
-
     @staticmethod
     def upgrade_data_model ( dm ):
         # Upgrade the data model as needed. Return updated data model or None if it can't be upgraded.
@@ -1273,6 +1213,47 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
         return dm
 
+
+    #@profile('ParameterSystem.build_properties_from_data_model')
+    def build_properties_from_data_model ( self, context, par_sys_dm ):
+        # Check that the data model version matches the version for this property group
+        if par_sys_dm['data_model_version'] != "DM_2014_10_24_1638":
+            data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
+
+        print ( "Parameter System building Properties from Data Model ..." )
+        self.clear_all_parameters ( context )
+        self.init_parameter_system()  # Do this in case it isn't already initialized
+
+        if 'model_parameters' in par_sys_dm:
+            # Add all of the parameters - some may be invalid if they depend on other parameters that haven't been read yet
+
+            for p in par_sys_dm['model_parameters']:
+
+                units = ""
+                descr = ""
+                if 'par_units' in p: units = p['par_units']
+                if 'par_description' in p: descr = p['par_description']
+                print ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + units + ") ... " + descr )
+
+                new_gid = self.allocate_available_gid()
+                new_gid_key = 'g'+str(new_gid)
+
+                new_name = p['par_name']
+
+                new_id_par = self.new_parameter ( new_name=new_name, new_expr=p['par_expression'], new_units=units, new_desc=descr )
+
+                dbprint ( "Adding " + str(new_id_par) )
+                self['gp_dict'][new_gid_key] = new_id_par
+
+                new_rna_par = self.general_parameter_list.add()
+                new_rna_par.par_id = new_gid_key
+                new_rna_par.name = new_name
+
+                self.active_par_index = len(self.general_parameter_list)-1
+                self.active_name = new_rna_par.name
+                self.active_expr = new_id_par['expr']
+                self.active_units = new_id_par['units']
+                self.active_desc = new_id_par['desc']
 
 
     #@profile('ParameterSystem.clear_all_parameters')
@@ -1404,6 +1385,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     #@profile('ParameterSystem.init_properties')
     def init_properties ( self ):
         self.init_parameter_system()
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Parameter System Properties ... " )
+        self.clear_all_parameters ( context )
 
 
     #@profile('ParameterSystem.add_general_parameter')
