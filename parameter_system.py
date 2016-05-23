@@ -1477,15 +1477,21 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                         dep_name = self['gp_dict'][dep]['name']
                         dbprint ( "  Setting index to: " + dep_name )
                         self.active_par_index = self.general_parameter_list.find(dep_name)
-                    # TODO Need to deal with what_depends_on_me
-                    # Also force a redraw of all parameters that have errors that might depend on this one by selecting each one
                     for p in self['gp_dict'].keys():
                         elist = pickle.loads(self['gp_dict'][p]['elist'].encode('latin1'))
                         if None in elist:
                             dep_name = self['gp_dict'][p]['name']
                             dbprint ( "  Setting index to: " + dep_name )
                             self.active_par_index = self.general_parameter_list.find(dep_name)
+                    what_depends_on_me = [n for n in self['gp_dict'][pid]['what_depends_on_me']]
+                    print ( "Updating name: " + old_name + " -> " + new_name + ", these depend on me: " + str(what_depends_on_me) )
+                    ppl = self.panel_parameter_list
+                    for p in what_depends_on_me:
+                        elist = pickle.loads(ppl[p]['elist'].encode('latin1'))
+                        ppl[p]['expr'] = self.build_expression ( elist )
+
                     self.active_par_index = saved_index
+                    # TODO Need to deal with errors in panel parameters
                 else:
                     print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
 
