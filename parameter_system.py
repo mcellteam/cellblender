@@ -17,7 +17,7 @@ import io
 
 
 
-def dbprint ( s, thresh=100 ):   # Threshold high means no printing, Threshold low (or negative) means lots of printing
+def dbprint ( s, thresh=-10 ):   # Threshold high means no printing, Threshold low (or negative) means lots of printing
     ps = bpy.context.scene.mcell.parameter_system
     if ps.debug_level >= thresh:
         print ( s )
@@ -1126,7 +1126,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     next_gid = IntProperty(name="Counter for Unique General Parameter IDs", default=0)
     next_pid = IntProperty(name="Counter for Unique Panel Parameter IDs",   default=0)
     active_par_index = IntProperty(name="Active Parameter",  default=0,                                                                 update=active_par_index_changed)
-    active_name  = StringProperty(name="Parameter Name",    default="Par", description="Unique name for this parameter",                update=update_parameter_name)
+    active_name  = StringProperty(name="Parameter Name",    default="Par", description="User name for this parameter (must be unique)", update=update_parameter_name)
     active_elist = StringProperty(name="Expression List",   default="",    description="Pickled Expression list for this parameter",    update=update_parameter_elist)
     active_expr  = StringProperty(name="Expression",        default="0",   description="Expression to be evaluated for this parameter", update=update_parameter_expression)
     active_units = StringProperty(name="Units",             default="",    description="Units for this parameter",                      update=update_parameter_units)
@@ -1467,31 +1467,64 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             old_name = str(self['gp_dict'][pid]['name'])
             new_name = self.active_name
             if new_name != old_name:
-                dbprint ("Parameter name changed from " + old_name + " to " + new_name )
+                print ("Parameter name changed from " + old_name + " to " + new_name )
                 if pid in self['gp_dict']:
+
+                    # Update this name
+                    print ("Update gp_dict from " + old_name + " to " + new_name )
                     self['gp_dict'][pid]['name'] = new_name
+                    print ("Update general_parameter_list from " + old_name + " to " + new_name )
                     self.general_parameter_list[old_name].name = new_name
-                    # Force a redraw of all parameters that depend on this one by selecting each one
-                    saved_index = self.active_par_index
-                    for dep in self['gp_dict'][pid]['who_depends_on_me']:
-                        dep_name = self['gp_dict'][dep]['name']
-                        dbprint ( "  Setting index to: " + dep_name )
-                        self.active_par_index = self.general_parameter_list.find(dep_name)
-                    for p in self['gp_dict'].keys():
-                        elist = pickle.loads(self['gp_dict'][p]['elist'].encode('latin1'))
-                        if None in elist:
-                            dep_name = self['gp_dict'][p]['name']
-                            dbprint ( "  Setting index to: " + dep_name )
-                            self.active_par_index = self.general_parameter_list.find(dep_name)
-                    what_depends_on_me = [n for n in self['gp_dict'][pid]['what_depends_on_me']]
-                    print ( "Updating name: " + old_name + " -> " + new_name + ", these depend on me: " + str(what_depends_on_me) )
+                    print ("Propagate changes from " + old_name + " to " + new_name )
+
+                    who_depends_on_me =  [ k for k in self['gp_dict'][pid]['who_depends_on_me']  ]
+                    what_depends_on_me = [ k for k in self['gp_dict'][pid]['what_depends_on_me'] ]
                     ppl = self.panel_parameter_list
+                    
+                    print ( "who_depends_on_me = " + str(who_depends_on_me) )
+                    print ( "what_depends_on_me = " + str(what_depends_on_me) )
+
+                    # Update all other general parameter expressions that depend on this name
+                    for dep_key in who_depends_on_me:
+                        dep_par = self['gp_dict'][dep_key]
+                        elist = pickle.loads(dep_par['elist'].encode('latin1'))
+                        dep_par['expr'] = self.build_expression ( elist )
+
+                    # Update all panel parameter expressions that depend on this name (this also forces a redraw)
+                    for dep_key in what_depends_on_me:
+                        elist = pickle.loads(ppl[dep_key]['elist'].encode('latin1'))
+                        ppl[dep_key]['expr'] = self.build_expression ( elist )
+
+
+                    # Save the current index so it can be changed to update other parameters
+                    saved_index = self.active_par_index
+
+                    # Force a redraw of all general parameters that depend on this one by selecting each one
+                    for dep_key in who_depends_on_me:
+                        dep_name = self['gp_dict'][dep_key]['name']
+                        print ( "  Setting index to: " + dep_name )
+                        self.active_par_index = self.general_parameter_list.find(dep_name)
+
+                    """ # This is being done earlier ... delete this if that works.
+                    # Force a redraw of all panel parameters that depend on this one
+                    print ( "Updating name: " + old_name + " -> " + new_name + ", these depend on me: " + str(what_depends_on_me) )
                     for p in what_depends_on_me:
                         elist = pickle.loads(ppl[p]['elist'].encode('latin1'))
                         ppl[p]['expr'] = self.build_expression ( elist )
+                    """
 
+                    # Force a redraw of all general parameters that might depend on this newly changed name (those with a "None" in thier list)
+                    #for p in self['gp_dict'].keys():
+                    #    elist = pickle.loads(self['gp_dict'][p]['elist'].encode('latin1'))
+                    #    if None in elist:
+                    #        dep_name = self['gp_dict'][p]['name']
+                    #        print ( "  Setting index to: " + dep_name )
+                    #        self.active_par_index = self.general_parameter_list.find(dep_name)
+
+                    # Restore the current index
                     self.active_par_index = saved_index
                     # TODO Need to deal with errors in panel parameters
+
                 else:
                     print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
 
