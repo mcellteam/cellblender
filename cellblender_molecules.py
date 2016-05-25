@@ -437,13 +437,13 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     glyph_lib = os.path.join(os.path.dirname(__file__), "glyph_library.blend", "Mesh", "")
     glyph_enum = [
+        ('Sphere_1', "Sphere_1", ""),
         ('Cone', "Cone", ""),
         ('Cube', "Cube", ""),
         ('Cylinder', "Cylinder", ""),
         ('Icosahedron', "Icosahedron", ""),
         ('Octahedron', "Octahedron", ""),
         ('Receptor', "Receptor", ""),
-        ('Sphere_1', "Sphere_1", ""),
         ('Sphere_2', "Sphere_2", ""),
         ('Torus', "Torus", ""),
         ('Tetrahedron', "Tetrahedron", ""),
@@ -618,8 +618,21 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         # Bob: Maybe we need to associate it with the OBJECT with: shape_object.material_slots[0].link = 'OBJECT'
         mol_mat = mats.get(material_name)
         if not mol_mat:
+            mol_list = bpy.context.scene.mcell.molecules
+
+            def_colors = [ (1,0,0), (0,1,0), (0,0,1), (0,1,1), (1,0,1), (1,1,0), (1,1,1), (0,0,0) ]
+            print ( "next_color = " + str(mol_list.next_color) )
+            new_color = [ 1.0*c for c in def_colors[mol_list.next_color] ]
+            print ( "new_color = " + str(new_color) )
+            mol_list.next_color += 1
+            if mol_list.next_color >= len(def_colors):
+               mol_list.next_color = 0
             mol_mat = mats.new(material_name)
             # Need to pick a color here ?
+            color = mol_mat.diffuse_color
+            color[0] = new_color[0]
+            color[1] = new_color[1]
+            color[2] = new_color[2]
         if not mol_shape_mesh.materials.get(material_name):
             mol_shape_mesh.materials.append(mol_mat)
 
@@ -1188,6 +1201,9 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
     show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_preview = bpy.props.BoolProperty(default=False, name="Material Preview")
     show_extra_columns = bpy.props.BoolProperty(default=False, description="Show additional visibility control columns")
+
+    next_color = IntProperty (default=0)  # Keeps track of the next molecule color to use
+
 
     def init_properties ( self, parameter_system ):
         if self.molecule_list:
