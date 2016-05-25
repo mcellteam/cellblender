@@ -17,7 +17,7 @@ import io
 
 
 
-def dbprint ( s, thresh=-10 ):   # Threshold high means no printing, Threshold low (or negative) means lots of printing
+def dbprint ( s, thresh=1 ):   # Threshold high means no printing, Threshold low (or negative) means lots of printing
     ps = bpy.context.scene.mcell.parameter_system
     if ps.debug_level >= thresh:
         print ( s )
@@ -154,6 +154,8 @@ class MCELL_OT_clear_profiling(bpy.types.Operator):
 
 class Expression_Handler:
     """
+      Note that while this expression handler supports string encoding of expressions, this version encodes expressions as pickled lists.
+
       String encoding of expression lists:
       
       Rules:
@@ -1135,7 +1137,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     show_options_panel = BoolProperty(name="Show Options Panel", default=False)
 
-    debug_level = IntProperty(default=0)
+    debug_level = IntProperty(name="Debug Level", default=0, description="Higher values print more detail")
     
     status = StringProperty ( name="status", default="" )
 
@@ -1161,18 +1163,18 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
         # Save the list in dependency order so they can be exported from the data model to MDL in dependency order
         gp_ordered_list = [ p for p in self['gp_ordered_list'] ]
-        print ( "gp_ordered_list = " + str ( gp_ordered_list ) )
+        dbprint ( "gp_ordered_list = " + str ( gp_ordered_list ) )
         
         # It is possible that there are parameters NOT in the gp_ordered_list, but in the RNA parameters (those with circular references)
         # So build a list that contains the ordered parameters first, followed by any that were not in the ordered list
         gp_set_from_list = set ( gp_ordered_list )
         gp_set_from_rna = set ( [ self.general_parameter_list[k].par_id for k in self.general_parameter_list.keys() ] )
         remaining_unordered_set = gp_set_from_rna - gp_set_from_list
-        print ( str(remaining_unordered_set) + " = " + str(gp_set_from_rna) + " - " + str(gp_set_from_list) )
+        dbprint ( str(remaining_unordered_set) + " = " + str(gp_set_from_rna) + " - " + str(gp_set_from_list) )
         for k in remaining_unordered_set:
             gp_ordered_list.append ( k )
 
-        print ( "Ordered GP keys = " + str ( gp_ordered_list ) )
+        dbprint ( "Ordered GP keys = " + str ( gp_ordered_list ) )
 
         for pkey in gp_ordered_list:
             par_dict = {}
@@ -1190,7 +1192,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
             par_dict['_extras'] = extras_dict
 
-            print ( "Dm for " + pkey + " = " + str(par_dict) )
+            dbprint ( "Dm for " + pkey + " = " + str(par_dict) )
             
             gen_par_list.append ( par_dict )
 
@@ -1220,7 +1222,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         if par_sys_dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
 
-        print ( "Parameter System building Properties from Data Model ..." )
+        dbprint ( "Parameter System building Properties from Data Model ..." )
         self.clear_all_parameters ( context )
         self.init_parameter_system()  # Do this in case it isn't already initialized
 
@@ -1233,7 +1235,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 descr = ""
                 if 'par_units' in p: units = p['par_units']
                 if 'par_description' in p: descr = p['par_description']
-                print ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + units + ") ... " + descr )
+                dbprint ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + units + ") ... " + descr )
 
                 new_gid = self.allocate_available_gid()
                 new_gid_key = 'g'+str(new_gid)
@@ -1387,7 +1389,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         self.init_parameter_system()
 
     def remove_properties ( self, context ):
-        print ( "Removing all Parameter System Properties ... " )
+        dbprint ( "Removing all Parameter System Properties ... " )
         self.clear_all_parameters ( context )
 
 
@@ -1443,7 +1445,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     #@profile('ParameterSystem.active_par_index_changed')
     def active_par_index_changed ( self, context ):
         """ The "self" passed in is a ParameterSystemPropertyGroup object. """
-        #dbprint ( "Type of self = " + str ( type(self) ) )
+        dbprint ( "Type of self = " + str ( type(self) ), thresh=50 )
 
         par_num = self.active_par_index  # self.active_par_index is what gets changed when the user selects an item
         dbprint ( "par_num = " + str(par_num) )
@@ -1467,22 +1469,22 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             old_name = str(self['gp_dict'][pid]['name'])
             new_name = self.active_name
             if new_name != old_name:
-                print ("Parameter name changed from " + old_name + " to " + new_name )
+                dbprint ("Parameter name changed from " + old_name + " to " + new_name )
                 if pid in self['gp_dict']:
 
                     # Update this name
-                    print ("Update gp_dict from " + old_name + " to " + new_name )
+                    dbprint ("Update gp_dict from " + old_name + " to " + new_name )
                     self['gp_dict'][pid]['name'] = new_name
-                    print ("Update general_parameter_list from " + old_name + " to " + new_name )
+                    dbprint ("Update general_parameter_list from " + old_name + " to " + new_name )
                     self.general_parameter_list[old_name].name = new_name
-                    print ("Propagate changes from " + old_name + " to " + new_name )
+                    dbprint ("Propagate changes from " + old_name + " to " + new_name )
 
                     who_depends_on_me =  [ k for k in self['gp_dict'][pid]['who_depends_on_me']  ]
                     what_depends_on_me = [ k for k in self['gp_dict'][pid]['what_depends_on_me'] ]
                     ppl = self.panel_parameter_list
                     
-                    print ( "who_depends_on_me = " + str(who_depends_on_me) )
-                    print ( "what_depends_on_me = " + str(what_depends_on_me) )
+                    dbprint ( "who_depends_on_me = " + str(who_depends_on_me) )
+                    dbprint ( "what_depends_on_me = " + str(what_depends_on_me) )
 
                     # Update all other general parameter expressions that depend on this name
                     for dep_key in who_depends_on_me:
@@ -1502,12 +1504,12 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                     # Force a redraw of all general parameters that depend on this one by selecting each one
                     for dep_key in who_depends_on_me:
                         dep_name = self['gp_dict'][dep_key]['name']
-                        print ( "  Setting index to: " + dep_name )
+                        dbprint ( "  Setting index to: " + dep_name )
                         self.active_par_index = self.general_parameter_list.find(dep_name)
 
                     """ # This is being done earlier ... delete this if that works.
                     # Force a redraw of all panel parameters that depend on this one
-                    print ( "Updating name: " + old_name + " -> " + new_name + ", these depend on me: " + str(what_depends_on_me) )
+                    dbprint ( "Updating name: " + old_name + " -> " + new_name + ", these depend on me: " + str(what_depends_on_me) )
                     for p in what_depends_on_me:
                         elist = pickle.loads(ppl[p]['elist'].encode('latin1'))
                         ppl[p]['expr'] = self.build_expression ( elist )
@@ -1518,7 +1520,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                     #    elist = pickle.loads(self['gp_dict'][p]['elist'].encode('latin1'))
                     #    if None in elist:
                     #        dep_name = self['gp_dict'][p]['name']
-                    #        print ( "  Setting index to: " + dep_name )
+                    #        dbprint ( "  Setting index to: " + dep_name )
                     #        self.active_par_index = self.general_parameter_list.find(dep_name)
 
                     # Restore the current index
@@ -2116,6 +2118,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             row = box.row()
             row.operator("mcell.print_profiling", text="Print Profiling")
             row.operator("mcell.clear_profiling", text="Clear Profiling")
+            row.prop ( self, "debug_level" )
 
 
         """
