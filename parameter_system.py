@@ -901,6 +901,7 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
             # Recompute the value
 
             gl = {}  # This is the dictionary to contain the globals and locals of the evaluated python expressions
+            py_expr = None
             if ('gp_dict' in parameter_system) and (len(parameter_system['gp_dict']) > 0):
                 gp_dict = parameter_system['gp_dict']
                 if 'gp_ordered_list' in parameter_system:
@@ -935,12 +936,15 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
 
             if py_expr is None:
                 print ( "Error: " + str(elist) + " contains None" )
-                self['value'] = None
+                self['valid'] = False
+                self['value'] = 0.0
             else:
                 py_expr = parameter_system.build_expression ( parameterized_expr, as_python=True )
                 if (len(py_expr.strip()) > 0):
+                    self['valid'] = True
                     self['value'] = float(eval(py_expr,globals(),gl))
                 else:
+                    self['valid'] = False
                     self['value'] = 0.0
 
 
@@ -977,8 +981,10 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         new_rna_par['expr'] = user_expr
         if (len(user_expr.strip()) > 0):
             new_rna_par['value'] = eval(user_expr)
+            new_rna_par['valid'] = True
         else:
             new_rna_par['value'] = 0.0
+            new_rna_par['valid'] = True
 
     ## There are a lot of Parameter_Reference functions from the old version that may not be used
     ## For now, have them flag when they're called by exiting Blender.
@@ -1010,10 +1016,14 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
             user_type = par['user_type']
         if 'value' in par:
             #print ( "Par[value] = " + str(par['value']) )
-            if user_type == 'f':
-                user_value = int(par['value'])
+            if par['valid']:
+                if user_type == 'f':
+                    user_value = int(par['value'])
+                else:
+                    user_value = float(par['value'])
             else:
-                user_value = float(par['value'])
+                user_value = None
+                user_type = ''
         return user_value
 
     #@profile('Parameter_Reference.get_expr')
