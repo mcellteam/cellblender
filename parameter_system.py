@@ -996,6 +996,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
     #@profile('Parameter_Reference.get_param')
     def get_param ( self, plist=None ):
+        print ( "get_param called on Parameter_Reference " + str(self.unique_static_name) )
         if plist == None:
             # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
             mcell = bpy.context.scene.mcell
@@ -1399,8 +1400,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         self.init_parameter_system()
 
     def remove_properties ( self, context ):
-        dbprint ( "Removing all Parameter System Properties ... " )
-        self.clear_all_parameters ( context )
+        dbprint ( "Removing all Parameter System Properties ... ", thresh=-1 )
+        # It's not clear if this should be done or not ... it wasn't done in the old version.
+        # self.clear_all_parameters ( context )
 
 
     #@profile('ParameterSystem.add_general_parameter')
