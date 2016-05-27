@@ -1015,11 +1015,22 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
         # Now convert the updated Data Model into CellBlender Properties
         print ( "Overwriting properites based on data in the data model dictionary" )
+
+        # Start by calling "init_properties" which creates a full new CellBlender property tree
         self.init_properties()
+
+        # Then add each section
+
         if "parameter_system" in dm:
             print ( "Overwriting the parameter_system properties" )
             self.parameter_system.build_properties_from_data_model ( context, dm["parameter_system"] )
         
+
+        ### __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        
+        #return ##############  See what we have at this point...
+                                                                                                         
+
 
         # Move below model objects?
         #if "modify_surface_regions" in dm:

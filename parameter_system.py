@@ -531,7 +531,7 @@ class Expression_Handler:
         return expr
 
     #@profile('Expression_Handler.parse_param_expr')
-    def parse_param_expr ( self, param_expr, context ):
+    def parse_param_expr ( self, param_expr ):
         """ Converts a string expression into a list expression with:
                  variable id's as integers,
                  None preceding undefined names
@@ -864,7 +864,7 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
 
         if len(parameter_system['gp_dict']) > 0:
             dbprint ("Parameter string changed to " + self.expr, 10 )
-            parameterized_expr = parameter_system.parse_param_expr ( self.expr, context )
+            parameterized_expr = parameter_system.parse_param_expr ( self.expr )
             self.elist = pickle.dumps(parameterized_expr,protocol=0).decode('latin1')
 
             dbprint ("Parsed expression = " + str(parameterized_expr), 10 )
@@ -974,11 +974,13 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
         new_rna_par = parameter_system.panel_parameter_list.add()
         new_rna_par.name = new_pid_key
+        new_rna_par.expr = user_expr   # This should trigger an evaluation of the expression into an expression list
+
         new_rna_par['user_name'] = user_name
         new_rna_par['user_type'] = t
         new_rna_par['user_units'] = user_units
         new_rna_par['user_descr'] = user_descr
-        new_rna_par['expr'] = user_expr
+        #new_rna_par['expr'] = user_expr
         if (len(user_expr.strip()) > 0):
             new_rna_par['value'] = eval(user_expr)
             new_rna_par['valid'] = True
@@ -1000,13 +1002,13 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         if plist == None:
             # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
             mcell = bpy.context.scene.mcell
-            plist = mcell.parameter_system.panel_parameter_list
+            plist = mcell.parameter_system.panel_parameter_list   # <<<< This appears to be empty after rebuilding parameters from a data model
         return plist[self.unique_static_name]
-
+                                                                                                                                                   
 
     #@profile('Parameter_Reference.get_value')
-    def get_value ( self ):
-        #print ( "%%%%%%%%%%%%%%%\n  get_value for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
+    def get_value ( self, plist=None ):
+        print ( "%%%%%%%%%%%%%%%\n  get_value for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
         self.optional_exit()
         par = self.get_param()
         #print ( "Par.keys() = " + str(par.keys()) )
@@ -1019,29 +1021,26 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
             #print ( "Par[value] = " + str(par['value']) )
             if par['valid']:
                 if user_type == 'f':
-                    user_value = int(par['value'])
-                else:
                     user_value = float(par['value'])
+                else:
+                    user_value = int(par['value'])
             else:
                 user_value = None
                 user_type = ''
         return user_value
 
     #@profile('Parameter_Reference.get_expr')
-    def get_expr ( self ):
-        #print ( "%%%%%%%%%%%%%%%\n  get_expr for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
-        par = self.get_param()
-        #print ( "Par.keys() = " + str(par.keys()) )
-        #print ( "Par.items() = " + str(par.items()) )
-        #print ( "Par[expr] = " + str(par['expr']) )
-        return par.expr
+    def get_expr ( self, plist=None ):
+        print ( "%%%%%%%%%%%%%%%\n  get_expr for " + self.unique_static_name + "\n%%%%%%%%%%%%%%\n" )
+        rna_par = self.get_param(plist)
+        print ( "%%%%%%%%%%%%%%%\n    returning " + str(rna_par.expr) + "\n%%%%%%%%%%%%%%\n" )
+        return rna_par.expr
 
     #@profile('Parameter_Reference.set_expr')
-    def set_expr ( self, expr ):
-        #print ( "%%%%%%%%%%%%%%%\n  set_expr for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
-        par = self.get_param()
-        par.expr = expr
-        self.optional_exit()
+    def set_expr ( self, expr, plist=None ):
+        print ( "%%%%%%%%%%%%%%%\n  set_expr for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
+        rna_par = self.get_param(plist)
+        rna_par.expr = expr
         return
 
 
@@ -1054,7 +1053,10 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         val = "??"
         if 'value' in rna_par:
             if not (rna_par['value'] is None):
-                val = str(rna_par['value'])
+                if rna_par['user_type'] == 'i':
+                    val = str(int(rna_par['value']))
+                else:
+                    val = str(rna_par['value'])
 
         if parameter_system.param_display_mode == 'one_line':
             split = row.split(parameter_system.param_label_fraction)
@@ -1233,7 +1235,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         if par_sys_dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
 
-        dbprint ( "Parameter System building Properties from Data Model ..." )
+        dbprint ( "Parameter System building Properties from Data Model ...", thresh=-1 )
         self.clear_all_parameters ( context )
         self.init_parameter_system()  # Do this in case it isn't already initialized
 
@@ -1246,7 +1248,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 descr = ""
                 if 'par_units' in p: units = p['par_units']
                 if 'par_description' in p: descr = p['par_description']
-                dbprint ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + units + ") ... " + descr )
+                dbprint ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + units + ") ... " + descr, thresh=-1 )
 
                 new_gid = self.allocate_available_gid()
                 new_gid_key = 'g'+str(new_gid)
@@ -1255,7 +1257,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
                 new_id_par = self.new_parameter ( new_name=new_name, new_expr=p['par_expression'], new_units=units, new_desc=descr )
 
-                dbprint ( "Adding " + str(new_id_par) )
+                dbprint ( "Adding " + str(new_id_par), thresh=-1 )
                 self['gp_dict'][new_gid_key] = new_id_par
 
                 new_rna_par = self.general_parameter_list.add()
@@ -1267,6 +1269,11 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 self.active_expr = new_id_par['expr']
                 self.active_units = new_id_par['units']
                 self.active_desc = new_id_par['desc']
+
+        print ( "=== After parameter_system.ParameterSystemPropertyGroup.build_properties_from_data_model() ===" )
+        bpy.ops.mcell.print_gen_parameters()
+        bpy.ops.mcell.print_pan_parameters()
+        print ( "==============================================================================================" )
 
 
     #@profile('ParameterSystem.clear_all_parameters')
@@ -1314,7 +1321,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             'elist': pickle.dumps(['0'],protocol=0).decode('latin1'),
             'units': new_units,
             'desc': new_desc,
-            'type' : new_type,
+            'user_type' : new_type,
             'who_i_depend_on': {},      # This ID dictionary acts as a set
             'who_depends_on_me': {},    # This ID dictionary acts as a set
             'what_depends_on_me': {}    # This ID dictionary acts as a set
@@ -1400,9 +1407,15 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         self.init_parameter_system()
 
     def remove_properties ( self, context ):
-        dbprint ( "Removing all Parameter System Properties ... ", thresh=-1 )
+        dbprint ( "Removing all Parameter System Properties ... (actually doing nothing right now)", thresh=-1 )
+        print ( "Before removing:" )
+        bpy.ops.mcell.print_gen_parameters()
+        bpy.ops.mcell.print_pan_parameters()
         # It's not clear if this should be done or not ... it wasn't done in the old version.
-        # self.clear_all_parameters ( context )
+        self.clear_all_parameters ( context )
+        print ( "After removing:" )
+        bpy.ops.mcell.print_gen_parameters()
+        bpy.ops.mcell.print_pan_parameters()
 
 
     #@profile('ParameterSystem.add_general_parameter')
@@ -1418,7 +1431,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         new_name = name
         if new_name is None:
             #new_name = "Parameter_"+str(new_gid)
-            new_name = "p"+str(new_gid)
+            new_name = 'Parameter_'+str(new_gid)
 
         new_id_par = self.new_parameter ( new_name=new_name, new_expr=expr, new_units=units, new_desc=desc )
 
@@ -1628,9 +1641,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             par = gp_dict[self.last_selected_id]
 
             #id_par = self['gp_dict'][self.last_selected_id]
-            #parameterized_expr = self.parse_param_expr ( id_par['expr'], context )
+            #parameterized_expr = self.parse_param_expr ( id_par['expr'] )
             
-            parameterized_expr = self.parse_param_expr ( par['expr'], context )
+            parameterized_expr = self.parse_param_expr ( par['expr'] )
             dbprint ( "ParExp = " + str(parameterized_expr) )
             par['elist'] = pickle.dumps(parameterized_expr,protocol=0).decode('latin1')
 
@@ -1929,6 +1942,23 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     #@profile('ParameterSystem.draw_layout')
     def draw_layout ( self, context, layout ):
+
+        ### These are here for help during debugging when errors might cause the rest of the panel to not be drawn
+        row = layout.row()
+        col = row.column()
+        col.operator ( "mcell.print_gen_parameters" )
+        col = row.column()
+        col.operator ( "mcell.print_pan_parameters" )
+        col = row.column()
+        col.prop ( self, "max_field_width" )
+
+        row = layout.row()
+        row.operator("mcell.print_profiling", text="Print Profiling")
+        row.operator("mcell.clear_profiling", text="Clear Profiling")
+        row.prop ( self, "debug_level" )
+        ### These are here for help during debugging when errors might cause the rest of the panel to not be drawn
+
+
 
         errors = set()
         if 'gp_dict' in self:

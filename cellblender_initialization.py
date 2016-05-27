@@ -250,8 +250,12 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm_dict ):
 
+        print ( "Top of MCellInitializationPropertyGroup.build_properties_from_data_model" )
+
         if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellInitializationPropertyGroup data model to current version." )
+
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
         if "iterations" in dm_dict: self.iterations.set_expr ( dm_dict["iterations"] )
         if "time_step" in dm_dict: self.time_step.set_expr ( dm_dict["time_step"] )
@@ -297,6 +301,9 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
             if "missing_surface_orientation" in warn_dict: self.missing_surface_orientation = warn_dict['missing_surface_orientation']
             if "negative_reaction_rate" in warn_dict: self.negative_reaction_rate = warn_dict['negative_reaction_rate']
             if "useless_volume_orientation" in warn_dict: self.useless_volume_orientation = warn_dict['useless_volume_orientation']
+
+        print ( "Bottom of MCellInitializationPropertyGroup.build_properties_from_data_model" )
+
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
