@@ -987,23 +987,28 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         else:
             new_rna_par['value'] = 0.0
             new_rna_par['valid'] = True
+        print ( 'Finished init_ref for ' + str(user_name) + ' = ' + str(new_pid_key) )
+        bpy.ops.mcell.print_gen_parameters()
+        bpy.ops.mcell.print_pan_parameters()
+        print ( "==============================================================================================" )
+
 
 
     def clear_ref ( self, parameter_system ):
         print ( "clear_ref for " + self.unique_static_name )
-        #gpl = parameter_system.general_parameter_list
-        gpd = parameter_system['gp_dict']
         ppl = parameter_system.panel_parameter_list
-        rna_par = ppl[self.unique_static_name]
+        if 'gp_dict' in parameter_system:
+            gpd = parameter_system['gp_dict']
+            rna_par = ppl[self.unique_static_name]
 
-        # Start by removing this reference from the what_depends_on_me of any general parameters that it depends on
-        if 'elist' in rna_par:
-            elist = pickle.loads(rna_par['elist'].encode('latin1'))
-            for term in elist:
-                if type(term) == int:
-                    # This refers to a general parameter, so remove this panel parameter from its "what_depends_on_me" list
-                    gp = gpd['g'+str(term)]
-                    gp['what_depends_on_me'].pop(self.unique_static_name)
+            # Start by removing this reference from the what_depends_on_me of any general parameters that it depends on
+            if 'elist' in rna_par:
+                elist = pickle.loads(rna_par['elist'].encode('latin1'))
+                for term in elist:
+                    if type(term) == int:
+                        # This refers to a general parameter, so remove this panel parameter from its "what_depends_on_me" list
+                        gp = gpd['g'+str(term)]
+                        gp['what_depends_on_me'].pop(self.unique_static_name)
 
         # Now remove this parameter from the panel parameters list
         i = ppl.find(self.unique_static_name)
@@ -1023,17 +1028,33 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
     #@profile('Parameter_Reference.get_param')
     def get_param ( self, plist=None ):
-        ##print ( "get_param called on Parameter_Reference " + str(self.unique_static_name) )
+        #print ( "get_param called on Parameter_Reference " + str(self.unique_static_name) )
+
         if plist == None:
             # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
             mcell = bpy.context.scene.mcell
             plist = mcell.parameter_system.panel_parameter_list   # <<<< This appears to be empty after rebuilding parameters from a data model
+            # print ( "Inside get_param, len(ppl) = " + str(len(plist)) )
         return plist[self.unique_static_name]
-                                                                                                                                                   
+
+    #@profile('Parameter_Reference.set_expr')
+    def set_expr ( self, expr, plist=None ):
+        ##print ( "%%%%%%%%%%%%%%%\n  set_expr for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
+        rna_par = self.get_param(plist)
+        rna_par.expr = expr
+        return
+
+    #@profile('Parameter_Reference.get_expr')
+    def get_expr ( self, plist=None ):
+        ##print ( "%%%%%%%%%%%%%%%\n  get_expr for " + self.unique_static_name + "\n%%%%%%%%%%%%%%\n" )
+        rna_par = self.get_param(plist)
+        ##print ( "%%%%%%%%%%%%%%%\n    returning " + str(rna_par.expr) + "\n%%%%%%%%%%%%%%\n" )
+        return rna_par.expr
+
 
     #@profile('Parameter_Reference.get_value')
     def get_value ( self, plist=None ):
-        ##print ( "%%%%%%%%%%%%%%%\n  get_value for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
+        print ( "%%%%%%%%%%%%%%%\n  get_value for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
         self.optional_exit()
         par = self.get_param()
         #print ( "Par.keys() = " + str(par.keys()) )
@@ -1044,7 +1065,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
             user_type = par['user_type']
         if 'value' in par:
             #print ( "Par[value] = " + str(par['value']) )
-            if par['valid']:
+            if True or par['valid']:    # Force this to be valid for now
                 if user_type == 'f':
                     user_value = float(par['value'])
                 else:
@@ -1052,21 +1073,19 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
             else:
                 user_value = None
                 user_type = ''
+        print ( "Returning " + str(user_value) )
         return user_value
 
-    #@profile('Parameter_Reference.get_expr')
-    def get_expr ( self, plist=None ):
-        ##print ( "%%%%%%%%%%%%%%%\n  get_expr for " + self.unique_static_name + "\n%%%%%%%%%%%%%%\n" )
-        rna_par = self.get_param(plist)
-        ##print ( "%%%%%%%%%%%%%%%\n    returning " + str(rna_par.expr) + "\n%%%%%%%%%%%%%%\n" )
-        return rna_par.expr
 
-    #@profile('Parameter_Reference.set_expr')
-    def set_expr ( self, expr, plist=None ):
-        ##print ( "%%%%%%%%%%%%%%%\n  set_expr for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
+    #@profile('Parameter_Reference.get_as_string_or_value')
+    def get_as_string_or_value ( self, plist=None, as_expr=False ):
+        '''Return a string represeting the numeric value or a non-blank expression'''
         rna_par = self.get_param(plist)
-        rna_par.expr = expr
-        return
+        if as_expr and (len(rna_par.expr.strip()) > 0):
+            return self.get_expr(plist)
+        else:
+            return self.get_value(plist)
+
 
 
     #@profile('Parameter_Reference.draw')
@@ -1187,6 +1206,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     param_display_format = StringProperty ( default='%.6g', description="Formatting string for each parameter" )
     param_label_fraction = FloatProperty(precision=4, min=0.0, max=1.0, default=0.35, description="Width (0 to 1) of parameter's label")
 
+    export_as_expressions = BoolProperty ( default=False, description="Export Parameters as Expressions rather than Numbers" )
+
     # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
     last_parameter_update_time = StringProperty ( default="-1.0", description="Time that the last parameter was updated" )
 
@@ -1261,8 +1282,21 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model to current version." )
 
         dbprint ( "Parameter System building Properties from Data Model ...", thresh=-1 )
-        self.clear_all_parameters ( context )
+
         self.init_parameter_system()  # Do this in case it isn't already initialized
+
+        self.next_gid = 0
+        self.active_par_index = 0
+        self.active_name = "Par"
+        self.active_elist = ""
+        self.active_expr = "0"
+        self.active_units = ""
+        self.active_desc = ""
+        self.last_selected_id = ""
+        self.general_parameter_list.clear()
+        #self.panel_parameter_list.clear()
+        self['gp_dict'] = {}
+        self['gp_ordered_list'] = []
 
         if 'model_parameters' in par_sys_dm:
             # Add all of the parameters - some may be invalid if they depend on other parameters that haven't been read yet
@@ -1514,7 +1548,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     def update_parameter_name (self, context):
         ps = context.scene.mcell.parameter_system
 
-        if len(self['gp_dict']) > 0:
+        if ('gp_dict' in self) and (len(self['gp_dict']) > 0):
             pid = self.last_selected_id
             old_name = str(self['gp_dict'][pid]['name'])
             new_name = self.active_name
@@ -1582,7 +1616,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     #@profile('ParameterSystem.update_parameter_expression')
     def update_parameter_expression (self, context):
-        if len(self['gp_dict']) > 0:
+        if ('gp_dict' in self) and (len(self['gp_dict']) > 0):
             dbprint ("Parameter string changed from " + str(self['gp_dict'][self.last_selected_id]['expr']) + " to " + self.active_expr )
             if self.last_selected_id in self['gp_dict']:
                 self['gp_dict'][self.last_selected_id]['expr'] = self.active_expr
@@ -1590,32 +1624,32 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             else:
                 print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
 
-        # Now set all status based on the expression lists:
-        for par in self['gp_dict'].keys():
-            self['gp_dict'][par]['status'] = {} # set()
-            elist = pickle.loads(self['gp_dict'][par]['elist'].encode('latin1'))
-            if None in elist:
-                # self['gp_dict'][par]['status'].add ( 'undef' ) # This would be the set operation, but we're using a dictionary
-                self['gp_dict'][par]['status']['undef'] = True   # Use "True" to flag the intention of 'undef' being in the set
-        # Next add status based on loops:
-        result = self.update_dependency_ordered_name_list()
-        if len(result) > 0:
-            # There was a loop and result contains the names of unresolvable parameters
+            # Now set all status based on the expression lists:
             for par in self['gp_dict'].keys():
-                if par in result:
-                    # self['gp_dict'][par]['status'].add ( 'loop' ) # This would be the set operation, but we're using a dictionary
-                    self['gp_dict'][par]['status']['loop'] = True   # Use "True" to flag the intention of 'loop' being in the set
-        else:
-            mcell = context.scene.mcell
-            ps = mcell.parameter_system
-            # TODO: Note that this might not be the most efficient thing to do!!!!
-            ps.evaluate_all_gp_expressions ( context )
-            ps.evaluate_all_pp_expressions ( context )
+                self['gp_dict'][par]['status'] = {} # set()
+                elist = pickle.loads(self['gp_dict'][par]['elist'].encode('latin1'))
+                if None in elist:
+                    # self['gp_dict'][par]['status'].add ( 'undef' ) # This would be the set operation, but we're using a dictionary
+                    self['gp_dict'][par]['status']['undef'] = True   # Use "True" to flag the intention of 'undef' being in the set
+            # Next add status based on loops:
+            result = self.update_dependency_ordered_name_list()
+            if len(result) > 0:
+                # There was a loop and result contains the names of unresolvable parameters
+                for par in self['gp_dict'].keys():
+                    if par in result:
+                        # self['gp_dict'][par]['status'].add ( 'loop' ) # This would be the set operation, but we're using a dictionary
+                        self['gp_dict'][par]['status']['loop'] = True   # Use "True" to flag the intention of 'loop' being in the set
+            else:
+                mcell = context.scene.mcell
+                ps = mcell.parameter_system
+                # TODO: Note that this might not be the most efficient thing to do!!!!
+                ps.evaluate_all_gp_expressions ( context )
+                ps.evaluate_all_pp_expressions ( context )
 
 
     #@profile('ParameterSystem.update_parameter_elist')
     def update_parameter_elist (self, context):
-        if len(self['gp_dict']) > 0:
+        if ('gp_dict' in self) and (len(self['gp_dict']) > 0):
             dbprint ("Parameter elist changed from " + str(self['gp_dict'][self.last_selected_id]['elist']) + " to " + self.active_elist )
             if self.last_selected_id in self['gp_dict']:
                 # self['gp_dict'][self.last_selected_id]['elist'] = eval(self.active_elist)
@@ -1628,7 +1662,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     #@profile('ParameterSystem.update_parameter_units')
     def update_parameter_units (self, context):
-        if len(self['gp_dict']) > 0:
+        if ('gp_dict' in self) and (len(self['gp_dict']) > 0):
             dbprint ("Parameter units changed from " + str(self['gp_dict'][self.last_selected_id]['units']) + " to " + self.active_units )
             if self.last_selected_id in self['gp_dict']:
                 self['gp_dict'][self.last_selected_id]['units'] = self.active_units
@@ -1637,7 +1671,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     #@profile('ParameterSystem.update_parameter_desc')
     def update_parameter_desc (self, context):
-        if len(self['gp_dict']) > 0:
+        if ('gp_dict' in self) and (len(self['gp_dict']) > 0):
             dbprint ("Parameter description changed from " + str(self['gp_dict'][self.last_selected_id]['desc']) + " to " + self.active_desc )
             if self.last_selected_id in self['gp_dict']:
                 self['gp_dict'][self.last_selected_id]['desc'] = self.active_desc
@@ -2165,10 +2199,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             row = box.row()
             row.prop(self, "param_label_fraction", text="Parameter Label Fraction")
 
-            """
             row = box.row()
             row.prop(ps, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
 
+            """
             row = box.row()
             row.operator("mcell.print_profiling", text="Print Profiling")
             row.operator("mcell.clear_profiling", text="Clear Profiling")

@@ -593,7 +593,7 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
         out_file.write('  }\n')
 
 
-def write_parameter_as_mdl ( p, out_file, as_expr ):
+def write_parameter_as_mdl_old ( p, out_file, as_expr ):
     """ Writes a single parameter as MDL as either a value or an expression """
 
     # Export Parameter:
@@ -623,6 +623,36 @@ def write_parameter_as_mdl ( p, out_file, as_expr ):
 
 
 
+def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
+    """ Writes a single parameter as MDL as either a value or an expression """
+
+    # Export Parameter:
+    if as_expr:
+        # Note that some expressions are allowed to be blank which indicates use of the default VALUE
+        if len(p.expr.strip()) <= 0:
+            # The expression is blank, so use the value which should be the default
+            out_file.write("%s = %.15g" % (par_name, p['value']))
+        else:
+            # The expression is not blank, so use it
+            out_file.write("%s = %s" % (par_name, p['expr']))
+    else:
+        # Output the value rather than the expression
+        out_file.write("%s = %.15g" % (par_name, p['value']))
+
+    if ((p['desc'] != "") | (p['units'] != "")):
+        out_file.write("    /* ")
+
+        if p['desc'] != "":
+            out_file.write("%s " % (p['desc']))
+
+        if p['units'] != "":
+            out_file.write("   units=%s" % (p['units']))
+
+        out_file.write(" */")
+    out_file.write("\n")
+
+
+
 def save_general_parameters(ps, out_file):
     """ Saves parameter info to mdl output file. """
 
@@ -634,7 +664,7 @@ def save_general_parameters(ps, out_file):
             # Output as values ... order doesn't matter
             out_file.write("/* DEFINE PARAMETERS */\n")
             for p in ps.general_parameter_list:
-                write_parameter_as_mdl ( p, out_file, ps.export_as_expressions )
+                write_parameter_as_mdl ( p.name, ps['gp_dict'][p.par_id], out_file, ps.export_as_expressions )
             out_file.write("\n")
 
         else:
@@ -646,14 +676,14 @@ def save_general_parameters(ps, out_file):
                 # Output as values ... order doesn't matter
                 out_file.write("/* DEFINE PARAMETERS */\n")
                 for p in ps.general_parameter_list:
-                    write_parameter_as_mdl ( p, out_file, False )
+                    write_parameter_as_mdl ( p.name, ps['gp_dict'][p.par_id], out_file, False )
                 out_file.write("\n")
             else:
                 # Output as expressions where order matters
                 out_file.write("/* DEFINE PARAMETERS */\n")
                 for pn in ordered_names:
                     p = ps.general_parameter_list[pn]
-                    write_parameter_as_mdl ( p, out_file, ps.export_as_expressions )
+                    write_parameter_as_mdl ( p.name, ps['gp_dict'][p.par_id], out_file, ps.export_as_expressions )
                 out_file.write("\n")
 
 

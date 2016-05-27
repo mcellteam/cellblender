@@ -627,6 +627,8 @@ def upgrade_properties_from_data_model ( context ):
     print ( "Upgrading Properties from Data Model" )
     mcell = context.scene.mcell
 
+    print ( "Inside upgrade_properties_from_data_model, len(ppl) = " + str(len(mcell.parameter_system.panel_parameter_list)) )
+
     dm = {}
     if 'data_model' in mcell:
         print ( "Found a data model to upgrade." )
@@ -672,13 +674,14 @@ def upgrade_properties_from_data_model ( context ):
 
     # Restore the local variable mcell to be consistent with not taking this branch of the if.
     mcell = context.scene.mcell
+    mcell.init_properties()
 
     # Restore the current preferences that had been saved
     restore_mcell_preferences ( mp, mcell )
 
     # Do the actual updating of properties from data model right here
     dm = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm)
-    print ( "Build Properties from this Data Model:" )
+    print ( "Build Properties from this Upgraded Data Model:" )
     dump_data_model ( "Data Model", dm )
     mcell.build_properties_from_data_model ( context, dm )
                                                                               
@@ -778,7 +781,7 @@ def save_pre(context):
             # Only save the data model if mcell has been initialized
             if hasattr ( mcell, 'initialized' ):
                 if mcell.initialized:
-                    print ( "Upgrading blend file to current version before saving" )
+                    print ( "Upgrading blend file to current version (" + str(source_id) + " before saving" )
                     mcell = context.scene.mcell
                     if not mcell.get ( 'saved_by_source_id' ):
                         # This .blend file was created with CellBlender RC3 / RC4

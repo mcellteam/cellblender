@@ -178,7 +178,17 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
                                              user_descr=helptext )
 
     def remove_properties ( self, context ):
-        print ( "Removing all Initialization Properties... no collections to remove." )
+        ps = context.scene.mcell.parameter_system
+        """ # It's not needed to remove these properties because there is only one copy? """
+        self.iterations.clear_ref ( ps )
+        self.time_step.clear_ref ( ps )
+        self.time_step_max.clear_ref ( ps )
+        self.space_step.clear_ref ( ps )
+        self.interaction_radius.clear_ref ( ps )
+        self.radial_directions.clear_ref ( ps )
+        self.radial_subdivisions.clear_ref ( ps )
+        self.vacancy_search_distance.clear_ref ( ps )
+        self.surface_grid_density.clear_ref ( ps )
 
 
     def build_data_model_from_properties ( self, context ):
