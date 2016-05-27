@@ -519,6 +519,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all Molecule Properties ... not implemented yet!" )
+        self.diffusion_constant.clear_ref ( context.scene.mcell.parameter_system )
+        self.custom_time_step.clear_ref ( context.scene.mcell.parameter_system )
+        self.custom_space_step.clear_ref ( context.scene.mcell.parameter_system )
         self.remove_mol_data ( context )
 
 
@@ -1235,6 +1238,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             mol = self.molecule_list[self.active_mol_index]
             if mol:
                 mol.remove_mol_data(context)
+                mol.remove_properties(context)
             self.molecule_list.remove ( self.active_mol_index )
             self.active_mol_index -= 1
             if self.active_mol_index < 0:

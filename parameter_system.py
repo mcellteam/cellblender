@@ -988,6 +988,31 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
             new_rna_par['value'] = 0.0
             new_rna_par['valid'] = True
 
+
+    def clear_ref ( self, parameter_system ):
+        print ( "clear_ref for " + self.unique_static_name )
+        #gpl = parameter_system.general_parameter_list
+        gpd = parameter_system['gp_dict']
+        ppl = parameter_system.panel_parameter_list
+        rna_par = ppl[self.unique_static_name]
+
+        # Start by removing this reference from the what_depends_on_me of any general parameters that it depends on
+        if 'elist' in rna_par:
+            elist = pickle.loads(rna_par['elist'].encode('latin1'))
+            for term in elist:
+                if type(term) == int:
+                    # This refers to a general parameter, so remove this panel parameter from its "what_depends_on_me" list
+                    gp = gpd['g'+str(term)]
+                    gp['what_depends_on_me'].pop(self.unique_static_name)
+
+        # Now remove this parameter from the panel parameters list
+        i = ppl.find(self.unique_static_name)
+        if i >= 0:
+            ppl.remove ( i )
+
+
+
+
     ## There are a lot of Parameter_Reference functions from the old version that may not be used
     ## For now, have them flag when they're called by exiting Blender.
     
@@ -998,7 +1023,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
     #@profile('Parameter_Reference.get_param')
     def get_param ( self, plist=None ):
-        print ( "get_param called on Parameter_Reference " + str(self.unique_static_name) )
+        ##print ( "get_param called on Parameter_Reference " + str(self.unique_static_name) )
         if plist == None:
             # No list specified, so get it from the top (it would be better to NOT have to do this!!!)
             mcell = bpy.context.scene.mcell
@@ -1008,7 +1033,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
     #@profile('Parameter_Reference.get_value')
     def get_value ( self, plist=None ):
-        print ( "%%%%%%%%%%%%%%%\n  get_value for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
+        ##print ( "%%%%%%%%%%%%%%%\n  get_value for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
         self.optional_exit()
         par = self.get_param()
         #print ( "Par.keys() = " + str(par.keys()) )
@@ -1031,14 +1056,14 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
     #@profile('Parameter_Reference.get_expr')
     def get_expr ( self, plist=None ):
-        print ( "%%%%%%%%%%%%%%%\n  get_expr for " + self.unique_static_name + "\n%%%%%%%%%%%%%%\n" )
+        ##print ( "%%%%%%%%%%%%%%%\n  get_expr for " + self.unique_static_name + "\n%%%%%%%%%%%%%%\n" )
         rna_par = self.get_param(plist)
-        print ( "%%%%%%%%%%%%%%%\n    returning " + str(rna_par.expr) + "\n%%%%%%%%%%%%%%\n" )
+        ##print ( "%%%%%%%%%%%%%%%\n    returning " + str(rna_par.expr) + "\n%%%%%%%%%%%%%%\n" )
         return rna_par.expr
 
     #@profile('Parameter_Reference.set_expr')
     def set_expr ( self, expr, plist=None ):
-        print ( "%%%%%%%%%%%%%%%\n  set_expr for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
+        ##print ( "%%%%%%%%%%%%%%%\n  set_expr for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
         rna_par = self.get_param(plist)
         rna_par.expr = expr
         return
