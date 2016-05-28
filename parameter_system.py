@@ -1525,6 +1525,26 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         self.active_desc = new_id_par['desc']
 
 
+
+    #@profile('ParameterSystem.add_general_parameter_and_update')
+    def add_general_parameter_and_update ( self, context, name=None, expr="0", units="", desc="" ):
+
+        self.add_general_parameter ( name, expr, units, desc )
+
+        self.active_par_index_changed ( context )
+        self.update_parameter_name ( context )
+
+        self.active_expr = expr
+
+        self.update_parameter_expression ( context )
+        self.update_parameter_elist ( context )
+        self.update_parameter_units ( context )
+        self.update_parameter_desc ( context )
+
+        context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
+
+
+
     #@profile('ParameterSystem.remove_active_parameter')
     def remove_active_parameter ( self, context ):
         """ Remove the active parameter from the list of parameters if not needed by others """
