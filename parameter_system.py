@@ -2,6 +2,55 @@
 This module supports parameters and evaluation of expressions.
 """
 
+"""
+### This script can generate parameters for testing
+
+num_pars_to_gen = 10
+num_back = 2
+make_loop = False
+
+import cellblender as cb
+
+dm = cb.get_data_model()
+
+def make_par_name ( n ):
+    name = None
+    if n < 26:
+        name = chr(ord('a')+n)
+    else:
+        name = "P_" + str(n)
+    if (n % 3) == 0:
+        name += 'x'
+    if (n % 3) == 1:
+        name += 'y'
+    return name
+
+pars = []
+for n in range(num_pars_to_gen):
+    pname = make_par_name ( n )
+    par = {}
+    par['par_name'] = pname
+    par['par_description'] = "Description for " + pname
+    par['par_units'] = "u"
+    par['par_expression'] = "1"
+    for i in range(max(n-num_back,0),n):
+        par['par_expression'] += " + "
+        par['par_expression'] += make_par_name ( i )
+    pars.append ( par )
+
+if make_loop:
+    mid = round(num_pars_to_gen / 2)
+    print ( " mid = " + str(mid) )
+    if (mid-1) >= 0:
+        # There are enough parameters to make a loop
+        pars[mid-1]['par_expression'] += " + " + pars[mid]['par_name']
+
+dm['mcell']['parameter_system'] = { 'model_parameters':pars }
+
+cb.replace_data_model ( dm )
+
+"""
+
 import bpy
 from bpy.props import *
 from math import *
@@ -1331,6 +1380,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
                 new_name = p['par_name']
 
+
+                self.add_general_parameter_and_update ( context, name=new_name, expr=p['par_expression'], units=units, desc=descr )
+
+                """
                 new_id_par = self.new_parameter ( new_name=new_name, new_expr=p['par_expression'], new_units=units, new_desc=descr )
 
                 dbprint ( "Adding " + str(new_id_par), thresh=-1 )
@@ -1345,6 +1398,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 self.active_expr = new_id_par['expr']
                 self.active_units = new_id_par['units']
                 self.active_desc = new_id_par['desc']
+                """
 
         print ( "=== After parameter_system.ParameterSystemPropertyGroup.build_properties_from_data_model() ===" )
         bpy.ops.mcell.print_gen_parameters()
@@ -1585,7 +1639,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     def update_parameter_name (self, context):
         ps = context.scene.mcell.parameter_system
 
-        if ('gp_dict' in self) and (len(self['gp_dict']) > 0):
+        if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
             pid = self.last_selected_id
             old_name = str(self['gp_dict'][pid]['name'])
             new_name = self.active_name
@@ -1653,7 +1707,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     #@profile('ParameterSystem.update_parameter_expression')
     def update_parameter_expression (self, context):
-        if ('gp_dict' in self) and (len(self['gp_dict']) > 0):
+        if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
             dbprint ("Parameter string changed from " + str(self['gp_dict'][self.last_selected_id]['expr']) + " to " + self.active_expr )
             if self.last_selected_id in self['gp_dict']:
                 self['gp_dict'][self.last_selected_id]['expr'] = self.active_expr
@@ -1686,7 +1740,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     #@profile('ParameterSystem.update_parameter_elist')
     def update_parameter_elist (self, context):
-        if ('gp_dict' in self) and (len(self['gp_dict']) > 0):
+        if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
             dbprint ("Parameter elist changed from " + str(self['gp_dict'][self.last_selected_id]['elist']) + " to " + self.active_elist )
             if self.last_selected_id in self['gp_dict']:
                 # self['gp_dict'][self.last_selected_id]['elist'] = eval(self.active_elist)
@@ -1699,7 +1753,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     #@profile('ParameterSystem.update_parameter_units')
     def update_parameter_units (self, context):
-        if ('gp_dict' in self) and (len(self['gp_dict']) > 0):
+        if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
             dbprint ("Parameter units changed from " + str(self['gp_dict'][self.last_selected_id]['units']) + " to " + self.active_units )
             if self.last_selected_id in self['gp_dict']:
                 self['gp_dict'][self.last_selected_id]['units'] = self.active_units
