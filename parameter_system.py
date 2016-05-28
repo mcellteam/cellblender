@@ -1049,22 +1049,22 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
     #@profile('Parameter_Reference.set_expr')
     def set_expr ( self, expr, plist=None ):
-        ##print ( "%%%%%%%%%%%%%%%\n  set_expr for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
+        ##print ( "###############\n  set_expr for " + self.unique_static_name + " Error!!!\n###############\n" )
         rna_par = self.get_param(plist)
         rna_par.expr = expr
         return
 
     #@profile('Parameter_Reference.get_expr')
     def get_expr ( self, plist=None ):
-        ##print ( "%%%%%%%%%%%%%%%\n  get_expr for " + self.unique_static_name + "\n%%%%%%%%%%%%%%\n" )
+        ##print ( "###############\n  get_expr for " + self.unique_static_name + "\n###############\n" )
         rna_par = self.get_param(plist)
-        ##print ( "%%%%%%%%%%%%%%%\n    returning " + str(rna_par.expr) + "\n%%%%%%%%%%%%%%\n" )
+        ##print ( "###############\n    returning " + str(rna_par.expr) + "\n###############\n" )
         return rna_par.expr
 
 
     #@profile('Parameter_Reference.get_value')
     def get_value ( self, plist=None ):
-        #print ( "%%%%%%%%%%%%%%%\n  get_value for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
+        #print ( "###############\n  get_value for " + self.unique_static_name + " Error!!!\n###############\n" )
         self.optional_exit()
         par = self.get_param()
         #print ( "Par.keys() = " + str(par.keys()) )
@@ -1094,7 +1094,13 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         if as_expr and (len(rna_par.expr.strip()) > 0):
             return self.get_expr(plist)
         else:
-            return self.get_value(plist)
+            isint = False
+            s = None
+            if ('user_type' in rna_par) and (rna_par['user_type'] == 'i'):
+                s = "%g" % (int(self.get_value(plist)))
+            else:
+                s = "%g" % (self.get_value(plist))
+            return s
 
 
 
