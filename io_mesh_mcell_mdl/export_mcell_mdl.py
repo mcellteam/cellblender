@@ -629,7 +629,7 @@ def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
     # Export Parameter:
     if as_expr:
         # Note that some expressions are allowed to be blank which indicates use of the default VALUE
-        if len(p.expr.strip()) <= 0:
+        if len(p['expr'].strip()) <= 0:
             # The expression is blank, so use the value which should be the default
             out_file.write("%s = %.15g" % (par_name, p['value']))
         else:
@@ -664,27 +664,31 @@ def save_general_parameters(ps, out_file):
             # Output as values ... order doesn't matter
             out_file.write("/* DEFINE PARAMETERS */\n")
             for p in ps.general_parameter_list:
+                #print ( "Writing id = " + str(p.par_id) )
                 write_parameter_as_mdl ( p.name, ps['gp_dict'][p.par_id], out_file, ps.export_as_expressions )
             out_file.write("\n")
 
         else:
 
-            ordered_names = ps.build_dependency_ordered_name_list()
-            print ( "Ordered names = " + str(ordered_names) )
+            #ordered_names = ps.build_dependency_ordered_name_list()
+            ordered_names = None
+            if 'gp_ordered_list' in ps:
+                ordered_names = ps['gp_ordered_list']
+            #print ( "Ordered names = " + str(ordered_names) )
+            out_file.write("/* DEFINE PARAMETERS */\n")
             if ordered_names == None:
-                print ( "Warning: Unable to export as expressions due to circular dependency" )
+                #print ( "Warning: Unable to export as expressions." )
                 # Output as values ... order doesn't matter
-                out_file.write("/* DEFINE PARAMETERS */\n")
                 for p in ps.general_parameter_list:
+                    #print ( "Writing id = " + str(p.par_id) )
                     write_parameter_as_mdl ( p.name, ps['gp_dict'][p.par_id], out_file, False )
-                out_file.write("\n")
             else:
                 # Output as expressions where order matters
-                out_file.write("/* DEFINE PARAMETERS */\n")
                 for pn in ordered_names:
-                    p = ps.general_parameter_list[pn]
-                    write_parameter_as_mdl ( p.name, ps['gp_dict'][p.par_id], out_file, ps.export_as_expressions )
-                out_file.write("\n")
+                    p = ps['gp_dict'][pn]
+                    #print ( "Writing id = " + str(pn) )
+                    write_parameter_as_mdl ( p['name'], ps['gp_dict'][pn], out_file, ps.export_as_expressions )
+            out_file.write("\n")
 
 
 def save_molecules(context, out_file, mol_list):

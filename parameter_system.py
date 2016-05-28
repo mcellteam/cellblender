@@ -1046,15 +1046,15 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         else:
             new_rna_par['value'] = 0.0
             new_rna_par['valid'] = True
-        print ( 'Finished init_ref for ' + str(user_name) + ' = ' + str(new_pid_key) )
-        bpy.ops.mcell.print_gen_parameters()
-        bpy.ops.mcell.print_pan_parameters()
-        print ( "==============================================================================================" )
+        dbprint ( 'Finished init_ref for ' + str(user_name) + ' = ' + str(new_pid_key) )
+        #bpy.ops.mcell.print_gen_parameters()
+        #bpy.ops.mcell.print_pan_parameters()
+        dbprint ( "==============================================================================================" )
 
 
 
     def clear_ref ( self, parameter_system ):
-        print ( "clear_ref for " + self.unique_static_name )
+        dbprint ( "clear_ref for " + self.unique_static_name )
         ppl = parameter_system.panel_parameter_list
         if 'gp_dict' in parameter_system:
             gpd = parameter_system['gp_dict']
@@ -1400,10 +1400,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 self.active_desc = new_id_par['desc']
                 """
 
-        print ( "=== After parameter_system.ParameterSystemPropertyGroup.build_properties_from_data_model() ===" )
-        bpy.ops.mcell.print_gen_parameters()
-        bpy.ops.mcell.print_pan_parameters()
-        print ( "==============================================================================================" )
+        dbprint ( "=== After parameter_system.ParameterSystemPropertyGroup.build_properties_from_data_model() ===" )
+        #bpy.ops.mcell.print_gen_parameters()
+        #bpy.ops.mcell.print_pan_parameters()
+        dbprint ( "==============================================================================================" )
 
 
     #@profile('ParameterSystem.clear_all_parameters')
@@ -1446,7 +1446,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         dbprint ( "Called new_parameter ( " + str(new_name) + ", " + str(pp) + ", " + str(new_expr) + ", " + str(new_units) + ", " + str(new_desc) + " )" )
 
         new_par_id_dict = {
-            'name': new_name,
+            'name': new_name,           # This is the user name
             'expr': "0",
             'elist': pickle.dumps(['0'],protocol=0).decode('latin1'),
             'units': new_units,
@@ -1538,14 +1538,14 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     def remove_properties ( self, context ):
         dbprint ( "Removing all Parameter System Properties ... (actually doing nothing right now)", thresh=-1 )
-        print ( "Before removing:" )
-        bpy.ops.mcell.print_gen_parameters()
-        bpy.ops.mcell.print_pan_parameters()
+        #print ( "Before removing:" )
+        #bpy.ops.mcell.print_gen_parameters()
+        #bpy.ops.mcell.print_pan_parameters()
         # It's not clear if this should be done or not ... it wasn't done in the old version.
         self.clear_all_parameters ( context )
-        print ( "After removing:" )
-        bpy.ops.mcell.print_gen_parameters()
-        bpy.ops.mcell.print_pan_parameters()
+        #print ( "After removing:" )
+        #bpy.ops.mcell.print_gen_parameters()
+        #bpy.ops.mcell.print_pan_parameters()
 
 
     #@profile('ParameterSystem.add_general_parameter')
@@ -2291,7 +2291,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             row.prop(self, "param_label_fraction", text="Parameter Label Fraction")
 
             row = box.row()
-            row.prop(ps, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
+            row.prop(self, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
 
             """
             row = box.row()
