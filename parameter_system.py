@@ -953,8 +953,9 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
                 else:
                     self['valid'] = False
                     self['value'] = 0.0
-            if ('user_type' in self) and (self['user_type'] == 'i'):
-                self['value'] = int(self['value'])
+            # It's not clear if this should be integerized here or only on display. Retain full value for now.
+            #if ('user_type' in self) and (self['user_type'] == 'i'):
+            #    self['value'] = int(self['value'])
 
 
 class Parameter_Reference ( bpy.types.PropertyGroup ):
