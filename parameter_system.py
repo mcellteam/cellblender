@@ -859,10 +859,12 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
         parameter_system = mcell.parameter_system
         dbprint ( "Update the panel expression for " + self.name + " with keys = " + str(self.keys()) )
         dbprint ( "Updating " + str(parameter_system.panel_parameter_list[self.name]) )
+
+        parameter_system.init_parameter_system()  # Do this in case it isn't already initialized
         
         old_parameterized_expr = pickle.loads(self.elist.encode('latin1'))
 
-        if len(parameter_system['gp_dict']) > 0:
+        if True or (len(parameter_system['gp_dict']) > 0):
             dbprint ("Parameter string changed to " + self.expr, 10 )
             parameterized_expr = parameter_system.parse_param_expr ( self.expr )
             self.elist = pickle.dumps(parameterized_expr,protocol=0).decode('latin1')
@@ -900,11 +902,13 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
 
             # Recompute the value
 
+            # Start by creating a dictionary of values from all general parameters:
+
             gl = {}  # This is the dictionary to contain the globals and locals of the evaluated python expressions
-            py_expr = None
-            if ('gp_dict' in parameter_system) and (len(parameter_system['gp_dict']) > 0):
+            valid = True
+            if True or ('gp_dict' in parameter_system): ## and (len(parameter_system['gp_dict']) > 0):
                 gp_dict = parameter_system['gp_dict']
-                if 'gp_ordered_list' in parameter_system:
+                if True or ('gp_ordered_list' in parameter_system):
                     dbprint ( "parameter_system['gp_ordered_list'] = " + str(parameter_system['gp_ordered_list']), thresh=1 )
                     for par_id in parameter_system['gp_ordered_list']:
                         par = gp_dict[par_id]
@@ -924,28 +928,33 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
                                     expr += " " + term
                                 else:
                                     dbprint ( "Error" )
+                                    valid = False
                                 dbprint ( "Expr: " + par['name'] + " = " + expr )
                             py_expr = parameter_system.build_expression ( elist, as_python=True )
                             if py_expr is None:
-                                print ( "Error: " + str(elist) + " contains None" )
+                                print ( "Error: " + str(elist) + " cannot be evaluated" )
+                                par['value'] = 0.0
+                                valid = False
                             else:
                                 # Assign the value to the parameter item
                                 par['value'] = float(eval(py_expr,globals(),gl))
-                                # Make the assignment in the dictionary used as "globals" and "locals" for any parameters that depend on it
-                                gl[par['name']] = par['value']
+                            # Make the assignment in the dictionary used as "globals" and "locals" for any parameters that depend on it
+                            gl[par['name']] = par['value']
 
-            if py_expr is None:
-                print ( "Error: " + str(elist) + " contains None" )
+            if not valid:
+                print ( "Error: " + str(parameterized_expr) + " cannot be evaluated" )
                 self['valid'] = False
                 self['value'] = 0.0
             else:
                 py_expr = parameter_system.build_expression ( parameterized_expr, as_python=True )
-                if (len(py_expr.strip()) > 0):
+                if (py_expr != None) and (len(py_expr.strip()) > 0):
                     self['valid'] = True
                     self['value'] = float(eval(py_expr,globals(),gl))
                 else:
                     self['valid'] = False
                     self['value'] = 0.0
+            if ('user_type' in self) and (self['user_type'] == 'i'):
+                self['value'] = int(self['value'])
 
 
 class Parameter_Reference ( bpy.types.PropertyGroup ):
@@ -1054,7 +1063,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
     #@profile('Parameter_Reference.get_value')
     def get_value ( self, plist=None ):
-        print ( "%%%%%%%%%%%%%%%\n  get_value for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
+        #print ( "%%%%%%%%%%%%%%%\n  get_value for " + self.unique_static_name + " Error!!!\n%%%%%%%%%%%%%%\n" )
         self.optional_exit()
         par = self.get_param()
         #print ( "Par.keys() = " + str(par.keys()) )
@@ -1073,7 +1082,7 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
             else:
                 user_value = None
                 user_type = ''
-        print ( "Returning " + str(user_value) )
+        #print ( "Returning " + str(user_value) )
         return user_value
 
 
@@ -1217,6 +1226,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         # Normally, a Property Group would delegate the building of group items to those items.
         # But since the parameter system is so complex, it's all being done at the group level for now.
         dbprint ( "Parameter System building Data Model" )
+
         par_sys_dm = {}
         gen_par_list = []
 
