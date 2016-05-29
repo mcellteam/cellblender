@@ -1643,7 +1643,11 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
         if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
             pid = self.last_selected_id
-            old_name = str(self['gp_dict'][pid]['name'])  # Note that sometimes the old name cannot be found
+            old_name = ""
+            try:
+                old_name = str(self['gp_dict'][pid]['name'])  # Note that sometimes the old name cannot be found
+            except:
+                print ( "Unexpected error: Cannot find name for self['gp_dict'][" + str(pid) + "]['name']" )
             new_name = self.active_name
             if new_name != old_name:
                 # The name actually changed, so really perform the update
@@ -1654,7 +1658,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                     dbprint ("Update gp_dict from " + old_name + " to " + new_name )
                     self['gp_dict'][pid]['name'] = new_name
                     dbprint ("Update general_parameter_list from " + old_name + " to " + new_name )
-                    self.general_parameter_list[old_name].name = new_name
+                    if old_name in self.general_parameter_list:
+                        self.general_parameter_list[old_name].name = new_name
                     dbprint ("Propagate changes from " + old_name + " to " + new_name )
 
                     who_depends_on_me =  [ k for k in self['gp_dict'][pid]['who_depends_on_me']  ]
@@ -1706,19 +1711,24 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                     # TODO Need to deal with errors in panel parameters
 
                 else:
-                    print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
+                    print ( "Unexpected error: pid \"" + str(pid) + "\" not in self['gp_dict']" )
 
     @profile('ParameterSystem.update_parameter_expression')
     def update_parameter_expression (self, context):
         if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
-            if str(self['gp_dict'][self.last_selected_id]['expr']) != self.active_expr:
+            needs_update = False
+            try:
+                needs_update = (str(self['gp_dict'][self.last_selected_id]['expr']) != self.active_expr)
+            except:
+                needs_update = True
+            if needs_update:
                 # The expression string actually changed, so really perform the update
-                dbprint ("Parameter string changed from " + str(self['gp_dict'][self.last_selected_id]['expr']) + " to " + self.active_expr )
+                # dbprint ("Parameter string changed from " + str(self['gp_dict'][self.last_selected_id]['expr']) + " to " + self.active_expr )
                 if self.last_selected_id in self['gp_dict']:
                     self['gp_dict'][self.last_selected_id]['expr'] = self.active_expr
                     self.evaluate_active_expression(context)
                 else:
-                    print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
+                    print ( "Unexpected error: last_selected_id \"" + str(self.last_selected_id) + "\" not in self['gp_dict']" )
 
                 # Now set all status based on the expression lists:
                 for par in self['gp_dict'].keys():
@@ -1746,9 +1756,14 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     @profile('ParameterSystem.update_parameter_elist')
     def update_parameter_elist (self, context):
         if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
-            if str(self['gp_dict'][self.last_selected_id]['elist']) != self.active_elist:
+            needs_update = False
+            try:
+                needs_update = (str(self['gp_dict'][self.last_selected_id]['elist']) != self.active_elist)
+            except:
+                needs_update = True
+            if needs_update:
                 # The expression list actually changed, so really perform the update
-                dbprint ("Parameter elist changed from " + str(self['gp_dict'][self.last_selected_id]['elist']) + " to " + self.active_elist )
+                # dbprint ("Parameter elist changed from " + str(self['gp_dict'][self.last_selected_id]['elist']) + " to " + self.active_elist )
                 if self.last_selected_id in self['gp_dict']:
                     # self['gp_dict'][self.last_selected_id]['elist'] = eval(self.active_elist)
                     elist = pickle.loads(self['gp_dict'][self.last_selected_id]['elist'].encode('latin1'))
@@ -1756,29 +1771,39 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                         self.active_expr = str ( self.build_expression ( elist ) )
                         # self.evaluate_active_expression(context)
                 else:
-                    print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
+                    print ( "Unexpected error: \"" + str(self.last_selected_id) + "\" not in self['gp_dict']" )
 
     @profile('ParameterSystem.update_parameter_units')
     def update_parameter_units (self, context):
         if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
-            if str(self['gp_dict'][self.last_selected_id]['units']) != self.active_units:
+            needs_update = False
+            try:
+                needs_update = (str(self['gp_dict'][self.last_selected_id]['units']) != self.active_units)
+            except:
+                needs_update = True
+            if needs_update:
                 # The units actually changed, so really perform the update
-                dbprint ("Parameter units changed from " + str(self['gp_dict'][self.last_selected_id]['units']) + " to " + self.active_units )
+                # dbprint ("Parameter units changed from " + str(self['gp_dict'][self.last_selected_id]['units']) + " to " + self.active_units )
                 if self.last_selected_id in self['gp_dict']:
                     self['gp_dict'][self.last_selected_id]['units'] = self.active_units
                 else:
-                    print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
+                    print ( "Unexpected error: \"" + str(self.last_selected_id) + "\" not in self['gp_dict']" )
 
     @profile('ParameterSystem.update_parameter_desc')
     def update_parameter_desc (self, context):
         if ('gp_dict' in self) and (len(self['gp_dict']) > 0):
-            if str(self['gp_dict'][self.last_selected_id]['desc']) != self.active_desc:
+            needs_update = False
+            try:
+                needs_update = (str(self['gp_dict'][self.last_selected_id]['desc']) != self.active_desc)
+            except:
+                needs_update = True
+            if needs_update:
                 # The description actually changed, so really perform the update
-                dbprint ("Parameter description changed from " + str(self['gp_dict'][self.last_selected_id]['desc']) + " to " + self.active_desc )
+                # dbprint ("Parameter description changed from " + str(self['gp_dict'][self.last_selected_id]['desc']) + " to " + self.active_desc )
                 if self.last_selected_id in self['gp_dict']:
                     self['gp_dict'][self.last_selected_id]['desc'] = self.active_desc
                 else:
-                    print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
+                    print ( "Unexpected error: \"" + str(self.last_selected_id) + "\" not in self['gp_dict']" )
 
 
 
