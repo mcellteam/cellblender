@@ -2,6 +2,7 @@
 This module supports parameters and evaluation of expressions.
 """
 
+
 """
 ### This script can generate parameters for testing
 
@@ -1645,6 +1646,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             old_name = str(self['gp_dict'][pid]['name'])  # Note that sometimes the old name cannot be found
             new_name = self.active_name
             if new_name != old_name:
+                # The name actually changed, so really perform the update
                 dbprint ("Parameter name changed from " + old_name + " to " + new_name )
                 if pid in self['gp_dict']:
 
@@ -1709,66 +1711,74 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     @profile('ParameterSystem.update_parameter_expression')
     def update_parameter_expression (self, context):
         if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
-            dbprint ("Parameter string changed from " + str(self['gp_dict'][self.last_selected_id]['expr']) + " to " + self.active_expr )
-            if self.last_selected_id in self['gp_dict']:
-                self['gp_dict'][self.last_selected_id]['expr'] = self.active_expr
-                self.evaluate_active_expression(context)
-            else:
-                print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
+            if str(self['gp_dict'][self.last_selected_id]['expr']) != self.active_expr:
+                # The expression string actually changed, so really perform the update
+                dbprint ("Parameter string changed from " + str(self['gp_dict'][self.last_selected_id]['expr']) + " to " + self.active_expr )
+                if self.last_selected_id in self['gp_dict']:
+                    self['gp_dict'][self.last_selected_id]['expr'] = self.active_expr
+                    self.evaluate_active_expression(context)
+                else:
+                    print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
 
-            # Now set all status based on the expression lists:
-            for par in self['gp_dict'].keys():
-                self['gp_dict'][par]['status'] = {} # set()
-                elist = pickle.loads(self['gp_dict'][par]['elist'].encode('latin1'))
-                if None in elist:
-                    # self['gp_dict'][par]['status'].add ( 'undef' ) # This would be the set operation, but we're using a dictionary
-                    self['gp_dict'][par]['status']['undef'] = True   # Use "True" to flag the intention of 'undef' being in the set
-            # Next add status based on loops:
-            result = self.update_dependency_ordered_name_list()
-            if len(result) > 0:
-                # There was a loop and result contains the names of unresolvable parameters
+                # Now set all status based on the expression lists:
                 for par in self['gp_dict'].keys():
-                    if par in result:
-                        # self['gp_dict'][par]['status'].add ( 'loop' ) # This would be the set operation, but we're using a dictionary
-                        self['gp_dict'][par]['status']['loop'] = True   # Use "True" to flag the intention of 'loop' being in the set
-            else:
-                mcell = context.scene.mcell
-                ps = mcell.parameter_system
-                # TODO: Note that this might not be the most efficient thing to do!!!!
-                ps.evaluate_all_gp_expressions ( context )
-                ps.evaluate_all_pp_expressions ( context )
+                    self['gp_dict'][par]['status'] = {} # set()
+                    elist = pickle.loads(self['gp_dict'][par]['elist'].encode('latin1'))
+                    if None in elist:
+                        # self['gp_dict'][par]['status'].add ( 'undef' ) # This would be the set operation, but we're using a dictionary
+                        self['gp_dict'][par]['status']['undef'] = True   # Use "True" to flag the intention of 'undef' being in the set
+                # Next add status based on loops:
+                result = self.update_dependency_ordered_name_list()
+                if len(result) > 0:
+                    # There was a loop and result contains the names of unresolvable parameters
+                    for par in self['gp_dict'].keys():
+                        if par in result:
+                            # self['gp_dict'][par]['status'].add ( 'loop' ) # This would be the set operation, but we're using a dictionary
+                            self['gp_dict'][par]['status']['loop'] = True   # Use "True" to flag the intention of 'loop' being in the set
+                else:
+                    mcell = context.scene.mcell
+                    ps = mcell.parameter_system
+                    # TODO: Note that this might not be the most efficient thing to do!!!!
+                    ps.evaluate_all_gp_expressions ( context )
+                    ps.evaluate_all_pp_expressions ( context )
 
 
     @profile('ParameterSystem.update_parameter_elist')
     def update_parameter_elist (self, context):
         if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
-            dbprint ("Parameter elist changed from " + str(self['gp_dict'][self.last_selected_id]['elist']) + " to " + self.active_elist )
-            if self.last_selected_id in self['gp_dict']:
-                # self['gp_dict'][self.last_selected_id]['elist'] = eval(self.active_elist)
-                elist = pickle.loads(self['gp_dict'][self.last_selected_id]['elist'].encode('latin1'))
-                if not None in elist:
-                    self.active_expr = str ( self.build_expression ( elist ) )
-                    # self.evaluate_active_expression(context)
-            else:
-                print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
+            if str(self['gp_dict'][self.last_selected_id]['elist']) != self.active_elist:
+                # The expression list actually changed, so really perform the update
+                dbprint ("Parameter elist changed from " + str(self['gp_dict'][self.last_selected_id]['elist']) + " to " + self.active_elist )
+                if self.last_selected_id in self['gp_dict']:
+                    # self['gp_dict'][self.last_selected_id]['elist'] = eval(self.active_elist)
+                    elist = pickle.loads(self['gp_dict'][self.last_selected_id]['elist'].encode('latin1'))
+                    if not None in elist:
+                        self.active_expr = str ( self.build_expression ( elist ) )
+                        # self.evaluate_active_expression(context)
+                else:
+                    print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
 
     @profile('ParameterSystem.update_parameter_units')
     def update_parameter_units (self, context):
         if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
-            dbprint ("Parameter units changed from " + str(self['gp_dict'][self.last_selected_id]['units']) + " to " + self.active_units )
-            if self.last_selected_id in self['gp_dict']:
-                self['gp_dict'][self.last_selected_id]['units'] = self.active_units
-            else:
-                print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
+            if str(self['gp_dict'][self.last_selected_id]['units']) != self.active_units:
+                # The units actually changed, so really perform the update
+                dbprint ("Parameter units changed from " + str(self['gp_dict'][self.last_selected_id]['units']) + " to " + self.active_units )
+                if self.last_selected_id in self['gp_dict']:
+                    self['gp_dict'][self.last_selected_id]['units'] = self.active_units
+                else:
+                    print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
 
     @profile('ParameterSystem.update_parameter_desc')
     def update_parameter_desc (self, context):
         if ('gp_dict' in self) and (len(self['gp_dict']) > 0):
-            dbprint ("Parameter description changed from " + str(self['gp_dict'][self.last_selected_id]['desc']) + " to " + self.active_desc )
-            if self.last_selected_id in self['gp_dict']:
-                self['gp_dict'][self.last_selected_id]['desc'] = self.active_desc
-            else:
-                print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
+            if str(self['gp_dict'][self.last_selected_id]['desc']) != self.active_desc:
+                # The description actually changed, so really perform the update
+                dbprint ("Parameter description changed from " + str(self['gp_dict'][self.last_selected_id]['desc']) + " to " + self.active_desc )
+                if self.last_selected_id in self['gp_dict']:
+                    self['gp_dict'][self.last_selected_id]['desc'] = self.active_desc
+                else:
+                    print ( "Unexpected error: " + str(self.last_selected_id) + " not in self['gp_dict']" )
 
 
 
