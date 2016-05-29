@@ -1376,8 +1376,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 if 'par_description' in p: descr = p['par_description']
                 dbprint ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + units + ") ... " + descr, thresh=-1 )
 
-                new_gid = self.allocate_available_gid()
-                new_gid_key = 'g'+str(new_gid)
+                #new_gid = self.allocate_available_gid()
+                #new_gid_key = 'g'+str(new_gid)
 
                 new_name = p['par_name']
 
