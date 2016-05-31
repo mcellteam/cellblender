@@ -661,7 +661,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     def init_properties ( self, parameter_system ):
         # self.name = "Release_Site_"+str(mcell.release_sites.allocate_available_id())
         self.molecule = ""
-        self.shape = 'CUBIC'
+        self.shape = 'SPHERICAL'
         self.orient = '\''
         self.object_expr = ""
        
