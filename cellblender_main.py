@@ -529,24 +529,24 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     # Draw all the selection buttons with labels in 2 columns:
 
                     brow = layout.row()
+
                     bcol = brow.column()
                     bcol.prop ( self, "preferences_select", icon='PREFERENCES', text="Settings & Preferences" )
+
                     bcol = brow.column()
                     bcol.prop ( self, "scripting_select", icon='SCRIPT', text="Scripting" )
 
 
                     brow = layout.row()
+
                     bcol = brow.column()
                     bcol.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="Parameters" )
+
                     bcol = brow.column()
-                    
 
                     if mcell.cellblender_preferences.use_stock_icons:
                         # Use "stock" icons to check on drawing speed problem
                         bcol.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES', text="Molecules" )
-                        brow = layout.row()
-                        bcol = brow.column()
-                        bcol.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="Reactions" )
                     else:
                         # Use custom icons for some buttons
                         if self.molecule_select:
@@ -566,7 +566,13 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                                 mol_u = layout.icon(molecule_img_unsel)
                                 bcol.prop ( self, "molecule_select", icon_value=mol_u, text="Molecules" )
 
-                        brow = layout.row()
+
+                    brow = layout.row()
+
+                    if mcell.cellblender_preferences.use_stock_icons:
+                        bcol = brow.column()
+                        bcol.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="Reactions" )
+                    else:
                         bcol = brow.column()
                         if self.reaction_select:
                             if mcell.cellblender_preferences.use_stock_icons:
@@ -584,6 +590,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                                 react_img_unsel = bpy.data.images.get('reaction_u')
                                 reaction_u = layout.icon(react_img_unsel)
                                 bcol.prop ( self, "reaction_select", icon_value=reaction_u, text="Reactions" )
+
+
 
 
                     bcol = brow.column()
