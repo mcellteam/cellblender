@@ -578,11 +578,11 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         description="The molecule to release",
         update=check_release_site)
     shape_enum = [
-        ('SPHERICAL', 'Spherical', ''),
         ('CUBIC', 'Cubic', ''),
+        ('SPHERICAL', 'Spherical', ''),
         ('SPHERICAL_SHELL', 'Spherical Shell', ''),
-        ('OBJECT', 'Object/Region', ''),
-        ('LIST', 'List', '') ]
+        ('LIST', 'List', ''),
+        ('OBJECT', 'Object/Region', '')]
     shape = EnumProperty(
         items=shape_enum, name="Release Shape",
         description="Release in the specified shape. Surface molecules can "
