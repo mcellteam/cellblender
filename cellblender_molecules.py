@@ -1103,10 +1103,15 @@ class MCell_UL_check_molecule(bpy.types.UIList):
         if item.status:
             layout.label(item.status, icon='ERROR')
         else:
+            ms = context.scene.mcell.molecules
+
             col = layout.column()
             col.label(item.name, icon='FILE_TICK')
 
-            ms = context.scene.mcell.molecules
+            if len(item.bnglLabel) > 0:
+                col = layout.column()
+                col.label (item.bnglLabel)
+
             show_name = "mol_" + item.name
             show_shape_name = show_name + "_shape"
             objs = context.scene.objects
