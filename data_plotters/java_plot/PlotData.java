@@ -1143,9 +1143,7 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
     ButtonGroup bg;
     JMenuBar menu_bar = new JMenuBar();
 	    JMenu file_menu = new JMenu("File");
-        file_menu.add ( mi = new JMenuItem("Add Single") );
-        mi.addActionListener(this);
-        file_menu.add ( mi = new JMenuItem("Add Multiple") );
+        file_menu.add ( mi = new JMenuItem("Add File") );
         mi.addActionListener(this);
         JMenu file_clear_menu = new JMenu("Clear");
           file_clear_menu.add ( mi = new JMenuItem("Clear All") );
@@ -1231,12 +1229,6 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		} else if (cmd.substring(0,3).equalsIgnoreCase("Add")) {
 			System.out.println ( "Adding a file" );
 
-			// fd_file_types = ".txt";
-			// String current_base_path = ".";
-			// Change to a new base folder
-			// gdata.println ( 50, "Opening new file ..." );
-			//String old_path = current_base_path;
-
 			if (fd == null) {
         System.out.println ( "Creating a file dialog." );
 				fd = new FileDialog ( frame, "Choose a file", FileDialog.LOAD );
@@ -1248,14 +1240,7 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 				// fd.setModalityType ( Dialog.APPLICATION_MODAL );
 			}
 			fd.setTitle ( "Open a Reaction File" );
-			// fd.setFilenameFilter ( this );
 			fd.setMode ( FileDialog.LOAD );
-			//if (gdata.histogram_tags_file_name != null) {
-			//	fd.setFile ( gdata.histogram_file_name );
-			//} else {
-			//	fd.setFile ( "*" + fd_file_types );
-			//}
-			//fd.show();
       fd.setModal ( true );
 			fd.setVisible(true);
 			fd.toFront();
@@ -1268,26 +1253,17 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 					file_name = fd.getFile();
 				}
 				System.out.println ( "Reading data from " + file_name );
-        if (cmd.equalsIgnoreCase("Add Single")) {
-          file_xy fxy = new file_xy ( file_name );
+        file_xy fxy;
+        int x_col = 0; // Assume first column is x
+        int y_col = 1; // Assume second column is first y
+        do {
+          fxy = new file_xy ( file_name, x_col, y_col );
+          if (!fxy.valid_data) break;
           fxy.setColor ( data_file.get_next_color() );
           add_file ( fxy );
-        } else if (cmd.equalsIgnoreCase("Add Multiple")) {
-          System.out.println ( "Adding Multiple" );
-          file_xy fxy;
-          int x_col = 0; // Assume first column is x
-          int y_col = 1; // Assume second column is first y
-          do {
-            fxy = new file_xy ( file_name, x_col, y_col );
-            if (!fxy.valid_data) break;
-            fxy.setColor ( data_file.get_next_color() );
-            add_file ( fxy );
-            y_col += 1;
-          } while (true);
-        }
-				//gdata.read_hist_file();
+          y_col += 1;
+        } while (true);
 			}
-			//gdata.display_histogram = true;
 			
 		} else if (cmd.equalsIgnoreCase("Clear All")) {
       set_files ( null );
