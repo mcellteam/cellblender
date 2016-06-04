@@ -339,9 +339,6 @@ class file_xy extends data_file {
 
   public file_xy ( String file_name, int xcol, int ycol ) {
     read_col_file ( file_name, xcol, ycol );
-    if (ycol > 10) {
-      valid_data = false;
-    }
   }
 
 
@@ -351,7 +348,9 @@ class file_xy extends data_file {
 
 
   public void read_col_file ( String file_name, int xcol, int ycol ) {
-    // Column numbers start at 0
+    // Column numbers start at 0 which is normally the time field
+    // # time col1 col2 col3
+    //    0    1    2    3
 
     double[][] blocks = null;
     int blocksize = 100000*2; // Must be an EVEN number to save on checking!!!
@@ -371,13 +370,16 @@ class file_xy extends data_file {
       
       // Read labels if there are any for BioNetGen output files (must start with #)
       s = in.readLine();
-      s = s.replaceAll ("\\s+", " ");
-      // System.out.println ( "First Line: " + s );
-      if (s.charAt(0) == '#') {
-        ss = s.substring(1).split(" ");
-        if (ss.length > ycol) {
-          this.name = ss[ycol+1];  // The "+1" is needed to skip the original "time" column
-          // System.out.println ( "Got a title: " + this.name );
+      if (s != null) {
+        s = s.trim().replaceAll ("\\s+", " ");  // Replace all white space with spaces
+        System.out.println ( "Header line after processing: " + s );
+        if (s.charAt(0) == '#') {
+          // This is a comment line so remove the # and split into column names (which should always start with "time")
+          ss = s.substring(1).split(" ");
+          if (ss.length > (ycol+1)) {
+            System.out.println ( "Using a title: " + ss[ycol] );
+            this.name = ss[ycol+1];  // The "+1" is needed to skip the original "time" column
+          }
         }
       }
       
