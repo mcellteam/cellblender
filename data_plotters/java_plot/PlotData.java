@@ -365,9 +365,26 @@ class file_xy extends data_file {
     this.name = "File=\"" + this.file_name + "\"" + " Columns " + xcol + " and " + ycol;
 
     BufferedReader in = null;
+    String s, ss[];
     try {
       in = new BufferedReader(new FileReader(this.file_name));
-      String s;
+      
+      // Read labels if there are any for BioNetGen output files (must start with #)
+      s = in.readLine();
+      s = s.replaceAll ("\\s+", " ");
+      // System.out.println ( "First Line: " + s );
+      if (s.charAt(0) == '#') {
+        ss = s.substring(1).split(" ");
+        if (ss.length > ycol) {
+          this.name = ss[ycol+1];  // The "+1" is needed to skip the original "time" column
+          // System.out.println ( "Got a title: " + this.name );
+        }
+      }
+      
+      // Close the file to open again
+      in.close();
+      in = new BufferedReader(new FileReader(this.file_name));
+
       while ( (s = in.readLine()) != null ) {
         // Trim whitespace
         s = s.trim();
@@ -376,7 +393,7 @@ class file_xy extends data_file {
           //System.out.println ( "Read line: \"" + s + "\"" );
           s = s.replaceAll ("\\s+", " ");
           //System.out.println ( "Proc line: \"" + s + "\"" );
-          String ss[] = s.split(" ");
+          ss = s.split(" ");
           if ( (ss.length <= xcol) || (ss.length <= ycol) ) {
             // Not enough data
             valid_data = false;
@@ -1226,7 +1243,8 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		
 		if (cmd.equalsIgnoreCase("Exit")) {
 			save_and_exit();
-		} else if (cmd.substring(0,3).equalsIgnoreCase("Add")) {
+		//} else if (cmd.substring(0,3).equalsIgnoreCase("Add")) {
+		} else if (cmd.equalsIgnoreCase("Add File")) {
 			System.out.println ( "Adding a file" );
 
 			if (fd == null) {
@@ -1245,6 +1263,7 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 			fd.setVisible(true);
 			fd.toFront();
 			
+			// Read from a file which may contain 2 or more columns
 			if (fd.getFile() != null) {
 				String file_name = null;
 				if (fd.getDirectory() != null) {
