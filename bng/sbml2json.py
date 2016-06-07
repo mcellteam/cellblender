@@ -335,7 +335,7 @@ class SBML2JSON:
             if initialConcentration != 0 and not math.isnan(initialConcentration):
                 if compartmentList[compartment][0] == 2:
                     relOrientation = "'"
-                    objectExpr = '{0}[ALL]'.format(inside.upper(),compartment.upper())
+                    objectExpr = '{0}[ALL]'.format(inside)
                     #objectExpr = '{0}[ALL]'.format(inside.upper(),compartment.upper())
                 else:
                     relOrientation = ','
@@ -542,8 +542,8 @@ class SBML2JSON:
                 tmpR['rxn_name'] = 'rec_m{0}'.format(index+1)
                 #if its a volume molecule
                 if compartmentList[product[0][2]][0] == 3:
-                    object_expr = '{0}[ALL]'.format(product[0][2].upper())
-                    object_exprm = '{0}[ALL]'.format(reactant[0][2].upper())
+                    object_expr = '{0}[ALL]'.format(product[0][2])
+                    object_exprm = '{0}[ALL]'.format(reactant[0][2])
                     
                     #substracting inner compartments                    
                     children = compartmentTree.get_node(product[0][2]).fpointer

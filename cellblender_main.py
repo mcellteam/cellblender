@@ -528,25 +528,31 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                     # Draw all the selection buttons with labels in 2 columns:
 
-                    brow = layout.row()
+                    brow = layout.row()  ##############################################################
+
                     bcol = brow.column()
                     bcol.prop ( self, "preferences_select", icon='PREFERENCES', text="Settings & Preferences" )
+
                     bcol = brow.column()
                     bcol.prop ( self, "scripting_select", icon='SCRIPT', text="Scripting" )
 
 
-                    brow = layout.row()
+                    brow = layout.row()  ##############################################################
+
                     bcol = brow.column()
                     bcol.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="Parameters" )
-                    bcol = brow.column()
-                    
 
+                    bcol = brow.column()
+                    bcol.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="Model Objects" )
+
+
+
+                    brow = layout.row()  ##############################################################
+
+                    bcol = brow.column()
                     if mcell.cellblender_preferences.use_stock_icons:
                         # Use "stock" icons to check on drawing speed problem
                         bcol.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES', text="Molecules" )
-                        brow = layout.row()
-                        bcol = brow.column()
-                        bcol.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="Reactions" )
                     else:
                         # Use custom icons for some buttons
                         if self.molecule_select:
@@ -566,8 +572,10 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                                 mol_u = layout.icon(molecule_img_unsel)
                                 bcol.prop ( self, "molecule_select", icon_value=mol_u, text="Molecules" )
 
-                        brow = layout.row()
-                        bcol = brow.column()
+                    bcol = brow.column()
+                    if mcell.cellblender_preferences.use_stock_icons:
+                        bcol.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="Reactions" )
+                    else:
                         if self.reaction_select:
                             if mcell.cellblender_preferences.use_stock_icons:
                                 # Use "stock" icons to check on drawing speed problem
@@ -586,39 +594,41 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                                 bcol.prop ( self, "reaction_select", icon_value=reaction_u, text="Reactions" )
 
 
+                    brow = layout.row()  ##############################################################
+
                     bcol = brow.column()
                     bcol.prop ( self, "placement_select", icon='GROUP_VERTEX', text=" Molecule Placement" )
 
 
-                    brow = layout.row()
                     bcol = brow.column()
                     bcol.prop ( self, "rel_patterns_select", icon='TIME', text="Release Patterns" )
-                    bcol = brow.column()
-                    bcol.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="Model Objects" )
 
 
-                    brow = layout.row()
+                    brow = layout.row()  ##############################################################
+
                     bcol = brow.column()
                     bcol.prop ( self, "surf_classes_select", icon='FACESEL_HLT', text="Surface Classes" )
                     bcol = brow.column()
                     bcol.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="Assign Surface Classes" )
                     
 
-                    brow = layout.row()
+                    brow = layout.row()  ##############################################################
+
                     bcol = brow.column()
                     bcol.prop ( self, "partitions_select", icon='GRID', text="Partitions" )
                     bcol = brow.column()
                     bcol.prop ( self, "graph_select", icon='FCURVE', text="Plot Output Settings" )
 
 
-                    brow = layout.row()
+                    brow = layout.row()  ##############################################################
                     bcol = brow.column()
                     bcol.prop ( self, "viz_select", icon='SEQUENCE', text="Visualization Settings" )
                     bcol = brow.column()
                     bcol.prop ( self, "init_select", icon='COLOR_RED', text="Run Simulation" )
 
 
-                    brow = layout.row()
+                    brow = layout.row()  ##############################################################
+
                     bcol = brow.column()
                     if self.select_multiple:
                         bcol.prop ( self, "select_multiple", icon='PINNED', text="Show All / Multiple" )

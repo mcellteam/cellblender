@@ -337,8 +337,20 @@ class file_xy extends data_file {
   }
 
 
+  public file_xy ( String file_name, int xcol, int ycol ) {
+    read_col_file ( file_name, xcol, ycol );
+  }
+
 
   public file_xy ( String file_name ) {
+    read_col_file ( file_name, 0, 1 );
+  }
+
+
+  public void read_col_file ( String file_name, int xcol, int ycol ) {
+    // Column numbers start at 0 which is normally the time field
+    // # time col1 col2 col3
+    //    0    1    2    3
 
     double[][] blocks = null;
     int blocksize = 100000*2; // Must be an EVEN number to save on checking!!!
@@ -349,33 +361,65 @@ class file_xy extends data_file {
     int num_values = 0;
 
     this.file_name = file_name;
-    this.name = "File=\"" + this.file_name + "\"";
+    this.name = "File=\"" + this.file_name + "\"" + " Columns " + xcol + " and " + ycol;
 
     BufferedReader in = null;
+    String s, ss[];
     try {
       in = new BufferedReader(new FileReader(this.file_name));
-      String s;
+      
+      // Read labels if there are any for BioNetGen output files (must start with #)
+      s = in.readLine();
+      if (s != null) {
+        s = s.trim().replaceAll ("\\s+", " ");  // Replace all white space with spaces
+        System.out.println ( "Header line after processing: " + s );
+        if (s.charAt(0) == '#') {
+          // This is a comment line so remove the # and split into column names (which should always start with "time")
+          ss = s.substring(1).split(" ");
+          if (ss.length > (ycol+1)) {
+            System.out.println ( "Using a title: " + ss[ycol] );
+            this.name = ss[ycol+1];  // The "+1" is needed to skip the original "time" column
+          }
+        }
+      }
+      
+      // Close the file to open again
+      in.close();
+      in = new BufferedReader(new FileReader(this.file_name));
+
       while ( (s = in.readLine()) != null ) {
-        // Convert all contiguous white space to a single space
-        //System.out.println ( "Read line: \"" + s + "\"" );
-        s = s.replaceAll ("\\s+", " ");
-        //System.out.println ( "Proc line: \"" + s + "\"" );
-        String ss[] = s.split(" ");
-        for (int i=0; i<ss.length; i++) {
-          if (block == null) {
-            block = new double[blocksize];
-            blockindex = 0;
+        // Trim whitespace
+        s = s.trim();
+        if (s.charAt(0) != '#') {  // This is not a comment
+          // Convert all contiguous white space to a single space
+          //System.out.println ( "Read line: \"" + s + "\"" );
+          s = s.replaceAll ("\\s+", " ");
+          //System.out.println ( "Proc line: \"" + s + "\"" );
+          ss = s.split(" ");
+          if ( (ss.length <= xcol) || (ss.length <= ycol) ) {
+            // Not enough data
+            valid_data = false;
+            return;
           }
-          //System.out.println ( "Parsing \"" + ss[i] + "\"" );
-          block[blockindex] = Double.parseDouble(ss[i]);
-          blockindex += 1;
-          if (blockindex >= blocksize) {
-            blocks = append_block ( blocks, block );
-            num_blocks += 1;
-            block = new double[blocksize];
-            blockindex = 0;
+          for (int i=0; i<ss.length; i++) {
+            if ( (i == xcol) || (i == ycol) ) {
+              // Only add the block if this is one of the selected data columns
+              if (block == null) {
+                block = new double[blocksize];
+                blockindex = 0;
+              }
+              //System.out.println ( "Parsing \"" + ss[i] + "\"" );
+              block[blockindex] = Double.parseDouble(ss[i]);
+              blockindex += 1;
+              if (blockindex >= blocksize) {
+                blocks = append_block ( blocks, block );
+                num_blocks += 1;
+                block = new double[blocksize];
+                blockindex = 0;
+              }
+              total_values += 1;
+            }
           }
-          total_values += 1;
         }
       }
 
@@ -1118,8 +1162,8 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
     ButtonGroup bg;
     JMenuBar menu_bar = new JMenuBar();
 	    JMenu file_menu = new JMenu("File");
-	    	file_menu.add ( mi = new JMenuItem("Add") );
-	    	mi.addActionListener(this);
+        file_menu.add ( mi = new JMenuItem("Add File") );
+        mi.addActionListener(this);
         JMenu file_clear_menu = new JMenu("Clear");
           file_clear_menu.add ( mi = new JMenuItem("Clear All") );
           mi.addActionListener(this);
@@ -1201,14 +1245,9 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		
 		if (cmd.equalsIgnoreCase("Exit")) {
 			save_and_exit();
-		} else if (cmd.equalsIgnoreCase("Add")) {
+		//} else if (cmd.substring(0,3).equalsIgnoreCase("Add")) {
+		} else if (cmd.equalsIgnoreCase("Add File")) {
 			System.out.println ( "Adding a file" );
-
-			// fd_file_types = ".txt";
-			// String current_base_path = ".";
-			// Change to a new base folder
-			// gdata.println ( 50, "Opening new file ..." );
-			//String old_path = current_base_path;
 
 			if (fd == null) {
         System.out.println ( "Creating a file dialog." );
@@ -1221,18 +1260,12 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 				// fd.setModalityType ( Dialog.APPLICATION_MODAL );
 			}
 			fd.setTitle ( "Open a Reaction File" );
-			// fd.setFilenameFilter ( this );
 			fd.setMode ( FileDialog.LOAD );
-			//if (gdata.histogram_tags_file_name != null) {
-			//	fd.setFile ( gdata.histogram_file_name );
-			//} else {
-			//	fd.setFile ( "*" + fd_file_types );
-			//}
-			//fd.show();
       fd.setModal ( true );
 			fd.setVisible(true);
 			fd.toFront();
 			
+			// Read from a file which may contain 2 or more columns
 			if (fd.getFile() != null) {
 				String file_name = null;
 				if (fd.getDirectory() != null) {
@@ -1241,15 +1274,22 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 					file_name = fd.getFile();
 				}
 				System.out.println ( "Reading data from " + file_name );
-        file_xy fxy = new file_xy ( file_name );
-        fxy.setColor ( data_file.get_next_color() );
-        add_file ( fxy );
-				//gdata.read_hist_file();
+        file_xy fxy;
+        int x_col = 0; // Assume first column is x
+        int y_col = 1; // Assume second column is first y
+        do {
+          fxy = new file_xy ( file_name, x_col, y_col );
+          if (!fxy.valid_data) break;
+          fxy.setColor ( data_file.get_next_color() );
+          add_file ( fxy );
+          y_col += 1;
+        } while (true);
 			}
-			//gdata.display_histogram = true;
 			
 		} else if (cmd.equalsIgnoreCase("Clear All")) {
       set_files ( null );
+      data_file.next_color = 0;
+			fit_x = true;
 		} else if (cmd.startsWith("Clear ")) {
 		  int n = Integer.parseInt ( cmd.substring(6) );
       remove_file_by_number ( n-1 );
@@ -1310,6 +1350,8 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
       }
 		} else if (cmd.equalsIgnoreCase("Full Range")) {
 			fit_x = true;
+		} else {
+		  System.out.println ( "Unknown command: " + cmd );
 		}
 
 		repaint();

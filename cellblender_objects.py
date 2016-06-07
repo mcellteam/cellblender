@@ -511,10 +511,6 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             #col.operator_menu_enum("mcell.model_objects_create", 'option_item', text="Create Object")
 
 
-            if context.active_object != None:
-                row = layout.row()
-                row.prop ( context.active_object, "name", text="Active:" )
-
             row = layout.row()
             col = row.column()
             col.template_list("MCELL_UL_model_objects", "model_objects",
