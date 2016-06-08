@@ -404,7 +404,11 @@ class MCELL_UL_model_objects(bpy.types.UIList):
             # But this has many "trickle down" effects so it hasn't been done yet.
             # layout.prop(item, 'name', text="", icon='FILE_TICK')
             # layout.prop(bpy.data.objects[item.name], 'name', text="", icon='FILE_TICK')
-            layout.label(item.name, icon='FILE_TICK')
+            model_obj = context.scene.objects[item.name]
+            col = layout.column()
+            col.label(item.name, icon='FILE_TICK')
+            col = layout.column()
+            col.prop(model_obj, 'hide', text="")
 
 
 class MCELL_PT_model_objects(bpy.types.Panel):

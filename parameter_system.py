@@ -1075,7 +1075,7 @@ def update_parameter_name ( self, context ):
 def update_parameter_expression ( self, context ):
     start_timer('update_parameter_expression')
     """ The "self" passed in is a Parameter_Data object. """
-    print ( "\n\nIn update_parameter_expression, setting recursion_depth to 0" )
+    # print ( "\n\nIn update_parameter_expression, setting recursion_depth to 0" )
     context.scene.mcell.parameter_system.recursion_depth = 0
     if not self.disable_parse:
         self.expression_changed ( context )
