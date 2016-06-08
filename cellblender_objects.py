@@ -397,6 +397,10 @@ class MCELL_UL_model_objects(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
 
+        #print ( "item = " + str(item) )
+        #print ( "data = " + str(data) )
+        #print ( "active_data = " + str(active_data) )
+        #print ( "active_propname = " + str(active_propname) )
         if item.status:
             layout.label(item.status, icon='ERROR')
         else:
@@ -407,6 +411,22 @@ class MCELL_UL_model_objects(bpy.types.UIList):
             model_obj = context.scene.objects[item.name]
             col = layout.column()
             col.label(item.name, icon='FILE_TICK')
+
+            has_material = True
+            if len(model_obj.material_slots) <= 0:
+              has_material = False
+            else:
+              if model_obj.material_slots[0].material == None:
+                has_material = False
+            if not has_material:
+              #col = layout.column()
+              #col.operator("mcell.model_obj_add_mat", text="Add Material")
+              pass
+            else:
+              mat = model_obj.material_slots[0].material
+              col = layout.column()
+              col.prop ( mat, "diffuse_color", text="" )
+
             col = layout.column()
             col.prop(model_obj, 'hide', text="")
 
