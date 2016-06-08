@@ -828,9 +828,11 @@ class CellBlender_Model:
         self.mcell.mol_viz.mol_viz_enable = enable_visualization
         self.mcell.viz_output.export_all = export_all
         self.mcell.viz_output.all_iterations = all_iterations
-        self.mcell.viz_output.start = start
-        self.mcell.viz_output.end = end
-        self.mcell.viz_output.step = step
+
+        self.mcell.viz_output.start.set_expr ( str(start) )
+        self.mcell.viz_output.end.set_expr ( str(end) )
+        self.mcell.viz_output.step.set_expr ( str(step) )
+
         print ( "Done setting visualization parameters" )
         return self.mcell.viz_output
 

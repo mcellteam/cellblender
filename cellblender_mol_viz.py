@@ -1198,26 +1198,31 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
     all_iterations = bpy.props.BoolProperty(
         name="All Iterations",
         description="Include all iterations for visualization.", default=True)
-    start = bpy.props.IntProperty(
-        name="Start", description="Starting iteration", default=0, min=0)
-    end = bpy.props.IntProperty(
-        name="End", description="Ending iteration", default=1, min=1)
-    step = bpy.props.IntProperty(
-        name="Step", description="Output viz data every n iterations.",
-        default=1, min=1)
+    start = PointerProperty ( name="Start", type=parameter_system.Parameter_Reference )
+    end = PointerProperty ( name="End", type=parameter_system.Parameter_Reference )
+    step = PointerProperty ( name="Step", type=parameter_system.Parameter_Reference )
     export_all = BoolProperty(
         name="Export All",
         description="Visualize all molecules",
         default=True)
+
+    def init_properties ( self, parameter_system ):
+        helptext = "Starting iteration"
+        self.start.init_ref  ( parameter_system, "Viz_Start_Type", user_name="Start", user_expr="0", user_units="", user_descr=helptext, user_int=True )
+        helptext = "Ending iteration"
+        self.end.init_ref    ( parameter_system, "Viz_End_Type",   user_name="End",   user_expr="1", user_units="", user_descr=helptext, user_int=True )
+        helptext = "Output viz every n iterations"
+        self.step.init_ref   ( parameter_system, "Viz_Step_Type",  user_name="Step",  user_expr="1", user_units="", user_descr=helptext, user_int=True )
+
 
     def build_data_model_from_properties ( self, context ):
         print ( "Viz Output building Data Model" )
         vo_dm = {}
         vo_dm['data_model_version'] = "DM_2014_10_24_1638"
         vo_dm['all_iterations'] = self.all_iterations
-        vo_dm['start'] = str(self.start)
-        vo_dm['end'] = str(self.end)
-        vo_dm['step'] = str(self.step)
+        vo_dm['start'] = self.start.get_expr()
+        vo_dm['end']   = self.end.get_expr()
+        vo_dm['step']  = self.step.get_expr()
         vo_dm['export_all'] = self.export_all
         return vo_dm
 
@@ -1245,9 +1250,9 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellVizOutputPropertyGroup data model to current version." )
         
         self.all_iterations = dm["all_iterations"]
-        self.start = int(dm["start"])
-        self.end = int(dm["end"])
-        self.step = int(dm["step"])
+        if "start" in dm: self.start.set_expr ( dm["start"] )
+        if "end"   in dm: self.end.set_expr   ( dm["end"] )
+        if "step"  in dm: self.step.set_expr  ( dm["step"] )
         self.export_all = dm["export_all"]
 
     def check_properties_after_building ( self, context ):
@@ -1265,6 +1270,7 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
         else:
+            ps = mcell.parameter_system
             row = layout.row()
             if mcell.molecules.molecule_list:
                 row.label(text="Molecules To Visualize:",
@@ -1277,9 +1283,10 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
                 layout.prop(self, "all_iterations")
                 if self.all_iterations is False:
                     row = layout.row(align=True)
-                    row.prop(self, "start")
-                    row.prop(self, "end")
-                    row.prop(self, "step")
+                    self.start.draw(layout,ps)
+                    self.end.draw(layout,ps)
+                    self.step.draw(layout,ps)
+
             else:
                 row.label(text="Define at least one molecule", icon='ERROR')
 
