@@ -146,7 +146,7 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
         start = int(mcell.run_simulation.start_seed.get_value())
-        end = int(mcell.run_simulation.end_seed)
+        end = int(mcell.run_simulation.end_seed.get_value())
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
         mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
