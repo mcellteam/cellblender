@@ -1114,7 +1114,17 @@ class MCell_UL_check_molecule(bpy.types.UIList):
 
             show_name = "mol_" + item.name
             show_shape_name = show_name + "_shape"
+            mat_name = show_name + "_mat"
             objs = context.scene.objects
+
+
+            col = layout.column()
+            if mat_name in bpy.data.materials:
+                col.prop ( bpy.data.materials[mat_name], "diffuse_color", text="" )
+            else:
+                col.label (" ")
+
+
             #col = layout.column()
             #col.operator("mcell.molecule_show_only", icon='VIEWZOOM', text="")
             col = layout.column()
