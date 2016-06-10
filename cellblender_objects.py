@@ -128,6 +128,8 @@ class MCELL_OT_model_objects_add(bpy.types.Operator):
             bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY',
                                                ngon_method='BEAUTY')
             bpy.ops.object.mode_set(mode='OBJECT')
+            obj.draw_type = 'SOLID'
+            obj.show_all_edges = True
             obj.mcell.include = True
 
         model_objects_update(context)
@@ -518,7 +520,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
             col = row.column()
-            col.operator("mcell.snap_cursor_to_center", text="Center Cursor")
+            col.operator("mcell.snap_cursor_to_center", icon="CURSOR", text="Center Cursor")
             #col = row.column()
             #col.label(text="Add:")
             col = row.column()
@@ -564,6 +566,8 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     row = box.row()
                     col = row.column()
                     col.prop ( context.scene.objects[obj_name], "draw_type", text="" )
+                    col = row.column()
+                    col.prop ( context.scene.objects[obj_name], "show_wire", text="Show Wire" )
                     col = row.column()
                     col.prop ( context.scene.objects[obj_name], "show_name", text="Show Name" )
                     
