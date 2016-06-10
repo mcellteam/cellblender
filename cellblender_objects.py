@@ -552,13 +552,30 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
         print ( "Removing all Model Objects Properties... no collections to remove." )
 
 
+def active_obj_index_changed ( self, context ):
+    """ The "self" passed in is a MCellModelObjectsPropertyGroup object. """
+    print ( "Type of self = " + str ( type(self) ) )
+
+    if len(self.object_list) > 0:
+        model_object = self.object_list[self.active_obj_index]
+        for o in context.scene.objects:
+            if o.name == model_object.name:
+                # Unhide, Select, and Make Active
+                o.hide = False
+                o.select = True
+                context.scene.objects.active = o
+            else:
+                # DeSelect
+                o.select = False
+
+
 
 import mathutils
 
 class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     object_list = CollectionProperty(
         type=MCellModelObjectsProperty, name="Object List")
-    active_obj_index = IntProperty(name="Active Object Index", default=0)
+    active_obj_index = IntProperty(name="Active Object Index", default=0, update=active_obj_index_changed)
     show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
 
     def remove_properties ( self, context ):
