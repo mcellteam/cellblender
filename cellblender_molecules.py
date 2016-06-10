@@ -1103,22 +1103,46 @@ class MCell_UL_check_molecule(bpy.types.UIList):
         if item.status:
             layout.label(item.status, icon='ERROR')
         else:
+            """
+            # Example of using split to subdivide into: [0.2][     0.6     ][0.2]
+
+            split = layout.split(percentage=0.2)
+            col1 = split.column()
+            remainder = split.column()
+            split = remainder.split(percentage=0.6666)
+            col2 = split.column()
+            col3 = split.column()
+
+            col1.label ( "11111111111111111" )
+            col2.label ( "22222222222222222" )
+            col3.label ( "33333333333333333" )
+            """
+
             ms = context.scene.mcell.molecules
-
-            col = layout.column()
-            col.label(item.name, icon='FILE_TICK')
-
-            if len(item.bnglLabel) > 0:
-                col = layout.column()
-                col.label (item.bnglLabel)
-
             show_name = "mol_" + item.name
             show_shape_name = show_name + "_shape"
             mat_name = show_name + "_mat"
             objs = context.scene.objects
 
-
             col = layout.column()
+            col.label(item.name, icon='FILE_TICK')
+
+            sv_bngcolor_split = layout.split(percentage=0.05)
+            col = sv_bngcolor_split.column()
+            if item.type == '2D':
+                col.label ( "", icon='OUTLINER_OB_SURFACE' ) # 'SNAP_FACE'
+            else:
+                col.label ( "", icon='OBJECT_DATA' )  # 'SNAP_VOLUME'
+
+            col = sv_bngcolor_split.column()
+            bng_color_split = col.split(percentage=0.90)   # Amount of space for BGNL, the rest is color
+            col = bng_color_split.column()
+            if len(item.bnglLabel) > 0:
+                col.label (item.bnglLabel)
+            else:
+                col.label (" ")
+
+            col = bng_color_split.column()
             if mat_name in bpy.data.materials:
                 col.prop ( bpy.data.materials[mat_name], "diffuse_color", text="" )
             else:
