@@ -128,6 +128,8 @@ class MCELL_OT_model_objects_add(bpy.types.Operator):
             bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY',
                                                ngon_method='BEAUTY')
             bpy.ops.object.mode_set(mode='OBJECT')
+            obj.draw_type = 'SOLID'
+            obj.show_all_edges = True
             obj.mcell.include = True
 
         model_objects_update(context)
@@ -294,6 +296,36 @@ class MCELL_OT_toggle_renderability_filtered(bpy.types.Operator):
 
 
 
+class MCell_OT_object_show_all(bpy.types.Operator):
+    bl_idname = "mcell.object_show_all"
+    bl_label = "Show All"
+    bl_description = "Show all of the model objects"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        for o in context.scene.objects:
+            if 'mcell' in o:
+                if o.mcell.include:
+                    # This is a model object, so show it
+                    o.hide = False
+        return {'FINISHED'}
+
+class MCell_OT_object_hide_all(bpy.types.Operator):
+    bl_idname = "mcell.object_hide_all"
+    bl_label = "Hide All"
+    bl_description = "Hide all of the model objects"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        for o in context.scene.objects:
+            if 'mcell' in o:
+                if o.mcell.include:
+                    # This is a model object, so hide it
+                    o.hide = True
+        return {'FINISHED'}
+
+
+
 # Model Objects callback functions
 
 
@@ -397,6 +429,10 @@ class MCELL_UL_model_objects(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
 
+        #print ( "item = " + str(item) )
+        #print ( "data = " + str(data) )
+        #print ( "active_data = " + str(active_data) )
+        #print ( "active_propname = " + str(active_propname) )
         if item.status:
             layout.label(item.status, icon='ERROR')
         else:
@@ -404,7 +440,30 @@ class MCELL_UL_model_objects(bpy.types.UIList):
             # But this has many "trickle down" effects so it hasn't been done yet.
             # layout.prop(item, 'name', text="", icon='FILE_TICK')
             # layout.prop(bpy.data.objects[item.name], 'name', text="", icon='FILE_TICK')
-            layout.label(item.name, icon='FILE_TICK')
+            model_obj = context.scene.objects[item.name]
+            col = layout.column()
+            col.label(item.name, icon='FILE_TICK')
+
+            has_material = True
+            if len(model_obj.material_slots) <= 0:
+              has_material = False
+            else:
+              if model_obj.material_slots[0].material == None:
+                has_material = False
+            if not has_material:
+              #col = layout.column()
+              #col.operator("mcell.model_obj_add_mat", text="Add Material")
+              pass
+            else:
+              mat = model_obj.material_slots[0].material
+              col = layout.column()
+              col.prop ( mat, "diffuse_color", text="" )
+
+            col = layout.column()
+            col.prop(item, 'object_show_only', text="", icon='VIEWZOOM')
+
+            col = layout.column()
+            col.prop(model_obj, 'hide', text="")
 
 
 class MCELL_PT_model_objects(bpy.types.Panel):
@@ -421,11 +480,37 @@ class MCELL_PT_model_objects(bpy.types.Panel):
 
 # Model Objects Property Groups
 
+def object_show_only_callback(self, context):
+    mcell = context.scene.mcell
+
+    print ( "Object show only callback for object " + self.name )
+    # Note the check before set to keep from infinite recursion in properties!!
+    if self.object_show_only != False:
+        self.object_show_only = False
+
+    for o in context.scene.objects:
+        if 'mcell' in o:
+            if o.mcell.include:
+                # This is a model object, so check the name
+                if o.name == self.name:
+                    # Unhide, Select, and Make Active
+                    o.hide = False
+                    o.select = True
+                    context.scene.objects.active = o
+                else:
+                    # Unhide and DeSelect
+                    o.hide = True
+                    o.select = False
+
+    if self.name in mcell.model_objects.object_list:
+        # Select this item in the list as well
+        mcell.model_objects.active_obj_index = mcell.model_objects.object_list.find ( self.name )
+    return
 
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
-    name = StringProperty(
-        name="Object Name", update=check_model_object)
+    name = StringProperty(name="Object Name", update=check_model_object)
+    object_show_only = BoolProperty ( default=False, description='Show only this object', update=object_show_only_callback )
     status = StringProperty(name="Status")
     """
     def build_data_model_from_properties ( self, context ):
@@ -467,13 +552,30 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
         print ( "Removing all Model Objects Properties... no collections to remove." )
 
 
+def active_obj_index_changed ( self, context ):
+    """ The "self" passed in is a MCellModelObjectsPropertyGroup object. """
+    print ( "Type of self = " + str ( type(self) ) )
+
+    if len(self.object_list) > 0:
+        model_object = self.object_list[self.active_obj_index]
+        for o in context.scene.objects:
+            if o.name == model_object.name:
+                # Unhide, Select, and Make Active
+                o.hide = False
+                o.select = True
+                context.scene.objects.active = o
+            else:
+                # DeSelect
+                o.select = False
+
+
 
 import mathutils
 
 class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     object_list = CollectionProperty(
         type=MCellModelObjectsProperty, name="Object List")
-    active_obj_index = IntProperty(name="Active Object Index", default=0)
+    active_obj_index = IntProperty(name="Active Object Index", default=0, update=active_obj_index_changed)
     show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
 
     def remove_properties ( self, context ):
@@ -493,20 +595,22 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         else:
 
             row = layout.row()
-            col = row.column()
-            col.operator("mcell.snap_cursor_to_center", text="Center Cursor")
             #col = row.column()
-            #col.label(text="Add:")
-            col = row.column()
-            col.operator("mesh.primitive_cube_add", text="", icon='MESH_CUBE')
-            col = row.column()
-            col.operator("mesh.primitive_ico_sphere_add", text="", icon='MESH_ICOSPHERE')
-            col = row.column()
-            col.operator("mesh.primitive_cylinder_add", text="", icon='MESH_CYLINDER')
-            col = row.column()
-            col.operator("mesh.primitive_cone_add", text="", icon='MESH_CONE')
-            col = row.column()
-            col.operator("mesh.primitive_torus_add", text="", icon='MESH_TORUS')
+            row.operator("mcell.snap_cursor_to_center", icon="CURSOR", text="Center Cursor")
+            #col = row.column()
+            #row.label(text="    Add:")
+            #col = row.column()
+            row.operator("mesh.primitive_cube_add", text="", icon='MESH_CUBE')
+            #col = row.column()
+            row.operator("mesh.primitive_ico_sphere_add", text="", icon='MESH_ICOSPHERE')
+            #col = row.column()
+            row.operator("mesh.primitive_cylinder_add", text="", icon='MESH_CYLINDER')
+            #col = row.column()
+            row.operator("mesh.primitive_cone_add", text="", icon='MESH_CONE')
+            #col = row.column()
+            row.operator("mesh.primitive_torus_add", text="", icon='MESH_TORUS')
+            #col = row.column()
+            row.operator("mesh.primitive_plane_add", text="", icon='MESH_PLANE')
             #col = row.column()
             #col.operator_menu_enum("mcell.model_objects_create", 'option_item', text="Create Object")
 
@@ -516,13 +620,31 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             col.template_list("MCELL_UL_model_objects", "model_objects",
                               self, "object_list",
                               self, "active_obj_index", rows=2)
+            """
             col = row.column(align=True)
 #           col.active = (len(context.selected_objects) == 1)
             col.operator("mcell.model_objects_add", icon='ZOOMIN', text="")
             col.operator("mcell.model_objects_remove", icon='ZOOMOUT', text="")
 
             col.operator("mcell.model_objects_remove_sel", icon='X', text="")
-            
+
+            subcol = col.column(align=True)
+            subcol.operator("mcell.object_show_all", icon='RESTRICT_VIEW_OFF', text="")
+            subcol.operator("mcell.object_hide_all", icon='RESTRICT_VIEW_ON', text="")
+            """
+
+            col = row.column(align=False)
+            # Use subcolumns to group logically related buttons together
+            subcol = col.column(align=True)
+            subcol.operator("mcell.model_objects_add", icon='ZOOMIN', text="")
+            subcol.operator("mcell.model_objects_remove", icon='ZOOMOUT', text="")
+            subcol.operator("mcell.model_objects_remove_sel", icon='X', text="")
+            subcol = col.column(align=True)
+            subcol.operator("mcell.object_show_all", icon='RESTRICT_VIEW_OFF', text="")
+            subcol.operator("mcell.object_hide_all", icon='RESTRICT_VIEW_ON', text="")
+
+
+
             if len(self.object_list) > 0:
                 obj_name = str(self.object_list[self.active_obj_index].name)
                 # layout.label(text="") # Use as a separator
@@ -540,6 +662,8 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     row = box.row()
                     col = row.column()
                     col.prop ( context.scene.objects[obj_name], "draw_type", text="" )
+                    col = row.column()
+                    col.prop ( context.scene.objects[obj_name], "show_wire", text="Show Wire" )
                     col = row.column()
                     col.prop ( context.scene.objects[obj_name], "show_name", text="Show Name" )
                     

@@ -595,47 +595,50 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
             row = layout.row()
             row.prop ( active_obj, "name", text="Active Object" )
 
-            row = layout.row()
-            col = row.column()
-            col.template_list("MCELL_UL_check_region", "define_surf_regions",
-                          self, "region_list",
-                          self, "active_reg_index",
-                          rows=2)
-            col = row.column(align=True)
-            col.operator("mcell.region_add", icon='ZOOMIN', text="")
-            col.operator("mcell.region_remove", icon='ZOOMOUT', text="")
-            col.operator("mcell.region_remove_all", icon='X', text="")
+            # Only draw the surface addition panel if this is an mcell object
+            if active_obj.mcell.include:
 
-            # Could have region item draw itself in new row here:
-            row = layout.row()
-            if len(self.region_list) > 0:
-                layout.prop(self.get_active_region(), "name")
-
-            if active_obj.mode == 'EDIT' and (len(self.region_list)>0):
                 row = layout.row()
-                sub = row.row(align=True)
-                sub.operator("mcell.region_faces_assign", text="Assign")
-                sub.operator("mcell.region_faces_remove", text="Remove")
-                sub = row.row(align=True)
-                sub.operator("mcell.region_faces_select", text="Select")
-                sub.operator("mcell.region_faces_deselect", text="Deselect")
+                col = row.column()
+                col.template_list("MCELL_UL_check_region", "define_surf_regions",
+                              self, "region_list",
+                              self, "active_reg_index",
+                              rows=2)
+                col = row.column(align=True)
+                col.operator("mcell.region_add", icon='ZOOMIN', text="")
+                col.operator("mcell.region_remove", icon='ZOOMOUT', text="")
+                col.operator("mcell.region_remove_all", icon='X', text="")
 
-                # Option to Get Region Info
-                box = layout.box()
-                row = box.row(align=True)
-                row.alignment = 'LEFT'
-                if self.get_region_info:
-                    row.prop(self, "get_region_info", icon='TRIA_DOWN',
-                             text="Region Info for Selected Faces",
-                              emboss=False)
-                    reg_info = self.faces_get_regions(context)
-                    for reg_name in reg_info:
-                        row = box.row()
-                        row.label(text=reg_name)
-                else:
-                    row.prop(self, "get_region_info", icon='TRIA_RIGHT',
-                             text="Region Info for Selected Faces",
-                             emboss=False)
+                # Could have region item draw itself in new row here:
+                row = layout.row()
+                if len(self.region_list) > 0:
+                    layout.prop(self.get_active_region(), "name")
+
+                if active_obj.mode == 'EDIT' and (len(self.region_list)>0):
+                    row = layout.row()
+                    sub = row.row(align=True)
+                    sub.operator("mcell.region_faces_assign", text="Assign")
+                    sub.operator("mcell.region_faces_remove", text="Remove")
+                    sub = row.row(align=True)
+                    sub.operator("mcell.region_faces_select", text="Select")
+                    sub.operator("mcell.region_faces_deselect", text="Deselect")
+
+                    # Option to Get Region Info
+                    box = layout.box()
+                    row = box.row(align=True)
+                    row.alignment = 'LEFT'
+                    if self.get_region_info:
+                        row.prop(self, "get_region_info", icon='TRIA_DOWN',
+                                 text="Region Info for Selected Faces",
+                                  emboss=False)
+                        reg_info = self.faces_get_regions(context)
+                        for reg_name in reg_info:
+                            row = box.row()
+                            row.label(text=reg_name)
+                    else:
+                        row.prop(self, "get_region_info", icon='TRIA_RIGHT',
+                                 text="Region Info for Selected Faces",
+                                 emboss=False)
 
 
                 

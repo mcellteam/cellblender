@@ -900,9 +900,10 @@ def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all):
 
     mcell = context.scene.mcell
     settings = mcell.project_settings
-    start = mcell.viz_output.start
-    end = mcell.viz_output.end
-    step = mcell.viz_output.step
+    ps = mcell.parameter_system
+    start = mcell.viz_output.start.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)
+    end   = mcell.viz_output.end.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)
+    step  = mcell.viz_output.step.get_as_string_or_value(ps.panel_parameter_list,ps.export_as_expressions)
     all_iterations = mcell.viz_output.all_iterations
 
     if molecule_viz_list or export_all:

@@ -828,9 +828,11 @@ class CellBlender_Model:
         self.mcell.mol_viz.mol_viz_enable = enable_visualization
         self.mcell.viz_output.export_all = export_all
         self.mcell.viz_output.all_iterations = all_iterations
-        self.mcell.viz_output.start = start
-        self.mcell.viz_output.end = end
-        self.mcell.viz_output.step = step
+
+        self.mcell.viz_output.start.set_expr ( str(start) )
+        self.mcell.viz_output.end.set_expr ( str(end) )
+        self.mcell.viz_output.step.set_expr ( str(step) )
+
         print ( "Done setting visualization parameters" )
         return self.mcell.viz_output
 
@@ -2988,7 +2990,7 @@ class GlyphTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=4.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "23162a78f987624096dbae5697a08a26197be613", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "2ab0eb1aa8cd0b577f5b86fe130d16af8b6d7f80", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5551,7 +5553,7 @@ class MinDMinETestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='0.8 * 200/dt', time_step='dt', wait_time=5.0 )  # Can use to generate MDL, but SHA1 won't be right: export_format="mcell_mdl_modular", 
 
-        cb_model.compare_mdl_with_sha1 ( "19b8815a19d78ffe61f951a00e9953b5f030788c", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "c1e089f783a3435da2305b46e3d3a5da94b51176", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
