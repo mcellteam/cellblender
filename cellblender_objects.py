@@ -89,7 +89,7 @@ class MCELL_OT_create_object(bpy.types.Operator):
 class MCELL_OT_model_obj_add_mat(bpy.types.Operator):
     bl_idname = "mcell.model_obj_add_mat"
     bl_label = "Create Material"
-    bl_description = ("Create a new material for this object")
+    bl_description = ("Create a new material for selected object")
 
     def execute(self, context):
         model_objects = context.scene.mcell.model_objects
@@ -123,6 +123,9 @@ class MCELL_OT_model_objects_add(bpy.types.Operator):
         # From the list of selected objects, only add MESH objects.
         objs = [obj for obj in context.selected_objects if obj.type == 'MESH']
         for obj in objs:
+            # context.active_object = obj # Can't do this because active_object is read only
+            context.scene.objects.active = obj
+
             bpy.ops.object.mode_set(mode='EDIT')
             bpy.ops.mesh.select_all(action='SELECT')
             bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY',
@@ -132,7 +135,13 @@ class MCELL_OT_model_objects_add(bpy.types.Operator):
             obj.show_all_edges = True
             obj.mcell.include = True
 
-        model_objects_update(context)
+        if len(objs) > 0:
+            # Rebuild the list of objects
+            model_objects_update(context)
+            # Select the last selected object
+            obj_to_select_in_list = objs[-1]  # The last selected object
+            if obj_to_select_in_list.name in mcell.model_objects.object_list:
+                mcell.model_objects.active_obj_index = mcell.model_objects.object_list.find(obj_to_select_in_list.name)
 
 #        for obj in objs:
 #            # Prevent duplicate entries
@@ -433,6 +442,8 @@ class MCELL_UL_model_objects(bpy.types.UIList):
         #print ( "data = " + str(data) )
         #print ( "active_data = " + str(active_data) )
         #print ( "active_propname = " + str(active_propname) )
+        #print ( "index = " + str(index) )
+        #print ( "active = " + str(active_data[active_propname]) )
         if item.status:
             layout.label(item.status, icon='ERROR')
         else:
@@ -450,13 +461,19 @@ class MCELL_UL_model_objects(bpy.types.UIList):
             else:
               if model_obj.material_slots[0].material == None:
                 has_material = False
+
+            split = layout.split(percentage=0.8)  # This is used to make the color patch smaller
+            col1 = split.column()
+            col = split.column()
             if not has_material:
-              #col = layout.column()
-              #col.operator("mcell.model_obj_add_mat", text="Add Material")
-              pass
+              if active_data[active_propname] == index:
+                  # Only draw the add material in this slot when this object is selected
+                  col.operator("mcell.model_obj_add_mat", text=" ", icon='COLOR')  # 'MATERIAL'
+              else:
+                  # If this slot is not selected, just draw a label
+                  col.label(text=" ", icon='COLOR')  # 'MATERIAL'
             else:
               mat = model_obj.material_slots[0].material
-              col = layout.column()
               col.prop ( mat, "diffuse_color", text="" )
 
             col = layout.column()
@@ -483,7 +500,7 @@ class MCELL_PT_model_objects(bpy.types.Panel):
 def object_show_only_callback(self, context):
     mcell = context.scene.mcell
 
-    print ( "Object show only callback for object " + self.name )
+    #print ( "Object show only callback for object " + self.name )
     # Note the check before set to keep from infinite recursion in properties!!
     if self.object_show_only != False:
         self.object_show_only = False
@@ -554,7 +571,7 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
 
 def active_obj_index_changed ( self, context ):
     """ The "self" passed in is a MCellModelObjectsPropertyGroup object. """
-    print ( "Type of self = " + str ( type(self) ) )
+    #print ( "Type of self = " + str ( type(self) ) )
 
     if len(self.object_list) > 0:
         model_object = self.object_list[self.active_obj_index]
@@ -614,6 +631,11 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             #col = row.column()
             #col.operator_menu_enum("mcell.model_objects_create", 'option_item', text="Create Object")
 
+            row = layout.row()
+            if context.active_object is None:
+                row.label ( "No active object" )
+            else:
+                row.prop (context.active_object, "name", text="Active Object")
 
             row = layout.row()
             col = row.column()
