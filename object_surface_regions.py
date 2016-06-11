@@ -588,15 +588,15 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
 
             layout.box() # Use as a separator
 
-            row = layout.row()
-            # row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
-            row.label(text="Defined Surface Regions:", icon='SNAP_FACE')
-
-            row = layout.row()
-            row.prop ( active_obj, "name", text="Active Object" )
-
             # Only draw the surface addition panel if this is an mcell object
             if active_obj.mcell.include:
+
+                row = layout.row()
+                # row.label(text="Defined Regions:", icon='FORCE_LENNARDJONES')
+                row.label(text="Defined Surface Regions for %s:" % (active_obj.name), icon='SNAP_FACE')
+
+                #row = layout.row()
+                #row.prop ( active_obj, "name", text="Active Object" )
 
                 row = layout.row()
                 col = row.column()

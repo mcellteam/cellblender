@@ -619,7 +619,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             col = row.column()
             col.template_list("MCELL_UL_model_objects", "model_objects",
                               self, "object_list",
-                              self, "active_obj_index", rows=2)
+                              self, "active_obj_index", rows=4)
             """
             col = row.column(align=True)
 #           col.active = (len(context.selected_objects) == 1)
@@ -659,11 +659,16 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     row.prop(self, "show_display", icon='TRIA_DOWN',
                              text=obj_name+" Display Options", emboss=False)
 
+                    #row = box.row()
+                    #row.prop ( self.object_list[self.active_obj_index], "name", text="Current Name" )
+
                     row = box.row()
                     col = row.column()
                     col.prop ( context.scene.objects[obj_name], "draw_type", text="" )
                     col = row.column()
                     col.prop ( context.scene.objects[obj_name], "show_wire", text="Show Wire" )
+                    col = row.column()
+                    col.prop ( context.scene.objects[obj_name], "show_x_ray", text="Show X-Ray" )
                     col = row.column()
                     col.prop ( context.scene.objects[obj_name], "show_name", text="Show Name" )
                     

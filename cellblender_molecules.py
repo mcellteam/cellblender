@@ -1134,12 +1134,12 @@ class MCell_UL_check_molecule(bpy.types.UIList):
             sv_bngcolor_split = layout.split(percentage=0.05)
             col = sv_bngcolor_split.column()
             if item.type == '2D':
-                col.label ( "", icon='OUTLINER_OB_SURFACE' ) # 'SNAP_FACE'
+                col.label ( "", icon='TEXTURE' )  #  'OUTLINER_OB_SURFACE' 'SNAP_FACE'
             else:
-                col.label ( "", icon='OBJECT_DATA' )  # 'SNAP_VOLUME'
+                col.label ( "", icon='PHYSICS' )  #  'VIEW3D' 'OBJECT_DATA'  'SNAP_VOLUME'
 
             col = sv_bngcolor_split.column()
-            bng_color_split = col.split(percentage=0.90)   # Amount of space for BGNL, the rest is color
+            bng_color_split = col.split(percentage=0.82)   # Amount of space for BGNL, the rest is color
             col = bng_color_split.column()
             if len(item.bnglLabel) > 0:
                 col.label (item.bnglLabel)
