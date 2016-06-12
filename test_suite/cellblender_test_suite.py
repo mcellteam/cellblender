@@ -381,6 +381,11 @@ class CellBlender_Model:
     def get_scene(self):
         return bpy.data.scenes['Scene']
 
+    def select_none(self):
+        bpy.ops.object.select_all(action='DESELECT')
+        for obj in bpy.context.scene.objects:
+            obj.select = False
+
     def delete_all_objects(self):
         bpy.ops.object.select_all(action='SELECT')
         bpy.ops.object.delete(use_global=True)
@@ -469,15 +474,14 @@ class CellBlender_Model:
 
         self.mcell.cellblender_main_panel.objects_select = True
         bpy.ops.mcell.model_objects_add()
-        bpy.data.objects[name].draw_type = draw_type
         bpy.ops.object.mode_set ( mode="OBJECT" )
+        bpy.data.objects[name].draw_type = draw_type
         print ( "Done Adding " + name )
 
 
     def add_active_object_to_model ( self, name="Cell", draw_type="WIRE" ):
         """ draw_type is one of: WIRE, TEXTURED, SOLID, BOUNDS """
         print ( "Adding " + name )
-        bpy.data.objects[name].draw_type = draw_type
         bpy.data.objects[name].select = True
 
         # Make the object active and add it to the model objects list
@@ -486,6 +490,7 @@ class CellBlender_Model:
 
         self.mcell.cellblender_main_panel.objects_select = True
         bpy.ops.mcell.model_objects_add()
+        bpy.data.objects[name].draw_type = draw_type
         print ( "Done Adding " + name )
 
 
@@ -494,12 +499,12 @@ class CellBlender_Model:
         print ( "Adding " + name )
         bpy.ops.mesh.primitive_cube_add ( location=(x,y,z), radius=size)
         self.scn.objects.active.name = name
-        bpy.data.objects[name].draw_type = draw_type
 
         # Add the newly added object to the model objects list
 
         self.mcell.cellblender_main_panel.objects_select = True
         bpy.ops.mcell.model_objects_add()
+        bpy.data.objects[name].draw_type = draw_type
         print ( "Done Adding " + name )
 
 
@@ -508,12 +513,12 @@ class CellBlender_Model:
         print ( "Adding " + name )
         bpy.ops.mesh.primitive_ico_sphere_add ( subdivisions=subdiv, size=size, location=(x, y, z) )
         self.scn.objects.active.name = name
-        bpy.data.objects[name].draw_type = draw_type
 
         # Add the newly added object to the model objects list
 
         self.mcell.cellblender_main_panel.objects_select = True
         bpy.ops.mcell.model_objects_add()
+        bpy.data.objects[name].draw_type = draw_type
         print ( "Done Adding " + name )
 
 
@@ -2464,6 +2469,9 @@ class SingleMoleculeTestOp(bpy.types.Operator):
 
         cb_model.refresh_molecules()
 
+        cb_model.select_none()
+
+
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.02 )
@@ -2521,6 +2529,9 @@ class DoubleSphereTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "e9fa4703bb71ffbf2729d8c97fcbb2939975e7d4", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
 
         cb_model.set_view_back()
 
@@ -2583,6 +2594,9 @@ class VolDiffusionConstTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "0d069034f18a2062921dfe402d3a5280057a0d10", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
 
         cb_model.set_view_back()
 
@@ -2647,6 +2661,9 @@ class ReactionTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "61e0e56f0c77bc8901b80778dc31768d17579c5b", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
 
         cb_model.set_view_back()
 
@@ -2722,6 +2739,9 @@ class ReleaseShapeTestOp(bpy.types.Operator):
 
         cb_model.refresh_molecules()
 
+        cb_model.select_none()
+
+
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.25 )
@@ -2780,6 +2800,9 @@ class ParSystemTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "56f42c00db6e46ce27bbe20cb351897a01aa6026", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
 
         cb_model.set_view_back()
 
@@ -2855,6 +2878,9 @@ class ParSys200pCntTestOp(bpy.types.Operator):
 
         cb_model.refresh_molecules()
 
+        cb_model.select_none()
+
+
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.04 )
@@ -2929,6 +2955,9 @@ class ParSystem100p3eTestOp(bpy.types.Operator):
 
         cb_model.refresh_molecules()
 
+        cb_model.select_none()
+
+
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.04 )
@@ -2994,6 +3023,9 @@ class GlyphTestOp(bpy.types.Operator):
 
         cb_model.refresh_molecules()
 
+        cb_model.select_none()
+
+
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.04 )
@@ -3051,6 +3083,9 @@ class CubeTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "83a2472870349ba2d24a7ade4f9af204f133573b", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
 
         cb_model.set_view_back()
 
@@ -3117,6 +3152,9 @@ class CubeSurfaceTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "adf91df1e8f4e44942c78d29332c965f9b0ec9b0", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
         
         scn.frame_current = 1
 
@@ -3185,6 +3223,9 @@ class SphereSurfaceTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "bab9eb05b4cbe1980d434f1a1bce96d7f1b16d97", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
         
         scn.frame_current = 1
 
@@ -3263,6 +3304,9 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "574b9a61591081c796db0e277fb6b8c29ffc1da6", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
 
         scn.frame_current = 1
 
@@ -3393,12 +3437,13 @@ class SurfaceClassesTestOp(bpy.types.Operator):
         mcell.rxn_output.plot_layout = ' '
         mcell.rxn_output.mol_colors = True
 
-
         cb_model.run_model ( iterations='5000', time_step='1e-6', wait_time=40.0 )
 
         cb_model.compare_mdl_with_sha1 ( "8917af31db423ff1aa1af2540e61e9c8c1406921", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
+
+        cb_model.select_none()
 
         scn.frame_current = 1
 
@@ -3497,11 +3542,11 @@ class CapsuleTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "150eebaf65ac0e2441139bb9c76c7184cb58dd09", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
-        
+
+        cb_model.select_none()
+
         scn.frame_current = 1
 
-        cb_model.refresh_molecules()
-        
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.25 )
@@ -3572,7 +3617,9 @@ class GobletTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "e25aa3786d73e16d673654d7bfa184804d31ffe0", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
-        
+
+        cb_model.select_none()
+
         scn.frame_current = 1
 
         cb_model.set_view_back()
@@ -3739,6 +3786,9 @@ class EcoliTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "fb8b2ed093142488c5036731c49b5b2463285675", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
         
         scn.frame_current = 1
 
@@ -3944,6 +3994,9 @@ class MDLGeoImport(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "85710739353a03ffc9f28c296d44b9c20668da8d", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
         scn.frame_current = 1
         cb_model.set_view_back()
 
@@ -4706,6 +4759,9 @@ class DynCubeTestOp(bpy.types.Operator):
 
         cb_model.refresh_molecules()
 
+        cb_model.select_none()
+
+
         cb_model.change_molecule_display ( molv, glyph='Cube', scale=3.0, red=1.0, green=1.0, blue=1.0 )
         cb_model.change_molecule_display ( mols, glyph='Cone', scale=5.0, red=0.0, green=1.0, blue=0.1 )
 
@@ -4968,6 +5024,9 @@ class DynIcosphereTestOp(bpy.types.Operator):
 
         cb_model.refresh_molecules()
 
+        cb_model.select_none()
+
+
         cb_model.change_molecule_display ( molv, glyph='Cube', scale=3.0, red=1.0, green=1.0, blue=1.0 )
         cb_model.change_molecule_display ( mols, glyph='Cone', scale=5.0, red=0.0, green=1.0, blue=0.1 )
 
@@ -5035,6 +5094,9 @@ class SimpleMoleculeCountTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "b66c79aa7bff66f5e077caa2afe54c66588a3f72", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
         cb_model.change_molecule_display ( mol_a, glyph='Cube', scale=2.0, red=1.0, green=0.0, blue=0.0 )
         cb_model.set_view_back()
         cb_model.scale_view_distance ( 0.1 )
@@ -5126,6 +5188,9 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "fe55fe5a9c3a812f93328183df1a53db6df68eb0", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
 
         mol_scale = 1.0
 
@@ -5411,6 +5476,9 @@ class OrganelleTestOp(bpy.types.Operator):
 
         cb_model.refresh_molecules()
 
+        cb_model.select_none()
+
+
         scn.frame_current = 2
 
         cb_model.set_view_back()
@@ -5557,6 +5625,9 @@ class MinDMinETestOp(bpy.types.Operator):
 
         cb_model.refresh_molecules()
 
+        cb_model.select_none()
+
+
         cb_model.set_view_back()
 
         cb_model.scale_view_distance ( 0.25 )
@@ -5658,6 +5729,9 @@ class SimpleSynapseTestOp(bpy.types.Operator):
         cb_model.compare_mdl_with_sha1 ( "aeff609131baedddc674bd3f2386f4992a49d75e", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
 
         scn.frame_current = 1
 
