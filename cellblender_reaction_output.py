@@ -124,6 +124,25 @@ class MCELL_OT_rxn_output_enable_all(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_add_all_world(bpy.types.Operator):
+    bl_idname = "mcell.rxn_out_all_world"
+    bl_label = "Add all in world"
+    bl_description = "Add a count statement for each molecule in the world"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mol_list = mcell.molecules.molecule_list
+        for mol in mol_list:
+            new_rxn_out = mcell.rxn_output.rxn_output_list.add()
+            mcell.rxn_output.active_rxn_output_index = len(mcell.rxn_output.rxn_output_list)-1
+            new_rxn_out.molecule_name = mol.name
+            new_rxn_out.count_location = "World"
+            new_rxn_out.rxn_or_mol = "Molecule"
+            check_rxn_output(self, context)
+        return {'FINISHED'}
+
+
 # This is just a means to store a temporary file path for the duration of a
 # Blender session.
 class ReactionDataTmpFile:
@@ -766,6 +785,8 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                 subcol = col.column(align=True)
                 subcol.operator("mcell.rxn_output_add", icon='ZOOMIN', text="")
                 subcol.operator("mcell.rxn_output_remove", icon='ZOOMOUT', text="")
+                subcol = col.column(align=True)
+                subcol.operator("mcell.rxn_out_all_world", icon='PLUS', text="")
                 subcol = col.column(align=True)
                 subcol.operator("mcell.rxn_output_enable_all", icon='RESTRICT_VIEW_OFF', text="")
                 subcol.operator("mcell.rxn_output_disable_all", icon='RESTRICT_VIEW_ON', text="")
