@@ -3019,7 +3019,7 @@ class GlyphTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=4.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "2ab0eb1aa8cd0b577f5b86fe130d16af8b6d7f80", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "45df62fae6c7d58fc70ee5ecab201d7c2252a3f4", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
