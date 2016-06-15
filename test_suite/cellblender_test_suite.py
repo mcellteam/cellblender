@@ -5621,7 +5621,7 @@ class MinDMinETestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='0.8 * 200/dt', time_step='dt', wait_time=5.0 )  # Can use to generate MDL, but SHA1 won't be right: export_format="mcell_mdl_modular", 
 
-        cb_model.compare_mdl_with_sha1 ( "c1e089f783a3435da2305b46e3d3a5da94b51176", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "f6c817bad666049827b3be8cb91e1e5ae3e4c89d", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
