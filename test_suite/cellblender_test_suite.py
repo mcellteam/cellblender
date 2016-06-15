@@ -2797,7 +2797,7 @@ class ParSystemTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "56f42c00db6e46ce27bbe20cb351897a01aa6026", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "2a995063fa613e0c028766bf579a1696ef6c8238", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
