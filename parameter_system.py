@@ -1212,30 +1212,30 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
 ##@profile('ParameterSystemCallBack.active_par_index_changed')
 def active_par_index_changed ( self, context ):
-    self.active_par_index_changed ( context )
+    self.active_par_index_changed ( context, interactive=True )
 
 ##@profile('ParameterSystemCallBack.update_parameter_name')
 def update_parameter_name ( self, context ):
-    self.update_parameter_name ( context )
+    self.update_parameter_name ( context, interactive=True )
     context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
 ##@profile('ParameterSystemCallBack.update_parameter_elist')
 def update_parameter_elist ( self, context ):
-    self.update_parameter_elist ( context )
+    self.update_parameter_elist ( context, interactive=True )
     context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
 ##@profile('ParameterSystemCallBack.update_parameter_expression')
 def update_parameter_expression ( self, context ):
-    self.update_parameter_expression ( context )
+    self.update_parameter_expression ( context, interactive=True )
     context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
 ##@profile('ParameterSystemCallBack.update_parameter_units')
 def update_parameter_units ( self, context ):
-    self.update_parameter_units ( context )
+    self.update_parameter_units ( context, interactive=True )
 
 ##@profile('ParameterSystemCallBack.update_parameter_desc')
 def update_parameter_desc ( self, context ):
-    self.update_parameter_desc ( context )
+    self.update_parameter_desc ( context, interactive=True )
 
 
 
@@ -1568,7 +1568,6 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
 
-    """ This works, but is very slow:
     @profile('ParameterSystem.add_general_parameters_from_list')
     def add_general_parameters_from_list ( self, context, par_list ):
 
@@ -1610,22 +1609,22 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
 
 
-            self.active_par_index_changed ( context )
-            self.update_parameter_name ( context )
+            self.active_par_index_changed ( context, interactive=False )
+            self.update_parameter_name ( context, interactive=False )
 
             self.active_expr = expr
 
-            self.update_parameter_expression ( context )
-            self.update_parameter_elist ( context )
-            self.update_parameter_units ( context )
-            self.update_parameter_desc ( context )
+            self.update_parameter_expression ( context, interactive=False )
+            self.update_parameter_elist ( context, interactive=False )
+            self.update_parameter_units ( context, interactive=False )
+            self.update_parameter_desc ( context, interactive=False )
 
 
 
         context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
-    """
 
 
+    """ This works, but is very slow:
     @profile('ParameterSystem.add_general_parameters_from_list')
     def add_general_parameters_from_list ( self, context, par_list ):
 
@@ -1642,6 +1641,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             self.add_general_parameter_and_update ( context, name=name, expr=expr, units=units, desc=descr )
 
         context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
+    """
 
 
 
@@ -1664,8 +1664,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
 
     @profile('ParameterSystem.active_par_index_changed')
-    def active_par_index_changed ( self, context ):
-        """ The "self" passed in is a ParameterSystemPropertyGroup object. """
+    def active_par_index_changed ( self, context, interactive=False ):
+        """ Swap the ID property versions of this parameter into the active RNA properties to be displayed and possibly edited. """
+        # The "self" passed in is a ParameterSystemPropertyGroup object.
         dbprint ( "Type of self = " + str ( type(self) ), thresh=50 )
 
         par_num = self.active_par_index  # self.active_par_index is what gets changed when the user selects an item
@@ -1682,7 +1683,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
 
     @profile('ParameterSystem.update_parameter_name')
-    def update_parameter_name (self, context):
+    def update_parameter_name (self, context, interactive=False):
         ps = context.scene.mcell.parameter_system
 
         if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
@@ -1758,7 +1759,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                     print ( "Unexpected error: pid \"" + str(pid) + "\" not in self['gp_dict']" )
 
     @profile('ParameterSystem.update_parameter_expression')
-    def update_parameter_expression (self, context):
+    def update_parameter_expression (self, context, interactive=False):
         if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
             needs_update = False
             try:
@@ -1798,7 +1799,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
 
     @profile('ParameterSystem.update_parameter_elist')
-    def update_parameter_elist (self, context):
+    def update_parameter_elist (self, context, interactive=False):
         if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
             needs_update = False
             try:
@@ -1818,7 +1819,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                     print ( "Unexpected error: \"" + str(self.last_selected_id) + "\" not in self['gp_dict']" )
 
     @profile('ParameterSystem.update_parameter_units')
-    def update_parameter_units (self, context):
+    def update_parameter_units (self, context, interactive=False):
         if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
             needs_update = False
             try:
@@ -1834,7 +1835,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                     print ( "Unexpected error: \"" + str(self.last_selected_id) + "\" not in self['gp_dict']" )
 
     @profile('ParameterSystem.update_parameter_desc')
-    def update_parameter_desc (self, context):
+    def update_parameter_desc (self, context, interactive=False):
         if ('gp_dict' in self) and (len(self['gp_dict']) > 0):
             needs_update = False
             try:
