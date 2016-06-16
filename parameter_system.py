@@ -1572,21 +1572,97 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     @profile('ParameterSystem.add_general_parameters_from_list')
     def add_general_parameters_from_list ( self, context, par_list ):
 
+        self.init_parameter_system()  # Do this in case it isn't already initialized
+
         for p in par_list:
 
+            name = p['par_name']
+            expr = p['par_expression']
             units = ""
             descr = ""
             if 'par_units' in p: units = p['par_units']
             if 'par_description' in p: descr = p['par_description']
-            print ( "Bulk Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + units + ") ... " + descr )
+
+            print ( "Bulk Adding " + name + " = " + expr + " (" + units + ") ... " + descr )
             # dbprint ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + units + ") ... " + descr, thresh=-1 )
+            # self.add_general_parameter_and_update ( context, name=name, expr=expr, units=units, desc=descr )
 
-            #new_gid = self.allocate_available_gid()
-            #new_gid_key = 'g'+str(new_gid)
+            self.add_general_parameter ( name, expr, units, descr )
 
-            new_name = p['par_name']
+            self.active_par_index_changed ( context )
+            self.update_parameter_name ( context )
 
-            self.add_general_parameter_and_update ( context, name=new_name, expr=p['par_expression'], units=units, desc=descr )
+            self.active_expr = expr
+
+            self.update_parameter_expression ( context )
+            self.update_parameter_elist ( context )
+            self.update_parameter_units ( context )
+            self.update_parameter_desc ( context )
+
+
+
+
+            """
+
+            new_gid = self.allocate_available_gid()
+            new_gid_key = 'g'+str(new_gid)
+
+            ############## TEST ###############
+            #self.last_selected_id = "" + new_gid_key
+            
+            new_id_par = self.new_parameter ( new_name=name, new_expr=expr, new_units=units, new_desc=descr )
+
+            dbprint ( "Adding " + str(new_id_par) )
+            self['gp_dict'][new_gid_key] = new_id_par
+
+            new_rna_par = self.general_parameter_list.add()
+            new_rna_par.par_id = new_gid_key
+            new_rna_par.name = name
+
+            self.active_name = new_rna_par.name
+            self.active_expr = new_id_par['expr']
+            self.active_units = new_id_par['units']
+            self.active_desc = new_id_par['desc']
+            
+            #self.add_general_parameter_and_update ( context, name=new_name, expr=p['par_expression'], units=units, desc=descr )
+
+            ### This is causing slowness!! ###
+            
+            self.active_par_index = len(self.general_parameter_list)-1
+
+            self.active_par_index_changed ( context )
+            self.update_parameter_name ( context )
+
+            self.active_expr = par_list[-1]['par_expression']
+
+            self.update_parameter_expression ( context )
+            self.update_parameter_elist ( context )
+            self.update_parameter_units ( context )
+            self.update_parameter_desc ( context )
+            """
+
+        context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
+
+
+    """ This works, but is very slow:
+    @profile('ParameterSystem.add_general_parameters_from_list')
+    def add_general_parameters_from_list ( self, context, par_list ):
+
+        self.init_parameter_system()  # Do this in case it isn't already initialized
+
+        for p in par_list:
+
+            name = p['par_name']
+            expr = p['par_expression']
+            units = ""
+            descr = ""
+            if 'par_units' in p: units = p['par_units']
+            if 'par_description' in p: descr = p['par_description']
+            self.add_general_parameter_and_update ( context, name=name, expr=expr, units=units, desc=descr )
+
+        context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
+    """
+
 
 
     @profile('ParameterSystem.remove_active_parameter')
