@@ -4,7 +4,7 @@ This module supports parameters and evaluation of expressions.
 
 
 """
-### This script can generate parameters for testing
+### This CellBlender Data Model script can generate parameters for testing
 
 num_pars_to_gen = 10
 num_back = 2
@@ -1368,38 +1368,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         if 'model_parameters' in par_sys_dm:
             # Add all of the parameters - some may be invalid if they depend on other parameters that haven't been read yet
 
-            for p in par_sys_dm['model_parameters']:
-
-                units = ""
-                descr = ""
-                if 'par_units' in p: units = p['par_units']
-                if 'par_description' in p: descr = p['par_description']
-                dbprint ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + units + ") ... " + descr, thresh=-1 )
-
-                #new_gid = self.allocate_available_gid()
-                #new_gid_key = 'g'+str(new_gid)
-
-                new_name = p['par_name']
-
-
-                self.add_general_parameter_and_update ( context, name=new_name, expr=p['par_expression'], units=units, desc=descr )
-
-                """
-                new_id_par = self.new_parameter ( new_name=new_name, new_expr=p['par_expression'], new_units=units, new_desc=descr )
-
-                dbprint ( "Adding " + str(new_id_par), thresh=-1 )
-                self['gp_dict'][new_gid_key] = new_id_par
-
-                new_rna_par = self.general_parameter_list.add()
-                new_rna_par.par_id = new_gid_key
-                new_rna_par.name = new_name
-
-                self.active_par_index = len(self.general_parameter_list)-1
-                self.active_name = new_rna_par.name
-                self.active_expr = new_id_par['expr']
-                self.active_units = new_id_par['units']
-                self.active_desc = new_id_par['desc']
-                """
+            self.add_general_parameters_from_list ( context, par_sys_dm['model_parameters'] )
 
         dbprint ( "=== After parameter_system.ParameterSystemPropertyGroup.build_properties_from_data_model() ===" )
         #bpy.ops.mcell.print_gen_parameters()
@@ -1599,6 +1568,25 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
         context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
+
+    @profile('ParameterSystem.add_general_parameters_from_list')
+    def add_general_parameters_from_list ( self, context, par_list ):
+
+        for p in par_list:
+
+            units = ""
+            descr = ""
+            if 'par_units' in p: units = p['par_units']
+            if 'par_description' in p: descr = p['par_description']
+            print ( "Bulk Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + units + ") ... " + descr )
+            # dbprint ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + units + ") ... " + descr, thresh=-1 )
+
+            #new_gid = self.allocate_available_gid()
+            #new_gid_key = 'g'+str(new_gid)
+
+            new_name = p['par_name']
+
+            self.add_general_parameter_and_update ( context, name=new_name, expr=p['par_expression'], units=units, desc=descr )
 
 
     @profile('ParameterSystem.remove_active_parameter')
