@@ -205,6 +205,7 @@ class MCELL_OT_clear_profiling(bpy.types.Operator):
 class Expression_Handler:
     """
       Note that while this expression handler supports string encoding of expressions, this version encodes expressions as pickled lists.
+        The string encoding code should be removed after the pickled list code is working properly.
 
       String encoding of expression lists:
       
@@ -686,7 +687,7 @@ class Expression_Handler:
                 self.isvalid = False
                 self.pending_expr = self.expr
                 param_sys.register_validity ( self.name, False )
-                # Might want to propagate invalidity here as well ???
+                # Might want to propagate invalidity here as well ?
                 param_sys.recursion_depth += -1
                 self.updating = False
                 dbprint ( "Return from evaluate_parsed_expr_py with depth = " + str(param_sys.recursion_depth) )
@@ -825,6 +826,23 @@ class MCELL_OT_print_pan_parameters(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class MCELL_OT_add_par_list(bpy.types.Operator):
+    bl_idname = "mcell.add_par_list"
+    bl_label = "Add List"
+    bl_description = "Add a short list of parameters"
+    bl_options = {'REGISTER', 'UNDO'}
+    def execute(self, context):
+        par_list = []
+        for i in range(5):
+            p = {}
+            p['par_name'] = chr(ord('a')+i)
+            p['par_expression'] = str(i) + " + 5 + 7"
+            p['par_units'] = "mm"
+            p['par_description'] = "Test Parameter " + str(i)
+            par_list.append ( p )
+
+        context.scene.mcell.parameter_system.add_general_parameters_from_list ( context, par_list )
+        return {'FINISHED'}
 
 
 class MCELL_OT_add_gen_par(bpy.types.Operator):
@@ -1417,6 +1435,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
         new_par_id_dict = {
             'name': new_name,           # This is the user name
+            ##### Note that the expression is currently ignored!!!!!
             'expr': "0",
             'elist': pickle.dumps(['0'],protocol=0).decode('latin1'),
             'units': new_units,
@@ -1573,6 +1592,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
         self.init_parameter_system()  # Do this in case it isn't already initialized
 
+        # Start by creating all of the parameters
+
         for p in par_list:
 
             name = p['par_name']
@@ -1583,43 +1604,73 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             if 'par_description' in p: descr = p['par_description']
 
             print ( "Bulk Adding " + name + " = " + expr + " (" + units + ") ... " + descr )
-
-            new_gid = self.allocate_available_gid()
-            new_gid_key = 'g'+str(new_gid)
             
-            new_name = name
-            if new_name is None:
-                new_name = 'Parameter_'+str(new_gid)
+            # Check to see if this name already exists in the name-to-id list
 
-            new_id_par = self.new_parameter ( new_name=new_name, new_expr=expr, new_units=units, new_desc=descr )
+            gid = None
+            if name is None:
+                # Always add with a default name (although this shouldn't happen)
+                gid = 'g'+str(self.allocate_available_gid())
+                name = 'Parameter_'+str(gid)
+            else:
+                # Check to see if the name already exists
+                if name in self.general_parameter_list:
+                    gid = self.general_parameter_list[name].par_id
+                else:
+                    gid = 'g'+str(self.allocate_available_gid())
 
-            dbprint ( "Adding " + str(new_id_par) )
-            self['gp_dict'][new_gid_key] = new_id_par
+            # Create or overwrite this entry
 
-            new_rna_par = self.general_parameter_list.add()
-            new_rna_par.par_id = new_gid_key
-            new_rna_par.name = new_name
+            new_id_par = self.new_parameter ( new_name=name, new_expr=expr, new_units=units, new_desc=descr )
+            new_id_par['expr'] = expr
 
-            self.active_par_index = len(self.general_parameter_list)-1
-            self.active_name = new_rna_par.name
-            self.active_expr = new_id_par['expr']
-            self.active_units = new_id_par['units']
-            self.active_desc = new_id_par['desc']
+            self['gp_dict'][gid] = new_id_par
+
+            rna_par = None
+            if name in self.general_parameter_list:
+                rna_par = self.general_parameter_list[name]
+                rna_par.par_id = gid
+            else:
+                rna_par = self.general_parameter_list.add()
+                rna_par.par_id = gid
+                rna_par.name = name
+
+        # Determine the dependency order of the list
+        if len(self['gp_dict']) > 0:
+            gp_dict = self['gp_dict']
+            for k in gp_dict.keys():
+                par = gp_dict[k]
+
+                parameterized_expr = self.parse_param_expr ( par['expr'] )
+                dbprint ( "ParExp = " + str(parameterized_expr) )
+                par['elist'] = pickle.dumps(parameterized_expr,protocol=0).decode('latin1')
+
+        for k in self['gp_dict'].keys():
+            self.update_expr_list_by_id ( context, k )
+
+        self.update_all_parameters ( context )
+
+        self.active_par_index = len(self.general_parameter_list)-1
 
 
+        """
+        par_map_item = self.general_parameter_list[self.active_par_index]
 
+        self.active_name = rna_par.name
+        self.active_expr = id_par['expr']
+        self.active_units = id_par['units']
+        self.active_desc = id_par['desc']
 
-            self.active_par_index_changed ( context, interactive=False )
-            self.update_parameter_name ( context, interactive=False )
+        self.active_par_index_changed ( context, interactive=False )
+        self.update_parameter_name ( context, interactive=False )
 
-            self.active_expr = expr
+        self.active_expr = expr
 
-            self.update_parameter_expression ( context, interactive=False )
-            self.update_parameter_elist ( context, interactive=False )
-            self.update_parameter_units ( context, interactive=False )
-            self.update_parameter_desc ( context, interactive=False )
-
-
+        self.update_parameter_expression ( context, interactive=False )
+        self.update_parameter_elist ( context, interactive=False )
+        self.update_parameter_units ( context, interactive=False )
+        self.update_parameter_desc ( context, interactive=False )
+        """
 
         context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
@@ -1758,6 +1809,33 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 else:
                     print ( "Unexpected error: pid \"" + str(pid) + "\" not in self['gp_dict']" )
 
+    @profile('ParameterSystem.update_all_parameters')
+    def update_all_parameters (self, context, interactive=False):
+        if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
+
+            # Now set all status based on the expression lists:
+            for par in self['gp_dict'].keys():
+                self['gp_dict'][par]['status'] = {} # Intended to be a set(), but sets are not stored as ID properties. So use a dictionary.
+                elist = pickle.loads(self['gp_dict'][par]['elist'].encode('latin1'))
+                if None in elist:
+                    # self['gp_dict'][par]['status'].add ( 'undef' ) # This would be the set operation, but we're using a dictionary
+                    self['gp_dict'][par]['status']['undef'] = True   # Use "True" to flag the intention of 'undef' being in the set
+            # Next add status based on loops:
+            result = self.update_dependency_ordered_name_list()
+            if len(result) > 0:
+                # There was a loop and result contains the names of unresolvable parameters
+                for par in self['gp_dict'].keys():
+                    if par in result:
+                        # self['gp_dict'][par]['status'].add ( 'loop' ) # This would be the set operation, but we're using a dictionary
+                        self['gp_dict'][par]['status']['loop'] = True   # Use "True" to flag the intention of 'loop' being in the set
+            else:
+                mcell = context.scene.mcell
+                ps = mcell.parameter_system
+                # TODO: Note that this might not be the most efficient thing to do!!!!
+                ps.evaluate_all_gp_expressions ( context )
+                ps.evaluate_all_pp_expressions ( context )
+
+
     @profile('ParameterSystem.update_parameter_expression')
     def update_parameter_expression (self, context, interactive=False):
         if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
@@ -1775,27 +1853,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 else:
                     print ( "Unexpected error: last_selected_id \"" + str(self.last_selected_id) + "\" not in self['gp_dict']" )
 
-                # Now set all status based on the expression lists:
-                for par in self['gp_dict'].keys():
-                    self['gp_dict'][par]['status'] = {} # set()
-                    elist = pickle.loads(self['gp_dict'][par]['elist'].encode('latin1'))
-                    if None in elist:
-                        # self['gp_dict'][par]['status'].add ( 'undef' ) # This would be the set operation, but we're using a dictionary
-                        self['gp_dict'][par]['status']['undef'] = True   # Use "True" to flag the intention of 'undef' being in the set
-                # Next add status based on loops:
-                result = self.update_dependency_ordered_name_list()
-                if len(result) > 0:
-                    # There was a loop and result contains the names of unresolvable parameters
-                    for par in self['gp_dict'].keys():
-                        if par in result:
-                            # self['gp_dict'][par]['status'].add ( 'loop' ) # This would be the set operation, but we're using a dictionary
-                            self['gp_dict'][par]['status']['loop'] = True   # Use "True" to flag the intention of 'loop' being in the set
-                else:
-                    mcell = context.scene.mcell
-                    ps = mcell.parameter_system
-                    # TODO: Note that this might not be the most efficient thing to do!!!!
-                    ps.evaluate_all_gp_expressions ( context )
-                    ps.evaluate_all_pp_expressions ( context )
+                self.update_all_parameters ( context, interactive )
 
 
     @profile('ParameterSystem.update_parameter_elist')
@@ -1862,16 +1920,16 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             layout.prop(self, "active_desc")
 
 
-    @profile('ParameterSystem.evaluate_active_expression')
-    def evaluate_active_expression ( self, context ):
+    @profile('ParameterSystem.update_expr_list_by_id')
+    def update_expr_list_by_id ( self, context, gid ):
         # global global_params
         # ps = context.scene.mcell.general_parameters
 
         if len(self['gp_dict']) > 0:
             gp_dict = self['gp_dict']
-            par = gp_dict[self.last_selected_id]
+            par = gp_dict[gid]
 
-            #id_par = self['gp_dict'][self.last_selected_id]
+            #id_par = self['gp_dict'][gid]
             #parameterized_expr = self.parse_param_expr ( id_par['expr'] )
             
             parameterized_expr = self.parse_param_expr ( par['expr'] )
@@ -1906,9 +1964,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
                         new_who_i_depend_on.add ( "g" + str(term) )
                         par['who_i_depend_on']["g"+str(term)] = True
-                        #self['gp_dict']["g"+str(term)]['who_depends_on_me'][self.last_selected_id] = True
+                        #self['gp_dict']["g"+str(term)]['who_depends_on_me'][gid] = True
                         
-                        gp_dict["g"+str(term)]['who_depends_on_me'][self.last_selected_id] = True
+                        gp_dict["g"+str(term)]['who_depends_on_me'][gid] = True
                         expr += " " + gp_dict["g"+str(term)]['name']
                     elif type(term) == type('a'):
                         # This is an operator or constant
@@ -1924,14 +1982,92 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 if len(add_me_to) > 0:
                     dbprint ( "Add " + par['name'] + " to who_depends_on_me list for: " + str(add_me_to) )
                 for k in remove_me_from:
-                    dbprint ( "  Removing ( " + str(self.last_selected_id) + " ) from " + str(k) )
-                    self['gp_dict'][k]['who_depends_on_me'].pop ( self.last_selected_id )
+                    dbprint ( "  Removing ( " + str(gid) + " ) from " + str(k) )
+                    self['gp_dict'][k]['who_depends_on_me'].pop ( gid )
                 for k in add_me_to:
-                    self['gp_dict'][k]['who_depends_on_me'][self.last_selected_id] = True
+                    self['gp_dict'][k]['who_depends_on_me'][gid] = True
 
             dbprint ( "ExprList = " + str ( explst ) )
             dbprint ( "MDL Expr = " + str ( self.build_expression ( explst ) ) )
             dbprint ( "Py  Expr = " + str ( self.build_expression ( explst, as_python=True ) ) )
+
+
+    @profile('ParameterSystem.evaluate_active_expression')
+    def evaluate_active_expression ( self, context ):
+        # global global_params
+        # ps = context.scene.mcell.general_parameters
+
+        if len(self['gp_dict']) > 0:
+            self.update_expr_list_by_id ( context, self.last_selected_id )
+
+        """
+        gp_dict = self['gp_dict']
+        par = gp_dict[self.last_selected_id]
+
+        #id_par = self['gp_dict'][self.last_selected_id]
+        #parameterized_expr = self.parse_param_expr ( id_par['expr'] )
+        
+        parameterized_expr = self.parse_param_expr ( par['expr'] )
+        dbprint ( "ParExp = " + str(parameterized_expr) )
+        par['elist'] = pickle.dumps(parameterized_expr,protocol=0).decode('latin1')
+
+        explst = parameterized_expr
+        dbprint ( "Top: ExprList = " + str ( explst ) )
+        """
+        """
+        if (type(explst) == type(1)) or (type(explst) == type(1.0)):
+            # Force it to be a list for now to suppress errors when constants are entered
+            explst = [ str(explst) ]
+        if type(explst) != type([]):
+            # Force it to be a list for now to suppress errors when constants are entered
+            explst = [ explst ]
+        """
+        """
+        dbprint ( "Eval exprlist: " + str(explst) )
+        if None in explst:
+            dbprint ( "Expression Error: Contains None" )
+        else:
+            expr = ""
+
+            old_who_i_depend_on = set([ w for w in par['who_i_depend_on'] ])
+            new_who_i_depend_on = set()
+
+            par['who_i_depend_on'] = {}
+
+            for term in explst:
+                if type(term) == int:
+                    # This is a parameter
+                    #par['who_i_depend_on'].add ( "g" + str(term) )
+
+                    new_who_i_depend_on.add ( "g" + str(term) )
+                    par['who_i_depend_on']["g"+str(term)] = True
+                    #self['gp_dict']["g"+str(term)]['who_depends_on_me'][self.last_selected_id] = True
+                    
+                    gp_dict["g"+str(term)]['who_depends_on_me'][self.last_selected_id] = True
+                    expr += " " + gp_dict["g"+str(term)]['name']
+                elif type(term) == type('a'):
+                    # This is an operator or constant
+                    expr += " " + term
+                else:
+                    dbprint ( "Error" )
+                dbprint ( "Expr: " + par['name'] + " = " + expr )
+
+            remove_me_from = old_who_i_depend_on - new_who_i_depend_on
+            add_me_to = new_who_i_depend_on - old_who_i_depend_on
+            if len(remove_me_from) > 0:
+                dbprint ( "Remove " + par['name'] + " from who_depends_on_me list for: " + str(remove_me_from) )
+            if len(add_me_to) > 0:
+                dbprint ( "Add " + par['name'] + " to who_depends_on_me list for: " + str(add_me_to) )
+            for k in remove_me_from:
+                dbprint ( "  Removing ( " + str(self.last_selected_id) + " ) from " + str(k) )
+                self['gp_dict'][k]['who_depends_on_me'].pop ( self.last_selected_id )
+            for k in add_me_to:
+                self['gp_dict'][k]['who_depends_on_me'][self.last_selected_id] = True
+
+        dbprint ( "ExprList = " + str ( explst ) )
+        dbprint ( "MDL Expr = " + str ( self.build_expression ( explst ) ) )
+        dbprint ( "Py  Expr = " + str ( self.build_expression ( explst, as_python=True ) ) )
+        """
 
 
     @profile('ParameterSystem.evaluate_all_gp_expressions')
@@ -2175,7 +2311,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     def draw_layout ( self, context, layout ):
 
         ### These are here for help during debugging when errors might cause the rest of the panel to not be drawn
+
         row = layout.row()
+        col = row.column()
+        col.operator ( "mcell.add_par_list" )
         col = row.column()
         col.operator ( "mcell.print_gen_parameters" )
         col = row.column()
