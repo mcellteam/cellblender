@@ -1481,6 +1481,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
         new_par_id_dict = {
             'name': new_name,           # This is the user name
+            'value' : 0.0,              # This is the initial value
             ##### Note that the expression is currently ignored!!!!!
             'expr': "0",
             'elist': pickle.dumps(['0'],protocol=0).decode('latin1'),
