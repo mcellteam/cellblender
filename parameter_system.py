@@ -2256,9 +2256,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     @profile('ParameterSystem.draw_layout')
     def draw_layout ( self, context, layout ):
 
-        ### These are here for help during debugging when errors might cause the rest of the panel to not be drawn
-        self.draw_debug_items ( context, layout )
-        ### These are here for help during debugging when errors might cause the rest of the panel to not be drawn
+        if context.scene.mcell.cellblender_preferences.debug_level > 0:
+            ### This is here for help during debugging when errors might keep the rest of the panel from being drawn
+            self.draw_debug_items ( context, layout )
 
         errors = set()
         if 'gp_dict' in self:

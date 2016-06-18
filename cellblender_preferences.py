@@ -294,6 +294,7 @@ class MCELL_OT_save_preferences(AddPresetBase, bpy.types.Operator):
         "scene.mcell.cellblender_preferences.decouple_export_run",
         "scene.mcell.cellblender_preferences.invalid_policy",
         "scene.mcell.cellblender_preferences.show_sim_runner_options",
+        "scene.mcell.cellblender_preferences.debug_level",
     ]
 
     # This needs to be the same as what's in the menu class
@@ -316,6 +317,7 @@ class MCELL_OT_reset_preferences(bpy.types.Operator):
         mcell.cellblender_preferences.invalid_policy = 'dont_run'
         mcell.cellblender_preferences.decouple_export_run = False
         mcell.cellblender_preferences.show_sim_runner_options = False
+        mcell.cellblender_preferences.debug_level = 0
 
         return {'FINISHED'}
 
@@ -405,13 +407,15 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
         name="Invalid Policy",
         default='dont_run',
         update=save_preferences)
+
     decouple_export_run = BoolProperty(
         name="Decouple Export and Run", default=False,
         description="Allow the project to be exported without also running"
                     " the simulation.",
         update=save_preferences)
+
     debug_level = IntProperty(
-        name="Debug", default=0, min=0, max=100,
+        name="Debug Level", default=0, min=0, max=100,
         description="Amount of debug information to print: 0 to 100")
     
     use_long_menus = BoolProperty(
@@ -559,6 +563,9 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
                 row = box.row()
                 row.prop(mcell.cellblender_preferences, "lockout_export")
+
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "debug_level")
 
 
                 #row = box.row()
