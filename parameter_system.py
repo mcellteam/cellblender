@@ -6,7 +6,7 @@ This module supports parameters and evaluation of expressions.
 """
 ### This CellBlender Data Model script can generate parameters for testing
 
-num_pars_to_gen = 10
+num_pars_to_gen = 20
 num_back = 2
 make_loop = False
 
@@ -826,22 +826,67 @@ class MCELL_OT_print_pan_parameters(bpy.types.Operator):
 
         return {'FINISHED'}
 
+
+
 class MCELL_OT_add_par_list(bpy.types.Operator):
     bl_idname = "mcell.add_par_list"
     bl_label = "Add List"
     bl_description = "Add a short list of parameters"
-    bl_options = {'REGISTER', 'UNDO'}
-    def execute(self, context):
-        par_list = []
-        for i in range(5):
-            p = {}
-            p['par_name'] = chr(ord('a')+i)
-            p['par_expression'] = str(i) + " + 5 + 7"
-            p['par_units'] = "mm"
-            p['par_description'] = "Test Parameter " + str(i)
-            par_list.append ( p )
+    bl_options = {'REGISTER'}
 
-        context.scene.mcell.parameter_system.add_general_parameters_from_list ( context, par_list )
+    def make_par_name ( self, n ):
+        name = None
+        if n < 26:
+            name = chr(ord('a')+n)
+        else:
+            name = "P_" + str(n)
+        if (n % 3) == 0:
+            name += 'x'
+        if (n % 3) == 1:
+            name += 'y'
+        return name
+
+    def execute(self, context):
+        num_pars_to_gen = context.scene.mcell.parameter_system.num_pars_to_gen
+        num_back = 2
+        make_loop = False
+
+        pars = []
+        for n in range(num_pars_to_gen):
+            pname = self.make_par_name ( n )
+            par = {}
+            par['par_name'] = pname
+            par['par_description'] = "Description for " + pname
+            par['par_units'] = "u"
+            par['par_expression'] = "1"
+            for i in range(max(n-num_back,0),n):
+                par['par_expression'] += " + "
+                par['par_expression'] += self.make_par_name ( i )
+            pars.append ( par )
+
+        if make_loop:
+            mid = round(num_pars_to_gen / 2)
+            print ( " mid = " + str(mid) )
+            if (mid-1) >= 0:
+                # There are enough parameters to make a loop
+                pars[mid-1]['par_expression'] += " + " + pars[mid]['par_name']
+
+        print ( "Before call to add_general_parameters_from_list" )
+        context.scene.mcell.parameter_system.add_general_parameters_from_list ( context, pars )
+        print ( "After call to add_general_parameters_from_list" )
+        return {'FINISHED'}
+
+
+class MCELL_OT_remove_all_pars(bpy.types.Operator):
+    bl_idname = "mcell.delete_all_pars"
+    bl_label = "Delete All Pars"
+    bl_description = "Delete All Parameters"
+    bl_options = {'REGISTER'}
+    def execute(self, context):
+        while ( len(context.scene.mcell.parameter_system.general_parameter_list) > 0 ):
+            status = context.scene.mcell.parameter_system.remove_active_parameter(context)
+        if status != "":
+            self.report({'ERROR'}, status)
         return {'FINISHED'}
 
 
@@ -1284,6 +1329,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     show_all_details = BoolProperty(name="Show All Details", default=False)
     max_field_width = IntProperty(name="Max Field Width", default=20)
+    num_pars_to_gen = IntProperty(name="Num Pars", default=20)
 
     param_display_mode_enum = [ ('one_line',  "One line per parameter", ""), ('two_line',  "Two lines per parameter", "") ]
     param_display_mode = bpy.props.EnumProperty ( items=param_display_mode_enum, default='one_line', name="Parameter Display Mode", description="Display layout for each parameter" )
@@ -1652,26 +1698,6 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
         self.active_par_index = len(self.general_parameter_list)-1
 
-
-        """
-        par_map_item = self.general_parameter_list[self.active_par_index]
-
-        self.active_name = rna_par.name
-        self.active_expr = id_par['expr']
-        self.active_units = id_par['units']
-        self.active_desc = id_par['desc']
-
-        self.active_par_index_changed ( context, interactive=False )
-        self.update_parameter_name ( context, interactive=False )
-
-        self.active_expr = expr
-
-        self.update_parameter_expression ( context, interactive=False )
-        self.update_parameter_elist ( context, interactive=False )
-        self.update_parameter_units ( context, interactive=False )
-        self.update_parameter_desc ( context, interactive=False )
-        """
-
         context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
 
@@ -2000,75 +2026,6 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         if len(self['gp_dict']) > 0:
             self.update_expr_list_by_id ( context, self.last_selected_id )
 
-        """
-        gp_dict = self['gp_dict']
-        par = gp_dict[self.last_selected_id]
-
-        #id_par = self['gp_dict'][self.last_selected_id]
-        #parameterized_expr = self.parse_param_expr ( id_par['expr'] )
-        
-        parameterized_expr = self.parse_param_expr ( par['expr'] )
-        dbprint ( "ParExp = " + str(parameterized_expr) )
-        par['elist'] = pickle.dumps(parameterized_expr,protocol=0).decode('latin1')
-
-        explst = parameterized_expr
-        dbprint ( "Top: ExprList = " + str ( explst ) )
-        """
-        """
-        if (type(explst) == type(1)) or (type(explst) == type(1.0)):
-            # Force it to be a list for now to suppress errors when constants are entered
-            explst = [ str(explst) ]
-        if type(explst) != type([]):
-            # Force it to be a list for now to suppress errors when constants are entered
-            explst = [ explst ]
-        """
-        """
-        dbprint ( "Eval exprlist: " + str(explst) )
-        if None in explst:
-            dbprint ( "Expression Error: Contains None" )
-        else:
-            expr = ""
-
-            old_who_i_depend_on = set([ w for w in par['who_i_depend_on'] ])
-            new_who_i_depend_on = set()
-
-            par['who_i_depend_on'] = {}
-
-            for term in explst:
-                if type(term) == int:
-                    # This is a parameter
-                    #par['who_i_depend_on'].add ( "g" + str(term) )
-
-                    new_who_i_depend_on.add ( "g" + str(term) )
-                    par['who_i_depend_on']["g"+str(term)] = True
-                    #self['gp_dict']["g"+str(term)]['who_depends_on_me'][self.last_selected_id] = True
-                    
-                    gp_dict["g"+str(term)]['who_depends_on_me'][self.last_selected_id] = True
-                    expr += " " + gp_dict["g"+str(term)]['name']
-                elif type(term) == type('a'):
-                    # This is an operator or constant
-                    expr += " " + term
-                else:
-                    dbprint ( "Error" )
-                dbprint ( "Expr: " + par['name'] + " = " + expr )
-
-            remove_me_from = old_who_i_depend_on - new_who_i_depend_on
-            add_me_to = new_who_i_depend_on - old_who_i_depend_on
-            if len(remove_me_from) > 0:
-                dbprint ( "Remove " + par['name'] + " from who_depends_on_me list for: " + str(remove_me_from) )
-            if len(add_me_to) > 0:
-                dbprint ( "Add " + par['name'] + " to who_depends_on_me list for: " + str(add_me_to) )
-            for k in remove_me_from:
-                dbprint ( "  Removing ( " + str(self.last_selected_id) + " ) from " + str(k) )
-                self['gp_dict'][k]['who_depends_on_me'].pop ( self.last_selected_id )
-            for k in add_me_to:
-                self['gp_dict'][k]['who_depends_on_me'][self.last_selected_id] = True
-
-        dbprint ( "ExprList = " + str ( explst ) )
-        dbprint ( "MDL Expr = " + str ( self.build_expression ( explst ) ) )
-        dbprint ( "Py  Expr = " + str ( self.build_expression ( explst, as_python=True ) ) )
-        """
-
 
     @profile('ParameterSystem.evaluate_all_gp_expressions')
     def evaluate_all_gp_expressions ( self, context ):
@@ -2110,38 +2067,6 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         ppl = ps.panel_parameter_list
         for k in ppl.keys():
             ppl[k].expr = ppl[k].expr
-
-        """
-        if ('pp_dict' in self) and (len(self['gp_dict']) > 0):
-            gp_dict = self['gp_dict']
-            if 'gp_ordered_list' in self:
-                dbprint ( "self['gp_ordered_list'] = " + str(self['gp_ordered_list']), thresh=1 )
-                gl = {}  # This is the dictionary to contain the globals and locals of the evaluated python expressions
-                for par_id in self['gp_ordered_list']:
-                    par = gp_dict[par_id]
-                    elist = pickle.loads(par['elist'].encode('latin1'))
-
-                    dbprint ( "Eval exprlist: " + str(elist) )
-                    if None in elist:
-                        dbprint ( "Expression Error: Contains None" )
-                    else:
-                        expr = ""
-                        for term in elist:
-                            if type(term) == int:
-                                # This is a parameter
-                                expr += " " + gp_dict["g"+str(term)]['name']
-                            elif type(term) == type('a'):
-                                # This is an operator or constant
-                                expr += " " + term
-                            else:
-                                dbprint ( "Error" )
-                            dbprint ( "Expr: " + par['name'] + " = " + expr )
-                        py_expr = self.build_expression ( elist, as_python=True )
-                        # Assign the value to the parameter item
-                        par['value'] = float(eval(py_expr,globals(),gl))
-                        # Make the assignment in the dictionary used as "globals" and "locals" for any parameters that depend on it
-                        gl[par['name']] = par['value']
-        """
 
 
     @profile('ParameterSystem.update_dependency_ordered_name_list')
@@ -2306,15 +2231,16 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             for desc_line in desc_list:
                 box.label (text=desc_line)
 
-
-    @profile('ParameterSystem.draw_layout')
-    def draw_layout ( self, context, layout ):
-
-        ### These are here for help during debugging when errors might cause the rest of the panel to not be drawn
-
+    def draw_debug_items ( self, context, layout ):
         row = layout.row()
         col = row.column()
         col.operator ( "mcell.add_par_list" )
+        col = row.column()
+        col.prop ( self, "num_pars_to_gen" )
+        col = row.column()
+        col.operator ( "mcell.delete_all_pars" )
+
+        row = layout.row()
         col = row.column()
         col.operator ( "mcell.print_gen_parameters" )
         col = row.column()
@@ -2326,9 +2252,13 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         row.operator("mcell.print_profiling", text="Print Profiling")
         row.operator("mcell.clear_profiling", text="Clear Profiling")
         row.prop ( self, "debug_level" )
+
+    @profile('ParameterSystem.draw_layout')
+    def draw_layout ( self, context, layout ):
+
         ### These are here for help during debugging when errors might cause the rest of the panel to not be drawn
-
-
+        self.draw_debug_items ( context, layout )
+        ### These are here for help during debugging when errors might cause the rest of the panel to not be drawn
 
         errors = set()
         if 'gp_dict' in self:
@@ -2475,34 +2405,6 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                     detail_box.label(text="No General Parameters Defined")
                     row = detail_box.row()
 
-
-
-
-                """
-                if len(ps.param_error_list) > 0:
-                    error_names_box = box.box()
-                    param_error_names = ps.param_error_list.split()
-                    for name in param_error_names:
-                        error_names_box.label(text="Parameter Error for: " + name, icon='ERROR')
-                """
-
-            """
-            row = layout.row()
-            row.operator("mcell.dump_parameters")
-            row.operator("mcell.eval_expr")
-            row.operator("mcell.eval_all_expr")
-            row.operator("mcell.reorder_names")
-            row = layout.row()
-            row.prop ( app, "debug_level" )
-            row.prop ( app, "num_back" )
-            row.prop ( app, "num_pars_to_gen" )
-            row = layout.row()
-            row.operator("mcell.clear_parameters")
-            row.operator("mcell.gen_good_parameters")
-            row.operator("mcell.gen_bad_parameters")
-            """
-
-
             row = box.row()
             row.prop(self, "param_display_mode", text="Parameter Display Mode")
             row = box.row()
@@ -2513,61 +2415,11 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             row = box.row()
             row.prop(self, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
 
-            """
-            row = box.row()
-            row.operator("mcell.print_profiling", text="Print Profiling")
-            row.operator("mcell.clear_profiling", text="Clear Profiling")
-            """
 
             row = box.row()
-            col = row.column()
-            col.operator ( "mcell.print_gen_parameters" )
-            col = row.column()
-            col.operator ( "mcell.print_pan_parameters" )
-            col = row.column()
-            col.prop ( self, "max_field_width" )
+            row.label ( "======== Debugging Controls ========" )
+            self.draw_debug_items ( context, box )
 
-            row = box.row()
-            row.operator("mcell.print_profiling", text="Print Profiling")
-            row.operator("mcell.clear_profiling", text="Clear Profiling")
-            row.prop ( self, "debug_level" )
-
-
-        """
-        if not self.show_debug:
-            layout.prop ( self, "show_debug", text="Show Debug", icon="TRIA_RIGHT" )
-        else:
-            layout.prop ( self, "show_debug", text="Show Debug", icon="TRIA_DOWN" )
-            #layout.prop(self, "active_elist")  # Use this to be able to edit the elist pickle
-            layout.label ( "elist pickle = " + str(self.active_elist) )
-            if len(self.active_elist) > 0:
-                elist = pickle.loads(self.active_elist.encode('latin1'))
-                layout.label ( "elist = " + str(elist) )
-
-            if len(self.general_parameter_list) > 0:
-
-                par_map_item = self.general_parameter_list[self.active_par_index]
-                par_name = par_map_item.name
-                par_id = par_map_item.par_id
-                elist = pickle.loads(self['gp_dict'][par_id]['elist'].encode('latin1'))
-                if None in elist:
-                   layout.label ( "Parameter " + par_name + " is {" + par_id + "} = " + str(elist) + " = ?" )
-                else:
-                  layout.label ( "Parameter " + par_name + " is {" + par_id + "} = " + str(elist) + " = " + self.build_expression ( elist ) )
-                if 'status' in self['gp_dict'][par_id]:
-                   if len(self['gp_dict'][par_id]['status']) > 0:
-                      layout.label ( "  Status = " + str(self['gp_dict'][par_id]['status']) )
-                #layout.label ( "Who I Depend On = " + str(self['gp_dict'][par_id]['who_i_depend_on']) )
-                layout.label ( "Who I Depend On ID = " + str(self['gp_dict'][par_id]['who_i_depend_on'].keys()) )
-                #layout.label ( "Who Depends On Me = " + str(self['gp_dict'][par_id]['who_depends_on_me']) )
-                layout.label ( "Who Depends On Me ID = " + str(self['gp_dict'][par_id]['who_depends_on_me'].keys()) )
-                # layout.prop(self, "active_elist", text="Expression List")
-                layout.prop(self, "last_selected_id")
-                layout.prop(par_map_item, "par_id")
-
-            row = layout.row()
-            row.operator("mcell.dump_parameters")
-        """
 
     @profile('ParameterSystem.draw_panel')
     def draw_panel ( self, context, panel ):
