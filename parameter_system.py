@@ -1570,6 +1570,27 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         #bpy.ops.mcell.print_pan_parameters()
 
 
+    # TODO: This function is a temporary mechanism to ensure unique names with as little work as possible while building an ID-based parameter system.
+    # TODO: This function accomplishes that task by simply appending a number to the name rather than flagging an error.
+    # TODO: This function should be replaced with a more proper error handling/notification system once the basic ID-based parameter system is working.
+    @profile('ParameterSystem.construct_unique_name')
+    def construct_unique_name( self, new_name ):
+        """ Construct a name that's not already in the list """
+        dbprint ( "construct_unique_name called" )
+
+        if new_name is None:
+            new_name = 'Parameter'
+        if new_name in self.general_parameter_list:
+            # Deal with duplicate names
+            base_name = (' ' + new_name).strip()  # This is just a mechanism to ensure a true copy
+            next_copy_num = 2
+            while base_name + '_' + str(next_copy_num) in self.general_parameter_list:
+                next_copy_num += 1
+            new_name = base_name + '_' + str(next_copy_num)
+        return new_name
+
+
+
     @profile('ParameterSystem.add_general_parameter')
     def add_general_parameter ( self, name=None, expr="0", units="", desc="" ):
         """ Add a new parameter to the list of parameters and set as the active parameter """
@@ -1580,9 +1601,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         new_gid = self.allocate_available_gid()
         new_gid_key = 'g'+str(new_gid)
         
-        new_name = name
-        if new_name is None:
-            new_name = 'Parameter_'+str(new_gid)
+        new_name = self.construct_unique_name ( name )
 
         new_id_par = self.new_parameter ( new_name=new_name, new_expr=expr, new_units=units, new_desc=desc )
 
@@ -1603,7 +1622,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     @profile('ParameterSystem.add_general_parameter_and_update')
     def add_general_parameter_and_update ( self, context, name=None, expr="0", units="", desc="" ):
-
+        """ This function is currenly only used by the test suite """
         self.add_general_parameter ( name, expr, units, desc )
 
         self.active_par_index_changed ( context )
@@ -1770,7 +1789,12 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             new_name = self.active_name
             if new_name != old_name:
                 # The name actually changed, so really perform the update
+
+                # First make the name unique in case it's already there
+                # TODO: This function is a temporary way to ensure unique names.
+                new_name = self.construct_unique_name( new_name )
                 dbprint ("Parameter name changed from " + old_name + " to " + new_name )
+
                 if pid in self['gp_dict']:
 
                     # Update this name
