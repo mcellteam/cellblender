@@ -863,7 +863,7 @@ class MCELL_OT_add_par_list(bpy.types.Operator):
 
     def execute(self, context):
         num_pars_to_gen = context.scene.mcell.parameter_system.num_pars_to_gen
-        num_back = 2
+        num_back = context.scene.mcell.parameter_system.num_pars_back
         make_loop = False
 
         pars = []
@@ -881,14 +881,14 @@ class MCELL_OT_add_par_list(bpy.types.Operator):
 
         if make_loop:
             mid = round(num_pars_to_gen / 2)
-            print ( " mid = " + str(mid) )
+            dbprint ( " mid = " + str(mid) )
             if (mid-1) >= 0:
                 # There are enough parameters to make a loop
                 pars[mid-1]['par_expression'] += " + " + pars[mid]['par_name']
 
-        print ( "Before call to add_general_parameters_from_list" )
+        dbprint ( "Before call to add_general_parameters_from_list" )
         context.scene.mcell.parameter_system.add_general_parameters_from_list ( context, pars )
-        print ( "After call to add_general_parameters_from_list" )
+        dbprint ( "After call to add_general_parameters_from_list" )
         return {'FINISHED'}
 
 
@@ -898,6 +898,7 @@ class MCELL_OT_remove_all_pars(bpy.types.Operator):
     bl_description = "Delete All Parameters"
     bl_options = {'REGISTER'}
     def execute(self, context):
+        status = ""
         while ( len(context.scene.mcell.parameter_system.general_parameter_list) > 0 ):
             status = context.scene.mcell.parameter_system.remove_active_parameter(context)
         if status != "":
@@ -981,6 +982,7 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
     elist = StringProperty(name="elist", default="(lp0\n.", description="Pickled Expression List")  # This ("(lp0\n.") is a pickled empty list: pickle.dumps([],protocol=0).decode('latin1')
     show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
+
     @profile('PanelParameterData.update_panel_expression')
     def update_panel_expression (self, context, gl=None):
         mcell = context.scene.mcell
@@ -1030,44 +1032,11 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
 
             # Recompute the value
 
-            # Start by creating a dictionary of values from all general parameters:
-
-            gl = {}  # This is the dictionary to contain the globals and locals of the evaluated python expressions
+            # Start by creating a dictionary of values from all general parameters if not passed in:
             valid = True
-            if True or ('gp_dict' in parameter_system): ## and (len(parameter_system['gp_dict']) > 0):
-                gp_dict = parameter_system['gp_dict']
-                if True or ('gp_ordered_list' in parameter_system):
-                    dbprint ( "parameter_system['gp_ordered_list'] = " + str(parameter_system['gp_ordered_list']), thresh=1 )
-                    for par_id in parameter_system['gp_ordered_list']:
-                        par = gp_dict[par_id]
-                        elist = pickle.loads(par['elist'].encode('latin1'))
-
-                        dbprint ( "Eval exprlist: " + str(elist) )
-                        if None in elist:
-                            print ( "Expression Error: Contains None" )
-                        else:
-                            expr = ""
-                            for term in elist:
-                                if type(term) == int:
-                                    # This is a parameter
-                                    expr += " " + gp_dict["g"+str(term)]['name']
-                                elif type(term) == type('a'):
-                                    # This is an operator or constant
-                                    expr += " " + term
-                                else:
-                                    dbprint ( "Error" )
-                                    valid = False
-                                dbprint ( "Expr: " + par['name'] + " = " + expr )
-                            py_expr = parameter_system.build_expression ( elist, as_python=True )
-                            if py_expr is None:
-                                print ( "Error: " + str(elist) + " cannot be evaluated" )
-                                par['value'] = 0.0
-                                valid = False
-                            else:
-                                # Assign the value to the parameter item
-                                par['value'] = float(eval(py_expr,globals(),gl))
-                            # Make the assignment in the dictionary used as "globals" and "locals" for any parameters that depend on it
-                            gl[par['name']] = par['value']
+            if gl is None:
+                gl = {}
+                valid = parameter_system.build_eval_dict ( gl )
 
             if not valid:
                 print ( "Error: " + str(parameterized_expr) + " cannot be evaluated" )
@@ -1344,7 +1313,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     show_all_details = BoolProperty(name="Show All Details", default=False)
     max_field_width = IntProperty(name="Max Field Width", default=20)
-    num_pars_to_gen = IntProperty(name="Num Pars", default=20)
+    num_pars_to_gen = IntProperty(name="Num Pars", default=5)
+    num_pars_back = IntProperty(name="Num Back", default=2)
 
     param_display_mode_enum = [ ('one_line',  "One line per parameter", ""), ('two_line',  "Two lines per parameter", "") ]
     param_display_mode = bpy.props.EnumProperty ( items=param_display_mode_enum, default='one_line', name="Parameter Display Mode", description="Display layout for each parameter" )
@@ -1656,6 +1626,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
         # Start by creating all of the parameters
 
+        print ( "Top of add_general_parameters_from_list" )
+
         for p in par_list:
 
             name = p['par_name']
@@ -1665,7 +1637,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             if 'par_units' in p: units = p['par_units']
             if 'par_description' in p: descr = p['par_description']
 
-            print ( "Bulk Adding " + name + " = " + expr + " (" + units + ") ... " + descr )
+            dbprint ( "Bulk Adding " + name + " = " + expr + " (" + units + ") ... " + descr )
             
             # Check to see if this name already exists in the name-to-id list
 
@@ -1697,6 +1669,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 rna_par.par_id = gid
                 rna_par.name = name
 
+        print ( "Step 2 of add_general_parameters_from_list" )
+
         # Determine the dependency order of the list
         if len(self['gp_dict']) > 0:
             gp_dict = self['gp_dict']
@@ -1707,10 +1681,17 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 dbprint ( "ParExp = " + str(parameterized_expr) )
                 par['elist'] = pickle.dumps(parameterized_expr,protocol=0).decode('latin1')
 
+        print ( "Step 3 of add_general_parameters_from_list" )
+
         for k in self['gp_dict'].keys():
             self.update_expr_list_by_id ( context, k )
 
-        self.update_all_parameters ( context )
+        print ( "Step 4 of add_general_parameters_from_list" )
+
+        # This one takes a long time:
+        self.update_all_parameters ( context )  # This calls update_dependency_ordered_name_list
+
+        print ( "Step 5 of add_general_parameters_from_list" )
 
         self.active_par_index = len(self.general_parameter_list)-1
 
@@ -1862,8 +1843,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 if None in elist:
                     # self['gp_dict'][par]['status'].add ( 'undef' ) # This would be the set operation, but we're using a dictionary
                     self['gp_dict'][par]['status']['undef'] = True   # Use "True" to flag the intention of 'undef' being in the set
+
             # Next add status based on loops:
             result = self.update_dependency_ordered_name_list()
+
             if len(result) > 0:
                 # There was a loop and result contains the names of unresolvable parameters
                 for par in self['gp_dict'].keys():
@@ -2029,9 +2012,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 for k in add_me_to:
                     self['gp_dict'][k]['who_depends_on_me'][gid] = True
 
-            dbprint ( "ExprList = " + str ( explst ) )
-            dbprint ( "MDL Expr = " + str ( self.build_expression ( explst ) ) )
-            dbprint ( "Py  Expr = " + str ( self.build_expression ( explst, as_python=True ) ) )
+            if self.debug_level >= 0:
+                dbprint ( "ExprList = " + str ( explst ) )
+                dbprint ( "MDL Expr = " + str ( self.build_expression ( explst ) ) )
+                dbprint ( "Py  Expr = " + str ( self.build_expression ( explst, as_python=True ) ) )
 
 
     @profile('ParameterSystem.evaluate_active_expression')
@@ -2081,10 +2065,56 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         dbprint ( "Evaluate all pp expressions" )
         ps = context.scene.mcell.parameter_system
         ppl = ps.panel_parameter_list
+        gl = {}
+        valid = self.build_eval_dict ( gl )
         for k in ppl.keys():
-            # TODO This causes a re-evaluation of all general parameters for each panel parameter which is very inefficient
+            # This causes a re-evaluation of all general parameters for each panel parameter which is very inefficient
             # ppl[k].expr = ppl[k].expr
-            ppl[k].update_panel_expression(context)
+            ppl[k].update_panel_expression(context, gl)
+
+
+    @profile('ParameterSystem.build_eval_dict')
+    def build_eval_dict ( self, gl ):
+        if gl is None:
+            gl = {}  # This is the dictionary to contain the globals and locals of the evaluated python expressions
+
+        valid = True
+        if True or ('gp_dict' in self): ## and (len(self['gp_dict']) > 0):
+            gp_dict = self['gp_dict']
+            if True or ('gp_ordered_list' in self):
+                dbprint ( "parameter_system['gp_ordered_list'] = " + str(self['gp_ordered_list']), thresh=1 )
+                for par_id in self['gp_ordered_list']:
+                    par = gp_dict[par_id]
+                    elist = pickle.loads(par['elist'].encode('latin1'))
+
+                    dbprint ( "Eval exprlist: " + str(elist) )
+                    if None in elist:
+                        print ( "Expression Error: Contains None" )
+                    else:
+                        expr = ""
+                        for term in elist:
+                            if type(term) == int:
+                                # This is a parameter
+                                expr += " " + gp_dict["g"+str(term)]['name']
+                            elif type(term) == type('a'):
+                                # This is an operator or constant
+                                expr += " " + term
+                            else:
+                                dbprint ( "Error" )
+                                valid = False
+                            dbprint ( "Expr: " + par['name'] + " = " + expr )
+                        py_expr = self.build_expression ( elist, as_python=True )
+                        if py_expr is None:
+                            print ( "Error: " + str(elist) + " cannot be evaluated" )
+                            par['value'] = 0.0
+                            valid = False
+                        else:
+                            # Assign the value to the parameter item
+                            par['value'] = float(eval(py_expr,globals(),gl))
+                        # Make the assignment in the dictionary used as "globals" and "locals" for any parameters that depend on it
+                        gl[par['name']] = par['value']
+        return valid
+
 
 
     @profile('ParameterSystem.update_dependency_ordered_name_list')
@@ -2255,6 +2285,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         col.operator ( "mcell.add_par_list" )
         col = row.column()
         col.prop ( self, "num_pars_to_gen" )
+        col = row.column()
+        col.prop ( self, "num_pars_back" )
         col = row.column()
         col.operator ( "mcell.delete_all_pars" )
 
