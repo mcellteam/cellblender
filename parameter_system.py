@@ -978,11 +978,11 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
     # There are only a few properties for items in this class ... most of the rest are in the parameter system itself.
     #self.name is a Blender defined key that should be set to the unique_static_name (new_pid_key) on creation (typically "p#")
     expr = StringProperty(name="Expression", default="0", description="Expression to be evaluated for this parameter", update=update_panel_expr)
-    elist = StringProperty(name="elist", default="(lp0\n.", description="Pickled Expression List")  # This is a pickled empty list: pickle.dumps([],protocol=0).decode('latin1')
+    elist = StringProperty(name="elist", default="(lp0\n.", description="Pickled Expression List")  # This ("(lp0\n.") is a pickled empty list: pickle.dumps([],protocol=0).decode('latin1')
     show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
     @profile('PanelParameterData.update_panel_expression')
-    def update_panel_expression (self, context):
+    def update_panel_expression (self, context, gl=None):
         mcell = context.scene.mcell
         parameter_system = mcell.parameter_system
         dbprint ( "Update the panel expression for " + self.name + " with keys = " + str(self.keys()) )
@@ -2082,7 +2082,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         ps = context.scene.mcell.parameter_system
         ppl = ps.panel_parameter_list
         for k in ppl.keys():
-            ppl[k].expr = ppl[k].expr
+            # TODO This causes a re-evaluation of all general parameters for each panel parameter which is very inefficient
+            # ppl[k].expr = ppl[k].expr
+            ppl[k].update_panel_expression(context)
 
 
     @profile('ParameterSystem.update_dependency_ordered_name_list')
