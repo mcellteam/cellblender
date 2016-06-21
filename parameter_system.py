@@ -749,8 +749,9 @@ class MCELL_OT_print_gen_parameters(bpy.types.Operator):
                     print ( "  " + ("  "*depth) + pname + "." + str(k) + " = " + str(item[k]) )
 
 
-    def print_items (self, d):
+    def print_items (self, d, ps):
         #self.print_subdict ( 'gp_dict', d, 0 )
+        fw = ps.max_field_width
         for k in d.keys():
             output = "  " + str(k) + " = "
             item = d[k]
@@ -763,7 +764,19 @@ class MCELL_OT_print_gen_parameters(bpy.types.Operator):
                 output += str(elist) + " = "
 
             if str(type(item)) == "<class 'IDPropertyGroup'>":
-                output += str(item.to_dict())
+                # output += str(item.to_dict())
+                ditem = item.to_dict()
+                output += "{ "
+                for dk in ditem.keys():
+                    ditem_str = str(ditem[dk])
+                    if dk == 'elist':
+                        #ditem_str = str(pickle.loads(ditem[dk].encode('latin1')))
+                        ditem_str = str(ditem[dk]).replace('\n',' ')
+                    output += str(dk) + ":" + ps.shorten_string(ditem_str,fw) + "  "  # ", "
+                if len(output) > 2:
+                    # Strip off the last ", "
+                    output = output[0:-2]
+                output += " }"
             else:
                 output += str(item)
             print ( output )
@@ -777,13 +790,15 @@ class MCELL_OT_print_gen_parameters(bpy.types.Operator):
         print ( "=== ID Parameters ===" )
 
         if 'gp_dict' in ps:
-            self.print_items ( ps['gp_dict'] )
+            self.print_items ( ps['gp_dict'], ps )
 
-        print ( "  = Ordered List =" )
+        print ( "  = Ordered Evaluation List =" )
 
         if 'gp_ordered_list' in ps:
+          ols = ""
           for k in ps['gp_ordered_list']:
-            print ( "    " + k )
+            ols += str(k) + " "
+          print ( "    " + ols )
 
         return {'FINISHED'}
 
@@ -802,18 +817,18 @@ class MCELL_OT_print_pan_parameters(bpy.types.Operator):
         fw = ps.max_field_width
         # ps.init_parameter_system()
 
-        print ( "  = RNA Panel Parameters =" )
+        print ( "=== RNA Panel Parameters ===" )
 
         ppl = ps.panel_parameter_list
         for k in ppl.keys():
             pp = ppl[k]
-            # pp is an RNA property, so the ID properties (and keys) might not exist yet ... use RNA references
-            s  = "    "
-            s += "  name : \"" + ps.shorten_string(str(pp.name),fw) + "\""
-            s += "  user_name : \"" + ps.shorten_string(str(pp['user_name']),fw) + "\""
-            s += "  expr : \"" + ps.shorten_string(str(pp.expr),fw) + "\""
+            # pp is an RNA property, so the ID properties (and keys) might not exist yet ... prefer RNA references
+            s  = ""
+            s += "  " + ps.shorten_string(str(pp.name),fw)
+            s += " = " + ps.shorten_string(str(pp['user_name']),fw)
+            s += " = \"" + ps.shorten_string(str(pp.expr),fw) + "\""
             elist = pickle.loads(pp.elist.encode('latin1'))
-            s += "  elist : \"" + ps.shorten_string(str(elist),fw) + "\""
+            s += ",  elist : \"" + ps.shorten_string(str(elist),fw) + "\""
             v = "??"
             if 'value' in pp:
                 v = str(pp['value'])
