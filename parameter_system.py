@@ -772,6 +772,8 @@ class MCELL_OT_print_gen_parameters(bpy.types.Operator):
                     if dk == 'elist':
                         #ditem_str = str(pickle.loads(ditem[dk].encode('latin1')))
                         ditem_str = str(ditem[dk]).replace('\n',' ')
+                    if type(ditem[dk]) == type('abc'):
+                        ditem_str = "\"" + ditem_str + "\""
                     output += str(dk) + ":" + ps.shorten_string(ditem_str,fw) + "  "  # ", "
                 if len(output) > 2:
                     # Strip off the last ", "
@@ -835,7 +837,10 @@ class MCELL_OT_print_pan_parameters(bpy.types.Operator):
             s += "  value : " + v + ""
             for pk in pp.keys():
                 if not (pk in ['name', 'user_name', 'expr', 'elist', 'value']):
-                    s += "  " + str(pk) + " : \"" + ps.shorten_string(str(pp[pk]),fw) + "\""
+                    v = ps.shorten_string(str(pp[pk]),fw)
+                    if type(pp[pk]) == type('abc'):
+                        v = "\"" + v + "\""
+                    s += "  " + str(pk) + " : " + v
             s += "  elistp : \"" + ps.shorten_string(str(pp.elist),fw) + "\""
             print ( s.replace('\n',' ') )
 
@@ -1046,7 +1051,10 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
                 py_expr = parameter_system.build_expression ( parameterized_expr, as_python=True )
                 if (py_expr != None) and (len(py_expr.strip()) > 0):
                     self['valid'] = True
-                    self['value'] = float(eval(py_expr,globals(),gl))
+                    try:
+                        self['value'] = float(eval(py_expr,globals(),gl))
+                    except:
+                        self['valid'] = False
                 else:
                     self['valid'] = False
                     self['value'] = 0.0
@@ -1208,28 +1216,34 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         rna_par = parameter_system.panel_parameter_list[self.unique_static_name]
 
         val = "??"
+        icon = 'ERROR'
         if 'value' in rna_par:
             if not (rna_par['value'] is None):
                 if rna_par['user_type'] == 'i':
                     val = str(int(rna_par['value']))
                 else:
                     val = str(rna_par['value'])
+                icon = 'NONE'
+        if 'valid' in rna_par:
+            if not rna_par['valid']:
+                val = "??"
+                icon = 'ERROR'
 
         if parameter_system.param_display_mode == 'one_line':
             split = row.split(parameter_system.param_label_fraction)
             col = split.column()
-            col.label ( text=rna_par['user_name']+" = "+val )
+            col.label ( text=rna_par['user_name']+" = "+val, icon=icon )
             col = split.column()
-            col.prop ( rna_par, "expr", text="" )
+            col.prop ( rna_par, "expr", text="", icon=icon )
             col = row.column()
             col.prop ( rna_par, "show_help", icon='INFO', text="" )
         elif parameter_system.param_display_mode == 'two_line':
-            row.label ( icon='NONE', text=rna_par['user_name']+" = "+val )
+            row.label ( text=rna_par['user_name']+" = "+val, icon=icon )
             row = layout.row()
             split = row.split(0.03)
             col = split.column()
             col = split.column()
-            col.prop ( rna_par, "expr", text="" )
+            col.prop ( rna_par, "expr", text="", icon=icon )
             col = row.column()
             col.prop ( rna_par, "show_help", icon='INFO', text="" )
 
@@ -1475,7 +1489,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             'user_type' : new_type,
             'who_i_depend_on': {},      # This ID dictionary acts as a set
             'who_depends_on_me': {},    # This ID dictionary acts as a set
-            'what_depends_on_me': {}    # This ID dictionary acts as a set
+            'what_depends_on_me': {},   # This ID dictionary acts as a set
+            'status': {}                # This ID dictionary acts as a set
             }
         return ( new_par_id_dict )
 
@@ -1962,11 +1977,11 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     @profile('ParameterSystem.draw')
     def draw(self, context, layout):
         if len(self.general_parameter_list) > 0:
-            layout.prop(self, "active_name")
-            layout.prop(self, "active_expr")
+            layout.prop(self, "active_name", text='Name')
+            layout.prop(self, "active_expr", text='Expression')
             # layout.prop(self, "active_elist")
-            layout.prop(self, "active_units")
-            layout.prop(self, "active_desc")
+            layout.prop(self, "active_units", text='Units')
+            layout.prop(self, "active_desc", text='Description')
 
 
     @profile('ParameterSystem.update_expr_list_by_id')
@@ -1997,7 +2012,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             """
             dbprint ( "Eval exprlist: " + str(explst) )
             if None in explst:
-                dbprint ( "Expression Error: Contains None" )
+                dbprint ( "Expression Error: Contains None during update_expr_list_by_id" )
             else:
                 expr = ""
 
@@ -2064,7 +2079,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
                     dbprint ( "Eval exprlist: " + str(elist) )
                     if None in elist:
-                        dbprint ( "Expression Error: Contains None" )
+                        dbprint ( "Expression Error: Contains None during evaluate_all_gp_expressions" )
                     else:
                         expr = ""
                         for term in elist:
@@ -2099,6 +2114,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     @profile('ParameterSystem.build_eval_dict')
     def build_eval_dict ( self, gl ):
+        """ Build a dictionary of { par_name:par_val } for all valid expressions """
+        # Simply omit any names that are not valid. This will trigger an evaluation error later.
         if gl is None:
             gl = {}  # This is the dictionary to contain the globals and locals of the evaluated python expressions
 
@@ -2113,28 +2130,36 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
                     dbprint ( "Eval exprlist: " + str(elist) )
                     if None in elist:
-                        print ( "Expression Error: Contains None" )
+                        print ( "Expression Error: Contains None during build_eval_dict" )
+                        if 'value' in par:
+                            par.pop('value')
                     else:
-                        expr = ""
-                        for term in elist:
-                            if type(term) == int:
-                                # This is a parameter
-                                expr += " " + gp_dict["g"+str(term)]['name']
-                            elif type(term) == type('a'):
-                                # This is an operator or constant
-                                expr += " " + term
-                            else:
-                                dbprint ( "Error" )
-                                valid = False
-                            dbprint ( "Expr: " + par['name'] + " = " + expr )
+                        if self.debug_level >= 0:
+                            # Build an expression and print as it is built
+                            expr = ""
+                            for term in elist:
+                                if type(term) == int:
+                                    # This is a parameter
+                                    expr += " " + gp_dict["g"+str(term)]['name']
+                                elif type(term) == type('a'):
+                                    # This is an operator or constant
+                                    expr += " " + term
+                                else:
+                                    dbprint ( "Unexpected Type Error in " + str(elist) )
+                                    if 'value' in par:
+                                        par.pop('value')
+                                    valid = False
+                                dbprint ( "Expr: " + par['name'] + " = " + expr )
                         py_expr = self.build_expression ( elist, as_python=True )
                         if py_expr is None:
                             print ( "Error: " + str(elist) + " cannot be evaluated" )
-                            par['value'] = 0.0
+                            if 'value' in par:
+                                par.pop('value')
                             valid = False
                         else:
                             # Assign the value to the parameter item
                             par['value'] = float(eval(py_expr,globals(),gl))
+                    if 'value' in par:
                         # Make the assignment in the dictionary used as "globals" and "locals" for any parameters that depend on it
                         gl[par['name']] = par['value']
         return valid
@@ -2160,7 +2185,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 for k in items_not_in_global_dict:
                     #gp_ordered_list.remove(k)
                     gp_ordered_list = [ i for i in gp_ordered_list if i != k ]  # This is one way to remove an item in a read only list
-                    
+
             items_not_in_ordered_list = set(glkeys) - set(self['gp_ordered_list'])
             if len(items_not_in_ordered_list) > 0:
                 # There are some items in the global list that are not yet in the ordered list. Add them.
@@ -2169,7 +2194,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                     gp_ordered_list = [ i for i in gp_ordered_list ] + [ k ]  # This is one way to add an item to a read only list
 
             assert len(gp_ordered_list) == len(gp_dict)
-            
+
             # Continually loop through all parameters until they're either all in order or a loop is detected
             double_check_count = 0
             gl = self['gp_dict']
@@ -2367,10 +2392,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             par_map_item = self.general_parameter_list[self.active_par_index]
             par_name = par_map_item.name
             par_id = par_map_item.par_id
-            layout.prop(self, "active_name")
-            layout.prop(self, "active_expr")
-            layout.prop(self, "active_units")
-            layout.prop(self, "active_desc")
+            layout.prop(self, "active_name", text='Name')
+            layout.prop(self, "active_expr", text='Expression')
+            layout.prop(self, "active_units", text='Units')
+            layout.prop(self, "active_desc", text='Description')
 
             elist = pickle.loads(self.active_elist.encode('latin1'))
             
