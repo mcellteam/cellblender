@@ -52,6 +52,8 @@ cb.replace_data_model ( dm )
 
 """
 
+#Handy debugging line:  __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
 import bpy
 from bpy.props import *
 from math import *
@@ -1271,9 +1273,9 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 ### They just call the function with the same name from within the class
 
 
-##@profile('ParameterSystemCallBack.active_par_index_changed')
-def active_par_index_changed ( self, context ):
-    self.active_par_index_changed ( context, interactive=True )
+##@profile('ParameterSystemCallBack.update_parameter_index')
+def update_parameter_index ( self, context ):
+    self.update_parameter_index ( context, interactive=True )
 
 ##@profile('ParameterSystemCallBack.update_parameter_name')
 def update_parameter_name ( self, context ):
@@ -1306,12 +1308,15 @@ class ParameterMappingProperty(bpy.types.PropertyGroup):
 
 
 class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler ):
-    """This is the class that encapsulates a group (or list) of general purpose parameters"""
+    """Root of CellBlender's Parameter Handling Capabilities"""
+    # ID Property: gp_dict - Indexed by g# key. Holds the data for each parameter (name, expression, elist, units, description, dependencies)
+    # ID Property: gp_ordered_list - List of g# keys in dependency order for evaluation.
+
     general_parameter_list = CollectionProperty(type=ParameterMappingProperty) # , name="Parameters List"
     panel_parameter_list = CollectionProperty(type=PanelParameterData) # , name="Panel Parameters List"
     next_gid = IntProperty(default=0) # name="Counter for Unique General Parameter IDs",
     next_pid = IntProperty(default=0) # name="Counter for Unique Panel Parameter IDs",
-    active_par_index = IntProperty(default=0,                                                                 update=active_par_index_changed) # name="Active Parameter",
+    active_par_index = IntProperty(default=0,                                                                 update=update_parameter_index) # name="Active Parameter",
     active_name  = StringProperty(default="Par", description="User name for this parameter (must be unique)", update=update_parameter_name)    # name="Parameter Name",
     active_elist = StringProperty(default="",    description="Pickled Expression list for this parameter",    update=update_parameter_elist)   # name="Expression List",
     active_expr  = StringProperty(default="0",   description="Expression to be evaluated for this parameter", update=update_parameter_expression) # name="Expression",
@@ -1637,10 +1642,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     @profile('ParameterSystem.add_general_parameter_and_update')
     def add_general_parameter_and_update ( self, context, name=None, expr="0", units="", desc="" ):
-        """ This function is currenly only used by the test suite """
+        """ This function is currently only used by the test suite """
         self.add_general_parameter ( name, expr, units, desc )
 
-        self.active_par_index_changed ( context )
+        self.update_parameter_index ( context )
         self.update_parameter_name ( context )
 
         self.active_expr = expr
@@ -1771,14 +1776,14 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         return ( status )
 
 
-    @profile('ParameterSystem.active_par_index_changed')
-    def active_par_index_changed ( self, context, interactive=False ):
+    @profile('ParameterSystem.update_parameter_index')
+    def update_parameter_index ( self, context, interactive=False ):
         """ Swap the ID property versions of this parameter into the active RNA properties to be displayed and possibly edited. """
         # The "self" passed in is a ParameterSystemPropertyGroup object.
         dbprint ( "Type of self = " + str ( type(self) ), thresh=50 )
 
         par_num = self.active_par_index  # self.active_par_index is what gets changed when the user selects an item
-        dbprint ( "par_num = " + str(par_num) )
+        dbprint ( "update_parameter_index callback: par_num = " + str(par_num) )
         if (par_num >= 0) and (len(self.general_parameter_list) > 0):
             par_id = self.general_parameter_list[par_num].par_id
             self.last_selected_id = "" + par_id
@@ -1796,7 +1801,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
         if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
             pid = self.last_selected_id
-            old_name = ""
+            old_name = "\1\2\3\4\5\6\7" # This should be a string that cannot be legally entered as a parameter name
             try:
                 old_name = str(self['gp_dict'][pid]['name'])  # Note that sometimes the old name cannot be found
             except:
