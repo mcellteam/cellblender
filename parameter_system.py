@@ -94,7 +94,7 @@ class profile:
     def __init__(self,name):
         self.name = name
 
-    def print_frame(self):
+    def print_call_stack(self):
         frame = inspect.currentframe()
         call_list_frames = inspect.getouterframes(frame)
         filtered_frames = [ {"function":f.function, "line":f.lineno, "file":f.filename} for f in call_list_frames if not ( f.function in ("execute", "print_frame", "profile_fun", "draw", "draw_self", "draw_layout") ) ]
@@ -120,7 +120,9 @@ class profile:
                 # print ( "    Frame: " + str(f.function) + " at " + str(f.lineno) + " in "  + str(f.filename.split('/')[-1].split('.')[0]) )
             if num_repeat > 0:
                 s += last_call + (num_repeat * "*") + sep
-            print ( s[len(sep):-len(sep)] )
+            s = s[len(sep):-len(sep)]
+            if len(s) > 0:
+                print ( s )
 
         del filtered_frames
         del call_list_frames
@@ -128,7 +130,7 @@ class profile:
 
     def __call__(self,fun):
         def profile_fun(*args, **kwargs):
-            ## self.print_frame()
+            self.print_call_stack()               # This will print the call stack as each function is called
             start = time.clock()
             try:
                 return fun(*args, **kwargs)
@@ -673,6 +675,13 @@ class Expression_Handler:
         self.count_stub()
         if type(pt) == tuple:
             # This is a tuple, so find out if it's a terminal leaf in the parse tree
+            # Note: This code didn't use the token.ISTERMINAL function.
+            # It might have been written as:
+            #   terminal = False
+            #   if len(pt) > 0:
+            #     if token.ISTERMINAL(pt[0]):
+            #       terminal = True
+            # However, that doesn't check that the terminal is a 2-tuple containing a string
             terminal = False
             if len(pt) == 2:
                 if type(pt[1]) == str:
