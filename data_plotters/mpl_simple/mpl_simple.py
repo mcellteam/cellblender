@@ -2,8 +2,6 @@
 
 import sys
 import numpy
-import scipy
-import pylab
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 

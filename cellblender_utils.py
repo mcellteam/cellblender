@@ -84,8 +84,9 @@ def check_val_str(val_str, min_val, max_val):
 
 def get_python_path ( mcell=None ):
     # If python path was set by user, use that one. Otherwise, try to
-    # automatically find it. This will probably fail on Windows unless it's
-    # set in the PATH.
+    # use bundled version (this should have everything we need, e.g.,
+    # matplotlib, numpy, etc). If that doesn't work, try to find it in the
+    # user's PATH. This last option will probably fail on Windows.
     python_path = None
     if mcell and mcell.cellblender_preferences.python_binary_valid:
         python_path = mcell.cellblender_preferences.python_binary
