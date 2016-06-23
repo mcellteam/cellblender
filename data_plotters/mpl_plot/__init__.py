@@ -2,6 +2,7 @@ import os
 import subprocess
 import shutil
 
+from cellblender.cellblender_utils import get_python_path
 
 def get_name():
     return("MatPlotLib Plotter")
@@ -9,9 +10,8 @@ def get_name():
 
 def requirements_met():
     ok = True
-    required_modules = ['matplotlib', 'matplotlib.pyplot', 'pylab', 'numpy',
-                        'scipy']
-    python_command = shutil.which("python", mode=os.X_OK)
+    required_modules = ['matplotlib', 'matplotlib.pyplot', 'pylab', 'numpy']
+    python_command = get_python_path()
     if python_command is None:
         print("  Python is needed for \"%s\"" % (get_name()))
         ok = False
@@ -30,22 +30,22 @@ def requirements_met():
                 #       "is available through external python interpreter")
                 pass
             else:
-                print("  ", plot_mod,
-                      "is not available through external python interpreter")
+                print("  One or more required modules (i.e., " + 
+                      ", ".join(required_modules) + ") are not available through " +
+                      get_python_path())
                 ok = False
     return ok
 
 
 def plot(data_path, plot_spec, python_path=None):
-    # We should  not use python_path because it might point to Blender's
-    # python, which doesn't have matplotlib, scipy, numpy
+    # The bundled version of python now has maplotlib, so we can use it here.
     program_path = os.path.dirname(__file__)
     # print("MPL Plotter called with %s, %s" % (data_path, plot_spec))
     # print("Plotter-specific files are located here: %s" %(program_path))
 
     # mpl_plot.py accepts all generic parameters, so no translation is needed
 
-    python_cmd = shutil.which("python", mode=os.X_OK)
+    python_cmd = python_path
 
     if python_cmd is None:
         print("Unable to plot: python not found in path")
