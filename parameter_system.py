@@ -97,15 +97,30 @@ class profile:
     def print_frame(self):
         frame = inspect.currentframe()
         call_list_frames = inspect.getouterframes(frame)
-        filtered_frames = [ f for f in call_list_frames if not ( f.function in ("execute", "print_frame", "profile_fun", "draw", "draw_self") ) ]
+        filtered_frames = [ {"function":f.function, "line":f.lineno, "file":f.filename} for f in call_list_frames if not ( f.function in ("execute", "print_frame", "profile_fun", "draw", "draw_self", "draw_layout") ) ]
         
         if len(filtered_frames) > 0:
+            filtered_frames.reverse()
             s = ""
+            last_call = ""
+            num_repeat = 0
+            sep = " ->  "
             for f in filtered_frames:
-                # Each will have: frame object, filename, current line 3, function name, context source lines, relative source line index
-                s = str(f.function) + '[' + str(f.lineno) + ' in ' + str(f.filename.split('/')[-1].split('.')[0]) + ']' + "  ->  " + s
+                # this_call = str(f["function"]) + '[' + str(f["line"]) + ' in ' + str(f["file"].split('/')[-1].split('.')[0]) + ']'
+                this_call = str(f["function"]).strip()
+                if this_call == last_call:
+                    num_repeat += 1
+                else:
+                    repeat_str = num_repeat * "*"
+                    #if len(repeat_str) > 0:
+                    #    repeat_str = " " + repeat_str + " "
+                    s += last_call + repeat_str + sep
+                    num_repeat = 0
+                    last_call = this_call
                 # print ( "    Frame: " + str(f.function) + " at " + str(f.lineno) + " in "  + str(f.filename.split('/')[-1].split('.')[0]) )
-            print ( s[0:-4] )
+            if num_repeat > 0:
+                s += last_call + (num_repeat * "*") + sep
+            print ( s[len(sep):-len(sep)] )
 
         del filtered_frames
         del call_list_frames
@@ -113,7 +128,7 @@ class profile:
 
     def __call__(self,fun):
         def profile_fun(*args, **kwargs):
-            self.print_frame()
+            ## self.print_frame()
             start = time.clock()
             try:
                 return fun(*args, **kwargs)
@@ -668,23 +683,27 @@ class Expression_Handler:
                     expression_keywords = self.get_expression_keywords()
                     if pt[1] in expression_keywords:
                         # This is a recognized name and not a user-defined symbol, so append the string itself
-                        return current_expr + [ pt[1] ]
+                        # return current_expr + [ pt[1] ]
+                        return current_expr.append ( pt[1] )
                     else:
                         # This must be a user-defined symbol, so check if it's in the dictionary
                         pt1_str = str(pt[1])
                         #if pt[1] in local_name_ID_dict:
                         if pt1_str in local_name_ID_dict:
-                            dbprint ( "Found a user defined name in the dictionary: " + pt1_str )
-                            dbprint ( "  Maps to: " + str(local_name_ID_dict[pt1_str]['par_id']) )
+                            #dbprint ( "Found a user defined name in the dictionary: " + pt1_str )
+                            #dbprint ( "  Maps to: " + str(local_name_ID_dict[pt1_str]['par_id']) )
                             # Append the integer ID to the list after stripping off the leading "g"
-                            return current_expr + [ int(local_name_ID_dict[pt1_str]['par_id'][1:]) ]
+                            #return current_expr + [ int(local_name_ID_dict[pt1_str]['par_id'][1:]) ]
+                            return current_expr.append ( int(local_name_ID_dict[pt1_str]['par_id'][1:]) )
                         else:
-                            dbprint ( "Found a user defined name NOT in the dictionary: " + pt1_str )
+                            #dbprint ( "Found a user defined name NOT in the dictionary: " + pt1_str )
                             # Not in the dictionary, so append a None flag followed by the undefined name
-                            return current_expr + [ None, pt[1] ]
+                            #return current_expr + [ None, pt[1] ]
+                            return current_expr.append(None).append( pt[1] )
                 else:
                     # This is a non-name part of the expression
-                    return current_expr + [ pt[1] ]
+                    #return current_expr + [ pt[1] ]
+                    return current_expr.append ( pt[1] )
             else:
                 # Break it down further
                 for i in range(len(pt)):
