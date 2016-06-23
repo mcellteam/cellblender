@@ -67,7 +67,7 @@ import pickle
 import time
 import io
 
-
+import inspect
 
 def dbprint ( s, thresh=1 ):   # Threshold high means no printing, Threshold low (or negative) means lots of printing
     ps = bpy.context.scene.mcell.parameter_system
@@ -94,8 +94,26 @@ class profile:
     def __init__(self,name):
         self.name = name
 
+    def print_frame(self):
+        frame = inspect.currentframe()
+        call_list_frames = inspect.getouterframes(frame)
+        filtered_frames = [ f for f in call_list_frames if not ( f.function in ("execute", "print_frame", "profile_fun", "draw", "draw_self") ) ]
+        
+        if len(filtered_frames) > 0:
+            s = ""
+            for f in filtered_frames:
+                # Each will have: frame object, filename, current line 3, function name, context source lines, relative source line index
+                s = str(f.function) + '[' + str(f.lineno) + ' in ' + str(f.filename.split('/')[-1].split('.')[0]) + ']' + "  ->  " + s
+                # print ( "    Frame: " + str(f.function) + " at " + str(f.lineno) + " in "  + str(f.filename.split('/')[-1].split('.')[0]) )
+            print ( s[0:-4] )
+
+        del filtered_frames
+        del call_list_frames
+        del frame
+
     def __call__(self,fun):
         def profile_fun(*args, **kwargs):
+            self.print_frame()
             start = time.clock()
             try:
                 return fun(*args, **kwargs)
@@ -862,10 +880,13 @@ class MCELL_OT_add_par_list(bpy.types.Operator):
             name = chr(ord('a')+n)
         else:
             name = "P_" + str(n)
+        """
+        # These were helpful for testing filtering (by "x" or "y", for example)
         if (n % 3) == 0:
             name += 'x'
         if (n % 3) == 1:
             name += 'y'
+        """
         return name
 
     def execute(self, context):
