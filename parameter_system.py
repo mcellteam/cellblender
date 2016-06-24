@@ -130,7 +130,7 @@ class profile:
 
     def __call__(self,fun):
         def profile_fun(*args, **kwargs):
-            self.print_call_stack()               # This will print the call stack as each function is called
+            #self.print_call_stack()               # This will print the call stack as each function is called
             start = time.clock()
             try:
                 return fun(*args, **kwargs)
