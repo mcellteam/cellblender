@@ -2,6 +2,7 @@ import os
 import bpy
 import shutil
 import sys
+import subprocess
 
 
 def timeline_view_all ( context ):
@@ -82,21 +83,40 @@ def check_val_str(val_str, min_val, max_val):
     return (val, status)
 
 
-def get_python_path ( mcell=None ):
-    # If python path was set by user, use that one. Otherwise, try to
-    # use bundled version (this should have everything we need, e.g.,
-    # matplotlib, numpy, etc). If that doesn't work, try to find it in the
-    # user's PATH. This last option will probably fail on Windows.
-    python_path = None
-    if mcell and mcell.cellblender_preferences.python_binary_valid:
-        python_path = mcell.cellblender_preferences.python_binary
-        print ( "Using user specified Python: " + python_path )
-    elif (bpy.app.binary_path_python != None) and (len(bpy.app.binary_path_python) > 0):
-        python_path = bpy.app.binary_path_python
-        print ( "Using Blender's Python: " + python_path )
+def try_to_import(python_path, required_modules):
+    if (required_modules == None):
+        return True
+
+    import_test = ''
+    for module in required_modules:
+        import_test += 'import %s\n' % (module)
+    
+    cmd = [python_path, '-c', import_test] 
+    process = subprocess.Popen(cmd, stderr=subprocess.PIPE)
+    process.wait()
+    if (process.poll()):
+        return False
     else:
+        return True
+
+
+def get_python_path(required_modules=None, mcell=None):
+    python_path = None
+    # Try user assigned python path first. This won't work if we don't have
+    # bpy.context.scene.mcell
+    if (mcell and mcell.cellblender_preferences.python_binary_valid and
+            try_to_import(mcell.cellblender_preferences.python_binary, required_modules)):
+        python_path = mcell.cellblender_preferences.python_binary
+        print("Using user specified Python: " + python_path)
+    # Try to use the built-in version. This will require the bundled miniconda
+    # version for the matplotlib plotters.
+    elif (try_to_import(bpy.app.binary_path_python, required_modules)):
+        python_path = bpy.app.binary_path_python
+        print("Using Blender's Python: " + python_path)
+    # Try python in the user's PATH. This will probably fail on Windows.
+    elif (try_to_import(shutil.which("python", mode=os.X_OK), required_modules)):
         python_path = shutil.which("python", mode=os.X_OK)
-        print ( "Using shutil.which Python: " + python_path )
+        print("Using shutil.which Python: " + python_path)
     return python_path
 
 

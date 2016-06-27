@@ -310,7 +310,7 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
         plot_spec_string += " tf="+ReactionDataTmpFile.reactdata_tmpfile
         print("Plotting from", data_path)
         print("Plotting spec", plot_spec_string)
-        python_path = get_python_path()
+        python_path = get_python_path(mcell=mcell)
         plot_module.plot(data_path, plot_spec_string, python_path)
 
         return {'FINISHED'}

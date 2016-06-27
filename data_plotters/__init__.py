@@ -70,17 +70,14 @@ def find_plotting_options():
                     import_name = plot_plugin
                     module_name_list = module_name_list + [f]
                     # print ( "Attempting to import %s" % (import_name) )
-                    try:
-                        plot_module = __import__ ( f )
-                        # print ( "Checking requirements for %s" % ( plot_module.get_name() ) )
-                        if plot_module.requirements_met():
-                            # print ( "System requirements met for Plot Module \"%s\"" % ( plot_module.get_name() ) )
-                            module_list = module_list + [ plot_module ]
-                        else:
-                            print ( "System requirements NOT met for Plot Module \"%s\"" % ( plot_module.get_name() ) )
-                        # print ( "Imported __init__.py from %s" % (f) )
-                    except:
-                        print ( "Directory %s did not contain a working __init__.py file" % (f) )
+                    plot_module = __import__ ( f )
+                    # print ( "Checking requirements for %s" % ( plot_module.get_name() ) )
+                    if plot_module.requirements_met():
+                        # print ( "System requirements met for Plot Module \"%s\"" % ( plot_module.get_name() ) )
+                        module_list = module_list + [ plot_module ]
+                    else:
+                        print ( "System requirements NOT met for Plot Module \"%s\"" % ( plot_module.get_name() ) )
+                    # print ( "Imported __init__.py from %s" % (f) )
     return ( module_list )
 
 

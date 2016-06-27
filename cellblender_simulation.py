@@ -153,7 +153,7 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
         project_dir = mcell_files_path()
         status = ""
 
-        python_path = cellblender.cellblender_utils.get_python_path ( mcell )
+        python_path = cellblender.cellblender_utils.get_python_path(mcell=mcell)
 
         if python_path:
             if not mcell.cellblender_preferences.decouple_export_run:
@@ -252,7 +252,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
         project_dir = mcell_files_path()
         status = ""
 
-        python_path = cellblender.cellblender_utils.get_python_path ( mcell )
+        python_path = cellblender.cellblender_utils.get_python_path(mcell=mcell)
 
         if python_path:
             if not mcell.cellblender_preferences.decouple_export_run:

@@ -1,6 +1,5 @@
 import os
 import subprocess
-import shutil
 
 from cellblender.cellblender_utils import get_python_path
 
@@ -11,32 +10,10 @@ def get_name():
 def requirements_met():
     ok = True
     required_modules = ['matplotlib', 'matplotlib.pyplot', 'pylab', 'numpy']
-    python_command = get_python_path()
+    python_command = get_python_path(required_modules=required_modules)
     if python_command is None:
         print("  Python is needed for \"%s\"" % (get_name()))
         ok = False
-    else:
-        import_test_program = ''
-        for plot_mod in required_modules:
-            import_test_program = import_test_program + 'import %s\n' % (plot_mod)
-        
-        import_test_program = import_test_program + 'print("Found=OK")\n'
-        process = subprocess.Popen(
-            [python_command, '-c', import_test_program],
-            shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE)
-        process.poll()
-        output = process.stdout.readline()
-        strout = str(output)
-        if (strout is not None) & (strout.find("Found=OK") >= 0):
-            # print("  ", plot_mod,
-            #       "is available through external python interpreter")
-            pass
-        else:
-            print("  One or more required modules (i.e., " + 
-                  ", ".join(required_modules) + ") are not available through " +
-                  get_python_path())
-            ok = False
     return ok
 
 
