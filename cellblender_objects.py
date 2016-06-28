@@ -1047,16 +1047,24 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             # Add the surface regions to new_obj.mcell
             
             if model_object.get('define_surface_regions'):
+                #for rgn in model_object['define_surface_regions']:
+                #    print ( "  Need to add region:[" + rgn['name'] + "]" )
                 for rgn in model_object['define_surface_regions']:
-                    print ( "  Building region[" + rgn['name'] + "]" )
+                    #print ( "  Building region[" + rgn['name'] + "]" )
 
                     bpy.ops.object.select_all ( action = "DESELECT" )
                     new_obj.select = True
                     context.scene.objects.active = new_obj
 
+                    #print ( "    Before add_region_by_name" )
                     new_obj.mcell.regions.add_region_by_name ( context, rgn['name'] )
+                    #print ( "    After add_region_by_name" )
                     reg = new_obj.mcell.regions.region_list[rgn['name']]
+                    #print ( "    After assignment" )
                     reg.set_region_faces ( new_mesh, set(rgn['include_elements']) )
+                    #print ( "    After set_region_faces" )
+
+                #print ( "  Done building all regions" )
 
         if most_recent_object != None:
 
