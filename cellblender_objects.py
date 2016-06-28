@@ -1058,6 +1058,8 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     reg = new_obj.mcell.regions.region_list[rgn['name']]
                     reg.set_region_faces ( new_mesh, set(rgn['include_elements']) )
 
+                print ( "  Done building all regions" )
+
         if most_recent_object != None:
 
             bpy.ops.object.select_all ( action = "DESELECT" )
