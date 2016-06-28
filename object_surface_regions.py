@@ -473,11 +473,11 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
     def add_region(self, context):
         """ Add a new region to the list of regions and set as the active region """
         id = self.allocate_id()
-        new_reg=self.region_list.add()
+        new_reg=self.region_list.add()  # Note that this invalidates any handles that had been obtained from this list
         new_reg.init_region(context, id)
 # FIXME: CHECK FOR NAME COLLISION HERE: FIX BY ALLOCATING NEXT ID...
         reg_name = "Region_%d" % (new_reg.id)
-        new_reg.name = reg_name
+        new_reg.name = reg_name  # This will cause sorting via the callback to region_update on the region name
         idx = self.region_list.find(reg_name)
         self.active_reg_index = idx
 
@@ -486,28 +486,32 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
         """ Add a new region to the list of regions and set as the active region """
         #print ( "      Adding a new region by name with reg_name = " + str(reg_name) )
         curr_reg = self.get_active_region()
+        curr_reg_name = ""
+        if curr_reg:
+            curr_reg_name = curr_reg.name
 
         id = self.allocate_id()
-        new_reg=self.region_list.add()
+        new_reg=self.region_list.add()  # Note that this invalidates any handles that had been obtained from this list
         #print ( "      Before init_region" )
         new_reg.init_region(context, id)
         #print ( "      After init_region" )
         # FIXME: CHECK FOR NAME COLLISION HERE: FIX BY ALLOCATING NEXT ID...
-        new_reg.name = reg_name
+        new_reg.name = reg_name  # This will cause sorting via the callback to region_update on the region name
 
-        if not curr_reg:
-          #print ( "      set curr_reg = new_reg" )
-          curr_reg = new_reg
+        if curr_reg_name == "":
+            curr_reg_name = reg_name
+        #if not curr_reg:
+        #  #print ( "      set curr_reg = new_reg" )
+        #  curr_reg = new_reg
         #print ( "      Before Find" )
 
         # Use this for examining the situation interactively before the find crash:
-        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-        """
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
         # These statements seem to crash Blender for some regions (but not all!!)
-        idx = self.region_list.find(curr_reg.name)
+        idx = self.region_list.find(curr_reg_name)
         print ( "      Found region index: " + str(idx) )
         self.active_reg_index = idx
-        """
 
 
     def remove_all_regions(self, context):
