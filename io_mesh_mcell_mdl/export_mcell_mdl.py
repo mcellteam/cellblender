@@ -899,6 +899,14 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
     ps = mcell.parameter_system
 
     out_file.write("REACTION_DATA_OUTPUT\n{\n")
+
+    output_buf_size = mcell.rxn_output.output_buf_size.get_expr(ps.panel_parameter_list)
+    if len(output_buf_size.strip()) > 0:
+        # When not blank, convert it as a normal panel parameter
+        output_buf_size = mcell.rxn_output.output_buf_size.get_as_string_or_value(
+            ps.panel_parameter_list, ps.export_as_expressions)
+        out_file.write("  OUTPUT_BUFFER_SIZE=%s\n" % output_buf_size)
+
     rxn_step = mcell.rxn_output.rxn_step.get_expr(ps.panel_parameter_list)
     if len(rxn_step.strip()) == 0:
         # When blank, use the system time step set in initialization

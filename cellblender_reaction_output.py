@@ -625,6 +625,8 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
 
     rxn_step = PointerProperty ( name="Step",
         type=parameter_system.Parameter_Reference )
+    output_buf_size = PointerProperty ( name="OutBufSize",
+        type=parameter_system.Parameter_Reference )
     active_rxn_output_index = IntProperty(
         name="Active Reaction Output Index", default=0)
     rxn_output_list = CollectionProperty(
@@ -677,12 +679,17 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             parameter_system, "Rxn_Output_Step", user_name="Step", 
             user_expr="", user_units="", user_descr="Step\n"
             "Output reaction data every t seconds.\nUses simulation time step when blank.") 
+        self.output_buf_size.init_ref (
+            parameter_system, "Rxn_Output_Buf_Size", user_name="OutputBufSize", 
+            user_expr="", user_units="", user_descr="OutputBufSize\n"
+            "Write output to disk after every N lines. Default is N=10000.") 
 
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output Panel building Data Model" )
         ro_dm = {}
         ro_dm['data_model_version'] = "DM_2016_03_15_1800"
         ro_dm['rxn_step'] = self.rxn_step.get_expr()
+        ro_dm['output_buf_size'] = self.output_buf_size.get_expr()
         ro_dm['plot_layout'] = self.plot_layout
         ro_dm['plot_legend'] = self.plot_legend
         ro_dm['combine_seeds'] = self.combine_seeds
@@ -713,8 +720,12 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             dm['always_generate'] = True
             dm['data_model_version'] = "DM_2016_03_15_1800"
 
+        if dm['data_model_version'] == "DM_2016_03_15_1800":
+            dm['output_buf_size'] = ""
+            dm['data_model_version'] = "DM_2016_06_30_1600"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2016_03_15_1800":
+        if dm['data_model_version'] != "DM_2016_06_30_1600":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellReactionOutputPropertyGroup data model to current version." )
             return None
 
@@ -727,12 +738,13 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
         # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2016_03_15_1800":
+        if dm['data_model_version'] != "DM_2016_06_30_1600":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReactionOutputPropertyGroup data model to current version." )
         self.init_properties(context.scene.mcell.parameter_system)
         self.plot_layout = dm["plot_layout"]
         self.plot_legend = dm["plot_legend"]
         self.rxn_step.set_expr ( dm["rxn_step"] )
+        self.output_buf_size.set_expr ( dm["output_buf_size"] )
         self.combine_seeds = dm["combine_seeds"]
         self.mol_colors = dm["mol_colors"]
         self.always_generate = dm["always_generate"]
@@ -770,6 +782,8 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         else:
 
             self.rxn_step.draw(layout,ps)
+            row = layout.row()
+            self.output_buf_size.draw(layout,ps)
             row = layout.row()
 
             # Do not need molecules to bring up plotting for pure MDL cases
