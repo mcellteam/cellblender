@@ -1827,14 +1827,34 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         ps = context.scene.mcell.parameter_system
         if len(self.general_parameter_list) > 0:
             par_map_item = self.general_parameter_list[self.active_par_index]
+            pid = par_map_item.par_id
+            if pid in self['gp_dict']:
+                who_depends_on_me =  [ k for k in self['gp_dict'][pid]['who_depends_on_me']  ]
+                what_depends_on_me = [ k for k in self['gp_dict'][pid]['what_depends_on_me'] ]
+                #print ( "Who  depends on me: " + str(who_depends_on_me) )
+                #print ( "What depends on me: " + str(what_depends_on_me) )
 
-            ps['gp_dict'].pop(par_map_item.par_id)
-            ps['gp_ordered_list'] = [ i for i in ps['gp_ordered_list'] if i != par_map_item.par_id ]  # This is one way to remove an item in a read only list
+                for wdom in who_depends_on_me:
+                    status += " " + str(wdom)
 
-            self.general_parameter_list.remove ( self.active_par_index )
-            self.active_par_index += -1
-            if self.active_par_index < 0:
-                self.active_par_index = 0
+                for wdom in what_depends_on_me:
+                    status += " " + str(wdom)
+
+                status = status.strip()
+
+                if len(status) > 0:
+                    # Don't delete
+                     status = "Parameter " + self['gp_dict'][pid]['name'] + " is used by: " + status
+                else:
+                    # OK to delete
+                    ps['gp_dict'].pop(par_map_item.par_id)
+                    ps['gp_ordered_list'] = [ i for i in ps['gp_ordered_list'] if i != par_map_item.par_id ]  # This is one way to remove an item in a read only list
+
+                    self.general_parameter_list.remove ( self.active_par_index )
+                    self.active_par_index += -1
+                    if self.active_par_index < 0:
+                        self.active_par_index = 0
+
         return ( status )
 
 
