@@ -938,8 +938,13 @@ class MCELL_OT_add_par_list(bpy.types.Operator):
             par['par_description'] = "Description for " + pname
             par['par_units'] = "u"
             par['par_expression'] = "1"
+            if n > 0:
+                par['par_expression'] = "a"
             for i in range(max(n-num_back,0),n):
-                par['par_expression'] += " + "
+                if i % 2:
+                    par['par_expression'] += " - "
+                else:
+                    par['par_expression'] += " + "
                 par['par_expression'] += self.make_par_name ( i )
             pars.append ( par )
 
