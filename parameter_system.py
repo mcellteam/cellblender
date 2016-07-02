@@ -1503,7 +1503,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         dbprint ( "=== After parameter_system.ParameterSystemPropertyGroup.build_properties_from_data_model() ===" )
         #bpy.ops.mcell.print_gen_parameters()
         #bpy.ops.mcell.print_pan_parameters()
-        dbprint ( "==============================================================================================" )
+        #dbprint ( "==============================================================================================" )
 
 
     @profile('ParameterSystem.clear_all_parameters')
@@ -1717,7 +1717,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         self.update_parameter_units ( context )
         self.update_parameter_desc ( context )
 
-        context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
+        self.last_parameter_update_time = str(time.time())
 
 
     @profile('ParameterSystem.add_general_parameters_from_list')
@@ -1796,7 +1796,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
         self.active_par_index = len(self.general_parameter_list)-1
 
-        context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
+        self.last_parameter_update_time = str(time.time())
 
 
     """ This works, but is very slow:
@@ -1815,7 +1815,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             if 'par_description' in p: descr = p['par_description']
             self.add_general_parameter_and_update ( context, name=name, expr=expr, units=units, desc=descr )
 
-        context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
+        self.last_parameter_update_time = str(time.time())
     """
 
 
@@ -1977,11 +1977,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                         # self['gp_dict'][par]['status'].add ( 'loop' ) # This would be the set operation, but we're using a dictionary
                         self['gp_dict'][par]['status']['loop'] = True   # Use "True" to flag the intention of 'loop' being in the set
             else:
-                mcell = context.scene.mcell
-                ps = mcell.parameter_system
                 # TODO: Note that this might not be the most efficient thing to do!!!!
-                ps.evaluate_all_gp_expressions ( context )
-                ps.evaluate_all_pp_expressions ( context )
+                self.evaluate_all_gp_expressions ( context )
+                self.evaluate_all_pp_expressions ( context )
 
 
     @profile('ParameterSystem.update_parameter_expression')
@@ -2070,9 +2068,6 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     @profile('ParameterSystem.update_expr_list_by_id')
     def update_expr_list_by_id ( self, context, gid ):
-        # global global_params
-        # ps = context.scene.mcell.general_parameters
-
         if len(self['gp_dict']) > 0:
             gp_dict = self['gp_dict']
             par = gp_dict[gid]
@@ -2143,9 +2138,6 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     @profile('ParameterSystem.evaluate_active_expression')
     def evaluate_active_expression ( self, context ):
-        # global global_params
-        # ps = context.scene.mcell.general_parameters
-
         if len(self['gp_dict']) > 0:
             self.update_expr_list_by_id ( context, self.last_selected_id )
 
@@ -2186,8 +2178,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     @profile('ParameterSystem.evaluate_all_pp_expressions')
     def evaluate_all_pp_expressions ( self, context ):
         dbprint ( "Evaluate all pp expressions" )
-        ps = context.scene.mcell.parameter_system
-        ppl = ps.panel_parameter_list
+        ppl = self.panel_parameter_list
         gl = {}
         valid = self.build_eval_dict ( gl )
         for k in ppl.keys():
