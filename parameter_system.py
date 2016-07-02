@@ -1824,7 +1824,6 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     def remove_active_parameter ( self, context ):
         """ Remove the active parameter from the list of parameters if not needed by others """
         status = ""
-        ps = context.scene.mcell.parameter_system
         if len(self.general_parameter_list) > 0:
             par_map_item = self.general_parameter_list[self.active_par_index]
             pid = par_map_item.par_id
@@ -1835,10 +1834,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 #print ( "What depends on me: " + str(what_depends_on_me) )
 
                 for wdom in who_depends_on_me:
-                    status += " " + str(wdom)
+                    status += " " + self['gp_dict'][wdom]['name']
 
                 for wdom in what_depends_on_me:
-                    status += " " + str(wdom)
+                    status += " " + self.panel_parameter_list[wdom]['user_name']
 
                 status = status.strip()
 
@@ -1847,8 +1846,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                      status = "Parameter " + self['gp_dict'][pid]['name'] + " is used by: " + status
                 else:
                     # OK to delete
-                    ps['gp_dict'].pop(par_map_item.par_id)
-                    ps['gp_ordered_list'] = [ i for i in ps['gp_ordered_list'] if i != par_map_item.par_id ]  # This is one way to remove an item in a read only list
+                    self['gp_dict'].pop(par_map_item.par_id)
+                    self['gp_ordered_list'] = [ i for i in self['gp_ordered_list'] if i != par_map_item.par_id ]  # This is one way to remove an item in a read only list
 
                     self.general_parameter_list.remove ( self.active_par_index )
                     self.active_par_index += -1
@@ -1879,8 +1878,6 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
     @profile('ParameterSystem.update_parameter_name')
     def update_parameter_name (self, context, interactive=False):
-        ps = context.scene.mcell.parameter_system
-
         if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
             pid = self.last_selected_id
             old_name = "\1\2\3\4\5\6\7" # This should be a string that cannot be legally entered as a parameter name
