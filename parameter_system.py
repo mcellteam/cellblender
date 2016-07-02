@@ -983,7 +983,13 @@ class Expression_Handler:
     def recurse_tree_symbols ( self, local_name_ID_dict, pt, current_expr ):
         """ Recurse through the parse tree looking for "terminal" items which are added to the list """
         # print ( "Top of recurse_tree_symbols" )
-        self.count_stub()
+
+        # Strip off the outer layers that are not of interest
+        while (type(pt) == tuple) and (len(pt) == 2) and (type(pt[1]) == tuple):
+            # print ( "  changing " + str(pt) + " to " + str(pt[1]) )
+            pt = pt[1]
+
+        # self.count_stub()
 
         if type(pt) == tuple:
             # This is a tuple, so find out if it's a terminal leaf in the parse tree
