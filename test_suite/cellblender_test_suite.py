@@ -346,7 +346,22 @@ class CellBlender_Model:
         self.context = cb_context
         self.setup_cb_defaults ( self.context )
         self.context.scene.cellblender_test_suite.test_status == "?"
+
+        print ( "\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" )
+        if self.using_id_params():
+            print ( "Running with new ID parameters" )
+        else:
+            print ( "Running with old RNA parameters" )
+        print ( "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n" )
+
         
+    def using_id_params(self):
+        ps = self.context.scene.mcell.parameter_system
+        if 'active_elist' in ps:
+            return True
+        return False
+
+
     def get_scene(self):
         return self.scn
         
@@ -592,6 +607,7 @@ class CellBlender_Model:
 
     def parameter_system_index_of_name ( self, name ):
         """ Return the first index of the name in the general parameter list """
+
         print ( "Test Suite Parameter Index of Name: " + str(name) + " begin" )
         gpl = self.mcell.parameter_system.general_parameter_list
         index = 0
