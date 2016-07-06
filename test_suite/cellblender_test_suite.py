@@ -569,6 +569,72 @@ class CellBlender_Model:
 
 
 
+    def parameter_system_op_add ( self ):
+        """ Add a parameter to the model """
+        print ( "Test Suite Parameter Operator: add begin" )
+        bpy.ops.mcell.add_gen_par()
+        print ( "Test Suite Parameter Operator: add done " )
+
+
+    def parameter_system_op_remove ( self ):
+        """ Remove the active parameter to the model """
+        print ( "Test Suite Parameter Operator: remove begin" )
+        bpy.ops.mcell.remove_parameter()
+        print ( "Test Suite Parameter Operator: remove done " )
+
+
+    def parameter_system_op_set_active ( self, index ):
+        """ Set the active parameter for the model """
+        print ( "Test Suite Parameter Operator: set active " + str(index) + " begin" )
+        self.mcell.parameter_system.active_par_index = index
+        print ( "Test Suite Parameter Operator: active done " )
+
+
+    def parameter_system_index_of_name ( self, name ):
+        """ Return the first index of the name in the general parameter list """
+        print ( "Test Suite Parameter Index of Name: " + str(name) + " begin" )
+        gpl = self.mcell.parameter_system.general_parameter_list
+        index = 0
+        for gp in gpl:
+            if gp['name'] == name:
+                return index
+            index += 1
+        return -1
+
+
+    def parameter_system_op_get_active ( self ):
+        """ Set the active parameter for the model """
+        print ( "Test Suite Parameter Operator: get active" )
+        return self.mcell.parameter_system.active_par_index
+
+
+    def parameter_system_prop_name ( self, name ):
+        """ Change active parameter name """
+        print ( "Test Suite Parameter Property: name = " + str(name) )
+        self.mcell.parameter_system.active_name = name
+        print ( "Test Suite Parameter Property: name done " )
+
+    def parameter_system_prop_expr ( self, expr ):
+        """ Change active parameter expression """
+        print ( "Test Suite Parameter Property: expr = " + str(expr) )
+        self.mcell.parameter_system.active_expr = expr
+        print ( "Test Suite Parameter Property: expr done " )
+
+    def parameter_system_prop_units ( self, units ):
+        """ Change active parameter units """
+        print ( "Test Suite Parameter Property: units = " + str(units) )
+        self.mcell.parameter_system.active_units = units
+        print ( "Test Suite Parameter Property: units done " )
+
+    def parameter_system_prop_desc ( self, desc ):
+        """ Change active parameter desc """
+        print ( "Test Suite Parameter Property: desc = " + str(desc) )
+        self.mcell.parameter_system.active_desc = desc
+        print ( "Test Suite Parameter Property: desc done " )
+
+
+
+
     def add_molecule_species_to_model ( self, name="A", mol_type="3D", diff_const_expr="0.0", custom_time_step="" ):
         """ Add a molecule species """
         print ( "Adding Molecule Species " + name )
@@ -1025,8 +1091,6 @@ class CellBlender_Model:
                 self.wait ( wait_time / 10.0 )
                 print ( "Test Suite is Waiting for MCell to complete ..." )
             print ( "Test Suite is done waiting!!" )
-
-
 
 
     def run_model ( self, iterations="100", time_step="1e-6", export_format="mcell_mdl_unified", wait_time=10.0, seed=1 ):
@@ -2779,12 +2843,85 @@ class ParSystemTestOp(bpy.types.Operator):
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
 
+        # These are low level parameter operator and property setting commands
+
+        cb_model.parameter_system_op_add()
+        cb_model.parameter_system_prop_name ( "should_be_gone" )
+        cb_model.parameter_system_op_remove()
+
+
+        cb_model.parameter_system_op_add()
+        cb_model.parameter_system_prop_name ( "should_be_gone_1" )
+
+
+        cb_model.parameter_system_op_add()
+        cb_model.parameter_system_prop_name ( "cant_delete_1" )
+        cb_model.parameter_system_prop_expr ( "5 + 5" )
+        cb_model.parameter_system_prop_units ( "mm" )
+        cb_model.parameter_system_prop_desc ( "Test of adding a parameter via low level operators and properties" )
+
+        cb_model.parameter_system_op_add()
+        cb_model.parameter_system_prop_name ( "cant_delete_2" )
+        cb_model.parameter_system_prop_expr ( "1e-6" )
+        cb_model.parameter_system_prop_units ( "mm" )
+        cb_model.parameter_system_prop_desc ( "Test of adding a parameter via low level operators and properties" )
+
+        cb_model.parameter_system_op_add()
+        cb_model.parameter_system_prop_name ( "should_be_gone_2" )
+        cb_model.parameter_system_op_remove()
+
+
+        cb_model.mcell.initialization.iterations.set_expr("cant_delete_1")
+        cb_model.mcell.initialization.time_step.set_expr("cant_delete_2 * 2")
+
+        # These are relatively high level parameter addition commands
+
         cb_model.add_parameter_to_model ( name="A", expr="1.23", units="A units", desc="" )
         cb_model.add_parameter_to_model ( name="B", expr="A * 2", units="B units", desc="" )
         cb_model.add_parameter_to_model ( name="C", expr="A * B", units="", desc="A * B" )
         cb_model.add_parameter_to_model ( name="dc", expr="1e-8", units="", desc="Diffusion Constant" )
 
         mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="dc" )
+        
+
+        # Back to some low level calls
+
+        cb_model.parameter_system_op_add()
+        cb_model.parameter_system_prop_name ( "cant_delete_3" )
+        cb_model.parameter_system_prop_expr ( "123" )
+        cb_model.parameter_system_prop_units ( "ft" )
+        cb_model.parameter_system_prop_desc ( "Another GP depends on me" )
+
+        cb_model.parameter_system_op_add()
+        cb_model.parameter_system_prop_name ( "depends_on_cant_del_3" )
+        cb_model.parameter_system_prop_expr ( "2 * cant_delete_3" )
+        cb_model.parameter_system_prop_units ( "ft" )
+        cb_model.parameter_system_prop_desc ( "This depends on cant_delete_3" )
+
+
+        cb_model.parameter_system_op_set_active ( cb_model.parameter_system_index_of_name ( "cant_delete_1" ) )
+
+        cb_model.parameter_system_op_add()
+        cb_model.parameter_system_prop_name ( "should_be_gone_3" )
+
+
+        cb_model.parameter_system_op_set_active ( cb_model.parameter_system_index_of_name ( "should_be_gone_3" ) )
+        cb_model.parameter_system_op_remove()
+
+        cb_model.parameter_system_op_set_active ( cb_model.parameter_system_index_of_name ( "should_be_gone_1" ) )
+        cb_model.parameter_system_op_remove()
+
+        cb_model.parameter_system_op_set_active ( cb_model.parameter_system_index_of_name ( "A" ) )
+        cb_model.parameter_system_prop_name ( "AinC" )
+
+        cb_model.parameter_system_op_set_active ( cb_model.parameter_system_index_of_name ( "B" ) )
+        cb_model.parameter_system_prop_name ( "BinC" )
+
+        cb_model.parameter_system_op_set_active ( cb_model.parameter_system_index_of_name ( "cant_delete_1" ) )
+        # Unfortunately, trying to remove a parameter that is used by another throws a RuntimeError, so comment to avoid an error
+        #cb_model.parameter_system_op_remove()
+
+
 
         ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
         ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
@@ -2795,14 +2932,20 @@ class ParSystemTestOp(bpy.types.Operator):
 
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="C" )
 
-        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
+        # cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
+        bpy.ops.mcell.export_project()
 
-        cb_model.compare_mdl_with_sha1 ( "2a995063fa613e0c028766bf579a1696ef6c8238", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "", test_name=self.self_test_name )
+        
+        """
+        # Use the "run_only" call to keep the test suite from overwriting iterations and time step
+
+        cb_model.run_only ( wait_time=5.0, seed=1 )
 
         cb_model.refresh_molecules()
+        """
 
         cb_model.select_none()
-
 
         cb_model.set_view_back()
 
