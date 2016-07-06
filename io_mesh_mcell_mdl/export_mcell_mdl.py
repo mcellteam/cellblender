@@ -623,8 +623,11 @@ def write_parameter_as_mdl_old ( p, out_file, as_expr ):
 
 
 
+"""
+
+# This is the proper release version of this function
 def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
-    """ Writes a single parameter as MDL as either a value or an expression """
+    # Writes a single parameter as MDL as either a value or an expression
 
     # Export Parameter:
     if as_expr:
@@ -653,8 +656,10 @@ def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
 
 
 """
+
 # This temporary version uses a flag to force output with Blender's precision
 def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
+    # Writes a single parameter as MDL as either a value or an expression
     force_blender_precision = True
 
     # Export Parameter:
@@ -689,7 +694,6 @@ def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
 
         out_file.write(" */")
     out_file.write("\n")
-"""
 
 
 
