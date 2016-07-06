@@ -975,8 +975,8 @@ class MCELL_OT_remove_all_pars(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MCELL_OT_add_gen_par(bpy.types.Operator):
-    bl_idname = "mcell.add_gen_par"
+class MCELL_OT_add_parameter(bpy.types.Operator):
+    bl_idname = "mcell.add_parameter"
     bl_label = "Add Parameter"
     bl_description = "Add a new parameter"
     bl_options = {'REGISTER', 'UNDO'}
@@ -2460,7 +2460,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                           self, "general_parameter_list",
                           self, "active_par_index", rows=7)
         col = row.column(align=True)
-        col.operator("mcell.add_gen_par", icon='ZOOMIN', text="")
+        col.operator("mcell.add_parameter", icon='ZOOMIN', text="")
         col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
         
         if len(self.general_parameter_list) > 0:

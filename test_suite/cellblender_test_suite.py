@@ -572,7 +572,7 @@ class CellBlender_Model:
     def parameter_system_op_add ( self ):
         """ Add a parameter to the model """
         print ( "Test Suite Parameter Operator: add begin" )
-        bpy.ops.mcell.add_gen_par()
+        bpy.ops.mcell.add_parameter()
         print ( "Test Suite Parameter Operator: add done " )
 
 
