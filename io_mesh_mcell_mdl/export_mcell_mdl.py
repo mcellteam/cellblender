@@ -593,6 +593,36 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
         out_file.write('  }\n')
 
 
+def write_parameter_as_mdl_old ( p, out_file, as_expr ):
+    """ Writes a single parameter as MDL as either a value or an expression """
+
+    # Export Parameter:
+    if as_expr:
+        # Note that some expressions are allowed to be blank which indicates use of the default VALUE
+        if len(p.expr.strip()) <= 0:
+            # The expression is blank, so use the value which should be the default
+            out_file.write("%s = %.15g" % (p.par_name, p.value))
+        else:
+            # The expression is not blank, so use it
+            out_file.write("%s = %s" % (p.par_name, p.expr))
+    else:
+        # Output the value rather than the expression
+        out_file.write("%s = %.15g" % (p.par_name, p.value))
+
+    if ((p.descr != "") | (p.units != "")):
+        out_file.write("    /* ")
+
+        if p.descr != "":
+            out_file.write("%s " % (p.descr))
+
+        if p.units != "":
+            out_file.write("   units=%s" % (p.units))
+
+        out_file.write(" */")
+    out_file.write("\n")
+
+
+
 def write_parameter_as_mdl ( p, out_file, as_expr ):
     """ Writes a single parameter as MDL as either a value or an expression """
 
@@ -620,6 +650,46 @@ def write_parameter_as_mdl ( p, out_file, as_expr ):
 
         out_file.write(" */")
     out_file.write("\n")
+
+
+"""
+# This temporary version uses a flag to force output with Blender's precision
+def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
+    force_blender_precision = True
+
+    # Export Parameter:
+    if as_expr:
+        # Note that some expressions are allowed to be blank which indicates use of the default VALUE
+        if len(p['expr'].strip()) <= 0:
+            # The expression is blank, so use the value which should be the default
+            if force_blender_precision:
+                mcell = bpy.context.scene.mcell
+                out_file.write("%s = %.15g" % (par_name, mcell.blender_float(p['value'])))
+            else:
+                out_file.write("%s = %.15g" % (par_name, p['value']))
+        else:
+            # The expression is not blank, so use it
+            out_file.write("%s = %s" % (par_name, p['expr']))
+    else:
+        # Output the value rather than the expression
+        if force_blender_precision:
+            mcell = bpy.context.scene.mcell
+            out_file.write("%s = %.15g" % (par_name, mcell.blender_float(p['value'])))
+        else:
+            out_file.write("%s = %.15g" % (par_name, p['value']))
+
+    if ((p['desc'] != "") | (p['units'] != "")):
+        out_file.write("    /* ")
+
+        if p['desc'] != "":
+            out_file.write("%s " % (p['desc']))
+
+        if p['units'] != "":
+            out_file.write("   units=%s" % (p['units']))
+
+        out_file.write(" */")
+    out_file.write("\n")
+"""
 
 
 
