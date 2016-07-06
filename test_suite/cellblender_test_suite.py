@@ -2935,7 +2935,7 @@ class ParSystemTestOp(bpy.types.Operator):
         # cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
         bpy.ops.mcell.export_project()
 
-        cb_model.compare_mdl_with_sha1 ( "", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "5d1f23e6b47a4102800e343b5887b3e044b0100a", test_name=self.self_test_name )
         
         """
         # Use the "run_only" call to keep the test suite from overwriting iterations and time step
