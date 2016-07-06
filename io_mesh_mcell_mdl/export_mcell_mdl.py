@@ -652,6 +652,46 @@ def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
     out_file.write("\n")
 
 
+"""
+# This temporary version uses a flag to force output with Blender's precision
+def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
+    force_blender_precision = True
+
+    # Export Parameter:
+    if as_expr:
+        # Note that some expressions are allowed to be blank which indicates use of the default VALUE
+        if len(p['expr'].strip()) <= 0:
+            # The expression is blank, so use the value which should be the default
+            if force_blender_precision:
+                mcell = bpy.context.scene.mcell
+                out_file.write("%s = %.15g" % (par_name, mcell.blender_float(p['value'])))
+            else:
+                out_file.write("%s = %.15g" % (par_name, p['value']))
+        else:
+            # The expression is not blank, so use it
+            out_file.write("%s = %s" % (par_name, p['expr']))
+    else:
+        # Output the value rather than the expression
+        if force_blender_precision:
+            mcell = bpy.context.scene.mcell
+            out_file.write("%s = %.15g" % (par_name, mcell.blender_float(p['value'])))
+        else:
+            out_file.write("%s = %.15g" % (par_name, p['value']))
+
+    if ((p['desc'] != "") | (p['units'] != "")):
+        out_file.write("    /* ")
+
+        if p['desc'] != "":
+            out_file.write("%s " % (p['desc']))
+
+        if p['units'] != "":
+            out_file.write("   units=%s" % (p['units']))
+
+        out_file.write(" */")
+    out_file.write("\n")
+"""
+
+
 
 def save_general_parameters(ps, out_file):
     """ Saves parameter info to mdl output file. """

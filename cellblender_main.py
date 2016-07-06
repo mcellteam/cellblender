@@ -766,6 +766,13 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     #cellblender_source_hash = StringProperty(
     #    name="CellBlender Source Hash", default="unknown")
 
+    # This provides a means to convert Python double values to Blender's FloatProperty precision
+    blender_float_prop = FloatProperty()
+    def blender_float ( self, python_float ):
+        self.blender_float_prop = python_float
+        return ( self.blender_float_prop )
+
+
     cellblender_main_panel = PointerProperty(
         type=CellBlenderMainPanelPropertyGroup,
         name="CellBlender Main Panel")
