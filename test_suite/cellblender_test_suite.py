@@ -589,7 +589,6 @@ class CellBlender_Model:
 
     def parameter_system_op_add ( self ):
         """ Add a parameter to the model """
-        # Note that this function has been back-ported into the development branch
         print ( "Test Suite Parameter Operator: add begin" )
         bpy.ops.mcell.add_parameter()
         print ( "Test Suite Parameter Operator: add done " )
@@ -597,7 +596,6 @@ class CellBlender_Model:
 
     def parameter_system_op_remove ( self ):
         """ Remove the active parameter to the model """
-        # Note that this function has been back-ported into the development branch
         print ( "Test Suite Parameter Operator: remove begin" )
         bpy.ops.mcell.remove_parameter()
         print ( "Test Suite Parameter Operator: remove done " )
@@ -605,7 +603,6 @@ class CellBlender_Model:
 
     def parameter_system_op_set_active ( self, index ):
         """ Set the active parameter for the model """
-        # Note that this function has been back-ported into the development branch
         print ( "Test Suite Parameter Operator: set active " + str(index) + " begin" )
         self.mcell.parameter_system.active_par_index = index
         print ( "Test Suite Parameter Operator: active done " )
@@ -613,12 +610,6 @@ class CellBlender_Model:
 
     def parameter_system_index_of_name ( self, name ):
         """ Return the first index of the name in the general parameter list """
-        # Note that this function has been back-ported into the development branch
-        # For that reason, this will actually return the index of the sorted_list which is drawn in the panel
-        # The general_parameter_list in this version uses a "name" field which is the parameter number
-        # The general_parameter_list in this version uses a "par_name" field which is the user name
-        # The general_parameter_sort_list in this version uses a "name" field which is the user name
-        # Since this function will be used to select a parameter, it should return the index in the sort_list
         print ( "Test Suite Parameter Index of Name: " + str(name) + " begin" )
         gpl = self.mcell.parameter_system.general_parameter_list
         gpls = self.mcell.parameter_system.general_parameter_sort_list
@@ -632,14 +623,12 @@ class CellBlender_Model:
 
     def parameter_system_op_get_active ( self ):
         """ Set the active parameter for the model """
-        # Note that this function has been back-ported into the development branch
         print ( "Test Suite Parameter Operator: get active" )
         return self.mcell.parameter_system.active_par_index
 
 
     def parameter_system_prop_name ( self, name ):
         """ Change active parameter name """
-        # Note that this function has been back-ported into the development branch
         print ( "Test Suite Parameter Property: name = " + str(name) )
         #self.mcell.parameter_system.active_name = name
         ps = self.mcell.parameter_system
@@ -648,7 +637,6 @@ class CellBlender_Model:
 
     def parameter_system_prop_expr ( self, expr ):
         """ Change active parameter expression """
-        # Note that this function has been back-ported into the development branch
         print ( "Test Suite Parameter Property: expr = " + str(expr) )
         #self.mcell.parameter_system.active_expr = expr
         ps = self.mcell.parameter_system
@@ -657,7 +645,6 @@ class CellBlender_Model:
 
     def parameter_system_prop_units ( self, units ):
         """ Change active parameter units """
-        # Note that this function has been back-ported into the development branch
         print ( "Test Suite Parameter Property: units = " + str(units) )
         #self.mcell.parameter_system.active_units = units
         ps = self.mcell.parameter_system
@@ -666,7 +653,6 @@ class CellBlender_Model:
 
     def parameter_system_prop_desc ( self, desc ):
         """ Change active parameter desc """
-        # Note that this function has been back-ported into the development branch
         print ( "Test Suite Parameter Property: desc = " + str(desc) )
         #self.mcell.parameter_system.active_desc = desc
         ps = self.mcell.parameter_system
