@@ -612,12 +612,21 @@ class CellBlender_Model:
         """ Return the first index of the name in the general parameter list """
 
         print ( "Test Suite Parameter Index of Name: " + str(name) + " begin" )
-        gpl = self.mcell.parameter_system.general_parameter_list
-        index = 0
-        for gp in gpl:
-            if gp['name'] == name:
-                return index
-            index += 1
+        if self.using_id_params():
+            gpl = self.mcell.parameter_system.general_parameter_list
+            gpls = self.mcell.parameter_system.general_parameter_sort_list
+            index = 0
+            for gp in gpls:
+                if gp['name'] == name:
+                    return index
+                index += 1
+        else:
+            gpl = self.mcell.parameter_system.general_parameter_list
+            index = 0
+            for gp in gpl:
+                if gp['name'] == name:
+                    return index
+                index += 1
         return -1
 
 
