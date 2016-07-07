@@ -577,7 +577,10 @@ class CellBlender_Model:
         """ Add a parameter to the model """
         print ( "Test Suite Adding Parameter " + name + " = " + expr )
         ps = self.mcell.parameter_system
-        ps.add_general_parameter_and_update ( self.context, name=name, expr=expr, units=units, desc=desc )
+        if self.using_id_params():
+            ps.add_general_parameter_and_update ( self.context, name=name, expr=expr, units=units, desc=desc )
+        else:
+            ps.new_parameter ( name, pp=False, new_expr=expr, new_units=units, new_desc=desc )
         print ( "Test Suite Done Adding Parameter " + name )
         #return ps.general_parameter_list[ps.active_par_index]
 
