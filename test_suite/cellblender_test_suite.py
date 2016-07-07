@@ -632,34 +632,44 @@ class CellBlender_Model:
         return -1
 
 
-    def parameter_system_op_get_active ( self ):
-        """ Set the active parameter for the model """
-        print ( "Test Suite Parameter Operator: get active" )
-        return self.mcell.parameter_system.active_par_index
-
-
     def parameter_system_prop_name ( self, name ):
         """ Change active parameter name """
         print ( "Test Suite Parameter Property: name = " + str(name) )
-        self.mcell.parameter_system.active_name = name
+        if self.using_id_params():
+            self.mcell.parameter_system.active_name = name
+        else:
+            ps = self.mcell.parameter_system
+            ps.general_parameter_list[ps.active_par_index].par_name = name
         print ( "Test Suite Parameter Property: name done " )
 
     def parameter_system_prop_expr ( self, expr ):
         """ Change active parameter expression """
         print ( "Test Suite Parameter Property: expr = " + str(expr) )
-        self.mcell.parameter_system.active_expr = expr
+        if self.using_id_params():
+            self.mcell.parameter_system.active_expr = expr
+        else:
+            ps = self.mcell.parameter_system
+            ps.general_parameter_list[ps.active_par_index].expr = expr
         print ( "Test Suite Parameter Property: expr done " )
 
     def parameter_system_prop_units ( self, units ):
         """ Change active parameter units """
         print ( "Test Suite Parameter Property: units = " + str(units) )
-        self.mcell.parameter_system.active_units = units
+        if self.using_id_params():
+            self.mcell.parameter_system.active_units = units
+        else:
+            ps = self.mcell.parameter_system
+            ps.general_parameter_list[ps.active_par_index].units = units
         print ( "Test Suite Parameter Property: units done " )
 
     def parameter_system_prop_desc ( self, desc ):
         """ Change active parameter desc """
         print ( "Test Suite Parameter Property: desc = " + str(desc) )
-        self.mcell.parameter_system.active_desc = desc
+        if self.using_id_params():
+            self.mcell.parameter_system.active_desc = desc
+        else:
+            ps = self.mcell.parameter_system
+            ps.general_parameter_list[ps.active_par_index].descr = desc
         print ( "Test Suite Parameter Property: desc done " )
 
 
