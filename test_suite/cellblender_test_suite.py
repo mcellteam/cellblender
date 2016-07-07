@@ -632,6 +632,12 @@ class CellBlender_Model:
         return -1
 
 
+    def parameter_system_op_get_active ( self ):
+        """ Set the active parameter for the model """
+        print ( "Test Suite Parameter Operator: get active" )
+        return self.mcell.parameter_system.active_par_index
+
+
     def parameter_system_prop_name ( self, name ):
         """ Change active parameter name """
         print ( "Test Suite Parameter Property: name = " + str(name) )
