@@ -347,7 +347,7 @@ class CellBlender_Model:
         self.setup_cb_defaults ( self.context )
         self.context.scene.cellblender_test_suite.test_status == "?"
 
-        
+
     def using_id_params(self):
         ps = bpy.context.scene.mcell.parameter_system
         new_id = False
