@@ -142,7 +142,7 @@ class MCellExportProjectPropertyGroup(bpy.types.PropertyGroup):
         ('mcell_mdl_modular', "Modular MCell MDL Files", "")]
     export_format = EnumProperty(items=export_format_enum,
                                  name="Export Format",
-                                 default='mcell_mdl_unified')
+                                 default='mcell_mdl_modular')
 
     def remove_properties ( self, context ):
         print ( "Removing all Export Project Properties... no collections to remove." )
