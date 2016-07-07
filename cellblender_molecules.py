@@ -312,10 +312,9 @@ class MCELL_OT_mol_shade_flat(bpy.types.Operator):
             mol = mols.molecule_list[mols.active_mol_index]
             if mol:
                 shape_name = 'mol_' + mol.name + '_shape'
-                cur_sel = bpy.data.objects[shape_name].select
-                bpy.data.objects[shape_name].select = True
-                bpy.ops.object.shade_flat()
-                bpy.data.objects[shape_name].select = cur_sel
+                obj = bpy.data.objects[shape_name]
+                cellblender_utils.preserve_selection_use_operator(
+                        bpy.ops.object.shade_flat, obj)
         return {'FINISHED'}
 
 class MCELL_OT_mol_shade_smooth(bpy.types.Operator):
@@ -330,10 +329,9 @@ class MCELL_OT_mol_shade_smooth(bpy.types.Operator):
             mol = mols.molecule_list[mols.active_mol_index]
             if mol:
                 shape_name = 'mol_' + mol.name + '_shape'
-                cur_sel = bpy.data.objects[shape_name].select
-                bpy.data.objects[shape_name].select = True
-                bpy.ops.object.shade_smooth()
-                bpy.data.objects[shape_name].select = cur_sel
+                obj = bpy.data.objects[shape_name]
+                cellblender_utils.preserve_selection_use_operator(
+                        bpy.ops.object.shade_smooth, obj)
         return {'FINISHED'}
 
 
