@@ -346,7 +346,22 @@ class CellBlender_Model:
         self.context = cb_context
         self.setup_cb_defaults ( self.context )
         self.context.scene.cellblender_test_suite.test_status == "?"
+
+        print ( "\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" )
+        if self.using_id_params():
+            print ( "Running with new ID parameters" )
+        else:
+            print ( "Running with old RNA parameters" )
+        print ( "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n" )
+
         
+    def using_id_params(self):
+        ps = self.context.scene.mcell.parameter_system
+        if 'active_elist' in ps:
+            return True
+        return False
+
+
     def get_scene(self):
         return self.scn
         
