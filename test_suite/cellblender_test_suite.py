@@ -2978,20 +2978,14 @@ class ParSystemTestOp(bpy.types.Operator):
 
         cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="C" )
 
-        # cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
-        bpy.ops.mcell.export_project()
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
 
         cb_model.compare_mdl_with_sha1 ( "cdc9aca4a9cfec35a4b194268234c85a3e66b779", test_name=self.self_test_name )
         
-        """
-        # Use the "run_only" call to keep the test suite from overwriting iterations and time step
-
-        cb_model.run_only ( wait_time=5.0, seed=1 )
-
         cb_model.refresh_molecules()
-        """
 
         cb_model.select_none()
+
 
         cb_model.set_view_back()
 
