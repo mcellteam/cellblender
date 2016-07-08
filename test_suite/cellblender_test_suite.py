@@ -331,7 +331,7 @@ class CellBlender_Model:
     scn = None
     mcell = None
     path_to_blend = None
-    
+
     def __init__(self, cb_context, model_name=None):
         banner_text = "Initializing CellBlender Model"
         if model_name != None:
@@ -351,7 +351,7 @@ class CellBlender_Model:
     def using_id_params(self):
         ps = bpy.context.scene.mcell.parameter_system
         new_id = False
-        if 'active_elist' in ps:
+        if 'active_elist' in dir(ps):
             new_id = True
 
         print ( "\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" )
@@ -366,7 +366,7 @@ class CellBlender_Model:
 
     def get_scene(self):
         return self.scn
-        
+
     def get_mcell(self):
         return self.mcell
 
@@ -3040,6 +3040,15 @@ class ParSys200pCntTestOp(bpy.types.Operator):
         mcell = cb_model.get_mcell()
 
 
+
+
+        # Testing to see if this will force "ID Parameter Mode"
+        #cb_model.parameter_system_op_add()
+        #cb_model.parameter_system_prop_name ( "should_be_gone" )
+        #cb_model.parameter_system_op_remove()
+
+
+
         # Add new parameters
         for n in range(200):
             exp_str = '1'
@@ -3048,6 +3057,7 @@ class ParSys200pCntTestOp(bpy.types.Operator):
                 exp_str += self.pname(i)
 
             par_name = self.pname(n)
+            print ( "200 Pars Counting: adding %s = %s" % (par_name, exp_str) )
             cb_model.add_parameter_to_model ( name=par_name, expr=exp_str, units="u", desc="Parameter "+par_name )
 
         mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
