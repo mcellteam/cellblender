@@ -1293,6 +1293,10 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
                 val = "??"
                 icon = 'ERROR'
 
+        if len(rna_par['expr'].strip()) == 0:
+            val = ""
+            icon = 'NONE'
+
         if parameter_system.param_display_mode == 'one_line':
             split = row.split(parameter_system.param_label_fraction)
             col = split.column()
