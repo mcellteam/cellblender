@@ -331,7 +331,7 @@ class CellBlender_Model:
     scn = None
     mcell = None
     path_to_blend = None
-    
+
     def __init__(self, cb_context, model_name=None):
         banner_text = "Initializing CellBlender Model"
         if model_name != None:
@@ -366,7 +366,7 @@ class CellBlender_Model:
 
     def get_scene(self):
         return self.scn
-        
+
     def get_mcell(self):
         return self.mcell
 
