@@ -1139,6 +1139,8 @@ class CellBlender_Model:
             print ( "Test Suite is done waiting!!" )
 
 
+
+
     def run_model ( self, iterations="100", time_step="1e-6", export_format="mcell_mdl_unified", wait_time=10.0, seed=1 ):
         """ export_format is one of: mcell_mdl_unified, mcell_mdl_modular """
         print ( "Test Suite is exporting the model and running the simulation with seed " + str(seed) + " ..." )
@@ -2980,7 +2982,7 @@ class ParSystemTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "cdc9aca4a9cfec35a4b194268234c85a3e66b779", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "bbd1320b7966ec60bb4bcc0f2c92deff7cdadf9e", test_name=self.self_test_name )
         
         cb_model.refresh_molecules()
 
@@ -3034,15 +3036,6 @@ class ParSys200pCntTestOp(bpy.types.Operator):
         mcell = cb_model.get_mcell()
 
 
-
-
-        # Testing to see if this will force "ID Parameter Mode"
-        #cb_model.parameter_system_op_add()
-        #cb_model.parameter_system_prop_name ( "should_be_gone" )
-        #cb_model.parameter_system_op_remove()
-
-
-
         # Add new parameters
         for n in range(200):
             exp_str = '1'
@@ -3051,7 +3044,6 @@ class ParSys200pCntTestOp(bpy.types.Operator):
                 exp_str += self.pname(i)
 
             par_name = self.pname(n)
-            print ( "200 Pars Counting: adding %s = %s" % (par_name, exp_str) )
             cb_model.add_parameter_to_model ( name=par_name, expr=exp_str, units="u", desc="Parameter "+par_name )
 
         mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
@@ -3144,7 +3136,7 @@ class ParSystem100p3eTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "114e1a81ba5a7692997ba70fe35836730c694620", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "1be16b43f98f8a61617eb8450601a5deafccd3f3", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
