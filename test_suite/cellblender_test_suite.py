@@ -2982,7 +2982,7 @@ class ParSystemTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "bbd1320b7966ec60bb4bcc0f2c92deff7cdadf9e", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "28b8d738fc4b0b313fb395077a1e13b089a9c3c5", test_name=self.self_test_name )
         
         cb_model.refresh_molecules()
 
@@ -3137,7 +3137,7 @@ class ParSystem100p3eTestOp(bpy.types.Operator):
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
 
         if cb_model.using_id_params():
-            cb_model.compare_mdl_with_sha1 ( "a0ecc37275694d0dd07991aa484944af3f5ef652", test_name=self.self_test_name )
+            cb_model.compare_mdl_with_sha1 ( "e05bfd4b67fb88863db0eba0bcd1a28f9f6c1c25", test_name=self.self_test_name )
         else:
             cb_model.compare_mdl_with_sha1 ( "1be16b43f98f8a61617eb8450601a5deafccd3f3", test_name=self.self_test_name )
 
@@ -3207,7 +3207,7 @@ class GlyphTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=4.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "2ab0eb1aa8cd0b577f5b86fe130d16af8b6d7f80", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "45df62fae6c7d58fc70ee5ecab201d7c2252a3f4", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5809,7 +5809,7 @@ class MinDMinETestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='0.8 * 200/dt', time_step='dt', wait_time=5.0 )  # Can use to generate MDL, but SHA1 won't be right: export_format="mcell_mdl_modular", 
 
-        cb_model.compare_mdl_with_sha1 ( "c1e089f783a3435da2305b46e3d3a5da94b51176", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "f6c817bad666049827b3be8cb91e1e5ae3e4c89d", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 

@@ -660,7 +660,7 @@ def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
 # This temporary version uses a flag to force output with Blender's precision
 def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
     # Writes a single parameter as MDL as either a value or an expression
-    force_blender_precision = True
+    force_blender_precision = False
 
     # Export Parameter:
     if as_expr:
