@@ -92,6 +92,29 @@ def read_viz_data_load_post(context):
     bpy.ops.mcell.read_viz_data()
 
 
+@persistent
+def viz_data_save_post(context):
+    # context appears to be None
+    print ( "save post handler: cellblender_mol_viz.viz_data_save_post() called" )
+    if 'global_mol_file_list' in dir(cellblender.cellblender_mol_viz):
+        if len(cellblender.cellblender_mol_viz.global_mol_file_list) > 0:
+            # There is a non-empty file list, so check if this file path matches the current viz directory
+            print ( "New file name = " + str(bpy.data.filepath) )
+            mv = bpy.context.scene.mcell.mol_viz
+            if not mv.manual_select_viz_dir:
+                print ( "Viz not manually selected" )
+                bfn = os.path.abspath(str(bpy.data.filepath))
+                mfd = os.path.abspath(str(mv.mol_file_dir))
+                num_common = len(os.path.commonpath([bfn,mfd]))
+                print ( "Blender File Name = " + bfn + ",  Mol File Dir = " + mfd )
+                if os.path.basename(bfn) != mfd[num_common+1:]:
+                    print ( "Paths don't match, so clear mol-viz information" )
+                    # This is being saved as a different file than was used to generate the visualization data
+                    cellblender.cellblender_mol_viz.global_mol_file_list = []
+                    mv.mol_file_dir = ''
+                    #  __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
 # Operators can't be callbacks, so we need this function for now.  This is
 # temporary until we make importing viz data automatic.
 def read_viz_data_callback(self, context):
