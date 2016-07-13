@@ -357,6 +357,9 @@ def register():
     add_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
     add_handler ( bpy.app.handlers.save_pre, cellblender_objects.model_objects_update )
 
+    # Add the save_post handlers
+    add_handler ( bpy.app.handlers.save_post, cellblender_mol_viz.viz_data_save_post )
+
     # Register atexit function to shutdown simulation queue before quitting Blender
     atexit.register(simulation_queue.shutdown)
 
@@ -375,6 +378,7 @@ def unregister():
     remove_handler ( bpy.app.handlers.load_post, cellblender_preferences.load_preferences )
     remove_handler ( bpy.app.handlers.load_post, cellblender_main.scene_loaded )
     remove_handler ( bpy.app.handlers.load_post, cellblender_mol_viz.read_viz_data_load_post )
+    remove_handler ( bpy.app.handlers.save_post, cellblender_mol_viz.viz_data_save_post )
     remove_handler ( bpy.app.handlers.scene_update_pre, cellblender_main.scene_loaded )
     remove_handler ( bpy.app.handlers.save_pre, data_model.save_pre )
     remove_handler ( bpy.app.handlers.save_pre, cellblender_objects.model_objects_update )
