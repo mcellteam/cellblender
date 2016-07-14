@@ -53,6 +53,34 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 
+
+# Model Object Helpers:
+
+def get_object_status(context):
+    objs = bpy.data.objects
+    objstat = {}
+    for o in objs:
+        ostat = {}
+        ostat['vis'] = ( o.hide == False )
+        ostat['sel'] = ( o.select == True )
+        ostat['act'] = ( o == context.active_object )
+        objstat[o.name] = ostat
+    return objstat
+
+
+def restore_object_status(context, objstat):
+
+    for oname in objstat.keys():
+        if oname in bpy.data.objects:
+            ostat = objstat[oname]
+            o = bpy.data.objects[oname]
+            o.hide = ( ostat['vis'] == False )
+            o.select = ( ostat['sel'] == True )
+            if ostat['act']:
+                context.scene.objects.active = o
+
+
+
 # Model Object Operators:
 
 class MCELL_OT_snap_cursor_to_center(bpy.types.Operator):
@@ -92,6 +120,7 @@ class MCELL_OT_model_obj_add_mat(bpy.types.Operator):
     bl_description = ("Create a new material for selected object")
 
     def execute(self, context):
+        objstat = get_object_status(context)
         model_objects = context.scene.mcell.model_objects
         obj_name = str(model_objects.object_list[model_objects.active_obj_index].name)
         for obj in context.selected_objects:
@@ -108,6 +137,7 @@ class MCELL_OT_model_obj_add_mat(bpy.types.Operator):
             obj.data.materials[0] = mat
         else:
             obj.data.materials.append(mat)
+        restore_object_status(context, objstat)
         return{'FINISHED'}
 
 
@@ -347,6 +377,8 @@ def model_objects_update(context):
     if not context:
         context = bpy.context
 
+    objstat = get_object_status(context)
+
     mcell = context.scene.mcell
     mobjs = mcell.model_objects
     sobjs = context.scene.objects
@@ -404,6 +436,8 @@ def model_objects_update(context):
             cellblender_release.check_release_site_wrapped(context)
         # Restore the active index
         mcell.release_sites.active_release_index = save_release_idx
+
+    restore_object_status(context, objstat)
 
     return
 
