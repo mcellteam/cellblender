@@ -3051,6 +3051,7 @@ class ParSys200pCntTestOp(bpy.types.Operator):
                 par['par_description'] = "Parameter "+par['par_name']
                 par['par_units'] = "u"
                 par['par_expression'] = exp_str
+                pars.append ( par )
             context.scene.mcell.parameter_system.add_general_parameters_from_list ( context, pars )
         else:
             # Use non-batch add
@@ -3144,6 +3145,7 @@ class ParSystem100p3eTestOp(bpy.types.Operator):
                 par['par_description'] = "Parameter "+par['par_name']
                 par['par_units'] = "u"
                 par['par_expression'] = exp_str
+                pars.append ( par )
             context.scene.mcell.parameter_system.add_general_parameters_from_list ( context, pars )
 
         else:
