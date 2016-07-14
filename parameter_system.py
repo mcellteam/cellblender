@@ -1278,7 +1278,7 @@ class Parameter_Data ( bpy.types.PropertyGroup, Expression_Handler ):
         
         expr_list = self.parse_param_expr ( self.expr, parameter_system )
         
-        print ( "Expression List for " + str(self.expr) + " = " + str(expr_list) )
+        # print ( "Expression List for " + str(self.expr) + " = " + str(expr_list) )
 
         if expr_list is None:
             self.parsed_expr = ""
@@ -1711,7 +1711,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
 
     def remove_properties ( self, context ):
-        print ( "Removing all Parameter System Properties ... " )
+        # print ( "Removing all Parameter System Properties ... " )
         while len(self.general_parameter_list) > 0:
             self.general_parameter_list.remove(0)
             self.general_parameter_sort_list.remove(0)
@@ -1811,7 +1811,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 # Double it to be sure there's enough room
                 current_recursion_limit = 2 * current_recursion_limit
                 sys.setrecursionlimit ( current_recursion_limit )
-                print ( "Set recursion limit to " + str(current_recursion_limit) )
+                # print ( "Set recursion limit to " + str(current_recursion_limit) )
 
 
         new_par.disable_parse = True
@@ -1912,24 +1912,24 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
     #@profile('ParameterSystem.build_dependency_ordered_name_list')
     def build_dependency_ordered_name_list ( self ):
-        print ( "Building Dependency Ordered Name List" )
+        # print ( "Building Dependency Ordered Name List" )
         ol = []
         if len(self.general_parameter_list) > 0:
             gl = self.general_parameter_list;
             gs = set(gl.keys())
-            print ( " general parameter set (gs) = " + str(gs) )
+            # print ( " general parameter set (gs) = " + str(gs) )
             while len(gs) > len(ol):
                 defined_set = set(ol)
-                print ( "  In while with already defined_set = " + str(defined_set) )
+                # print ( "  In while with already defined_set = " + str(defined_set) )
                 added = False
                 for n in gs:
-                    print ( n + " is " + gl[n].par_name + ", depends on (" + gl[n].who_I_depend_on + "), and depended on by (" + gl[n].who_depends_on_me + ")" )
-                    print ( "   Checking for " + n + " in the defined set" )
+                    # print ( n + " is " + gl[n].par_name + ", depends on (" + gl[n].who_I_depend_on + "), and depended on by (" + gl[n].who_depends_on_me + ")" )
+                    # print ( "   Checking for " + n + " in the defined set" )
                     if not ( n in defined_set):
-                        print ( "     " + n + " is not defined yet, check if it can be" )
+                        # print ( "     " + n + " is not defined yet, check if it can be" )
                         dep_set = set(gl[n].who_I_depend_on.split())
                         if dep_set.issubset(defined_set):
-                            print ( "       " + n + " is now defined since all its dependencies are defined." )
+                            # print ( "       " + n + " is now defined since all its dependencies are defined." )
                             ol.append ( n );
                             defined_set = set(ol)
                             added = True
@@ -2048,13 +2048,13 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 descr = ""
                 if 'par_units' in p: units = p['par_units']
                 if 'par_description' in p: descr = p['par_description']
-                print ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + units + ") ... " + descr )
+                # print ( "Adding " + p['par_name'] + " = " + p['par_expression'] + " (" + units + ") ... " + descr )
                 new_par = self.add_general_parameter_with_values ( p['par_name'], p['par_expression'], units, descr )
                 # Set the initial value if available ... this preserves values of parameters with circular dependencies
                 if '_extras' in p:
                     if 'par_value' in p['_extras']:
                         new_par.value = p['_extras']['par_value']
-                        print ( "  Setting value of " + p['par_name'] + " to " + str(p['_extras']['par_value']) )
+                        # print ( "  Setting value of " + p['par_name'] + " to " + str(p['_extras']['par_value']) )
 
             # Update the parameter expressions for any that were invalid after all have been added
             last_num_invalid = 0
