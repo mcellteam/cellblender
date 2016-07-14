@@ -564,26 +564,26 @@ class CellBlender_Model:
 
 
     def add_label_to_model ( self, name="Label", text="Text", x=0, y=0, z=0, size=1, rx=0, ry=0, rz=0 ):
-        print ( "Adding " + text )
+        #print ( "Adding " + text )
 
         bpy.ops.object.text_add ( location=(x,y,z), rotation=(rx,ry,rz), radius=size )
         tobj = bpy.context.active_object
         tobj.data.body = text
 
-        print ( "Done Adding " + text )
+        #print ( "Done Adding " + text )
 
 
 
 
     def add_parameter_to_model ( self, name="a", expr="0.0", units="", desc="" ):
         """ Add a parameter to the model """
-        print ( "Test Suite Adding Parameter " + name + " = " + expr )
+        #print ( "Test Suite Adding Parameter " + name + " = " + expr )
         ps = self.mcell.parameter_system
         if self.using_id_params():
             ps.add_general_parameter_and_update ( self.context, name=name, expr=expr, units=units, desc=desc )
         else:
             ps.new_parameter ( name, pp=False, new_expr=expr, new_units=units, new_desc=desc )
-        print ( "Test Suite Done Adding Parameter " + name )
+        #print ( "Test Suite Done Adding Parameter " + name )
         #return ps.general_parameter_list[ps.active_par_index]
 
 
@@ -591,29 +591,29 @@ class CellBlender_Model:
 
     def parameter_system_op_add ( self ):
         """ Add a parameter to the model """
-        print ( "Test Suite Parameter Operator: add begin" )
+        #print ( "Test Suite Parameter Operator: add begin" )
         bpy.ops.mcell.add_parameter()
-        print ( "Test Suite Parameter Operator: add done " )
+        #print ( "Test Suite Parameter Operator: add done " )
 
 
     def parameter_system_op_remove ( self ):
         """ Remove the active parameter to the model """
-        print ( "Test Suite Parameter Operator: remove begin" )
+        #print ( "Test Suite Parameter Operator: remove begin" )
         bpy.ops.mcell.remove_parameter()
-        print ( "Test Suite Parameter Operator: remove done " )
+        #print ( "Test Suite Parameter Operator: remove done " )
 
 
     def parameter_system_op_set_active ( self, index ):
         """ Set the active parameter for the model """
-        print ( "Test Suite Parameter Operator: set active " + str(index) + " begin" )
+        #print ( "Test Suite Parameter Operator: set active " + str(index) + " begin" )
         self.mcell.parameter_system.active_par_index = index
-        print ( "Test Suite Parameter Operator: active done " )
+        #print ( "Test Suite Parameter Operator: active done " )
 
 
     def parameter_system_index_of_name ( self, name ):
         """ Return the first index of the name in the general parameter list """
 
-        print ( "Test Suite Parameter Index of Name: " + str(name) + " begin" )
+        #print ( "Test Suite Parameter Index of Name: " + str(name) + " begin" )
         if self.using_id_params():
             gpl = self.mcell.parameter_system.general_parameter_list
             index = 0
@@ -634,49 +634,49 @@ class CellBlender_Model:
 
     def parameter_system_op_get_active ( self ):
         """ Set the active parameter for the model """
-        print ( "Test Suite Parameter Operator: get active" )
+        #print ( "Test Suite Parameter Operator: get active" )
         return self.mcell.parameter_system.active_par_index
 
 
     def parameter_system_prop_name ( self, name ):
         """ Change active parameter name """
-        print ( "Test Suite Parameter Property: name = " + str(name) )
+        #print ( "Test Suite Parameter Property: name = " + str(name) )
         if self.using_id_params():
             self.mcell.parameter_system.active_name = name
         else:
             ps = self.mcell.parameter_system
             ps.general_parameter_list[ps.active_par_index].par_name = name
-        print ( "Test Suite Parameter Property: name done " )
+        #print ( "Test Suite Parameter Property: name done " )
 
     def parameter_system_prop_expr ( self, expr ):
         """ Change active parameter expression """
-        print ( "Test Suite Parameter Property: expr = " + str(expr) )
+        #print ( "Test Suite Parameter Property: expr = " + str(expr) )
         if self.using_id_params():
             self.mcell.parameter_system.active_expr = expr
         else:
             ps = self.mcell.parameter_system
             ps.general_parameter_list[ps.active_par_index].expr = expr
-        print ( "Test Suite Parameter Property: expr done " )
+        #print ( "Test Suite Parameter Property: expr done " )
 
     def parameter_system_prop_units ( self, units ):
         """ Change active parameter units """
-        print ( "Test Suite Parameter Property: units = " + str(units) )
+        #print ( "Test Suite Parameter Property: units = " + str(units) )
         if self.using_id_params():
             self.mcell.parameter_system.active_units = units
         else:
             ps = self.mcell.parameter_system
             ps.general_parameter_list[ps.active_par_index].units = units
-        print ( "Test Suite Parameter Property: units done " )
+        #print ( "Test Suite Parameter Property: units done " )
 
     def parameter_system_prop_desc ( self, desc ):
         """ Change active parameter desc """
-        print ( "Test Suite Parameter Property: desc = " + str(desc) )
+        #print ( "Test Suite Parameter Property: desc = " + str(desc) )
         if self.using_id_params():
             self.mcell.parameter_system.active_desc = desc
         else:
             ps = self.mcell.parameter_system
             ps.general_parameter_list[ps.active_par_index].descr = desc
-        print ( "Test Suite Parameter Property: desc done " )
+        #print ( "Test Suite Parameter Property: desc done " )
 
 
 
