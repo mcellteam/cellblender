@@ -258,8 +258,10 @@ class MCELL_OT_upgrade(bpy.types.Operator):
     def execute(self, context):
 
         print ( "Upgrade Operator called" )
+        objstat = cellblender_objects.get_object_status(context)
         data_model.upgrade_properties_from_data_model ( context )
         bpy.ops.cbm.refresh_operator()
+        cellblender_objects.restore_object_status(context, objstat)
         return {'FINISHED'}
 
 
