@@ -259,6 +259,7 @@ class MCELL_OT_upgrade(bpy.types.Operator):
 
         print ( "Upgrade Operator called" )
         data_model.upgrade_properties_from_data_model ( context )
+        bpy.ops.cbm.refresh_operator()
         return {'FINISHED'}
 
 
