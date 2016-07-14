@@ -354,12 +354,12 @@ class CellBlender_Model:
         if 'active_elist' in dir(ps):
             new_id = True
 
-        print ( "\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" )
-        if new_id:
-            print ( "Running with new ID parameters" )
-        else:
-            print ( "Running with old RNA parameters" )
-        print ( "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n" )
+        #print ( "\n@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" )
+        #if new_id:
+        #    print ( "Running with new ID parameters" )
+        #else:
+        #    print ( "Running with old RNA parameters" )
+        #print ( "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n" )
 
         return new_id
 
