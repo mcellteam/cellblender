@@ -3037,14 +3037,31 @@ class ParSys200pCntTestOp(bpy.types.Operator):
 
 
         # Add new parameters
-        for n in range(200):
-            exp_str = '1'
-            for i in range(max(n-1,0),n):
-                exp_str += ' + '
-                exp_str += self.pname(i)
+        if cb_model.using_id_params():
+            # Use batch add
+            pars = []
+            for n in range(200):
+                par = {}
+                exp_str = '1'
+                for i in range(max(n-1,0),n):
+                    exp_str += ' + '
+                    exp_str += self.pname(i)
 
-            par_name = self.pname(n)
-            cb_model.add_parameter_to_model ( name=par_name, expr=exp_str, units="u", desc="Parameter "+par_name )
+                par['par_name'] = self.pname(n)
+                par['par_description'] = "Parameter "+par['par_name']
+                par['par_units'] = "u"
+                par['par_expression'] = expr_str
+            context.scene.mcell.parameter_system.add_general_parameters_from_list ( context, pars )
+        else:
+            # Use non-batch add
+            for n in range(200):
+                exp_str = '1'
+                for i in range(max(n-1,0),n):
+                    exp_str += ' + '
+                    exp_str += self.pname(i)
+
+                par_name = self.pname(n)
+                cb_model.add_parameter_to_model ( name=par_name, expr=exp_str, units="u", desc="Parameter "+par_name )
 
         mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
 
@@ -3114,14 +3131,33 @@ class ParSystem100p3eTestOp(bpy.types.Operator):
 
 
         # Add new parameters
-        for n in range(100):
-            exp_str = '1e-6'
-            for i in range(max(n-3,0),n):
-                exp_str += ' + '
-                exp_str += self.pname(i)
+        if cb_model.using_id_params():
+            # Use batch add
+            pars = []
+            for n in range(100):
+                par = {}
+                exp_str = '1e-6'
+                for i in range(max(n-3,0),n):
+                    exp_str += ' + '
+                    exp_str += self.pname(i)
+                par['par_name'] = self.pname(n)
+                par['par_description'] = "Parameter "+par['par_name']
+                par['par_units'] = "u"
+                par['par_expression'] = expr_str
+            context.scene.mcell.parameter_system.add_general_parameters_from_list ( context, pars )
 
-            par_name = self.pname(n)
-            cb_model.add_parameter_to_model ( name=par_name, expr=exp_str, units="u", desc="Parameter "+par_name )
+        else:
+            # Use non-batch add
+            for n in range(100):
+                exp_str = '1e-6'
+                for i in range(max(n-3,0),n):
+                    exp_str += ' + '
+                    exp_str += self.pname(i)
+
+                par_name = self.pname(n)
+                cb_model.add_parameter_to_model ( name=par_name, expr=exp_str, units="u", desc="Parameter "+par_name )
+
+
 
         mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
 
