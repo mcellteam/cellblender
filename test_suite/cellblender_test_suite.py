@@ -3031,7 +3031,7 @@ def ParSysTest ( cb_model, first="1", num_pars=10, num_back=1, mdl_hash="", test
             par['par_units'] = "u"
             par['par_expression'] = exp_str
             pars.append ( par )
-        cb_model.context.scene.mcell.parameter_system.add_general_parameters_from_list ( context, pars )
+        cb_model.context.scene.mcell.parameter_system.add_general_parameters_from_list ( cb_model.context, pars )
 
     else:
         # Use non-batch add
