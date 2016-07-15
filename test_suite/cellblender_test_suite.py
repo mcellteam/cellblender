@@ -2416,7 +2416,7 @@ class ShapedCylinder (plf_object):
 
 def SimRunnerExample ( context, method="COMMAND", test_name=None ):
 
-    cb_model = CellBlender_Model (  context, test_name )
+    cb_model = CellBlender_Model ( context, test_name )
 
     scn = cb_model.get_scene()
     mcell = cb_model.get_mcell()
@@ -2559,7 +2559,7 @@ class SingleMoleculeTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2616,7 +2616,7 @@ class DoubleSphereTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2677,7 +2677,7 @@ class VolDiffusionConstTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2743,7 +2743,7 @@ class ReactionTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2809,7 +2809,7 @@ class ReleaseShapeTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -2886,7 +2886,7 @@ class ParSystemTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -3000,6 +3000,79 @@ class ParSystemTestOp(bpy.types.Operator):
         return { 'FINISHED' }
 
 
+###########################################################################################################
+# Shared routines for various paramter test configurations
+
+def pname ( n ):
+    name = None
+    if n < 26:
+        name = chr(ord('a')+n)
+    else:
+        name = "P_" + str(n)
+    return name
+
+def ParSysTest ( cb_model, first="1", num_pars=10, num_back=1, mdl_hash="", test_name="ParSysTest", wait_time=4.0 ):
+
+    scn = cb_model.get_scene()
+    mcell = cb_model.get_mcell()
+
+    # Add new parameters
+    if cb_model.using_id_params():
+        # Use batch add
+        pars = []
+        for n in range(num_pars):
+            par = {}
+            exp_str = first
+            for i in range(max(n-num_back,0),n):
+                exp_str += ' + '
+                exp_str += pname(i)
+            par['par_name'] = pname(n)
+            par['par_description'] = "Parameter "+par['par_name']
+            par['par_units'] = "u"
+            par['par_expression'] = exp_str
+            pars.append ( par )
+        cb_model.context.scene.mcell.parameter_system.add_general_parameters_from_list ( context, pars )
+
+    else:
+        # Use non-batch add
+        for n in range(num_pars):
+            exp_str = first
+            for i in range(max(n-num_back,0),n):
+                exp_str += ' + '
+                exp_str += pname(i)
+
+            par_name = pname(n)
+            cb_model.add_parameter_to_model ( name=par_name, expr=exp_str, units="u", desc="Parameter "+par_name )
+
+    mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
+
+    ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+    ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+    mol  = cb_model.get_molecule_species_by_name('a')
+
+    cb_model.change_molecule_display ( mol, glyph='Torus', scale=4.0, red=1.0, green=1.0, blue=0.0 )
+
+    cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="10" )
+
+    cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=wait_time )
+
+    cb_model.compare_mdl_with_sha1 ( mdl_hash, test_name=test_name )
+
+    cb_model.refresh_molecules()
+
+    cb_model.select_none()
+
+
+    cb_model.set_view_back()
+
+    cb_model.scale_view_distance ( 0.04 )
+
+    cb_model.hide_manipulator ( hide=True )
+
+    cb_model.play_animation()
+
+    return cb_model
 
 
 ###########################################################################################################
@@ -3013,14 +3086,6 @@ class ParSys200pCntTestOp(bpy.types.Operator):
     bl_label = test_name
     self_test_name = test_name
 
-    def pname ( self, n ):
-        name = None
-        if n < 26:
-            name = chr(ord('a')+n)
-        else:
-            name = "P_" + str(n)
-        return name
-
     def invoke(self, context, event):
         self.execute ( context )
         return {'FINISHED'}
@@ -3030,77 +3095,16 @@ class ParSys200pCntTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
-
-        scn = cb_model.get_scene()
-        mcell = cb_model.get_mcell()
-
-
-        # Add new parameters
-        if cb_model.using_id_params():
-            # Use batch add
-            pars = []
-            for n in range(200):
-                par = {}
-                exp_str = '1'
-                for i in range(max(n-1,0),n):
-                    exp_str += ' + '
-                    exp_str += self.pname(i)
-
-                par['par_name'] = self.pname(n)
-                par['par_description'] = "Parameter "+par['par_name']
-                par['par_units'] = "u"
-                par['par_expression'] = exp_str
-                pars.append ( par )
-            context.scene.mcell.parameter_system.add_general_parameters_from_list ( context, pars )
-        else:
-            # Use non-batch add
-            for n in range(200):
-                exp_str = '1'
-                for i in range(max(n-1,0),n):
-                    exp_str += ' + '
-                    exp_str += self.pname(i)
-
-                par_name = self.pname(n)
-                cb_model.add_parameter_to_model ( name=par_name, expr=exp_str, units="u", desc="Parameter "+par_name )
-
-        mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
-
-        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
-        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
-
-        mol  = cb_model.get_molecule_species_by_name('a')
-
-        cb_model.change_molecule_display ( mol, glyph='Torus', scale=4.0, red=1.0, green=1.0, blue=0.0 )
-
-        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="10" )
-
-        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
-
-        cb_model.compare_mdl_with_sha1 ( "789b6a5cef4ff583d7edd6cc0f8af5f9ce7a8e37", test_name=self.self_test_name )
-
-        cb_model.refresh_molecules()
-
-        cb_model.select_none()
-
-
-        cb_model.set_view_back()
-
-        cb_model.scale_view_distance ( 0.04 )
-
-        cb_model.hide_manipulator ( hide=True )
-
-        cb_model.play_animation()
+        cb_model = CellBlender_Model ( context, self.self_test_name )
+        cb_model = ParSysTest ( cb_model, first='1', num_pars=200, num_back=1, mdl_hash="789b6a5cef4ff583d7edd6cc0f8af5f9ce7a8e37", test_name=self.self_test_name )
 
         return { 'FINISHED' }
-
-
 
 
 ###########################################################################################################
 group_name = "Non-Geometry Tests"
 test_name = "100 Pars Using 3 Each"
-operator_name = "cellblender_test.par_system_100p3e"
+operator_name = "cellblender_test.par_sys_100p3e"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
 class ParSystem100p3eTestOp(bpy.types.Operator):
@@ -3108,14 +3112,6 @@ class ParSystem100p3eTestOp(bpy.types.Operator):
     bl_label = test_name
     self_test_name = test_name
 
-    def pname ( self, n ):
-        name = None
-        if n < 26:
-            name = chr(ord('a')+n)
-        else:
-            name = "P_" + str(n)
-        return name
-
     def invoke(self, context, event):
         self.execute ( context )
         return {'FINISHED'}
@@ -3125,82 +3121,19 @@ class ParSystem100p3eTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
-
-        scn = cb_model.get_scene()
-        mcell = cb_model.get_mcell()
-
-
-        # Add new parameters
+        cb_model = CellBlender_Model ( context, self.self_test_name )
         if cb_model.using_id_params():
-            # Use batch add
-            pars = []
-            for n in range(100):
-                par = {}
-                exp_str = '1e-6'
-                for i in range(max(n-3,0),n):
-                    exp_str += ' + '
-                    exp_str += self.pname(i)
-                par['par_name'] = self.pname(n)
-                par['par_description'] = "Parameter "+par['par_name']
-                par['par_units'] = "u"
-                par['par_expression'] = exp_str
-                pars.append ( par )
-            context.scene.mcell.parameter_system.add_general_parameters_from_list ( context, pars )
-
+            cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=100, num_back=3, mdl_hash="e05bfd4b67fb88863db0eba0bcd1a28f9f6c1c25", test_name=self.self_test_name )
         else:
-            # Use non-batch add
-            for n in range(100):
-                exp_str = '1e-6'
-                for i in range(max(n-3,0),n):
-                    exp_str += ' + '
-                    exp_str += self.pname(i)
-
-                par_name = self.pname(n)
-                cb_model.add_parameter_to_model ( name=par_name, expr=exp_str, units="u", desc="Parameter "+par_name )
-
-
-
-        mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
-
-        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
-        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
-
-        mol  = cb_model.get_molecule_species_by_name('a')
-
-        cb_model.change_molecule_display ( mol, glyph='Torus', scale=4.0, red=1.0, green=1.0, blue=0.0 )
-
-        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="10" )
-
-        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
-
-        if cb_model.using_id_params():
-            cb_model.compare_mdl_with_sha1 ( "e05bfd4b67fb88863db0eba0bcd1a28f9f6c1c25", test_name=self.self_test_name )
-        else:
-            cb_model.compare_mdl_with_sha1 ( "1be16b43f98f8a61617eb8450601a5deafccd3f3", test_name=self.self_test_name )
-
-        cb_model.refresh_molecules()
-
-        cb_model.select_none()
-
-
-        cb_model.set_view_back()
-
-        cb_model.scale_view_distance ( 0.04 )
-
-        cb_model.hide_manipulator ( hide=True )
-
-        cb_model.play_animation()
+            cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=100, num_back=3, mdl_hash="1be16b43f98f8a61617eb8450601a5deafccd3f3", test_name=self.self_test_name )
 
         return { 'FINISHED' }
-
-
 
 
 ###########################################################################################################
 group_name = "Non-Geometry Tests"
 test_name = "1000 Pars Using 3 Each"
-operator_name = "cellblender_test.par_system_1000p3e"
+operator_name = "cellblender_test.par_sys_1000p3e"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
 class ParSystem1000p3eTestOp(bpy.types.Operator):
@@ -3208,14 +3141,6 @@ class ParSystem1000p3eTestOp(bpy.types.Operator):
     bl_label = test_name
     self_test_name = test_name
 
-    def pname ( self, n ):
-        name = None
-        if n < 26:
-            name = chr(ord('a')+n)
-        else:
-            name = "P_" + str(n)
-        return name
-
     def invoke(self, context, event):
         self.execute ( context )
         return {'FINISHED'}
@@ -3225,75 +3150,13 @@ class ParSystem1000p3eTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
-
-        scn = cb_model.get_scene()
-        mcell = cb_model.get_mcell()
-
-
-        # Add new parameters
+        cb_model = CellBlender_Model ( context, self.self_test_name )
         if cb_model.using_id_params():
-            # Use batch add
-            pars = []
-            for n in range(1000):
-                par = {}
-                exp_str = '1e-6'
-                for i in range(max(n-3,0),n):
-                    exp_str += ' + '
-                    exp_str += self.pname(i)
-                par['par_name'] = self.pname(n)
-                par['par_description'] = "Parameter "+par['par_name']
-                par['par_units'] = "u"
-                par['par_expression'] = exp_str
-                pars.append ( par )
-            context.scene.mcell.parameter_system.add_general_parameters_from_list ( context, pars )
-
+            cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=1000, num_back=3, mdl_hash="8b9749e45a81dd30f9663f0151b3e5aff19a775f", test_name=self.self_test_name )
         else:
-            # Use non-batch add
-            for n in range(1000):
-                exp_str = '1e-6'
-                for i in range(max(n-3,0),n):
-                    exp_str += ' + '
-                    exp_str += self.pname(i)
-
-                par_name = self.pname(n)
-                cb_model.add_parameter_to_model ( name=par_name, expr=exp_str, units="u", desc="Parameter "+par_name )
-
-
-
-        mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-6" )
-
-        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
-        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
-
-        mol  = cb_model.get_molecule_species_by_name('a')
-
-        cb_model.change_molecule_display ( mol, glyph='Torus', scale=4.0, red=1.0, green=1.0, blue=0.0 )
-
-        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="10" )
-
-        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=4.0 )
-
-        if cb_model.using_id_params():
-            cb_model.compare_mdl_with_sha1 ( "8b9749e45a81dd30f9663f0151b3e5aff19a775f", test_name=self.self_test_name )
-        else:
-            cb_model.compare_mdl_with_sha1 ( "fe97effc69d90e15c5a39b72aebfbbd660d3f707", test_name=self.self_test_name )
-
-        cb_model.refresh_molecules()
-
-        cb_model.select_none()
-
-
-        cb_model.set_view_back()
-
-        cb_model.scale_view_distance ( 0.04 )
-
-        cb_model.hide_manipulator ( hide=True )
-
-        cb_model.play_animation()
+            cb_model = ParSysTest ( cb_model, first='1e-6', num_pars=1000, num_back=3, mdl_hash="fe97effc69d90e15c5a39b72aebfbbd660d3f707", test_name=self.self_test_name )
 
         return { 'FINISHED' }
-
 
 
 
@@ -3317,7 +3180,7 @@ class GlyphTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -3444,7 +3307,7 @@ class CubeSurfaceTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -3516,7 +3379,7 @@ class SphereSurfaceTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -3588,7 +3451,7 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -3669,7 +3532,7 @@ class SurfaceClassesTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -3805,7 +3668,7 @@ class CapsuleTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -3906,7 +3769,7 @@ class GobletTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -3984,7 +3847,7 @@ class EcoliTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -4272,7 +4135,7 @@ class MDLGeoImport(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -4431,7 +4294,7 @@ def create_subdiv_squashed_z_box ( scene, min_len=0.25, max_len=3.5, period_fram
 
 def DynamicGeometryCubeTest ( context, mol_types="vs", size=[1.0,1.0,1.0], subs=[1,1,1], dc_2D="1e-4", dc_3D="1e-5", time_step=1e-6, iterations=300, min_len=0.25, max_len=3.5, period_frames=100, mdl_hash="", test_name="Dynamic Geometry Cube", wait_time=30.0, seed=1 ):
 
-    cb_model = CellBlender_Model (  context, test_name )
+    cb_model = CellBlender_Model ( context, test_name )
 
     bp = cb_model.path_to_blend
     p = bp[0:bp.rfind(os.sep)]
@@ -4921,7 +4784,7 @@ class DynCubeTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         bp = cb_model.path_to_blend
         p = bp[0:bp.rfind(os.sep)]
@@ -5186,7 +5049,7 @@ class DynIcosphereTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_icosphere_frame_change_handler
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         bp = cb_model.path_to_blend
         p = bp[0:bp.rfind(os.sep)]
@@ -5396,7 +5259,7 @@ class SimpleMoleculeCountTestOp(bpy.types.Operator):
 
         print ( str(test_groups) )
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -5456,7 +5319,7 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -5541,7 +5404,7 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
 
 def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_rate, interaction_radius, time_step, iterations, mdl_hash, test_name, wait_time ):
 
-    cb_model = CellBlender_Model (  context, test_name )
+    cb_model = CellBlender_Model ( context, test_name )
 
     scn = cb_model.get_scene()
     mcell = cb_model.get_mcell()
@@ -5697,7 +5560,7 @@ class OrganelleTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -5841,7 +5704,7 @@ class MinDMinETestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
@@ -5987,7 +5850,7 @@ class SimpleSynapseTestOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model (  context, self.self_test_name )
+        cb_model = CellBlender_Model ( context, self.self_test_name )
 
         scn = cb_model.get_scene()
         mcell = cb_model.get_mcell()
