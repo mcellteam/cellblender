@@ -672,7 +672,7 @@ class Expression_Handler:
     @profile('Expression_Handler.recurse_tree_symbols')
     def recurse_tree_symbols ( self, local_name_ID_dict, pt, current_expr ):
         """ Recurse through the parse tree looking for "terminal" items which are added to the list """
-        # print ( "Top of recurse_tree_symbols" )
+        dbprint ( "Top of recurse_tree_symbols" )
 
         # Strip off the outer layers that are not of interest
         while (type(pt) == tuple) and (len(pt) == 2) and (type(pt[1]) == tuple):
@@ -968,10 +968,21 @@ class MCELL_OT_remove_all_pars(bpy.types.Operator):
     bl_options = {'REGISTER'}
     def execute(self, context):
         status = ""
-        while ( len(context.scene.mcell.parameter_system.general_parameter_list) > 0 ):
-            status = context.scene.mcell.parameter_system.remove_active_parameter(context)
-        if status != "":
-            self.report({'ERROR'}, status)
+        ps = context.scene.mcell.parameter_system
+        num_deleted = 1
+        while ( len(ps.general_parameter_list) > 0 ) and ( num_deleted > 0 ):
+            # Delete from end since that's most likely to be the fastest
+            num_before = len(ps.general_parameter_list)
+            next_to_delete = len(ps.general_parameter_list) - 1
+            dbprint ( "Deleting parameters starting with " + str(next_to_delete) )
+            while next_to_delete >= 0:
+                dbprint ( "  Deleting parameter " + str(next_to_delete) )
+                ps.active_par_index = next_to_delete
+                ps.remove_active_parameter(context)
+                next_to_delete += -1
+            num_deleted = num_before - len(ps.general_parameter_list)
+        if len(ps.general_parameter_list) > 0:
+            self.report({'ERROR'}, "Unable to delete all")
         return {'FINISHED'}
 
 
@@ -1731,7 +1742,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
         # Start by creating all of the parameters
 
-        print ( "Top of add_general_parameters_from_list" )
+        dbprint ( "Top of add_general_parameters_from_list" )
 
         for p in par_list:
 
@@ -1774,7 +1785,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 rna_par.par_id = gid
                 rna_par.name = name
 
-        print ( "Step 2 of add_general_parameters_from_list" )
+        dbprint ( "Step 2 of add_general_parameters_from_list" )
 
         # Determine the dependency order of the list
         if len(self['gp_dict']) > 0:
@@ -1786,17 +1797,17 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                 dbprint ( "ParExp = " + str(parameterized_expr) )
                 par['elist'] = pickle.dumps(parameterized_expr,protocol=0).decode('latin1')
 
-        print ( "Step 3 of add_general_parameters_from_list" )
+        dbprint ( "Step 3 of add_general_parameters_from_list" )
 
         for k in self['gp_dict'].keys():
             self.update_expr_list_by_id ( context, k )
 
-        print ( "Step 4 of add_general_parameters_from_list" )
+        dbprint ( "Step 4 of add_general_parameters_from_list" )
 
         # This one takes a long time:
         self.update_all_parameters ( context )  # This calls update_dependency_ordered_name_list
 
-        print ( "Step 5 of add_general_parameters_from_list" )
+        dbprint ( "Step 5 of add_general_parameters_from_list" )
 
         self.active_par_index = len(self.general_parameter_list)-1
 
@@ -1850,6 +1861,15 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                      status = "Parameter " + self['gp_dict'][pid]['name'] + " is used by: " + status
                 else:
                     # OK to delete
+
+                    # Remove this parameter from the who_depends_on_me of every parameter in the who_i_depend_on dictionary
+
+                    wido_list = [ k for k in self['gp_dict'][pid]['who_i_depend_on'] ]
+                    for wido in wido_list:
+                        self['gp_dict'][wido]['who_depends_on_me'].pop(pid)
+
+                    # Remove this parameter itself
+
                     self['gp_dict'].pop(par_map_item.par_id)
                     self['gp_ordered_list'] = [ i for i in self['gp_ordered_list'] if i != par_map_item.par_id ]  # This is one way to remove an item in a read only list
 
