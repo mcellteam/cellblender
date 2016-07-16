@@ -1395,6 +1395,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
     # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
     last_parameter_update_time = StringProperty ( default="-1.0", description="Time that the last parameter was updated" )
 
+    show_debugging = BoolProperty ( default=False, description="Show Debugging" )
 
     @profile('ParameterSystem.build_data_model_from_properties')
     def build_data_model_from_properties ( self, context ):
@@ -2587,9 +2588,13 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             row.prop(self, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
 
 
-            row = box.row()
-            row.label ( "======== Debugging Controls ========" )
-            self.draw_debug_items ( context, box )
+            if not self.show_debugging:
+                row = box.row()
+                row.prop(self, "show_debugging", text="Show Debugging", icon='TRIA_RIGHT', emboss=False)
+            else:
+                row = box.row()
+                row.prop(self, "show_debugging", text="Show Debugging", icon='TRIA_DOWN', emboss=False)
+                self.draw_debug_items ( context, box )
 
 
     @profile('ParameterSystem.draw_panel')
