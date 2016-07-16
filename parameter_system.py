@@ -730,33 +730,6 @@ class Expression_Handler:
                 return current_expr
         return None
 
-    @profile('Expression_Handler.evaluate_parsed_expr_py')
-    def evaluate_parsed_expr_py ( self, param_sys ):
-        self.updating = True        # Set flag to check for self-references
-        param_sys.recursion_depth += 1
-        self.isvalid = False        # Mark as invalid and return None on any failure
-        general_parameter_list = param_sys.general_parameter_list
-        who_i_depend_on_list = self.who_i_depend_on.split()
-        for I_depend_on in who_i_depend_on_list:
-            if not general_parameter_list[I_depend_on].isvalid:
-                dbprint ( "Cannot evaluate " + self.name + " because " + general_parameter_list[I_depend_on].name + " is not valid." )
-                self.isvalid = False
-                self.pending_expr = self.expr
-                param_sys.register_validity ( self.name, False )
-                # Might want to propagate invalidity here as well ?
-                param_sys.recursion_depth += -1
-                self.updating = False
-                dbprint ( "Return from evaluate_parsed_expr_py with depth = " + str(param_sys.recursion_depth) )
-                return None
-            exec ( general_parameter_list[I_depend_on].name + " = " + str(general_parameter_list[I_depend_on].value) )
-        #print ( "About to exec (" + self.name + " = " + self.parsed_expr_py + ")" )
-        exec ( self.name + " = " + self.parsed_expr_py )
-        self.isvalid = True
-        self.pending_expr = ""
-        param_sys.register_validity ( self.name, True )
-        return ( eval ( self.name, globals(), locals() ) )
-
-
 
 class MCELL_OT_update_general(bpy.types.Operator):
     bl_idname = "mcell.update_general"
