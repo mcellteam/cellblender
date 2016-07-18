@@ -64,6 +64,7 @@ def get_object_status(context):
         ostat['vis'] = ( o.hide == False )
         ostat['sel'] = ( o.select == True )
         ostat['act'] = ( o == context.active_object )
+        ostat['layers'] = o.layers[:]
         objstat[o.name] = ostat
     return objstat
 
@@ -76,6 +77,7 @@ def restore_object_status(context, objstat):
             o = bpy.data.objects[oname]
             o.hide = ( ostat['vis'] == False )
             o.select = ( ostat['sel'] == True )
+            o.layers = ostat['layers'][:]
             if ostat['act']:
                 context.scene.objects.active = o
 

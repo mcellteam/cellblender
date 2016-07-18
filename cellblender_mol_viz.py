@@ -808,6 +808,10 @@ def mol_viz_file_read(mcell_prop, filepath):
                     # print ( "Using a " + str(mol.glyph) + " molecule glyph" )
                     mol_shape_obj = objs.get(mol_shape_obj_name)
 
+                # Save the current layer(s) that the molecule positions are on.
+                # We'll apply this to the new position and glyph objects later.
+                mol_layers = mol_shape_obj.layers[:]
+
                 # Look-up material, create if needed.
                 # Associate material with mesh shape.
                 mol_mat = mats.get(mol_mat_name)
@@ -856,6 +860,8 @@ def mol_viz_file_read(mcell_prop, filepath):
                 mol_obj.use_dupli_vertices_rotation = True
                 mol_obj.parent = mols_obj
                 mol_obj.hide_select = True
+                mol_obj.layers = mol_layers[:]
+                mol_shape_obj.layers = mol_layers[:]
             
                 # Restore the visibility state
                 mol_obj.hide = hide
