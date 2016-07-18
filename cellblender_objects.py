@@ -153,7 +153,15 @@ class MCELL_OT_model_objects_add(bpy.types.Operator):
 
         mcell = context.scene.mcell
         # From the list of selected objects, only add MESH objects.
-        objs = [obj for obj in context.selected_objects if obj.type == 'MESH']
+        # Avoid adding any of the molecule mesh objects (either pos or shapes).
+        try:
+            top_mol_obj = bpy.data.objects['molecules']
+            mol_objs = [obj for obj in top_mol_obj.children] # get positions
+            if mol_objs:
+                mol_objs += [obj.children[0] for obj in mol_objs] # get shapes too
+        except KeyError:
+            mol_objs = []
+        objs = [obj for obj in context.selected_objects if (obj.type == 'MESH' and obj not in mol_objs) ]
         for obj in objs:
             # context.active_object = obj # Can't do this because active_object is read only
             context.scene.objects.active = obj
