@@ -877,6 +877,17 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 col.operator ('mcell.mol_shade_smooth')
                 col = row.column()
                 col.operator ('mcell.mol_shade_flat')
+
+                # Allow the user to set what layer(s) the molecule appears on
+                mol = molecules.molecule_list[molecules.active_mol_index]
+                mol_obj_name = "mol_" + mol.name
+                mol_shape_name = mol_obj_name + "_shape"
+                mol_obj = bpy.context.scene.objects.get(mol_obj_name)
+                mol_shape_obj = bpy.context.scene.objects.get(mol_shape_name)
+                row = box.row(align=True)
+                row.prop(mol_obj, "layers")
+                mol_shape_obj.layers = mol_obj.layers
+
                 if len(bpy.data.materials) and (bpy.context.scene.render.engine in {'BLENDER_RENDER', 'BLENDER_GAME'}):
                   if 'mcell' in bpy.context.scene.keys():
                     #print ( "Context OK, showing materials" )
