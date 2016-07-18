@@ -66,15 +66,26 @@ class MCELL_OT_create_partitions_object(bpy.types.Operator):
         objs = bpy.data.objects
         meshes = bpy.data.meshes
         if not "partitions" in objs:
-            old_active_object = bpy.context.active_object
+            # Save object selections and mode
+            object_list = bpy.context.scene.objects
+            selected_objs = [obj for obj in object_list if obj.select]
+            for obj in selected_objs:
+                obj.select = False
+            active_object = bpy.context.active_object
+            active_object_mode = active_object.mode
+            bpy.ops.object.mode_set(mode='OBJECT')
             # Add a box that represents the partitions' boundaries
             bpy.ops.mesh.primitive_cube_add()
             partition_object = bpy.context.active_object
+            # Restore selections and mode
+            scene.objects.active = active_object
+            for obj in selected_objs:
+                obj.select = True
+            bpy.ops.object.mode_set(mode=active_object_mode)
+            partition_object.select = False
             # Prevent user from manipulating the box, because I don't yet have
             # a good way of updating the partitions when the box object is
             # moved/scaled in the 3D view window
-            scene.objects.active = old_active_object
-            partition_object.select = False
             partition_object.hide_select = True
             # Set draw_type to wireframe so the user can see what's inside
             partition_object.draw_type = 'WIRE'
