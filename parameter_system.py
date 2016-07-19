@@ -1092,7 +1092,7 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
                 valid = parameter_system.build_eval_dict ( gl )
 
             if not valid:
-                print ( "Error: " + str(parameterized_expr) + " cannot be evaluated" )
+                print ( "Error: \"" + str(parameterized_expr) + "\" cannot be evaluated (1)" )
                 self['valid'] = False
                 self['value'] = 0.0
             else:
@@ -1102,8 +1102,11 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
                     try:
                         self['value'] = float(eval(py_expr,globals(),gl))
                     except:
+                        print ( "Error: \"" + str(py_expr) + "\" cannot be evaluated (2)" )
+                        print ( "  Globals (gl) = " + str(gl) )
                         self['valid'] = False
                 else:
+                    print ( "Error: \"" + str(py_expr) + "\" cannot be evaluated (3)" )
                     self['valid'] = False
                     self['value'] = 0.0
             # It's not clear if this should be integerized here or only on display. Retain full value for now.
@@ -1526,13 +1529,13 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         return ( self.next_pid )
 
 
-    @profile('ParameterSystem.new_parameter')
-    def new_parameter ( self, new_name=None, pp=False, new_expr=None, new_units=None, new_desc=None, new_type='f' ):
+    @profile('ParameterSystem.new_general_parameter')
+    def new_general_parameter ( self, new_name=None, new_expr=None, new_units=None, new_desc=None, new_type='f' ):
         """ Add a new parameter to the list of parameters, and return its id name (g# or p#) """
         # Create and return a parameter dictionary entry
         # The new name is the user name ... not the id name
 
-        dbprint ( "Called new_parameter ( " + str(new_name) + ", " + str(pp) + ", " + str(new_expr) + ", " + str(new_units) + ", " + str(new_desc) + " )" )
+        dbprint ( "Called new_general_parameter ( " + str(new_name) + ", " + str(new_expr) + ", " + str(new_units) + ", " + str(new_desc) + " )" )
 
         new_par_id_dict = {
             'name': new_name,           # This is the user name
@@ -1674,7 +1677,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
         
         new_name = self.construct_unique_name ( name )
 
-        new_id_par = self.new_parameter ( new_name=new_name, new_expr=expr, new_units=units, new_desc=desc )
+        new_id_par = self.new_general_parameter ( new_name=new_name, new_expr=expr, new_units=units, new_desc=desc )
 
         dbprint ( "Adding " + str(new_id_par) )
         self['gp_dict'][new_gid_key] = new_id_par
@@ -1745,7 +1748,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
 
             # Create or overwrite this entry
 
-            new_id_par = self.new_parameter ( new_name=name, new_expr=expr, new_units=units, new_desc=descr )
+            new_id_par = self.new_general_parameter ( new_name=name, new_expr=expr, new_units=units, new_desc=descr )
             new_id_par['expr'] = expr
 
             self['gp_dict'][gid] = new_id_par
