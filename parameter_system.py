@@ -1089,6 +1089,7 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
             valid = True
             if gl is None:
                 gl = {}
+                parameter_system.update_dependency_ordered_name_list() # This call is needed the first time
                 valid = parameter_system.build_eval_dict ( gl )
 
             if not valid:
