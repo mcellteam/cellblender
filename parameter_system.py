@@ -1830,7 +1830,12 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
                     status += " " + self['gp_dict'][wdom]['name']
 
                 for wdom in what_depends_on_me:
-                    status += " " + self.panel_parameter_list[wdom]['user_name']
+                    # The following test checks to see that any dependencies still exist
+                    #  before adding the dependency to the error list preventing deletion
+                    # However, this still does not work because some items (like Mol Placement)
+                    #  don't actively delete their own parameters when they are removed.
+                    if wdom in self.panel_parameter_list:
+                        status += " " + self.panel_parameter_list[wdom]['user_name']
 
                 status = status.strip()
 
