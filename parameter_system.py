@@ -237,31 +237,6 @@ class MCELL_OT_clear_profiling(bpy.types.Operator):
 
 ####################### End of Profiling Code #######################
 
-
-
-# class Expression_Handler:
-"""
-  Note that while this expression handler supports string encoding of expressions, this version encodes expressions as pickled lists.
-    The string encoding code should be removed after the pickled list code is working properly.
-
-  String encoding of expression lists:
-
-  String Encoding Rules:
-    The tilde character (~) separates all terms
-    Any term that does not start with # is a string literal
-    Any term that starts with #? is an undefined parameter name
-    Any term that starts with # followed by an integer is a parameter ID
-  Example:
-    Parameter 'a' has an ID of 1
-    Parameter 'b' has an ID of 2
-    Parameter 'c' is undefined
-    Original Expression:  a + 5 + b + c
-      Expression as a List: [1, '+', '5', '+', 2, '+', None, 'c' ]
-      Expression as string:  #1~+~5~+~#2~+~#?c
-    Note that these ID numbers always reference General Parameters so the IDs
-      used in this example (1 and 2) will reference "g1" and "g2" respectively.
-      Panel Parameters cannot be referenced in expressions (they have no name).
-"""
     
 
 class MCELL_OT_update_general(bpy.types.Operator):
@@ -640,7 +615,8 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
                         print ( "  Globals (gl) = " + str(gl) )
                         self['valid'] = False
                 else:
-                    print ( "Error: \"" + str(py_expr) + "\" cannot be evaluated (3)" )
+                    # Empty parameters are intended to be interpreted as defaults by the code that uses them
+                    # print ( "Error: \"" + str(py_expr) + "\" cannot be evaluated (3)" )
                     self['valid'] = False
                     self['value'] = 0.0
             # It's not clear if this should be integerized here or only on display. Retain full value for now.
@@ -1526,6 +1502,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
     @profile('ParameterSystem.update_parameter_expression')
     def update_parameter_expression (self, context, interactive=False):
+        if len(self.active_expr.strip()) <= 0:
+            self.active_expr = "0"
+            return
         if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
             needs_update = False
             try:
@@ -2157,26 +2136,23 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
 
     """
-    Expression Handler Code moved here:
+    Expression Handler Code:
+      Expressions are encoded into lists containing strings and integers.
+      The string items in the lists are verbatim representations of parts
+      of the expression that do not represent variable parameters. The
+      integer items in the list are the ID numbers of variable parameters
+      known as "general parameters" in this code. The value of "None" is
+      used to prefix general parameters that are currently undefined
+      within the parameter system.
 
-      Note that while this expression handler supports string encoding of expressions, this version encodes expressions as pickled lists.
-        The string encoding code should be removed after the pickled list code is working properly.
-
-      String encoding of expression lists:
-
-      String Encoding Rules:
-        The tilde character (~) separates all terms
-        Any term that does not start with # is a string literal
-        Any term that starts with #? is an undefined parameter name
-        Any term that starts with # followed by an integer is a parameter ID
       Example:
         Parameter 'a' has an ID of 1
         Parameter 'b' has an ID of 2
         Parameter 'c' is undefined
         Original Expression:  a + 5 + b + c
-          Expression as a List: [1, '+', '5', '+', 2, '+', None, 'c' ]
-          Expression as string:  #1~+~5~+~#2~+~#?c
-        Note that these ID numbers always reference General Parameters so the IDs
+        Expression as a List: [1, '+', '5', '+', 2, '+', None, 'c' ]
+        Alternate Expression as a List: [1, '+ 5 +', 2, '+', None, 'c' ]
+          Note that these ID numbers always reference General Parameters so the IDs
           used in this example (1 and 2) will reference "g1" and "g2" respectively.
           Panel Parameters cannot be referenced in expressions (they have no name).
     """
