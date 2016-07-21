@@ -239,497 +239,30 @@ class MCELL_OT_clear_profiling(bpy.types.Operator):
 
 
 
-class Expression_Handler:
-    """
-      Note that while this expression handler supports string encoding of expressions, this version encodes expressions as pickled lists.
-        The string encoding code should be removed after the pickled list code is working properly.
+# class Expression_Handler:
+"""
+  Note that while this expression handler supports string encoding of expressions, this version encodes expressions as pickled lists.
+    The string encoding code should be removed after the pickled list code is working properly.
 
-      String encoding of expression lists:
-      
-      Rules:
-        The tilde character (~) separates all terms
-        Any term that does not start with # is a string literal
-        Any term that starts with #? is an undefined parameter name
-        Any term that starts with # followed by an integer is a parameter ID
-      Example:
-        Parameter 'a' has an ID of 1
-        Parameter 'b' has an ID of 2
-        Parameter 'c' is undefined
-        Original Expression:  a + 5 + b + c
-          Expression as a List: [1, '+', '5', '+', 2, '+', None, 'c' ]
-          Expression as string:  #1~+~5~+~#2~+~#?c
-        Note that these ID numbers always reference General Parameters so the IDs
-          used in this example (1 and 2) will reference "g1" and "g2" respectively.
-          Panel Parameters cannot be referenced in expressions (they have no name).
-    """
+  String encoding of expression lists:
+
+  String Encoding Rules:
+    The tilde character (~) separates all terms
+    Any term that does not start with # is a string literal
+    Any term that starts with #? is an undefined parameter name
+    Any term that starts with # followed by an integer is a parameter ID
+  Example:
+    Parameter 'a' has an ID of 1
+    Parameter 'b' has an ID of 2
+    Parameter 'c' is undefined
+    Original Expression:  a + 5 + b + c
+      Expression as a List: [1, '+', '5', '+', 2, '+', None, 'c' ]
+      Expression as string:  #1~+~5~+~#2~+~#?c
+    Note that these ID numbers always reference General Parameters so the IDs
+      used in this example (1 and 2) will reference "g1" and "g2" respectively.
+      Panel Parameters cannot be referenced in expressions (they have no name).
+"""
     
-    @profile('Expression_Handler.UNDEFINED_NAME')
-    def UNDEFINED_NAME(self):
-        return ( "   (0*1111111*0)   " )   # This is a string that evaluates to zero, but is easy to spot in expressions
-    
-    @profile('Expression_Handler.get_expression_keywords')
-    def get_expression_keywords(self):
-        return ( { '^': '**', 'SQRT': 'sqrt', 'EXP': 'exp', 'LOG': 'log', 'LOG10': 'log10', 'SIN': 'sin', 'COS': 'cos', 'TAN': 'tan', 'ASIN': 'asin', 'ACOS':'acos', 'ATAN': 'atan', 'ABS': 'abs', 'CEIL': 'ceil', 'FLOOR': 'floor', 'MAX': 'max', 'MIN': 'min', 'RAND_UNIFORM': 'uniform', 'RAND_GAUSSIAN': 'gauss', 'PI': 'pi', 'SEED': '1' } )
-
-    @profile('Expression_Handler.get_mdl_keywords')
-    def get_mdl_keywords(self):
-        # It's not clear how these will be handled, but they've been added here because they will be needed to avoid naming conflicts
-        return ( [  "ABS",
-                    "ABSORPTIVE",
-                    "ACCURATE_3D_REACTIONS",
-                    "ACOS",
-                    "ALL_DATA",
-                    "ALL_CROSSINGS",
-                    "ALL_ELEMENTS",
-                    "ALL_ENCLOSED",
-                    "ALL_HITS",
-                    "ALL_ITERATIONS",
-                    "ALL_MESHES",
-                    "ALL_MOLECULES",
-                    "ALL_NOTIFICATIONS",
-                    "ALL_TIMES",
-                    "ALL_WARNINGS",
-                    "ASCII",
-                    "ASIN",
-                    "ASPECT_RATIO",
-                    "ATAN",
-                    "BACK",
-                    "BACK_CROSSINGS",
-                    "BACK_HITS",
-                    "BINARY",
-                    "BOTTOM",
-                    "BOX",
-                    "BOX_TRIANGULATION_REPORT",
-                    "BRIEF",
-                    "CEIL",
-                    "CELLBLENDER",
-                    "CENTER_MOLECULES_ON_GRID",
-                    "CHECKPOINT_INFILE",
-                    "CHECKPOINT_OUTFILE",
-                    "CHECKPOINT_ITERATIONS",
-                    "CHECKPOINT_REALTIME",
-                    "CHECKPOINT_REPORT",
-                    "CLAMP",
-                    "CLAMP_CONC",
-                    "CLAMP_CONCENTRATION",
-                    "CLOSE_PARTITION_SPACING",
-                    "COMPLEX_PLACEMENT_ATTEMPTS",
-                    "COMPLEX_PLACEMENT_FAILURE",
-                    "COMPLEX_PLACEMENT_FAILURE_THRESHOLD",
-                    "COMPLEX_RATE",
-                    "CORNERS",
-                    "COS",
-                    "CONC",
-                    "CONCENTRATION",
-                    "COUNT",
-                    "CUBIC",
-                    "CUBIC_RELEASE_SITE",
-                    "CUSTOM_SPACE_STEP",
-                    "CUSTOM_RK",
-                    "CUSTOM_TIME_STEP",
-                    "D_3D",
-                    "DIFFUSION_CONSTANT",
-                    "DIFFUSION_CONSTANT_3D",
-                    "D_2D",
-                    "DIFFUSION_CONSTANT_2D",
-                    "DEFAULT",
-                    "DEFINE_COMPLEX_MOLECULE",
-                    "DEFINE_MOLECULE",
-                    "DEFINE_MOLECULES",
-                    "DEFINE_REACTIONS",
-                    "DEFINE_RELEASE_PATTERN",
-                    "DEFINE_SURFACE_REGIONS",
-                    "DEFINE_SURFACE_CLASS",
-                    "DEFINE_SURFACE_CLASSES",
-                    "DEGENERATE_POLYGONS",
-                    "DELAY",
-                    "DENSITY",
-                    "DIFFUSION_CONSTANT_REPORT",
-                    "DX",
-                    "DREAMM_V3",
-                    "DREAMM_V3_GROUPED",
-                    "EFFECTOR_GRID_DENSITY",
-                    "SURFACE_GRID_DENSITY",
-                    "EFFECTOR_POSITIONS",
-                    "EFFECTOR_STATES",
-                    "ELEMENT_CONNECTIONS",
-                    "ELEMENT_LIST",
-                    "ELLIPTIC",
-                    "ELLIPTIC_RELEASE_SITE",
-                    "ERROR",
-                    "ESTIMATE_CONC",
-                    "ESTIMATE_CONCENTRATION",
-                    "EXCLUDE_ELEMENTS",
-                    "EXCLUDE_PATCH",
-                    "EXCLUDE_REGION",
-                    "EXIT",
-                    "EXP",
-                    "EXPRESSION",
-                    "FALSE",
-                    "FILENAME",
-                    "FILENAME_PREFIX",
-                    "FILE_OUTPUT_REPORT",
-                    "FINAL_SUMMARY",
-                    "FLOOR",
-                    "FRONT",
-                    "FRONT_CROSSINGS",
-                    "FRONT_HITS",
-                    "FULLY_RANDOM",
-                    "GAUSSIAN_RELEASE_NUMBER",
-                    "GEOMETRY",
-                    "HEADER",
-                    "HIGH_PROBABILITY_THRESHOLD",
-                    "HIGH_REACTION_PROBABILITY",
-                    "IGNORE",
-                    "IGNORED",
-                    "INCLUDE_ELEMENTS",
-                    "INCLUDE_FILE",
-                    "INCLUDE_PATCH",
-                    "INCLUDE_REGION",
-                    "INPUT_FILE",
-                    "INSTANTIATE",
-                    "INTERACTION_RADIUS",
-                    "INVALID_OUTPUT_STEP_TIME",
-                    "ITERATIONS",
-                    "ITERATION_FRAME_DATA",
-                    "ITERATION_LIST",
-                    "ITERATION_NUMBERS",
-                    "ITERATION_REPORT",
-                    "LEFT",
-                    "LIFETIME_TOO_SHORT",
-                    "LIFETIME_THRESHOLD",
-                    "LIST",
-                    "LOCATION",
-                    "LOG10",
-                    "LOG",
-                    "MAX",
-                    "MAXIMUM_STEP_LENGTH",
-                    "MEAN_DIAMETER",
-                    "MEAN_NUMBER",
-                    "MEMORY_PARTITION_X",
-                    "MEMORY_PARTITION_Y",
-                    "MEMORY_PARTITION_Z",
-                    "MEMORY_PARTITION_POOL",
-                    "MESHES",
-                    "MICROSCOPIC_REVERSIBILITY",
-                    "MIN",
-                    "MISSED_REACTIONS",
-                    "MISSED_REACTION_THRESHOLD",
-                    "MISSING_SURFACE_ORIENTATION",
-                    "MOD",
-                    "MODE",
-                    "MODIFY_SURFACE_REGIONS",
-                    "MOLECULE_DENSITY",
-                    "MOLECULE_NUMBER",
-                    "MOLECULE",
-                    "LIGAND",
-                    "MOLECULES",
-                    "MOLECULE_COLLISION_REPORT",
-                    "MOLECULE_POSITIONS",
-                    "LIGAND_POSITIONS",
-                    "MOLECULE_STATES",
-                    "LIGAND_STATES",
-                    "MOLECULE_FILE_PREFIX",
-                    "MOLECULE_PLACEMENT_FAILURE",
-                    "NAME_LIST",
-                    "NEGATIVE_DIFFUSION_CONSTANT",
-                    "NEGATIVE_REACTION_RATE",
-                    "NO",
-                    "NOEXIT",
-                    "NONE",
-                    "NOTIFICATIONS",
-                    "NULL",
-                    "NUMBER_OF_SUBUNITS",
-                    "NUMBER_OF_SLOTS",
-                    "NUMBER_OF_TRAINS",
-                    "NUMBER_TO_RELEASE",
-                    "OBJECT",
-                    "OBJECT_FILE_PREFIXES",
-                    "OFF",
-                    "ON",
-                    "ORIENTATIONS",
-                    "OUTPUT_BUFFER_SIZE",
-                    "OVERWRITTEN_OUTPUT_FILE",
-                    "PARTITION_LOCATION_REPORT",
-                    "PARTITION_X",
-                    "PARTITION_Y",
-                    "PARTITION_Z",
-                    "PI",
-                    "POLYGON_LIST",
-                    "POSITIONS",
-                    "PROBABILITY_REPORT",
-                    "PROBABILITY_REPORT_THRESHOLD",
-                    "PROGRESS_REPORT",
-                    "RADIAL_DIRECTIONS",
-                    "RADIAL_SUBDIVISIONS",
-                    "RAND_UNIFORM",
-                    "RAND_GAUSSIAN",
-                    "RATE_RULES",
-                    "REACTION_DATA_OUTPUT",
-                    "REACTION_OUTPUT_REPORT",
-                    "REACTION_GROUP",
-                    "RECTANGULAR",
-                    "RECTANGULAR_RELEASE_SITE",
-                    "REFERENCE_DIFFUSION_CONSTANT",
-                    "REFLECTIVE",
-                    "REGION_DATA",
-                    "RELEASE_EVENT_REPORT",
-                    "RELEASE_INTERVAL",
-                    "RELEASE_PATTERN",
-                    "RELEASE_PROBABILITY",
-                    "RELEASE_SITE",
-                    "REMOVE_ELEMENTS",
-                    "RIGHT",
-                    "ROTATE",
-                    "ROUND_OFF",
-                    "SCALE",
-                    "SEED",
-                    "SHAPE",
-                    "SHOW_EXACT_TIME",
-                    "SIN",
-                    "SITE_DIAMETER",
-                    "SITE_RADIUS",
-                    "SPACE_STEP",
-                    "SPHERICAL",
-                    "SPHERICAL_RELEASE_SITE",
-                    "SPHERICAL_SHELL",
-                    "SPHERICAL_SHELL_SITE",
-                    "SQRT",
-                    "STANDARD_DEVIATION",
-                    "STATE_VALUES",
-                    "STEP",
-                    "STRING_TO_NUM",
-                    "SUBUNIT",
-                    "SLOT",
-                    "SUBUNIT_RELATIONSHIPS",
-                    "SLOT_RELATIONSHIPS",
-                    "SUM",
-                    "SURFACE_CLASS",
-                    "SURFACE_ONLY",
-                    "SURFACE_POSITIONS",
-                    "SURFACE_STATES",
-                    "TAN",
-                    "TARGET_ONLY",
-                    "TET_ELEMENT_CONNECTIONS",
-                    "THROUGHPUT_REPORT",
-                    "TIME_LIST",
-                    "TIME_POINTS",
-                    "TIME_STEP",
-                    "TIME_STEP_MAX",
-                    "TO",
-                    "TOP",
-                    "TRAIN_DURATION",
-                    "TRAIN_INTERVAL",
-                    "TRANSLATE",
-                    "TRANSPARENT",
-                    "TRIGGER",
-                    "TRUE",
-                    "UNLIMITED",
-                    "VACANCY_SEARCH_DISTANCE",
-                    "VARYING_PROBABILITY_REPORT",
-                    "USELESS_VOLUME_ORIENTATION",
-                    "VERTEX_LIST",
-                    "VIZ_DATA_OUTPUT",
-                    "VIZ_MESH_FORMAT",
-                    "VIZ_MOLECULE_FORMAT",
-                    "VIZ_OUTPUT",
-                    "VIZ_OUTPUT_REPORT",
-                    "VIZ_VALUE",
-                    "VOLUME_DATA_OUTPUT",
-                    "VOLUME_OUTPUT_REPORT",
-                    "VOLUME_DEPENDENT_RELEASE_NUMBER",
-                    "VOLUME_ONLY",
-                    "VOXEL_COUNT",
-                    "VOXEL_LIST",
-                    "VOXEL_SIZE",
-                    "WARNING",
-                    "WARNINGS",
-                    "WORLD",
-                    "YES",
-                    "printf",
-                    "fprintf",
-                    "sprintf",
-                    "print_time",
-                    "fprint_time",
-                    "fopen",
-                    "fclose" ] )
-
-    @profile('Expression_Handler.build_expression')
-    def build_expression ( self, expr_list, as_python=False ):
-        """ Converts an MDL expression list into either an MDL expression or Python expression using user names for parameters"""
-        # With "as_python=True", this becomes:  build_py_expr_using_names ( self, expr_list ):
-        # global global_params
-        expr = ""
-        if None in expr_list:
-            expr = None
-        else:
-            expression_keywords = None
-            if as_python:
-                expression_keywords = self.get_expression_keywords()
-            for token in expr_list:
-                if token is None:
-                    return None
-                elif type(token) == int:
-                    # This is an integer parameter ID, so look up the variable name to concatenate
-                    token_name = "g" + str(token)
-                    if token_name in self['gp_dict']:
-                        expr = expr + self['gp_dict'][token_name]['name']
-                    else:
-                        # In previous versions, this case might have defined a new parameter here.
-                        # In this version, it should never happen, but appends an undefined name flag ... just in case!!
-                        #threshold_print ( 5, "build_ID_pyexpr_dict adding an undefined name to " + expr )
-                        dbprint ( "build_expression did not find " + str(token_name) + " in " + str(self['gp_dict']) + ", adding an undefined name flag to " + expr )
-                        expr = expr + self.UNDEFINED_NAME()
-                else:
-                    if as_python and (token in expression_keywords):
-                        # This is a string so simply concatenate it after translation as needed
-                        expr = expr + expression_keywords[token]
-                    else:
-                        # This is a string so simply concatenate it without translation
-                        expr = expr + token
-        return expr
-
-    @profile('Expression_Handler.build_py_expr_using_ids')
-    def build_py_expr_using_ids ( self, expr_list ):
-        """ Converts an MDL expression list into a python expression using unique names for parameters"""
-        # global global_params
-        expr = ""
-        if None in expr_list:
-            expr = None
-        else:
-            expression_keywords = self.get_expression_keywords()
-            for token in expr_list:
-                if type(token) == int:
-                    # This is an integer parameter ID, so look up the variable name to concatenate
-                    token_name = "g" + str(token)
-                    if token_name in self['gp_dict']:
-                        expr = expr + self['gp_dict'][token_name]['name']
-                    else:
-                        # In previous versions, this case might have defined a new parameter here.
-                        # In this version, it should never happen, but appends an undefined name flag ... just in case!!
-                        #threshold_print ( 5, "build_ID_pyexpr_dict adding an undefined name to " + expr )
-                        dbprint ( "build_py_expr_using_ids did not find " + str(token_name) + " in " + str(self['gp_dict']) + ", adding an undefined name flag to " + expr )
-                        expr = expr + self.UNDEFINED_NAME()
-                else:
-                    # This is a string so simply concatenate it after translation as needed
-                    if token in expression_keywords:
-                        expr = expr + expression_keywords[token]
-                    else:
-                        expr = expr + token
-        return expr
-
-    @profile('Expression_Handler.parse_param_expr')
-    def parse_param_expr ( self, param_expr ):
-        """ Converts a string expression into a list expression with:
-                 variable id's as integers,
-                 None preceding undefined names
-                 all others as strings
-            Returns either a list (if successful) or None if there is an error
-            Examples:
-              Expression: "A * (B + C)" becomes something like: [ 3, "*", "(", 22, "+", 5, ")", "" ]
-                 where 3, 22, and 5 are the ID numbers for parameters A, B, and C respectively
-              Expression: "A * (B + C)" when B is undefined becomes: [ 3, "*", "(", None, "B", "+", 5, ")", "" ]
-              Note that the parsing may produce empty strings in the list which should not cause any problem.
-        """
-        # global global_params
-        dbprint ( "parse_param_expr called with param_expr = " + str(param_expr) )
-        #general_parameter_list = self['gp_dict']
-        local_name_ID_dict = self.general_parameter_list
-        dbprint ( "Parsing using local_name_ID_dict: " + str(local_name_ID_dict) )
-
-        param_expr = param_expr.strip()
-        if len(param_expr) == 0:
-            return []
-        st = None
-        pt = None
-        try:
-            st = parser.expr(param_expr)
-            pt = st.totuple()
-        except:
-            print ( "==> Parsing Exception: " + str ( sys.exc_info() ) )
-        parameterized_expr = None  # param_expr
-        if pt != None:
-            #start_timer("All_Expression_Handler.recurse_tree_symbols" )
-            parameterized_expr = self.recurse_tree_symbols ( local_name_ID_dict, pt, [] )
-            #stop_timer("All_Expression_Handler.recurse_tree_symbols" )
-            
-            if parameterized_expr != None:
-            
-                # Remove trailing empty strings from parse tree - why are they there?
-                while len(parameterized_expr) > 0:
-                    if parameterized_expr[-1] != '':
-                        break
-                    parameterized_expr = parameterized_expr[0:-2]
-        dbprint ( "Original: " + param_expr )
-        dbprint ( "Parsed:   " + str(parameterized_expr) )
-        # This is where the preservation of white space might take place
-        return parameterized_expr
-
-    @profile('Expression_Handler.count_stub')
-    def count_stub ( self ):
-        pass
-
-    @profile('Expression_Handler.recurse_tree_symbols')
-    def recurse_tree_symbols ( self, local_name_ID_dict, pt, current_expr ):
-        """ Recurse through the parse tree looking for "terminal" items which are added to the list """
-        dbprint ( "Top of recurse_tree_symbols" )
-
-        # Strip off the outer layers that are not of interest
-        while (type(pt) == tuple) and (len(pt) == 2) and (type(pt[1]) == tuple):
-            # print ( "  changing " + str(pt) + " to " + str(pt[1]) )
-            pt = pt[1]
-
-        # self.count_stub()
-
-        if type(pt) == tuple:
-            # This is a tuple, so find out if it's a terminal leaf in the parse tree
-            # Note: This code didn't use the token.ISTERMINAL function.
-            # It might have been written as:
-            #   terminal = False
-            #   if len(pt) > 0:
-            #     if token.ISTERMINAL(pt[0]):
-            #       terminal = True
-            # However, that doesn't check that the terminal is a 2-tuple containing a string
-            terminal = False
-            if len(pt) == 2:
-                if type(pt[1]) == str:
-                    terminal = True
-            if terminal:
-                # This is a 2-tuple with a type and value
-                if pt[0] == token.NAME:
-                    expression_keywords = self.get_expression_keywords()
-                    if pt[1] in expression_keywords:
-                        # This is a recognized name and not a user-defined symbol, so append the string itself
-                        # return current_expr + [ pt[1] ]
-                        return current_expr.append ( pt[1] )
-                    else:
-                        # This must be a user-defined symbol, so check if it's in the dictionary
-                        pt1_str = str(pt[1])
-                        #if pt[1] in local_name_ID_dict:
-                        if pt1_str in local_name_ID_dict:
-                            #dbprint ( "Found a user defined name in the dictionary: " + pt1_str )
-                            #dbprint ( "  Maps to: " + str(local_name_ID_dict[pt1_str]['par_id']) )
-                            # Append the integer ID to the list after stripping off the leading "g"
-                            #return current_expr + [ int(local_name_ID_dict[pt1_str]['par_id'][1:]) ]
-                            return current_expr.append ( int(local_name_ID_dict[pt1_str]['par_id'][1:]) )
-                        else:
-                            #dbprint ( "Found a user defined name NOT in the dictionary: " + pt1_str )
-                            # Not in the dictionary, so append a None flag followed by the undefined name
-                            #return current_expr + [ None, pt[1] ]
-                            return current_expr.append(None).append( pt[1] )
-                else:
-                    # This is a non-name part of the expression
-                    #return current_expr + [ pt[1] ]
-                    return current_expr.append ( pt[1] )
-            else:
-                # Break it down further
-                for i in range(len(pt)):
-                    next_segment = self.recurse_tree_symbols ( local_name_ID_dict, pt[i], current_expr )
-                    if next_segment != None:
-                        current_expr = next_segment
-                return current_expr
-        return None
-
 
 class MCELL_OT_update_general(bpy.types.Operator):
     bl_idname = "mcell.update_general"
@@ -1361,7 +894,9 @@ class ParameterMappingProperty(bpy.types.PropertyGroup):
     par_id = StringProperty(default="", description="Unique ID for each parameter used as a key into the Python Dictionary") # name="Par_ID",
 
 
-class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler ):
+# class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler ):
+
+class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     """Root of CellBlender's Parameter Handling Capabilities"""
     # ID Property: gp_dict - Indexed by g# key. Holds the data for each parameter (name, expression, elist, units, description, dependencies)
     # ID Property: gp_ordered_list - List of g# keys in dependency order for evaluation.
@@ -2619,6 +2154,501 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler
             return s[:]
         else:
             return s[0:fw]
+
+
+    """
+    Expression Handler Code moved here:
+
+      Note that while this expression handler supports string encoding of expressions, this version encodes expressions as pickled lists.
+        The string encoding code should be removed after the pickled list code is working properly.
+
+      String encoding of expression lists:
+
+      String Encoding Rules:
+        The tilde character (~) separates all terms
+        Any term that does not start with # is a string literal
+        Any term that starts with #? is an undefined parameter name
+        Any term that starts with # followed by an integer is a parameter ID
+      Example:
+        Parameter 'a' has an ID of 1
+        Parameter 'b' has an ID of 2
+        Parameter 'c' is undefined
+        Original Expression:  a + 5 + b + c
+          Expression as a List: [1, '+', '5', '+', 2, '+', None, 'c' ]
+          Expression as string:  #1~+~5~+~#2~+~#?c
+        Note that these ID numbers always reference General Parameters so the IDs
+          used in this example (1 and 2) will reference "g1" and "g2" respectively.
+          Panel Parameters cannot be referenced in expressions (they have no name).
+    """
+
+
+    @profile('Expression_Handler.UNDEFINED_NAME')
+    def UNDEFINED_NAME(self):
+        return ( "   (0*1111111*0)   " )   # This is a string that evaluates to zero, but is easy to spot in expressions
+
+    @profile('Expression_Handler.get_expression_keywords')
+    def get_expression_keywords(self):
+        return ( { '^': '**', 'SQRT': 'sqrt', 'EXP': 'exp', 'LOG': 'log', 'LOG10': 'log10', 'SIN': 'sin', 'COS': 'cos', 'TAN': 'tan', 'ASIN': 'asin', 'ACOS':'acos', 'ATAN': 'atan', 'ABS': 'abs', 'CEIL': 'ceil', 'FLOOR': 'floor', 'MAX': 'max', 'MIN': 'min', 'RAND_UNIFORM': 'uniform', 'RAND_GAUSSIAN': 'gauss', 'PI': 'pi', 'SEED': '1' } )
+
+    @profile('Expression_Handler.get_mdl_keywords')
+    def get_mdl_keywords(self):
+        # It's not clear how these will be handled, but they've been added here because they will be needed to avoid naming conflicts
+        return ( [  "ABS",
+                    "ABSORPTIVE",
+                    "ACCURATE_3D_REACTIONS",
+                    "ACOS",
+                    "ALL_DATA",
+                    "ALL_CROSSINGS",
+                    "ALL_ELEMENTS",
+                    "ALL_ENCLOSED",
+                    "ALL_HITS",
+                    "ALL_ITERATIONS",
+                    "ALL_MESHES",
+                    "ALL_MOLECULES",
+                    "ALL_NOTIFICATIONS",
+                    "ALL_TIMES",
+                    "ALL_WARNINGS",
+                    "ASCII",
+                    "ASIN",
+                    "ASPECT_RATIO",
+                    "ATAN",
+                    "BACK",
+                    "BACK_CROSSINGS",
+                    "BACK_HITS",
+                    "BINARY",
+                    "BOTTOM",
+                    "BOX",
+                    "BOX_TRIANGULATION_REPORT",
+                    "BRIEF",
+                    "CEIL",
+                    "CELLBLENDER",
+                    "CENTER_MOLECULES_ON_GRID",
+                    "CHECKPOINT_INFILE",
+                    "CHECKPOINT_OUTFILE",
+                    "CHECKPOINT_ITERATIONS",
+                    "CHECKPOINT_REALTIME",
+                    "CHECKPOINT_REPORT",
+                    "CLAMP",
+                    "CLAMP_CONC",
+                    "CLAMP_CONCENTRATION",
+                    "CLOSE_PARTITION_SPACING",
+                    "COMPLEX_PLACEMENT_ATTEMPTS",
+                    "COMPLEX_PLACEMENT_FAILURE",
+                    "COMPLEX_PLACEMENT_FAILURE_THRESHOLD",
+                    "COMPLEX_RATE",
+                    "CORNERS",
+                    "COS",
+                    "CONC",
+                    "CONCENTRATION",
+                    "COUNT",
+                    "CUBIC",
+                    "CUBIC_RELEASE_SITE",
+                    "CUSTOM_SPACE_STEP",
+                    "CUSTOM_RK",
+                    "CUSTOM_TIME_STEP",
+                    "D_3D",
+                    "DIFFUSION_CONSTANT",
+                    "DIFFUSION_CONSTANT_3D",
+                    "D_2D",
+                    "DIFFUSION_CONSTANT_2D",
+                    "DEFAULT",
+                    "DEFINE_COMPLEX_MOLECULE",
+                    "DEFINE_MOLECULE",
+                    "DEFINE_MOLECULES",
+                    "DEFINE_REACTIONS",
+                    "DEFINE_RELEASE_PATTERN",
+                    "DEFINE_SURFACE_REGIONS",
+                    "DEFINE_SURFACE_CLASS",
+                    "DEFINE_SURFACE_CLASSES",
+                    "DEGENERATE_POLYGONS",
+                    "DELAY",
+                    "DENSITY",
+                    "DIFFUSION_CONSTANT_REPORT",
+                    "DX",
+                    "DREAMM_V3",
+                    "DREAMM_V3_GROUPED",
+                    "EFFECTOR_GRID_DENSITY",
+                    "SURFACE_GRID_DENSITY",
+                    "EFFECTOR_POSITIONS",
+                    "EFFECTOR_STATES",
+                    "ELEMENT_CONNECTIONS",
+                    "ELEMENT_LIST",
+                    "ELLIPTIC",
+                    "ELLIPTIC_RELEASE_SITE",
+                    "ERROR",
+                    "ESTIMATE_CONC",
+                    "ESTIMATE_CONCENTRATION",
+                    "EXCLUDE_ELEMENTS",
+                    "EXCLUDE_PATCH",
+                    "EXCLUDE_REGION",
+                    "EXIT",
+                    "EXP",
+                    "EXPRESSION",
+                    "FALSE",
+                    "FILENAME",
+                    "FILENAME_PREFIX",
+                    "FILE_OUTPUT_REPORT",
+                    "FINAL_SUMMARY",
+                    "FLOOR",
+                    "FRONT",
+                    "FRONT_CROSSINGS",
+                    "FRONT_HITS",
+                    "FULLY_RANDOM",
+                    "GAUSSIAN_RELEASE_NUMBER",
+                    "GEOMETRY",
+                    "HEADER",
+                    "HIGH_PROBABILITY_THRESHOLD",
+                    "HIGH_REACTION_PROBABILITY",
+                    "IGNORE",
+                    "IGNORED",
+                    "INCLUDE_ELEMENTS",
+                    "INCLUDE_FILE",
+                    "INCLUDE_PATCH",
+                    "INCLUDE_REGION",
+                    "INPUT_FILE",
+                    "INSTANTIATE",
+                    "INTERACTION_RADIUS",
+                    "INVALID_OUTPUT_STEP_TIME",
+                    "ITERATIONS",
+                    "ITERATION_FRAME_DATA",
+                    "ITERATION_LIST",
+                    "ITERATION_NUMBERS",
+                    "ITERATION_REPORT",
+                    "LEFT",
+                    "LIFETIME_TOO_SHORT",
+                    "LIFETIME_THRESHOLD",
+                    "LIST",
+                    "LOCATION",
+                    "LOG10",
+                    "LOG",
+                    "MAX",
+                    "MAXIMUM_STEP_LENGTH",
+                    "MEAN_DIAMETER",
+                    "MEAN_NUMBER",
+                    "MEMORY_PARTITION_X",
+                    "MEMORY_PARTITION_Y",
+                    "MEMORY_PARTITION_Z",
+                    "MEMORY_PARTITION_POOL",
+                    "MESHES",
+                    "MICROSCOPIC_REVERSIBILITY",
+                    "MIN",
+                    "MISSED_REACTIONS",
+                    "MISSED_REACTION_THRESHOLD",
+                    "MISSING_SURFACE_ORIENTATION",
+                    "MOD",
+                    "MODE",
+                    "MODIFY_SURFACE_REGIONS",
+                    "MOLECULE_DENSITY",
+                    "MOLECULE_NUMBER",
+                    "MOLECULE",
+                    "LIGAND",
+                    "MOLECULES",
+                    "MOLECULE_COLLISION_REPORT",
+                    "MOLECULE_POSITIONS",
+                    "LIGAND_POSITIONS",
+                    "MOLECULE_STATES",
+                    "LIGAND_STATES",
+                    "MOLECULE_FILE_PREFIX",
+                    "MOLECULE_PLACEMENT_FAILURE",
+                    "NAME_LIST",
+                    "NEGATIVE_DIFFUSION_CONSTANT",
+                    "NEGATIVE_REACTION_RATE",
+                    "NO",
+                    "NOEXIT",
+                    "NONE",
+                    "NOTIFICATIONS",
+                    "NULL",
+                    "NUMBER_OF_SUBUNITS",
+                    "NUMBER_OF_SLOTS",
+                    "NUMBER_OF_TRAINS",
+                    "NUMBER_TO_RELEASE",
+                    "OBJECT",
+                    "OBJECT_FILE_PREFIXES",
+                    "OFF",
+                    "ON",
+                    "ORIENTATIONS",
+                    "OUTPUT_BUFFER_SIZE",
+                    "OVERWRITTEN_OUTPUT_FILE",
+                    "PARTITION_LOCATION_REPORT",
+                    "PARTITION_X",
+                    "PARTITION_Y",
+                    "PARTITION_Z",
+                    "PI",
+                    "POLYGON_LIST",
+                    "POSITIONS",
+                    "PROBABILITY_REPORT",
+                    "PROBABILITY_REPORT_THRESHOLD",
+                    "PROGRESS_REPORT",
+                    "RADIAL_DIRECTIONS",
+                    "RADIAL_SUBDIVISIONS",
+                    "RAND_UNIFORM",
+                    "RAND_GAUSSIAN",
+                    "RATE_RULES",
+                    "REACTION_DATA_OUTPUT",
+                    "REACTION_OUTPUT_REPORT",
+                    "REACTION_GROUP",
+                    "RECTANGULAR",
+                    "RECTANGULAR_RELEASE_SITE",
+                    "REFERENCE_DIFFUSION_CONSTANT",
+                    "REFLECTIVE",
+                    "REGION_DATA",
+                    "RELEASE_EVENT_REPORT",
+                    "RELEASE_INTERVAL",
+                    "RELEASE_PATTERN",
+                    "RELEASE_PROBABILITY",
+                    "RELEASE_SITE",
+                    "REMOVE_ELEMENTS",
+                    "RIGHT",
+                    "ROTATE",
+                    "ROUND_OFF",
+                    "SCALE",
+                    "SEED",
+                    "SHAPE",
+                    "SHOW_EXACT_TIME",
+                    "SIN",
+                    "SITE_DIAMETER",
+                    "SITE_RADIUS",
+                    "SPACE_STEP",
+                    "SPHERICAL",
+                    "SPHERICAL_RELEASE_SITE",
+                    "SPHERICAL_SHELL",
+                    "SPHERICAL_SHELL_SITE",
+                    "SQRT",
+                    "STANDARD_DEVIATION",
+                    "STATE_VALUES",
+                    "STEP",
+                    "STRING_TO_NUM",
+                    "SUBUNIT",
+                    "SLOT",
+                    "SUBUNIT_RELATIONSHIPS",
+                    "SLOT_RELATIONSHIPS",
+                    "SUM",
+                    "SURFACE_CLASS",
+                    "SURFACE_ONLY",
+                    "SURFACE_POSITIONS",
+                    "SURFACE_STATES",
+                    "TAN",
+                    "TARGET_ONLY",
+                    "TET_ELEMENT_CONNECTIONS",
+                    "THROUGHPUT_REPORT",
+                    "TIME_LIST",
+                    "TIME_POINTS",
+                    "TIME_STEP",
+                    "TIME_STEP_MAX",
+                    "TO",
+                    "TOP",
+                    "TRAIN_DURATION",
+                    "TRAIN_INTERVAL",
+                    "TRANSLATE",
+                    "TRANSPARENT",
+                    "TRIGGER",
+                    "TRUE",
+                    "UNLIMITED",
+                    "VACANCY_SEARCH_DISTANCE",
+                    "VARYING_PROBABILITY_REPORT",
+                    "USELESS_VOLUME_ORIENTATION",
+                    "VERTEX_LIST",
+                    "VIZ_DATA_OUTPUT",
+                    "VIZ_MESH_FORMAT",
+                    "VIZ_MOLECULE_FORMAT",
+                    "VIZ_OUTPUT",
+                    "VIZ_OUTPUT_REPORT",
+                    "VIZ_VALUE",
+                    "VOLUME_DATA_OUTPUT",
+                    "VOLUME_OUTPUT_REPORT",
+                    "VOLUME_DEPENDENT_RELEASE_NUMBER",
+                    "VOLUME_ONLY",
+                    "VOXEL_COUNT",
+                    "VOXEL_LIST",
+                    "VOXEL_SIZE",
+                    "WARNING",
+                    "WARNINGS",
+                    "WORLD",
+                    "YES",
+                    "printf",
+                    "fprintf",
+                    "sprintf",
+                    "print_time",
+                    "fprint_time",
+                    "fopen",
+                    "fclose" ] )
+
+    @profile('Expression_Handler.build_expression')
+    def build_expression ( self, expr_list, as_python=False ):
+        """ Converts an MDL expression list into either an MDL expression or Python expression using user names for parameters"""
+        # With "as_python=True", this becomes:  build_py_expr_using_names ( self, expr_list ):
+        # global global_params
+        expr = ""
+        if None in expr_list:
+            expr = None
+        else:
+            expression_keywords = None
+            if as_python:
+                expression_keywords = self.get_expression_keywords()
+            for token in expr_list:
+                if token is None:
+                    return None
+                elif type(token) == int:
+                    # This is an integer parameter ID, so look up the variable name to concatenate
+                    token_name = "g" + str(token)
+                    if token_name in self['gp_dict']:
+                        expr = expr + self['gp_dict'][token_name]['name']
+                    else:
+                        # In previous versions, this case might have defined a new parameter here.
+                        # In this version, it should never happen, but appends an undefined name flag ... just in case!!
+                        #threshold_print ( 5, "build_ID_pyexpr_dict adding an undefined name to " + expr )
+                        dbprint ( "build_expression did not find " + str(token_name) + " in " + str(self['gp_dict']) + ", adding an undefined name flag to " + expr )
+                        expr = expr + self.UNDEFINED_NAME()
+                else:
+                    if as_python and (token in expression_keywords):
+                        # This is a string so simply concatenate it after translation as needed
+                        expr = expr + expression_keywords[token]
+                    else:
+                        # This is a string so simply concatenate it without translation
+                        expr = expr + token
+        return expr
+
+    @profile('Expression_Handler.build_py_expr_using_ids')
+    def build_py_expr_using_ids ( self, expr_list ):
+        """ Converts an MDL expression list into a python expression using unique names for parameters"""
+        # global global_params
+        expr = ""
+        if None in expr_list:
+            expr = None
+        else:
+            expression_keywords = self.get_expression_keywords()
+            for token in expr_list:
+                if type(token) == int:
+                    # This is an integer parameter ID, so look up the variable name to concatenate
+                    token_name = "g" + str(token)
+                    if token_name in self['gp_dict']:
+                        expr = expr + self['gp_dict'][token_name]['name']
+                    else:
+                        # In previous versions, this case might have defined a new parameter here.
+                        # In this version, it should never happen, but appends an undefined name flag ... just in case!!
+                        #threshold_print ( 5, "build_ID_pyexpr_dict adding an undefined name to " + expr )
+                        dbprint ( "build_py_expr_using_ids did not find " + str(token_name) + " in " + str(self['gp_dict']) + ", adding an undefined name flag to " + expr )
+                        expr = expr + self.UNDEFINED_NAME()
+                else:
+                    # This is a string so simply concatenate it after translation as needed
+                    if token in expression_keywords:
+                        expr = expr + expression_keywords[token]
+                    else:
+                        expr = expr + token
+        return expr
+
+    @profile('Expression_Handler.parse_param_expr')
+    def parse_param_expr ( self, param_expr ):
+        """ Converts a string expression into a list expression with:
+                 variable id's as integers,
+                 None preceding undefined names
+                 all others as strings
+            Returns either a list (if successful) or None if there is an error
+            Examples:
+              Expression: "A * (B + C)" becomes something like: [ 3, "*", "(", 22, "+", 5, ")", "" ]
+                 where 3, 22, and 5 are the ID numbers for parameters A, B, and C respectively
+              Expression: "A * (B + C)" when B is undefined becomes: [ 3, "*", "(", None, "B", "+", 5, ")", "" ]
+              Note that the parsing may produce empty strings in the list which should not cause any problem.
+        """
+        # global global_params
+        dbprint ( "parse_param_expr called with param_expr = " + str(param_expr) )
+        #general_parameter_list = self['gp_dict']
+        local_name_ID_dict = self.general_parameter_list
+        dbprint ( "Parsing using local_name_ID_dict: " + str(local_name_ID_dict) )
+
+        param_expr = param_expr.strip()
+        if len(param_expr) == 0:
+            return []
+        st = None
+        pt = None
+        try:
+            st = parser.expr(param_expr)
+            pt = st.totuple()
+        except:
+            print ( "==> Parsing Exception: " + str ( sys.exc_info() ) )
+        parameterized_expr = None  # param_expr
+        if pt != None:
+            #start_timer("All_Expression_Handler.recurse_tree_symbols" )
+            parameterized_expr = self.recurse_tree_symbols ( local_name_ID_dict, pt, [] )
+            #stop_timer("All_Expression_Handler.recurse_tree_symbols" )
+
+            if parameterized_expr != None:
+
+                # Remove trailing empty strings from parse tree - why are they there?
+                while len(parameterized_expr) > 0:
+                    if parameterized_expr[-1] != '':
+                        break
+                    parameterized_expr = parameterized_expr[0:-2]
+        dbprint ( "Original: " + param_expr )
+        dbprint ( "Parsed:   " + str(parameterized_expr) )
+        # This is where the preservation of white space might take place
+        return parameterized_expr
+
+    @profile('Expression_Handler.count_stub')
+    def count_stub ( self ):
+        pass
+
+    @profile('Expression_Handler.recurse_tree_symbols')
+    def recurse_tree_symbols ( self, local_name_ID_dict, pt, current_expr ):
+        """ Recurse through the parse tree looking for "terminal" items which are added to the list """
+        dbprint ( "Top of recurse_tree_symbols" )
+
+        # Strip off the outer layers that are not of interest
+        while (type(pt) == tuple) and (len(pt) == 2) and (type(pt[1]) == tuple):
+            # print ( "  changing " + str(pt) + " to " + str(pt[1]) )
+            pt = pt[1]
+
+        # self.count_stub()
+
+        if type(pt) == tuple:
+            # This is a tuple, so find out if it's a terminal leaf in the parse tree
+            # Note: This code didn't use the token.ISTERMINAL function.
+            # It might have been written as:
+            #   terminal = False
+            #   if len(pt) > 0:
+            #     if token.ISTERMINAL(pt[0]):
+            #       terminal = True
+            # However, that doesn't check that the terminal is a 2-tuple containing a string
+            terminal = False
+            if len(pt) == 2:
+                if type(pt[1]) == str:
+                    terminal = True
+            if terminal:
+                # This is a 2-tuple with a type and value
+                if pt[0] == token.NAME:
+                    expression_keywords = self.get_expression_keywords()
+                    if pt[1] in expression_keywords:
+                        # This is a recognized name and not a user-defined symbol, so append the string itself
+                        # return current_expr + [ pt[1] ]
+                        return current_expr.append ( pt[1] )
+                    else:
+                        # This must be a user-defined symbol, so check if it's in the dictionary
+                        pt1_str = str(pt[1])
+                        #if pt[1] in local_name_ID_dict:
+                        if pt1_str in local_name_ID_dict:
+                            #dbprint ( "Found a user defined name in the dictionary: " + pt1_str )
+                            #dbprint ( "  Maps to: " + str(local_name_ID_dict[pt1_str]['par_id']) )
+                            # Append the integer ID to the list after stripping off the leading "g"
+                            #return current_expr + [ int(local_name_ID_dict[pt1_str]['par_id'][1:]) ]
+                            return current_expr.append ( int(local_name_ID_dict[pt1_str]['par_id'][1:]) )
+                        else:
+                            #dbprint ( "Found a user defined name NOT in the dictionary: " + pt1_str )
+                            # Not in the dictionary, so append a None flag followed by the undefined name
+                            #return current_expr + [ None, pt[1] ]
+                            return current_expr.append(None).append( pt[1] )
+                else:
+                    # This is a non-name part of the expression
+                    #return current_expr + [ pt[1] ]
+                    return current_expr.append ( pt[1] )
+            else:
+                # Break it down further
+                for i in range(len(pt)):
+                    next_segment = self.recurse_tree_symbols ( local_name_ID_dict, pt[i], current_expr )
+                    if next_segment != None:
+                        current_expr = next_segment
+                return current_expr
+        return None
+
 
 
 
