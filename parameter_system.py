@@ -629,6 +629,17 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
     # There is only one property in this class
     unique_static_name = StringProperty ( name="unique_name", default="" )
 
+
+    # __init__ does not appear to be called
+    #def __init__ ( self ):
+    #    print ( "Parameter_Reference.__init__ called" )
+
+
+    # __del__ appears to be called all the time ... even when nothing is being added or removed
+    #def __del__ ( self ):
+    #    print ( "Parameter_Reference.__del__ called" )
+
+
     @profile('Parameter_Reference.init_ref')
     def init_ref ( self, parameter_system, type_name, user_name=None, user_expr="0", user_descr="Panel Parameter", user_units="", user_int=False ):
 
@@ -684,7 +695,8 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
                     if type(term) == int:
                         # This refers to a general parameter, so remove this panel parameter from its "what_depends_on_me" list
                         gp = gpd['g'+str(term)]
-                        gp['what_depends_on_me'].pop(self.unique_static_name)
+                        if self.unique_static_name in gp['what_depends_on_me']:
+                            gp['what_depends_on_me'].pop(self.unique_static_name)
 
         # Now remove this parameter from the panel parameters list
         i = ppl.find(self.unique_static_name)
@@ -2602,16 +2614,19 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                         pt1_str = str(pt[1])
                         #if pt[1] in local_name_ID_dict:
                         if pt1_str in local_name_ID_dict:
+                            # Append the integer ID to the list after stripping off the leading "g"
                             #dbprint ( "Found a user defined name in the dictionary: " + pt1_str )
                             #dbprint ( "  Maps to: " + str(local_name_ID_dict[pt1_str]['par_id']) )
-                            # Append the integer ID to the list after stripping off the leading "g"
                             #return current_expr + [ int(local_name_ID_dict[pt1_str]['par_id'][1:]) ]
                             return current_expr.append ( int(local_name_ID_dict[pt1_str]['par_id'][1:]) )
                         else:
-                            #dbprint ( "Found a user defined name NOT in the dictionary: " + pt1_str )
                             # Not in the dictionary, so append a None flag followed by the undefined name
+                            #dbprint ( "Found a user defined name NOT in the dictionary: " + pt1_str )
                             #return current_expr + [ None, pt[1] ]
-                            return current_expr.append(None).append( pt[1] )
+                            #return current_expr.append(None).append( pt[1] )
+                            current_expr.append(None)
+                            current_expr.append( pt[1] )
+                            return current_expr
                 else:
                     # This is a non-name part of the expression
                     #return current_expr + [ pt[1] ]
