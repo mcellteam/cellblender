@@ -63,12 +63,7 @@ class MCELL_OT_reaction_add(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        mcell = context.scene.mcell
-        mcell.reactions.reaction_list.add()
-        mcell.reactions.active_rxn_index = len(mcell.reactions.reaction_list)-1
-        rxn = mcell.reactions.reaction_list[mcell.reactions.active_rxn_index]
-        rxn.init_properties(mcell.parameter_system)
-        check_reaction(self, context)
+        context.scene.mcell.reactions.add_reaction(context)
         return {'FINISHED'}
 
 
@@ -79,17 +74,8 @@ class MCELL_OT_reaction_remove(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        mcell = context.scene.mcell
-        mcell.reactions.reaction_list.remove(mcell.reactions.active_rxn_index)
-        mcell.reactions.active_rxn_index = mcell.reactions.active_rxn_index-1
-        if (mcell.reactions.active_rxn_index < 0):
-            mcell.reactions.active_rxn_index = 0
-
-        if mcell.reactions.reaction_list:
-            check_reaction(self, context)
-        else:
-            cellblender_release.update_release_pattern_rxn_name_list()
-
+        context.scene.mcell.reactions.remove_active_reaction(context)
+        self.report({'INFO'}, "Deleted Reaction")
         return {'FINISHED'}
 
 
@@ -359,6 +345,9 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
     variable_rate_switch_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     rxn_name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
+    status = StringProperty(name="Status")
+
+
     def init_properties ( self, parameter_system ):
         self.name = "The_Reaction"
         self.rxn_name = ""
@@ -376,7 +365,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
                    "      two volume molecules or a volume molecule and a surface molecule,\n" + \
                    "  [um^2 / (N * s)] for bimolecular reactions between two surface molecules."
         self.fwd_rate.init_ref   ( parameter_system, "FW_Rate_Type", user_name="Forward Rate",  user_expr="0", user_units="", user_descr=helptext )
-       
+
         helptext = "Backward Rate\n" + \
                   "The units for the reaction rate for uni- and bimolecular reactions is:\n" + \
                   "  [1/s] for unimolecular reactions,\n" + \
@@ -385,10 +374,12 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
                   "  [um^2 / (N * s)] for bimolecular reactions between two surface molecules."
         self.bkwd_rate.init_ref  ( parameter_system, "BW_Rate_Type", user_name="Backward Rate", user_expr="",  user_units="s", user_descr=helptext )
 
+
     def remove_properties ( self, context ):
         print ( "Removing all Reaction Properties... no collections to remove." )
-
-    status = StringProperty(name="Status")
+        ps = context.scene.mcell.parameter_system
+        self.fwd_rate.clear_ref ( ps )
+        self.bkwd_rate.clear_ref ( ps )
 
 
     def build_data_model_from_properties ( self, context ):
@@ -537,14 +528,35 @@ class RxnStringProperty(bpy.types.PropertyGroup):
 
 
 
-
 class MCellReactionsListProperty(bpy.types.PropertyGroup):
     reaction_list = CollectionProperty(
         type=MCellReactionProperty, name="Reaction List")
     active_rxn_index = IntProperty(name="Active Reaction Index", default=0)
     reaction_name_list = CollectionProperty(
         type=RxnStringProperty, name="Reaction Name List")
-    # plot_command = StringProperty(name="", default="")      # TODO: This may not be needed ... check on it
+
+    def add_reaction ( self, context ):
+        self.reaction_list.add()
+        self.active_rxn_index = len(self.reaction_list)-1
+        rxn = self.reaction_list[self.active_rxn_index]
+        rxn.init_properties(context.scene.mcell.parameter_system)
+        check_reaction(self, context)
+
+    def remove_active_reaction ( self, context ):
+        print ( "Call to: \"remove_active_reaction\"" )
+        if len(self.reaction_list) > 0:
+            rxn = self.reaction_list[self.active_rxn_index]
+            if rxn:
+                rxn.remove_properties(context)
+            self.reaction_list.remove(self.active_rxn_index)
+            self.active_rxn_index = self.active_rxn_index-1
+            if (self.active_rxn_index < 0):
+                self.active_rxn_index = 0
+            if self.reaction_list:
+                check_reaction(self, context)
+            else:
+                cellblender_release.update_release_pattern_rxn_name_list()
+
 
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction List building Data Model" )
