@@ -130,20 +130,7 @@ class MCELL_OT_release_site_add(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        mcell = context.scene.mcell
-        rel_id = mcell.release_sites.allocate_available_id()  # Get the ID before allocating to allow it to reset
-        mcell.release_sites.mol_release_list.add()
-        mcell.release_sites.active_release_index = len(
-            mcell.release_sites.mol_release_list)-1
-        mcell.release_sites.mol_release_list[
-            mcell.release_sites.active_release_index].name = "Release_Site_"+str(rel_id)
-
-        relsite = mcell.release_sites.mol_release_list[mcell.release_sites.active_release_index]
-
-        relsite.init_properties(mcell.parameter_system)
-            
-        check_release_molecule(context)
-
+        context.scene.mcell.release_sites.add_release_site ( context )
         return {'FINISHED'}
 
 
@@ -154,18 +141,9 @@ class MCELL_OT_release_site_remove(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        mcell = context.scene.mcell
-        mcell.release_sites.mol_release_list.remove(
-            mcell.release_sites.active_release_index)
-        mcell.release_sites.active_release_index -= 1
-        if (mcell.release_sites.active_release_index < 0):
-            mcell.release_sites.active_release_index = 0
-
-        if mcell.release_sites.mol_release_list:
-            check_release_site(self, context)
-
+        context.scene.mcell.release_sites.remove_active_rel_site(context)
+        self.report({'INFO'}, "Deleted Release Site")
         return {'FINISHED'}
-
 
 
 
@@ -696,7 +674,15 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all Molecule Release Properties... " )
+        ps = context.scene.mcell.parameter_system
         self.remove_all_points ( context )
+        self.location_x.clear_ref ( ps )
+        self.location_y.clear_ref ( ps )
+        self.location_z.clear_ref ( ps )
+        self.diameter.clear_ref ( ps )
+        self.probability.clear_ref ( ps )
+        self.quantity.clear_ref ( ps )
+        self.stddev.clear_ref ( ps )
 
     def build_data_model_from_properties ( self, context ):
         r = self
@@ -790,6 +776,38 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
         self.next_id += 1
         return ( self.next_id - 1 )
 
+
+    def add_release_site ( self, context ):
+        mcell = context.scene.mcell
+        rel_id = mcell.release_sites.allocate_available_id()  # Get the ID before allocating to allow it to reset
+        mcell.release_sites.mol_release_list.add()
+        mcell.release_sites.active_release_index = len(
+            mcell.release_sites.mol_release_list)-1
+        mcell.release_sites.mol_release_list[
+            mcell.release_sites.active_release_index].name = "Release_Site_"+str(rel_id)
+
+        relsite = mcell.release_sites.mol_release_list[mcell.release_sites.active_release_index]
+
+        relsite.init_properties(mcell.parameter_system)
+
+        check_release_molecule(context)
+
+
+    def remove_active_rel_site ( self, context ):
+        """ Remove the active release site from the list of release sites """
+        print ( "Call to: \"remove_active_rel_site\"" )
+        if len(self.mol_release_list) > 0:
+            rel = self.mol_release_list[self.active_release_index]
+            if rel:
+                rel.remove_properties(context)
+            self.mol_release_list.remove ( self.active_release_index )
+            self.active_release_index -= 1
+            if self.active_release_index < 0:
+                self.active_release_index = 0
+            if len(self.mol_release_list) <= 0:
+                self.next_id = 1
+            if self.mol_release_list:
+                check_release_site(self, context)
 
 
     def build_data_model_from_properties ( self, context ):
@@ -1073,6 +1091,12 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all Release Pattern Properties... no collections to remove." )
+        ps = context.scene.mcell.parameter_system
+        self.delay.clear_ref ( ps )
+        self.release_interval.clear_ref ( ps )
+        self.train_duration.clear_ref ( ps )
+        self.train_interval.clear_ref ( ps )
+        self.number_of_trains.clear_ref ( ps )
 
 
     def build_data_model_from_properties ( self, context ):
