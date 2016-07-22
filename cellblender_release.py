@@ -596,14 +596,12 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
     def add_release_site ( self, context ):
         mcell = context.scene.mcell
-        rel_id = mcell.release_sites.allocate_available_id()  # Get the ID before allocating to allow it to reset
-        mcell.release_sites.mol_release_list.add()
-        mcell.release_sites.active_release_index = len(
-            mcell.release_sites.mol_release_list)-1
-        mcell.release_sites.mol_release_list[
-            mcell.release_sites.active_release_index].name = "Release_Site_"+str(rel_id)
+        rel_id = self.allocate_available_id()  # Get the ID before allocating to allow it to reset
+        self.mol_release_list.add()
+        self.active_release_index = len(self.mol_release_list)-1
+        self.mol_release_list[self.active_release_index].name = "Release_Site_"+str(rel_id)
 
-        relsite = mcell.release_sites.mol_release_list[mcell.release_sites.active_release_index]
+        relsite = self.mol_release_list[self.active_release_index]
 
         relsite.init_properties(mcell.parameter_system)
 
@@ -1085,15 +1083,26 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
     # Contains release patterns AND reaction names. Used in "Release Placement"
     release_pattern_rxn_name_list = CollectionProperty ( type=RelStringProperty, name="Release Pattern and Reaction Name List")
     active_release_pattern_index = IntProperty ( name="Active Release Pattern Index", default=0 )
+    next_id = IntProperty(name="Counter for Unique Release Pattern IDs", default=1)  # Start ID's at 1 to confirm initialization
+
+
+    def allocate_available_id ( self ):
+        """ Return a unique release ID for a new release pattern """
+        if len(self.release_pattern_list) <= 0:
+            # Reset the ID to 1 when there are no more sites
+            self.next_id = 1
+        self.next_id += 1
+        return ( self.next_id - 1 )
 
 
     def add_release_pattern ( self, context ):
         mcell = context.scene.mcell
+        pat_id = self.allocate_available_id()  # Get the ID before allocating to allow it to reset
         self.release_pattern_list.add()
         self.active_release_pattern_index = len(self.release_pattern_list)-1
         rel_pattern = self.release_pattern_list[self.active_release_pattern_index]
-        rel_pattern.name = "Release_Pattern"
         rel_pattern.init_properties(mcell.parameter_system)
+        rel_pattern.name = "Release_Pattern_"+str(pat_id)
         check_release_pattern_name(self, context)
 
 
@@ -1101,7 +1110,6 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
         """ Remove the active release pattern from the list of release pattern """
         print ( "Call to: \"remove_active_rel_pattern\"" )
         if len(self.release_pattern_list) > 0:
-            mcell = context.scene.mcell
             pat = self.release_pattern_list[self.active_release_pattern_index]
             if pat:
                 pat.remove_properties(context)
@@ -1109,10 +1117,13 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
             self.active_release_pattern_index -= 1
             if (self.active_release_pattern_index < 0):
                 self.active_release_pattern_index = 0
+            if len(self.release_pattern_list) <= 0:
+                self.next_id = 1
             if self.release_pattern_list:
                 check_release_pattern_name(self, context)
             else:
                 update_release_pattern_rxn_name_list()
+
 
 
     def build_data_model_from_properties ( self, context ):
