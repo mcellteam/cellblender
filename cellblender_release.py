@@ -55,72 +55,11 @@ def unregister():
 
 
 
-
-class MCELL_OT_release_pattern_add(bpy.types.Operator):
-    bl_idname = "mcell.release_pattern_add"
-    bl_label = "Add Release Pattern"
-    bl_description = "Add a new Release Pattern to an MCell model"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        mcell.release_patterns.release_pattern_list.add()
-        mcell.release_patterns.active_release_pattern_index = len(
-            mcell.release_patterns.release_pattern_list)-1
-        rel_pattern = mcell.release_patterns.release_pattern_list[
-            mcell.release_patterns.active_release_pattern_index]
-        rel_pattern.name = "Release_Pattern"
-        rel_pattern.init_properties(mcell.parameter_system)
-        check_release_pattern_name(self, context)
-
-        return {'FINISHED'}
-
-
-class MCELL_OT_release_pattern_remove(bpy.types.Operator):
-    bl_idname = "mcell.release_pattern_remove"
-    bl_label = "Remove Release Pattern"
-    bl_description = "Remove selected Release Pattern from MCell model"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        mcell.release_patterns.release_pattern_list.remove(
-            mcell.release_patterns.active_release_pattern_index)
-        mcell.release_patterns.active_release_pattern_index -= 1
-        if (mcell.release_patterns.active_release_pattern_index < 0):
-            mcell.release_patterns.active_release_pattern_index = 0
-
-        if mcell.release_patterns.release_pattern_list:
-            check_release_pattern_name(self, context)
-        else:
-            update_release_pattern_rxn_name_list()
-
-        return {'FINISHED'}
-
-
-def check_release_pattern_name(self, context):
-    """Checks for duplicate or illegal release pattern name."""
-
-    mcell = context.scene.mcell
-    rel_pattern_list = mcell.release_patterns.release_pattern_list
-    rel_pattern = rel_pattern_list[
-        mcell.release_patterns.active_release_pattern_index]
-
-    status = ""
-
-    # Check for duplicate release pattern name
-    rel_pattern_keys = rel_pattern_list.keys()
-    if rel_pattern_keys.count(rel_pattern.name) > 1:
-        status = "Duplicate release pattern: %s" % (rel_pattern.name)
-
-    # Check for illegal names (Starts with a letter. No special characters.)
-    rel_pattern_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
-    m = re.match(rel_pattern_filter, rel_pattern.name)
-    if m is None:
-        status = "Release Pattern name error: %s" % (rel_pattern.name)
-
-    rel_pattern.status = status
-    update_release_pattern_rxn_name_list()
+########################################################
+#
+#   Release Site Code
+#
+########################################################
 
 
 class MCELL_OT_release_site_add(bpy.types.Operator):
@@ -288,128 +227,6 @@ def check_release_object_expr(context):
     return status
 
 
-
-def update_release_pattern_rxn_name_list():
-    """ Update lists needed to count rxns and use rel patterns. """
-
-    mcell = bpy.context.scene.mcell
-    mcell.reactions.reaction_name_list.clear()
-    mcell.release_patterns.release_pattern_rxn_name_list.clear()
-    rxns = mcell.reactions.reaction_list
-    rel_patterns_rxns = mcell.release_patterns.release_pattern_rxn_name_list
-    # If a reaction has a reaction name, save it in reaction_name_list for
-    # counting in "Reaction Output Settings." Also, save reaction names in
-    # release_pattern_rxn_name_list for use as a release pattern, which is
-    # assigned in "Molecule Release/Placement"
-    for rxn in rxns:
-        if rxn.rxn_name and not rxn.status:
-            new_rxn_item = mcell.reactions.reaction_name_list.add()
-            new_rxn_item.name = rxn.rxn_name
-            new_rel_pattern_item = rel_patterns_rxns.add()
-            new_rel_pattern_item.name = rxn.rxn_name
-
-    rel_patterns = mcell.release_patterns.release_pattern_list
-    for rp in rel_patterns:
-        if not rp.status:
-            new_rel_pattern_item = rel_patterns_rxns.add()
-            new_rel_pattern_item.name = rp.name
-
-
-
-"""
-These don't seem to be called anywhere...
-
-def update_delay(self, context):
-    # Store the release pattern delay as a float if it's legal
-
-    mcell = context.scene.mcell
-    release_pattern = mcell.release_patterns.release_pattern_list[
-        mcell.release_patterns.active_release_pattern_index]
-    delay_str = release_pattern.delay_str
-
-    (delay, status) = cellblender_utils.check_val_str(delay_str, 0, None)
-
-    if status == "":
-        release_pattern.delay = delay
-    else:
-        release_pattern.delay_str = "%g" % (release_pattern.delay)
-
-
-def update_release_interval(self, context):
-    # Store the release interval as a float if it's legal
-
-    mcell = context.scene.mcell
-    release_pattern = mcell.release_patterns.release_pattern_list[
-        mcell.release_patterns.active_release_pattern_index]
-    release_interval_str = release_pattern.release_interval_str
-
-    (release_interval, status) = cellblender_utils.check_val_str(
-        release_interval_str, 1e-12, None)
-
-    if status == "":
-        release_pattern.release_interval = release_interval
-    else:
-        release_pattern.release_interval_str = "%g" % (
-            release_pattern.release_interval)
-
-
-def update_train_duration(self, context):
-    # Store the train duration as a float if it's legal
-
-    mcell = context.scene.mcell
-    release_pattern = mcell.release_patterns.release_pattern_list[
-        mcell.release_patterns.active_release_pattern_index]
-    train_duration_str = release_pattern.train_duration_str
-
-    (train_duration, status) = cellblender_utils.check_val_str(train_duration_str, 1e-12, None)
-
-    if status == "":
-        release_pattern.train_duration = train_duration
-    else:
-        release_pattern.train_duration_str = "%g" % (
-            release_pattern.train_duration)
-
-
-def update_train_interval(self, context):
-    # Store the train interval as a float if it's legal
-
-    mcell = context.scene.mcell
-    release_pattern = mcell.release_patterns.release_pattern_list[
-        mcell.release_patterns.active_release_pattern_index]
-    train_interval_str = release_pattern.train_interval_str
-
-    (train_interval, status) = cellblender_utils.check_val_str(train_interval_str, 1e-12, None)
-
-    if status == "":
-        release_pattern.train_interval = train_interval
-    else:
-        release_pattern.train_interval_str = "%g" % (
-            release_pattern.train_interval)
-
-
-"""
-
-
-
-
-class MCELL_UL_check_release_pattern(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data,
-                  active_propname, index):
-        if item.status:
-            layout.label(item.status, icon='ERROR')
-        else:
-            layout.label(item.name, icon='FILE_TICK')
-
-
-class MCELL_PT_release_pattern(bpy.types.Panel):
-    bl_label = "CellBlender - Release Pattern"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.release_patterns.draw_panel ( context, self )
 
 
 class MCELL_UL_check_molecule_release(bpy.types.UIList):
@@ -1060,6 +877,131 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
         """ Create a layout from the panel and draw into it """
         layout = panel.layout
         self.draw_layout ( context, layout )
+
+
+
+########################################################
+#
+#   Release Pattern Code
+#
+########################################################
+
+
+class MCELL_OT_release_pattern_add(bpy.types.Operator):
+    bl_idname = "mcell.release_pattern_add"
+    bl_label = "Add Release Pattern"
+    bl_description = "Add a new Release Pattern to an MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.release_patterns.release_pattern_list.add()
+        mcell.release_patterns.active_release_pattern_index = len(
+            mcell.release_patterns.release_pattern_list)-1
+        rel_pattern = mcell.release_patterns.release_pattern_list[
+            mcell.release_patterns.active_release_pattern_index]
+        rel_pattern.name = "Release_Pattern"
+        rel_pattern.init_properties(mcell.parameter_system)
+        check_release_pattern_name(self, context)
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_release_pattern_remove(bpy.types.Operator):
+    bl_idname = "mcell.release_pattern_remove"
+    bl_label = "Remove Release Pattern"
+    bl_description = "Remove selected Release Pattern from MCell model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        mcell.release_patterns.release_pattern_list.remove(
+            mcell.release_patterns.active_release_pattern_index)
+        mcell.release_patterns.active_release_pattern_index -= 1
+        if (mcell.release_patterns.active_release_pattern_index < 0):
+            mcell.release_patterns.active_release_pattern_index = 0
+
+        if mcell.release_patterns.release_pattern_list:
+            check_release_pattern_name(self, context)
+        else:
+            update_release_pattern_rxn_name_list()
+
+        return {'FINISHED'}
+
+
+
+def update_release_pattern_rxn_name_list():
+    """ Update lists needed to count rxns and use rel patterns. """
+
+    mcell = bpy.context.scene.mcell
+    mcell.reactions.reaction_name_list.clear()
+    mcell.release_patterns.release_pattern_rxn_name_list.clear()
+    rxns = mcell.reactions.reaction_list
+    rel_patterns_rxns = mcell.release_patterns.release_pattern_rxn_name_list
+    # If a reaction has a reaction name, save it in reaction_name_list for
+    # counting in "Reaction Output Settings." Also, save reaction names in
+    # release_pattern_rxn_name_list for use as a release pattern, which is
+    # assigned in "Molecule Release/Placement"
+    for rxn in rxns:
+        if rxn.rxn_name and not rxn.status:
+            new_rxn_item = mcell.reactions.reaction_name_list.add()
+            new_rxn_item.name = rxn.rxn_name
+            new_rel_pattern_item = rel_patterns_rxns.add()
+            new_rel_pattern_item.name = rxn.rxn_name
+
+    rel_patterns = mcell.release_patterns.release_pattern_list
+    for rp in rel_patterns:
+        if not rp.status:
+            new_rel_pattern_item = rel_patterns_rxns.add()
+            new_rel_pattern_item.name = rp.name
+
+
+
+def check_release_pattern_name(self, context):
+    """Checks for duplicate or illegal release pattern name."""
+
+    mcell = context.scene.mcell
+    rel_pattern_list = mcell.release_patterns.release_pattern_list
+    rel_pattern = rel_pattern_list[
+        mcell.release_patterns.active_release_pattern_index]
+
+    status = ""
+
+    # Check for duplicate release pattern name
+    rel_pattern_keys = rel_pattern_list.keys()
+    if rel_pattern_keys.count(rel_pattern.name) > 1:
+        status = "Duplicate release pattern: %s" % (rel_pattern.name)
+
+    # Check for illegal names (Starts with a letter. No special characters.)
+    rel_pattern_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
+    m = re.match(rel_pattern_filter, rel_pattern.name)
+    if m is None:
+        status = "Release Pattern name error: %s" % (rel_pattern.name)
+
+    rel_pattern.status = status
+    update_release_pattern_rxn_name_list()
+
+
+
+class MCELL_UL_check_release_pattern(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data,
+                  active_propname, index):
+        if item.status:
+            layout.label(item.status, icon='ERROR')
+        else:
+            layout.label(item.name, icon='FILE_TICK')
+
+
+class MCELL_PT_release_pattern(bpy.types.Panel):
+    bl_label = "CellBlender - Release Pattern"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        context.scene.mcell.release_patterns.draw_panel ( context, self )
+
 
 
 
