@@ -490,7 +490,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         self.stddev.init_ref      ( parameter_system, "Rel_StdDev_Type", user_name="Standard Deviation",  user_expr="0", user_units="", user_descr=helptext )
 
     def remove_properties ( self, context ):
-        print ( "Removing all Molecule Release Properties... " )
+        print ( "Removing all Molecule Release Site Properties... " )
         ps = context.scene.mcell.parameter_system
         self.remove_all_points ( context )
         self.location_x.clear_ref ( ps )
@@ -886,7 +886,6 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 #
 ########################################################
 
-
 class MCELL_OT_release_pattern_add(bpy.types.Operator):
     bl_idname = "mcell.release_pattern_add"
     bl_label = "Add Release Pattern"
@@ -894,16 +893,7 @@ class MCELL_OT_release_pattern_add(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        mcell = context.scene.mcell
-        mcell.release_patterns.release_pattern_list.add()
-        mcell.release_patterns.active_release_pattern_index = len(
-            mcell.release_patterns.release_pattern_list)-1
-        rel_pattern = mcell.release_patterns.release_pattern_list[
-            mcell.release_patterns.active_release_pattern_index]
-        rel_pattern.name = "Release_Pattern"
-        rel_pattern.init_properties(mcell.parameter_system)
-        check_release_pattern_name(self, context)
-
+        context.scene.mcell.release_patterns.add_release_pattern ( context )
         return {'FINISHED'}
 
 
@@ -914,19 +904,10 @@ class MCELL_OT_release_pattern_remove(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        mcell = context.scene.mcell
-        mcell.release_patterns.release_pattern_list.remove(
-            mcell.release_patterns.active_release_pattern_index)
-        mcell.release_patterns.active_release_pattern_index -= 1
-        if (mcell.release_patterns.active_release_pattern_index < 0):
-            mcell.release_patterns.active_release_pattern_index = 0
-
-        if mcell.release_patterns.release_pattern_list:
-            check_release_pattern_name(self, context)
-        else:
-            update_release_pattern_rxn_name_list()
-
+        context.scene.mcell.release_patterns.remove_active_rel_pattern ( context )
+        self.report({'INFO'}, "Deleted Release Pattern")
         return {'FINISHED'}
+
 
 
 
@@ -1100,14 +1081,39 @@ class RelStringProperty(bpy.types.PropertyGroup):
 
 
 class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
-    release_pattern_list = CollectionProperty(
-        type=MCellReleasePatternProperty, name="Release Pattern List")
+    release_pattern_list = CollectionProperty ( type=MCellReleasePatternProperty, name="Release Pattern List" )
     # Contains release patterns AND reaction names. Used in "Release Placement"
-    release_pattern_rxn_name_list = CollectionProperty(
-        type=RelStringProperty,
-        name="Release Pattern and Reaction Name List")
-    active_release_pattern_index = IntProperty(
-        name="Active Release Pattern Index", default=0)
+    release_pattern_rxn_name_list = CollectionProperty ( type=RelStringProperty, name="Release Pattern and Reaction Name List")
+    active_release_pattern_index = IntProperty ( name="Active Release Pattern Index", default=0 )
+
+
+    def add_release_pattern ( self, context ):
+        mcell = context.scene.mcell
+        self.release_pattern_list.add()
+        self.active_release_pattern_index = len(self.release_pattern_list)-1
+        rel_pattern = self.release_pattern_list[self.active_release_pattern_index]
+        rel_pattern.name = "Release_Pattern"
+        rel_pattern.init_properties(mcell.parameter_system)
+        check_release_pattern_name(self, context)
+
+
+    def remove_active_rel_pattern ( self, context ):
+        """ Remove the active release pattern from the list of release pattern """
+        print ( "Call to: \"remove_active_rel_pattern\"" )
+        if len(self.release_pattern_list) > 0:
+            mcell = context.scene.mcell
+            pat = self.release_pattern_list[self.active_release_pattern_index]
+            if pat:
+                pat.remove_properties(context)
+            self.release_pattern_list.remove(self.active_release_pattern_index)
+            self.active_release_pattern_index -= 1
+            if (self.active_release_pattern_index < 0):
+                self.active_release_pattern_index = 0
+            if self.release_pattern_list:
+                check_release_pattern_name(self, context)
+            else:
+                update_release_pattern_rxn_name_list()
+
 
     def build_data_model_from_properties ( self, context ):
         print ( "Release Pattern List building Data Model" )
