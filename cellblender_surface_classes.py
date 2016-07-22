@@ -153,9 +153,9 @@ def check_surface_class(self, context):
 
     return
 
-
+"""
 def update_clamp_value(self, context):
-    """ Store the clamp value as a float if it's legal or generate an error """
+    # Store the clamp value as a float if it's legal or generate an error
 
     mcell = context.scene.mcell
     surf_class = context.scene.mcell.surface_classes
@@ -190,7 +190,7 @@ def update_clamp_value(self, context):
     #surf_class.surf_class_props_status = status
 
     return
-
+"""
 
 # Surface Classes Operators:
 
@@ -219,8 +219,12 @@ class MCELL_OT_surf_class_props_remove(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        ps = context.scene.mcell.parameter_system
         surf_class = context.scene.mcell.surface_classes
         active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
+        active_surf_class_prop = active_surf_class.surf_class_props_list[active_surf_class.active_surf_class_props_index]
+        active_surf_class_prop.remove_properties(context)
+
         active_surf_class.surf_class_props_list.remove(active_surf_class.active_surf_class_props_index)
         active_surf_class.active_surf_class_props_index = len(active_surf_class.surf_class_props_list) - 1
         if (active_surf_class.active_surf_class_props_index < 0):
@@ -414,6 +418,8 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all Surface Class Properties... no collections to remove." )
+        ps = context.scene.mcell.parameter_system
+        self.clamp_value.clear_ref ( ps )
 
 
     def check_properties_after_building ( self, context ):
