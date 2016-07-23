@@ -256,7 +256,18 @@ class MCELL_OT_surface_class_remove(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
+        ps = context.scene.mcell.parameter_system
         surf_class = context.scene.mcell.surface_classes
+        active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
+
+        # First clear the list of properties in this active surface class
+        active_surf_class.active_surf_class_props_index = 0
+        while ( len(active_surf_class.surf_class_props_list) > 0 ):
+            active_surf_class_prop = active_surf_class.surf_class_props_list[0]
+            active_surf_class_prop.remove_properties(context)
+            active_surf_class.surf_class_props_list.remove(0)
+
+        # Now remove the surface class itself
         surf_class.surf_class_list.remove(surf_class.active_surf_class_index)
         surf_class.active_surf_class_index -= 1
         if (surf_class.active_surf_class_index < 0):
