@@ -458,19 +458,16 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
     surf_class_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
     def add_class ( self, context ):
-        surf_class = context.scene.mcell.surface_classes
-        surf_class.surf_class_list.add()
-        surf_class.active_surf_class_index = len(surf_class.surf_class_list) - 1
-        surf_class.surf_class_list[surf_class.active_surf_class_index].init_properties(context.scene.mcell.parameter_system)
-        surf_class.surf_class_list[surf_class.active_surf_class_index].name = "Surface_Class"
+        self.surf_class_list.add()
+        self.active_surf_class_index = len(self.surf_class_list) - 1
+        self.surf_class_list[self.active_surf_class_index].init_properties(context.scene.mcell.parameter_system)
+        self.surf_class_list[self.active_surf_class_index].name = "Surface_Class"
 
     def remove_active_class ( self, context ):
         print ( "Call to: \"remove_active_reaction\"" )
 
         if len(self.surf_class_list) > 0:
-            ps = context.scene.mcell.parameter_system
-            surf_class = context.scene.mcell.surface_classes
-            active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
+            active_surf_class = self.surf_class_list[self.active_surf_class_index]
 
             # First clear the list of properties in this active surface class
             active_surf_class.active_surf_class_props_index = 0
@@ -480,20 +477,19 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
                 active_surf_class.surf_class_props_list.remove(0)
 
             # Now remove the surface class itself
-            surf_class.surf_class_list.remove(surf_class.active_surf_class_index)
-            surf_class.active_surf_class_index -= 1
-            if (surf_class.active_surf_class_index < 0):
-                surf_class.active_surf_class_index = 0
+            self.surf_class_list.remove(self.active_surf_class_index)
+            self.active_surf_class_index -= 1
+            if (self.active_surf_class_index < 0):
+                self.active_surf_class_index = 0
 
-            if surf_class.surf_class_list:
+            if self.surf_class_list:
                 check_surface_class(self, context)
             else:
-                surf_class.surf_class_status = ""
+                self.surf_class_status = ""
 
 
     def add_class_prop ( self, context ):
-        surf_class = context.scene.mcell.surface_classes
-        active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
+        active_surf_class = self.surf_class_list[self.active_surf_class_index]
         active_surf_class.surf_class_props_list.add()
         active_surf_class.active_surf_class_props_index = len(active_surf_class.surf_class_props_list) - 1
         active_surf_class.surf_class_props_list[active_surf_class.active_surf_class_props_index].init_properties(context.scene.mcell.parameter_system)
@@ -503,9 +499,7 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
     def remove_class_prop ( self, context ):
         print ( "Call to: \"remove_class_prop\"" )
 
-        ps = context.scene.mcell.parameter_system
-        surf_class = context.scene.mcell.surface_classes
-        active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
+        active_surf_class = self.surf_class_list[self.active_surf_class_index]
         active_surf_class_prop = active_surf_class.surf_class_props_list[active_surf_class.active_surf_class_props_index]
         active_surf_class_prop.remove_properties(context)
 
