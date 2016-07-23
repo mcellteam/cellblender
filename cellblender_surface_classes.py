@@ -30,18 +30,12 @@ from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
                       FloatProperty, FloatVectorProperty, IntProperty, \
                       IntVectorProperty, PointerProperty, StringProperty
 
-#from bpy.app.handlers import persistent
-#import math
-#import mathutils
-
 # python imports
 import re
 
 # CellBlender imports
 import cellblender
 from . import parameter_system
-from . import cellblender_release
-from . import cellblender_utils
 from . import data_model
 
 
@@ -55,7 +49,9 @@ def unregister():
 
 
 
+#########################################################################
 # Surface Classes callback functions
+#########################################################################
 
 
 def convert_orient_str(orient):
@@ -154,8 +150,10 @@ def check_surface_class(self, context):
     return
 
 
-
-# Surface Classes Operators - These should delegate all work to the surfaces_classes object via its methods:
+#########################################################################
+# Surface Classes Operators - These should delegate all work to the
+#                             surfaces_classes object via its methods
+#########################################################################
 
 
 class MCELL_OT_surf_class_props_add(bpy.types.Operator):
@@ -204,7 +202,9 @@ class MCELL_OT_surface_class_remove(bpy.types.Operator):
 
 
 
-# Surface Classes Panels:
+#########################################################################
+# UI List Classes for drawing into Surface Class Template Lists
+#########################################################################
 
 
 class MCELL_UL_check_surface_class(bpy.types.UIList):
@@ -236,7 +236,10 @@ class MCELL_PT_define_surface_classes(bpy.types.Panel):
         context.scene.mcell.surface_classes.draw_panel ( context, self )
 
 
+
+#########################################################################
 # Surface Classes Property Groups
+#########################################################################
 
 
 
@@ -362,6 +365,7 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
 
 
 
+
 class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
     """ Stores the surface class name and a list of its properties. """
 
@@ -439,6 +443,7 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
                 scp = self.surf_class_props_list[self.active_surf_class_props_index]
                 scp.init_properties(context.scene.mcell.parameter_system)
                 scp.build_properties_from_data_model ( context, sc )
+
 
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
@@ -704,10 +709,4 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
         """ Create a layout from the panel and draw into it """
         layout = panel.layout
         self.draw_layout ( context, layout )
-
-
-
-
-#Custom Properties
-
 
