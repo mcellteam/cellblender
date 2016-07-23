@@ -153,46 +153,9 @@ def check_surface_class(self, context):
 
     return
 
-"""
-def update_clamp_value(self, context):
-    # Store the clamp value as a float if it's legal or generate an error
 
-    mcell = context.scene.mcell
-    surf_class = context.scene.mcell.surface_classes
-    active_surf_class = mcell.surface_classes.surf_class_list[
-        mcell.surface_classes.active_surf_class_index]
-    surf_class_props = active_surf_class.surf_class_props_list[
-        active_surf_class.active_surf_class_props_index]
-    #surf_class_type = surf_class_props.surf_class_type
-    #orient = surf_class_props.surf_class_orient
-    #molecule = surf_class_props.molecule
-    clamp_value_str = surf_class_props.clamp_value_str
 
-    (clamp_value, status) = cellblender_utils.check_val_str(clamp_value_str, 0, None)
-
-    if status == "":
-        surf_class_props.clamp_value = clamp_value
-    else:
-        #status = status % ("clamp_value", clamp_value_str)
-        surf_class_props.clamp_value_str = "%g" % (
-            surf_class_props.clamp_value)
-
-    #surf_class_type = convert_surf_class_str(surf_class_type)
-    #orient = convert_orient_str(orient)
-
-    #if molecule:
-    #    surf_class_props.name = "Molec.: %s   Orient.: %s   Type: %s" % (
-    #        molecule, orient, surf_class_type)
-    #else:
-    #    surf_class_props.name = "Molec.: NA   Orient.: %s   Type: %s" % (
-    #        orient, surf_class_type)
-
-    #surf_class.surf_class_props_status = status
-
-    return
-"""
-
-# Surface Classes Operators:
+# Surface Classes Operators - These should delegate all work to the surfaces_classes object via its methods:
 
 
 class MCELL_OT_surf_class_props_add(bpy.types.Operator):
@@ -202,13 +165,7 @@ class MCELL_OT_surf_class_props_add(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        surf_class = context.scene.mcell.surface_classes
-        active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
-        active_surf_class.surf_class_props_list.add()
-        active_surf_class.active_surf_class_props_index = len(active_surf_class.surf_class_props_list) - 1
-        active_surf_class.surf_class_props_list[active_surf_class.active_surf_class_props_index].init_properties(context.scene.mcell.parameter_system)
-        check_surf_class_props(self, context)
-
+        context.scene.mcell.surface_classes.add_class_prop ( context )
         return {'FINISHED'}
 
 
@@ -219,17 +176,7 @@ class MCELL_OT_surf_class_props_remove(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        ps = context.scene.mcell.parameter_system
-        surf_class = context.scene.mcell.surface_classes
-        active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
-        active_surf_class_prop = active_surf_class.surf_class_props_list[active_surf_class.active_surf_class_props_index]
-        active_surf_class_prop.remove_properties(context)
-
-        active_surf_class.surf_class_props_list.remove(active_surf_class.active_surf_class_props_index)
-        active_surf_class.active_surf_class_props_index = len(active_surf_class.surf_class_props_list) - 1
-        if (active_surf_class.active_surf_class_props_index < 0):
-            active_surf_class.active_surf_class_props_index = 0
-
+        context.scene.mcell.surface_classes.remove_class_prop ( context )
         return {'FINISHED'}
 
 
@@ -240,12 +187,7 @@ class MCELL_OT_surface_class_add(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        surf_class = context.scene.mcell.surface_classes
-        surf_class.surf_class_list.add()
-        surf_class.active_surf_class_index = len(surf_class.surf_class_list) - 1
-        surf_class.surf_class_list[surf_class.active_surf_class_index].init_properties(context.scene.mcell.parameter_system)
-        surf_class.surf_class_list[surf_class.active_surf_class_index].name = "Surface_Class"
-
+        context.scene.mcell.surface_classes.add_class ( context )
         return {'FINISHED'}
 
 
@@ -256,29 +198,10 @@ class MCELL_OT_surface_class_remove(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        ps = context.scene.mcell.parameter_system
-        surf_class = context.scene.mcell.surface_classes
-        active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
-
-        # First clear the list of properties in this active surface class
-        active_surf_class.active_surf_class_props_index = 0
-        while ( len(active_surf_class.surf_class_props_list) > 0 ):
-            active_surf_class_prop = active_surf_class.surf_class_props_list[0]
-            active_surf_class_prop.remove_properties(context)
-            active_surf_class.surf_class_props_list.remove(0)
-
-        # Now remove the surface class itself
-        surf_class.surf_class_list.remove(surf_class.active_surf_class_index)
-        surf_class.active_surf_class_index -= 1
-        if (surf_class.active_surf_class_index < 0):
-            surf_class.active_surf_class_index = 0
-
-        if surf_class.surf_class_list:
-            check_surface_class(self, context)
-        else:
-            surf_class.surf_class_status = ""
-
+        context.scene.mcell.surface_classes.remove_active_class ( context )
         return {'FINISHED'}
+
+
 
 
 # Surface Classes Panels:
@@ -533,6 +456,65 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
 
     # surf_class_help_title = StringProperty(name="SCT", default="Help on Surface Classes", description="Toggle Showing of Help for Surface Classes." )
     surf_class_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+
+    def add_class ( self, context ):
+        surf_class = context.scene.mcell.surface_classes
+        surf_class.surf_class_list.add()
+        surf_class.active_surf_class_index = len(surf_class.surf_class_list) - 1
+        surf_class.surf_class_list[surf_class.active_surf_class_index].init_properties(context.scene.mcell.parameter_system)
+        surf_class.surf_class_list[surf_class.active_surf_class_index].name = "Surface_Class"
+
+    def remove_active_class ( self, context ):
+        print ( "Call to: \"remove_active_reaction\"" )
+
+        if len(self.surf_class_list) > 0:
+            ps = context.scene.mcell.parameter_system
+            surf_class = context.scene.mcell.surface_classes
+            active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
+
+            # First clear the list of properties in this active surface class
+            active_surf_class.active_surf_class_props_index = 0
+            while ( len(active_surf_class.surf_class_props_list) > 0 ):
+                active_surf_class_prop = active_surf_class.surf_class_props_list[0]
+                active_surf_class_prop.remove_properties(context)
+                active_surf_class.surf_class_props_list.remove(0)
+
+            # Now remove the surface class itself
+            surf_class.surf_class_list.remove(surf_class.active_surf_class_index)
+            surf_class.active_surf_class_index -= 1
+            if (surf_class.active_surf_class_index < 0):
+                surf_class.active_surf_class_index = 0
+
+            if surf_class.surf_class_list:
+                check_surface_class(self, context)
+            else:
+                surf_class.surf_class_status = ""
+
+
+    def add_class_prop ( self, context ):
+        surf_class = context.scene.mcell.surface_classes
+        active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
+        active_surf_class.surf_class_props_list.add()
+        active_surf_class.active_surf_class_props_index = len(active_surf_class.surf_class_props_list) - 1
+        active_surf_class.surf_class_props_list[active_surf_class.active_surf_class_props_index].init_properties(context.scene.mcell.parameter_system)
+        check_surf_class_props(self, context)
+
+
+    def remove_class_prop ( self, context ):
+        print ( "Call to: \"remove_class_prop\"" )
+
+        ps = context.scene.mcell.parameter_system
+        surf_class = context.scene.mcell.surface_classes
+        active_surf_class = surf_class.surf_class_list[surf_class.active_surf_class_index]
+        active_surf_class_prop = active_surf_class.surf_class_props_list[active_surf_class.active_surf_class_props_index]
+        active_surf_class_prop.remove_properties(context)
+
+        active_surf_class.surf_class_props_list.remove(active_surf_class.active_surf_class_props_index)
+        active_surf_class.active_surf_class_props_index = len(active_surf_class.surf_class_props_list) - 1
+        if (active_surf_class.active_surf_class_props_index < 0):
+            active_surf_class.active_surf_class_props_index = 0
+
+
 
     def build_data_model_from_properties ( self, context ):
         print ( "Surface Classes Panel building Data Model" )
