@@ -347,7 +347,7 @@ class CellBlender_Model:
         self.old_type = None
         self.context = cb_context
         self.setup_cb_defaults ( self.context )
-        self.context.scene.cellblender_test_suite.test_status == "?"
+        self.context.scene.cellblender_test_suite.test_status = "?"
 
 
     def using_id_params(self):
