@@ -554,7 +554,18 @@ class MCELL_PT_parameter_system(bpy.types.Panel):
 """
 
 
-##@profile('PanelParameterDataCallBack.update_panel_expression')
+
+#######################################################################
+#  A Panel Parameter Data object exists for each panel parameter
+#    They are stored in the panel_parameter_list CollectionProperty
+#      within the ParameterSystemPropertyGroup
+#######################################################################
+
+
+### External callback needed to match the "update=" syntax of Blender.
+### This just calls the function with the same name from within the class
+
+##@profile('PanelParameterDataCallBack.update_panel_expression')  # profiling callbacks can be problematic
 def update_panel_expr ( self, context ):
     self.update_panel_expression ( context )
 
@@ -647,9 +658,20 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
             #    self['value'] = int(self['value'])
 
 
+
+
+#######################################################################
+#  A Panel Parameter Reference is just an ID that is stored wherever
+#    a panel parameter is defined. That ID is the name index into the
+#    the panel_parameter_list CollectionProperty within the top level
+#    ParameterSystemPropertyGroup. The panel_parameter_list contains
+#    the PanelParameterData items keyed by this ID.
+#######################################################################
+
+
 class Parameter_Reference ( bpy.types.PropertyGroup ):
     """ Simple class to reference a panel parameter - used throughout the application """
-    # There is only one property in this class
+    # There is ONLY ONE property in this class ... don't add any more without careful thought
     unique_static_name = StringProperty ( name="unique_name", default="" )
 
 
@@ -662,6 +684,17 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
     #def __del__ ( self ):
     #    print ( "Parameter_Reference.__del__ called" )
 
+
+    #######################################################################
+    #  This is the function that actually creates the data associated with
+    #    a panel parameter.
+    #  The "type_name" was used in the past, and it is being preserved
+    #    temporarily since it's used throughout CellBlender. Removing it
+    #    prior to merging with the development branch will only cause
+    #    additional headache at this time.
+    #  The "user_int" parameter will probably change to "user_type" when we
+    #    add string parameters giving: 'f', 'i', 's'.
+    #######################################################################
 
     @profile('Parameter_Reference.init_ref')
     def init_ref ( self, parameter_system, type_name, user_name=None, user_expr="0", user_descr="Panel Parameter", user_units="", user_int=False ):
@@ -704,6 +737,20 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
 
 
 
+    #######################################################################
+    #  This is the function that deletes the data associated with a panel
+    #    parameter. This was not needed prior to ID properties because the
+    #    RNA properties (supposedly) cleaned up after themselves. This is
+    #    not the case with ID parameters, and this data must be removed.
+    #  Nothing depends on panel parameters (they are leaves in the tree)
+    #    so no dependencies need to be checked.
+    #  However, the general parameters DO keep track of which panel
+    #    parameters depend on them. This relationship is stored in their
+    #    "what_depends_on_me" list. So removing a panel parameter requires
+    #    clearing that panel parameter reference from each general parameter
+    #    that is used by the panel parameter. This function does that.
+    #######################################################################
+
     def clear_ref ( self, parameter_system ):
         dbprint ( "clear_ref for " + self.unique_static_name )
         ppl = parameter_system.panel_parameter_list
@@ -727,15 +774,21 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
             ppl.remove ( i )
 
 
-
-
-    ## There are a lot of Parameter_Reference functions from the old version that may not be used
-    ## For now, have them flag when they're called by exiting Blender.
-    
-    @profile('Parameter_Reference.optional_exit')
-    def optional_exit(self):
-        #bpy.ops.wm.quit_blender()
-        pass
+    #######################################################################
+    #  These are the general access functions used to set and get the
+    #    parameter's expression and value. They take an optional plist
+    #    argument that should be the panel parameter list. This is done
+    #    to keep this function from looking it up when the list is already
+    #    available in the calling function.
+    #    The available access functions are:
+    #      get_param  - Returns a PanelParameterData item for the parameter
+    #      set_expr   - Sets the expression for the parameter
+    #      get_expr   - Gets the expression for the parameter
+    #      get_value  - Returns a numeric value for the parameter 
+    #      get_as_string_or_value - Returns a string which might be
+    #                               either a string expression or a
+    #                               string representation of a number
+    #######################################################################
 
     @profile('Parameter_Reference.get_param')
     def get_param ( self, plist=None ):
@@ -766,7 +819,6 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
     @profile('Parameter_Reference.get_value')
     def get_value ( self, plist=None ):
         #print ( "###############\n  get_value for " + self.unique_static_name + " Error!!!\n###############\n" )
-        self.optional_exit()
         par = self.get_param()
         #print ( "Par.keys() = " + str(par.keys()) )
         #print ( "Par.items() = " + str(par.items()) )
@@ -804,6 +856,10 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
             return s
 
 
+    #######################################################################
+    #  This function draws a panel parameter in a panel "layout".
+    #    This is the function that shows help, labels, double rows, etc.
+    #######################################################################
 
     @profile('Parameter_Reference.draw')
     def draw ( self, layout, parameter_system, label=None ):
@@ -867,45 +923,94 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
                 parameter_system.draw_rna_par_details ( rna_par, box )
 
 
-### External callbacks needed to match the "update=" syntax of Blender.
-### They just call the function with the same name from within the class
+
+#######################################################################
+#  External callbacks needed to match the "update=" syntax of Blender.
+#  Blender's "update=" parameter cannot accept a class method, so there
+#  must be a "global" method for each update. They mostly just call the
+#  function with the same name from within the class. There is also a
+#  problem with profiling of callbacks, so the profile is disabled.
+#######################################################################
 
 
-##@profile('ParameterSystemCallBack.update_parameter_index')
+##@profile('ParameterSystemCallBack.update_parameter_index')  # profiling callbacks can be problematic
 def update_parameter_index ( self, context ):
     self.update_parameter_index ( context, interactive=True )
 
-##@profile('ParameterSystemCallBack.update_parameter_name')
+##@profile('ParameterSystemCallBack.update_parameter_name')  # profiling callbacks can be problematic
 def update_parameter_name ( self, context ):
     self.update_parameter_name ( context, interactive=True )
     context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
-##@profile('ParameterSystemCallBack.update_parameter_elist')
+##@profile('ParameterSystemCallBack.update_parameter_elist')  # profiling callbacks can be problematic
 def update_parameter_elist ( self, context ):
     self.update_parameter_elist ( context, interactive=True )
     context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
-##@profile('ParameterSystemCallBack.update_parameter_expression')
+##@profile('ParameterSystemCallBack.update_parameter_expression')  # profiling callbacks can be problematic
 def update_parameter_expression ( self, context ):
     self.update_parameter_expression ( context, interactive=True )
     context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
-##@profile('ParameterSystemCallBack.update_parameter_units')
+##@profile('ParameterSystemCallBack.update_parameter_units')  # profiling callbacks can be problematic
 def update_parameter_units ( self, context ):
     self.update_parameter_units ( context, interactive=True )
 
-##@profile('ParameterSystemCallBack.update_parameter_desc')
+##@profile('ParameterSystemCallBack.update_parameter_desc')  # profiling callbacks can be problematic
 def update_parameter_desc ( self, context ):
     self.update_parameter_desc ( context, interactive=True )
 
 
+
+#######################################################################
+#  The "general_parameter_list" is a Blender CollectionProperty which
+#    must take an object type that is a subclass of PropertyGroup (see
+#    "bpy.props.CollectionProperty" in documentation). This class is
+#    just a PropertyGroup subclass to hold a StringProperty (par_id)
+#    so that it can be included in a CollectionProperty.
+#  The general_parameter_list is just a collection of par_id values
+#    stored in this "ParameterMappingProperty" group.
+#######################################################################
 
 class ParameterMappingProperty(bpy.types.PropertyGroup):
     """An instance of this class exists for every general parameter"""
     par_id = StringProperty(default="", description="Unique ID for each parameter used as a key into the Python Dictionary") # name="Par_ID",
 
 
-# class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup, Expression_Handler ):
+#######################################################################
+#  The ParameterSystemPropertyGroup is the top-level group containing
+#    CellBlender's parameter system. It contains both RNA properties
+#    (defined here) and ID properties added as keys to its dictionary.
+#    The use of ID properties is intended to improve performance over
+#    the earlier versions that used all RNA properties.
+#
+#  The following ID Properties are added to this class at run time:
+#
+#    gp_dict - Dictionary containing the actual general parameter data
+#    gp_ordered_dict - A dependency-ordered list of parameter IDs
+#
+#  While the drawing functions appear to be drawing data from a selected
+#    Blender CollectionProperty, they are actually drawing the same
+#    static "active_.." StringProperty items from this class that are
+#    being re-populated with data from the ID properties mentioned
+#    above (mostly from the gp_dict ID property). This "re-populating"
+#    happens whenever the active_par_index is changed via the update
+#    callback function associated with the active_par_index. This helps
+#    minimize the number of actual RNA properties (which appears to be
+#    the primary performance bottleneck). When the selection changes,
+#    the "last_selected_id" value is set so that changes to the "active"
+#    properties can be stored in the appropriate slot in the ID property
+#    dictionary ("gp_dict").
+#
+#  Note that previous versions of the parameter system defined a
+#    separate "Expression_Handler" class which contained the various
+#    expression parsing and evaluation functions. This separate class
+#    was inherited by the ParameterSystemPropertyGroup using Python's
+#    multiple inheritance. While this isolation might have been useful
+#    if the "Expression_Handler" class found other uses, it was mostly
+#    just confusing and served no real purpose. Those functions have
+#    now all been included in the ParameterSystemPropertyGroup itself.
+#######################################################################
 
 class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     """Root of CellBlender's Parameter Handling Capabilities"""
