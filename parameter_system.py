@@ -237,36 +237,41 @@ class MCELL_OT_clear_profiling(bpy.types.Operator):
 
 ####################### End of Profiling Code #######################
 
-    
 
-class MCELL_OT_update_general(bpy.types.Operator):
-    bl_idname = "mcell.update_general"
-    bl_label = "Update General Parameters"
-    bl_description = "Update all General Parameters"
-    #bl_options = {'REGISTER', 'UNDO'}
-    bl_options = {'REGISTER' }
+#####################################################################
+#  Forced update operators (may be commented out when not used)
+#####################################################################
 
-    def execute(self, context):
-        mcell = context.scene.mcell
-        ps = mcell.parameter_system
-        ps.evaluate_all_gp_expressions ( context )
-        return {'FINISHED'}
-
-
-class MCELL_OT_update_panel(bpy.types.Operator):
-    bl_idname = "mcell.update_panel"
-    bl_label = "Update Panel Parameters"
-    bl_description = "Update all Panel Parameters"
-    #bl_options = {'REGISTER', 'UNDO'}
-    bl_options = {'REGISTER' }
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        ps = mcell.parameter_system
-        dbprint ( "This doesn't do anything at this time" )
-        return {'FINISHED'}
+#class MCELL_OT_update_general(bpy.types.Operator):
+#    bl_idname = "mcell.update_general"
+#    bl_label = "Update General Parameters"
+#    bl_description = "Update all General Parameters"
+#    #bl_options = {'REGISTER', 'UNDO'}
+#    bl_options = {'REGISTER' }
+#    def execute(self, context):
+#        mcell = context.scene.mcell
+#        ps = mcell.parameter_system
+#        ps.evaluate_all_gp_expressions ( context )
+#        return {'FINISHED'}
 
 
+#class MCELL_OT_update_panel(bpy.types.Operator):
+#    bl_idname = "mcell.update_panel"
+#    bl_label = "Update Panel Parameters"
+#    bl_description = "Update all Panel Parameters"
+#    #bl_options = {'REGISTER', 'UNDO'}
+#    bl_options = {'REGISTER' }
+#    def execute(self, context):
+#        mcell = context.scene.mcell
+#        ps = mcell.parameter_system
+#        dbprint ( "This doesn't do anything at this time" )
+#        return {'FINISHED'}
+
+
+
+#####################################################################
+#  Operators for printing and debugging
+#####################################################################
 
 class MCELL_OT_print_gen_parameters(bpy.types.Operator):
     bl_idname = "mcell.print_gen_parameters"
@@ -442,10 +447,36 @@ class MCELL_OT_add_par_list(bpy.types.Operator):
         return {'FINISHED'}
 
 
+
+#####################################################################
+#  Operators for adding and removing parameters
+#####################################################################
+
+
+class MCELL_OT_add_parameter(bpy.types.Operator):
+    bl_idname = "mcell.add_parameter"
+    bl_label = "Add Parameter"
+    bl_description = "Add a new parameter"
+    bl_options = {'REGISTER', 'UNDO'}
+    def execute(self, context):
+        context.scene.mcell.parameter_system.add_general_parameter()
+        return {'FINISHED'}
+
+class MCELL_OT_remove_parameter(bpy.types.Operator):
+    bl_idname = "mcell.remove_parameter"
+    bl_label = "Remove Parameter"
+    bl_description = "Remove selected parameter"
+    bl_options = {'REGISTER', 'UNDO'}
+    def execute(self, context):
+        status = context.scene.mcell.parameter_system.remove_active_parameter(context)
+        if status != "":
+            self.report({'ERROR'}, status)
+        return {'FINISHED'}
+
 class MCELL_OT_remove_all_pars(bpy.types.Operator):
     bl_idname = "mcell.delete_all_pars"
     bl_label = "Delete All Pars"
-    bl_description = "Delete All Parameters"
+    bl_description = "Delete All Parameters (that aren't used)"
     bl_options = {'REGISTER'}
     def execute(self, context):
         status = ""
@@ -467,25 +498,11 @@ class MCELL_OT_remove_all_pars(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MCELL_OT_add_parameter(bpy.types.Operator):
-    bl_idname = "mcell.add_parameter"
-    bl_label = "Add Parameter"
-    bl_description = "Add a new parameter"
-    bl_options = {'REGISTER', 'UNDO'}
-    def execute(self, context):
-        context.scene.mcell.parameter_system.add_general_parameter()
-        return {'FINISHED'}
-        
-class MCELL_OT_remove_parameter(bpy.types.Operator):
-    bl_idname = "mcell.remove_parameter"
-    bl_label = "Remove Parameter"
-    bl_description = "Remove selected parameter"
-    bl_options = {'REGISTER', 'UNDO'}
-    def execute(self, context):
-        status = context.scene.mcell.parameter_system.remove_active_parameter(context)
-        if status != "":
-            self.report({'ERROR'}, status)
-        return {'FINISHED'}
+
+
+#######################################################################
+#  Parameter Drawing Class - Displays each line in the parameter list
+#######################################################################
 
 
 class MCELL_UL_draw_parameter(bpy.types.UIList):
@@ -514,6 +531,12 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
         layout.label(disp, icon=icon)
 
 
+
+"""
+#######################################################################
+#  Top Level Panel for the Parameter System (not currently used)
+#######################################################################
+
 class MCELL_PT_parameter_system(bpy.types.Panel):
     bl_label = "CellBlender - Model Parameters"  # This names the collapse control at the top of the panel
     bl_space_type = "VIEW_3D"
@@ -528,7 +551,7 @@ class MCELL_PT_parameter_system(bpy.types.Panel):
         mcell = context.scene.mcell
         ps = mcell.parameter_system
         ps.draw_panel ( context, self.layout )
-
+"""
 
 
 ##@profile('PanelParameterDataCallBack.update_panel_expression')
@@ -1977,7 +2000,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                         errors.add ( 'loop' )
                     if 'undef' in par['status']:
                         errors.add ( 'undef' )
-        
+
         for err in errors:
             if 'loop' in err:
                 row = layout.row()
@@ -1995,7 +2018,11 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         col = row.column(align=True)
         col.operator("mcell.add_parameter", icon='ZOOMIN', text="")
         col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
-        
+
+        col.separator()
+        col.operator("mcell.delete_all_pars", icon='X_VEC', text="")
+
+
         if len(self.general_parameter_list) > 0:
             par_map_item = self.general_parameter_list[self.active_par_index]
             par_name = par_map_item.name
