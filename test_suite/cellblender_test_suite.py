@@ -249,7 +249,7 @@ class LoadHomeOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
-        context.scene.cellblender_test_suite.test_status == "?"
+        context.scene.cellblender_test_suite.test_status = "?"
         context.scene.cellblender_test_suite.groups_real = False
         bpy.ops.wm.read_homefile()
         return { 'FINISHED' }
@@ -264,8 +264,10 @@ class SaveHomeOp(bpy.types.Operator):
         return {'FINISHED'}
 
     def execute(self, context):
-        context.scene.cellblender_test_suite.test_status == "?"
-        bpy.ops.wm.save_homefile()
+        if context.scene.cellblender_test_suite.test_status == "?":
+            bpy.ops.wm.save_homefile()
+        else:
+            self.report({'ERROR'}, "Warning: CellBlender is enabled. Use File menu to over-ride.")
         return { 'FINISHED' }
 
 
