@@ -987,7 +987,7 @@ class ParameterMappingProperty(bpy.types.PropertyGroup):
 #  The following ID Properties are added to this class at run time:
 #
 #    gp_dict - Dictionary containing the actual general parameter data
-#    gp_ordered_dict - A dependency-ordered list of parameter IDs
+#    gp_ordered_list - A dependency-ordered list of parameter IDs
 #
 #  While the drawing functions appear to be drawing data from a selected
 #    Blender CollectionProperty, they are actually drawing the same
@@ -1133,6 +1133,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             gen_par_list.append ( par_dict )
 
         par_sys_dm['model_parameters'] = gen_par_list
+        par_sys_dm['_extras'] = { 'ordered_id_names': [ p for p in self['gp_ordered_list'] ] }
         return par_sys_dm
 
 
