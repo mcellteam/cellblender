@@ -1052,8 +1052,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
     show_debugging = BoolProperty ( default=False, description="Show Debugging" )
 
-    @profile('ParameterSystem.build_data_model_from_properties')
-    def build_data_model_from_properties ( self, context ):
+
+    @profile('ParameterSystem.build_ordered_data_model_from_properties')
+    def build_ordered_data_model_from_properties ( self, context ):
         # Normally, a Property Group would delegate the building of group items to those items.
         # But since the parameter system is so complex, it's all being done at the group level for now.
         dbprint ( "Parameter System building Data Model" )
@@ -1064,7 +1065,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         # Save the list in dependency order so they can be exported from the data model to MDL in dependency order
         gp_ordered_list = [ p for p in self['gp_ordered_list'] ]
         dbprint ( "gp_ordered_list = " + str ( gp_ordered_list ) )
-        
+
         # It is possible that there are parameters NOT in the gp_ordered_list, but in the RNA parameters (those with circular references)
         # So build a list that contains the ordered parameters first, followed by any that were not in the ordered list
         gp_set_from_list = set ( gp_ordered_list )
@@ -1093,7 +1094,42 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             par_dict['_extras'] = extras_dict
 
             dbprint ( "Dm for " + pkey + " = " + str(par_dict) )
-            
+
+            gen_par_list.append ( par_dict )
+
+        par_sys_dm['model_parameters'] = gen_par_list
+        return par_sys_dm
+
+
+    @profile('ParameterSystem.build_data_model_from_properties')
+    def build_data_model_from_properties ( self, context ):
+        # Normally, a Property Group would delegate the building of group items to those items.
+        # But since the parameter system is so complex, it's all being done at the group level for now.
+        dbprint ( "Parameter System building Data Model" )
+
+        par_sys_dm = {}
+        gen_par_list = []
+
+        gp_list_par_ids = [ self.general_parameter_list[k].par_id for k in self.general_parameter_list.keys() ]
+
+        for pkey in gp_list_par_ids:
+            par_dict = {}
+            par_dict['par_name']        = self['gp_dict'][pkey]['name']
+            par_dict['par_expression']  = self['gp_dict'][pkey]['expr']
+            par_dict['par_units']       = self['gp_dict'][pkey]['units']
+            par_dict['par_description'] = self['gp_dict'][pkey]['desc']
+
+            extras_dict = {}
+            extras_dict['par_id_name'] = pkey
+            extras_dict['par_value'] = 0.0
+            if 'value' in self['gp_dict'][pkey]:
+                extras_dict['par_value'] = self['gp_dict'][pkey]['value']
+            extras_dict['par_valid'] = True
+
+            par_dict['_extras'] = extras_dict
+
+            dbprint ( "Dm for " + pkey + " = " + str(par_dict) )
+
             gen_par_list.append ( par_dict )
 
         par_sys_dm['model_parameters'] = gen_par_list
