@@ -106,8 +106,10 @@ def viz_data_save_post(context):
                 bfn = os.path.abspath(str(bpy.data.filepath))
                 mfd = os.path.abspath(str(mv.mol_file_dir))
 
-                bfn_common = bfn.rsplit('.')[0]
-                if bfn_common != mfd[:len(bfn_common)]:
+                print ( "Blend:  " + bfn )
+                print ( "Viz:    " + mfd )
+
+                if not mfd.startswith(os.path.splitext(bfn)[0] + "_files" + os.sep + "mcell" + os.sep + "viz_data"):
                     print ( "Paths don't match, so clear mol-viz information" )
                     # This is being saved as a different file than was used to generate the visualization data
                     cellblender.cellblender_mol_viz.global_mol_file_list = []
