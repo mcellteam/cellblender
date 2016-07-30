@@ -335,6 +335,7 @@ def register():
     
     # Add the frame change pre handler
     add_handler ( bpy.app.handlers.frame_change_pre, cellblender_mol_viz.frame_change_handler )
+    add_handler ( bpy.app.handlers.frame_change_pre, cellblender_objects.frame_change_handler )
 
     # Add the load_pre handlers
     add_handler ( bpy.app.handlers.load_pre, cellblender_main.report_load_pre )
@@ -368,6 +369,7 @@ def register():
 
 
 def unregister():
+    remove_handler ( bpy.app.handlers.frame_change_pre, cellblender_objects.frame_change_handler )
     remove_handler ( bpy.app.handlers.frame_change_pre, cellblender_mol_viz.frame_change_handler )
     remove_handler ( bpy.app.handlers.load_pre,         cellblender_main.report_load_pre )
     remove_handler ( bpy.app.handlers.load_post, data_model.load_post )

@@ -39,6 +39,7 @@ from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
 # python imports
 import re
 import os
+import math
 
 
 # CellBlender imports
@@ -149,7 +150,6 @@ class MCellExportProjectPropertyGroup(bpy.types.PropertyGroup):
 
 
 
-
 class MCELL_OT_export_project(bpy.types.Operator):
     bl_idname = "mcell.export_project"
     bl_label = "Export CellBlender Project"
@@ -167,6 +167,37 @@ class MCELL_OT_export_project(bpy.types.Operator):
             return False
 
         return True
+
+
+    def write_as_mdl ( self, obj_name, points, faces, file_name=None, partitions=False, instantiate=False ):
+      if file_name != None:
+        out_file = open ( file_name, "w" )
+        if partitions:
+            out_file.write ( "PARTITION_X = [[-2.0 TO 2.0 STEP 0.5]]\n" )
+            out_file.write ( "PARTITION_Y = [[-2.0 TO 2.0 STEP 0.5]]\n" )
+            out_file.write ( "PARTITION_Z = [[-2.0 TO 2.0 STEP 0.5]]\n" )
+            out_file.write ( "\n" )
+        out_file.write ( "%s POLYGON_LIST\n" % (obj_name) )
+        out_file.write ( "{\n" )
+        out_file.write ( "  VERTEX_LIST\n" )
+        out_file.write ( "  {\n" )
+        for p in points:
+            out_file.write ( "    [ " + str(p[0]) + ", " + str(p[1]) + ", " + str(p[2]) + " ]\n" );
+        out_file.write ( "  }\n" )
+        out_file.write ( "  ELEMENT_CONNECTIONS\n" )
+        out_file.write ( "  {\n" )
+        for f in faces:
+            s = "    [ " + str(f[0]) + ", " + str(f[1]) + ", " + str(f[2]) + " ]\n"
+            out_file.write ( s );
+        out_file.write ( "  }\n" )
+        out_file.write ( "}\n" )
+        if instantiate:
+            out_file.write ( "\n" )
+            out_file.write ( "INSTANTIATE Scene OBJECT {\n" )
+            out_file.write ( "  %s OBJECT %s {}\n" % (obj_name, obj_name) )
+            out_file.write ( "}\n" )
+        out_file.close()
+
 
     def execute(self, context):
         print("MCELL_OT_export_project.execute()")
@@ -195,24 +226,192 @@ class MCELL_OT_export_project(bpy.types.Operator):
             # be removed
             mcell.project_settings.base_name = scene_name
 
-            #filepath = os.path.join(
+            #mainmdl = os.path.join(
             #   filepath, mcell.project_settings.base_name + ".main.mdl")
-            filepath = os.path.join(filepath, scene_name + ".main.mdl")
-    #        bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
-            export_mcell_mdl.save(context, filepath)
+            mainmdl = os.path.join(filepath, scene_name + ".main.mdl")
+            #   bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=mainmdl)
+            export_mcell_mdl.save(context, mainmdl)
 
             # These two branches of the if statement seem identical ?
 
             #if mcell.export_project.export_format == 'mcell_mdl_unified':
-            #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
+            #    mainmdl = os.path.join(os.path.dirname(bpy.data.filepath),
             #                            (mcell.project_settings.base_name +
             #                            ".main.mdl"))
-            #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+            #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=mainmdl)
             #elif mcell.export_project.export_format == 'mcell_mdl_modular':
-            #    filepath = os.path.join(os.path.dirname(bpy.data.filepath),
+            #    mainmdl = os.path.join(os.path.dirname(bpy.data.filepath),
             #                            (mcell.project_settings.base_name +
             #                            ".main.mdl"))
-            #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=filepath)
+            #    bpy.ops.export_mdl_mesh.mdl('EXEC_DEFAULT', filepath=mainmdl)
+
+
+            ###################################
+            ### Begin Dynamic Geometry Export
+            ###################################
+
+            dynamic = False
+
+            # Check to see if dynamic geometry is enabled.
+            for obj in context.scene.mcell.model_objects.object_list:
+                print ( "Checking if object " + str(obj) + " is dynamic" )
+                print ( "  obj.dynamic = " + str(obj.dynamic) )
+                if obj.dynamic:
+                    dynamic = True
+                    break
+
+            if dynamic:
+
+                # Save the current frame to restore later
+                fc = context.scene.frame_current
+
+                # Generate the dynamic geometry
+
+                geom_list_name = 'dyn_geom_list.txt'
+                geom_list_file = open(os.path.join(filepath,geom_list_name), "w", encoding="utf8", newline="\n")
+                path_to_dg_files = os.path.join ( filepath, "dynamic_geometry" )
+                if not os.path.exists(path_to_dg_files):
+                    os.makedirs(path_to_dg_files)
+
+
+                iterations = context.scene.mcell.initialization.iterations.get_value()
+                time_step = context.scene.mcell.initialization.time_step.get_value()
+                print ( "iterations = " + str(iterations) + ", time_step = " + str(time_step) )
+
+                for i in range(iterations):
+                    context.scene.frame_set(i)
+                    for obj in context.scene.mcell.model_objects.object_list:
+                        if obj.dynamic:
+                            # print ( "  Iteration " + str(i) + ", Saving geometry for object " + obj.name + " using script \"" + obj.script_name + "\"" )
+                            points = []
+                            faces = []
+                            if len(obj.script_name) > 0:
+                                # Let the script create the geometry
+                                script_text = bpy.data.texts[obj.script_name].as_string()
+                                #print ( 80*"=" )
+                                #print ( script_text )
+                                #print ( 80*"=" )
+                                exec ( script_text, locals() )
+                            else:
+                                # Get the geometry from the object (presumably animated by Blender)
+                                mesh = context.scene.objects[obj.name].data
+                                nv = len(mesh.vertices)
+                                #print ( "  Object has " + str(nv) + " vertices" )
+                                for vn in range(nv):
+                                    vertex = []
+                                    for v in mesh.vertices[vn].co:
+                                        vertex.append ( v )
+                                    #print ( "    Vertex " + str(vn) + " = " + str(vertex) )
+                                    points.append ( vertex )
+                                nf = len(mesh.polygons)
+                                #print ( "  Object has " + str(nf) + " faces" )
+                                for fn in range(nf):
+                                    vert_nums = []
+                                    for v in mesh.polygons[fn].vertices:
+                                        vert_nums.append ( v )
+                                    #print ( "    Face " + str(fn) + " = " + str(vert_nums) )
+                                    faces.append ( vert_nums )
+                            file_name = "%s_frame_%d.mdl"%(obj.name,i)
+                            full_file_name = os.path.join(path_to_dg_files,file_name)
+                            self.write_as_mdl ( obj.name, points, faces, file_name=full_file_name, partitions=True, instantiate=True )
+                            geom_list_file.write('%.9g %s\n' % (i*time_step, os.path.join(".","dynamic_geometry",file_name)))
+
+                geom_list_file.close()
+
+                # Restore the current frame
+                context.scene.frame_set(fc)
+
+                # Update the main MDL file Scene.main.mdl to insert the DYNAMIC_GEOMETRY directive
+                try:
+
+                    full_fname = mainmdl
+                    #print ( "Updating Main MDL file: " + full_fname + " for dynamic geometry" )
+                    
+                    mdl_file = open ( full_fname )
+                    mdl_lines = mdl_file.readlines()
+                    mdl_file.close()
+
+                    # Remove any old dynamic geometry lines
+                    new_lines = []
+                    for line in mdl_lines:
+                        if line.strip()[0:16] != "DYNAMIC_GEOMETRY":
+                            new_lines.append(line)
+                    lines = new_lines
+
+                    # Remove the Scene.geometry.mdl file line
+                    new_lines = []
+                    for line in lines:
+                        if not "\"Scene.geometry.mdl\"" in line:
+                            new_lines.append(line)
+                    lines = new_lines
+
+                    # Change the "INSTANTIATE Scene OBJECT" line  to  "INSTANTIATE Releases OBJECT"
+                    new_lines = []
+                    for line in lines:
+                        if "INSTANTIATE Scene OBJECT" in line:
+                            new_lines.append("INSTANTIATE Releases OBJECT\n")
+                        else:
+                            new_lines.append(line)
+                    lines = new_lines
+
+                    # Remove the "  box OBJECT box {}" line:
+                    new_lines = []
+                    for line in lines:
+                        if not "box OBJECT box {}" in line:
+                            new_lines.append(line)
+                    lines = new_lines
+
+                    # Rewrite the MDL with the changes
+                    mdl_file = open ( full_fname, "w" )
+                    line_num = 0
+                    for line in lines:
+                        line_num += 1
+                        mdl_file.write ( line )
+                        if line_num == 3:
+                            # Insert the dynamic geometry line
+                            mdl_file.write ( "DYNAMIC_GEOMETRY = \"%s\"\n" % (geom_list_name) )
+                    mdl_file.close()
+
+                    full_fname = os.path.join(mcell_files_path(),"Scene.initialization.mdl")
+                    #print ( "Updating Initialization MDL file: " + full_fname )
+                    mdl_file = open ( full_fname )
+                    mdl_lines = mdl_file.readlines()
+                    mdl_file.close()
+
+                    # Remove any old LARGE_MOLECULAR_DISPLACEMENT lines
+                    new_lines = []
+                    for line in mdl_lines:
+                        if line.strip()[0:28] != "LARGE_MOLECULAR_DISPLACEMENT":
+                            new_lines.append(line)
+                    lines = new_lines
+
+                    # Find the WARNINGS section
+                    warning_line = -10
+                    line_num = 0
+                    for line in lines:
+                        line_num += 1
+                        if line.strip() == "WARNINGS":
+                            warning_line = line_num
+
+                    mdl_file = open ( full_fname, "w" )
+                    line_num = 0
+                    for line in lines:
+                        line_num += 1
+                        mdl_file.write ( line )
+                        if line_num == warning_line + 1:
+                            # Insert the dynamic geometry line
+                            mdl_file.write ( "   LARGE_MOLECULAR_DISPLACEMENT = IGNORED\n" )
+                    mdl_file.close()
+
+                except Exception as e:
+                    print ( "Warning: unable to update the existing Scene.main.mdl file, try running the model to generate it first." )
+                    print ( "   Exception = " + str(e) )
+                except:
+                    print ( "Warning: unable to update the existing Scene.main.mdl file, try running the model to generate it first." )
+
+            #################################
+            ### End Dynamic Geometry Export
+            #################################
 
             self.report({'INFO'}, "Project Exported")
 
