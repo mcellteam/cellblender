@@ -252,7 +252,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
             dynamic = False
 
-            # Check to see if dynamic geometry is enabled.
+            # Check to see if dynamic geometry is enabled for any objects
             for obj in context.scene.mcell.model_objects.object_list:
                 print ( "Checking if object " + str(obj) + " is dynamic" )
                 print ( "  obj.dynamic = " + str(obj.dynamic) )
@@ -314,6 +314,28 @@ class MCELL_OT_export_project(bpy.types.Operator):
                                 exec ( script_text, locals() )
                             else:
                                 # Get the geometry from the object (presumably animated by Blender)
+
+                                # Note that this branch has not been tested yet and may suffer from
+                                #   problems noted in Tom's September 2nd, 2015 email message:
+                                #
+                                #     I've been struggling with how to do this over the last
+                                #     two days but finally got it working this morning.  I got stuck because the
+                                #     shape keys are applied implicitly to the mesh during rendering and are not
+                                #     applied explicitly to the actual mesh.  So when you look-up the mesh data
+                                #     during export you get the shape of the base mesh -- not the interpolated
+                                #     deformation. Ack!  After some research on the Blender website I found an Add-on
+                                #     called "Corrective shape keys" which, among other things, defines a new
+                                #     operator called bpy.ops.object.object_duplicate_flatten_modifiers().  This
+                                #     duplicates the object and applies all the deformations to the mesh data.  We
+                                #     can then pass this duplicated object to our MDL mesh exporter and save it to an
+                                #     appropriately named MDL file.  So now we just need to step through time and
+                                #     output each mesh.  This was also tricky to do in a script.  Strangely, you
+                                #     can't just set scene.frame_current to the point in time you want.  Instead you
+                                #     have to called scene.frame_set(t).  One I figured this out, the export of
+                                #     dynamic geometry now works perfectly!
+                                #
+                                #   That approach is not used here and so the following may not work as expected.
+
                                 mesh = context.scene.objects[obj.name].data
                                 nv = len(mesh.vertices)
                                 #print ( "  Object has " + str(nv) + " vertices" )
