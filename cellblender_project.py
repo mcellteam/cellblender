@@ -278,11 +278,31 @@ class MCELL_OT_export_project(bpy.types.Operator):
                 time_step = context.scene.mcell.initialization.time_step.get_value()
                 print ( "iterations = " + str(iterations) + ", time_step = " + str(time_step) )
 
-                for i in range(iterations):
-                    context.scene.frame_set(i)
+                for frame_number in range(iterations):
+                    ####################################################################
+                    #
+                    #  This section essentially defines the interface to the user's
+                    #  dynamic geometry code. Right now it's being done through 4 global
+                    #  variables which will be in the user's environment when they run:
+                    #
+                    #     frame_number
+                    #     time_step
+                    #     points[]
+                    #     faces[]
+                    #
+                    #  The user code gets the frame number as input and fills in both the
+                    #  points and faces arrays (lists). The format is fairly standard with
+                    #  each point being a list of 3 double values [x, y, z], and with each
+                    #  face being a list of 3 point indexes defining a triangle with outward
+                    #  facing normals using the right hand rule. The index values are the
+                    #  integer offsets into the points array starting with index 0.
+                    #  This is a very primitive interface, and it may be subject to change.
+                    #
+                    ####################################################################
+                    context.scene.frame_set(frame_number)
                     for obj in context.scene.mcell.model_objects.object_list:
                         if obj.dynamic:
-                            # print ( "  Iteration " + str(i) + ", Saving geometry for object " + obj.name + " using script \"" + obj.script_name + "\"" )
+                            # print ( "  Iteration " + str(frame_number) + ", Saving geometry for object " + obj.name + " using script \"" + obj.script_name + "\"" )
                             points = []
                             faces = []
                             if len(obj.script_name) > 0:
@@ -311,10 +331,10 @@ class MCELL_OT_export_project(bpy.types.Operator):
                                         vert_nums.append ( v )
                                     #print ( "    Face " + str(fn) + " = " + str(vert_nums) )
                                     faces.append ( vert_nums )
-                            file_name = "%s_frame_%d.mdl"%(obj.name,i)
+                            file_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
                             full_file_name = os.path.join(path_to_dg_files,file_name)
                             self.write_as_mdl ( obj.name, points, faces, file_name=full_file_name, partitions=True, instantiate=True )
-                            geom_list_file.write('%.9g %s\n' % (i*time_step, os.path.join(".","dynamic_geometry",file_name)))
+                            geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",file_name)))
 
                 geom_list_file.close()
 
