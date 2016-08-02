@@ -307,6 +307,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
                             faces = []
                             if len(obj.script_name) > 0:
                                 # Let the script create the geometry
+                                print ( "Build object mesh from user script for frame " + str(frame_number) )
                                 script_text = bpy.data.texts[obj.script_name].as_string()
                                 #print ( 80*"=" )
                                 #print ( script_text )
@@ -314,6 +315,8 @@ class MCELL_OT_export_project(bpy.types.Operator):
                                 exec ( script_text, locals() )
                             else:
                                 # Get the geometry from the object (presumably animated by Blender)
+
+                                # This code requires the addon: "Animation: Corrective shape keys"
 
                                 # Note that this branch has not been tested yet and may suffer from
                                 #   problems noted in Tom's September 2nd, 2015 email message:
@@ -334,25 +337,49 @@ class MCELL_OT_export_project(bpy.types.Operator):
                                 #     have to called scene.frame_set(t).  One I figured this out, the export of
                                 #     dynamic geometry now works perfectly!
                                 #
-                                #   That approach is not used here and so the following may not work as expected.
 
-                                mesh = context.scene.objects[obj.name].data
+                                # The following code attempts to do that but currently doesn't work ...
+
+                                print ( "Build MDL mesh from Blender object for frame " + str(frame_number) )
+
+                                bpy.ops.object.select_all(action="DESELECT")
+                                context.scene.objects[obj.name].select = True
+                                context.scene.objects.active = context.scene.objects[obj.name]
+                                bpy.ops.object.duplicate()  # Make a copy to flatten modifiers
+                                obj_copy = context.scene.objects.active
+                                bpy.ops.object.object_duplicate_flatten_modifiers()  # Flatten to apply the shape key influence to this copy
+                                flat_copy = context.scene.objects.active
+
+                                mesh = flat_copy.data
+                                mesh = obj_copy.data
                                 nv = len(mesh.vertices)
-                                #print ( "  Object has " + str(nv) + " vertices" )
+                                print ( "  Object " + obj.name + " has " + str(nv) + " vertices" )
                                 for vn in range(nv):
                                     vertex = []
                                     for v in mesh.vertices[vn].co:
                                         vertex.append ( v )
-                                    #print ( "    Vertex " + str(vn) + " = " + str(vertex) )
+                                    print ( "    Vertex " + str(vn) + " = " + str(vertex) )
                                     points.append ( vertex )
                                 nf = len(mesh.polygons)
-                                #print ( "  Object has " + str(nf) + " faces" )
+                                print ( "  Object " + obj.name + " has " + str(nf) + " faces" )
                                 for fn in range(nf):
                                     vert_nums = []
                                     for v in mesh.polygons[fn].vertices:
                                         vert_nums.append ( v )
-                                    #print ( "    Face " + str(fn) + " = " + str(vert_nums) )
+                                    print ( "    Face " + str(fn) + " = " + str(vert_nums) )
                                     faces.append ( vert_nums )
+
+
+                                flat_copy.select = True
+                                context.scene.objects.active = flat_copy
+                                bpy.ops.object.delete()
+
+                                obj_copy.select = True
+                                context.scene.objects.active = obj_copy
+                                bpy.ops.object.delete()
+
+                                bpy.ops.object.select_all(action="DESELECT")
+
                             file_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
                             full_file_name = os.path.join(path_to_dg_files,file_name)
                             self.write_as_mdl ( obj.name, points, faces, file_name=full_file_name, partitions=True, instantiate=True )
@@ -396,12 +423,13 @@ class MCELL_OT_export_project(bpy.types.Operator):
                             new_lines.append(line)
                     lines = new_lines
 
-                    # Remove the "  box OBJECT box {}" line:
-                    new_lines = []
-                    for line in lines:
-                        if not "box OBJECT box {}" in line:
-                            new_lines.append(line)
-                    lines = new_lines
+                    # Remove the "  obj OBJECT obj {}" lines:
+                    for obj in context.scene.mcell.model_objects.object_list:
+                        new_lines = []
+                        for line in lines:
+                            if not "%s OBJECT %s {}" % (obj.name, obj.name) in line:
+                                new_lines.append(line)
+                        lines = new_lines
 
                     # Rewrite the MDL with the changes
                     mdl_file = open ( full_fname, "w" )

@@ -666,6 +666,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     active_obj_index = IntProperty(name="Active Object Index", default=0, update=active_obj_index_changed)
     show_options = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     has_some_dynamic  = bpy.props.BoolProperty(default=False)
+    show_dynamic_from_mdl = bpy.props.BoolProperty(default=False)
 
     def remove_properties ( self, context ):
         print ( "Removing all Model Object List Properties..." )
@@ -683,8 +684,10 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( layout )
         else:
 
-            #row = layout.row()
-            #row.prop (self, "has_some_dynamic", text="Some Dynamic")
+            if self.has_some_dynamic:
+                # Only show this if there's dynamic geometry. This is a debugging aid for non-scripted shape keys from Blender
+                row = layout.row()
+                row.prop (self, "show_dynamic_from_mdl", text="Show Dynamic MDL")
 
             row = layout.row()
             #col = row.column()
@@ -1215,7 +1218,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
           cur_frame = scene.frame_current
 
         mcell = scene.mcell
-        if mcell.model_objects.has_some_dynamic:
+        if mcell.model_objects.has_some_dynamic and mcell.model_objects.show_dynamic_from_mdl:
             filepath = mcell_files_path()
             path_to_dg_files = os.path.join ( filepath, "dynamic_geometry" )
             for obj in mcell.model_objects.object_list:
