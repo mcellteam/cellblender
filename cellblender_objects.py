@@ -583,15 +583,27 @@ def object_show_only_callback(self, context):
 
 
 def changed_dynamic_callback(self, context):
+    # Whenever an object's dynamic flag changes, check to see how that affects the "has_some_dynamic" flag
+    mcell = context.scene.mcell
+    if (self.dynamic):
+        # Easy case: if this one is dynamic, then has_some_dynamic must be true
+        mcell.model_objects.has_some_dynamic = True
+    elif (mcell.model_objects.has_some_dynamic):
+        # Harder case, this one is no longer dynamic ... are there any others left?
+        mcell.model_objects.has_some_dynamic = len([ True for o in mcell.model_objects.object_list if o.dynamic ]) > 0
+    """
     # Whenever an object's dynamic flag changes, check to see if there still are ANY dynamic flags set
+    print ( "changed_dynamic_callback checking for " + str(self) )
+    print ( "   self.dynamic " + str(self.dynamic) )
     mcell = context.scene.mcell
     mcell.model_objects.has_some_dynamic = False
     for obj in mcell.model_objects.object_list:
-        print ( "Checking if object " + str(obj) + " is dynamic" )
-        print ( "  obj.dynamic = " + str(obj.dynamic) )
+        #print ( "Callback Checking if object " + str(obj) + " is dynamic" )
+        #print ( "  obj.dynamic = " + str(obj.dynamic) )
         if obj.dynamic:
             mcell.model_objects.has_some_dynamic = True
             break
+    """
 
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):

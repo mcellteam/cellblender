@@ -250,17 +250,23 @@ class MCELL_OT_export_project(bpy.types.Operator):
             ### Begin Dynamic Geometry Export
             ###################################
 
-            dynamic = False
+            print ( "Checking for dynamic objects" )
 
+            dynamic = len([ True for o in mcell.model_objects.object_list if o.dynamic ]) > 0
+
+            """
             # Check to see if dynamic geometry is enabled for any objects
             for obj in context.scene.mcell.model_objects.object_list:
-                print ( "Checking if object " + str(obj) + " is dynamic" )
+                print ( "Export Checking if object " + str(obj) + " is dynamic" )
                 print ( "  obj.dynamic = " + str(obj.dynamic) )
                 if obj.dynamic:
                     dynamic = True
                     break
+            """
 
             if dynamic:
+
+                print ( "Exporting dynamic objects" )
 
                 # Save the current frame to restore later
                 fc = context.scene.frame_current
