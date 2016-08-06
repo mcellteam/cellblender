@@ -470,27 +470,19 @@ def model_objects_update(context):
     return
 
 
-def check_model_object(self, context):
+def check_model_object_name(self, context):
     """Checks for illegal object name"""
-    #print ( "The self passed into \"check_model_object\" is " + str(self) )
-
-    model_object = self
-
-    #mcell = context.scene.mcell
-    #model_object_list = mcell.model_objects.object_list
-    #model_object = model_object_list[mcell.model_objects.active_obj_index]
-
-    # print ("Checking name " + model_object.name )
+    # print ("Checking name " + self.name )
 
     status = ""
 
     # Check for illegal names (Starts with a letter. No special characters.)
     model_object_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
-    m = re.match(model_object_filter, model_object.name)
+    m = re.match(model_object_filter, self.name)
     if m is None:
-        status = "Object name error: %s" % (model_object.name)
+        status = "Object name error: %s" % (self.name)
 
-    model_object.status = status
+    self.status = status
 
     return
 
@@ -619,9 +611,9 @@ def changed_dynamic_callback(self, context):
 
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
-    name = StringProperty(name="Object Name", update=check_model_object)
+    name = StringProperty(name="Object Name", update=check_model_object_name)
     dynamic = BoolProperty ( default=False, description='This object is dynamic', update=changed_dynamic_callback )
-    script_name = StringProperty(name="Script Name", update=check_model_object, default="")
+    script_name = StringProperty(name="Script Name", default="")
     # Note that the "object_show_only" property should always be False except during the short time that it's callback is being called.
     object_show_only = BoolProperty ( default=False, description='Show only this object', update=object_show_only_callback )
     status = StringProperty(name="Status")
