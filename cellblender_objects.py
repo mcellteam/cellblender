@@ -568,13 +568,17 @@ def object_show_only_callback(self, context):
                 # This is a model object, so check the name
                 if o.name == self.name:
                     # Unhide, Select, and Make Active
-                    o.hide = False
-                    o.select = True
+                    if o.hide:
+                        o.hide = False
+                    if not o.select:
+                        o.select = True
                     context.scene.objects.active = o
                 else:
                     # Unhide and DeSelect
-                    o.hide = True
-                    o.select = False
+                    if not o.hide:
+                        o.hide = True
+                    if o.select:
+                        o.select = False
 
     if self.name in mcell.model_objects.object_list:
         # Select this item in the list as well
@@ -662,12 +666,15 @@ def active_obj_index_changed ( self, context ):
         for o in context.scene.objects:
             if o.name == model_object.name:
                 # Unhide, Select, and Make Active
-                o.hide = False
-                o.select = True
+                if o.hide:
+                    o.hide = False
+                if not o.select:
+                    o.select = True
                 context.scene.objects.active = o
             else:
                 # DeSelect
-                o.select = False
+                if o.select:
+                    o.select = False
 
 
 
