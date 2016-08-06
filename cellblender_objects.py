@@ -608,9 +608,10 @@ def changed_dynamic_callback(self, context):
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Object Name", update=check_model_object)
-    object_show_only = BoolProperty ( default=False, description='Show only this object', update=object_show_only_callback )
     dynamic = BoolProperty ( default=False, description='This object is dynamic', update=changed_dynamic_callback )
     script_name = StringProperty(name="Script Name", update=check_model_object, default="")
+    # Note that the "object_show_only" property should always be False except during the short time that it's callback is being called.
+    object_show_only = BoolProperty ( default=False, description='Show only this object', update=object_show_only_callback )
     status = StringProperty(name="Status")
     """
     def build_data_model_from_properties ( self, context ):
@@ -673,8 +674,7 @@ def active_obj_index_changed ( self, context ):
 import mathutils
 
 class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
-    object_list = CollectionProperty(
-        type=MCellModelObjectsProperty, name="Object List")
+    object_list = CollectionProperty(type=MCellModelObjectsProperty, name="Object List")
     active_obj_index = IntProperty(name="Active Object Index", default=0, update=active_obj_index_changed)
     show_options = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     has_some_dynamic  = bpy.props.BoolProperty(default=False)
@@ -901,13 +901,13 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         if "model_object_list" in dm:
           for m in dm["model_object_list"]:
               print ( "Data model contains " + m["name"] )
-              self.object_list.add()
-              self.active_obj_index = len(self.object_list)-1
-              mo = self.object_list[self.active_obj_index]
-              #mo.init_properties(context.scene.mcell.parameter_system)
-              #mo.build_properties_from_data_model ( context, m )
+              mo = self.object_list.add()
               mo.name = m['name']
               mo_list.append ( m["name"] )
+          obj_list_len = len(self.object_list)
+          if self.active_obj_index >= obj_list_len:
+              # The active object was beyond the list, so set it to the last element
+              self.active_obj_index = obj_list_len-1
 
         # Use the list of Data Model names to set flags of all objects
         for k,o in context.scene.objects.items():
