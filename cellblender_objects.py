@@ -217,9 +217,8 @@ class MCELL_OT_model_objects_remove(bpy.types.Operator):
                 obj.mcell.include = False
 
                 mobjs.object_list.remove(mobjs.active_obj_index)
-                mobjs.active_obj_index -= 1
-                if (mobjs.active_obj_index < 0):
-                    mobjs.active_obj_index = 0
+                if (mobjs.active_obj_index > 0):
+                    mobjs.active_obj_index -= 1
         
         model_objects_update(context)
 
@@ -414,6 +413,7 @@ def model_objects_update(context):
         model_obj_names.sort()
 
         # Save a list of objects with dynamic geometry specified
+        print ( "Saving dynamic and script name for objects" )
         dyn_dict = {}
         for i in range(len(mobjs.object_list)-1, -1, -1):
             things_to_save = {}
@@ -421,29 +421,34 @@ def model_objects_update(context):
             things_to_save['script_name'] = mobjs.object_list[i].script_name
             dyn_dict[mobjs.object_list[i].name] = things_to_save
             mobjs.object_list.remove(i)
+        print ( "Done saving dynamic and script name for objects" )
 
-        active_index = mobjs.active_obj_index
+        original_active_index = mobjs.active_obj_index
         for obj_name in model_obj_names:
-            mobjs.object_list.add()
-            mobjs.active_obj_index = len(mobjs.object_list)-1
-            mobjs.object_list[mobjs.active_obj_index].name = obj_name
+            new_obj = mobjs.object_list.add()
+            # mobjs.active_obj_index = len(mobjs.object_list)-1
+            # mobjs.object_list[mobjs.active_obj_index].name = obj_name
+            new_obj.name = obj_name
             # Restore the dynamic status if it had been set
             if obj_name in dyn_dict:
-                mobjs.object_list[mobjs.active_obj_index].dynamic = dyn_dict[obj_name]['dynamic']
-                mobjs.object_list[mobjs.active_obj_index].script_name = dyn_dict[obj_name]['script_name']
+                #mobjs.object_list[mobjs.active_obj_index].dynamic = dyn_dict[obj_name]['dynamic']
+                #mobjs.object_list[mobjs.active_obj_index].script_name = dyn_dict[obj_name]['script_name']
+                new_obj.dynamic = dyn_dict[obj_name]['dynamic']
+                new_obj.script_name = dyn_dict[obj_name]['script_name']
             scene_object = sobjs[obj_name]
             # Set an error status if object is not triangulated
             for face in scene_object.data.polygons:
                 if not (len(face.vertices) == 3):
                     status = "Object is not triangulated: %s" % (obj_name)
-                    mobjs.object_list[mobjs.active_obj_index].status = status
+                    #mobjs.object_list[mobjs.active_obj_index].status = status
+                    new_obj.status = status
                     break
 
         if len(mobjs.object_list) <= 0:
             mobjs.active_obj_index = 0
         else:
-            if active_index < len(mobjs.object_list):
-                mobjs.active_obj_index = active_index
+            if original_active_index < len(mobjs.object_list):
+                mobjs.active_obj_index = original_active_index
             else:
                 mobjs.active_obj_index = len(mobjs.object_list) - 1
 
@@ -467,10 +472,13 @@ def model_objects_update(context):
 
 def check_model_object(self, context):
     """Checks for illegal object name"""
+    #print ( "The self passed into \"check_model_object\" is " + str(self) )
 
-    mcell = context.scene.mcell
-    model_object_list = mcell.model_objects.object_list
-    model_object = model_object_list[mcell.model_objects.active_obj_index]
+    model_object = self
+
+    #mcell = context.scene.mcell
+    #model_object_list = mcell.model_objects.object_list
+    #model_object = model_object_list[mcell.model_objects.active_obj_index]
 
     # print ("Checking name " + model_object.name )
 
@@ -568,13 +576,17 @@ def object_show_only_callback(self, context):
                 # This is a model object, so check the name
                 if o.name == self.name:
                     # Unhide, Select, and Make Active
-                    o.hide = False
-                    o.select = True
+                    if o.hide:
+                        o.hide = False
+                    if not o.select:
+                        o.select = True
                     context.scene.objects.active = o
                 else:
                     # Unhide and DeSelect
-                    o.hide = True
-                    o.select = False
+                    if not o.hide:
+                        o.hide = True
+                    if o.select:
+                        o.select = False
 
     if self.name in mcell.model_objects.object_list:
         # Select this item in the list as well
@@ -608,9 +620,10 @@ def changed_dynamic_callback(self, context):
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Object Name", update=check_model_object)
-    object_show_only = BoolProperty ( default=False, description='Show only this object', update=object_show_only_callback )
     dynamic = BoolProperty ( default=False, description='This object is dynamic', update=changed_dynamic_callback )
     script_name = StringProperty(name="Script Name", update=check_model_object, default="")
+    # Note that the "object_show_only" property should always be False except during the short time that it's callback is being called.
+    object_show_only = BoolProperty ( default=False, description='Show only this object', update=object_show_only_callback )
     status = StringProperty(name="Status")
     """
     def build_data_model_from_properties ( self, context ):
@@ -661,20 +674,22 @@ def active_obj_index_changed ( self, context ):
         for o in context.scene.objects:
             if o.name == model_object.name:
                 # Unhide, Select, and Make Active
-                o.hide = False
-                o.select = True
+                if o.hide:
+                    o.hide = False
+                if not o.select:
+                    o.select = True
                 context.scene.objects.active = o
             else:
                 # DeSelect
-                o.select = False
+                if o.select:
+                    o.select = False
 
 
 
 import mathutils
 
 class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
-    object_list = CollectionProperty(
-        type=MCellModelObjectsProperty, name="Object List")
+    object_list = CollectionProperty(type=MCellModelObjectsProperty, name="Object List")
     active_obj_index = IntProperty(name="Active Object Index", default=0, update=active_obj_index_changed)
     show_options = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     has_some_dynamic  = bpy.props.BoolProperty(default=False)
@@ -901,13 +916,13 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         if "model_object_list" in dm:
           for m in dm["model_object_list"]:
               print ( "Data model contains " + m["name"] )
-              self.object_list.add()
-              self.active_obj_index = len(self.object_list)-1
-              mo = self.object_list[self.active_obj_index]
-              #mo.init_properties(context.scene.mcell.parameter_system)
-              #mo.build_properties_from_data_model ( context, m )
+              mo = self.object_list.add()
               mo.name = m['name']
               mo_list.append ( m["name"] )
+          obj_list_len = len(self.object_list)
+          if self.active_obj_index >= obj_list_len:
+              # The active object was beyond the list, so set it to the last element
+              self.active_obj_index = obj_list_len-1
 
         # Use the list of Data Model names to set flags of all objects
         for k,o in context.scene.objects.items():
