@@ -217,9 +217,8 @@ class MCELL_OT_model_objects_remove(bpy.types.Operator):
                 obj.mcell.include = False
 
                 mobjs.object_list.remove(mobjs.active_obj_index)
-                mobjs.active_obj_index -= 1
-                if (mobjs.active_obj_index < 0):
-                    mobjs.active_obj_index = 0
+                if (mobjs.active_obj_index > 0):
+                    mobjs.active_obj_index -= 1
         
         model_objects_update(context)
 
@@ -414,6 +413,7 @@ def model_objects_update(context):
         model_obj_names.sort()
 
         # Save a list of objects with dynamic geometry specified
+        print ( "Saving dynamic and script name for objects" )
         dyn_dict = {}
         for i in range(len(mobjs.object_list)-1, -1, -1):
             things_to_save = {}
@@ -421,29 +421,34 @@ def model_objects_update(context):
             things_to_save['script_name'] = mobjs.object_list[i].script_name
             dyn_dict[mobjs.object_list[i].name] = things_to_save
             mobjs.object_list.remove(i)
+        print ( "Done saving dynamic and script name for objects" )
 
-        active_index = mobjs.active_obj_index
+        original_active_index = mobjs.active_obj_index
         for obj_name in model_obj_names:
-            mobjs.object_list.add()
-            mobjs.active_obj_index = len(mobjs.object_list)-1
-            mobjs.object_list[mobjs.active_obj_index].name = obj_name
+            new_obj = mobjs.object_list.add()
+            # mobjs.active_obj_index = len(mobjs.object_list)-1
+            # mobjs.object_list[mobjs.active_obj_index].name = obj_name
+            new_obj.name = obj_name
             # Restore the dynamic status if it had been set
             if obj_name in dyn_dict:
-                mobjs.object_list[mobjs.active_obj_index].dynamic = dyn_dict[obj_name]['dynamic']
-                mobjs.object_list[mobjs.active_obj_index].script_name = dyn_dict[obj_name]['script_name']
+                #mobjs.object_list[mobjs.active_obj_index].dynamic = dyn_dict[obj_name]['dynamic']
+                #mobjs.object_list[mobjs.active_obj_index].script_name = dyn_dict[obj_name]['script_name']
+                new_obj.dynamic = dyn_dict[obj_name]['dynamic']
+                new_obj.script_name = dyn_dict[obj_name]['script_name']
             scene_object = sobjs[obj_name]
             # Set an error status if object is not triangulated
             for face in scene_object.data.polygons:
                 if not (len(face.vertices) == 3):
                     status = "Object is not triangulated: %s" % (obj_name)
-                    mobjs.object_list[mobjs.active_obj_index].status = status
+                    #mobjs.object_list[mobjs.active_obj_index].status = status
+                    new_obj.status = status
                     break
 
         if len(mobjs.object_list) <= 0:
             mobjs.active_obj_index = 0
         else:
-            if active_index < len(mobjs.object_list):
-                mobjs.active_obj_index = active_index
+            if original_active_index < len(mobjs.object_list):
+                mobjs.active_obj_index = original_active_index
             else:
                 mobjs.active_obj_index = len(mobjs.object_list) - 1
 
@@ -467,10 +472,13 @@ def model_objects_update(context):
 
 def check_model_object(self, context):
     """Checks for illegal object name"""
+    #print ( "The self passed into \"check_model_object\" is " + str(self) )
 
-    mcell = context.scene.mcell
-    model_object_list = mcell.model_objects.object_list
-    model_object = model_object_list[mcell.model_objects.active_obj_index]
+    model_object = self
+
+    #mcell = context.scene.mcell
+    #model_object_list = mcell.model_objects.object_list
+    #model_object = model_object_list[mcell.model_objects.active_obj_index]
 
     # print ("Checking name " + model_object.name )
 
