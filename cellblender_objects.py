@@ -1271,6 +1271,13 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                         new_object = bpy.data.objects.new ( obj.name, new_mesh )
                         scene.objects.link ( new_object )
 
+                    mat_name = obj.name + "_mat"
+                    if mat_name in bpy.data.materials:
+                        new_object.data.materials.append ( bpy.data.materials[mat_name] )
+
+                    # TODO: Deal with materials on faces
+
+
 
 @persistent
 def frame_change_handler(scn):
