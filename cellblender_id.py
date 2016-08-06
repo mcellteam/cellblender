@@ -1,1 +1,1 @@
-cellblender_id = '7c27ca796bd55066417c22ce9f78c700af0a06fe'
+cellblender_id = '92d9fe39373fc62fb1fb682c57e64d19a830d644'
