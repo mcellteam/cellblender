@@ -230,8 +230,8 @@ def display_callback(self, context):
 
 
 def name_change_callback(self, context):
-    print ( "name_change_callback called with self = " + str(self) )
-    print ( "  old = " + self.old_name + " => new = " + self.name )
+    # print ( "name_change_callback called with self = " + str(self) )
+    # print ( "  old = " + self.old_name + " => new = " + self.name )
     old_mol_name = "mol_" + self.old_name
     new_mol_name = "mol_" + self.name
 
@@ -296,7 +296,7 @@ def glyph_show_only_callback(self, context):
     return
 
 def shape_change_callback(self, context):
-    print ( "Shape change callback for molecule " + self.name )
+    # print ( "Shape change callback for molecule " + self.name )
     self.create_mol_data () # ( context )
     return
 
@@ -339,7 +339,7 @@ import os
 
 def remove_mol_data_by_name ( mol_name, context ):
 
-    print ( "Call to: \"remove_mol_data_by_name\" to remove " + mol_name )
+    # print ( "Call to: \"remove_mol_data_by_name\" to remove " + mol_name )
 
     meshes = bpy.data.meshes
     mats = bpy.data.materials
@@ -530,7 +530,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def create_mol_data ( self ):
 
-        print ( "Creating mol data for " + self.name )
+        # print ( "Creating mol data for " + self.name )
 
         meshes = bpy.data.meshes
         mats = bpy.data.materials
@@ -619,9 +619,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             mol_list = bpy.context.scene.mcell.molecules
 
             def_colors = [ (1,0,0), (0,1,0), (0,0,1), (0,1,1), (1,0,1), (1,1,0), (1,1,1), (0,0,0) ]
-            print ( "next_color = " + str(mol_list.next_color) )
+            # print ( "next_color = " + str(mol_list.next_color) )
             new_color = [ 1.0*c for c in def_colors[mol_list.next_color] ]
-            print ( "new_color = " + str(new_color) )
+            # print ( "new_color = " + str(new_color) )
             mol_list.next_color += 1
             if mol_list.next_color >= len(def_colors):
                mol_list.next_color = 0
@@ -671,7 +671,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         mol_obj.dupli_type = 'VERTS'
         mol_shape_obj.parent = mol_obj
 
-        print ( "Done creating mol data for " + self.name )
+        # print ( "Done creating mol data for " + self.name )
 
 
 
@@ -1322,7 +1322,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
 
 
     def build_properties_from_data_model ( self, context, dm ):
-        print ( "Call to: \"MCellMoleculesListProperty.build_properties_from_data_model\" with %d molecules" % len(self.molecule_list) )
+        # print ( "Call to: \"MCellMoleculesListProperty.build_properties_from_data_model\" with %d molecules" % len(self.molecule_list) )
         # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2014_10_24_1638":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculesListProperty data model to current version." )
@@ -1338,7 +1338,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             while len(bpy.data.objects['molecules'].children) > 0:
                 mol_name = bpy.data.objects['molecules'].children[0].name
                 remove_mol_data_by_name ( mol_name[4:], context )
-                print ( "New length of molecule_list = " + str(len(bpy.data.objects['molecules'].children)) )
+                # print ( "New length of molecule_list = " + str(len(bpy.data.objects['molecules'].children)) )
 
 
 
