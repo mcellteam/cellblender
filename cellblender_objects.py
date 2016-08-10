@@ -376,7 +376,6 @@ class MCell_OT_object_hide_all(bpy.types.Operator):
         return {'FINISHED'}
 
 
-
 # Model Objects callback functions
 
 
@@ -405,45 +404,12 @@ def model_objects_update(context):
             obj = sobjs.get(mobjs.object_list[i].name)
             if obj:
                 obj.mcell.include = True
-        model_obj_names = [ obj.name for obj in sobjs if obj.mcell.include ]
+        model_obj_names = [obj.name for obj in sobjs if obj.mcell.include]
 
     # Update the model object list from objects marked obj.mcell.include = True
     if (len(model_obj_names) > 0):
+        model_obj_names.sort()
 
-        original_active_index = mobjs.active_obj_index
-
-        model_obj_set = set(model_obj_names)
-        cur_model_obj_set = set(mobjs.object_list.keys())
-
-        mobj_add = model_obj_set.difference(cur_model_obj_set)
-        mobj_del = cur_model_obj_set.difference(model_obj_set)
-
-        for del_me in mobj_del:
-            print ( "Deleting model object " + del_me )
-            i = mobjs.object_list.keys().index(del_me)
-            mobjs.object_list.remove(i)
-
-        for add_me in mobj_add:
-            print ( "Adding model object " + add_me )
-            new_obj = mobjs.object_list.add()
-            new_obj.name = add_me
-            if add_me in sobjs:
-                scene_object = sobjs[add_me]
-                # Set an error status if object is not triangulated
-                for face in scene_object.data.polygons:
-                    if not (len(face.vertices) == 3):
-                        status = "Object is not triangulated: %s" % (add_mee)
-                        #mobjs.object_list[mobjs.active_obj_index].status = status
-                        new_obj.status = status
-                        break
-            else:
-                new_obj.status = "Object is not in scene: %s" % (add_me)
-
-
-        # model_obj_names.sort()
-
-
-        """
         # Save a list of objects with dynamic geometry specified
         print ( "Saving dynamic and script name for objects" )
         dyn_dict = {}
@@ -475,8 +441,6 @@ def model_objects_update(context):
                     #mobjs.object_list[mobjs.active_obj_index].status = status
                     new_obj.status = status
                     break
-        """
-
 
         if len(mobjs.object_list) <= 0:
             mobjs.active_obj_index = 0
@@ -502,6 +466,7 @@ def model_objects_update(context):
     restore_object_status(context, objstat)
 
     return
+
 
 
 def check_model_object_name(self, context):
