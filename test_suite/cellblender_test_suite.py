@@ -5408,105 +5408,6 @@ class ReleaseTimePatternsTestOp(bpy.types.Operator):
 
 
 ###########################################################################################################
-group_name = "Stress Tests"
-test_name = "Stress Model Objects"
-operator_name = "cellblender_test.stress_model_objects_test"
-next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
-
-class StressModelObjectsTestOp(bpy.types.Operator):
-    bl_idname = operator_name
-    bl_label = test_name
-    self_test_name = test_name
-
-    def invoke(self, context, event):
-        self.execute ( context )
-        return {'FINISHED'}
-
-    def execute(self, context):
-
-        global active_frame_change_handler
-        active_frame_change_handler = None
-
-        app = bpy.context.scene.cellblender_test_suite
-
-        cb_model = CellBlender_Model ( context, self.self_test_name )
-
-        scn = cb_model.get_scene()
-        mcell = cb_model.get_mcell()
-
-
-
-        min_x = 0
-        max_x = 0
-        min_y = 0
-        max_y = 0
-
-        dx = 1
-        dy = 0
-
-        x = 0
-        y = 0
-
-        for i in range(app.stress_test_level):
-
-            cb_model.add_cube_to_model ( name="box_%d"%(i), draw_type="WIRE", x=x, y=y, z=0, size=0.45 )
-
-            print ( "x = %f, y = %f" % (x, y) )
-            x += dx
-            y += dy
-            if (x > max_x):
-                dx = 0
-                dy = 1
-                max_x = x
-            elif (y > max_y):
-                dx = -1
-                dy = 0
-                max_y = y
-            elif (x < min_x):
-                dx = 0
-                dy = -1
-                min_x = x
-            elif (y < min_y):
-                dx = 1
-                dy = 0
-                min_y = y
-
-
-        mol_a =  cb_model.add_molecule_species_to_model ( name="a",  diff_const_expr="1e-4" )
-
-        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
-        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
-
-        mol_a   = cb_model.get_molecule_species_by_name('a')
-
-        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="1000", shape="SPHERICAL", d="0.1", x="0", y="0", z="-1" )
-
-        cb_model.run_model ( iterations='1500', time_step='1e-5', wait_time=10.0 )
-
-        cb_model.compare_mdl_with_sha1 ( "", test_name=self.self_test_name )
-
-        cb_model.refresh_molecules()
-
-        cb_model.select_none()
-
-
-        mol_scale = 5.0
-
-        cb_model.change_molecule_display ( mol_a,  glyph='Cube',  scale=mol_scale, red=1.0, green=0.0, blue=0.0 )
-
-        cb_model.set_view_back()
-
-        cb_model.scale_view_distance ( 1.0 )
-
-        cb_model.hide_manipulator ( hide=True )
-
-        cb_model.play_animation()
-
-        return { 'FINISHED' }
-
-
-
-###########################################################################################################
 ##   Main Function supporting Lotka Volterra models
 
 def LotkaVolterraTorus ( context, prey_birth_rate, predation_rate, pred_death_rate, interaction_radius, time_step, iterations, mdl_hash, test_name, wait_time ):
@@ -6044,6 +5945,105 @@ class SimpleSynapseTestOp(bpy.types.Operator):
         return { 'FINISHED' }
 
 
+
+
+
+###########################################################################################################
+group_name = "Stress Tests"
+test_name = "Stress Model Objects"
+operator_name = "cellblender_test.stress_model_objects_test"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+class StressModelObjectsTestOp(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+    self_test_name = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
+        app = bpy.context.scene.cellblender_test_suite
+
+        cb_model = CellBlender_Model ( context, self.self_test_name )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+
+
+        min_x = 0
+        max_x = 0
+        min_y = 0
+        max_y = 0
+
+        dx = 1
+        dy = 0
+
+        x = 0
+        y = 0
+
+        for i in range(app.stress_test_level):
+
+            cb_model.add_cube_to_model ( name="box_%d"%(i), draw_type="WIRE", x=x, y=y, z=0, size=0.45 )
+
+            print ( "x = %f, y = %f" % (x, y) )
+            x += dx
+            y += dy
+            if (x > max_x):
+                dx = 0
+                dy = 1
+                max_x = x
+            elif (y > max_y):
+                dx = -1
+                dy = 0
+                max_y = y
+            elif (x < min_x):
+                dx = 0
+                dy = -1
+                min_x = x
+            elif (y < min_y):
+                dx = 1
+                dy = 0
+                min_y = y
+
+
+        mol_a =  cb_model.add_molecule_species_to_model ( name="a",  diff_const_expr="1e-4" )
+
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mol_a   = cb_model.get_molecule_species_by_name('a')
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", q_expr="1000", shape="SPHERICAL", d="0.1", x="0", y="0", z="-1" )
+
+        cb_model.run_model ( iterations='1500', time_step='1e-5', wait_time=10.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "814eb90608e48cf83cbd29e6d6c0e702b15a5fd7", test_name=self.self_test_name )
+
+        cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
+
+        mol_scale = 5.0
+
+        cb_model.change_molecule_display ( mol_a,  glyph='Cube',  scale=mol_scale, red=1.0, green=0.0, blue=0.0 )
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 1.0 )
+
+        cb_model.hide_manipulator ( hide=True )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
 
 
 
