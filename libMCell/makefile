@@ -1,6 +1,21 @@
 PYTHON_INCLUDE = /usr/include/python3.4m
 
-all: mcell_main_c _libMCell.so mcell_main mcell_main_c StorageClasses mcell_simple
+all: mcell_pipe_cpp mcell_pipe_c mcell_main_c _libMCell.so mcell_main mcell_main_c StorageClasses mcell_simple
+
+
+mcell_pipe_cpp: mcell_pipe_cpp.o JSON.o makefile
+	g++ -lm -o mcell_pipe_cpp mcell_pipe_cpp.o JSON.o
+
+mcell_pipe_cpp.o: mcell_pipe_cpp.cpp JSON.h makefile
+	g++ -c -Wno-write-strings mcell_pipe_cpp.cpp
+
+
+mcell_pipe_c: mcell_pipe_c.o JSON.o makefile
+	gcc -lm -o mcell_pipe_c mcell_pipe_c.o JSON.o
+
+mcell_pipe_c.o: mcell_pipe_c.c JSON.h makefile
+	gcc -c mcell_pipe_c.c
+
 
 mcell_main_c: mcell_main_c.o JSON.o makefile
 	gcc -lm -o mcell_main_c mcell_main_c.o JSON.o
@@ -8,11 +23,14 @@ mcell_main_c: mcell_main_c.o JSON.o makefile
 mcell_main_c.o: mcell_main_c.c JSON.h makefile
 	gcc -c mcell_main_c.c
 
+
 JSON.o: JSON.c JSON.h makefile
 	gcc -o JSON.o -c JSON.c -fPIC -I$(PYTHON_INCLUDE)
 
+
 rng.o: rng.cpp rng.h makefile
 	g++ -o rng.o -c rng.cpp -fPIC -I$(PYTHON_INCLUDE)
+
 
 StorageClasses.o: StorageClasses.cpp makefile
 	g++ -g -c StorageClasses.cpp -o StorageClasses.o
@@ -35,13 +53,17 @@ mcell_main.o: mcell_main.cpp libMCell.h makefile
 mcell_main: mcell_main.o rng.o JSON.o libMCell.o makefile
 	g++ -lm -o mcell_main mcell_main.o rng.o JSON.o libMCell.o
 
+
 mcell_simple.o: mcell_simple.cpp libMCell.h makefile
 	g++ -c -Wno-write-strings mcell_simple.cpp -o mcell_simple.o
 
 mcell_simple: mcell_simple.o JSON.o libMCell.o makefile
 	g++ -lm -o mcell_simple mcell_simple.o JSON.o libMCell.o
 
+
 clean:
+	rm -f mcell_pipe_cpp
+	rm -f mcell_pipe_c
 	rm -f mcell_main
 	rm -f mcell_main_c
 	rm -f StorageClasses
