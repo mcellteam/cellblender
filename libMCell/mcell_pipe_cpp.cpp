@@ -3,14 +3,54 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-// This was an attempt to correct the exp10 warning that didn't work: #define _GNU_SOURCE
+// This was an attempt to correct the exp10 warning that didn't work: #define _GNU_SOURCE ... put in makefile instead
 #include <math.h>
+#include <unistd.h>
+#include <signal.h>
 
 extern "C" {
 #include "JSON.h"
 }
 
 using namespace std;
+
+class CVector {
+  public: int x=0, y=0;                  // Member data
+  //public: static int n=0;              // Illegal: ISO C++ forbids in-class initialization of non-const static member - why???
+  public: static int n;                  // Keep track of the number of objects that have been created
+  public: CVector() { x=0; y=0; n++; }   // Constructor with body declared inside class definition
+  public: CVector(int,int);              // Constructor prototype with body declared outside class definition
+  public: CVector operator + (CVector);  // Member operator function with body declared outside class definition
+};
+
+
+int CVector::n = 0;  // Static variable must be initialized in the global scope according to ISO C++
+
+CVector::CVector ( int a, int b ) {
+  // Initialize member data
+  x = a;
+  y = b;
+  n++;
+}
+
+CVector CVector::operator + (CVector operand) {
+  CVector result = CVector(x,y);
+  result.x += operand.x;
+  result.y += operand.y;
+  return result;
+}
+
+/*
+int main () {
+  CVector a(3,1);
+  CVector b(1,2);
+  CVector c;         // In C++ this calls a constructor, but not in Java
+  c = a + b;
+  cout << c.x << "," << c.y << endl;
+  cout << "Created " << CVector::n << " total CVectors" << endl;
+  return 0;
+}
+*/
 
 typedef json_element data_model_element;
 
@@ -33,6 +73,12 @@ char *join_path ( char *p1, char sep, char *p2 ) {
   return ( joined_path );
 }
 
+void signal_handler ( int signal_number ) {
+  fprintf ( stderr, "Caught signal %d\n", signal_number );
+  if (signal_number == 2) {
+    exit ( signal_number );
+  }
+}
 
 int  main ( int argc, char *argv[] ) {
 
@@ -336,12 +382,24 @@ int  main ( int argc, char *argv[] ) {
     fclose(f);
   }
 
-  printf ( "Done simulation.\n" );
+  printf ( "Done simulation ... Control-C to terminate.\n" );
+  
+  signal ( SIGINT, signal_handler );
+
+  fflush(stdout);
+  
+  while (1) {
+    printf ( "waiting..." );
+    fflush(stdout);
+    sleep(1);
+  }
+  
   
   //free_json_tree ( dm );
   //free ( file_text );
   
   printf ( "Still need to free lots of stuff!!\n\n" );
+  fflush(stdout);
 
   return ( 0 );
 }

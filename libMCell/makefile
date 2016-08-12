@@ -7,7 +7,7 @@ mcell_pipe_cpp: mcell_pipe_cpp.o JSON.o makefile
 	g++ -lm -o mcell_pipe_cpp mcell_pipe_cpp.o JSON.o
 
 mcell_pipe_cpp.o: mcell_pipe_cpp.cpp JSON.h makefile
-	g++ -c -Wno-write-strings mcell_pipe_cpp.cpp
+	g++ -c -std=c++11 -Wno-write-strings mcell_pipe_cpp.cpp
 
 
 mcell_pipe_c: mcell_pipe_c.o JSON.o makefile
