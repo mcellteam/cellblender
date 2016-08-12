@@ -76,6 +76,7 @@ char *join_path ( char *p1, char sep, char *p2 ) {
 void signal_handler ( int signal_number ) {
   fprintf ( stderr, "Caught signal %d\n", signal_number );
   if (signal_number == 2) {
+    fprintf ( stderr, "Exiting mcell_pipe_cpp.\n" );
     exit ( signal_number );
   }
 }
@@ -384,12 +385,15 @@ int  main ( int argc, char *argv[] ) {
 
   printf ( "Done simulation ... Control-C to terminate.\n" );
   
-  signal ( SIGINT, signal_handler );
+  signal ( SIGINT,  signal_handler );
+  signal ( SIGUSR1, signal_handler );
+  signal ( SIGUSR2, signal_handler );
 
+  printf ( "..." ); // currently used to signal end
   fflush(stdout);
   
   while (1) {
-    printf ( "waiting..." );
+    fprintf ( stderr, "waiting\n" );
     fflush(stdout);
     sleep(1);
   }

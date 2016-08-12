@@ -28,7 +28,6 @@ else:
 
     last_3 = b"   "
     while (sp.poll() is None) and (len(sp.stdout.peek(1)) > 0):
-        print ( "Try to read a byte" )
         b = sp.stdout.read(1)
         last_3 = last_3[1:] + b
         print ( "Read " + str(len(b)) + " bytes: " + str(b) )
@@ -40,6 +39,10 @@ else:
     time.sleep(3)
 
     try:
+        sp.send_signal ( signal.SIGUSR1 )
+        time.sleep(1)
+        sp.send_signal ( signal.SIGUSR2 )
+        time.sleep(1)
         sp.send_signal ( signal.SIGINT )
     except:
         # Just in case
