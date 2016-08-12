@@ -85,7 +85,7 @@ int  main ( int argc, char *argv[] ) {
 
   // ##### Start by reading the command line parameters which includes the data model file name
 
-  printf ( "\n\nMCell C prototype using libMCell with %d arguments:\n\n", argc-1 );
+  printf ( "\n\nMCell C++ pipe interface prototype with %d arguments:\n\n", argc-1 );
 
   char *proj_path = NULL;
   char *data_model_file_name = NULL;
@@ -389,11 +389,11 @@ int  main ( int argc, char *argv[] ) {
   signal ( SIGUSR1, signal_handler );
   signal ( SIGUSR2, signal_handler );
 
-  printf ( "..." ); // currently used to signal end
+  // printf ( "zzz" ); // currently used to signal end
   fflush(stdout);
   
   while (1) {
-    fprintf ( stderr, "waiting\n" );
+    fprintf ( stderr, "waiting ...\n" );
     fflush(stdout);
     sleep(1);
   }
