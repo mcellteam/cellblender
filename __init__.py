@@ -150,7 +150,9 @@ def cd_to_project():
 
 def cd_to_location ( location ):
     import os
+    original_cwd = os.getcwd()
     os.chdir ( location )
+    return original_cwd
 
 ###############################################################
 
