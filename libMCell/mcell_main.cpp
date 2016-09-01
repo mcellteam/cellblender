@@ -45,6 +45,7 @@ int main ( int argc, char *argv[] ) {
   cout << "\n\n" << endl;
   cout << "******************************************" << endl;
   cout << "*   MCell C++ Prototype using libMCell   *" << endl;
+  cout << "*      Updated: August 31st, 2016        *" << endl;
   cout << "******************************************" << endl;
   cout << "\n" << endl;
 
@@ -76,7 +77,7 @@ int main ( int argc, char *argv[] ) {
   // Read the data model text from the input file
 
   data_model_full_path = join_path ( proj_path, '/', data_model_file_name );
-  
+
   printf ( "Project path = \"%s\", data_model_file_name = \"%s\"\n", proj_path, data_model_full_path );
 
   char *file_name = data_model_full_path;

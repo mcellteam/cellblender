@@ -10,7 +10,7 @@
 #include <math.h>
 
 #include "libMCell.h"
-#include "StorageClasses.h"
+// #include "StorageClasses.h"
 
 using namespace std;
 
@@ -29,12 +29,12 @@ int main ( int argc, char *argv[] ) {
 
   MCellMoleculeSpecies *mol_a = new MCellMoleculeSpecies();
   mol_a->name = "A";
-  mol_a->diffusion_constant = 1e-7;
+  mol_a->diffusion_constant = 1e-6;
   mcell->add_molecule_species( mol_a );
 
   MCellMoleculeSpecies *mol_b = new MCellMoleculeSpecies();
   mol_b->name = "B";
-  mol_b->diffusion_constant = 2e-7;
+  mol_b->diffusion_constant = 2e-5;
   mcell->add_molecule_species( mol_b );
 
   MCellReleaseSite *rel_a = new MCellReleaseSite();
@@ -42,7 +42,7 @@ int main ( int argc, char *argv[] ) {
   rel_a->y = 0.0;
   rel_a->z = 0.0;
   rel_a->molecule_species = mol_a;
-  rel_a->quantity = 3;
+  rel_a->quantity = 300;
   mcell->add_molecule_release_site ( rel_a );
 
   MCellReleaseSite *rel_b = new MCellReleaseSite();
@@ -50,7 +50,7 @@ int main ( int argc, char *argv[] ) {
   rel_b->y = 0.2;
   rel_b->z = 0.1;
   rel_b->molecule_species = mol_b;
-  rel_b->quantity = 7;
+  rel_b->quantity = 700;
   mcell->add_molecule_release_site ( rel_b );
 
   mcell->num_iterations = 200;

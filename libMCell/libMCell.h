@@ -47,6 +47,34 @@ class MCellReleaseSite {
   MCellReleaseSite *next;
 };
 
+class MCellEvent {
+ public:
+  double time;
+  MCellEvent() {
+    time = 0.0;
+  }
+};
+
+class MCellTimerEvent : public MCellEvent {
+ public:
+  MCellTimerEvent() {
+    time = 0.0;
+  }
+  virtual void execute() {
+    cout << "Default timer" << endl;
+  }
+};
+
+class MCellMolCreationEvent : public MCellEvent {
+ public:
+  MCellMoleculeInstance *mol;
+  MCellMolCreationEvent() {
+    time = 0.0;
+  }
+  virtual void execute(MCellMoleculeInstance *mol) {
+    cout << "Default molecule creation" << endl;
+  }
+};
 
 class MCellSimulation {
  private:
@@ -57,6 +85,9 @@ class MCellSimulation {
 
   int num_iterations;
   double time_step;
+
+  ArrayStore<MCellTimerEvent *>timer_event_handlers;
+  ArrayStore<MCellMolCreationEvent *>mol_creation_event_handlers;
 
   MapStore<MCellMoleculeSpecies *> molecule_species;
   ArrayStore<MCellReleaseSite *> molecule_release_sites;
@@ -75,5 +106,4 @@ class MCellSimulation {
   MCellMoleculeSpecies *get_molecule_species_by_name ( char *mol_name );
   void run_simulation ( char *proj_path );
 };
-
 

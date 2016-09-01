@@ -573,13 +573,13 @@ text = dyn_text;
   text_length = strlen(text);
 
   printf ( "Parsing text of length %d\n", text_length );
-  printf ( "Text: %s\n", text );
+  // printf ( "Text: %s\n", text );
 
   json_element *root_element = new_empty_json_array_element ( NULL, 0, text_length-1, 0 );
 
   parse_element ( root_element, NULL, 0, 0 );
 
-  dump_json_element_tree ( root_element, 80, 1 );
+  // dump_json_element_tree ( root_element, 80, 1 );
 
   printf ( "\n\n==========\n\n" );
 

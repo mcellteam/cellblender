@@ -57,7 +57,7 @@ template <class T> class ArrayStore {
   void expand_capacity ( int index ) {
     // Increase the capacity to include index
     int new_capacity = 1 + index;
-    cout << "Capacity: " << capacity << " -> " << new_capacity << endl;
+    // cout << "Capacity: " << capacity << " -> " << new_capacity << endl;
     if (new_capacity > capacity) {
       T *new_item_array;
       new_item_array = (T *) malloc ( sizeof(T) * new_capacity );
@@ -118,7 +118,7 @@ template <class T> class MapStore {
   void expand_capacity() {
     // Increase the capacity by some amount
     int new_capacity = 1 + (3 * capacity / 2);
-    cout << "Capacity: " << capacity << " -> " << new_capacity << endl;
+    // cout << "Capacity: " << capacity << " -> " << new_capacity << endl;
 
     char **new_keys;
     T *new_item_array;

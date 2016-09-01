@@ -1,6 +1,13 @@
 PYTHON_INCLUDE = /usr/include/python3.4m
 
-all: mcell_pipe_cpp mcell_pipe_c mcell_main_c _libMCell.so mcell_main mcell_main_c StorageClasses mcell_simple
+# Linux:
+INSTALL_DIR = ~/.config/blender/2.77/scripts/addons/
+
+# Mac:
+#INSTALL_DIR = ~/Library/Application\ Support/Blender/2.74/scripts/addons/
+
+
+all: mcell_pipe_cpp mcell_pipe_c mcell_main_c _libMCell.so mcell_main mcell_main_c StorageClasses mcell_simple mcell_simple_count
 
 
 mcell_pipe_cpp: mcell_pipe_cpp.o JSON.o makefile
@@ -32,7 +39,7 @@ rng.o: rng.cpp rng.h makefile
 	g++ -o rng.o -c rng.cpp -fPIC -I$(PYTHON_INCLUDE)
 
 
-StorageClasses.o: StorageClasses.cpp makefile
+StorageClasses.o: StorageClasses.cpp StorageClasses.h makefile
 	g++ -g -c StorageClasses.cpp -o StorageClasses.o
 
 StorageClasses: StorageClasses.o makefile
@@ -47,7 +54,7 @@ _libMCell.so: libMCell.cpp rng.cpp libMCell.h rng.h libMCell.i makefile
 libMCell.o: libMCell.cpp libMCell.h makefile
 	g++ -c -Wno-write-strings libMCell.cpp -o libMCell.o
 
-mcell_main.o: mcell_main.cpp libMCell.h makefile
+mcell_main.o: mcell_main.cpp libMCell.h StorageClasses.h makefile
 	g++ -c -Wno-write-strings mcell_main.cpp -o mcell_main.o
 
 mcell_main: mcell_main.o rng.o JSON.o libMCell.o makefile
@@ -57,8 +64,15 @@ mcell_main: mcell_main.o rng.o JSON.o libMCell.o makefile
 mcell_simple.o: mcell_simple.cpp libMCell.h makefile
 	g++ -c -Wno-write-strings mcell_simple.cpp -o mcell_simple.o
 
-mcell_simple: mcell_simple.o JSON.o libMCell.o makefile
-	g++ -lm -o mcell_simple mcell_simple.o JSON.o libMCell.o
+mcell_simple: mcell_simple.o rng.o JSON.o libMCell.o makefile
+	g++ -lm -o mcell_simple mcell_simple.o JSON.o rng.o libMCell.o
+
+
+mcell_simple_count.o: mcell_simple_count.cpp libMCell.h makefile
+	g++ -c -std=c++11 -Wno-write-strings mcell_simple_count.cpp -o mcell_simple_count.o
+
+mcell_simple_count: mcell_simple_count.o rng.o JSON.o libMCell.o makefile
+	g++ -lm -o mcell_simple_count mcell_simple_count.o JSON.o rng.o libMCell.o
 
 
 clean:
@@ -68,6 +82,7 @@ clean:
 	rm -f mcell_main_c
 	rm -f StorageClasses
 	rm -f mcell_simple
+	rm -f mcell_simple_count
 	rm -f *_wrap* *.pyc
 	rm -f core
 	rm -f *.o *.so
@@ -107,3 +122,6 @@ test_cpp: mcell_main
 test_py: mcell_main.py _libMCell.so
 	python mcell_main.py proj_path=. data_model=dm.txt
 
+install: mcell_main mcell_main_c
+	cp -v mcell_main $(INSTALL_DIR)cellblender/libMCell/
+	cp -v mcell_main_c $(INSTALL_DIR)cellblender/libMCell/

@@ -73,6 +73,9 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
   char *react_dir = join_path ( proj_path, '/', "react_data" );
   mkdir ( react_dir, 0777 );
 
+  char *react_seed_dir = join_path ( react_dir, '/', "seed_00001" );
+  mkdir ( react_seed_dir, 0777 );
+
   char *viz_dir = join_path ( proj_path, '/', "viz_data" );
   mkdir ( viz_dir, 0777 );
 
@@ -101,13 +104,19 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
       new_mol_instance->x = this_site->x;
       new_mol_instance->y = this_site->y;
       new_mol_instance->z = this_site->z;
+      for (int i=0; i<this->mol_creation_event_handlers.get_size(); i++) {
+        this->mol_creation_event_handlers[i]->execute(new_mol_instance);
+      }
     }
   }
 
-  // # Figure out the number of digits needed for file names and allocate strings as file name templates
+  // # Figure out the number of digits needed for file names
 
   int ndigits = 1 + log10(num_iterations+1);
   printf ( "File names will require %d digits\n", ndigits );
+
+  // Produce file name templates for viz output files
+
   char *template_template = "seed_00001/Scene.cellbin.%%0%dd.dat";
   char *file_template = (char *) malloc ( strlen(template_template) + (ndigits*sizeof(char)) + 10 );
   sprintf ( file_template, template_template, ndigits );
@@ -119,7 +128,24 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
 
   char *sim_step_mol_name = (char *) malloc ( strlen(f_template) + 10 );
 
+  // Create the count files for each molecule species
+
+  FILE **count_files;
+  count_files = (FILE **) malloc ( this->molecule_species.get_num_items() * sizeof(FILE *) );
+
+  MCellMoleculeSpecies *this_species;
+  cout << "Set up count files for " << this->molecule_species.get_num_items() << " species." << endl;
+  for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
+    char *react_file_name;
+    this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
+    react_file_name = (char *) malloc ( strlen(react_dir) + 1 + strlen ( "/seed_00001/" ) + strlen ( this_species->name.c_str() ) + strlen ( ".World.dat" ) + 10 );
+    sprintf ( react_file_name, "%s/seed_00001/%s.World.dat", react_dir, this_species->name.c_str() );
+    cout << "Setting up count file for species " << this_species->name << " at " << react_file_name << endl;
+    count_files[sp_num] = fopen ( react_file_name, "w" );
+  }
+
   // Run the actual simulation
+
   printf ( "Begin libMCell simulation (printf).\n" );
   cout << "Begin libMCell simulation (cout)." << endl;
   
@@ -129,6 +155,26 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
   if (print_every < 1) print_every = 1;
   for (iteration=0; iteration<=num_iterations; iteration++) {
     cout << "Iteration " << iteration << ", t=" << (time_step*iteration) << endl;
+    
+    for (int i=0; i<this->timer_event_handlers.get_size(); i++) {
+      this->timer_event_handlers[i]->execute();
+    }
+
+    // Count the molecules
+
+    // cout << "Count molecules for " << this->molecule_species.get_num_items() << " species." << endl;
+    for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
+      this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
+      MCellMoleculeInstance *this_mol_instance = this_species->instance_list;
+      long count = 0;
+      while (this_mol_instance != NULL) {
+        count++;
+        this_mol_instance = this_mol_instance->next;
+      }
+      fprintf ( count_files[sp_num], "%g %ld\n", iteration*time_step, count );
+    }
+
+    // Create the viz output file for this iteration
 
     sprintf ( sim_step_mol_name, f_template, iteration );
     if ((iteration%print_every) == 0) {
@@ -139,11 +185,15 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
     int binary_marker = 1;
     fwrite ( &binary_marker, sizeof(int), 1, f );
 
+    // Move all molecules and produce viz output
+
     MCellMoleculeSpecies *this_species;
-    cout << "Iterate over " << this->molecule_species.get_num_items() << " species." << endl;
+    // cout << "Iterate over " << this->molecule_species.get_num_items() << " species." << endl;
     for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
       this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
-      cout << "Simulating for species " << this_species->name << endl;
+      // cout << "Simulating for species " << this_species->name << endl;
+
+      // Output the header of the mol viz file
 
       unsigned char name_len = 0x0ff & this_species->name.length();
       fwrite ( &name_len, sizeof(unsigned char), 1, f );
@@ -156,9 +206,9 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
       MCellMoleculeInstance *this_mol_instance = this_species->instance_list;
       float float_val;
       double dc = this_species->diffusion_constant;
+
       // From one branch of mcell_species.c ...  Determine the actual space step and time step
       double ds = sqrt(16.0 * 1.0e8 * dc * time_step);
-
 
       while (this_mol_instance != NULL) {
         float_val = this_mol_instance->x;
@@ -177,7 +227,30 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
     }
 
     fclose(f);
+    
+    // Perform "reactions" ... just randomly delete the first molecule for now
+
+    for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
+      this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
+      if (this_species->instance_list != NULL) {
+        if ( mcell_random->rng_gauss() < 0.0 ) { // Delete the molecule about half the time.
+          cout << "Default Decay Reaction removing an instance of " << this_species->name << endl;
+          MCellMoleculeInstance *first = this_species->instance_list;
+          this_species->instance_list = this_species->instance_list->next;
+          this_species->num_instances += -1;
+          delete ( first );
+        }
+      }
+    }
 
   }
+
+  // Close the count files for each molecule species
+
+  for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
+    fclose ( count_files[sp_num] );
+  }
+
+
 }
 
