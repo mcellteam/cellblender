@@ -577,6 +577,15 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
     elist = StringProperty(name="elist", default="(lp0\n.", description="Pickled Expression List")  # This ("(lp0\n.") is a pickled empty list: pickle.dumps([],protocol=0).decode('latin1')
     show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
+    # The following PanelParameterData (PPD) ID properties are added dynamically (for performance reasons):
+
+    #  PPD['user_name']
+    #  PPD['user_type']
+    #  PPD['user_units']
+    #  PPD['user_descr']
+    #  PPD['expr']
+    #  PPD['value']
+    #  PPD['valid']
 
     @profile('PanelParameterData.update_panel_expression')
     def update_panel_expression (self, context, gl=None):
@@ -1191,7 +1200,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     def clear_all_parameters ( self, context ):
         """ Clear all Parameters """
         self.next_gid = 0
-        self.next_pid = 0
+        # self.next_pid = 0  # Do not reset the PID because the panel parameters must be deleted by the property group that created them.
+        #                    # Note that there are some panel parameters that should never be deleted (iterations, time_step, start_seed ...)
+        #                    # There is a problem in resetting a simulation that requires the defaults to be re-established for the "static" panel parameters.
         self.active_par_index = 0
         self.active_name = "Par"
         self.active_elist = ""
@@ -1200,7 +1211,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         self.active_desc = ""
         self.last_selected_id = ""
         self.general_parameter_list.clear()
-        self.panel_parameter_list.clear()
+        #self.panel_parameter_list.clear()
         self['gp_dict'] = {}
         self['gp_ordered_list'] = []
 
@@ -1212,6 +1223,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         self.next_gid += 1
         return ( self.next_gid )
 
+    # TODO: This allocation function does not re-use id numbers
     @profile('ParameterSystem.allocate_available_pid')
     def allocate_available_pid(self):
         self.next_pid += 1
@@ -1333,9 +1345,6 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         #bpy.ops.mcell.print_pan_parameters()
 
 
-    # TODO: This function is a temporary mechanism to ensure unique names with as little work as possible while building an ID-based parameter system.
-    # TODO: This function accomplishes that task by simply appending a number to the name rather than flagging an error.
-    # TODO: This function should be replaced with a more proper error handling/notification system once the basic ID-based parameter system is working.
     @profile('ParameterSystem.construct_unique_name')
     def construct_unique_name( self, new_name ):
         """ Construct a name that's not already in the list """
@@ -1580,6 +1589,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 old_name = str(self['gp_dict'][pid]['name'])  # Note that sometimes the old name cannot be found
             except:
                 print ( "Unexpected error: Cannot find name for self['gp_dict'][" + str(pid) + "]['name']" )
+                # Halt here for interaction
+                # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
             new_name = self.active_name
             if new_name != old_name:
                 # The name actually changed, so really perform the update
