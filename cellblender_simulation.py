@@ -693,7 +693,7 @@ class MCELL_OT_run_simulation_libmcell(bpy.types.Operator):
                 for sim_seed in range(start,end+1):
                     print ("Running with seed " + str(sim_seed) )
 
-                    command_list = [ final_script_path, "proj_path="+project_dir, "data_model=dm.json" ]
+                    command_list = [ final_script_path, "proj_path="+project_dir, "data_model=dm.json", "seed=%ld"%sim_seed ]
 
                     dm = mcell.build_data_model_from_properties ( context, geometry=True )
 
