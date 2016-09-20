@@ -1030,6 +1030,12 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     panel_parameter_list = CollectionProperty(type=PanelParameterData) # , name="Panel Parameters List"
     next_gid = IntProperty(default=0) # name="Counter for Unique General Parameter IDs",
     next_pid = IntProperty(default=0) # name="Counter for Unique Panel Parameter IDs",
+
+    # The following "active" RNA properties are used to temporarily hold the
+    # data that's otherwise stored in ID properties. Changing active_par_index
+    # will trigger a callback that moves data from the active ID property into
+    # the active RNA property. Changing the other "active_" values will similarly
+    # trigger an update that puts the new RNA changes back into the ID properties.
     active_par_index = IntProperty(default=0,                                                                 update=update_parameter_index) # name="Active Parameter",
     active_name  = StringProperty(default="Par", description="User name for this parameter (must be unique)", update=update_parameter_name)    # name="Parameter Name",
     active_elist = StringProperty(default="",    description="Pickled Expression list for this parameter",    update=update_parameter_elist)   # name="Expression List",
