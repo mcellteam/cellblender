@@ -1295,6 +1295,10 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all Visualization Output Properties... no collections to remove." )
+        # Note that the three "Panel Parameters" (start, end, and step) in this group are all static and should not be removed.
+        #self.start.clear_ref ( ps )
+        #self.end.clear_ref ( ps )
+        #self.step.clear_ref ( ps )
 
 
     def draw_layout ( self, context, layout ):

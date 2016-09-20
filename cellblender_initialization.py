@@ -179,7 +179,18 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         ps = context.scene.mcell.parameter_system
-        """ # It's not needed to remove these properties because there is only one copy? """
+        # It's not needed to remove these properties because there is only one copy? Mostly yes.
+
+        # It appears that removing some of the "original 16" panel parameters causes a problem.
+        # This was fixed by commenting out the removal code. However, that causes some of the
+        # other "original 16" to be recreated when reading from a data model (or using the
+        # "Clear Project" scripting button). These duplicate parameters appear to not be a
+        # problem because the RNA properties only store a reference to the most current one.
+        # However, they do leave a trail of ID property "ghosts" which show multiple versions
+        # of the same panel parameters.
+
+        # But if they were to be removed, here's what it would look like:
+        """
         self.iterations.clear_ref ( ps )
         self.time_step.clear_ref ( ps )
         self.time_step_max.clear_ref ( ps )
@@ -189,6 +200,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         self.radial_subdivisions.clear_ref ( ps )
         self.vacancy_search_distance.clear_ref ( ps )
         self.surface_grid_density.clear_ref ( ps )
+        """
 
 
     def build_data_model_from_properties ( self, context ):

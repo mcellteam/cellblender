@@ -764,6 +764,9 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
 
 
     def remove_properties ( self, context ):
+        # Note that the two "Panel Parameters" (rxn_step and output_buf_size) in this group are static and should not be removed.
+        #self.rxn_step.clear_ref ( ps )
+        #self.output_buf_size.clear_ref ( ps )
         print ( "Removing all Reaction Output Properties..." )
         self.active_rxn_output_index = 0
         for item in self.rxn_output_list:

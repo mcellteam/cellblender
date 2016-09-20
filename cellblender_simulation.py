@@ -1361,6 +1361,10 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
     def remove_properties ( self, context ):
         print ( "Removing all Run Simulation Properties..." )
+        # Note that the two "Panel Parameters" (start_seed and end_seed) in this group are both static and should not be removed.
+        #self.start_seed.clear_ref ( ps )
+        #self.end_seed.clear_ref ( ps )
+
         for item in self.processes_list:
             item.remove_properties(context)
         self.processes_list.clear()
