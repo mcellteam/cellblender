@@ -518,9 +518,12 @@ class CellBlender_Model:
         print ( "Done Adding " + name )
 
 
-    def add_cube_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, size=1 ):
+    # The old add_cube_to_model used Blender's primitive_cube_add function which varied between versions.
+    # This produced varying MDL which could not be easily checked against a precomputed SHA1.
+    # So this old version was replaced, but it's kept here to show how Blender's primitives can be used.
+    def old_add_cube_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, size=1 ):
         """ draw_type is one of: WIRE, TEXTURED, SOLID, BOUNDS """
-        # print ( "Adding " + name )
+        print ( "Adding " + name )
         bpy.ops.mesh.primitive_cube_add ( location=(x,y,z), radius=size)
         self.scn.objects.active.name = name
 
@@ -529,7 +532,50 @@ class CellBlender_Model:
         self.mcell.cellblender_main_panel.objects_select = True
         bpy.ops.mcell.model_objects_add()
         bpy.data.objects[name].draw_type = draw_type
-        # print ( "Done Adding " + name )
+        print ( "Done Adding " + name )
+
+
+    # This version of add_cube_to_model produces repeatable results across Blender versions.
+    def add_cube_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, size=1 ):
+        """ draw_type is one of: WIRE, TEXTURED, SOLID, BOUNDS """
+        print ( "Adding " + name )
+
+        cube = plf_object
+
+        cube.points = [
+            point ( -1.0, -1.0, -1.0 ),
+            point ( -1.0, -1.0, 1.0 ),
+            point ( -1.0, 1.0, -1.0 ),
+            point ( -1.0, 1.0, 1.0 ),
+            point ( 1.0, -1.0, -1.0 ),
+            point ( 1.0, -1.0, 1.0 ),
+            point ( 1.0, 1.0, -1.0 ),
+            point ( 1.0, 1.0, 1.0 )
+          ]
+
+        cube.faces = [
+            face ( 3, 0, 1 ),
+            face ( 7, 2, 3 ),
+            face ( 5, 6, 7 ),
+            face ( 1, 4, 5 ),
+            face ( 2, 4, 0 ),
+            face ( 7, 1, 5 ),
+            face ( 3, 2, 0 ),
+            face ( 7, 6, 2 ),
+            face ( 5, 4, 6 ),
+            face ( 1, 0, 4 ),
+            face ( 2, 6, 4 ),
+            face ( 7, 3, 1 )
+          ]
+
+        for p in cube.points:
+            p.x = p.x * size
+            p.y = p.y * size
+            p.z = p.z * size
+
+        self.create_object_from_mesh ( name=name, draw_type=draw_type, x=x, y=y, z=z, vertex_list=cube.points, face_list=cube.faces )
+
+        print ( "Done Adding " + name )
 
 
     def add_icosphere_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, size=1, subdiv=2 ):
