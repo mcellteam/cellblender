@@ -578,7 +578,12 @@ class CellBlender_Model:
         print ( "Done Adding " + name )
 
 
-    def add_icosphere_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, size=1, subdiv=2 ):
+
+
+    # The old add_icosphere_to_model used Blender's primitive_ico_sphere_add function which varied between versions.
+    # This produced varying MDL which could not be easily checked against a precomputed SHA1.
+    # So this old version was replaced, but it's kept here to show how Blender's primitives can be used.
+    def old_add_icosphere_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, size=1, subdiv=2 ):
         """ draw_type is one of: WIRE, TEXTURED, SOLID, BOUNDS """
         print ( "Adding " + name )
         bpy.ops.mesh.primitive_ico_sphere_add ( subdivisions=subdiv, size=size, location=(x, y, z) )
@@ -590,6 +595,25 @@ class CellBlender_Model:
         bpy.ops.mcell.model_objects_add()
         bpy.data.objects[name].draw_type = draw_type
         print ( "Done Adding " + name )
+
+
+    # This version of add_icosphere_to_model produces repeatable results across Blender versions.
+    def add_icosphere_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, size=1, subdiv=2 ):
+        """ draw_type is one of: WIRE, TEXTURED, SOLID, BOUNDS """
+        print ( "Adding " + name )
+
+        ico = IcoSphere ( subdiv-1, scale_x=size, scale_y=size, scale_z=size )
+        self.create_object_from_mesh ( name=name, draw_type=draw_type, x=x, y=y, z=z, vertex_list=ico.points, face_list=ico.faces )
+
+        self.scn.objects.active.name = name
+
+        # Add the newly added object to the model objects list
+
+        self.mcell.cellblender_main_panel.objects_select = True
+        bpy.ops.mcell.model_objects_add()
+        bpy.data.objects[name].draw_type = draw_type
+        print ( "Done Adding " + name )
+
 
 
     def add_capsule_to_model ( self, name="Cell", draw_type="WIRE", x=0, y=0, z=0, sigma=0, subdiv=2, radius=1, cyl_len=2, subdivide_sides=True ):
@@ -3462,7 +3486,7 @@ class SphereSurfaceTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='500', time_step='1e-6', wait_time=7.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "bab9eb05b4cbe1980d434f1a1bce96d7f1b16d97", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "8bd6f3efc3d7291950baaa23dfb655fafba042b8", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -3543,7 +3567,7 @@ class OverlappingSurfaceTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=5.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "574b9a61591081c796db0e277fb6b8c29ffc1da6", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "96286b6f2269a5bed9d9a7841579916fbb8cf6a5", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5715,7 +5739,7 @@ class OrganelleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=25.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "f3a9702034ff7e1eceb9affb51076f2cf7ebcf7a", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "c1f5ed1913f02e1cc4f081c984525a9edd240887", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
