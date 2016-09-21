@@ -1242,11 +1242,11 @@ class MCellVizOutputPropertyGroup(bpy.types.PropertyGroup):
 
     def init_properties ( self, parameter_system ):
         helptext = "Starting iteration"
-        self.start.init_ref  ( parameter_system, "Viz_Start_Type", user_name="Start", user_expr="0", user_units="", user_descr=helptext, user_int=True )
+        self.start.init_ref  ( parameter_system, user_name="Start", user_expr="0", user_units="", user_descr=helptext, user_int=True )
         helptext = "Ending iteration"
-        self.end.init_ref    ( parameter_system, "Viz_End_Type",   user_name="End",   user_expr="1", user_units="", user_descr=helptext, user_int=True )
+        self.end.init_ref    ( parameter_system, user_name="End",   user_expr="1", user_units="", user_descr=helptext, user_int=True )
         helptext = "Output viz every n iterations"
-        self.step.init_ref   ( parameter_system, "Viz_Step_Type",  user_name="Step",  user_expr="1", user_units="", user_descr=helptext, user_int=True )
+        self.step.init_ref   ( parameter_system, user_name="Step",  user_expr="1", user_units="", user_descr=helptext, user_int=True )
 
 
     def build_data_model_from_properties ( self, context ):

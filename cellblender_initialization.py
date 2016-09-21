@@ -91,7 +91,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
 
     def init_properties ( self, parameter_system ):
         helptext = "Number of iterations to run"
-        self.iterations.init_ref    ( parameter_system, "Iteration_Type", 
+        self.iterations.init_ref    ( parameter_system,
                                       user_name="Iterations", 
                                       user_expr="1000",    
                                       user_units="",  
@@ -99,7 +99,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
                                       user_int=True )
 
         helptext = "Simulation Time Step\n1e-6 is a common value."
-        self.time_step.init_ref     ( parameter_system, "Time_Step_Type", 
+        self.time_step.init_ref     ( parameter_system,
                                       user_name="Time Step",  
                                       user_expr="1e-6", 
                                       user_units="seconds", 
@@ -110,7 +110,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
                    "if it seems safe. This command makes sure that the longest possible\n" + \
                    "time step is no longer than this value (in seconds), even if MCell3\n" + \
                    "thinks a longer step would be safe. The default is no limit."
-        self.time_step_max.init_ref ( parameter_system, "Time_Step_Max_Type", 
+        self.time_step_max.init_ref ( parameter_system,
                                       user_name="Maximum Time Step", 
                                       user_expr="", 
                                       user_units="seconds", 
@@ -120,7 +120,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
                    "Have all diffusing molecules take time steps of different duration,\n" + \
                    "chosen so that the mean diffusion distance is N microns for each\n" + \
                    "molecule. By default, all molecules move the same time step."
-        self.space_step.init_ref    ( parameter_system, "Space_Step_Type",    
+        self.space_step.init_ref    ( parameter_system,
                                       user_name="Space Step",    
                                       user_expr="", 
                                       user_units="microns", 
@@ -129,7 +129,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         helptext = "Diffusing Volume Molecules will interact when they get within\n" + \
                    "N microns of each other.\n" + \
                    "The default is:  1 / sqrt(Pi * SurfaceGridDensity)"
-        self.interaction_radius.init_ref ( parameter_system, "Int_Rad_Type", 
+        self.interaction_radius.init_ref ( parameter_system,
                                            user_name="Interaction Radius", 
                                            user_expr="", user_units="microns", 
                                            user_descr=helptext )
@@ -138,14 +138,14 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
                    "The default is sensible. Don’t use this unless you know what you’re doing." + \
                    "Instead of a number, you can specify FULLY_RANDOM in MDL to generate the" + \
                    "directions directly from double precision numbers (but this is slower)."
-        self.radial_directions.init_ref   ( parameter_system, "Rad_Dir_Type", 
+        self.radial_directions.init_ref   ( parameter_system,
                                             user_name="Radial Directions",   
                                             user_expr="", user_units="microns", 
                                             user_descr=helptext )
        
         helptext = "Specifies how many distances to put in the diffusion look-up table.\n" + \
                    "The default is sensible. FULLY_RANDOM is not implemented."
-        self.radial_subdivisions.init_ref ( parameter_system, "Rad_Sub_Type", 
+        self.radial_subdivisions.init_ref ( parameter_system,
                                             user_name="Radial Subdivisions", 
                                             user_expr="", 
                                             user_descr=helptext )
@@ -161,7 +161,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
                    "place its products within a radius r, and will place those products\n" + \
                    "as close as possible to the place where the reaction occurs\n" + \
                    "(deterministically, so small- scale directional bias is possible)."
-        self.vacancy_search_distance.init_ref ( parameter_system, "Vac_SD_Type", 
+        self.vacancy_search_distance.init_ref ( parameter_system,
                                                 user_name="Vacancy Search Distance", 
                                                 user_expr="", 
                                                 user_units="microns", 
@@ -171,7 +171,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
                    "Tile all surfaces so that they can hold molecules at N different\n" + \
                    "positions per square micron. The default is 10000. For backwards\n" + \
                    "compatibility, EFFECTOR_GRID_DENSITY works also in MCell MDL."
-        self.surface_grid_density.init_ref ( parameter_system, "Int_Rad_Type", 
+        self.surface_grid_density.init_ref ( parameter_system,
                                              user_name="Surface Grid Density", 
                                              user_expr="10000", 
                                              user_units="count / sq micron", 

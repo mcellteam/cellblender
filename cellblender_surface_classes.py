@@ -351,7 +351,7 @@ class MCellSurfaceClassPropertiesProperty(bpy.types.PropertyGroup):
         self.surf_class_orient = ';'
         self.surf_class_type = 'TRANSPARENT'
         helptext = "Clamp the Concentration of this molecule to this value on this surface."
-        self.clamp_value.init_ref ( parameter_system, "Surf_Class_Val_Type", user_name="Value", user_expr="0", user_units="Concentration Units: Molar", user_descr=helptext )
+        self.clamp_value.init_ref ( parameter_system, user_name="Value", user_expr="0", user_units="Concentration Units: Molar", user_descr=helptext )
 
     def remove_properties ( self, context ):
         print ( "Removing all Surface Class Properties... no collections to remove." )

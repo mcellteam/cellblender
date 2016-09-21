@@ -364,7 +364,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
                    "  [1/(M * s)] for bimolecular reactions between either\n" + \
                    "      two volume molecules or a volume molecule and a surface molecule,\n" + \
                    "  [um^2 / (N * s)] for bimolecular reactions between two surface molecules."
-        self.fwd_rate.init_ref   ( parameter_system, "FW_Rate_Type", user_name="Forward Rate",  user_expr="0", user_units="", user_descr=helptext )
+        self.fwd_rate.init_ref   ( parameter_system, user_name="Forward Rate",  user_expr="0", user_units="", user_descr=helptext )
 
         helptext = "Backward Rate\n" + \
                   "The units for the reaction rate for uni- and bimolecular reactions is:\n" + \
@@ -372,7 +372,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
                   "  [1/(M * s)] for bimolecular reactions between either\n" + \
                   "      two volume molecules or a volume molecule and a surface molecule,\n" + \
                   "  [um^2 / (N * s)] for bimolecular reactions between two surface molecules."
-        self.bkwd_rate.init_ref  ( parameter_system, "BW_Rate_Type", user_name="Backward Rate", user_expr="",  user_units="s", user_descr=helptext )
+        self.bkwd_rate.init_ref  ( parameter_system, user_name="Backward Rate", user_expr="",  user_units="s", user_descr=helptext )
 
 
     def remove_properties ( self, context ):

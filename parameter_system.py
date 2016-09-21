@@ -697,16 +697,12 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
     #######################################################################
     #  This is the function that actually creates the data associated with
     #    a panel parameter.
-    #  The "type_name" was used in the past, and it is being preserved
-    #    temporarily since it's used throughout CellBlender. Removing it
-    #    prior to merging with the development branch will only cause
-    #    additional headache at this time.
     #  The "user_int" parameter will probably change to "user_type" when we
     #    add string parameters giving: 'f', 'i', 's'.
     #######################################################################
 
     @profile('Parameter_Reference.init_ref')
-    def init_ref ( self, parameter_system, type_name, user_name=None, user_expr="0", user_descr="Panel Parameter", user_units="", user_int=False ):
+    def init_ref ( self, parameter_system, user_name=None, user_expr="0", user_descr="Panel Parameter", user_units="", user_int=False ):
 
         parameter_system.init_parameter_system()  # Do this in case it isn't already initialized
 

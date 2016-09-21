@@ -1350,12 +1350,12 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         helptext = "Start Seed\n" + \
                    "The first seed used in running a series of simulations.\n" + \
                    "The number of simulations depends on the start and end seeds."
-        self.start_seed.init_ref   ( parameter_system, "Sim_Start_Seed_Type", user_name="Start Seed",   user_expr="1", user_units="", user_descr=helptext )
+        self.start_seed.init_ref   ( parameter_system, user_name="Start Seed",   user_expr="1", user_units="", user_descr=helptext )
 
         helptext = "End Seed\n" + \
                    "The last seed used in running a series of simulations.\n" + \
                    "The number of simulations depends on the start and end seeds."
-        self.end_seed.init_ref   ( parameter_system, "Sim_End_Seed_Type", user_name="End Seed",   user_expr="1", user_units="", user_descr=helptext )
+        self.end_seed.init_ref   ( parameter_system, user_name="End Seed",   user_expr="1", user_units="", user_descr=helptext )
 
 
 

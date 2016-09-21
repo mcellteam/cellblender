@@ -498,21 +498,21 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                    "This molecule diffuses in space with 3D diffusion constant for volume molecules.\n" + \
                    "This molecule diffuses on a surface with 2D diffusion constant for surface molecules.\n" + \
                    "The Diffusion Constant can be zero, in which case the molecule doesn’t move."
-        self.diffusion_constant.init_ref   ( parameter_system, "Mol_Diff_Const_Type", user_name="Diffusion Constant",   user_expr="0", user_units="cm^2/sec", user_descr=helptext )
+        self.diffusion_constant.init_ref   ( parameter_system, user_name="Diffusion Constant",   user_expr="0", user_units="cm^2/sec", user_descr=helptext )
 
         helptext = "Molecule Custom Time Step\n" + \
                    "This molecule should take timesteps of this length (in seconds).\n" + \
                    "Use either this or CUSTOM_SPACE_STEP, not both."
-        self.custom_time_step.init_ref     ( parameter_system, "Mol_Time_Step_Type",  user_name="Custom Time Step",     user_expr="",  user_units="seconds",  user_descr=helptext )
+        self.custom_time_step.init_ref     ( parameter_system, user_name="Custom Time Step",     user_expr="",  user_units="seconds",  user_descr=helptext )
 
         helptext = "Molecule Custom Space Step\n" + \
                    "This molecule should take steps of this average length (in microns).\n" + \
                    "If you use this directive, do not set CUSTOM_TIME_STEP.\n" + \
                    "Providing a CUSTOM_SPACE_STEP for a molecule overrides a potentially\n" + \
                    "present global SPACE_STEP for this particular molecule."
-        self.custom_space_step.init_ref    ( parameter_system, "Mol_Space_Step_Type", user_name="Custom Space Step",    user_expr="",  user_units="microns",  user_descr=helptext )
+        self.custom_space_step.init_ref    ( parameter_system, user_name="Custom Space Step",    user_expr="",  user_units="microns",  user_descr=helptext )
         self.create_mol_data() #(context)
-        # TODO: Add after data model release:  self.maximum_step_length.init_ref  ( parameter_system, "Max_Step_Len_Type",   user_name="Maximum Step Length",  user_expr="",  user_units="microns",  user_descr="Molecule should never step farther than this length during a single timestep. Use with caution (see documentation)." )
+        # TODO: Add after data model release:  self.maximum_step_length.init_ref  ( parameter_system, user_name="Maximum Step Length",  user_expr="",  user_units="microns",  user_descr="Molecule should never step farther than this length during a single timestep. Use with caution (see documentation)." )
 
 
     def remove_properties ( self, context ):

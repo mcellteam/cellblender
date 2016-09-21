@@ -676,11 +676,11 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
 
     def init_properties ( self, parameter_system ):
         self.rxn_step.init_ref (
-            parameter_system, "Rxn_Output_Step", user_name="Step", 
+            parameter_system, user_name="Step", 
             user_expr="", user_units="", user_descr="Step\n"
             "Output reaction data every t seconds.\nUses simulation time step when blank.") 
         self.output_buf_size.init_ref (
-            parameter_system, "Rxn_Output_Buf_Size", user_name="OutputBufSize", 
+            parameter_system, user_name="OutputBufSize", 
             user_expr="", user_units="", user_descr="OutputBufSize\n"
             "Write output to disk after every N lines. Default is N=10000.") 
 

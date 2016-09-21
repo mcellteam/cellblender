@@ -460,11 +460,11 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         self.orient = '\''
         self.object_expr = ""
        
-        self.location_x.init_ref  ( parameter_system, "Rel_Loc_Type_X",  user_name="Release Location X",  user_expr="0", user_units="", user_descr="The center of the release site's X coordinate.\nOnly used for geometrical shapes." )
-        self.location_y.init_ref  ( parameter_system, "Rel_Loc_Type_Y",  user_name="Release Location Y",  user_expr="0", user_units="", user_descr="The center of the release site's Y coordinate\nOnly used for geometrical shapes." )
-        self.location_z.init_ref  ( parameter_system, "Rel_Loc_Type_Z",  user_name="Release Location Z",  user_expr="0", user_units="", user_descr="The center of the release site's Z coordinate\nOnly used for geometrical shapes." )
-        self.diameter.init_ref    ( parameter_system, "Diam_Type",       user_name="Site Diameter",       user_expr="0", user_units="", user_descr="Release molecules uniformly within a diameter d.\nNot used for releases on regions." )
-        self.probability.init_ref ( parameter_system, "Rel_Prob_Type",   user_name="Release Probability", user_expr="1", user_units="", user_descr="This release does not have to occur every time, but rather with probability p.\nEither the whole release occurs or none of it does;\nthe probability does not apply molecule-by-molecule.\np must be in the interval [0;1]." )
+        self.location_x.init_ref  ( parameter_system,  user_name="Release Location X",  user_expr="0", user_units="", user_descr="The center of the release site's X coordinate.\nOnly used for geometrical shapes." )
+        self.location_y.init_ref  ( parameter_system,  user_name="Release Location Y",  user_expr="0", user_units="", user_descr="The center of the release site's Y coordinate\nOnly used for geometrical shapes." )
+        self.location_z.init_ref  ( parameter_system,  user_name="Release Location Z",  user_expr="0", user_units="", user_descr="The center of the release site's Z coordinate\nOnly used for geometrical shapes." )
+        self.diameter.init_ref    ( parameter_system,  user_name="Site Diameter",       user_expr="0", user_units="", user_descr="Release molecules uniformly within a diameter d.\nNot used for releases on regions." )
+        self.probability.init_ref ( parameter_system,  user_name="Release Probability", user_expr="1", user_units="", user_descr="This release does not have to occur every time, but rather with probability p.\nEither the whole release occurs or none of it does;\nthe probability does not apply molecule-by-molecule.\np must be in the interval [0;1]." )
 
         helptext = "Quantity of Molecules to release at this site." + \
                 "\n" + \
@@ -484,10 +484,10 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
                 "  Release molecules at concentration c molar for volumes and d\n" + \
                 "  molecules per square micron for surfaces. Neither can be used\n" + \
                 "  for the LIST shape; DENSITY is only valid for regions."
-        self.quantity.init_ref    ( parameter_system, "Rel_Quant_Type",  user_name="Quantity to Release", user_expr="",  user_units="", user_descr=helptext )
+        self.quantity.init_ref    ( parameter_system,  user_name="Quantity to Release", user_expr="",  user_units="", user_descr=helptext )
 
         helptext = "Standard Deviation of number to release\nwhen Quantity Type is Gaussian Number"
-        self.stddev.init_ref      ( parameter_system, "Rel_StdDev_Type", user_name="Standard Deviation",  user_expr="0", user_units="", user_descr=helptext )
+        self.stddev.init_ref      ( parameter_system, user_name="Standard Deviation",  user_expr="0", user_units="", user_descr=helptext )
 
     def remove_properties ( self, context ):
         print ( "Removing all Molecule Release Site Properties... " )
@@ -1004,11 +1004,11 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
     def init_properties ( self, parameter_system ):
         self.name = "Release_Pattern"
         helptext = ""
-        self.delay.init_ref            ( parameter_system, "Rel_Delay_Type", user_name="Release Pattern Delay", user_expr="0",     user_units="s", user_descr="The time at which the release pattern will start.\nDefault is at time zero." )
-        self.release_interval.init_ref ( parameter_system, "Rel_Int_Type",   user_name="Relese Interval",       user_expr="",      user_units="s", user_descr="During a train of releases, release molecules after every t seconds.\nDefault is release only once (t is infinite)." )
-        self.train_duration.init_ref   ( parameter_system, "Tr_Dur_Type",    user_name="Train Duration",        user_expr="",      user_units="s", user_descr="The duration of the train before turning off.\nDefault is to never turn off." )
-        self.train_interval.init_ref   ( parameter_system, "Tr_Int_Type",    user_name="Train Interval",        user_expr="",      user_units="s", user_descr="A new train happens every interval.\nDefault is no new trains.\nThe train interval must not be shorter than the train duration." )
-        self.number_of_trains.init_ref ( parameter_system, "NTrains_Type",   user_name="Number of Trains",      user_expr="1",     user_units="",  user_descr="Repeat the release process for this number of trains of releases.\nDefault is one train.", user_int=True )
+        self.delay.init_ref            ( parameter_system,  user_name="Release Pattern Delay", user_expr="0",     user_units="s", user_descr="The time at which the release pattern will start.\nDefault is at time zero." )
+        self.release_interval.init_ref ( parameter_system,  user_name="Relese Interval",       user_expr="",      user_units="s", user_descr="During a train of releases, release molecules after every t seconds.\nDefault is release only once (t is infinite)." )
+        self.train_duration.init_ref   ( parameter_system,  user_name="Train Duration",        user_expr="",      user_units="s", user_descr="The duration of the train before turning off.\nDefault is to never turn off." )
+        self.train_interval.init_ref   ( parameter_system,  user_name="Train Interval",        user_expr="",      user_units="s", user_descr="A new train happens every interval.\nDefault is no new trains.\nThe train interval must not be shorter than the train duration." )
+        self.number_of_trains.init_ref ( parameter_system,  user_name="Number of Trains",      user_expr="1",     user_units="",  user_descr="Repeat the release process for this number of trains of releases.\nDefault is one train.", user_int=True )
 
     def remove_properties ( self, context ):
         print ( "Removing all Release Pattern Properties... no collections to remove." )
