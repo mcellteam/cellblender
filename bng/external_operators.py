@@ -46,16 +46,16 @@ class EXTERNAL_OT_parameter_add(bpy.types.Operator):
         #jfile = json.load(filePointer) 
         jfile = accessFile(filePath,self)       
         par_list = jfile['par_list']
-        index = -1
+
+        cell_par_list = []
         for key in par_list:
-            index += 1
-
-            par_name = str(key['name'])
-            par_value = str(key['value'])
-            par_unit = str(key['unit'])
-            par_type = str(key['type'])
-
-            mcell.parameter_system.add_general_parameter_with_values( par_name, par_value, par_unit, par_type )
+            local_par = {}
+            local_par["par_name"] = str(key['name'])
+            local_par["par_expression"] = str(key['value'])
+            local_par["par_units"] = str(key['unit'])
+            local_par["par_description"] = str(key['type'])
+            cell_par_list.append(local_par)
+        mcell.parameter_system.add_general_parameters_from_list(context, cell_par_list)
             #print ( "Adding parameter \"" + str(par_name) + "\"  =  \"" + str(par_value) + "\"  (" + str(par_unit) + ")" )
  
         return {'FINISHED'}
