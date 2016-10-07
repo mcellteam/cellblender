@@ -713,14 +713,42 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
         if user_int:
             t = 'i'
 
-        new_pid = parameter_system.allocate_available_pid()
-        new_pid_key = 'p'+str(new_pid)
+        # Check to see if it already exists ...
 
-        # Add special information for panel parameters:
+        new_pid_key = None
+
+        if len(self.unique_static_name) <= 0:
+
+            # This parameter reference needs a unique name, so create it
+
+            new_pid = parameter_system.allocate_available_pid()
+            new_pid_key = 'p'+str(new_pid)
+
+        else:
+
+            # This parameter reference already has a unique name, so use it
+
+            new_pid_key = self.unique_static_name
 
         self.unique_static_name = new_pid_key
 
-        new_rna_par = parameter_system.panel_parameter_list.add()
+        # Add special information for panel parameters:
+
+        ppl = parameter_system.panel_parameter_list
+
+        # Check to see if this parameter is already in the RNA panel parameters list
+        new_rna_par = None
+        i = ppl.find(self.unique_static_name)
+
+        if i < 0:
+            # There is no RNA parameter with this ID so add it
+            new_rna_par = ppl.add()
+        else:
+            # There already is an RNA parameter with this ID so use it
+            new_rna_par = ppl[i]
+
+        # Now set everything as requested by the function call (some are RNA properties, others are ID properties)
+
         new_rna_par.name = new_pid_key
         new_rna_par.expr = user_expr   # This should trigger an evaluation of the expression into an expression list
 
