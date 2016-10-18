@@ -43,8 +43,18 @@ def unpickle_data_model ( dmp ):
 
 def read_data_model ( file_name ):
     """ Return a data model read from a named file """
-    if (file_name[-5:].lower() == '.json'):
-        # Assume this is a JSON format file
+    # Start by determining if this is a JSON file or not
+    is_json = False
+    f = open ( file_name, 'r' )
+    header = f.read(20)
+    if '"mcell":' in header:
+      is_json = True
+    elif "'mcell':" in header:
+      is_json = True
+    f.close()
+    # Open as appropriate
+    if is_json:
+        # Open as a JSON format file
         print ( "Opening a JSON file" )
         f = open ( file_name, 'r' )
         print ( "Reading a JSON file" )
@@ -53,7 +63,7 @@ def read_data_model ( file_name ):
         data_model = json.loads ( json_model )
         print ( "Done loading a JSON file" )
     else:
-        # Assume this is a pickled format file
+        # Open as a pickled format file
         print ( "Opening a Pickle file" )
         f = open ( file_name, 'r' )
         pickled_model = f.read()
