@@ -29,6 +29,7 @@ data model and provide the most current to this function.
 
 import pickle
 import sys
+import json
 
 #### Helper Functions ####
 
@@ -42,10 +43,46 @@ def unpickle_data_model ( dmp ):
 
 def read_data_model ( file_name ):
     """ Return a data model read from a named file """
-    f = open ( file_name, 'r' )
-    pickled_model = f.read()
-    data_model = unpickle_data_model ( pickled_model )
+    if (file_name[-5:].lower() == '.json'):
+        # Assume this is a JSON format file
+        print ( "Opening a JSON file" )
+        f = open ( file_name, 'r' )
+        print ( "Reading a JSON file" )
+        json_model = f.read()
+        print ( "Loading a JSON file" )
+        data_model = json.loads ( json_model )
+        print ( "Done loading a JSON file" )
+    else:
+        # Assume this is a pickled format file
+        print ( "Opening a Pickle file" )
+        f = open ( file_name, 'r' )
+        pickled_model = f.read()
+        data_model = unpickle_data_model ( pickled_model )
+    print ( "Returning a data model" )
     return data_model
+
+dump_depth = 0;
+def dump_data_model ( name, dm ):
+    if type(dm) == type({'a':1}):  #dm is a dictionary
+        print ( str(dump_depth*"  ") + name + " {}" )
+        dump_depth += 1
+        for k,v in sorted(dm.items()):
+            dump_data_model ( k, v )
+        dump_depth += -1
+    elif type(dm) == type(['a',1]):  #dm is a list
+        print ( str(dump_depth*"  ") + name + " []" )
+        dump_depth += 1
+        i = 0
+        for v in dm:
+            k = name + "["+str(i)+"]"
+            dump_data_model ( k, v )
+            i += 1
+        dump_depth += -1
+    elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
+        print ( str(dump_depth*"  ") + name + " = " + "\"" + str(dm) + "\"" )
+    else:
+        print ( str(dump_depth*"  ") + name + " = " + str(dm) )
+
 
 def write_dm_str_val ( dm, f, dm_name, mdl_name, blank_default="", indent="" ):
     if dm_name in dm:
@@ -148,6 +185,13 @@ def write_mdl ( dm, file_name ):
           mols = mcell['define_molecules']
         write_viz_out ( vizout, mols, f )
 
+      if 'reaction_data_output' in mcell:
+        reactout = mcell['reaction_data_output']
+        mols = None
+        if ('define_molecules' in mcell):
+          mols = mcell['define_molecules']
+        write_react_out ( reactout, mols, f )
+
     f.close()
 
 
@@ -156,11 +200,21 @@ def write_parameter_system ( ps, f ):
       mplist = ps['model_parameters']
       if len(mplist) > 0:
         f.write ( "/* DEFINE PARAMETERS */\n" );
+
         for p in mplist:
+
+          # Write the name = val portion of the definition
           if True:
-            f.write ( p['par_name'] + " = " +              p['par_expression'] + "    /* " + p['par_description'] + " " + p['par_units'] + " */\n" )
+            f.write ( p['par_name'] + " = " +              p['par_expression'] )
           else:
-            f.write ( p['par_name'] + " = " + "%.g"%(p['extras']['par_value']) + "    /* " + p['par_description'] + " " + p['par_units'] + " */\n" )
+            f.write ( p['par_name'] + " = " + "%.15g"%(p['extras']['par_value']) )
+
+          # Write the optional description and units in a comment (if non empty)
+          if (len(p['par_description']) > 0) or (len(p['par_units']) > 0):
+            f.write ( "    /* " + p['par_description'] + " " + p['par_units'] + " */\n" )
+          else:
+            f.write ( "\n" )
+            
         f.write ( "\n" );
 
 
@@ -525,6 +579,71 @@ def write_viz_out ( vizout, mols, f ):
       f.write ( "\n" );
 
 
+def write_react_out ( rout, mols, f ):
+
+    context_scene_name = "Scene"
+
+    f.write("REACTION_DATA_OUTPUT\n{\n")
+
+    if "output_buf_size" in rout:
+      if len(rout["output_buf_size"].strip()) > 0:
+        f.write("  OUTPUT_BUFFER_SIZE=%s\n" % (rout['output_buf_size']))
+
+    if "rxn_step" in rout:
+      if len(rout["rxn_step"]) > 0:
+        f.write("  STEP=%s\n" % (rout['rxn_step']))
+
+    always_generate = False
+    if "always_generate" in rout:
+      always_generate = rout["always_generate"]
+    if "reaction_output_list" in rout:
+      count_name = ""
+      for rxn_output in rout["reaction_output_list"]:
+        plotting_enabled = True
+        if "plotting_enabled" in rxn_output:
+          plotting_enabled = rxn_output["plotting_enabled"]
+        if always_generate or plotting_enabled:
+          if "rxn_or_mol" in rxn_output:
+            rxn_or_mol = rxn_output["rxn_or_mol"]
+            if rxn_or_mol == 'Reaction':
+                count_name = rxn_output["reaction_name"]
+            elif rxn_or_mol == 'Molecule':
+                count_name = rxn_output["molecule_name"]
+            elif rxn_or_mol == 'MDLString':
+                outputStr = rxn_output["mdl_string"]
+                output_file = rxn_output["mdl_file_prefix"]
+                if outputStr not in ['', None]:
+                    outputStr = '  {%s} =>  "./react_data/seed_" & seed & \"/%s_MDLString.dat\"\n' % (outputStr, output_file)
+                    f.write(outputStr)
+                else:
+                    print('Found invalid reaction output {0}'.format(rxn_output["name"]))
+                continue  ####   <=====-----  C O N T I N U E     H E R E  !!!!!
+            elif rxn_or_mol == 'File':
+                # No MDL is generated for plot items that are plain files
+                continue  ####   <=====-----  C O N T I N U E     H E R E  !!!!!
+
+            object_name = rxn_output["object_name"]
+            region_name = rxn_output["region_name"]
+            if rxn_output["count_location"] == 'World':
+                f.write(
+                    "  {COUNT[%s,WORLD]}=> \"./react_data/seed_\" & seed & "
+                    "\"/%s.World.dat\"\n" % (count_name, count_name,))
+            elif rxn_output["count_location"] == 'Object':
+                f.write(
+                    "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
+                    "\"/%s.%s.dat\"\n" % (count_name, context_scene_name,
+                                          object_name, count_name, object_name))
+            elif rxn_output["count_location"] == 'Region':
+                f.write(
+                    "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
+                    "\"/%s.%s.%s.dat\"\n" % (count_name, context_scene_name,
+                    object_name, region_name, count_name, object_name, region_name))
+    
+
+    f.write ( "}\n" )
+    f.write ( "\n" );
+
+
 data_model_depth = 0
 def dump_data_model ( dm ):
     global data_model_depth
@@ -550,10 +669,12 @@ def dump_data_model ( dm ):
 
 if len(sys.argv) > 2:
     print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] )
+    print ( "Reading Data Model: " + sys.argv[1] )
     dm = read_data_model ( sys.argv[1] )
     # dump_data_model ( dm )
+    print ( "Writing MDL: " + sys.argv[2] )
     write_mdl ( dm, sys.argv[2] )
-    print ( "Wrote Data Model found in \"" + sys.argv[1] + " to MDL file " + sys.argv[2] )
+    print ( "Wrote Data Model found in \"" + sys.argv[1] + "\" to MDL file \"" + sys.argv[2] + "\"" )
     # Drop into an interactive python session
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
