@@ -2330,7 +2330,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             row.prop(self, "param_label_fraction", text="Parameter Label Fraction")
 
             row = box.row()
-            row.prop(self, "export_as_expressions", text="Export Parameters as Expressions (experimental)")
+            row.prop(self, "export_as_expressions", text="Export Parameters as Expressions")
 
 
             if not self.show_debugging:
