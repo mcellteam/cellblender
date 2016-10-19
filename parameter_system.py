@@ -1084,7 +1084,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     param_display_format = StringProperty ( default='%.6g', description="Formatting string for each parameter" )
     param_label_fraction = FloatProperty(precision=4, min=0.0, max=1.0, default=0.35, description="Width (0 to 1) of parameter's label")
 
-    export_as_expressions = BoolProperty ( default=False, description="Export Parameters as Expressions rather than Numbers" )
+    export_as_expressions = BoolProperty ( default=True, description="Export Parameters as Expressions rather than Numbers" )
 
     # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
     last_parameter_update_time = StringProperty ( default="-1.0", description="Time that the last parameter was updated" )
