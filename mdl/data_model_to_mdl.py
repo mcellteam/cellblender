@@ -200,7 +200,12 @@ def write_mdl ( dm, file_name ):
         mols = None
         if ('define_molecules' in mcell):
           mols = mcell['define_molecules']
-        write_react_out ( reactout, mols, f )
+        time_step = ""
+        if 'initialization' in mcell:
+          init = mcell['initialization']
+          if "time_step" in init:
+            time_step = init['time_step']
+        write_react_out ( reactout, mols, time_step, f )
 
     f.close()
 
@@ -589,11 +594,12 @@ def write_viz_out ( vizout, mols, f ):
       f.write ( "\n" );
 
 
-def write_react_out ( rout, mols, f ):
+def write_react_out ( rout, mols, time_step, f ):
 
     context_scene_name = "Scene"
 
     f.write("REACTION_DATA_OUTPUT\n{\n")
+    f.write("  STEP=%s\n" % time_step)
 
     if "output_buf_size" in rout:
       if len(rout["output_buf_size"].strip()) > 0:
