@@ -599,7 +599,6 @@ def write_react_out ( rout, mols, time_step, f ):
     context_scene_name = "Scene"
 
     f.write("REACTION_DATA_OUTPUT\n{\n")
-    f.write("  STEP=%s\n" % time_step)
 
     if "output_buf_size" in rout:
       if len(rout["output_buf_size"].strip()) > 0:
@@ -608,6 +607,10 @@ def write_react_out ( rout, mols, time_step, f ):
     if "rxn_step" in rout:
       if len(rout["rxn_step"]) > 0:
         f.write("  STEP=%s\n" % (rout['rxn_step']))
+      else:
+        f.write("  STEP=%s\n" % time_step)
+    else:
+      f.write("  STEP=%s\n" % time_step)
 
     always_generate = False
     if "always_generate" in rout:
