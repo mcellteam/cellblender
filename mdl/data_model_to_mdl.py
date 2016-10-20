@@ -548,11 +548,11 @@ def write_release_patterns ( pats, f ):
         for p in plist:
           f.write ( "DEFINE_RELEASE_PATTERN %s\n" % (p['name']) )
           f.write ( "{\n" )
-          f.write ( "  DELAY = %s\n" % (p['delay']) )
-          f.write ( "  RELEASE_INTERVAL = %s\n" % (p['release_interval']) )
-          f.write ( "  TRAIN_DURATION = %s\n" % (p['train_duration']) )
-          f.write ( "  TRAIN_INTERVAL = %s\n" % (p['train_interval']) )
-          f.write ( "  NUMBER_OF_TRAINS = %s\n" % (p['number_of_trains']) )
+          if ('delay' in p) and (len(p['delay']) > 0): f.write ( "  DELAY = %s\n" % (p['delay']) )
+          if ('release_interval' in p) and (len(p['release_interval']) > 0): f.write ( "  RELEASE_INTERVAL = %s\n" % (p['release_interval']) )
+          if ('train_duration' in p) and (len(p['train_duration']) > 0): f.write ( "  TRAIN_DURATION = %s\n" % (p['train_duration']) )
+          if ('train_interval' in p) and (len(p['train_interval']) > 0): f.write ( "  TRAIN_INTERVAL = %s\n" % (p['train_interval']) )
+          if ('number_of_trains' in p) and (len(p['number_of_trains']) > 0): f.write ( "  NUMBER_OF_TRAINS = %s\n" % (p['number_of_trains']) )
           f.write ( "}\n" )
           f.write("\n")
 
@@ -596,71 +596,72 @@ def write_viz_out ( vizout, mols, f ):
 
 def write_react_out ( rout, mols, time_step, f ):
 
-    context_scene_name = "Scene"
+    if ("reaction_output_list" in rout) and (len(rout["reaction_output_list"]) > 0):
+        context_scene_name = "Scene"
 
-    f.write("REACTION_DATA_OUTPUT\n{\n")
+        f.write("REACTION_DATA_OUTPUT\n{\n")
 
-    if "output_buf_size" in rout:
-      if len(rout["output_buf_size"].strip()) > 0:
-        f.write("  OUTPUT_BUFFER_SIZE=%s\n" % (rout['output_buf_size']))
+        if "output_buf_size" in rout:
+          if len(rout["output_buf_size"].strip()) > 0:
+            f.write("  OUTPUT_BUFFER_SIZE=%s\n" % (rout['output_buf_size']))
 
-    if "rxn_step" in rout:
-      if len(rout["rxn_step"]) > 0:
-        f.write("  STEP=%s\n" % (rout['rxn_step']))
-      else:
-        f.write("  STEP=%s\n" % time_step)
-    else:
-      f.write("  STEP=%s\n" % time_step)
+        if "rxn_step" in rout:
+          if len(rout["rxn_step"]) > 0:
+            f.write("  STEP=%s\n" % (rout['rxn_step']))
+          else:
+            f.write("  STEP=%s\n" % time_step)
+        else:
+          f.write("  STEP=%s\n" % time_step)
 
-    always_generate = False
-    if "always_generate" in rout:
-      always_generate = rout["always_generate"]
-    if "reaction_output_list" in rout:
-      count_name = ""
-      for rxn_output in rout["reaction_output_list"]:
-        plotting_enabled = True
-        if "plotting_enabled" in rxn_output:
-          plotting_enabled = rxn_output["plotting_enabled"]
-        if always_generate or plotting_enabled:
-          if "rxn_or_mol" in rxn_output:
-            rxn_or_mol = rxn_output["rxn_or_mol"]
-            if rxn_or_mol == 'Reaction':
-                count_name = rxn_output["reaction_name"]
-            elif rxn_or_mol == 'Molecule':
-                count_name = rxn_output["molecule_name"]
-            elif rxn_or_mol == 'MDLString':
-                outputStr = rxn_output["mdl_string"]
-                output_file = rxn_output["mdl_file_prefix"]
-                if outputStr not in ['', None]:
-                    outputStr = '  {%s} =>  "./react_data/seed_" & seed & \"/%s_MDLString.dat\"\n' % (outputStr, output_file)
-                    f.write(outputStr)
-                else:
-                    print('Found invalid reaction output {0}'.format(rxn_output["name"]))
-                continue  ####   <=====-----  C O N T I N U E     H E R E  !!!!!
-            elif rxn_or_mol == 'File':
-                # No MDL is generated for plot items that are plain files
-                continue  ####   <=====-----  C O N T I N U E     H E R E  !!!!!
+        always_generate = False
+        if "always_generate" in rout:
+          always_generate = rout["always_generate"]
+        if "reaction_output_list" in rout:
+          count_name = ""
+          for rxn_output in rout["reaction_output_list"]:
+            plotting_enabled = True
+            if "plotting_enabled" in rxn_output:
+              plotting_enabled = rxn_output["plotting_enabled"]
+            if always_generate or plotting_enabled:
+              if "rxn_or_mol" in rxn_output:
+                rxn_or_mol = rxn_output["rxn_or_mol"]
+                if rxn_or_mol == 'Reaction':
+                    count_name = rxn_output["reaction_name"]
+                elif rxn_or_mol == 'Molecule':
+                    count_name = rxn_output["molecule_name"]
+                elif rxn_or_mol == 'MDLString':
+                    outputStr = rxn_output["mdl_string"]
+                    output_file = rxn_output["mdl_file_prefix"]
+                    if outputStr not in ['', None]:
+                        outputStr = '  {%s} =>  "./react_data/seed_" & seed & \"/%s_MDLString.dat\"\n' % (outputStr, output_file)
+                        f.write(outputStr)
+                    else:
+                        print('Found invalid reaction output {0}'.format(rxn_output["name"]))
+                    continue  ####   <=====-----  C O N T I N U E     H E R E  !!!!!
+                elif rxn_or_mol == 'File':
+                    # No MDL is generated for plot items that are plain files
+                    continue  ####   <=====-----  C O N T I N U E     H E R E  !!!!!
 
-            object_name = rxn_output["object_name"]
-            region_name = rxn_output["region_name"]
-            if rxn_output["count_location"] == 'World':
-                f.write(
-                    "  {COUNT[%s,WORLD]}=> \"./react_data/seed_\" & seed & "
-                    "\"/%s.World.dat\"\n" % (count_name, count_name,))
-            elif rxn_output["count_location"] == 'Object':
-                f.write(
-                    "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
-                    "\"/%s.%s.dat\"\n" % (count_name, context_scene_name,
-                                          object_name, count_name, object_name))
-            elif rxn_output["count_location"] == 'Region':
-                f.write(
-                    "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
-                    "\"/%s.%s.%s.dat\"\n" % (count_name, context_scene_name,
-                    object_name, region_name, count_name, object_name, region_name))
-    
+                object_name = rxn_output["object_name"]
+                region_name = rxn_output["region_name"]
+                if rxn_output["count_location"] == 'World':
+                    f.write(
+                        "  {COUNT[%s,WORLD]}=> \"./react_data/seed_\" & seed & "
+                        "\"/%s.World.dat\"\n" % (count_name, count_name,))
+                elif rxn_output["count_location"] == 'Object':
+                    f.write(
+                        "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
+                        "\"/%s.%s.dat\"\n" % (count_name, context_scene_name,
+                                              object_name, count_name, object_name))
+                elif rxn_output["count_location"] == 'Region':
+                    f.write(
+                        "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
+                        "\"/%s.%s.%s.dat\"\n" % (count_name, context_scene_name,
+                        object_name, region_name, count_name, object_name, region_name))
 
-    f.write ( "}\n" )
-    f.write ( "\n" );
+
+        f.write ( "}\n" )
+        f.write ( "\n" );
 
 
 data_model_depth = 0
