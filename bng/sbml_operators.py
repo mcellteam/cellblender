@@ -23,14 +23,8 @@ def execute_sbml2mcell(filepath, context):
     mcell = context.scene.mcell
     python_path = get_python_path(mcell=mcell)
     destpath = os.path.dirname(__file__)
-    # We still have to use the pyinstaller version for windows, since 
-    # the Miniconda version isn't working.
-    if platform.system() == "Windows":
-        subprocess.call([os.path.join(destpath, 'bin', 'sbml2json.exe'),
-                        '-i', filepath])
-    else:
-        subprocess.call([python_path, destpath + '{0}sbml2json.py'.format(
-            os.sep), '-i', filepath])
+    subprocess.call([python_path, destpath + '{0}sbml2json.py'.format(
+        os.sep), '-i', filepath])
     # execute_externally(filepath,context)
     #TODO: If isTransformed is false a window should be shown that the model
     # failed to load
