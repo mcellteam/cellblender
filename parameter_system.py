@@ -993,6 +993,15 @@ def update_parameter_units ( self, context ):
 def update_parameter_desc ( self, context ):
     self.update_parameter_desc ( context, interactive=True )
 
+##@profile('ParameterSystemCallBack.update_sweep_expression')  # profiling callbacks can be problematic
+def update_sweep_expression ( self, context ):
+    self.update_sweep_expression ( context, interactive=True )
+    context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
+
+##@profile('ParameterSystemCallBack.update_sweep_enabled')  # profiling callbacks can be problematic
+def update_sweep_enabled ( self, context ):
+    self.update_sweep_enabled ( context, interactive=True )
+    context.scene.mcell.parameter_system.last_parameter_update_time = str(time.time())
 
 
 #######################################################################
@@ -1060,13 +1069,16 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     # will trigger a callback that moves data from the active ID property into
     # the active RNA property. Changing the other "active_" values will similarly
     # trigger an update that puts the new RNA changes back into the ID properties.
-    active_par_index = IntProperty(default=0,                                                                 update=update_parameter_index) # name="Active Parameter",
-    active_name  = StringProperty(default="Par", description="User name for this parameter (must be unique)", update=update_parameter_name)    # name="Parameter Name",
-    active_elist = StringProperty(default="",    description="Pickled Expression list for this parameter",    update=update_parameter_elist)   # name="Expression List",
+    active_par_index = IntProperty(default=0,                                                                 update=update_parameter_index)  # name="Active Parameter",
+    active_name  = StringProperty(default="Par", description="User name for this parameter (must be unique)", update=update_parameter_name)   # name="Parameter Name",
+    active_elist = StringProperty(default="",    description="Pickled Expression list for this parameter",    update=update_parameter_elist)  # name="Expression List",
     active_expr  = StringProperty(default="0",   description="Expression to be evaluated for this parameter", update=update_parameter_expression) # name="Expression",
     active_units = StringProperty(default="",    description="Units for this parameter",                      update=update_parameter_units)  # name="Units",
     active_desc  = StringProperty(default="",    description="Description of this parameter",                 update=update_parameter_desc)   # name="Description",
+    active_sweep_expr    = StringProperty(default="",   description="Sweep Expression",                       update=update_sweep_expression)
+    active_sweep_enabled = BoolProperty(default=False,  description="Sweep Enabled",                          update=update_sweep_enabled)
     last_selected_id = StringProperty(default="")
+
 
     show_options_panel = BoolProperty(name="Show Options Panel", default=False)
 
@@ -1794,15 +1806,68 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                     print ( "Unexpected error: \"" + str(self.last_selected_id) + "\" not in self['gp_dict']" )
 
 
+    @profile('ParameterSystem.update_sweep_expression')
+    def update_sweep_expression (self, context, interactive=False):
+        """
+        if len(self.active_expr.strip()) <= 0:
+            self.active_expr = "0"
+            return
+        if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
+            needs_update = False
+            try:
+                needs_update = (str(self['gp_dict'][self.last_selected_id]['expr']) != self.active_expr)
+            except:
+                needs_update = True
+            if needs_update:
+                # The expression string actually changed, so really perform the update
+                # dbprint ("Parameter string changed from " + str(self['gp_dict'][self.last_selected_id]['expr']) + " to " + self.active_expr )
+                if self.last_selected_id in self['gp_dict']:
+                    self['gp_dict'][self.last_selected_id]['expr'] = self.active_expr
+                    self.evaluate_active_expression(context)
+                else:
+                    print ( "Unexpected error: last_selected_id \"" + str(self.last_selected_id) + "\" not in self['gp_dict']" )
 
+                self.update_all_parameters ( context, interactive )
+        """
+        pass
+
+    @profile('ParameterSystem.update_sweep_enabled')
+    def update_sweep_enabled (self, context, interactive=False):
+        """
+        if len(self.active_expr.strip()) <= 0:
+            self.active_expr = "0"
+            return
+        if ('gp_dict' in self):   ## and (len(self['gp_dict']) > 0):
+            needs_update = False
+            try:
+                needs_update = (str(self['gp_dict'][self.last_selected_id]['expr']) != self.active_expr)
+            except:
+                needs_update = True
+            if needs_update:
+                # The expression string actually changed, so really perform the update
+                # dbprint ("Parameter string changed from " + str(self['gp_dict'][self.last_selected_id]['expr']) + " to " + self.active_expr )
+                if self.last_selected_id in self['gp_dict']:
+                    self['gp_dict'][self.last_selected_id]['expr'] = self.active_expr
+                    self.evaluate_active_expression(context)
+                else:
+                    print ( "Unexpected error: last_selected_id \"" + str(self.last_selected_id) + "\" not in self['gp_dict']" )
+
+                self.update_all_parameters ( context, interactive )
+        """
+        pass
+
+
+    """
     @profile('ParameterSystem.draw')
     def draw(self, context, layout):
         if len(self.general_parameter_list) > 0:
             layout.prop(self, "active_name", text='Name')
             layout.prop(self, "active_expr", text='Expression')
-            # layout.prop(self, "active_elist")
+            layout.prop(self, "active_sweep_expr", text='Sweep Expression')
+            layout.prop(self, "active_sweep_enabled", text='Sweep Enabled')
             layout.prop(self, "active_units", text='Units')
             layout.prop(self, "active_desc", text='Description')
+    """
 
 
     @profile('ParameterSystem.update_expr_list_by_id')
@@ -2214,6 +2279,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             layout.prop(self, "active_expr", text='Expression')
             layout.prop(self, "active_units", text='Units')
             layout.prop(self, "active_desc", text='Description')
+            layout.prop(self, "active_sweep_expr", text='Sweep Expression')
+            layout.prop(self, "active_sweep_enabled", text='Sweep Enabled')
 
             elist = pickle.loads(self.active_elist.encode('latin1'))
             
