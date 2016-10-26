@@ -511,7 +511,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     if mcell.cellblender_preferences.show_button_num[8]: row.prop ( self, "surf_classes_select", icon='FACESEL_HLT', text="" )
                     if mcell.cellblender_preferences.show_button_num[9]: row.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="" )
                     if mcell.cellblender_preferences.show_button_num[10]: row.prop ( self, "partitions_select", icon='GRID', text="" )
-                    if mcell.cellblender_preferences.show_button_num[11]: row.prop ( self, "graph_select", icon='FCURVE', text="" )
+                    if mcell.cellblender_preferences.show_button_num[11]: row.prop ( self, "graph_select", icon='IPO', text="" )
                     if mcell.cellblender_preferences.show_button_num[12]: row.prop ( self, "viz_select", icon='SEQUENCE', text="" )
                     if mcell.cellblender_preferences.show_button_num[13]: row.prop ( self, "init_select", icon='COLOR_RED', text="" )
 
@@ -620,7 +620,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     bcol = brow.column()
                     bcol.prop ( self, "partitions_select", icon='GRID', text="Partitions" )
                     bcol = brow.column()
-                    bcol.prop ( self, "graph_select", icon='FCURVE', text="Plot Output Settings" )
+                    bcol.prop ( self, "graph_select", icon='IPO', text="Plot Output Settings" )
 
 
                     brow = layout.row()  ##############################################################
@@ -720,7 +720,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                 if self.graph_select:
                     layout.box() # Use as a separator
-                    layout.label ( "Reaction Data Output", icon='FCURVE' )
+                    layout.label ( "Reaction Data Output", icon='IPO' )
                     context.scene.mcell.rxn_output.draw_layout ( context, layout )
 
                 if self.viz_select:

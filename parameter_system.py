@@ -1857,19 +1857,6 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         pass
 
 
-    """
-    @profile('ParameterSystem.draw')
-    def draw(self, context, layout):
-        if len(self.general_parameter_list) > 0:
-            layout.prop(self, "active_name", text='Name')
-            layout.prop(self, "active_expr", text='Expression')
-            layout.prop(self, "active_sweep_expr", text='Sweep Expression')
-            layout.prop(self, "active_sweep_enabled", text='Sweep Enabled')
-            layout.prop(self, "active_units", text='Units')
-            layout.prop(self, "active_desc", text='Description')
-    """
-
-
     @profile('ParameterSystem.update_expr_list_by_id')
     def update_expr_list_by_id ( self, context, gid ):
         if len(self['gp_dict']) > 0:
@@ -2276,11 +2263,15 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             par_name = par_map_item.name
             par_id = par_map_item.par_id
             layout.prop(self, "active_name", text='Name')
-            layout.prop(self, "active_expr", text='Expression')
+            expr_row = layout.row()
+            if self.active_sweep_enabled:
+              layout.prop(self, "active_sweep_expr", text='Sweep Expression')
+              layout.prop(self, "active_sweep_enabled", text='Sweep Enabled')
+            else:
+              layout.prop(self, "active_expr", text='Expression')
+              layout.prop(self, "active_sweep_enabled", text='Sweep Enabled')
             layout.prop(self, "active_units", text='Units')
             layout.prop(self, "active_desc", text='Description')
-            layout.prop(self, "active_sweep_expr", text='Sweep Expression')
-            layout.prop(self, "active_sweep_enabled", text='Sweep Enabled')
 
             elist = pickle.loads(self.active_elist.encode('latin1'))
             
