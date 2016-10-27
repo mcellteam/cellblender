@@ -1146,6 +1146,11 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             par_dict['par_units']       = self['gp_dict'][pkey]['units']
             par_dict['par_description'] = self['gp_dict'][pkey]['desc']
 
+            if 'sweep_expr' in self['gp_dict'][pkey]:
+              par_dict['sweep_expression'] = self['gp_dict'][pkey]['sweep_expr']
+            if 'sweep_enabled' in self['gp_dict'][pkey]:
+              par_dict['sweep_enabled'] = self['gp_dict'][pkey]['sweep_enabled'] != 0
+
             extras_dict = {}
             extras_dict['par_id_name'] = pkey
             extras_dict['par_value'] = 0.0
@@ -1180,6 +1185,11 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             par_dict['par_expression']  = self['gp_dict'][pkey]['expr']
             par_dict['par_units']       = self['gp_dict'][pkey]['units']
             par_dict['par_description'] = self['gp_dict'][pkey]['desc']
+
+            if 'sweep_expr' in self['gp_dict'][pkey]:
+              par_dict['sweep_expression'] = self['gp_dict'][pkey]['sweep_expr']
+            if 'sweep_enabled' in self['gp_dict'][pkey]:
+              par_dict['sweep_enabled'] = (self['gp_dict'][pkey]['sweep_enabled'] != 0)  # Converts Blender ID property (integer) into Python boolean
 
             extras_dict = {}
             extras_dict['par_id_name'] = pkey
@@ -1288,7 +1298,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
 
     @profile('ParameterSystem.new_general_parameter')
-    def new_general_parameter ( self, new_name=None, new_expr=None, new_units=None, new_desc=None, new_type='f' ):
+    def new_general_parameter ( self, new_name=None, new_expr=None, new_units=None, new_desc=None, new_swex=None, new_swen=None, new_type='f' ):
         """ Add a new parameter to the list of parameters, and return its id name (g# or p#) """
         # Create and return a parameter dictionary entry
         # The new name is the user name ... not the id name
@@ -1309,6 +1319,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             'what_depends_on_me': {},   # This ID dictionary acts as a set
             'status': {}                # This ID dictionary acts as a set
             }
+        if not (new_swex is None):
+            new_par_id_dict['sweep_expr'] = new_swex
+        if not (new_swen is None):
+            new_par_id_dict['sweep_enabled'] = new_swen  # Converts boolean to Blender ID integer type on assignment
         return ( new_par_id_dict )
 
 
@@ -1486,8 +1500,13 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             expr = p['par_expression']
             units = ""
             descr = ""
+            swex = None
+            swen = None
             if 'par_units' in p: units = p['par_units']
             if 'par_description' in p: descr = p['par_description']
+
+            if 'sweep_expression' in p: swex = p['sweep_expression']
+            if 'sweep_enabled' in p: swen = p['sweep_enabled']
 
             dbprint ( "Bulk Adding " + name + " = " + expr + " (" + units + ") ... " + descr )
             
@@ -1507,7 +1526,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
             # Create or overwrite this entry
 
-            new_id_par = self.new_general_parameter ( new_name=name, new_expr=expr, new_units=units, new_desc=descr )
+            new_id_par = self.new_general_parameter ( new_name=name, new_expr=expr, new_units=units, new_desc=descr, new_swex=swex, new_swen=swen )
             new_id_par['expr'] = expr
 
             self['gp_dict'][gid] = new_id_par
@@ -1639,9 +1658,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             print ( "============= Updating parameter index for " + str(self.active_name) )
 
             if 'sweep_enabled' in self['gp_dict'][par_id]:
-              if self.active_sweep_enabled != (self['gp_dict'][par_id]['sweep_enabled'] != 0):  # Convert to a boolean
+              if self.active_sweep_enabled != (self['gp_dict'][par_id]['sweep_enabled'] != 0):  # Convert to a boolean??
                 # They differ so update
-                self.active_sweep_enabled = (self['gp_dict'][par_id]['sweep_enabled'] != 0)  # Convert to a boolean
+                self.active_sweep_enabled = (self['gp_dict'][par_id]['sweep_enabled'] != 0)  # Convert to a boolean??
             else:
               if self.active_sweep_enabled:
                 self.active_sweep_enabled = False
