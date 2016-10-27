@@ -515,15 +515,27 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
         par = ps.general_parameter_list[index]
         par_id = par.par_id
         id_par = ps['gp_dict'][par_id]
-        
-        disp = id_par['name'] + " = " + id_par['expr']
-        if 'value' in id_par:
-            disp += " = " + str(id_par['value'])
-        else:
-            disp += " = ??"
+
+        disp = id_par['name'] + " = "
         icon = 'FILE_TICK'
-        if 'status' in ps['gp_dict'][par_id]:
-            status = ps['gp_dict'][par_id]['status']
+
+        is_swept = False
+        if ('sweep_expr' in id_par) and ('sweep_enabled' in id_par):
+          if id_par['sweep_enabled']:
+            is_swept = True
+
+        if is_swept:
+          disp += id_par['sweep_expr']
+          icon = 'FCURVE'
+        else:
+          disp += id_par['expr']
+          if 'value' in id_par:
+              disp += " = " + str(id_par['value'])
+          else:
+              disp += " = ??"
+
+        if 'status' in id_par:
+            status = id_par['status']
             if 'undef' in status:
                 icon='ERROR'
             elif 'loop' in status:
@@ -1627,22 +1639,16 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             print ( "============= Updating parameter index for " + str(self.active_name) )
 
             if 'sweep_enabled' in self['gp_dict'][par_id]:
-              print ( "Setting sweep_enabled to found value of " + str(self['gp_dict'][par_id]['sweep_enabled']) )
               if self.active_sweep_enabled != (self['gp_dict'][par_id]['sweep_enabled'] != 0):  # Convert to a boolean
-                print ( "Setting sweep_enabled to changed value of " + str(self['gp_dict'][par_id]['sweep_enabled']) )
                 # They differ so update
                 self.active_sweep_enabled = (self['gp_dict'][par_id]['sweep_enabled'] != 0)  # Convert to a boolean
             else:
-              print ( "Setting sweep_enabled to False" )
               if self.active_sweep_enabled:
-                print ( "Setting sweep_enabled to changed value of False" )
                 self.active_sweep_enabled = False
 
             if 'sweep_expr' in self['gp_dict'][par_id]:
-              print ( "Copying sweep_expr" )
               self.active_sweep_expr = self['gp_dict'][par_id]['sweep_expr']
             else:
-              print ( "Clearing sweep_expr" )
               self.active_sweep_expr = ""
 
             self.active_units = self['gp_dict'][par_id]['units']
@@ -1841,17 +1847,14 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
           par_id = self.general_parameter_list[par_num].par_id
           if len(self.active_sweep_expr.strip()) <= 0:
             # The sweep expression has been cleared so remove from the ID properties
-            print ( "Removing the sweep via expression change" )
             if 'sweep_expr' in self['gp_dict'][par_id]:
               self['gp_dict'][par_id].pop('sweep_expr')
             if 'sweep_enabled' in self['gp_dict'][par_id]:
               self['gp_dict'][par_id].pop('sweep_enabled')
           else:
-            print ( "Adding or updating the sweep via expression change" )
-            # The sweep expression is not cleared so copy from the active into this ID property
+            # The sweep expression is not empty so copy from the active into this ID property
             self['gp_dict'][par_id]['sweep_expr'] = self.active_sweep_expr;
             self['gp_dict'][par_id]['sweep_enabled'] = self.active_sweep_enabled
-          #print ( "  Result = " + str(self['gp_dict'][par_id]['sweep_expr']) + " and " + str(self['gp_dict'][par_id]['sweep_enabled']) )
 
 
     @profile('ParameterSystem.update_sweep_enabled')
@@ -1859,11 +1862,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         par_num = self.active_par_index  # self.active_par_index is what gets changed when the user selects an item
         if (par_num >= 0) and (len(self.general_parameter_list) > par_num):
           par_id = self.general_parameter_list[par_num].par_id
-          print ( "Adding or updating the sweep via enable change" )
-          # The sweep expression is not cleared so copy from the active into this ID property
-          # self['gp_dict'][par_id]['sweep_expr'] = self.active_sweep_expr;
           self['gp_dict'][par_id]['sweep_enabled'] = self.active_sweep_enabled
-          #print ( "  Result = " + str(self['gp_dict'][par_id]['sweep_expr']) + " and " + str(self['gp_dict'][par_id]['sweep_enabled']) )
 
 
     @profile('ParameterSystem.update_expr_list_by_id')
