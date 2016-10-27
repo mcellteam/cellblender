@@ -2264,12 +2264,23 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             par_id = par_map_item.par_id
             layout.prop(self, "active_name", text='Name')
             expr_row = layout.row()
+
+            expr_split = expr_row.split(self.param_label_fraction)
             if self.active_sweep_enabled:
-              layout.prop(self, "active_sweep_expr", text='Sweep Expression')
-              layout.prop(self, "active_sweep_enabled", text='Sweep Enabled')
+              col = expr_split.column()
+              col.label ( text="Sweep Expression" )
+              col = expr_split.column()
+              col.prop ( self, "active_sweep_expr", text="" )
             else:
-              layout.prop(self, "active_expr", text='Expression')
-              layout.prop(self, "active_sweep_enabled", text='Sweep Enabled')
+              col = expr_split.column()
+              col.label ( text="Expression" )
+              col = expr_split.column()
+              col.prop ( self, "active_expr", text="" )
+
+            col = expr_row.column()
+            col.prop ( self, "active_sweep_enabled", icon='FCURVE', text="" )
+
+
             layout.prop(self, "active_units", text='Units')
             layout.prop(self, "active_desc", text='Description')
 
