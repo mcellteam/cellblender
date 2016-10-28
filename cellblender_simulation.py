@@ -95,11 +95,27 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
 
     def execute(self, context):
         mcell = context.scene.mcell
-        mcell.run_simulation.last_simulation_run_time = str(time.time())
+        ps = mcell.parameter_system
+        run_sim = mcell.run_simulation
+        run_sim.last_simulation_run_time = str(time.time())
+
+        # Calculate the number of runs and check against the limit
+        start_seed = int(run_sim.start_seed.get_value())
+        end_seed = int(run_sim.end_seed.get_value())
+        run_limit = int(run_sim.run_limit.get_value())
+
+        total_sweep_runs = ps.count_sweep_runs()
+        print ( "Requested sweep runs = " + str(total_sweep_runs) )
+
+        num_runs_requested = (1 + end_seed - start_seed) * total_sweep_runs
+        print ( "Requested runs (including seeds) = " + str(num_runs_requested) )
 
         if mcell.cellblender_preferences.lockout_export and (not mcell.cellblender_preferences.decouple_export_run):
             print ( "Exporting is currently locked out. See the Preferences/ExtraOptions panel." )
             self.report({'INFO'}, "Exporting is Locked Out")
+        elif (run_limit >=0) and (num_runs_requested > run_limit):
+            print ( "Run limit exceeded. Reduce number of runs or increase limit." )
+            self.report({'INFO'}, "Request for %d runs exceeds limit of %d" % (num_runs_requested, run_limit) )
         else:
             ### Note: This section of code was taken from the export for cases where a
             ###   newly opened .blend file is being run without being exported.
@@ -113,20 +129,21 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
             # be removed
             mcell.project_settings.base_name = scene_name
 
-            print ( "Need to run " + str(mcell.run_simulation.simulation_run_control) )
-            if str(mcell.run_simulation.simulation_run_control) == 'JAVA':
+            print ( "Need to run " + str(run_sim.simulation_run_control) )
+            if str(run_sim.simulation_run_control) == 'JAVA':
                 bpy.ops.mcell.run_simulation_control_java()
-            elif str(mcell.run_simulation.simulation_run_control) == 'OPENGL':
+            elif str(run_sim.simulation_run_control) == 'OPENGL':
                 bpy.ops.mcell.run_simulation_control_opengl()
-            elif str(mcell.run_simulation.simulation_run_control) == 'COMMAND':
+            elif str(run_sim.simulation_run_control) == 'COMMAND':
                 bpy.ops.mcell.run_simulation_normal()
-            elif str(mcell.run_simulation.simulation_run_control) == 'libMCell':
+            elif str(run_sim.simulation_run_control) == 'libMCell':
                 bpy.ops.mcell.run_simulation_libmcell()
-            elif str(mcell.run_simulation.simulation_run_control) == 'libMCellpy':
+            elif str(run_sim.simulation_run_control) == 'libMCellpy':
                 bpy.ops.mcell.run_simulation_libmcellpy()
-            elif str(mcell.run_simulation.simulation_run_control) == 'PurePython':
+            elif str(run_sim.simulation_run_control) == 'PurePython':
                 bpy.ops.mcell.run_simulation_pure_python()
             else:
+                bpy.ops.mcell.run_simulation_control_queue()
                 bpy.ops.mcell.run_simulation_control_queue()
         return {'FINISHED'}
 
@@ -1281,6 +1298,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
     start_seed = PointerProperty ( name="Start Seed", type=parameter_system.Parameter_Reference )
     end_seed   = PointerProperty ( name="End Seed", type=parameter_system.Parameter_Reference )
+    run_limit  = PointerProperty ( name="Run Limit", type=parameter_system.Parameter_Reference )
     mcell_processes = IntProperty(
         name="Number of Processes",
         default=cpu_count(),
@@ -1357,13 +1375,21 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                    "The number of simulations depends on the start and end seeds."
         self.end_seed.init_ref   ( parameter_system, user_name="End Seed",   user_expr="1", user_units="", user_descr=helptext )
 
+        helptext = "Run Limit\n" + \
+                   "Maximum number of simulation runs that can be submitted.\n" + \
+                   "This setting provides a safeguard against running more runs than expected.\n" + \
+                   "A value of -1 implies no limit.\n" + \
+                   "The default for upgraded files is -1 since they had no limit."
+        self.run_limit.init_ref   ( parameter_system, user_name="Run Limit",   user_expr="12", user_units="", user_descr=helptext, user_int=True )
+
 
 
     def remove_properties ( self, context ):
         print ( "Removing all Run Simulation Properties..." )
-        # Note that the two "Panel Parameters" (start_seed and end_seed) in this group are both static and should not be removed.
+        # Note that the three "Panel Parameters" (start_seed, end_seed, and run_limit) in this group are all static and should not be removed.
         #self.start_seed.clear_ref ( ps )
         #self.end_seed.clear_ref ( ps )
+        #self.run_limit.clear_ref ( ps )
 
         for item in self.processes_list:
             item.remove_properties(context)
@@ -1379,10 +1405,11 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "MCellRunSimulationPropertyGroup building Data Model" )
         dm = {}
-        dm['data_model_version'] = "DM_2016_04_15_1430"
+        dm['data_model_version'] = "DM_2016_10_27_1642"
         dm['name'] = self.name
         dm['start_seed'] = self.start_seed.get_expr()
         dm['end_seed'] = self.end_seed.get_expr()
+        dm['run_limit'] = self.run_limit.get_expr()
         p_list = []
         for p in self.processes_list:
             p_list.append ( p.build_data_model_from_properties(context) )
@@ -1404,7 +1431,12 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
             dm['end_seed'] = "1"
             dm['data_model_version'] = "DM_2016_04_15_1430"
 
-        if dm['data_model_version'] != "DM_2016_04_15_1430":
+        if dm['data_model_version'] == "DM_2016_04_15_1430":
+            # Add the run_limit to the data model with an unlimited value (-1)
+            dm['run_limit'] = "-1"
+            dm['data_model_version'] = "DM_2016_10_27_1642"
+
+        if dm['data_model_version'] != "DM_2016_10_27_1642":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationPropertyGroup data model to current version." )
             return None
         return dm
@@ -1412,15 +1444,17 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
 
-        if dm['data_model_version'] != "DM_2016_04_15_1430":
+        if dm['data_model_version'] != "DM_2016_10_27_1642":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationPropertyGroup data model to current version." )
 
         self.enable_python_scripting = False  # Explicitly disable this when building from a data model
         if 'name' in dm:
             self.name = dm["name"]
         print ( "Setting start and end seeds to " + dm['start_seed'] + " and " + dm['end_seed'] )
+        print ( "Setting the run limit to " + dm['run_limit'] )
         self.start_seed.set_expr ( dm["start_seed"] )
         self.end_seed.set_expr ( dm["end_seed"] )
+        self.run_limit.set_expr ( dm["run_limit"] )
         self.processes_list.clear()
 
         # The processes_list should not be restored from the data model
@@ -1576,6 +1610,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
                     self.start_seed.draw(box,ps)
                     self.end_seed.draw(box,ps)
+                    self.run_limit.draw(box,ps)
 
                     row = box.row()
                     row.prop(self, "mcell_processes")

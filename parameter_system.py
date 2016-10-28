@@ -2127,6 +2127,72 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         # self['loop_status'] = ""
         return ([])
 
+
+    @profile('ParameterSystem.count_sweep_runs')
+    def count_sweep_runs ( self ):
+        """ Count the number of runs that will be swept with this configuration. """
+        total_sweep_runs = 1
+        print ( "Ready to count sweep runs... " )
+        if 'gp_dict' in self:
+            for par_name in self['gp_dict']:
+                par = self['gp_dict'][par_name]
+                print ( "Checking par " + str(par) )
+                if ('sweep_expr' in par) and ('sweep_enabled' in par):
+                    if par['sweep_enabled']:
+                        # Sweep expression example: "0, 2, 9, 10:20, 25:35:5, 50"
+                        num_runs_for_this_parameter = 0
+                        # Get the sweep expression sublists which are separated by commas
+                        sw_items = [ p.strip() for p in par['sweep_expr'].split(',') ]
+                        print ( "Sweep item list = " + str(sw_items) )
+                        # Count the number of runs represented by each sweep item (either:  #  or  #:#  or  #:#:#  )
+                        for sw_item in sw_items:
+                            parts = [ p.strip() for p in sw_item.split(':') ]
+                            if len(parts) <= 0:
+                              # This would be two commas together?
+                              pass
+                            elif len(parts) == 1:
+                              # This is a scalar
+                              num_runs_for_this_parameter += 1
+                              print ( "Added 1" )
+                            elif len(parts) == 2:
+                              # This is a range with implied steps of 1
+                              start = float(parts[0])
+                              stop = float(parts[1])
+                              if start > stop:
+                                start = float(parts[1])
+                                stop = float(parts[0])
+                              num_runs_for_this_parameter += int(1 + stop - start)
+                              print ( "Added " + str(int(1 + stop - start)) )
+                            elif len(parts) >= 3:
+                              # This is a range with explicit steps
+                              start = float(parts[0])
+                              stop = float(parts[1])
+                              step = float(parts[2])
+                              if start > stop:
+                                start = float(parts[1])
+                                stop = float(parts[0])
+                              if step < 0:
+                                step = -step
+                              if step == 0:
+                                # Do something to keep it from an infinite loop
+                                step = 1;
+                              # Start with a pessimistic guess
+                              num = int((stop-start) / step)
+                              # Increase until equal or over
+                              print ( "Before increasing, num = " + str(num) )
+                              while (start+((num-1)*step)) < (stop+(step/1000)):
+                                num += 1
+                                print ( "Increased to num = " + str(num) )
+                              # Reduce while actually over
+                              while start+((num-1)*step) > (stop+(step/1000)):
+                                num += -1
+                                print ( "Decreased to num = " + str(num) )
+                              num_runs_for_this_parameter += num
+                              print ( "Added " + str(num) )
+                        # Multiply the total sweep runs by the number in this dimension
+                        total_sweep_runs *= num_runs_for_this_parameter
+        return total_sweep_runs
+
     @profile('ParameterSystem.draw_label_with_help')
     def draw_label_with_help ( self, layout, label, prop_group, show, show_help, help_string ):
         """ This function helps draw non-parameter properties with help (info) button functionality """
