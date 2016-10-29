@@ -188,20 +188,20 @@ if __name__ == "__main__":
             for sw_item in sweep_list:
                 sweep_path += "/" + sw_item['par_name'] + "_index_" + str(sw_item['current_index'])
             print ( "Sweep path = " + sweep_path )
+            # Set the data model parameters to the current parameter settings
+            for par in dm['mcell']['parameter_system']['model_parameters']:
+                if ('par_name' in par):
+                    for sweep_item in sweep_list:
+                        if par['par_name'] == sweep_item['par_name']:
+                            par['par_expression'] = str(sweep_item['values'][sweep_item['current_index']])
+            # Sweep through the seeds for this set of parameters creating a run specification for each seed
             for seed in range(start,end+1):
-                # Set the data model parameters to the current parameter settings
-                for par in dm['mcell']['parameter_system']['model_parameters']:
-                    if ('par_name' in par):
-                        for sweep_item in sweep_list:
-                            if par['par_name'] == sweep_item['par_name']:
-                                par['par_expression'] = str(sweep_item['values'][sweep_item['current_index']])
-
                 # Create the directories and write the MDL
                 sweep_item_path = os.path.join(project_dir,sweep_path)
                 os.makedirs ( sweep_item_path, exist_ok=True )
                 data_model_to_mdl.write_mdl ( dm, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ) )
                 run_cmd_list.append ( [mcell_binary, sweep_item_path, base_name, error_file_option, log_file_option, seed] )
-            # Increment the current_index counters
+            # Increment the current_index counters from rightmost side (deepest directory)
             i = len(sweep_list) - 1
             while i >= 0:
                 sweep_list[i]['current_index'] += 1
