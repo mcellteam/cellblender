@@ -221,6 +221,18 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
                 # multiprocessing pool, instead of directly creating it here,
                 # because the multiprocessing package requires that the __main__
                 # module be importable by the children.
+                print ( "Running subprocess with:" +
+                        "\n  python_path = " + str(python_path) +
+                        "\n  script_file_path = " + str(script_file_path) +
+                        "\n  mcell_binary = " + str(mcell_binary) +
+                        "\n  start = " + str(start) +
+                        "\n  end+1 = " + str(end + 1) +
+                        "\n  project_dir = " + str(project_dir) +
+                        "\n  base_name = " + str(base_name) +
+                        "\n  error_file_option = " + str(error_file_option) +
+                        "\n  log_file_option = " + str(log_file_option) +
+                        "\n  mcell_processes_str = " + str(mcell_processes_str) +
+                        "\n" )
                 sp = subprocess.Popen([
                     python_path, script_file_path, mcell_binary, str(start),
                     str(end + 1), project_dir, base_name, error_file_option,
