@@ -686,25 +686,26 @@ def dump_data_model ( dm ):
 
 
 
+if __name__ == "__main__":
 
-if len(sys.argv) > 2:
-    print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] )
-    print ( "Reading Data Model: " + sys.argv[1] )
-    dm = read_data_model ( sys.argv[1] )
-    # dump_data_model ( dm )
-    print ( "Writing MDL: " + sys.argv[2] )
-    write_mdl ( dm, sys.argv[2] )
-    print ( "Wrote Data Model found in \"" + sys.argv[1] + "\" to MDL file \"" + sys.argv[2] + "\"" )
-    # Drop into an interactive python session
-    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    if len(sys.argv) > 2:
+        print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] )
+        print ( "Reading Data Model: " + sys.argv[1] )
+        dm = read_data_model ( sys.argv[1] )
+        # dump_data_model ( dm )
+        print ( "Writing MDL: " + sys.argv[2] )
+        write_mdl ( dm, sys.argv[2] )
+        print ( "Wrote Data Model found in \"" + sys.argv[1] + "\" to MDL file \"" + sys.argv[2] + "\"" )
+        # Drop into an interactive python session
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-else:
-    # Print the help information
-    print ( "\nhelp():" )
-    print ( "\n=======================================" )
-    print ( "Requires 2 parameters:" )
-    print ( "   data_model_file_name - A Data Model (pickled format)" )
-    print ( "   mdl_base_name - The base name to use for the project" )
-    # print ( "Use Control-D to exit the interactive mode" )
-    print ( "=======================================\n" )
+    else:
+        # Print the help information
+        print ( "\nhelp():" )
+        print ( "\n=======================================" )
+        print ( "Requires 2 parameters:" )
+        print ( "   data_model_file_name - A Data Model (pickled format)" )
+        print ( "   mdl_base_name - The base name to use for the project" )
+        # print ( "Use Control-D to exit the interactive mode" )
+        print ( "=======================================\n" )
 
