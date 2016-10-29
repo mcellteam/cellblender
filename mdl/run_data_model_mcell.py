@@ -75,18 +75,32 @@ if __name__ == "__main__":
     # Over-ride for testing:
     mcell_binary = os.path.join(os.getcwd(), 'mcell')
     start_str = '1'
-    end_str = '2'
+    end_str = '3'
     project_dir = os.path.join(os.getcwd(), 'project_name_files/mcell')
     base_name = 'Scene'
     error_file_option = 'console'
     log_file_option = 'console'
     mcell_processes_str = '8'
 
+    data_model_file_name = sys.argv[1]
+
+    dm = data_model_to_mdl.read_data_model ( data_model_file_name )
+    data_model_to_mdl.dump_data_model ( dm )
+
+
     start = int(start_str)
     end = int(end_str)
     mcell_processes = int(mcell_processes_str)
 
     arglist = [[mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed] for seed in range(start, end)]
+
+    arglist = []
+    for seed in range(start,end):
+        arglist.append ( [mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed] )
+
+    #Arglist for run = [['/netapp/cnl/home/bobkuczewski/proj/MCell/cellblender_git/mdl/mcell', '/netapp/cnl/home/bobkuczewski/proj/MCell/cellblender_git/mdl/project_name_files/mcell', 'Scene', 'console', 'console', 1], 
+    #                   ['/netapp/cnl/home/bobkuczewski/proj/MCell/cellblender_git/mdl/mcell', '/netapp/cnl/home/bobkuczewski/proj/MCell/cellblender_git/mdl/project_name_files/mcell', 'Scene', 'console', 'console', 2]]
+
     
     print ( "Arglist for run = " + str(arglist) )
 

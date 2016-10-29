@@ -664,6 +664,7 @@ def write_react_out ( rout, mols, time_step, f ):
         f.write ( "\n" );
 
 
+##### NOTE that this function shadows the earlier version ... which is best??
 data_model_depth = 0
 def dump_data_model ( dm ):
     global data_model_depth
