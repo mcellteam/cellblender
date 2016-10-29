@@ -65,6 +65,82 @@ def run_sim(arglist):
             cwd=subprocess_cwd, stdout=log_file, stderr=error_file)
 
 
+def build_sweep_list ( par_dict ):
+    """ Count the number of runs that will be swept with this data model. """
+    sweep_list = []
+    #print ( "Building sweep list... " )
+    if 'model_parameters' in par_dict:
+        for par in par_dict['model_parameters']:
+            #print ( "Checking par " + str(par) )
+            if ('sweep_expression' in par) and ('sweep_enabled' in par):
+                if par['sweep_enabled']:
+                    sweep_item = {}
+                    if 'par_name' in par:
+                        sweep_item['par_name'] = par['par_name']
+                    else:
+                        sweep_item['par_name'] = "Unknown"
+                    # Sweep expression example: "0, 2, 9, 10:20, 25:35:5, 50"
+                    num_runs_for_this_parameter = 0
+                    # Get the sweep expression sublists which are separated by commas
+                    sw_items = []
+                    if 'sweep_expression' in par:
+                        sw_items = [ p.strip() for p in par['sweep_expression'].split(',') ]
+                    #print ( "Sweep item list = " + str(sw_items) )
+                    # Count the number of runs represented by each sweep item (either:  #  or  #:#  or  #:#:#  )
+                    sweep_values = []
+                    for sw_item in sw_items:
+                        parts = [ p.strip() for p in sw_item.split(':') ]
+                        if len(parts) <= 0:
+                          # This would be two commas together?
+                          pass
+                        elif len(parts) == 1:
+                          # This is a scalar
+                          sweep_values.append ( float(parts[0]) )
+                          #print ( "Added " + parts[0] )
+                        elif len(parts) >= 2:
+                          # This is a range with a start and stop
+                          start = float(parts[0])
+                          stop = float(parts[1])
+                          step = 1
+                          if len(parts) > 2:
+                            step = float(parts[2])
+                          if start > stop:
+                            start = float(parts[1])
+                            stop = float(parts[0])
+                          if step < 0:
+                            step = -step
+                          if step == 0:
+                            # Do something to keep it from an infinite loop
+                            step = 1;
+                          # Start with a pessimistic guess
+                          num = int((stop-start) / step)
+                          # Increase until equal or over
+                          #print ( "Before increasing, num = " + str(num) )
+                          while (start+((num-1)*step)) < (stop+(step/1000)):
+                            num += 1
+                            #print ( "Increased to num = " + str(num) )
+                          # Reduce while actually over
+                          while start+((num-1)*step) > (stop+(step/1000)):
+                            num += -1
+                            #print ( "Decreased to num = " + str(num) )
+                          # Finally append the values
+                          for n in range(num):
+                            sweep_values.append ( start + (n*step) )
+                    sweep_item['values'] = sweep_values
+                    sweep_list.append ( sweep_item )
+    return sweep_list
+
+
+def count_sweep_runs ( sweep_list ):
+    total_sweep_runs = 1
+    for sweep_item in sweep_list:
+      if 'values' in sweep_item:
+        total_sweep_runs *= len(sweep_item['values'])
+    return total_sweep_runs
+
+
+
+
 if __name__ == "__main__":
     # Get the command line arguments (excluding the script name itself)
     print ( "Arguments = " + str(sys.argv) )
@@ -85,25 +161,60 @@ if __name__ == "__main__":
     data_model_file_name = sys.argv[1]
 
     dm = data_model_to_mdl.read_data_model ( data_model_file_name )
-    data_model_to_mdl.dump_data_model ( dm )
+    # data_model_to_mdl.dump_data_model ( dm )
 
+    sweep_list = build_sweep_list( dm['mcell']['parameter_system'] )
+    for sw_item in sweep_list:
+      sw_item['current_index'] = 0
+      print ( "Sweep list = " + str(sw_item) )
+    num_sweep_runs = count_sweep_runs ( sweep_list )
+    print ( "Number of runs = " + str(num_sweep_runs) )
 
     start = int(start_str)
     end = int(end_str)
     mcell_processes = int(mcell_processes_str)
 
-    arglist = [[mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed] for seed in range(start, end)]
+    #run_cmd_list = [[mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed] for seed in range(start, end)]
 
-    arglist = []
-    for seed in range(start,end):
-        arglist.append ( [mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed] )
+    run_cmd_list = []
+    if num_sweep_runs <= 1:
+        # Build a normal list of seed runs without a "sweep_data" directory:
+        for seed in range(start,end+1):
+            run_cmd_list.append ( [mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed] )
+    else:
+        # Build a sweep list with a "sweep_data" prefix directory
+        for run in range (num_sweep_runs):
+            sweep_path = "sweep_data"
+            for sw_item in sweep_list:
+                sweep_path += "/" + sw_item['par_name'] + "_index_" + str(sw_item['current_index'])
+            print ( "Sweep path = " + sweep_path )
+            for seed in range(start,end+1):
+                # Set the data model parameters to the current parameter settings
+                for par in dm['mcell']['parameter_system']['model_parameters']:
+                    if ('par_name' in par):
+                        for sweep_item in sweep_list:
+                            if par['par_name'] == sweep_item['par_name']:
+                                par['par_expression'] = str(sweep_item['values'][sweep_item['current_index']])
 
-    #Arglist for run = [['/netapp/cnl/home/bobkuczewski/proj/MCell/cellblender_git/mdl/mcell', '/netapp/cnl/home/bobkuczewski/proj/MCell/cellblender_git/mdl/project_name_files/mcell', 'Scene', 'console', 'console', 1], 
-    #                   ['/netapp/cnl/home/bobkuczewski/proj/MCell/cellblender_git/mdl/mcell', '/netapp/cnl/home/bobkuczewski/proj/MCell/cellblender_git/mdl/project_name_files/mcell', 'Scene', 'console', 'console', 2]]
+                # Create the directories and write the MDL
+                sweep_item_path = os.path.join(project_dir,sweep_path)
+                os.makedirs ( sweep_item_path, exist_ok=True )
+                data_model_to_mdl.write_mdl ( dm, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ) )
+                run_cmd_list.append ( [mcell_binary, sweep_item_path, base_name, error_file_option, log_file_option, seed] )
+            # Increment the current_index counters
+            i = len(sweep_list) - 1
+            while i >= 0:
+                sweep_list[i]['current_index'] += 1
+                if sweep_list[i]['current_index'] >= len(sweep_list[i]['values']):
+                  sweep_list[i]['current_index'] = 0
+                else:
+                  break
+                i += -1
 
-    
-    print ( "Arglist for run = " + str(arglist) )
+    print ( "Run Cmds:" )
+    for rc in run_cmd_list:
+      print ( "  " + str(rc) )
 
     # Create a pool of mcell processes.
     pool = multiprocessing.Pool(processes=mcell_processes)
-    pool.map(run_sim, arglist)
+    pool.map(run_sim, run_cmd_list)
