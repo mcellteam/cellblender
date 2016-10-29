@@ -73,10 +73,10 @@ if __name__ == "__main__":
     #    error_file_option, log_file_option, mcell_processes_str = sys.argv[1:]
 
     # Over-ride for testing:
-    mcell_binary = '../../mcell'
+    mcell_binary = os.path.join(os.getcwd(), 'mcell')
     start_str = '1'
     end_str = '2'
-    project_dir = 'project_name_files/mcell'
+    project_dir = os.path.join(os.getcwd(), 'project_name_files/mcell')
     base_name = 'Scene'
     error_file_option = 'console'
     log_file_option = 'console'
