@@ -228,6 +228,8 @@ if __name__ == "__main__":
                 # Create the directories and write the MDL
                 sweep_item_path = os.path.join(project_dir,sweep_path)
                 os.makedirs ( sweep_item_path, exist_ok=True )
+                os.makedirs ( os.path.join(sweep_item_path,'react_data'), exist_ok=True )
+                os.makedirs ( os.path.join(sweep_item_path,'viz_data'), exist_ok=True )
                 data_model_to_mdl.write_mdl ( dm, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ) )
                 run_cmd_list.append ( [mcell_binary, sweep_item_path, base_name, error_file_option, log_file_option, seed] )
             # Increment the current_index counters from rightmost side (deepest directory)
