@@ -46,7 +46,11 @@ def read_data_model ( file_name ):
     # Start by determining if this is a JSON file or not
     is_json = False
     f = open ( file_name, 'r' )
-    header = f.read(20)
+    header = "xxxxx"
+    try:
+      header = f.read(20)
+    except  UnicodeDecodeError:
+      pass # The header value shouldn't contain "'mcell:'" in this case anyway
     if '"mcell":' in header:
       is_json = True
     elif "'mcell':" in header:
@@ -55,7 +59,7 @@ def read_data_model ( file_name ):
     # Open as appropriate
     if is_json:
         # Open as a JSON format file
-        print ( "Opening a JSON file" )
+        print ( "Opening a JSON file: " + file_name )
         f = open ( file_name, 'r' )
         print ( "Reading a JSON file" )
         json_model = f.read()
@@ -64,7 +68,7 @@ def read_data_model ( file_name ):
         print ( "Done loading a JSON file" )
     else:
         # Open as a pickled format file
-        print ( "Opening a Pickle file" )
+        print ( "Opening a Pickle file: " + file_name )
         f = open ( file_name, 'r' )
         pickled_model = f.read()
         data_model = unpickle_data_model ( pickled_model )

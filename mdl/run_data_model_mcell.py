@@ -5,6 +5,7 @@ import sys
 import multiprocessing
 import os
 import subprocess
+import argparse
 import data_model_to_mdl
 
 
@@ -142,40 +143,68 @@ def count_sweep_runs ( sweep_list ):
 
 
 if __name__ == "__main__":
+    """
+    Run one or more MCell processes from a potentially swept CellBlender Data Model
+    """
     # Get the command line arguments (excluding the script name itself)
     print ( "Arguments = " + str(sys.argv) )
 
-    #mcell_binary, start_str, end_str, project_dir, base_name, \
-    #    error_file_option, log_file_option, mcell_processes_str = sys.argv[1:]
+    arg_parser = argparse.ArgumentParser(description='Run MCell with appropriate arguments')
+    arg_parser.add_argument ( 'data_model_file_name',     type=str,                    help='the file name of the data model to run' )
+    arg_parser.add_argument ( '-pd', '--proj_dir',        type=str, default='',        help='the directory where the program will run' )
+    arg_parser.add_argument ( '-b',  '--binary',          type=str, default='mcell',   help='full path of binary file to run' )
+    arg_parser.add_argument ( '-fs', '--first_seed',      type=int, default=1,         help='the first seed in a series of seeds to run' )
+    arg_parser.add_argument ( '-ls', '--last_seed',       type=int, default=1,         help='the last seed in a series of seeds to run' )
+    arg_parser.add_argument ( '-lf', '--log_file_opt',    type=str, default='console', help='the log file option for mcell' )
+    arg_parser.add_argument ( '-ef', '--error_file_opt',  type=str, default='console', help='the error file option for mcell' )
+    arg_parser.add_argument ( '-np', '--num_processes',   type=int, default=8,         help='the number of processors' )
+    
+    parsed_args = arg_parser.parse_args() # Without any arguments this uses sys.argv automatically
 
-    # Over-ride for testing:
-    mcell_binary = os.path.join(os.getcwd(), 'mcell')
-    start_str = '1'
-    end_str = '3'
-    project_dir = os.path.join(os.getcwd(), 'project_name_files/mcell')
+    print ( "Data Model Name = " + parsed_args.data_model_file_name )
+    print ( "Binary Name = " + parsed_args.binary )
+    print ( "Project Directory = " + parsed_args.proj_dir )
+    print ( "First Seed = " + str(parsed_args.first_seed) )
+    print ( "Last Seed = " + str(parsed_args.last_seed) )
+    print ( "Log File = " + parsed_args.log_file_opt )
+    print ( "Error File = " + parsed_args.error_file_opt )
+    print ( "Num Processes = " + str(parsed_args.num_processes) )
+    
+    # Create convenience variables from parsed_args:
+    mcell_binary = parsed_args.binary
+    start_str = parsed_args.first_seed
+    end_str = parsed_args.last_seed
+    project_dir = parsed_args.proj_dir
+    if len(project_dir) <= 0:
+      project_dir = os.path.join(os.getcwd(), 'project_name_files/mcell')
     base_name = 'Scene'
-    error_file_option = 'console'
-    log_file_option = 'console'
-    mcell_processes_str = '8'
+    error_file_option = parsed_args.error_file_opt
+    log_file_option = parsed_args.log_file_opt
+    mcell_processes_str = str(parsed_args.num_processes)
 
-    data_model_file_name = sys.argv[1]
+    data_model_file_name = parsed_args.data_model_file_name
 
+    # Read the data model specified on the command line
     dm = data_model_to_mdl.read_data_model ( data_model_file_name )
     # data_model_to_mdl.dump_data_model ( dm )
 
+    # Build a sweep list and add a "current_index" of 0 to support the sweeping
     sweep_list = build_sweep_list( dm['mcell']['parameter_system'] )
     for sw_item in sweep_list:
       sw_item['current_index'] = 0
       print ( "Sweep list = " + str(sw_item) )
+
+    # Count the number of sweep runs (could be done in build_sweep_list, but it's nice as a separate function) 
     num_sweep_runs = count_sweep_runs ( sweep_list )
     print ( "Number of runs = " + str(num_sweep_runs) )
 
+    # These were needed when all arguments were strings, but may be replaced now that parse_args returns ints
     start = int(start_str)
     end = int(end_str)
     mcell_processes = int(mcell_processes_str)
 
-    #run_cmd_list = [[mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed] for seed in range(start, end)]
-
+    # Build a list of "run commands" (one for each run) to be run by the multiprocessing pool and "run_sim" (above)
+    # Note that the format of these came from the original "run_simulations.py" program and may not be what we want in the long run
     run_cmd_list = []
     if num_sweep_runs <= 1:
         # Build a normal list of seed runs without a "sweep_data" directory:
@@ -211,6 +240,7 @@ if __name__ == "__main__":
                   break
                 i += -1
 
+    # Print the run commands as a record of what's being done
     print ( "Run Cmds:" )
     for rc in run_cmd_list:
       print ( "  " + str(rc) )

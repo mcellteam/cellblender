@@ -178,23 +178,17 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
             if not mcell.cellblender_preferences.decouple_export_run:
                 bpy.ops.mcell.export_project()
 
-            if (mcell.run_simulation.error_list and
-                    mcell.cellblender_preferences.invalid_policy == 'dont_run'):
+            if (mcell.run_simulation.error_list and mcell.cellblender_preferences.invalid_policy == 'dont_run'):
                 pass
             else:
-                react_dir = os.path.join(project_dir, "react_data")
-                if (os.path.exists(react_dir) and
-                        mcell.run_simulation.remove_append == 'remove'):
-                    shutil.rmtree(react_dir)
-                if not os.path.exists(react_dir):
-                    os.makedirs(react_dir)
+                sweep_dir = os.path.join(project_dir, "sweep_data")
+                if (os.path.exists(sweep_dir) and mcell.run_simulation.remove_append == 'remove'):
+                    shutil.rmtree(sweep_dir)
+                if not os.path.exists(sweep_dir):
+                    os.makedirs(sweep_dir)
 
-                viz_dir = os.path.join(project_dir, "viz_data")
-                if (os.path.exists(viz_dir) and
-                        mcell.run_simulation.remove_append == 'remove'):
-                    shutil.rmtree(viz_dir)
-                if not os.path.exists(viz_dir):
-                    os.makedirs(viz_dir)
+                mcell_dm = mcell.build_data_model_from_properties ( context, geometry=True )
+                data_model.save_data_model_to_json_file ( mcell_dm, os.path.join(project_dir,"data_model.json") )
 
                 base_name = mcell.project_settings.base_name
 
@@ -202,7 +196,7 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
                 log_file_option = mcell.run_simulation.log_file
                 script_dir_path = os.path.dirname(os.path.realpath(__file__))
                 script_file_path = os.path.join(
-                    script_dir_path, "run_simulations.py")
+                    script_dir_path, os.path.join("mdl", "run_data_model_mcell.py") )
 
                 processes_list = mcell.run_simulation.processes_list
                 processes_list.add()
@@ -234,9 +228,16 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
                         "\n  mcell_processes_str = " + str(mcell_processes_str) +
                         "\n" )
                 sp = subprocess.Popen([
-                    python_path, script_file_path, mcell_binary, str(start),
-                    str(end + 1), project_dir, base_name, error_file_option,
-                    log_file_option, mcell_processes_str], stdout=None,
+                    python_path,
+                    script_file_path,
+                    os.path.join(project_dir,"data_model.json"),
+                    "-b", mcell_binary,
+                    "-fs", str(start), "-ls", str(end+1),
+                    "-pd", project_dir,
+                    "-ef", error_file_option,
+                    "-lf", log_file_option,
+                    "-np", mcell_processes_str],
+                    stdout=None,
                     stderr=None)
                 self.report({'INFO'}, "Simulation Running")
 
