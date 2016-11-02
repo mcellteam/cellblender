@@ -220,7 +220,7 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
                         "\n  script_file_path = " + str(script_file_path) +
                         "\n  mcell_binary = " + str(mcell_binary) +
                         "\n  start = " + str(start) +
-                        "\n  end+1 = " + str(end + 1) +
+                        "\n  end = " + str(end) +
                         "\n  project_dir = " + str(project_dir) +
                         "\n  base_name = " + str(base_name) +
                         "\n  error_file_option = " + str(error_file_option) +
@@ -232,7 +232,7 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
                     script_file_path,
                     os.path.join(project_dir,"data_model.json"),
                     "-b", mcell_binary,
-                    "-fs", str(start), "-ls", str(end+1),
+                    "-fs", str(start), "-ls", str(end),
                     "-pd", project_dir,
                     "-ef", error_file_option,
                     "-lf", log_file_option,
