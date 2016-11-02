@@ -516,17 +516,23 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
         par_id = par.par_id
         id_par = ps['gp_dict'][par_id]
 
-        disp = id_par['name'] + " = "
-        icon = 'FILE_TICK'
-
         is_swept = False
         if ('sweep_expr' in id_par) and ('sweep_enabled' in id_par):
           if id_par['sweep_enabled']:
             is_swept = True
 
+        icon = 'FILE_TICK'
+        if 'status' in id_par:
+            status = id_par['status']
+            if 'undef' in status:
+                icon='ERROR'
+            elif 'loop' in status:
+                icon='LOOP_BACK'
+
+        disp = id_par['name'] + " = "
         if is_swept:
           disp += id_par['sweep_expr']
-          icon = 'FCURVE'
+          disp += "    => " + str(ps.runs_in_sweep(id_par['sweep_expr'])) + " runs"
         else:
           disp += id_par['expr']
           if 'value' in id_par:
@@ -534,14 +540,22 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
           else:
               disp += " = ??"
 
-        if 'status' in id_par:
-            status = id_par['status']
-            if 'undef' in status:
-                icon='ERROR'
-            elif 'loop' in status:
-                icon='LOOP_BACK'
-        layout.label(disp, icon=icon)
+        col = layout.column()
+        col.label(disp, icon=icon)
 
+        col = layout.column()
+        icon = 'BLANK1'
+        if ('sweep_expr' in id_par):
+          icon = 'SPACE3'
+          if 'sweep_enabled' in id_par:
+            if id_par['sweep_enabled']:
+              icon = 'FCURVE'
+        col.label("", icon=icon)
+
+        # BLANK1 = no sweep specification
+        # SPACE3 = sweepable but off
+        # FCURVE = sweepable and on
+        # Optional?: SPACE2 = sweepable and on
 
 
 """
@@ -1870,6 +1884,8 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
               self['gp_dict'][par_id].pop('sweep_expr')
             if 'sweep_enabled' in self['gp_dict'][par_id]:
               self['gp_dict'][par_id].pop('sweep_enabled')
+            # Turn off the global sweep flag
+            self.active_sweep_enabled = False
           else:
             # The sweep expression is not empty so copy from the active into this ID property
             self['gp_dict'][par_id]['sweep_expr'] = self.active_sweep_expr;
@@ -2128,6 +2144,56 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         return ([])
 
 
+    @profile('ParameterSystem.runs_in_sweep')
+    def runs_in_sweep ( self, sw_item ):
+        """ Count the number of runs in a single sweep expression. """
+        num_runs_for_this_parameter = 0
+        parts = [ p.strip() for p in sw_item.split(':') ]
+        if len(parts) <= 0:
+            # This would be two commas together?
+            pass
+        elif len(parts) == 1:
+            # This is a scalar
+            num_runs_for_this_parameter += 1
+            #print ( "Added 1" )
+        elif len(parts) == 2:
+            # This is a range with implied steps of 1
+            start = float(parts[0])
+            stop = float(parts[1])
+            if start > stop:
+                start = float(parts[1])
+                stop = float(parts[0])
+            num_runs_for_this_parameter += int(1 + stop - start)
+            #print ( "Added " + str(int(1 + stop - start)) )
+        elif len(parts) >= 3:
+            # This is a range with explicit steps
+            start = float(parts[0])
+            stop = float(parts[1])
+            step = float(parts[2])
+            if start > stop:
+                start = float(parts[1])
+                stop = float(parts[0])
+            if step < 0:
+                step = -step
+            if step == 0:
+                # Do something to keep it from an infinite loop
+                step = 1;
+            # Start with a pessimistic guess
+            num = int((stop-start) / step)
+            # Increase until equal or over
+            #print ( "Before increasing, num = " + str(num) )
+            while (start+((num-1)*step)) < (stop+(step/1000)):
+                num += 1
+                #print ( "Increased to num = " + str(num) )
+            # Reduce while actually over
+            while start+((num-1)*step) > (stop+(step/1000)):
+                num += -1
+                #print ( "Decreased to num = " + str(num) )
+            num_runs_for_this_parameter += num
+            #print ( "Added " + str(num) )
+        return num_runs_for_this_parameter;
+
+
     @profile('ParameterSystem.count_sweep_runs')
     def count_sweep_runs ( self ):
         """ Count the number of runs that will be swept with this configuration. """
@@ -2146,49 +2212,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                         print ( "Sweep item list = " + str(sw_items) )
                         # Count the number of runs represented by each sweep item (either:  #  or  #:#  or  #:#:#  )
                         for sw_item in sw_items:
-                            parts = [ p.strip() for p in sw_item.split(':') ]
-                            if len(parts) <= 0:
-                              # This would be two commas together?
-                              pass
-                            elif len(parts) == 1:
-                              # This is a scalar
-                              num_runs_for_this_parameter += 1
-                              print ( "Added 1" )
-                            elif len(parts) == 2:
-                              # This is a range with implied steps of 1
-                              start = float(parts[0])
-                              stop = float(parts[1])
-                              if start > stop:
-                                start = float(parts[1])
-                                stop = float(parts[0])
-                              num_runs_for_this_parameter += int(1 + stop - start)
-                              print ( "Added " + str(int(1 + stop - start)) )
-                            elif len(parts) >= 3:
-                              # This is a range with explicit steps
-                              start = float(parts[0])
-                              stop = float(parts[1])
-                              step = float(parts[2])
-                              if start > stop:
-                                start = float(parts[1])
-                                stop = float(parts[0])
-                              if step < 0:
-                                step = -step
-                              if step == 0:
-                                # Do something to keep it from an infinite loop
-                                step = 1;
-                              # Start with a pessimistic guess
-                              num = int((stop-start) / step)
-                              # Increase until equal or over
-                              print ( "Before increasing, num = " + str(num) )
-                              while (start+((num-1)*step)) < (stop+(step/1000)):
-                                num += 1
-                                print ( "Increased to num = " + str(num) )
-                              # Reduce while actually over
-                              while start+((num-1)*step) > (stop+(step/1000)):
-                                num += -1
-                                print ( "Decreased to num = " + str(num) )
-                              num_runs_for_this_parameter += num
-                              print ( "Added " + str(num) )
+                            num_runs_for_this_parameter += self.runs_in_sweep ( sw_item )
                         # Multiply the total sweep runs by the number in this dimension
                         total_sweep_runs *= num_runs_for_this_parameter
         return total_sweep_runs
@@ -2350,29 +2374,20 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         col.separator()
         col.operator("mcell.delete_all_pars", icon='X_VEC', text="")
 
+        if len(self.general_parameter_list) > 0:
+            col.separator()
+            col.prop ( self, "active_sweep_enabled", icon='FCURVE', text="" )
 
         if len(self.general_parameter_list) > 0:
             par_map_item = self.general_parameter_list[self.active_par_index]
             par_name = par_map_item.name
             par_id = par_map_item.par_id
             layout.prop(self, "active_name", text='Name')
-            expr_row = layout.row()
 
-            expr_split = expr_row.split(self.param_label_fraction)
             if self.active_sweep_enabled:
-              col = expr_split.column()
-              col.label ( text="Sweep Expression" )
-              col = expr_split.column()
-              col.prop ( self, "active_sweep_expr", text="" )
+              layout.prop(self, "active_sweep_expr", text='Sweep Expression', icon='FCURVE')
             else:
-              col = expr_split.column()
-              col.label ( text="Expression" )
-              col = expr_split.column()
-              col.prop ( self, "active_expr", text="" )
-
-            col = expr_row.column()
-            col.prop ( self, "active_sweep_enabled", icon='FCURVE', text="" )
-
+              layout.prop(self, "active_expr", text='Expression')
 
             layout.prop(self, "active_units", text='Units')
             layout.prop(self, "active_desc", text='Description')
