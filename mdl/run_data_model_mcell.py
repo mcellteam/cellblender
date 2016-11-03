@@ -172,15 +172,15 @@ if __name__ == "__main__":
     
     # Create convenience variables from parsed_args:
     mcell_binary = parsed_args.binary
-    start_str = parsed_args.first_seed
-    end_str = parsed_args.last_seed
+    start = parsed_args.first_seed
+    end = parsed_args.last_seed
     project_dir = parsed_args.proj_dir
     if len(project_dir) <= 0:
       project_dir = os.path.join(os.getcwd(), 'project_name_files/mcell')
     base_name = 'Scene'
     error_file_option = parsed_args.error_file_opt
     log_file_option = parsed_args.log_file_opt
-    mcell_processes_str = str(parsed_args.num_processes)
+    mcell_processes = parsed_args.num_processes
 
     data_model_file_name = parsed_args.data_model_file_name
 
@@ -194,14 +194,24 @@ if __name__ == "__main__":
       sw_item['current_index'] = 0
       print ( "Sweep list = " + str(sw_item) )
 
+
+    # Save the sweep list to a file for plotting, visualization, and other processing
+    sweep_list_file_name = os.path.join ( project_dir, "sweep_list.json" )
+    sweep_list_file = open ( sweep_list_file_name, "w" )
+    sweep_list_length = len(sweep_list)
+    sweep_list_file.write ( "[\n" )
+    for i in range ( sweep_list_length ):
+      sw_item = sweep_list[i]
+      sweep_list_file.write ( " [\"" + sw_item['par_name'] + "\", " + str(sw_item['values']) + "],\n" )
+    # Include the seeds in the sweep list file for plotting, etc.
+    sweep_list_file.write ( " [\"SEED\", " + str([s for s in range(start,end+1)]) + "]\n" )
+    sweep_list_file.write ( "]\n" )
+    sweep_list_file.close()
+
+
     # Count the number of sweep runs (could be done in build_sweep_list, but it's nice as a separate function) 
     num_sweep_runs = count_sweep_runs ( sweep_list )
     print ( "Number of runs = " + str(num_sweep_runs) )
-
-    # These were needed when all arguments were strings, but may be replaced now that parse_args returns ints
-    start = int(start_str)
-    end = int(end_str)
-    mcell_processes = int(mcell_processes_str)
 
     # Build a list of "run commands" (one for each run) to be run by the multiprocessing pool and "run_sim" (above)
     # Note that the format of these came from the original "run_simulations.py" program and may not be what we want in the long run
