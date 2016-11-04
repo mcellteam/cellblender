@@ -196,16 +196,22 @@ if __name__ == "__main__":
 
 
     # Save the sweep list to a file for plotting, visualization, and other processing
-    sweep_list_file_name = os.path.join ( project_dir, "sweep_list.json" )
+    sweep_list_file_name = os.path.join ( project_dir, "data_layout.json" )
     sweep_list_file = open ( sweep_list_file_name, "w" )
     sweep_list_length = len(sweep_list)
-    sweep_list_file.write ( "[\n" )
+    sweep_list_file.write ( "{\n" )
+    sweep_list_file.write ( " \"version\": 0,\n" )
+    sweep_list_file.write ( " \"data_layout\": [\n" )
+    sweep_list_file.write ( "  [\"dir\", [\"sweep_data\"]],\n" )
     for i in range ( sweep_list_length ):
       sw_item = sweep_list[i]
-      sweep_list_file.write ( " [\"" + sw_item['par_name'] + "\", " + str(sw_item['values']) + "],\n" )
+      sweep_list_file.write ( "  [\"" + sw_item['par_name'] + "\", " + str(sw_item['values']) + "],\n" )
+    # Include the file type
+    sweep_list_file.write ( "  [\"file_type\", [\"react_data\", \"viz_data\"]],\n" )
     # Include the seeds in the sweep list file for plotting, etc.
-    sweep_list_file.write ( " [\"SEED\", " + str([s for s in range(start,end+1)]) + "]\n" )
-    sweep_list_file.write ( "]\n" )
+    sweep_list_file.write ( "  [\"SEED\", " + str([s for s in range(start,end+1)]) + "]\n" )
+    sweep_list_file.write ( " ]\n" )
+    sweep_list_file.write ( "}\n" )
     sweep_list_file.close()
 
 

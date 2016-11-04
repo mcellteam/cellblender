@@ -25,6 +25,7 @@ This file contains the classes for CellBlender's Reaction Output.
 import glob
 import os
 import tempfile
+import json
 
 import cellblender
 
@@ -170,6 +171,7 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
         mcell = context.scene.mcell
         plot_sep = mcell.rxn_output.plot_layout
         plot_legend = mcell.rxn_output.plot_legend
+        use_sweep = mcell.rxn_output.use_sweep
 
         combine_seeds = mcell.rxn_output.combine_seeds
         mol_colors = mcell.rxn_output.mol_colors
@@ -186,132 +188,212 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
         if mod_name == None:
             return {'FINISHED'}
 
+        files_path = mcell_files_path()
+
+        root_path = files_path
+        data_paths = []
+        if use_sweep:
+          # Build the list from the sweep data file
+          #root_path = os.path.join(files_path, "sweep_data")
+          root_path = files_path
+          f = open ( os.path.join(files_path,"data_layout.json"), 'r' )
+          layout_spec = json.loads ( f.read() )
+          f.close()
+          data_layout = layout_spec['data_layout']
+          print ( "data_layout = " + str(layout_spec) )
+          num_runs = 1
+          for level in data_layout:
+            if (level[0] != 'dir') and (level[0] != 'file_type') and (level[0] != 'SEED'):
+              # Multiply by the number of sweep points in each level (stored at index 1)
+              num_runs *= len(level[1])
+              # append a counter to keep track of looping through levels
+              level.append ( 0 )
+          print ( "data_layout = " + str(layout_spec) )
+
+          # Use the counters to count up the paths from the reversed layout
+          data_layout.reverse()
+          run_num = 0
+          while run_num < num_runs:
+            print ( "Preparing run " + str(run_num) )
+            run_path = ""
+            for level in data_layout:
+              if (level[0] == 'dir'):
+                run_path = os.path.join ( level[1][0], run_path )
+              elif (level[0] ==  'file_type'):
+                run_path = os.path.join ( level[1][0], run_path )
+              elif (level[0] ==  'SEED'):
+                pass
+              else:
+                run_path = os.path.join ( level[0] + "_index_" + str(level[2]), run_path )
+                run_num += 1
+
+            run_path = run_path.strip ( os.path.sep )
+            data_paths.append ( run_path )
+            print ( "Run path = " + run_path )
+
+            # Increment the counters
+            for level in data_layout:
+              if (level[0] == 'dir'):
+                pass
+              elif (level[0] ==  'file_type'):
+                pass
+              elif (level[0] ==  'SEED'):
+                pass
+              else:
+                level[2] += 1
+                if (level[2] < len(level[1])):
+                  # This counter didn't roll over, so there's no need to carry into the next one. Break.
+                  break
+                else:
+                  # This counter did roll over, so go back to zero and continue to increment the next one
+                  level[2] = 0
+
+
+          #data_paths.append ( "sweep_data/a_index_0/react_data" )
+          #data_paths.append ( "sweep_data/a_index_1/react_data" )
+          #data_paths.append ( "sweep_data/a_index_2/react_data" )
+        else:
+          root_path = os.path.join(files_path, "react_data")
+          data_paths.append ( "" )
+
         # Plot the data via this module
         # print("Preparing to call %s" % (mod_name))
         # The mcell_files_path is now where the MDL lives:
-        data_path = mcell_files_path()
-        data_path = os.path.join(data_path, "react_data")
-        create_reactdata_tmpfile(data_path)
+        create_reactdata_tmpfile(files_path)
 
         plot_spec_string = "xlabel=time(s) ylabel=count "
         if plot_legend != 'x':
             plot_spec_string = plot_spec_string + "legend=" + plot_legend
 
-        for rxn_output in mcell.rxn_output.rxn_output_list:
+        for data_path in data_paths:
 
-            if rxn_output.plotting_enabled:
+            for rxn_output in mcell.rxn_output.rxn_output_list:
 
-                molecule_name = rxn_output.molecule_name
-                object_name = rxn_output.object_name
-                region_name = rxn_output.region_name
-                file_name = None
+                if rxn_output.plotting_enabled:
 
-                if rxn_output.rxn_or_mol == 'Molecule':
-                    if rxn_output.count_location == 'World':
-                        file_name = "%s.World.dat" % (molecule_name)
-                    elif rxn_output.count_location == 'Object':
-                        file_name = "%s.%s.dat" % (molecule_name, object_name)
-                    elif rxn_output.count_location == 'Region':
-                        file_name = "%s.%s.%s.dat" % (molecule_name,
-                                               object_name, region_name)
-                elif rxn_output.rxn_or_mol == 'Reaction':
-                    rxn_name = rxn_output.reaction_name
-                    if rxn_output.count_location == 'World':
-                        file_name = "%s.World.dat" % (rxn_name)
-                    elif rxn_output.count_location == 'Object':
-                        file_name = "%s.%s.dat" % (rxn_name, object_name)
-                    elif rxn_output.count_location == 'Region':
-                        file_name = "%s.%s.%s.dat" % (rxn_name,
-                                               object_name, region_name)
+                    molecule_name = rxn_output.molecule_name
+                    object_name = rxn_output.object_name
+                    region_name = rxn_output.region_name
+                    file_name = None
 
-                elif rxn_output.rxn_or_mol == 'MDLString':
-                    file_name = rxn_output.mdl_file_prefix + "_MDLString.dat"
+                    if rxn_output.rxn_or_mol == 'Molecule':
+                        if rxn_output.count_location == 'World':
+                            file_name = "%s.World.dat" % (molecule_name)
+                        elif rxn_output.count_location == 'Object':
+                            file_name = "%s.%s.dat" % (molecule_name, object_name)
+                        elif rxn_output.count_location == 'Region':
+                            file_name = "%s.%s.%s.dat" % (molecule_name,
+                                                   object_name, region_name)
+                    elif rxn_output.rxn_or_mol == 'Reaction':
+                        rxn_name = rxn_output.reaction_name
+                        if rxn_output.count_location == 'World':
+                            file_name = "%s.World.dat" % (rxn_name)
+                        elif rxn_output.count_location == 'Object':
+                            file_name = "%s.%s.dat" % (rxn_name, object_name)
+                        elif rxn_output.count_location == 'Region':
+                            file_name = "%s.%s.%s.dat" % (rxn_name,
+                                                   object_name, region_name)
 
-                elif rxn_output.rxn_or_mol == 'File':
-                    file_name = rxn_output.data_file_name
-                    print ( "Preparing to plot a File with file_name = " + file_name )
+                    elif rxn_output.rxn_or_mol == 'MDLString':
+                        file_name = rxn_output.mdl_file_prefix + "_MDLString.dat"
 
-                if file_name:
-                    first_pass = True
+                    elif rxn_output.rxn_or_mol == 'File':
+                        file_name = rxn_output.data_file_name
+                        print ( "Preparing to plot a File with file_name = " + file_name )
 
-                    if rxn_output.rxn_or_mol == 'File':
-                        # Assume that the file path is blend file relative (begins with "//")
-                        if file_name.startswith ( "//" ):
-                            # Convert the file name from blend file relative to react_data folder relative:
-                            candidate_file_list = [ os.path.pardir + os.path.sep + os.path.pardir + os.path.sep + os.path.pardir + os.path.sep + file_name[2:] ]
-                    else:
-                        # Prepend a search across all seeds for this file
-                        file_name = os.path.join("seed_*", file_name)
-                        candidate_file_list = glob.glob(os.path.join(data_path, file_name))
-                        # Without sorting, the seeds may not be increasing
-                        candidate_file_list.sort()
-                        #print("Candidate file list for %s:" % (file_name))
-                        #print("  ", candidate_file_list)
-                        # Use the start_time.txt file to find files modified since MCell was started
-                        start_time = os.stat(os.path.join(os.path.dirname(
-                            bpy.data.filepath), "start_time.txt")).st_mtime
-                        # This file is both in the list and newer than the run time for MCell
-                        candidate_file_list = [ffn for ffn in candidate_file_list if os.stat(ffn).st_mtime >= start_time]
+                    if file_name:
+                        first_pass = True
 
-                    for ffn in candidate_file_list:
-
-                        f = None
                         if rxn_output.rxn_or_mol == 'File':
-                          # Use the file name as it is
-                          f = ffn
+                            # Assume that the file path is blend file relative (begins with "//")
+                            if file_name.startswith ( "//" ):
+                                # Convert the file name from blend file relative to react_data folder relative:
+                                candidate_file_list = [ os.path.pardir + os.path.sep + os.path.pardir + os.path.sep + os.path.pardir + os.path.sep + file_name[2:] ]
                         else:
-                          # Create f as a relative path containing seed/file
-                          split1 = os.path.split(ffn)
-                          split2 = os.path.split(split1[0])
-                          f = os.path.join(split2[1], split1[1])
+                            # Prepend a search across all seeds for this file
+                            file_name = os.path.join("seed_*", file_name)
+                            if len(data_path) > 0:
+                              print ( "glob of " + os.path.join(root_path, data_path, file_name) )
+                              candidate_file_list = glob.glob(os.path.join(root_path, data_path, file_name))
+                            else:
+                              print ( "glob of " + os.path.join(root_path, file_name) )
+                              candidate_file_list = glob.glob(os.path.join(root_path, file_name))
+                            # Without sorting, the seeds may not be increasing
+                            candidate_file_list.sort()
+                            #print("Candidate file list for %s:" % (file_name))
+                            #print("  ", candidate_file_list)
+                            # Use the start_time.txt file to find files modified since MCell was started
+                            start_time = os.stat(os.path.join(os.path.dirname(
+                                bpy.data.filepath), "start_time.txt")).st_mtime
+                            # This file is both in the list and newer than the run time for MCell
+                            candidate_file_list = [ffn for ffn in candidate_file_list if os.stat(ffn).st_mtime >= start_time]
 
-                        color_string = ""
-                        if rxn_output.rxn_or_mol == 'Molecule' and mol_colors:
-                            # Use molecule colors for graphs
-                            # Should be standardized!!
-                            mol_mat_name = "mol_%s_mat" % (molecule_name)
-                            #print ("Molecule Material Name = ", mol_mat_name)
-                            #Look up the material
-                            mats = bpy.data.materials
-                            mol_color = mats.get(mol_mat_name).diffuse_color
-                            #print("Molecule color = ", mol_mat.diffuse_color)
+                        print ( "Candidate list = " + str(candidate_file_list) )
 
-                            mol_color_red = int(255 * mol_color.r)
-                            mol_color_green = int(255 * mol_color.g)
-                            mol_color_blue = int(255 * mol_color.b)
-                            color_string = " color=#%2.2x%2.2x%2.2x " % (
-                                mol_color_red, mol_color_green, mol_color_blue)
+                        for ffn in candidate_file_list:
 
-                        base_name = os.path.basename(f)
+                            print ( "   Files path      = " + str(files_path) )
+                            print ( "    Candidate file = " + str(ffn) )
 
-                        if combine_seeds:
-                            title_string = " title=" + base_name
-                        else:
-                            title_string = " title=" + f
+                            f = None
+                            if rxn_output.rxn_or_mol == 'File':
+                              # Use the file name as it is
+                              f = ffn
+                            else:
+                              # Create f as a relative path containing seed/file
+                              #split1 = os.path.split(ffn)
+                              #split2 = os.path.split(split1[0])
+                              #f = os.path.join(split2[1], split1[1])
 
-                        if plot_sep == ' ':
-                            # No title when all are on the same plot since only
-                            # last will show
-                            title_string = ""
+                              f = ffn[len(root_path)+1:]
 
-                        if combine_seeds:
-                            psep = " "
-                            if first_pass:
-                                psep = plot_sep
-                                first_pass = False
-                            plot_spec_string = (
-                                plot_spec_string + psep + color_string +
-                                title_string + " f=" + f)
-                        else:
-                            plot_spec_string = (
-                                plot_spec_string + plot_sep + color_string +
-                                title_string + " f=" + f)
+                            color_string = ""
+                            if rxn_output.rxn_or_mol == 'Molecule' and mol_colors:
+                                # Use molecule colors for graphs
+                                # Should be standardized!!
+                                mol_mat_name = "mol_%s_mat" % (molecule_name)
+                                #print ("Molecule Material Name = ", mol_mat_name)
+                                #Look up the material
+                                mats = bpy.data.materials
+                                mol_color = mats.get(mol_mat_name).diffuse_color
+                                #print("Molecule color = ", mol_mat.diffuse_color)
+
+                                mol_color_red = int(255 * mol_color.r)
+                                mol_color_green = int(255 * mol_color.g)
+                                mol_color_blue = int(255 * mol_color.b)
+                                color_string = " color=#%2.2x%2.2x%2.2x " % (
+                                    mol_color_red, mol_color_green, mol_color_blue)
+
+                            base_name = os.path.basename(f)
+
+                            if combine_seeds:
+                                title_string = " title=" + base_name
+                            else:
+                                title_string = " title=" + f
+
+                            if plot_sep == ' ':
+                                # No title when all are on the same plot since only
+                                # last will show
+                                title_string = ""
+
+                            if combine_seeds:
+                                psep = " "
+                                if first_pass:
+                                    psep = plot_sep
+                                    first_pass = False
+                                plot_spec_string = (
+                                    plot_spec_string + psep + color_string +
+                                    title_string + " f=" + f)
+                            else:
+                                plot_spec_string = (
+                                    plot_spec_string + plot_sep + color_string +
+                                    title_string + " f=" + f)
 
         plot_spec_string += " tf="+ReactionDataTmpFile.reactdata_tmpfile
-        print("Plotting from", data_path)
+        print("Plotting from", root_path)
         print("Plotting spec", plot_spec_string)
         python_path = get_python_path(mcell=mcell)
-        plot_module.plot(data_path, plot_spec_string, python_path)
+        plot_module.plot(root_path, plot_spec_string, python_path)
 
         return {'FINISHED'}
 
@@ -664,6 +746,10 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         name="Molecule Colors",
         description="Use Molecule Colors for line colors.",
         default=False)
+    use_sweep = BoolProperty(
+        name="Use Sweep",
+        description="Plot from the sweep file.",
+        default=False)
     plotter_to_use = EnumProperty(
         name="", # "Plot with:",
         description="Plotter to use.",
@@ -904,9 +990,11 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             row = layout.row()
             col = row.column()
             col.prop ( self, "plotter_to_use" )
-
             col = row.column()
-            col.operator("mcell.plot_rxn_output_with_selected")
+            col.prop ( self, "use_sweep" )
+
+            row = layout.row()
+            row.operator("mcell.plot_rxn_output_with_selected")
 
 
 
