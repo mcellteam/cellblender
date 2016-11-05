@@ -628,7 +628,7 @@ class MCELL_OT_run_simulation_control_opengl(bpy.types.Operator):
                     ":",
                     mcell_binary,
                     ("-seed %s" % str(sim_seed)),
-                    os.path.join(project_dir, ("%s.main.mdl" % base_name))
+                    os.path.join(project_dir, "output_data", ("%s.main.mdl" % base_name))
                   ]
                 
                 command_string = "Command:";
@@ -636,7 +636,7 @@ class MCELL_OT_run_simulation_control_opengl(bpy.types.Operator):
                   command_string += " " + s
                 print ( command_string )
                 
-                sp = subprocess.Popen ( command_list, cwd=project_dir, stdout=None, stderr=None )
+                sp = subprocess.Popen ( command_list, cwd=os.path.join(project_dir,"output_data"), stdout=None, stderr=None )
 
                 self.report({'INFO'}, "Simulation Running")
 
@@ -746,7 +746,7 @@ class MCELL_OT_run_simulation_control_java(bpy.types.Operator):
                     ":",
                     mcell_binary,
                     ("-seed %s" % str(sim_seed)),
-                    os.path.join(project_dir, ("%s.main.mdl" % base_name))
+                    os.path.join(project_dir, "output_data", ("%s.main.mdl" % base_name))
                   ]
 
                 command_string = "Command:";
@@ -754,7 +754,7 @@ class MCELL_OT_run_simulation_control_java(bpy.types.Operator):
                   command_string += " " + s
                 print ( command_string )
 
-                sp = subprocess.Popen ( command_list, cwd=project_dir, stdout=None, stderr=None )
+                sp = subprocess.Popen ( command_list, cwd=os.path.join(project_dir,"output_data"), stdout=None, stderr=None )
 
                 self.report({'INFO'}, "Simulation Running")
 
