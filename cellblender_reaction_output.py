@@ -171,7 +171,7 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
         mcell = context.scene.mcell
         plot_sep = mcell.rxn_output.plot_layout
         plot_legend = mcell.rxn_output.plot_legend
-        use_sweep = mcell.rxn_output.use_sweep
+        ###use_sweep = mcell.rxn_output.use_sweep
 
         combine_seeds = mcell.rxn_output.combine_seeds
         mol_colors = mcell.rxn_output.mol_colors
@@ -188,7 +188,9 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
         if mod_name == None:
             return {'FINISHED'}
 
-        files_path = mcell_files_path()
+        files_path = mcell_files_path()  # This will include the "mcell" on the end
+
+        use_sweep = 'sweep_data' in os.listdir(files_path)
 
         root_path = files_path
         data_paths = []
@@ -207,14 +209,18 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
               # Multiply by the number of sweep points in each level (stored at index 1)
               num_runs *= len(level[1])
               # append a counter to keep track of looping through levels
-              level.append ( 0 )
-          print ( "data_layout = " + str(layout_spec) )
+            level.append ( 0 )
+          print ( "num_runs = " + str(num_runs) + ",  data_layout = " + str(layout_spec) )
 
           # Use the counters to count up the paths from the reversed layout
           data_layout.reverse()
           run_num = 0
           while run_num < num_runs:
             print ( "Preparing run " + str(run_num) )
+            counters = ""
+            for level in data_layout:
+              counters = counters + "  " + level[0] + ":" + str(level[2])
+            print ( " Counters = " + counters )
             run_path = ""
             for level in data_layout:
               if (level[0] == 'dir'):
@@ -225,7 +231,7 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                 pass
               else:
                 run_path = os.path.join ( level[0] + "_index_" + str(level[2]), run_path )
-                run_num += 1
+            run_num += 1
 
             run_path = run_path.strip ( os.path.sep )
             data_paths.append ( run_path )
@@ -746,10 +752,10 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         name="Molecule Colors",
         description="Use Molecule Colors for line colors.",
         default=False)
-    use_sweep = BoolProperty(
-        name="Use Sweep",
-        description="Plot from the sweep file.",
-        default=False)
+    #use_sweep = BoolProperty(
+    #    name="Use Sweep",
+    #    description="Plot from the sweep file.",
+    #    default=False)
     plotter_to_use = EnumProperty(
         name="", # "Plot with:",
         description="Plotter to use.",
@@ -991,10 +997,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
             col = row.column()
             col.prop ( self, "plotter_to_use" )
             col = row.column()
-            col.prop ( self, "use_sweep" )
-
-            row = layout.row()
-            row.operator("mcell.plot_rxn_output_with_selected")
+            col.operator("mcell.plot_rxn_output_with_selected")
 
 
 

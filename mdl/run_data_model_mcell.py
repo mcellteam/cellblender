@@ -222,7 +222,7 @@ if __name__ == "__main__":
     # Build a list of "run commands" (one for each run) to be run by the multiprocessing pool and "run_sim" (above)
     # Note that the format of these came from the original "run_simulations.py" program and may not be what we want in the long run
     run_cmd_list = []
-    if num_sweep_runs <= 1:
+    if False and (num_sweep_runs <= 1):  # This branch is no longer needed if we always put the data in the sweep_data directory
         # Build a normal list of seed runs without a "sweep_data" directory:
         for seed in range(start,end+1):
             run_cmd_list.append ( [mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed] )

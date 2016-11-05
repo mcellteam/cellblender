@@ -158,6 +158,8 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
 
     def execute(self, context):
 
+        print("Executing Sweep Runner")
+
         mcell = context.scene.mcell
         mcell.run_simulation.last_simulation_run_time = str(time.time())
 
