@@ -219,7 +219,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
             # Force the project directory to be where the .blend file lives
             cellblender_objects.model_objects_update(context)
 
-            filepath = mcell_files_path()
+            filepath = os.path.join ( mcell_files_path(), "output_data" )
             os.makedirs(filepath, exist_ok=True)
 
             # Set this for now to have it hopefully propagate until base_name can

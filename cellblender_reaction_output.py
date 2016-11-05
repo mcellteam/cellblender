@@ -190,13 +190,16 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
 
         files_path = mcell_files_path()  # This will include the "mcell" on the end
 
+        # Determine if this data structure is in the newer sweep format or not
         use_sweep = 'output_data' in os.listdir(files_path)
 
         root_path = files_path
         data_paths = []
+
         if use_sweep:
+
           # Build the list from the sweep data file
-          #root_path = os.path.join(files_path, "output_data")
+
           root_path = files_path
           f = open ( os.path.join(files_path,"data_layout.json"), 'r' )
           layout_spec = json.loads ( f.read() )
@@ -256,6 +259,9 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
 
 
         else:
+
+          # This is a pre-sweeping directory structure, so build a list containing a single item
+
           root_path = os.path.join(files_path, "react_data")
           data_paths.append ( "" )
 

@@ -42,6 +42,7 @@ import glob
 import os
 import random
 import re
+import json
 
 # CellBlender imports
 import cellblender
@@ -109,7 +110,7 @@ def viz_data_save_post(context):
                 print ( "Blend:  " + bfn )
                 print ( "Viz:    " + mfd )
 
-                if not mfd.startswith(os.path.splitext(bfn)[0] + "_files" + os.sep + "mcell" + os.sep + "viz_data"):
+                if not mfd.startswith(os.path.splitext(bfn)[0] + "_files" + os.sep + "mcell" + os.sep ):
                     print ( "Paths don't match, so clear mol-viz information" )
                     # This is being saved as a different file than was used to generate the visualization data
                     cellblender.cellblender_mol_viz.global_mol_file_list = []
@@ -143,17 +144,50 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
 
         mol_file_dir = ''
 
-        #  mol_file_dir comes from directory already chosen manually
         if mcell.mol_viz.manual_select_viz_dir:
-            mol_file_dir = mcell.mol_viz.mol_file_dir
-            print("manual mol_file_dir: %s" % (mol_file_dir))
 
-        #  mol_file_dir comes from directory associated with saved .blend file
+          #  mol_file_dir comes from directory already chosen manually
+          mol_file_dir = mcell.mol_viz.mol_file_dir
+          print("manual mol_file_dir: %s" % (mol_file_dir))
+
+
         else:
-          # Force the top level mol_viz directory to be where the .blend file
-          # lives plus "viz_data". The seed directories will live underneath it.
-          mol_viz_top_level_dir = os.path.join(mcell_files_path(), "viz_data", "")
+
+          #  mol_file_dir comes from directory associated with saved .blend file
+          mol_viz_top_level_dir = None
+          files_path = mcell_files_path()
+
+          # Check to see if the data is in an output_data directory or not
+
+          if os.path.exists(files_path) and 'output_data' in os.listdir(files_path):
+            # Read the viz data from the first data path in the potential sweep
+            f = open ( os.path.join(files_path,"data_layout.json"), 'r' )
+            layout_spec = json.loads ( f.read() )
+            f.close()
+            data_layout = layout_spec['data_layout']
+            print ( "data_layout = " + str(data_layout) )
+            sub_path = ""
+            for level in data_layout:
+              if level[0] == 'dir':
+                sub_path = os.path.join ( sub_path, level[1][0] )
+              elif level[0] == 'file_type':
+                sub_path = os.path.join ( sub_path, 'viz_data', '' )
+                pass
+              elif (level[0] ==  'SEED'):
+                pass
+              else:
+                sub_path = os.path.join ( sub_path, level[0] + "_index_0" )
+            mol_viz_top_level_dir = os.path.join(files_path, sub_path)
+            print ( "Mol Viz top level = " + str(mol_viz_top_level_dir) )
+
+          else:
+
+            # Force the top level mol_viz directory to be where the .blend file
+            # lives plus "viz_data". The seed directories will live underneath it.
+            mol_viz_top_level_dir = os.path.join(files_path, "viz_data", "")
+
           mol_viz_top_level_dir = os.path.relpath(mol_viz_top_level_dir)
+
           mol_viz_seed_list = glob.glob(os.path.join(mol_viz_top_level_dir, "*"))
           mol_viz_seed_list.sort()
 
@@ -170,7 +204,17 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
               new_item.name = os.path.basename(mol_viz_seed)
 
           if mcell.mol_viz.mol_viz_seed_list:
-              mol_file_dir = get_mol_file_dir()
+              # If you previously had some viz data loaded, but reran the
+              # simulation with less seeds, you can receive an index error.
+              try:
+                  active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[
+                      mcell.mol_viz.active_mol_viz_seed_index]
+              except IndexError:
+                  mcell.mol_viz.active_mol_viz_seed_index = 0
+                  active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[0]
+              mol_file_dir = os.path.join(mol_viz_top_level_dir, active_mol_viz_seed.name)
+              mol_file_dir = os.path.relpath(mol_file_dir)
+
               mcell.mol_viz.mol_file_dir = mol_file_dir
               print("auto mol_file_dir: %s" % (mol_file_dir))
 
