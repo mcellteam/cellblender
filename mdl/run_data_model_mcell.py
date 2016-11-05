@@ -202,7 +202,7 @@ if __name__ == "__main__":
     sweep_list_file.write ( "{\n" )
     sweep_list_file.write ( " \"version\": 0,\n" )
     sweep_list_file.write ( " \"data_layout\": [\n" )
-    sweep_list_file.write ( "  [\"dir\", [\"sweep_data\"]],\n" )
+    sweep_list_file.write ( "  [\"dir\", [\"output_data\"]],\n" )
     for i in range ( sweep_list_length ):
       sw_item = sweep_list[i]
       sweep_list_file.write ( "  [\"" + sw_item['par_name'] + "\", " + str(sw_item['values']) + "],\n" )
@@ -222,41 +222,36 @@ if __name__ == "__main__":
     # Build a list of "run commands" (one for each run) to be run by the multiprocessing pool and "run_sim" (above)
     # Note that the format of these came from the original "run_simulations.py" program and may not be what we want in the long run
     run_cmd_list = []
-    if False and (num_sweep_runs <= 1):  # This branch is no longer needed if we always put the data in the sweep_data directory
-        # Build a normal list of seed runs without a "sweep_data" directory:
+    # Build a sweep list with a "output_data" prefix directory
+    for run in range (num_sweep_runs):
+        sweep_path = "output_data"
+        for sw_item in sweep_list:
+            sweep_path += "/" + sw_item['par_name'] + "_index_" + str(sw_item['current_index'])
+        print ( "Sweep path = " + sweep_path )
+        # Set the data model parameters to the current parameter settings
+        for par in dm['mcell']['parameter_system']['model_parameters']:
+            if ('par_name' in par):
+                for sweep_item in sweep_list:
+                    if par['par_name'] == sweep_item['par_name']:
+                        par['par_expression'] = str(sweep_item['values'][sweep_item['current_index']])
+        # Sweep through the seeds for this set of parameters creating a run specification for each seed
         for seed in range(start,end+1):
-            run_cmd_list.append ( [mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed] )
-    else:
-        # Build a sweep list with a "sweep_data" prefix directory
-        for run in range (num_sweep_runs):
-            sweep_path = "sweep_data"
-            for sw_item in sweep_list:
-                sweep_path += "/" + sw_item['par_name'] + "_index_" + str(sw_item['current_index'])
-            print ( "Sweep path = " + sweep_path )
-            # Set the data model parameters to the current parameter settings
-            for par in dm['mcell']['parameter_system']['model_parameters']:
-                if ('par_name' in par):
-                    for sweep_item in sweep_list:
-                        if par['par_name'] == sweep_item['par_name']:
-                            par['par_expression'] = str(sweep_item['values'][sweep_item['current_index']])
-            # Sweep through the seeds for this set of parameters creating a run specification for each seed
-            for seed in range(start,end+1):
-                # Create the directories and write the MDL
-                sweep_item_path = os.path.join(project_dir,sweep_path)
-                os.makedirs ( sweep_item_path, exist_ok=True )
-                os.makedirs ( os.path.join(sweep_item_path,'react_data'), exist_ok=True )
-                os.makedirs ( os.path.join(sweep_item_path,'viz_data'), exist_ok=True )
-                data_model_to_mdl.write_mdl ( dm, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ) )
-                run_cmd_list.append ( [mcell_binary, sweep_item_path, base_name, error_file_option, log_file_option, seed] )
-            # Increment the current_index counters from rightmost side (deepest directory)
-            i = len(sweep_list) - 1
-            while i >= 0:
-                sweep_list[i]['current_index'] += 1
-                if sweep_list[i]['current_index'] >= len(sweep_list[i]['values']):
-                  sweep_list[i]['current_index'] = 0
-                else:
-                  break
-                i += -1
+            # Create the directories and write the MDL
+            sweep_item_path = os.path.join(project_dir,sweep_path)
+            os.makedirs ( sweep_item_path, exist_ok=True )
+            os.makedirs ( os.path.join(sweep_item_path,'react_data'), exist_ok=True )
+            os.makedirs ( os.path.join(sweep_item_path,'viz_data'), exist_ok=True )
+            data_model_to_mdl.write_mdl ( dm, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ) )
+            run_cmd_list.append ( [mcell_binary, sweep_item_path, base_name, error_file_option, log_file_option, seed] )
+        # Increment the current_index counters from rightmost side (deepest directory)
+        i = len(sweep_list) - 1
+        while i >= 0:
+            sweep_list[i]['current_index'] += 1
+            if sweep_list[i]['current_index'] >= len(sweep_list[i]['values']):
+              sweep_list[i]['current_index'] = 0
+            else:
+              break
+            i += -1
 
     # Print the run commands as a record of what's being done
     print ( "Run Cmds:" )

@@ -183,7 +183,7 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
             if (mcell.run_simulation.error_list and mcell.cellblender_preferences.invalid_policy == 'dont_run'):
                 pass
             else:
-                sweep_dir = os.path.join(project_dir, "sweep_data")
+                sweep_dir = os.path.join(project_dir, "output_data")
                 if (os.path.exists(sweep_dir) and mcell.run_simulation.remove_append == 'remove'):
                     shutil.rmtree(sweep_dir)
                 if not os.path.exists(sweep_dir):

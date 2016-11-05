@@ -190,13 +190,13 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
 
         files_path = mcell_files_path()  # This will include the "mcell" on the end
 
-        use_sweep = 'sweep_data' in os.listdir(files_path)
+        use_sweep = 'output_data' in os.listdir(files_path)
 
         root_path = files_path
         data_paths = []
         if use_sweep:
           # Build the list from the sweep data file
-          #root_path = os.path.join(files_path, "sweep_data")
+          #root_path = os.path.join(files_path, "output_data")
           root_path = files_path
           f = open ( os.path.join(files_path,"data_layout.json"), 'r' )
           layout_spec = json.loads ( f.read() )
@@ -255,9 +255,6 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                   level[2] = 0
 
 
-          #data_paths.append ( "sweep_data/a_index_0/react_data" )
-          #data_paths.append ( "sweep_data/a_index_1/react_data" )
-          #data_paths.append ( "sweep_data/a_index_2/react_data" )
         else:
           root_path = os.path.join(files_path, "react_data")
           data_paths.append ( "" )
