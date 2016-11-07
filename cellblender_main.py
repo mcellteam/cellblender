@@ -724,9 +724,10 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     context.scene.mcell.rxn_output.draw_layout ( context, layout )
 
                 if self.viz_select:
-                    layout.box()
+                    layout.box() # Use as a separator
                     layout.label ( "Visualization", icon='SEQUENCE' )
                     context.scene.mcell.viz_output.draw_layout ( context, layout )
+                    layout.box() # Use as a separator
                     context.scene.mcell.mol_viz.draw_layout ( context, layout )
                     
                 if self.init_select:

@@ -1012,7 +1012,7 @@ class MCellFloatVectorProperty(bpy.types.PropertyGroup):
 class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
     """ Property group for for molecule visualization.
 
-      This is the "Visualize Simulation Results Panel".
+      This was the "Visualize Simulation Results Panel".
 
     """
 
