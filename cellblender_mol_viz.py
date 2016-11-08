@@ -145,15 +145,11 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        print ( "MCELL_OT_read_viz_data operator" )
         global global_mol_file_list
 
         # Called when the molecule files are actually to be read (when the
         # "Read Molecule Files" button is pushed or a seed value is selected
         # from the list)
-
-        # print("MCELL_OT_read_viz_data.execute() called")
-        # self.report({'INFO'}, "Reading Visualization Data")
 
         mcell = context.scene.mcell
 
@@ -180,7 +176,6 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
             layout_spec = json.loads ( f.read() )
             f.close()
             data_layout = layout_spec['data_layout']
-            print ( "data_layout = " + str(data_layout) )
             sub_path = ""
             for level in data_layout:
               if level[0] == 'dir':
@@ -191,12 +186,8 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
               elif (level[0] ==  'SEED'):
                 pass
               else:
-                print ( "Choices = " + str(mcell.mol_viz.choices_list) )
-                for choice in mcell.mol_viz.choices_list:
-                  print ( '  Choice "' + choice.name + '" is index ' + str(choice.enum_choice) )
                 sub_path = os.path.join ( sub_path, level[0] + "_index_0" )
             mol_viz_top_level_dir = os.path.join(files_path, sub_path)
-            print ( "Mol Viz top level = " + str(mol_viz_top_level_dir) )
 
           else:
 
@@ -234,7 +225,6 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
               mol_file_dir = os.path.relpath(mol_file_dir)
 
               mcell.mol_viz.mol_file_dir = mol_file_dir
-              print("auto mol_file_dir: %s" % (mol_file_dir))
 
 #        mcell.mol_viz.mol_file_list.clear()
 
@@ -1299,8 +1289,6 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
 
         files_path = mcell_files_path()  # This will include the "mcell" on the end
 
-        print ( "$$$$$$$$$$$$$$$$$$$$$$$$  update_data_layout with files_path = " + str(files_path) )
-
         # Determine if this data structure is in the newer sweep format or not
         use_sweep = 'output_data' in os.listdir(files_path)
 
@@ -1317,16 +1305,6 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
 
           self['data_layout'] = data_layout
 
-
-          print ( "$$$$$$$$$$$$$$$$$$$$$$$$  Length of choices_list = " + str(len(self.choices_list)) )
-          for i in range(len(self.choices_list)):
-              #print ( "Choice = " + str(self.choices_list[i].enum_choice) )
-              print ( "Choice = " + str(self.choices_list[i]['name']) )
-
-          for i in range(len(data_layout)):
-              print ( "Name = " + str(data_layout[i][0]) + ", Data = " + str(data_layout) )
-
-
           # Build an expected choice list that won't contain "dir", "file_type", or "SEED"
           expected_choice_list = []
           for i in range(len(data_layout)):
@@ -1335,7 +1313,6 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
                   # This is a directory name so add it to the expected list
                   expected_choice_list.append ( name )
 
-          print ( "Expected choices = " + str(expected_choice_list) )
           # Compare the expected list with the current Blender choice list
           needs_refresh = False
           if len(self.choices_list) != len(expected_choice_list):
@@ -1348,44 +1325,16 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
                       break
 
           if needs_refresh:
-
-              print ( "########## Needs to be refreshed" )
-              # Remove all items
-              #for i in range(len(data_layout)):
-              #    if not (data_layout[i][0] in self.choices_list):
-              #        self.choices_list.remove ( self.choices_list.keys().index(data_layout[i][0]) )
-              # Add items in the data layout but don't overwrite
-
-              # Remove items that are not in the current data layout
-              #for i in range(len(data_layout)):
-              #    if not (data_layout[i][0] in self.choices_list):
-              #        self.choices_list.remove ( self.choices_list.keys().index(data_layout[i][0]) )
-              # Add items in the data layout but don't overwrite
-              #for i in range(len(data_layout)):
-              #    print ( "name = " + str(data_layout[i][0]) + ", Data = " + str(data_layout) )
-              #    if not (data_layout[i][0] in ['dir', 'file_type', 'SEED']):
-              #        if not (data_layout[i][0] in self.choices_list):
-              #            self.choices_list.add()
-              #            choice = self.choices_list[len(self.choices_list)-1]
-              #            choice['name'] = data_layout[i][0]
-              #            choice['values'] = data_layout[i][1]
-
-              # Remove items that are not in the current data layout
-              #for i in range(len(self.choices_list)):
-              #    print ( "Choice = " + str(self.choices_list[i].enum_choice) )
+              # Remove all items from Blender's RNA self.choices_list
               while len(self.choices_list) > 0:
                   self.choices_list.remove ( 0 )
-              # Add items in the data layout but not in the current choices
+              # Add the items in the current data layout
               for i in range(len(data_layout)):
-                  #print ( "name = " + str(data_layout[i][0]) + ", Data = " + str(data_layout) )
                   if not (data_layout[i][0] in ['dir', 'file_type', 'SEED']):
                       self.choices_list.add()
                       choice = self.choices_list[len(self.choices_list)-1]
                       choice['name'] = data_layout[i][0]
                       choice['values'] = data_layout[i][1]
-
-              #choices_list = CollectionProperty(type=DynamicChoicePropGroup, name="Choice Dimensions")
-
 
 
     def draw_layout(self, context, layout):
@@ -1429,9 +1378,6 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
                 choice = self.choices_list[i]
                 row = layout.row()
                 row.prop ( self.choices_list[i], "enum_choice", text=choice['name'] )
-            #if 'data_layout' in self:
-            #    for item in self['data_layout']:
-            #        print ( "Data Layout item = " + str(item) )
 
 
 
