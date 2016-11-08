@@ -2148,49 +2148,53 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
     def runs_in_sweep ( self, sw_item ):
         """ Count the number of runs in a single sweep expression. """
         num_runs_for_this_parameter = 0
-        parts = [ p.strip() for p in sw_item.split(':') ]
-        if len(parts) <= 0:
-            # This would be two commas together?
-            pass
-        elif len(parts) == 1:
-            # This is a scalar
-            num_runs_for_this_parameter += 1
-            #print ( "Added 1" )
-        elif len(parts) == 2:
-            # This is a range with implied steps of 1
-            start = float(parts[0])
-            stop = float(parts[1])
-            if start > stop:
-                start = float(parts[1])
-                stop = float(parts[0])
-            num_runs_for_this_parameter += int(1 + stop - start)
-            #print ( "Added " + str(int(1 + stop - start)) )
-        elif len(parts) >= 3:
-            # This is a range with explicit steps
-            start = float(parts[0])
-            stop = float(parts[1])
-            step = float(parts[2])
-            if start > stop:
-                start = float(parts[1])
-                stop = float(parts[0])
-            if step < 0:
-                step = -step
-            if step == 0:
-                # Do something to keep it from an infinite loop
-                step = 1;
-            # Start with a pessimistic guess
-            num = int((stop-start) / step)
-            # Increase until equal or over
-            #print ( "Before increasing, num = " + str(num) )
-            while (start+((num-1)*step)) < (stop+(step/1000)):
-                num += 1
-                #print ( "Increased to num = " + str(num) )
-            # Reduce while actually over
-            while start+((num-1)*step) > (stop+(step/1000)):
-                num += -1
-                #print ( "Decreased to num = " + str(num) )
-            num_runs_for_this_parameter += num
-            #print ( "Added " + str(num) )
+        # First split by commas to separate out the groups (which may be single points or ranges)
+        groups = [ p.strip() for p in sw_item.split(',') ]
+        for group in groups:
+          # Next split by colons to find any ranges
+          parts = [ p.strip() for p in group.split(':') ]
+          if len(parts) <= 0:
+              # This would be two commas together?
+              pass
+          elif len(parts) == 1:
+              # This is a scalar
+              num_runs_for_this_parameter += 1
+              #print ( "Added 1" )
+          elif len(parts) == 2:
+              # This is a range with implied steps of 1
+              start = float(parts[0])
+              stop = float(parts[1])
+              if start > stop:
+                  start = float(parts[1])
+                  stop = float(parts[0])
+              num_runs_for_this_parameter += int(1 + stop - start)
+              #print ( "Added " + str(int(1 + stop - start)) )
+          elif len(parts) >= 3:
+              # This is a range with explicit steps
+              start = float(parts[0])
+              stop = float(parts[1])
+              step = float(parts[2])
+              if start > stop:
+                  start = float(parts[1])
+                  stop = float(parts[0])
+              if step < 0:
+                  step = -step
+              if step == 0:
+                  # Do something to keep it from an infinite loop
+                  step = 1;
+              # Start with a pessimistic guess
+              num = int((stop-start) / step)
+              # Increase until equal or over
+              #print ( "Before increasing, num = " + str(num) )
+              while (start+((num-1)*step)) < (stop+(step/1000)):
+                  num += 1
+                  #print ( "Increased to num = " + str(num) )
+              # Reduce while actually over
+              while start+((num-1)*step) > (stop+(step/1000)):
+                  num += -1
+                  #print ( "Decreased to num = " + str(num) )
+              num_runs_for_this_parameter += num
+              #print ( "Added " + str(num) )
         return num_runs_for_this_parameter;
 
 
