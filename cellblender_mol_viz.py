@@ -121,7 +121,21 @@ def viz_data_save_post(context):
 # Operators can't be callbacks, so we need this function for now.  This is
 # temporary until we make importing viz data automatic.
 def read_viz_data_callback(self, context):
+    print ( "read_viz_data_callback" )
     bpy.ops.mcell.read_viz_data()
+
+
+class MCELL_OT_update_data_layout(bpy.types.Operator):
+    bl_idname = "mcell.update_data_layout"
+    bl_label = "Update Layout Data"
+    bl_description = "Update the Data Layout based on most recent run of this project."
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        print ( "MCELL_OT_update_data_layout operator" )
+        mcell = context.scene.mcell
+        mcell.mol_viz.update_data_layout(context)
+        return {'FINISHED'}
 
 
 class MCELL_OT_read_viz_data(bpy.types.Operator):
@@ -131,6 +145,7 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
+        print ( "MCELL_OT_read_viz_data operator" )
         global global_mol_file_list
 
         # Called when the molecule files are actually to be read (when the
@@ -176,6 +191,9 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
               elif (level[0] ==  'SEED'):
                 pass
               else:
+                print ( "Choices = " + str(mcell.mol_viz.choices_list) )
+                for choice in mcell.mol_viz.choices_list:
+                  print ( '  Choice "' + choice.name + '" is index ' + str(choice.enum_choice) )
                 sub_path = os.path.join ( sub_path, level[0] + "_index_0" )
             mol_viz_top_level_dir = os.path.join(files_path, sub_path)
             print ( "Mol Viz top level = " + str(mol_viz_top_level_dir) )
@@ -1008,6 +1026,39 @@ class MCellFloatVectorProperty(bpy.types.PropertyGroup):
         pass
 
 
+def generate_choices_callback(self, context):
+
+    mcell = context.scene.mcell
+    data_layout = mcell.mol_viz['data_layout']
+
+    #print ( "generate_choices_callback called with a self of " + str(self) )
+    #print ( "generate_choices_callback called with a self.name of " + str(self.name) )
+    #print ( "generate_choices_callback called with a dyn_data_layout of " + str(data_layout) )
+
+    items = []
+
+    for item in data_layout:
+        if self.name == item[0]:
+            opt_num = 0
+            for option in item[1]:
+                # print ( "appending " + str(option) + " as " + str(opt_num) )
+                items.append ( (str(opt_num), str(option), "") )
+                opt_num += 1
+    return items
+
+
+def select_test_case_callback(self, context):
+    # Build the path starting from output_data
+    print ( "select test case callback with self = " + str(self) )
+    mcell = context.scene.mcell
+    mol_viz = mcell.mol_viz
+    data_layout = mcell.mol_viz['data_layout']
+    print ( " Data Layout: " + str(data_layout) )
+
+
+class DynamicChoicePropGroup(bpy.types.PropertyGroup):
+    enum_choice = EnumProperty( name="Parameter Value", description="Dynamic List of Choices.", items=generate_choices_callback, update=select_test_case_callback )
+
 
 class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
     """ Property group for for molecule visualization.
@@ -1021,7 +1072,6 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
     active_mol_viz_seed_index = IntProperty(
         name="Current Visualization Seed Index", default=0,
         update=read_viz_data_callback)
-        #update= bpy.ops.mcell.read_viz_data)
     mol_file_dir = StringProperty(
         name="Molecule File Dir", subtype='NONE')
     mol_file_list = CollectionProperty(
@@ -1051,6 +1101,9 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         name="Manually Select Viz Directory", default=False,
         description="Toggle the option to manually load viz data.",
         update=mol_viz_toggle_manual_select)
+
+    #mol_viz_sweep_list = CollectionProperty(type=DynamicChoicePropGroup, name="Choice Dimensions")
+    choices_list = CollectionProperty(type=DynamicChoicePropGroup, name="Choice Dimensions")
 
 
     def build_data_model_from_properties ( self, context ):
@@ -1224,6 +1277,114 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         print ( "Done removing all Molecule Visualization Properties." )
 
 
+    def update_data_layout(self, context):
+        """
+        The data layout describes the folder structure containing mcell's output.
+        For consistency, it is currently a Python structure directly reflecting
+        the JSON structure stored in that file. Some of those fields may not be
+        needed for all types of processing, and substructures could be passed.
+        But that might result in confusion, so the whole structure is used for now.
+
+        self.choices_list is the Blender structure holding the list of subdirectories
+        described by the data layout. It is currently a list of enum fields where the
+        choices in the enum are the possible sub-subdirectories at each level. This
+        function updates those choices based on the data in "data_layout.json". It is
+        relatively easy to simply read that file and recreate the self.choices_list
+        each time a refresh is requested. However, this has the unfortunate effect
+        of not preserving the previously chosen settings. This code attempts to
+        preserve the settings when the structure hasn't changed.
+        """
+
+        mcell = context.scene.mcell
+
+        files_path = mcell_files_path()  # This will include the "mcell" on the end
+
+        print ( "$$$$$$$$$$$$$$$$$$$$$$$$  update_data_layout with files_path = " + str(files_path) )
+
+        # Determine if this data structure is in the newer sweep format or not
+        use_sweep = 'output_data' in os.listdir(files_path)
+
+        data_paths = []
+
+        if use_sweep:
+
+          # Check if the current structure reflects the recent run
+
+          f = open ( os.path.join(files_path,"data_layout.json"), 'r' )
+          layout_spec = json.loads ( f.read() )
+          f.close()
+          data_layout = layout_spec['data_layout']
+
+          self['data_layout'] = data_layout
+
+
+          print ( "$$$$$$$$$$$$$$$$$$$$$$$$  Length of choices_list = " + str(len(self.choices_list)) )
+          for i in range(len(self.choices_list)):
+              #print ( "Choice = " + str(self.choices_list[i].enum_choice) )
+              print ( "Choice = " + str(self.choices_list[i]['name']) )
+
+          for i in range(len(data_layout)):
+              print ( "Name = " + str(data_layout[i][0]) + ", Data = " + str(data_layout) )
+
+
+          # Build an expected choice list that won't contain "dir", "file_type", or "SEED"
+          expected_choice_list = []
+          for i in range(len(data_layout)):
+              name = str(data_layout[i][0])
+              if not (name in ['dir', 'file_type', 'SEED']):
+                  # This is a directory name so add it to the expected list
+                  expected_choice_list.append ( name )
+
+          print ( "Expected choices = " + str(expected_choice_list) )
+          # Compare the expected list with the current Blender choice list
+          needs_refresh = False
+          if len(self.choices_list) != len(expected_choice_list):
+              print ( "List Lengths don't match" )
+              needs_refresh = True
+          else:
+              for i in range(len(self.choices_list)):
+                  if self.choices_list[i]['name'] != expected_choice_list[i]:
+                      needs_refresh = True
+                      break
+
+          if needs_refresh:
+
+              print ( "########## Needs to be refreshed" )
+              # Remove all items
+              #for i in range(len(data_layout)):
+              #    if not (data_layout[i][0] in self.choices_list):
+              #        self.choices_list.remove ( self.choices_list.keys().index(data_layout[i][0]) )
+              # Add items in the data layout but don't overwrite
+
+              # Remove items that are not in the current data layout
+              #for i in range(len(data_layout)):
+              #    if not (data_layout[i][0] in self.choices_list):
+              #        self.choices_list.remove ( self.choices_list.keys().index(data_layout[i][0]) )
+              # Add items in the data layout but don't overwrite
+              #for i in range(len(data_layout)):
+              #    print ( "name = " + str(data_layout[i][0]) + ", Data = " + str(data_layout) )
+              #    if not (data_layout[i][0] in ['dir', 'file_type', 'SEED']):
+              #        if not (data_layout[i][0] in self.choices_list):
+              #            self.choices_list.add()
+              #            choice = self.choices_list[len(self.choices_list)-1]
+              #            choice['name'] = data_layout[i][0]
+              #            choice['values'] = data_layout[i][1]
+
+              # Remove items that are not in the current data layout
+              #for i in range(len(self.choices_list)):
+              #    print ( "Choice = " + str(self.choices_list[i].enum_choice) )
+              while len(self.choices_list) > 0:
+                  self.choices_list.remove ( 0 )
+              # Add items in the data layout but not in the current choices
+              for i in range(len(data_layout)):
+                  #print ( "name = " + str(data_layout[i][0]) + ", Data = " + str(data_layout) )
+                  if not (data_layout[i][0] in ['dir', 'file_type', 'SEED']):
+                      self.choices_list.add()
+                      choice = self.choices_list[len(self.choices_list)-1]
+                      choice['name'] = data_layout[i][0]
+                      choice['values'] = data_layout[i][1]
+
+              #choices_list = CollectionProperty(type=DynamicChoicePropGroup, name="Choice Dimensions")
 
 
 
@@ -1261,6 +1422,17 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
 #                              rows=2)
             row = layout.row()
             layout.prop(mcell.mol_viz, "mol_viz_enable")
+
+
+            layout.box()
+            for i in range(len(self.choices_list)):
+                choice = self.choices_list[i]
+                row = layout.row()
+                row.prop ( self.choices_list[i], "enum_choice", text=choice['name'] )
+            #if 'data_layout' in self:
+            #    for item in self['data_layout']:
+            #        print ( "Data Layout item = " + str(item) )
+
 
 
     def draw_panel ( self, context, panel ):
