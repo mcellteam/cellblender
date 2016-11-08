@@ -121,7 +121,7 @@ def viz_data_save_post(context):
 # Operators can't be callbacks, so we need this function for now.  This is
 # temporary until we make importing viz data automatic.
 def read_viz_data_callback(self, context):
-    print ( "read_viz_data_callback" )
+    # print ( "read_viz_data_callback" )
     bpy.ops.mcell.read_viz_data()
 
 
@@ -132,7 +132,7 @@ class MCELL_OT_update_data_layout(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        print ( "MCELL_OT_update_data_layout operator" )
+        # print ( "MCELL_OT_update_data_layout operator" )
         mcell = context.scene.mcell
         mcell.mol_viz.update_data_layout(context)
         return {'FINISHED'}
@@ -1049,11 +1049,9 @@ def generate_choices_callback(self, context):
 
 def select_test_case_callback(self, context):
     # Build the path starting from output_data
-    print ( "select test case callback with self = " + str(self) )
     mcell = context.scene.mcell
     mol_viz = mcell.mol_viz
     data_layout = mcell.mol_viz['data_layout']
-    print ( " Data Layout: " + str(data_layout) )
     bpy.ops.mcell.update_data_layout()
     bpy.ops.mcell.read_viz_data()
 
@@ -1328,7 +1326,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
           # Compare the expected list with the current Blender choice list
           needs_refresh = False
           if len(self.choices_list) != len(expected_choice_list):
-              print ( "List Lengths don't match" )
+              # print ( "List Lengths don't match" )
               needs_refresh = True
           else:
               for i in range(len(self.choices_list)):
