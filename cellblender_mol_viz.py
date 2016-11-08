@@ -152,13 +152,15 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
         # from the list)
 
         mcell = context.scene.mcell
+        mol_viz = mcell.mol_viz
+        choices_list = mol_viz.choices_list
 
         mol_file_dir = ''
 
-        if mcell.mol_viz.manual_select_viz_dir:
+        if mol_viz.manual_select_viz_dir:
 
           #  mol_file_dir comes from directory already chosen manually
-          mol_file_dir = mcell.mol_viz.mol_file_dir
+          mol_file_dir = mol_viz.mol_file_dir
           print("manual mol_file_dir: %s" % (mol_file_dir))
 
 
@@ -179,14 +181,22 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
             sub_path = ""
             for level in data_layout:
               if level[0] == 'dir':
+                # This is typically the top level directory
                 sub_path = os.path.join ( sub_path, level[1][0] )
               elif level[0] == 'file_type':
+                # This is typically either "viz_data" or "react_data" ... force "viz_data
                 sub_path = os.path.join ( sub_path, 'viz_data', '' )
-                pass
               elif (level[0] ==  'SEED'):
+                # Seed selection is handled in another part of the application so pass
                 pass
               else:
-                sub_path = os.path.join ( sub_path, level[0] + "_index_0" )
+                # This is a parameter sweep subdirectory, use the parameter name and currently selected index
+                selected_index = 0
+                try:
+                  selected_index = choices_list[level[0]]['enum_choice']
+                except:
+                  pass
+                sub_path = os.path.join ( sub_path, level[0] + ("_index_%d" % selected_index) )
             mol_viz_top_level_dir = os.path.join(files_path, sub_path)
 
           else:
@@ -203,30 +213,30 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
           # Clear the list of seeds (e.g. seed_00001, seed_00002, etc) and the
           # list of files (e.g. my_project.cellbin.0001.dat,
           # my_project.cellbin.0002.dat)
-          mcell.mol_viz.mol_viz_seed_list.clear()
+          mol_viz.mol_viz_seed_list.clear()
 
 
           # Add all the seed directories to the mol_viz_seed_list collection
           # (seed_00001, seed_00002, etc)
           for mol_viz_seed in mol_viz_seed_list:
-              new_item = mcell.mol_viz.mol_viz_seed_list.add()
+              new_item = mol_viz.mol_viz_seed_list.add()
               new_item.name = os.path.basename(mol_viz_seed)
 
-          if mcell.mol_viz.mol_viz_seed_list:
+          if mol_viz.mol_viz_seed_list:
               # If you previously had some viz data loaded, but reran the
               # simulation with less seeds, you can receive an index error.
               try:
-                  active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[
-                      mcell.mol_viz.active_mol_viz_seed_index]
+                  active_mol_viz_seed = mol_viz.mol_viz_seed_list[
+                      mol_viz.active_mol_viz_seed_index]
               except IndexError:
-                  mcell.mol_viz.active_mol_viz_seed_index = 0
-                  active_mol_viz_seed = mcell.mol_viz.mol_viz_seed_list[0]
+                  mol_viz.active_mol_viz_seed_index = 0
+                  active_mol_viz_seed = mol_viz.mol_viz_seed_list[0]
               mol_file_dir = os.path.join(mol_viz_top_level_dir, active_mol_viz_seed.name)
               mol_file_dir = os.path.relpath(mol_file_dir)
 
-              mcell.mol_viz.mol_file_dir = mol_file_dir
+              mol_viz.mol_file_dir = mol_file_dir
 
-#        mcell.mol_viz.mol_file_list.clear()
+#        mol_viz.mol_file_list.clear()
 
         global_mol_file_list = []
         mol_file_list = []
@@ -239,19 +249,19 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
           # Add all the viz_data files to global_mol_file_list (e.g.
           # my_project.cellbin.0001.dat, my_project.cellbin.0001.dat, etc)
           for mol_file_name in mol_file_list:
-#              new_item = mcell.mol_viz.mol_file_list.add()
+#              new_item = mol_viz.mol_file_list.add()
 #              new_item.name = os.path.basename(mol_file_name)
               global_mol_file_list.append(os.path.basename(mol_file_name))
 
           # If you previously had some viz data loaded, but reran the
           # simulation with less iterations, you can receive an index error.
           try:
-#              mol_file = mcell.mol_viz.mol_file_list[
-#                  mcell.mol_viz.mol_file_index]
+#              mol_file = mol_viz.mol_file_list[
+#                  mol_viz.mol_file_index]
               mol_file = global_mol_file_list[
-                  mcell.mol_viz.mol_file_index]
+                  mol_viz.mol_file_index]
           except IndexError:
-              mcell.mol_viz.mol_file_index = 0
+              mol_viz.mol_file_index = 0
 
           create_color_list()
           set_viz_boundaries(context)
@@ -259,11 +269,11 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
           # Set the mol_file_index to match the cursor as closely as possible
           cursor_index = context.scene.frame_current
           if len(mol_file_list) > cursor_index:
-            mcell.mol_viz.mol_file_index = cursor_index
+            mol_viz.mol_file_index = cursor_index
           elif len(mol_file_list) >= 1:
-            mcell.mol_viz.mol_file_index = len(mol_file_list) - 1
+            mol_viz.mol_file_index = len(mol_file_list) - 1
           else:
-            mcell.mol_viz.mol_file_index = 0
+            mol_viz.mol_file_index = 0
 
           try:
               mol_viz_clear(mcell, force_clear=True)
@@ -1044,6 +1054,8 @@ def select_test_case_callback(self, context):
     mol_viz = mcell.mol_viz
     data_layout = mcell.mol_viz['data_layout']
     print ( " Data Layout: " + str(data_layout) )
+    bpy.ops.mcell.update_data_layout()
+    bpy.ops.mcell.read_viz_data()
 
 
 class DynamicChoicePropGroup(bpy.types.PropertyGroup):
