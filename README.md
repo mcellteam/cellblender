@@ -184,4 +184,10 @@ assumption that the data is "hyper-rectangular".
 These two files (**data_model.json** and **data_layout.json**) allow a relatively
 simple program (or script) to make use of CellBlender's parameters sweeping output
 for a variety of purposes. At the present time, they are used by CellBlender for
-plotting and visualization.
+plotting and visualization. They are also being used to integrate MCell into Galaxy.
+
+Note that the **data_layout.json** specification is still under development. It may
+be redefined so that the special keys of "dir" and "file_type" are changed to names
+or symbols that are not legal MCell parameter names. Note also that the "dir" level
+provides flexibility to change the name "output_data" to some other name or eliminate
+that directory layer altogether.
