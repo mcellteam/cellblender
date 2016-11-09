@@ -140,6 +140,19 @@ def count_sweep_runs ( sweep_list ):
     return total_sweep_runs
 
 
+def makedirs_exist_ok ( path_to_build, exist_ok=False ):
+    # Needed for old python which doesn't have the exist_ok option!!!
+    print ( " Make dirs for " + path_to_build )
+    parts = path_to_build.split(os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
+    print ( "  Parts = " + str(parts) )
+    full = ""
+    if len(parts[0]) == 0:
+      full = os.sep
+    for p in parts:
+      full = os.path.join(full,p)
+      print ( "   " + full )
+      if not os.path.exists(full):
+        os.makedirs ( full )
 
 
 if __name__ == "__main__":
@@ -238,9 +251,9 @@ if __name__ == "__main__":
         for seed in range(start,end+1):
             # Create the directories and write the MDL
             sweep_item_path = os.path.join(project_dir,sweep_path)
-            os.makedirs ( sweep_item_path, exist_ok=True )
-            os.makedirs ( os.path.join(sweep_item_path,'react_data'), exist_ok=True )
-            os.makedirs ( os.path.join(sweep_item_path,'viz_data'), exist_ok=True )
+            makedirs_exist_ok ( sweep_item_path, exist_ok=True )
+            makedirs_exist_ok ( os.path.join(sweep_item_path,'react_data'), exist_ok=True )
+            makedirs_exist_ok ( os.path.join(sweep_item_path,'viz_data'), exist_ok=True )
             data_model_to_mdl.write_mdl ( dm, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ) )
             run_cmd_list.append ( [mcell_binary, sweep_item_path, base_name, error_file_option, log_file_option, seed] )
         # Increment the current_index counters from rightmost side (deepest directory)
