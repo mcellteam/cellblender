@@ -84,11 +84,12 @@ directory tree for a Blender file named "**MyProject.blend**" in **some_director
 .../some_directory/MyProject_files/mcell/viz_data    (Contains a Directory per seed)
 ```
 
-The newer format adds the "output_data" directory directly below the "mcell" folder
+The newer format adds the **"output_data"** directory directly below the **"mcell"** folder
 as shown here:
 ```
 .../some_directory/MyProject.blend                               (Blender file)
 .../some_directory/MyProject_files                               (Directory of related files)
+.../some_directory/MyProject_files/mcell                         (MCell-Specific files)
 .../some_directory/MyProject_files/mcell/output_data             (MDL files for running MCell)
 .../some_directory/MyProject_files/mcell/output_data/react_data  (Contains a Directory per seed)
 .../some_directory/MyProject_files/mcell/output_data/viz_data    (Contains a Directory per seed)
@@ -96,13 +97,14 @@ as shown here:
 
 That would be the directory layout for a run with no parameters being swept. If
 any parameters are swept, then an additional subdirectory tree is inserted below
-the "output_data" subdirectory of that tree and above the react_data and viz_data
+the **"output_data"** subdirectory of that tree and above the **react_data** and **viz_data**
 directories. For example, if a single parameter named **"a"** were to be swept
 with values of **{3.5, 3.7, and 3.8}**, then the directory structure produced by 
 CellBlender would be:
 ```
 .../some_directory/MyProject.blend                                         (Blender file)
 .../some_directory/MyProject_files                                         (Directory of related files)
+.../some_directory/MyProject_files/mcell                                   (MCell-Specific files)
 .../some_directory/MyProject_files/mcell/output_data                       (Files related to running MCell)
 .../some_directory/MyProject_files/mcell/output_data/a_index_0             (MDL files for a=3.5)
 .../some_directory/MyProject_files/mcell/output_data/a_index_0/react_data  (Contains a Directory per seed)
@@ -115,12 +117,13 @@ CellBlender would be:
 .../some_directory/MyProject_files/mcell/output_data/a_index_2/viz_data    (Contains a Directory per seed)
 ```
 
-If two parameter (**a** and **b**) were being swept with **a** taking values
+If two parameters (**a** and **b**) were being swept with **a** taking values
 **{3.5, 3.7, 3.8}** and **b** taking values **{100, 200}** then the directory
 structure would be:
 ```
 .../some_directory/MyProject.blend                                                   (Blender file)
 .../some_directory/MyProject_files                                                   (Directory of related files)
+.../some_directory/MyProject_files/mcell                                             (MCell-Specific files)
 .../some_directory/MyProject_files/mcell/output_data                                 (Files related to running MCell)
 .../some_directory/MyProject_files/mcell/output_data/a_index_0                       (Directory for a=3.5)
 .../some_directory/MyProject_files/mcell/output_data/a_index_0/b_index_0             (MDL files for a=3.5, b=100)
@@ -152,16 +155,16 @@ during a typical run:
 .../some_directory/MyProject_files/mcell/data_layout.json   (JSON description of directory tree)
 ```
 
-The first file ("data_model.json") contains a JSON representation of CellBlender's
+The first file (**"data_model.json"**) contains a JSON representation of CellBlender's
 Data Model. This file describes the model and also contains all of the parameter
 sweeping specifications.
 
-The second file ("data_layout.json") contains a JSON description of the data produced
+The second file (**"data_layout.json"**) contains a JSON description of the data produced
 by the run. It can be used by CellBlender and other applications to navigate the
 directory structure and know the values used for each parameter in the output data
 directory tree. Here's the "data_layout.json" file for the previous example where two
 parameters (**a** and **b**) are being swept with **a** taking values **{3.5, 3.7, 3.8}**
-and **b** taking values **{100, 200}**:
+and **b** taking values **{100, 200}** and 3 seeds **{1, 2, 3}**:
 ```
 {
   "version": 0,
@@ -178,5 +181,7 @@ and **b** taking values **{100, 200}**:
 This file facilitates automated processing of the output_data tree with the implied
 assumption that the data is "hyper-rectangular".
 
-Using these two files (**data_model.json** and **data_layout.json**) a relatively
-simple program (or script) can make use of CellBlender's parameters sweeping output.
+These two files (**data_model.json** and **data_layout.json**) allow a relatively
+simple program (or script) to make use of CellBlender's parameters sweeping output
+for a variety of purposes. At the present time, they are used by CellBlender for
+plotting and visualization.
