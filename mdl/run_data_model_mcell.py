@@ -11,6 +11,7 @@ import data_model_to_mdl
 
 def run_sim(arglist):
     """ Run the MCell simulations. """
+    print ( "Sim Thread using " + str(arglist) )
 
     mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed = arglist
     mdl_filename = '%s.main.mdl' % (base_name)
@@ -69,10 +70,10 @@ def run_sim(arglist):
 def build_sweep_list ( par_dict ):
     """ Count the number of runs that will be swept with this data model. """
     sweep_list = []
-    #print ( "Building sweep list... " )
+    print ( "Building sweep list... " )
     if 'model_parameters' in par_dict:
         for par in par_dict['model_parameters']:
-            #print ( "Checking par " + str(par) )
+            print ( "Checking par " + str(par) )
             if ('sweep_expression' in par) and ('sweep_enabled' in par):
                 if par['sweep_enabled']:
                     sweep_item = {}
@@ -202,10 +203,12 @@ if __name__ == "__main__":
     # data_model_to_mdl.dump_data_model ( dm )
 
     # Build a sweep list and add a "current_index" of 0 to support the sweeping
+    print ( "Building sweep list" )
     sweep_list = build_sweep_list( dm['mcell']['parameter_system'] )
+    print ( "Sweep list = " + str(sweep_list) )
     for sw_item in sweep_list:
       sw_item['current_index'] = 0
-      print ( "Sweep list = " + str(sw_item) )
+      print ( "  Sweep list = " + str(sw_item) )
 
 
     # Save the sweep list to a file for plotting, visualization, and other processing
@@ -274,3 +277,4 @@ if __name__ == "__main__":
     # Create a pool of mcell processes.
     pool = multiprocessing.Pool(processes=mcell_processes)
     pool.map(run_sim, run_cmd_list)
+
