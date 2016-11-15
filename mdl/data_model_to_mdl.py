@@ -216,7 +216,32 @@ def write_mdl ( dm, file_name ):
 
 def write_parameter_system ( ps, f ):
     if 'model_parameters' in ps:
+
       mplist = ps['model_parameters']
+
+      if ('_extras' in ps) and ('ordered_id_names' in ps['_extras']):
+        # Re-order the model parameters list (mplist) for proper dependency order based on ordered_id_names
+        unordered_mplist = [ p for p in mplist ]  # Make a copy first since the algorithm removes items from this list!!
+        ordered_mplist = []
+        # First get all the parameters that match the ids in order (leave remaining in original list)
+        ordered_ids = ps['_extras']['ordered_id_names']
+        for ordered_id in ordered_ids:
+          for p in unordered_mplist:
+            if ('_extras' in p) and ('par_id_name' in p['_extras']):
+              if p['_extras']['par_id_name'] == ordered_id:
+                ordered_mplist.append(p)
+                unordered_mplist.remove(p)
+                break
+        # Finish by adding all remaing items to the new list)
+        for p in unordered_mplist:
+          ordered_mplist.append(p)
+        # Replace the old list by the new sorted list
+        mplist = ordered_mplist
+      else:
+        # This is where the parameters could be placed in dependency order without relying on _extras fields
+        # There should be no data models that don't have those fields, so pass for now.
+        pass
+
       if len(mplist) > 0:
         f.write ( "/* DEFINE PARAMETERS */\n" );
 
