@@ -145,13 +145,13 @@ def makedirs_exist_ok ( path_to_build, exist_ok=False ):
     # Needed for old python which doesn't have the exist_ok option!!!
     print ( " Make dirs for " + path_to_build )
     parts = path_to_build.split(os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
-    print ( "  Parts = " + str(parts) )
+    # print ( "  Parts = " + str(parts) )
     full = ""
     if len(parts[0]) == 0:
       full = os.sep
     for p in parts:
       full = os.path.join(full,p)
-      print ( "   " + full )
+      # print ( "   " + full )
       if not os.path.exists(full):
         os.makedirs ( full )
 
