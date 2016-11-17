@@ -11,6 +11,7 @@ import data_model_to_mdl
 
 def run_sim(arglist):
     """ Run the MCell simulations. """
+    print ( "Sim Thread running from " + str(os.getcwd()) )
     print ( "Sim Thread using " + str(arglist) )
 
     mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed = arglist
@@ -161,6 +162,7 @@ if __name__ == "__main__":
     Run one or more MCell processes from a potentially swept CellBlender Data Model
     """
     # Get the command line arguments (excluding the script name itself)
+    print ( "Main of run_data_model_mcell.py running from " + str(os.getcwd()) )
     print ( "Arguments = " + str(sys.argv) )
 
     arg_parser = argparse.ArgumentParser(description='Run MCell with appropriate arguments')
@@ -208,7 +210,7 @@ if __name__ == "__main__":
     print ( "Sweep list = " + str(sweep_list) )
     for sw_item in sweep_list:
       sw_item['current_index'] = 0
-      print ( "  Sweep list = " + str(sw_item) )
+      print ( "  Sweep list item = " + str(sw_item) )
 
 
     # Save the sweep list to a file for plotting, visualization, and other processing
