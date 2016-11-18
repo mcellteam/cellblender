@@ -161,10 +161,6 @@ if __name__ == "__main__":
     """
     Run one or more MCell processes from a potentially swept CellBlender Data Model
     """
-    # Get the command line arguments (excluding the script name itself)
-    print ( "Main of run_data_model_mcell.py running from " + str(os.getcwd()) )
-    print ( "Arguments = " + str(sys.argv) )
-
     arg_parser = argparse.ArgumentParser(description='Run MCell with appropriate arguments')
     arg_parser.add_argument ( 'data_model_file_name',     type=str,                    help='the file name of the data model to run' )
     arg_parser.add_argument ( '-pd', '--proj_dir',        type=str, default='',        help='the directory where the program will run' )
@@ -173,9 +169,14 @@ if __name__ == "__main__":
     arg_parser.add_argument ( '-ls', '--last_seed',       type=int, default=1,         help='the last seed in a series of seeds to run' )
     arg_parser.add_argument ( '-lf', '--log_file_opt',    type=str, default='console', help='the log file option for mcell' )
     arg_parser.add_argument ( '-ef', '--error_file_opt',  type=str, default='console', help='the error file option for mcell' )
-    arg_parser.add_argument ( '-np', '--num_processes',   type=int, default=8,         help='the number of processors' )
+    arg_parser.add_argument ( '-np', '--num_processors',  type=int, default=8,         help='the number of processors' )
+    arg_parser.add_argument ( '-rl', '--run_limit',       type=int, default=-1,        help='limit the total number of runs' )
     
     parsed_args = arg_parser.parse_args() # Without any arguments this uses sys.argv automatically
+
+    # Get the command line arguments (excluding the script name itself)
+    print ( "Main of run_data_model_mcell.py running from " + str(os.getcwd()) )
+    print ( "Arguments = " + str(sys.argv) )
 
     print ( "Data Model Name = " + parsed_args.data_model_file_name )
     print ( "Binary Name = " + parsed_args.binary )
@@ -184,7 +185,8 @@ if __name__ == "__main__":
     print ( "Last Seed = " + str(parsed_args.last_seed) )
     print ( "Log File = " + parsed_args.log_file_opt )
     print ( "Error File = " + parsed_args.error_file_opt )
-    print ( "Num Processes = " + str(parsed_args.num_processes) )
+    print ( "Num Processors = " + str(parsed_args.num_processors) )
+    print ( "Run Limit = " + str(parsed_args.run_limit) )
     
     # Create convenience variables from parsed_args:
     mcell_binary = parsed_args.binary
@@ -196,7 +198,7 @@ if __name__ == "__main__":
     base_name = 'Scene'
     error_file_option = parsed_args.error_file_opt
     log_file_option = parsed_args.log_file_opt
-    mcell_processes = parsed_args.num_processes
+    mcell_processors = parsed_args.num_processors
 
     data_model_file_name = parsed_args.data_model_file_name
 
@@ -235,7 +237,20 @@ if __name__ == "__main__":
 
     # Count the number of sweep runs (could be done in build_sweep_list, but it's nice as a separate function) 
     num_sweep_runs = count_sweep_runs ( sweep_list )
-    print ( "Number of runs = " + str(num_sweep_runs) )
+    num_requested_runs = num_sweep_runs * (1 + parsed_args.last_seed - parsed_args.first_seed)
+    print ( "Number of non-seed sweep runs = " + str(num_sweep_runs) )
+    print ( "Total runs (sweep and seed) is " + str(num_requested_runs) )
+
+    if parsed_args.run_limit >= 0:
+      # Only check when run_limit is non-negative (0 is legal and means that no runs are allowed)
+      if num_requested_runs > parsed_args.run_limit:
+        print ( " " )
+        print ( 100*"%" )
+        print ( 100*"%" )
+        print ( "Number of requested runs is " + str(num_requested_runs) + " which exceeds the current limit of " + str(parsed_args.run_limit) )
+        print ( 100*"%" )
+        print ( 100*"%" )
+        sys.exit(111)
 
     # Build a list of "run commands" (one for each run) to be run by the multiprocessing pool and "run_sim" (above)
     # Note that the format of these came from the original "run_simulations.py" program and may not be what we want in the long run
@@ -277,6 +292,6 @@ if __name__ == "__main__":
       print ( "  " + str(rc) )
 
     # Create a pool of mcell processes.
-    pool = multiprocessing.Pool(processes=mcell_processes)
+    pool = multiprocessing.Pool(processes=mcell_processors)
     pool.map(run_sim, run_cmd_list)
 
