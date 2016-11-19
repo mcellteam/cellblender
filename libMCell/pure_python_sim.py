@@ -45,14 +45,14 @@ if dm is None:
 
 ##### Clear out the old data
 
-react_dir = os.path.join(proj_path, "react_data")
+react_dir = os.path.join(proj_path, "output_data", "react_data")
 
 if os.path.exists(react_dir):
     shutil.rmtree(react_dir)
 if not os.path.exists(react_dir):
     os.makedirs(react_dir)
 
-viz_dir = os.path.join(proj_path, "viz_data")
+viz_dir = os.path.join(proj_path, "output_data", "viz_data")
 
 if os.path.exists(viz_dir):
     shutil.rmtree(viz_dir)
