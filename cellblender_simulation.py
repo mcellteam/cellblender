@@ -436,6 +436,9 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                 cellblender.simulation_queue.start(mcell_processes)
                 cellblender.simulation_queue.notify = True
 
+                # The following line will create the "data_layout.json" file describing the directory structure
+                write_default_data_layout(project_dir, start_seed, end_seed)
+
                 processes_list = mcell.run_simulation.processes_list
                 for seed in range(start_seed,end_seed + 1):
                   processes_list.add()
@@ -471,7 +474,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                   mdl_filename = '%s.main.mdl' % (base_name)
                   mcell_args = '-seed %d %s' % (seed, mdl_filename)
                   make_texts = mcell.run_simulation.save_text_logs
-                  proc = cellblender.simulation_queue.add_task(mcell_binary, mcell_args, project_dir, make_texts)
+                  proc = cellblender.simulation_queue.add_task(mcell_binary, mcell_args, os.path.join(project_dir, "output_data"), make_texts)
 
                   self.report({'INFO'}, "Simulation Running")
 
