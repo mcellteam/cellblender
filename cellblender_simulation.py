@@ -1635,8 +1635,8 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
             #mcell.project_settings.base_name = scene_name
 
             main_mdl = mcell_files_path()
+            main_mdl = os.path.join(main_mdl, "output_data")
             main_mdl = os.path.join(main_mdl, scene_name + ".main.mdl")
-
 
             global global_scripting_enabled_once
 
