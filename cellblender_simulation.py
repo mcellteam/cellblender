@@ -146,7 +146,6 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
                 bpy.ops.mcell.run_simulation_pure_python()
             else:
                 bpy.ops.mcell.run_simulation_control_queue()
-                bpy.ops.mcell.run_simulation_control_queue()
         return {'FINISHED'}
 
 
