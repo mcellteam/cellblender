@@ -1308,7 +1308,7 @@ class CellBlender_Model:
         # print ( "Done Changing Material for Molecule \"" + mol_name + "\"" )
 
     def get_mdl_file_path ( self ):
-        return self.path_to_blend[:self.path_to_blend.rfind('.')] + "_files" + os.sep + "mcell"
+        return self.path_to_blend[:self.path_to_blend.rfind('.')] + "_files" + os.sep + "mcell" + os.sep + "output_data"
 
     def get_main_mdl_file_path ( self ):
         return self.get_mdl_file_path() + os.sep + "Scene.main.mdl"
