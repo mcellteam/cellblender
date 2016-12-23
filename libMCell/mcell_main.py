@@ -7,6 +7,7 @@ import math
 import random
 import array
 import shutil
+print ( "Running from " + os.getcwd() )
 from libMCell import *
 
 print ( "\n\nMCell Python Prototype using libMCell %d arguments:\n" % len(sys.argv) )
@@ -81,8 +82,9 @@ mols = {}
 for m in mol_defs:
   print ( "Molecule " + m['mol_name'] + " is a " + m['mol_type'] + " molecule diffusing with " + str(m['diffusion_constant']) )
   mol = MCellMoleculeSpecies()
-  mol.name = m['mol_name']
-  mol.diffusion_constant = m['diffusion_constant']
+  mol.name = str(m['mol_name']) # This str() appears to be needed because of "uName" kinds of problems (Unicode?)
+  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+  mol.diffusion_constant = float(m['diffusion_constant'])
   mcell_sim.add_molecule_species(mol)
   mols[mol.name] = mol
 
