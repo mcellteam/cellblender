@@ -1,7 +1,7 @@
 PYTHON_INCLUDE = /usr/include/python3.4m
 
 # Linux:
-INSTALL_DIR = ~/.config/blender/2.77/scripts/addons/
+INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
 
 # Mac:
 #INSTALL_DIR = ~/Library/Application\ Support/Blender/2.74/scripts/addons/
@@ -125,3 +125,4 @@ test_py: mcell_main.py _libMCell.so
 install: mcell_main mcell_main_c
 	cp -v mcell_main $(INSTALL_DIR)cellblender/libMCell/
 	cp -v mcell_main_c $(INSTALL_DIR)cellblender/libMCell/
+	cp -v _libMCell.so $(INSTALL_DIR)cellblender/libMCell/
