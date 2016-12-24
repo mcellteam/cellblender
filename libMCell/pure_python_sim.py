@@ -66,6 +66,13 @@ if os.path.exists(viz_seed_dir):
 if not os.path.exists(viz_seed_dir):
     os.makedirs(viz_seed_dir)
 
+react_seed_dir = os.path.join(react_dir, "seed_00001")
+
+if os.path.exists(react_seed_dir):
+    shutil.rmtree(react_seed_dir)
+if not os.path.exists(react_seed_dir):
+    os.makedirs(react_seed_dir)
+
 ##### Use the Data Model to generate output files
 
 iterations = eval(dm['mcell']['initialization']['iterations'])
@@ -102,11 +109,21 @@ for r in rels:
 ndigits = 1 + math.log(iterations+1,10)
 file_name_template = "Scene.cellbin.%%0%dd.dat" % ndigits
 
+# Create the count files for each molecule species (doesn't currently use the count specifications)
+
+count_files = {}
+
+for m in mols:
+  react_file_name = "%s/seed_00001/%s.World.dat" % ( react_dir, m['mol_name'] )
+  count_files[m['mol_name']] = open(react_file_name,"w")
+
+
 # Begin the simulation
 
 print_every = math.pow(10,math.floor(math.log10((iterations/10))));
 if print_every < 1: print_every = 1;
 for i in range(iterations+1):
+  # Write the viz data (every iteration for now)
   viz_file_name = file_name_template % i
   viz_file_name = os.path.join(viz_seed_dir,viz_file_name)
   if (i % print_every) == 0:
@@ -118,9 +135,9 @@ for i in range(iterations+1):
   for m in mols:
     name = m['mol_name']
     f.write(bytearray([len(name)]))       # Number of bytes in the name
-    for i in range(len(name)):
-      f.write(bytearray([ord(name[i])]))  # Each byte of the name
-    f.write(bytearray([0]))               # Molecule Type, 1=Surface, 0=Volume?
+    for ni in range(len(name)):
+      f.write(bytearray([ord(name[ni])]))  # Each byte of the name
+    f.write(bytearray([0]))                # Molecule Type, 1=Surface, 0=Volume?
 
     # Write out the total number of values for this molecule species
     int_array = array.array("I")
@@ -130,17 +147,32 @@ for i in range(iterations+1):
     dc = eval(m['diffusion_constant'])
     ds = 6000 * math.sqrt( 6 * dc * time_step )    # N O T E:  This is a guess!!!!  (TODO: Make this realistic)
 
-    for i in m['instances']:
-      x = i[0]
-      y = i[1]
-      z = i[2]
+    for mi in m['instances']:
+      x = mi[0]
+      y = mi[1]
+      z = mi[2]
       mol_pos = array.array("f")
       mol_pos.fromlist ( [ x, y, z ] )
       mol_pos.tofile(f)
-      i[0] += random.gauss(0.0,ds)
-      i[1] += random.gauss(0.0,ds)
-      i[2] += random.gauss(0.0,ds)
+      mi[0] += random.gauss(0.0,ds)
+      mi[1] += random.gauss(0.0,ds)
+      mi[2] += random.gauss(0.0,ds)
   f.close()
+  # Write the count data (every iteration for now)
+  for m in mols:
+    name = m['mol_name']
+    count = len(m['instances'])
+    count_files[name].write ( "%.15g" % (i*time_step) + " " + str(count) + "\n" )
+
+  # Perform "reactions" ... just randomly delete the last molecule for now
+  for m in mols:
+    if random.gauss(0.0,1.0) < 0:
+      if len(m['instances']) > 0:
+        m['instances'].pop()
+
+
+for fname in count_files.keys():
+  count_files[fname].close()
 
 print ( "Done simulation.\n" );
 
