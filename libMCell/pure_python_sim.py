@@ -80,6 +80,11 @@ time_step = eval(dm['mcell']['initialization']['time_step'])
 mols = dm['mcell']['define_molecules']['molecule_list']
 rels = dm['mcell']['release_sites']['release_site_list']
 
+num_defined_reactions = 0
+if 'define_reactions' in dm['mcell']:
+  if 'reaction_list' in dm['mcell']['define_reactions']:
+    num_defined_reactions = len(dm['mcell']['define_reactions']['reaction_list'])
+
 for m in mols:
   print ( "Molecule " + m['mol_name'] + " is a " + m['mol_type'] + " molecule diffusing with " + str(m['diffusion_constant']) )
 
@@ -164,11 +169,12 @@ for i in range(iterations+1):
     count = len(m['instances'])
     count_files[name].write ( "%.15g" % (i*time_step) + " " + str(count) + "\n" )
 
-  # Perform "reactions" ... just randomly delete the last molecule for now
-  for m in mols:
-    if random.gauss(0.0,1.0) < 0:
-      if len(m['instances']) > 0:
-        m['instances'].pop()
+  if num_defined_reactions > 0:
+    # Perform fake "reactions" ... just randomly delete the last molecule for now
+    for m in mols:
+      if random.gauss(0.0,1.0) < 0:
+        if len(m['instances']) > 0:
+          m['instances'].pop()
 
 
 for fname in count_files.keys():
