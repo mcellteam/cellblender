@@ -7,11 +7,9 @@ import math
 import random
 import array
 import shutil
-print ( "Running from " + os.getcwd() )
 from libMCell import *
-import libMCell
-print ( "Imported with libMCell.__file__ = " + str(libMCell.__file__) )
 print ( "\n\nMCell Python Prototype using libMCell %d arguments:\n" % len(sys.argv) )
+print ( "Running from " + os.getcwd() )
 proj_path = ""
 data_model_file_name = ""
 data_model_full_path = ""
