@@ -45,6 +45,7 @@ if dm is None:
 
 #print ( str(dm) )
 
+""" # This is now done by libMCell's run_simulation call
 ##### Clear out the old data
 
 react_dir = os.path.join(proj_path, "react_data")
@@ -67,6 +68,8 @@ if os.path.exists(viz_seed_dir):
     shutil.rmtree(viz_seed_dir)
 if not os.path.exists(viz_seed_dir):
     os.makedirs(viz_seed_dir)
+"""
+
 
 ##### Use the Data Model to initialize a libMCell model
 

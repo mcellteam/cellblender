@@ -70,17 +70,20 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
 
   printf ( "Creating directories ...\n" );
 
-  char *react_dir = join_path ( proj_path, '/', "react_data" );
-  mkdir ( react_dir, 0777 );
+  char *output_dir = join_path ( proj_path, '/', "output_data" );
+  mkdir ( output_dir, 0755 );
+
+  char *react_dir = join_path ( output_dir, '/', "react_data" );
+  mkdir ( react_dir, 0755 );
 
   char *react_seed_dir = join_path ( react_dir, '/', "seed_00001" );
-  mkdir ( react_seed_dir, 0777 );
+  mkdir ( react_seed_dir, 0755 );
 
-  char *viz_dir = join_path ( proj_path, '/', "viz_data" );
-  mkdir ( viz_dir, 0777 );
+  char *viz_dir = join_path ( output_dir, '/', "viz_data" );
+  mkdir ( viz_dir, 0755 );
 
   char *viz_seed_dir = join_path ( viz_dir, '/', "seed_00001" );
-  mkdir ( viz_seed_dir, 0777 );
+  mkdir ( viz_seed_dir, 0755 );
 
 
   printf ( "Generating Data ...\n" );
@@ -128,7 +131,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
 
   char *sim_step_mol_name = (char *) malloc ( strlen(f_template) + 10 );
 
-  // Create the count files for each molecule species
+  // Create the count files for each molecule species (doesn't currently use the count specifications)
 
   FILE **count_files;
   count_files = (FILE **) malloc ( this->molecule_species.get_num_items() * sizeof(FILE *) );
