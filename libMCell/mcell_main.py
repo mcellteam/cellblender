@@ -8,8 +8,8 @@ import random
 import array
 import shutil
 from libMCell import *
-
 print ( "\n\nMCell Python Prototype using libMCell %d arguments:\n" % len(sys.argv) )
+print ( "Running from " + os.getcwd() )
 proj_path = ""
 data_model_file_name = ""
 data_model_full_path = ""
@@ -81,8 +81,8 @@ mols = {}
 for m in mol_defs:
   print ( "Molecule " + m['mol_name'] + " is a " + m['mol_type'] + " molecule diffusing with " + str(m['diffusion_constant']) )
   mol = MCellMoleculeSpecies()
-  mol.name = m['mol_name']
-  mol.diffusion_constant = m['diffusion_constant']
+  mol.name = str(m['mol_name']) # This str() appears to be needed because of "uName" kinds of problems (Unicode?)
+  mol.diffusion_constant = eval(m['diffusion_constant'])
   mcell_sim.add_molecule_species(mol)
   mols[mol.name] = mol
 
@@ -91,12 +91,19 @@ rels = {}
 
 for r in rel_defs:
   print ( "Release " + str(r['quantity']) + " of " + r['molecule'] + " at (" + str(r['location_x']) + "," + str(r['location_y']) + "," + str(r['location_z']) + ")"  )
-  rel = MCellReleaseSite
+  rel = MCellReleaseSite()
   rel.x = eval(r['location_x'])
   rel.y = eval(r['location_y'])
   rel.z = eval(r['location_z'])
   rel.quantity = eval(r['quantity'])
   rel.molecule_species = mols[r['molecule']]
+  mcell_sim.add_molecule_release_site(rel)
+
+mcell_sim.dump_state()
+
+#__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+print ( "\nStarting Python simulation using libMCell ...\n" )
 
 mcell_sim.run_simulation(proj_path)
 

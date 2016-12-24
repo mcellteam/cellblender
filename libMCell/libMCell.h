@@ -105,5 +105,6 @@ class MCellSimulation {
   void add_molecule_release_site ( MCellReleaseSite *site );
   MCellMoleculeSpecies *get_molecule_species_by_name ( char *mol_name );
   void run_simulation ( char *proj_path );
+  void dump_state ( void );
 };
 
