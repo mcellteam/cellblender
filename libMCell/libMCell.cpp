@@ -154,7 +154,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
   int print_every = exp10(floor(log10((num_iterations/10))));
   if (print_every < 1) print_every = 1;
   for (iteration=0; iteration<=num_iterations; iteration++) {
-    cout << "Iteration " << iteration << ", t=" << (time_step*iteration) << endl;
+    cout << "Iteration " << iteration << ", t=" << (time_step*iteration) << "   (from libMCell's run_simulation)" << endl;
     
     for (int i=0; i<this->timer_event_handlers.get_size(); i++) {
       this->timer_event_handlers[i]->execute();
@@ -254,3 +254,22 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
 
 }
 
+void MCellSimulation::dump_state ( void ) {
+  cout << "Dumping state of simulation" << endl;
+
+  MCellMoleculeSpecies *this_species;
+  MCellReleaseSite *this_site;
+
+  cout << "  Molecules:" << endl;
+  for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
+    this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
+    cout << "    Molecule " << this_species->name << " is type " << this_species->type << " with dc = " << this_species->diffusion_constant << endl;
+  }
+
+  cout << "  Release Sites:" << endl;
+  for (int rs_num=0; rs_num<this->molecule_release_sites.get_size(); rs_num++) {
+    this_site = this->molecule_release_sites[rs_num];
+    cout << "  Release " << this_site->quantity << " molecules of type " << this_site->molecule_species->name << endl;
+  }
+
+}

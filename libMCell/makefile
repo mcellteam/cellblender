@@ -125,4 +125,8 @@ test_py: mcell_main.py _libMCell.so
 install: mcell_main mcell_main_c
 	cp -v mcell_main $(INSTALL_DIR)cellblender/libMCell/
 	cp -v mcell_main_c $(INSTALL_DIR)cellblender/libMCell/
+	cp -v libMCell.cpp $(INSTALL_DIR)cellblender/libMCell/
 	cp -v _libMCell.so $(INSTALL_DIR)cellblender/libMCell/
+	cp -v mcell_main.py $(INSTALL_DIR)cellblender/libMCell/
+	cp -v libMCell.py $(INSTALL_DIR)cellblender/libMCell/
+
