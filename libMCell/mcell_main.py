@@ -77,6 +77,16 @@ for r in rel_defs:
   rel.molecule_species = mols[r['molecule']]
   mcell_sim.add_molecule_release_site(rel)
 
+# This is a temporary way of defining fake reactions if there are any reactions requested
+num_defined_reactions = 0
+if 'define_reactions' in dm['mcell']:
+  if 'reaction_list' in dm['mcell']['define_reactions']:
+    num_defined_reactions = len(dm['mcell']['define_reactions']['reaction_list'])
+
+# This is a temporary way of defining fake reactions if there are any reactions requested
+if num_defined_reactions > 0:
+  mcell_sim.has_reactions = True
+
 mcell_sim.dump_state()
 
 #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})

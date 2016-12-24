@@ -231,17 +231,18 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
 
     fclose(f);
     
-    // Perform "reactions" ... just randomly delete the first molecule for now
-
-    for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
-      this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
-      if (this_species->instance_list != NULL) {
-        if ( mcell_random->rng_gauss() < 0.0 ) { // Delete the molecule about half the time.
-          cout << "Default Decay Reaction removing an instance of " << this_species->name << endl;
-          MCellMoleculeInstance *first = this_species->instance_list;
-          this_species->instance_list = this_species->instance_list->next;
-          this_species->num_instances += -1;
-          delete ( first );
+    if (has_reactions) {
+      // Perform fake "reactions" ... just randomly delete the first molecule for now
+      for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
+        this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
+        if (this_species->instance_list != NULL) {
+          if ( mcell_random->rng_gauss() < 0.0 ) { // Delete the molecule about half the time.
+            cout << "Default Decay Reaction removing an instance of " << this_species->name << endl;
+            MCellMoleculeInstance *first = this_species->instance_list;
+            this_species->instance_list = this_species->instance_list->next;
+            this_species->num_instances += -1;
+            delete ( first );
+          }
         }
       }
     }

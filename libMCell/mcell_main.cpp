@@ -150,11 +150,21 @@ int main ( int argc, char *argv[] ) {
   data_model_element *dm_release_sites = json_get_element_with_key ( mcell, "release_sites" );
   data_model_element *rels = json_get_element_with_key ( dm_release_sites, "release_site_list" );
   
+  data_model_element *dm_define_reactions = json_get_element_with_key ( mcell, "define_reactions" );
+  data_model_element *rxns = json_get_element_with_key ( dm_define_reactions, "reaction_list" );
+  int rxn_nums = 0;
+  data_model_element *this_rxn;
+  while ((this_rxn=json_get_element_by_index(rxns,rxn_nums)) != NULL) {
+    rxn_nums++;
+  }
 
   // Finally build the actual simulation from the data extracted from the data model
 
   MCellSimulation *mcell_sim = new MCellSimulation();
 
+  if (rxn_nums > 0) {
+    mcell_sim->has_reactions = true;
+  }
 
   // Define the molecules for this simulation
 
