@@ -162,8 +162,14 @@ for i in range(iterations+1):
   for m in mols:
     name = m['mol_name']
     count = len(m['instances'])
-    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
     count_files[name].write ( "%.15g" % (i*time_step) + " " + str(count) + "\n" )
+
+  # Perform "reactions" ... just randomly delete the last molecule for now
+  for m in mols:
+    if random.gauss(0.0,1.0) < 0:
+      if len(m['instances']) > 0:
+        m['instances'].pop()
+
 
 for fname in count_files.keys():
   count_files[fname].close()
