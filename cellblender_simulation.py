@@ -1586,8 +1586,23 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row = box.row()
                     row.prop(mcell.export_project, "export_format")
 
+
                     row = box.row()
                     row.prop(self, "remove_append", expand=True)
+
+
+                    #row = box.row()
+                    #col = row.column()
+                    #col.label ( "Enable Scripting" )
+                    #col = row.column()
+                    #col.operator ( "mcell.initialize_scripting", icon="COLOR_RED" )
+
+                    helptext = "Initialize Python Code Scripting for this Session\n" + \
+                               "This must be done each time CellBlender is restarted."
+                    ps.draw_operator_with_help ( box, "Enable Python Scripting", self, "mcell.initialize_scripting", "python_initialize_show_help", self.python_initialize_show_help, helptext )
+
+
+
                     row = box.row()
                     col = row.column()
                     col.prop(mcell.cellblender_preferences, "decouple_export_run")
@@ -1600,22 +1615,14 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     #if mcell.cellblender_preferences.show_sim_runner_options:
                     col = row.column()
                     col.prop(self, "simulation_run_control")
+                    
+                    # This will eventually show the panel for the selected runner
 
                     if self.simulation_run_control == "QUEUE":
                         row = box.row()
                         row.prop ( self, "save_text_logs" )
                         row.operator("mcell.remove_text_logs")
 
-
-                    #row = box.row()
-                    #col = row.column()
-                    #col.label ( "Enable Scripting" )
-                    #col = row.column()
-                    #col.operator ( "mcell.initialize_scripting", icon="COLOR_RED" )
-
-                    helptext = "Initialize Python Code Scripting for this Session\n" + \
-                               "This must be done each time CellBlender is restarted."
-                    ps.draw_operator_with_help ( box, "Enable Python Scripting", self, "mcell.initialize_scripting", "python_initialize_show_help", self.python_initialize_show_help, helptext )
 
                 else:
                     row = box.row(align=True)
