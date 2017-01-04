@@ -598,7 +598,7 @@ class MCELL_OT_run_simulation_control_opengl(bpy.types.Operator):
             log_file_option = mcell.run_simulation.log_file
             script_dir_path = os.path.dirname(os.path.realpath(__file__))
             script_file_path = os.path.join(
-                script_dir_path, "SimControl")
+                script_dir_path, "sim_runners", "open_gl", "SimControl")
 
             # The following line will create the "data_layout.json" file describing the directory structure
             write_default_data_layout(project_dir, start, end)
@@ -714,7 +714,7 @@ class MCELL_OT_run_simulation_control_java(bpy.types.Operator):
             log_file_option = mcell.run_simulation.log_file
             script_dir_path = os.path.dirname(os.path.realpath(__file__))
             script_file_path = os.path.join(
-                script_dir_path, "SimControl.jar")
+                script_dir_path, "sim_runners", "java", "SimControl.jar")
 
             # The following line will create the "data_layout.json" file describing the directory structure
             write_default_data_layout(project_dir, start, end)
