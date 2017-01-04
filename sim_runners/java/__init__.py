@@ -24,6 +24,11 @@ import sys
 
 runner_name = "Java"
 
+runner_user_parameters = [
+  { 'name':"Start Seed", 'desc':"First seed number for simulations that use seeds", 'def':1 },
+  { 'name':"End Seed", 'desc':"Last seed number for simulations that use seeds", 'def':1 },
+]
+
 def find_in_path(program_name):
     for path in os.environ.get('PATH','').split(os.pathsep):
         full_name = os.path.join(path,program_name)
