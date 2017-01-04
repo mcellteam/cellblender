@@ -21,7 +21,7 @@ ZIPFILES = $(SOURCES) $(IOMESHFILES) $(SIMCTLFILES) $(PLOTTERFILES) $(BNGFILES) 
 ZIPOPTS = -X -0 -D -o
 
 .PHONY: all
-all: cellblender subdirs cellblender.zip SimControl.jar SimControl
+all: cellblender subdirs cellblender.zip
 
 cellblender:
 	ln -s . cellblender
