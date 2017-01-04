@@ -8,11 +8,14 @@ INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
 SHELL = /bin/sh
 
 SUBDIRS = icons io_mesh_mcell_mdl sim_runners data_plotters developer_utilities
+
 SOURCES = $(shell python cellblender_source_info.py)
+
 IOMESHFILES = cellblender/io_mesh_mcell_mdl/_mdlmesh_parser.so cellblender/io_mesh_mcell_mdl/mdlmesh_parser.py
-SIMCTLFILES = cellblender/SimControl.jar cellblender/SimControl cellblender/sim_runners/java/SimControl.jar cellblender/sim_runners/open_gl/SimControl
+SIMCTLFILES = cellblender/sim_runners/java/SimControl.jar cellblender/sim_runners/open_gl/SimControl
 PLOTTERFILES = cellblender/data_plotters/java_plot/PlotData.jar
 BNGFILES = cellblender/bng/bin/sbml2json
+
 ZIPFILES = $(SOURCES) $(IOMESHFILES) $(SIMCTLFILES) $(PLOTTERFILES) $(BNGFILES) cellblender/cellblender_id.py
 
 ZIPOPTS = -X -0 -D -o
@@ -38,34 +41,15 @@ $(SUBDIRS):
 #  (see Arguments to Specify the Goals). 
 
 # Note that files which auto-change but are included in the zip file are not part of the source list
-cellblender.zip: $(SOURCES) SimControl
+cellblender.zip: $(SOURCES)
 	@echo Updating cellblender.zip
-	@echo Sources = $(SOURCES)
 	touch -t 201502050000 cellblender_id.py
 	@zip $(ZIPOPTS) cellblender.zip $(ZIPFILES)
-
-
-SimControl.jar: SimControl.java
-	rm -f *.class
-	javac SimControl.java
-	touch -t 201407160000 *.class
-	zip $(ZIPOPTS) SimControl.jar META-INF/MANIFEST.MF SimControl.java *.class
-	rm -f *.class
-
-
-SimControl: SimControl.o
-	gcc -o SimControl SimControl.o -lGL -lglut -lGLU
-
-SimControl.o: SimControl.c
-	gcc -c -std=c99 -I/usr/include/GL SimControl.c
 
 
 .PHONY: clean
 clean:
 	rm -f cellblender.zip
-	rm -f SimControl.jar
-	rm -f SimControl.o
-	rm -f SimControl
 	(cd io_mesh_mcell_mdl ; make clean)
 	(cd sim_runners ; make clean)
 	(cd data_plotters ; make clean)
@@ -79,10 +63,6 @@ id:
 install: cellblender.zip
 	@if [ "$(INSTALL_DIR)" ]; then \
 	  unzip -o cellblender.zip -d $(INSTALL_DIR); \
-	  cp -v test_suite/cellblender_test_suite.py $(INSTALL_DIR); \
-	  cp -v test_suite/box_test.py $(INSTALL_DIR); \
-	  cp -v test_suite/capsule_test.py $(INSTALL_DIR); \
-	  cp -v developer_utilities/NeuronBuilderMeta.py $(INSTALL_DIR); \
 	fi
 	@echo ===========================================================
 	@cat $(INSTALL_DIR)cellblender/cellblender_id.py
