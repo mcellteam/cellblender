@@ -46,7 +46,11 @@ def read_data_model ( file_name ):
     # Start by determining if this is a JSON file or not
     is_json = False
     f = open ( file_name, 'r' )
-    header = f.read(20)
+    header = "xxxxx"
+    try:
+      header = f.read(20)
+    except  UnicodeDecodeError:
+      pass # The header value shouldn't contain "'mcell:'" in this case anyway
     if '"mcell":' in header:
       is_json = True
     elif "'mcell':" in header:
@@ -55,7 +59,7 @@ def read_data_model ( file_name ):
     # Open as appropriate
     if is_json:
         # Open as a JSON format file
-        print ( "Opening a JSON file" )
+        print ( "Opening a JSON file: " + file_name )
         f = open ( file_name, 'r' )
         print ( "Reading a JSON file" )
         json_model = f.read()
@@ -64,7 +68,7 @@ def read_data_model ( file_name ):
         print ( "Done loading a JSON file" )
     else:
         # Open as a pickled format file
-        print ( "Opening a Pickle file" )
+        print ( "Opening a Pickle file: " + file_name )
         f = open ( file_name, 'r' )
         pickled_model = f.read()
         data_model = unpickle_data_model ( pickled_model )
@@ -212,7 +216,32 @@ def write_mdl ( dm, file_name ):
 
 def write_parameter_system ( ps, f ):
     if 'model_parameters' in ps:
+
       mplist = ps['model_parameters']
+
+      if ('_extras' in ps) and ('ordered_id_names' in ps['_extras']):
+        # Re-order the model parameters list (mplist) for proper dependency order based on ordered_id_names
+        unordered_mplist = [ p for p in mplist ]  # Make a copy first since the algorithm removes items from this list!!
+        ordered_mplist = []
+        # First get all the parameters that match the ids in order (leave remaining in original list)
+        ordered_ids = ps['_extras']['ordered_id_names']
+        for ordered_id in ordered_ids:
+          for p in unordered_mplist:
+            if ('_extras' in p) and ('par_id_name' in p['_extras']):
+              if p['_extras']['par_id_name'] == ordered_id:
+                ordered_mplist.append(p)
+                unordered_mplist.remove(p)
+                break
+        # Finish by adding all remaing items to the new list)
+        for p in unordered_mplist:
+          ordered_mplist.append(p)
+        # Replace the old list by the new sorted list
+        mplist = ordered_mplist
+      else:
+        # This is where the parameters could be placed in dependency order without relying on _extras fields
+        # There should be no data models that don't have those fields, so pass for now.
+        pass
+
       if len(mplist) > 0:
         f.write ( "/* DEFINE PARAMETERS */\n" );
 
@@ -664,6 +693,7 @@ def write_react_out ( rout, mols, time_step, f ):
         f.write ( "\n" );
 
 
+##### NOTE that this function shadows the earlier version ... which is best??
 data_model_depth = 0
 def dump_data_model ( dm ):
     global data_model_depth
@@ -686,25 +716,26 @@ def dump_data_model ( dm ):
 
 
 
+if __name__ == "__main__":
 
-if len(sys.argv) > 2:
-    print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] )
-    print ( "Reading Data Model: " + sys.argv[1] )
-    dm = read_data_model ( sys.argv[1] )
-    # dump_data_model ( dm )
-    print ( "Writing MDL: " + sys.argv[2] )
-    write_mdl ( dm, sys.argv[2] )
-    print ( "Wrote Data Model found in \"" + sys.argv[1] + "\" to MDL file \"" + sys.argv[2] + "\"" )
-    # Drop into an interactive python session
-    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    if len(sys.argv) > 2:
+        print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] )
+        print ( "Reading Data Model: " + sys.argv[1] )
+        dm = read_data_model ( sys.argv[1] )
+        # dump_data_model ( dm )
+        print ( "Writing MDL: " + sys.argv[2] )
+        write_mdl ( dm, sys.argv[2] )
+        print ( "Wrote Data Model found in \"" + sys.argv[1] + "\" to MDL file \"" + sys.argv[2] + "\"" )
+        # Drop into an interactive python session
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-else:
-    # Print the help information
-    print ( "\nhelp():" )
-    print ( "\n=======================================" )
-    print ( "Requires 2 parameters:" )
-    print ( "   data_model_file_name - A Data Model (pickled format)" )
-    print ( "   mdl_base_name - The base name to use for the project" )
-    # print ( "Use Control-D to exit the interactive mode" )
-    print ( "=======================================\n" )
+    else:
+        # Print the help information
+        print ( "\nhelp():" )
+        print ( "\n=======================================" )
+        print ( "Requires 2 parameters:" )
+        print ( "   data_model_file_name - A Data Model (pickled format)" )
+        print ( "   mdl_base_name - The base name to use for the project" )
+        # print ( "Use Control-D to exit the interactive mode" )
+        print ( "=======================================\n" )
 
