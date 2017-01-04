@@ -117,6 +117,8 @@ cellblender_info = {
         "data_plotters"+os.sep+"browser_plot"+os.sep+"unit-tests"+os.sep+"gen-tests.c",
         "data_plotters"+os.sep+"browser_plot"+os.sep+"unit-tests"+os.sep+"gen-tests-description.txt",
         #        "data_plotters"+os.sep+"java_plot"+os.sep+"PlotData.jar",
+        "sim_engines"+os.sep+"mcell"+os.sep+"__init__.py",
+        "sim_runners"+os.sep+"java"+os.sep+"__init__.py",
         "mdl"+os.sep+"__init__.py",
         "mdl"+os.sep+"data_model_to_mdl.py",
         "mdl"+os.sep+"run_data_model_mcell.py",
