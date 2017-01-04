@@ -1,4 +1,4 @@
-SUBDIRS = java_plot
+SUBDIRS = open_gl java
 
 .PHONY: all
 all: subdirs
@@ -11,6 +11,7 @@ $(SUBDIRS):
 
 .PHONY: clean
 clean:
-	(cd java_plot ; make clean)
+	(cd java ; make clean)
+	(cd open_gl ; make clean)
 
 

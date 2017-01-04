@@ -7,7 +7,7 @@ INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
 
 SHELL = /bin/sh
 
-SUBDIRS = icons io_mesh_mcell_mdl data_plotters developer_utilities
+SUBDIRS = icons io_mesh_mcell_mdl sim_runners data_plotters developer_utilities
 SOURCES = $(shell python cellblender_source_info.py)
 ZIPFILES = $(SOURCES) cellblender/io_mesh_mcell_mdl/_mdlmesh_parser.so cellblender/io_mesh_mcell_mdl/mdlmesh_parser.py cellblender/SimControl.jar cellblender/SimControl cellblender/data_plotters/java_plot/PlotData.jar cellblender/cellblender_id.py cellblender/bng/bin/sbml2json
 
@@ -63,6 +63,7 @@ clean:
 	rm -f SimControl.o
 	rm -f SimControl
 	(cd io_mesh_mcell_mdl ; make clean)
+	(cd sim_runners ; make clean)
 	(cd data_plotters ; make clean)
 
 id:
