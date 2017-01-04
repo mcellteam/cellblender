@@ -444,7 +444,7 @@ class MCELL_OT_run_simulation_control_opengl(bpy.types.Operator):
             log_file_option = mcell.run_simulation.log_file
             script_dir_path = os.path.dirname(os.path.realpath(__file__))
             script_file_path = os.path.join(
-                script_dir_path, "SimControl")
+                script_dir_path, "sim_runners", "open_gl", "SimControl")
 
             processes_list = mcell.run_simulation.processes_list
             processes_list.add()
@@ -557,7 +557,7 @@ class MCELL_OT_run_simulation_control_java(bpy.types.Operator):
             log_file_option = mcell.run_simulation.log_file
             script_dir_path = os.path.dirname(os.path.realpath(__file__))
             script_file_path = os.path.join(
-                script_dir_path, "SimControl.jar")
+                script_dir_path, "sim_runners", "java", "SimControl.jar")
 
             processes_list = mcell.run_simulation.processes_list
             processes_list.add()
