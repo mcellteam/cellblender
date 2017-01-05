@@ -105,6 +105,9 @@ def run_generic_runner (context, sim_module):
         if not os.path.exists(viz_dir):
             os.makedirs(viz_dir)
 
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=True )
+        data_model.save_data_model_to_file ( mcell_dm, os.path.join(project_dir,"dm.txt") )
+
         base_name = mcell.project_settings.base_name
 
         error_file_option = mcell.run_simulation.error_file
