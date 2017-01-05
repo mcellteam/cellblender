@@ -22,7 +22,8 @@ import os
 import subprocess
 import sys
 
-runner_name = "Java"
+runner_code = "JAVA"
+runner_name = "Java Control"
 
 runner_user_parameters = [
   { 'name':"Start Seed", 'desc':"First seed number for simulations that use seeds", 'def':1 },
@@ -35,6 +36,21 @@ def find_in_path(program_name):
         if os.path.exists(full_name) and not os.path.isdir(full_name):
             return full_name
     return None
+
+
+def run_commands ( commands, cwd="" ):
+    sp_list = []
+    window_num = 0
+    for cmd in commands:
+        command_list = [ 'java', '-jar', os.path.join(os.path.dirname(os.path.realpath(__file__)),"SimControl.jar") ]
+        command_list.append ( "x=%d" % ((50*(1+window_num))%500) ),
+        command_list.append ( "y=%d" % ((40*(1+window_num))%400) ),
+        command_list.append ( ":" ),
+        for subcmd in cmd:
+            command_list.append ( subcmd )
+        sp_list.append ( subprocess.Popen ( command_list, cwd=cwd, stdout=None, stderr=None ) )
+        window_num += 1
+    return sp_list
 
 
 if __name__ == "__main__":
