@@ -93,7 +93,7 @@ void update(int value){
     char *buf = fgets ( buffer, 1000, subprocess_pipe );
     if (buf != NULL) {
       replace_crs(buf);
-      printf ( "Input: %s\n", buf );
+      printf ( "Sim: %s\n", buf );
       new_line = (a_line *) malloc ( sizeof(a_line) );
       new_line->next = NULL;
       new_line->line = (char *) malloc ( 1+strlen(buf) );
