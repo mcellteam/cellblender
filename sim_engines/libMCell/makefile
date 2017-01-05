@@ -7,7 +7,7 @@ INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
 #INSTALL_DIR = ~/Library/Application\ Support/Blender/2.74/scripts/addons/
 
 
-all: mcell_pipe_cpp mcell_pipe_c mcell_main_c _libMCell.so mcell_main mcell_main_c StorageClasses mcell_simple mcell_simple_count
+all: mcell_main_c _libMCell.so mcell_main mcell_main_c StorageClasses mcell_simple mcell_simple_count
 
 
 mcell_pipe_cpp: mcell_pipe_cpp.o JSON.o makefile
@@ -123,10 +123,10 @@ test_py: mcell_main.py _libMCell.so
 	python mcell_main.py proj_path=. data_model=dm.txt
 
 install: mcell_main mcell_main_c
-	cp -v mcell_main $(INSTALL_DIR)cellblender/libMCell/
-	cp -v mcell_main_c $(INSTALL_DIR)cellblender/libMCell/
-	cp -v libMCell.cpp $(INSTALL_DIR)cellblender/libMCell/
-	cp -v _libMCell.so $(INSTALL_DIR)cellblender/libMCell/
-	cp -v mcell_main.py $(INSTALL_DIR)cellblender/libMCell/
-	cp -v libMCell.py $(INSTALL_DIR)cellblender/libMCell/
+	cp -v mcell_main $(INSTALL_DIR)cellblender/sim_engines/libMCell/
+	cp -v mcell_main_c $(INSTALL_DIR)cellblender/sim_engines/libMCell/
+	cp -v libMCell.cpp $(INSTALL_DIR)cellblender/sim_engines/libMCell/
+	cp -v _libMCell.so $(INSTALL_DIR)cellblender/sim_engines/libMCell/
+	cp -v mcell_main.py $(INSTALL_DIR)cellblender/sim_engines/libMCell/
+	cp -v libMCell.py $(INSTALL_DIR)cellblender/sim_engines/libMCell/
 
