@@ -22,8 +22,8 @@ import os
 import subprocess
 import sys
 
-runner_code = "JAVA"
-runner_name = "Java Control (Dynamic)"
+runner_code = "OPENGL"
+runner_name = "OpenGL Control (Dynamic)"
 
 runner_user_parameters = [
   { 'name':"Start Seed", 'desc':"First seed number for simulations that use seeds", 'def':1 },
@@ -42,7 +42,7 @@ def run_commands ( commands, cwd="" ):
     sp_list = []
     window_num = 0
     for cmd in commands:
-        command_list = [ 'java', '-jar', os.path.join(os.path.dirname(os.path.realpath(__file__)),"SimControl.jar") ]
+        command_list = [ os.path.join(os.path.dirname(os.path.realpath(__file__)),"SimControl") ]
         command_list.append ( "x=%d" % ((50*(1+window_num))%500) ),
         command_list.append ( "y=%d" % ((40*(1+window_num))%400) ),
         command_list.append ( ":" ),
