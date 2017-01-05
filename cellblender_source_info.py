@@ -115,6 +115,7 @@ cellblender_info = {
         "sim_runners"+os.sep+"open_gl"+os.sep+"makefile",
 
         "sim_engines"+os.sep+"mcell"+os.sep+"__init__.py",
+        "sim_runners"+os.sep+"pure_python"+os.sep+"__init__.py",
 
         "sim_engines"+os.sep+"libMCell"+os.sep+"makefile",
         "sim_engines"+os.sep+"libMCell"+os.sep+"JSON.h",
