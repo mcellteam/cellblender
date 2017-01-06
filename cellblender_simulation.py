@@ -105,8 +105,15 @@ def run_generic_runner (context, sim_module):
         if not os.path.exists(viz_dir):
             os.makedirs(viz_dir)
 
+        runner_input = "dm.txt"
+        if "runner_input" in dir(sim_module):
+          runner_input = sim_module.runner_input
+
         mcell_dm = mcell.build_data_model_from_properties ( context, geometry=True )
-        data_model.save_data_model_to_file ( mcell_dm, os.path.join(project_dir,"dm.txt") )
+        if runner_input.endswith("json"):
+          data_model.save_data_model_to_json_file ( mcell_dm, os.path.join(project_dir,runner_input) )
+        else:
+          data_model.save_data_model_to_file ( mcell_dm, os.path.join(project_dir,runner_input) )
 
         base_name = mcell.project_settings.base_name
 
