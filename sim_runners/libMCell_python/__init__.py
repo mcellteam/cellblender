@@ -22,8 +22,8 @@ import os
 import subprocess
 
 
-runner_code = "PUREPYTHON"
-runner_name = "Pure Python"
+runner_code = "LIBMCELLPY"
+runner_name = "libMCell Python"
 runner_input = "dm.txt"
 
 
@@ -31,9 +31,9 @@ def run_commands ( commands, cwd="" ):
     sp_list = []
     for cmd in commands:
         shared_path = os.path.dirname ( os.path.dirname ( os.path.dirname(os.path.realpath(__file__)) ) )
-        command_list = [ "python3", os.path.join(shared_path,"sim_engines","libMCell","pure_python_sim.py") ]
+        command_list = [ "python3", os.path.join(shared_path,"sim_engines","libMCell","mcell_main.py") ]
         command_list.append ( "proj_path="+cwd )
-        command_list.append ( "data_model=dm.txt" )
+        command_list.append ( "data_model="+runner_input )
         
         print ( "Command List: " + str(command_list) )
         sp_list.append ( subprocess.Popen ( command_list, cwd=cwd, stdout=None, stderr=None ) )
