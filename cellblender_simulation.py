@@ -240,6 +240,7 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
                 for m in cellblender.cellblender_info['cellblender_runner_modules']:
                     if str(mcell.run_simulation.simulation_run_control) == m.runner_code:
                         # Run with this module
+                        print ( "Running a generic runner: " + str(mcell.run_simulation.simulation_run_control) )
                         run_generic_runner ( context, m )
                         break
 
@@ -1325,7 +1326,7 @@ def get_runners_as_items(scene, context):
       ('PurePython', "Prototype Pure Python", "")]
     # Add the dynamic modules
     for m in cellblender.cellblender_info['cellblender_runner_modules']:
-      runners_list.append ( (m.runner_code, m.runner_name, "") )
+      runners_list.append ( (m.runner_code, m.runner_name + " (dyn)", "") )
     return runners_list
 
 
