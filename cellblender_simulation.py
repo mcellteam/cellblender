@@ -176,7 +176,7 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
             # self.report({'INFO'}, "Exporting is Locked Out")
             return False
 
-        elif str(mcell.run_simulation.simulation_run_control) == 'QUEUE':
+        elif str(mcell.run_simulation.simulation_engine_and_runner) == 'QUEUE':
             processes_list = mcell.run_simulation.processes_list
             for pl_item in processes_list:
                 pid = int(pl_item.name.split(',')[0].split(':')[1])
@@ -222,25 +222,25 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
             # be removed
             mcell.project_settings.base_name = scene_name
 
-            print ( "Need to run " + str(mcell.run_simulation.simulation_run_control) )
-            if str(mcell.run_simulation.simulation_run_control) == 'QUEUE':
+            print ( "Need to run " + str(mcell.run_simulation.simulation_engine_and_runner) )
+            if str(mcell.run_simulation.simulation_engine_and_runner) == 'QUEUE':
                 bpy.ops.mcell.run_simulation_control_queue()
-            elif str(mcell.run_simulation.simulation_run_control) == 'COMMAND':
+            elif str(mcell.run_simulation.simulation_engine_and_runner) == 'COMMAND':
                 bpy.ops.mcell.run_simulation_normal()
-            elif str(run_sim.simulation_run_control) == 'SWEEP':
+            elif str(run_sim.simulation_engine_and_runner) == 'SWEEP':
                 bpy.ops.mcell.run_simulation_sweep()
-            elif str(run_sim.simulation_run_control) == 'libMCell':
+            elif str(run_sim.simulation_engine_and_runner) == 'libMCell':
                 bpy.ops.mcell.run_simulation_libmcell()
-            elif str(run_sim.simulation_run_control) == 'libMCellpy':
+            elif str(run_sim.simulation_engine_and_runner) == 'libMCellpy':
                 bpy.ops.mcell.run_simulation_libmcellpy()
-            elif str(run_sim.simulation_run_control) == 'PurePython':
+            elif str(run_sim.simulation_engine_and_runner) == 'PurePython':
                 bpy.ops.mcell.run_simulation_pure_python()
             else:
                 # Look for it in the dynamic modules
                 for m in cellblender.cellblender_info['cellblender_runner_modules']:
-                    if str(mcell.run_simulation.simulation_run_control) == m.runner_code:
+                    if str(mcell.run_simulation.simulation_engine_and_runner) == m.runner_code:
                         # Run with this module
-                        print ( "Running a generic runner: " + str(mcell.run_simulation.simulation_run_control) )
+                        print ( "Running a generic runner: " + str(mcell.run_simulation.simulation_engine_and_runner) )
                         run_generic_runner ( context, m )
                         break
 
@@ -699,7 +699,7 @@ class MCELL_OT_run_simulation_libmcell(bpy.types.Operator):
             write_default_data_layout(project_dir, start, end)
 
             if not os.path.exists(final_script_path):
-                print ( "\n\nUnable to run " + final_script_path + "\n\n" )
+                print ( "\n\nUnable to run, script does not exist: " + final_script_path + "\n\n" )
             else:
 
                 processes_list = mcell.run_simulation.processes_list
@@ -811,7 +811,7 @@ class MCELL_OT_run_simulation_libmcellpy(bpy.types.Operator):
             write_default_data_layout(project_dir, start, end)
 
             if not os.path.exists(final_script_path):
-                print ( "\n\nUnable to run " + final_script_path + "\n\n" )
+                print ( "\n\nUnable to run, script does not exist: " + final_script_path + "\n\n" )
             else:
 
                 processes_list = mcell.run_simulation.processes_list
@@ -922,7 +922,7 @@ class MCELL_OT_run_simulation_pure_python(bpy.types.Operator):
             write_default_data_layout(project_dir, start, end)
 
             if not os.path.exists(final_script_path):
-                print ( "\n\nUnable to run " + final_script_path + "\n\n" )
+                print ( "\n\nUnable to run, script does not exist: " + final_script_path + "\n\n" )
             else:
 
                 processes_list = mcell.run_simulation.processes_list
@@ -1320,13 +1320,13 @@ import cellblender.sim_runners
 
 def load_engine_modules():
     if not ('cellblender_engine_modules' in cellblender.cellblender_info):
-      print ( "\n\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n\nload_engine_modules reloading list\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n\n\n" )
+      print ( "\n\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\nload_engine_modules reloading list\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\n\n" )
       cellblender.cellblender_info['cellblender_engine_modules'] = cellblender.sim_engines.get_sim_engine_modules()
 
 def get_engines_as_items(scene, context):
     load_engine_modules()
     # Start with static modules
-    engines_list = []
+    engines_list = [("NONE", "None", "")]
     # Add the dynamic modules
     for m in cellblender.cellblender_info['cellblender_engine_modules']:
       engines_list.append ( (m.engine_code, m.engine_name + " (dyn)", "") )
@@ -1335,7 +1335,7 @@ def get_engines_as_items(scene, context):
 
 def load_runner_modules():
     if not ('cellblender_runner_modules' in cellblender.cellblender_info):
-      print ( "\n\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n\nload_runner_modules reloading list\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n\n\n" )
+      print ( "\n\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\nload_runner_modules reloading list\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\n\n" )
       cellblender.cellblender_info['cellblender_runner_modules'] = cellblender.sim_runners.get_sim_runner_modules()
 
 def get_runners_as_items(scene, context):
@@ -1343,6 +1343,7 @@ def get_runners_as_items(scene, context):
     # Start with static modules
     runners_list = [
       ('QUEUE', "Queue Control", ""),  # Default must be first since cannot set a default when using a function initializer
+      ('NONE', "None", ""),  # Default must be first since cannot set a default when using a function initializer
       ('COMMAND', "Command Line", ""),
       ('SWEEP', "Sweep Control", ""),
       ('libMCell', "Prototype Lib MCell via C++", ""),
@@ -1415,10 +1416,25 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         # default='QUEUE', # Cannot set a default when "items" is a function
         update=sim_runner_changed_callback)
 
-
     simulation_run_control = EnumProperty(
         items=get_runners_as_items, name="",
-        description="Mechanism for running and controlling the simulation",
+        description="Control mechanisms for running the selected simulation engine",
+        # default='QUEUE', # Cannot set a default when "items" is a function
+        update=sim_runner_changed_callback)
+
+
+    simulation_engine_and_run_enum = [
+         ('QUEUE', "Queue Control", ""),
+         ('COMMAND', "Command Line", ""),
+         ('JAVA', "Java Control", ""),
+         ('OPENGL', "OpenGL Control", ""),
+         ('libMCell', "Prototype Lib MCell via C++", ""),
+         ('libMCellpy', "Prototype Lib MCell via Python", ""),
+         ('PurePython', "Prototype Pure Python", "")] 
+
+    simulation_engine_and_runner = EnumProperty(
+        items=simulation_engine_and_run_enum, name="",
+        description="Mechanism for running and controlling a specific simulation",
         # default='QUEUE', # Cannot set a default when "items" is a function
         update=sim_runner_changed_callback)
 
@@ -1605,7 +1621,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         row.operator("mcell.run_simulation", text="Export & Run", icon='COLOR_RED')
 
                 
-                if self.simulation_run_control != "QUEUE":
+                if self.simulation_engine_and_runner != "QUEUE":
                     if self.processes_list and (len(self.processes_list) > 0):
                         row = layout.row()
                         row.template_list("MCELL_UL_run_simulation", "run_simulation",
@@ -1673,6 +1689,10 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row.label ( "Simulation Engine" )
                     row.prop(self, "simulation_engine_control")
 
+                    row = box.row()
+                    row.label ( "Run with" )
+                    row.prop(self, "simulation_run_control")
+
                     self.start_seed.draw(box,ps)
                     self.end_seed.draw(box,ps)
                     self.run_limit.draw(box,ps)
@@ -1707,18 +1727,18 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     col = row.column()
                     col.prop(mcell.cellblender_preferences, "decouple_export_run")
 
-                    # Generally hide the selector for simulation_run_control options
+                    # Generally hide the selector for simulation_engine_and_runner options
                     #  Queue control is the default
                     #  Queue control is currently the only option which properly disables the
                     #  run_simulation operator while simulations are currenlty running or queued
                     # Only show this option it when specifically requested
                     #if mcell.cellblender_preferences.show_sim_runner_options:
                     col = row.column()
-                    col.prop(self, "simulation_run_control")
+                    col.prop(self, "simulation_engine_and_runner")
                     
                     # This will eventually show the panel for the selected runner
 
-                    if self.simulation_run_control == "QUEUE":
+                    if self.simulation_engine_and_runner == "QUEUE":
                         row = box.row()
                         row.prop ( self, "save_text_logs" )
                         row.operator("mcell.remove_text_logs")

@@ -8,17 +8,22 @@ import shutil
 
 ##### Start by reading the command line parameters which includes the data model file name
 
-print ( "\n\nMCell Python Prototype using libMCell %d arguments:\n" % len(sys.argv) )
+print ( "\n\nMCell Pure Python Prototype with %d arguments:\n" % len(sys.argv) )
 proj_path = ""
 data_model_file_name = ""
 data_model_full_path = ""
+run_seed = 1
 for arg in sys.argv:
   print ( "   " + str(arg) )
   if arg[0:10] == "proj_path=":
     proj_path = arg[10:]
   if arg[0:11] == "data_model=":
     data_model_file_name = arg[11:]
+  if arg[0:5] == "seed=":
+    run_seed = int(arg[5:])
 print ( "\n\n" )
+
+seed_dir = "seed_%05d" % run_seed
 
 if len(data_model_file_name) > 0:
   data_model_full_path = os.path.join ( proj_path, data_model_file_name )
@@ -45,31 +50,35 @@ if dm is None:
 
 ##### Clear out the old data
 
+# Note that there have been some errors calling rmtree, which are currently being ignored:
+#  OSError: [Errno 16] Device or resource busy: '.nfs0000000000a48d3e00005e12'
+#  OSError: [Errno 39] Directory not empty: 'seed_00001'
+
 react_dir = os.path.join(proj_path, "react_data")
 
 if os.path.exists(react_dir):
-    shutil.rmtree(react_dir)
+    shutil.rmtree(react_dir,ignore_errors=True)
 if not os.path.exists(react_dir):
     os.makedirs(react_dir)
 
 viz_dir = os.path.join(proj_path, "viz_data")
 
 if os.path.exists(viz_dir):
-    shutil.rmtree(viz_dir)
+    shutil.rmtree(viz_dir,ignore_errors=True)
 if not os.path.exists(viz_dir):
     os.makedirs(viz_dir)
 
-viz_seed_dir = os.path.join(viz_dir, "seed_00001")
+viz_seed_dir = os.path.join(viz_dir, seed_dir)
 
 if os.path.exists(viz_seed_dir):
-    shutil.rmtree(viz_seed_dir)
+    shutil.rmtree(viz_seed_dir,ignore_errors=True)
 if not os.path.exists(viz_seed_dir):
     os.makedirs(viz_seed_dir)
 
-react_seed_dir = os.path.join(react_dir, "seed_00001")
+react_seed_dir = os.path.join(react_dir, seed_dir)
 
 if os.path.exists(react_seed_dir):
-    shutil.rmtree(react_seed_dir)
+    shutil.rmtree(react_seed_dir,ignore_errors=True)
 if not os.path.exists(react_seed_dir):
     os.makedirs(react_seed_dir)
 
@@ -119,7 +128,7 @@ file_name_template = "Scene.cellbin.%%0%dd.dat" % ndigits
 count_files = {}
 
 for m in mols:
-  react_file_name = "%s/seed_00001/%s.World.dat" % ( react_dir, m['mol_name'] )
+  react_file_name = "%s/%s/%s.World.dat" % ( react_dir, seed_dir, m['mol_name'] )
   count_files[m['mol_name']] = open(react_file_name,"w")
 
 
