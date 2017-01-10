@@ -28,7 +28,9 @@ import subprocess
 import sys
 
 # Name of this engine to display in the list of choices
+engine_code = "MCELL"
 engine_name = "MCell"
+
 
 # List of parameters dictionaries - each with keys for 'name', 'desc', 'def':
 engine_user_parameters = [
@@ -39,14 +41,13 @@ engine_user_parameters = [
 ]
 
 
-def prepare_runs ( data_model ) {
+def prepare_runs ( data_model ):
   # Return a list of run command strings
-}
+  pass
 
-
-def postprocess_runs ( data_model, command_strings ) {
+def postprocess_runs ( data_model, command_strings ):
   # Move and/or transform data to match expected CellBlender file structure
-}
+  pass
 
 
 def find_in_path(program_name):

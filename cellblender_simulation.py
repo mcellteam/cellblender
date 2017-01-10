@@ -1150,6 +1150,14 @@ def clear_run_list(context):
         processes_list.clear()
 
 
+def sim_engine_changed_callback ( self, context ):
+    """ The run lists are somewhat incompatible between sim runners, so just clear them when switching. """
+    # print ( "Sim Runner has been changed!!" )
+    # mcell = context.scene.mcell
+    bpy.ops.mcell.clear_run_list()
+    bpy.ops.mcell.clear_simulation_queue()
+
+
 def sim_runner_changed_callback ( self, context ):
     """ The run lists are somewhat incompatible between sim runners, so just clear them when switching. """
     # print ( "Sim Runner has been changed!!" )
@@ -1307,7 +1315,23 @@ class MCellSimStringProperty(bpy.types.PropertyGroup):
         pass
 
 import os
+import cellblender.sim_engines
 import cellblender.sim_runners
+
+def load_engine_modules():
+    if not ('cellblender_engine_modules' in cellblender.cellblender_info):
+      print ( "\n\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n\nload_engine_modules reloading list\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n\n\n" )
+      cellblender.cellblender_info['cellblender_engine_modules'] = cellblender.sim_engines.get_sim_engine_modules()
+
+def get_engines_as_items(scene, context):
+    load_engine_modules()
+    # Start with static modules
+    engines_list = []
+    # Add the dynamic modules
+    for m in cellblender.cellblender_info['cellblender_engine_modules']:
+      engines_list.append ( (m.engine_code, m.engine_name + " (dyn)", "") )
+    return engines_list
+
 
 def load_runner_modules():
     if not ('cellblender_runner_modules' in cellblender.cellblender_info):
@@ -1384,6 +1408,13 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
     # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
+
+    simulation_engine_control = EnumProperty(
+        items=get_engines_as_items, name="",
+        description="Simulators for running a simulation",
+        # default='QUEUE', # Cannot set a default when "items" is a function
+        update=sim_runner_changed_callback)
+
 
     simulation_run_control = EnumProperty(
         items=get_runners_as_items, name="",
@@ -1637,6 +1668,10 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row.alignment = 'LEFT'
                     row.prop(self, "show_output_options", icon='TRIA_DOWN',
                              text="Output / Control Options", emboss=False)
+
+                    row = box.row()
+                    row.label ( "Simulation Engine" )
+                    row.prop(self, "simulation_engine_control")
 
                     self.start_seed.draw(box,ps)
                     self.end_seed.draw(box,ps)
