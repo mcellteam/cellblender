@@ -1398,6 +1398,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
     show_output_options = BoolProperty ( name='Output Options', default=False )
     show_engine_runner_options = BoolProperty ( name='Engine/Runners (experimental)', default=False )
+    show_engine_runner_help = BoolProperty ( default=False )
     python_scripting_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     python_initialize_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
@@ -1572,7 +1573,9 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                            "Running scripts from unknown sources is a security risk.\n" + \
                            "Only enable this option if you are confident that all of\n" + \
                            "the scripts contained in this .blend file are safe to run."
-                ps.draw_prop_with_help ( layout, "Enable Python Scripting", self, "enable_python_scripting", "python_scripting_show_help", self.python_scripting_show_help, helptext )
+                ps.draw_prop_with_help ( layout, "Enable Python Scripting", self,
+                           "enable_python_scripting", "python_scripting_show_help",
+                           self.python_scripting_show_help, helptext )
 
             #else:
 
@@ -1709,7 +1712,9 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
                     helptext = "Initialize Python Code Scripting for this Session\n" + \
                                "This must be done each time CellBlender is restarted."
-                    ps.draw_operator_with_help ( box, "Enable Python Scripting", self, "mcell.initialize_scripting", "python_initialize_show_help", self.python_initialize_show_help, helptext )
+                    ps.draw_operator_with_help ( box, "Enable Python Scripting", self,
+                               "mcell.initialize_scripting", "python_initialize_show_help",
+                               self.python_initialize_show_help, helptext )
 
 
 
@@ -1748,6 +1753,18 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row.alignment = 'LEFT'
                     row.prop(self, "show_engine_runner_options", icon='TRIA_DOWN',
                              text="Engine / Runner Options (experimental)", emboss=False)
+                    row.prop ( self, "show_engine_runner_help", icon='INFO', text="" )
+                    if self.show_engine_runner_help:
+                        row = box.row()
+                        row.label ( ">>> Select different simulation engines and run mechanisms <<<" )
+                        row = box.row()
+                        row.label ( "This experimental panel will eventually permit the independent selection of" )
+                        row = box.row()
+                        row.label ( "simulation engines and run mechanisms. This will become increasingly important" )
+                        row = box.row()
+                        row.label ( "as CellBlender supports custom instances of libMCell and distributed computing." )
+                        row = box.row()
+
 
                     row = box.row()
                     row.label ( "Simulation Engine" )
