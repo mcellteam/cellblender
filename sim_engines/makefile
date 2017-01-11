@@ -1,4 +1,4 @@
-SUBDIRS = mcell pure_python
+SUBDIRS = mcell libMCell pure_python
 
 .PHONY: all
 all: subdirs
@@ -12,6 +12,7 @@ $(SUBDIRS):
 .PHONY: clean
 clean:
 	(cd mcell ; make clean)
+	(cd libMCell ; make clean)
 	(cd pure_python ; make clean)
 
 
