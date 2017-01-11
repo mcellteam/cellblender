@@ -7,10 +7,10 @@ all: subdirs
 subdirs: makefile $(SUBDIRS)
 
 $(SUBDIRS):
-	$(MAKE) -C $@
+	-$(MAKE) -C $@
 
 .PHONY: clean
 clean:
-	(cd java_plot ; make clean)
+	-(cd java_plot ; make clean)
 
 

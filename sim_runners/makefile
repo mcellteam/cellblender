@@ -7,11 +7,11 @@ all: subdirs
 subdirs: makefile $(SUBDIRS)
 
 $(SUBDIRS):
-	$(MAKE) -C $@
+	-$(MAKE) -C $@
 
 .PHONY: clean
 clean:
-	(cd java ; make clean)
-	(cd open_gl ; make clean)
+	-(cd java ; make clean)
+	-(cd open_gl ; make clean)
 
 

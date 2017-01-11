@@ -7,12 +7,12 @@ all: subdirs
 subdirs: makefile $(SUBDIRS)
 
 $(SUBDIRS):
-	$(MAKE) -C $@
+	-$(MAKE) -C $@
 
 .PHONY: clean
 clean:
-	(cd mcell ; make clean)
-	(cd libMCell ; make clean)
-	(cd pure_python ; make clean)
+	-(cd mcell ; make clean)
+	-(cd libMCell ; make clean)
+	-(cd pure_python ; make clean)
 
 
