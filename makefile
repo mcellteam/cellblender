@@ -7,7 +7,7 @@ INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
 
 SHELL = /bin/sh
 
-SUBDIRS = icons io_mesh_mcell_mdl sim_runners data_plotters developer_utilities
+SUBDIRS = icons io_mesh_mcell_mdl libMCell sim_engines sim_runners data_plotters developer_utilities
 
 SOURCES = $(shell python cellblender_source_info.py)
 
@@ -53,6 +53,7 @@ cellblender.zip: $(SOURCES)
 clean:
 	rm -f cellblender.zip
 	(cd io_mesh_mcell_mdl ; make clean)
+	(cd libMCell ; make clean)
 	(cd sim_engines ; make clean)
 	(cd sim_runners ; make clean)
 	(cd data_plotters ; make clean)
