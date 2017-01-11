@@ -1326,7 +1326,7 @@ def load_engine_modules():
 def get_engines_as_items(scene, context):
     load_engine_modules()
     # Start with static modules
-    engines_list = [("NONE", "None", "")]
+    engines_list = [("NONE", "Choose Engine", "")]
     # Add the dynamic modules
     for m in cellblender.cellblender_info['cellblender_engine_modules']:
       engines_list.append ( (m.engine_code, m.engine_name + " (dyn)", "") )
@@ -1341,14 +1341,7 @@ def load_runner_modules():
 def get_runners_as_items(scene, context):
     load_runner_modules()
     # Start with static modules
-    runners_list = [
-      ('QUEUE', "Queue Control", ""),  # Default must be first since cannot set a default when using a function initializer
-      ('NONE', "None", ""),  # Default must be first since cannot set a default when using a function initializer
-      ('COMMAND', "Command Line", ""),
-      ('SWEEP', "Sweep Control", ""),
-      ('libMCell', "Prototype Lib MCell via C++", ""),
-      ('libMCellpy', "Prototype Lib MCell via Python", ""),
-      ('PurePython', "Prototype Pure Python", "")]
+    runners_list = [("NONE", "Choose Runner", "")]
     # Add the dynamic modules
     for m in cellblender.cellblender_info['cellblender_runner_modules']:
       runners_list.append ( (m.runner_code, m.runner_name + " (dyn)", "") )
@@ -1424,13 +1417,15 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
 
     simulation_engine_and_run_enum = [
-         ('QUEUE', "Queue Control", ""),
-         ('COMMAND', "Command Line", ""),
-         ('JAVA', "Java Control", ""),
-         ('OPENGL', "OpenGL Control", ""),
+         ('QUEUE', "MCell via Queue Runner", ""),
+         ('COMMAND', "MCell via Command Line", ""),
+         ('JAVA', "MCell via Java Runner", ""),
+         ('OPENGL', "MCell via OpenGL Runner", ""),
+         ('SWEEP', "MCell via Sweep Runner", ""),
          ('libMCell', "Prototype Lib MCell via C++", ""),
          ('libMCellpy', "Prototype Lib MCell via Python", ""),
-         ('PurePython', "Prototype Pure Python", "")] 
+         ('PurePython', "Prototype Pure Python", ""),
+         ('NONE', "None", "")]
 
     simulation_engine_and_runner = EnumProperty(
         items=simulation_engine_and_run_enum, name="",
