@@ -176,7 +176,7 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
             # self.report({'INFO'}, "Exporting is Locked Out")
             return False
 
-        elif str(mcell.run_simulation.simulation_engine_and_runner) == 'QUEUE':
+        elif str(mcell.run_simulation.simulation_run_control) == 'QUEUE':
             processes_list = mcell.run_simulation.processes_list
             for pl_item in processes_list:
                 pid = int(pl_item.name.split(',')[0].split(':')[1])
@@ -222,25 +222,27 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
             # be removed
             mcell.project_settings.base_name = scene_name
 
-            print ( "Need to run " + str(mcell.run_simulation.simulation_engine_and_runner) )
-            if str(mcell.run_simulation.simulation_engine_and_runner) == 'QUEUE':
+            print ( "Need to run " + str(mcell.run_simulation.simulation_run_control) )
+            if str(mcell.run_simulation.simulation_run_control) == 'QUEUE':
                 bpy.ops.mcell.run_simulation_control_queue()
-            elif str(mcell.run_simulation.simulation_engine_and_runner) == 'COMMAND':
+            elif str(mcell.run_simulation.simulation_run_control) == 'COMMAND':
                 bpy.ops.mcell.run_simulation_normal()
-            elif str(run_sim.simulation_engine_and_runner) == 'SWEEP':
+            elif str(run_sim.simulation_run_control) == 'SWEEP':
                 bpy.ops.mcell.run_simulation_sweep()
-            elif str(run_sim.simulation_engine_and_runner) == 'libMCell':
+            elif str(run_sim.simulation_run_control) == 'libMCell':
                 bpy.ops.mcell.run_simulation_libmcell()
-            elif str(run_sim.simulation_engine_and_runner) == 'libMCellpy':
+            elif str(run_sim.simulation_run_control) == 'libMCellpy':
                 bpy.ops.mcell.run_simulation_libmcellpy()
-            elif str(run_sim.simulation_engine_and_runner) == 'PurePython':
+            elif str(run_sim.simulation_run_control) == 'PurePython':
                 bpy.ops.mcell.run_simulation_pure_python()
             else:
                 # Look for it in the dynamic modules
+                load_engine_modules()   # Note that this might already have been done ... except by the test suite!!
+                load_runner_modules()   # Note that this might already have been done ... except by the test suite!!
                 for m in cellblender.cellblender_info['cellblender_runner_modules']:
-                    if str(mcell.run_simulation.simulation_engine_and_runner) == m.runner_code:
+                    if str(mcell.run_simulation.simulation_run_control) == m.runner_code:
                         # Run with this module
-                        print ( "Running a generic runner: " + str(mcell.run_simulation.simulation_engine_and_runner) )
+                        print ( "Running a generic runner: " + str(mcell.run_simulation.simulation_run_control) )
                         run_generic_runner ( context, m )
                         break
 
@@ -1395,6 +1397,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         name="Active Error Index", default=0)
 
     show_output_options = BoolProperty ( name='Output Options', default=False )
+    show_engine_runner_options = BoolProperty ( name='Engine/Runners (experimental)', default=False )
     python_scripting_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     python_initialize_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
@@ -1409,7 +1412,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         # default='QUEUE', # Cannot set a default when "items" is a function
         update=sim_runner_changed_callback)
 
-    simulation_run_control = EnumProperty(
+    simulation_runners = EnumProperty(
         items=get_runners_as_items, name="",
         description="Control mechanisms for running the selected simulation engine",
         # default='QUEUE', # Cannot set a default when "items" is a function
@@ -1427,7 +1430,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
          ('PurePython', "Prototype Pure Python", ""),
          ('NONE', "None", "")]
 
-    simulation_engine_and_runner = EnumProperty(
+    simulation_run_control = EnumProperty(
         items=simulation_engine_and_run_enum, name="",
         description="Mechanism for running and controlling a specific simulation",
         # default='QUEUE', # Cannot set a default when "items" is a function
@@ -1616,7 +1619,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         row.operator("mcell.run_simulation", text="Export & Run", icon='COLOR_RED')
 
                 
-                if self.simulation_engine_and_runner != "QUEUE":
+                if self.simulation_run_control != "QUEUE":
                     if self.processes_list and (len(self.processes_list) > 0):
                         row = layout.row()
                         row.template_list("MCELL_UL_run_simulation", "run_simulation",
@@ -1680,14 +1683,6 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row.prop(self, "show_output_options", icon='TRIA_DOWN',
                              text="Output / Control Options", emboss=False)
 
-                    row = box.row()
-                    row.label ( "Simulation Engine" )
-                    row.prop(self, "simulation_engine_control")
-
-                    row = box.row()
-                    row.label ( "Run with" )
-                    row.prop(self, "simulation_run_control")
-
                     self.start_seed.draw(box,ps)
                     self.end_seed.draw(box,ps)
                     self.run_limit.draw(box,ps)
@@ -1722,18 +1717,18 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     col = row.column()
                     col.prop(mcell.cellblender_preferences, "decouple_export_run")
 
-                    # Generally hide the selector for simulation_engine_and_runner options
+                    # Generally hide the selector for simulation_run_control options
                     #  Queue control is the default
                     #  Queue control is currently the only option which properly disables the
                     #  run_simulation operator while simulations are currenlty running or queued
                     # Only show this option it when specifically requested
                     #if mcell.cellblender_preferences.show_sim_runner_options:
                     col = row.column()
-                    col.prop(self, "simulation_engine_and_runner")
+                    col.prop(self, "simulation_run_control")
                     
                     # This will eventually show the panel for the selected runner
 
-                    if self.simulation_engine_and_runner == "QUEUE":
+                    if self.simulation_run_control == "QUEUE":
                         row = box.row()
                         row.prop ( self, "save_text_logs" )
                         row.operator("mcell.remove_text_logs")
@@ -1744,6 +1739,30 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row.alignment = 'LEFT'
                     row.prop(self, "show_output_options", icon='TRIA_RIGHT',
                              text="Output / Control Options", emboss=False)
+
+
+                box = layout.box()
+
+                if self.show_engine_runner_options:
+                    row = box.row(align=True)
+                    row.alignment = 'LEFT'
+                    row.prop(self, "show_engine_runner_options", icon='TRIA_DOWN',
+                             text="Engine / Runner Options (experimental)", emboss=False)
+
+                    row = box.row()
+                    row.label ( "Simulation Engine" )
+                    row.prop(self, "simulation_engine_control")
+
+                    row = box.row()
+                    row.label ( "Run with" )
+                    row.prop(self, "simulation_runners")
+
+                else:
+                    row = box.row(align=True)
+                    row.alignment = 'LEFT'
+                    row.prop(self, "show_engine_runner_options", icon='TRIA_RIGHT',
+                             text="Engine / Runner Options (experimental)", emboss=False)
+
 
                 
             if self.status:
