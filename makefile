@@ -11,12 +11,14 @@ SUBDIRS = icons io_mesh_mcell_mdl sim_runners data_plotters developer_utilities
 
 SOURCES = $(shell python cellblender_source_info.py)
 
+# These are generally binary files that are built by this makefile and included in the .zip file
 IOMESHFILES = cellblender/io_mesh_mcell_mdl/_mdlmesh_parser.so cellblender/io_mesh_mcell_mdl/mdlmesh_parser.py
 SIMCTLFILES = cellblender/sim_runners/java/SimControl.jar cellblender/sim_runners/open_gl/SimControl
+SIMLIBMCFILES = cellblender/libMCell/_libMCell.so cellblender/libMCell/mcell_main
 PLOTTERFILES = cellblender/data_plotters/java_plot/PlotData.jar
 BNGFILES = cellblender/bng/bin/sbml2json
 
-ZIPFILES = $(SOURCES) $(IOMESHFILES) $(SIMCTLFILES) $(PLOTTERFILES) $(BNGFILES) cellblender/cellblender_id.py
+ZIPFILES = $(SOURCES) $(IOMESHFILES) $(SIMCTLFILES) $(SIMLIBMCFILES) $(PLOTTERFILES) $(BNGFILES) cellblender/cellblender_id.py
 
 ZIPOPTS = -X -0 -D -o
 
@@ -51,6 +53,7 @@ cellblender.zip: $(SOURCES)
 clean:
 	rm -f cellblender.zip
 	(cd io_mesh_mcell_mdl ; make clean)
+	(cd sim_engines ; make clean)
 	(cd sim_runners ; make clean)
 	(cd data_plotters ; make clean)
 
