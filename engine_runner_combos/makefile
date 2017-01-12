@@ -10,20 +10,6 @@ INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
 all: _libMCell.so mcell_main
 
 
-mcell_pipe_cpp: mcell_pipe_cpp.o JSON.o makefile
-	g++ -lm -o mcell_pipe_cpp mcell_pipe_cpp.o JSON.o
-
-mcell_pipe_cpp.o: mcell_pipe_cpp.cpp JSON.h makefile
-	g++ -c -std=c++11 -Wno-write-strings mcell_pipe_cpp.cpp
-
-
-mcell_pipe_c: mcell_pipe_c.o JSON.o makefile
-	gcc -lm -o mcell_pipe_c mcell_pipe_c.o JSON.o
-
-mcell_pipe_c.o: mcell_pipe_c.c JSON.h makefile
-	gcc -c mcell_pipe_c.c
-
-
 mcell_main_c: mcell_main_c.o JSON.o makefile
 	gcc -lm -o mcell_main_c mcell_main_c.o JSON.o
 
@@ -61,28 +47,11 @@ mcell_main: mcell_main.o rng.o JSON.o libMCell.o makefile
 	g++ -lm -o mcell_main mcell_main.o rng.o JSON.o libMCell.o
 
 
-mcell_simple.o: mcell_simple.cpp libMCell.h makefile
-	g++ -c -Wno-write-strings mcell_simple.cpp -o mcell_simple.o
-
-mcell_simple: mcell_simple.o rng.o JSON.o libMCell.o makefile
-	g++ -lm -o mcell_simple mcell_simple.o JSON.o rng.o libMCell.o
-
-
-mcell_simple_count.o: mcell_simple_count.cpp libMCell.h makefile
-	g++ -c -std=c++11 -Wno-write-strings mcell_simple_count.cpp -o mcell_simple_count.o
-
-mcell_simple_count: mcell_simple_count.o rng.o JSON.o libMCell.o makefile
-	g++ -lm -o mcell_simple_count mcell_simple_count.o JSON.o rng.o libMCell.o
-
 
 clean:
-	rm -f mcell_pipe_cpp
-	rm -f mcell_pipe_c
 	rm -f mcell_main
 	rm -f mcell_main_c
 	rm -f StorageClasses
-	rm -f mcell_simple
-	rm -f mcell_simple_count
 	rm -f *_wrap* *.pyc
 	rm -f core
 	rm -f *.o *.so
