@@ -18,13 +18,18 @@
 
 # <pep8 compliant>
 
+#
+
 import os
 import subprocess
 
 
 engine_code = "PUREPYTHON"
 engine_name = "Pure Python"
-engine_input = "dm.txt"
+engine_input = "dm"  # May be "dm", "dmg", or "blender"
+
+def prepare_run_command_list ( data_model ):
+    pass
 
 
 def run_commands ( commands, cwd="" ):
@@ -43,3 +48,4 @@ def run_commands ( commands, cwd="" ):
 if __name__ == "__main__":
     print ( "Called with __name__ == __main__" )
     pass
+

@@ -694,7 +694,7 @@ class MCELL_OT_run_simulation_libmcell(bpy.types.Operator):
             error_file_option = mcell.run_simulation.error_file
             log_file_option = mcell.run_simulation.log_file
             script_dir_path = os.path.dirname(os.path.realpath(__file__))
-            script_file_path = os.path.join(script_dir_path, "libMCell")
+            script_file_path = os.path.join(script_dir_path, "engine_runner_combos")
             final_script_path = os.path.join(script_file_path,"mcell_main")
 
             # The following line will create the "data_layout.json" file describing the directory structure
@@ -806,7 +806,7 @@ class MCELL_OT_run_simulation_libmcellpy(bpy.types.Operator):
             error_file_option = mcell.run_simulation.error_file
             log_file_option = mcell.run_simulation.log_file
             script_dir_path = os.path.dirname(os.path.realpath(__file__))
-            script_file_path = os.path.join(script_dir_path, "libMCell")
+            script_file_path = os.path.join(script_dir_path, "engine_runner_combos")
             final_script_path = os.path.join(script_file_path,"mcell_main.py")
 
             # The following line will create the "data_layout.json" file describing the directory structure
@@ -917,7 +917,7 @@ class MCELL_OT_run_simulation_pure_python(bpy.types.Operator):
             error_file_option = mcell.run_simulation.error_file
             log_file_option = mcell.run_simulation.log_file
             script_dir_path = os.path.dirname(os.path.realpath(__file__))
-            script_file_path = os.path.join(script_dir_path, "libMCell")
+            script_file_path = os.path.join(script_dir_path, "engine_runner_combos")
             final_script_path = os.path.join(script_file_path,"pure_python_sim.py")
 
             # The following line will create the "data_layout.json" file describing the directory structure
@@ -1751,9 +1751,13 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                 if self.show_engine_runner_options:
                     row = box.row(align=True)
                     row.alignment = 'LEFT'
-                    row.prop(self, "show_engine_runner_options", icon='TRIA_DOWN',
+                    col = row.column()
+                    col.alignment = 'LEFT'
+                    col.prop(self, "show_engine_runner_options", icon='TRIA_DOWN',
                              text="Engine / Runner Options (experimental)", emboss=False)
-                    row.prop ( self, "show_engine_runner_help", icon='INFO', text="" )
+                    col = row.column()
+                    col.alignment = 'RIGHT'
+                    col.prop ( self, "show_engine_runner_help", icon='INFO', text="" )
                     if self.show_engine_runner_help:
                         row = box.row()
                         row.label ( ">>> Select different simulation engines and run mechanisms <<<" )
@@ -1764,14 +1768,16 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         row = box.row()
                         row.label ( "as CellBlender supports custom instances of libMCell and distributed computing." )
                         row = box.row()
+                        row.label ( "To enable the selections in this panel, choose \"None\" in the normal run control." )
+                        row = box.row()
 
 
                     row = box.row()
-                    row.label ( "Simulation Engine" )
+                    row.label ( "Simulate with:" )
                     row.prop(self, "simulation_engine_control")
 
                     row = box.row()
-                    row.label ( "Run with" )
+                    row.label ( "Run with:" )
                     row.prop(self, "simulation_runners")
 
                 else:

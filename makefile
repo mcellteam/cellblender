@@ -7,14 +7,14 @@ INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
 
 SHELL = /bin/sh
 
-SUBDIRS = icons io_mesh_mcell_mdl libMCell sim_engines sim_runners data_plotters developer_utilities
+SUBDIRS = icons io_mesh_mcell_mdl engine_runner_combos sim_engines sim_runners data_plotters developer_utilities
 
 SOURCES = $(shell python cellblender_source_info.py)
 
 # These are generally binary files that are built by this makefile and included in the .zip file
 IOMESHFILES = cellblender/io_mesh_mcell_mdl/_mdlmesh_parser.so cellblender/io_mesh_mcell_mdl/mdlmesh_parser.py
 SIMCTLFILES = cellblender/sim_runners/java/SimControl.jar cellblender/sim_runners/open_gl/SimControl
-SIMLIBMCFILES = cellblender/libMCell/_libMCell.so cellblender/libMCell/mcell_main cellblender/sim_engines/libMCell/_libMCell.so cellblender/sim_engines/libMCell/mcell_main
+SIMLIBMCFILES = cellblender/engine_runner_combos/_libMCell.so cellblender/engine_runner_combos/mcell_main cellblender/sim_engines/engine_runner_combos/_libMCell.so cellblender/sim_engines/engine_runner_combos/mcell_main
 PLOTTERFILES = cellblender/data_plotters/java_plot/PlotData.jar
 BNGFILES = cellblender/bng/bin/sbml2json
 
@@ -53,7 +53,7 @@ cellblender.zip: $(SOURCES)
 clean:
 	rm -f cellblender.zip
 	(cd io_mesh_mcell_mdl ; make clean)
-	-(cd libMCell ; make clean)
+	-(cd engine_runner_combos ; make clean)
 	-(cd sim_engines ; make clean)
 	-(cd sim_runners ; make clean)
 	-(cd data_plotters ; make clean)
