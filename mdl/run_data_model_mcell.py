@@ -5,8 +5,88 @@ import sys
 import multiprocessing
 import os
 import subprocess
+import time
+import sys
 import argparse
 import data_model_to_mdl
+
+
+def submit_sge_job ( arglist, node_name ):
+    print ( "Sim Process running from " + str(os.getcwd()) )
+    print ( "Sim Process using " + str(arglist) )
+
+    mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed = arglist
+    mdl_filename = '%s.main.mdl' % (base_name)
+    mdl_filepath = os.path.join(project_dir, mdl_filename)
+    subprocess_cwd = os.path.dirname(mdl_filepath)
+
+    time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
+
+    qsub_filename = "qsub_%s_%d.sh" % (time_now, seed)
+    qsub_filepath = os.path.join(project_dir, qsub_filename)
+
+    job_filename = "job_%s_%d.sh" % (time_now, seed)
+    job_filepath = os.path.join(project_dir, job_filename)
+
+    log_filename = "log.%s_%d.txt" % (time_now, seed)
+    log_filepath = os.path.join(project_dir, log_filename)
+
+    error_filename = "error.%s_%d.txt" % (time_now, seed)
+    error_filepath = os.path.join(project_dir, error_filename)
+
+    job_file = open(job_filepath,"w")
+    job_command = mcell_binary + " -seed " + str(seed) + " " + mdl_filepath
+    job_file.write ( job_command )
+    job_file.close()
+    print ( "Job file contains: " + job_command )
+
+    qsub_command = "qsub"
+    qsub_command += " -wd " + subprocess_cwd
+    qsub_command += " -o " + log_filepath
+    qsub_command += " -e " + error_filepath
+    qsub_command += " -l h=" + node_name
+    qsub_command += " -m e"
+    qsub_command += " -M " + "bobkuczewski@snl.salk.edu"
+    qsub_command += " " + job_filename
+
+
+    qsub_file = open(qsub_filepath,"w")
+    qsub_file.write ( qsub_command )
+    qsub_file.close()
+    print ( "QSUB file contains: " + qsub_command )
+
+    args = ['ssh', 'hydra', qsub_filepath ]
+
+    p = subprocess.Popen ( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+
+    pi = p.stdin
+    po = p.stdout
+    pe = p.stderr
+
+    nodes = []
+
+    print ( "Waiting for something..." )
+    count = 0
+    while len(po.peek()) == 0:
+        # Wait for something
+        time.sleep ( 0.01 )
+        count = count + 1
+        if count > 100:
+            break
+
+    print ( "Waiting for nothing..." )
+    count = 0
+    while (len(po.peek()) > 0) and (count < 1000):
+        # Wait for nothing
+        # time.sleep ( 0.01 )
+        if b'\n' in po.peek():
+            line = str(po.readline())
+            count = 0
+        count = count + 1
+        # print ( "Count = " + str(count) )
+        #if b"nothing" in po.peek():
+        #  break
+    p.kill()
 
 
 def run_sim(arglist):
@@ -45,22 +125,19 @@ def run_sim(arglist):
             with open (error_filepath, "w") as error_file:
                 subprocess.call(
                     [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-                    cwd=subprocess_cwd,
-                    stdout=log_file, stderr=error_file)
+                    cwd=subprocess_cwd, stdout=log_file, stderr=error_file)
     # Only output log file
     elif log_file_option == 'file':
         with open(log_filepath, "w") as log_file:
             subprocess.call(
                 [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-                cwd=subprocess_cwd,
-                stdout=log_file, stderr=error_file)
+                cwd=subprocess_cwd, stdout=log_file, stderr=error_file)
     # Only error log file
     elif error_file_option == 'file':
         with open(error_filepath, "w") as error_file:
             subprocess.call(
                 [mcell_binary, '-seed', '%d' % seed, mdl_filepath],
-                cwd=subprocess_cwd,
-                stdout=log_file, stderr=error_file)
+                cwd=subprocess_cwd, stdout=log_file, stderr=error_file)
     # Neither error nor output log
     else:
         subprocess.call(
@@ -156,6 +233,51 @@ def makedirs_exist_ok ( path_to_build, exist_ok=False ):
       if not os.path.exists(full):
         os.makedirs ( full )
 
+def get_nodes():
+    args = ['ssh', 'hydra', 'qhost']
+
+    p = subprocess.Popen ( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+
+    pi = p.stdin
+    po = p.stdout
+    pe = p.stderr
+
+    nodes = []
+
+    print ( "Waiting for something..." )
+    count = 0
+    while len(po.peek()) == 0:
+        # Wait for something
+        time.sleep ( 0.01 )
+        count = count + 1
+        if count > 100:
+            break
+
+    print ( "Waiting for nothing..." )
+    count = 0
+    while (len(po.peek()) > 0) and (count < 1000):
+        # Wait for nothing
+        # time.sleep ( 0.01 )
+        if b'\n' in po.peek():
+            line = str(po.readline())
+            if line.startswith("b'node"):
+                fields = line[2:len(line)-3].split()
+                nodes.append ( { 'name':fields[0].strip(),
+                                 'arch':fields[1].strip(),
+                                 'ncpu':fields[2].strip(),
+                                 'load':fields[3].strip(),
+                                 'memtot':fields[4].strip(),
+                                 'memuse':fields[5].strip(),
+                                 'swapto':fields[6].strip(),
+                                 'swapus':fields[7].strip() } )
+            count = 0
+        count = count + 1
+        # print ( "Count = " + str(count) )
+        #if b"nothing" in po.peek():
+        #  break
+    p.kill()
+    return nodes
+
 
 if __name__ == "__main__":
     """
@@ -171,6 +293,7 @@ if __name__ == "__main__":
     arg_parser.add_argument ( '-ef', '--error_file_opt',  type=str, default='console', help='the error file option for mcell' )
     arg_parser.add_argument ( '-np', '--num_processors',  type=int, default=8,         help='the number of processors' )
     arg_parser.add_argument ( '-rl', '--run_limit',       type=int, default=-1,        help='limit the total number of runs' )
+    arg_parser.add_argument ( '-rt', '--runner_type',     type=str, default='mpp',     help='run mechanism: mpp or sge (mpp=MultiProcessingPool, sge=SunGridEngine)' )
     
     parsed_args = arg_parser.parse_args() # Without any arguments this uses sys.argv automatically
 
@@ -187,6 +310,7 @@ if __name__ == "__main__":
     print ( "Error File = " + parsed_args.error_file_opt )
     print ( "Num Processors = " + str(parsed_args.num_processors) )
     print ( "Run Limit = " + str(parsed_args.run_limit) )
+    print ( "Runner Type = " + str(parsed_args.runner_type) )
     
     # Create convenience variables from parsed_args:
     mcell_binary = parsed_args.binary
@@ -289,9 +413,43 @@ if __name__ == "__main__":
     # Print the run commands as a record of what's being done
     print ( "Run Cmds:" )
     for rc in run_cmd_list:
-      print ( "  " + str(rc) )
+        print ( "  " + str(rc) )
 
-    # Create a pool of mcell processes.
-    pool = multiprocessing.Pool(processes=mcell_processors)
-    pool.map(run_sim, run_cmd_list)
+    if str(parsed_args.runner_type) == "mpp":
 
+        # Create a pool of mcell processes and run the command list on them
+        pool = multiprocessing.Pool(processes=mcell_processors)
+        pool.map(run_sim, run_cmd_list)
+
+    if str(parsed_args.runner_type) == "sge":
+        # Find the best nodes to use for running
+        best_nodes = []
+        nodes = get_nodes();
+
+        for n in nodes:
+            n['capacity'] = float(n['load']) / float(n['ncpu'])
+            n['freecpu'] = float(n['ncpu']) - (float(n['load'])/100.0)
+            if n['freecpu'] > 1.5:
+                best_nodes.append ( [ n['name'], n['freecpu'] ] )
+
+        if len(best_nodes) == 0:
+            # None met the criteria, so just find the best of the bad
+            best = None
+            for n in nodes:
+                if (best == None):
+                    best = n
+                elif n['freecpu'] > best['freecpu']:
+                    best = n
+            if best != None:
+                best_nodes.append ( best )
+
+        node_index = 0
+        for rc in run_cmd_list:
+            print ( "  Running " + str(rc) + " on " + str(best_nodes[node_index]) )
+            submit_sge_job ( rc, best_nodes[node_index][0] )
+            node_index += 1
+            if node_index >= len(best_nodes):
+                node_index = 0
+
+        #pool = multiprocessing.Pool(processes=mcell_processors)
+        #pool.map(run_sim, run_cmd_list)
