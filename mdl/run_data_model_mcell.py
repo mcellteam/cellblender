@@ -11,82 +11,6 @@ import argparse
 import data_model_to_mdl
 
 
-def submit_sge_job ( arglist, node_name ):
-    print ( "Sim Process running from " + str(os.getcwd()) )
-    print ( "Sim Process using " + str(arglist) )
-
-    mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed = arglist
-    mdl_filename = '%s.main.mdl' % (base_name)
-    mdl_filepath = os.path.join(project_dir, mdl_filename)
-    subprocess_cwd = os.path.dirname(mdl_filepath)
-
-    time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
-
-    qsub_filename = "qsub_%s_%d.sh" % (time_now, seed)
-    qsub_filepath = os.path.join(project_dir, qsub_filename)
-
-    job_filename = "job_%s_%d.sh" % (time_now, seed)
-    job_filepath = os.path.join(project_dir, job_filename)
-
-    log_filename = "log.%s_%d.txt" % (time_now, seed)
-    log_filepath = os.path.join(project_dir, log_filename)
-
-    error_filename = "error.%s_%d.txt" % (time_now, seed)
-    error_filepath = os.path.join(project_dir, error_filename)
-
-    job_file = open(job_filepath,"w")
-    job_command = mcell_binary + " -seed " + str(seed) + " " + mdl_filepath
-    job_file.write ( job_command )
-    job_file.close()
-    print ( "Job file contains: " + job_command )
-
-    qsub_command = "qsub"
-    qsub_command += " -wd " + subprocess_cwd
-    qsub_command += " -o " + log_filepath
-    qsub_command += " -e " + error_filepath
-    qsub_command += " -l h=" + node_name
-    qsub_command += " -m e"
-    qsub_command += " -M " + "bobkuczewski@snl.salk.edu"
-    qsub_command += " " + job_filename
-
-
-    qsub_file = open(qsub_filepath,"w")
-    qsub_file.write ( qsub_command )
-    qsub_file.close()
-    print ( "QSUB file contains: " + qsub_command )
-
-    args = ['ssh', 'hydra', qsub_filepath ]
-
-    p = subprocess.Popen ( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
-
-    pi = p.stdin
-    po = p.stdout
-    pe = p.stderr
-
-    nodes = []
-
-    print ( "Waiting for something..." )
-    count = 0
-    while len(po.peek()) == 0:
-        # Wait for something
-        time.sleep ( 0.01 )
-        count = count + 1
-        if count > 100:
-            break
-
-    print ( "Waiting for nothing..." )
-    count = 0
-    while (len(po.peek()) > 0) and (count < 1000):
-        # Wait for nothing
-        # time.sleep ( 0.01 )
-        if b'\n' in po.peek():
-            line = str(po.readline())
-            count = 0
-        count = count + 1
-        # print ( "Count = " + str(count) )
-        #if b"nothing" in po.peek():
-        #  break
-    p.kill()
 
 
 def run_sim(arglist):
@@ -314,8 +238,8 @@ if __name__ == "__main__":
     
     # Create convenience variables from parsed_args:
     mcell_binary = parsed_args.binary
-    start = parsed_args.first_seed
-    end = parsed_args.last_seed
+    start_seed = parsed_args.first_seed
+    end_seed = parsed_args.last_seed
     project_dir = parsed_args.proj_dir
     if len(project_dir) <= 0:
       project_dir = os.path.join(os.getcwd(), 'project_name_files/mcell')
@@ -353,7 +277,7 @@ if __name__ == "__main__":
     # Include the file type
     sweep_list_file.write ( "  [\"file_type\", [\"react_data\", \"viz_data\"]],\n" )
     # Include the seeds in the sweep list file for plotting, etc.
-    sweep_list_file.write ( "  [\"SEED\", " + str([s for s in range(start,end+1)]) + "]\n" )
+    sweep_list_file.write ( "  [\"SEED\", " + str([s for s in range(start_seed,end_seed+1)]) + "]\n" )
     sweep_list_file.write ( " ]\n" )
     sweep_list_file.write ( "}\n" )
     sweep_list_file.close()
@@ -392,7 +316,7 @@ if __name__ == "__main__":
                     if par['par_name'] == sweep_item['par_name']:
                         par['par_expression'] = str(sweep_item['values'][sweep_item['current_index']])
         # Sweep through the seeds for this set of parameters creating a run specification for each seed
-        for seed in range(start,end+1):
+        for seed in range(start_seed,end_seed+1):
             # Create the directories and write the MDL
             sweep_item_path = os.path.join(project_dir,sweep_path)
             makedirs_exist_ok ( sweep_item_path, exist_ok=True )
@@ -411,7 +335,7 @@ if __name__ == "__main__":
             i += -1
 
     # Print the run commands as a record of what's being done
-    print ( "Run Cmds:" )
+    print ( "Run Cmds for SGE:" )
     for rc in run_cmd_list:
         print ( "  " + str(rc) )
 
@@ -443,13 +367,91 @@ if __name__ == "__main__":
             if best != None:
                 best_nodes.append ( best )
 
+        #
+        #
+        #
+        # For testing, force use of known little-used nodes
+        best_nodes = [ ['node34'], ['node35'], ['node57'], ['node58'] ]
+        #
+        #
+        #
+
+        # Build 1 master qsub file and a job file for each MCell run
+
+        master_job_list_name = os.path.join ( project_dir, "master_job_list.sh" )
+        master_job_list = open ( master_job_list_name, "w" )
+        master_job_list.write ( 'echo "Start of master job list"\n' )
+        master_job_list.write ( "cd %s\n" % os.path.join(project_dir,"output_data") )
         node_index = 0
-        for rc in run_cmd_list:
-            print ( "  Running " + str(rc) + " on " + str(best_nodes[node_index]) )
-            submit_sge_job ( rc, best_nodes[node_index][0] )
+        for run_cmd in run_cmd_list:
+
+            job_filename = "job_%d.sh" % (node_index)
+            job_filepath = os.path.join(project_dir, job_filename)
+
+            log_filename = "log_%d.txt" % (node_index)
+            log_filepath = os.path.join(project_dir, log_filename)
+
+            error_filename = "error_%d.txt" % (node_index)
+            error_filepath = os.path.join(project_dir, error_filename)
+
+            mdl_filename = '%s.main.mdl' % (base_name)
+            mdl_filepath = os.path.join(project_dir, "output_data", mdl_filename)
+
+            job_file = open(job_filepath,"w")
+            job_file.write ( "cd %s\n" % os.path.join(project_dir,"output_data") )
+            job_file.write ( mcell_binary + " -seed " + str(run_cmd[5]) + " " + mdl_filename + "\n" )
+            job_file.close()
+
+            qsub_command = "qsub"
+            # qsub_command += " -wd " + subprocess_cwd
+            qsub_command += " -o " + log_filepath
+            qsub_command += " -e " + error_filepath
+            qsub_command += " -l h=" + best_nodes[node_index][0]
+            qsub_command += " -m e"
+            qsub_command += " -M " + "bobkuczewski@snl.salk.edu"
+            qsub_command += " " + job_filepath
+
+            master_job_list.write ( qsub_command + "\n" )
+
             node_index += 1
             if node_index >= len(best_nodes):
-                node_index = 0
+              node_index = 0
 
-        #pool = multiprocessing.Pool(processes=mcell_processors)
-        #pool.map(run_sim, run_cmd_list)
+
+        master_job_list.write ( 'echo "End of master job list"\n' )
+        master_job_list.close()
+        os.chmod ( master_job_list_name, 0o740 )  # Must make executable
+
+        args = ['ssh', 'hydra', master_job_list_name ]
+        print ( "Args for Popen: " + str(args) )
+        p = subprocess.Popen ( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+
+        pi = p.stdin
+        po = p.stdout
+        pe = p.stderr
+
+        print ( "Waiting for something from subprocess ..." )
+        count = 0
+        while len(po.peek()) == 0:
+            # Wait for something
+            time.sleep ( 0.01 )
+            count = count + 1
+            if count > 100:
+                break
+
+        print ( "Waiting for pause from subprocess..." )
+        count = 0
+        while (len(po.peek()) > 0) and (count < 1000):
+            # Wait for nothing
+            # time.sleep ( 0.01 )
+            if b'\n' in po.peek():
+                line = str(po.readline())
+                print ( "J: " + str(line) )
+                count = 0
+            count = count + 1
+            # print ( "Count = " + str(count) )
+            #if b"nothing" in po.peek():
+            #  break
+        #print ( "Terminating subprocess..." )
+        #p.kill()
+
