@@ -155,9 +155,9 @@ def makedirs_exist_ok ( path_to_build, exist_ok=False ):
       full = os.path.join(full,p)
       # print ( "   " + full )
       if not os.path.exists(full):
-        os.makedirs ( full )
+        os.makedirs ( full, exist_ok=True )
 
-def get_nodes():
+def get_sge_nodes():
     args = ['ssh', 'hydra', 'qhost']
 
     p = subprocess.Popen ( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
@@ -336,8 +336,8 @@ if __name__ == "__main__":
 
     # Print the run commands as a record of what's being done
     print ( "Run Cmds for SGE:" )
-    for rc in run_cmd_list:
-        print ( "  " + str(rc) )
+    for run_cmd in run_cmd_list:
+        print ( "  " + str(run_cmd) )
 
     if str(parsed_args.runner_type) == "mpp":
 
@@ -348,7 +348,7 @@ if __name__ == "__main__":
     if str(parsed_args.runner_type) == "sge":
         # Find the best nodes to use for running
         best_nodes = []
-        nodes = get_nodes();
+        nodes = get_sge_nodes();
 
         for n in nodes:
             n['capacity'] = float(n['load']) / float(n['ncpu'])
@@ -395,10 +395,10 @@ if __name__ == "__main__":
             error_filepath = os.path.join(project_dir, error_filename)
 
             mdl_filename = '%s.main.mdl' % (base_name)
-            mdl_filepath = os.path.join(project_dir, "output_data", mdl_filename)
+            # mdl_filepath = os.path.join(run_cmd[1], mdl_filename)
 
             job_file = open(job_filepath,"w")
-            job_file.write ( "cd %s\n" % os.path.join(project_dir,"output_data") )
+            job_file.write ( "cd %s\n" % run_cmd[1] )
             job_file.write ( mcell_binary + " -seed " + str(run_cmd[5]) + " " + mdl_filename + "\n" )
             job_file.close()
 
