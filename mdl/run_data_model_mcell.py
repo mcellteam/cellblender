@@ -382,16 +382,16 @@ if __name__ == "__main__":
         master_job_list = open ( master_job_list_name, "w" )
         master_job_list.write ( 'echo "Start of master job list"\n' )
         master_job_list.write ( "cd %s\n" % os.path.join(project_dir,"output_data") )
-        node_index = 0
+        job_index = 0
         for run_cmd in run_cmd_list:
 
-            job_filename = "job_%d.sh" % (node_index)
+            job_filename = "job_%d.sh" % (job_index)
             job_filepath = os.path.join(project_dir, job_filename)
 
-            log_filename = "log_%d.txt" % (node_index)
+            log_filename = "log_%d.txt" % (job_index)
             log_filepath = os.path.join(project_dir, log_filename)
 
-            error_filename = "error_%d.txt" % (node_index)
+            error_filename = "error_%d.txt" % (job_index)
             error_filepath = os.path.join(project_dir, error_filename)
 
             mdl_filename = '%s.main.mdl' % (base_name)
@@ -406,16 +406,14 @@ if __name__ == "__main__":
             # qsub_command += " -wd " + subprocess_cwd
             qsub_command += " -o " + log_filepath
             qsub_command += " -e " + error_filepath
-            qsub_command += " -l h=" + best_nodes[node_index][0]
+            qsub_command += " -l h=" + best_nodes[job_index%len(best_nodes)][0]
             qsub_command += " -m e"
             qsub_command += " -M " + "bobkuczewski@snl.salk.edu"
             qsub_command += " " + job_filepath
 
             master_job_list.write ( qsub_command + "\n" )
 
-            node_index += 1
-            if node_index >= len(best_nodes):
-              node_index = 0
+            job_index += 1
 
 
         master_job_list.write ( 'echo "End of master job list"\n' )
