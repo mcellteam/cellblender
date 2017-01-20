@@ -219,7 +219,8 @@ if __name__ == "__main__":
     arg_parser.add_argument ( '-rl', '--run_limit',       type=int, default=-1,        help='limit the total number of runs' )
     arg_parser.add_argument ( '-rt', '--runner_type',     type=str, default='mpp',     help='run mechanism: mpp or sge (mpp=MultiProcessingPool, sge=SunGridEngine)' )
     arg_parser.add_argument ( '-nl', '--node_list',       type=str, default='',        help='list of comma-separated nodes to run on with SGE' )
-    
+    arg_parser.add_argument ( '-em', '--email_addr',      type=str, default='',        help='email address for notifications of job results' )
+
     parsed_args = arg_parser.parse_args() # Without any arguments this uses sys.argv automatically
 
     # Get the command line arguments (excluding the script name itself)
@@ -237,7 +238,8 @@ if __name__ == "__main__":
     print ( "Run Limit = " + str(parsed_args.run_limit) )
     print ( "Runner Type = " + str(parsed_args.runner_type) )
     print ( "Node List = " + str(parsed_args.node_list) )
-    
+    print ( "Email Address = " + str(parsed_args.email_addr) )
+
     # Create convenience variables from parsed_args:
     mcell_binary = parsed_args.binary
     start_seed = parsed_args.first_seed
@@ -372,8 +374,7 @@ if __name__ == "__main__":
         #
         #
         #
-        # For testing, force use of known little-used nodes
-        best_nodes = [ ['node34'], ['node35'], ['node57'], ['node58'] ]
+        # For now, ignore the previous calculations and just use the nodes passed in
         #
         #
         #
@@ -410,8 +411,9 @@ if __name__ == "__main__":
             qsub_command += " -o " + log_filepath
             qsub_command += " -e " + error_filepath
             qsub_command += " -l h=" + best_nodes[job_index%len(best_nodes)][0]
-            qsub_command += " -m e"
-            qsub_command += " -M " + "bobkuczewski@snl.salk.edu"
+            if len(parsed_args.email_addr) > 0:
+                qsub_command += " -m e"
+                qsub_command += " -M " + parsed_args.email_addr
             qsub_command += " " + job_filepath
 
             master_job_list.write ( qsub_command + "\n" )

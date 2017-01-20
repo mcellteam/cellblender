@@ -479,7 +479,7 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
                         "\n  log_file_option = " + str(log_file_option) +
                         "\n  mcell_processes_str = " + str(mcell_processes_str) +
                         "\n" )
-                sp = subprocess.Popen([
+                cmd_list = [
                     python_path,
                     script_file_path,
                     os.path.join(project_dir,"data_model.json"),
@@ -490,9 +490,12 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
                     "-lf", log_file_option,
                     "-np", mcell_processes_str,
                     "-rt", "sge",
-                    "-nl", computer_names_string ],
-                    stdout=None,
-                    stderr=None)
+                    "-nl", computer_names_string ]
+                if len(run_sim.sge_email_addr) > 0:
+                    cmd_list.append ("-em")
+                    cmd_list.append (run_sim.sge_email_addr)
+
+                sp = subprocess.Popen(cmd_list, stdout=None, stderr=None)
                 self.report({'INFO'}, "Simulation Running")
 
                 # This is a hackish workaround since we can't return arbitrary
@@ -1565,6 +1568,7 @@ class MCell_UL_computer_item ( bpy.types.UIList ):
 class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     enable_python_scripting = BoolProperty ( name='Enable Python Scripting', default=False )  # Intentionally not in the data model
     sge_host_name = StringProperty ( default="", description="Name of Grid Engine Scheduler" )
+    sge_email_addr = StringProperty ( default="", description="Email address for notifications" )
     computer_list = CollectionProperty(type=MCellComputerProperty, name="Computer List")
     active_comp_index = IntProperty(name="Active Computer Index", default=0)
 
@@ -1959,6 +1963,9 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         col = row.column()
                         # col.label( "SGE Options" )
                         col.prop ( self, "sge_host_name", text="Host" )
+                        col = row.column()
+                        col.prop ( self, "sge_email_addr", text="Email" )
+                        row = box.row()
                         col = row.column()
                         col.operator( "mcell.refresh_sge_list", icon='FILE_REFRESH' )
                         row = box.row()
