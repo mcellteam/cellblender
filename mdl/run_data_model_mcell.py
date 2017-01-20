@@ -218,6 +218,7 @@ if __name__ == "__main__":
     arg_parser.add_argument ( '-np', '--num_processors',  type=int, default=8,         help='the number of processors' )
     arg_parser.add_argument ( '-rl', '--run_limit',       type=int, default=-1,        help='limit the total number of runs' )
     arg_parser.add_argument ( '-rt', '--runner_type',     type=str, default='mpp',     help='run mechanism: mpp or sge (mpp=MultiProcessingPool, sge=SunGridEngine)' )
+    arg_parser.add_argument ( '-nl', '--node_list',       type=str, default='',        help='list of comma-separated nodes to run on with SGE' )
     
     parsed_args = arg_parser.parse_args() # Without any arguments this uses sys.argv automatically
 
@@ -235,6 +236,7 @@ if __name__ == "__main__":
     print ( "Num Processors = " + str(parsed_args.num_processors) )
     print ( "Run Limit = " + str(parsed_args.run_limit) )
     print ( "Runner Type = " + str(parsed_args.runner_type) )
+    print ( "Node List = " + str(parsed_args.node_list) )
     
     # Create convenience variables from parsed_args:
     mcell_binary = parsed_args.binary
@@ -375,6 +377,7 @@ if __name__ == "__main__":
         #
         #
         #
+        best_nodes = [ [s] for s in str(parsed_args.node_list).split(',') ]
 
         # Build 1 master qsub file and a job file for each MCell run
 

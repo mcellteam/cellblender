@@ -415,10 +415,15 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
         for computer in computer_list:
             if computer.selected:
                 computer_names_to_run.append ( computer.comp_name.split()[0] )
+        computer_names_string = ""
+        if len(computer_names_to_run) > 0:
+          computer_names_string = computer_names_to_run[0]
+          for n in computer_names_to_run[1:]:
+            computer_names_string += ','+n
 
         print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
         print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
-        print ( "Running on computers: " + str(computer_names_to_run) )
+        print ( "Running on computers: " + str(computer_names_string) )
         print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
         print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
@@ -484,7 +489,8 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
                     "-ef", error_file_option,
                     "-lf", log_file_option,
                     "-np", mcell_processes_str,
-                    "-rt", "sge"],
+                    "-rt", "sge",
+                    "-nl", computer_names_string ],
                     stdout=None,
                     stderr=None)
                 self.report({'INFO'}, "Simulation Running")
