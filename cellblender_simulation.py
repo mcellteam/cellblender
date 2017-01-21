@@ -490,6 +490,7 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
                     "-lf", log_file_option,
                     "-np", mcell_processes_str,
                     "-rt", "sge",
+                    "-gh", run_sim.sge_host_name,
                     "-nl", computer_names_string ]
                 if len(run_sim.sge_email_addr) > 0:
                     cmd_list.append ("-em")
@@ -1139,7 +1140,7 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
 
         args = ['ssh', run_sim.sge_host_name, 'qhost']
 
-        p = subprocess.Popen ( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+        p = subprocess.Popen ( args, bufsize=100000, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
 
         pi = p.stdin
         po = p.stdout
@@ -1158,11 +1159,10 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
         count = 0
         past_header = False
         while (len(po.peek()) > 0) and (count < 1000):
-            # Wait for nothing
-            # time.sleep ( 0.01 )
+            # Keep checking while there's input until there is none
             if b'\n' in po.peek():
                 line = str(po.readline())
-                # if line.startswith("b'node"):
+                # print ( "  SGE: " + str(line) )
                 if past_header:
                     fields = line[2:len(line)-3].split()
                     computer_list.add()
@@ -1175,6 +1175,9 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
                     past_header = True
                     print ( "past header" )
                 count = 0
+            else:
+                # Not a full line yet, so kill some time
+                time.sleep ( 0.001 )
             count = count + 1
         p.kill()
         run_sim.active_comp_index = 0

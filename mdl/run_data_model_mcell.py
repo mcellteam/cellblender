@@ -157,8 +157,8 @@ def makedirs_exist_ok ( path_to_build, exist_ok=False ):
       if not os.path.exists(full):
         os.makedirs ( full, exist_ok=True )
 
-def get_sge_nodes():
-    args = ['ssh', 'hydra', 'qhost']
+def get_sge_nodes(grid_engine_host):
+    args = ['ssh', grid_engine_host, 'qhost']
 
     p = subprocess.Popen ( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
 
@@ -220,6 +220,7 @@ if __name__ == "__main__":
     arg_parser.add_argument ( '-rt', '--runner_type',     type=str, default='mpp',     help='run mechanism: mpp or sge (mpp=MultiProcessingPool, sge=SunGridEngine)' )
     arg_parser.add_argument ( '-nl', '--node_list',       type=str, default='',        help='list of comma-separated nodes to run on with SGE' )
     arg_parser.add_argument ( '-em', '--email_addr',      type=str, default='',        help='email address for notifications of job results' )
+    arg_parser.add_argument ( '-gh', '--grid_host',       type=str, default='',        help='grid engine host name' )
 
     parsed_args = arg_parser.parse_args() # Without any arguments this uses sys.argv automatically
 
@@ -239,6 +240,7 @@ if __name__ == "__main__":
     print ( "Runner Type = " + str(parsed_args.runner_type) )
     print ( "Node List = " + str(parsed_args.node_list) )
     print ( "Email Address = " + str(parsed_args.email_addr) )
+    print ( "Grid Engine Host = " + str(parsed_args.grid_host) )
 
     # Create convenience variables from parsed_args:
     mcell_binary = parsed_args.binary
@@ -352,7 +354,7 @@ if __name__ == "__main__":
     if str(parsed_args.runner_type) == "sge":
         # Find the best nodes to use for running
         best_nodes = []
-        nodes = get_sge_nodes();
+        nodes = get_sge_nodes(parsed_args.grid_host);
 
         for n in nodes:
             n['capacity'] = float(n['load']) / float(n['ncpu'])
@@ -425,7 +427,7 @@ if __name__ == "__main__":
         master_job_list.close()
         os.chmod ( master_job_list_name, 0o740 )  # Must make executable
 
-        args = ['ssh', 'hydra', master_job_list_name ]
+        args = ['ssh', parsed_args.grid_host, master_job_list_name ]
         print ( "Args for Popen: " + str(args) )
         p = subprocess.Popen ( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
 
