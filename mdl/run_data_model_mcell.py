@@ -353,25 +353,25 @@ if __name__ == "__main__":
 
     if str(parsed_args.runner_type) == "sge":
         # Find the best nodes to use for running
-        best_nodes = []
-        nodes = get_sge_nodes(parsed_args.grid_host);
+        #best_nodes = []
+        #nodes = get_sge_nodes(parsed_args.grid_host);
 
-        for n in nodes:
-            n['capacity'] = float(n['load']) / float(n['ncpu'])
-            n['freecpu'] = float(n['ncpu']) - (float(n['load'])/100.0)
-            if n['freecpu'] > 1.5:
-                best_nodes.append ( [ n['name'], n['freecpu'] ] )
+        #for n in nodes:
+        #    n['capacity'] = float(n['load']) / float(n['ncpu'])
+        #    n['freecpu'] = float(n['ncpu']) - (float(n['load'])/100.0)
+        #    if n['freecpu'] > 1.5:
+        #        best_nodes.append ( [ n['name'], n['freecpu'] ] )
 
-        if len(best_nodes) == 0:
-            # None met the criteria, so just find the best of the bad
-            best = None
-            for n in nodes:
-                if (best == None):
-                    best = n
-                elif n['freecpu'] > best['freecpu']:
-                    best = n
-            if best != None:
-                best_nodes.append ( best )
+        #if len(best_nodes) == 0:
+        #    # None met the criteria, so just find the best of the bad
+        #    best = None
+        #    for n in nodes:
+        #        if (best == None):
+        #            best = n
+        #        elif n['freecpu'] > best['freecpu']:
+        #            best = n
+        #    if best != None:
+        #        best_nodes.append ( best )
 
         #
         #
