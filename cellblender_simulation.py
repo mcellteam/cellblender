@@ -1131,6 +1131,25 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
     bl_description = ("Refresh the list of computers in the Sun Grid Engine list.")
     bl_options = {'REGISTER'}
 
+    def read_a_line ( self, process_output, wait_count, sleep_time ):
+        count = 0
+        while (len(process_output.peek()) > 0) and (count < wait_count):
+            # Keep checking for a full line
+            if b'\n' in process_output.peek():
+                line = str(process_output.readline())
+                if line != None:
+                    return line
+            else:
+                # Not a full line yet, so kill some time
+                time.sleep ( sleep_time )
+            count = count + 1
+        # Try to read the line anyway ... this seems to be needed in some cases
+        line = str(process_output.readline())
+        if line != None:
+            return line
+        return None
+
+
     def execute(self, context):
         print ( "Refreshing the SGE list" )
         run_sim = context.scene.mcell.run_simulation
@@ -1140,13 +1159,13 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
 
         args = ['ssh', run_sim.sge_host_name, 'qhost']
 
-        p = subprocess.Popen ( args, bufsize=100000, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+        p = subprocess.Popen ( args, bufsize=10000, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
 
         pi = p.stdin
         po = p.stdout
         pe = p.stderr
 
-        nodes = []
+        # Start by waiting fror any kind of response
 
         count = 0
         while len(po.peek()) == 0:
@@ -1154,31 +1173,39 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
             time.sleep ( 0.01 )
             count = count + 1
             if count > 100:
+                # That's enough waiting
                 break
 
-        count = 0
-        past_header = False
-        while (len(po.peek()) > 0) and (count < 1000):
-            # Keep checking while there's input until there is none
-            if b'\n' in po.peek():
-                line = str(po.readline())
-                # print ( "  SGE: " + str(line) )
-                if past_header:
-                    fields = line[2:len(line)-3].split()
+        # Read lines until the header line has been read
+
+        while True:
+            line = self.read_a_line ( po, 100, 0.001 )
+            if line == None:
+                break
+            if line.startswith("b'----------"):
+                break
+
+        # Read lines until done
+
+        found_nodes = []
+        while True:
+            line = self.read_a_line ( po, 100, 0.001 )
+            if line == None:
+                break
+            elif len(line.strip()) == 0:
+                break
+            elif str(line) == "b''":
+                break
+            else:
+                print ( "SGE: " + str(line) )
+                fields = line[2:len(line)-3].split()
+                if len(fields) > 5:
                     computer_list.add()
                     run_sim.active_comp_index = len(run_sim.computer_list) - 1
                     new_comp = run_sim.computer_list[run_sim.active_comp_index]
                     new_comp.comp_name = fields[0].strip()
                     new_comp.comp_props = fields[1].strip() + "," + fields[2].strip() + "," + fields[3].strip() + "," + fields[4].strip() + "," + fields[5].strip()
                     new_comp.selected = False
-                if line.startswith("b'--------"):
-                    past_header = True
-                    print ( "past header" )
-                count = 0
-            else:
-                # Not a full line yet, so kill some time
-                time.sleep ( 0.001 )
-            count = count + 1
         p.kill()
         run_sim.active_comp_index = 0
         return {'FINISHED'}
