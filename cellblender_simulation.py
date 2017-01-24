@@ -1153,63 +1153,104 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
     def execute(self, context):
         print ( "Refreshing the SGE list" )
         run_sim = context.scene.mcell.run_simulation
-        computer_list = run_sim.computer_list
-        computer_list.clear()
-        run_sim.active_comp_index = 0
+        if len(run_sim.sge_host_name) <= -10:
+            print ( "Error: SGE Host name is empty" )
+        else:
+            computer_list = run_sim.computer_list
+            computer_list.clear()
+            run_sim.active_comp_index = 0
 
-        args = ['ssh', run_sim.sge_host_name, 'qhost']
+            args = ['ssh', run_sim.sge_host_name, 'qhost']
 
-        p = subprocess.Popen ( args, bufsize=10000, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+            p = subprocess.Popen ( args, bufsize=10000, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
 
-        pi = p.stdin
-        po = p.stdout
-        pe = p.stderr
+            pi = p.stdin
+            po = p.stdout
+            pe = p.stderr
 
-        # Start by waiting fror any kind of response
+            # Start by waiting fror any kind of response
 
-        count = 0
-        while len(po.peek()) == 0:
-            # Wait for something
-            time.sleep ( 0.01 )
-            count = count + 1
-            if count > 100:
-                # That's enough waiting
-                break
+            count = 0
+            while len(po.peek()) == 0:
+                # Wait for something
+                time.sleep ( 0.01 )
+                count = count + 1
+                if count > 100:
+                    # That's enough waiting
+                    break
 
-        # Read lines until the header line has been read
+            # Read lines until the header line has been read
 
-        while True:
-            line = self.read_a_line ( po, 100, 0.001 )
-            if line == None:
-                break
-            if line.startswith("b'----------"):
-                break
+            num_wait = 0
+            while True:
+                line = self.read_a_line ( po, 100, 0.001 )
+                num_wait += 1
+                if num_wait > 1000:
+                    break
+                if line == None:
+                    break
+                if line.startswith("b'----------"):
+                    break
 
-        # Read lines until done
+            # Read lines until done
 
-        found_nodes = []
-        while True:
-            line = self.read_a_line ( po, 100, 0.001 )
-            if line == None:
-                break
-            elif len(line.strip()) == 0:
-                break
-            elif str(line) == "b''":
-                break
-            else:
-                print ( "SGE: " + str(line) )
-                fields = line[2:len(line)-3].split()
-                if len(fields) > 5:
-                    computer_list.add()
-                    run_sim.active_comp_index = len(run_sim.computer_list) - 1
-                    new_comp = run_sim.computer_list[run_sim.active_comp_index]
-                    new_comp.comp_name = fields[0].strip()
-                    new_comp.comp_props = fields[1].strip() + "," + fields[2].strip() + "," + fields[3].strip() + "," + fields[4].strip() + "," + fields[5].strip()
-                    new_comp.selected = False
-        p.kill()
-        run_sim.active_comp_index = 0
+            found_nodes = []
+            num_wait = 0
+            while True:
+                line = self.read_a_line ( po, 100, 0.001 )
+                if line == None:
+                    break
+                elif len(line.strip()) == 0:
+                    break
+                elif str(line) == "b''":
+                    break
+                else:
+                    num_wait = 0
+                    print ( "SGE: " + str(line) )
+                    fields = line[2:len(line)-3].split()
+                    if len(fields) > 5:
+                        computer_list.add()
+                        run_sim.active_comp_index = len(run_sim.computer_list) - 1
+                        new_comp = run_sim.computer_list[run_sim.active_comp_index]
+                        new_comp.comp_name = fields[0].strip()
+                        new_comp.comp_props = fields[1].strip() + "," + fields[2].strip() + "," + fields[3].strip() + "," + fields[4].strip() + "," + fields[5].strip()
+                        new_comp.selected = False
+                num_wait += 1
+                if num_wait > 1000:
+                    print ( "Host " + run_sim.sge_host_name + " seems unresponsive. List may not be complete." )
+                    break
+            p.kill()
+            run_sim.active_comp_index = 0
         return {'FINISHED'}
 
+
+class MCELL_OT_select_with_required(bpy.types.Operator):
+    bl_idname = "mcell.select_with_required"
+    bl_label = "Select"
+    bl_description = ("Select computers meeting requirements.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        print ( "Selecting" )
+        run_sim = context.scene.mcell.run_simulation
+        computer_list = run_sim.computer_list
+        for computer in computer_list:
+            print ( "Computer " + str(computer.comp_name.split()[0]) + " selection = " + str(computer.selected) )
+            props = [ p.strip() for p in computer.comp_props.split(',') ]
+            print ( "  props: " + str(props) )
+            try:
+                print ( "Is \"" + props[3][:-1] + "\" > " + str(run_sim.required_memory_gig) + " ?" )
+                if float(props[3][:-1]) > run_sim.required_memory_gig:
+                    print ( "  Selected" )
+                    computer.selected = True
+                else:
+                    computer.selected = False
+                #for i in range(len(props)):
+                #    print ( "  Property" + str(i) + " = " + str(props[i]) )
+            except Exception as err:
+                print ( "Exception with: \"" + str(props[3][:-1]) + "\", exception = " + str(err) )
+                pass
+        return {'FINISHED'}
 
 
 class MCELL_OT_remove_text_logs(bpy.types.Operator):
@@ -1600,6 +1641,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     sge_host_name = StringProperty ( default="", description="Name of Grid Engine Scheduler" )
     sge_email_addr = StringProperty ( default="", description="Email address for notifications" )
     computer_list = CollectionProperty(type=MCellComputerProperty, name="Computer List")
+    required_memory_gig = FloatProperty(default=2.0, description="Minimum memory per job - used for selecting hosts")
     active_comp_index = IntProperty(name="Active Computer Index", default=0)
 
     start_seed = PointerProperty ( name="Start Seed", type=parameter_system.Parameter_Reference )
@@ -2001,7 +2043,11 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         row = box.row()
                         row.template_list("MCell_UL_computer_item", "computer_item",
                                           self, "computer_list", self, "active_comp_index", rows=4 )
-
+                        row = box.row()
+                        col = row.column()
+                        col.prop ( self, "required_memory_gig", text="Memory(G)" )
+                        col = row.column()
+                        col.operator( "mcell.select_with_required" )
                 else:
                     row = box.row(align=True)
                     row.alignment = 'LEFT'
