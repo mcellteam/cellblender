@@ -1150,16 +1150,43 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
         return None
 
 
+    def wait_for_anything (self, pipe_in, sleep_time, max_count):
+        count = 0
+        while len(pipe_in.peek()) == 0:
+            # Wait for something
+            time.sleep ( sleep_time )
+            count = count + 1
+            if count > max_count:
+                # That's enough waiting
+                break
+
+    def wait_for_line_start (self, pipe_in, line_start, max_wait_count, line_wait_count, line_sleep_time):
+        #
+        num_wait = 0
+        while True:
+            line = self.read_a_line ( pipe_in, 100, 0.001 )
+            num_wait += 1
+            if num_wait > 1000:
+                break
+            if line == None:
+                break
+            if line.startswith("b'----------"):
+                break
+
     def execute(self, context):
         print ( "Refreshing the SGE list" )
         run_sim = context.scene.mcell.run_simulation
-        if len(run_sim.sge_host_name) <= -10:
+        if len(run_sim.sge_host_name) <= 0:
             print ( "Error: SGE Host name is empty" )
         else:
-            computer_list = run_sim.computer_list
-            computer_list.clear()
+            run_sim.computer_list.clear()
             run_sim.active_comp_index = 0
 
+            # Build generic Python structures to use for filling Blender properties later
+            name_list = []
+            comp_dict = {}
+
+            # First pass - Use qhost to build the basic structure (additional passes will add to it)
             args = ['ssh', run_sim.sge_host_name, 'qhost']
 
             p = subprocess.Popen ( args, bufsize=10000, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
@@ -1168,33 +1195,17 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
             po = p.stdout
             pe = p.stderr
 
-            # Start by waiting fror any kind of response
+            # Start by waiting for any kind of response
 
-            count = 0
-            while len(po.peek()) == 0:
-                # Wait for something
-                time.sleep ( 0.01 )
-                count = count + 1
-                if count > 100:
-                    # That's enough waiting
-                    break
+            self.wait_for_anything (po, 0.01, 100)
 
-            # Read lines until the header line has been read
+            # Read lines until the header line has been found
 
-            num_wait = 0
-            while True:
-                line = self.read_a_line ( po, 100, 0.001 )
-                num_wait += 1
-                if num_wait > 1000:
-                    break
-                if line == None:
-                    break
-                if line.startswith("b'----------"):
-                    break
+            self.wait_for_line_start (po, "b'----------", 1000, 100, 0.001)
+
 
             # Read lines until done
 
-            found_nodes = []
             num_wait = 0
             while True:
                 line = self.read_a_line ( po, 100, 0.001 )
@@ -1207,20 +1218,59 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
                 else:
                     num_wait = 0
                     print ( "SGE: " + str(line) )
-                    fields = line[2:len(line)-3].split()
-                    if len(fields) > 5:
-                        computer_list.add()
-                        run_sim.active_comp_index = len(run_sim.computer_list) - 1
-                        new_comp = run_sim.computer_list[run_sim.active_comp_index]
-                        new_comp.comp_name = fields[0].strip()
-                        new_comp.comp_props = fields[1].strip() + "," + fields[2].strip() + "," + fields[3].strip() + "," + fields[4].strip() + "," + fields[5].strip()
-                        new_comp.selected = False
+                    try:
+                        comp = {}
+                        fields = line[2:len(line)-3].split()
+                        comp['comp_props'] = ','.join(fields[1:])
+                        comp['name']  = fields[0].strip()
+                        comp['mem']   = fields[4].strip()
+                        name_list.append ( comp['name'] )
+                        comp_dict[comp['name']] = comp
+                    except Exception as err:
+                        # This line didn't contain proper fields, so don't add it to the list
+                        print ( "This line didn't contain proper fields, so don't add it to the list" + line )
+                        pass
                 num_wait += 1
                 if num_wait > 1000:
                     print ( "Host " + run_sim.sge_host_name + " seems unresponsive. List may not be complete." )
                     break
             p.kill()
+
+            # Finally build the Blender properties after everything else is done
+
+            for name in name_list:
+                if comp_dict[name]['mem'] != '-':   # Filter out the "global" node which has "-" for all fields
+                    print ( "Adding to computer_list: " + name )
+                    run_sim.computer_list.add()
+                    run_sim.active_comp_index = len(run_sim.computer_list) - 1
+                    new_comp = run_sim.computer_list[run_sim.active_comp_index]
+                    new_comp.comp_name = comp_dict[name]['name']
+                    new_comp.comp_props = comp_dict[name]['comp_props']
+                    try:
+                        # Parse the memory specification (#M,#G,#T)
+                        new_comp.comp_mem = float(comp_dict[name]['mem'][:-1])
+                        if comp_dict[name]['mem'][-1] == 'G':
+                            # No change ... report everything in G for CellBlender interface
+                            pass
+                        elif comp_dict[name]['mem'][-1] == 'M':
+                            new_comp.comp_mem *= 1.0/1024
+                        elif comp_dict[name]['mem'][-1] == 'T':
+                            new_comp.comp_mem *= 1024
+                        elif comp_dict[name]['mem'][-1] == 'P':
+                            new_comp.comp_mem *= 1024 * 1024
+                        elif comp_dict[name]['mem'][-1] == 'E':
+                            new_comp.comp_mem *= 1024 * 1024 * 1024
+                        elif comp_dict[name]['mem'][-1] == 'K':
+                            new_comp.comp_mem *= 1.0/(1024 * 1024)
+                        else:
+                            print ( "Unidentified memory units used in: \"" + comp_dict[name]['mem'] + "\"" )
+                            new_comp.comp_mem = 0
+                    except Exception as err:
+                        print ( "Exception translating memory specification: \"" +  comp_dict[name]['mem'] + "\", exception = " + str(err) )
+                        pass
+
             run_sim.active_comp_index = 0
+
         return {'FINISHED'}
 
 
@@ -1236,20 +1286,12 @@ class MCELL_OT_select_with_required(bpy.types.Operator):
         computer_list = run_sim.computer_list
         for computer in computer_list:
             print ( "Computer " + str(computer.comp_name.split()[0]) + " selection = " + str(computer.selected) )
-            props = [ p.strip() for p in computer.comp_props.split(',') ]
-            print ( "  props: " + str(props) )
-            try:
-                print ( "Is \"" + props[3][:-1] + "\" > " + str(run_sim.required_memory_gig) + " ?" )
-                if float(props[3][:-1]) > run_sim.required_memory_gig:
-                    print ( "  Selected" )
-                    computer.selected = True
-                else:
-                    computer.selected = False
-                #for i in range(len(props)):
-                #    print ( "  Property" + str(i) + " = " + str(props[i]) )
-            except Exception as err:
-                print ( "Exception with: \"" + str(props[3][:-1]) + "\", exception = " + str(err) )
-                pass
+            print ( "Is \"" + str(computer.comp_mem) + "\" > " + str(run_sim.required_memory_gig) + " ?" )
+            if computer.comp_mem > run_sim.required_memory_gig:
+                print ( "  Selected" )
+                computer.selected = True
+            else:
+                computer.selected = False
         return {'FINISHED'}
 
 
@@ -1622,6 +1664,7 @@ def get_runners_as_items(scene, context):
 
 class MCellComputerProperty(bpy.types.PropertyGroup):
     comp_name = StringProperty ( default="", description="Computer name" )
+    comp_mem = FloatProperty ( default=0, description="Total Memory" )
     comp_props = StringProperty ( default="", description="Computer properties" )
     selected = BoolProperty ( default=False, description="Select for running" )
 
