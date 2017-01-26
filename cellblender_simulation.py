@@ -1841,6 +1841,8 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         # default='QUEUE', # Cannot set a default when "items" is a function
         update=sim_runner_changed_callback)
 
+    show_auto_sge_panel = BoolProperty ( name="SGE Automatic Host Selection", default=False, description="Show or hide the automatic Grid Engine host selection controls" )
+    show_manual_sge_panel = BoolProperty ( name="SGE Manual Host Selection", default=False, description="Show or hide the manual Grid Engine host selection controls" )
 
     def init_properties ( self, parameter_system ):
         helptext = "Start Seed\n" + \
@@ -2149,19 +2151,40 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         col.prop ( self, "sge_host_name", text="Host" )
                         col = row.column()
                         col.prop ( self, "sge_email_addr", text="Email" )
+
                         row = box.row()
-                        col = row.column()
-                        col.operator( "mcell.refresh_sge_list", icon='FILE_REFRESH' )
+                        subbox = row.box()
+                        row = subbox.row()
+                        row.alignment = 'LEFT'
+                        if not self.show_auto_sge_panel:
+                            row.prop ( self, "show_auto_sge_panel", icon='TRIA_RIGHT', emboss=False )
+                        else:
+                            row.prop ( self, "show_auto_sge_panel", icon='TRIA_DOWN', emboss=False )
+                            row = subbox.row()
+                            row.label ( "Coming soon ..." )
+
                         row = box.row()
-                        row.template_list("MCell_UL_computer_item", "computer_item",
-                                          self, "computer_list", self, "active_comp_index", rows=4 )
-                        row = box.row()
-                        col = row.column()
-                        col.prop ( self, "required_memory_gig", text="Memory(G)" )
-                        col = row.column()
-                        col.prop ( self, "required_free_cores", text="Free Cores" )
-                        col = row.column()
-                        col.operator( "mcell.select_with_required" )
+                        subbox = row.box()
+                        row = subbox.row()
+                        row.alignment = 'LEFT'
+                        if not self.show_manual_sge_panel:
+                            row.prop ( self, "show_manual_sge_panel", icon='TRIA_RIGHT', emboss=False )
+                        else:
+                            row.prop ( self, "show_manual_sge_panel", icon='TRIA_DOWN', emboss=False )
+
+                            row = subbox.row()
+                            col = row.column()
+                            col.operator( "mcell.refresh_sge_list", icon='FILE_REFRESH' )
+                            row = subbox.row()
+                            row.template_list("MCell_UL_computer_item", "computer_item",
+                                              self, "computer_list", self, "active_comp_index", rows=4 )
+                            row = subbox.row()
+                            col = row.column()
+                            col.prop ( self, "required_memory_gig", text="Memory(G)" )
+                            col = row.column()
+                            col.prop ( self, "required_free_cores", text="Free Slots/Cores" )
+                            col = row.column()
+                            col.operator( "mcell.select_with_required" )
                 else:
                     row = box.row(align=True)
                     row.alignment = 'LEFT'
