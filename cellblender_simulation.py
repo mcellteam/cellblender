@@ -1201,6 +1201,125 @@ class sge_interface:
         p.kill()
 
 
+    def get_hosts_information (self, host_name):
+        # Build generic Python structures to use for filling Blender properties later
+        name_list = []
+        comp_dict = {}
+
+
+        # First pass - Use qhost to build the basic structure (additional passes will add to it)
+        args = ['ssh', host_name, 'qhost']
+
+        p = subprocess.Popen ( args, bufsize=10000, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+
+        pi = p.stdin
+        po = p.stdout
+        pe = p.stderr
+
+        # Start by waiting for any kind of response
+
+        self.wait_for_anything (po, 0.01, 100)
+
+        # Read lines until the header line has been found
+
+        self.wait_for_line_start (po, "b'----------", 1000, 100, 0.001)
+
+        # Read lines until done
+
+        num_wait = 0
+        while True:
+            line = self.read_a_line ( po, 100, 0.001 )
+            if line == None:
+                break
+            elif len(line.strip()) == 0:
+                break
+            elif str(line) == "b''":
+                break
+            else:
+                num_wait = 0
+                print ( " Pass 1 SGE: " + str(line) )
+                try:
+                    comp = {}
+                    fields = line[2:len(line)-3].split()
+                    comp['comp_props'] = ','.join(fields[1:])
+                    comp['name']  = fields[0].strip()
+                    comp['mem']   = fields[4].strip()
+                    comp['cores_in_use'] = 0
+                    comp['cores_total'] = 0
+                    name_list.append ( comp['name'] )
+                    comp_dict[comp['name']] = comp
+                except Exception as err:
+                    # This line didn't contain proper fields, so don't add it to the list
+                    print ( "This line didn't contain proper fields, so don't add it to the list" + line )
+                    pass
+            num_wait += 1
+            if num_wait > 1000:
+                print ( "Host " + run_sim.sge_host_name + " seems unresponsive. List may not be complete." )
+                break
+        p.kill()
+
+
+        # Second pass - Use qhost -q to add the number of cores in use and available
+        args = ['ssh', host_name, 'qhost', '-q']
+
+        p = subprocess.Popen ( args, bufsize=10000, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+
+        pi = p.stdin
+        po = p.stdout
+        pe = p.stderr
+
+        # Start by waiting for any kind of response
+
+        self.wait_for_anything (po, 0.01, 100)
+
+        # Read lines until the header line has been found
+
+        self.wait_for_line_start (po, "b'----------", 1000, 100, 0.001)
+
+        # Read lines until done
+
+        num_wait = 0
+        most_recent_host = "";
+        while True:
+            line = self.read_a_line ( po, 100, 0.001 )
+            if line == None:
+                most_recent_host = "";
+                break
+            elif len(line.strip()) == 0:
+                most_recent_host = "";
+                break
+            elif str(line) == "b''":
+                most_recent_host = "";
+                break
+            else:
+                num_wait = 0
+                print ( " Pass 2 SGE: " + str(line) )
+                try:
+                    fields = line[2:len(line)-3].split()
+                    if fields[0].strip() in comp_dict:
+                        # The returned name matches a known host, so store the name in preparation for a subsequent line
+                        most_recent_host = fields[0].strip()
+                    else:
+                        if len(most_recent_host) > 0:
+                            # The previous line should have been a valid host, and this line should contain: queue BIPC cores_in_use/cores_available
+                            if fields[1].strip() == "BIPC":
+                                core_info = [ int(f.strip()) for f in fields[2].strip().split('/') ]
+                                comp = comp_dict[most_recent_host]
+                                comp['cores_in_use'] = core_info[0]
+                                comp['cores_total'] = core_info[1]
+                                print ( "Cores for " + most_recent_host + " " + core_info[0] + "/" + core_info[1] )
+                except Exception as err:
+                    most_recent_host = "";
+                    # This line didn't contain proper fields, so don't add it to the list
+                    print ( "This line didn't contain proper fields, so don't add it to the list" + line )
+                    pass
+            num_wait += 1
+            if num_wait > 1000:
+                print ( "Host " + run_sim.sge_host_name + " seems unresponsive. List may not be complete." )
+                break
+        p.kill()
+        return ( name_list, comp_dict )
+
 
 
 class MCELL_OT_refresh_sge_list(bpy.types.Operator):
@@ -1208,48 +1327,6 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
     bl_label = "Refresh the SGE list"
     bl_description = ("Refresh the list of computers in the Sun Grid Engine list.")
     bl_options = {'REGISTER'}
-
-    def read_a_line ( self, process_output, wait_count, sleep_time ):
-        count = 0
-        while (len(process_output.peek()) > 0) and (count < wait_count):
-            # Keep checking for a full line
-            if b'\n' in process_output.peek():
-                line = str(process_output.readline())
-                if line != None:
-                    return line
-            else:
-                # Not a full line yet, so kill some time
-                time.sleep ( sleep_time )
-            count = count + 1
-        # Try to read the line anyway ... this seems to be needed in some cases
-        line = str(process_output.readline())
-        if line != None:
-            return line
-        return None
-
-
-    def wait_for_anything (self, pipe_in, sleep_time, max_count):
-        count = 0
-        while len(pipe_in.peek()) == 0:
-            # Wait for something
-            time.sleep ( sleep_time )
-            count = count + 1
-            if count > max_count:
-                # That's enough waiting
-                break
-
-    def wait_for_line_start (self, pipe_in, line_start, max_wait_count, line_wait_count, line_sleep_time):
-        #
-        num_wait = 0
-        while True:
-            line = self.read_a_line ( pipe_in, 100, 0.001 )
-            num_wait += 1
-            if num_wait > 1000:
-                break
-            if line == None:
-                break
-            if line.startswith("b'----------"):
-                break
 
     def execute(self, context):
         print ( "Refreshing the SGE list" )
@@ -1260,125 +1337,12 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
             run_sim.computer_list.clear()
             run_sim.active_comp_index = 0
 
-            # Build generic Python structures to use for filling Blender properties later
-            name_list = []
-            comp_dict = {}
+            # Get the host information as a name list and a dictionary of capabilities for each computer
 
+            sge = sge_interface()
+            ( name_list, comp_dict ) = sge.get_hosts_information ( run_sim.sge_host_name )
 
-            # First pass - Use qhost to build the basic structure (additional passes will add to it)
-            args = ['ssh', run_sim.sge_host_name, 'qhost']
-
-            p = subprocess.Popen ( args, bufsize=10000, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
-
-            pi = p.stdin
-            po = p.stdout
-            pe = p.stderr
-
-            # Start by waiting for any kind of response
-
-            self.wait_for_anything (po, 0.01, 100)
-
-            # Read lines until the header line has been found
-
-            self.wait_for_line_start (po, "b'----------", 1000, 100, 0.001)
-
-            # Read lines until done
-
-            num_wait = 0
-            while True:
-                line = self.read_a_line ( po, 100, 0.001 )
-                if line == None:
-                    break
-                elif len(line.strip()) == 0:
-                    break
-                elif str(line) == "b''":
-                    break
-                else:
-                    num_wait = 0
-                    print ( " Pass 1 SGE: " + str(line) )
-                    try:
-                        comp = {}
-                        fields = line[2:len(line)-3].split()
-                        comp['comp_props'] = ','.join(fields[1:])
-                        comp['name']  = fields[0].strip()
-                        comp['mem']   = fields[4].strip()
-                        comp['cores_in_use'] = 0
-                        comp['cores_total'] = 0
-                        name_list.append ( comp['name'] )
-                        comp_dict[comp['name']] = comp
-                    except Exception as err:
-                        # This line didn't contain proper fields, so don't add it to the list
-                        print ( "This line didn't contain proper fields, so don't add it to the list" + line )
-                        pass
-                num_wait += 1
-                if num_wait > 1000:
-                    print ( "Host " + run_sim.sge_host_name + " seems unresponsive. List may not be complete." )
-                    break
-            p.kill()
-
-
-            # Second pass - Use qhost -q to add the number of cores in use and available
-            args = ['ssh', run_sim.sge_host_name, 'qhost', '-q']
-
-            p = subprocess.Popen ( args, bufsize=10000, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
-
-            pi = p.stdin
-            po = p.stdout
-            pe = p.stderr
-
-            # Start by waiting for any kind of response
-
-            self.wait_for_anything (po, 0.01, 100)
-
-            # Read lines until the header line has been found
-
-            self.wait_for_line_start (po, "b'----------", 1000, 100, 0.001)
-
-            # Read lines until done
-
-            num_wait = 0
-            most_recent_host = "";
-            while True:
-                line = self.read_a_line ( po, 100, 0.001 )
-                if line == None:
-                    most_recent_host = "";
-                    break
-                elif len(line.strip()) == 0:
-                    most_recent_host = "";
-                    break
-                elif str(line) == "b''":
-                    most_recent_host = "";
-                    break
-                else:
-                    num_wait = 0
-                    print ( " Pass 2 SGE: " + str(line) )
-                    try:
-                        fields = line[2:len(line)-3].split()
-                        if fields[0].strip() in comp_dict:
-                            # The returned name matches a known host, so store the name in preparation for a subsequent line
-                            most_recent_host = fields[0].strip()
-                        else:
-                            if len(most_recent_host) > 0:
-                                # The previous line should have been a valid host, and this line should contain: queue BIPC cores_in_use/cores_available
-                                if fields[1].strip() == "BIPC":
-                                    core_info = [ int(f.strip()) for f in fields[2].strip().split('/') ]
-                                    comp = comp_dict[most_recent_host]
-                                    comp['cores_in_use'] = core_info[0]
-                                    comp['cores_total'] = core_info[1]
-                                    print ( "Cores for " + most_recent_host + " " + core_info[0] + "/" + core_info[1] )
-                    except Exception as err:
-                        most_recent_host = "";
-                        # This line didn't contain proper fields, so don't add it to the list
-                        print ( "This line didn't contain proper fields, so don't add it to the list" + line )
-                        pass
-                num_wait += 1
-                if num_wait > 1000:
-                    print ( "Host " + run_sim.sge_host_name + " seems unresponsive. List may not be complete." )
-                    break
-            p.kill()
-
-
-            # Finally build the Blender properties after everything else is done
+            # Build the Blender properties from the list
 
             for name in name_list:
                 if comp_dict[name]['mem'] != '-':   # Filter out the "global" node which has "-" for all fields
