@@ -1125,6 +1125,84 @@ class MCELL_OT_run_simulation_pure_python(bpy.types.Operator):
         return {'FINISHED'}
 
 
+
+class sge_interface:
+
+    def read_a_line ( self, process_output, wait_count, sleep_time ):
+        count = 0
+        while (len(process_output.peek()) > 0) and (count < wait_count):
+            # Keep checking for a full line
+            if b'\n' in process_output.peek():
+                line = str(process_output.readline())
+                if line != None:
+                    return line
+            else:
+                # Not a full line yet, so kill some time
+                time.sleep ( sleep_time )
+            count = count + 1
+        # Try to read the line anyway ... this seems to be needed in some cases
+        line = str(process_output.readline())
+        if line != None:
+            return line
+        return None
+
+
+    def wait_for_anything (self, pipe_in, sleep_time, max_count):
+        count = 0
+        while len(pipe_in.peek()) == 0:
+            # Wait for something
+            time.sleep ( sleep_time )
+            count = count + 1
+            if count > max_count:
+                # That's enough waiting
+                break
+
+    def wait_for_line_start (self, pipe_in, line_start, max_wait_count, line_wait_count, line_sleep_time):
+        num_wait = 0
+        while True:
+            line = self.read_a_line ( pipe_in, 100, 0.001 )
+            num_wait += 1
+            if num_wait > 1000:
+                break
+            if line == None:
+                break
+            if line.startswith("b'----------"):
+                break
+
+    def kill_all_users_jobs (self, host_name, user_name):
+        num_wait = 0
+
+        args = ['ssh', host_name, 'qdel', '-u', user_name]
+
+        p = subprocess.Popen ( args, bufsize=10000, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+
+        pi = p.stdin
+        po = p.stdout
+        pe = p.stderr
+
+        # Read lines until done
+
+        num_wait = 0
+        while True:
+            line = self.read_a_line ( po, 100, 0.001 )
+            if line == None:
+                break
+            elif len(line.strip()) == 0:
+                break
+            elif str(line) == "b''":
+                break
+            else:
+                num_wait = 0
+                print ( line )
+            num_wait += 1
+            if num_wait > 1000:
+                print ( "Host " + run_sim.sge_host_name + " seems unresponsive. List may not be complete." )
+                break
+        p.kill()
+
+
+
+
 class MCELL_OT_refresh_sge_list(bpy.types.Operator):
     bl_idname = "mcell.refresh_sge_list"
     bl_label = "Refresh the SGE list"
@@ -1338,6 +1416,50 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
             run_sim.active_comp_index = 0
 
         return {'FINISHED'}
+
+
+class MCELL_OT_select_all_computers(bpy.types.Operator):
+    bl_idname = "mcell.select_all_computers"
+    bl_label = "Select All"
+    bl_description = ("Select all computers.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        run_sim = context.scene.mcell.run_simulation
+        computer_list = run_sim.computer_list
+        for computer in computer_list:
+            computer.selected = True
+        return {'FINISHED'}
+
+class MCELL_OT_deselect_all_computers(bpy.types.Operator):
+    bl_idname = "mcell.deselect_all_computers"
+    bl_label = "Select None"
+    bl_description = ("Select no computers.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        run_sim = context.scene.mcell.run_simulation
+        computer_list = run_sim.computer_list
+        for computer in computer_list:
+            computer.selected = False
+        return {'FINISHED'}
+
+
+class MCELL_OT_kill_all_users_jobs(bpy.types.Operator):
+    bl_idname = "mcell.kill_all_users_jobs"
+    bl_label = "Terminate All"
+    bl_description = ("Kill all jobs run by the current user name.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        run_sim = context.scene.mcell.run_simulation
+        sge = sge_interface()
+        sge.kill_all_users_jobs ( run_sim.sge_host_name, os.getlogin() );
+        return {'FINISHED'}
+
+
+
+
 
 
 class MCELL_OT_select_with_required(bpy.types.Operator):
@@ -2185,6 +2307,14 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                             col.prop ( self, "required_free_cores", text="Free Slots/Cores" )
                             col = row.column()
                             col.operator( "mcell.select_with_required" )
+
+                            row = subbox.row()
+                            col = row.column()
+                            col.operator ( "mcell.select_all_computers" )
+                            col = row.column()
+                            col.operator ( "mcell.deselect_all_computers" )
+                            col = row.column()
+                            col.operator ( "mcell.kill_all_users_jobs" )
                 else:
                     row = box.row(align=True)
                     row.alignment = 'LEFT'
