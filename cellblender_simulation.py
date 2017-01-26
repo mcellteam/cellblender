@@ -1186,6 +1186,7 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
             name_list = []
             comp_dict = {}
 
+
             # First pass - Use qhost to build the basic structure (additional passes will add to it)
             args = ['ssh', run_sim.sge_host_name, 'qhost']
 
@@ -1203,7 +1204,6 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
 
             self.wait_for_line_start (po, "b'----------", 1000, 100, 0.001)
 
-
             # Read lines until done
 
             num_wait = 0
@@ -1217,13 +1217,15 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
                     break
                 else:
                     num_wait = 0
-                    print ( "SGE: " + str(line) )
+                    print ( " Pass 1 SGE: " + str(line) )
                     try:
                         comp = {}
                         fields = line[2:len(line)-3].split()
                         comp['comp_props'] = ','.join(fields[1:])
                         comp['name']  = fields[0].strip()
                         comp['mem']   = fields[4].strip()
+                        comp['cores_in_use'] = 0
+                        comp['cores_total'] = 0
                         name_list.append ( comp['name'] )
                         comp_dict[comp['name']] = comp
                     except Exception as err:
@@ -1236,6 +1238,68 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
                     break
             p.kill()
 
+
+            # Second pass - Use qhost -q to add the number of cores in use and available
+            args = ['ssh', run_sim.sge_host_name, 'qhost', '-q']
+
+            p = subprocess.Popen ( args, bufsize=10000, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+
+            pi = p.stdin
+            po = p.stdout
+            pe = p.stderr
+
+            # Start by waiting for any kind of response
+
+            self.wait_for_anything (po, 0.01, 100)
+
+            # Read lines until the header line has been found
+
+            self.wait_for_line_start (po, "b'----------", 1000, 100, 0.001)
+
+            # Read lines until done
+
+            num_wait = 0
+            most_recent_host = "";
+            while True:
+                line = self.read_a_line ( po, 100, 0.001 )
+                if line == None:
+                    most_recent_host = "";
+                    break
+                elif len(line.strip()) == 0:
+                    most_recent_host = "";
+                    break
+                elif str(line) == "b''":
+                    most_recent_host = "";
+                    break
+                else:
+                    num_wait = 0
+                    print ( " Pass 2 SGE: " + str(line) )
+                    try:
+                        fields = line[2:len(line)-3].split()
+                        if fields[0].strip() in comp_dict:
+                            # The returned name matches a known host, so store the name in preparation for a subsequent line
+                            most_recent_host = fields[0].strip()
+                        else:
+                            if len(most_recent_host) > 0:
+                                # The previous line should have been a valid host, and this line should contain: queue BIPC cores_in_use/cores_available
+                                if fields[1].strip() == "BIPC":
+                                    core_info = [ int(f.strip()) for f in fields[2].strip().split('/') ]
+                                    comp = comp_dict[most_recent_host]
+                                    comp['cores_in_use'] = core_info[0]
+                                    comp['cores_total'] = core_info[1]
+                                    print ( "Cores for " + most_recent_host + " " + core_info[0] + "/" + core_info[1] )
+                    except Exception as err:
+                        most_recent_host = "";
+                        # This line didn't contain proper fields, so don't add it to the list
+                        print ( "This line didn't contain proper fields, so don't add it to the list" + line )
+                        pass
+                num_wait += 1
+                if num_wait > 1000:
+                    print ( "Host " + run_sim.sge_host_name + " seems unresponsive. List may not be complete." )
+                    break
+            p.kill()
+
+
             # Finally build the Blender properties after everything else is done
 
             for name in name_list:
@@ -1246,6 +1310,8 @@ class MCELL_OT_refresh_sge_list(bpy.types.Operator):
                     new_comp = run_sim.computer_list[run_sim.active_comp_index]
                     new_comp.comp_name = comp_dict[name]['name']
                     new_comp.comp_props = comp_dict[name]['comp_props']
+                    new_comp.cores_in_use = comp_dict[name]['cores_in_use']
+                    new_comp.cores_total = comp_dict[name]['cores_total']
                     try:
                         # Parse the memory specification (#M,#G,#T)
                         new_comp.comp_mem = float(comp_dict[name]['mem'][:-1])
@@ -1285,10 +1351,10 @@ class MCELL_OT_select_with_required(bpy.types.Operator):
         run_sim = context.scene.mcell.run_simulation
         computer_list = run_sim.computer_list
         for computer in computer_list:
-            print ( "Computer " + str(computer.comp_name.split()[0]) + " selection = " + str(computer.selected) )
-            print ( "Is \"" + str(computer.comp_mem) + "\" > " + str(run_sim.required_memory_gig) + " ?" )
-            if computer.comp_mem > run_sim.required_memory_gig:
-                print ( "  Selected" )
+            #print ( "Computer " + str(computer.comp_name.split()[0]) + " selection = " + str(computer.selected) )
+            #print ( "Is \"" + str(computer.comp_mem) + "\" > " + str(run_sim.required_memory_gig) + " ?" )
+            if (computer.comp_mem >= run_sim.required_memory_gig) and ((computer.cores_total - computer.cores_in_use) >= run_sim.required_free_cores):
+                print ( "  Selected to run on " + str(computer.comp_name) )
                 computer.selected = True
             else:
                 computer.selected = False
@@ -1665,13 +1731,15 @@ def get_runners_as_items(scene, context):
 class MCellComputerProperty(bpy.types.PropertyGroup):
     comp_name = StringProperty ( default="", description="Computer name" )
     comp_mem = FloatProperty ( default=0, description="Total Memory" )
+    cores_in_use = IntProperty ( default=0, description="Cores in use" )
+    cores_total = IntProperty ( default=0, description="Cores total" )
     comp_props = StringProperty ( default="", description="Computer properties" )
     selected = BoolProperty ( default=False, description="Select for running" )
 
 class MCell_UL_computer_item ( bpy.types.UIList ):
     def draw_item (self, context, layout, data, item, icon, active_data, active_propname, index):
       col = layout.column()
-      col.label ( item.comp_name + " [" + item.comp_props + "]" )
+      col.label ( item.comp_name + "  " + str(int(item.comp_mem)) + "G " + str(item.cores_in_use) + "/" + str(item.cores_total) )
       col = layout.column()
       if item.selected:
           col.prop ( item, "selected", text="", icon="POSE_DATA" )
@@ -1685,6 +1753,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     sge_email_addr = StringProperty ( default="", description="Email address for notifications" )
     computer_list = CollectionProperty(type=MCellComputerProperty, name="Computer List")
     required_memory_gig = FloatProperty(default=2.0, description="Minimum memory per job - used for selecting hosts")
+    required_free_cores = IntProperty(default=1, description="Minimum free cores for selecting hosts")
     active_comp_index = IntProperty(name="Active Computer Index", default=0)
 
     start_seed = PointerProperty ( name="Start Seed", type=parameter_system.Parameter_Reference )
@@ -2089,6 +2158,8 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         row = box.row()
                         col = row.column()
                         col.prop ( self, "required_memory_gig", text="Memory(G)" )
+                        col = row.column()
+                        col.prop ( self, "required_free_cores", text="Free Cores" )
                         col = row.column()
                         col.operator( "mcell.select_with_required" )
                 else:
