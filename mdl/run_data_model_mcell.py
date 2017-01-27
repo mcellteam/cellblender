@@ -219,6 +219,7 @@ if __name__ == "__main__":
     arg_parser.add_argument ( '-rl', '--run_limit',       type=int, default=-1,        help='limit the total number of runs' )
     arg_parser.add_argument ( '-rt', '--runner_type',     type=str, default='mpp',     help='run mechanism: mpp or sge (mpp=MultiProcessingPool, sge=SunGridEngine)' )
     arg_parser.add_argument ( '-nl', '--node_list',       type=str, default='',        help='list of comma-separated nodes to run on with SGE' )
+    arg_parser.add_argument ( '-mm', '--min_memory',      type=int, default=0,         help='minimum memory in Gigabytes' )
     arg_parser.add_argument ( '-em', '--email_addr',      type=str, default='',        help='email address for notifications of job results' )
     arg_parser.add_argument ( '-gh', '--grid_host',       type=str, default='',        help='grid engine host name' )
 
@@ -380,7 +381,9 @@ if __name__ == "__main__":
         #
         #
         #
-        best_nodes = [ [s] for s in str(parsed_args.node_list).split(',') ]
+        best_nodes = None
+        if len(parsed_args.node_list) > 0:
+            best_nodes = [ [s] for s in str(parsed_args.node_list).split(',') ]
 
         # Build 1 master qsub file and a job file for each MCell run
 
@@ -412,7 +415,13 @@ if __name__ == "__main__":
             # qsub_command += " -wd " + subprocess_cwd
             qsub_command += " -o " + log_filepath
             qsub_command += " -e " + error_filepath
-            qsub_command += " -l h=" + best_nodes[job_index%len(best_nodes)][0]
+            resource_list = []
+            if best_nodes != None:
+                resource_list.append ( "h=" + best_nodes[job_index%len(best_nodes)][0] )
+            if (parsed_args.min_memory > 0):
+                resource_list.append ( "mt=" + str(parsed_args.min_memory) + "G" )
+            if len(resource_list) > 0:
+                qsub_command += " -l " + ",".join(resource_list)
             if len(parsed_args.email_addr) > 0:
                 qsub_command += " -m e"
                 qsub_command += " -M " + parsed_args.email_addr
