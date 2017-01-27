@@ -2263,7 +2263,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                                 col = row.column()
                                 col.prop ( self, "required_memory_gig", text="Memory(G)" )
                                 col = row.column()
-                                col.prop ( self, "required_free_slots", text="Free Slots" )
+                                col.operator ( "mcell.kill_all_users_jobs" )
                             else:
                                 row = subbox.row()
                                 col = row.column()
