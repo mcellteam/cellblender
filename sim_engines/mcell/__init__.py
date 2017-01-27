@@ -27,35 +27,34 @@ import os
 import subprocess
 import sys
 
-# Name of this engine to display in the list of choices
+# Name of this engine to display in the list of choices (Both should be unique within a CellBlender installation)
 engine_code = "MCELL"
 engine_name = "MCell"
 
 
-# List of parameters dictionaries - each with keys for 'name', 'desc', 'def':
+# List of parameters as dictionaries - each with keys for 'name', 'desc', 'def', and optional 'as':
 engine_user_parameters = [
-  { 'name':"Log File Name", 'desc':"File name for logging (blank for no logging)", 'def':"" },
-  { 'name':"Log Frequency", 'desc':"How often to log (default is 100)", 'def':100 },
-  { 'name':"With Checks", 'desc':"Perform a geometry check for coincident walls", 'def':["yes", "no"] },
-  { 'name':"Quiet", 'desc':"Suppress all unrequested output except for errors", 'def':False }
+  { 'name':"MCell Binary",  'desc':"Executable MCell binary file",                      'def':"",           'as':"file" },
+  { 'name':"Log File Name", 'desc':"File name for logging (blank for no logging)",      'def':""                        },
+  { 'name':"Log Frequency", 'desc':"How often to log (default is 100)",                 'def':100                       },
+  { 'name':"With Checks",   'desc':"Perform a geometry check for coincident walls",     'def':["yes", "no"]             },
+  { 'name':"Quiet",         'desc':"Suppress all unrequested output except for errors", 'def':False                     }
 ]
 
 
 def prepare_runs ( data_model ):
-  # Return a list of run command strings
+  # Return a list of run command dictionaries.
+  # Each run command dictionary must contain a "cmd" key and a "wd" key.
+  # The cmd key will refer to a command list suitable for popen.
+  # The wd key will refer to a working directory string.
+  # Each run command dictionary may contain any other keys helpful for post-processing.
+  # The run command dictionary list will be passed on to the postprocess_runs function.
   pass
 
 def postprocess_runs ( data_model, command_strings ):
-  # Move and/or transform data to match expected CellBlender file structure
+  # Move and/or transform data to match expected CellBlender file structure as required
   pass
 
-
-def find_in_path(program_name):
-    for path in os.environ.get('PATH','').split(os.pathsep):
-        full_name = os.path.join(path,program_name)
-        if os.path.exists(full_name) and not os.path.isdir(full_name):
-            return full_name
-    return None
 
 
 if __name__ == "__main__":

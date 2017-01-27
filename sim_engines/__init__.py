@@ -24,14 +24,6 @@ import sys
 
 import cellblender
 
-def find_in_path(program_name):
-    for path in os.environ.get('PATH','').split(os.pathsep):
-        full_name = os.path.join(path,program_name)
-        if os.path.exists(full_name) and not os.path.isdir(full_name):
-            return full_name
-    return None
-
-
 
 def get_sim_engine_modules():
 

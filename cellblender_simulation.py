@@ -1201,7 +1201,7 @@ class sge_interface:
                 print ( line )
             num_wait += 1
             if num_wait > 1000:
-                print ( "Host " + run_sim.sge_host_name + " seems unresponsive. List may not be complete." )
+                print ( "Submit Host " + run_sim.sge_host_name + " seems unresponsive. List may not be complete." )
                 break
         p.kill()
 
@@ -1259,7 +1259,7 @@ class sge_interface:
                     pass
             num_wait += 1
             if num_wait > 1000:
-                print ( "Host " + run_sim.sge_host_name + " seems unresponsive. List may not be complete." )
+                print ( "Submit Host " + run_sim.sge_host_name + " seems unresponsive. List may not be complete." )
                 break
         p.kill()
 
@@ -1320,7 +1320,7 @@ class sge_interface:
                     pass
             num_wait += 1
             if num_wait > 1000:
-                print ( "Host " + run_sim.sge_host_name + " seems unresponsive. List may not be complete." )
+                print ( "Submit Host " + run_sim.sge_host_name + " seems unresponsive. List may not be complete." )
                 break
         p.kill()
         return ( name_list, comp_dict )
@@ -1329,15 +1329,15 @@ class sge_interface:
 
 class MCELL_OT_refresh_sge_list(bpy.types.Operator):
     bl_idname = "mcell.refresh_sge_list"
-    bl_label = "Refresh the SGE list"
-    bl_description = ("Refresh the list of computers in the Sun Grid Engine list.")
+    bl_label = "Refresh the Execution Host list"
+    bl_description = ("Refresh the list of execution hosts in the Sun Grid Engine list.")
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        print ( "Refreshing the SGE list" )
+        print ( "Refreshing the SGE execution host list" )
         run_sim = context.scene.mcell.run_simulation
         if len(run_sim.sge_host_name) <= 0:
-            print ( "Error: SGE Host name is empty" )
+            print ( "Error: SGE Submit Host name is empty" )
         else:
             run_sim.computer_list.clear()
             run_sim.active_comp_index = 0
@@ -1931,7 +1931,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         update=sim_runner_changed_callback)
 
     show_sge_control_panel = BoolProperty ( name="Host Selection Details", default=False, description="Show or hide the Grid Engine host selection controls" )
-    manual_sge_host = BoolProperty ( name="Select hosts manually", default=False, description="Select hosts from a capabilities list" )
+    manual_sge_host = BoolProperty ( name="Select execution hosts manually", default=False, description="Select execution hosts from a capabilities list" )
 
     def init_properties ( self, parameter_system ):
         helptext = "Start Seed\n" + \
@@ -2238,7 +2238,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         subbox = row.box()
                         row = subbox.row()
                         col = row.column()
-                        col.prop ( self, "sge_host_name", text="Host" )
+                        col.prop ( self, "sge_host_name", text="Submit Host" )
                         col = row.column()
                         col.prop ( self, "sge_email_addr", text="Email" )
 
@@ -2323,9 +2323,26 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row.label ( "Simulate with:" )
                     row.prop(self, "simulation_engine_control")
 
+                    # Search the dynamic modules for the current selection and draw its optional parameters and panel
+                    for m in cellblender.cellblender_info['cellblender_engine_modules']:
+                      if m.engine_code == self.simulation_engine_control:
+                        # This is the currently selected simulation engine, so draw its parameters
+                        if 'engine_user_parameters' in dir(m):
+                          for p in m.engine_user_parameters:
+                            row = box.row()
+                            row.label ( p['name'] + " -> " + p['desc'] )
+                        # This would be the place to invoke the engine's draw_panel function if found
+
+                    #row = box.row()
+                    #row.label ( "Display optional draw_engine_panel" )
+
                     row = box.row()
                     row.label ( "Run with:" )
                     row.prop(self, "simulation_runners")
+                    row = box.row()
+                    row.label ( "Display optional runner_user_parameters" )
+                    row = box.row()
+                    row.label ( "Display optional draw_runner_panel" )
 
                 else:
                     row = box.row(align=True)
