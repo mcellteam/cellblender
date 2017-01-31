@@ -141,9 +141,6 @@ cellblender_info = {
 
 
         "sim_engines"+os.sep+"__init__.py",
-        "sim_engines"+os.sep+"cone"+os.sep+"__init__.py",
-        "sim_engines"+os.sep+"cube"+os.sep+"__init__.py",
-        "sim_engines"+os.sep+"torus"+os.sep+"__init__.py",
         "sim_engines"+os.sep+"limited_python"+os.sep+"__init__.py",
         "sim_engines"+os.sep+"limited_python"+os.sep+"limited_python_sim.py",
         "sim_engines"+os.sep+"limited_python"+os.sep+"pure_python_sim.py",
