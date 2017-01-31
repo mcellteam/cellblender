@@ -47,7 +47,7 @@ def run_simulation ( data_model, project_dir ):
 
   script_dir_path = os.path.dirname(os.path.realpath(__file__))
   script_file_path = script_dir_path
-  final_script_path = os.path.join(script_file_path,"pure_python_sim.py")
+  final_script_path = os.path.join(script_file_path,"limited_python_sim.py")
 
   if not os.path.exists(final_script_path):
       print ( "\n\nUnable to run, script does not exist: " + final_script_path + "\n\n" )
