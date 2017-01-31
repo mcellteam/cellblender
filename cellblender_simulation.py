@@ -237,6 +237,8 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
                 bpy.ops.mcell.run_simulation_libmcellpy()
             elif str(run_sim.simulation_run_control) == 'PurePython':
                 bpy.ops.mcell.run_simulation_pure_python()
+            elif str(run_sim.simulation_run_control) == 'DYNAMIC':
+                bpy.ops.mcell.run_simulation_dynamic()
             else:
                 # Look for it in the dynamic modules
                 load_engine_modules()   # Note that this might already have been done ... except by the test suite!!
@@ -1130,6 +1132,67 @@ class MCELL_OT_run_simulation_pure_python(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
+    bl_idname = "mcell.run_simulation_dynamic"
+    bl_label = "Run MCell Simulation Control libmcell Pure Python"
+    bl_description = "Run MCell Simulation Control libmcell Pure Python"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+
+        global active_plug_module
+
+        status = ""
+
+        if active_plug_module == None:
+            print ( "No module selected" )
+            status = "Error: No module selected"
+        else:
+            if 'run_simulation' in dir(active_plug_module):
+
+              with open(os.path.join(os.path.dirname(bpy.data.filepath), "start_time.txt"), "w") as start_time_file:
+                  start_time_file.write("Started MCell at: " + (str(time.ctime())) + "\n")
+
+              mcell = context.scene.mcell
+              mcell.run_simulation.last_simulation_run_time = str(time.time())
+
+              start = int(mcell.run_simulation.start_seed.get_value())
+              end = int(mcell.run_simulation.end_seed.get_value())
+
+              project_dir = mcell_files_path()
+
+              react_dir = os.path.join(project_dir, "output_data", "react_data")
+              if os.path.exists(react_dir) and (mcell.run_simulation.remove_append == 'remove'):
+                  shutil.rmtree(react_dir)
+              if not os.path.exists(react_dir):
+                  os.makedirs(react_dir)
+
+              viz_dir = os.path.join(project_dir, "output_data", "viz_data")
+              if os.path.exists(viz_dir) and (mcell.run_simulation.remove_append == 'remove'):
+                  shutil.rmtree(viz_dir)
+              if not os.path.exists(viz_dir):
+                  os.makedirs(viz_dir)
+
+              script_dir_path = os.path.dirname(os.path.realpath(__file__))
+              script_file_path = os.path.join(script_dir_path, "sim_engines")
+              final_script_path = os.path.join(script_file_path,"pure_python_sim.py")
+
+              dm = mcell.build_data_model_from_properties ( context, geometry=True )
+
+              print ( "Calling run_simulation in active_plug_module" )
+
+              active_plug_module.run_simulation ( dm, project_dir )
+
+            else:
+
+              print ( "This module does not support running" )
+
+
+        mcell.run_simulation.status = status
+
+        return {'FINISHED'}
+
+
 
 class sge_interface:
 
@@ -1922,7 +1985,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
          ('libMCell', "Prototype Lib MCell via C++", ""),
          ('libMCellpy', "Prototype Lib MCell via Python", ""),
          ('PurePython', "Prototype Pure Python", ""),
-         ('NONE', "None", "")]
+         ('DYNAMIC', "Dynamic", "")]
 
     simulation_run_control = EnumProperty(
         items=simulation_engine_and_run_enum, name="",
@@ -2318,36 +2381,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         row.label ( "To enable the selections in this panel, choose \"None\" in the normal run control." )
                         row = box.row()
 
-
-                    """
-                    row = box.row()
-                    row.label ( "Simulate with:" )
-                    row.prop(self, "simulation_engine_control")
-
-                    # Search the dynamic modules for the current selection and draw its optional parameters and panel
-                    for m in cellblender.cellblender_info['cellblender_engine_modules']:
-                      if m.engine_code == self.simulation_engine_control:
-                        # This is the currently selected simulation engine, so draw its parameters
-                        if 'engine_user_parameters' in dir(m):
-                          for p in m.engine_user_parameters:
-                            row = box.row()
-                            row.label ( p['name'] + " -> " + p['desc'] )
-                        # This would be the place to invoke the engine's draw_panel function if found
-
-                    #row = box.row()
-                    #row.label ( "Display optional draw_engine_panel" )
-
-                    row = box.row()
-                    row.label ( "Run with:" )
-                    row.prop(self, "simulation_runners")
-                    row = box.row()
-                    row.label ( "Display optional runner_user_parameters" )
-                    row = box.row()
-                    row.label ( "Display optional draw_runner_panel" )
-                    """
-
-
-                    mcell.sim_engines.draw_panel ( context, layout )
+                    mcell.sim_engines.draw_panel ( context, box )
 
                 else:
                     row = box.row(align=True)
@@ -2398,7 +2432,7 @@ active_plug_module = None
 def load_plug_modules():
     # print ( "Call to load_plug_modules" )
     if plugs.plug_modules == None:
-        plugs.plug_modules = plugs.get_plug_modules()
+        plugs.plug_modules = plugs.get_sim_engine_modules()
     #if not ('cellblender_plug_modules' in cellblender.cellblender_info):
     #  print ( "\n\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\nload_plug_modules reloading list\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\n\n" )
     #  #cellblender.cellblender_info['cellblender_plug_modules'] = cellblender.sim_plugs.get_sim_plug_modules()
@@ -2813,11 +2847,8 @@ class Pluggable(bpy.types.PropertyGroup):
           __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
     """
 
-    def draw_panel ( self, context, panel ):
+    def draw_panel ( self, context, layout ):
         global active_plug_module
-        layout = panel
-        row = layout.row()
-        row.label ( "-=- Dynamic -=-" )
 
         box = layout.box()
         layout = box
@@ -2872,17 +2903,8 @@ class Pluggable(bpy.types.PropertyGroup):
                         col.prop ( s, "filename_val", text=s.key_name, icon=s.icon_code )
                   
 
-        #### Above here: layout is in the box
-        layout = panel
 
 """
-        row = layout.row()
-        row.operator ( 'pluggable.print', icon='COLOR_GREEN' )
-        row = layout.row()
-        row.operator ( 'pluggable.run', icon='COLOR_RED' )
-        row = layout.row()
-        row.operator ( 'pluggable.interact', icon='COLOR_BLUE' )
-
 #
 #   class PluggablePanel(bpy.types.Panel):
 #

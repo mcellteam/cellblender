@@ -4,9 +4,9 @@ import sys
 
 # import cellblender
 
-plug_modules = None
+plug_modules = None  # This is currently set by "cellblender_simulation.load_plug_modules"
 
-def get_plug_modules():
+def get_sim_engine_modules():
 
     module_name_list = []
     module_list = []
