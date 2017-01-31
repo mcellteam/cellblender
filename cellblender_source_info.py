@@ -132,9 +132,6 @@ cellblender_info = {
         "sim_runners"+os.sep+"open_gl"+os.sep+"SimControl.c",
         "sim_runners"+os.sep+"open_gl"+os.sep+"makefile",
 
-        "sim_engines"+os.sep+"__init__.py",
-        "sim_engines"+os.sep+"mcell"+os.sep+"__init__.py",
-
         # These should really be in sim_engines
         "sim_runners"+os.sep+"libMCell"+os.sep+"__init__.py",
         "sim_runners"+os.sep+"libMCell_python"+os.sep+"__init__.py",
@@ -142,27 +139,38 @@ cellblender_info = {
         "sim_runners"+os.sep+"pure_python"+os.sep+"__init__.py",
         "sim_runners"+os.sep+"pure_python"+os.sep+"pure_python_run.py",
 
-        "sim_engines"+os.sep+"pure_python_sim"+os.sep+"__init__.py",
-        "sim_engines"+os.sep+"pure_python_sim"+os.sep+"pure_python_sim.py",
 
-        "sim_engines"+os.sep+"libMCell"+os.sep+"makefile",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"JSON.h",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"JSON.c",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"JSON.cpp",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"JSON.java",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"StorageClasses.cpp",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"StorageClasses.h",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"rng.h",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"rng.cpp",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"libMCell.h",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"libMCell.cpp",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"libMCell.i",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"mcell_main.cpp",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"mcell_main.py",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"mcell_main_c.c",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"pure_python_sim.py",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"mcell_simple.cpp",
-        "sim_engines"+os.sep+"libMCell"+os.sep+"mcell_simple_count.cpp",
+        "sim_engines"+os.sep+"__init__.py",
+        "sim_engines"+os.sep+"cone"+os.sep+"__init__.py",
+        "sim_engines"+os.sep+"cube"+os.sep+"__init__.py",
+        "sim_engines"+os.sep+"torus"+os.sep+"__init__.py",
+
+        # Old sim engines
+
+        #"sim_engines"+os.sep+"__init__.py",
+        #"sim_engines"+os.sep+"mcell"+os.sep+"__init__.py",
+
+        #"sim_engines"+os.sep+"pure_python_sim"+os.sep+"__init__.py",
+        #"sim_engines"+os.sep+"pure_python_sim"+os.sep+"pure_python_sim.py",
+
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"makefile",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"JSON.h",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"JSON.c",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"JSON.cpp",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"JSON.java",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"StorageClasses.cpp",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"StorageClasses.h",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"rng.h",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"rng.cpp",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"libMCell.h",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"libMCell.cpp",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"libMCell.i",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"mcell_main.cpp",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"mcell_main.py",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"mcell_main_c.c",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"pure_python_sim.py",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"mcell_simple.cpp",
+        #"sim_engines"+os.sep+"libMCell"+os.sep+"mcell_simple_count.cpp",
 
 
         "mdl"+os.sep+"__init__.py",

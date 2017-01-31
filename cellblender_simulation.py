@@ -2319,6 +2319,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         row = box.row()
 
 
+                    """
                     row = box.row()
                     row.label ( "Simulate with:" )
                     row.prop(self, "simulation_engine_control")
@@ -2343,6 +2344,10 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row.label ( "Display optional runner_user_parameters" )
                     row = box.row()
                     row.label ( "Display optional draw_runner_panel" )
+                    """
+
+
+                    mcell.sim_engines.draw_panel ( context, layout )
 
                 else:
                     row = box.row(align=True)
@@ -2372,4 +2377,550 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         self.draw_layout_queue ( context, layout )
 
 
+
+
+###########################################################################
+###########################################################################
+###########################################################################
+######                                                               ######
+######    Code taken directly from the Pluggable __init__.py file    ######
+######                                                               ######
+###########################################################################
+###########################################################################
+###########################################################################
+
+
+import os
+import cellblender.sim_engines as plugs
+
+active_plug_module = None
+
+def load_plug_modules():
+    # print ( "Call to load_plug_modules" )
+    if plugs.plug_modules == None:
+        plugs.plug_modules = plugs.get_plug_modules()
+    #if not ('cellblender_plug_modules' in cellblender.cellblender_info):
+    #  print ( "\n\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\nload_plug_modules reloading list\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\n\n" )
+    #  #cellblender.cellblender_info['cellblender_plug_modules'] = cellblender.sim_plugs.get_sim_plug_modules()
+    pass
+
+def get_plugs_as_items(scene, context):
+    load_plug_modules()
+    # Start with any static modules that should always be in the list
+    plugs_list = [("NONE", "Choose plug", "")]
+    # Add the dynamic modules
+    for plug in plugs.plug_modules:
+        plugs_list.append ( (plug.plug_code, plug.plug_name + " (dyn)", "") )
+    return plugs_list
+
+class PLUGGABLE_OT_Reload(bpy.types.Operator):
+  bl_idname = "pluggable.reload"
+  bl_label = "Reload"
+
+  def execute(self, context):
+    print ( "pluggable.reload.execute()" )
+    plugs.plug_modules = None
+    return{'FINISHED'}
+
+class PLUGGABLE_OT_Run(bpy.types.Operator):
+  bl_idname = "pluggable.print"
+  bl_label = "Print"
+
+  def execute(self, context):
+    #print ( "pluggable.print.execute()" )
+    global active_plug_module
+    ###???### pluggable = context.scene.Pluggable
+    if active_plug_module == None:
+      print ( "No active plug in module" )
+    else:
+      # Add items to the lists
+      if 'print_parameters' in dir(active_plug_module):
+        print ( "Calling print in active_plug_module" )
+        active_plug_module.print_parameters()
+      else:
+        print ( "This module does not support printing" )
+    return{'FINISHED'}
+
+class PLUGGABLE_OT_Run(bpy.types.Operator):
+  bl_idname = "pluggable.run"
+  bl_label = "Run"
+
+  def execute(self, context):
+    print ( "pluggable.run.execute()" )
+    return{'FINISHED'}
+
+class PLUGGABLE_OT_Interact(bpy.types.Operator):
+  bl_idname = "pluggable.interact"
+  bl_label = "Interact"
+
+  def execute(self, context):
+    print ( "pluggable.interact.execute()" )
+    __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    return{'FINISHED'}
+
+
+
+class PLUGGABLE_OT_User(bpy.types.Operator):
+  bl_idname = "pluggable.user_function"
+  bl_label = "User"
+  user_function_name = StringProperty ( default="", description="Name of function to call for this button" )
+
+  def execute(self, context):
+    global active_plug_module
+    print ( "pluggable.user_function.execute() will run function " + str(self.user_function_name) )
+    ###???### pluggable = context.scene.Pluggable
+    if active_plug_module == None:
+      print ( "No active plug in module" )
+    else:
+      # Add items to the lists
+      if 'parameter_dictionary' in dir(active_plug_module):
+        print ( "Calling " + str(self.user_function_name) + " in active_plug_module" )
+        active_plug_module.parameter_dictionary[str(self.user_function_name)]['val']()
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      else:
+        print ( "This module does not support a function named " + str(self.user_function_name) )
+    return{'FINISHED'}
+
+
+
+
+
+
+#def plugs_changed_callback ( self, context ):
+#    context.scene.Pluggable.plugs_changed_callback(context)
+
+# This is here because these pluggables might exist in two places:
+#   context.scene.mcell.sim_engines
+#   context.scene.mcell.sim_runners
+# So getting to this function could happen in two paths.
+
+def plugs_changed_callback ( self, context ):
+    global active_plug_module
+    print ( "Plugs have changed!!" )
+    selected_module_code = self.plugs_enum
+    active_plug_module = None
+    for plug_module in plugs.plug_modules:  
+        if plug_module.plug_code == selected_module_code:
+            active_plug_module = plug_module
+            break
+    # Clear the lists
+    self.plug_val_list.clear()
+    self.active_plug_val_index = -1  # or 0?
+    if active_plug_module != None:
+      # Add items to the lists
+      if 'parameter_dictionary' in dir(active_plug_module):
+        # print ( "Ready to go with " + str(dir(active_plug_module)) )
+        for k in sorted(active_plug_module.parameter_dictionary.keys()):
+          self.plug_val_list.add()
+          self.active_plug_val_index = len(self.plug_val_list) - 1
+          new_plug_val = self.plug_val_list[self.active_plug_val_index]
+          # Change all values to force the ID properties to be instantiated
+          new_plug_val.key_name = ""
+          new_plug_val.val_type = ""
+          new_plug_val.icon_code = "NONE"
+          new_plug_val.int_val = 0
+          new_plug_val.float_val = 0.0
+          new_plug_val.bool_val = False
+          new_plug_val.string_val = ""
+          new_plug_val.filename_val = ""
+
+          # Save the index of the PluggableValue property in the dictionary for this parameter
+          active_plug_module.parameter_dictionary[k]['_i'] = int(self.active_plug_val_index)
+          # Save the key and other values in this property
+          new_plug_val.key_name = k
+          if 'icon' in active_plug_module.parameter_dictionary[k]:
+            new_plug_val.icon_code = active_plug_module.parameter_dictionary[k]['icon']
+          val = active_plug_module.parameter_dictionary[k]['val']
+          if type(val) == type(plugs_changed_callback):  # type() needs to return a function
+            print ( "Got a function callback in 'val'" )
+            # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+            new_plug_val.val_type = 'F'
+            new_plug_val.func_val = str(val)
+          elif type(val) == type(1):     # type() needs to return an integer
+            new_plug_val.val_type = 'i'
+            new_plug_val.int_val = val
+          elif type(val) == type(1.2):   # type() needs to return a float
+            new_plug_val.val_type = 'f'
+            new_plug_val.float_val = val
+          elif type(val) == type(True):  # type() needs to return a boolean
+            new_plug_val.val_type = 'b'
+            new_plug_val.bool_val = val
+          elif type(val) == type("ab"):  # type() needs to return a string
+            subtype = 's'
+            if 'as' in active_plug_module.parameter_dictionary[k].keys():
+              if active_plug_module.parameter_dictionary[k]['as'] == 'filename':
+                subtype = 'fn'
+            if subtype == 's':
+              new_plug_val.val_type = 's'
+              new_plug_val.string_val = val
+            else:
+              new_plug_val.val_type = 'fn'
+              new_plug_val.filename_val = val
+          else:
+            # Force everything else to be a string for now (add new types as needed)
+            print ( "Forcing type " + str(type(val)) + " to be a string" )
+            new_plug_val.val_type = 's'
+            new_plug_val.string_val = str(val)
+
+
+
+
+def plug_int_set_callback ( self, value ):
+    self.plug_int_set_callback ( value )
+def plug_int_get_callback ( self ):
+    return self.plug_int_get_callback()
+def plug_int_update_callback ( self, context ):
+    self.plug_int_update_callback(context)
+
+
+def plug_float_set_callback ( self, value ):
+    self.plug_float_set_callback ( value )
+def plug_float_get_callback ( self ):
+    return self.plug_float_get_callback()
+def plug_float_update_callback ( self, context ):
+    self.plug_float_update_callback(context)
+
+
+def plug_bool_set_callback ( self, value ):
+    self.plug_bool_set_callback ( value )
+def plug_bool_get_callback ( self ):
+    return self.plug_bool_get_callback()
+def plug_bool_update_callback ( self, context ):
+    self.plug_bool_update_callback(context)
+
+
+def plug_string_set_callback ( self, value ):
+    self.plug_string_set_callback ( value )
+def plug_string_get_callback ( self ):
+    return self.plug_string_get_callback()
+def plug_string_update_callback ( self, context ):
+    self.plug_string_update_callback(context)
+
+
+def plug_filename_set_callback ( self, value ):
+    self.plug_filename_set_callback ( value )
+def plug_filename_get_callback ( self ):
+    return self.plug_filename_get_callback()
+def plug_filename_update_callback ( self, context ):
+    self.plug_filename_update_callback(context)
+
+
+class PluggableValue(bpy.types.PropertyGroup):
+    key_name = StringProperty ( default="x", description="Key name into the parameters dictionary" )
+    val_type = StringProperty ( default="x" )
+    icon_code = StringProperty ( default="NONE" )
+
+    func_val = StringProperty ( default="x", description="A function value" )
+    func_val_shadow = StringProperty ( default="x" )
+
+    int_val = IntProperty ( default=-1, description="An integer value", set=plug_int_set_callback, get=plug_int_get_callback, update=plug_int_update_callback )
+    int_val_shadow = IntProperty ( default=-1 )
+
+    float_val = FloatProperty ( default=-1.0, description="A float value", set=plug_float_set_callback, get=plug_float_get_callback, update=plug_float_update_callback )
+    float_val_shadow = FloatProperty ( default=-1.0 )
+
+    bool_val = BoolProperty ( default=True, description="A boolean value", set=plug_bool_set_callback, get=plug_bool_get_callback, update=plug_bool_update_callback )
+    bool_val_shadow = BoolProperty ( default=True )
+
+    string_val = StringProperty ( default="x", description="A string value", set=plug_string_set_callback, get=plug_string_get_callback, update=plug_string_update_callback )
+    string_val_shadow = StringProperty ( default="x" )
+
+    filename_val = StringProperty ( subtype='FILE_PATH', default="x", description="A file name string value", set=plug_filename_set_callback, get=plug_filename_get_callback, update=plug_filename_update_callback )
+    filename_val_shadow = StringProperty ( subtype='FILE_PATH', default="x" )
+
+
+    def plug_int_set_callback ( self, value ):
+        self.int_val_shadow = value
+    def plug_int_get_callback ( self ):
+        return self.int_val_shadow
+    def plug_int_update_callback ( self, context ):
+        print ( "PluggableValue.plug_int_update_callback called with key_name = " + str(self.key_name) )
+        if len(self.key_name) > 0:
+          global active_plug_module
+          ###???### pluggable = context.scene.Pluggable
+          if active_plug_module != None:
+            # Add items to the lists
+            if 'parameter_dictionary' in dir(active_plug_module):
+              print ( "Updating parameter_dictionary with " + str(self.key_name) + " = " + str(self.int_val_shadow) )
+              active_plug_module.parameter_dictionary[self.key_name]['val'] = self.int_val_shadow
+
+
+    def plug_float_set_callback ( self, value ):
+        self.float_val_shadow = value
+    def plug_float_get_callback ( self ):
+        return self.float_val_shadow
+    def plug_float_update_callback ( self, context ):
+        print ( "PluggableValue.plug_float_update_callback called with key_name = " + str(self.key_name) )
+        if len(self.key_name) > 0:
+          global active_plug_module
+          ###???### pluggable = context.scene.Pluggable
+          if active_plug_module != None:
+            # Add items to the lists
+            if 'parameter_dictionary' in dir(active_plug_module):
+              print ( "Updating parameter_dictionary with " + str(self.key_name) + " = " + str(self.float_val_shadow) )
+              active_plug_module.parameter_dictionary[self.key_name]['val'] = self.float_val_shadow
+
+
+    def plug_bool_set_callback ( self, value ):
+        self.bool_val_shadow = value
+    def plug_bool_get_callback ( self ):
+        return self.bool_val_shadow
+    def plug_bool_update_callback ( self, context ):
+        print ( "PluggableValue.plug_bool_update_callback called with key_name = " + str(self.key_name) )
+        if len(self.key_name) > 0:
+          global active_plug_module
+          ###???### pluggable = context.scene.Pluggable
+          if active_plug_module != None:
+            # Add items to the lists
+            if 'parameter_dictionary' in dir(active_plug_module):
+              print ( "Updating parameter_dictionary with " + str(self.key_name) + " = " + str(self.bool_val_shadow) )
+              active_plug_module.parameter_dictionary[self.key_name]['val'] = self.bool_val_shadow
+
+
+    def plug_string_set_callback ( self, value ):
+        self.string_val_shadow = value
+    def plug_string_get_callback ( self ):
+        return self.string_val_shadow
+    def plug_string_update_callback ( self, context ):
+        print ( "PluggableValue.plug_string_update_callback called with key_name = " + str(self.key_name) )
+        if len(self.key_name) > 0:
+          global active_plug_module
+          ###???### pluggable = context.scene.Pluggable
+          if active_plug_module != None:
+            # Add items to the lists
+            if 'parameter_dictionary' in dir(active_plug_module):
+              print ( "Updating parameter_dictionary with " + str(self.key_name) + " = " + str(self.string_val_shadow) )
+              active_plug_module.parameter_dictionary[self.key_name]['val'] = self.string_val_shadow
+
+
+    def plug_filename_set_callback ( self, value ):
+        self.filename_val_shadow = value
+    def plug_filename_get_callback ( self ):
+        return self.filename_val_shadow
+    def plug_filename_update_callback ( self, context ):
+        print ( "PluggableValue.plug_filename_update_callback called with key_name = " + str(self.key_name) )
+        if len(self.key_name) > 0:
+          global active_plug_module
+          ###???### pluggable = context.scene.Pluggable
+          if active_plug_module != None:
+            # Add items to the lists
+            if 'parameter_dictionary' in dir(active_plug_module):
+              print ( "Updating parameter_dictionary with " + str(self.key_name) + " = " + str(self.filename_val_shadow) )
+              active_plug_module.parameter_dictionary[self.key_name]['val'] = self.filename_val_shadow
+
+
+
+class Pluggable(bpy.types.PropertyGroup):
+    file_name = StringProperty ( subtype='FILE_PATH', default="")
+    plugs_enum = EnumProperty ( items=get_plugs_as_items, name="", description="Plugs", update=plugs_changed_callback )
+    plug_val_list = CollectionProperty(type=PluggableValue, name="String List")
+    active_plug_val_index = IntProperty(name="Active String Index", default=0)
+
+    def plug_int_val_changed_callback ( self, context ):
+        print ( "int val changed" )
+
+    def plug_float_val_changed_callback ( self, context ):
+        print ( "float val changed" )
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+    def plug_bool_val_changed_callback ( self, context ):
+        print ( "bool val changed" )
+
+    def plug_string_val_changed_callback ( self, context ):
+        print ( "string val changed" )
+
+    def plug_filename_val_changed_callback ( self, context ):
+        print ( "filename val changed" )
+
+    """
+    def plugs_changed_callback ( self, context ):
+        global active_plug_module
+        print ( "Plugs have changed!!" )
+        selected_module_code = self.plugs_enum
+        active_plug_module = None
+        for plug_module in plugs.plug_modules:  
+            if plug_module.plug_code == selected_module_code:
+                active_plug_module = plug_module
+                break
+        # Clear the lists
+        self.plug_val_list.clear()
+        self.active_plug_val_index = -1  # or 0?
+        if active_plug_module != None:
+          # Add items to the lists
+          if 'parameter_dictionary' in dir(active_plug_module):
+            # print ( "Ready to go with " + str(dir(active_plug_module)) )
+            for k in sorted(active_plug_module.parameter_dictionary.keys()):
+              self.plug_val_list.add()
+              self.active_plug_val_index = len(self.plug_val_list) - 1
+              new_plug_val = self.plug_val_list[self.active_plug_val_index]
+              # Change all values to force the ID properties to be instantiated
+              new_plug_val.key_name = ""
+              new_plug_val.val_type = ""
+              new_plug_val.icon_code = "NONE"
+              new_plug_val.int_val = 0
+              new_plug_val.float_val = 0.0
+              new_plug_val.bool_val = False
+              new_plug_val.string_val = ""
+              new_plug_val.filename_val = ""
+
+              # Save the index of the PluggableValue property in the dictionary for this parameter
+              active_plug_module.parameter_dictionary[k]['_i'] = int(self.active_plug_val_index)
+              # Save the key and other values in this property
+              new_plug_val.key_name = k
+              if 'icon' in active_plug_module.parameter_dictionary[k]:
+                new_plug_val.icon_code = active_plug_module.parameter_dictionary[k]['icon']
+              val = active_plug_module.parameter_dictionary[k]['val']
+              if type(val) == type(plugs_changed_callback):  # type() needs to return a function
+                print ( "Got a function callback in 'val'" )
+                # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+                new_plug_val.val_type = 'F'
+                new_plug_val.func_val = str(val)
+              elif type(val) == type(1):     # type() needs to return an integer
+                new_plug_val.val_type = 'i'
+                new_plug_val.int_val = val
+              elif type(val) == type(1.2):   # type() needs to return a float
+                new_plug_val.val_type = 'f'
+                new_plug_val.float_val = val
+              elif type(val) == type(True):  # type() needs to return a boolean
+                new_plug_val.val_type = 'b'
+                new_plug_val.bool_val = val
+              elif type(val) == type("ab"):  # type() needs to return a string
+                subtype = 's'
+                if 'as' in active_plug_module.parameter_dictionary[k].keys():
+                  if active_plug_module.parameter_dictionary[k]['as'] == 'filename':
+                    subtype = 'fn'
+                if subtype == 's':
+                  new_plug_val.val_type = 's'
+                  new_plug_val.string_val = val
+                else:
+                  new_plug_val.val_type = 'fn'
+                  new_plug_val.filename_val = val
+              else:
+                # Force everything else to be a string for now (add new types as needed)
+                print ( "Forcing type " + str(type(val)) + " to be a string" )
+                new_plug_val.val_type = 's'
+                new_plug_val.string_val = str(val)
+    """
+
+
+    """
+    # This is for drawing not loading
+            if 'parameter_layout' in plug_module:
+              # Layout according to the list of lists
+            else:
+              # Layout in alphabetical order (since a dictionary has random ordering)
+              for k in sorted(plug_module.parameter_dictionary.keys()):
+          __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    """
+
+    def draw_panel ( self, context, panel ):
+        global active_plug_module
+        layout = panel
+        row = layout.row()
+        row.label ( "-=- Dynamic -=-" )
+
+        box = layout.box()
+        layout = box
+        #### Below here: layout is in the box
+        row = layout.row()
+        col = row.column()
+        col.prop ( self, 'plugs_enum' )
+        col = row.column()
+        col.operator ( 'pluggable.reload', icon='FILE_REFRESH' )
+        if active_plug_module == None:
+            row = layout.row()
+            row.label ( "No module selected" )
+        else:
+            #row = layout.row()
+            #row.label ( "Current module info: " + active_plug_module.plug_code + " " + active_plug_module.plug_name )
+
+            if ('parameter_dictionary' in dir(active_plug_module)) and ('parameter_layout' in dir(active_plug_module)):
+                # Draw the panel according to the layout
+                for r in active_plug_module.parameter_layout:
+                    row = layout.row()
+                    for k in r:
+                        col = row.column()
+                        p = active_plug_module.parameter_dictionary[k]
+                        s = self.plug_val_list[p['_i']]
+                        if s.val_type == 'F':
+                            col.operator ( 'pluggable.user_function', text=s.key_name, icon=s.icon_code ).user_function_name = s.key_name
+                        elif s.val_type == 'i':
+                            col.prop ( s, "int_val", text=s.key_name, icon=s.icon_code )
+                        elif s.val_type == 'f':
+                            col.prop ( s, "float_val", text=s.key_name, icon=s.icon_code )
+                        elif s.val_type == 'b':
+                            col.prop ( s, "bool_val", text=s.key_name, icon=s.icon_code )
+                        elif s.val_type == 's':
+                            col.prop ( s, "string_val", text=s.key_name, icon=s.icon_code )
+                        elif s.val_type == 'fn':
+                            col.prop ( s, "filename_val", text=s.key_name, icon=s.icon_code )
+            else:
+                # Draw the panel in alphabetical order
+                for s in self.plug_val_list:
+                    row = layout.row()
+                    if s.val_type == 'F':
+                        row.operator ( 'pluggable.user_function', text=s.key_name, icon=s.icon_code ).user_function_name = s.key_name
+                    elif s.val_type == 'i':
+                        row.prop ( s, "int_val", text=s.key_name, icon=s.icon_code )
+                    elif s.val_type == 'f':
+                        row.prop ( s, "float_val", text=s.key_name, icon=s.icon_code )
+                    elif s.val_type == 'b':
+                        row.prop ( s, "bool_val", text=s.key_name, icon=s.icon_code )
+                    elif s.val_type == 's':
+                        row.prop ( s, "string_val", text=s.key_name, icon=s.icon_code )
+                    elif s.val_type == 'fn':
+                        col.prop ( s, "filename_val", text=s.key_name, icon=s.icon_code )
+                  
+
+        #### Above here: layout is in the box
+        layout = panel
+
+"""
+        row = layout.row()
+        row.operator ( 'pluggable.print', icon='COLOR_GREEN' )
+        row = layout.row()
+        row.operator ( 'pluggable.run', icon='COLOR_RED' )
+        row = layout.row()
+        row.operator ( 'pluggable.interact', icon='COLOR_BLUE' )
+
+#
+#   class PluggablePanel(bpy.types.Panel):
+#
+class PluggablePanel(bpy.types.Panel):
+  bl_label = "Pluggable Prototype"
+  bl_space_type = "VIEW_3D"
+  bl_region_type = "TOOLS"
+  bl_category = "Pluggable"
+
+  def draw(self, context):
+    self.layout.operator("pluggable.add", text="Add cube").mesh = "cube"
+    self.layout.operator("pluggable.add", text="Add cylinder").mesh = "cylinder"
+    self.layout.operator("pluggable.add", text="Add sphere").mesh = "sphere"
+    context.scene.Pluggable.draw_panel ( context, self )
+
+
+#
+#   class OBJECT_OT_AddButton(bpy.types.Operator):
+#
+class OBJECT_OT_AddButton(bpy.types.Operator):
+  bl_idname = "pluggable.add"
+  bl_label = "Add"
+  mesh = bpy.props.StringProperty()
+
+  def execute(self, context):
+    if self.mesh == "cube":
+      mycube.makeMesh(-3)
+      print ("Added a cube")
+    elif self.mesh == "cylinder":
+      mycylinder.makeMesh(0)
+      print ("Added a cylinder")
+    elif self.mesh == "sphere":
+      mysphere.makeMesh(3)
+      print ("Added a sphere")
+    return{'FINISHED'}
+
+#
+#    Registration
+#
+"""
 

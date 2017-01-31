@@ -795,6 +795,10 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=cellblender_project.MCellExportProjectPropertyGroup, name="Export Simulation")
     run_simulation = PointerProperty(
         type=cellblender_simulation.MCellRunSimulationPropertyGroup, name="Run Simulation")
+    sim_engines = PointerProperty(
+        type=cellblender_simulation.Pluggable, name="Simulation Engines")
+    sim_runners = PointerProperty(
+        type=cellblender_simulation.Pluggable, name="Simulation Runners")
     mol_viz = PointerProperty(
         type=cellblender_mol_viz.MCellMolVizPropertyGroup, name="Mol Viz Settings")
     initialization = PointerProperty(
