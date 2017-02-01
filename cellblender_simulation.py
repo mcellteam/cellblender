@@ -1751,7 +1751,7 @@ def get_engines_as_items(scene, context):
     engines_list = [("NONE", "Choose Engine", "")]
     # Add the dynamic modules
     for m in cellblender.cellblender_info['cellblender_engine_modules']:
-      engines_list.append ( (m.engine_code, m.engine_name + " (dyn)", "") )
+      engines_list.append ( (m.engine_code, m.engine_name, "") )
     return engines_list
 
 
@@ -1766,7 +1766,7 @@ def get_runners_as_items(scene, context):
     runners_list = [("NONE", "Choose Runner", "")]
     # Add the dynamic modules
     for m in cellblender.cellblender_info['cellblender_runner_modules']:
-      runners_list.append ( (m.runner_code, m.runner_name + " (dyn)", "") )
+      runners_list.append ( (m.runner_code, m.runner_name, "") )
     return runners_list
 
 class MCellComputerProperty(bpy.types.PropertyGroup):
@@ -1873,7 +1873,6 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
          ('SWEEP_SGE', "MCell via Sweep Runner and SGE", ""),
          ('libMCell', "Prototype Lib MCell via C++", ""),
          ('libMCellpy', "Prototype Lib MCell via Python", ""),
-         ('PurePython', "Prototype Pure Python", ""),
          ('DYNAMIC', "Dynamic", "")]
 
     simulation_run_control = EnumProperty(
@@ -2185,6 +2184,34 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         row.prop ( self, "save_text_logs" )
                         row.operator("mcell.remove_text_logs")
 
+                    elif self.simulation_run_control == "DYNAMIC":
+
+                        sep = box.box()
+
+                        row = box.row(align=True)
+                        split = row.split(0.03)
+                        col = split.column()
+                        col = split.column()
+                        col.label("Dynamic Engine / Runner Options (experimental)")
+                        col = row.column()
+                        col.prop ( self, "show_engine_runner_help", icon='INFO', text="" )
+                        if self.show_engine_runner_help:
+                            helpbox = box.box()
+                            row = helpbox.row()
+                            row.label ( ">>> Select different simulation engines and run mechanisms <<<" )
+                            row = helpbox.row()
+                            row.label ( "This experimental panel will eventually permit the independent selection of" )
+                            row = helpbox.row()
+                            row.label ( "simulation engines and run mechanisms. This will become increasingly important" )
+                            row = helpbox.row()
+                            row.label ( "as CellBlender supports custom instances of libMCell and distributed computing." )
+                            row = helpbox.row()
+                            row.label ( "To enable the selections in this panel, choose \"Dynamic\" in the normal run control." )
+
+                        mcell.sim_engines.draw_panel ( context, box )
+
+
+
                     elif self.simulation_run_control == "SWEEP_SGE":
                         row = box.row()
                         subbox = row.box()
@@ -2267,7 +2294,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         row = box.row()
                         row.label ( "as CellBlender supports custom instances of libMCell and distributed computing." )
                         row = box.row()
-                        row.label ( "To enable the selections in this panel, choose \"None\" in the normal run control." )
+                        row.label ( "To enable the selections in this panel, choose \"Dynamic\" in the normal run control." )
                         row = box.row()
 
                     mcell.sim_engines.draw_panel ( context, box )
@@ -2330,10 +2357,10 @@ def load_plug_modules():
 def get_plugs_as_items(scene, context):
     load_plug_modules()
     # Start with any static modules that should always be in the list
-    plugs_list = [("NONE", "Choose plug", "")]
+    plugs_list = [("NONE", "Choose Engine", "")]
     # Add the dynamic modules
     for plug in plugs.plug_modules:
-        plugs_list.append ( (plug.plug_code, plug.plug_name + " (dyn)", "") )
+        plugs_list.append ( (plug.plug_code, plug.plug_name, "") )
     return plugs_list
 
 class PLUGGABLE_OT_Reload(bpy.types.Operator):

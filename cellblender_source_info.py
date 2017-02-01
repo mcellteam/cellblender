@@ -141,9 +141,28 @@ cellblender_info = {
 
 
         "sim_engines"+os.sep+"__init__.py",
+
         "sim_engines"+os.sep+"limited_python"+os.sep+"__init__.py",
         "sim_engines"+os.sep+"limited_python"+os.sep+"limited_python_sim.py",
-        "sim_engines"+os.sep+"limited_python"+os.sep+"pure_python_sim.py",
+
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"__init__.py",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"rng.h",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"rng.cpp",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"JSON.c",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"JSON.cpp",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"makefile",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"JSON.h",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"JSON.java",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"libMCell.cpp",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"libMCell.h",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"libMCell.i",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"libMCell.py",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"mcell_main.cpp",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"mcell_main.py",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"mcell_main_c.c",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"pure_python_sim.py",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"StorageClasses.cpp",
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"StorageClasses.h",
 
 
 
