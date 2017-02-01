@@ -13,14 +13,19 @@ proj_path = ""
 data_model_file_name = ""
 data_model_full_path = ""
 run_seed = 1
+decay_rate_factor = 1.0
 for arg in sys.argv:
   print ( "   " + str(arg) )
   if arg[0:10] == "proj_path=":
     proj_path = arg[10:]
-  if arg[0:11] == "data_model=":
+  elif arg[0:11] == "data_model=":
     data_model_file_name = arg[11:]
-  if arg[0:5] == "seed=":
+  elif arg[0:5] == "seed=":
     run_seed = int(arg[5:])
+  elif arg[0:13] == "decay_factor=":
+    decay_rate_factor = float(arg[13:])
+  else:
+    print ( "Unknown argument = " + str(arg) )
 print ( "\n\n" )
 
 seed_dir = "seed_%05d" % run_seed
@@ -89,16 +94,25 @@ time_step = eval(dm['mcell']['initialization']['time_step'])
 mols = dm['mcell']['define_molecules']['molecule_list']
 rels = dm['mcell']['release_sites']['release_site_list']
 
-num_defined_reactions = 0
+rxns = []
 if 'define_reactions' in dm['mcell']:
   if 'reaction_list' in dm['mcell']['define_reactions']:
-    num_defined_reactions = len(dm['mcell']['define_reactions']['reaction_list'])
+    if len(dm['mcell']['define_reactions']['reaction_list']) > 0:
+      rxns = dm['mcell']['define_reactions']['reaction_list']
 
 for m in mols:
   print ( "Molecule " + m['mol_name'] + " is a " + m['mol_type'] + " molecule diffusing with " + str(m['diffusion_constant']) )
 
 for r in rels:
   print ( "Release " + str(r['quantity']) + " of " + r['molecule'] + " at (" + str(r['location_x']) + "," + str(r['location_y']) + "," + str(r['location_z']) + ")"  )
+
+for r in rxns:
+  arrow = '->'
+  bkwd = ''
+  if len(r['bkwd_rate']) > 0:
+    arrow = '<->'
+    bkwd = ", " + str(r['bkwd_rate'])
+  print ( "Reaction: " + r['reactants'] + " " + arrow + " " + r['products'] + "  [" + str(r['fwd_rate']) + bkwd + "]"  )
 
 # Create instances for each molecule that is released (note that release patterns are not handled)
 
@@ -178,12 +192,23 @@ for i in range(iterations+1):
     count = len(m['instances'])
     count_files[name].write ( "%.15g" % (i*time_step) + " " + str(count) + "\n" )
 
-  if num_defined_reactions > 0:
-    # Perform fake "reactions" ... just randomly delete the last molecule for now
-    for m in mols:
-      if random.gauss(0.0,1.0) < 0:
-        if len(m['instances']) > 0:
-          m['instances'].pop()
+  # Perform approximate decay reactions for now  (TODO: Make this realistic)
+  for m in mols:
+    if len(m['instances']) > 0:
+      # There are some molecules left to react
+      for r in rxns:
+        if r['reactants'] == m['mol_name']:
+          # The reaction applies to this molecule
+          rate = float(r['fwd_rate'])
+          fraction_to_remove = decay_rate_factor * rate * time_step
+          amount_to_remove = fraction_to_remove * len(m['instances'])
+          num_to_remove = int(amount_to_remove)
+          if random.random() < (amount_to_remove - num_to_remove):
+            num_to_remove += 1
+          #print ( "React " + m['mol_name'] + " with rate = " + str(rate) + ", remove " + str(num_to_remove) + " (should be about " + str(100*fraction_to_remove) + "%)" )
+          for i in range(num_to_remove):
+            if len(m['instances']) > 0:
+              m['instances'].pop()
 
 
 for fname in count_files.keys():

@@ -7,7 +7,7 @@ print ( "Executing Limited Python Simulation" )
 
 # Name of this engine to display in the list of choices (Both should be unique within a CellBlender installation)
 plug_code = "LIM_PYTHON"
-plug_name = "Limited Python Simulation"
+plug_name = "Prototype Python Simulation"
 
 def print_info():
   global parameter_dictionary
@@ -24,11 +24,13 @@ def reset():
 # List of parameters as dictionaries - each with keys for 'name', 'desc', 'def', and optional 'as':
 parameter_dictionary = {
   'Optional Path': {'val': "", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
+  'Decay Factor': {'val': 1.0, 'desc':"Decay Rate Multiplier", 'icon':'ARROW_LEFTRIGHT'},
   'Print Information': {'val': print_info, 'desc':"Print information about Limited Python Simulation"},
   'Reset': {'val': reset, 'desc':"Reset everything"}
 }
 
 parameter_layout = [
+  ['Decay Factor'],
   ['Optional Path'],
   ['Print Information', 'Reset']
 ]
@@ -74,7 +76,10 @@ def run_simulation ( data_model, project_dir ):
           f.close()
           print ( "Done saving CellBlender model." )
 
-          command_list = [ 'python3', final_script_path, "proj_path="+project_dir, "data_model=dm.txt" ]
+          command_list = [ 'python3', final_script_path,
+                           "proj_path="+project_dir,
+                           "decay_factor="+str(parameter_dictionary["Decay Factor"]['val']),
+                           "data_model=dm.txt" ]
 
           command_string = "Command:";
           for s in command_list:
