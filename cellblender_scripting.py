@@ -814,11 +814,13 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                     if script.internal_external == 'internal':
                         mdl_file.write ( bpy.data.texts[script.internal_file_name].as_string() )
                     else:
-                        print ( "Cannot export external MDL scripts yet (" + script.external_file_name + ")" )
+                        print ( "Loading external MDL script: " + script.external_file_name )
+                        f = open ( script.external_file_name )
+                        script_text = f.read()
+                        mdl_file.write ( script_text )
                 if script.mdl_python == 'python':
                     if script.internal_external == 'internal':
                         mdl_file.write ( "\n/* Before Executing Python %s */\n\n" % (script.internal_file_name))
-                        #exec ( bpy.data.texts[script.internal_file_name].as_string(), globals(), locals() )
                         exec ( bpy.data.texts[script.internal_file_name].as_string(), locals() )
                         mdl_file.write ( "\n/* After Executing Python %s */\n\n" % (script.internal_file_name))
                     else:
@@ -826,7 +828,6 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                         f = open ( script.external_file_name )
                         script_text = f.read()
                         mdl_file.write ( "\n/* Before Executing Python %s */\n\n" % (script.external_file_name))
-                        #exec ( bpy.data.texts[script.external_file_name].as_string(), globals(), locals() )
                         exec ( script_text, locals() )
                         mdl_file.write ( "\n/* After Executing Python %s */\n\n" % (script.external_file_name))
                 if script.internal_external == 'internal':
