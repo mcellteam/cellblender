@@ -237,6 +237,7 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
                 bpy.ops.mcell.run_simulation_dynamic()
             else:
                 # Look for it in the dynamic modules
+                """
                 load_engine_modules()   # Note that this might already have been done ... except by the test suite!!
                 load_runner_modules()   # Note that this might already have been done ... except by the test suite!!
                 for m in cellblender.cellblender_info['cellblender_runner_modules']:
@@ -245,6 +246,9 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
                         print ( "Running a generic runner: " + str(mcell.run_simulation.simulation_run_control) )
                         run_generic_runner ( context, m )
                         break
+                """
+                print ( "Unexpected case in MCELL_OT_run_simulation" )
+                pass
 
         return {'FINISHED'}
 
@@ -1622,14 +1626,16 @@ class MCellSimStringProperty(bpy.types.PropertyGroup):
         #print ( "Removing an MCell String Property with name \"" + self.name + "\" ... no collections to remove." )
         pass
 
+
 import os
 import cellblender.sim_engines
 import cellblender.sim_runners
 
+"""
 def load_engine_modules():
     if not ('cellblender_engine_modules' in cellblender.cellblender_info):
       print ( "\n\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\nload_engine_modules reloading list\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\n\n" )
-      cellblender.cellblender_info['cellblender_engine_modules'] = cellblender.sim_engines.get_sim_engine_modules()
+      cellblender.cellblender_info['cellblender_engine_modules'] = cellblender.sim_engines.get_modules()
 
 def get_engines_as_items(scene, context):
     load_engine_modules()
@@ -1644,7 +1650,7 @@ def get_engines_as_items(scene, context):
 def load_runner_modules():
     if not ('cellblender_runner_modules' in cellblender.cellblender_info):
       print ( "\n\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\nload_runner_modules reloading list\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\n\n" )
-      cellblender.cellblender_info['cellblender_runner_modules'] = cellblender.sim_runners.get_sim_runner_modules()
+      cellblender.cellblender_info['cellblender_runner_modules'] = cellblender.sim_runners.get_modules()
 
 def get_runners_as_items(scene, context):
     load_runner_modules()
@@ -1654,6 +1660,8 @@ def get_runners_as_items(scene, context):
     for m in cellblender.cellblender_info['cellblender_runner_modules']:
       runners_list.append ( (m.runner_code, m.runner_name, "") )
     return runners_list
+"""
+
 
 class MCellComputerProperty(bpy.types.PropertyGroup):
     comp_name = StringProperty ( default="", description="Computer name" )
@@ -1737,6 +1745,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
 
+    """
     simulation_engine_control = EnumProperty(
         items=get_engines_as_items, name="",
         description="Simulators for running a simulation",
@@ -1748,6 +1757,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         description="Control mechanisms for running the selected simulation engine",
         # default='QUEUE', # Cannot set a default when "items" is a function
         update=sim_runner_changed_callback)
+    """
 
 
     simulation_engine_and_run_enum = [
@@ -2077,7 +2087,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         split = row.split(0.03)
                         col = split.column()
                         col = split.column()
-                        col.label("Dynamic Engine / Runner Options (experimental)")
+                        col.label("Dynamic Engine Options (experimental)")
                         col = row.column()
                         col.prop ( self, "show_engine_runner_help", icon='INFO', text="" )
                         if self.show_engine_runner_help:
@@ -2093,7 +2103,17 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                             row = helpbox.row()
                             row.label ( "To enable the selections in this panel, choose \"Dynamic\" in the normal run control." )
 
+                        sep = box.box()
+                        row = box.row()
+                        row.label ( "Engines" )
+
                         mcell.sim_engines.draw_panel ( context, box )
+
+                        sep = box.box()
+                        row = box.row()
+                        row.label ( "Runners" )
+
+                        mcell.sim_runners.draw_panel ( context, box )
 
 
 
@@ -2156,7 +2176,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row.prop(self, "show_output_options", icon='TRIA_RIGHT',
                              text="Output / Control Options", emboss=False)
 
-
+                """
                 box = layout.box()
 
                 if self.show_engine_runner_options:
@@ -2189,6 +2209,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     row.alignment = 'LEFT'
                     row.prop(self, "show_engine_runner_options", icon='TRIA_RIGHT',
                              text="Engine / Runner Options (experimental)", emboss=False)
+                """
 
 
                 
@@ -2226,26 +2247,43 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
 
 import os
-import cellblender.sim_engines as plugs
+import cellblender.sim_engines as engine_manager
+import cellblender.sim_runners as runner_manager
+
+module_type_dict = { "sim_engines": engine_manager, "sim_runners": runner_manager }
 
 active_plug_module = None
 
 def load_plug_modules():
     # print ( "Call to load_plug_modules" )
-    if plugs.plug_modules == None:
-        plugs.plug_modules = plugs.get_sim_engine_modules()
+    if engine_manager.plug_modules == None:
+        engine_manager.plug_modules = engine_manager.get_modules()
+    if runner_manager.plug_modules == None:
+        runner_manager.plug_modules = runner_manager.get_modules()
     #if not ('cellblender_plug_modules' in cellblender.cellblender_info):
     #  print ( "\n\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\nload_plug_modules reloading list\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\n\n" )
     #  #cellblender.cellblender_info['cellblender_plug_modules'] = cellblender.sim_plugs.get_sim_plug_modules()
     pass
 
-def get_plugs_as_items(scene, context):
+def get_plugs_as_items(self, context):
+    print ( "get_plugs_as_items" )
+    print ( "  self is a " + str(type(self)) )
+    print ( "  self = " + str(self) )
+    #print ( "  self.name = " + str(self.name) )
     load_plug_modules()
     # Start with any static modules that should always be in the list
-    plugs_list = [("NONE", "Choose Engine", "")]
+    plugs_list = []
+    if self.name == "sim_engines":
+      plugs_list.append ( ("NONE", "Choose Engine", "") )
+      for plug in engine_manager.plug_modules:
+          plugs_list.append ( (plug.plug_code, plug.plug_name, "") )
+    elif self.name == "sim_runners":
+      plugs_list.append ( ("NONE", "Choose Runner", "") )
+      for plug in runner_manager.plug_modules:
+          plugs_list.append ( (plug.plug_code, plug.plug_name, "") )
+    else:
+      plugs_list.append ( ("NONE", "Choose Module", "") )
     # Add the dynamic modules
-    for plug in plugs.plug_modules:
-        plugs_list.append ( (plug.plug_code, plug.plug_name, "") )
     return plugs_list
 
 class PLUGGABLE_OT_Reload(bpy.types.Operator):
@@ -2254,7 +2292,7 @@ class PLUGGABLE_OT_Reload(bpy.types.Operator):
 
   def execute(self, context):
     print ( "pluggable.reload.execute()" )
-    plugs.plug_modules = None
+    engine_manager.plug_modules = None
     return{'FINISHED'}
 
 class PLUGGABLE_OT_Run(bpy.types.Operator):
@@ -2327,14 +2365,30 @@ class PLUGGABLE_OT_User(bpy.types.Operator):
 # This is here because these pluggables might exist in two places:
 #   context.scene.mcell.sim_engines
 #   context.scene.mcell.sim_runners
-# So getting to this function could happen in two paths.
+# So getting to this function could happen from two paths.
+
+# It would be nice for all of this code to work seamlessly between instances.
 
 def plugs_changed_callback ( self, context ):
     global active_plug_module
     print ( "Plugs have changed!!" )
+    print ( "  self is a " + str(type(self)) )
+    print ( "  self = " + str(self) )
+    print ( "  self.name = " + str(self.name) )
+
+    # Plugs have changed!!
+    #   self is a <class 'cellblender.cellblender_simulation.Pluggable'>
+    #   self = <bpy_struct, Pluggable("sim_engines")>
+    #   self.name = sim_engines
+
+    # Plugs have changed!!
+    #   self is a <class 'cellblender.cellblender_simulation.Pluggable'>
+    #   self = <bpy_struct, Pluggable("sim_runners")>
+    #   self.name = sim_runners
+
     selected_module_code = self.plugs_enum
     active_plug_module = None
-    for plug_module in plugs.plug_modules:  
+    for plug_module in engine_manager.plug_modules:  
         if plug_module.plug_code == selected_module_code:
             active_plug_module = plug_module
             break
@@ -2550,6 +2604,9 @@ class Pluggable(bpy.types.PropertyGroup):
     plugs_enum = EnumProperty ( items=get_plugs_as_items, name="", description="Plugs", update=plugs_changed_callback )
     plug_val_list = CollectionProperty(type=PluggableValue, name="String List")
     active_plug_val_index = IntProperty(name="Active String Index", default=0)
+    
+    def __init__():
+        print ( "Init has been called for Pluggable" )
 
     def plug_int_val_changed_callback ( self, context ):
         print ( "int val changed" )
@@ -2573,7 +2630,7 @@ class Pluggable(bpy.types.PropertyGroup):
         print ( "Plugs have changed!!" )
         selected_module_code = self.plugs_enum
         active_plug_module = None
-        for plug_module in plugs.plug_modules:  
+        for plug_module in engine_manager.plug_modules:  
             if plug_module.plug_code == selected_module_code:
                 active_plug_module = plug_module
                 break

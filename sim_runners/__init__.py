@@ -22,18 +22,11 @@ import os
 import subprocess
 import sys
 
-import cellblender
+# import cellblender
 
-def find_in_path(program_name):
-    for path in os.environ.get('PATH','').split(os.pathsep):
-        full_name = os.path.join(path,program_name)
-        if os.path.exists(full_name) and not os.path.isdir(full_name):
-            return full_name
-    return None
+plug_modules = None  # This is currently set by "cellblender_simulation.load_plug_modules"
 
-
-
-def get_sim_runner_modules():
+def get_modules():
 
     module_name_list = []
     module_list = []
@@ -57,24 +50,24 @@ def get_sim_runner_modules():
     module_name_list = []
     module_list = []
 
-    print ( "Searching for installed sim runner plugins in " + parent_path )
+    print ( "Searching for installed plugins in " + parent_path )
 
     for f in os.listdir(parent_path):
         if (f != "__pycache__"):
-            sim_runner_plugin = os.path.join ( parent_path, f )
-            if os.path.isdir(sim_runner_plugin):
-                if os.path.exists(os.path.join(sim_runner_plugin,"__init__.py")):
-                    # print ( "Adding %s " % (sim_runner_plugin) )
-                    import_name = sim_runner_plugin
+            plugin = os.path.join ( parent_path, f )
+            if os.path.isdir(plugin):
+                if os.path.exists(os.path.join(plugin,"__init__.py")):
+                    print ( "Adding %s " % (plugin) )
+                    import_name = plugin
                     module_name_list = module_name_list + [f]
-                    # print ( "Attempting to import %s" % (import_name) )
-                    sim_runner_module = __import__ ( f )
-                    # print ( "Checking requirements for %s" % ( sim_runner_module.get_name() ) )
-                    #if sim_runner_module.requirements_met():
-                    # print ( "System requirements met for Plot Module \"%s\"" % ( sim_runner_module.get_name() ) )
-                    module_list = module_list + [ sim_runner_module ]
+                    print ( "Attempting to import %s" % (import_name) )
+                    plugin_module = __import__ ( f )
+                    # print ( "Checking requirements for %s" % ( plugin_module.get_name() ) )
+                    #if plugin_module.requirements_met():
+                    # print ( "System requirements met for Plot Module \"%s\"" % ( plugin_module.get_name() ) )
+                    module_list = module_list + [ plugin_module ]
                     #else:
-                    #    print ( "System requirements NOT met for Plot Module \"%s\"" % ( sim_runner_module.get_name() ) )
+                    #    print ( "System requirements NOT met for Plot Module \"%s\"" % ( plugin_module.get_name() ) )
                     # print ( "Imported __init__.py from %s" % (f) )
     return ( module_list )
 

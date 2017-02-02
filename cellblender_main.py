@@ -851,6 +851,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         self.run_simulation.init_properties ( self.parameter_system )
         self.molecules.init_properties ( self.parameter_system )
         self.viz_output.init_properties ( self.parameter_system )
+        self.sim_engines.name = "sim_engines"
+        self.sim_runners.name = "sim_runners"
         # Don't forget to update the "saved_by_source_id" to match the current version of the addon
         self['saved_by_source_id'] = cellblender.cellblender_info['cellblender_source_sha1']
         self.initialized = True

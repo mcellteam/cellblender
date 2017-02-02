@@ -22,8 +22,8 @@ import os
 import subprocess
 import sys
 
-runner_code = "OPENGL"
-runner_name = "OpenGL Control"
+plug_code = "OPENGL"
+plug_name = "OpenGL Control"
 
 runner_user_parameters = [
   { 'name':"Start Seed", 'desc':"First seed number for simulations that use seeds", 'def':1 },

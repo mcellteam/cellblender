@@ -22,8 +22,8 @@ import os
 import subprocess
 import sys
 
-runner_code = "JAVA"
-runner_name = "Java Control"
+plug_code = "JAVA"
+plug_name = "Java Control"
 
 runner_user_parameters = [
   { 'name':"Start Seed", 'desc':"First seed number for simulations that use seeds", 'def':1 },
