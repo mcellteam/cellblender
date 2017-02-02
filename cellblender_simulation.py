@@ -236,17 +236,6 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
             elif str(run_sim.simulation_run_control) == 'DYNAMIC':
                 bpy.ops.mcell.run_simulation_dynamic()
             else:
-                # Look for it in the dynamic modules
-                """
-                load_engine_modules()   # Note that this might already have been done ... except by the test suite!!
-                load_runner_modules()   # Note that this might already have been done ... except by the test suite!!
-                for m in cellblender.cellblender_info['cellblender_runner_modules']:
-                    if str(mcell.run_simulation.simulation_run_control) == m.runner_code:
-                        # Run with this module
-                        print ( "Running a generic runner: " + str(mcell.run_simulation.simulation_run_control) )
-                        run_generic_runner ( context, m )
-                        break
-                """
                 print ( "Unexpected case in MCELL_OT_run_simulation" )
                 pass
 
@@ -1627,11 +1616,11 @@ class MCellSimStringProperty(bpy.types.PropertyGroup):
         pass
 
 
+"""
 import os
 import cellblender.sim_engines
 import cellblender.sim_runners
 
-"""
 def load_engine_modules():
     if not ('cellblender_engine_modules' in cellblender.cellblender_info):
       print ( "\n\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\nload_engine_modules reloading list\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%\n\n\n" )
@@ -2293,6 +2282,7 @@ class PLUGGABLE_OT_Reload(bpy.types.Operator):
   def execute(self, context):
     print ( "pluggable.reload.execute()" )
     engine_manager.plug_modules = None
+    runner_manager.plug_modules = None
     return{'FINISHED'}
 
 class PLUGGABLE_OT_Run(bpy.types.Operator):
@@ -2729,20 +2719,23 @@ class Pluggable(bpy.types.PropertyGroup):
                     row = layout.row()
                     for k in r:
                         col = row.column()
-                        p = active_plug_module.parameter_dictionary[k]
-                        s = self.plug_val_list[p['_i']]
-                        if s.val_type == 'F':
-                            col.operator ( 'pluggable.user_function', text=s.key_name, icon=s.icon_code ).user_function_name = s.key_name
-                        elif s.val_type == 'i':
-                            col.prop ( s, "int_val", text=s.key_name, icon=s.icon_code )
-                        elif s.val_type == 'f':
-                            col.prop ( s, "float_val", text=s.key_name, icon=s.icon_code )
-                        elif s.val_type == 'b':
-                            col.prop ( s, "bool_val", text=s.key_name, icon=s.icon_code )
-                        elif s.val_type == 's':
-                            col.prop ( s, "string_val", text=s.key_name, icon=s.icon_code )
-                        elif s.val_type == 'fn':
-                            col.prop ( s, "filename_val", text=s.key_name, icon=s.icon_code )
+                        if k in active_plug_module.parameter_dictionary:
+                            p = active_plug_module.parameter_dictionary[k]
+                            if '_i' in p:
+                                if p['_i'] in self.plug_val_list:
+                                    s = self.plug_val_list[p['_i']]
+                                    if s.val_type == 'F':
+                                        col.operator ( 'pluggable.user_function', text=s.key_name, icon=s.icon_code ).user_function_name = s.key_name
+                                    elif s.val_type == 'i':
+                                        col.prop ( s, "int_val", text=s.key_name, icon=s.icon_code )
+                                    elif s.val_type == 'f':
+                                        col.prop ( s, "float_val", text=s.key_name, icon=s.icon_code )
+                                    elif s.val_type == 'b':
+                                        col.prop ( s, "bool_val", text=s.key_name, icon=s.icon_code )
+                                    elif s.val_type == 's':
+                                        col.prop ( s, "string_val", text=s.key_name, icon=s.icon_code )
+                                    elif s.val_type == 'fn':
+                                        col.prop ( s, "filename_val", text=s.key_name, icon=s.icon_code )
             else:
                 # Draw the panel in alphabetical order
                 for s in self.plug_val_list:
