@@ -2721,21 +2721,22 @@ class Pluggable(bpy.types.PropertyGroup):
                         col = row.column()
                         if k in active_plug_module.parameter_dictionary:
                             p = active_plug_module.parameter_dictionary[k]
+                            print ( "p = " + str(p) )
                             if '_i' in p:
-                                if p['_i'] in self.plug_val_list:
-                                    s = self.plug_val_list[p['_i']]
-                                    if s.val_type == 'F':
-                                        col.operator ( 'pluggable.user_function', text=s.key_name, icon=s.icon_code ).user_function_name = s.key_name
-                                    elif s.val_type == 'i':
-                                        col.prop ( s, "int_val", text=s.key_name, icon=s.icon_code )
-                                    elif s.val_type == 'f':
-                                        col.prop ( s, "float_val", text=s.key_name, icon=s.icon_code )
-                                    elif s.val_type == 'b':
-                                        col.prop ( s, "bool_val", text=s.key_name, icon=s.icon_code )
-                                    elif s.val_type == 's':
-                                        col.prop ( s, "string_val", text=s.key_name, icon=s.icon_code )
-                                    elif s.val_type == 'fn':
-                                        col.prop ( s, "filename_val", text=s.key_name, icon=s.icon_code )
+                                print ( "self.plug_val_list = " + str(self.plug_val_list) )
+                                s = self.plug_val_list[p['_i']]
+                                if s.val_type == 'F':
+                                    col.operator ( 'pluggable.user_function', text=s.key_name, icon=s.icon_code ).user_function_name = s.key_name
+                                elif s.val_type == 'i':
+                                    col.prop ( s, "int_val", text=s.key_name, icon=s.icon_code )
+                                elif s.val_type == 'f':
+                                    col.prop ( s, "float_val", text=s.key_name, icon=s.icon_code )
+                                elif s.val_type == 'b':
+                                    col.prop ( s, "bool_val", text=s.key_name, icon=s.icon_code )
+                                elif s.val_type == 's':
+                                    col.prop ( s, "string_val", text=s.key_name, icon=s.icon_code )
+                                elif s.val_type == 'fn':
+                                    col.prop ( s, "filename_val", text=s.key_name, icon=s.icon_code )
             else:
                 # Draw the panel in alphabetical order
                 for s in self.plug_val_list:
