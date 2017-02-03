@@ -1299,52 +1299,54 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
 
         files_path = mcell_files_path()  # This will include the "mcell" on the end
 
-        # Determine if this data structure is in the newer sweep format or not
-        use_sweep = 'output_data' in os.listdir(files_path)
+        if os.path.exists(files_path):
 
-        data_paths = []
+          # Determine if this data structure is in the newer sweep format or not
+          use_sweep = 'output_data' in os.listdir(files_path)
 
-        if use_sweep:
+          data_paths = []
 
-          # Check if the current structure reflects the recent run
+          if use_sweep:
 
-          f = open ( os.path.join(files_path,"data_layout.json"), 'r' )
-          layout_spec = json.loads ( f.read() )
-          f.close()
-          data_layout = layout_spec['data_layout']
+            # Check if the current structure reflects the recent run
 
-          self['data_layout'] = data_layout
+            f = open ( os.path.join(files_path,"data_layout.json"), 'r' )
+            layout_spec = json.loads ( f.read() )
+            f.close()
+            data_layout = layout_spec['data_layout']
 
-          # Build an expected choice list that won't contain "dir", "file_type", or "SEED"
-          expected_choice_list = []
-          for i in range(len(data_layout)):
-              name = str(data_layout[i][0])
-              if not (name in ['dir', 'file_type', 'SEED']):
-                  # This is a directory name so add it to the expected list
-                  expected_choice_list.append ( name )
+            self['data_layout'] = data_layout
 
-          # Compare the expected list with the current Blender choice list
-          needs_refresh = False
-          if len(self.choices_list) != len(expected_choice_list):
-              # print ( "List Lengths don't match" )
-              needs_refresh = True
-          else:
-              for i in range(len(self.choices_list)):
-                  if self.choices_list[i]['name'] != expected_choice_list[i]:
-                      needs_refresh = True
-                      break
+            # Build an expected choice list that won't contain "dir", "file_type", or "SEED"
+            expected_choice_list = []
+            for i in range(len(data_layout)):
+                name = str(data_layout[i][0])
+                if not (name in ['dir', 'file_type', 'SEED']):
+                    # This is a directory name so add it to the expected list
+                    expected_choice_list.append ( name )
 
-          if needs_refresh:
-              # Remove all items from Blender's RNA self.choices_list
-              while len(self.choices_list) > 0:
-                  self.choices_list.remove ( 0 )
-              # Add the items in the current data layout
-              for i in range(len(data_layout)):
-                  if not (data_layout[i][0] in ['dir', 'file_type', 'SEED']):
-                      self.choices_list.add()
-                      choice = self.choices_list[len(self.choices_list)-1]
-                      choice['name'] = data_layout[i][0]
-                      choice['values'] = data_layout[i][1]
+            # Compare the expected list with the current Blender choice list
+            needs_refresh = False
+            if len(self.choices_list) != len(expected_choice_list):
+                # print ( "List Lengths don't match" )
+                needs_refresh = True
+            else:
+                for i in range(len(self.choices_list)):
+                    if self.choices_list[i]['name'] != expected_choice_list[i]:
+                        needs_refresh = True
+                        break
+
+            if needs_refresh:
+                # Remove all items from Blender's RNA self.choices_list
+                while len(self.choices_list) > 0:
+                    self.choices_list.remove ( 0 )
+                # Add the items in the current data layout
+                for i in range(len(data_layout)):
+                    if not (data_layout[i][0] in ['dir', 'file_type', 'SEED']):
+                        self.choices_list.add()
+                        choice = self.choices_list[len(self.choices_list)-1]
+                        choice['name'] = data_layout[i][0]
+                        choice['values'] = data_layout[i][1]
 
 
     def draw_layout(self, context, layout):
