@@ -815,7 +815,12 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                         mdl_file.write ( bpy.data.texts[script.internal_file_name].as_string() )
                     else:
                         print ( "Loading external MDL script: " + script.external_file_name )
-                        f = open ( script.external_file_name )
+                        f = None
+                        if script.external_file_name.startswith ( "//" ):
+                            # Convert the file name from blend file relative (//) to full path:
+                            f = open ( os.path.join ( os.path.dirname(bpy.data.filepath), script.external_file_name[2:] ), mode='r' )
+                        else:
+                            f = open ( script.external_file_name, mode='r' )
                         script_text = f.read()
                         mdl_file.write ( script_text )
                 if script.mdl_python == 'python':
@@ -825,7 +830,12 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                         mdl_file.write ( "\n/* After Executing Python %s */\n\n" % (script.internal_file_name))
                     else:
                         print ( "Loading external Python script: " + script.external_file_name )
-                        f = open ( script.external_file_name )
+                        f = None
+                        if script.external_file_name.startswith ( "//" ):
+                            # Convert the file name from blend file relative (//) to full path:
+                            f = open ( os.path.join ( os.path.dirname(bpy.data.filepath), script.external_file_name[2:] ), mode='r' )
+                        else:
+                            f = open ( script.external_file_name, mode='r' )
                         script_text = f.read()
                         mdl_file.write ( "\n/* Before Executing Python %s */\n\n" % (script.external_file_name))
                         exec ( script_text, locals() )
