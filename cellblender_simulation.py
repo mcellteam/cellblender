@@ -908,53 +908,53 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
 
     def execute(self, context):
 
-        global active_plug_module
+        global active_engine_module
+        global active_runner_module
 
         status = ""
 
-        if active_plug_module == None:
-            print ( "No module selected" )
-            status = "Error: No module selected"
-        else:
-            if 'run_simulation' in dir(active_plug_module):
+        if active_engine_module == None:
+            print ( "Cannot run without selecting a simulation engine" )
+            status = "Error: No simulation engine selected"
+        elif active_runner_module == None:
+            print ( "Cannot run without selecting a simulation runner" )
+            status = "Error: No simulation runner selected"
+        elif not ( 'run_simulation' in dir(active_engine_module) ):
+            print ( "Selected engine module doesn not contain a \"run_simulation\" function" )
+            status = "Error: function \"run_simulation\" not found in selected engine"
+        if len(status) == 0:
+            with open(os.path.join(os.path.dirname(bpy.data.filepath), "start_time.txt"), "w") as start_time_file:
+                start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
-              with open(os.path.join(os.path.dirname(bpy.data.filepath), "start_time.txt"), "w") as start_time_file:
-                  start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
+            mcell = context.scene.mcell
+            mcell.run_simulation.last_simulation_run_time = str(time.time())
 
-              mcell = context.scene.mcell
-              mcell.run_simulation.last_simulation_run_time = str(time.time())
+            start = int(mcell.run_simulation.start_seed.get_value())
+            end = int(mcell.run_simulation.end_seed.get_value())
 
-              start = int(mcell.run_simulation.start_seed.get_value())
-              end = int(mcell.run_simulation.end_seed.get_value())
+            project_dir = mcell_files_path()
 
-              project_dir = mcell_files_path()
+            react_dir = os.path.join(project_dir, "output_data", "react_data")
+            if os.path.exists(react_dir) and (mcell.run_simulation.remove_append == 'remove'):
+                shutil.rmtree(react_dir)
+            if not os.path.exists(react_dir):
+                os.makedirs(react_dir)
 
-              react_dir = os.path.join(project_dir, "output_data", "react_data")
-              if os.path.exists(react_dir) and (mcell.run_simulation.remove_append == 'remove'):
-                  shutil.rmtree(react_dir)
-              if not os.path.exists(react_dir):
-                  os.makedirs(react_dir)
+            viz_dir = os.path.join(project_dir, "output_data", "viz_data")
+            if os.path.exists(viz_dir) and (mcell.run_simulation.remove_append == 'remove'):
+                shutil.rmtree(viz_dir)
+            if not os.path.exists(viz_dir):
+                os.makedirs(viz_dir)
 
-              viz_dir = os.path.join(project_dir, "output_data", "viz_data")
-              if os.path.exists(viz_dir) and (mcell.run_simulation.remove_append == 'remove'):
-                  shutil.rmtree(viz_dir)
-              if not os.path.exists(viz_dir):
-                  os.makedirs(viz_dir)
+            script_dir_path = os.path.dirname(os.path.realpath(__file__))
+            script_file_path = os.path.join(script_dir_path, "sim_engines")
+            final_script_path = os.path.join(script_file_path,"pure_python_sim.py")
 
-              script_dir_path = os.path.dirname(os.path.realpath(__file__))
-              script_file_path = os.path.join(script_dir_path, "sim_engines")
-              final_script_path = os.path.join(script_file_path,"pure_python_sim.py")
+            dm = mcell.build_data_model_from_properties ( context, geometry=True )
 
-              dm = mcell.build_data_model_from_properties ( context, geometry=True )
+            print ( "Calling run_simulation in active_engine_module" )
 
-              print ( "Calling run_simulation in active_plug_module" )
-
-              active_plug_module.run_simulation ( dm, project_dir )
-
-            else:
-
-              print ( "This module does not support running" )
-
+            active_engine_module.run_simulation ( dm, project_dir )
 
         mcell.run_simulation.status = status
 
@@ -2244,7 +2244,7 @@ class PLUGGABLE_OT_User(bpy.types.Operator):
   def execute(self, context):
     global active_engine_module
     global active_runner_module
-    print ( "pluggable.user_function.execute() will run function " + str(self.user_function_name) )
+    # print ( "pluggable.user_function.execute() will run function " + str(self.user_function_name) )
     if '\t' in self.user_function_name:
       modname,plugname = self.user_function_name.split('\t')
       pluggable = None
@@ -2253,7 +2253,7 @@ class PLUGGABLE_OT_User(bpy.types.Operator):
           print ( "No active engine in module" )
         else:
           if 'parameter_dictionary' in dir(active_engine_module):
-            print ( "Calling " + str(plugname) )
+            #print ( "Calling " + str(plugname) )
             active_engine_module.parameter_dictionary[str(plugname)]['val']()
             # Call plugs_changed_callback to force a reloading of properties from the parameter_dictionary
             context.scene.mcell.sim_engines.plugs_changed_callback ( context )
@@ -2264,7 +2264,7 @@ class PLUGGABLE_OT_User(bpy.types.Operator):
           print ( "No active runner in module" )
         else:
           if 'parameter_dictionary' in dir(active_runner_module):
-            print ( "Calling " + str(plugname) )
+            #print ( "Calling " + str(plugname) )
             active_runner_module.parameter_dictionary[str(plugname)]['val']()
             # Call plugs_changed_callback to force a reloading of properties from the parameter_dictionary
             context.scene.mcell.sim_runners.plugs_changed_callback ( context )
@@ -2361,13 +2361,13 @@ class PluggableValue(bpy.types.PropertyGroup):
     def plug_int_get_callback ( self ):
         return self.int_val_shadow
     def plug_int_update_callback ( self, context ):
-        print ( "PluggableValue.plug_int_update_callback called with key_name = " + str(self.key_name) )
+        #print ( "PluggableValue.plug_int_update_callback called with key_name = " + str(self.key_name) )
         if len(self.key_name) > 0:
           active_module = self.get_active_module()
           if active_module != None:
             # Add items to the lists
             if 'parameter_dictionary' in dir(active_module):
-              print ( "Updating parameter_dictionary with " + str(self.key_name) + " = " + str(self.int_val_shadow) )
+              #print ( "Updating parameter_dictionary with " + str(self.key_name) + " = " + str(self.int_val_shadow) )
               active_module.parameter_dictionary[self.key_name]['val'] = self.int_val_shadow
 
 
@@ -2376,13 +2376,13 @@ class PluggableValue(bpy.types.PropertyGroup):
     def plug_float_get_callback ( self ):
         return self.float_val_shadow
     def plug_float_update_callback ( self, context ):
-        print ( "PluggableValue.plug_float_update_callback called with key_name = " + str(self.key_name) )
+        #print ( "PluggableValue.plug_float_update_callback called with key_name = " + str(self.key_name) )
         if len(self.key_name) > 0:
           active_module = self.get_active_module()
           if active_module != None:
             # Add items to the lists
             if 'parameter_dictionary' in dir(active_module):
-              print ( "Updating parameter_dictionary with " + str(self.key_name) + " = " + str(self.float_val_shadow) )
+              #print ( "Updating parameter_dictionary with " + str(self.key_name) + " = " + str(self.float_val_shadow) )
               active_module.parameter_dictionary[self.key_name]['val'] = self.float_val_shadow
 
 
@@ -2391,13 +2391,13 @@ class PluggableValue(bpy.types.PropertyGroup):
     def plug_bool_get_callback ( self ):
         return self.bool_val_shadow
     def plug_bool_update_callback ( self, context ):
-        print ( "PluggableValue.plug_bool_update_callback called with key_name = " + str(self.key_name) )
+        #print ( "PluggableValue.plug_bool_update_callback called with key_name = " + str(self.key_name) )
         if len(self.key_name) > 0:
           active_module = self.get_active_module()
           if active_module != None:
             # Add items to the lists
             if 'parameter_dictionary' in dir(active_module):
-              print ( "Updating parameter_dictionary with " + str(self.key_name) + " = " + str(self.bool_val_shadow) )
+              #print ( "Updating parameter_dictionary with " + str(self.key_name) + " = " + str(self.bool_val_shadow) )
               active_module.parameter_dictionary[self.key_name]['val'] = self.bool_val_shadow
 
 
@@ -2406,13 +2406,13 @@ class PluggableValue(bpy.types.PropertyGroup):
     def plug_string_get_callback ( self ):
         return self.string_val_shadow
     def plug_string_update_callback ( self, context ):
-        print ( "PluggableValue.plug_string_update_callback called with key_name = " + str(self.key_name) )
+        #print ( "PluggableValue.plug_string_update_callback called with key_name = " + str(self.key_name) )
         if len(self.key_name) > 0:
           active_module = self.get_active_module()
           if active_module != None:
             # Add items to the lists
             if 'parameter_dictionary' in dir(active_module):
-              print ( "Updating parameter_dictionary with " + str(self.key_name) + " = " + str(self.string_val_shadow) )
+              #print ( "Updating parameter_dictionary with " + str(self.key_name) + " = " + str(self.string_val_shadow) )
               active_module.parameter_dictionary[self.key_name]['val'] = self.string_val_shadow
 
 
@@ -2421,13 +2421,13 @@ class PluggableValue(bpy.types.PropertyGroup):
     def plug_filename_get_callback ( self ):
         return self.filename_val_shadow
     def plug_filename_update_callback ( self, context ):
-        print ( "PluggableValue.plug_filename_update_callback called with key_name = " + str(self.key_name) )
+        #print ( "PluggableValue.plug_filename_update_callback called with key_name = " + str(self.key_name) )
         if len(self.key_name) > 0:
           active_module = self.get_active_module()
           if active_module != None:
             # Add items to the lists
             if 'parameter_dictionary' in dir(active_module):
-              print ( "Updating parameter_dictionary with " + str(self.key_name) + " = " + str(self.filename_val_shadow) )
+              #print ( "Updating parameter_dictionary with " + str(self.key_name) + " = " + str(self.filename_val_shadow) )
               active_module.parameter_dictionary[self.key_name]['val'] = self.filename_val_shadow
 
 
@@ -2443,23 +2443,6 @@ class Pluggable(bpy.types.PropertyGroup):
     plug_val_list = CollectionProperty(type=PluggableValue, name="String List")
     active_plug_val_index = IntProperty(name="Active String Index", default=0)
     
-    def plug_int_val_changed_callback ( self, context ):
-        print ( "int val changed" )
-
-    def plug_float_val_changed_callback ( self, context ):
-        print ( "float val changed" )
-        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-    def plug_bool_val_changed_callback ( self, context ):
-        print ( "bool val changed" )
-
-    def plug_string_val_changed_callback ( self, context ):
-        print ( "string val changed" )
-
-    def plug_filename_val_changed_callback ( self, context ):
-        print ( "filename val changed" )
-
-
     def plugs_changed_callback ( self, context ):
         global active_engine_module
         global active_runner_module
@@ -2468,7 +2451,7 @@ class Pluggable(bpy.types.PropertyGroup):
         active_sub_module = None
         set_name = None
         if self == context.scene.mcell.sim_engines:
-          print ( "Engines have changed!!" )
+          # print ( "Engines have changed!!" )
           set_name = "engine"
           selected_module_code = self.engines_enum
           for plug_module in engine_manager.plug_modules:
@@ -2477,7 +2460,7 @@ class Pluggable(bpy.types.PropertyGroup):
                   active_engine_module = plug_module
                   break
         if self == context.scene.mcell.sim_runners:
-          print ( "Runners have changed!!" )
+          # print ( "Runners have changed!!" )
           set_name = "runner"
           selected_module_code = self.runners_enum
           for plug_module in runner_manager.plug_modules:
@@ -2493,7 +2476,7 @@ class Pluggable(bpy.types.PropertyGroup):
         if active_sub_module != None:
           # Add items to the lists
           if 'parameter_dictionary' in dir(active_sub_module):
-            print ( "Ready to go with " + str(active_sub_module.parameter_dictionary.keys()) )
+            # print ( "Ready to go with " + str(active_sub_module.parameter_dictionary.keys()) )
             for k in sorted(active_sub_module.parameter_dictionary.keys()):
               self.plug_val_list.add()
               self.active_plug_val_index = len(self.plug_val_list) - 1
@@ -2517,7 +2500,7 @@ class Pluggable(bpy.types.PropertyGroup):
                 new_plug_val.icon_code = active_sub_module.parameter_dictionary[k]['icon']
               val = active_sub_module.parameter_dictionary[k]['val']
               if type(val) == type(plugs_changed_callback):  # type() needs to return a function
-                print ( "Got a function callback in 'val'" )
+                # print ( "Got a function callback in 'val'" )
                 # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
                 new_plug_val.val_type = 'F'
                 new_plug_val.func_val = str(val)
@@ -2543,7 +2526,7 @@ class Pluggable(bpy.types.PropertyGroup):
                   new_plug_val.filename_val = val
               else:
                 # Force everything else to be a string for now (add new types as needed)
-                print ( "Forcing type " + str(type(val)) + " to be a string" )
+                # print ( "Forcing type " + str(type(val)) + " to be a string" )
                 new_plug_val.val_type = 's'
                 new_plug_val.string_val = str(val)
 

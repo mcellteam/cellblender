@@ -30,7 +30,7 @@ def reset():
     print ( "Resetting" )
 
 def info():
-    print ( "Print Info" )
+    print ( "Print OpenGL Information" )
 
 parameter_dictionary = {
   'OpenGL Path': {'val': "", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
@@ -39,8 +39,8 @@ parameter_dictionary = {
 }
 
 parameter_layout = [
-  ['Java Path'],
-  ['Print Information', 'Reset']
+  ['OpenGL Path'],
+  ['Print OpenGL Information', 'Reset']
 ]
 
 
