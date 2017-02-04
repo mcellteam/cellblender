@@ -25,9 +25,21 @@ import sys
 plug_code = "JAVA"
 plug_name = "Java Control"
 
-runner_user_parameters = [
-  { 'name':"Start Seed", 'desc':"First seed number for simulations that use seeds", 'def':1 },
-  { 'name':"End Seed", 'desc':"Last seed number for simulations that use seeds", 'def':1 },
+def reset():
+    print ( "Resetting" )
+
+def info():
+    print ( "Print Info" )
+
+parameter_dictionary = {
+  'Java Path': {'val': "", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
+  'Print Information': {'val': info, 'desc':"Print information"},
+  'Reset': {'val': reset, 'desc':"Reset everything"}
+}
+
+parameter_layout = [
+  ['Java Path'],
+  ['Print Information', 'Reset']
 ]
 
 def find_in_path(program_name):

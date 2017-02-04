@@ -23,15 +23,15 @@ def reset():
 
 # List of parameters as dictionaries - each with keys for 'name', 'desc', 'def', and optional 'as':
 parameter_dictionary = {
-  'Optional Path': {'val': "", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
+  'C++ Path': {'val': "", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
   'Decay Factor': {'val': 1.0, 'desc':"Decay Rate Multiplier", 'icon':'ARROW_LEFTRIGHT'},
   'Print Information': {'val': print_info, 'desc':"Print information about Limited Python Simulation"},
   'Reset': {'val': reset, 'desc':"Reset everything"}
 }
 
 parameter_layout = [
+  ['C++ Path'],
   ['Decay Factor'],
-  ['Optional Path'],
   ['Print Information', 'Reset']
 ]
 
