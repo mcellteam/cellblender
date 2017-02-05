@@ -213,28 +213,20 @@ int main ( int argc, char *argv[] ) {
 
   data_model_element *dm_define_molecules = json_get_element_with_key ( mcell, "define_molecules" );
   data_model_element *mols = json_get_element_with_key ( dm_define_molecules, "molecule_list" );
-  
-  data_model_element *dm_release_sites = json_get_element_with_key ( mcell, "release_sites" );
-  data_model_element *rels = json_get_element_with_key ( dm_release_sites, "release_site_list" );
-  
+
   data_model_element *dm_define_reactions = json_get_element_with_key ( mcell, "define_reactions" );
   data_model_element *rxns = json_get_element_with_key ( dm_define_reactions, "reaction_list" );
 
-  int rxn_nums = 0;
-  data_model_element *this_rxn;
-  while ((this_rxn=json_get_element_by_index(rxns,rxn_nums)) != NULL) {
-    rxn_nums++;
-  }
+  data_model_element *dm_release_sites = json_get_element_with_key ( mcell, "release_sites" );
+  data_model_element *rels = json_get_element_with_key ( dm_release_sites, "release_site_list" );
+
 
   // Finally build the actual simulation from the data extracted from the data model
 
   MCellSimulation *mcell_sim = new MCellSimulation();
 
-  if (rxn_nums > 0) {
-    mcell_sim->has_reactions = true;
-  }
 
-  // Define the molecules for this simulation
+  // Define the molecules for this simulation by reading from the data model
 
   int mol_num = 0;
   data_model_element *this_mol;
@@ -251,7 +243,22 @@ int main ( int argc, char *argv[] ) {
   printf ( "Total molecules = %d\n", total_mols );
 
 
-  // Define the release sites for this simulation
+  // Define the reactions for this simulation by reading from the data model
+
+  int rxn_num = 0;
+  data_model_element *this_rxn;
+  MCellReaction *reaction;
+  while ((this_rxn=json_get_element_by_index(rxns,rxn_num)) != NULL) {
+    mcell_sim->has_reactions = true;
+    reaction = new MCellReaction();
+    reaction->reactant = mcell_sim->molecule_species [ json_get_string_value( json_get_element_with_key ( this_rxn, "reactants" ) ) ];
+    reaction->rate = get_float_from_par ( par_dict, json_get_element_with_key ( this_rxn, "fwd_rate" ) );
+    mcell_sim->reactions.append ( reaction );
+    rxn_num++;
+  }
+
+
+  // Define the release sites for this simulation by reading from the data model
 
   int rel_num = 0;
   data_model_element *this_rel;
@@ -275,6 +282,8 @@ int main ( int argc, char *argv[] ) {
 
   mcell_sim->num_iterations = iterations;
   mcell_sim->time_step = time_step;
+
+  mcell_sim->dump_state();
 
   mcell_sim->run_simulation(proj_path);
 

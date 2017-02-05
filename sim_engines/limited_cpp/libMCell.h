@@ -39,6 +39,16 @@ class MCellMoleculeInstance {
   MCellMoleculeInstance *next;
 };
 
+class MCellReaction {
+ public:
+  // Only allow decay reactions for now
+  MCellMoleculeSpecies *reactant;
+  //ArrayStore<MCellMoleculeSpecies *> reactants;
+  //ArrayStore<MCellMoleculeSpecies *> products;
+  double rate;
+  MCellReaction *next;
+};
+
 class MCellReleaseSite {
  public:
   MCellMoleculeSpecies *molecule_species;
@@ -91,6 +101,7 @@ class MCellSimulation {
   ArrayStore<MCellMolCreationEvent *>mol_creation_event_handlers;
 
   MapStore<MCellMoleculeSpecies *> molecule_species;
+  ArrayStore<MCellReaction *> reactions;
   ArrayStore<MCellReleaseSite *> molecule_release_sites;
 
   MCellSimulation() {
@@ -104,6 +115,7 @@ class MCellSimulation {
   }
   
   void add_molecule_species ( MCellMoleculeSpecies *species );
+  void add_decay_reaction ( MCellMoleculeSpecies *reactant, double rate );
   void add_molecule_release_site ( MCellReleaseSite *site );
   MCellMoleculeSpecies *get_molecule_species_by_name ( char *mol_name );
   void run_simulation ( char *proj_path );

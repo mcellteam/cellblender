@@ -43,6 +43,13 @@ void MCellSimulation::add_molecule_species ( MCellMoleculeSpecies *species ) {
   molecule_species[species->name.c_str()] = species;
 }
 
+void MCellSimulation::add_decay_reaction ( MCellMoleculeSpecies *reactant, double rate ) {
+  MCellReaction *rxn = new MCellReaction();
+  rxn->reactant = reactant;
+  rxn->rate = rate;
+  reactions.append ( rxn );
+}
+
 void MCellSimulation::add_molecule_release_site ( MCellReleaseSite *site ) {
   molecule_release_sites.append ( site );
 }
@@ -262,18 +269,25 @@ void MCellSimulation::dump_state ( void ) {
   cout << "Dumping state of simulation" << endl;
 
   MCellMoleculeSpecies *this_species;
+  MCellReaction *this_rxn;
   MCellReleaseSite *this_site;
 
   cout << "  Molecules:" << endl;
   for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
     this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
-    cout << "    Molecule " << this_species->name << " is type " << this_species->type << " with dc = " << this_species->diffusion_constant << endl;
+    cout << "    Molecule \"" << this_species->name << "\" is type " << this_species->type << " with dc = " << this_species->diffusion_constant << endl;
+  }
+
+  cout << "  Reactions:" << endl;
+  for (int rx_num=0; rx_num<this->reactions.get_size(); rx_num++) {
+    this_rxn = this->reactions[rx_num];
+    cout << "    Reaction involving molecule \"" << this_rxn->reactant->name << "\" with rate " << this_rxn->rate << endl;
   }
 
   cout << "  Release Sites:" << endl;
   for (int rs_num=0; rs_num<this->molecule_release_sites.get_size(); rs_num++) {
     this_site = this->molecule_release_sites[rs_num];
-    cout << "  Release " << this_site->quantity << " molecules of type " << this_site->molecule_species->name << endl;
+    cout << "    Release " << this_site->quantity << " molecules of type \"" << this_site->molecule_species->name << "\"" << endl;
   }
 
 }
