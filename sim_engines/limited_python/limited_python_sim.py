@@ -211,7 +211,7 @@ for i in range(iterations+1):
       for r in rxns:
         if r['reactants'] == m['mol_name']:
           # The reaction applies to this molecule
-          rate = float(r['fwd_rate'])
+          rate = convert_to_value(r['fwd_rate'])
           fraction_to_remove = decay_rate_factor * rate * time_step
           amount_to_remove = fraction_to_remove * len(m['instances'])
           num_to_remove = int(amount_to_remove)
