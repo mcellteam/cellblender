@@ -39,6 +39,51 @@ char *join_path ( char *p1, char sep, char *p2 ) {
   return ( joined_path );
 }
 
+// These two functions look up names in the parameter dictionary when strings are found:
+
+int get_int_from_par ( MapStore<double> par_dict, data_model_element *dm_element ) {
+  int return_value = 0;
+  if (dm_element->type == JSON_VAL_NUMBER) {
+    printf ( "get_int_from_par found a number\n" );
+    return_value = json_get_int_value ( dm_element );
+  } else if (dm_element->type == JSON_VAL_STRING) {
+    printf ( "get_int_from_par found a string\n" );
+    char *s = json_get_string_value ( dm_element );
+    // First try to see if it can be scanned as an integer:
+    int num_scanned = sscanf ( s, " %d", &return_value );
+    if (num_scanned > 0) {
+      // The scan was good, so the value string was an integer
+    } else {
+      // The scan failed, so this should be a parameter name. Look it up:
+      return_value = (int)(par_dict[s]);
+    }
+    free ( s );
+  }
+  printf ( "get_int_from_par returning %d\n", return_value );
+  return (return_value);
+}
+
+double get_float_from_par ( MapStore<double> par_dict, data_model_element *dm_element ) {
+  double return_value = 0.0;
+  if (dm_element->type == JSON_VAL_NUMBER) {
+    printf ( "get_float_from_par found a number\n" );
+    return_value = json_get_float_value ( dm_element );
+  } else if (dm_element->type == JSON_VAL_STRING) {
+    printf ( "get_float_from_par found a string\n" );
+    char *s = json_get_string_value ( dm_element );
+    // First try to see if it can be scanned as an double:
+    int num_scanned = sscanf ( s, " %lg", &return_value );
+    if (num_scanned > 0) {
+      // The scan was good, so the value string was a float
+    } else {
+      // The scan failed, so this should be a parameter name. Look it up:
+      return_value = (double)(par_dict[s]);
+    }
+    free ( s );
+  }
+  return (return_value);
+}
+
 
 int main ( int argc, char *argv[] ) {
 
@@ -134,16 +179,38 @@ int main ( int argc, char *argv[] ) {
 
   printf ( "CellBlender API version = %d\n", json_get_int_value ( api_ver ) );
 
+
+  // Start by collecting the parameters
+
+  MapStore<double> par_dict;
+
+  data_model_element *dm_parameter_system = json_get_element_with_key ( mcell, "parameter_system" );
+  data_model_element *pars = json_get_element_with_key ( dm_parameter_system, "model_parameters" );
+
+  printf ( "Finding parameters:\n" );
+  int par_num = 0;
+  data_model_element *this_par;
+  while ((this_par=json_get_element_by_index(pars,par_num)) != NULL) {
+    char *par_name;
+    par_name = json_get_string_value ( json_get_element_with_key ( this_par, "par_name" ) );
+    double par_val;
+    data_model_element *extras = json_get_element_with_key ( this_par, "_extras" );
+    par_val = json_get_float_value ( json_get_element_with_key ( extras, "par_value" ) );
+    par_dict[par_name] = par_val;
+    printf ( "  Parameter: %s = %f\n", par_name, par_dict[par_name] );
+    par_num++;
+  }
+
   // iterations = ['mcell']['initialization']['iterations']
   data_model_element *dm_init = json_get_element_with_key ( mcell, "initialization" );
 
-  int iterations = json_get_int_value ( json_get_element_with_key ( dm_init, "iterations" ) );
+  int iterations = get_int_from_par ( par_dict, json_get_element_with_key ( dm_init, "iterations" ) );
   //mcell_set_iterations ( iterations );
 
-  double time_step = json_get_float_value ( json_get_element_with_key ( dm_init, "time_step" ) );
+  double time_step = get_float_from_par ( par_dict, json_get_element_with_key ( dm_init, "time_step" ) );
   //mcell_set_time_step ( time_step );
 
-  
+
   data_model_element *dm_define_molecules = json_get_element_with_key ( mcell, "define_molecules" );
   data_model_element *mols = json_get_element_with_key ( dm_define_molecules, "molecule_list" );
   
@@ -152,6 +219,7 @@ int main ( int argc, char *argv[] ) {
   
   data_model_element *dm_define_reactions = json_get_element_with_key ( mcell, "define_reactions" );
   data_model_element *rxns = json_get_element_with_key ( dm_define_reactions, "reaction_list" );
+
   int rxn_nums = 0;
   data_model_element *this_rxn;
   while ((this_rxn=json_get_element_by_index(rxns,rxn_nums)) != NULL) {
@@ -174,7 +242,7 @@ int main ( int argc, char *argv[] ) {
   while ((this_mol=json_get_element_by_index(mols,mol_num)) != NULL) {
     mol = new MCellMoleculeSpecies();
     mol->name = json_get_string_value ( json_get_element_with_key ( this_mol, "mol_name" ) );
-    mol->diffusion_constant = json_get_float_value ( json_get_element_with_key ( this_mol, "diffusion_constant" ) );
+    mol->diffusion_constant = get_float_from_par ( par_dict, json_get_element_with_key ( this_mol, "diffusion_constant" ) );
     // This allows the molecule to be referenced by name when needed:
     mcell_sim->molecule_species[mol->name.c_str()] = mol;
     mol_num++;
@@ -191,10 +259,10 @@ int main ( int argc, char *argv[] ) {
   while ((this_rel=json_get_element_by_index(rels,rel_num)) != NULL) {
     char *mname = json_get_string_value ( json_get_element_with_key ( this_rel, "molecule" ) );
     rel = new MCellReleaseSite();
-    rel->x = json_get_float_value ( json_get_element_with_key ( this_rel, "location_x" ) );
-    rel->y = json_get_float_value ( json_get_element_with_key ( this_rel, "location_y" ) );
-    rel->z = json_get_float_value ( json_get_element_with_key ( this_rel, "location_z" ) );
-    rel->quantity = json_get_float_value ( json_get_element_with_key ( this_rel, "quantity" ) );
+    rel->x = get_float_from_par ( par_dict, json_get_element_with_key ( this_rel, "location_x" ) );
+    rel->y = get_float_from_par ( par_dict, json_get_element_with_key ( this_rel, "location_y" ) );
+    rel->z = get_float_from_par ( par_dict, json_get_element_with_key ( this_rel, "location_z" ) );
+    rel->quantity = get_float_from_par ( par_dict, json_get_element_with_key ( this_rel, "quantity" ) );
     rel->molecule_species = mcell_sim->molecule_species[mname];
     mcell_sim->molecule_release_sites.append ( rel );
     rel_num++;
