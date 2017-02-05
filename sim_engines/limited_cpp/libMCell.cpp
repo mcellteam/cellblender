@@ -71,11 +71,11 @@ void MCellSimulation::pick_displacement( MCellMoleculeInstance *mol, double scal
 void MCellSimulation::run_simulation ( char *proj_path ) {
   int iteration;
 
-  printf ( "Project path = \"%s\"\n", proj_path );
+  if (this->print_detail >= 10) printf ( "Project path = \"%s\"\n", proj_path );
 
   // ##### Clear out the old data
 
-  printf ( "Creating directories ...\n" );
+  if (this->print_detail >= 20) printf ( "Creating directories ...\n" );
 
   char *output_dir = join_path ( proj_path, '/', "output_data" );
   mkdir ( output_dir, 0755 );
@@ -93,7 +93,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
   mkdir ( viz_seed_dir, 0755 );
 
 
-  printf ( "Generating Data ...\n" );
+  if (this->print_detail >= 20) printf ( "Generating Data ...\n" );
 
 
   // # Create structures and instances for each molecule that is released (note that release patterns are not handled)
@@ -101,11 +101,11 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
   MCellReleaseSite *this_site;
 
   for (int rs_num=0; rs_num<this->molecule_release_sites.get_size(); rs_num++) {
-    cout << "Release Site " << rs_num << endl;
+    if (this->print_detail >= 40) cout << "Release Site " << rs_num << endl;
     this_site = this->molecule_release_sites[rs_num];
-    cout << "  Releasing " << this_site->quantity << " molecules of type " << this_site->molecule_species->name << endl;
+    if (this->print_detail >= 40) cout << "  Releasing " << this_site->quantity << " molecules of type " << this_site->molecule_species->name << endl;
     for (int i=0; i<this_site->quantity; i++) {
-      // cout << "  Releasing a molecule of type " << this_site->molecule_species->name << endl;
+      if (this->print_detail >= 80) cout << "  Releasing a molecule of type " << this_site->molecule_species->name << endl;
       MCellMoleculeInstance *new_mol_instance = new MCellMoleculeInstance();
       new_mol_instance->next = this_site->molecule_species->instance_list;
       this_site->molecule_species->instance_list = new_mol_instance;
@@ -123,18 +123,18 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
   // # Figure out the number of digits needed for file names
 
   int ndigits = 1 + log10(num_iterations+1);
-  printf ( "File names will require %d digits\n", ndigits );
+  if (this->print_detail >= 30) printf ( "File names will require %d digits\n", ndigits );
 
   // Produce file name templates for viz output files
 
   char *template_template = "seed_00001/Scene.cellbin.%%0%dd.dat";
   char *file_template = (char *) malloc ( strlen(template_template) + (ndigits*sizeof(char)) + 10 );
   sprintf ( file_template, template_template, ndigits );
-  printf ( "File Template = %s\n", file_template );
+  if (this->print_detail >= 30) printf ( "File Template = %s\n", file_template );
 
   char *f_template =  (char *) malloc ( ( strlen(viz_dir) + 1 + strlen(file_template) + ndigits + 10 ) *sizeof(char));
   sprintf ( f_template, "%s/%s", viz_dir, file_template );
-  printf ( "Full Template = %s\n", f_template );
+  if (this->print_detail >= 30) printf ( "Full Template = %s\n", f_template );
 
   char *sim_step_mol_name = (char *) malloc ( strlen(f_template) + 10 );
 
@@ -144,35 +144,37 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
   count_files = (FILE **) malloc ( this->molecule_species.get_num_items() * sizeof(FILE *) );
 
   MCellMoleculeSpecies *this_species;
-  cout << "Set up count files for " << this->molecule_species.get_num_items() << " species." << endl;
+  if (this->print_detail >= 20) cout << "Set up count files for " << this->molecule_species.get_num_items() << " species." << endl;
   for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
     char *react_file_name;
     this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
     react_file_name = (char *) malloc ( strlen(react_dir) + 1 + strlen ( "/seed_00001/" ) + strlen ( this_species->name.c_str() ) + strlen ( ".World.dat" ) + 10 );
     sprintf ( react_file_name, "%s/seed_00001/%s.World.dat", react_dir, this_species->name.c_str() );
-    cout << "Setting up count file for species " << this_species->name << " at " << react_file_name << endl;
+    if (this->print_detail >= 40) cout << "Setting up count file for species " << this_species->name << " at " << react_file_name << endl;
     count_files[sp_num] = fopen ( react_file_name, "w" );
   }
 
   // Run the actual simulation
 
-  printf ( "Begin libMCell simulation (printf).\n" );
-  cout << "Begin libMCell simulation (cout)." << endl;
+  if (this->print_detail >= 20) cout << "Begin libMCell simulation." << endl << endl;
   
   MCellRandomNumber_mrng *mcell_random = new MCellRandomNumber_mrng((uint32_t)12345);
 
   int print_every = exp10(floor(log10((num_iterations/10))));
   if (print_every < 1) print_every = 1;
   for (iteration=0; iteration<=num_iterations; iteration++) {
-    cout << "Iteration " << iteration << ", t=" << (time_step*iteration) << "   (from libMCell's run_simulation)" << endl;
-    
+
+    if ( (iteration % print_every) == 0 ) {
+      if (this->print_detail >= 20) cout << "Iteration " << iteration << ", t=" << (time_step*iteration) << "   (from libMCell's run_simulation)" << endl;
+    }
+
     for (int i=0; i<this->timer_event_handlers.get_size(); i++) {
       this->timer_event_handlers[i]->execute();
     }
 
     // Count the molecules
 
-    // cout << "Count molecules for " << this->molecule_species.get_num_items() << " species." << endl;
+    if (this->print_detail >= 40) cout << "Count molecules for " << this->molecule_species.get_num_items() << " species." << endl;
     for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
       this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
       MCellMoleculeInstance *this_mol_instance = this_species->instance_list;
@@ -188,7 +190,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
 
     sprintf ( sim_step_mol_name, f_template, iteration );
     if ((iteration%print_every) == 0) {
-      printf ( "Creating mol viz file: \"%s\"\n", sim_step_mol_name );
+      if (this->print_detail >= 50) printf ( "Creating mol viz file: \"%s\"\n", sim_step_mol_name );
     }
     FILE *f = fopen ( sim_step_mol_name, "w" );
     // Write the binary marker for this file
@@ -198,10 +200,10 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
     // Move all molecules and produce viz output
 
     MCellMoleculeSpecies *this_species;
-    // cout << "Iterate over " << this->molecule_species.get_num_items() << " species." << endl;
+    if (this->print_detail >= 40) cout << "Iterate over " << this->molecule_species.get_num_items() << " species." << endl;
     for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
       this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
-      // cout << "Simulating for species " << this_species->name << endl;
+      if (this->print_detail >= 80) cout << "Simulating for species " << this_species->name << endl;
 
       // Output the header of the mol viz file
 
@@ -254,7 +256,6 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
               if ( (mcell_random->generate() % 1000)/1000.0 < (amount_to_remove - num_to_remove) ) {
                 num_to_remove += 1;
               }
-              printf ( "Should remove %d\n", num_to_remove );
               MCellMoleculeInstance *first;
               for (int i=0; i<num_to_remove; i++) {
                 first = this_species->instance_list;

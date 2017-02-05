@@ -20,6 +20,8 @@ using namespace std;
 
 typedef json_element data_model_element;
 
+int print_detail = 0;
+
 char *join_path ( char *p1, char sep, char *p2 ) {
   char *joined_path;
   if ((p1 == NULL) && (p2 == NULL) ) {
@@ -44,10 +46,10 @@ char *join_path ( char *p1, char sep, char *p2 ) {
 int get_int_from_par ( MapStore<double> par_dict, data_model_element *dm_element ) {
   int return_value = 0;
   if (dm_element->type == JSON_VAL_NUMBER) {
-    printf ( "get_int_from_par found a number\n" );
+    if (print_detail >= 80) printf ( "get_int_from_par found a number\n" );
     return_value = json_get_int_value ( dm_element );
   } else if (dm_element->type == JSON_VAL_STRING) {
-    printf ( "get_int_from_par found a string\n" );
+    if (print_detail >= 80) printf ( "get_int_from_par found a string\n" );
     char *s = json_get_string_value ( dm_element );
     // First try to see if it can be scanned as an integer:
     int num_scanned = sscanf ( s, " %d", &return_value );
@@ -59,17 +61,17 @@ int get_int_from_par ( MapStore<double> par_dict, data_model_element *dm_element
     }
     free ( s );
   }
-  printf ( "get_int_from_par returning %d\n", return_value );
+  if (print_detail >= 50) printf ( "get_int_from_par returning %d\n", return_value );
   return (return_value);
 }
 
 double get_float_from_par ( MapStore<double> par_dict, data_model_element *dm_element ) {
   double return_value = 0.0;
   if (dm_element->type == JSON_VAL_NUMBER) {
-    printf ( "get_float_from_par found a number\n" );
+    if (print_detail >= 80) printf ( "get_float_from_par found a number\n" );
     return_value = json_get_float_value ( dm_element );
   } else if (dm_element->type == JSON_VAL_STRING) {
-    printf ( "get_float_from_par found a string\n" );
+    if (print_detail >= 80) printf ( "get_float_from_par found a string\n" );
     char *s = json_get_string_value ( dm_element );
     // First try to see if it can be scanned as an double:
     int num_scanned = sscanf ( s, " %lg", &return_value );
@@ -87,13 +89,6 @@ double get_float_from_par ( MapStore<double> par_dict, data_model_element *dm_el
 
 int main ( int argc, char *argv[] ) {
 
-  cout << "\n\n" << endl;
-  cout << "******************************************" << endl;
-  cout << "*   MCell C++ Prototype using libMCell   *" << endl;
-  cout << "*      Updated: August 31st, 2016        *" << endl;
-  cout << "******************************************" << endl;
-  cout << "\n" << endl;
-
   // Define data items to come from the command line arguments
 
   char *proj_path = NULL;
@@ -105,30 +100,40 @@ int main ( int argc, char *argv[] ) {
   // Process the command line arguments
 
   for (int i=1; i<argc; i++) {
-    printf ( "   Arg: %s\n", argv[i] );
+    if (print_detail > 10) printf ( "   Arg: %s\n", argv[i] );
     if (strncmp("proj_path=",argv[i],10) == 0) {
       proj_path = &argv[i][10];
     }
     if (strncmp("data_model=",argv[i],11) == 0) {
       data_model_file_name = &argv[i][11];
     }
+    if (strncmp("print_detail=",argv[i],13) == 0) {
+      sscanf ( &argv[i][13], "%d", &print_detail );
+    }
     if (strcmp("dump",argv[i]) == 0) {
       dump_data_model = 1;
     }
   }
-  printf ( "\n" );
+  if (print_detail > 10) printf ( "\n" );
+
+  if (print_detail > 0) cout << "\n\n" << endl;
+  if (print_detail > 0) cout << "******************************************" << endl;
+  if (print_detail > 0) cout << "*   MCell C++ Prototype using libMCell   *" << endl;
+  if (print_detail > 0) cout << "*      Updated: February 5th, 2017       *" << endl;
+  if (print_detail > 0) cout << "******************************************" << endl;
+  if (print_detail > 0) cout << "\n" << endl;
 
 
   // Read the data model text from the input file
 
   data_model_full_path = join_path ( proj_path, '/', data_model_file_name );
 
-  printf ( "Project path = \"%s\", data_model_file_name = \"%s\"\n", proj_path, data_model_full_path );
+  if (print_detail > 0) printf ( "Project path = \"%s\", data_model_file_name = \"%s\"\n", proj_path, data_model_full_path );
 
   char *file_name = data_model_full_path;
   FILE *f = fopen ( file_name, "r" );
 
-  printf ( "Loading data model from file: %s ...\n", file_name );
+  if (print_detail > 10) printf ( "Loading data model from file: %s ...\n", file_name );
 
   long file_length;
   fseek (f, 0L, SEEK_END);
@@ -141,19 +146,19 @@ int main ( int argc, char *argv[] ) {
 
   fclose(f);
   
-  printf ( "Done loading CellBlender model.\n" );
+  if (print_detail > 10) printf ( "Done loading CellBlender model.\n" );
 
   file_text[file_length] = '\0'; // Be sure to null terminate!!
 
 
   // Parse the data model text into convenient structures
 
-  printf ( "Parsing the JSON data model ...\n" );
+  if (print_detail > 10) printf ( "Parsing the JSON data model ...\n" );
 
   data_model_element *dm; // Data Model Tree
   dm = parse_json_text ( file_text );
 
-  printf ( "Done parsing the JSON data model ...\n" );
+  if (print_detail > 10) printf ( "Done parsing the JSON data model ...\n" );
 
   if (dump_data_model != 0) {
     dump_json_element_tree ( dm, 80, 0 ); printf ( "\n\n" );
@@ -168,16 +173,16 @@ int main ( int argc, char *argv[] ) {
   // Blender version = ['mcell']['blender_version']
   data_model_element *blender_ver = json_get_element_with_key ( mcell, "blender_version" );
   data_model_element *vn = json_get_element_by_index ( blender_ver, 0 );
-  printf ( "Blender API version = %ld", json_get_int_value ( vn ) );
+  if (print_detail > 10) printf ( "Blender API version = %ld", json_get_int_value ( vn ) );
   vn = json_get_element_by_index ( blender_ver, 1 );
-  printf ( ".%ld", json_get_int_value ( vn ) );
+  if (print_detail > 10) printf ( ".%ld", json_get_int_value ( vn ) );
   vn = json_get_element_by_index ( blender_ver, 2 );
-  printf ( ".%ld\n", json_get_int_value ( vn ) );
+  if (print_detail > 10) printf ( ".%ld\n", json_get_int_value ( vn ) );
   
   // API version = ['mcell']['api_version']
   data_model_element *api_ver = json_get_element_with_key ( mcell, "api_version" );
 
-  printf ( "CellBlender API version = %d\n", json_get_int_value ( api_ver ) );
+  if (print_detail > 10) printf ( "CellBlender API version = %d\n", json_get_int_value ( api_ver ) );
 
 
   // Start by collecting the parameters
@@ -187,7 +192,7 @@ int main ( int argc, char *argv[] ) {
   data_model_element *dm_parameter_system = json_get_element_with_key ( mcell, "parameter_system" );
   data_model_element *pars = json_get_element_with_key ( dm_parameter_system, "model_parameters" );
 
-  printf ( "Finding parameters:\n" );
+  if (print_detail > 10) printf ( "Finding parameters:\n" );
   int par_num = 0;
   data_model_element *this_par;
   while ((this_par=json_get_element_by_index(pars,par_num)) != NULL) {
@@ -197,7 +202,7 @@ int main ( int argc, char *argv[] ) {
     data_model_element *extras = json_get_element_with_key ( this_par, "_extras" );
     par_val = json_get_float_value ( json_get_element_with_key ( extras, "par_value" ) );
     par_dict[par_name] = par_val;
-    printf ( "  Parameter: %s = %f\n", par_name, par_dict[par_name] );
+    if (print_detail > 10) printf ( "  Parameter: %s = %f\n", par_name, par_dict[par_name] );
     par_num++;
   }
 
@@ -224,6 +229,7 @@ int main ( int argc, char *argv[] ) {
   // Finally build the actual simulation from the data extracted from the data model
 
   MCellSimulation *mcell_sim = new MCellSimulation();
+  mcell_sim->print_detail = print_detail;
 
 
   // Define the molecules for this simulation by reading from the data model
@@ -240,7 +246,7 @@ int main ( int argc, char *argv[] ) {
     mol_num++;
   }
   int total_mols = mol_num;
-  printf ( "Total molecules = %d\n", total_mols );
+  if (print_detail > 10) printf ( "Total molecules = %d\n", total_mols );
 
 
   // Define the reactions for this simulation by reading from the data model
@@ -256,6 +262,8 @@ int main ( int argc, char *argv[] ) {
     mcell_sim->reactions.append ( reaction );
     rxn_num++;
   }
+  int total_rxns = rxn_num;
+  if (print_detail > 10) printf ( "Total reactions = %d\n", total_rxns );
 
 
   // Define the release sites for this simulation by reading from the data model
@@ -275,7 +283,7 @@ int main ( int argc, char *argv[] ) {
     rel_num++;
   }
   int total_rels = rel_num;
-  printf ( "Total release sites = %d\n", total_rels );
+  if (print_detail > 10) printf ( "Total release sites = %d\n", total_rels );
 
 
   // Set final parameters needed to run simulation and Run it
@@ -283,11 +291,11 @@ int main ( int argc, char *argv[] ) {
   mcell_sim->num_iterations = iterations;
   mcell_sim->time_step = time_step;
 
-  mcell_sim->dump_state();
+  if (print_detail > 30) mcell_sim->dump_state();
 
   mcell_sim->run_simulation(proj_path);
 
-  printf ( "\nMay need to free some things ...\n\n" );
+  if (print_detail > 0) printf ( "\nDone running ... may still need to free some things ...\n\n" );
 
   return ( 0 );
 }

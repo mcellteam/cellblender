@@ -19,19 +19,21 @@ def print_info():
 def reset():
   global parameter_dictionary
   print ( "Reset was called" )
+  parameter_dictionary['Output Detail (0-100)']['val'] = 20
 
 
 # List of parameters as dictionaries - each with keys for 'name', 'desc', 'def', and optional 'as':
 parameter_dictionary = {
+  'Output Detail (0-100)': {'val': 20, 'desc':"Amount of Information to Print (0-100)", 'icon':'INFO'},
   'Python Path': {'val': "", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
-  'Decay Factor': {'val': 1.0, 'desc':"Decay Rate Multiplier", 'icon':'ARROW_LEFTRIGHT'},
+  'Reaction Factor': {'val': 1.0, 'desc':"Decay Rate Multiplier", 'icon':'ARROW_LEFTRIGHT'},
   'Print Information': {'val': print_info, 'desc':"Print information about Limited Python Simulation"},
   'Reset': {'val': reset, 'desc':"Reset everything"}
 }
 
 parameter_layout = [
-  ['Python Path'],
-  ['Decay Factor'],
+  ['Output Detail (0-100)'],
+  ['Reaction Factor'],
   ['Print Information', 'Reset']
 ]
 
@@ -45,7 +47,10 @@ def prepare_runs ( data_model=None, data_layout=None ):
   pass
 
 def run_simulation ( data_model, project_dir ):
-  print ( "Inside limited_python.run_simulation, project_dir=" + project_dir )
+
+  output_detail = parameter_dictionary['Output Detail (0-100)']['val']
+
+  if output_detail > 0: print ( "Inside limited_python.run_simulation, project_dir=" + project_dir )
 
   script_dir_path = os.path.dirname(os.path.realpath(__file__))
   script_file_path = script_dir_path
@@ -65,26 +70,27 @@ def run_simulation ( data_model, project_dir ):
         pass
 
       for sim_seed in range(start,end+1):
-          print ("Running with seed " + str(sim_seed) )
+          if output_detail > 0: print ("Running with seed " + str(sim_seed) )
           
           file_name = os.path.join(project_dir,"dm.txt")
 
-          print ( "Saving CellBlender model to file: " + file_name )
+          if output_detail > 0: print ( "Saving CellBlender model to file: " + file_name )
           f = open ( file_name, 'w' )
           ##dm = { 'mcell': mcell_dm }
           f.write ( pickle.dumps({'mcell':data_model},protocol=0).decode('latin1') )
           f.close()
-          print ( "Done saving CellBlender model." )
+          if output_detail > 0: print ( "Done saving CellBlender model." )
 
           command_list = [ 'python3', final_script_path,
+                           "output_detail="+str(parameter_dictionary['Output Detail (0-100)']['val']),
                            "proj_path="+project_dir,
-                           "decay_factor="+str(parameter_dictionary["Decay Factor"]['val']),
+                           "decay_factor="+str(parameter_dictionary['Reaction Factor']['val']),
                            "data_model=dm.txt" ]
 
           command_string = "Command:";
           for s in command_list:
             command_string += " " + s
-          print ( command_string )
+          if output_detail > 0: print ( command_string )
 
           sp = subprocess.Popen ( command_list, cwd=script_file_path, stdout=None, stderr=None )
 

@@ -96,6 +96,7 @@ class MCellSimulation {
   int num_iterations;
   double time_step;
   bool has_reactions; // Temporary until real reactions are implemented
+  int print_detail;
 
   ArrayStore<MCellTimerEvent *>timer_event_handlers;
   ArrayStore<MCellMolCreationEvent *>mol_creation_event_handlers;
@@ -109,6 +110,7 @@ class MCellSimulation {
     num_iterations = 0;
     time_step = 0.0;
     has_reactions = false; // Temporary until real reactions are implemented
+    print_detail = 0;
   }
   virtual ~MCellSimulation() {
     num_simulations--;

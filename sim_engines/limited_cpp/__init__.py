@@ -19,10 +19,12 @@ def print_info():
 def reset():
   global parameter_dictionary
   print ( "Reset was called" )
+  parameter_dictionary['Output Detail (0-100)']['val'] = 20
 
 
 # List of parameters as dictionaries - each with keys for 'name', 'desc', 'def', and optional 'as':
 parameter_dictionary = {
+  'Output Detail (0-100)': {'val': 20, 'desc':"Amount of Information to Print (0-100)", 'icon':'INFO'},
   'C++ Path': {'val': "", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
   'Decay Factor': {'val': 1.0, 'desc':"Decay Rate Multiplier", 'icon':'ARROW_LEFTRIGHT'},
   'Print Information': {'val': print_info, 'desc':"Print information about Limited Python Simulation"},
@@ -30,8 +32,7 @@ parameter_dictionary = {
 }
 
 parameter_layout = [
-  ['C++ Path'],
-  ['Decay Factor'],
+  ['Output Detail (0-100)'],
   ['Print Information', 'Reset']
 ]
 
@@ -76,6 +77,7 @@ def run_simulation ( data_model, project_dir ):
           print ( "Done saving CellBlender model." )
 
           command_list = [ final_script_path,
+                           "print_detail="+str(parameter_dictionary['Output Detail (0-100)']['val']),
                            "proj_path="+project_dir,
                            "data_model=dm.json" ]
 
