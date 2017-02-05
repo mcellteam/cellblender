@@ -15,6 +15,10 @@ import data_model_to_mdl
 
 def run_sim(arglist):
     """ Run the MCell simulations. """
+    # This is the Python function that is run for each item in the iterable passed to pool.map by __main__ below.
+    # Pool.map is called with:  pool.map(run_sim, run_cmd_list) where the run_cmd_list must be iterable.
+    # So this function will be called once for each item in the run_cmd_list iterable.
+
     print ( "Sim Thread running from " + str(os.getcwd()) )
     print ( "Sim Thread using " + str(arglist) )
 
@@ -342,7 +346,7 @@ if __name__ == "__main__":
             i += -1
 
     # Print the run commands as a record of what's being done
-    print ( "Run Cmds for SGE:" )
+    print ( "Run Cmds for submission via " + str(parsed_args.runner_type) + ":" )
     for run_cmd in run_cmd_list:
         print ( "  " + str(run_cmd) )
 

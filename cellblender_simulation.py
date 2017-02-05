@@ -51,6 +51,9 @@ from . import parameter_system
 from . import cellblender_utils
 from . import data_model
 
+#from cellblender.mdl import data_model_to_mdl
+#from cellblender.mdl import run_data_model_mcell
+
 from cellblender.cellblender_utils import mcell_files_path
 
 from multiprocessing import cpu_count
@@ -906,10 +909,15 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
     bl_description = "Run MCell Simulation Control libmcell Pure Python"
     bl_options = {'REGISTER'}
 
+
+
+
     def execute(self, context):
 
         global active_engine_module
         global active_runner_module
+
+        mcell = context.scene.mcell
 
         status = ""
 
@@ -919,14 +927,14 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
         elif active_runner_module == None:
             print ( "Cannot run without selecting a simulation runner" )
             status = "Error: No simulation runner selected"
-        elif not ( 'run_simulation' in dir(active_engine_module) ):
-            print ( "Selected engine module doesn not contain a \"run_simulation\" function" )
+        elif not ( 'prepare_runs' in dir(active_engine_module) ):
+            print ( "Selected engine module does not contain a \"prepare_runs\" function" )
             status = "Error: function \"run_simulation\" not found in selected engine"
+
         if len(status) == 0:
             with open(os.path.join(os.path.dirname(bpy.data.filepath), "start_time.txt"), "w") as start_time_file:
                 start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
-            mcell = context.scene.mcell
             mcell.run_simulation.last_simulation_run_time = str(time.time())
 
             start = int(mcell.run_simulation.start_seed.get_value())
@@ -945,6 +953,10 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
                 shutil.rmtree(viz_dir)
             if not os.path.exists(viz_dir):
                 os.makedirs(viz_dir)
+
+            # The following line will create the "data_layout.json" file describing the directory structure
+            # It would probably be better for the actual engine to do this, but put it here for now...
+            write_default_data_layout(project_dir, start, end)
 
             script_dir_path = os.path.dirname(os.path.realpath(__file__))
             script_file_path = os.path.join(script_dir_path, "sim_engines")

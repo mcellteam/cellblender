@@ -89,8 +89,20 @@ if not os.path.exists(react_seed_dir):
 
 ##### Use the Data Model to generate output files
 
-iterations = eval(dm['mcell']['initialization']['iterations'])
-time_step = eval(dm['mcell']['initialization']['time_step'])
+## Start by building a parameter value dictionary
+
+par_val_dict = {}
+for p in dm['mcell']['parameter_system']['model_parameters']:
+  par_val_dict[p['par_name']] = p['_extras']['par_value']
+
+print ( "Parameter Dictionary: " + str(par_val_dict) )
+
+def convert_to_value ( expression ):
+  global par_val_dict
+  return eval(expression,globals(),par_val_dict)
+
+iterations = int(convert_to_value(dm['mcell']['initialization']['iterations']))
+time_step = convert_to_value(dm['mcell']['initialization']['time_step'])
 mols = dm['mcell']['define_molecules']['molecule_list']
 rels = dm['mcell']['release_sites']['release_site_list']
 
@@ -120,10 +132,10 @@ for m in mols:
   m['instances'] = []
 
 for r in rels:
-  rel_x = eval(r['location_x'])
-  rel_y = eval(r['location_y'])
-  rel_z = eval(r['location_z'])
-  q = eval(r['quantity'])
+  rel_x = convert_to_value(r['location_x'])
+  rel_y = convert_to_value(r['location_y'])
+  rel_z = convert_to_value(r['location_z'])
+  q = int(convert_to_value(r['quantity']))
   for m in mols:
     if m['mol_name'] == r['molecule']:
       for i in range(q):
@@ -172,7 +184,7 @@ for i in range(iterations+1):
     int_array.fromlist([3*len(m['instances'])])
     int_array.tofile(f)
     
-    dc = eval(m['diffusion_constant'])
+    dc = convert_to_value(m['diffusion_constant'])
     ds = 6000 * math.sqrt( 6 * dc * time_step )    # N O T E:  This is a guess!!!!  (TODO: Make this realistic)
 
     for mi in m['instances']:
