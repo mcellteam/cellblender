@@ -73,6 +73,10 @@ def run_sim(arglist):
             cwd=subprocess_cwd, stdout=log_file, stderr=error_file)
 
 
+######################################################################################
+#### This function has been duplicated in cellblender/mdl/run_data_model_mcell.py ####
+####          Many attempts were made to import it, but they all failed.          ####
+######################################################################################
 def build_sweep_list ( par_dict ):
     """ Count the number of runs that will be swept with this data model. """
     sweep_list = []

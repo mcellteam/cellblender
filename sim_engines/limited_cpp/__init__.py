@@ -36,13 +36,29 @@ parameter_layout = [
   ['Print Information', 'Reset']
 ]
 
-def prepare_runs ( data_model ):
+def prepare_runs ( data_model=None, data_layout=None ):
   # Return a list of run command dictionaries.
   # Each run command dictionary must contain a "cmd" key and a "wd" key.
   # The cmd key will refer to a command list suitable for popen.
   # The wd key will refer to a working directory string.
   # Each run command dictionary may contain any other keys helpful for post-processing.
   # The run command dictionary list will be passed on to the postprocess_runs function.
+
+  # The data_layout should be a dictionary something like this:
+
+  #  {
+  #   "version": 0,
+  #   "data_layout": [
+  #    ["dir", ["output_data"]],
+  #    ["dc_a", [1e-06, 1e-05]],
+  #    ["nrel", [100.0, 200.0, 300.0]],
+  #    ["file_type", ["react_data", "viz_data"]],
+  #    ["SEED", [100, 101]]
+  #   ]
+  #  }
+
+  # That dictionary describes the directory structure that CellBlender expects to find on the disk
+
   pass
 
 def run_simulation ( data_model, project_dir ):
@@ -79,6 +95,7 @@ def run_simulation ( data_model, project_dir ):
           command_list = [ final_script_path,
                            "print_detail="+str(parameter_dictionary['Output Detail (0-100)']['val']),
                            "proj_path="+project_dir,
+                           "seed="+str(sim_seed),
                            "data_model=dm.json" ]
 
           command_string = "Command:";

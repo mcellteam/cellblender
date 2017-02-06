@@ -44,6 +44,22 @@ def prepare_runs ( data_model=None, data_layout=None ):
   # The wd key will refer to a working directory string.
   # Each run command dictionary may contain any other keys helpful for post-processing.
   # The run command dictionary list will be passed on to the postprocess_runs function.
+
+  # The data_layout should be a dictionary something like this:
+
+  #  {
+  #   "version": 0,
+  #   "data_layout": [
+  #    ["dir", ["output_data"]],
+  #    ["dc_a", [1e-06, 1e-05]],
+  #    ["nrel", [100.0, 200.0, 300.0]],
+  #    ["file_type", ["react_data", "viz_data"]],
+  #    ["SEED", [100, 101]]
+  #   ]
+  #  }
+
+  # That dictionary describes the directory structure that CellBlender expects to find on the disk
+
   pass
 
 def run_simulation ( data_model, project_dir ):
@@ -64,9 +80,10 @@ def run_simulation ( data_model, project_dir ):
       start = 1
       end = 1
       try:
-        start = int(data_model['mcell']['simulation_control']['start_seed'])
-        end = int(data_model['mcell']['simulation_control']['end_seed'])
+        start = int(data_model['simulation_control']['start_seed'])
+        end = int(data_model['simulation_control']['end_seed'])
       except Exception as e:
+        print ( "Unable to find the start and/or end seeds in the data model" )
         pass
 
       for sim_seed in range(start,end+1):
@@ -84,6 +101,7 @@ def run_simulation ( data_model, project_dir ):
           command_list = [ 'python3', final_script_path,
                            "output_detail="+str(parameter_dictionary['Output Detail (0-100)']['val']),
                            "proj_path="+project_dir,
+                           "seed="+str(sim_seed),
                            "decay_factor="+str(parameter_dictionary['Reaction Factor']['val']),
                            "data_model=dm.txt" ]
 

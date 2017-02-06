@@ -35,6 +35,9 @@ if output_detail > 0: print ( "*  Limited Pure Python Prototype Simulation  *" )
 if output_detail > 0: print ( "*        Updated: February 5th, 2017         *" )
 if output_detail > 0: print ( "**********************************************" )
 
+if output_detail > 10: print ( "Arguments: " + str(sys.argv) )
+
+random.seed ( run_seed )
 seed_dir = "seed_%05d" % run_seed
 
 if len(data_model_file_name) > 0:
