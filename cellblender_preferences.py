@@ -466,7 +466,10 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( layout )
         else:
             row = layout.row(align=True)
-            row.operator("mcell.preferences_reset")
+            col = row.column()
+            col.operator("mcell.preferences_reset")
+            col = row.column()
+            col.operator ( "wm.save_userpref" )
             layout.separator()
 
             row = layout.row()
@@ -576,7 +579,6 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
             else:
                 row.prop(self, "show_extra_options", icon='TRIA_RIGHT', emboss=False)
-
 
             #row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')
             #row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='ZOOMOUT')

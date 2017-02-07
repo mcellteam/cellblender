@@ -335,7 +335,7 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
         description="The end of the partitions on the x-axis",
         update=transform_x_partition_boundary)
     x_step = bpy.props.FloatProperty(
-        name="X Step", default=0.02, precision=3,
+        name="X Step", default=0.05, precision=3,
         description="The distance between partitions on the x-axis",
         update=check_x_partition_step)
     y_start = bpy.props.FloatProperty(
@@ -347,7 +347,7 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
         description="The end of the partitions on the y-axis",
         update=transform_y_partition_boundary)
     y_step = bpy.props.FloatProperty(
-        name="Y Step", default=0.02, precision=3,
+        name="Y Step", default=0.05, precision=3,
         description="The distance between partitions on the y-axis",
         update=check_y_partition_step)
     z_start = bpy.props.FloatProperty(
@@ -359,7 +359,7 @@ class MCellPartitionsPropertyGroup(bpy.types.PropertyGroup):
         description="The end of the partitions on the z-axis",
         update=transform_z_partition_boundary)
     z_step = bpy.props.FloatProperty(
-        name="Z Step", default=0.02, precision=3,
+        name="Z Step", default=0.05, precision=3,
         description="The distance between partitions on the z-axis",
         update=check_z_partition_step)
 
