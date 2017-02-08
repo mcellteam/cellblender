@@ -685,6 +685,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     show_options = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     has_some_dynamic  = bpy.props.BoolProperty(default=False)
     show_dynamic_from_mdl = bpy.props.BoolProperty(default=False)
+    show_cursor_controls = bpy.props.BoolProperty(default=False, description="Show/Hide 3D Cursor Location")
 
     def remove_properties ( self, context ):
         print ( "Removing all Model Object List Properties..." )
@@ -708,24 +709,27 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                 row.prop (self, "show_dynamic_from_mdl", text="Show Dynamic MDL")
 
             row = layout.row()
-            #col = row.column()
-            row.operator("mcell.snap_cursor_to_center", icon="CURSOR", text="Center Cursor")
-            #col = row.column()
-            #row.label(text="    Add:")
-            #col = row.column()
+            row.prop (self, "show_cursor_controls", icon="CURSOR", text="")  # text="3D Cursor"
+            row.operator("mcell.snap_cursor_to_center", icon="PLUS", text="") # icon="INLINK"
+            # row.operator("mcell.snap_cursor_to_center", icon="CURSOR", text="Center Cursor")
+            row.label("", icon='BLANK1')
             row.operator("mesh.primitive_cube_add", text="", icon='MESH_CUBE')
-            #col = row.column()
             row.operator("mesh.primitive_ico_sphere_add", text="", icon='MESH_ICOSPHERE')
-            #col = row.column()
+            row.operator("mesh.primitive_uv_sphere_add", text="", icon='MESH_UVSPHERE')
             row.operator("mesh.primitive_cylinder_add", text="", icon='MESH_CYLINDER')
-            #col = row.column()
             row.operator("mesh.primitive_cone_add", text="", icon='MESH_CONE')
-            #col = row.column()
             row.operator("mesh.primitive_torus_add", text="", icon='MESH_TORUS')
-            #col = row.column()
             row.operator("mesh.primitive_plane_add", text="", icon='MESH_PLANE')
-            #col = row.column()
+            row.operator("mesh.primitive_circle_add", text="", icon='MESH_CIRCLE')
+            row.operator("mesh.primitive_grid_add", text="", icon='MESH_GRID')
+            # row.operator("mesh.primitive_monkey_add", text="", icon='MESH_MONKEY') # Monkey is not manifold ... can be good example, but maybe not here.
             #col.operator_menu_enum("mcell.model_objects_create", 'option_item', text="Create Object")
+
+            if self.show_cursor_controls:
+              row = layout.row()
+              #row.operator("mcell.snap_cursor_to_center", icon="INLINK", text="Zero")
+              row.prop ( context.scene, "cursor_location", text="" )
+
 
             row = layout.row()
             if context.active_object is None:
