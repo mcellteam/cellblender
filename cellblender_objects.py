@@ -971,7 +971,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         # Delete all materials with identical names
         for mat_name in mat_names:
             if mat_name in bpy.data.materials:
-                bpy.data.materials.remove ( bpy.data.materials[mat_name] )
+                bpy.data.materials.remove ( bpy.data.materials[mat_name], do_unlink=True )
         
         # Now add all the new materials
         
