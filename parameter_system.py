@@ -630,7 +630,13 @@ class PanelParameterData ( bpy.types.PropertyGroup ):
             self.elist = pickle.dumps(parameterized_expr,protocol=0).decode('latin1')
 
             dbprint ("Parsed expression = " + str(parameterized_expr), 10 )
+            if parameterized_expr is None:
+                self['valid'] = False
+                print ( "Error: expression is None" )
+                return
+
             if None in parameterized_expr:
+                self['valid'] = False
                 print ( "Error: None in " + str(parameterized_expr) )
                 return
 
