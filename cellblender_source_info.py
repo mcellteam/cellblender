@@ -145,6 +145,8 @@ cellblender_info = {
         "sim_engines"+os.sep+"limited_python"+os.sep+"__init__.py",
         "sim_engines"+os.sep+"limited_python"+os.sep+"limited_python_sim.py",
 
+        "sim_engines"+os.sep+"smoldyn248"+os.sep+"__init__.py",
+
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"__init__.py",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"rng.h",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"rng.cpp",
