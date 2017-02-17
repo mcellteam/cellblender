@@ -2560,7 +2560,7 @@ class Pluggable(bpy.types.PropertyGroup):
     runners_enum = EnumProperty ( items=get_runners_as_items, name="", description="Runners", update=plugs_changed_callback )
     plug_val_list = CollectionProperty(type=PluggableValue, name="String List")
     active_plug_val_index = IntProperty(name="Active String Index", default=0)
-    
+
     def plugs_changed_callback ( self, context ):
         global active_engine_module
         global active_runner_module
