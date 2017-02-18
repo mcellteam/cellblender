@@ -3805,7 +3805,7 @@ class CapsuleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='10000', time_step='1e-6', wait_time=50.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "ac1f668b2e298ba2c5d1ce6e7483a4ada13c5c1f", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "a3a11faa9af3b31f5b67e1e851f3b77a095efa1a", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
@@ -5208,8 +5208,6 @@ class DynIcosphereTestOp(bpy.types.Operator):
                     new_lines.append(line)
             lines = new_lines
 
-
-
             # Remove the Scene.geometry.mdl file line
             new_lines = []
             for line in lines:
@@ -5582,7 +5580,7 @@ class LotkaVolterraTorusTestDiffLimOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="0c243f8e5246bddc0e569fe219afeb72cb21ddd3", test_name=self.self_test_name, wait_time=15.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="8.6e6", predation_rate="1e12", pred_death_rate="5e6", interaction_radius="0.003", time_step="1e-8", iterations="1200", mdl_hash="9818ab17366098991c6089ebf01b74ff3d0103dc", test_name=self.self_test_name, wait_time=15.0 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -5610,7 +5608,7 @@ class LotkaVolterraTorusTestPhysOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="08ff7a4cb4d44bc95bf5ba03cd6eb8ed7835f918", test_name=self.self_test_name, wait_time=60.0 )
+        cb_model = LotkaVolterraTorus ( context, prey_birth_rate="129e3", predation_rate="1e8", pred_death_rate="130e3", interaction_radius=None, time_step="1e-6", iterations="1200", mdl_hash="7abf8aafdd8ba395bb10ab3c8f7289fe2c3f652c", test_name=self.self_test_name, wait_time=60.0 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -5739,7 +5737,7 @@ class OrganelleTestOp(bpy.types.Operator):
 
         cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=25.0 )
 
-        cb_model.compare_mdl_with_sha1 ( "282ceac043b582fa40a65f9aee9c757f9dac176e", test_name=self.self_test_name )
+        cb_model.compare_mdl_with_sha1 ( "d835cada890d696fdac92054f21bf337e1031a3b", test_name=self.self_test_name )
 
         cb_model.refresh_molecules()
 
