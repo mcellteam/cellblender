@@ -15,6 +15,8 @@ plug_name = "Prototype Smoldyn 2.48 Simulation"
 
 smoldyn_files_dir = ""
 project_files_dir = ""
+start_seed = 1
+end_seed = 1
 
 def print_info():
   global parameter_dictionary
@@ -33,110 +35,112 @@ def postprocess():
   global parameter_dictionary
   global smoldyn_files_dir
   global project_files_dir
+  global start_seed
+  global end_seed
   print ( "Postprocess was called with Smoldyn files at " + str(smoldyn_files_dir) )
   print ( "Postprocess was called for CellBlender files " + str(project_files_dir) )
-  f1 = open ( os.path.join ( smoldyn_files_dir, 'run1', 'viz_data.txt' ) )
-  f2 = open ( os.path.join ( smoldyn_files_dir, 'run1', 'viz_data2.txt' ) )
-  f1d = f1.read()
-  f2d = f2.read()
-  f1s = [ l for l in f1d.split('\n') if len(l) > 0 ]
-  f2s = [ l for l in f2d.split('\n') if len(l) > 0 ]
+  for run_seed in range(start_seed, end_seed+1):
+    f1 = open ( os.path.join ( smoldyn_files_dir, 'run%d'%run_seed, 'viz_data.txt' ) )
+    f2 = open ( os.path.join ( smoldyn_files_dir, 'run%d'%run_seed, 'viz_data2.txt' ) )
+    f1d = f1.read()
+    f2d = f2.read()
+    f1s = [ l for l in f1d.split('\n') if len(l) > 0 ]
+    f2s = [ l for l in f2d.split('\n') if len(l) > 0 ]
 
-  # Convert each string to a list that includes the molecule name at the end
-  n = min(len(f1s),len(f2s))
-  full_list = []
-  for i in range(n):
-    l = f2s[i].strip().split()
-    l.append ( f1s[i][0:f1s[i].index('(')] )
-    full_list.append ( l )
+    # Convert each string to a list that includes the molecule name at the end
+    n = min(len(f1s),len(f2s))
+    full_list = []
+    for i in range(n):
+      l = f2s[i].strip().split()
+      l.append ( f1s[i][0:f1s[i].index('(')] )
+      full_list.append ( l )
 
-  first_iteration = int(full_list[0][0])
-  last_iteration = int(full_list[-1][0])
-  iter_list = sorted(set([ int(l[0]) for l in full_list]))
+    first_iteration = int(full_list[0][0])
+    last_iteration = int(full_list[-1][0])
+    iter_list = sorted(set([ int(l[0]) for l in full_list]))
 
-  frame_dict = {}
-  for k in iter_list:
-    frame_dict[k] = {}
+    frame_dict = {}
+    for k in iter_list:
+      frame_dict[k] = {}
 
-  for l in full_list:
-    i = int(l[0])
-    mol = l[-1]
-    if not mol in frame_dict[i]:
-      frame_dict[i][mol] = []
-    frame_dict[i][mol].append ( [ l[3], l[4], l[5] ] )
+    for l in full_list:
+      i = int(l[0])
+      mol = l[-1]
+      if not mol in frame_dict[i]:
+        frame_dict[i][mol] = []
+      frame_dict[i][mol].append ( [ l[3], l[4], l[5] ] )
 
-  # The frame_dict is now organized to use for writing molecule files
+    # The frame_dict is now organized to use for writing molecule files
 
-  ndigits = 1 + math.log(last_iteration+1,10)
-  file_name_template = "Scene.cellbin.%%0%dd.dat" % ndigits
-
-
-  react_dir = os.path.join(project_files_dir, "output_data", "react_data")
-
-  if os.path.exists(react_dir):
-      shutil.rmtree(react_dir,ignore_errors=True)
-  if not os.path.exists(react_dir):
-      os.makedirs(react_dir)
-
-  viz_dir = os.path.join(project_files_dir, "output_data", "viz_data")
-
-  if os.path.exists(viz_dir):
-      shutil.rmtree(viz_dir,ignore_errors=True)
-  if not os.path.exists(viz_dir):
-      os.makedirs(viz_dir)
-
-  run_seed = 1
-  seed_dir = "seed_%05d" % run_seed
-
-  viz_seed_dir = os.path.join(viz_dir, seed_dir)
-
-  if os.path.exists(viz_seed_dir):
-      shutil.rmtree(viz_seed_dir,ignore_errors=True)
-  if not os.path.exists(viz_seed_dir):
-      os.makedirs(viz_seed_dir)
-
-  react_seed_dir = os.path.join(react_dir, seed_dir)
-
-  if os.path.exists(react_seed_dir):
-      shutil.rmtree(react_seed_dir,ignore_errors=True)
-  if not os.path.exists(react_seed_dir):
-      os.makedirs(react_seed_dir)
+    ndigits = 1 + math.log(last_iteration+1,10)
+    file_name_template = "Scene.cellbin.%%0%dd.dat" % ndigits
 
 
-  for i in iter_list:
-    frame = frame_dict[i]
+    react_dir = os.path.join(project_files_dir, "output_data", "react_data")
 
-    # Write the viz data (every iteration for now)
-    viz_file_name = file_name_template % i
-    viz_file_name = os.path.join(viz_seed_dir,viz_file_name)
-    #if (i % print_every) == 0:
-    #  if output_detail > 0: print ( "File = " + viz_file_name )
-    f = open(viz_file_name,"wb")
-    int_array = array.array("I")   # Marker indicating a binary file
-    int_array.fromlist([1])
-    int_array.tofile(f)
-    for mol_name in frame.keys():
-      f.write(bytearray([len(mol_name)]))        # Number of bytes in the name
-      for ni in range(len(mol_name)):
-        f.write(bytearray([ord(mol_name[ni])]))  # Each byte of the name
-      f.write(bytearray([0]))                    # Molecule Type, 1=Surface, 0=Volume?
+    if os.path.exists(react_dir):
+        shutil.rmtree(react_dir,ignore_errors=True)
+    if not os.path.exists(react_dir):
+        os.makedirs(react_dir)
 
-      # Write out the total number of values for this molecule species
-      int_array = array.array("I")
-      #int_array.fromlist([3*len(m['instances'])])
-      int_array.fromlist([3*len(frame[mol_name])])
+    viz_dir = os.path.join(project_files_dir, "output_data", "viz_data")
+
+    if os.path.exists(viz_dir):
+        shutil.rmtree(viz_dir,ignore_errors=True)
+    if not os.path.exists(viz_dir):
+        os.makedirs(viz_dir)
+
+    seed_dir = "seed_%05d" % run_seed
+
+    viz_seed_dir = os.path.join(viz_dir, seed_dir)
+
+    if os.path.exists(viz_seed_dir):
+        shutil.rmtree(viz_seed_dir,ignore_errors=True)
+    if not os.path.exists(viz_seed_dir):
+        os.makedirs(viz_seed_dir)
+
+    react_seed_dir = os.path.join(react_dir, seed_dir)
+
+    if os.path.exists(react_seed_dir):
+        shutil.rmtree(react_seed_dir,ignore_errors=True)
+    if not os.path.exists(react_seed_dir):
+        os.makedirs(react_seed_dir)
+
+
+    for i in iter_list:
+      frame = frame_dict[i]
+
+      # Write the viz data (every iteration for now)
+      viz_file_name = file_name_template % i
+      viz_file_name = os.path.join(viz_seed_dir,viz_file_name)
+      #if (i % print_every) == 0:
+      #  if output_detail > 0: print ( "File = " + viz_file_name )
+      f = open(viz_file_name,"wb")
+      int_array = array.array("I")   # Marker indicating a binary file
+      int_array.fromlist([1])
       int_array.tofile(f)
-      
-      for mi in frame[mol_name]:
-        x = float(mi[0])
-        y = float(mi[1])
-        z = float(mi[2])
-        mol_pos = array.array("f")
-        mol_pos.fromlist ( [ x, y, z ] )
-        mol_pos.tofile(f)
-    f.close()
+      for mol_name in frame.keys():
+        f.write(bytearray([len(mol_name)]))        # Number of bytes in the name
+        for ni in range(len(mol_name)):
+          f.write(bytearray([ord(mol_name[ni])]))  # Each byte of the name
+        f.write(bytearray([0]))                    # Molecule Type, 1=Surface, 0=Volume?
 
-  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        # Write out the total number of values for this molecule species
+        int_array = array.array("I")
+        #int_array.fromlist([3*len(m['instances'])])
+        int_array.fromlist([3*len(frame[mol_name])])
+        int_array.tofile(f)
+
+        for mi in frame[mol_name]:
+          x = float(mi[0])
+          y = float(mi[1])
+          z = float(mi[2])
+          mol_pos = array.array("f")
+          mol_pos.fromlist ( [ x, y, z ] )
+          mol_pos.tofile(f)
+      f.close()
+
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
 
@@ -184,7 +188,9 @@ def prepare_runs ( data_model=None, data_layout=None ):
 def run_simulation ( data_model, project_dir ):
   global smoldyn_files_dir
   global project_files_dir
-  
+  global start_seed
+  global end_seed
+
   project_files_dir = "" + project_dir
 
   dm_mol_list = data_model['define_molecules']['molecule_list']
@@ -226,6 +232,8 @@ def run_simulation ( data_model, project_dir ):
       except Exception as e:
         print ( "Unable to find the start and/or end seeds in the data model" )
         pass
+      start_seed = start
+      end_seed = end
 
       for sim_seed in range(start,end+1):
           if output_detail > 0: print ("Running with seed " + str(sim_seed) )
@@ -245,6 +253,7 @@ def run_simulation ( data_model, project_dir ):
           f.write ( "# Smoldyn Simulation Exported from CellBlender\n\n" )
           f.write ( "graphics opengl\n" )
           f.write ( "dim 3\n" )
+          f.write ( "random_seed " + str(sim_seed) + "\n" )
           x_start = "-1"
           x_end   =  "1"
           y_start = "-1"
@@ -272,7 +281,9 @@ def run_simulation ( data_model, project_dir ):
           f.write ("\n" )
 
           for m in dm_mol_list:
-            f.write ( "difc " + str(m['mol_name']) + " 2\n" )
+            mcell_diffusion_constant = float(str(m['diffusion_constant']))
+            smoldyn_diffusion_constant = mcell_diffusion_constant * 10000  # Convert due to units difference
+            f.write ( "difc " + str(m['mol_name']) + " " + str(smoldyn_diffusion_constant) + "\n" )
 
           for m in dm_mol_list:
             color = m['display']['color']
