@@ -16,7 +16,6 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import cellblender
-from . import parameter_system
 
 # blender imports
 import bpy
@@ -29,6 +28,17 @@ def register():
 
 def unregister():
     bpy.utils.unregister_module(__name__)
+
+
+class MCELL_OT_load_lotka_volterra(bpy.types.Operator):
+    bl_idname = "mcell.load_lotka_volterra"
+    bl_label = "Load Lotka-Volterra Model"
+    bl_description = "Loads a Lotka-Volterra model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        context.scene.mcell.cellblender_examples.load_lotka_volterra ( context )
+        return {'FINISHED'}
 
 
 class MCELL_PT_examples(bpy.types.Panel):
@@ -50,3 +60,5 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( layout )
         else:
             ps = mcell.parameter_system
+            row = layout.row()
+            row.operator("mcell.load_lotka_volterra")
