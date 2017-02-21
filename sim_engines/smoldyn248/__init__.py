@@ -9,6 +9,8 @@ import shutil
 
 print ( "Executing Smoldyn Simulation" )
 
+print ( "Note that CellBlender partitions are used to define Smoldyn Boundaries" )
+
 # Name of this engine to display in the list of choices (Both should be unique within a CellBlender installation)
 plug_code = "SMOLDYN248"
 plug_name = "Prototype Smoldyn 2.48 Simulation"
