@@ -145,10 +145,29 @@ def postprocess():
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
+def use_cube():
+  global parameter_dictionary
+  size = float(parameter_dictionary['bounding_cube_size']['val']) / 2
+  parameter_dictionary['x_bound_min']['val'] = -size
+  parameter_dictionary['x_bound_max']['val'] =  size
+  parameter_dictionary['y_bound_min']['val'] = -size
+  parameter_dictionary['y_bound_max']['val'] =  size
+  parameter_dictionary['z_bound_min']['val'] = -size
+  parameter_dictionary['z_bound_max']['val'] =  size
+
+
 
 # List of parameters as dictionaries - each with keys for 'name', 'desc', 'def', and optional 'as':
 parameter_dictionary = {
   'Smoldyn Path': {'val': "//../../../../../smoldyn/smoldyn-2.48/cmake/smoldyn", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
+  'Set Cube Boundaries:': {'val': use_cube, 'desc':"Set Boundaries as cube"},
+  'bounding_cube_size': {'val': 2, 'desc':"Cube Boundary Size"},
+  'x_bound_min': {'val': -1.0, 'desc':"x boundary (minimum)"},
+  'x_bound_max': {'val':  1.0, 'desc':"x boundary (maximum)"},
+  'y_bound_min': {'val': -1.0, 'desc':"y boundary (minimum)"},
+  'y_bound_max': {'val':  1.0, 'desc':"y boundary (maximum)"},
+  'z_bound_min': {'val': -1.0, 'desc':"z boundary (minimum)"},
+  'z_bound_max': {'val':  1.0, 'desc':"z boundary (maximum)"},
   'Command Line': {'val': "", 'desc':"Additional Command Line Parameters"},
   'Output Detail (0-100)': {'val': 20, 'desc':"Amount of Information to Print (0-100)", 'icon':'INFO'},
   'Postprocess': {'val': postprocess, 'desc':"Postprocess the data for CellBlender"},
@@ -157,6 +176,9 @@ parameter_dictionary = {
 
 parameter_layout = [
   ['Smoldyn Path'],
+  ['Set Cube Boundaries:', 'bounding_cube_size'],
+  ['x_bound_min', 'y_bound_min', 'z_bound_min'],
+  ['x_bound_max', 'y_bound_max', 'z_bound_max'],
   ['Command Line'],
   ['Output Detail (0-100)'],
   ['Postprocess', 'Reset']
@@ -256,26 +278,11 @@ def run_simulation ( data_model, project_dir ):
           f.write ( "graphics opengl\n" )
           f.write ( "dim 3\n" )
           f.write ( "random_seed " + str(sim_seed) + "\n" )
-          x_start = "-1"
-          x_end   =  "1"
-          y_start = "-1"
-          y_end   =  "1"
-          z_start = "-1"
-          z_end   =  "1"
-          if 'initialization' in data_model:
-            if 'partitions' in data_model['initialization']:
-              partitions = data_model['initialization']['partitions']
-              if partitions['include']:
-                x_start = str(partitions['x_start'])
-                x_end   = str(partitions['x_end'])
-                y_start = str(partitions['y_start'])
-                y_end   = str(partitions['y_end'])
-                z_start = str(partitions['z_start'])
-                z_end   = str(partitions['z_end'])
+
           # Smoldyn gives an error: "simulation dimensions or boundaries are undefined" followed by "Simulation skipped" without boundaries:
-          f.write ( "boundaries x " + str(x_start) + " " + str(x_end) + " r\n" )
-          f.write ( "boundaries y " + str(y_start) + " " + str(y_end) + " r\n" )
-          f.write ( "boundaries z " + str(z_start) + " " + str(z_end) + " r\n" )
+          f.write ( "boundaries x " + str(parameter_dictionary['x_bound_min']['val']) + " " + str(parameter_dictionary['x_bound_max']['val']) + " r\n" )
+          f.write ( "boundaries y " + str(parameter_dictionary['y_bound_min']['val']) + " " + str(parameter_dictionary['y_bound_max']['val']) + " r\n" )
+          f.write ( "boundaries z " + str(parameter_dictionary['z_bound_min']['val']) + " " + str(parameter_dictionary['z_bound_max']['val']) + " r\n" )
 
           f.write ( "species" )
           for m in dm_mol_list:
