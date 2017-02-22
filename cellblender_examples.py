@@ -39,7 +39,7 @@ class MCELL_OT_load_lotka_volterra(bpy.types.Operator):
 
     def execute(self, context):
 
-        dm = cellblender.get_data_model()
+        dm = {}
         dm['mcell'] = examples.lv.lv_dm
         cellblender.replace_data_model(dm, geometry=True)
         return {'FINISHED'}
