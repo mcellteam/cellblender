@@ -45,6 +45,20 @@ class MCELL_OT_load_lotka_volterra(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_load_ficks_law(bpy.types.Operator):
+    bl_idname = "mcell.load_ficks_laws"
+    bl_label = "Load Fick's Laws Model"
+    bl_description = "Loads a model illustrating Fick's Laws"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.ficks_laws.ficks_laws_dm
+        cellblender.replace_data_model(dm, geometry=True)
+        return {'FINISHED'}
+
+
 class MCELL_PT_examples(bpy.types.Panel):
     bl_label = "CellBlender - Examples"
     bl_space_type = "PROPERTIES"
@@ -66,3 +80,4 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             ps = mcell.parameter_system
             row = layout.row()
             row.operator("mcell.load_lotka_volterra")
+            row.operator("mcell.load_ficks_laws")
