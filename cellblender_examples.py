@@ -20,6 +20,7 @@ import cellblender
 # blender imports
 import bpy
 from bpy.props import BoolProperty
+from cellblender import examples
 
 # We use per module class registration/unregistration
 def register():
@@ -37,7 +38,10 @@ class MCELL_OT_load_lotka_volterra(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        context.scene.mcell.cellblender_examples.load_lotka_volterra ( context )
+
+        dm = cellblender.get_data_model()
+        dm['mcell'] = examples.lv.lv_dm
+        cellblender.replace_data_model(dm, geometry=True)
         return {'FINISHED'}
 
 
