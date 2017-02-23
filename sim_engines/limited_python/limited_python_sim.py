@@ -70,30 +70,18 @@ if dm is None:
 #  OSError: [Errno 39] Directory not empty: 'seed_00001'
 
 react_dir = os.path.join(proj_path, "output_data", "react_data")
-
-if os.path.exists(react_dir):
-    shutil.rmtree(react_dir,ignore_errors=True)
 if not os.path.exists(react_dir):
     os.makedirs(react_dir)
 
 viz_dir = os.path.join(proj_path, "output_data", "viz_data")
-
-if os.path.exists(viz_dir):
-    shutil.rmtree(viz_dir,ignore_errors=True)
 if not os.path.exists(viz_dir):
     os.makedirs(viz_dir)
 
 viz_seed_dir = os.path.join(viz_dir, seed_dir)
-
-if os.path.exists(viz_seed_dir):
-    shutil.rmtree(viz_seed_dir,ignore_errors=True)
 if not os.path.exists(viz_seed_dir):
     os.makedirs(viz_seed_dir)
 
 react_seed_dir = os.path.join(react_dir, seed_dir)
-
-if os.path.exists(react_seed_dir):
-    shutil.rmtree(react_seed_dir,ignore_errors=True)
 if not os.path.exists(react_seed_dir):
     os.makedirs(react_seed_dir)
 
