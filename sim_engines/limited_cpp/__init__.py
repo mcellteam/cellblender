@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import json
+import shutil
 
 print ( "Executing Limited C++ Simulation" )
 
@@ -36,7 +37,7 @@ parameter_layout = [
   ['Print Information', 'Reset']
 ]
 
-def prepare_runs ( data_model=None, data_layout=None ):
+def prepare_runs ( data_model, project_dir, data_layout=None ):
   # Return a list of run command dictionaries.
   # Each run command dictionary must contain a "cmd" key and a "wd" key.
   # The cmd key will refer to a command list suitable for popen.
@@ -59,51 +60,92 @@ def prepare_runs ( data_model=None, data_layout=None ):
 
   # That dictionary describes the directory structure that CellBlender expects to find on the disk
 
-  pass
 
-def run_simulation ( data_model, project_dir ):
-  print ( "Inside limited_python.run_simulation, project_dir=" + project_dir )
+  command_list = []
+
+  output_detail = parameter_dictionary['Output Detail (0-100)']['val']
+
+  if output_detail > 0: print ( "Inside limited_cpp.prepare_runs, project_dir=" + project_dir )
 
   script_dir_path = os.path.dirname(os.path.realpath(__file__))
-  script_file_path = script_dir_path
-  final_script_path = os.path.join(script_file_path,"mcell_main")
+  final_script_path = os.path.join(script_dir_path,"mcell_main")
 
   if not os.path.exists(final_script_path):
-      print ( "\n\nUnable to run, script does not exist: " + final_script_path + "\n\n" )
+      print ( "\n\nUnable to prepare runs, script does not exist: " + final_script_path + "\n\n" )
   else:
 
       # Create a subprocess for each simulation
       start = 1
       end = 1
       try:
-        start = int(data_model['mcell']['simulation_control']['start_seed'])
-        end = int(data_model['mcell']['simulation_control']['end_seed'])
+        start = int(data_model['simulation_control']['start_seed'])
+        end = int(data_model['simulation_control']['end_seed'])
       except Exception as e:
+        print ( "Unable to find the start and/or end seeds in the data model" )
         pass
 
+
+      # Make all of the directories first to avoid race condition errors in the file system
+
+      react_dir = os.path.join(project_dir, "output_data", "react_data")
+
+      if os.path.exists(react_dir):
+          shutil.rmtree(react_dir,ignore_errors=True)
+      if not os.path.exists(react_dir):
+          os.makedirs(react_dir)
+
+      viz_dir = os.path.join(project_dir, "output_data", "viz_data")
+
+      if os.path.exists(viz_dir):
+          shutil.rmtree(viz_dir,ignore_errors=True)
+      if not os.path.exists(viz_dir):
+          os.makedirs(viz_dir)
+
       for sim_seed in range(start,end+1):
-          print ("Running with seed " + str(sim_seed) )
-          
+
+        seed_dir = "seed_%05d" % sim_seed
+
+        viz_seed_dir = os.path.join(viz_dir, seed_dir)
+
+        if os.path.exists(viz_seed_dir):
+            shutil.rmtree(viz_seed_dir,ignore_errors=True)
+        if not os.path.exists(viz_seed_dir):
+            os.makedirs(viz_seed_dir)
+
+        react_seed_dir = os.path.join(react_dir, seed_dir)
+        if os.path.exists(react_seed_dir):
+            shutil.rmtree(react_seed_dir,ignore_errors=True)
+        if not os.path.exists(react_seed_dir):
+            os.makedirs(react_seed_dir)
+
+
+      # Build the list of commands to be run along with any data files needed
+
+      for sim_seed in range(start,end+1):
+          if output_detail > 0: print ("Running with seed " + str(sim_seed) )
+
           file_name = os.path.join(project_dir,"dm.json")
 
-          print ( "Saving CellBlender model to JSON file: " + file_name )
+          if output_detail > 0: print ( "Saving CellBlender model to JSON file: " + file_name )
           f = open ( file_name, 'w' )
           f.write ( json.dumps ( {"mcell": data_model} ) )
           f.close()
-          print ( "Done saving CellBlender model." )
+          if output_detail > 0: print ( "Done saving CellBlender model." )
 
-          command_list = [ final_script_path,
-                           "print_detail="+str(parameter_dictionary['Output Detail (0-100)']['val']),
-                           "proj_path="+project_dir,
-                           "seed="+str(sim_seed),
-                           "data_model=dm.json" ]
+          command_dict = { 'cmd': final_script_path,
+                           'args': [
+                               "print_detail="+str(parameter_dictionary['Output Detail (0-100)']['val']),
+                               "proj_path="+project_dir,
+                               "seed="+str(sim_seed),
+                               "data_model=dm.json" ],
+                           'wd': project_dir
+                         }
 
-          command_string = "Command:";
-          for s in command_list:
-            command_string += " " + s
-          print ( command_string )
+          command_list.append ( command_dict )
+          if output_detail > 0: print ( str(command_dict) )
 
-          sp = subprocess.Popen ( command_list, cwd=script_file_path, stdout=None, stderr=None )
+  return ( command_list )
+
 
 def postprocess_runs ( data_model, command_strings ):
   # Move and/or transform data to match expected CellBlender file structure as required
