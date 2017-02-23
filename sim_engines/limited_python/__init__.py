@@ -111,7 +111,7 @@ def build_sweep_list ( par_dict ):
 
 
 
-def prepare_runs ( data_model=None, data_layout=None ):
+def prepare_runs ( data_model, project_dir, data_layout=None ):
   # Return a list of run command dictionaries.
   # Each run command dictionary must contain a "cmd" key, an "args" key, and a "wd" key.
   # The cmd key will refer to a command string suitable for popen.
@@ -135,7 +135,89 @@ def prepare_runs ( data_model=None, data_layout=None ):
 
   # That dictionary describes the directory structure that CellBlender expects to find on the disk
 
-  pass
+  command_list = []
+
+  output_detail = parameter_dictionary['Output Detail (0-100)']['val']
+
+  if output_detail > 0: print ( "Inside limited_python.prepare_runs, project_dir=" + project_dir )
+
+  script_file_path = os.path.dirname(os.path.realpath(__file__))
+  final_script_path = os.path.join(script_file_path,"limited_python_sim.py")
+
+  if not os.path.exists(final_script_path):
+      print ( "\n\nUnable to prepare runs, script does not exist: " + final_script_path + "\n\n" )
+  else:
+
+      # Create a subprocess for each simulation
+      start = 1
+      end = 1
+      try:
+        start = int(data_model['simulation_control']['start_seed'])
+        end = int(data_model['simulation_control']['end_seed'])
+      except Exception as e:
+        print ( "Unable to find the start and/or end seeds in the data model" )
+        pass
+
+      # Make all of the directories first to avoid race condition errors in the file system
+      for sim_seed in range(start,end+1):
+
+        seed_dir = "seed_%05d" % sim_seed
+
+        react_dir = os.path.join(project_dir, "output_data", "react_data")
+
+        if os.path.exists(react_dir):
+            shutil.rmtree(react_dir,ignore_errors=True)
+        if not os.path.exists(react_dir):
+            os.makedirs(react_dir)
+
+        viz_dir = os.path.join(project_dir, "output_data", "viz_data")
+
+        if os.path.exists(viz_dir):
+            shutil.rmtree(viz_dir,ignore_errors=True)
+        if not os.path.exists(viz_dir):
+            os.makedirs(viz_dir)
+
+        viz_seed_dir = os.path.join(viz_dir, seed_dir)
+
+        if os.path.exists(viz_seed_dir):
+            shutil.rmtree(viz_seed_dir,ignore_errors=True)
+        if not os.path.exists(viz_seed_dir):
+            os.makedirs(viz_seed_dir)
+
+        react_seed_dir = os.path.join(react_dir, seed_dir)
+        if os.path.exists(react_seed_dir):
+            shutil.rmtree(react_seed_dir,ignore_errors=True)
+        if not os.path.exists(react_seed_dir):
+            os.makedirs(react_seed_dir)
+
+      # Build the list of commands to be run along with any data files needed
+      for sim_seed in range(start,end+1):
+          if output_detail > 0: print ("Running with seed " + str(sim_seed) )
+
+          file_name = os.path.join(project_dir,"dm.txt")
+
+          if output_detail > 0: print ( "Saving CellBlender model to file: " + file_name )
+          f = open ( file_name, 'w' )
+          ##dm = { 'mcell': mcell_dm }
+          f.write ( pickle.dumps({'mcell':data_model},protocol=0).decode('latin1') )
+          f.close()
+          if output_detail > 0: print ( "Done saving CellBlender model." )
+
+          command_dict = { 'cmd': 'python3',
+                           'args': [ final_script_path,
+                               "output_detail="+str(parameter_dictionary['Output Detail (0-100)']['val']),
+                               "proj_path="+project_dir,
+                               "seed="+str(sim_seed),
+                               "decay_factor="+str(parameter_dictionary['Reaction Factor']['val']),
+                               "data_model=dm.txt" ],
+                           'wd': project_dir
+                         }
+
+          command_list.append ( command_dict )
+          if output_detail > 0: print ( str(command_dict) )
+
+  return ( command_list )
+
 
 def run_simulation ( data_model, project_dir ):
 
@@ -143,8 +225,7 @@ def run_simulation ( data_model, project_dir ):
 
   if output_detail > 0: print ( "Inside limited_python.run_simulation, project_dir=" + project_dir )
 
-  script_dir_path = os.path.dirname(os.path.realpath(__file__))
-  script_file_path = script_dir_path
+  script_file_path = os.path.dirname(os.path.realpath(__file__))
   final_script_path = os.path.join(script_file_path,"limited_python_sim.py")
 
   if not os.path.exists(final_script_path):
@@ -219,6 +300,25 @@ def run_simulation ( data_model, project_dir ):
           if output_detail > 0: print ( command_string )
 
           sp = subprocess.Popen ( command_list, cwd=script_file_path, stdout=None, stderr=None )
+
+
+def run_simulations ( command_list ):
+
+  output_detail = parameter_dictionary['Output Detail (0-100)']['val']
+
+  if output_detail > 0: print ( "Inside limited_python.run_simulations." )
+  if output_detail > 10:
+      for cmd in command_list:
+          print ( "cmd = " + str(cmd) )
+
+  for cmd in command_list:
+      if output_detail > 0: print ( "" )
+
+      cmd_list = [ cmd['cmd'] ]
+      for arg in cmd['args']:
+        cmd_list.append ( arg )
+
+      sp = subprocess.Popen ( cmd_list, cwd=cmd['wd'], stdout=None, stderr=None )
 
 def postprocess_runs ( data_model, command_strings ):
   # Move and/or transform data to match expected CellBlender file structure as required

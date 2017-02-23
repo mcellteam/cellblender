@@ -1016,8 +1016,6 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
 
-
-
     def execute(self, context):
 
         global active_engine_module
@@ -1066,13 +1064,19 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
 
             script_dir_path = os.path.dirname(os.path.realpath(__file__))
             script_file_path = os.path.join(script_dir_path, "sim_engines")
-            final_script_path = os.path.join(script_file_path,"pure_python_sim.py")
 
             dm = mcell.build_data_model_from_properties ( context, geometry=True )
 
-            print ( "Calling run_simulation in active_engine_module" )
+            if "prepare_runs" in dir(active_engine_module):
+                print ( "Calling prepare_runs in active_engine_module" )
+                command_list = active_engine_module.prepare_runs ( dm, project_dir )
 
-            active_engine_module.run_simulation ( dm, project_dir )
+                if "run_simulations" in dir(active_engine_module):
+                    print ( "Calling run_simulations in active_engine_module" )
+                    active_engine_module.run_simulations ( command_list )
+                elif "run_simulation" in dir(active_engine_module):
+                    print ( "Calling run_simulation in active_engine_module" )
+                    active_engine_module.run_simulation ( dm, project_dir )
 
         mcell.run_simulation.status = status
 
