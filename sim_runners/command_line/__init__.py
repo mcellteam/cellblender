@@ -33,14 +33,14 @@ def info():
     print ( "Print Command Line Information" )
 
 parameter_dictionary = {
-  'OpenGL Path': {'val': "", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
-  'Print OpenGL Information': {'val': info, 'desc':"Print information"},
+  'Command Line Path': {'val': "", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
+  'Print Command Line Info': {'val': info, 'desc':"Print information"},
   'Reset': {'val': reset, 'desc':"Reset everything"}
 }
 
 parameter_layout = [
-  ['OpenGL Path'],
-  ['Print OpenGL Information', 'Reset']
+  ['Command Line Path'],
+  ['Print Command Line Info', 'Reset']
 ]
 
 

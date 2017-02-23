@@ -29,7 +29,7 @@ def reset():
     print ( "Resetting" )
 
 def info():
-    print ( "Print Info" )
+    print ( "Print Java Information" )
 
 parameter_dictionary = {
   'Java Path': {'val': "", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
