@@ -125,6 +125,9 @@ cellblender_info = {
         "sim_runners"+os.sep+"makefile",
         "sim_runners"+os.sep+"__init__.py",
 
+        "sim_runners"+os.sep+"command_line"+os.sep+"__init__.py",
+        "sim_runners"+os.sep+"command_line"+os.sep+"makefile",
+
         "sim_runners"+os.sep+"java"+os.sep+"__init__.py",
         "sim_runners"+os.sep+"java"+os.sep+"SimControl.java",
         "sim_runners"+os.sep+"java"+os.sep+"makefile",
