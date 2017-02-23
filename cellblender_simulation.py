@@ -1070,8 +1070,11 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
             if "prepare_runs" in dir(active_engine_module):
                 print ( "Calling prepare_runs in active_engine_module" )
                 command_list = active_engine_module.prepare_runs ( dm, project_dir )
+                
+                if "run_commands" in dir(active_runner_module):
+                    active_runner_module.run_commands ( command_list )
 
-                if "run_simulations" in dir(active_engine_module):
+                elif "run_simulations" in dir(active_engine_module):
                     print ( "Calling run_simulations in active_engine_module" )
                     active_engine_module.run_simulations ( command_list )
                 elif "run_simulation" in dir(active_engine_module):
