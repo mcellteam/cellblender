@@ -1077,6 +1077,7 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
                 elif "run_simulations" in dir(active_engine_module):
                     print ( "Calling run_simulations in active_engine_module" )
                     active_engine_module.run_simulations ( command_list )
+
                 elif "run_simulation" in dir(active_engine_module):
                     print ( "Calling run_simulation in active_engine_module" )
                     active_engine_module.run_simulation ( dm, project_dir )
