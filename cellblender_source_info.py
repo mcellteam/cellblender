@@ -144,19 +144,27 @@ cellblender_info = {
         "sim_runners"+os.sep+"pure_python"+os.sep+"pure_python_run.py",
 
 
+        "sim_engines"+os.sep+"makefile",
         "sim_engines"+os.sep+"__init__.py",
 
+        "sim_engines"+os.sep+"limited_python"+os.sep+"makefile",
         "sim_engines"+os.sep+"limited_python"+os.sep+"__init__.py",
         "sim_engines"+os.sep+"limited_python"+os.sep+"limited_python_sim.py",
 
+        "sim_engines"+os.sep+"mcell3"+os.sep+"makefile",
+        "sim_engines"+os.sep+"mcell3"+os.sep+"__init__.py",
+        "sim_engines"+os.sep+"mcell3"+os.sep+"data_model_to_mdl.py",
+        "sim_engines"+os.sep+"mcell3"+os.sep+"run_data_model_mcell.py",
+
+        "sim_engines"+os.sep+"smoldyn248"+os.sep+"makefile",
         "sim_engines"+os.sep+"smoldyn248"+os.sep+"__init__.py",
 
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"makefile",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"__init__.py",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"rng.h",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"rng.cpp",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"JSON.c",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"JSON.cpp",
-        "sim_engines"+os.sep+"limited_cpp"+os.sep+"makefile",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"JSON.h",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"JSON.java",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"libMCell.cpp",
