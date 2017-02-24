@@ -147,24 +147,6 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   return ( command_list )
 
 
-def run_simulations ( command_list ):
-
-  output_detail = parameter_dictionary['Output Detail (0-100)']['val']
-
-  if output_detail > 0: print ( "Inside limited_python.run_simulations." )
-  if output_detail > 10:
-      for cmd in command_list:
-          print ( "cmd = " + str(cmd) )
-
-  for cmd in command_list:
-      if output_detail > 0: print ( "" )
-
-      cmd_list = [ cmd['cmd'] ]
-      for arg in cmd['args']:
-        cmd_list.append ( arg )
-
-      sp = subprocess.Popen ( cmd_list, cwd=cmd['wd'], stdout=None, stderr=None )
-
 def postprocess_runs ( data_model, command_strings ):
   # Move and/or transform data to match expected CellBlender file structure as required
   pass

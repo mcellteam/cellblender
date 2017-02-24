@@ -26,32 +26,6 @@ plug_code = "CMDLINE"
 plug_name = "Command Line"
 
 
-def reset():
-    print ( "Resetting" )
-
-def info():
-    print ( "Print Command Line Information" )
-
-parameter_dictionary = {
-  'Command Line Path': {'val': "", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
-  'Print Command Line Info': {'val': info, 'desc':"Print information"},
-  'Reset': {'val': reset, 'desc':"Reset everything"}
-}
-
-parameter_layout = [
-  ['Command Line Path'],
-  ['Print Command Line Info', 'Reset']
-]
-
-
-def find_in_path(program_name):
-    for path in os.environ.get('PATH','').split(os.pathsep):
-        full_name = os.path.join(path,program_name)
-        if os.path.exists(full_name) and not os.path.isdir(full_name):
-            return full_name
-    return None
-
-
 def run_commands ( commands ):
     sp_list = []
     window_num = 0
@@ -63,7 +37,3 @@ def run_commands ( commands ):
         window_num += 1
     return sp_list
 
-
-if __name__ == "__main__":
-    print ( "Called with __name__ == __main__" )
-    pass
