@@ -184,7 +184,7 @@ parameter_layout = [
   ['Postprocess', 'Reset']
 ]
 
-def prepare_runs ( data_model=None, data_layout=None ):
+def prepare_runs ( data_model, project_dir, data_layout=None ):
   # Return a list of run command dictionaries.
   # Each run command dictionary must contain a "cmd" key and a "wd" key.
   # The cmd key will refer to a command list suitable for popen.
@@ -207,9 +207,8 @@ def prepare_runs ( data_model=None, data_layout=None ):
 
   # That dictionary describes the directory structure that CellBlender expects to find on the disk
 
-  pass
+  command_list = []
 
-def run_simulation ( data_model, project_dir ):
   global smoldyn_files_dir
   global project_files_dir
   global start_seed
@@ -316,24 +315,17 @@ def run_simulation ( data_model, project_dir ):
 
           if output_detail > 0: print ( "Done saving Smoldyn file." )
 
-          command_list = [ smoldyn_path, run_file ]
+          command_dict = { 'cmd': smoldyn_path,
+                           'args': [ run_file ],
+                           'wd': project_dir
+                         }
           if len(command_line_options) > 0:
-            command_list.append(command_line_options)
+            command_dict['args'].append(command_line_options)
 
-          command_string = "Command:";
-          for s in command_list:
-            command_string += " " + s
-          if output_detail > 0: print ( "Running with smoldyn_path: " + str(smoldyn_path) )
-          if output_detail > 0: print ( "Running with project_dir: " + str(project_dir) )
-          if output_detail > 0: print ( command_string )
+          command_list.append ( command_dict )
+          if output_detail > 0: print ( str(command_dict) )
 
-          sp = subprocess.Popen ( command_list, cwd=run_path, stdout=None, stderr=None )
-          
-          print ( "Done running ... copying data from Smoldyn format to CellBlender format" )
-
-def postprocess_runs ( data_model, command_strings ):
-  # Move and/or transform data to match expected CellBlender file structure as required
-  pass
+  return ( command_list )
 
 
 if __name__ == "__main__":
