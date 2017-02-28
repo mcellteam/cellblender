@@ -59,6 +59,28 @@ class MCELL_OT_load_ficks_law(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_load_rat_nmj(bpy.types.Operator):
+    bl_idname = "mcell.load_rat_nmj"
+    bl_label = "Load Rat NMJ Model"
+    bl_description = "Loads a model of the rat NMJ"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.rat_nmj.rat_nmj_dm
+
+        from pprint import pprint
+        pprint(dm['mcell']['scripting']['script_texts']['rat_nmj.parameters.mdl'])
+        parameters_txt = bpy.data.texts.new("rat_nmj.parameters.mdl")
+        parameters_txt.write(dm['mcell']['scripting']['script_texts']['rat_nmj.parameters.mdl'])
+
+        release_sites_txt = bpy.data.texts.new("rat_nmj.release_sites.mdl")
+        release_sites_txt.write(dm['mcell']['scripting']['script_texts']['rat_nmj.release_sites.mdl'])
+
+        cellblender.replace_data_model(dm, geometry=True)
+        return {'FINISHED'}
+
 class MCELL_PT_examples(bpy.types.Panel):
     bl_label = "CellBlender - Examples"
     bl_space_type = "PROPERTIES"
@@ -81,3 +103,4 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row = layout.row()
             row.operator("mcell.load_lotka_volterra")
             row.operator("mcell.load_ficks_laws")
+            row.operator("mcell.load_rat_nmj")
