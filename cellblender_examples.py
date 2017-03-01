@@ -113,6 +113,22 @@ class MCELL_OT_load_pbc(bpy.types.Operator):
         view_all()
         return {'FINISHED'}
 
+
+class MCELL_OT_load_lipid_raft(bpy.types.Operator):
+    bl_idname = "mcell.load_lipid_raft"
+    bl_label = "Load Lipid Raft Model"
+    bl_description = "Loads a lipid raft model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.lipid_raft.lipid_raft_dm
+        cellblender.replace_data_model(dm, geometry=True)
+        view_all()
+        return {'FINISHED'}
+
+
 class MCELL_PT_examples(bpy.types.Panel):
     bl_label = "CellBlender - Examples"
     bl_space_type = "PROPERTIES"
@@ -140,3 +156,5 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mcell.load_rat_nmj")
             row = layout.row()
             row.operator("mcell.load_pbc")
+            row = layout.row()
+            row.operator("mcell.load_lipid_raft")
