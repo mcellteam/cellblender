@@ -31,6 +31,15 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 
+def view_all():
+    for area in bpy.context.screen.areas:
+        if area.type == 'VIEW_3D':
+            for region in area.regions:
+                if region.type == 'WINDOW':
+                    override = {'area': area, 'region': region}
+                    bpy.ops.view3d.view_all(override)
+
+
 class MCELL_OT_load_lotka_volterra(bpy.types.Operator):
     bl_idname = "mcell.load_lotka_volterra"
     bl_label = "Load Lotka-Volterra Model"
@@ -42,6 +51,7 @@ class MCELL_OT_load_lotka_volterra(bpy.types.Operator):
         dm = {}
         dm['mcell'] = examples.lv.lv_dm
         cellblender.replace_data_model(dm, geometry=True)
+        view_all()
         return {'FINISHED'}
 
 
@@ -56,6 +66,7 @@ class MCELL_OT_load_ficks_law(bpy.types.Operator):
         dm = {}
         dm['mcell'] = examples.ficks_laws.ficks_laws_dm
         cellblender.replace_data_model(dm, geometry=True)
+        view_all()
         return {'FINISHED'}
 
 
@@ -77,6 +88,7 @@ class MCELL_OT_load_rat_nmj(bpy.types.Operator):
         release_sites_txt.write(dm['mcell']['scripting']['script_texts']['rat_nmj.release_sites.mdl'])
 
         cellblender.replace_data_model(dm, geometry=True)
+        view_all()
         return {'FINISHED'}
 
 
@@ -95,6 +107,10 @@ class MCELL_OT_load_pbc(bpy.types.Operator):
         pbc_txt.write(dm['mcell']['scripting']['script_texts']['pbc.mdl'])
 
         cellblender.replace_data_model(dm, geometry=True)
+        bpy.ops.mesh.primitive_cube_add()
+        bpy.context.scene.objects.active.scale = (0.5, 0.1, 0.1)
+        bpy.context.object.draw_type = 'WIRE'
+        view_all()
         return {'FINISHED'}
 
 class MCELL_PT_examples(bpy.types.Panel):
