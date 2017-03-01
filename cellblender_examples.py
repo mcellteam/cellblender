@@ -70,13 +70,29 @@ class MCELL_OT_load_rat_nmj(bpy.types.Operator):
         dm = {}
         dm['mcell'] = examples.rat_nmj.rat_nmj_dm
 
-        from pprint import pprint
-        pprint(dm['mcell']['scripting']['script_texts']['rat_nmj.parameters.mdl'])
         parameters_txt = bpy.data.texts.new("rat_nmj.parameters.mdl")
         parameters_txt.write(dm['mcell']['scripting']['script_texts']['rat_nmj.parameters.mdl'])
 
         release_sites_txt = bpy.data.texts.new("rat_nmj.release_sites.mdl")
         release_sites_txt.write(dm['mcell']['scripting']['script_texts']['rat_nmj.release_sites.mdl'])
+
+        cellblender.replace_data_model(dm, geometry=True)
+        return {'FINISHED'}
+
+
+class MCELL_OT_load_pbc(bpy.types.Operator):
+    bl_idname = "mcell.load_pbc"
+    bl_label = "Load PBC Model"
+    bl_description = "Loads a model illustrating periodic boundary conditions"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.pbc.pbc_dm
+
+        pbc_txt = bpy.data.texts.new("pbc.mdl")
+        pbc_txt.write(dm['mcell']['scripting']['script_texts']['pbc.mdl'])
 
         cellblender.replace_data_model(dm, geometry=True)
         return {'FINISHED'}
@@ -102,5 +118,9 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             ps = mcell.parameter_system
             row = layout.row()
             row.operator("mcell.load_lotka_volterra")
+            row = layout.row()
             row.operator("mcell.load_ficks_laws")
+            row = layout.row()
             row.operator("mcell.load_rat_nmj")
+            row = layout.row()
+            row.operator("mcell.load_pbc")
