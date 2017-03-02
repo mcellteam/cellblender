@@ -18,6 +18,7 @@ class ImportMDLData(bpy.types.Operator, ImportHelper):
         f = open ( self.filepath, 'r' )
         bracket_depth = 0
         # Read each line of the file
+        par_list = []
         for line in f:
             # Keep track of bracket nesting depth to only pull parameters from the top level
             if ('{' in line) and not ('}' in line):
@@ -57,7 +58,11 @@ class ImportMDLData(bpy.types.Operator, ImportHelper):
                                     desc = split_comment[0].strip()
                                     units = split_comment[1].strip()
                             print ( vname + " = " + expr + " : " + desc + " (" + units + ")" )
-                            mcell.general_parameters.add_parameter_with_values ( vname, expr, units, desc )
+                            par_list.append ( {'par_name':vname, 'par_expression':expr, 'par_units':units, 'par_description':desc} )
+                            # mcell.general_parameters.add_parameter_with_values ( vname, expr, units, desc )
+
+        mcell.parameter_system.add_general_parameters_from_list ( context, par_list )
+
         print ( "Done loading parameters from MDL file." )
         return {'FINISHED'}
 

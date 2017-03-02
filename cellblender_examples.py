@@ -31,23 +31,48 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 
-class MCELL_OT_load_lotka_volterra(bpy.types.Operator):
-    bl_idname = "mcell.load_lotka_volterra"
-    bl_label = "Load Lotka-Volterra Model"
-    bl_description = "Loads a Lotka-Volterra model"
+def view_all():
+    for area in bpy.context.screen.areas:
+        if area.type == 'VIEW_3D':
+            for region in area.regions:
+                if region.type == 'WINDOW':
+                    override = {'area': area, 'region': region}
+                    bpy.ops.view3d.view_all(override)
+
+
+class MCELL_OT_load_lotka_volterra_rxn_limited(bpy.types.Operator):
+    bl_idname = "mcell.load_lotka_volterra_rxn_limited"
+    bl_label = "Reaction-Limited"
+    bl_description = "Loads the Reaction-Limited Lotka-Volterra model"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
 
         dm = {}
-        dm['mcell'] = examples.lv.lv_dm
+        dm['mcell'] = examples.lv.lv_rxn_lim_dm
         cellblender.replace_data_model(dm, geometry=True)
+        view_all()
+        return {'FINISHED'}
+
+
+class MCELL_OT_load_lotka_volterra_diff_limited(bpy.types.Operator):
+    bl_idname = "mcell.load_lotka_volterra_diff_limited"
+    bl_label = "Diffusion-Limited"
+    bl_description = "Loads the Diffusion-Limited Lotka-Volterra model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.lv.lv_diff_lim_dm
+        cellblender.replace_data_model(dm, geometry=True)
+        view_all()
         return {'FINISHED'}
 
 
 class MCELL_OT_load_ficks_law(bpy.types.Operator):
     bl_idname = "mcell.load_ficks_laws"
-    bl_label = "Load Fick's Laws Model"
+    bl_label = "Fick's Laws"
     bl_description = "Loads a model illustrating Fick's Laws"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -56,6 +81,84 @@ class MCELL_OT_load_ficks_law(bpy.types.Operator):
         dm = {}
         dm['mcell'] = examples.ficks_laws.ficks_laws_dm
         cellblender.replace_data_model(dm, geometry=True)
+        view_all()
+        return {'FINISHED'}
+
+
+class MCELL_OT_load_rat_nmj(bpy.types.Operator):
+    bl_idname = "mcell.load_rat_nmj"
+    bl_label = "Rat NMJ"
+    bl_description = "Loads a model of the rat NMJ"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.rat_nmj.rat_nmj_dm
+
+        parameters_txt = bpy.data.texts.new("rat_nmj.parameters.mdl")
+        parameters_txt.write(dm['mcell']['scripting']['script_texts']['rat_nmj.parameters.mdl'])
+
+        release_sites_txt = bpy.data.texts.new("rat_nmj.release_sites.mdl")
+        release_sites_txt.write(dm['mcell']['scripting']['script_texts']['rat_nmj.release_sites.mdl'])
+
+        cellblender.replace_data_model(dm, geometry=True)
+        view_all()
+        return {'FINISHED'}
+
+
+class MCELL_OT_load_pbc(bpy.types.Operator):
+    bl_idname = "mcell.load_pbc"
+    bl_label = "Periodic Boundary Conditions"
+    bl_description = "Loads a model illustrating periodic boundary conditions"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.pbc.pbc_dm
+
+        pbc_txt = bpy.data.texts.new("pbc.mdl")
+        pbc_txt.write(dm['mcell']['scripting']['script_texts']['pbc.mdl'])
+
+        cellblender.replace_data_model(dm, geometry=True)
+        bpy.ops.view3d.snap_cursor_to_center()
+        bpy.ops.mesh.primitive_cube_add()
+        bpy.context.scene.objects.active.scale = (0.5, 0.1, 0.1)
+        bpy.context.object.draw_type = 'WIRE'
+        view_all()
+        return {'FINISHED'}
+
+
+class MCELL_OT_load_lipid_raft(bpy.types.Operator):
+    bl_idname = "mcell.load_lipid_raft"
+    bl_label = "Lipid Raft"
+    bl_description = "Loads a lipid raft model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.lipid_raft.lipid_raft_dm
+        cellblender.replace_data_model(dm, geometry=True)
+        view_all()
+        return {'FINISHED'}
+
+
+class MCELL_OT_load_variable_rate_constant(bpy.types.Operator):
+    bl_idname = "mcell.load_variable_rate_constant"
+    bl_label = "Variable Rate Constant"
+    bl_description = "Loads a model with a variable rate constant"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.variable_rate_constant.variable_rate_constant_dm
+        # vrc_txt = bpy.data.texts.new("rate_constant.txt")
+        # vrc_txt.write(dm['mcell']['define_reactions']['reaction_list'][0]['variable_rate_text'])
+        cellblender.replace_data_model(dm, geometry=True)
+        view_all()
         return {'FINISHED'}
 
 
@@ -78,6 +181,17 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( layout )
         else:
             ps = mcell.parameter_system
+            row = layout.row(align=True)
+            row.label(text="Lotka-Volterra:")
+            row.operator("mcell.load_lotka_volterra_rxn_limited")
+            row.operator("mcell.load_lotka_volterra_diff_limited")
             row = layout.row()
-            row.operator("mcell.load_lotka_volterra")
             row.operator("mcell.load_ficks_laws")
+            row = layout.row()
+            row.operator("mcell.load_rat_nmj")
+            row = layout.row()
+            row.operator("mcell.load_pbc")
+            row = layout.row()
+            row.operator("mcell.load_lipid_raft")
+            row = layout.row()
+            row.operator("mcell.load_variable_rate_constant")

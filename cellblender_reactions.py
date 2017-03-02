@@ -435,11 +435,9 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         self.variable_rate_valid = dm_dict["variable_rate_valid"]
         self.fwd_rate.set_expr ( dm_dict["fwd_rate"] )
         self.bkwd_rate.set_expr ( dm_dict["bkwd_rate"] )
-        # TODO: The following logic doesn't seem right ... we might want to check it!!
         if self.type == 'irreversible':
             # Check if a variable rate constant file is specified
-            if self.variable_rate_switch and self.variable_rate_valid:
-                variable_rate_text = bpy.data.texts[self.variable_rate].as_string()
+            if self.variable_rate_switch and self.variable_rate and dm_dict["variable_rate_text"]:
                 self.store_variable_rate_text ( context, self.variable_rate, dm_dict["variable_rate_text"] )
 
     def check_properties_after_building ( self, context ):
