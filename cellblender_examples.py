@@ -40,16 +40,31 @@ def view_all():
                     bpy.ops.view3d.view_all(override)
 
 
-class MCELL_OT_load_lotka_volterra(bpy.types.Operator):
-    bl_idname = "mcell.load_lotka_volterra"
-    bl_label = "Load Lotka-Volterra Model"
-    bl_description = "Loads a Lotka-Volterra model"
+class MCELL_OT_load_lotka_volterra_rxn_limited(bpy.types.Operator):
+    bl_idname = "mcell.load_lotka_volterra_rxn_limited"
+    bl_label = "Reaction-Limited"
+    bl_description = "Loads the Reaction-Limited Lotka-Volterra model"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
 
         dm = {}
-        dm['mcell'] = examples.lv.lv_dm
+        dm['mcell'] = examples.lv.lv_rxn_lim_dm
+        cellblender.replace_data_model(dm, geometry=True)
+        view_all()
+        return {'FINISHED'}
+
+
+class MCELL_OT_load_lotka_volterra_diff_limited(bpy.types.Operator):
+    bl_idname = "mcell.load_lotka_volterra_diff_limited"
+    bl_label = "Diffusion-Limited"
+    bl_description = "Loads the Diffusion-Limited Lotka-Volterra model"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.lv.lv_diff_lim_dm
         cellblender.replace_data_model(dm, geometry=True)
         view_all()
         return {'FINISHED'}
@@ -57,7 +72,7 @@ class MCELL_OT_load_lotka_volterra(bpy.types.Operator):
 
 class MCELL_OT_load_ficks_law(bpy.types.Operator):
     bl_idname = "mcell.load_ficks_laws"
-    bl_label = "Load Fick's Laws Model"
+    bl_label = "Fick's Laws"
     bl_description = "Loads a model illustrating Fick's Laws"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -72,7 +87,7 @@ class MCELL_OT_load_ficks_law(bpy.types.Operator):
 
 class MCELL_OT_load_rat_nmj(bpy.types.Operator):
     bl_idname = "mcell.load_rat_nmj"
-    bl_label = "Load Rat NMJ Model"
+    bl_label = "Rat NMJ"
     bl_description = "Loads a model of the rat NMJ"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -94,7 +109,7 @@ class MCELL_OT_load_rat_nmj(bpy.types.Operator):
 
 class MCELL_OT_load_pbc(bpy.types.Operator):
     bl_idname = "mcell.load_pbc"
-    bl_label = "Load PBC Model"
+    bl_label = "Periodic Boundary Conditions"
     bl_description = "Loads a model illustrating periodic boundary conditions"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -117,7 +132,7 @@ class MCELL_OT_load_pbc(bpy.types.Operator):
 
 class MCELL_OT_load_lipid_raft(bpy.types.Operator):
     bl_idname = "mcell.load_lipid_raft"
-    bl_label = "Load Lipid Raft Model"
+    bl_label = "Lipid Raft"
     bl_description = "Loads a lipid raft model"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -149,8 +164,10 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( layout )
         else:
             ps = mcell.parameter_system
-            row = layout.row()
-            row.operator("mcell.load_lotka_volterra")
+            row = layout.row(align=True)
+            row.label(text="Lotka-Volterra:")
+            row.operator("mcell.load_lotka_volterra_rxn_limited")
+            row.operator("mcell.load_lotka_volterra_diff_limited")
             row = layout.row()
             row.operator("mcell.load_ficks_laws")
             row = layout.row()
