@@ -145,6 +145,23 @@ class MCELL_OT_load_lipid_raft(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_load_variable_rate_constant(bpy.types.Operator):
+    bl_idname = "mcell.load_variable_rate_constant"
+    bl_label = "Variable Rate Constant"
+    bl_description = "Loads a model with a variable rate constant"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.variable_rate_constant.variable_rate_constant_dm
+        # vrc_txt = bpy.data.texts.new("rate_constant.txt")
+        # vrc_txt.write(dm['mcell']['define_reactions']['reaction_list'][0]['variable_rate_text'])
+        cellblender.replace_data_model(dm, geometry=True)
+        view_all()
+        return {'FINISHED'}
+
+
 class MCELL_PT_examples(bpy.types.Panel):
     bl_label = "CellBlender - Examples"
     bl_space_type = "PROPERTIES"
@@ -176,3 +193,5 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mcell.load_pbc")
             row = layout.row()
             row.operator("mcell.load_lipid_raft")
+            row = layout.row()
+            row.operator("mcell.load_variable_rate_constant")
