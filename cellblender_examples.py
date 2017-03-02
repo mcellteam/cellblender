@@ -107,6 +107,7 @@ class MCELL_OT_load_pbc(bpy.types.Operator):
         pbc_txt.write(dm['mcell']['scripting']['script_texts']['pbc.mdl'])
 
         cellblender.replace_data_model(dm, geometry=True)
+        bpy.ops.view3d.snap_cursor_to_center()
         bpy.ops.mesh.primitive_cube_add()
         bpy.context.scene.objects.active.scale = (0.5, 0.1, 0.1)
         bpy.context.object.draw_type = 'WIRE'
