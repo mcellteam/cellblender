@@ -1,9 +1,7 @@
-import copy
-
-lv_rxn_lim_dm = {
+variable_rate_constant_dm = {
   'api_version' : 0,
   'blender_version' : [2, 78, 0],
-  'cellblender_source_sha1' : "d34986b7e98e0833a70d4bb6abffb0650da9cb05",
+  'cellblender_source_sha1' : "3191e3cf6b11ea707a7a3b57165bc8483a38f38a",
   'cellblender_version' : "0.1.54",
   'data_model_version' : "DM_2014_10_24_1638",
   'define_molecules' : {
@@ -13,35 +11,17 @@ lv_rxn_lim_dm = {
         'custom_space_step' : "",
         'custom_time_step' : "",
         'data_model_version' : "DM_2016_01_13_1930",
-        'diffusion_constant' : "6e-6",
+        'diffusion_constant' : "1e-6",
         'display' : {
           'color' : [1.0, 0.0, 0.0],
           'emit' : 0.0,
-          'glyph' : "Sphere_2",
-          'scale' : 1.0
+          'glyph' : "Sphere_1",
+          'scale' : 5.0
         },
         'export_viz' : False,
         'maximum_step_length' : "",
         'mol_bngl_label' : "",
-        'mol_name' : "prey",
-        'mol_type' : "3D",
-        'target_only' : False
-      },
-      {
-        'custom_space_step' : "",
-        'custom_time_step' : "",
-        'data_model_version' : "DM_2016_01_13_1930",
-        'diffusion_constant' : "6e-6",
-        'display' : {
-          'color' : [0.0, 1.0, 0.0],
-          'emit' : 0.0,
-          'glyph' : "Sphere_2",
-          'scale' : 1.0
-        },
-        'export_viz' : False,
-        'maximum_step_length' : "",
-        'mol_bngl_label' : "",
-        'mol_name' : "predator",
+        'mol_name' : "vm",
         'mol_type' : "3D",
         'target_only' : False
       }
@@ -53,44 +33,18 @@ lv_rxn_lim_dm = {
       {
         'bkwd_rate' : "",
         'data_model_version' : "DM_2014_10_24_1638",
-        'fwd_rate' : "1.29e5",
-        'name' : "prey -> prey + prey",
-        'products' : "prey + prey",
-        'reactants' : "prey",
-        'rxn_name' : "",
-        'rxn_type' : "irreversible",
-        'variable_rate' : "",
-        'variable_rate_switch' : False,
-        'variable_rate_text' : "",
-        'variable_rate_valid' : False
-      },
-      {
-        'bkwd_rate' : "",
-        'data_model_version' : "DM_2014_10_24_1638",
-        'fwd_rate' : "1e8",
-        'name' : "predator + prey -> predator + predator",
-        'products' : "predator + predator",
-        'reactants' : "predator + prey",
-        'rxn_name' : "",
-        'rxn_type' : "irreversible",
-        'variable_rate' : "",
-        'variable_rate_switch' : False,
-        'variable_rate_text' : "",
-        'variable_rate_valid' : False
-      },
-      {
-        'bkwd_rate' : "",
-        'data_model_version' : "DM_2014_10_24_1638",
-        'fwd_rate' : "1.3e5",
-        'name' : "predator -> NULL",
+        'fwd_rate' : "0",
+        'name' : "vm -> NULL",
         'products' : "NULL",
-        'reactants' : "predator",
+        'reactants' : "vm",
         'rxn_name' : "",
         'rxn_type' : "irreversible",
-        'variable_rate' : "",
-        'variable_rate_switch' : False,
-        'variable_rate_text' : "",
-        'variable_rate_valid' : False
+        'variable_rate' : "rate_constant.txt",
+        'variable_rate_switch' : True,
+        'variable_rate_text' : """0      0
+5E-4   1E4
+""",
+        'variable_rate_valid' : True
       }
     ]
   },
@@ -123,14 +77,14 @@ lv_rxn_lim_dm = {
         'material_names' : ['Cube_mat'],
         'name' : "Cube",
         'vertex_list' : [
-          [-0.25, -0.25, -0.004999999888241291],
-          [-0.25, -0.25, 0.004999999888241291],
-          [-0.25, 0.25, -0.004999999888241291],
-          [-0.25, 0.25, 0.004999999888241291],
-          [0.25, -0.25, -0.004999999888241291],
-          [0.25, -0.25, 0.004999999888241291],
-          [0.25, 0.25, -0.004999999888241291],
-          [0.25, 0.25, 0.004999999888241291]
+          [-1.0, -1.0, -1.0],
+          [-1.0, -1.0, 1.0],
+          [-1.0, 1.0, -1.0],
+          [-1.0, 1.0, 1.0],
+          [1.0, -1.0, -1.0],
+          [1.0, -1.0, 1.0],
+          [1.0, 1.0, -1.0],
+          [1.0, 1.0, 1.0]
         ]
       }
     ]
@@ -140,7 +94,7 @@ lv_rxn_lim_dm = {
     'center_molecules_on_grid' : False,
     'data_model_version' : "DM_2014_10_24_1638",
     'interaction_radius' : "",
-    'iterations' : "500",
+    'iterations' : "1000",
     'microscopic_reversibility' : "OFF",
     'notifications' : {
       'all_notifications' : "INDIVIDUAL",
@@ -159,17 +113,17 @@ lv_rxn_lim_dm = {
     },
     'partitions' : {
       'data_model_version' : "DM_2016_04_15_1600",
-      'include' : True,
+      'include' : False,
       'recursion_flag' : False,
-      'x_end' : "0.25",
-      'x_start' : "-0.25",
+      'x_end' : "1",
+      'x_start' : "-1",
       'x_step' : "0.02",
-      'y_end' : "0.25",
-      'y_start' : "-0.25",
+      'y_end' : "1",
+      'y_start' : "-1",
       'y_step' : "0.02",
-      'z_end' : "0.0075",
-      'z_start' : "-0.0075",
-      'z_step' : "0.015"
+      'z_end' : "1",
+      'z_start' : "-1",
+      'z_step' : "0.02"
     },
     'radial_directions' : "",
     'radial_subdivisions' : "",
@@ -231,18 +185,18 @@ lv_rxn_lim_dm = {
       [0.0, 0.0, 0.0]
     ],
     'data_model_version' : "DM_2015_04_13_1700",
-    'file_dir' : "../../../../../../mcell/tests/cellblender_tests/lv/lv3_files/mcell/output_data/viz_data/seed_00001",
-    'file_index' : 325,
-    'file_name' : "Scene.cellbin.325.dat",
-    'file_num' : 501,
+    'file_dir' : "../../../../../../mcell/tests/cellblender_tests/lv/vrc_files/mcell/output_data/viz_data/seed_00001",
+    'file_index' : 869,
+    'file_name' : "Scene.cellbin.0869.dat",
+    'file_num' : 1001,
     'file_start_index' : 0,
     'file_step_index' : 1,
-    'file_stop_index' : 500,
+    'file_stop_index' : 1000,
     'manual_select_viz_dir' : False,
     'render_and_save' : False,
     'seed_list' : ['seed_00001'],
     'viz_enable' : True,
-    'viz_list' : ['mol_prey', 'mol_predator']
+    'viz_list' : ['mol_vm']
   },
   'parameter_system' : {
     'model_parameters' : [],
@@ -262,22 +216,8 @@ lv_rxn_lim_dm = {
         'data_model_version' : "DM_2016_03_15_1800",
         'mdl_file_prefix' : "",
         'mdl_string' : "",
-        'molecule_name' : "prey",
-        'name' : "Count prey in World",
-        'object_name' : "",
-        'plotting_enabled' : True,
-        'reaction_name' : "",
-        'region_name' : "",
-        'rxn_or_mol' : "Molecule"
-      },
-      {
-        'count_location' : "World",
-        'data_file_name' : "",
-        'data_model_version' : "DM_2016_03_15_1800",
-        'mdl_file_prefix' : "",
-        'mdl_string' : "",
-        'molecule_name' : "predator",
-        'name' : "Count predator in World",
+        'molecule_name' : "vm",
+        'name' : "Count vm in World",
         'object_name' : "",
         'plotting_enabled' : True,
         'reaction_name' : "",
@@ -295,26 +235,8 @@ lv_rxn_lim_dm = {
         'location_x' : "0",
         'location_y' : "0",
         'location_z' : "0",
-        'molecule' : "prey",
-        'name' : "rel_prey",
-        'object_expr' : "Cube",
-        'orient' : "'",
-        'pattern' : "",
-        'points_list' : [],
-        'quantity' : "1000",
-        'quantity_type' : "NUMBER_TO_RELEASE",
-        'release_probability' : "1",
-        'shape' : "OBJECT",
-        'site_diameter' : "0",
-        'stddev' : "0"
-      },
-      {
-        'data_model_version' : "DM_2015_11_11_1717",
-        'location_x' : "0",
-        'location_y' : "0",
-        'location_z' : "0",
-        'molecule' : "predator",
-        'name' : "rel_predator",
+        'molecule' : "vm",
+        'name' : "Release_Site_1",
         'object_expr' : "Cube",
         'orient' : "'",
         'pattern' : "",
@@ -336,7 +258,7 @@ lv_rxn_lim_dm = {
     'script_texts' : {},
     'scripting_list' : [],
     'show_data_model_scripting' : True,
-    'show_simulation_scripting' : False
+    'show_simulation_scripting' : True
   },
   'simulation_control' : {
     'data_model_version' : "DM_2016_10_27_1642",
@@ -345,15 +267,15 @@ lv_rxn_lim_dm = {
     'processes_list' : [
       {
         'data_model_version' : "DM_2015_04_23_1753",
-        'name' : "PID: 10124, MDL: Scene.main.mdl, Seed: 1"
+        'name' : "PID: 4526, MDL: Scene.main.mdl, Seed: 1"
       },
       {
         'data_model_version' : "DM_2015_04_23_1753",
-        'name' : "PID: 10735, MDL: Scene.main.mdl, Seed: 1"
+        'name' : "PID: 4623, MDL: Scene.main.mdl, Seed: 1"
       },
       {
         'data_model_version' : "DM_2015_04_23_1753",
-        'name' : "PID: 11074, MDL: Scene.main.mdl, Seed: 1"
+        'name' : "PID: 4732, MDL: Scene.main.mdl, Seed: 1"
       }
     ],
     'run_limit' : "-1",
@@ -368,11 +290,3 @@ lv_rxn_lim_dm = {
     'step' : "1"
   }
 }
-
-# diffusion limited case is almost the same
-# copy dict so we can replace rate constants decrease shrink timestep
-lv_diff_lim_dm = copy.deepcopy(lv_rxn_lim_dm)
-lv_diff_lim_dm['define_reactions']['reaction_list'][0]['fwd_rate'] = "8.6e6"
-lv_diff_lim_dm['define_reactions']['reaction_list'][1]['fwd_rate'] = "1e12"
-lv_diff_lim_dm['define_reactions']['reaction_list'][2]['fwd_rate'] = "5e6"
-lv_diff_lim_dm['initialization']['time_step'] = "1e-8"

@@ -184,6 +184,9 @@ cellblender_info = {
         "examples"+os.sep+"lv.py",
         "examples"+os.sep+"ficks_laws.py",
         "examples"+os.sep+"rat_nmj.py",
+        "examples"+os.sep+"pbc.py",
+        "examples"+os.sep+"lipid_raft.py",
+        "examples"+os.sep+"variable_rate_constant.py",
         #        "bng"+os.sep+"libsbml3"+os.sep+"__init__.py",
         ],
 
