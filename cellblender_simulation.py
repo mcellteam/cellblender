@@ -68,6 +68,10 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 
+def get_pid(item):
+    return int(item.name.split(',')[0].split(':')[1])
+
+
 ###################################################################################
 #### This function was duplicated from cellblender/mdl/run_data_model_mcell.py ####
 ####        Many attempts were made to import it, but they all failed.         ####
@@ -288,7 +292,7 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
         elif str(mcell.run_simulation.simulation_run_control) == 'QUEUE':
             processes_list = mcell.run_simulation.processes_list
             for pl_item in processes_list:
-                pid = int(pl_item.name.split(',')[0].split(':')[1])
+                pid = get_pid(pl_item)
                 q_item = cellblender.simulation_queue.task_dict[pid]
                 if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
                     return False
@@ -744,7 +748,7 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
             task_ctr = 0
             processes_list = context.scene.mcell.run_simulation.processes_list
             for simulation_process in processes_list:
-                pid = int(simulation_process.name.split(',')[0].split(':')[1])
+                pid = get_pid(simulation_process)
                 mdl_filename = simulation_process.name.split(',')[1].split(':')[1][1:]
                 seed = int(simulation_process.name.split(',')[2].split(':')[1])
                 q_item = cellblender.simulation_queue.task_dict[pid]
@@ -918,7 +922,8 @@ class MCELL_OT_kill_simulation(bpy.types.Operator):
         processes_list = mcell.run_simulation.processes_list
         active_index = mcell.run_simulation.active_process_index
         ap = processes_list[active_index]
-        pid = int(ap.name.split(',')[0].split(':')[1])
+        pid = get_pid(ap)
+        # pid = int(ap.name.split(',')[0].split(':')[1])
         q_item = cellblender.simulation_queue.task_dict.get(pid)
         if q_item:
             if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
@@ -940,7 +945,7 @@ class MCELL_OT_kill_all_simulations(bpy.types.Operator):
         processes_list = mcell.run_simulation.processes_list
 
         for p_item in processes_list:
-            pid = int(p_item.name.split(',')[0].split(':')[1])
+            pid = get_pid(p_item)
             q_item = cellblender.simulation_queue.task_dict.get(pid)
             if q_item:
                 if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
@@ -1524,7 +1529,7 @@ class MCELL_OT_clear_simulation_queue(bpy.types.Operator):
 
         while ctr < proc_list_length:
             ctr += 1
-            pid = int(processes_list[idx].name.split(',')[0].split(':')[1])
+            pid = get_pid(processes_list[idx])
             q_item = simulation_queue.task_dict.get(pid)
             if q_item:
                 proc = q_item['process']
@@ -1709,7 +1714,7 @@ class MCELL_UL_run_simulation_queue(bpy.types.UIList):
                   active_propname, index):
 
         if len(cellblender.simulation_queue.task_dict) > index:
-            pid = int(item.name.split(',')[0].split(':')[1])
+            pid = get_pid(item)
             q_item = cellblender.simulation_queue.task_dict[pid]
             proc = q_item['process']
             if q_item['status'] == 'queued':
@@ -2094,7 +2099,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         if proc_list_length > 0:
                             active_process_index = mcell.run_simulation.active_process_index
                             simulation_queue = cellblender.simulation_queue
-                            pid = int(processes_list[active_process_index].name.split(',')[0].split(':')[1])
+                            pid = get_pid(processes_list[active_process_index])
                             q_item = cellblender.simulation_queue.task_dict[pid]
 
                             if q_item['stderr'] != b'':
