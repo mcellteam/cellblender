@@ -730,6 +730,60 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_percentage_done_timer(bpy.types.Operator):
+    """Update the MCell job list periodically to show percentage done"""
+    bl_idname = "mcell.percentage_done_timer"
+    bl_label = "Modal Timer Operator"
+    bl_options = {'REGISTER'}
+
+    _timer = None
+
+    def modal(self, context, event):
+        if event.type == 'TIMER':
+            task_len = len(cellblender.simulation_queue.task_dict)
+            task_ctr = 0
+            processes_list = context.scene.mcell.run_simulation.processes_list
+            for simulation_process in processes_list:
+                pid = int(simulation_process.name.split(',')[0].split(':')[1])
+                mdl_filename = simulation_process.name.split(',')[1].split(':')[1][1:]
+                seed = int(simulation_process.name.split(',')[2].split(':')[1])
+                q_item = cellblender.simulation_queue.task_dict[pid]
+                stdout_txt = q_item['bl_text'].as_string()
+                percent = 0 
+                for i in reversed(stdout_txt.split("\n")):
+                    if i.startswith("Iterations"):
+                        last_iter = int(i.split()[1])
+                        total_iter = int(i.split()[3])
+                        percent = (last_iter/total_iter)*100
+                        break
+                if last_iter == total_iter:
+                    task_ctr += 1
+                simulation_process.name = "PID: %d, MDL: %s, Seed: %d, %d%%" % (pid, mdl_filename, seed, percent)
+
+            # just a silly way of forcing a screen update. ¯\_(ツ)_/¯
+            color = context.user_preferences.themes[0].view_3d.space.gradients.high_gradient
+            color.h += 0.01
+            color.h -= 0.01
+            # if every MCell job is done, quit updating the screen
+            if task_len == task_ctr:
+                self.cancel(context)
+                return {'CANCELLED'}
+
+        return {'PASS_THROUGH'}
+
+    def execute(self, context):
+        wm = context.window_manager
+        # this is how often we should update this in seconds
+        secs = 0.1
+        self._timer = wm.event_timer_add(secs, context.window)
+        wm.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
+
+    def cancel(self, context):
+        wm = context.window_manager
+        wm.event_timer_remove(self._timer)
+
+
 class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
     bl_idname = "mcell.run_simulation_control_queue"
     bl_label = "Run MCell Simulation Using Command Queue"
@@ -825,7 +879,9 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
 
                   self.report({'INFO'}, "Simulation Running")
 
-                  simulation_process.name = ("PID: %d, MDL: %s, " "Seed: %d" % (proc.pid, mdl_filename, seed))
+                  if not simulation_process.name:
+                      simulation_process.name = ("PID: %d, MDL: %s, Seed: %d, 0%%" % (proc.pid, mdl_filename, seed))
+                  bpy.ops.mcell.percentage_done_timer()
 
         else:
             status = "Python not found. Set it in Project Settings."
@@ -1811,7 +1867,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     python_scripting_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     python_initialize_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
-    save_text_logs = BoolProperty ( name='Save Text Logs', default=False, description="Create a text log for each run" )
+    save_text_logs = BoolProperty ( name='Save Text Logs', default=True, description="Create a text log for each run" )
 
     # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
