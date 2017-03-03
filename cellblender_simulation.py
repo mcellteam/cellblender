@@ -260,11 +260,11 @@ def run_generic_runner (context, sim_module):
 
 
         if ((end - start) == 0):
-            simulation_process.name = ("PID: %d, MDL: %s.main.mdl, Seed: %d" %
-                                        (sp_list[0].pid, base_name, start))
+            simulation_process.name = ("PID: %d, Seed: %d" %
+                                        (sp_list[0].pid, start))
         else:
-            simulation_process.name = ("PID: %d-%d, MDL: %s.main.mdl, Seeds: %d-%d" %
-                                        (sp_list[0].pid, sp_list[-1].pid, base_name, start, end))
+            simulation_process.name = ("PID: %d-%d, Seeds: %d-%d" %
+                                        (sp_list[0].pid, sp_list[-1].pid, start, end))
 
     mcell.run_simulation.status = status
 
@@ -470,13 +470,9 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
                 cellblender.simulation_popen_list.append(sp)
 
                 if ((end - start) == 0):
-                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                               "Seed: %d" % (sp.pid, base_name,
-                                                             start))
+                    simulation_process.name = ("PID: %d, Seed: %d" % (sp.pid, start))
                 else:
-                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                               "Seeds: %d-%d" % (sp.pid, base_name,
-                                                                 start, end))
+                    simulation_process.name = ("PID: %d, Seeds: %d-%d" % (sp.pid, start, end))
         else:
             status = "Python not found. Set it in Project Settings."
 
@@ -615,13 +611,9 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
                 cellblender.simulation_popen_list.append(sp)
 
                 if ((end - start) == 0):
-                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                               "Seed: %d" % (sp.pid, base_name,
-                                                             start))
+                    simulation_process.name = ("PID: %d, Seed: %d" % (sp.pid, start))
                 else:
-                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                               "Seeds: %d-%d" % (sp.pid, base_name,
-                                                                 start, end))
+                    simulation_process.name = ("PID: %d, Seeds: %d-%d" % (sp.pid, start, end))
         else:
             status = "Python not found. Set it in Project Settings."
 
@@ -719,13 +711,9 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
                 cellblender.simulation_popen_list.append(sp)
 
                 if ((end - start) == 0):
-                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                               "Seed: %d" % (sp.pid, base_name,
-                                                             start))
+                    simulation_process.name = ("PID: %d, Seed: %d" % (sp.pid, start))
                 else:
-                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                               "Seeds: %d-%d" % (sp.pid, base_name,
-                                                                 start, end))
+                    simulation_process.name = ("PID: %d, Seeds: %d-%d" % (sp.pid, start, end))
         else:
             status = "Python not found. Set it in Project Settings."
 
@@ -749,8 +737,7 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
             processes_list = context.scene.mcell.run_simulation.processes_list
             for simulation_process in processes_list:
                 pid = get_pid(simulation_process)
-                mdl_filename = simulation_process.name.split(',')[1].split(':')[1][1:]
-                seed = int(simulation_process.name.split(',')[2].split(':')[1])
+                seed = int(simulation_process.name.split(',')[1].split(':')[1])
                 q_item = cellblender.simulation_queue.task_dict[pid]
                 stdout_txt = q_item['bl_text'].as_string()
                 percent = 0 
@@ -762,7 +749,7 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
                         break
                 if last_iter == total_iter:
                     task_ctr += 1
-                simulation_process.name = "PID: %d, MDL: %s, Seed: %d, %d%%" % (pid, mdl_filename, seed, percent)
+                simulation_process.name = "PID: %d, Seed: %d, %d%%" % (pid, seed, percent)
 
             # just a silly way of forcing a screen update. ¯\_(ツ)_/¯
             color = context.user_preferences.themes[0].view_3d.space.gradients.high_gradient
@@ -884,7 +871,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                   self.report({'INFO'}, "Simulation Running")
 
                   if not simulation_process.name:
-                      simulation_process.name = ("PID: %d, MDL: %s, Seed: %d, 0%%" % (proc.pid, mdl_filename, seed))
+                      simulation_process.name = ("PID: %d, Seed: %d, 0%%" % (proc.pid, seed))
                   bpy.ops.mcell.percentage_done_timer()
 
         else:
@@ -998,8 +985,6 @@ class MCELL_OT_run_simulation_libmcellpy(bpy.types.Operator):
             if not os.path.exists(viz_dir):
                 os.makedirs(viz_dir)
 
-            base_name = mcell.project_settings.base_name
-
             error_file_option = mcell.run_simulation.error_file
             log_file_option = mcell.run_simulation.log_file
             script_dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -1055,13 +1040,9 @@ class MCELL_OT_run_simulation_libmcellpy(bpy.types.Operator):
 
 
                 if ((end - start) == 0):
-                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                               "Seed: %d" % (sp.pid, base_name,
-                                                             start))
+                    simulation_process.name = ("PID: %d, Seed: %d" % (sp.pid, start))
                 else:
-                    simulation_process.name = ("PID: %d, MDL: %s.main.mdl, "
-                                               "Seeds: %d-%d" % (sp.pid, base_name,
-                                                                 start, end))
+                    simulation_process.name = ("PID: %d, Seeds: %d-%d" % (sp.pid, start, end))
 
         mcell.run_simulation.status = status
 
