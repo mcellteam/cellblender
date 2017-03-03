@@ -765,7 +765,7 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
     def execute(self, context):
         wm = context.window_manager
         # this is how often we should update this in seconds
-        secs = 0.1
+        secs = 0.5
         self._timer = wm.event_timer_add(secs, context.window)
         wm.modal_handler_add(self)
         return {'RUNNING_MODAL'}
