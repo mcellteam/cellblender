@@ -16,9 +16,8 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import cellblender
-
-# blender imports
 import bpy
+import os
 from bpy.props import BoolProperty
 from cellblender import examples
 
@@ -162,6 +161,39 @@ class MCELL_OT_load_variable_rate_constant(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_load_dynamic_geometry(bpy.types.Operator):
+    bl_idname = "mcell.load_dynamic_geometry"
+    bl_label = "Dynamic Geometry"
+    bl_description = "Loads a model using dynamic geometries"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.dynamic_geometry.dynamic_geometry_dm
+        cellblender.replace_data_model(dm, geometry=True)
+
+        # load object with shape keys from blend file
+        blendfile = os.path.join(os.path.dirname(__file__), "./examples/dynamic_geometry.blend")
+        section   = "/Object/"
+        obj    = "Cube"
+        filepath  = blendfile + section + obj
+        directory = blendfile + section
+        filename  = obj
+        bpy.ops.wm.append(
+            filepath=filepath, 
+            filename=filename,
+            directory=directory)
+
+        # set it to be dynamic and make transparent
+        bpy.context.scene.mcell.model_objects.object_list[0].dynamic = True
+        bpy.data.objects["Cube"].show_transparent = True
+        bpy.data.materials["Cube_mat"].use_transparency = True
+        bpy.data.materials["Cube_mat"].alpha = 0.2
+        view_all()
+        return {'FINISHED'}
+
+
 class MCELL_PT_examples(bpy.types.Panel):
     bl_label = "CellBlender - Examples"
     bl_space_type = "PROPERTIES"
@@ -195,3 +227,5 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mcell.load_lipid_raft")
             row = layout.row()
             row.operator("mcell.load_variable_rate_constant")
+            row = layout.row()
+            row.operator("mcell.load_dynamic_geometry")
