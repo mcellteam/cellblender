@@ -1242,7 +1242,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         mcell = scene.mcell
         if mcell.model_objects.has_some_dynamic and mcell.model_objects.show_dynamic_from_mdl:
             filepath = mcell_files_path()
-            path_to_dg_files = os.path.join ( filepath, "dynamic_geometry" )
+            path_to_dg_files = os.path.join ( filepath, "output_data", "dynamic_geometry" )
             for obj in mcell.model_objects.object_list:
                 if obj.dynamic:
                     file_name = "%s_frame_%d.mdl"%(obj.name,cur_frame)
