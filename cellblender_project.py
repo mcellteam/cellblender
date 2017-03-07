@@ -344,7 +344,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
                 try:
 
                     full_fname = mainmdl
-                    #print ( "Updating Main MDL file: " + full_fname + " for dynamic geometry" )
+                    print ( "Updating Main MDL file: " + full_fname + " for dynamic geometry" )
                     
                     mdl_file = open ( full_fname )
                     mdl_lines = mdl_file.readlines()
@@ -392,7 +392,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
                             mdl_file.write ( "DYNAMIC_GEOMETRY = \"%s\"\n" % (geom_list_name) )
                     mdl_file.close()
 
-                    full_fname = os.path.join(mcell_files_path(),"Scene.initialization.mdl")
+                    full_fname = os.path.join(filepath, scene_name + ".initialization.mdl")
                     #print ( "Updating Initialization MDL file: " + full_fname )
                     mdl_file = open ( full_fname )
                     mdl_lines = mdl_file.readlines()
