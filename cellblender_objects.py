@@ -1245,40 +1245,41 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             path_to_dg_files = os.path.join ( filepath, "output_data", "dynamic_geometry" )
             for obj in mcell.model_objects.object_list:
                 if obj.dynamic:
-                    file_name = "%s_frame_%d.mdl"%(obj.name,cur_frame)
-                    #print ( "Reading from " + file_name )
-                    full_file_name = os.path.join(path_to_dg_files,file_name)
-                    vertex_list = []
-                    face_list = []
-                    self.read_from_regularized_mdl ( file_name=full_file_name, points=vertex_list, faces=face_list, partitions=False, instantiate=False )
+                    if len(obj.script_name) > 0:
+                        file_name = "%s_frame_%d.mdl"%(obj.name,cur_frame)
+                        #print ( "Reading from " + file_name )
+                        full_file_name = os.path.join(path_to_dg_files,file_name)
+                        vertex_list = []
+                        face_list = []
+                        self.read_from_regularized_mdl ( file_name=full_file_name, points=vertex_list, faces=face_list, partitions=False, instantiate=False )
 
-                    vertices = []
-                    for point in vertex_list:
-                        #print ( "  " + str(point[0]) + "  " + str(point[1]) + "  " + str(point[2]) )
-                        vertices.append ( mathutils.Vector((point[0],point[1],point[2])) )
-                    faces = []
-                    for face in face_list:
-                        faces.append ( face )
+                        vertices = []
+                        for point in vertex_list:
+                            #print ( "  " + str(point[0]) + "  " + str(point[1]) + "  " + str(point[2]) )
+                            vertices.append ( mathutils.Vector((point[0],point[1],point[2])) )
+                        faces = []
+                        for face in face_list:
+                            faces.append ( face )
 
-                    new_mesh = bpy.data.meshes.new ( obj.name + "_mesh" )
-                    new_mesh.from_pydata ( vertices, [], faces )
-                    new_mesh.update()
-                    
-                    new_object = None
-                    if obj.name in scene.objects:
-                        new_object = scene.objects[obj.name]
-                        old_mesh = new_object.data
-                        new_object.data = new_mesh
-                        bpy.data.meshes.remove ( old_mesh )
-                    else:
-                        new_object = bpy.data.objects.new ( obj.name, new_mesh )
-                        scene.objects.link ( new_object )
+                        new_mesh = bpy.data.meshes.new ( obj.name + "_mesh" )
+                        new_mesh.from_pydata ( vertices, [], faces )
+                        new_mesh.update()
 
-                    mat_name = obj.name + "_mat"
-                    if mat_name in bpy.data.materials:
-                        new_object.data.materials.append ( bpy.data.materials[mat_name] )
+                        new_object = None
+                        if obj.name in scene.objects:
+                            new_object = scene.objects[obj.name]
+                            old_mesh = new_object.data
+                            new_object.data = new_mesh
+                            bpy.data.meshes.remove ( old_mesh )
+                        else:
+                            new_object = bpy.data.objects.new ( obj.name, new_mesh )
+                            scene.objects.link ( new_object )
 
-                    # TODO: Deal with materials on faces
+                        mat_name = obj.name + "_mat"
+                        if mat_name in bpy.data.materials:
+                            new_object.data.materials.append ( bpy.data.materials[mat_name] )
+
+                        # TODO: Deal with materials on faces
 
 
 
