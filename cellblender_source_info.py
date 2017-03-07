@@ -187,6 +187,8 @@ cellblender_info = {
         "examples"+os.sep+"pbc.py",
         "examples"+os.sep+"lipid_raft.py",
         "examples"+os.sep+"variable_rate_constant.py",
+        "examples"+os.sep+"dynamic_geometry.py",
+        "examples"+os.sep+"dynamic_geometry.blend",
         #        "bng"+os.sep+"libsbml3"+os.sep+"__init__.py",
         ],
 
