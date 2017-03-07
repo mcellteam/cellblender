@@ -30,6 +30,11 @@ def unregister():
     bpy.utils.unregister_module(__name__)
 
 
+def clear_texts():
+    for text in bpy.data.texts:
+        bpy.data.texts.remove(text, do_unlink=True )
+
+
 def view_all():
     for area in bpy.context.screen.areas:
         if area.type == 'VIEW_3D':
@@ -95,11 +100,15 @@ class MCELL_OT_load_rat_nmj(bpy.types.Operator):
         dm = {}
         dm['mcell'] = examples.rat_nmj.rat_nmj_dm
 
-        parameters_txt = bpy.data.texts.new("rat_nmj.parameters.mdl")
-        parameters_txt.write(dm['mcell']['scripting']['script_texts']['rat_nmj.parameters.mdl'])
+        clear_texts()
 
-        release_sites_txt = bpy.data.texts.new("rat_nmj.release_sites.mdl")
-        release_sites_txt.write(dm['mcell']['scripting']['script_texts']['rat_nmj.release_sites.mdl'])
+        param_mdl_name = 'rat_nmj.parameters.mdl'
+        parameters_txt = bpy.data.texts.new(param_mdl_name)
+        parameters_txt.write(dm['mcell']['scripting']['script_texts'][param_mdl_name])
+
+        release_mdl_name = 'rat_nmj.release_sites.mdl'
+        release_sites_txt = bpy.data.texts.new(release_mdl_name)
+        release_sites_txt.write(dm['mcell']['scripting']['script_texts'][release_mdl_name])
 
         cellblender.replace_data_model(dm, geometry=True)
         view_all()
@@ -117,8 +126,11 @@ class MCELL_OT_load_pbc(bpy.types.Operator):
         dm = {}
         dm['mcell'] = examples.pbc.pbc_dm
 
-        pbc_txt = bpy.data.texts.new("pbc.mdl")
-        pbc_txt.write(dm['mcell']['scripting']['script_texts']['pbc.mdl'])
+        clear_texts()
+
+        mdl_name = 'pbc.mdl'
+        pbc_txt = bpy.data.texts.new(mdl_name)
+        pbc_txt.write(dm['mcell']['scripting']['script_texts'][mdl_name])
 
         cellblender.replace_data_model(dm, geometry=True)
         bpy.ops.view3d.snap_cursor_to_center()
@@ -154,8 +166,6 @@ class MCELL_OT_load_variable_rate_constant(bpy.types.Operator):
 
         dm = {}
         dm['mcell'] = examples.variable_rate_constant.variable_rate_constant_dm
-        # vrc_txt = bpy.data.texts.new("rate_constant.txt")
-        # vrc_txt.write(dm['mcell']['define_reactions']['reaction_list'][0]['variable_rate_text'])
         cellblender.replace_data_model(dm, geometry=True)
         view_all()
         return {'FINISHED'}
