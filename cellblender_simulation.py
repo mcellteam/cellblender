@@ -734,8 +734,11 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
         if event.type == 'TIMER':
             task_len = len(cellblender.simulation_queue.task_dict)
             task_ctr = 0
-            processes_list = context.scene.mcell.run_simulation.processes_list
+            mcell = context.scene.mcell
+            processes_list = mcell.run_simulation.processes_list
             for simulation_process in processes_list:
+                if not mcell.run_simulation.save_text_logs:
+                    return {'CANCELLED'}
                 pid = get_pid(simulation_process)
                 seed = int(simulation_process.name.split(',')[1].split(':')[1])
                 q_item = cellblender.simulation_queue.task_dict[pid]
@@ -872,7 +875,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                   self.report({'INFO'}, "Simulation Running")
 
                   if not simulation_process.name:
-                      simulation_process.name = ("PID: %d, Seed: %d, 0%%" % (proc.pid, seed))
+                      simulation_process.name = ("PID: %d, Seed: %d" % (proc.pid, seed))
                   bpy.ops.mcell.percentage_done_timer()
 
         else:
