@@ -284,6 +284,15 @@ class MCELL_OT_export_project(bpy.types.Operator):
                 time_step = context.scene.mcell.initialization.time_step.get_value()
                 print ( "iterations = " + str(iterations) + ", time_step = " + str(time_step) )
 
+                # Build the script list first as a dictionary by object names so they aren't read at every iteration
+                # It might also be efficient if these could be precompiled at this time (rather than in the loop).
+                script_dict = {}
+                for obj in context.scene.mcell.model_objects.object_list:
+                    if obj.dynamic:
+                        if len(obj.script_name) > 0:
+                            script_text = bpy.data.texts[obj.script_name].as_string()
+                            script_dict[obj.script_name] = script_text
+
                 for frame_number in range(iterations):
                     ####################################################################
                     #
@@ -314,7 +323,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
                             if len(obj.script_name) > 0:
                                 # Let the script create the geometry
                                 print ( "Build object mesh from user script for frame " + str(frame_number) )
-                                script_text = bpy.data.texts[obj.script_name].as_string()
+                                script_text = script_dict[obj.script_name]
                                 #print ( 80*"=" )
                                 #print ( script_text )
                                 #print ( 80*"=" )
