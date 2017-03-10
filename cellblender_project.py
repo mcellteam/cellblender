@@ -356,7 +356,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
                             frame_file.write ( "INCLUDE_FILE = \"%s\"\n" % (file_name) )
 
                     # Write the INSTANTIATE statement
-                    frame_file.write ( "INSTANTIATE World OBJECT {\n" )
+                    frame_file.write ( "INSTANTIATE Scene OBJECT {\n" )
                     for obj in context.scene.mcell.model_objects.object_list:
                         if obj.dynamic:
                             frame_file.write ( "  %s OBJECT %s {}\n" % (obj.name, obj.name) )
