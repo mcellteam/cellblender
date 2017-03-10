@@ -254,16 +254,6 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
             dynamic = len([ True for o in mcell.model_objects.object_list if o.dynamic ]) > 0
 
-            """
-            # Check to see if dynamic geometry is enabled for any objects
-            for obj in context.scene.mcell.model_objects.object_list:
-                print ( "Export Checking if object " + str(obj) + " is dynamic" )
-                print ( "  obj.dynamic = " + str(obj.dynamic) )
-                if obj.dynamic:
-                    dynamic = True
-                    break
-            """
-
             if dynamic:
 
                 print ( "Exporting dynamic objects" )
@@ -314,7 +304,12 @@ class MCELL_OT_export_project(bpy.types.Operator):
                     #  This is a very primitive interface, and it may be subject to change.
                     #
                     ####################################################################
+
+
+                    # Set the frame number for Blender
                     context.scene.frame_set(frame_number)
+
+                    # Write out the individual MDL files for each object at this frame
                     for obj in context.scene.mcell.model_objects.object_list:
                         if obj.dynamic:
                             # print ( "  Iteration " + str(frame_number) + ", Saving geometry for object " + obj.name + " using script \"" + obj.script_name + "\"" )
@@ -341,8 +336,30 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
                             file_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
                             full_file_name = os.path.join(path_to_dg_files,file_name)
-                            self.write_as_mdl ( obj.name, points, faces, file_name=full_file_name, partitions=True, instantiate=True )
-                            geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",file_name)))
+                            self.write_as_mdl ( obj.name, points, faces, file_name=full_file_name, partitions=False, instantiate=False )
+                            #geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",file_name)))
+
+                    # Write out the "master" MDL file for this frame
+
+                    frame_file_name = os.path.join(".","dynamic_geometry","frame_%d.mdl"%(frame_number))
+                    full_frame_file_name = os.path.join(path_to_dg_files,"frame_%d.mdl"%(frame_number))
+                    frame_file = open(full_frame_file_name, "w", encoding="utf8", newline="\n")
+
+                    # Write the INCLUDE statements
+                    for obj in context.scene.mcell.model_objects.object_list:
+                        if obj.dynamic:
+                            file_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
+                            frame_file.write ( "INCLUDE_FILE = \"%s\"\n" % (file_name) )
+
+                    # Write the INSTANTIATE statement
+                    frame_file.write ( "INSTANTIATE World OBJECT {\n" )
+                    for obj in context.scene.mcell.model_objects.object_list:
+                        if obj.dynamic:
+                            frame_file.write ( "  %s OBJECT %s {}\n" % (obj.name, obj.name) )
+                    frame_file.write ( "}\n" )
+                    frame_file.close()
+
+                    geom_list_file.write('%.9g %s\n' % (frame_number*time_step, frame_file_name))
 
                 geom_list_file.close()
 
