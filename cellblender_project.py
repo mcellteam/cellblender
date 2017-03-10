@@ -285,7 +285,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
                             script_text = bpy.data.texts[obj.script_name].as_string()
                             script_dict[obj.script_name] = script_text
 
-                for frame_number in range(iterations):
+                for frame_number in range(iterations+1):
                     ####################################################################
                     #
                     #  This section essentially defines the interface to the user's

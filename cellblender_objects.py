@@ -1252,6 +1252,8 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         cur_frame = frame_num
         if cur_frame == None:
           cur_frame = scene.frame_current
+        if cur_frame > scene.frame_end:
+          cur_frame = scene.frame_end
 
         mcell = scene.mcell
         if mcell.model_objects.has_some_dynamic and mcell.model_objects.show_dynamic_from_mdl:
