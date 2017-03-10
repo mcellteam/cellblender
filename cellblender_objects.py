@@ -1181,9 +1181,13 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         print ( "  Done creating new objects" )
 
 
-    def read_from_regularized_mdl ( self, file_name=None, points=[], faces=[], partitions=False, instantiate=False ):
+    def read_from_regularized_mdl ( self, file_name=None, points=[], faces=[], origin=None, partitions=False, instantiate=False ):
 
-      # This function makes some assumptions about the format of the geometry in an MDL file
+      # This function makes many assumptions about the format of the geometry in an MDL file.
+      # This function should only be used with MDL that was produced by code.
+
+      # This function will update the points and faces lists with data found in the MDL.
+      # This function updates the origin if a list is passed and a TRANSLATE keyword is found.
 
       if file_name == None:
         # Generate an easy tetrahedron for testing
@@ -1210,6 +1214,16 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
               mode = 'v'
             elif l == "ELEMENT_CONNECTIONS":
               mode = 'f'
+            elif l.startswith('TRANSLATE'):
+              if not origin is None:
+                # Parse the TRANSLATE line and update the origin
+                sq = l.find('[')
+                if sq > 0:
+                  orig = l[sq+1:-1].replace(',',' ').split()
+                  for i in range(min(len(origin),len(orig))):
+                    origin[i] = float(orig[i])
+              l = ""
+              mode = ""
             elif l == "}":
               mode = ""
 
@@ -1251,7 +1265,8 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                         full_file_name = os.path.join(path_to_dg_files,file_name)
                         vertex_list = []
                         face_list = []
-                        self.read_from_regularized_mdl ( file_name=full_file_name, points=vertex_list, faces=face_list, partitions=False, instantiate=False )
+                        origin = [0,0,0]
+                        self.read_from_regularized_mdl ( file_name=full_file_name, points=vertex_list, faces=face_list, origin=origin, partitions=False, instantiate=False )
 
                         vertices = []
                         for point in vertex_list:
@@ -1274,6 +1289,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                         else:
                             new_object = bpy.data.objects.new ( obj.name, new_mesh )
                             scene.objects.link ( new_object )
+                        new_object.location = mathutils.Vector((origin[0],origin[1],origin[2]))
 
                         mat_name = obj.name + "_mat"
                         if mat_name in bpy.data.materials:

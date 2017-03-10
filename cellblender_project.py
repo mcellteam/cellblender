@@ -169,7 +169,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
         return True
 
 
-    def write_as_mdl ( self, obj_name, points, faces, file_name=None, partitions=False, instantiate=False ):
+    def write_as_mdl ( self, obj_name, points, faces, origin=None, file_name=None, partitions=False, instantiate=False ):
       if file_name != None:
         out_file = open ( file_name, "w" )
         if partitions:
@@ -190,6 +190,8 @@ class MCELL_OT_export_project(bpy.types.Operator):
             s = "    [ " + str(f[0]) + ", " + str(f[1]) + ", " + str(f[2]) + " ]\n"
             out_file.write ( s );
         out_file.write ( "  }\n" )
+        if origin != None:
+            out_file.write ( "  TRANSLATE = [ %.15g, %.15g, %.15g ]\n" % (origin[0], origin[1], origin[2] ) )
         out_file.write ( "}\n" )
         if instantiate:
             out_file.write ( "\n" )
@@ -287,13 +289,14 @@ class MCELL_OT_export_project(bpy.types.Operator):
                     ####################################################################
                     #
                     #  This section essentially defines the interface to the user's
-                    #  dynamic geometry code. Right now it's being done through 4 global
+                    #  dynamic geometry code. Right now it's being done through 5 global
                     #  variables which will be in the user's environment when they run:
                     #
                     #     frame_number
                     #     time_step
                     #     points[]
                     #     faces[]
+                    #     origin[]
                     #
                     #  The user code gets the frame number as input and fills in both the
                     #  points and faces arrays (lists). The format is fairly standard with
@@ -315,6 +318,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
                             # print ( "  Iteration " + str(frame_number) + ", Saving geometry for object " + obj.name + " using script \"" + obj.script_name + "\"" )
                             points = []
                             faces = []
+                            origin = [0,0,0]
                             if len(obj.script_name) > 0:
                                 # Let the script create the geometry
                                 print ( "Build object mesh from user script for frame " + str(frame_number) )
@@ -336,7 +340,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
                             file_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
                             full_file_name = os.path.join(path_to_dg_files,file_name)
-                            self.write_as_mdl ( obj.name, points, faces, file_name=full_file_name, partitions=False, instantiate=False )
+                            self.write_as_mdl ( obj.name, points, faces, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
                             #geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",file_name)))
 
                     # Write out the "master" MDL file for this frame
