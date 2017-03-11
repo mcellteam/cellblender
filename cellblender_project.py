@@ -313,7 +313,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
                     # Set the frame number for Blender
                     context.scene.frame_set(frame_number)
 
-                    # Write out the individual MDL files for each object at this frame
+                    # Write out the individual MDL files for each dynamic object at this frame
                     for obj in context.scene.mcell.model_objects.object_list:
                         if obj.dynamic:
                             # print ( "  Iteration " + str(frame_number) + ", Saving geometry for object " + obj.name + " using script \"" + obj.script_name + "\"" )
@@ -327,7 +327,8 @@ class MCELL_OT_export_project(bpy.types.Operator):
                                 #print ( 80*"=" )
                                 #print ( script_text )
                                 #print ( 80*"=" )
-                                exec ( script_dict[obj.script_name], locals() )
+                                # exec ( script_dict[obj.script_name], locals() )
+                                exec ( script_dict[obj.script_name] )
                             else:
                                 # Get the geometry from the object (presumably animated by Blender)
 
