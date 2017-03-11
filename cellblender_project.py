@@ -282,8 +282,9 @@ class MCELL_OT_export_project(bpy.types.Operator):
                 for obj in context.scene.mcell.model_objects.object_list:
                     if obj.dynamic:
                         if len(obj.script_name) > 0:
-                            script_text = bpy.data.texts[obj.script_name].as_string()
-                            script_dict[obj.script_name] = script_text
+                            # script_text = bpy.data.texts[obj.script_name].as_string()
+                            compiled_text = compile ( bpy.data.texts[obj.script_name].as_string(), '<string>', 'exec' )
+                            script_dict[obj.script_name] = compiled_text
 
                 for frame_number in range(iterations+1):
                     ####################################################################
@@ -322,11 +323,11 @@ class MCELL_OT_export_project(bpy.types.Operator):
                             if len(obj.script_name) > 0:
                                 # Let the script create the geometry
                                 print ( "Build object mesh from user script for frame " + str(frame_number) )
-                                script_text = script_dict[obj.script_name]
+                                #script_text = script_dict[obj.script_name]
                                 #print ( 80*"=" )
                                 #print ( script_text )
                                 #print ( 80*"=" )
-                                exec ( script_text, locals() )
+                                exec ( script_dict[obj.script_name], locals() )
                             else:
                                 # Get the geometry from the object (presumably animated by Blender)
 
