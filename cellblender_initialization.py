@@ -220,6 +220,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         dm_dict['microscopic_reversibility'] = str(self.microscopic_reversibility)
         dm_dict['accurate_3d_reactions'] = self.accurate_3d_reactions==True
         dm_dict['center_molecules_on_grid'] = self.center_molecules_grid==True
+        dm_dict['export_all_ascii'] = self.export_all_ascii==True
 
         notify_dict = {}
         notify_dict['all_notifications'] = str(self.all_notifications)
@@ -291,6 +292,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         if "microscopic_reversibility" in dm_dict: self.microscopic_reversibility = dm_dict["microscopic_reversibility"]
         if "accurate_3d_reactions" in dm_dict: self.accurate_3d_reactions = dm_dict["accurate_3d_reactions"]
         if "center_molecules_on_grid" in dm_dict: self.center_molecules_grid = dm_dict["center_molecules_on_grid"]
+        if "export_all_ascii" in dm_dict: self.export_all_ascii = dm_dict["export_all_ascii"]
 
         if "notifications" in dm_dict:
             note_dict = dm_dict['notifications']
@@ -353,6 +355,11 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         description="If false, more efficient but less accurate reactions",
         default='OFF')
 
+    # Export all ascii
+    export_all_ascii = BoolProperty(
+        name="Export all molecules as ASCII",
+        description="Positions of all molecules are also exported in ASCII format",
+        default=False)
 
     # Notifications
     all_notifications_enum = [
@@ -516,6 +523,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
     acc3D_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     center_on_grid_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     micro_rev_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    export_ascii_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
@@ -582,6 +590,12 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
                            "accurate routines will be used only for reactions at surfaces\n" + \
                            "or only for those in the volume. OFF is the default."
                 ps.draw_prop_with_help ( box, "Microscopic Reversibility", mcell.initialization, "microscopic_reversibility", "micro_rev_show_help", self.micro_rev_show_help, helptext )
+
+                helptext = "Export all molecules as ASCII\n" + \
+                           "In addititon to the binary visualization data read by MCell,\n" + \
+                           "export ASCII formatted data. The default is OFF."
+                ps.draw_prop_with_help ( box, "Export all molecules as ASCII", mcell.initialization, "export_all_ascii", "export_ascii_show_help", self.export_ascii_show_help, helptext )
+                
 
             else:
                 row.prop(mcell.initialization, "advanced", icon='TRIA_RIGHT',
