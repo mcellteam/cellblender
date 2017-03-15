@@ -308,8 +308,9 @@ def save_wrapper(context, out_file, filedir):
     molecule_viz_str_list = [mol.name for mol in molecule_viz_list]
 
     export_all = mcell.viz_output.export_all
-    if export_all or molecule_viz_list:
-        args = [context, molecule_viz_str_list, export_all]
+    export_all_ascii = mcell.initialization.export_all_ascii
+    if export_all or molecule_viz_list or export_all_ascii:
+        args = [context, molecule_viz_str_list, export_all, export_all_ascii]
         save_modular_or_allinone(
             filedir, out_file, 'viz_output', save_viz_output_mdl, args)
 
@@ -939,7 +940,7 @@ def save_geometry(context, out_file, object_list):
             data_object.hide = saved_hide_status
 
 
-def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all):
+def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all, export_all_ascii):
     """ Saves visualizaton output info to mdl output file. """
 
     mcell = context.scene.mcell
@@ -960,6 +961,24 @@ def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all):
             out_file.write("    NAME_LIST {ALL_MOLECULES}\n")
         else:
             out_file.write("    NAME_LIST {%s}\n" % " ".join(molecule_viz_list))
+        if all_iterations:
+            out_file.write(
+                "    ITERATION_NUMBERS {ALL_DATA @ ALL_ITERATIONS}\n")
+        else:
+            out_file.write(
+                "    ITERATION_NUMBERS {ALL_DATA @ [[%s TO %s STEP %s]]}\n" %
+                (start, end, step))
+        out_file.write("  }\n")
+        out_file.write("}\n\n")
+
+    # New viz block if we also output ascii
+    if export_all_ascii:
+        out_file.write("VIZ_OUTPUT\n{\n")
+        out_file.write("  MODE = ASCII\n")
+        out_file.write("  FILENAME = \"./viz_data_ascii/seed_\" & seed & \"/%s\"\n" % settings.base_name)
+        out_file.write("  MOLECULES\n")
+        out_file.write("  {\n")
+        out_file.write("    NAME_LIST {ALL_MOLECULES}\n")
         if all_iterations:
             out_file.write(
                 "    ITERATION_NUMBERS {ALL_DATA @ ALL_ITERATIONS}\n")
