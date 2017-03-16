@@ -594,19 +594,6 @@ def changed_dynamic_callback(self, context):
     elif (mcell.model_objects.has_some_dynamic):
         # Harder case, this one is no longer dynamic ... are there any others left?
         mcell.model_objects.has_some_dynamic = len([ True for o in mcell.model_objects.object_list if o.dynamic ]) > 0
-    """
-    # Whenever an object's dynamic flag changes, check to see if there still are ANY dynamic flags set
-    print ( "changed_dynamic_callback checking for " + str(self) )
-    print ( "   self.dynamic " + str(self.dynamic) )
-    mcell = context.scene.mcell
-    mcell.model_objects.has_some_dynamic = False
-    for obj in mcell.model_objects.object_list:
-        #print ( "Callback Checking if object " + str(obj) + " is dynamic" )
-        #print ( "  obj.dynamic = " + str(obj.dynamic) )
-        if obj.dynamic:
-            mcell.model_objects.has_some_dynamic = True
-            break
-    """
 
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
@@ -683,9 +670,10 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     object_list = CollectionProperty(type=MCellModelObjectsProperty, name="Object List")
     active_obj_index = IntProperty(name="Active Object Index", default=0, update=active_obj_index_changed)
     show_options = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
+    show_cursor_controls = bpy.props.BoolProperty(default=False, description="Show/Hide 3D Cursor Location")
+
     has_some_dynamic  = bpy.props.BoolProperty(default=False)
     show_dynamic_from_files = bpy.props.BoolProperty(default=True)
-    show_cursor_controls = bpy.props.BoolProperty(default=False, description="Show/Hide 3D Cursor Location")
 
     def remove_properties ( self, context ):
         print ( "Removing all Model Object List Properties..." )
@@ -706,7 +694,6 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             row = layout.row()
             row.prop (self, "show_cursor_controls", icon="CURSOR", text="")  # text="3D Cursor"
             row.operator("mcell.snap_cursor_to_center", icon="PLUS", text="") # icon="INLINK"
-            # row.operator("mcell.snap_cursor_to_center", icon="CURSOR", text="Center Cursor")
             row.label("", icon='BLANK1')
             row.operator("mesh.primitive_cube_add", text="", icon='MESH_CUBE')
             row.operator("mesh.primitive_ico_sphere_add", text="", icon='MESH_ICOSPHERE')
@@ -717,12 +704,9 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mesh.primitive_plane_add", text="", icon='MESH_PLANE')
             row.operator("mesh.primitive_circle_add", text="", icon='MESH_CIRCLE')
             row.operator("mesh.primitive_grid_add", text="", icon='MESH_GRID')
-            # row.operator("mesh.primitive_monkey_add", text="", icon='MESH_MONKEY') # Monkey is not manifold ... can be good example, but maybe not here.
-            #col.operator_menu_enum("mcell.model_objects_create", 'option_item', text="Create Object")
 
             if self.show_cursor_controls:
               row = layout.row()
-              #row.operator("mcell.snap_cursor_to_center", icon="INLINK", text="Zero")
               row.prop ( context.scene, "cursor_location", text="" )
 
 
@@ -737,18 +721,6 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             col.template_list("MCELL_UL_model_objects", "model_objects",
                               self, "object_list",
                               self, "active_obj_index", rows=4)
-            """
-            col = row.column(align=True)
-#           col.active = (len(context.selected_objects) == 1)
-            col.operator("mcell.model_objects_add", icon='ZOOMIN', text="")
-            col.operator("mcell.model_objects_remove", icon='ZOOMOUT', text="")
-
-            col.operator("mcell.model_objects_remove_sel", icon='X', text="")
-
-            subcol = col.column(align=True)
-            subcol.operator("mcell.object_show_all", icon='RESTRICT_VIEW_OFF', text="")
-            subcol.operator("mcell.object_hide_all", icon='RESTRICT_VIEW_ON', text="")
-            """
 
             col = row.column(align=False)
             # Use subcolumns to group logically related buttons together
@@ -761,12 +733,8 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             subcol.operator("mcell.object_hide_all", icon='RESTRICT_VIEW_ON', text="")
 
 
-
             if len(self.object_list) > 0:
                 obj_name = str(self.object_list[self.active_obj_index].name)
-                # layout.label(text="") # Use as a separator
-                # layout.box() # Use as a separator
-                # layout.label(text="") # Use as a separator
                 box = layout.box()
                 row = box.row()
                 if not self.show_options:
