@@ -684,7 +684,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     active_obj_index = IntProperty(name="Active Object Index", default=0, update=active_obj_index_changed)
     show_options = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     has_some_dynamic  = bpy.props.BoolProperty(default=False)
-    show_dynamic_from_files = bpy.props.BoolProperty(default=False)
+    show_dynamic_from_files = bpy.props.BoolProperty(default=True)
     show_cursor_controls = bpy.props.BoolProperty(default=False, description="Show/Hide 3D Cursor Location")
 
     def remove_properties ( self, context ):
@@ -702,11 +702,6 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
         else:
-
-            if self.has_some_dynamic:
-                # Only show this if there's dynamic geometry. This is a debugging aid for non-scripted shape keys from Blender
-                row = layout.row()
-                row.prop (self, "show_dynamic_from_files", text="Show Dynamic from Files")
 
             row = layout.row()
             row.prop (self, "show_cursor_controls", icon="CURSOR", text="")  # text="3D Cursor"
@@ -825,35 +820,11 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                                           text="Script:", icon='TEXT' )
                         row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
 
-#           row = layout.row()
-#           sub = row.row(align=True)
-#           sub.operator("mcell.model_objects_include", text="Include")
-#           sub = row.row(align=True)
-#           sub.operator("mcell.model_objects_select", text="Select")
-#           sub.operator("mcell.model_objects_deselect", text="Deselect")
+            if self.has_some_dynamic:
+                # Only show this if there's dynamic geometry. This is a debugging aid for non-scripted shape keys from Blender
+                row = layout.row()
+                row.prop (self, "show_dynamic_from_files", text="Show Dynamic from Files")
 
-            """
-            row = layout.row()
-            row.label(text="Object Color:", icon='COLOR')
-            
-            active = None
-            for o in self.object_list.keys():
-                # print ( "Object: " + o )
-                row = layout.row()
-                if bpy.context.scene.objects[o] == bpy.context.scene.objects.active:
-                    active = bpy.context.scene.objects[o]
-                    row.label(text=o, icon='TRIA_RIGHT')
-                else:
-                    row.label(text=o, icon='DOT')
-
-            if active == None:
-                row = layout.row()
-                row.label(text="No CellBlender object is active", icon='DOT')
-            else:
-                row = layout.row()
-                row.label ( icon='DOT', text="  Object " + active.name + " is active and has " +
-                    str(len(active.material_slots)) + " material slots" )
-            """
 
 
     def draw_panel ( self, context, panel ):
