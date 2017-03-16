@@ -275,7 +275,7 @@ try:
                 self.build_tree_from_data_model ( new_parent, str(i), v )
                 i += 1
             elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
-              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + "\"" + str(dm) + "\"", open=draw_as_open, tags='s:'+name)
+              new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + "\"" + str(dm.replace('\n','\\n')) + "\"", open=draw_as_open, tags='s:'+name)
             elif type(dm) == type(True):  # dm is a boolean
               new_parent = self.tree.insert(parent_id, 'end', text=name + " = " + str(dm), open=draw_as_open, tags='b:'+name)
             elif type(dm) == type(1.0):  # dm is a float
@@ -389,9 +389,10 @@ try:
                 self.root.clipboard_append(str(selected_item['text']))
 
         def destroy(self):
-            if messagebox.askyesno("Exit", "Do you want to close the Data Model Browser?"):
-                # print ( "Destroying Tk" )
-                self.root.destroy()
+            #if messagebox.askyesno("Exit", "Do you want to close the Data Model Browser?"):
+            #    # print ( "Destroying Tk" )
+            #    self.root.destroy()
+            self.root.destroy()
 
         def debug(self):
             __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -440,7 +441,7 @@ class TkBrowseDataModelFromProps(bpy.types.Operator):
     def execute(self, context):
         print ( "Browsing CellBlender Data Model:" )
         mcell = context.scene.mcell
-        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm )
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm, scripts=mcell.scripting.include_scripts_in_dm )
         mcell['data_model'] = pickle_data_model ( mcell_dm )
         app = CellBlenderDataModelBrowser()
         return {'FINISHED'}
@@ -455,7 +456,7 @@ class RegenerateDataModelFromProps(bpy.types.Operator):
     def execute(self, context):
         print ( "Showing CellBlender Data Model:" )
         mcell = context.scene.mcell
-        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm )
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm, scripts=mcell.scripting.include_scripts_in_dm )
         mcell['data_model'] = pickle_data_model ( mcell_dm )
         return {'FINISHED'}
 
@@ -507,7 +508,7 @@ class ExportDataModelAll(bpy.types.Operator, ExportHelper):
 
     def execute(self, context):
         #print ( "Saving CellBlender model and geometry to file: " + self.filepath )
-        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
+        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
         save_data_model_to_file ( mcell_dm, self.filepath )
         """
         mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
@@ -530,7 +531,7 @@ class ExportDataModelAllJSON(bpy.types.Operator, ExportHelper):
     filter_glob = StringProperty(default="*.json",options={'HIDDEN'},)
 
     def execute(self, context):
-        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
+        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
         save_data_model_to_json_file ( mcell_dm, self.filepath )
         return {'FINISHED'}
 

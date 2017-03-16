@@ -552,7 +552,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         return dm
 
 
-    def build_properties_from_data_model ( self, context, dm, scripts=False ):
+    def build_properties_from_data_model ( self, context, dm, scripts=True ):
         # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2016_03_15_1900":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade CellBlenderScriptingPropertyGroup data model to current version." )
@@ -573,10 +573,6 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                 s = self.scripting_list[self.active_scripting_index]
                 # s.init_properties(context.scene.mcell.parameter_system)
                 s.build_properties_from_data_model ( context, dm_s )
-
-        # Don't: Load the scripts lists from the data model for now - they are regenerated with update below
-
-        # Do: Load all .mdl text files and all .py text files
 
         if scripts:
           if 'script_texts' in dm:

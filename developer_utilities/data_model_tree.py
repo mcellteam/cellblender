@@ -382,7 +382,7 @@ class data_model_tree:
         self.build_tree_from_data_model ( new_parent, name + "["+str(i)+"]", v )
         i += 1
     elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
-      new_parent = self.treestore.append(parent,[name + " = " + "\"" + str(dm) + "\"",str(type(dm))])
+      new_parent = self.treestore.append(parent,[name + " = " + "\"" + str(dm.replace('\n','..')) + "\"",str(type(dm))])
     else:
       new_parent = self.treestore.append(parent,[name + " = " + str(dm),str(type(dm))])
 
