@@ -684,7 +684,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     active_obj_index = IntProperty(name="Active Object Index", default=0, update=active_obj_index_changed)
     show_options = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     has_some_dynamic  = bpy.props.BoolProperty(default=False)
-    show_dynamic_from_mdl = bpy.props.BoolProperty(default=False)
+    show_dynamic_from_files = bpy.props.BoolProperty(default=False)
     show_cursor_controls = bpy.props.BoolProperty(default=False, description="Show/Hide 3D Cursor Location")
 
     def remove_properties ( self, context ):
@@ -706,7 +706,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             if self.has_some_dynamic:
                 # Only show this if there's dynamic geometry. This is a debugging aid for non-scripted shape keys from Blender
                 row = layout.row()
-                row.prop (self, "show_dynamic_from_mdl", text="Show Dynamic MDL")
+                row.prop (self, "show_dynamic_from_files", text="Show Dynamic from Files")
 
             row = layout.row()
             row.prop (self, "show_cursor_controls", icon="CURSOR", text="")  # text="3D Cursor"
@@ -1256,7 +1256,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
           cur_frame = scene.frame_end
 
         mcell = scene.mcell
-        if mcell.model_objects.has_some_dynamic and mcell.model_objects.show_dynamic_from_mdl:
+        if mcell.model_objects.has_some_dynamic and mcell.model_objects.show_dynamic_from_files:
             filepath = mcell_files_path()
             path_to_dg_files = os.path.join ( filepath, "output_data", "dynamic_geometry" )
             for obj in mcell.model_objects.object_list:
