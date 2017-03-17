@@ -171,6 +171,21 @@ class MCELL_OT_load_variable_rate_constant(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_load_scripted_dyn_geo(bpy.types.Operator):
+    bl_idname = "mcell.load_scripted_dyn_geo"
+    bl_label = "Scripted Dynamic Geometry"
+    bl_description = "Loads a model with scripted dynamic geometry"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.scripted_dyn_geo.scripted_dyn_geo_dm
+        cellblender.replace_data_model(dm, geometry=True, scripts=True)
+        view_all()
+        return {'FINISHED'}
+
+
 class MCELL_OT_load_dynamic_geometry(bpy.types.Operator):
     bl_idname = "mcell.load_dynamic_geometry"
     bl_label = "Dynamic Geometry"
@@ -239,3 +254,5 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mcell.load_variable_rate_constant")
             row = layout.row()
             row.operator("mcell.load_dynamic_geometry")
+            row = layout.row()
+            row.operator("mcell.load_scripted_dyn_geo")

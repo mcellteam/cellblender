@@ -5,3 +5,4 @@ from . import pbc
 from . import lipid_raft
 from . import variable_rate_constant
 from . import dynamic_geometry
+from . import scripted_dyn_geo

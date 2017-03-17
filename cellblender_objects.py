@@ -620,6 +620,8 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     status = StringProperty(name="Status")
 
     """
+    ## All of the data model code is currently handled at the MCellModelObjectsPropertyGroup level
+
     def build_data_model_from_properties ( self, context ):
         print ( "Model Object building Data Model" )
         mo_dm = {}
@@ -821,16 +823,22 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
     
         print ( "Model Objects List building Data Model" )
+
+        mcell_obj_list = context.scene.mcell.model_objects.object_list
+
         mo_dm = {}
-        mo_dm['data_model_version'] = "DM_2014_10_24_1638"
+        mo_dm['data_model_version'] = "DM_2017_03_16_1750"
         mo_list = []
         for scene_object in context.scene.objects:
             if scene_object.type == 'MESH':
                 if scene_object.mcell.include:
-                    print ( "MCell object: " + scene_object.name )
-                    obj_dm = { "name": scene_object.name }
+                    name = scene_object.name
+                    print ( "MCell object: " + name )
+                    obj_dm = { "name": name }
+                    obj_dm['dynamic'] = mcell_obj_list[name].dynamic
+                    obj_dm['script_name'] = mcell_obj_list[name].script_name
+                    obj_dm['dynamic_display_source'] = mcell_obj_list[name].dynamic_display_source
                     mo_list.append ( obj_dm )
-
         mo_dm['model_object_list'] = mo_list
         return mo_dm
 
@@ -843,8 +851,16 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
+        if dm['data_model_version'] == "DM_2014_10_24_1638":
+            # Add the default dynamic geometry properties to each object
+            for obj in dm['model_object_list']:
+                obj['dynamic'] = False
+                obj['script_name'] = ''
+                obj['dynamic_display_source'] = 'other'
+            dm['data_model_version'] = "DM_2017_03_16_1750"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] != "DM_2017_03_16_1750":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
             return None
 
@@ -857,20 +873,23 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         #   context.scene.objects[].mcell.include - boolean is true for model objects
         # This code updates both locations based on the data model
 
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] != "DM_2017_03_16_1750":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
         
         # Remove all model objects in the list
         while len(self.object_list) > 0:
             self.object_list.remove(0)
             
-        # Create a list of model object names from the Data Model
+        # Create the property list for model objects from the Data Model
         mo_list = []
         if "model_object_list" in dm:
           for m in dm["model_object_list"]:
               print ( "Data model contains " + m["name"] )
               mo = self.object_list.add()
               mo.name = m['name']
+              mo.dynamic = m['dynamic']
+              mo.script_name = m['script_name']
+              mo.dynamic_display_source = m['dynamic_display_source']
               mo_list.append ( m["name"] )
           obj_list_len = len(self.object_list)
           if self.active_obj_index >= obj_list_len:

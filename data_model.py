@@ -510,14 +510,6 @@ class ExportDataModelAll(bpy.types.Operator, ExportHelper):
         #print ( "Saving CellBlender model and geometry to file: " + self.filepath )
         mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
         save_data_model_to_file ( mcell_dm, self.filepath )
-        """
-        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True )
-        dm = { 'mcell': mcell_dm }
-        f = open ( self.filepath, 'w' )
-        f.write ( pickle_data_model(dm) )
-        f.close()
-        print ( "Done saving CellBlender model." )
-        """
         return {'FINISHED'}
 
 
@@ -576,7 +568,7 @@ class ImportDataModelAll(bpy.types.Operator, ExportHelper):
 
         dm = unpickle_data_model ( pickle_string )
         dm['mcell'] = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
-        context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
+        context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True, scripts=True )
 
         print ( "Done loading CellBlender model." )
         return {'FINISHED'}
@@ -599,7 +591,7 @@ class ImportDataModelAllJSON(bpy.types.Operator, ExportHelper):
         dm = {}
         dm['mcell'] = data_model_from_json ( json_string ) ['mcell']
         dm['mcell'] = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
-        context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True )
+        context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True, scripts=True )
 
         print ( "Done loading CellBlender model." )
         return {'FINISHED'}

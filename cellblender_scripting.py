@@ -575,13 +575,17 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                 s.build_properties_from_data_model ( context, dm_s )
 
         if scripts:
+          print ( "\nReading scripts because \"scripts\" parameter is true\n" )
           if 'script_texts' in dm:
             for key_name in dm['script_texts'].keys():
+              print ( "  Script: " + key_name )
               if key_name in bpy.data.texts:
                 bpy.data.texts[key_name].clear()
               else:
                 bpy.data.texts.new(key_name)
               bpy.data.texts[key_name].write ( dm['script_texts'][key_name] )
+        else:
+          print ( "\nNot reading scripts because \"scripts\" parameter is false\n" )
 
         # Update the list of available scripts (for the user interface list)
         update_available_scripts ( self )
