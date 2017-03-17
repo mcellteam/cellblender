@@ -77,7 +77,7 @@ scripted_dyn_geo_dm = {
     }
   },
   'simulation_control': {'start_seed': '1', 'processes_list': [], 'run_limit': '-1', 'end_seed': '1', 'name': '', 'data_model_version': 'DM_2016_10_27_1642'},
-  'materials': {'material_dict': {'ScriptCube_mat': {'diffuse_color': {'a': 0.20000000298023224, 'g': 0.8000000715255737, 'r': 0.0, 'b': 0.1189655214548111}}}},
+  'materials': {'material_dict': {'ScriptCube_mat': {'diffuse_color': {'a': 0.2, 'g': 0.8, 'r': 0.0, 'b': 0.12}}}},
   'scripting': {'force_property_update': True, 'show_data_model_scripting': True, 'dm_internal_file_name': '', 'dm_external_file_name': '',
     'script_texts': {
       'dg.py': "# This script gets both its inputs and outputs from the environment:\n" \
@@ -150,7 +150,7 @@ scripted_dyn_geo_dm = {
         'name': 'ScriptCube',
         'element_connections': [[1, 2, 3], [7, 6, 5], [4, 5, 1], [5, 6, 2], [2, 6, 7], [0, 3, 7], [0, 1, 3], [4, 7, 5], [0, 4, 1], [1, 5, 2], [3, 2, 7], [4, 0, 7]],
         'location': [0.0, 0.0, 0.0],
-        'vertex_list': [[1.0, 1.0, -1.0], [1.0, -1.0, -1.0], [-1.0, -1.0, -1.0], [-1.0, 1.0, -1.0], [1.0, 1.0, 1.3442301750183105], [1.0, -1.0, 1.3442301750183105], [-1.0, -1.0, 1.3442301750183105], [-1.0, 1.0, 1.3442301750183105]],
+        'vertex_list': [[1.0, 1.0, -1.0], [1.0, -1.0, -1.0], [-1.0, -1.0, -1.0], [-1.0, 1.0, -1.0], [1.0, 1.0, 1.3], [1.0, -1.0, 1.3], [-1.0, -1.0, 1.3], [-1.0, 1.0, 1.3]],
         'material_names': ['ScriptCube_mat']
       }
     ]
