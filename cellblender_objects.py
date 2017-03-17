@@ -417,6 +417,7 @@ def model_objects_update(context):
             things_to_save = {}
             things_to_save['dynamic'] = mobjs.object_list[i].dynamic
             things_to_save['script_name'] = mobjs.object_list[i].script_name
+            things_to_save['dynamic_display_source'] = mobjs.object_list[i].dynamic_display_source
             dyn_dict[mobjs.object_list[i].name] = things_to_save
             mobjs.object_list.remove(i)
         print ( "Done saving dynamic and script name for objects" )
@@ -433,6 +434,7 @@ def model_objects_update(context):
                 #mobjs.object_list[mobjs.active_obj_index].script_name = dyn_dict[obj_name]['script_name']
                 new_obj.dynamic = dyn_dict[obj_name]['dynamic']
                 new_obj.script_name = dyn_dict[obj_name]['script_name']
+                new_obj.dynamic_display_source = dyn_dict[obj_name]['dynamic_display_source']
             scene_object = sobjs[obj_name]
             # Set an error status if object is not triangulated
             for face in scene_object.data.polygons:
@@ -598,11 +600,25 @@ def changed_dynamic_callback(self, context):
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Object Name", update=check_model_object_name)
-    dynamic = BoolProperty ( default=False, description='This object is dynamic', update=changed_dynamic_callback )
+    dynamic = BoolProperty ( default=False, description='Flag this object as dynamic', update=changed_dynamic_callback )
     script_name = StringProperty(name="Script Name", default="")
+
+    dynamic_display_source = bpy.props.EnumProperty (
+        items= [ # key        label
+                 ('files',   "Files",   ""),
+                 ('script',  "Script", ""),
+                 ("other",   "Other",  "")  ],
+        name="Display From:",
+        default='other',
+        description="Select source of data used to drive the Blender display." )
+        ## update=changed_ddisplay_source )
+
     # Note that the "object_show_only" property should always be False except during the short time that it's callback is being called.
+    # This is for selecting just one object and hiding all others
     object_show_only = BoolProperty ( default=False, description='Show only this object', update=object_show_only_callback )
+
     status = StringProperty(name="Status")
+
     """
     def build_data_model_from_properties ( self, context ):
         print ( "Model Object building Data Model" )
@@ -782,10 +798,11 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     row = box.row()
                     row.prop ( self.object_list[self.active_obj_index], "dynamic", text="Dynamic" )
                     if self.object_list[self.active_obj_index].dynamic:
-                        #row.prop ( self.object_list[self.active_obj_index], "script_name", text="Script" )
+                        row.prop ( self.object_list[self.active_obj_index], "dynamic_display_source" )
+                        row = box.row()
                         row.prop_search ( self.object_list[self.active_obj_index], "script_name",
                                           context.scene.mcell.scripting, "internal_python_scripts_list",
-                                          text="Script:", icon='TEXT' )
+                                          text="Script", icon='TEXT' )
                         row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
 
             if self.has_some_dynamic:
@@ -811,7 +828,9 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             if scene_object.type == 'MESH':
                 if scene_object.mcell.include:
                     print ( "MCell object: " + scene_object.name )
-                    mo_list.append ( { "name": scene_object.name } )
+                    obj_dm = { "name": scene_object.name }
+                    mo_list.append ( obj_dm )
+
         mo_dm['model_object_list'] = mo_list
         return mo_dm
 
@@ -1199,7 +1218,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             filepath = mcell_files_path()
             path_to_dg_files = os.path.join ( filepath, "output_data", "dynamic_geometry" )
             for obj in mcell.model_objects.object_list:
-                if obj.dynamic:
+                if obj.dynamic and (obj.dynamic_display_source != 'other'):
                     if len(obj.script_name) > 0:
                         file_name = "%s_frame_%d.mdl"%(obj.name,cur_frame)
                         #print ( "Reading from " + file_name )
