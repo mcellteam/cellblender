@@ -162,6 +162,14 @@ class CopyDataModelFromSelectedProps(bpy.types.Operator):
             else:
                 selected_dm = ""
             selected_key += '[\'' + section + '\']'
+        # Clean up selected_dm as desired
+        if 'mol_viz' in selected_dm:
+          selected_dm['mol_viz']['file_dir'] = ""
+        else:
+          if ('file_dir' in selected_dm) and ('viz_list' in selected_dm):
+            # This is likely to be a "mol_viz" entry
+            selected_dm['file_dir'] = ""
+
         #s = "dm['mcell'] = " + pprint.pformat ( selected_dm, indent=4, width=40 ) + "\n"
         s = selected_key + " = " + data_model.data_model_as_text ( selected_dm ) + "\n"
         #s = "dm['mcell'] = " + str(selected_dm) + "\n"

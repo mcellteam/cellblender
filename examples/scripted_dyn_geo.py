@@ -1,7 +1,7 @@
 scripted_dyn_geo_dm = {
   'api_version' : 0,
   'blender_version' : [2, 78, 0],
-  'cellblender_source_sha1' : "ecb4a3282095c2bfb63520fcf890100b2d2a26e1",
+  'cellblender_source_sha1' : "0",
   'cellblender_version' : "0.1.54",
   'data_model_version' : "DM_2014_10_24_1638",
   'define_molecules' : {
@@ -16,7 +16,7 @@ scripted_dyn_geo_dm = {
           'color' : [0.0, 1.0, 0.0],
           'emit' : 0.0,
           'glyph' : "Sphere_1",
-          'scale' : 10.0
+          'scale' : 5.0
         },
         'export_viz' : False,
         'maximum_step_length' : "",
@@ -37,16 +37,32 @@ scripted_dyn_geo_dm = {
   },
   'define_surface_classes' : {
     'data_model_version' : "DM_2014_10_24_1638",
-    'surface_class_list' : []
+    'surface_class_list' : [
+      {
+        'data_model_version' : "DM_2014_10_24_1638",
+        'name' : "Surface_Class",
+        'surface_class_prop_list' : [
+          {
+            'affected_mols' : "SINGLE",
+            'clamp_value' : "1e-6",
+            'data_model_version' : "DM_2015_11_08_1756",
+            'molecule' : "v",
+            'name' : "Molec.: v   Orient.: Bottom/Back   Type: Clamp Concentration",
+            'surf_class_orient' : ",",
+            'surf_class_type' : "CLAMP_CONCENTRATION"
+          }
+        ]
+      }
+    ]
   },
   'geometrical_objects' : {
-    'object_list': [
+    'object_list' : [
       {
-        'name': 'ScriptCube',
-        'location': [0.0, 0.0, 0.0],
-        'vertex_list': [ [1.0, 1.0, -1.0], [1.0, -1.0, -1.0], [-1.0, -1.0, -1.0], [-1.0, 1.0, -1.0], [1.0, 1.0, 1.3], [1.0, -1.0, 1.3], [-1.0, -1.0, 1.3], [-1.0, 1.0, 1.3] ],
+        'name' : "Cube",
+        'location' : [0.0, 0.0, 0.0],
+        'vertex_list': [ [1.0, 1.0, -1.0], [1.0, -1.0, -1.0], [-1.0, -1.0, -1.0], [-1.0, 1.0, -1.0], [1.0, 1.0, 1.0], [1.0, -1.0, 1.0], [-1.0, -1.0, 1.0], [-1.0, 1.0, 1.0] ],
         'element_connections': [ [1, 2, 3], [7, 6, 5], [4, 5, 1], [5, 6, 2], [2, 6, 7], [0, 3, 7], [0, 1, 3], [4, 7, 5], [0, 4, 1], [1, 5, 2], [3, 2, 7], [4, 0, 7] ],
-        'material_names': ['ScriptCube_mat']
+        'material_names' : ['Cube_mat']
       }
     ]
   },
@@ -56,7 +72,7 @@ scripted_dyn_geo_dm = {
     'data_model_version' : "DM_2014_10_24_1638",
     'export_all_ascii' : False,
     'interaction_radius' : "",
-    'iterations' : "200",
+    'iterations' : "300",
     'microscopic_reversibility' : "OFF",
     'notifications' : {
       'all_notifications' : "INDIVIDUAL",
@@ -79,13 +95,13 @@ scripted_dyn_geo_dm = {
       'recursion_flag' : False,
       'x_end' : "1",
       'x_start' : "-1",
-      'x_step' : "0.02",
+      'x_step' : "0.05",
       'y_end' : "1",
       'y_start' : "-1",
-      'y_step' : "0.02",
+      'y_step' : "0.05",
       'z_end' : "1",
       'z_start' : "-1",
-      'z_step' : "0.02"
+      'z_step' : "0.05"
     },
     'radial_directions' : "",
     'radial_subdivisions' : "",
@@ -111,7 +127,7 @@ scripted_dyn_geo_dm = {
   },
   'materials' : {
     'material_dict' : {
-      'ScriptCube_mat' : {
+      'Cube_mat' : {
         'diffuse_color' : {
           'r' : 0.0,
           'g' : 0.8,
@@ -125,16 +141,25 @@ scripted_dyn_geo_dm = {
     'data_model_version' : "DM_2017_03_16_1750",
     'model_object_list' : [
       {
-        'name' : "ScriptCube",
         'dynamic' : True,
-        'script_name' : "dg.py",
-        'dynamic_display_source' : "script"
+        'dynamic_display_source' : "files",
+        'name' : "Cube",
+        'script_name' : "dyn_geo.py"
       }
     ]
   },
   'modify_surface_regions' : {
     'data_model_version' : "DM_2014_10_24_1638",
-    'modify_surface_regions_list' : []
+    'modify_surface_regions_list' : [
+      {
+        'data_model_version' : "DM_2015_11_06_1732",
+        'name' : "Surface Class: Surface_Class   Object: Cube   ALL",
+        'object_name' : "Cube",
+        'region_name' : "",
+        'region_selection' : "ALL",
+        'surf_class_name' : "Surface_Class"
+      }
+    ]
   },
   'mol_viz' : {
     'active_seed_index' : 0,
@@ -150,13 +175,13 @@ scripted_dyn_geo_dm = {
       [0.0, 0.0, 0.0]
     ],
     'data_model_version' : "DM_2015_04_13_1700",
-    'file_dir' : "../../../../../../../home/bobkuczewski/proj/MCell/tutorials/intro/2017/2017_03/2017_03_17/dg_ex_files/mcell/output_data/viz_data/seed_00001",
-    'file_index' : 134,
-    'file_name' : "Scene.cellbin.134.dat",
-    'file_num' : 201,
+    'file_dir' : "",
+    'file_index' : 456,
+    'file_name' : "Scene.cellbin.456.dat",
+    'file_num' : 501,
     'file_start_index' : 0,
     'file_step_index' : 1,
-    'file_stop_index' : 200,
+    'file_stop_index' : 500,
     'manual_select_viz_dir' : False,
     'render_and_save' : False,
     'seed_list' : ['seed_00001'],
@@ -170,11 +195,26 @@ scripted_dyn_geo_dm = {
     'always_generate' : True,
     'combine_seeds' : True,
     'data_model_version' : "DM_2016_03_15_1800",
-    'mol_colors' : False,
+    'mol_colors' : True,
     'output_buf_size' : "",
     'plot_layout' : " plot ",
     'plot_legend' : "0",
-    'reaction_output_list' : [],
+    'reaction_output_list' : [
+      {
+        'count_location' : "World",
+        'data_file_name' : "",
+        'data_model_version' : "DM_2016_03_15_1800",
+        'mdl_file_prefix' : "",
+        'mdl_string' : "",
+        'molecule_name' : "v",
+        'name' : "Count v in World",
+        'object_name' : "",
+        'plotting_enabled' : True,
+        'reaction_name' : "",
+        'region_name' : "",
+        'rxn_or_mol' : "Molecule"
+      }
+    ],
     'rxn_step' : ""
   },
   'release_sites' : {
@@ -186,16 +226,16 @@ scripted_dyn_geo_dm = {
         'location_y' : "0",
         'location_z' : "0",
         'molecule' : "v",
-        'name' : "rel_v",
-        'object_expr' : "ScriptCube",
+        'name' : "Release_Site_1",
+        'object_expr' : "Cube",
         'orient' : "'",
         'pattern' : "",
         'points_list' : [],
-        'quantity' : "500",
+        'quantity' : "5000",
         'quantity_type' : "NUMBER_TO_RELEASE",
         'release_probability' : "1",
-        'shape' : "CUBIC",
-        'site_diameter' : "1.95",
+        'shape' : "OBJECT",
+        'site_diameter' : "0",
         'stddev' : "0"
       }
     ]
@@ -206,7 +246,7 @@ scripted_dyn_geo_dm = {
     'dm_internal_file_name' : "",
     'force_property_update' : True,
     'script_texts' : {
-      'dg.py': "# This script gets both its inputs and outputs from the environment:\n" \
+      'dyn_geo.py': "# This script gets both its inputs and outputs from the environment:\n" \
                "#\n" \
                "#  frame_number is the frame number indexed from the start of the simulation\n" \
                "#  time_step is the amount of time between each frame (same as CellBlender's time_step)\n" \
@@ -266,10 +306,22 @@ scripted_dyn_geo_dm = {
     'processes_list' : [
       {
         'data_model_version' : "DM_2015_04_23_1753",
-        'name' : "PID: 10015, Seed: 1, 100%"
+        'name' : "PID: 3405, Seed: 1, 100%"
+      },
+      {
+        'data_model_version' : "DM_2015_04_23_1753",
+        'name' : "PID: 3431, Seed: 1, 100%"
+      },
+      {
+        'data_model_version' : "DM_2015_04_23_1753",
+        'name' : "PID: 3695, Seed: 1, 100%"
+      },
+      {
+        'data_model_version' : "DM_2015_04_23_1753",
+        'name' : "PID: 3987, Seed: 1, 100%"
       }
     ],
-    'run_limit' : "-1",
+    'run_limit' : "12",
     'start_seed' : "1"
   },
   'viz_output' : {
@@ -281,4 +333,5 @@ scripted_dyn_geo_dm = {
     'step' : "1"
   }
 }
+
 
