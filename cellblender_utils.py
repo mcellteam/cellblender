@@ -15,6 +15,26 @@ def get_tool_shelf():
     return tool_shelf
 
 
+def wrap_long_text(width, text):
+
+  lines = []
+  arr = text.split()
+  lengthSum = 0
+  strSum = ""
+
+  for var in arr:
+    lengthSum+=len(var) + 1
+    if lengthSum <= width:
+      strSum += " " + var
+    else:
+      lines.append(strSum)
+      lengthSum = 0
+      strSum = var
+  lines.append(" " + arr[len(arr) - 1])
+
+  return lines
+
+
 def timeline_view_all ( context ):
     if bpy.context.screen != None:
         for area in bpy.context.screen.areas:
