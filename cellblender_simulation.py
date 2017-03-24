@@ -2114,13 +2114,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                                     row = layout.row()
                                     row.label ( "Error from task " + str(pid), icon="ERROR" )
 
-                                    tool_shelf = None
-                                    area = bpy.context.area
-
-                                    for region in area.regions:
-                                        if region.type == 'TOOLS':
-                                            tool_shelf = region
-
+                                    tool_shelf = cellblender_utils.get_tool_shelf()
                                     lines = wrap(math.ceil(tool_shelf.width / 9), serr)
 
                                     for var in lines:

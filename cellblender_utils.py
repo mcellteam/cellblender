@@ -5,6 +5,16 @@ import sys
 import subprocess
 
 
+def get_tool_shelf():
+    tool_shelf = None
+    area = bpy.context.area
+
+    for region in area.regions:
+        if region.type == 'TOOLS':
+            tool_shelf = region
+    return tool_shelf
+
+
 def timeline_view_all ( context ):
     if bpy.context.screen != None:
         for area in bpy.context.screen.areas:
