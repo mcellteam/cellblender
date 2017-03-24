@@ -43,6 +43,7 @@ import subprocess
 import time
 import shutil
 import datetime
+import math
 
 
 # CellBlender imports
@@ -57,6 +58,26 @@ from . import data_model
 from cellblender.cellblender_utils import mcell_files_path
 
 from multiprocessing import cpu_count
+
+
+def wrap(width, text):
+
+  lines = []
+  arr = text.split()
+  lengthSum = 0
+  strSum = ""
+
+  for var in arr:
+    lengthSum+=len(var) + 1
+    if lengthSum <= width:
+      strSum += " " + var
+    else:
+      lines.append(strSum)
+      lengthSum = 0
+      strSum = var
+  lines.append(" " + arr[len(arr) - 1])
+
+  return lines
 
 
 # We use per module class registration/unregistration
@@ -2092,10 +2113,20 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                                 if len(serr) > 0:
                                     row = layout.row()
                                     row.label ( "Error from task " + str(pid), icon="ERROR" )
-                                    serr_list = serr.split('\n')
-                                    for l in serr_list:
-                                        row = layout.row()
-                                        row.label ( "  " + l, icon="BLANK1" )
+
+                                    tool_shelf = None
+                                    area = bpy.context.area
+
+                                    for region in area.regions:
+                                        if region.type == 'TOOLS':
+                                            tool_shelf = region
+
+                                    lines = wrap(math.ceil(tool_shelf.width / 9), serr)
+
+                                    for var in lines:
+                                      row = layout.row(align = True)
+                                      row.alignment = 'EXPAND'
+                                      row.label(var)
 
                             sout = str(q_item['stdout'])
                             if False and (len(sout) > 0):
