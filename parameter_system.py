@@ -2302,6 +2302,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             split = row.split(0.03)
             col = split.column()
             col = split.column()
+            box = col.box()
 
             tool_shelf = cellblender_utils.get_tool_shelf()
             lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), help_string)
