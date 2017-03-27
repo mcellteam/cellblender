@@ -1883,21 +1883,18 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     manual_sge_host = BoolProperty ( name="Select execution hosts manually", default=False, description="Select execution hosts from a capabilities list" )
 
     def init_properties ( self, parameter_system ):
-        helptext = "Start Seed\n" + \
-                   "The first seed used in running a series of simulations.\n" + \
-                   "The number of simulations depends on the start and end seeds."
+        helptext = """The first seed used in running a series of simulations.
+The number of simulations depends on the start and end seeds."""
         self.start_seed.init_ref   ( parameter_system, user_name="Start Seed",   user_expr="1", user_units="", user_descr=helptext )
 
-        helptext = "End Seed\n" + \
-                   "The last seed used in running a series of simulations.\n" + \
-                   "The number of simulations depends on the start and end seeds."
+        helptext = """The last seed used in running a series of simulations.
+The number of simulations depends on the start and end seeds."""
         self.end_seed.init_ref   ( parameter_system, user_name="End Seed",   user_expr="1", user_units="", user_descr=helptext )
 
-        helptext = "Run Limit\n" + \
-                   "Maximum number of simulation runs that can be submitted.\n" + \
-                   "This setting provides a safeguard against running more runs than expected.\n" + \
-                   "A value of -1 implies no limit.\n" + \
-                   "The default for upgraded files is -1 since they had no limit."
+        helptext = """Maximum number of simulation runs that can be submitted.
+This setting provides a safeguard against running more runs than expected.  A
+value of -1 implies no limit.  The default for upgraded files is -1 since they
+had no limit."""
         self.run_limit.init_ref   ( parameter_system, user_name="Run Limit",   user_expr="12", user_units="", user_descr=helptext, user_int=True )
 
 
