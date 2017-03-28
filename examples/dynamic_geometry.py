@@ -16,7 +16,7 @@ dynamic_geometry_dm = {
           'color' : [1.0, 0.0, 0.0],
           'emit' : 0.0,
           'glyph' : "Sphere_1",
-          'scale' : 1.0
+          'scale' : 5.0
         },
         'export_viz' : False,
         'maximum_step_length' : "",
@@ -97,11 +97,26 @@ dynamic_geometry_dm = {
       'useless_volume_orientation' : "WARNING"
     }
   },
+  'materials' : {
+    'material_dict' : {
+      'Cube_mat.002' : {
+        'diffuse_color' : {
+          'a' : 0.2,
+          'b' : 0.8,
+          'g' : 0.8,
+          'r' : 0.8
+        }
+      }
+    }
+  },
   'model_objects' : {
-    'data_model_version' : "DM_2014_10_24_1638",
+    'data_model_version' : "DM_2017_03_16_1750",
     'model_object_list' : [
       {
-        'name' : "Cube"
+        'dynamic' : True,
+        'dynamic_display_source' : "other",
+        'name' : "Cube",
+        'script_name' : ""
       }
     ]
   },
