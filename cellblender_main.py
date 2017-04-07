@@ -266,6 +266,56 @@ class MCELL_OT_upgrade(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_export_dm(bpy.types.Operator):
+    """This is the Upgrade operator called when the user presses the "Upgrade" button"""
+    bl_idname = "mcell.export_data_model"
+    bl_label = "Export Data Model to DM.txt"
+    bl_description = "Export Data Model from ID Properties to a file."
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+
+        print ( "Export Data Model Operator called" )
+        mcell = context.scene.mcell
+        if 'data_model' in mcell.keys():
+            # There is a data model present
+            dm = data_model.unpickle_data_model(mcell['data_model'])
+            # Build a full data model to get the geometry
+            full_dm = mcell.build_data_model_from_properties ( context, geometry=True )
+            # Add the geometry data to the original data model before exporting
+            if 'geometrical_objects' in full_dm:
+              dm['geometrical_objects'] = full_dm['geometrical_objects']
+            if 'materials' in full_dm:
+              dm['materials'] = full_dm['materials']
+            data_model.save_data_model_to_file ( dm, "DM.txt" )
+        return {'FINISHED'}
+
+
+class MCELL_OT_export_dm_json(bpy.types.Operator):
+    """This is the Upgrade operator called when the user presses the "Upgrade" button"""
+    bl_idname = "mcell.export_data_model_json"
+    bl_label = "Export Data Model to DM.json"
+    bl_description = "Export Data Model from ID Properties to a JSON file."
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+
+        print ( "Export Data Model JSON Operator called" )
+        mcell = context.scene.mcell
+        if 'data_model' in mcell.keys():
+            # There is a data model present
+            dm = data_model.unpickle_data_model(mcell['data_model'])
+            # Build a full data model to get the geometry
+            full_dm = mcell.build_data_model_from_properties ( context, geometry=True )
+            # Add the geometry data to the original data model before exporting
+            if 'geometrical_objects' in full_dm:
+              dm['geometrical_objects'] = full_dm['geometrical_objects']
+            if 'materials' in full_dm:
+              dm['materials'] = full_dm['materials']
+            data_model.save_data_model_to_json_file ( dm, "DM.json" )
+        return {'FINISHED'}
+
+
 class MCELL_OT_delete(bpy.types.Operator):
     """This is the Delete operator called when the user presses the "Delete Properties" button"""
     bl_idname = "mcell.delete"
@@ -466,6 +516,12 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                 row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
                 row = layout.row()
                 row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
+                if 'data_model' in mcell.keys():
+                    # There is a data model present, so show the option to save it directly
+                    row = layout.row()
+                    row.operator ( "mcell.export_data_model", text="Export Data Model to DM.txt", icon='EXPORT' )
+                    row = layout.row()
+                    row.operator ( "mcell.export_data_model_json", text="Export Data Model to DM.json", icon='EXPORT' )
 
             else:
                 # The versions matched, so draw the normal panels
