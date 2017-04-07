@@ -279,6 +279,13 @@ class MCELL_OT_export_dm(bpy.types.Operator):
         if 'data_model' in mcell.keys():
             # There is a data model present
             dm = data_model.unpickle_data_model(mcell['data_model'])
+            # Build a full data model to get the geometry
+            full_dm = mcell.build_data_model_from_properties ( context, geometry=True )
+            # Add the geometry data to the original data model before exporting
+            if 'geometrical_objects' in full_dm:
+              dm['geometrical_objects'] = full_dm['geometrical_objects']
+            if 'materials' in full_dm:
+              dm['materials'] = full_dm['materials']
             data_model.save_data_model_to_file ( dm, "DM.txt" )
         return {'FINISHED'}
 
@@ -297,6 +304,13 @@ class MCELL_OT_export_dm_json(bpy.types.Operator):
         if 'data_model' in mcell.keys():
             # There is a data model present
             dm = data_model.unpickle_data_model(mcell['data_model'])
+            # Build a full data model to get the geometry
+            full_dm = mcell.build_data_model_from_properties ( context, geometry=True )
+            # Add the geometry data to the original data model before exporting
+            if 'geometrical_objects' in full_dm:
+              dm['geometrical_objects'] = full_dm['geometrical_objects']
+            if 'materials' in full_dm:
+              dm['materials'] = full_dm['materials']
             data_model.save_data_model_to_json_file ( dm, "DM.json" )
         return {'FINISHED'}
 
