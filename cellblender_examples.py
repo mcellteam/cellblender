@@ -16,7 +16,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import cellblender
-import bpy
+import bpy, bmesh
 import os
 from bpy.props import BoolProperty
 from cellblender import examples
@@ -171,9 +171,73 @@ class MCELL_OT_load_variable_rate_constant(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
+    bl_idname = "mcell.load_skey_dyn_geo"
+    bl_label = "Dynamic Geometry (Shape Keys)"
+    bl_description = "Loads a model with shape key dynamic geometry"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        # Start by loading the data model and placing into CellBlender properties
+        dm = {}
+        dm['mcell'] = examples.shape_key_dyn_geo.shape_key_dyn_geo_dm
+        cellblender.replace_data_model(dm, geometry=True, scripts=False)
+
+        # Set the viewing angle to view all objects
+        view_all()
+
+        # Select the Cube object (created by the data model)
+        bpy.data.objects['Cube'].select = True
+        context.scene.objects.active = bpy.data.objects['Cube']
+
+        # Add two shape keys
+        bpy.ops.object.shape_key_add(from_mix=False)  # Adds "Basis" Shape Key
+        bpy.ops.object.shape_key_add(from_mix=False)  # Adds "Key 1" Shape Key
+
+        # Enter Edit Mode and deselect all
+        bpy.ops.object.mode_set ( mode="EDIT" )
+        bpy.ops.mesh.select_all(action='TOGGLE')
+
+        # Move the top 4 points when on Key 1
+        obj = context.object
+        mesh = obj.data
+        bm = bmesh.from_edit_mesh(mesh)
+        bm.verts.ensure_lookup_table()
+        verts = bm.verts
+        for v in verts:
+          if v.co[2] > 0:
+            print ( "Setting vertex" )
+            v.co[2] = 4.0
+        bmesh.update_edit_mesh(mesh)
+
+        # Return to Object Mode
+        bpy.ops.object.mode_set ( mode="OBJECT" )
+
+        context.scene.frame_current = 0
+        bpy.data.shape_keys['Key'].key_blocks["Key 1"].value = 0.0
+        mesh.shape_keys.key_blocks['Key 1'].keyframe_insert(data_path='value')
+
+        context.scene.frame_current = 50
+        bpy.data.shape_keys['Key'].key_blocks["Key 1"].value = 1.0
+        mesh.shape_keys.key_blocks['Key 1'].keyframe_insert(data_path='value')
+
+        context.scene.frame_current = 100
+        bpy.data.shape_keys['Key'].key_blocks["Key 1"].value = 0.0
+        mesh.shape_keys.key_blocks['Key 1'].keyframe_insert(data_path='value')
+
+        area = bpy.context.area
+        old_type = area.type
+        area.type = 'GRAPH_EDITOR'
+        bpy.ops.graph.fmodifier_add(type='CYCLES')
+        area.type = old_type
+
+        return {'FINISHED'}
+
+
 class MCELL_OT_load_scripted_dyn_geo(bpy.types.Operator):
     bl_idname = "mcell.load_scripted_dyn_geo"
-    bl_label = "Scripted Dynamic Geometry"
+    bl_label = "Dynamic Geometry (Scripted)"
     bl_description = "Loads a model with scripted dynamic geometry"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -188,7 +252,7 @@ class MCELL_OT_load_scripted_dyn_geo(bpy.types.Operator):
 
 class MCELL_OT_load_dynamic_geometry(bpy.types.Operator):
     bl_idname = "mcell.load_dynamic_geometry"
-    bl_label = "Dynamic Geometry"
+    bl_label = "Dynamic Geometry (Blend file)"
     bl_description = "Loads a model using dynamic geometries"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -255,4 +319,7 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row = layout.row()
             row.operator("mcell.load_dynamic_geometry")
             row = layout.row()
+            row.operator("mcell.load_skey_dyn_geo")
+            row = layout.row()
             row.operator("mcell.load_scripted_dyn_geo")
+

@@ -190,6 +190,7 @@ cellblender_info = {
         "examples"+os.sep+"dynamic_geometry.py",
         "examples"+os.sep+"dynamic_geometry.blend",
         "examples"+os.sep+"scripted_dyn_geo.py",
+        "examples"+os.sep+"shape_key_dyn_geo.py",
         #        "bng"+os.sep+"libsbml3"+os.sep+"__init__.py",
         ],
 
