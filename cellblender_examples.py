@@ -191,6 +191,65 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
         bpy.data.objects['Cube'].select = True
         context.scene.objects.active = bpy.data.objects['Cube']
 
+        # Remove all previous shape keys (otherwise this can't be run twice!!)
+        # https://blender.stackexchange.com/questions/27193/how-do-i-delete-one-single-shape-key
+        # Shape keys can be added and deleted through the Properties editor (the on the right ) under the Data tab in Shape keys.
+        # Note that you have to be in Object Mode for this to work... otherwise the minus sign will be greyed out!
+
+        # https://blenderartists.org/forum/showthread.php?283867-Delete-All-Shape-Keys
+        # Try this in the python console:
+        # [bpy.ops.object.shape_key_remove() for x in range(50)]
+        # It's a hack, but it should work!
+
+        # https://blenderartists.org/forum/showthread.php?233730-delete-shape-key-by-name-via-python
+        #  delete shape key by name via python
+
+        #    Q. how to delete shapekey by name from python...
+        #    foreach_get_howto.jpgforeach_get_howto.jpg
+
+        #    i can get shapekey names via
+        #    #### iterate over existing shapekeys
+        #    obj = bpy.context.object
+        #    sk = obj.data.shape_keys
+        #    skNamesArr = sk.key_blocks
+        #    for each in skNamesArr:
+        #    print each
+        #    ##########################
+
+        #    #### adding shape keys
+        #    obj.shape_key_add("nameStr")
+        #    ##########################
+
+        #    #### removing by name seems hard...
+        #    bpy.ops.object.shape_key_remove() # this will remove selected shape key.
+        #    # how to give it parameter/ datapath from above lines(where i m iterating over sk)
+        #    or how to select a shapekey from list by name, ??
+
+        #    another question(thanks in advance for taking time n helping me out)
+
+        #    Q. how to use function "foreach_get" or "foreach_set" in most of blender returned data objects.?? 
+
+        #you could wrap it like this:
+
+        #Code:
+
+        #import bpy
+        #def deleteShapekeyByName(oObject, sShapekeyName):
+        #
+        #    # setting the active shapekey
+        #    iIndex = oObject.data.shape_keys.key_blocks.keys().index(sShapekeyName)
+        #    oObject.active_shape_key_index = iIndex
+        #
+        #    # delete it
+        #    bpy.ops.object.shape_key_remove()
+        #
+        #oActiveObject = bpy.context.active_object
+        #deleteShapekeyByName(oActiveObject, "MyShapeKey")
+
+
+        #bpy.ops.object.shape_key_remove(all=True)
+
+
         # Add two shape keys
         bpy.ops.object.shape_key_add(from_mix=False)  # Adds "Basis" Shape Key
         bpy.ops.object.shape_key_add(from_mix=False)  # Adds "Key 1" Shape Key
