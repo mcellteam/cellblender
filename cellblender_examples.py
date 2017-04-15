@@ -273,6 +273,8 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
         # Return to Object Mode
         bpy.ops.object.mode_set ( mode="OBJECT" )
 
+        context.scene.frame_start = 0
+
         context.scene.frame_current = 0
         bpy.data.shape_keys['Key'].key_blocks["Key 1"].value = 0.0
         mesh.shape_keys.key_blocks['Key 1'].keyframe_insert(data_path='value')
