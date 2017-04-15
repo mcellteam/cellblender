@@ -44,6 +44,16 @@ def view_all():
                     bpy.ops.view3d.view_all(override)
 
 
+def view_selected():
+    for area in bpy.context.screen.areas:
+        if area.type == 'VIEW_3D':
+            for region in area.regions:
+                if region.type == 'WINDOW':
+                    override = {'area': area, 'region': region}
+                    bpy.ops.view3d.view_selected(override)
+
+
+
 class MCELL_OT_load_lotka_volterra_rxn_limited(bpy.types.Operator):
     bl_idname = "mcell.load_lotka_volterra_rxn_limited"
     bl_label = "Reaction-Limited"
@@ -184,9 +194,6 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
         dm['mcell'] = examples.shape_key_dyn_geo.shape_key_dyn_geo_dm
         cellblender.replace_data_model(dm, geometry=True, scripts=False)
 
-        # Set the viewing angle to view all objects
-        view_all()
-
         # Select the Cube object (created by the data model)
         bpy.data.objects['Cube'].select = True
         context.scene.objects.active = bpy.data.objects['Cube']
@@ -246,8 +253,10 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
         #oActiveObject = bpy.context.active_object
         #deleteShapekeyByName(oActiveObject, "MyShapeKey")
 
-
-        #bpy.ops.object.shape_key_remove(all=True)
+        try:
+          bpy.ops.object.shape_key_remove(all=True)
+        except:
+          pass
 
 
         # Add two shape keys
@@ -287,11 +296,20 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
         bpy.data.shape_keys['Key'].key_blocks["Key 1"].value = 0.0
         mesh.shape_keys.key_blocks['Key 1'].keyframe_insert(data_path='value')
 
+        # Leave the frame at 50 (large cube) so the view setting will fit
+        context.scene.frame_current = 50
+
         area = bpy.context.area
         old_type = area.type
         area.type = 'GRAPH_EDITOR'
         bpy.ops.graph.fmodifier_add(type='CYCLES')
         area.type = old_type
+
+        # Set the viewing angle to view selected object
+        context.scene.update()
+        view_all()
+        # Return the current frame to 0
+        context.scene.frame_current = 0
 
         return {'FINISHED'}
 
