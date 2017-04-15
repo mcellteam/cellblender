@@ -254,6 +254,9 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
         #deleteShapekeyByName(oActiveObject, "MyShapeKey")
 
         try:
+          # This currently fails with:
+          #  RuntimeError: Operator bpy.ops.object.shape_key_remove.poll() failed, context is incorrect
+          # Keep it here until we figure out how to make it work!!
           bpy.ops.object.shape_key_remove(all=True)
         except:
           pass
@@ -265,9 +268,9 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
 
         # Enter Edit Mode and deselect all
         bpy.ops.object.mode_set ( mode="EDIT" )
-        bpy.ops.mesh.select_all(action='TOGGLE')
+        bpy.ops.mesh.select_all(action='DESELECT')
 
-        # Move the top 4 points when on Key 1
+        # Move the top 4 points when on "Key 1" (the default key after the previous adds)
         obj = context.object
         mesh = obj.data
         bm = bmesh.from_edit_mesh(mesh)
@@ -275,15 +278,19 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
         verts = bm.verts
         for v in verts:
           if v.co[2] > 0:
-            print ( "Setting vertex" )
+            # This is a positive (top) vertex so stretch it
+            v.co[0] = v.co[0] * 0.25
+            v.co[1] = v.co[1] * 0.25
             v.co[2] = 4.0
         bmesh.update_edit_mesh(mesh)
 
         # Return to Object Mode
         bpy.ops.object.mode_set ( mode="OBJECT" )
 
+        # Default frame_start is 1, set to 0 to match shape key assignments
         context.scene.frame_start = 0
 
+        # Assign the shape keys to complete one cycle every 100 frames
         context.scene.frame_current = 0
         bpy.data.shape_keys['Key'].key_blocks["Key 1"].value = 0.0
         mesh.shape_keys.key_blocks['Key 1'].keyframe_insert(data_path='value')
@@ -296,19 +303,20 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
         bpy.data.shape_keys['Key'].key_blocks["Key 1"].value = 0.0
         mesh.shape_keys.key_blocks['Key 1'].keyframe_insert(data_path='value')
 
-        # Leave the frame at 50 (large cube) so the view setting will fit
+        # Set the frame to 50 (large cube) so the view all operator will fit at max size
         context.scene.frame_current = 50
 
+        # Switch area type to set the F-Curve modifier to "CYCLES"
         area = bpy.context.area
         old_type = area.type
         area.type = 'GRAPH_EDITOR'
         bpy.ops.graph.fmodifier_add(type='CYCLES')
         area.type = old_type
 
-        # Set the viewing angle to view selected object
+        # Set the view to show the selected object
         context.scene.update()
         view_all()
-        # Return the current frame to 0
+        # Return the current frame to 0 (small cube) after viewing large cube
         context.scene.frame_current = 0
 
         return {'FINISHED'}
