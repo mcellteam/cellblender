@@ -264,22 +264,25 @@ scripted_dyn_geo_dm = {
                "\n" \
                "min_ztop = 1.0\n" \
                "max_ztop = 4.0\n" \
+               "rad_bot = 1.0\n" \
+               "rad_top = 0.25\n" \
                "period_frames = 100\n" \
                "\n" \
-               "sx = sy = sz = 1\n" \
+               "sx = sy = sz = rad_bot\n" \
                "h = ( 1 + math.sin ( math.pi * ((2*frame_number/period_frames) - 0.5) ) ) / 2\n" \
                "\n" \
                "zt = min_ztop + ( (max_ztop-min_ztop) * h )\n" \
+               "rt = rt = rad_bot + ( h * (rad_top - rad_bot) )\n" \
                "\n" \
                "# These define the coordinates of the rectangular box\n" \
                "points.append ( [  sx,  sy, -sz ] )\n" \
                "points.append ( [  sx, -sy, -sz ] )\n" \
                "points.append ( [ -sx, -sy, -sz ] )\n" \
                "points.append ( [ -sx,  sy, -sz ] )\n" \
-               "points.append ( [  sx,  sy,  zt ] )\n" \
-               "points.append ( [  sx, -sy,  zt ] )\n" \
-               "points.append ( [ -sx, -sy,  zt ] )\n" \
-               "points.append ( [ -sx,  sy,  zt ] )\n" \
+               "points.append ( [  rt,  rt,  zt ] )\n" \
+               "points.append ( [  rt, -rt,  zt ] )\n" \
+               "points.append ( [ -rt, -rt,  zt ] )\n" \
+               "points.append ( [ -rt,  rt,  zt ] )\n" \
                "\n" \
                "# These define the faces of the rectangular box\n" \
                "faces.append ( [ 1, 2, 3 ] )\n" \

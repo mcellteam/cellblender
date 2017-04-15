@@ -333,7 +333,21 @@ class MCELL_OT_load_scripted_dyn_geo(bpy.types.Operator):
         dm = {}
         dm['mcell'] = examples.scripted_dyn_geo.scripted_dyn_geo_dm
         cellblender.replace_data_model(dm, geometry=True, scripts=True)
+
+        # Default frame_start is 1, set to 0 to match model
+        context.scene.frame_start = 0
+        context.scene.update()
+
+        # Set the frame to 50 (large cube) so the view all operator will fit at max size
+        context.scene.frame_current = 50
+
+        # Set the view to show the selected object
+        context.scene.update()
         view_all()
+
+        # Return the current frame to 0 (small cube) after viewing large cube
+        context.scene.frame_current = 0
+
         return {'FINISHED'}
 
 
