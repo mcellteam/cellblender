@@ -195,10 +195,22 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
         cellblender.replace_data_model(dm, geometry=True, scripts=False)
 
         # Select the Cube object (created by the data model)
-        bpy.data.objects['Cube'].select = True
-        context.scene.objects.active = bpy.data.objects['Cube']
+        obj = bpy.data.objects['Cube']
+        obj.select = True
+        context.scene.objects.active = obj
 
         # Remove all previous shape keys (otherwise this can't be run twice!!)
+
+        # Suggestion from cmomoney:
+        # https://blenderartists.org/forum/showthread.php?243733-Shape-Key-Removal&p=3177866&viewfull=1#post3177866
+
+        #if obj.data.shape_keys:
+        # This is never executed because obj.data.shape_keys is None
+        # The problem isn't how to delete from the object, but how to delete from bpy.data.shape_keys
+        #  for k in obj.data.shape_keys.key_blocks:
+        #    obj.shape_key_remove(k)
+
+
         # https://blender.stackexchange.com/questions/27193/how-do-i-delete-one-single-shape-key
         # Shape keys can be added and deleted through the Properties editor (the on the right ) under the Data tab in Shape keys.
         # Note that you have to be in Object Mode for this to work... otherwise the minus sign will be greyed out!
@@ -266,6 +278,14 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
         bpy.ops.object.shape_key_add(from_mix=False)  # Adds "Basis" Shape Key
         bpy.ops.object.shape_key_add(from_mix=False)  # Adds "Key 1" Shape Key
 
+        # Temp fix - this works,
+        #   but additional shape keys are added to:
+        #       bpy.data.shape_keys.keys
+        #   every time the example is loaded.
+        # key_to_modify = bpy.data.shape_keys['Key']
+        key_to_modify = bpy.data.shape_keys[-1]
+        print ( "Current bpy.data.shape_keys.keys() = " + str(bpy.data.shape_keys.keys()) )
+
         # Enter Edit Mode and deselect all
         bpy.ops.object.mode_set ( mode="EDIT" )
         bpy.ops.mesh.select_all(action='DESELECT')
@@ -292,15 +312,15 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
 
         # Assign the shape keys to complete one cycle every 100 frames
         context.scene.frame_current = 0
-        bpy.data.shape_keys['Key'].key_blocks["Key 1"].value = 0.0
+        key_to_modify.key_blocks["Key 1"].value = 0.0
         mesh.shape_keys.key_blocks['Key 1'].keyframe_insert(data_path='value')
 
         context.scene.frame_current = 50
-        bpy.data.shape_keys['Key'].key_blocks["Key 1"].value = 1.0
+        key_to_modify.key_blocks["Key 1"].value = 1.0
         mesh.shape_keys.key_blocks['Key 1'].keyframe_insert(data_path='value')
 
         context.scene.frame_current = 100
-        bpy.data.shape_keys['Key'].key_blocks["Key 1"].value = 0.0
+        key_to_modify.key_blocks["Key 1"].value = 0.0
         mesh.shape_keys.key_blocks['Key 1'].keyframe_insert(data_path='value')
 
         # Set the frame to 50 (large cube) so the view all operator will fit at max size
