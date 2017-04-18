@@ -44,7 +44,7 @@ scripted_dyn_geo_dm = {
         'surface_class_prop_list' : [
           {
             'affected_mols' : "SINGLE",
-            'clamp_value' : "1e-6",
+            'clamp_value' : "5e-7",
             'data_model_version' : "DM_2015_11_08_1756",
             'molecule' : "v",
             'name' : "Molec.: v   Orient.: Bottom/Back   Type: Clamp Concentration",
@@ -231,7 +231,7 @@ scripted_dyn_geo_dm = {
         'orient' : "'",
         'pattern' : "",
         'points_list' : [],
-        'quantity' : "5000",
+        'quantity' : "2500",
         'quantity_type' : "NUMBER_TO_RELEASE",
         'release_probability' : "1",
         'shape' : "OBJECT",

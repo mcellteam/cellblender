@@ -35,6 +35,15 @@ def clear_texts():
         bpy.data.texts.remove(text, do_unlink=True )
 
 
+def zoom_view(delta):
+    for area in bpy.context.screen.areas:
+        if area.type == 'VIEW_3D':
+            for region in area.regions:
+                if region.type == 'WINDOW':
+                    override = {'area': area, 'region': region}
+                    bpy.ops.view3d.zoom(delta=delta, mx=delta, my=delta)
+
+
 def view_all():
     for area in bpy.context.screen.areas:
         if area.type == 'VIEW_3D':
@@ -344,7 +353,7 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
 
 class MCELL_OT_load_scripted_dyn_geo(bpy.types.Operator):
     bl_idname = "mcell.load_scripted_dyn_geo"
-    bl_label = "Dynamic Geometry (Scripted)"
+    bl_label = "Dynamic Geometry (Scripted with concentration clamp)"
     bl_description = "Loads a model with scripted dynamic geometry"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -358,14 +367,28 @@ class MCELL_OT_load_scripted_dyn_geo(bpy.types.Operator):
         context.scene.frame_start = 0
         context.scene.update()
 
-        # Set the frame to 50 (large cube) so the view all operator will fit at max size
+        # Set the frame to 50 (large cube) so the view all operator will fit at max size (not really needed for scripting)
         context.scene.frame_current = 50
 
         # Set the view to show the selected object
         context.scene.update()
-        view_all()
 
-        # Return the current frame to 0 (small cube) after viewing large cube
+        # Add a cube tepmorarily to use for centering the view
+        bpy.ops.mesh.primitive_cube_add()
+        bpy.context.scene.objects.active.location.z = 3
+
+        view_all()
+        # This zooming seems to have no effect
+        # zoom_view(-500)
+
+        # Remove the temporary cube that was used for centering the view
+        bpy.ops.object.delete(use_global=False)
+
+        # Re-select the original cube
+        bpy.data.objects['Cube'].select = True                       # This selects it (enables manipulator on the object)
+        context.scene.objects.active = bpy.data.objects['Cube']      # This makes it active for material display etc
+
+        # Return the current frame to 0 (small cube) after viewing large cube (not really needed for scripting)
         context.scene.frame_current = 0
 
         return {'FINISHED'}
