@@ -11,7 +11,7 @@ scripted_dyn_geo_dm = {
         'custom_space_step' : "",
         'custom_time_step' : "",
         'data_model_version' : "DM_2016_01_13_1930",
-        'diffusion_constant' : "1e-3",
+        'diffusion_constant' : "1e-5",
         'display' : {
           'color' : [0.0, 1.0, 0.0],
           'emit' : 0.0,
@@ -21,7 +21,7 @@ scripted_dyn_geo_dm = {
         'export_viz' : False,
         'maximum_step_length' : "",
         'mol_bngl_label' : "",
-        'mol_name' : "v",
+        'mol_name' : "vm",
         'mol_type' : "3D",
         'target_only' : False
       }
@@ -37,23 +37,7 @@ scripted_dyn_geo_dm = {
   },
   'define_surface_classes' : {
     'data_model_version' : "DM_2014_10_24_1638",
-    'surface_class_list' : [
-      {
-        'data_model_version' : "DM_2014_10_24_1638",
-        'name' : "Surface_Class",
-        'surface_class_prop_list' : [
-          {
-            'affected_mols' : "SINGLE",
-            'clamp_value' : "5e-7",
-            'data_model_version' : "DM_2015_11_08_1756",
-            'molecule' : "v",
-            'name' : "Molec.: v   Orient.: Bottom/Back   Type: Clamp Concentration",
-            'surf_class_orient' : ",",
-            'surf_class_type' : "CLAMP_CONCENTRATION"
-          }
-        ]
-      }
-    ]
+    'surface_class_list' : []
   },
   'geometrical_objects' : {
     'object_list' : [
@@ -72,7 +56,7 @@ scripted_dyn_geo_dm = {
     'data_model_version' : "DM_2014_10_24_1638",
     'export_all_ascii' : False,
     'interaction_radius' : "",
-    'iterations' : "300",
+    'iterations' : "500",
     'microscopic_reversibility' : "OFF",
     'notifications' : {
       'all_notifications' : "INDIVIDUAL",
@@ -107,7 +91,7 @@ scripted_dyn_geo_dm = {
     'radial_subdivisions' : "",
     'space_step' : "",
     'surface_grid_density' : "10000",
-    'time_step' : "1e-6",
+    'time_step' : "5e-6",
     'time_step_max' : "",
     'vacancy_search_distance' : "",
     'warnings' : {
@@ -150,16 +134,7 @@ scripted_dyn_geo_dm = {
   },
   'modify_surface_regions' : {
     'data_model_version' : "DM_2014_10_24_1638",
-    'modify_surface_regions_list' : [
-      {
-        'data_model_version' : "DM_2015_11_06_1732",
-        'name' : "Surface Class: Surface_Class   Object: Cube   ALL",
-        'object_name' : "Cube",
-        'region_name' : "",
-        'region_selection' : "ALL",
-        'surf_class_name' : "Surface_Class"
-      }
-    ]
+    'modify_surface_regions_list' : []
   },
   'mol_viz' : {
     'active_seed_index' : 0,
@@ -186,7 +161,7 @@ scripted_dyn_geo_dm = {
     'render_and_save' : False,
     'seed_list' : ['seed_00001'],
     'viz_enable' : True,
-    'viz_list' : ['mol_v']
+    'viz_list' : ['mol_vm']
   },
   'parameter_system' : {
     'model_parameters' : [],
@@ -199,22 +174,7 @@ scripted_dyn_geo_dm = {
     'output_buf_size' : "",
     'plot_layout' : " plot ",
     'plot_legend' : "0",
-    'reaction_output_list' : [
-      {
-        'count_location' : "World",
-        'data_file_name' : "",
-        'data_model_version' : "DM_2016_03_15_1800",
-        'mdl_file_prefix' : "",
-        'mdl_string' : "",
-        'molecule_name' : "v",
-        'name' : "Count v in World",
-        'object_name' : "",
-        'plotting_enabled' : True,
-        'reaction_name' : "",
-        'region_name' : "",
-        'rxn_or_mol' : "Molecule"
-      }
-    ],
+    'reaction_output_list' : [],
     'rxn_step' : ""
   },
   'release_sites' : {
@@ -225,13 +185,13 @@ scripted_dyn_geo_dm = {
         'location_x' : "0",
         'location_y' : "0",
         'location_z' : "0",
-        'molecule' : "v",
+        'molecule' : "vm",
         'name' : "Release_Site_1",
         'object_expr' : "Cube",
         'orient' : "'",
         'pattern' : "",
         'points_list' : [],
-        'quantity' : "2500",
+        'quantity' : "1000",
         'quantity_type' : "NUMBER_TO_RELEASE",
         'release_probability' : "1",
         'shape' : "OBJECT",
@@ -263,10 +223,10 @@ scripted_dyn_geo_dm = {
                "faces.clear()\n" \
                "\n" \
                "min_ztop = 1.0\n" \
-               "max_ztop = 4.0\n" \
+               "max_ztop = 3.0\n" \
                "rad_bot = 1.0\n" \
                "rad_top = 0.25\n" \
-               "period_frames = 100\n" \
+               "period_frames = 200\n" \
                "\n" \
                "sx = sy = sz = rad_bot\n" \
                "h = ( 1 + math.sin ( math.pi * ((2*frame_number/period_frames) - 0.5) ) ) / 2\n" \

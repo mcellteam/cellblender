@@ -310,7 +310,7 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
             # This is a positive (top) vertex so stretch it
             v.co[0] = v.co[0] * 0.25
             v.co[1] = v.co[1] * 0.25
-            v.co[2] = 4.0
+            v.co[2] = 3.0
         bmesh.update_edit_mesh(mesh)
 
         # Return to Object Mode
@@ -324,16 +324,16 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
         key_to_modify.key_blocks["Key 1"].value = 0.0
         mesh.shape_keys.key_blocks['Key 1'].keyframe_insert(data_path='value')
 
-        context.scene.frame_current = 50
+        context.scene.frame_current = 100
         key_to_modify.key_blocks["Key 1"].value = 1.0
         mesh.shape_keys.key_blocks['Key 1'].keyframe_insert(data_path='value')
 
-        context.scene.frame_current = 100
+        context.scene.frame_current = 200
         key_to_modify.key_blocks["Key 1"].value = 0.0
         mesh.shape_keys.key_blocks['Key 1'].keyframe_insert(data_path='value')
 
         # Set the frame to 50 (large cube) so the view all operator will fit at max size
-        context.scene.frame_current = 50
+        context.scene.frame_current = 100
 
         # Switch area type to set the F-Curve modifier to "CYCLES"
         area = bpy.context.area

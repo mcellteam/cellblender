@@ -1,7 +1,7 @@
 shape_key_dyn_geo_dm = {
   'api_version' : 0,
   'blender_version' : [2, 78, 0],
-  'cellblender_source_sha1' : "34f74051359711e632e3847f1edfa1157768da36",
+  'cellblender_source_sha1' : "0",
   'cellblender_version' : "0.1.54",
   'data_model_version' : "DM_2014_10_24_1638",
   'define_molecules' : {
@@ -11,9 +11,9 @@ shape_key_dyn_geo_dm = {
         'custom_space_step' : "",
         'custom_time_step' : "",
         'data_model_version' : "DM_2016_01_13_1930",
-        'diffusion_constant' : "1e-3",
+        'diffusion_constant' : "1e-5",
         'display' : {
-          'color' : [1.0, 0.0, 0.0],
+          'color' : [0.0, 1.0, 1.0],
           'emit' : 1.0,
           'glyph' : "Sphere_1",
           'scale' : 5.0
@@ -21,7 +21,7 @@ shape_key_dyn_geo_dm = {
         'export_viz' : False,
         'maximum_step_length' : "",
         'mol_bngl_label' : "",
-        'mol_name' : "v",
+        'mol_name' : "vm",
         'mol_type' : "3D",
         'target_only' : False
       }
@@ -78,7 +78,7 @@ shape_key_dyn_geo_dm = {
     'data_model_version' : "DM_2014_10_24_1638",
     'export_all_ascii' : False,
     'interaction_radius' : "",
-    'iterations' : "200",
+    'iterations' : "500",
     'microscopic_reversibility' : "OFF",
     'notifications' : {
       'all_notifications' : "INDIVIDUAL",
@@ -113,7 +113,7 @@ shape_key_dyn_geo_dm = {
     'radial_subdivisions' : "",
     'space_step' : "",
     'surface_grid_density' : "10000",
-    'time_step' : "1e-6",
+    'time_step' : "5e-6",
     'time_step_max' : "",
     'vacancy_search_distance' : "",
     'warnings' : {
@@ -183,7 +183,7 @@ shape_key_dyn_geo_dm = {
     'render_and_save' : False,
     'seed_list' : ['seed_00001'],
     'viz_enable' : True,
-    'viz_list' : ['mol_v']
+    'viz_list' : ['mol_vm']
   },
   'parameter_system' : {
     'model_parameters' : [],
@@ -207,13 +207,13 @@ shape_key_dyn_geo_dm = {
         'location_x' : "0",
         'location_y' : "0",
         'location_z' : "0",
-        'molecule' : "v",
+        'molecule' : "vm",
         'name' : "Release_Site_1",
         'object_expr' : "Cube",
         'orient' : "'",
         'pattern' : "",
         'points_list' : [],
-        'quantity' : "500",
+        'quantity' : "1000",
         'quantity_type' : "NUMBER_TO_RELEASE",
         'release_probability' : "1",
         'shape' : "OBJECT",
