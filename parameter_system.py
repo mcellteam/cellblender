@@ -66,14 +66,22 @@ import sys
 import pickle
 import time
 import io
-
+import math
 import inspect
+
+from . import cellblender_utils
 
 def dbprint ( s, thresh=1 ):   # Threshold high means no printing, Threshold low (or negative) means lots of printing
     ps = bpy.context.scene.mcell.parameter_system
     if ps.debug_level >= thresh:
         print ( s )
 
+
+def write_lines_in_box(lines, layout, box):
+    for var in lines:
+      row = layout.row(align = True)
+      row.alignment = 'EXPAND'
+      box.label(text=var)
 
 
 ####################### Start of Profiling Code #######################
@@ -976,9 +984,11 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
             col = split.column()
             col = split.column()
             box = col.box()
-            desc_list = rna_par['user_descr'].split("\n")
-            for desc_line in desc_list:
-                box.label (text=desc_line)
+
+            tool_shelf = cellblender_utils.get_tool_shelf()
+            lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), rna_par['user_descr'])
+            write_lines_in_box(lines, layout, box)
+
             if len(rna_par['user_units']) > 0:
                 box.label(text="Units = " + rna_par['user_units'])
             if parameter_system.show_all_details:
@@ -2245,9 +2255,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             col = split.column()
             col = split.column()
             box = col.box()
-            desc_list = help_string.split("\n")
-            for desc_line in desc_list:
-                box.label (text=desc_line)
+
+            tool_shelf = cellblender_utils.get_tool_shelf()
+            lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), help_string)
+            write_lines_in_box(lines, layout, box)
 
 
     @profile('ParameterSystem.draw_prop_with_help')
@@ -2268,9 +2279,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             col = split.column()
             col = split.column()
             box = col.box()
-            desc_list = help_string.split("\n")
-            for desc_line in desc_list:
-                box.label (text=desc_line)
+
+            tool_shelf = cellblender_utils.get_tool_shelf()
+            lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), help_string)
+            write_lines_in_box(lines, layout, box)
 
 
     @profile('ParameterSystem.draw_operator_with_help')
@@ -2291,10 +2303,10 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             col = split.column()
             col = split.column()
             box = col.box()
-            desc_list = help_string.split("\n")
-            for desc_line in desc_list:
-                box.label (text=desc_line)
 
+            tool_shelf = cellblender_utils.get_tool_shelf()
+            lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), help_string)
+            write_lines_in_box(lines, layout, box)
 
 
     @profile('ParameterSystem.draw_prop_search_with_help')
@@ -2317,9 +2329,11 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
             col = split.column()
             col = split.column()
             box = col.box()
-            desc_list = help_string.split("\n")
-            for desc_line in desc_list:
-                box.label (text=desc_line)
+
+            tool_shelf = cellblender_utils.get_tool_shelf()
+            lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), help_string)
+            write_lines_in_box(lines, layout, box)
+
 
     def draw_debug_items ( self, context, layout ):
         row = layout.row()

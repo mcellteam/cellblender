@@ -200,6 +200,11 @@ cellblender_info = {
         "examples"+os.sep+"pbc.py",
         "examples"+os.sep+"lipid_raft.py",
         "examples"+os.sep+"variable_rate_constant.py",
+        "examples"+os.sep+"dynamic_geometry.py",
+        "examples"+os.sep+"dynamic_geometry.blend",
+        "examples"+os.sep+"scripted_dyn_geo.py",
+        "examples"+os.sep+"shape_key_dyn_geo.py",
+        "examples"+os.sep+"dyn_geo_conc_clamp.py",
         #        "bng"+os.sep+"libsbml3"+os.sep+"__init__.py",
         ],
 

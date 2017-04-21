@@ -207,7 +207,7 @@ class SimQueue:
       if self.task_dict[pid]['bl_text']:
         if self.task_dict[pid]['bl_text'].name:
           if self.task_dict[pid]['bl_text'].name in bpy.data.texts:
-            bpy.data.texts.remove(self.task_dict[pid]['bl_text'])
+            bpy.data.texts.remove(self.task_dict[pid]['bl_text'], do_unlink=True)
       self.task_dict.pop(pid)
 
   def shutdown(self):

@@ -231,7 +231,7 @@ lv_rxn_lim_dm = {
       [0.0, 0.0, 0.0]
     ],
     'data_model_version' : "DM_2015_04_13_1700",
-    'file_dir' : "../../../../../../mcell/tests/cellblender_tests/lv/lv3_files/mcell/output_data/viz_data/seed_00001",
+    'file_dir' : "",
     'file_index' : 325,
     'file_name' : "Scene.cellbin.325.dat",
     'file_num' : 501,

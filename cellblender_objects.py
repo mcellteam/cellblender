@@ -417,6 +417,7 @@ def model_objects_update(context):
             things_to_save = {}
             things_to_save['dynamic'] = mobjs.object_list[i].dynamic
             things_to_save['script_name'] = mobjs.object_list[i].script_name
+            things_to_save['dynamic_display_source'] = mobjs.object_list[i].dynamic_display_source
             dyn_dict[mobjs.object_list[i].name] = things_to_save
             mobjs.object_list.remove(i)
         print ( "Done saving dynamic and script name for objects" )
@@ -433,6 +434,7 @@ def model_objects_update(context):
                 #mobjs.object_list[mobjs.active_obj_index].script_name = dyn_dict[obj_name]['script_name']
                 new_obj.dynamic = dyn_dict[obj_name]['dynamic']
                 new_obj.script_name = dyn_dict[obj_name]['script_name']
+                new_obj.dynamic_display_source = dyn_dict[obj_name]['dynamic_display_source']
             scene_object = sobjs[obj_name]
             # Set an error status if object is not triangulated
             for face in scene_object.data.polygons:
@@ -594,29 +596,32 @@ def changed_dynamic_callback(self, context):
     elif (mcell.model_objects.has_some_dynamic):
         # Harder case, this one is no longer dynamic ... are there any others left?
         mcell.model_objects.has_some_dynamic = len([ True for o in mcell.model_objects.object_list if o.dynamic ]) > 0
-    """
-    # Whenever an object's dynamic flag changes, check to see if there still are ANY dynamic flags set
-    print ( "changed_dynamic_callback checking for " + str(self) )
-    print ( "   self.dynamic " + str(self.dynamic) )
-    mcell = context.scene.mcell
-    mcell.model_objects.has_some_dynamic = False
-    for obj in mcell.model_objects.object_list:
-        #print ( "Callback Checking if object " + str(obj) + " is dynamic" )
-        #print ( "  obj.dynamic = " + str(obj.dynamic) )
-        if obj.dynamic:
-            mcell.model_objects.has_some_dynamic = True
-            break
-    """
 
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Object Name", update=check_model_object_name)
-    dynamic = BoolProperty ( default=False, description='This object is dynamic', update=changed_dynamic_callback )
+    dynamic = BoolProperty ( default=False, description='Flag this object as dynamic', update=changed_dynamic_callback )
     script_name = StringProperty(name="Script Name", default="")
+
+    dynamic_display_source = bpy.props.EnumProperty (
+        items= [ # key        label
+                 ('files',   "Files",   ""),
+                 ('script',  "Script", ""),
+                 ("other",   "Other",  "")  ],
+        name="Display From:",
+        default='other',
+        description="Select source of data used to drive the Blender display." )
+        ## update=changed_ddisplay_source )
+
     # Note that the "object_show_only" property should always be False except during the short time that it's callback is being called.
+    # This is for selecting just one object and hiding all others
     object_show_only = BoolProperty ( default=False, description='Show only this object', update=object_show_only_callback )
+
     status = StringProperty(name="Status")
+
     """
+    ## All of the data model code is currently handled at the MCellModelObjectsPropertyGroup level
+
     def build_data_model_from_properties ( self, context ):
         print ( "Model Object building Data Model" )
         mo_dm = {}
@@ -683,9 +688,10 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     object_list = CollectionProperty(type=MCellModelObjectsProperty, name="Object List")
     active_obj_index = IntProperty(name="Active Object Index", default=0, update=active_obj_index_changed)
     show_options = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
-    has_some_dynamic  = bpy.props.BoolProperty(default=False)
-    show_dynamic_from_mdl = bpy.props.BoolProperty(default=False)
     show_cursor_controls = bpy.props.BoolProperty(default=False, description="Show/Hide 3D Cursor Location")
+
+    has_some_dynamic  = bpy.props.BoolProperty(default=False)
+    show_dynamic_from_files = bpy.props.BoolProperty(default=True)
 
     def remove_properties ( self, context ):
         print ( "Removing all Model Object List Properties..." )
@@ -703,15 +709,9 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( layout )
         else:
 
-            if self.has_some_dynamic:
-                # Only show this if there's dynamic geometry. This is a debugging aid for non-scripted shape keys from Blender
-                row = layout.row()
-                row.prop (self, "show_dynamic_from_mdl", text="Show Dynamic MDL")
-
             row = layout.row()
             row.prop (self, "show_cursor_controls", icon="CURSOR", text="")  # text="3D Cursor"
             row.operator("mcell.snap_cursor_to_center", icon="PLUS", text="") # icon="INLINK"
-            # row.operator("mcell.snap_cursor_to_center", icon="CURSOR", text="Center Cursor")
             row.label("", icon='BLANK1')
             row.operator("mesh.primitive_cube_add", text="", icon='MESH_CUBE')
             row.operator("mesh.primitive_ico_sphere_add", text="", icon='MESH_ICOSPHERE')
@@ -722,12 +722,9 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mesh.primitive_plane_add", text="", icon='MESH_PLANE')
             row.operator("mesh.primitive_circle_add", text="", icon='MESH_CIRCLE')
             row.operator("mesh.primitive_grid_add", text="", icon='MESH_GRID')
-            # row.operator("mesh.primitive_monkey_add", text="", icon='MESH_MONKEY') # Monkey is not manifold ... can be good example, but maybe not here.
-            #col.operator_menu_enum("mcell.model_objects_create", 'option_item', text="Create Object")
 
             if self.show_cursor_controls:
               row = layout.row()
-              #row.operator("mcell.snap_cursor_to_center", icon="INLINK", text="Zero")
               row.prop ( context.scene, "cursor_location", text="" )
 
 
@@ -742,18 +739,6 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             col.template_list("MCELL_UL_model_objects", "model_objects",
                               self, "object_list",
                               self, "active_obj_index", rows=4)
-            """
-            col = row.column(align=True)
-#           col.active = (len(context.selected_objects) == 1)
-            col.operator("mcell.model_objects_add", icon='ZOOMIN', text="")
-            col.operator("mcell.model_objects_remove", icon='ZOOMOUT', text="")
-
-            col.operator("mcell.model_objects_remove_sel", icon='X', text="")
-
-            subcol = col.column(align=True)
-            subcol.operator("mcell.object_show_all", icon='RESTRICT_VIEW_OFF', text="")
-            subcol.operator("mcell.object_hide_all", icon='RESTRICT_VIEW_ON', text="")
-            """
 
             col = row.column(align=False)
             # Use subcolumns to group logically related buttons together
@@ -766,12 +751,8 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             subcol.operator("mcell.object_hide_all", icon='RESTRICT_VIEW_ON', text="")
 
 
-
             if len(self.object_list) > 0:
                 obj_name = str(self.object_list[self.active_obj_index].name)
-                # layout.label(text="") # Use as a separator
-                # layout.box() # Use as a separator
-                # layout.label(text="") # Use as a separator
                 box = layout.box()
                 row = box.row()
                 if not self.show_options:
@@ -819,41 +800,18 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     row = box.row()
                     row.prop ( self.object_list[self.active_obj_index], "dynamic", text="Dynamic" )
                     if self.object_list[self.active_obj_index].dynamic:
-                        #row.prop ( self.object_list[self.active_obj_index], "script_name", text="Script" )
+                        row.prop ( self.object_list[self.active_obj_index], "dynamic_display_source" )
+                        row = box.row()
                         row.prop_search ( self.object_list[self.active_obj_index], "script_name",
                                           context.scene.mcell.scripting, "internal_python_scripts_list",
-                                          text="Script:", icon='TEXT' )
+                                          text="Script", icon='TEXT' )
                         row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
 
-#           row = layout.row()
-#           sub = row.row(align=True)
-#           sub.operator("mcell.model_objects_include", text="Include")
-#           sub = row.row(align=True)
-#           sub.operator("mcell.model_objects_select", text="Select")
-#           sub.operator("mcell.model_objects_deselect", text="Deselect")
+            if self.has_some_dynamic:
+                # Only show this if there's dynamic geometry. This is a debugging aid for non-scripted shape keys from Blender
+                row = layout.row()
+                row.prop (self, "show_dynamic_from_files", text="Show Dynamic from Files")
 
-            """
-            row = layout.row()
-            row.label(text="Object Color:", icon='COLOR')
-            
-            active = None
-            for o in self.object_list.keys():
-                # print ( "Object: " + o )
-                row = layout.row()
-                if bpy.context.scene.objects[o] == bpy.context.scene.objects.active:
-                    active = bpy.context.scene.objects[o]
-                    row.label(text=o, icon='TRIA_RIGHT')
-                else:
-                    row.label(text=o, icon='DOT')
-
-            if active == None:
-                row = layout.row()
-                row.label(text="No CellBlender object is active", icon='DOT')
-            else:
-                row = layout.row()
-                row.label ( icon='DOT', text="  Object " + active.name + " is active and has " +
-                    str(len(active.material_slots)) + " material slots" )
-            """
 
 
     def draw_panel ( self, context, panel ):
@@ -865,14 +823,22 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
     
         print ( "Model Objects List building Data Model" )
+
+        mcell_obj_list = context.scene.mcell.model_objects.object_list
+
         mo_dm = {}
-        mo_dm['data_model_version'] = "DM_2014_10_24_1638"
+        mo_dm['data_model_version'] = "DM_2017_03_16_1750"
         mo_list = []
         for scene_object in context.scene.objects:
             if scene_object.type == 'MESH':
                 if scene_object.mcell.include:
-                    print ( "MCell object: " + scene_object.name )
-                    mo_list.append ( { "name": scene_object.name } )
+                    name = scene_object.name
+                    print ( "MCell object: " + name )
+                    obj_dm = { "name": name }
+                    obj_dm['dynamic'] = mcell_obj_list[name].dynamic
+                    obj_dm['script_name'] = mcell_obj_list[name].script_name
+                    obj_dm['dynamic_display_source'] = mcell_obj_list[name].dynamic_display_source
+                    mo_list.append ( obj_dm )
         mo_dm['model_object_list'] = mo_list
         return mo_dm
 
@@ -885,8 +851,16 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
+        if dm['data_model_version'] == "DM_2014_10_24_1638":
+            # Add the default dynamic geometry properties to each object
+            for obj in dm['model_object_list']:
+                obj['dynamic'] = False
+                obj['script_name'] = ''
+                obj['dynamic_display_source'] = 'other'
+            dm['data_model_version'] = "DM_2017_03_16_1750"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] != "DM_2017_03_16_1750":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
             return None
 
@@ -899,20 +873,23 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         #   context.scene.objects[].mcell.include - boolean is true for model objects
         # This code updates both locations based on the data model
 
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] != "DM_2017_03_16_1750":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
         
         # Remove all model objects in the list
         while len(self.object_list) > 0:
             self.object_list.remove(0)
             
-        # Create a list of model object names from the Data Model
+        # Create the property list for model objects from the Data Model
         mo_list = []
         if "model_object_list" in dm:
           for m in dm["model_object_list"]:
               print ( "Data model contains " + m["name"] )
               mo = self.object_list.add()
               mo.name = m['name']
+              mo.dynamic = m['dynamic']
+              mo.script_name = m['script_name']
+              mo.dynamic_display_source = m['dynamic_display_source']
               mo_list.append ( m["name"] )
           obj_list_len = len(self.object_list)
           if self.active_obj_index >= obj_list_len:
@@ -1181,9 +1158,13 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         print ( "  Done creating new objects" )
 
 
-    def read_from_regularized_mdl ( self, file_name=None, points=[], faces=[], partitions=False, instantiate=False ):
+    def read_from_regularized_mdl ( self, file_name=None, points=[], faces=[], origin=None, partitions=False, instantiate=False ):
 
-      # This function makes some assumptions about the format of the geometry in an MDL file
+      # This function makes many assumptions about the format of the geometry in an MDL file.
+      # This function should only be used with MDL that was produced by code.
+
+      # This function will update the points and faces lists with data found in the MDL.
+      # This function updates the origin if a list is passed and a TRANSLATE keyword is found.
 
       if file_name == None:
         # Generate an easy tetrahedron for testing
@@ -1210,6 +1191,16 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
               mode = 'v'
             elif l == "ELEMENT_CONNECTIONS":
               mode = 'f'
+            elif l.startswith('TRANSLATE'):
+              if not origin is None:
+                # Parse the TRANSLATE line and update the origin
+                sq = l.find('[')
+                if sq > 0:
+                  orig = l[sq+1:-1].replace(',',' ').split()
+                  for i in range(min(len(origin),len(orig))):
+                    origin[i] = float(orig[i])
+              l = ""
+              mode = ""
             elif l == "}":
               mode = ""
 
@@ -1238,47 +1229,52 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         cur_frame = frame_num
         if cur_frame == None:
           cur_frame = scene.frame_current
+        if cur_frame > scene.frame_end:
+          cur_frame = scene.frame_end
 
         mcell = scene.mcell
-        if mcell.model_objects.has_some_dynamic and mcell.model_objects.show_dynamic_from_mdl:
+        if mcell.model_objects.has_some_dynamic and mcell.model_objects.show_dynamic_from_files:
             filepath = mcell_files_path()
-            path_to_dg_files = os.path.join ( filepath, "dynamic_geometry" )
+            path_to_dg_files = os.path.join ( filepath, "output_data", "dynamic_geometry" )
             for obj in mcell.model_objects.object_list:
-                if obj.dynamic:
-                    file_name = "%s_frame_%d.mdl"%(obj.name,cur_frame)
-                    #print ( "Reading from " + file_name )
-                    full_file_name = os.path.join(path_to_dg_files,file_name)
-                    vertex_list = []
-                    face_list = []
-                    self.read_from_regularized_mdl ( file_name=full_file_name, points=vertex_list, faces=face_list, partitions=False, instantiate=False )
+                if obj.dynamic and (obj.dynamic_display_source != 'other'):
+                    if len(obj.script_name) > 0:
+                        file_name = "%s_frame_%d.mdl"%(obj.name,cur_frame)
+                        #print ( "Reading from " + file_name )
+                        full_file_name = os.path.join(path_to_dg_files,file_name)
+                        vertex_list = []
+                        face_list = []
+                        origin = [0,0,0]
+                        self.read_from_regularized_mdl ( file_name=full_file_name, points=vertex_list, faces=face_list, origin=origin, partitions=False, instantiate=False )
 
-                    vertices = []
-                    for point in vertex_list:
-                        #print ( "  " + str(point[0]) + "  " + str(point[1]) + "  " + str(point[2]) )
-                        vertices.append ( mathutils.Vector((point[0],point[1],point[2])) )
-                    faces = []
-                    for face in face_list:
-                        faces.append ( face )
+                        vertices = []
+                        for point in vertex_list:
+                            #print ( "  " + str(point[0]) + "  " + str(point[1]) + "  " + str(point[2]) )
+                            vertices.append ( mathutils.Vector((point[0],point[1],point[2])) )
+                        faces = []
+                        for face in face_list:
+                            faces.append ( face )
 
-                    new_mesh = bpy.data.meshes.new ( obj.name + "_mesh" )
-                    new_mesh.from_pydata ( vertices, [], faces )
-                    new_mesh.update()
-                    
-                    new_object = None
-                    if obj.name in scene.objects:
-                        new_object = scene.objects[obj.name]
-                        old_mesh = new_object.data
-                        new_object.data = new_mesh
-                        bpy.data.meshes.remove ( old_mesh )
-                    else:
-                        new_object = bpy.data.objects.new ( obj.name, new_mesh )
-                        scene.objects.link ( new_object )
+                        new_mesh = bpy.data.meshes.new ( obj.name + "_mesh" )
+                        new_mesh.from_pydata ( vertices, [], faces )
+                        new_mesh.update()
 
-                    mat_name = obj.name + "_mat"
-                    if mat_name in bpy.data.materials:
-                        new_object.data.materials.append ( bpy.data.materials[mat_name] )
+                        new_object = None
+                        if obj.name in scene.objects:
+                            new_object = scene.objects[obj.name]
+                            old_mesh = new_object.data
+                            new_object.data = new_mesh
+                            bpy.data.meshes.remove ( old_mesh )
+                        else:
+                            new_object = bpy.data.objects.new ( obj.name, new_mesh )
+                            scene.objects.link ( new_object )
+                        new_object.location = mathutils.Vector((origin[0],origin[1],origin[2]))
 
-                    # TODO: Deal with materials on faces
+                        mat_name = obj.name + "_mat"
+                        if mat_name in bpy.data.materials:
+                            new_object.data.materials.append ( bpy.data.materials[mat_name] )
+
+                        # TODO: Deal with materials on faces
 
 
 
