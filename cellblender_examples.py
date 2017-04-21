@@ -353,7 +353,7 @@ class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
 
 class MCELL_OT_load_scripted_dyn_geo(bpy.types.Operator):
     bl_idname = "mcell.load_scripted_dyn_geo"
-    bl_label = "Dynamic Geometry (Scripted with concentration clamp)"
+    bl_label = "Dynamic Geometry (Scripted)"
     bl_description = "Loads a model with scripted dynamic geometry"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -361,6 +361,49 @@ class MCELL_OT_load_scripted_dyn_geo(bpy.types.Operator):
 
         dm = {}
         dm['mcell'] = examples.scripted_dyn_geo.scripted_dyn_geo_dm
+        cellblender.replace_data_model(dm, geometry=True, scripts=True)
+
+        # Default frame_start is 1, set to 0 to match model
+        context.scene.frame_start = 0
+        context.scene.update()
+
+        # Set the frame to 50 (large cube) so the view all operator will fit at max size (not really needed for scripting)
+        context.scene.frame_current = 50
+
+        # Set the view to show the selected object
+        context.scene.update()
+
+        # Add a cube tepmorarily to use for centering the view
+        bpy.ops.mesh.primitive_cube_add()
+        bpy.context.scene.objects.active.location.z = 3
+
+        view_all()
+        # This zooming seems to have no effect
+        # zoom_view(-500)
+
+        # Remove the temporary cube that was used for centering the view
+        bpy.ops.object.delete(use_global=False)
+
+        # Re-select the original cube
+        bpy.data.objects['Cube'].select = True                       # This selects it (enables manipulator on the object)
+        context.scene.objects.active = bpy.data.objects['Cube']      # This makes it active for material display etc
+
+        # Return the current frame to 0 (small cube) after viewing large cube (not really needed for scripting)
+        context.scene.frame_current = 0
+
+        return {'FINISHED'}
+
+
+class MCELL_OT_load_dyn_geo_cc(bpy.types.Operator):
+    bl_idname = "mcell.load_dyn_geo_cc"
+    bl_label = "Dynamic Geometry (Scripted with concentration clamp)"
+    bl_description = "Loads a scripted dynamic geometry model with concentration clamp"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.dyn_geo_conc_clamp.dyn_geo_cc_dm
         cellblender.replace_data_model(dm, geometry=True, scripts=True)
 
         # Default frame_start is 1, set to 0 to match model
@@ -466,4 +509,6 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mcell.load_skey_dyn_geo")
             row = layout.row()
             row.operator("mcell.load_scripted_dyn_geo")
+            row = layout.row()
+            row.operator("mcell.load_dyn_geo_cc")
 
