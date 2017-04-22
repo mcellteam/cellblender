@@ -8,7 +8,8 @@ import subprocess
 import time
 import sys
 import argparse
-import data_model_to_mdl
+#import data_model_to_mdl
+from . import data_model_to_mdl_3
 
 
 
@@ -211,12 +212,15 @@ def get_sge_nodes(grid_engine_host):
     return nodes
 
 
-if __name__ == "__main__":
+def run_mcell_sweep ( sys_argv, data_model=None ):
     """
     Run one or more MCell processes from a potentially swept CellBlender Data Model
     """
+    print ( "run_mcell_sweep running from " + str(os.getcwd()) )
+    print ( "Arguments = " + str(sys_argv) + " and a possibly None data_model" )
+
     arg_parser = argparse.ArgumentParser(description='Run MCell with appropriate arguments')
-    arg_parser.add_argument ( 'data_model_file_name',     type=str,                    help='the file name of the data model to run' )
+    arg_parser.add_argument ( '-dm', '--data_model_file_name',     type=str, default='',        help='the file name of the data model to run' )
     arg_parser.add_argument ( '-pd', '--proj_dir',        type=str, default='',        help='the directory where the program will run' )
     arg_parser.add_argument ( '-b',  '--binary',          type=str, default='mcell',   help='full path of binary file to run' )
     arg_parser.add_argument ( '-fs', '--first_seed',      type=int, default=1,         help='the first seed in a series of seeds to run' )
@@ -231,12 +235,9 @@ if __name__ == "__main__":
     arg_parser.add_argument ( '-em', '--email_addr',      type=str, default='',        help='email address for notifications of job results' )
     arg_parser.add_argument ( '-gh', '--grid_host',       type=str, default='',        help='grid engine host name' )
 
-    parsed_args = arg_parser.parse_args() # Without any arguments this uses sys.argv automatically
+    parsed_args = arg_parser.parse_args(sys_argv) # Without any arguments this uses sys.argv automatically
 
     # Get the command line arguments (excluding the script name itself)
-    print ( "Main of run_data_model_mcell.py running from " + str(os.getcwd()) )
-    print ( "Arguments = " + str(sys.argv) )
-
     print ( "Data Model Name = " + parsed_args.data_model_file_name )
     print ( "Binary Name = " + parsed_args.binary )
     print ( "Project Directory = " + parsed_args.proj_dir )
@@ -262,12 +263,15 @@ if __name__ == "__main__":
     error_file_option = parsed_args.error_file_opt
     log_file_option = parsed_args.log_file_opt
     mcell_processors = parsed_args.num_processors
+    
+    dm = data_model
+    
+    if dm is None:
+        data_model_file_name = parsed_args.data_model_file_name
 
-    data_model_file_name = parsed_args.data_model_file_name
-
-    # Read the data model specified on the command line
-    dm = data_model_to_mdl.read_data_model ( data_model_file_name )
-    # data_model_to_mdl.dump_data_model ( dm )
+        # Read the data model specified on the command line
+        dm = data_model_to_mdl_3.read_data_model ( data_model_file_name )
+        # data_model_to_mdl_3.dump_data_model ( dm )
 
     # Build a sweep list and add a "current_index" of 0 to support the sweeping
     print ( "Building sweep list" )
@@ -337,7 +341,7 @@ if __name__ == "__main__":
             makedirs_exist_ok ( sweep_item_path, exist_ok=True )
             makedirs_exist_ok ( os.path.join(sweep_item_path,'react_data'), exist_ok=True )
             makedirs_exist_ok ( os.path.join(sweep_item_path,'viz_data'), exist_ok=True )
-            data_model_to_mdl.write_mdl ( dm, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ) )
+            data_model_to_mdl_3.write_mdl ( dm, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ) )
             run_cmd_list.append ( [mcell_binary, sweep_item_path, base_name, error_file_option, log_file_option, seed] )
         # Increment the current_index counters from rightmost side (deepest directory)
         i = len(sweep_list) - 1
@@ -476,4 +480,9 @@ if __name__ == "__main__":
             #  break
         #print ( "Terminating subprocess..." )
         #p.kill()
+
+
+if __name__ == "__main__":
+    print ( "run_data_model_mcell_3.py running from " + str(os.getcwd()) )
+    run_mcell_sweep(sys.argv[1:])
 

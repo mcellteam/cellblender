@@ -62,6 +62,7 @@ def get_modules():
                     module_name_list = module_name_list + [f]
                     print ( "Attempting to import %s" % (import_name) )
                     plugin_module = __import__ ( f )
+                    # plugin_module = import f
                     # print ( "Checking requirements for %s" % ( plugin_module.get_name() ) )
                     #if plugin_module.requirements_met():
                     # print ( "System requirements met for Plot Module \"%s\"" % ( plugin_module.get_name() ) )
