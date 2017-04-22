@@ -1878,7 +1878,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
          ('OPENGL', "MCell via OpenGL Runner", ""),
          ('SWEEP', "MCell via Sweep Runner", ""),
          ('SWEEP_SGE', "MCell via Sweep Runner and SGE", ""),
-         ('libMCellpy', "Prototype Lib MCell via Python", ""),
+         # ('libMCellpy', "Prototype Lib MCell via Python", ""),
          ('DYNAMIC', "Dynamic", "")]
 
     simulation_run_control = EnumProperty(
@@ -2199,7 +2199,7 @@ had no limit."""
                         split = row.split(0.03)
                         col = split.column()
                         col = split.column()
-                        col.label("Dynamic Engine Options (experimental)")
+                        col.label("Dynamic Engine/Runner Options (experimental)")
                         col = row.column()
                         col.prop ( self, "show_engine_runner_help", icon='INFO', text="" )
                         if self.show_engine_runner_help:
