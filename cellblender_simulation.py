@@ -345,8 +345,6 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
                 bpy.ops.mcell.run_simulation_sweep()
             elif str(run_sim.simulation_run_control) == 'SWEEP_SGE':
                 bpy.ops.mcell.run_simulation_sweep_sge()
-            elif str(run_sim.simulation_run_control) == 'libMCellpy':
-                bpy.ops.mcell.run_simulation_libmcellpy()
             elif str(run_sim.simulation_run_control) == 'DYNAMIC':
                 bpy.ops.mcell.run_simulation_dynamic()
             else:
@@ -949,117 +947,14 @@ class MCELL_OT_kill_all_simulations(bpy.types.Operator):
 
 
 
-class MCELL_OT_run_simulation_libmcellpy(bpy.types.Operator):
-    bl_idname = "mcell.run_simulation_libmcellpy"
-    bl_label = "Run MCell Simulation Control libmcell Python"
-    bl_description = "Run MCell Simulation Control libmcell Python"
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-
-        mcell = context.scene.mcell
-        mcell.run_simulation.last_simulation_run_time = str(time.time())
-
-        binary_path = mcell.cellblender_preferences.mcell_binary
-        mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
-
-        start = int(mcell.run_simulation.start_seed.get_value())
-        end = int(mcell.run_simulation.end_seed.get_value())
-        mcell_processes_str = str(mcell.run_simulation.mcell_processes)
-        mcell_binary = mcell.cellblender_preferences.mcell_binary
-        # Force the project directory to be where the .blend file lives
-        project_dir = mcell_files_path()
-        status = ""
-
-        if not mcell.cellblender_preferences.decouple_export_run:
-            bpy.ops.mcell.export_project()
-
-        if (mcell.run_simulation.error_list and
-                mcell.cellblender_preferences.invalid_policy == 'dont_run'):
-            pass
-        else:
-            react_dir = os.path.join(project_dir, "output_data", "react_data")
-            if os.path.exists(react_dir) and (mcell.run_simulation.remove_append == 'remove'):
-                shutil.rmtree(react_dir)
-            if not os.path.exists(react_dir):
-                os.makedirs(react_dir)
-
-            viz_dir = os.path.join(project_dir, "output_data", "viz_data")
-            if os.path.exists(viz_dir) and (mcell.run_simulation.remove_append == 'remove'):
-                shutil.rmtree(viz_dir)
-            if not os.path.exists(viz_dir):
-                os.makedirs(viz_dir)
-
-            error_file_option = mcell.run_simulation.error_file
-            log_file_option = mcell.run_simulation.log_file
-            script_dir_path = os.path.dirname(os.path.realpath(__file__))
-            script_file_path = os.path.join(script_dir_path, "engine_runner_combos")
-            final_script_path = os.path.join(script_file_path,"mcell_main.py")
-
-            # The following line will create the "data_layout.json" file describing the directory structure
-            write_default_data_layout(project_dir, start, end)
-
-            if not os.path.exists(final_script_path):
-                print ( "\n\nUnable to run, script does not exist: " + final_script_path + "\n\n" )
-            else:
-
-                processes_list = mcell.run_simulation.processes_list
-                processes_list.add()
-                mcell.run_simulation.active_process_index = len(mcell.run_simulation.processes_list) - 1
-                simulation_process = processes_list[mcell.run_simulation.active_process_index]
-
-                print("Starting MCell ... create start_time.txt file:")
-                with open(os.path.join(os.path.dirname(bpy.data.filepath), "start_time.txt"), "w") as start_time_file:
-                    start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
-
-                # Create a subprocess for each simulation
-
-                window_num = 0
-
-                for sim_seed in range(start,end+1):
-                    print ("Running with seed " + str(sim_seed) )
-
-                    command_list = [ 'python', final_script_path, "proj_path="+project_dir, "data_model=dm.txt" ]
-
-                    dm = mcell.build_data_model_from_properties ( context, geometry=True )
-
-                    print ( "Data Model = " + str(dm) )
-
-                    data_model.save_data_model_to_file ( dm, os.path.join(project_dir,"dm.txt") )
-
-                    command_string = "Command:";
-                    for s in command_list:
-                      command_string += " " + s
-                    print ( command_string )
-
-                    sp = subprocess.Popen ( command_list, cwd=script_file_path, stdout=None, stderr=None )
-
-                    self.report({'INFO'}, "Simulation Running")
-
-                    # This is a hackish workaround since we can't return arbitrary
-                    # objects from operators or store arbitrary objects in collection
-                    # properties, and we need to keep track of the progress of the
-                    # subprocess objects for the panels.
-                    cellblender.simulation_popen_list.append(sp)
-                    window_num += 1
-
-
-                if ((end - start) == 0):
-                    simulation_process.name = ("PID: %d, Seed: %d" % (sp.pid, start))
-                else:
-                    simulation_process.name = ("PID: %d, Seeds: %d-%d" % (sp.pid, start, end))
-
-        mcell.run_simulation.status = status
-
-        return {'FINISHED'}
 
 
 
 
 class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
     bl_idname = "mcell.run_simulation_dynamic"
-    bl_label = "Run MCell Simulation Control libmcell Pure Python"
-    bl_description = "Run MCell Simulation Control libmcell Pure Python"
+    bl_label = "Run Simulation via Dynamic Engine/Runner"
+    bl_description = "Run Simulation via Dynamic Engine/Runner"
     bl_options = {'REGISTER'}
 
 
@@ -1874,11 +1769,8 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     simulation_engine_and_run_enum = [
          ('QUEUE', "MCell via Queue Runner", ""),
          ('COMMAND', "MCell via Command Line", ""),
-         ('JAVA', "MCell via Java Runner", ""),
-         ('OPENGL', "MCell via OpenGL Runner", ""),
          ('SWEEP', "MCell via Sweep Runner", ""),
          ('SWEEP_SGE', "MCell via Sweep Runner and SGE", ""),
-         # ('libMCellpy', "Prototype Lib MCell via Python", ""),
          ('DYNAMIC', "Dynamic", "")]
 
     simulation_run_control = EnumProperty(
