@@ -67,7 +67,9 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
 
   output_detail = parameter_dictionary['Output Detail (0-100)']['val']
 
-  if output_detail > 0: print ( "Inside limited_python.prepare_runs, project_dir=" + project_dir )
+  if output_detail > 0:    print ( "Inside limited_python.prepare_runs, project_dir=" + project_dir )
+  if output_detail >= 10:  print ( "  Data Layout = " + str(data_layout) )
+  if output_detail >= 100: print ( "    Data Model = " + str(data_model) )
 
   script_file_path = os.path.dirname(os.path.realpath(__file__))
   final_script_path = os.path.join(script_file_path,"limited_python_sim.py")

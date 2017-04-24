@@ -157,7 +157,6 @@ def build_sweep_layout ( sweep_list, start_seed, end_seed ):
     return sweep_layout
 
 
-
 def write_sweep_list_to_layout_file ( sweep_list, start_seed, end_seed, sweep_list_file_name ):
     # Save the sweep list to a file for plotting, visualization, and other processing
     # sweep_list_file_name = os.path.join ( project_dir, "data_layout.json" )
@@ -178,6 +177,19 @@ def write_sweep_list_to_layout_file ( sweep_list, start_seed, end_seed, sweep_li
     sweep_list_file.write ( "}\n" )
     sweep_list_file.close()
 
+
+def write_default_data_layout(project_dir, start, end):
+    sweep_list_file_name = os.path.join ( project_dir, "data_layout.json" )
+    sweep_list_file = open ( sweep_list_file_name, "w" )
+    sweep_list_file.write ( "{\n" )
+    sweep_list_file.write ( " \"version\": 0,\n" )
+    sweep_list_file.write ( " \"data_layout\": [\n" )
+    sweep_list_file.write ( "  [\"dir\", [\"output_data\"]],\n" )
+    sweep_list_file.write ( "  [\"file_type\", [\"react_data\", \"viz_data\"]],\n" )
+    sweep_list_file.write ( "  [\"SEED\", " + str([s for s in range(start,end+1)]) + "]\n" )
+    sweep_list_file.write ( " ]\n" )
+    sweep_list_file.write ( "}\n" )
+    sweep_list_file.close()
 
 
 def run_generic_runner (context, sim_module):
@@ -353,19 +365,6 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
 
         return {'FINISHED'}
 
-
-def write_default_data_layout(project_dir, start, end):
-    sweep_list_file_name = os.path.join ( project_dir, "data_layout.json" )
-    sweep_list_file = open ( sweep_list_file_name, "w" )
-    sweep_list_file.write ( "{\n" )
-    sweep_list_file.write ( " \"version\": 0,\n" )
-    sweep_list_file.write ( " \"data_layout\": [\n" )
-    sweep_list_file.write ( "  [\"dir\", [\"output_data\"]],\n" )
-    sweep_list_file.write ( "  [\"file_type\", [\"react_data\", \"viz_data\"]],\n" )
-    sweep_list_file.write ( "  [\"SEED\", " + str([s for s in range(start,end+1)]) + "]\n" )
-    sweep_list_file.write ( " ]\n" )
-    sweep_list_file.write ( "}\n" )
-    sweep_list_file.close()
 
 
 class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
@@ -973,9 +972,9 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
         elif active_runner_module == None:
             print ( "Cannot run without selecting a simulation runner" )
             status = "Error: No simulation runner selected"
-        elif not ( 'prepare_runs' in dir(active_engine_module) ):
-            print ( "Selected engine module does not contain a \"prepare_runs\" function" )
-            status = "Error: function \"run_simulation\" not found in selected engine"
+        elif not ( ( 'prepare_runs' in dir(active_engine_module) ) or ( 'prepare_run' in dir(active_engine_module) ) ):
+            print ( "Selected engine module does not contain a \"prepare_runs\" or \"prepare_run\" function" )
+            status = "Error: function \"prepare_run(s)\" not found in selected engine"
 
         if len(status) == 0:
             with open(os.path.join(os.path.dirname(bpy.data.filepath), "start_time.txt"), "w") as start_time_file:
