@@ -41,7 +41,26 @@ def postprocess():
   global end_seed
   print ( "Postprocess was called with Smoldyn files at " + str(smoldyn_files_dir) )
   print ( "Postprocess was called for CellBlender files " + str(project_files_dir) )
+
+
+  react_dir = os.path.join(project_files_dir, "output_data", "react_data")
+
+  if os.path.exists(react_dir):
+      shutil.rmtree(react_dir,ignore_errors=True)
+  if not os.path.exists(react_dir):
+      os.makedirs(react_dir)
+
+  viz_dir = os.path.join(project_files_dir, "output_data", "viz_data")
+
+  if os.path.exists(viz_dir):
+      shutil.rmtree(viz_dir,ignore_errors=True)
+  if not os.path.exists(viz_dir):
+      os.makedirs(viz_dir)
+
+
+
   for run_seed in range(start_seed, end_seed+1):
+    print ( "  Postprocessing for seed " + str(run_seed) )
     f1 = open ( os.path.join ( smoldyn_files_dir, 'run%d'%run_seed, 'viz_data.txt' ) )
     f2 = open ( os.path.join ( smoldyn_files_dir, 'run%d'%run_seed, 'viz_data2.txt' ) )
     f1d = f1.read()
@@ -76,21 +95,6 @@ def postprocess():
 
     ndigits = 1 + math.log(last_iteration+1,10)
     file_name_template = "Scene.cellbin.%%0%dd.dat" % ndigits
-
-
-    react_dir = os.path.join(project_files_dir, "output_data", "react_data")
-
-    if os.path.exists(react_dir):
-        shutil.rmtree(react_dir,ignore_errors=True)
-    if not os.path.exists(react_dir):
-        os.makedirs(react_dir)
-
-    viz_dir = os.path.join(project_files_dir, "output_data", "viz_data")
-
-    if os.path.exists(viz_dir):
-        shutil.rmtree(viz_dir,ignore_errors=True)
-    if not os.path.exists(viz_dir):
-        os.makedirs(viz_dir)
 
     seed_dir = "seed_%05d" % run_seed
 
@@ -143,6 +147,7 @@ def postprocess():
       f.close()
 
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+  print ( "Done postrocessing all Smoldyn runs" )
 
 
 def use_cube():
