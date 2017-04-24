@@ -180,13 +180,13 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
             data_layout = layout_spec['data_layout']
             sub_path = ""
             for level in data_layout:
-              if level[0] == 'dir':
+              if level[0] == '/DIR':
                 # This is typically the top level directory
                 sub_path = os.path.join ( sub_path, level[1][0] )
-              elif level[0] == 'file_type':
+              elif level[0] == '/FILE_TYPE':
                 # This is typically either "viz_data" or "react_data" ... force "viz_data
                 sub_path = os.path.join ( sub_path, 'viz_data', '' )
-              elif (level[0] ==  'SEED'):
+              elif (level[0] ==  '/SEED'):
                 # Seed selection is handled in another part of the application so pass
                 pass
               else:
@@ -1317,11 +1317,11 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
 
             self['data_layout'] = data_layout
 
-            # Build an expected choice list that won't contain "dir", "file_type", or "SEED"
+            # Build an expected choice list that won't contain '/DIR', '/FILE_TYPE', '/SEED'
             expected_choice_list = []
             for i in range(len(data_layout)):
                 name = str(data_layout[i][0])
-                if not (name in ['dir', 'file_type', 'SEED']):
+                if not (name in ['/DIR', '/FILE_TYPE', '/SEED']):
                     # This is a directory name so add it to the expected list
                     expected_choice_list.append ( name )
 
@@ -1342,7 +1342,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
                     self.choices_list.remove ( 0 )
                 # Add the items in the current data layout
                 for i in range(len(data_layout)):
-                    if not (data_layout[i][0] in ['dir', 'file_type', 'SEED']):
+                    if not (data_layout[i][0] in ['/DIR', '/FILE_TYPE', '/SEED']):
                         self.choices_list.add()
                         choice = self.choices_list[len(self.choices_list)-1]
                         choice['name'] = data_layout[i][0]

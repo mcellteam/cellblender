@@ -147,13 +147,13 @@ def build_sweep_list ( par_dict ):
 
 def build_sweep_layout ( sweep_list, start_seed, end_seed ):
     sweep_layout = {}
-    sweep_layout['version'] = 0;
+    sweep_layout['version'] = 2;
     sweep_layout['data_layout'] = []
-    sweep_layout['data_layout'].append ( [ 'dir', [ 'output_data' ] ] )
+    sweep_layout['data_layout'].append ( [ '/DIR', [ 'output_data' ] ] )
     for sw_item in sweep_list:
       sweep_layout['data_layout'].append ( [ sw_item['par_name'], sw_item['values'] ] )
-    sweep_layout['data_layout'].append ( [ 'file_type', [ 'react_data', 'viz_data' ] ] )
-    sweep_layout['data_layout'].append ( [ 'SEED', [s for s in range(start_seed,end_seed+1)] ] )
+    sweep_layout['data_layout'].append ( [ '/FILE_TYPE', [ 'react_data', 'viz_data' ] ] )
+    sweep_layout['data_layout'].append ( [ '/SEED', [s for s in range(start_seed,end_seed+1)] ] )
     return sweep_layout
 
 
@@ -163,16 +163,16 @@ def write_sweep_list_to_layout_file ( sweep_list, start_seed, end_seed, sweep_li
     sweep_list_file = open ( sweep_list_file_name, "w" )
     sweep_list_length = len(sweep_list)
     sweep_list_file.write ( "{\n" )
-    sweep_list_file.write ( " \"version\": 0,\n" )
+    sweep_list_file.write ( " \"version\": 2,\n" )
     sweep_list_file.write ( " \"data_layout\": [\n" )
-    sweep_list_file.write ( "  [\"dir\", [\"output_data\"]],\n" )
+    sweep_list_file.write ( "  [\"/DIR\", [\"output_data\"]],\n" )
     for i in range ( sweep_list_length ):
       sw_item = sweep_list[i]
       sweep_list_file.write ( "  [\"" + sw_item['par_name'] + "\", " + str(sw_item['values']) + "],\n" )
     # Include the file type
-    sweep_list_file.write ( "  [\"file_type\", [\"react_data\", \"viz_data\"]],\n" )
+    sweep_list_file.write ( "  [\"/FILE_TYPE\", [\"react_data\", \"viz_data\"]],\n" )
     # Include the seeds in the sweep list file for plotting, etc.
-    sweep_list_file.write ( "  [\"SEED\", " + str([s for s in range(start_seed,end_seed+1)]) + "]\n" )
+    sweep_list_file.write ( "  [\"/SEED\", " + str([s for s in range(start_seed,end_seed+1)]) + "]\n" )
     sweep_list_file.write ( " ]\n" )
     sweep_list_file.write ( "}\n" )
     sweep_list_file.close()
@@ -182,11 +182,11 @@ def write_default_data_layout(project_dir, start, end):
     sweep_list_file_name = os.path.join ( project_dir, "data_layout.json" )
     sweep_list_file = open ( sweep_list_file_name, "w" )
     sweep_list_file.write ( "{\n" )
-    sweep_list_file.write ( " \"version\": 0,\n" )
+    sweep_list_file.write ( " \"version\": 2,\n" )
     sweep_list_file.write ( " \"data_layout\": [\n" )
-    sweep_list_file.write ( "  [\"dir\", [\"output_data\"]],\n" )
-    sweep_list_file.write ( "  [\"file_type\", [\"react_data\", \"viz_data\"]],\n" )
-    sweep_list_file.write ( "  [\"SEED\", " + str([s for s in range(start,end+1)]) + "]\n" )
+    sweep_list_file.write ( "  [\"/DIR\", [\"output_data\"]],\n" )
+    sweep_list_file.write ( "  [\"/FILE_TYPE\", [\"react_data\", \"viz_data\"]],\n" )
+    sweep_list_file.write ( "  [\"/SEED\", " + str([s for s in range(start,end+1)]) + "]\n" )
     sweep_list_file.write ( " ]\n" )
     sweep_list_file.write ( "}\n" )
     sweep_list_file.close()

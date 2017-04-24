@@ -71,9 +71,12 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
     arg_parser.add_argument ( '-gh', '--grid_host',       type=str, default='',        help='grid engine host name' )
   """
 
-  # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-  run_data_model_mcell_3.run_mcell_sweep(['-pd',project_dir,'-b',parameter_dictionary['MCell Path']['val']],data_model={'mcell':data_model})
+  fs = data_model['simulation_control']['start_seed']
+  ls = data_model['simulation_control']['end_seed']
+
+  run_data_model_mcell_3.run_mcell_sweep(['-pd',project_dir,'-b',parameter_dictionary['MCell Path']['val'],'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
 
 
 

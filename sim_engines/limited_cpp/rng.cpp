@@ -31,6 +31,7 @@ MCellRandomNumber_mrng::MCellRandomNumber_mrng ( uint32_t seed ) {
   for (int i = 0; i < 20; ++i) {
     (void)generate();
   }
+  srand48 ( (long)seed );  // Had to add this because rng_gauss doesn't seem to use the seed!!!
 };
 
 uint32_t MCellRandomNumber_mrng::generate() {

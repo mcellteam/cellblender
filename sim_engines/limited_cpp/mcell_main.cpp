@@ -94,6 +94,7 @@ int main ( int argc, char *argv[] ) {
   char *proj_path = NULL;
   char *data_model_file_name = NULL;
   char *data_model_full_path = "dm.json";
+  unsigned int seed=1;
   
   int dump_data_model = 0;
 
@@ -110,6 +111,9 @@ int main ( int argc, char *argv[] ) {
     if (strncmp("print_detail=",argv[i],13) == 0) {
       sscanf ( &argv[i][13], "%d", &print_detail );
     }
+    if (strncmp("seed=",argv[i],5) == 0) {
+      sscanf ( &argv[i][5], "%d", &seed );
+    }
     if (strcmp("dump",argv[i]) == 0) {
       dump_data_model = 1;
     }
@@ -119,7 +123,7 @@ int main ( int argc, char *argv[] ) {
   if (print_detail > 0) cout << "\n\n" << endl;
   if (print_detail > 0) cout << "******************************************" << endl;
   if (print_detail > 0) cout << "*   MCell C++ Prototype using libMCell   *" << endl;
-  if (print_detail > 0) cout << "*      Updated: February 5th, 2017       *" << endl;
+  if (print_detail > 0) cout << "*      Updated: April 23rd, 2017         *" << endl;
   if (print_detail > 0) cout << "******************************************" << endl;
   if (print_detail > 0) cout << "\n" << endl;
 
@@ -128,7 +132,9 @@ int main ( int argc, char *argv[] ) {
 
   data_model_full_path = join_path ( proj_path, '/', data_model_file_name );
 
-  if (print_detail > 0) printf ( "Project path = \"%s\", data_model_file_name = \"%s\"\n", proj_path, data_model_full_path );
+  if (print_detail > 0) printf ( "Project path = \"%s\"\n", proj_path );
+  if (print_detail > 0) printf ( "Data Model file = \"%s\"\n", data_model_full_path );
+  if (print_detail > 0) printf ( "Seed = %d\n", seed );
 
   char *file_name = data_model_full_path;
   FILE *f = fopen ( file_name, "r" );
@@ -229,6 +235,7 @@ int main ( int argc, char *argv[] ) {
   // Finally build the actual simulation from the data extracted from the data model
 
   MCellSimulation *mcell_sim = new MCellSimulation();
+  mcell_sim->set_seed ( seed );
   mcell_sim->print_detail = print_detail;
 
 
