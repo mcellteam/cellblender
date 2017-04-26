@@ -225,7 +225,7 @@ if __name__ == "__main__":
     arg_parser.add_argument ( '-ef', '--error_file_opt',  type=str, default='console', help='the error file option for mcell' )
     arg_parser.add_argument ( '-np', '--num_processors',  type=int, default=8,         help='the number of processors' )
     arg_parser.add_argument ( '-rl', '--run_limit',       type=int, default=-1,        help='limit the total number of runs' )
-    arg_parser.add_argument ( '-rt', '--runner_type',     type=str, default='mpp',     help='run mechanism: mpp or sge (mpp=MultiProcessingPool, sge=SunGridEngine)' )
+    arg_parser.add_argument ( '-rt', '--runner_type',     type=str, default='mpp',     help='run mechanism: mpp or sge (mpp=MultiProcessingPool, sge=SunGridEngine, pbs=PortableBatchSystem)' )
     arg_parser.add_argument ( '-nl', '--node_list',       type=str, default='',        help='list of comma-separated nodes to run on with SGE' )
     arg_parser.add_argument ( '-mm', '--min_memory',      type=int, default=0,         help='minimum memory in Gigabytes' )
     arg_parser.add_argument ( '-em', '--email_addr',      type=str, default='',        help='email address for notifications of job results' )
@@ -355,12 +355,15 @@ if __name__ == "__main__":
         print ( "  " + str(run_cmd) )
 
     if str(parsed_args.runner_type) == "mpp":
+        print ( "Running MPP (MultiProcessing Pool)" )
 
         # Create a pool of mcell processes and run the command list on them
         pool = multiprocessing.Pool(processes=mcell_processors)
         pool.map(run_sim, run_cmd_list)
 
     if str(parsed_args.runner_type) == "sge":
+        print ( "Running SGE (Sun Grid Engine)" )
+
         # Find the best nodes to use for running
         #best_nodes = []
         #nodes = get_sge_nodes(parsed_args.grid_host);
@@ -389,6 +392,97 @@ if __name__ == "__main__":
         #
         #
         #
+        best_nodes = None
+        if len(parsed_args.node_list) > 0:
+            best_nodes = [ [s] for s in str(parsed_args.node_list).split(',') ]
+
+        # Build 1 master qsub file and a job file for each MCell run
+
+        master_job_list_name = os.path.join ( project_dir, "master_job_list.sh" )
+        master_job_list = open ( master_job_list_name, "w" )
+        master_job_list.write ( 'echo "Start of master job list"\n' )
+        master_job_list.write ( "cd %s\n" % os.path.join(project_dir,"output_data") )
+        job_index = 0
+        for run_cmd in run_cmd_list:
+
+            job_filename = "job_%d.sh" % (job_index)
+            job_filepath = os.path.join(project_dir, job_filename)
+
+            log_filename = "log_%d.txt" % (job_index)
+            log_filepath = os.path.join(project_dir, log_filename)
+
+            error_filename = "error_%d.txt" % (job_index)
+            error_filepath = os.path.join(project_dir, error_filename)
+
+            mdl_filename = '%s.main.mdl' % (base_name)
+            # mdl_filepath = os.path.join(run_cmd[1], mdl_filename)
+
+            job_file = open(job_filepath,"w")
+            job_file.write ( "cd %s\n" % run_cmd[1] )
+            job_file.write ( mcell_binary + " -seed " + str(run_cmd[5]) + " " + mdl_filename + "\n" )
+            job_file.close()
+
+            qsub_command = "qsub"
+            # qsub_command += " -wd " + subprocess_cwd
+            qsub_command += " -o " + log_filepath
+            qsub_command += " -e " + error_filepath
+            resource_list = []
+            if best_nodes != None:
+                resource_list.append ( "h=" + best_nodes[job_index%len(best_nodes)][0] )
+            if (parsed_args.min_memory > 0):
+                resource_list.append ( "mt=" + str(parsed_args.min_memory) + "G" )
+            if len(resource_list) > 0:
+                qsub_command += " -l " + ",".join(resource_list)
+            if len(parsed_args.email_addr) > 0:
+                qsub_command += " -m e"
+                qsub_command += " -M " + parsed_args.email_addr
+            qsub_command += " " + job_filepath
+
+            master_job_list.write ( qsub_command + "\n" )
+
+            job_index += 1
+
+
+        master_job_list.write ( 'echo "End of master job list"\n' )
+        master_job_list.close()
+        os.chmod ( master_job_list_name, 0o740 )  # Must make executable
+
+        args = ['ssh', parsed_args.grid_host, master_job_list_name ]
+        print ( "Args for Popen: " + str(args) )
+        p = subprocess.Popen ( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+
+        pi = p.stdin
+        po = p.stdout
+        pe = p.stderr
+
+        print ( "Waiting for something from subprocess ..." )
+        count = 0
+        while len(po.peek()) == 0:
+            # Wait for something
+            time.sleep ( 0.01 )
+            count = count + 1
+            if count > 100:
+                break
+
+        print ( "Waiting for pause from subprocess..." )
+        count = 0
+        while (len(po.peek()) > 0) and (count < 1000):
+            # Wait for nothing
+            # time.sleep ( 0.01 )
+            if b'\n' in po.peek():
+                line = str(po.readline())
+                print ( "J: " + str(line) )
+                count = 0
+            count = count + 1
+            # print ( "Count = " + str(count) )
+            #if b"nothing" in po.peek():
+            #  break
+        #print ( "Terminating subprocess..." )
+        #p.kill()
+
+
+    if str(parsed_args.runner_type) == "pbs":
+        print ( "Running PBS (Portable Batch System)" )
         best_nodes = None
         if len(parsed_args.node_list) > 0:
             best_nodes = [ [s] for s in str(parsed_args.node_list).split(',') ]

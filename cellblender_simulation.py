@@ -357,6 +357,8 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
                 bpy.ops.mcell.run_simulation_sweep()
             elif str(run_sim.simulation_run_control) == 'SWEEP_SGE':
                 bpy.ops.mcell.run_simulation_sweep_sge()
+            elif str(run_sim.simulation_run_control) == 'SWEEP_PBS':
+                bpy.ops.mcell.run_simulation_sweep_pbs()
             elif str(run_sim.simulation_run_control) == 'DYNAMIC':
                 bpy.ops.mcell.run_simulation_dynamic()
             else:
@@ -483,7 +485,7 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
 class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
     bl_idname = "mcell.run_simulation_sweep_sge"
     bl_label = "Run MCell Simulation Command"
-    bl_description = "Run MCell Simulation Command Line"
+    bl_description = "Run MCell Simulation SGE"
     bl_options = {'REGISTER'}
 
     def execute(self, context):
@@ -594,6 +596,132 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
                 if run_sim.manual_sge_host:
                     cmd_list.append("-nl")
                     cmd_list.append(computer_names_string)
+
+                if len(run_sim.sge_email_addr) > 0:
+                    cmd_list.append ("-em")
+                    cmd_list.append (run_sim.sge_email_addr)
+
+                sp = subprocess.Popen(cmd_list, stdout=None, stderr=None)
+                self.report({'INFO'}, "Simulation Running")
+
+                # This is a hackish workaround since we can't return arbitrary
+                # objects from operators or store arbitrary objects in collection
+                # properties, and we need to keep track of the progress of the
+                # subprocess objects for the panels.
+                cellblender.simulation_popen_list.append(sp)
+
+                if ((end - start) == 0):
+                    simulation_process.name = ("PID: %d, Seed: %d" % (sp.pid, start))
+                else:
+                    simulation_process.name = ("PID: %d, Seeds: %d-%d" % (sp.pid, start, end))
+        else:
+            status = "Python not found. Set it in Project Settings."
+
+        mcell.run_simulation.status = status
+
+        return {'FINISHED'}
+
+
+
+class MCELL_OT_run_simulation_control_sweep_pbs (bpy.types.Operator):
+    bl_idname = "mcell.run_simulation_sweep_pbs"
+    bl_label = "Run MCell Simulation Command"
+    bl_description = "Run MCell Simulation PBS"
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+
+        print("Executing Portable Batch System Runner")
+
+        mcell = context.scene.mcell
+        run_sim = context.scene.mcell.run_simulation
+
+        mcell.run_simulation.last_simulation_run_time = str(time.time())
+
+        binary_path = mcell.cellblender_preferences.mcell_binary
+        mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
+
+        start = int(run_sim.start_seed.get_value())
+        end = int(run_sim.end_seed.get_value())
+        mcell_processes_str = str(run_sim.mcell_processes)
+        mcell_binary = mcell.cellblender_preferences.mcell_binary
+        # Force the project directory to be where the .blend file lives
+        project_dir = mcell_files_path()
+        status = ""
+
+        python_path = cellblender.cellblender_utils.get_python_path(mcell=mcell)
+
+        print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+        print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+        print ( "Running " )
+        print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+        print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
+        if python_path:
+            if not mcell.cellblender_preferences.decouple_export_run:
+                bpy.ops.mcell.export_project()
+
+            if (run_sim.error_list and mcell.cellblender_preferences.invalid_policy == 'dont_run'):
+                pass
+            else:
+                sweep_dir = os.path.join(project_dir, "output_data")
+                if (os.path.exists(sweep_dir) and run_sim.remove_append == 'remove'):
+                    shutil.rmtree(sweep_dir)
+                if not os.path.exists(sweep_dir):
+                    os.makedirs(sweep_dir)
+
+                mcell_dm = mcell.build_data_model_from_properties ( context, geometry=True )
+                data_model.save_data_model_to_json_file ( mcell_dm, os.path.join(project_dir,"data_model.json") )
+
+                base_name = mcell.project_settings.base_name
+
+                error_file_option = run_sim.error_file
+                log_file_option = run_sim.log_file
+                script_dir_path = os.path.dirname(os.path.realpath(__file__))
+
+                # The following Python program will create the "data_layout.json" file describing the directory structure
+                script_file_path = os.path.join(script_dir_path, os.path.join("mdl", "run_data_model_mcell.py") )
+
+                processes_list = run_sim.processes_list
+                processes_list.add()
+                run_sim.active_process_index = len(
+                    run_sim.processes_list) - 1
+                simulation_process = processes_list[
+                    run_sim.active_process_index]
+
+                print("Starting MCell ... create start_time.txt file:")
+                with open(os.path.join(os.path.dirname(bpy.data.filepath),
+                          "start_time.txt"), "w") as start_time_file:
+                    start_time_file.write(
+                        "Started simulation at: " + (str(time.ctime())) + "\n")
+
+
+                # We have to create a new subprocess that assigns jobs to nodes in the SGE
+                print ( "Running subprocess with:" +
+                        "\n  python_path = " + str(python_path) +
+                        "\n  script_file_path = " + str(script_file_path) +
+                        "\n  mcell_binary = " + str(mcell_binary) +
+                        "\n  start = " + str(start) +
+                        "\n  end = " + str(end) +
+                        "\n  project_dir = " + str(project_dir) +
+                        "\n  base_name = " + str(base_name) +
+                        "\n  error_file_option = " + str(error_file_option) +
+                        "\n  log_file_option = " + str(log_file_option) +
+                        "\n  mcell_processes_str = " + str(mcell_processes_str) +
+                        "\n" )
+                cmd_list = [
+                    python_path,
+                    script_file_path,
+                    os.path.join(project_dir,"data_model.json"),
+                    "-b", mcell_binary,
+                    "-fs", str(start), "-ls", str(end),
+                    "-pd", project_dir,
+                    "-ef", error_file_option,
+                    "-lf", log_file_option,
+                    "-np", mcell_processes_str,
+                    "-rt", "pbs",
+                    "-gh", run_sim.sge_host_name,
+                    "-mm", str(int(run_sim.required_memory_gig)) ]
 
                 if len(run_sim.sge_email_addr) > 0:
                     cmd_list.append ("-em")
@@ -1706,6 +1834,8 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     enable_python_scripting = BoolProperty ( name='Enable Python Scripting', default=False )  # Intentionally not in the data model
     sge_host_name = StringProperty ( default="", description="Name of Grid Engine Scheduler" )
     sge_email_addr = StringProperty ( default="", description="Email address for notifications" )
+    pbs_host_name = StringProperty ( default="", description="Name of Portable Batch System Scheduler" )
+    pbs_email_addr = StringProperty ( default="", description="Email address for notifications" )
     computer_list = CollectionProperty(type=MCellComputerProperty, name="Computer List")
     required_memory_gig = FloatProperty(default=2.0, description="Minimum memory per job - used for selecting hosts")
     required_free_slots = IntProperty(default=1, description="Minimum free slots for selecting hosts")
@@ -1770,6 +1900,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
          ('COMMAND', "MCell via Command Line", ""),
          ('SWEEP', "MCell via Sweep Runner", ""),
          ('SWEEP_SGE', "MCell via Sweep Runner and SGE", ""),
+         ('SWEEP_PBS', "MCell via Sweep Runner and PBS", ""),
          ('DYNAMIC', "Dynamic", "")]
 
     simulation_run_control = EnumProperty(
@@ -2173,6 +2304,16 @@ had no limit."""
                                 col.operator ( "mcell.deselect_all_computers" )
                                 col = row.column()
                                 col.operator ( "mcell.kill_all_users_jobs" )
+
+                    elif self.simulation_run_control == "SWEEP_PBS":
+                        row = box.row()
+                        subbox = row.box()
+                        row = subbox.row()
+                        col = row.column()
+                        col.prop ( self, "pbs_host_name", text="Submit Host" )
+                        col = row.column()
+                        col.prop ( self, "pbs_email_addr", text="Email" )
+
                 else:
                     row = box.row(align=True)
                     row.alignment = 'LEFT'
