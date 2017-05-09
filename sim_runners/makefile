@@ -1,4 +1,5 @@
-SUBDIRS = command_line open_gl java
+#SUBDIRS = command_line open_gl java
+SUBDIRS = command_line java
 
 .PHONY: all
 all: subdirs

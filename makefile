@@ -16,7 +16,8 @@ SOURCES = $(shell python cellblender_source_info.py)
 
 # These are generally binary files that are built by this makefile and included in the .zip file
 IOMESHFILES = cellblender/io_mesh_mcell_mdl/_mdlmesh_parser.so cellblender/io_mesh_mcell_mdl/mdlmesh_parser.py
-SIMCTLFILES = cellblender/sim_runners/java/SimControl.jar cellblender/sim_runners/open_gl/SimControl
+#SIMCTLFILES = cellblender/sim_runners/java/SimControl.jar cellblender/sim_runners/open_gl/SimControl
+SIMCTLFILES = cellblender/sim_runners/java/SimControl.jar
 SIMLIBMCFILES = cellblender/sim_engines/limited_cpp/_libMCell.so cellblender/sim_engines/limited_cpp/mcell_main cellblender/sim_engines/sim_engines/limited_cpp/_libMCell.so cellblender/sim_engines/sim_engines/limited_cpp/mcell_main
 PLOTTERFILES = cellblender/data_plotters/java_plot/PlotData.jar
 BNGFILES = cellblender/bng/bin/sbml2json
