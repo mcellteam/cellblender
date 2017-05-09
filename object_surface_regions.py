@@ -122,6 +122,18 @@ class MCELL_OT_region_faces_select(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_region_faces_select_all(bpy.types.Operator):
+    bl_idname = "mcell.region_faces_select_all"
+    bl_label = "Select Faces of All Surface Regions"
+    bl_description = "Select faces of all surface regions"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        for reg in context.object.mcell.regions.region_list:
+            reg.select_region_faces(context)
+        return {'FINISHED'}
+
+
 class MCELL_OT_region_faces_deselect(bpy.types.Operator):
     bl_idname = "mcell.region_faces_deselect"
     bl_label = "Deselect Faces of Selected Surface Region"
@@ -627,6 +639,7 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
                     sub = row.row(align=True)
                     sub.operator("mcell.region_faces_select", text="Select")
                     sub.operator("mcell.region_faces_deselect", text="Deselect")
+                    sub.operator("mcell.region_faces_select_all", text="Select All")
 
                     # Option to Get Region Info
                     box = layout.box()

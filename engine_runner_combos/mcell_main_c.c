@@ -274,7 +274,7 @@ int main ( int argc, char *argv[] ) {
   printf ( "Begin simulation.\n" );
 
   int iteration;
-  int print_every = (int)(exp10(floor(log10((iterations/10)))));
+  int print_every = (int)(pow(10, floor(log10((iterations/10)))));
   if (print_every < 1) print_every = 1;
   for (iteration=0; iteration<=iterations; iteration++) {
     sprintf ( sim_step_mol_name, template, iteration );

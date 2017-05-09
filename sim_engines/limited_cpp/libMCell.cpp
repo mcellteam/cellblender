@@ -1,5 +1,6 @@
 /* File : libMCell.cpp */
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -160,7 +161,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
   
   MCellRandomNumber_mrng *mcell_random = new MCellRandomNumber_mrng((uint32_t)12345);
 
-  int print_every = exp10(floor(log10((num_iterations/10))));
+  int print_every = pow(10, floor(log10((num_iterations/10))));
   if (print_every < 1) print_every = 1;
   for (iteration=0; iteration<=num_iterations; iteration++) {
 

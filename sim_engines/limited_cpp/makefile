@@ -7,7 +7,8 @@ INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
 #INSTALL_DIR = ~/Library/Application\ Support/Blender/2.74/scripts/addons/
 
 
-all: _libMCell.so mcell_main
+# all: _libMCell.so mcell_main
+all: mcell_main
 
 
 mcell_main_c: mcell_main_c.o JSON.o makefile
