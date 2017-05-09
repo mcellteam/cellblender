@@ -949,7 +949,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             parameter_system.draw_prop_with_help ( box, "Target Only", self, "target_only", "target_only_show_help", self.target_only_show_help, 
                 "Target Only - This molecule will not initiate reactions when\n" +
                 "it runs into other molecules. This setting can speed up simulations\n" +
-                "when applied to a molecule at high concentrations that reacts with\n" +
+                "when applied t molecule at high concentrations that reacts with\n" +
                 "a molecule at low concentrations (it is more efficient for the\n" +
                 "low-concentration molecule to trigger the reactions). This directive\n" +
                 "does not affect unimolecular reactions." )

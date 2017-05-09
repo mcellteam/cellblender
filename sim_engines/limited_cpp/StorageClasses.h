@@ -35,6 +35,10 @@ template <class T> class ArrayStore {
     return item_array[index];
   }
 
+  int get_num_items() {
+    return ( capacity );
+  }
+
   int get_size() {
     return ( capacity );
   }

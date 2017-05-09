@@ -105,72 +105,72 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
                                       user_units="seconds", 
                                       user_descr=helptext )
        
-        helptext = "The longest possible time step.\n" + \
-                   "MCell3 will move longer than the specified simulation time step\n" + \
-                   "if it seems safe. This command makes sure that the longest possible\n" + \
-                   "time step is no longer than this value (in seconds), even if MCell3\n" + \
-                   "thinks a longer step would be safe. The default is no limit."
+        helptext = """The longest possible time step.  MCell3 will move longer
+than the specified simulation time step if it seems safe. This command makes
+sure that the longest possible time step is no longer than this value (in
+seconds), even if MCell3 thinks a longer step would be safe.  The default is no
+limit."""
         self.time_step_max.init_ref ( parameter_system,
                                       user_name="Maximum Time Step", 
                                       user_expr="", 
                                       user_units="seconds", 
                                       user_descr=helptext )
        
-        helptext = "Have molecules take the same mean diffusion distance.\n" + \
-                   "Have all diffusing molecules take time steps of different duration,\n" + \
-                   "chosen so that the mean diffusion distance is N microns for each\n" + \
-                   "molecule. By default, all molecules move the same time step."
+        helptext = """Have molecules take the same mean diffusion distance.
+Have all diffusing molecules take time steps of different duration, chosen so
+that the mean diffusion distance is N microns for each molecule. By default,
+all molecules move the same time step."""
         self.space_step.init_ref    ( parameter_system,
                                       user_name="Space Step",    
                                       user_expr="", 
                                       user_units="microns", 
                                       user_descr=helptext )
        
-        helptext = "Diffusing Volume Molecules will interact when they get within\n" + \
-                   "N microns of each other.\n" + \
-                   "The default is:  1 / sqrt(Pi * SurfaceGridDensity)"
+        helptext = """Diffusing Volume Molecules will interact when they get
+within N microns of each other. The default is:  1 / sqrt(Pi *
+SurfaceGridDensity)"""
         self.interaction_radius.init_ref ( parameter_system,
                                            user_name="Interaction Radius", 
                                            user_expr="", user_units="microns", 
                                            user_descr=helptext )
        
-        helptext = "Specifies how many different directions to put in the lookup table." + \
-                   "The default is sensible. Don’t use this unless you know what you’re doing." + \
-                   "Instead of a number, you can specify FULLY_RANDOM in MDL to generate the" + \
-                   "directions directly from double precision numbers (but this is slower)."
+        helptext = """Specifies how many different directions to put in the
+lookup table.  The default is sensible. Don’t use this unless you know what
+you’re doing.  Instead of a number, you can specify FULLY_RANDOM in MDL to
+generate the directions directly from double precision numbers (but this is
+slower)."""
         self.radial_directions.init_ref   ( parameter_system,
                                             user_name="Radial Directions",   
                                             user_expr="", user_units="microns", 
                                             user_descr=helptext )
        
-        helptext = "Specifies how many distances to put in the diffusion look-up table.\n" + \
-                   "The default is sensible. FULLY_RANDOM is not implemented."
+        helptext = """Specifies how many distances to put in the diffusion
+look-up table. The default is sensible. FULLY_RANDOM is not implemented."""
         self.radial_subdivisions.init_ref ( parameter_system,
                                             user_name="Radial Subdivisions", 
                                             user_expr="", 
                                             user_descr=helptext )
        
-        helptext = "Surface molecule products can be created at r distance.\n" + \
-                   "Normally, a reaction will not proceed on a surface unless there\n" + \
-                   "is room to place all products on the single grid element where\n" + \
-                   "the reaction is initiated. By increasing r from its default value\n" + \
-                   "of 0, one can specify how far from the reaction’s location, in microns,\n" + \
-                   "the reaction can place its products. To be useful, r must\n" + \
-                   "be larger than the longest axis of the grid element on the triangle\n" + \
-                   "in question. The reaction will then proceed if there is room to\n" + \
-                   "place its products within a radius r, and will place those products\n" + \
-                   "as close as possible to the place where the reaction occurs\n" + \
-                   "(deterministically, so small- scale directional bias is possible)."
+        helptext = """Surface molecule products can be created at r distance.
+Normally, a reaction will not proceed on a surface unless there is room to
+place all products on the single grid element where the reaction is initiated.
+By increasing r from its default value of 0, one can specify how far from the
+reaction’s location, in microns, the reaction can place its products. To be
+useful, r must be larger than the longest axis of the grid element on the
+triangle in question. The reaction will then proceed if there is room to place
+its products within a radius r, and will place those products as close as
+possible to the place where the reaction occurs (deterministically, so 
+small-scale directional bias is possible)."""
         self.vacancy_search_distance.init_ref ( parameter_system,
                                                 user_name="Vacancy Search Distance", 
                                                 user_expr="", 
                                                 user_units="microns", 
                                                 user_descr=helptext )
        
-        helptext = "Number of molecules that can be stored per square micron.\n" + \
-                   "Tile all surfaces so that they can hold molecules at N different\n" + \
-                   "positions per square micron. The default is 10000. For backwards\n" + \
-                   "compatibility, EFFECTOR_GRID_DENSITY works also in MCell MDL."
+        helptext = """Number of molecules that can be stored per square micron.
+Tile all surfaces so that they can hold molecules at N different positions per
+square micron. The default is 10000. For backwards compatibility,
+EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         self.surface_grid_density.init_ref ( parameter_system,
                                              user_name="Surface Grid Density", 
                                              user_expr="10000", 
@@ -220,6 +220,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         dm_dict['microscopic_reversibility'] = str(self.microscopic_reversibility)
         dm_dict['accurate_3d_reactions'] = self.accurate_3d_reactions==True
         dm_dict['center_molecules_on_grid'] = self.center_molecules_grid==True
+        dm_dict['export_all_ascii'] = self.export_all_ascii==True
 
         notify_dict = {}
         notify_dict['all_notifications'] = str(self.all_notifications)
@@ -291,6 +292,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         if "microscopic_reversibility" in dm_dict: self.microscopic_reversibility = dm_dict["microscopic_reversibility"]
         if "accurate_3d_reactions" in dm_dict: self.accurate_3d_reactions = dm_dict["accurate_3d_reactions"]
         if "center_molecules_on_grid" in dm_dict: self.center_molecules_grid = dm_dict["center_molecules_on_grid"]
+        if "export_all_ascii" in dm_dict: self.export_all_ascii = dm_dict["export_all_ascii"]
 
         if "notifications" in dm_dict:
             note_dict = dm_dict['notifications']
@@ -353,6 +355,11 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         description="If false, more efficient but less accurate reactions",
         default='OFF')
 
+    # Export all ascii
+    export_all_ascii = BoolProperty(
+        name="Export all molecules as ASCII",
+        description="Positions of all molecules are also exported in ASCII format",
+        default=False)
 
     # Notifications
     all_notifications_enum = [
@@ -516,6 +523,7 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
     acc3D_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     center_on_grid_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     micro_rev_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    export_ascii_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
@@ -550,38 +558,38 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
 
                 #row = box.row()
                 # row.prop(mcell.initialization, "accurate_3d_reactions")
-                helptext = "Accurate 3D Reactions\n" + \
-                           "Specifies which method to use for computing 3D molecule-molecule\n" + \
-                           "interactions. If value is TRUE, then molecules will look\n" + \
-                           "through partition boundaries for potential interacting\n" + \
-                           "partners – this is slower but more accurate. If boolean is\n" + \
-                           "FALSE, then molecule interaction disks will be clipped at partition\n" + \
-                           "boundaries and probabilities adjusted to get the correct rate – \n" + \
-                           "this is faster but can be less accurate. The default is TRUE."
+                helptext = """Specifies which method to use for computing 3D
+molecule-molecule interactions. If value is TRUE, then molecules will look
+through partition boundaries for potential interacting partners – this is
+slower but more accurate. If boolean is FALSE, then molecule interaction disks
+will be clipped at partition boundaries and probabilities adjusted to get the
+correct rate – this is faster but can be less accurate. The default is TRUE."""
                 ps.draw_prop_with_help ( box, "Accurate 3D Reactions", mcell.initialization, "accurate_3d_reactions", "acc3D_show_help", self.acc3D_show_help, helptext )
                 
                 #row = box.row()
                 #row.prop(mcell.initialization, "center_molecules_grid")
-                helptext = "Center Molecules on Grid\n" + \
-                           "If boolean is set to TRUE, then all molecules on a surface will be\n" + \
-                           "located exactly at the center of their grid element. If FALSE, the\n" + \
-                           "molecules will be randomly located when placed, and reactions\n" + \
-                           "will take place at the location of the target (or the site of impact\n" + \
-                           "in the case of 3D molecule/surface reactions). The default is FALSE."
+                helptext = """If boolean is set to TRUE, then all molecules on
+a surface will be located exactly at the center of their grid element. If
+FALSE, the molecules will be randomly located when placed, and reactions will
+take place at the location of the target (or the site of impact in the case of
+3D molecule/surface reactions). The default is FALSE."""
                 ps.draw_prop_with_help ( box, "Center Molecules on Grid", mcell.initialization, "center_molecules_grid", "center_on_grid_show_help", self.center_on_grid_show_help, helptext )
 
                 #row = box.row()
                 #row.prop(mcell.initialization, "microscopic_reversibility")
-                helptext = "Microscopic Reversibility\n" + \
-                           "If value is set to OFF, then binding- unbinding reactions between\n" + \
-                           "molecules will be somewhat more efficient but may not be accurate\n" + \
-                           "if the probability of binding is high (close to 1).\n" + \
-                           "If ON, a more computationally demanding routine will be used to\n" + \
-                           "make sure binding- unbinding is more similar in both directions.\n" + \
-                           "If value is set to SURFACE_ONLY or VOLUME_ONLY, the more\n" + \
-                           "accurate routines will be used only for reactions at surfaces\n" + \
-                           "or only for those in the volume. OFF is the default."
+                helptext = """If value is set to OFF, then binding- unbinding
+reactions between molecules will be somewhat more efficient but may not be
+accurate if the probability of binding is high (close to 1).  If ON, a more
+computationally demanding routine will be used to make sure binding- unbinding
+is more similar in both directions.  If value is set to SURFACE_ONLY or
+VOLUME_ONLY, the more accurate routines will be used only for reactions at
+surfaces or only for those in the volume. OFF is the default."""
                 ps.draw_prop_with_help ( box, "Microscopic Reversibility", mcell.initialization, "microscopic_reversibility", "micro_rev_show_help", self.micro_rev_show_help, helptext )
+
+                helptext = """In addititon to the binary visualization data
+read by MCell, export ASCII formatted data. The default is OFF."""
+                ps.draw_prop_with_help ( box, "Export all molecules as ASCII", mcell.initialization, "export_all_ascii", "export_ascii_show_help", self.export_ascii_show_help, helptext )
+                
 
             else:
                 row.prop(mcell.initialization, "advanced", icon='TRIA_RIGHT',
@@ -672,7 +680,3 @@ class MCellInitializationPropertyGroup(bpy.types.PropertyGroup):
         """ Create a layout from the panel and draw into it """
         layout = panel.layout
         self.draw_layout ( context, layout )
-
-
-
-

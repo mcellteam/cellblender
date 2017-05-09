@@ -48,6 +48,7 @@ from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
 
 from bpy.app.handlers import persistent
 
+from . import cellblender_examples
 from . import cellblender_preferences
 from . import cellblender_project
 from . import cellblender_initialization
@@ -265,6 +266,56 @@ class MCELL_OT_upgrade(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_export_dm(bpy.types.Operator):
+    """This is the Upgrade operator called when the user presses the "Upgrade" button"""
+    bl_idname = "mcell.export_data_model"
+    bl_label = "Export Data Model to DM.txt"
+    bl_description = "Export Data Model from ID Properties to a file."
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+
+        print ( "Export Data Model Operator called" )
+        mcell = context.scene.mcell
+        if 'data_model' in mcell.keys():
+            # There is a data model present
+            dm = data_model.unpickle_data_model(mcell['data_model'])
+            # Build a full data model to get the geometry
+            full_dm = mcell.build_data_model_from_properties ( context, geometry=True )
+            # Add the geometry data to the original data model before exporting
+            if 'geometrical_objects' in full_dm:
+              dm['geometrical_objects'] = full_dm['geometrical_objects']
+            if 'materials' in full_dm:
+              dm['materials'] = full_dm['materials']
+            data_model.save_data_model_to_file ( dm, "DM.txt" )
+        return {'FINISHED'}
+
+
+class MCELL_OT_export_dm_json(bpy.types.Operator):
+    """This is the Upgrade operator called when the user presses the "Upgrade" button"""
+    bl_idname = "mcell.export_data_model_json"
+    bl_label = "Export Data Model to DM.json"
+    bl_description = "Export Data Model from ID Properties to a JSON file."
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+
+        print ( "Export Data Model JSON Operator called" )
+        mcell = context.scene.mcell
+        if 'data_model' in mcell.keys():
+            # There is a data model present
+            dm = data_model.unpickle_data_model(mcell['data_model'])
+            # Build a full data model to get the geometry
+            full_dm = mcell.build_data_model_from_properties ( context, geometry=True )
+            # Add the geometry data to the original data model before exporting
+            if 'geometrical_objects' in full_dm:
+              dm['geometrical_objects'] = full_dm['geometrical_objects']
+            if 'materials' in full_dm:
+              dm['materials'] = full_dm['materials']
+            data_model.save_data_model_to_json_file ( dm, "DM.json" )
+        return {'FINISHED'}
+
+
 class MCELL_OT_delete(bpy.types.Operator):
     """This is the Delete operator called when the user presses the "Delete Properties" button"""
     bl_idname = "mcell.delete"
@@ -301,6 +352,7 @@ def select_callback ( self, context ):
 
 class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
+    examples_select = BoolProperty ( name="example_sel", description="Examples", default=False, subtype='NONE', update=select_callback)
     preferences_select = BoolProperty ( name="pref_sel", description="Settings & Preferences", default=False, subtype='NONE', update=select_callback)
     #settings_select = BoolProperty ( name="set_sel", description="Project Settings", default=False, subtype='NONE', update=select_callback)
     scripting_select = BoolProperty ( name="set_mdl", description="Scripting", default=False, subtype='NONE', update=select_callback)
@@ -345,7 +397,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             Hide all panels ... always
             
         """
-        prop_keys = [ 'preferences_select', 'scripting_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'init_select', 'graph_select', 'viz_select', 'select_multiple' ]
+        prop_keys = [ 'examples_select', 'preferences_select', 'scripting_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'init_select', 'graph_select', 'viz_select', 'select_multiple' ]
         
         pin_state = False
         
@@ -464,6 +516,12 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                 row.label ( "Blend File version doesn't match CellBlender version", icon='ERROR' )
                 row = layout.row()
                 row.operator ( "mcell.upgrade", text="Upgrade Blend File to Current Version", icon='RADIO' )
+                if 'data_model' in mcell.keys():
+                    # There is a data model present, so show the option to save it directly
+                    row = layout.row()
+                    row.operator ( "mcell.export_data_model", text="Export Data Model to DM.txt", icon='EXPORT' )
+                    row = layout.row()
+                    row.operator ( "mcell.export_data_model_json", text="Export Data Model to DM.json", icon='EXPORT' )
 
             else:
                 # The versions matched, so draw the normal panels
@@ -479,42 +537,43 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     #row = layout.row(align=True)
                     row = col.row(align=True)
 
-                    if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "preferences_select", icon='PREFERENCES', text="" )
-                    if mcell.cellblender_preferences.show_button_num[1]: row.prop ( self, "scripting_select", icon='SCRIPT', text="" )
-                    if mcell.cellblender_preferences.show_button_num[2]: row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="" )
+                    if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "examples_select", icon='MOD_BUILD', text="" )
+                    if mcell.cellblender_preferences.show_button_num[1]: row.prop ( self, "preferences_select", icon='PREFERENCES', text="" )
+                    if mcell.cellblender_preferences.show_button_num[2]: row.prop ( self, "scripting_select", icon='SCRIPT', text="" )
+                    if mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="" )
 
                     if mcell.cellblender_preferences.use_stock_icons:
                         # Use "stock" icons to check on drawing speed problem
-                        if mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES', text="" )
-                        if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="" )
+                        if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES', text="" )
+                        if mcell.cellblender_preferences.show_button_num[5]: row.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="" )
                     else:
                         if self.molecule_select:
-                            if mcell.cellblender_preferences.show_button_num[3]: molecule_img_sel = bpy.data.images.get('mol_s')
-                            if mcell.cellblender_preferences.show_button_num[3]: mol_s = layout.icon(molecule_img_sel)
-                            if mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "molecule_select", icon_value=mol_s, text="" )
+                            if mcell.cellblender_preferences.show_button_num[4]: molecule_img_sel = bpy.data.images.get('mol_s')
+                            if mcell.cellblender_preferences.show_button_num[4]: mol_s = layout.icon(molecule_img_sel)
+                            if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "molecule_select", icon_value=mol_s, text="" )
                         else:
-                            if mcell.cellblender_preferences.show_button_num[3]: molecule_img_unsel = bpy.data.images.get('mol_u')
-                            if mcell.cellblender_preferences.show_button_num[3]: mol_u = layout.icon(molecule_img_unsel)
-                            if mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "molecule_select", icon_value=mol_u, text="" )
+                            if mcell.cellblender_preferences.show_button_num[4]: molecule_img_unsel = bpy.data.images.get('mol_u')
+                            if mcell.cellblender_preferences.show_button_num[4]: mol_u = layout.icon(molecule_img_unsel)
+                            if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "molecule_select", icon_value=mol_u, text="" )
 
                         if self.reaction_select:
-                            if mcell.cellblender_preferences.show_button_num[4]: react_img_sel = bpy.data.images.get('reaction_s')
-                            if mcell.cellblender_preferences.show_button_num[4]: reaction_s = layout.icon(react_img_sel)
-                            if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "reaction_select", icon_value=reaction_s, text="" )
+                            if mcell.cellblender_preferences.show_button_num[5]: react_img_sel = bpy.data.images.get('reaction_s')
+                            if mcell.cellblender_preferences.show_button_num[5]: reaction_s = layout.icon(react_img_sel)
+                            if mcell.cellblender_preferences.show_button_num[5]: row.prop ( self, "reaction_select", icon_value=reaction_s, text="" )
                         else:
-                            if mcell.cellblender_preferences.show_button_num[4]: react_img_unsel = bpy.data.images.get('reaction_u')
-                            if mcell.cellblender_preferences.show_button_num[4]: reaction_u = layout.icon(react_img_unsel)
-                            if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "reaction_select", icon_value=reaction_u, text="" )
+                            if mcell.cellblender_preferences.show_button_num[5]: react_img_unsel = bpy.data.images.get('reaction_u')
+                            if mcell.cellblender_preferences.show_button_num[5]: reaction_u = layout.icon(react_img_unsel)
+                            if mcell.cellblender_preferences.show_button_num[5]: row.prop ( self, "reaction_select", icon_value=reaction_u, text="" )
 
-                    if mcell.cellblender_preferences.show_button_num[5]: row.prop ( self, "placement_select", icon='GROUP_VERTEX', text="" )
-                    if mcell.cellblender_preferences.show_button_num[6]: row.prop ( self, "rel_patterns_select", icon='TIME', text="" )
-                    if mcell.cellblender_preferences.show_button_num[7]: row.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="" )  # Or 'MESH_CUBE'
-                    if mcell.cellblender_preferences.show_button_num[8]: row.prop ( self, "surf_classes_select", icon='FACESEL_HLT', text="" )
-                    if mcell.cellblender_preferences.show_button_num[9]: row.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="" )
-                    if mcell.cellblender_preferences.show_button_num[10]: row.prop ( self, "partitions_select", icon='GRID', text="" )
-                    if mcell.cellblender_preferences.show_button_num[11]: row.prop ( self, "graph_select", icon='IPO', text="" )
-                    if mcell.cellblender_preferences.show_button_num[12]: row.prop ( self, "viz_select", icon='SEQUENCE', text="" )
-                    if mcell.cellblender_preferences.show_button_num[13]: row.prop ( self, "init_select", icon='COLOR_RED', text="" )
+                    if mcell.cellblender_preferences.show_button_num[6]: row.prop ( self, "placement_select", icon='GROUP_VERTEX', text="" )
+                    if mcell.cellblender_preferences.show_button_num[7]: row.prop ( self, "rel_patterns_select", icon='TIME', text="" )
+                    if mcell.cellblender_preferences.show_button_num[8]: row.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="" )  # Or 'MESH_CUBE'
+                    if mcell.cellblender_preferences.show_button_num[9]: row.prop ( self, "surf_classes_select", icon='FACESEL_HLT', text="" )
+                    if mcell.cellblender_preferences.show_button_num[10]: row.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="" )
+                    if mcell.cellblender_preferences.show_button_num[11]: row.prop ( self, "partitions_select", icon='GRID', text="" )
+                    if mcell.cellblender_preferences.show_button_num[12]: row.prop ( self, "graph_select", icon='IPO', text="" )
+                    if mcell.cellblender_preferences.show_button_num[13]: row.prop ( self, "viz_select", icon='SEQUENCE', text="" )
+                    if mcell.cellblender_preferences.show_button_num[14]: row.prop ( self, "init_select", icon='COLOR_RED', text="" )
 
                     col = split.column()
                     row = col.row()
@@ -531,6 +590,11 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                 else:
 
                     # Draw all the selection buttons with labels in 2 columns:
+
+                    brow = layout.row()  ##############################################################
+
+                    bcol = brow.column()
+                    bcol.prop ( self, "examples_select", icon='MOD_BUILD', text="Examples" )
 
                     brow = layout.row()  ##############################################################
 
@@ -735,6 +799,11 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     layout.box() # Use as a separator
                     layout.label ( "Run Simulation", icon='COLOR_RED' )
                     context.scene.mcell.initialization.draw_layout ( context, layout )
+
+                if self.examples_select:
+                    layout.box() # Use as a separator
+                    layout.label ( "Examples", icon='MOD_BUILD' )
+                    context.scene.mcell.cellblender_examples.draw_layout ( context, layout )
                     
         # print ( "Bottom of CellBlenderMainPanelPropertyGroup.draw_self" )
 
@@ -783,6 +852,9 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         name="CellBlender Main Panel")
 
 
+    cellblender_examples = PointerProperty(
+        type=cellblender_examples.CellBlenderExamplesPropertyGroup,
+        name="CellBlender Examples")
     cellblender_preferences = PointerProperty(
         type=cellblender_preferences.CellBlenderPreferencesPropertyGroup,
         name="CellBlender Preferences")

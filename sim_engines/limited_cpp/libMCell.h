@@ -41,10 +41,8 @@ class MCellMoleculeInstance {
 
 class MCellReaction {
  public:
-  // Only allow decay reactions for now
-  MCellMoleculeSpecies *reactant;
-  //ArrayStore<MCellMoleculeSpecies *> reactants;
-  //ArrayStore<MCellMoleculeSpecies *> products;
+  ArrayStore<MCellMoleculeSpecies *> reactants;
+  ArrayStore<MCellMoleculeSpecies *> products;
   double rate;
   MCellReaction *next;
 };
@@ -95,6 +93,7 @@ class MCellSimulation {
 
   int num_iterations;
   double time_step;
+  unsigned int seed;
   bool has_reactions; // Temporary until real reactions are implemented
   int print_detail;
 
@@ -109,6 +108,7 @@ class MCellSimulation {
     num_simulations++;
     num_iterations = 0;
     time_step = 0.0;
+    seed = 1;
     has_reactions = false; // Temporary until real reactions are implemented
     print_detail = 0;
   }
@@ -116,11 +116,13 @@ class MCellSimulation {
     num_simulations--;
   }
   
+  void set_seed ( unsigned int seed );
   void add_molecule_species ( MCellMoleculeSpecies *species );
   void add_decay_reaction ( MCellMoleculeSpecies *reactant, double rate );
   void add_molecule_release_site ( MCellReleaseSite *site );
   MCellMoleculeSpecies *get_molecule_species_by_name ( char *mol_name );
   void run_simulation ( char *proj_path );
   void dump_state ( void );
+  void stuff_seed ( char *path, unsigned int seed );
 };
 

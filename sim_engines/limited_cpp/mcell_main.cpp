@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,6 +40,24 @@ char *join_path ( char *p1, char sep, char *p2 ) {
     strcpy ( &joined_path[strlen(p1)+1], p2 );
   }
   return ( joined_path );
+}
+
+// http://stackoverflow.com/questions/216823/whats-the-best-way-to-trim-stdstring
+string trim(string& str) {
+  str.erase(0, str.find_first_not_of(' '));       //prefixing spaces
+  str.erase(str.find_last_not_of(' ')+1);         //surfixing spaces
+  return str;
+}
+
+// http://ysonggit.github.io/coding/2014/12/16/split-a-string-using-c.html
+vector<string> split(const string &s, char delim) {
+    stringstream ss(s);
+    string item;
+    vector<string> tokens;
+    while (getline(ss, item, delim)) {
+        tokens.push_back(trim(item));
+    }
+    return tokens;
 }
 
 // These two functions look up names in the parameter dictionary when strings are found:
@@ -94,6 +113,7 @@ int main ( int argc, char *argv[] ) {
   char *proj_path = NULL;
   char *data_model_file_name = NULL;
   char *data_model_full_path = "dm.json";
+  unsigned int seed=1;
   
   int dump_data_model = 0;
 
@@ -110,6 +130,9 @@ int main ( int argc, char *argv[] ) {
     if (strncmp("print_detail=",argv[i],13) == 0) {
       sscanf ( &argv[i][13], "%d", &print_detail );
     }
+    if (strncmp("seed=",argv[i],5) == 0) {
+      sscanf ( &argv[i][5], "%d", &seed );
+    }
     if (strcmp("dump",argv[i]) == 0) {
       dump_data_model = 1;
     }
@@ -119,7 +142,7 @@ int main ( int argc, char *argv[] ) {
   if (print_detail > 0) cout << "\n\n" << endl;
   if (print_detail > 0) cout << "******************************************" << endl;
   if (print_detail > 0) cout << "*   MCell C++ Prototype using libMCell   *" << endl;
-  if (print_detail > 0) cout << "*      Updated: February 5th, 2017       *" << endl;
+  if (print_detail > 0) cout << "*      Updated: April 23rd, 2017         *" << endl;
   if (print_detail > 0) cout << "******************************************" << endl;
   if (print_detail > 0) cout << "\n" << endl;
 
@@ -128,7 +151,9 @@ int main ( int argc, char *argv[] ) {
 
   data_model_full_path = join_path ( proj_path, '/', data_model_file_name );
 
-  if (print_detail > 0) printf ( "Project path = \"%s\", data_model_file_name = \"%s\"\n", proj_path, data_model_full_path );
+  if (print_detail > 0) printf ( "Project path = \"%s\"\n", proj_path );
+  if (print_detail > 0) printf ( "Data Model file = \"%s\"\n", data_model_full_path );
+  if (print_detail > 0) printf ( "Seed = %d\n", seed );
 
   char *file_name = data_model_full_path;
   FILE *f = fopen ( file_name, "r" );
@@ -229,6 +254,7 @@ int main ( int argc, char *argv[] ) {
   // Finally build the actual simulation from the data extracted from the data model
 
   MCellSimulation *mcell_sim = new MCellSimulation();
+  mcell_sim->set_seed ( seed );
   mcell_sim->print_detail = print_detail;
 
 
@@ -257,7 +283,38 @@ int main ( int argc, char *argv[] ) {
   while ((this_rxn=json_get_element_by_index(rxns,rxn_num)) != NULL) {
     mcell_sim->has_reactions = true;
     reaction = new MCellReaction();
-    reaction->reactant = mcell_sim->molecule_species [ json_get_string_value( json_get_element_with_key ( this_rxn, "reactants" ) ) ];
+
+    char *reactants_str;
+    reactants_str = json_get_string_value( json_get_element_with_key ( this_rxn, "reactants" ) );
+    char *products_str;
+    products_str = json_get_string_value( json_get_element_with_key ( this_rxn, "products" ) );
+    cout << "Reaction: " << reactants_str << " -> " << products_str << endl;
+    vector<string> reactants_vec = split(string(reactants_str), '+');
+    for (string s : reactants_vec) {
+      cout << "  Reactant [" << s << "]" << endl;
+      if ( s == "NULL" ) {
+        cout << "    NULL is not added to reactants" << endl;
+      } else {
+        reaction->reactants.append ( mcell_sim->molecule_species [ s.c_str() ] );
+      }
+    }
+    vector<string> products_vec = split(string(products_str), '+');
+    for (string s : products_vec) {
+      cout << "  Product [" << s << "]" << endl;
+      if ( s == "NULL" ) {
+        cout << "    NULL is not added to products" << endl;
+      } else {
+        reaction->products.append ( mcell_sim->molecule_species [ s.c_str() ] );
+      }
+    }
+    
+    if (reaction->reactants.get_size() != 1) {
+      cout << "Warning for " << reactants_str << ": This implementation only supports single reactants ... others ignored" << endl;
+    }
+    if (reaction->products.get_size() != 0) {
+      cout << "Warning for " << products_str << ": This implementation only supports NULL products ... others ignored" << endl;
+    }
+
     reaction->rate = get_float_from_par ( par_dict, json_get_element_with_key ( this_rxn, "fwd_rate" ) );
     mcell_sim->reactions.append ( reaction );
     rxn_num++;

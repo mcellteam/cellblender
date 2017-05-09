@@ -19,3 +19,4 @@ io_mesh_mcell_mdl/mdlparse.bison.output
 bng/net.py
 cellblender.zip
 *.pyc
+*.swp

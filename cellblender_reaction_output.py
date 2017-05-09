@@ -204,58 +204,115 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
           f = open ( os.path.join(files_path,"data_layout.json"), 'r' )
           layout_spec = json.loads ( f.read() )
           f.close()
+
+          data_layout_version = 0
+          if 'version' in layout_spec:
+            data_layout_version = layout_spec['version']
+
           data_layout = layout_spec['data_layout']
           print ( "data_layout = " + str(layout_spec) )
           num_runs = 1
-          for level in data_layout:
-            if (level[0] != 'dir') and (level[0] != 'file_type') and (level[0] != 'SEED'):
-              # Multiply by the number of sweep points in each level (stored at index 1)
-              num_runs *= len(level[1])
-              # append a counter to keep track of looping through levels
-            level.append ( 0 )
-          print ( "num_runs = " + str(num_runs) + ",  data_layout = " + str(layout_spec) )
 
-          # Use the counters to count up the paths from the reversed layout
-          data_layout.reverse()
-          run_num = 0
-          while run_num < num_runs:
-            print ( "Preparing run " + str(run_num) )
-            counters = ""
+          if data_layout_version == 2:
             for level in data_layout:
-              counters = counters + "  " + level[0] + ":" + str(level[2])
-            print ( " Counters = " + counters )
-            run_path = ""
-            for level in data_layout:
-              if (level[0] == 'dir'):
-                run_path = os.path.join ( level[1][0], run_path )
-              elif (level[0] ==  'file_type'):
-                run_path = os.path.join ( level[1][0], run_path )
-              elif (level[0] ==  'SEED'):
-                pass
-              else:
-                run_path = os.path.join ( level[0] + "_index_" + str(level[2]), run_path )
-            run_num += 1
+              if (level[0] != '/DIR') and (level[0] != '/FILE_TYPE') and (level[0] != '/SEED'):
+                # Multiply by the number of sweep points in each level (stored at index 1)
+                num_runs *= len(level[1])
+                # append a counter to keep track of looping through levels
+              level.append ( 0 )
+            print ( "num_runs = " + str(num_runs) + ",  data_layout = " + str(layout_spec) )
 
-            run_path = run_path.strip ( os.path.sep )
-            data_paths.append ( run_path )
-            print ( "Run path = " + run_path )
-
-            # Increment the counters
-            for level in data_layout:
-              if (level[0] == 'dir'):
-                pass
-              elif (level[0] ==  'file_type'):
-                pass
-              elif (level[0] ==  'SEED'):
-                pass
-              else:
-                level[2] += 1
-                if (level[2] < len(level[1])):
-                  # This counter didn't roll over, so there's no need to carry into the next one. Break.
-                  break
+            # Use the counters to count up the paths from the reversed layout
+            data_layout.reverse()
+            run_num = 0
+            while run_num < num_runs:
+              print ( "Preparing run " + str(run_num) )
+              counters = ""
+              for level in data_layout:
+                counters = counters + "  " + level[0] + ":" + str(level[2])
+              print ( " Counters = " + counters )
+              run_path = ""
+              for level in data_layout:
+                if (level[0] == '/DIR'):
+                  run_path = os.path.join ( level[1][0], run_path )
+                elif (level[0] ==  '/FILE_TYPE'):
+                  run_path = os.path.join ( level[1][0], run_path )
+                elif (level[0] ==  '/SEED'):
+                  pass
                 else:
-                  # This counter did roll over, so go back to zero and continue to increment the next one
-                  level[2] = 0
+                  run_path = os.path.join ( level[0] + "_index_" + str(level[2]), run_path )
+              run_num += 1
+
+              run_path = run_path.strip ( os.path.sep )
+              data_paths.append ( run_path )
+              print ( "Run path = " + run_path )
+
+              # Increment the counters
+              for level in data_layout:
+                if (level[0] == '/DIR'):
+                  pass
+                elif (level[0] ==  '/FILE_TYPE'):
+                  pass
+                elif (level[0] ==  '/SEED'):
+                  pass
+                else:
+                  level[2] += 1
+                  if (level[2] < len(level[1])):
+                    # This counter didn't roll over, so there's no need to carry into the next one. Break.
+                    break
+                  else:
+                    # This counter did roll over, so go back to zero and continue to increment the next one
+                    level[2] = 0
+          else:
+            for level in data_layout:
+              if (level[0] != 'dir') and (level[0] != 'file_type') and (level[0] != 'SEED'):
+                # Multiply by the number of sweep points in each level (stored at index 1)
+                num_runs *= len(level[1])
+                # append a counter to keep track of looping through levels
+              level.append ( 0 )
+            print ( "num_runs = " + str(num_runs) + ",  data_layout = " + str(layout_spec) )
+
+            # Use the counters to count up the paths from the reversed layout
+            data_layout.reverse()
+            run_num = 0
+            while run_num < num_runs:
+              print ( "Preparing run " + str(run_num) )
+              counters = ""
+              for level in data_layout:
+                counters = counters + "  " + level[0] + ":" + str(level[2])
+              print ( " Counters = " + counters )
+              run_path = ""
+              for level in data_layout:
+                if (level[0] == 'dir'):
+                  run_path = os.path.join ( level[1][0], run_path )
+                elif (level[0] ==  'file_type'):
+                  run_path = os.path.join ( level[1][0], run_path )
+                elif (level[0] ==  'SEED'):
+                  pass
+                else:
+                  run_path = os.path.join ( level[0] + "_index_" + str(level[2]), run_path )
+              run_num += 1
+
+              run_path = run_path.strip ( os.path.sep )
+              data_paths.append ( run_path )
+              print ( "Run path = " + run_path )
+
+              # Increment the counters
+              for level in data_layout:
+                if (level[0] == 'dir'):
+                  pass
+                elif (level[0] ==  'file_type'):
+                  pass
+                elif (level[0] ==  'SEED'):
+                  pass
+                else:
+                  level[2] += 1
+                  if (level[2] < len(level[1])):
+                    # This counter didn't roll over, so there's no need to carry into the next one. Break.
+                    break
+                  else:
+                    # This counter did roll over, so go back to zero and continue to increment the next one
+                    level[2] = 0
 
 
         else:

@@ -169,7 +169,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
         return True
 
 
-    def write_as_mdl ( self, obj_name, points, faces, file_name=None, partitions=False, instantiate=False ):
+    def write_as_mdl ( self, obj_name, points, faces, origin=None, file_name=None, partitions=False, instantiate=False ):
       if file_name != None:
         out_file = open ( file_name, "w" )
         if partitions:
@@ -190,6 +190,8 @@ class MCELL_OT_export_project(bpy.types.Operator):
             s = "    [ " + str(f[0]) + ", " + str(f[1]) + ", " + str(f[2]) + " ]\n"
             out_file.write ( s );
         out_file.write ( "  }\n" )
+        if origin != None:
+            out_file.write ( "  TRANSLATE = [ %.15g, %.15g, %.15g ]\n" % (origin[0], origin[1], origin[2] ) )
         out_file.write ( "}\n" )
         if instantiate:
             out_file.write ( "\n" )
@@ -254,16 +256,6 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
             dynamic = len([ True for o in mcell.model_objects.object_list if o.dynamic ]) > 0
 
-            """
-            # Check to see if dynamic geometry is enabled for any objects
-            for obj in context.scene.mcell.model_objects.object_list:
-                print ( "Export Checking if object " + str(obj) + " is dynamic" )
-                print ( "  obj.dynamic = " + str(obj.dynamic) )
-                if obj.dynamic:
-                    dynamic = True
-                    break
-            """
-
             if dynamic:
 
                 print ( "Exporting dynamic objects" )
@@ -284,17 +276,28 @@ class MCELL_OT_export_project(bpy.types.Operator):
                 time_step = context.scene.mcell.initialization.time_step.get_value()
                 print ( "iterations = " + str(iterations) + ", time_step = " + str(time_step) )
 
-                for frame_number in range(iterations):
+                # Build the script list first as a dictionary by object names so they aren't read at every iteration
+                # It might also be efficient if these could be precompiled at this time (rather than in the loop).
+                script_dict = {}
+                for obj in context.scene.mcell.model_objects.object_list:
+                    if obj.dynamic:
+                        if len(obj.script_name) > 0:
+                            # script_text = bpy.data.texts[obj.script_name].as_string()
+                            compiled_text = compile ( bpy.data.texts[obj.script_name].as_string(), '<string>', 'exec' )
+                            script_dict[obj.script_name] = compiled_text
+
+                for frame_number in range(iterations+1):
                     ####################################################################
                     #
                     #  This section essentially defines the interface to the user's
-                    #  dynamic geometry code. Right now it's being done through 4 global
+                    #  dynamic geometry code. Right now it's being done through 5 global
                     #  variables which will be in the user's environment when they run:
                     #
                     #     frame_number
                     #     time_step
                     #     points[]
                     #     faces[]
+                    #     origin[]
                     #
                     #  The user code gets the frame number as input and fills in both the
                     #  points and faces arrays (lists). The format is fairly standard with
@@ -305,20 +308,27 @@ class MCELL_OT_export_project(bpy.types.Operator):
                     #  This is a very primitive interface, and it may be subject to change.
                     #
                     ####################################################################
+
+
+                    # Set the frame number for Blender
                     context.scene.frame_set(frame_number)
+
+                    # Write out the individual MDL files for each dynamic object at this frame
                     for obj in context.scene.mcell.model_objects.object_list:
                         if obj.dynamic:
                             # print ( "  Iteration " + str(frame_number) + ", Saving geometry for object " + obj.name + " using script \"" + obj.script_name + "\"" )
                             points = []
                             faces = []
+                            origin = [0,0,0]
                             if len(obj.script_name) > 0:
                                 # Let the script create the geometry
                                 print ( "Build object mesh from user script for frame " + str(frame_number) )
-                                script_text = bpy.data.texts[obj.script_name].as_string()
+                                #script_text = script_dict[obj.script_name]
                                 #print ( 80*"=" )
                                 #print ( script_text )
                                 #print ( 80*"=" )
-                                exec ( script_text, locals() )
+                                # exec ( script_dict[obj.script_name], locals() )
+                                exec ( script_dict[obj.script_name] )
                             else:
                                 # Get the geometry from the object (presumably animated by Blender)
 
@@ -332,8 +342,30 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
                             file_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
                             full_file_name = os.path.join(path_to_dg_files,file_name)
-                            self.write_as_mdl ( obj.name, points, faces, file_name=full_file_name, partitions=True, instantiate=True )
-                            geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",file_name)))
+                            self.write_as_mdl ( obj.name, points, faces, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
+                            #geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",file_name)))
+
+                    # Write out the "master" MDL file for this frame
+
+                    frame_file_name = os.path.join(".","dynamic_geometry","frame_%d.mdl"%(frame_number))
+                    full_frame_file_name = os.path.join(path_to_dg_files,"frame_%d.mdl"%(frame_number))
+                    frame_file = open(full_frame_file_name, "w", encoding="utf8", newline="\n")
+
+                    # Write the INCLUDE statements
+                    for obj in context.scene.mcell.model_objects.object_list:
+                        if obj.dynamic:
+                            file_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
+                            frame_file.write ( "INCLUDE_FILE = \"%s\"\n" % (file_name) )
+
+                    # Write the INSTANTIATE statement
+                    frame_file.write ( "INSTANTIATE Scene OBJECT {\n" )
+                    for obj in context.scene.mcell.model_objects.object_list:
+                        if obj.dynamic:
+                            frame_file.write ( "  %s OBJECT %s {}\n" % (obj.name, obj.name) )
+                    frame_file.write ( "}\n" )
+                    frame_file.close()
+
+                    geom_list_file.write('%.9g %s\n' % (frame_number*time_step, frame_file_name))
 
                 geom_list_file.close()
 
@@ -344,7 +376,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
                 try:
 
                     full_fname = mainmdl
-                    #print ( "Updating Main MDL file: " + full_fname + " for dynamic geometry" )
+                    print ( "Updating Main MDL file: " + full_fname + " for dynamic geometry" )
                     
                     mdl_file = open ( full_fname )
                     mdl_lines = mdl_file.readlines()
@@ -392,7 +424,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
                             mdl_file.write ( "DYNAMIC_GEOMETRY = \"%s\"\n" % (geom_list_name) )
                     mdl_file.close()
 
-                    full_fname = os.path.join(mcell_files_path(),"Scene.initialization.mdl")
+                    full_fname = os.path.join(filepath, scene_name + ".initialization.mdl")
                     #print ( "Updating Initialization MDL file: " + full_fname )
                     mdl_file = open ( full_fname )
                     mdl_lines = mdl_file.readlines()

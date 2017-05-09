@@ -134,12 +134,12 @@ def get_data_model ( geometry=False ):
     dm = { 'mcell' : mdm }
     return dm
 
-def replace_data_model ( dm, geometry=False ):
+def replace_data_model ( dm, geometry=False, scripts=False ):
     import bpy
     import cellblender
     context = bpy.context
     dm['mcell'] = context.scene.mcell.upgrade_data_model ( dm['mcell'] )
-    context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=geometry )
+    context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=geometry, scripts=scripts )
 
 def cd_to_project():
     import os

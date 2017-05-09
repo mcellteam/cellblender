@@ -40,13 +40,17 @@ char *MCellSimulation::join_path ( char *p1, char sep, char *p2 ) {
   return ( joined_path );
 }
 
+void MCellSimulation::set_seed ( unsigned int seed ) {
+  this->seed = seed;
+}
+
 void MCellSimulation::add_molecule_species ( MCellMoleculeSpecies *species ) {
   molecule_species[species->name.c_str()] = species;
 }
 
 void MCellSimulation::add_decay_reaction ( MCellMoleculeSpecies *reactant, double rate ) {
   MCellReaction *rxn = new MCellReaction();
-  rxn->reactant = reactant;
+  rxn->reactants.append ( reactant );
   rxn->rate = rate;
   reactions.append ( rxn );
 }
@@ -69,10 +73,31 @@ void MCellSimulation::pick_displacement( MCellMoleculeInstance *mol, double scal
 }
 */
 
+void MCellSimulation::stuff_seed ( char *path, unsigned int seed ) {
+  // Temporary just to get seeds working
+  printf ( "Original path: \"%s\"\n", path );
+  char temp_buf[100];
+  sprintf ( temp_buf, "%d", seed );
+  printf ( "Seed to stuff: \"%s\"\n", temp_buf );
+  char *seed_string = strstr ( path, "seed_" );
+  if (seed_string != NULL) {
+    printf ( "Found seed: \"%s\"\n", seed_string );
+    int l = strlen(temp_buf);
+    int insert_at;
+    for (int i=0; i<l; i++) {
+      insert_at = strlen("seed_00001") - (i+1);
+      printf ( "  Insert \"%c\" from index %d at index %d\n", temp_buf[l-(i+1)], l-(i+1), insert_at );
+      seed_string[insert_at] = temp_buf[l-(i+1)];
+    }
+  }
+  printf ( "Updated path: \"%s\"\n", path );
+}
+
 void MCellSimulation::run_simulation ( char *proj_path ) {
   int iteration;
 
   if (this->print_detail >= 10) printf ( "Project path = \"%s\"\n", proj_path );
+  if (this->print_detail >= 15) printf ( "Seed = %d\n", this->seed );
 
   // ##### Clear out the old data
 
@@ -85,12 +110,14 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
   mkdir ( react_dir, 0755 );
 
   char *react_seed_dir = join_path ( react_dir, '/', "seed_00001" );
+  this->stuff_seed ( react_seed_dir, this->seed );
   mkdir ( react_seed_dir, 0755 );
 
   char *viz_dir = join_path ( output_dir, '/', "viz_data" );
   mkdir ( viz_dir, 0755 );
 
   char *viz_seed_dir = join_path ( viz_dir, '/', "seed_00001" );
+  this->stuff_seed ( viz_seed_dir, this->seed );
   mkdir ( viz_seed_dir, 0755 );
 
 
@@ -101,7 +128,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
 
   MCellReleaseSite *this_site;
 
-  for (int rs_num=0; rs_num<this->molecule_release_sites.get_size(); rs_num++) {
+  for (int rs_num=0; rs_num<this->molecule_release_sites.get_num_items(); rs_num++) {
     if (this->print_detail >= 40) cout << "Release Site " << rs_num << endl;
     this_site = this->molecule_release_sites[rs_num];
     if (this->print_detail >= 40) cout << "  Releasing " << this_site->quantity << " molecules of type " << this_site->molecule_species->name << endl;
@@ -115,7 +142,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
       new_mol_instance->x = this_site->x;
       new_mol_instance->y = this_site->y;
       new_mol_instance->z = this_site->z;
-      for (int i=0; i<this->mol_creation_event_handlers.get_size(); i++) {
+      for (int i=0; i<this->mol_creation_event_handlers.get_num_items(); i++) {
         this->mol_creation_event_handlers[i]->execute(new_mol_instance);
       }
     }
@@ -131,6 +158,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
   char *template_template = "seed_00001/Scene.cellbin.%%0%dd.dat";
   char *file_template = (char *) malloc ( strlen(template_template) + (ndigits*sizeof(char)) + 10 );
   sprintf ( file_template, template_template, ndigits );
+  this->stuff_seed ( file_template, this->seed );
   if (this->print_detail >= 30) printf ( "File Template = %s\n", file_template );
 
   char *f_template =  (char *) malloc ( ( strlen(viz_dir) + 1 + strlen(file_template) + ndigits + 10 ) *sizeof(char));
@@ -150,16 +178,21 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
     char *react_file_name;
     this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
     react_file_name = (char *) malloc ( strlen(react_dir) + 1 + strlen ( "/seed_00001/" ) + strlen ( this_species->name.c_str() ) + strlen ( ".World.dat" ) + 10 );
+    this->stuff_seed ( react_file_name, this->seed );
     sprintf ( react_file_name, "%s/seed_00001/%s.World.dat", react_dir, this_species->name.c_str() );
+    this->stuff_seed ( react_file_name, this->seed );
     if (this->print_detail >= 40) cout << "Setting up count file for species " << this_species->name << " at " << react_file_name << endl;
     count_files[sp_num] = fopen ( react_file_name, "w" );
   }
 
   // Run the actual simulation
 
-  if (this->print_detail >= 20) cout << "Begin libMCell simulation." << endl << endl;
-  
-  MCellRandomNumber_mrng *mcell_random = new MCellRandomNumber_mrng((uint32_t)12345);
+  if (this->print_detail >= 20) cout << "Begin libMCell simulation with seed " << this->seed << endl << endl;
+
+  MCellRandomNumber_mrng *mcell_random = new MCellRandomNumber_mrng((uint32_t)(this->seed));
+
+  // Note that the seed value wasn't contributing to the rng_gauss() result as detected by following debug statement:
+  // if (this->print_detail >= 20) cout << "  First random number would be " << mcell_random->rng_gauss() << endl << endl;
 
   int print_every = pow(10, floor(log10((num_iterations/10))));
   if (print_every < 1) print_every = 1;
@@ -169,7 +202,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
       if (this->print_detail >= 20) cout << "Iteration " << iteration << ", t=" << (time_step*iteration) << "   (from libMCell's run_simulation)" << endl;
     }
 
-    for (int i=0; i<this->timer_event_handlers.get_size(); i++) {
+    for (int i=0; i<this->timer_event_handlers.get_num_items(); i++) {
       this->timer_event_handlers[i]->execute();
     }
 
@@ -247,9 +280,9 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
       for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
         this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
         if (this_species->instance_list != NULL) {
-          for (int rx_num=0; rx_num<this->reactions.get_size(); rx_num++) {
+          for (int rx_num=0; rx_num<this->reactions.get_num_items(); rx_num++) {
             this_rxn = this->reactions[rx_num];
-            if (this_rxn->reactant == this_species) {
+            if (this_rxn->reactants[0] == this_species) {
               // This reaction applies to this molecule
               double fraction_to_remove = this_rxn->rate * time_step;
               double amount_to_remove = fraction_to_remove * this_species->num_instances;
@@ -290,6 +323,8 @@ void MCellSimulation::dump_state ( void ) {
   MCellReaction *this_rxn;
   MCellReleaseSite *this_site;
 
+  cout << "  Seed = " << this->seed << endl;
+
   cout << "  Molecules:" << endl;
   for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
     this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
@@ -297,13 +332,21 @@ void MCellSimulation::dump_state ( void ) {
   }
 
   cout << "  Reactions:" << endl;
-  for (int rx_num=0; rx_num<this->reactions.get_size(); rx_num++) {
+  for (int rx_num=0; rx_num<this->reactions.get_num_items(); rx_num++) {
     this_rxn = this->reactions[rx_num];
-    cout << "    Reaction involving molecule \"" << this_rxn->reactant->name << "\" with rate " << this_rxn->rate << endl;
+    cout << "    Reaction: ";
+    for (int m_num=0; m_num<this_rxn->reactants.get_num_items(); m_num++) {
+      cout << this_rxn->reactants[m_num]->name << " ";
+    }
+    cout << "  ->  ";
+    for (int m_num=0; m_num<this_rxn->products.get_num_items(); m_num++) {
+      cout << this_rxn->products[m_num]->name << " ";
+    }
+    cout << "  with rate " << this_rxn->rate << endl;
   }
 
   cout << "  Release Sites:" << endl;
-  for (int rs_num=0; rs_num<this->molecule_release_sites.get_size(); rs_num++) {
+  for (int rs_num=0; rs_num<this->molecule_release_sites.get_num_items(); rs_num++) {
     this_site = this->molecule_release_sites[rs_num];
     cout << "    Release " << this_site->quantity << " molecules of type \"" << this_site->molecule_species->name << "\"" << endl;
   }

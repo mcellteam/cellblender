@@ -52,7 +52,7 @@ def find_in_path(program_name):
     return None
 
 
-def run_commands ( commands, cwd="" ):
+def run_commands ( commands ):
     sp_list = []
     window_num = 0
     for cmd in commands:
@@ -60,9 +60,10 @@ def run_commands ( commands, cwd="" ):
         command_list.append ( "x=%d" % ((50*(1+window_num))%500) ),
         command_list.append ( "y=%d" % ((40*(1+window_num))%400) ),
         command_list.append ( ":" ),
-        for subcmd in cmd:
-            command_list.append ( subcmd )
-        sp_list.append ( subprocess.Popen ( command_list, cwd=cwd, stdout=None, stderr=None ) )
+        command_list.append ( cmd['cmd'] )
+        for arg in cmd['args']:
+            command_list.append ( arg )
+        sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=None, stderr=None ) )
         window_num += 1
     return sp_list
 

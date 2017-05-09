@@ -162,6 +162,14 @@ class CopyDataModelFromSelectedProps(bpy.types.Operator):
             else:
                 selected_dm = ""
             selected_key += '[\'' + section + '\']'
+        # Clean up selected_dm as desired
+        if 'mol_viz' in selected_dm:
+          selected_dm['mol_viz']['file_dir'] = ""
+        else:
+          if ('file_dir' in selected_dm) and ('viz_list' in selected_dm):
+            # This is likely to be a "mol_viz" entry
+            selected_dm['file_dir'] = ""
+
         #s = "dm['mcell'] = " + pprint.pformat ( selected_dm, indent=4, width=40 ) + "\n"
         s = selected_key + " = " + data_model.data_model_as_text ( selected_dm ) + "\n"
         #s = "dm['mcell'] = " + str(selected_dm) + "\n"
@@ -552,7 +560,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
         return dm
 
 
-    def build_properties_from_data_model ( self, context, dm, scripts=False ):
+    def build_properties_from_data_model ( self, context, dm, scripts=True ):
         # Check that the data model version matches the version for this property group
         if dm['data_model_version'] != "DM_2016_03_15_1900":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade CellBlenderScriptingPropertyGroup data model to current version." )
@@ -574,18 +582,18 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                 # s.init_properties(context.scene.mcell.parameter_system)
                 s.build_properties_from_data_model ( context, dm_s )
 
-        # Don't: Load the scripts lists from the data model for now - they are regenerated with update below
-
-        # Do: Load all .mdl text files and all .py text files
-
         if scripts:
+          print ( "\nReading scripts because \"scripts\" parameter is true\n" )
           if 'script_texts' in dm:
             for key_name in dm['script_texts'].keys():
+              print ( "  Script: " + key_name )
               if key_name in bpy.data.texts:
                 bpy.data.texts[key_name].clear()
               else:
                 bpy.data.texts.new(key_name)
               bpy.data.texts[key_name].write ( dm['script_texts'][key_name] )
+        else:
+          print ( "\nNot reading scripts because \"scripts\" parameter is false\n" )
 
         # Update the list of available scripts (for the user interface list)
         update_available_scripts ( self )

@@ -22,6 +22,7 @@ cellblender_info = {
         ## "githooks"+os.sep+"pre-commit",
 
         "parameter_system.py",
+        "cellblender_examples.py",
         "cellblender_preferences.py",
         "cellblender_project.py",
         "cellblender_initialization.py",
@@ -124,6 +125,9 @@ cellblender_info = {
         "sim_runners"+os.sep+"makefile",
         "sim_runners"+os.sep+"__init__.py",
 
+        "sim_runners"+os.sep+"command_line"+os.sep+"__init__.py",
+        "sim_runners"+os.sep+"command_line"+os.sep+"makefile",
+
         "sim_runners"+os.sep+"java"+os.sep+"__init__.py",
         "sim_runners"+os.sep+"java"+os.sep+"SimControl.java",
         "sim_runners"+os.sep+"java"+os.sep+"makefile",
@@ -140,17 +144,27 @@ cellblender_info = {
         "sim_runners"+os.sep+"pure_python"+os.sep+"pure_python_run.py",
 
 
+        "sim_engines"+os.sep+"makefile",
         "sim_engines"+os.sep+"__init__.py",
 
+        "sim_engines"+os.sep+"limited_python"+os.sep+"makefile",
         "sim_engines"+os.sep+"limited_python"+os.sep+"__init__.py",
         "sim_engines"+os.sep+"limited_python"+os.sep+"limited_python_sim.py",
 
+        "sim_engines"+os.sep+"mcell3"+os.sep+"makefile",
+        "sim_engines"+os.sep+"mcell3"+os.sep+"__init__.py",
+        "sim_engines"+os.sep+"mcell3"+os.sep+"data_model_to_mdl_3.py",
+        "sim_engines"+os.sep+"mcell3"+os.sep+"run_data_model_mcell_3.py",
+
+        "sim_engines"+os.sep+"smoldyn248"+os.sep+"makefile",
+        "sim_engines"+os.sep+"smoldyn248"+os.sep+"__init__.py",
+
+        "sim_engines"+os.sep+"limited_cpp"+os.sep+"makefile",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"__init__.py",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"rng.h",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"rng.cpp",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"JSON.c",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"JSON.cpp",
-        "sim_engines"+os.sep+"limited_cpp"+os.sep+"makefile",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"JSON.h",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"JSON.java",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"libMCell.cpp",
@@ -179,6 +193,18 @@ cellblender_info = {
         "bng"+os.sep+"treelib3"+os.sep+"__init__.py",
         "bng"+os.sep+"treelib3"+os.sep+"node.py",
         "bng"+os.sep+"treelib3"+os.sep+"tree.py",
+        "examples"+os.sep+"__init__.py",
+        "examples"+os.sep+"lv.py",
+        "examples"+os.sep+"ficks_laws.py",
+        "examples"+os.sep+"rat_nmj.py",
+        "examples"+os.sep+"pbc.py",
+        "examples"+os.sep+"lipid_raft.py",
+        "examples"+os.sep+"variable_rate_constant.py",
+        "examples"+os.sep+"dynamic_geometry.py",
+        "examples"+os.sep+"dynamic_geometry.blend",
+        "examples"+os.sep+"scripted_dyn_geo.py",
+        "examples"+os.sep+"shape_key_dyn_geo.py",
+        "examples"+os.sep+"dyn_geo_conc_clamp.py",
         #        "bng"+os.sep+"libsbml3"+os.sep+"__init__.py",
         ],
 
