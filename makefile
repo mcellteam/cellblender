@@ -1,10 +1,17 @@
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
+else
+	INSTALL_DIR = /Applications/Blender-2.78c_bundle/blender.app/Contents/Resources/2.78/scripts/addons/
+endif
 
 # Linux:
 #INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
 
+
 # Mac:
 #INSTALL_DIR = ~/Library/Application\ Support/Blender/2.78/scripts/addons/
-INSTALL_DIR = /Applications/Blender-2.78c_bundle/blender.app/Contents/Resources/2.78/scripts/addons/
+#INSTALL_DIR = /Applications/Blender-2.78c_bundle/blender.app/Contents/Resources/2.78/scripts/addons/
 
 SHELL = /bin/sh
 
