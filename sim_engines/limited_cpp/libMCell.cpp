@@ -49,7 +49,7 @@ void MCellSimulation::add_molecule_species ( MCellMoleculeSpecies *species ) {
 
 void MCellSimulation::add_decay_reaction ( MCellMoleculeSpecies *reactant, double rate ) {
   MCellReaction *rxn = new MCellReaction();
-  rxn->reactant = reactant;
+  rxn->reactants.append ( reactant );
   rxn->rate = rate;
   reactions.append ( rxn );
 }
@@ -127,7 +127,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
 
   MCellReleaseSite *this_site;
 
-  for (int rs_num=0; rs_num<this->molecule_release_sites.get_size(); rs_num++) {
+  for (int rs_num=0; rs_num<this->molecule_release_sites.get_num_items(); rs_num++) {
     if (this->print_detail >= 40) cout << "Release Site " << rs_num << endl;
     this_site = this->molecule_release_sites[rs_num];
     if (this->print_detail >= 40) cout << "  Releasing " << this_site->quantity << " molecules of type " << this_site->molecule_species->name << endl;
@@ -141,7 +141,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
       new_mol_instance->x = this_site->x;
       new_mol_instance->y = this_site->y;
       new_mol_instance->z = this_site->z;
-      for (int i=0; i<this->mol_creation_event_handlers.get_size(); i++) {
+      for (int i=0; i<this->mol_creation_event_handlers.get_num_items(); i++) {
         this->mol_creation_event_handlers[i]->execute(new_mol_instance);
       }
     }
@@ -201,7 +201,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
       if (this->print_detail >= 20) cout << "Iteration " << iteration << ", t=" << (time_step*iteration) << "   (from libMCell's run_simulation)" << endl;
     }
 
-    for (int i=0; i<this->timer_event_handlers.get_size(); i++) {
+    for (int i=0; i<this->timer_event_handlers.get_num_items(); i++) {
       this->timer_event_handlers[i]->execute();
     }
 
@@ -279,9 +279,9 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
       for (int sp_num=0; sp_num<this->molecule_species.get_num_items(); sp_num++) {
         this_species = this->molecule_species[this->molecule_species.get_key(sp_num)];
         if (this_species->instance_list != NULL) {
-          for (int rx_num=0; rx_num<this->reactions.get_size(); rx_num++) {
+          for (int rx_num=0; rx_num<this->reactions.get_num_items(); rx_num++) {
             this_rxn = this->reactions[rx_num];
-            if (this_rxn->reactant == this_species) {
+            if (this_rxn->reactants[0] == this_species) {
               // This reaction applies to this molecule
               double fraction_to_remove = this_rxn->rate * time_step;
               double amount_to_remove = fraction_to_remove * this_species->num_instances;
@@ -331,13 +331,21 @@ void MCellSimulation::dump_state ( void ) {
   }
 
   cout << "  Reactions:" << endl;
-  for (int rx_num=0; rx_num<this->reactions.get_size(); rx_num++) {
+  for (int rx_num=0; rx_num<this->reactions.get_num_items(); rx_num++) {
     this_rxn = this->reactions[rx_num];
-    cout << "    Reaction involving molecule \"" << this_rxn->reactant->name << "\" with rate " << this_rxn->rate << endl;
+    cout << "    Reaction: ";
+    for (int m_num=0; m_num<this_rxn->reactants.get_num_items(); m_num++) {
+      cout << this_rxn->reactants[m_num]->name << " ";
+    }
+    cout << "  ->  ";
+    for (int m_num=0; m_num<this_rxn->products.get_num_items(); m_num++) {
+      cout << this_rxn->products[m_num]->name << " ";
+    }
+    cout << "  with rate " << this_rxn->rate << endl;
   }
 
   cout << "  Release Sites:" << endl;
-  for (int rs_num=0; rs_num<this->molecule_release_sites.get_size(); rs_num++) {
+  for (int rs_num=0; rs_num<this->molecule_release_sites.get_num_items(); rs_num++) {
     this_site = this->molecule_release_sites[rs_num];
     cout << "    Release " << this_site->quantity << " molecules of type \"" << this_site->molecule_species->name << "\"" << endl;
   }

@@ -22,11 +22,11 @@ JSON.o: JSON.c JSON.h makefile
 
 
 rng.o: rng.cpp rng.h makefile
-	g++ -o rng.o -c rng.cpp -fPIC -I$(PYTHON_INCLUDE)
+	g++ -o rng.o -c -std=c++11 rng.cpp -fPIC -I$(PYTHON_INCLUDE)
 
 
 StorageClasses.o: StorageClasses.cpp StorageClasses.h makefile
-	g++ -g -c StorageClasses.cpp -o StorageClasses.o
+	g++ -g -c -std=c++11 StorageClasses.cpp -o StorageClasses.o
 
 StorageClasses: StorageClasses.o makefile
 	g++ -g -lm -o StorageClasses StorageClasses.o
@@ -34,14 +34,14 @@ StorageClasses: StorageClasses.o makefile
 
 _libMCell.so: libMCell.cpp rng.cpp libMCell.h rng.h libMCell.i makefile
 	swig -python -c++ -o libMCell_wrap.cpp libMCell.i
-	g++ -c -Wno-write-strings -fpic -I. -I/usr/include libMCell_wrap.cpp rng.cpp libMCell.cpp -I/usr/include/python2.7 -I/usr/lib/python2.7/config
+	g++ -c -std=c++11 -Wno-write-strings -fpic -I. -I/usr/include libMCell_wrap.cpp rng.cpp libMCell.cpp -I/usr/include/python2.7 -I/usr/lib/python2.7/config
 	g++ -shared -I/usr/include rng.o libMCell.o libMCell_wrap.o -o _libMCell.so
 
 libMCell.o: libMCell.cpp libMCell.h makefile
-	g++ -c -Wno-write-strings libMCell.cpp -o libMCell.o
+	g++ -c -std=c++11 -Wno-write-strings libMCell.cpp -o libMCell.o
 
 mcell_main.o: mcell_main.cpp libMCell.h StorageClasses.h makefile
-	g++ -c -Wno-write-strings mcell_main.cpp -o mcell_main.o
+	g++ -c -std=c++11 -Wno-write-strings mcell_main.cpp -o mcell_main.o
 
 mcell_main: mcell_main.o rng.o JSON.o libMCell.o makefile
 	g++ -lm -o mcell_main mcell_main.o rng.o JSON.o libMCell.o
@@ -91,7 +91,7 @@ test_cpp: mcell_main
 test_py: mcell_main.py _libMCell.so
 	python mcell_main.py proj_path=. data_model=dm.txt
 
-install: mcell_main mcell_main_c
+install: mcell_main
 	cp -v mcell_main $(INSTALL_DIR)cellblender/libMCell/
 	cp -v mcell_main_c $(INSTALL_DIR)cellblender/libMCell/
 	cp -v libMCell.cpp $(INSTALL_DIR)cellblender/libMCell/

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,6 +40,24 @@ char *join_path ( char *p1, char sep, char *p2 ) {
     strcpy ( &joined_path[strlen(p1)+1], p2 );
   }
   return ( joined_path );
+}
+
+// http://stackoverflow.com/questions/216823/whats-the-best-way-to-trim-stdstring
+string trim(string& str) {
+  str.erase(0, str.find_first_not_of(' '));       //prefixing spaces
+  str.erase(str.find_last_not_of(' ')+1);         //surfixing spaces
+  return str;
+}
+
+// http://ysonggit.github.io/coding/2014/12/16/split-a-string-using-c.html
+vector<string> split(const string &s, char delim) {
+    stringstream ss(s);
+    string item;
+    vector<string> tokens;
+    while (getline(ss, item, delim)) {
+        tokens.push_back(trim(item));
+    }
+    return tokens;
 }
 
 // These two functions look up names in the parameter dictionary when strings are found:
@@ -264,7 +283,38 @@ int main ( int argc, char *argv[] ) {
   while ((this_rxn=json_get_element_by_index(rxns,rxn_num)) != NULL) {
     mcell_sim->has_reactions = true;
     reaction = new MCellReaction();
-    reaction->reactant = mcell_sim->molecule_species [ json_get_string_value( json_get_element_with_key ( this_rxn, "reactants" ) ) ];
+
+    char *reactants_str;
+    reactants_str = json_get_string_value( json_get_element_with_key ( this_rxn, "reactants" ) );
+    char *products_str;
+    products_str = json_get_string_value( json_get_element_with_key ( this_rxn, "products" ) );
+    cout << "Reaction: " << reactants_str << " -> " << products_str << endl;
+    vector<string> reactants_vec = split(string(reactants_str), '+');
+    for (string s : reactants_vec) {
+      cout << "  Reactant [" << s << "]" << endl;
+      if ( s == "NULL" ) {
+        cout << "    NULL is not added to reactants" << endl;
+      } else {
+        reaction->reactants.append ( mcell_sim->molecule_species [ s.c_str() ] );
+      }
+    }
+    vector<string> products_vec = split(string(products_str), '+');
+    for (string s : products_vec) {
+      cout << "  Product [" << s << "]" << endl;
+      if ( s == "NULL" ) {
+        cout << "    NULL is not added to products" << endl;
+      } else {
+        reaction->products.append ( mcell_sim->molecule_species [ s.c_str() ] );
+      }
+    }
+    
+    if (reaction->reactants.get_size() != 1) {
+      cout << "Warning for " << reactants_str << ": This implementation only supports single reactants ... others ignored" << endl;
+    }
+    if (reaction->products.get_size() != 0) {
+      cout << "Warning for " << products_str << ": This implementation only supports NULL products ... others ignored" << endl;
+    }
+
     reaction->rate = get_float_from_par ( par_dict, json_get_element_with_key ( this_rxn, "fwd_rate" ) );
     mcell_sim->reactions.append ( reaction );
     rxn_num++;

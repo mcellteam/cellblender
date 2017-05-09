@@ -41,10 +41,8 @@ class MCellMoleculeInstance {
 
 class MCellReaction {
  public:
-  // Only allow decay reactions for now
-  MCellMoleculeSpecies *reactant;
-  //ArrayStore<MCellMoleculeSpecies *> reactants;
-  //ArrayStore<MCellMoleculeSpecies *> products;
+  ArrayStore<MCellMoleculeSpecies *> reactants;
+  ArrayStore<MCellMoleculeSpecies *> products;
   double rate;
   MCellReaction *next;
 };
