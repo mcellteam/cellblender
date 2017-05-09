@@ -8,16 +8,17 @@ endif
 # Linux:
 #INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
 
-
 # Mac:
 #INSTALL_DIR = ~/Library/Application\ Support/Blender/2.78/scripts/addons/
 #INSTALL_DIR = /Applications/Blender-2.78c_bundle/blender.app/Contents/Resources/2.78/scripts/addons/
 
 SHELL = /bin/sh
 
-#SUBDIRS = icons io_mesh_mcell_mdl engine_runner_combos sim_engines sim_runners data_plotters developer_utilities
-
-SUBDIRS = icons io_mesh_mcell_mdl sim_engines sim_runners data_plotters developer_utilities
+ifeq ($(UNAME_S),Linux)
+	SUBDIRS = icons io_mesh_mcell_mdl engine_runner_combos sim_engines sim_runners data_plotters developer_utilities
+else
+	SUBDIRS = icons io_mesh_mcell_mdl sim_engines sim_runners data_plotters developer_utilities
+endif
 
 SOURCES = $(shell python cellblender_source_info.py)
 

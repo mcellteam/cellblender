@@ -48,13 +48,13 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   # The data_layout should be a dictionary something like this:
 
   #  {
-  #   "version": 0,
+  #   "version": 2,
   #   "data_layout": [
-  #    ["dir", ["output_data"]],
+  #    ["/DIR", ["output_data"]],
   #    ["dc_a", [1e-06, 1e-05]],
   #    ["nrel", [100.0, 200.0, 300.0]],
-  #    ["file_type", ["react_data", "viz_data"]],
-  #    ["SEED", [100, 101]]
+  #    ["/FILE_TYPE", ["react_data", "viz_data"]],
+  #    ["/SEED", [100, 101]]
   #   ]
   #  }
 
