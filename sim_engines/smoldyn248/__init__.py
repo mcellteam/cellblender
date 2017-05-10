@@ -221,6 +221,8 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
 
   project_files_dir = "" + project_dir
 
+  init = data_model['initialization']
+
   dm_mol_list = data_model['define_molecules']['molecule_list']
   for m in dm_mol_list:
     print ( "Mol: " + str(m) )
@@ -318,9 +320,11 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
 
           f.write ( "\n" )
 
+          smoldyn_time_step = 0.01  # TODO Needs to use CellBlender time step
+          iterations = int(init['iterations'])
           f.write ( "time_start 0\n" )
-          f.write ( "time_stop 10\n" )
-          f.write ( "time_step 0.01\n" )
+          f.write ( "time_step " + str(smoldyn_time_step) + "\n" )
+          f.write ( "time_stop " + str(iterations * smoldyn_time_step) + "\n" )
 
           f.write ( "\n" )
 
