@@ -229,6 +229,11 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   for r in dm_rel_list:
     print ( "Rel: " + str(r) )
 
+  print ( "Geometrical Objects:" )
+  geo_obj_list = data_model['geometrical_objects']['object_list']
+  for o in geo_obj_list:
+    print ( "Obj: " + str(o['name']) )
+
   output_detail = parameter_dictionary['Output Detail (0-100)']['val']
 
   command_line_options = parameter_dictionary['Command Line']['val']
@@ -278,10 +283,15 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
           if output_detail > 0: print ( "Saving model to Smoldyn file: " + run_file )
 
           f = open ( run_file, 'w' )
-          f.write ( "# Smoldyn Simulation Exported from CellBlender\n\n" )
+          f.write ( "# Smoldyn Simulation Exported from CellBlender\n" )
+
+          f.write ( "\n" )
+
           f.write ( "graphics opengl\n" )
           f.write ( "dim 3\n" )
           f.write ( "random_seed " + str(sim_seed) + "\n" )
+
+          f.write ( "\n" )
 
           # Smoldyn gives an error: "simulation dimensions or boundaries are undefined" followed by "Simulation skipped" without boundaries:
           f.write ( "boundaries x " + str(parameter_dictionary['x_bound_min']['val']) + " " + str(parameter_dictionary['x_bound_max']['val']) + " r\n" )
@@ -291,29 +301,64 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
           f.write ( "species" )
           for m in dm_mol_list:
             f.write ( " " + str(m['mol_name']) )
-          f.write ("\n" )
+          f.write ( "\n" )
+
+          f.write ( "\n" )
 
           for m in dm_mol_list:
             mcell_diffusion_constant = float(str(m['diffusion_constant']))
             smoldyn_diffusion_constant = mcell_diffusion_constant * 10000  # Convert due to units difference
             f.write ( "difc " + str(m['mol_name']) + " " + str(smoldyn_diffusion_constant) + "\n" )
 
+          f.write ( "\n" )
+
           for m in dm_mol_list:
             color = m['display']['color']
             f.write ( "color " + str(m['mol_name']) + " " + str(color[0]) + " " + str(color[1]) + " " + str(color[2]) + "\n" )
+
+          f.write ( "\n" )
 
           f.write ( "time_start 0\n" )
           f.write ( "time_stop 10\n" )
           f.write ( "time_step 0.01\n" )
 
+          f.write ( "\n" )
+
           for r in dm_rel_list:
             f.write ( "mol " + r['quantity'] + " " + str(r['molecule']) + " " + r['location_x'] + " " + r['location_y'] + " " + r['location_z'] + "\n" )
+
+          f.write ( "\n" )
+
+          for o in geo_obj_list:
+              f.write ( "start_surface " + str(o['name']) + "\n" )
+              f.write ( "action both all reflect\n" )
+              f.write ( "color both 0.5 0.5 0.5\n" )
+              f.write ( "polygon both edge\n" )
+              vlist = o['vertex_list']
+              loc = o['location']
+              for face in o['element_connections']:
+                  f.write ( "panel tri" )
+                  for vindex in face:
+                      p = vlist[vindex]
+                      i = 0
+                      for coord in p:
+                          f.write ( " " + str(coord + loc[i]) )
+                          i = ( i + 1 ) % len(loc)
+                  f.write ( "\n" )
+              f.write ( "end_surface\n" )
+              f.write ( "\n" )
+
+          f.write ( "\n" )
 
           f.write ( "output_files viz_data.txt viz_data2.txt\n" )
           f.write ( "output_precision 6\n" )
 
+          f.write ( "\n" )
+
           f.write ( "cmd E listmols  viz_data.txt\n" )
           f.write ( "cmd E listmols2 viz_data2.txt\n" )
+
+          f.write ( "\n" )
 
           f.write ( "end_file\n" )
           f.close()
