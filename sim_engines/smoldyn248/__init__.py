@@ -267,31 +267,61 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   min_bounds.append ( float(parameter_dictionary['z_bound_min']['val']) )
   max_bounds.append ( float(parameter_dictionary['z_bound_max']['val']) )
 
-  if auto_bounds:
-    # Recalculate the bounds
-    print ( "Recalculating the bounds based on the objects (might want to include releases as well" )
-    first_value = True
-    for o in geo_obj_list:
-        vlist = o['vertex_list']
-        loc = o['location']
-        for face in o['element_connections']:
-            for vindex in face:
-                p = vlist[vindex]
-                i = 0
-                for coord in p:
-                    if auto_bounds:
-                        if first_value:
-                            min_bounds[i] = coord + loc[i]
-                            max_bounds[i] = min_bounds[i]
-                        else:
-                            if min_bounds[i] > coord + loc[i]:
-                              min_bounds[i] = coord + loc[i]
-                            if max_bounds[i] < coord + loc[i]:
-                              max_bounds[i] = coord + loc[i]
-                    i = ( i + 1 ) % len(loc)
-                first_value = False
+  # Calculate the bounds and attach to each object (needed to get an inside "point" for Smoldyn)
 
-  print ( "Bounds: %s<x<%s, %s<y<%s, %s<z<%s" % (min_bounds[0], max_bounds[0], min_bounds[1], max_bounds[1], min_bounds[2], max_bounds[2], ) )
+  print ( "Calculating the bounds of the objects (might want to include releases as well?)" )
+  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+  for o in geo_obj_list:
+      # Calculate the bounds for this object
+      vlist = o['vertex_list']
+      loc = o['location']
+      smoldyn_bounds = [ [0,0], [0,0], [0,0] ]  # Min and Max for each of three axes (assumes 3D!!)
+      first_value = True
+      for face in o['element_connections']:
+          for vindex in face:
+              p = vlist[vindex]
+              i = 0
+              for coord in p:
+                  if first_value:
+                      smoldyn_bounds[i][0] = coord + loc[i]
+                      smoldyn_bounds[i][1] = smoldyn_bounds[i][0]
+                      first_value = False
+                  else:
+                      if smoldyn_bounds[i][0] > coord + loc[i]:
+                        smoldyn_bounds[i][0] = coord + loc[i]
+                      if smoldyn_bounds[i][1] < coord + loc[i]:
+                        smoldyn_bounds[i][1] = coord + loc[i]
+                  i = ( i + 1 ) % len(loc)
+
+      print ( "Object " + o['name'] + " has bounds " + str(smoldyn_bounds) )
+
+      # Attach the bounds to the object
+
+      o['smoldyn_bounds'] = smoldyn_bounds
+
+  if auto_bounds:
+      # Calculate the global bounds from the bounds stored in each object
+      print ( "Calculating simulation bounds from objects" )
+      first_object = True
+      for o in geo_obj_list:
+          smoldyn_bounds = o['smoldyn_bounds']
+          print ( "  Current Simulation Bounds: %s<x<%s, %s<y<%s, %s<z<%s" % (min_bounds[0], max_bounds[0], min_bounds[1], max_bounds[1], min_bounds[2], max_bounds[2], ) )
+          print ( "    Object " + o['name'] + " has bounds " + str(smoldyn_bounds) )
+
+          i = 0
+          for bound in smoldyn_bounds:
+              if first_object:
+                  min_bounds[i] = bound[0]
+                  max_bounds[i] = bound[1]
+              else:
+                  if min_bounds[i] > bound[0]:
+                    min_bounds[i] = bound[0]
+                  if max_bounds[i] < bound[1]:
+                    max_bounds[i] = bound[1]
+              i = ( i + 1 ) % len(loc)
+          first_object = False
+
+  print ( "Simulation Bounds: %s<x<%s, %s<y<%s, %s<z<%s" % (min_bounds[0], max_bounds[0], min_bounds[1], max_bounds[1], min_bounds[2], max_bounds[2], ) )
 
 
   if not os.path.exists(smoldyn_path):
@@ -371,6 +401,8 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
           f.write ( "\n" )
 
           for r in dm_rel_list:
+            #if r['shape'] == 'OBJECT':
+            #else:
             f.write ( "mol " + r['quantity'] + " " + str(r['molecule']) + " " + r['location_x'] + " " + r['location_y'] + " " + r['location_z'] + "\n" )
 
           f.write ( "\n" )
