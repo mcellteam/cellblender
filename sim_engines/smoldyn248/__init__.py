@@ -7,6 +7,8 @@ import random
 import array
 import shutil
 
+# __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
 print ( "Executing Smoldyn Simulation" )
 
 print ( "Note that CellBlender partitions are used to define Smoldyn Boundaries" )
@@ -164,7 +166,8 @@ def use_cube():
 
 # List of parameters as dictionaries - each with keys for 'name', 'desc', 'def', and optional 'as':
 parameter_dictionary = {
-  'Smoldyn Path': {'val': "//../../../../../smoldyn/smoldyn-2.48/cmake/smoldyn", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
+  'Smoldyn Path': {'val': "//../../../../../smoldyn/smoldyn-2.51/cmake/smoldyn", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
+  'Auto Boundaries': {'val': True, 'desc':"Compute boundaries from all geometric points"},
   'Set Cube Boundaries:': {'val': use_cube, 'desc':"Set Boundaries as cube"},
   'bounding_cube_size': {'val': 2, 'desc':"Cube Boundary Size"},
   'x_bound_min': {'val': -1.0, 'desc':"x boundary (minimum)"},
@@ -181,7 +184,7 @@ parameter_dictionary = {
 
 parameter_layout = [
   ['Smoldyn Path'],
-  ['Set Cube Boundaries:', 'bounding_cube_size'],
+  ['Auto Boundaries', 'Set Cube Boundaries:', 'bounding_cube_size'],
   ['x_bound_min', 'y_bound_min', 'z_bound_min'],
   ['x_bound_max', 'y_bound_max', 'z_bound_max'],
   ['Command Line'],
@@ -252,7 +255,44 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
     blend_file_path = os.path.dirname(os.path.dirname(project_files_dir))
     smoldyn_path = os.path.abspath(os.path.join(blend_file_path, smoldyn_path[2:]))
 
-  # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+  auto_bounds = parameter_dictionary['Auto Boundaries']['val']
+
+  min_bounds = []
+  max_bounds = []
+
+  min_bounds.append ( float(parameter_dictionary['x_bound_min']['val']) )
+  max_bounds.append ( float(parameter_dictionary['x_bound_max']['val']) )
+  min_bounds.append ( float(parameter_dictionary['y_bound_min']['val']) )
+  max_bounds.append ( float(parameter_dictionary['y_bound_max']['val']) )
+  min_bounds.append ( float(parameter_dictionary['z_bound_min']['val']) )
+  max_bounds.append ( float(parameter_dictionary['z_bound_max']['val']) )
+
+  if auto_bounds:
+    # Recalculate the bounds
+    print ( "Recalculating the bounds based on the objects (might want to include releases as well" )
+    first_value = True
+    for o in geo_obj_list:
+        vlist = o['vertex_list']
+        loc = o['location']
+        for face in o['element_connections']:
+            for vindex in face:
+                p = vlist[vindex]
+                i = 0
+                for coord in p:
+                    if auto_bounds:
+                        if first_value:
+                            min_bounds[i] = coord + loc[i]
+                            max_bounds[i] = min_bounds[i]
+                        else:
+                            if min_bounds[i] > coord + loc[i]:
+                              min_bounds[i] = coord + loc[i]
+                            if max_bounds[i] < coord + loc[i]:
+                              max_bounds[i] = coord + loc[i]
+                    i = ( i + 1 ) % len(loc)
+                first_value = False
+
+  print ( "Bounds: %s<x<%s, %s<y<%s, %s<z<%s" % (min_bounds[0], max_bounds[0], min_bounds[1], max_bounds[1], min_bounds[2], max_bounds[2], ) )
+
 
   if not os.path.exists(smoldyn_path):
       print ( "\n\nUnable to run, file does not exist: " + str(parameter_dictionary['Smoldyn Path']['val']) + " (" + smoldyn_path + ")\n\n" )
@@ -296,9 +336,11 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
           f.write ( "\n" )
 
           # Smoldyn gives an error: "simulation dimensions or boundaries are undefined" followed by "Simulation skipped" without boundaries:
-          f.write ( "boundaries x " + str(parameter_dictionary['x_bound_min']['val']) + " " + str(parameter_dictionary['x_bound_max']['val']) + " r\n" )
-          f.write ( "boundaries y " + str(parameter_dictionary['y_bound_min']['val']) + " " + str(parameter_dictionary['y_bound_max']['val']) + " r\n" )
-          f.write ( "boundaries z " + str(parameter_dictionary['z_bound_min']['val']) + " " + str(parameter_dictionary['z_bound_max']['val']) + " r\n" )
+          f.write ( "boundaries x " + str(min_bounds[0]) + " " + str(max_bounds[0]) + " r\n" )
+          f.write ( "boundaries y " + str(min_bounds[1]) + " " + str(max_bounds[1]) + " r\n" )
+          f.write ( "boundaries z " + str(min_bounds[2]) + " " + str(max_bounds[2]) + " r\n" )
+
+          f.write ( "\n" )
 
           f.write ( "species" )
           for m in dm_mol_list:
