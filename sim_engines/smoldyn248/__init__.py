@@ -230,6 +230,10 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   for m in dm_mol_list:
     print ( "Mol: " + str(m) )
 
+  dm_rxn_list = data_model['define_reactions']['reaction_list']
+  for r in dm_rxn_list:
+    print ( "Rxn: " + str(r) )
+
   dm_rel_list = data_model['release_sites']['release_site_list']
   for r in dm_rel_list:
     print ( "Rel: " + str(r) )
@@ -389,6 +393,17 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
           for m in dm_mol_list:
             color = m['display']['color']
             f.write ( "color " + str(m['mol_name']) + " " + str(color[0]) + " " + str(color[1]) + " " + str(color[2]) + "\n" )
+
+          f.write ( "\n" )
+
+          rnum = 1
+          for r in dm_rxn_list:
+              # TODO Rates may need scaling
+              if r['products'] == 'NULL':
+                  f.write ( "reaction R" + str(rnum) + " " + str(r['reactants']) + " -> " +         "0"        + " " + str(r['fwd_rate']) + "\n" )
+              else:
+                  f.write ( "reaction R" + str(rnum) + " " + str(r['reactants']) + " -> " + str(r['products']) + " " + str(r['fwd_rate']) + "\n" )
+              rnum += 1
 
           f.write ( "\n" )
 
