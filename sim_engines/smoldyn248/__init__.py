@@ -400,13 +400,6 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
 
           f.write ( "\n" )
 
-          for r in dm_rel_list:
-            #if r['shape'] == 'OBJECT':
-            #else:
-            f.write ( "mol " + r['quantity'] + " " + str(r['molecule']) + " " + r['location_x'] + " " + r['location_y'] + " " + r['location_z'] + "\n" )
-
-          f.write ( "\n" )
-
           for o in geo_obj_list:
               f.write ( "start_surface " + str(o['name']) + "\n" )
               f.write ( "action both all reflect\n" )
@@ -425,6 +418,23 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
                   f.write ( "\n" )
               f.write ( "end_surface\n" )
               f.write ( "\n" )
+              f.write ( "start_compartment " + str(o['name']) + "_comp\n" )
+              f.write ( "surface " + str(o['name']) + "\n" )
+              print ( "Calculate Center Point for " + o['name'] + " from " + str(o['smoldyn_bounds']) )
+              center_point = [ (o['smoldyn_bounds'][0][0] + o['smoldyn_bounds'][0][1] ) / 2,
+                               (o['smoldyn_bounds'][1][0] + o['smoldyn_bounds'][1][1] ) / 2,
+                               (o['smoldyn_bounds'][2][0] + o['smoldyn_bounds'][2][1] ) / 2 ]
+              f.write ( "point " + str(center_point[0]) + " " + str(center_point[1]) + " " + str(center_point[2]) + "\n" )
+              f.write ( "end_compartment\n" )
+              f.write ( "\n" )
+
+          f.write ( "\n" )
+
+          for r in dm_rel_list:
+              if r['shape'] == 'OBJECT':
+                  f.write ( "compartment_mol " + r['quantity'] + " " + str(r['molecule']) + " " + r['object_expr'] + "_comp" + "\n" )
+              else:
+                  f.write ( "mol " + r['quantity'] + " " + str(r['molecule']) + " " + r['location_x'] + " " + r['location_y'] + " " + r['location_z'] + "\n" )
 
           f.write ( "\n" )
 
