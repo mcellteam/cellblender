@@ -186,8 +186,7 @@ for i in range(iterations+1):
     int_array.tofile(f)
     
     dc = convert_to_value(m['diffusion_constant'])
-    ds = 6000 * math.sqrt( 6 * dc * time_step )    # N O T E:  This is a guess!!!!  (TODO: Make this realistic)
-
+    ds = math.sqrt(4.0 * 1.0e8 * dc * time_step);
     for mi in m['instances']:
       x = mi[0]
       y = mi[1]
@@ -195,9 +194,9 @@ for i in range(iterations+1):
       mol_pos = array.array("f")
       mol_pos.fromlist ( [ x, y, z ] )
       mol_pos.tofile(f)
-      mi[0] += random.gauss(0.0,ds)
-      mi[1] += random.gauss(0.0,ds)
-      mi[2] += random.gauss(0.0,ds)
+      mi[0] += random.gauss(0.0,ds) * 0.70710678118654752440
+      mi[1] += random.gauss(0.0,ds) * 0.70710678118654752440
+      mi[2] += random.gauss(0.0,ds) * 0.70710678118654752440
   f.close()
   # Write the count data (every iteration for now)
   for m in mols:

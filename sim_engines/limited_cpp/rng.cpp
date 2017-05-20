@@ -16,12 +16,12 @@
 
 double MCellRandomNumber::rng_gauss() {
   // printf ( "  rng_gauss() called from rng.cpp\n" );
-  int n=16;
+  int n=12;
   double sum = 0.0;
   for (int i=0; i<n; i++) {
     sum += drand48();
   }
-  return ( (sum - (n/2.0)) * 6 / n );  // The 6 should be 12, but 6 matches MCell
+  return ( sum - 6 );
 };
 
 MCellRandomNumber_mrng::MCellRandomNumber_mrng ( uint32_t seed ) {

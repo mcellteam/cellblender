@@ -9,9 +9,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <math.h>
+#include <time.h>
 
 #include "libMCell.h"
 #include "StorageClasses.h"
+#include "rng.h"
 
 extern "C" {
 #include "JSON.h"
@@ -121,6 +123,22 @@ int main ( int argc, char *argv[] ) {
 
   for (int i=1; i<argc; i++) {
     if (print_detail > 10) printf ( "   Arg: %s\n", argv[i] );
+    if (strcmp("test_rng",argv[i]) == 0) {
+      int num_cases = 1000;
+      double mean = 0.0;
+      double variance = 0.0;
+      double samp = 0.0;
+      MCellRandomNumber_mrng *mcell_random = new MCellRandomNumber_mrng((uint32_t)(clock()));
+      for (int i=0; i<num_cases; i++) {
+        samp = mcell_random->rng_gauss();
+        mean = mean + samp;
+        variance = variance + (samp * samp);
+      }
+      mean = mean / num_cases;
+      variance = variance / num_cases;
+      printf ( "C++: mean=%g, var=%g\n", mean, variance );
+      exit(0);
+    }
     if (strncmp("proj_path=",argv[i],10) == 0) {
       proj_path = &argv[i][10];
     }

@@ -254,7 +254,7 @@ void MCellSimulation::run_simulation ( char *proj_path ) {
       double dc = this_species->diffusion_constant;
 
       // From one branch of mcell_species.c ...  Determine the actual space step and time step
-      double ds = sqrt(16.0 * 1.0e8 * dc * time_step);
+      double ds = sqrt(4.0 * 1.0e8 * dc * time_step);
 
       while (this_mol_instance != NULL) {
         float_val = this_mol_instance->x;
