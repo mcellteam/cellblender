@@ -186,7 +186,7 @@ for i in range(iterations+1):
     int_array.tofile(f)
     
     dc = convert_to_value(m['diffusion_constant'])
-    ds = math.sqrt(4.0 * 1.0e8 * dc * time_step);
+    ds = math.sqrt(4.0 * 1.0e8 * dc * time_step)
     for mi in m['instances']:
       x = mi[0]
       y = mi[1]
