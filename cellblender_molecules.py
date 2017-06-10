@@ -715,6 +715,21 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         remove_mol_data_by_name ( self.name, context )
 
 
+    def add_component ( self, name ):
+        new_comp = self.component_list.add()
+        new_comp.component_name = name
+        new_comp.states_string = ""
+        self.active_component_index = len(self.component_list)-1
+
+
+    def remove_active_component ( self, context ):
+        if len(self.component_list) > 0:
+            self.component_list.remove ( self.active_component_index )
+            self.active_component_index -= 1
+            if self.active_component_index < 0:
+                self.active_component_index = 0
+
+
     def build_data_model_from_properties ( self ):
         m = self
 
@@ -1349,7 +1364,6 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
     molecule_list = CollectionProperty(type=MCellMoleculeProperty, name="Molecule List")
     active_mol_index = IntProperty(name="Active Molecule Index", default=0)
     next_id = IntProperty(name="Counter for Unique Molecule IDs", default=1)  # Start ID's at 1 to confirm initialization
-    next_comp_id = IntProperty(name="Counter for Unique Component IDs", default=1)  # Start ID's at 1 to confirm initialization
     show_advanced = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_components = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
@@ -1357,6 +1371,15 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
     show_extra_columns = bpy.props.BoolProperty(default=False, description="Show additional visibility control columns")
 
     next_color = IntProperty (default=0)  # Keeps track of the next molecule color to use
+
+    def allocate_available_id ( self ):
+        """ Return a unique molecule ID for a new molecule """
+        if len(self.molecule_list) <= 0:
+            # Reset the ID to 1 when there are no more molecules
+            self.next_id = 1
+        self.next_id += 1
+        return ( self.next_id - 1 )
+
 
 
     def init_properties ( self, parameter_system ):
@@ -1371,7 +1394,6 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         self.molecule_list.clear()
         self.active_mol_index = 0
         self.next_id = 1
-        self.next_comp_id = 1
         print ( "Done removing all Molecule List Properties." )
         
     
@@ -1385,7 +1407,6 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
 
     def remove_active_molecule ( self, context ):
         """ Remove the active molecule from the list of molecules """
-        print ( "Call to: \"remove_active_molecule\"" )
         if len(self.molecule_list) > 0:
             mol = self.molecule_list[self.active_mol_index]
             if mol:
@@ -1404,28 +1425,17 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
 
     def add_component ( self, context ):
         """ Add a new component to the active molecule """
-        print ( "Call to: \"add_component\"" )
         if len(self.molecule_list) > 0:
             mol = self.molecule_list[self.active_mol_index]
             if mol:
-                new_comp = mol.component_list.add()
-                new_comp.component_name = "c" + str(self.next_comp_id)
-                new_comp.states_string = ""
-                self.next_comp_id += 1
-                mol.active_component_index = len(mol.component_list)-1
+                mol.add_component ( "C" + str(self.allocate_available_id()) )
 
     def remove_active_component ( self, context ):
         """ Remove the active component from the active molecule """
-        print ( "Call to: \"remove_active_component\"" )
         if len(self.molecule_list) > 0:
             mol = self.molecule_list[self.active_mol_index]
             if mol:
-              if len(mol.component_list) > 0:
-                  mol.component_list.remove ( mol.active_component_index )
-                  mol.active_component_index -= 1
-                  if mol.active_component_index < 0:
-                      mol.active_component_index = 0
-
+              mol.remove_active_component ( context )
 
 
     def build_data_model_from_properties ( self, context ):
@@ -1512,15 +1522,6 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         mol.status = status
 
         return
-
-
-    def allocate_available_id ( self ):
-        """ Return a unique molecule ID for a new molecule """
-        if len(self.molecule_list) <= 0:
-            # Reset the ID to 1 when there are no more molecules
-            self.next_id = 1
-        self.next_id += 1
-        return ( self.next_id - 1 )
 
 
     def draw_layout ( self, context, layout ):
