@@ -453,9 +453,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         description="If selected, molecule will not initiate reactions when "
                     "it runs into other molecules. Can speed up simulations.")
 
-    custom_time_step =   PointerProperty ( name="Molecule Custom Time Step",   type=parameter_system.Parameter_Reference )
-    custom_space_step =  PointerProperty ( name="Molecule Custom Space Step",  type=parameter_system.Parameter_Reference )
-    # TODO: Add after data model release:  maximum_step_length =  PointerProperty ( name="Maximum Step Length",  type=parameter_system.Parameter_Reference )
+    custom_time_step =    PointerProperty ( name="Molecule Custom Time Step",  type=parameter_system.Parameter_Reference )
+    custom_space_step =   PointerProperty ( name="Molecule Custom Space Step", type=parameter_system.Parameter_Reference )
+    maximum_step_length = PointerProperty ( name="Maximum Step Length",        type=parameter_system.Parameter_Reference )
 
     usecolor = BoolProperty ( name="Use this Color", default=True, description='Use Molecule Color instead of Material Color', update=display_callback )
     color = FloatVectorProperty ( name="", min=0.0, max=1.0, default=(0.5,0.5,0.5), subtype='COLOR', description='Molecule Color', update=display_callback )
@@ -526,34 +526,47 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         self.name = "Molecule_"+str(self.id)
         self.old_name = self.name
 
-        helptext = "Molecule Diffusion Constant\n" + \
+        helptext = "Molecule Diffusion Constant - \n" + \
                    "This molecule diffuses in space with 3D diffusion constant for volume molecules.\n" + \
                    "This molecule diffuses on a surface with 2D diffusion constant for surface molecules.\n" + \
                    "The Diffusion Constant can be zero, in which case the molecule doesn’t move."
         self.diffusion_constant.init_ref   ( parameter_system, user_name="Diffusion Constant",   user_expr="0", user_units="cm^2/sec", user_descr=helptext )
 
-        helptext = "Molecule Custom Time Step\n" + \
+        helptext = "Molecule Custom Time Step - \n" + \
                    "This molecule should take timesteps of this length (in seconds).\n" + \
                    "Use either this or CUSTOM_SPACE_STEP, not both."
         self.custom_time_step.init_ref     ( parameter_system, user_name="Custom Time Step",     user_expr="",  user_units="seconds",  user_descr=helptext )
 
-        helptext = "Molecule Custom Space Step\n" + \
+        helptext = "Molecule Custom Space Step - \n" + \
                    "This molecule should take steps of this average length (in microns).\n" + \
                    "If you use this directive, do not set CUSTOM_TIME_STEP.\n" + \
                    "Providing a CUSTOM_SPACE_STEP for a molecule overrides a potentially\n" + \
                    "present global SPACE_STEP for this particular molecule."
         self.custom_space_step.init_ref    ( parameter_system, user_name="Custom Space Step",    user_expr="",  user_units="microns",  user_descr=helptext )
+
+        helptext = "Maximum Step Length - \n" + \
+                   "This molecule should never step farther than length L (in microns) during a\n" + \
+                   "single timestep. This can be used to speed up simulations by enforcing a certain\n" + \
+                   "maximum step length for molecules such as molecular motors on a surface\n" + \
+                   "without having to reduce the global timestep unnecessarily. Please use this\n" + \
+                   "keyword with care since it may give rise to a non-equilibrium distribution of\n" + \
+                   "the given molecule and also cause deviations from mass action kinetics."
+        self.maximum_step_length.init_ref  ( parameter_system, user_name="Maximum Step Length",  user_expr="",  user_units="microns",  user_descr=helptext )
+
         self.create_mol_data() #(context)
-        # TODO: Add after data model release:  self.maximum_step_length.init_ref  ( parameter_system, user_name="Maximum Step Length",  user_expr="",  user_units="microns",  user_descr="Molecule should never step farther than this length during a single timestep. Use with caution (see documentation)." )
 
 
     def remove_properties ( self, context ):
-        print ( "Removing all Molecule Properties ... not implemented yet!" )
+        print ( "Removing all Molecule Properties ..." )
         ps = context.scene.mcell.parameter_system
         self.diffusion_constant.clear_ref ( ps )
         self.custom_time_step.clear_ref ( ps )
         self.custom_space_step.clear_ref ( ps )
+        self.maximum_step_length.clear_ref ( ps )
         self.remove_mol_data ( context )
+        self.component_list.clear()
+        self.active_component_index = 0
+        print ( "Done removing all Molecule Properties." )
 
 
     def initialize ( self, context ):
@@ -715,10 +728,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         remove_mol_data_by_name ( self.name, context )
 
 
-    def add_component ( self, name ):
+    def add_component ( self, name, states="" ):
         new_comp = self.component_list.add()
         new_comp.component_name = name
-        new_comp.states_string = ""
+        new_comp.states_string = states
         self.active_component_index = len(self.component_list)-1
 
 
@@ -732,19 +745,20 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def build_data_model_from_properties ( self ):
         m = self
-
         m_dict = {}
-        m_dict['data_model_version'] = "DM_2016_01_13_1930"
+        m_dict['data_model_version'] = "DM_2017_06_19_1960"
         m_dict['mol_name'] = m.name
+        comp_list = []
+        for comp in self.component_list:
+          comp_list.append ( { 'cname':comp.component_name, 'cstates':comp.states_string.replace(',',' ').split() } )
+        m_dict['bngl_component_list'] = comp_list
         m_dict['mol_bngl_label'] = m.bnglLabel
         m_dict['mol_type'] = str(m.type)
         m_dict['diffusion_constant'] = m.diffusion_constant.get_expr()
         m_dict['target_only'] = m.target_only
         m_dict['custom_time_step'] = m.custom_time_step.get_expr()
         m_dict['custom_space_step'] = m.custom_space_step.get_expr()
-        m_dict['custom_space_step'] = m.custom_space_step.get_expr()
-        # TODO: Add after data model release:   m_dict['maximum_step_length'] = m.maximum_step_length.get_expr()
-        m_dict['maximum_step_length'] = ""  # TODO: Remove this line after data model release
+        m_dict['maximum_step_length'] = m.maximum_step_length.get_expr()
         m_dict['export_viz'] = m.export_viz
         disp_dict = {}
         disp_dict['glyph'] = str(m.glyph)
@@ -803,8 +817,14 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             dm['display'] = disp_dict
             dm['data_model_version'] = "DM_2016_01_13_1930"
 
+        if dm['data_model_version'] == "DM_2016_01_13_1930":
+            # Change on June 9th, 2017: the maximum_step_length and bngl_component_list was added
+            dm['maximum_step_length'] = ""
+            dm['bngl_component_list'] = []
+            dm['data_model_version'] = "DM_2017_06_19_1960"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2016_01_13_1930":
+        if dm['data_model_version'] != "DM_2017_06_19_1960":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
             return None
 
@@ -813,17 +833,20 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm_dict ):
         # Check that the data model version matches the version for this property group
-        if dm_dict['data_model_version'] != "DM_2016_01_13_1930":
+        if dm_dict['data_model_version'] != "DM_2017_06_19_1960":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
         # Now convert the updated Data Model into CellBlender Properties
         self.name = dm_dict["mol_name"]
+        if "bngl_component_list" in dm_dict:
+            for comp in dm_dict["bngl_component_list"]:
+                self.add_component ( comp['cname'], " ".join(comp['cstates']) )
         if "mol_bngl_label" in dm_dict: self.bnglLabel = dm_dict['mol_bngl_label']
         if "mol_type" in dm_dict: self.type = dm_dict["mol_type"]
         if "diffusion_constant" in dm_dict: self.diffusion_constant.set_expr ( dm_dict["diffusion_constant"] )
         if "target_only" in dm_dict: self.target_only = dm_dict["target_only"]
         if "custom_time_step" in dm_dict: self.custom_time_step.set_expr ( dm_dict["custom_time_step"] )
         if "custom_space_step" in dm_dict: self.custom_space_step.set_expr ( dm_dict["custom_space_step"] )
-        # TODO: Add after data model release:   self.maximum_step_length.set_expr ( dm_dict["maximum_step_length"] )
+        if "maximum_step_length" in dm_dict: self.maximum_step_length.set_expr ( dm_dict["maximum_step_length"] )
         if "export_viz" in dm_dict: self.export_viz = dm_dict["export_viz"]
 
         if "display" in dm_dict:
@@ -849,6 +872,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 bpy.data.materials[mat_name].emit = disp_dict['emit']
 
 
+
     def check_properties_after_building ( self, context ):
         print ( "check_properties_after_building not implemented for " + str(self) )
 
@@ -859,14 +883,10 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def draw_props ( self, layout, molecules, parameter_system ):
 
-        helptext = "Molecule Name\nThis is the name used in Reactions and Display"
+        helptext = "Molecule Name - \nThis is the name used in Reactions and Display"
         parameter_system.draw_prop_with_help ( layout, "Name", self, "name", "name_show_help", self.name_show_help, helptext )
 
-        #helptext = "This is a BNGL label that is used to identify a given species \n \
-        #            as a complex molecule."
-        #parameter_system.draw_prop_with_help ( layout, "BNGL Label", self, "bnglLabel", "bngl_label_show_help", self.bngl_label_show_help, helptext )
-
-        helptext = "Molecule Type: Either Volume or Surface\n" + \
+        helptext = "Molecule Type - Either Volume or Surface\n" + \
                    "Volume molecules are placed in and diffuse in 3D spaces." + \
                    "Surface molecules are placed on and diffuse on 2D surfaces."
         parameter_system.draw_prop_with_help ( layout, "Molecule Type", self, "type", "type_show_help", self.type_show_help, helptext )
@@ -926,24 +946,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
             if self.component_list:
                 comp = self.component_list[self.active_component_index]
-
-
-            """ Old Code
-            row = layout.row()
-            col = row.column()
-            col.template_list("MCell_UL_check_molecule", "define_molecules",
-                              self, "molecule_list",
-                              self, "active_mol_index",
-                              rows=2)
-            col = row.column(align=True)
-            col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
-            col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
-            if self.molecule_list:
-                mol = self.molecule_list[self.active_mol_index]
-                # The self is needed to pass the "advanced" flag to the molecule
-                mol.draw_props ( layout, self, mcell.parameter_system )
-            """
-
 
 
         box = layout.box()
@@ -1012,31 +1014,6 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             else:
                 print ( "Material " + mat_name + " not found, not showing materials" )
 
-            """
-            row = box.row()
-            row.label ( "Molecule Display Settings" )
-            row = box.row()
-            col = row.column()
-            col.prop ( self, "glyph" )
-            col = row.column()
-            col.prop ( self, "scale" )
-            row = box.row()
-            col = row.column()
-            mol_mat_name = 'mol_' + self.name + '_mat'
-            if False and mol_mat_name in bpy.data.materials.keys():
-                # This would control the actual Blender material property directly
-                col.prop ( bpy.data.materials[mol_mat_name], "diffuse_color" )
-                col = row.column()
-                col.prop ( bpy.data.materials[mol_mat_name], "emit" )
-            else:
-                # This controls the molecule property which changes the Blender property via callback
-                # But changing the color via the Materials interface doesn't change these values
-                col.prop ( self, "color" )
-                col = row.column()
-                col.prop ( self, "emit" )
-            #col = row.column()
-            #col.prop ( self, "usecolor" )
-            """
 
         box = layout.box()
         row = box.row(align=True)
@@ -1058,7 +1035,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 "does not affect unimolecular reactions." )
             self.custom_time_step.draw(box,parameter_system)
             self.custom_space_step.draw(box,parameter_system)
-
+            self.maximum_step_length.draw(box,parameter_system)
 
     def check_callback(self, context):
         """Allow the parent molecule list (MCellMoleculesListProperty) to do the checking"""
@@ -1551,23 +1528,6 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
                 mol = self.molecule_list[self.active_mol_index]
                 #mol.draw_layout ( context, layout, self )
                 mol.draw_props ( layout, self, mcell.parameter_system )
-
-
-            """ Old Code
-            row = layout.row()
-            col = row.column()
-            col.template_list("MCell_UL_check_molecule", "define_molecules",
-                              self, "molecule_list",
-                              self, "active_mol_index",
-                              rows=2)
-            col = row.column(align=True)
-            col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
-            col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
-            if self.molecule_list:
-                mol = self.molecule_list[self.active_mol_index]
-                # The self is needed to pass the "advanced" flag to the molecule
-                mol.draw_props ( layout, self, mcell.parameter_system )
-            """
 
 
     def draw_panel ( self, context, panel ):
