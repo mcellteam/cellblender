@@ -189,6 +189,28 @@ class MCELL_OT_molecule_remove(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_mol_comp_add(bpy.types.Operator):
+    bl_idname = "mcell.mol_comp_add"
+    bl_label = "Add Component"
+    bl_description = "Add a new component to molecule"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        context.scene.mcell.molecules.add_component(context)
+        return {'FINISHED'}
+
+class MCELL_OT_mol_comp_remove(bpy.types.Operator):
+    bl_idname = "mcell.mol_comp_remove"
+    bl_label = "Remove Component"
+    bl_description = "Remove selected component from molecule"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        context.scene.mcell.molecules.remove_active_component(context)
+        self.report({'INFO'}, "Deleted Component")
+        return {'FINISHED'}
+
+
 class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
     bl_idname = "mcell.set_molecule_glyph"
     bl_label = "Set Molecule Glyph"
@@ -387,6 +409,13 @@ def remove_mol_data_by_name ( mol_name, context ):
             except: pass
 
 
+class MCellMolComponentProperty(bpy.types.PropertyGroup):
+    contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
+    component_name = StringProperty(default="", description="Component name")
+    states_string = StringProperty(default="", description="States String")
+
+
+
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     name = StringProperty(
@@ -394,6 +423,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         description="The molecule species name",
         update=name_change_callback)
     old_name = StringProperty(name="Old Mol Name", default="Molecule")
+
+    component_list = CollectionProperty(type=MCellMolComponentProperty, name="Component List")
+    active_component_index = IntProperty(name="Active Component Index", default=0)
 
     shape_name = StringProperty(name="ShapeName", default="")
     material_name = StringProperty(name="MatName", default="")
@@ -815,9 +847,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         helptext = "Molecule Name\nThis is the name used in Reactions and Display"
         parameter_system.draw_prop_with_help ( layout, "Name", self, "name", "name_show_help", self.name_show_help, helptext )
 
-        helptext = "This is a BNGL label that is used to identify a given species \n \
-                    as a complex molecule."
-        parameter_system.draw_prop_with_help ( layout, "BNGL Label", self, "bnglLabel", "bngl_label_show_help", self.bngl_label_show_help, helptext )
+        #helptext = "This is a BNGL label that is used to identify a given species \n \
+        #            as a complex molecule."
+        #parameter_system.draw_prop_with_help ( layout, "BNGL Label", self, "bnglLabel", "bngl_label_show_help", self.bngl_label_show_help, helptext )
 
         helptext = "Molecule Type: Either Volume or Surface\n" + \
                    "Volume molecules are placed in and diffuse in 3D spaces." + \
@@ -842,6 +874,62 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         row = layout.row()
         row.label(text="lr_bar:  %.4g  microns"%(lr_bar_display), icon='BLANK1')  # BLANK1 RIGHTARROW_THIN SMALL_TRI_RIGHT_VEC DISCLOSURE_TRI_RIGHT_VEC DRIVER DOT FORWARD LINKED
         #layout.prop ( self, "lr_bar_trigger", icon='NONE', text="lr_bar: " + str(lr_bar_display) )
+
+
+        box = layout.box()
+        row = box.row(align=True)
+        row.alignment = 'LEFT'
+        
+        comp_label = "BNGL: " + self.name
+        if len(self.component_list) > 0:
+          comp_list = []
+          for comp in self.component_list:
+            cname = comp.component_name
+            # state_list = comp.states_string.replace(',',' ').split() # Allows commas as separators
+            state_list = comp.states_string.split()
+            if len(state_list) > 0:
+              cname += "~"+"~".join(state_list)
+            comp_list.append(cname)
+          comp_label += " ( " + ", ".join(comp_list) + " )"
+
+        if not molecules.show_components:
+            row.prop(molecules, "show_components", icon='TRIA_RIGHT', text=comp_label, emboss=False)
+        else:
+            row.prop(molecules, "show_components", icon='TRIA_DOWN',  text=comp_label, emboss=False)
+
+            row = box.row()
+            col = row.column()
+            col.template_list("MCell_UL_check_component", "define_molecules",
+                              self, "component_list",
+                              self, "active_component_index",
+                              rows=4)
+            col = row.column(align=False)
+            # Use subcolumns to group logically related buttons together
+            subcol = col.column(align=True)
+            subcol.operator("mcell.mol_comp_add", icon='ZOOMIN', text="")
+            subcol.operator("mcell.mol_comp_remove", icon='ZOOMOUT', text="")
+
+            if self.component_list:
+                comp = self.component_list[self.active_component_index]
+
+
+            """ Old Code
+            row = layout.row()
+            col = row.column()
+            col.template_list("MCell_UL_check_molecule", "define_molecules",
+                              self, "molecule_list",
+                              self, "active_mol_index",
+                              rows=2)
+            col = row.column(align=True)
+            col.operator("mcell.molecule_add", icon='ZOOMIN', text="")
+            col.operator("mcell.molecule_remove", icon='ZOOMOUT', text="")
+            if self.molecule_list:
+                mol = self.molecule_list[self.active_mol_index]
+                # The self is needed to pass the "advanced" flag to the molecule
+                mol.draw_props ( layout, self, mcell.parameter_system )
+            """
+
+
 
         box = layout.box()
         row = box.row(align=True)
@@ -1190,6 +1278,18 @@ class MCell_UL_check_molecule(bpy.types.UIList):
                     col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_LENNARDJONES')
 
 
+class MCell_UL_check_component(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        # print ("Draw with " + str(data) + " " + str(item) + " " + str(active_data) + " " + str(active_propname) + " " + str(index) )
+        col = layout.column()
+        col.label(text='Component / States:', icon='NONE')
+        col = layout.column()
+        col.prop(item, "component_name", text='', icon='NONE')
+        col = layout.column()
+        col.prop(item, "states_string", text='', icon='NONE')
+
+
+
 class MCell_OT_molecule_show_all(bpy.types.Operator):
     bl_idname = "mcell.molecule_show_all"
     bl_label = "Show All"
@@ -1249,7 +1349,9 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
     molecule_list = CollectionProperty(type=MCellMoleculeProperty, name="Molecule List")
     active_mol_index = IntProperty(name="Active Molecule Index", default=0)
     next_id = IntProperty(name="Counter for Unique Molecule IDs", default=1)  # Start ID's at 1 to confirm initialization
+    next_comp_id = IntProperty(name="Counter for Unique Component IDs", default=1)  # Start ID's at 1 to confirm initialization
     show_advanced = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
+    show_components = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_preview = bpy.props.BoolProperty(default=False, name="Material Preview")
     show_extra_columns = bpy.props.BoolProperty(default=False, description="Show additional visibility control columns")
@@ -1269,6 +1371,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         self.molecule_list.clear()
         self.active_mol_index = 0
         self.next_id = 1
+        self.next_comp_id = 1
         print ( "Done removing all Molecule List Properties." )
         
     
@@ -1296,6 +1399,34 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
                 self.next_id = 1
             if self.molecule_list:
                 self.check(context)
+
+
+
+    def add_component ( self, context ):
+        """ Add a new component to the active molecule """
+        print ( "Call to: \"add_component\"" )
+        if len(self.molecule_list) > 0:
+            mol = self.molecule_list[self.active_mol_index]
+            if mol:
+                new_comp = mol.component_list.add()
+                new_comp.component_name = "c" + str(self.next_comp_id)
+                new_comp.states_string = ""
+                self.next_comp_id += 1
+                mol.active_component_index = len(mol.component_list)-1
+
+    def remove_active_component ( self, context ):
+        """ Remove the active component from the active molecule """
+        print ( "Call to: \"remove_active_component\"" )
+        if len(self.molecule_list) > 0:
+            mol = self.molecule_list[self.active_mol_index]
+            if mol:
+              if len(mol.component_list) > 0:
+                  mol.component_list.remove ( mol.active_component_index )
+                  mol.active_component_index -= 1
+                  if mol.active_component_index < 0:
+                      mol.active_component_index = 0
+
+
 
     def build_data_model_from_properties ( self, context ):
         print ( "Molecule List building Data Model" )
