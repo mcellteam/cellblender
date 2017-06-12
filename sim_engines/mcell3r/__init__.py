@@ -29,6 +29,8 @@ def reset():
 # Get data from Blender / CellBlender
 import bpy
 mcell_path = ""
+bionetgen_path = ""
+nfsim_path = ""
 try:
   mcell_path = bpy.context.scene.mcell.cellblender_preferences.mcell_binary
 except:
@@ -37,16 +39,19 @@ except:
 
 # List of parameters as dictionaries - each with keys for 'name', 'desc', 'def', and optional 'as':
 parameter_dictionary = {
+  'MCellR Path':    {'val': mcell_path,     'as':'filename', 'desc':"MCellR Path",    'icon':'FORCE_LENNARDJONES'},
+  'BioNetGen Path': {'val': bionetgen_path, 'as':'filename', 'desc':"BioNetGen Path", 'icon':'OUTLINER_DATA_MESH'},
+  'NFSim Path':     {'val': nfsim_path,     'as':'filename', 'desc':"NFSim Path",     'icon':'DRIVER'},
   'Output Detail (0-100)': {'val': 20, 'desc':"Amount of Information to Print (0-100)", 'icon':'INFO'},
-  'MCellR Path': {'val': mcell_path, 'as':'filename', 'desc':"MCellR Path", 'icon':'SCRIPTWIN'},
-  'Reaction Factor': {'val': 1.0, 'desc':"Decay Rate Multiplier", 'icon':'ARROW_LEFTRIGHT'},
   'Print Information': {'val': print_info, 'desc':"Print information about Limited Python Simulation"},
   'Reset': {'val': reset, 'desc':"Reset everything"}
 }
 
 parameter_layout = [
-  ['Output Detail (0-100)'],
   ['MCellR Path'],
+  ['BioNetGen Path'],
+  ['NFSim Path'],
+  ['Output Detail (0-100)'],
   ['Print Information', 'Reset']
 ]
 
