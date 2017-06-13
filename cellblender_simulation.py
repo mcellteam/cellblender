@@ -966,6 +966,12 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
 
         status = ""
 
+
+        # Force an update of the pluggable items - needed after starting Blender.
+        mcell.sim_engines.plugs_changed_callback ( context )
+        mcell.sim_runners.plugs_changed_callback ( context )
+
+
         if active_engine_module == None:
             print ( "Cannot run without selecting a simulation engine" )
             status = "Error: No simulation engine selected"
@@ -2200,6 +2206,16 @@ had no limit."""
 
 
 
+@persistent
+def load_pluggables(context):
+    print ( "load post handler: cellblender_simulation.load_pluggables() called" )
+    if context != None:
+        # Force an update of the pluggable items.
+        print ("MCellPropertyGroup.init_properties is updating engines and runners")
+        load_plug_modules(context)
+        context.scene.mcell.sim_engines.plugs_changed_callback ( context )
+        context.scene.mcell.sim_runners.plugs_changed_callback ( context )
+
 
 ###########################################################################
 ###########################################################################
@@ -2222,7 +2238,7 @@ active_engine_module = None
 active_runner_module = None
 
 
-def load_plug_modules():
+def load_plug_modules(context):
     # print ( "Call to load_plug_modules" )
     if engine_manager.plug_modules == None:
         engine_manager.plug_modules = engine_manager.get_modules()
@@ -2230,7 +2246,7 @@ def load_plug_modules():
         runner_manager.plug_modules = runner_manager.get_modules()
 
 def get_engines_as_items(scene, context):
-    load_plug_modules()
+    load_plug_modules(context)
     # Start with any static modules that should always be in the list
     plugs_list = [("NONE", "Choose Engine", "")]
     # Add the dynamic modules
@@ -2239,7 +2255,7 @@ def get_engines_as_items(scene, context):
     return plugs_list
 
 def get_runners_as_items(scene, context):
-    load_plug_modules()
+    load_plug_modules(context)
     # Start with any static modules that should always be in the list
     plugs_list = [("NONE", "Choose Runner", "")]
     # Add the dynamic modules
@@ -2257,6 +2273,8 @@ class PLUGGABLE_OT_Reload(bpy.types.Operator):
     print ( "pluggable.reload.execute()" )
     engine_manager.plug_modules = None
     runner_manager.plug_modules = None
+    context.scene.mcell.sim_engines.plugs_changed_callback ( context )
+    context.scene.mcell.sim_runners.plugs_changed_callback ( context )
     return{'FINISHED'}
 
 
@@ -2511,6 +2529,8 @@ class Pluggable(bpy.types.PropertyGroup):
     def plugs_changed_callback ( self, context ):
         global active_engine_module
         global active_runner_module
+
+        # print ( "plugs_changed_callback called" )
 
         selected_module_code = None
         active_sub_module = None

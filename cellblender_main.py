@@ -110,7 +110,7 @@ def init_properties(context):
         context = bpy.context
     mcell = context.scene.mcell
     if not mcell.initialized:
-        mcell.init_properties()
+        mcell.init_properties(context)
         mcell.initialized = True
 
 
@@ -173,7 +173,7 @@ class PP_OT_init_mcell(bpy.types.Operator):
     def execute(self, context):
         print ( "Initializing CellBlender" )
         mcell = context.scene.mcell
-        mcell.init_properties()
+        mcell.init_properties(context)
         mcell.rxn_output.init_properties(mcell.parameter_system)
         print ( "CellBlender has been initialized" )
         return {'FINISHED'}
@@ -914,7 +914,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     #scratch_settings = PointerProperty(
     #    type=MCellScratchPropertyGroup, name="CellBlender Scratch Settings")
 
-    def init_properties ( self ):
+    def init_properties ( self, context=None ):
+        print ("MCellPropertyGroup.init_properties called")
         self.cellblender_version = "0.1.54"
         self.cellblender_addon_id = "0"
         self.cellblender_data_model_version = "0"
@@ -925,6 +926,11 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         self.viz_output.init_properties ( self.parameter_system )
         self.sim_engines.name = "sim_engines"
         self.sim_runners.name = "sim_runners"
+        #if context != None:
+        #    # Force an update of the pluggable items.
+        #    print ("MCellPropertyGroup.init_properties is updating engines and runners")
+        #    self.sim_engines.plugs_changed_callback ( context )
+        #    self.sim_runners.plugs_changed_callback ( context )
         # Don't forget to update the "saved_by_source_id" to match the current version of the addon
         self['saved_by_source_id'] = cellblender.cellblender_info['cellblender_source_sha1']
         self.initialized = True
@@ -1118,7 +1124,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         print ( "Overwriting properites based on data in the data model dictionary" )
 
         # Start by calling "init_properties" which creates a full new CellBlender property tree
-        self.init_properties()
+        self.init_properties( context )
 
         # Then add each section
 
