@@ -966,10 +966,11 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
 
         status = ""
 
-
-        # Force an update of the pluggable items - needed after starting Blender.
-        mcell.sim_engines.plugs_changed_callback ( context )
-        mcell.sim_runners.plugs_changed_callback ( context )
+        # Force an update of the pluggable items as needed (typically after starting Blender).
+        if active_engine_module == None:
+            mcell.sim_engines.plugs_changed_callback ( context )
+        if active_runner_module == None:
+            mcell.sim_runners.plugs_changed_callback ( context )
 
 
         if active_engine_module == None:
@@ -2204,17 +2205,6 @@ had no limit."""
         layout = panel.layout
         self.draw_layout_queue ( context, layout )
 
-
-
-@persistent
-def load_pluggables(context):
-    print ( "load post handler: cellblender_simulation.load_pluggables() called" )
-    if context != None:
-        # Force an update of the pluggable items.
-        print ("MCellPropertyGroup.init_properties is updating engines and runners")
-        load_plug_modules(context)
-        context.scene.mcell.sim_engines.plugs_changed_callback ( context )
-        context.scene.mcell.sim_runners.plugs_changed_callback ( context )
 
 
 ###########################################################################
