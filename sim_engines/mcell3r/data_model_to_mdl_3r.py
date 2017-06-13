@@ -368,6 +368,13 @@ def write_molecules ( mols, f ):
         for m in mlist:
           f.write ( "  %s\n" % m['mol_name'] )
           f.write ( "  {\n" )
+          if "bngl_component_list" in m:
+            if len(m['bngl_component_list']) > 0:
+              print ( 50*"%%" )
+              print ( "  Molecule %s is a BNGL molecule with %d components:" % (m['mol_name'], len(m['bngl_component_list'])) )
+              for c in m['bngl_component_list']:
+                print ( "    " + c['cname'] + " with states: " + str(c['cstates']) )
+              print ( 50*"%%" )
           if m['mol_type'] == '2D':
             f.write ( "    DIFFUSION_CONSTANT_2D = %s\n" % m['diffusion_constant'] )
           else:

@@ -16,9 +16,13 @@ plug_name = "MCell Rules"
 
 def print_info():
   global parameter_dictionary
+  global parameter_layout
   print ( 50*'==' )
-  for k in sorted(parameter_dictionary.keys()):
-    print ( "" + k + " = " + str(parameter_dictionary[k]) )
+  print ( "This is a preliminary MCell-R engine." )
+  print ( 50*'==' )
+  for row in parameter_layout:
+    for k in row:
+      print ( "" + k + " = " + str(parameter_dictionary[k]) )
   print ( 50*'==' )
 
 def reset():
@@ -58,23 +62,9 @@ parameter_layout = [
 
 def prepare_runs ( data_model, project_dir, data_layout=None ):
 
-  """ Arguments to:  run_mcell_sweep ( sys_argv, data_model=None )
-    arg_parser = argparse.ArgumentParser(description='Run MCell with appropriate arguments')
-    arg_parser.add_argument ( '-dm', '--data_model_file_name',     type=str, default='',        help='the file name of the data model to run' )
-    arg_parser.add_argument ( '-pd', '--proj_dir',        type=str, default='',        help='the directory where the program will run' )
-    arg_parser.add_argument ( '-b',  '--binary',          type=str, default='mcell',   help='full path of binary file to run' )
-    arg_parser.add_argument ( '-fs', '--first_seed',      type=int, default=1,         help='the first seed in a series of seeds to run' )
-    arg_parser.add_argument ( '-ls', '--last_seed',       type=int, default=1,         help='the last seed in a series of seeds to run' )
-    arg_parser.add_argument ( '-lf', '--log_file_opt',    type=str, default='console', help='the log file option for mcell' )
-    arg_parser.add_argument ( '-ef', '--error_file_opt',  type=str, default='console', help='the error file option for mcell' )
-    arg_parser.add_argument ( '-np', '--num_processors',  type=int, default=8,         help='the number of processors' )
-    arg_parser.add_argument ( '-rl', '--run_limit',       type=int, default=-1,        help='limit the total number of runs' )
-    arg_parser.add_argument ( '-rt', '--runner_type',     type=str, default='mpp',     help='run mechanism: mpp or sge (mpp=MultiProcessingPool, sge=SunGridEngine)' )
-    arg_parser.add_argument ( '-nl', '--node_list',       type=str, default='',        help='list of comma-separated nodes to run on with SGE' )
-    arg_parser.add_argument ( '-mm', '--min_memory',      type=int, default=0,         help='minimum memory in Gigabytes' )
-    arg_parser.add_argument ( '-em', '--email_addr',      type=str, default='',        help='email address for notifications of job results' )
-    arg_parser.add_argument ( '-gh', '--grid_host',       type=str, default='',        help='grid engine host name' )
-  """
+  output_detail = parameter_dictionary['Output Detail (0-100)']['val']
+
+  if output_detail > 0: print ( "The current MCell-R engine doesn't really support the prepare/run model.\nIt just runs directly." )
 
   #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -85,7 +75,7 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
 
 
 
-  # Return a list of run command dictionaries.
+  # This should return a list of run command dictionaries.
   # Each run command dictionary must contain a "cmd" key, an "args" key, and a "wd" key.
   # The cmd key will refer to a command string suitable for popen.
   # The args key will refer to an argument list suitable for popen.
@@ -106,11 +96,10 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   #   ]
   #  }
 
-  # That dictionary describes the directory structure that CellBlender expects to find on the disk
+  # That last dictionary describes the directory structure that CellBlender expects to find on the disk
 
+  # For now return no commands at all since the run has already taken place
   command_list = []
-
-  output_detail = parameter_dictionary['Output Detail (0-100)']['val']
 
   if output_detail > 0: print ( "Inside MCellR Engine, project_dir=" + project_dir )
 
