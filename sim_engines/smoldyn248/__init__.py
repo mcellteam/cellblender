@@ -7,6 +7,8 @@ import random
 import array
 import shutil
 
+# __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
 print ( "Executing Smoldyn Simulation" )
 
 print ( "Note that CellBlender partitions are used to define Smoldyn Boundaries" )
@@ -164,7 +166,8 @@ def use_cube():
 
 # List of parameters as dictionaries - each with keys for 'name', 'desc', 'def', and optional 'as':
 parameter_dictionary = {
-  'Smoldyn Path': {'val': "//../../../../../smoldyn/smoldyn-2.48/cmake/smoldyn", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
+  'Smoldyn Path': {'val': "//../../../../../smoldyn/smoldyn-2.51/cmake/smoldyn", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
+  'Auto Boundaries': {'val': True, 'desc':"Compute boundaries from all geometric points"},
   'Set Cube Boundaries:': {'val': use_cube, 'desc':"Set Boundaries as cube"},
   'bounding_cube_size': {'val': 2, 'desc':"Cube Boundary Size"},
   'x_bound_min': {'val': -1.0, 'desc':"x boundary (minimum)"},
@@ -181,7 +184,7 @@ parameter_dictionary = {
 
 parameter_layout = [
   ['Smoldyn Path'],
-  ['Set Cube Boundaries:', 'bounding_cube_size'],
+  ['Auto Boundaries', 'Set Cube Boundaries:', 'bounding_cube_size'],
   ['x_bound_min', 'y_bound_min', 'z_bound_min'],
   ['x_bound_max', 'y_bound_max', 'z_bound_max'],
   ['Command Line'],
@@ -227,6 +230,10 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   for m in dm_mol_list:
     print ( "Mol: " + str(m) )
 
+  dm_rxn_list = data_model['define_reactions']['reaction_list']
+  for r in dm_rxn_list:
+    print ( "Rxn: " + str(r) )
+
   dm_rel_list = data_model['release_sites']['release_site_list']
   for r in dm_rel_list:
     print ( "Rel: " + str(r) )
@@ -252,7 +259,74 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
     blend_file_path = os.path.dirname(os.path.dirname(project_files_dir))
     smoldyn_path = os.path.abspath(os.path.join(blend_file_path, smoldyn_path[2:]))
 
-  # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+  auto_bounds = parameter_dictionary['Auto Boundaries']['val']
+
+  min_bounds = []
+  max_bounds = []
+
+  min_bounds.append ( float(parameter_dictionary['x_bound_min']['val']) )
+  max_bounds.append ( float(parameter_dictionary['x_bound_max']['val']) )
+  min_bounds.append ( float(parameter_dictionary['y_bound_min']['val']) )
+  max_bounds.append ( float(parameter_dictionary['y_bound_max']['val']) )
+  min_bounds.append ( float(parameter_dictionary['z_bound_min']['val']) )
+  max_bounds.append ( float(parameter_dictionary['z_bound_max']['val']) )
+
+  # Calculate the bounds and attach to each object (needed to get an inside "point" for Smoldyn)
+
+  print ( "Calculating the bounds of the objects (might want to include releases as well?)" )
+  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+  for o in geo_obj_list:
+      # Calculate the bounds for this object
+      vlist = o['vertex_list']
+      loc = o['location']
+      smoldyn_bounds = [ [0,0], [0,0], [0,0] ]  # Min and Max for each of three axes (assumes 3D!!)
+      first_value = True
+      for face in o['element_connections']:
+          for vindex in face:
+              p = vlist[vindex]
+              i = 0
+              for coord in p:
+                  if first_value:
+                      smoldyn_bounds[i][0] = coord + loc[i]
+                      smoldyn_bounds[i][1] = smoldyn_bounds[i][0]
+                      first_value = False
+                  else:
+                      if smoldyn_bounds[i][0] > coord + loc[i]:
+                        smoldyn_bounds[i][0] = coord + loc[i]
+                      if smoldyn_bounds[i][1] < coord + loc[i]:
+                        smoldyn_bounds[i][1] = coord + loc[i]
+                  i = ( i + 1 ) % len(loc)
+
+      print ( "Object " + o['name'] + " has bounds " + str(smoldyn_bounds) )
+
+      # Attach the bounds to the object
+
+      o['smoldyn_bounds'] = smoldyn_bounds
+
+  if auto_bounds:
+      # Calculate the global bounds from the bounds stored in each object
+      print ( "Calculating simulation bounds from objects" )
+      first_object = True
+      for o in geo_obj_list:
+          smoldyn_bounds = o['smoldyn_bounds']
+          print ( "  Current Simulation Bounds: %s<x<%s, %s<y<%s, %s<z<%s" % (min_bounds[0], max_bounds[0], min_bounds[1], max_bounds[1], min_bounds[2], max_bounds[2], ) )
+          print ( "    Object " + o['name'] + " has bounds " + str(smoldyn_bounds) )
+
+          i = 0
+          for bound in smoldyn_bounds:
+              if first_object:
+                  min_bounds[i] = bound[0]
+                  max_bounds[i] = bound[1]
+              else:
+                  if min_bounds[i] > bound[0]:
+                    min_bounds[i] = bound[0]
+                  if max_bounds[i] < bound[1]:
+                    max_bounds[i] = bound[1]
+              i = ( i + 1 ) % len(loc)
+          first_object = False
+
+  print ( "Simulation Bounds: %s<x<%s, %s<y<%s, %s<z<%s" % (min_bounds[0], max_bounds[0], min_bounds[1], max_bounds[1], min_bounds[2], max_bounds[2], ) )
+
 
   if not os.path.exists(smoldyn_path):
       print ( "\n\nUnable to run, file does not exist: " + str(parameter_dictionary['Smoldyn Path']['val']) + " (" + smoldyn_path + ")\n\n" )
@@ -296,9 +370,11 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
           f.write ( "\n" )
 
           # Smoldyn gives an error: "simulation dimensions or boundaries are undefined" followed by "Simulation skipped" without boundaries:
-          f.write ( "boundaries x " + str(parameter_dictionary['x_bound_min']['val']) + " " + str(parameter_dictionary['x_bound_max']['val']) + " r\n" )
-          f.write ( "boundaries y " + str(parameter_dictionary['y_bound_min']['val']) + " " + str(parameter_dictionary['y_bound_max']['val']) + " r\n" )
-          f.write ( "boundaries z " + str(parameter_dictionary['z_bound_min']['val']) + " " + str(parameter_dictionary['z_bound_max']['val']) + " r\n" )
+          f.write ( "boundaries x " + str(min_bounds[0]) + " " + str(max_bounds[0]) + " r\n" )
+          f.write ( "boundaries y " + str(min_bounds[1]) + " " + str(max_bounds[1]) + " r\n" )
+          f.write ( "boundaries z " + str(min_bounds[2]) + " " + str(max_bounds[2]) + " r\n" )
+
+          f.write ( "\n" )
 
           f.write ( "species" )
           for m in dm_mol_list:
@@ -320,16 +396,22 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
 
           f.write ( "\n" )
 
+          rnum = 1
+          for r in dm_rxn_list:
+              # TODO Rates may need scaling
+              if r['products'] == 'NULL':
+                  f.write ( "reaction R" + str(rnum) + " " + str(r['reactants']) + " -> " +         "0"        + " " + str(r['fwd_rate']) + "\n" )
+              else:
+                  f.write ( "reaction R" + str(rnum) + " " + str(r['reactants']) + " -> " + str(r['products']) + " " + str(r['fwd_rate']) + "\n" )
+              rnum += 1
+
+          f.write ( "\n" )
+
           smoldyn_time_step = 0.01  # TODO Needs to use CellBlender time step
           iterations = int(init['iterations'])
           f.write ( "time_start 0\n" )
           f.write ( "time_step " + str(smoldyn_time_step) + "\n" )
           f.write ( "time_stop " + str(iterations * smoldyn_time_step) + "\n" )
-
-          f.write ( "\n" )
-
-          for r in dm_rel_list:
-            f.write ( "mol " + r['quantity'] + " " + str(r['molecule']) + " " + r['location_x'] + " " + r['location_y'] + " " + r['location_z'] + "\n" )
 
           f.write ( "\n" )
 
@@ -351,6 +433,23 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
                   f.write ( "\n" )
               f.write ( "end_surface\n" )
               f.write ( "\n" )
+              f.write ( "start_compartment " + str(o['name']) + "_comp\n" )
+              f.write ( "surface " + str(o['name']) + "\n" )
+              print ( "Calculate Center Point for " + o['name'] + " from " + str(o['smoldyn_bounds']) )
+              center_point = [ (o['smoldyn_bounds'][0][0] + o['smoldyn_bounds'][0][1] ) / 2,
+                               (o['smoldyn_bounds'][1][0] + o['smoldyn_bounds'][1][1] ) / 2,
+                               (o['smoldyn_bounds'][2][0] + o['smoldyn_bounds'][2][1] ) / 2 ]
+              f.write ( "point " + str(center_point[0]) + " " + str(center_point[1]) + " " + str(center_point[2]) + "\n" )
+              f.write ( "end_compartment\n" )
+              f.write ( "\n" )
+
+          f.write ( "\n" )
+
+          for r in dm_rel_list:
+              if r['shape'] == 'OBJECT':
+                  f.write ( "compartment_mol " + r['quantity'] + " " + str(r['molecule']) + " " + r['object_expr'] + "_comp" + "\n" )
+              else:
+                  f.write ( "mol " + r['quantity'] + " " + str(r['molecule']) + " " + r['location_x'] + " " + r['location_y'] + " " + r['location_z'] + "\n" )
 
           f.write ( "\n" )
 

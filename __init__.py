@@ -329,8 +329,7 @@ def register():
                 cellblender_info['cellblender_plotting_modules'] + [plotter]
             print("  System meets requirements for %s" % (plotter.get_name()))
     except:
-        print("Error installing some plotting packages" + sys.exc_value)
-
+        print("Error installing some plotting packages: " + str(sys.exc_info()))
 
     print ( "Adding handlers to bpy.app.handlers" )
     # Note that handlers appear to be called in the order listed here (first listed are called first)
