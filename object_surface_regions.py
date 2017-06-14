@@ -146,6 +146,29 @@ class MCELL_OT_region_faces_deselect(bpy.types.Operator):
             reg.deselect_region_faces(context)
         return {'FINISHED'}
 
+class MCELL_OT_eliminate_overlapping_faces(bpy.types.Operator):
+    bl_idname = "mcell.eliminate_overlapping_faces"
+    bl_label = "Remove Faces Of This Region From All Other Regions"
+    bl_description = "Remove faces of this region from all other regions"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        reg = context.object.mcell.regions.get_active_region()
+        if reg:
+            reg.eliminate_overlapping_faces(context)
+        return{'FINISHED'}
+
+class MCELL_OT_eliminate_all_overlaps(bpy.types.Operator):
+    bl_idname = "mcell.eliminate_all_overlaps"
+    bl_label = "Eliminate All Overlaps Of This Object"
+    bl_description = "Eliminate all overlaps og this object"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(slef, context):
+        for reg in bpy.data.objects[context.active_object.name].mcell.regions.region_list:
+            reg.eliminate_overlapping_faces(context)
+            print('Eliminating overlaps in', reg.name)
+        return{'FINISHED'}
 
 class MCELL_OT_face_get_regions(bpy.types.Operator):
     bl_idname = "mcell.face_get_regions"
@@ -273,6 +296,19 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
         context.scene.tool_settings.mesh_select_mode = msm
 
         return {'FINISHED'}
+
+    def eliminate_overlapping_faces(self, context):
+        bpy.ops.mesh.select_all(action = 'DESELECT')
+        #mesh = context.active_object.data
+        self.select_region_faces(context)
+        reg_names = context.object.mcell.regions.faces_get_regions(context)
+        for reg_name in reg_names:
+            if reg_name != self.name:
+                reg = bpy.data.objects[context.active_object.name].mcell.regions.region_list[reg_name]
+                reg.remove_region_faces(context)
+                #bpy.data.objects[context.active_object.name].mcell.regions.active_reg_index = bpy.data.objects[context.active_object.name].mcell.regions.region_list.find(reg)
+                #bpy.ops.mcell.region_faces_remove()
+        #bpy.data.objects[context.active_object.name].mcell.regions.active_reg_index = bpy.data.objects[context.active_object.name].mcell.regions.region_list.find(self.name)
 
 
     def destroy_region(self, context):
@@ -640,6 +676,10 @@ class MCellSurfaceRegionListProperty(bpy.types.PropertyGroup):
                     sub.operator("mcell.region_faces_select", text="Select")
                     sub.operator("mcell.region_faces_deselect", text="Deselect")
                     sub.operator("mcell.region_faces_select_all", text="Select All")
+                    row1 = layout.row()
+                    sub = row1.row(align = True)
+                    sub.operator("mcell.eliminate_overlapping_faces", text = "Eliminate Overlaps")
+                    sub.operator("mcell.eliminate_all_overlaps", text = "Eliminate All Overlaps")
 
                     # Option to Get Region Info
                     box = layout.box()
