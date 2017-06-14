@@ -158,7 +158,6 @@ if __name__ == "__main__":
 
     # mdl to bngl
     result_dict = read_mdl.construct_bng_from_mdlr(namespace.input, namespace.nfsim)
-    __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
     output_dir = os.sep.join(namespace.output.split(os.sep)[:-1])
     # create bngl file
     read_mdl.output_bngl(result_dict['bnglstr'], bngl_path)
@@ -169,6 +168,8 @@ if __name__ == "__main__":
         f.write(result_dict['bngxmlestr'])
 
     # get cannonical label -bngl label dictionary
+
+    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     if not namespace.nfsim:
         # bngl 2 sbml 2 json
@@ -181,12 +182,18 @@ if __name__ == "__main__":
         write_mdl.write_mdl(mdl_dict, final_name)
     else:
         try:
+            print ( "Looking for mcellr.yaml in " + get_script_path() )
             mdlr2mdl = MDLR2MDL(os.path.join(get_script_path(), 'mcellr.yaml'))
             mdlr2mdl.process_mdlr(namespace.input)
         except IOError:
-            print("Please create mcellr.yaml in the mcellRules directory. Use "
-                  "mcellr.yaml.template as a reference.")
-        # get the species definitions
+            try:
+                print ( "Looking for mcellr.yaml in " + os.getcwd() )
+                mdlr2mdl = MDLR2MDL(os.path.join(os.getcwd(), 'mcellr.yaml'))
+                mdlr2mdl.process_mdlr(namespace.input)
+            except IOError:
+                print("Please create mcellr.yaml in the mcellRules directory. Use "
+                      "mcellr.yaml.template as a reference.")
+    # get the species definitions
     noext = os.path.splitext(namespace.input)[0]
     xml_name = "{0}.mdlr_total.xml".format(noext)
     mdl_name = "{0}.main.mdl".format(namespace.output)
@@ -202,4 +209,4 @@ if __name__ == "__main__":
     # Print the command to run MCell
     print ( "\n====> Run MCell with: " + " ".join(cmd) + "\n" )
     # Actually run MCell (if desired)
-    # call(cmd)
+    call(cmd)

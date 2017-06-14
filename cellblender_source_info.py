@@ -161,6 +161,16 @@ cellblender_info = {
         "sim_engines"+os.sep+"mcell3r"+os.sep+"data_model_to_mdl_3r.py",
         "sim_engines"+os.sep+"mcell3r"+os.sep+"run_data_model_mcell_3r.py",
 
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"grammar_definition.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"mdlr2mdl.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"nfsim_python.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"read_bngxml.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"read_mdl.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"small_structures.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"split_bngxml.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"write_bngxmle.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"write_mdl.py",
+
         "sim_engines"+os.sep+"smoldyn248"+os.sep+"makefile",
         "sim_engines"+os.sep+"smoldyn248"+os.sep+"__init__.py",
 
