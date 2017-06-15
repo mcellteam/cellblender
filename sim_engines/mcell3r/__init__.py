@@ -104,6 +104,13 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   global fceri_mdlr
 
   f = open ( os.path.join(output_data_dir,"Scene.mdlr"), 'w' )
+  # Can't write all initialization MDL because booleans like "TRUE" are referenced but not defined in BNGL
+  # data_model_to_mdl_3r.write_initialization(data_model['initialization'], f)
+  # Write specific parts instead:
+  data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'iterations',                'ITERATIONS' )
+  data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'time_step',                 'TIME_STEP' )
+  data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
+
   f.write ( fceri_mdlr )
   f.close()
 
@@ -180,11 +187,11 @@ if __name__ == "__main__":
 ### The following strings are short cuts (should come from data model)
 
 
-fceri_mdlr = """ITERATIONS = 50
+fceri_mdlr_old = """ITERATIONS = 50
 TIME_STEP = 5e-06
-VACANCY_SEARCH_DISTANCE = 100
+VACANCY_SEARCH_DISTANCE = 100"""
 
-INCLUDE_FILE = "Scene.geometry.mdl"
+fceri_mdlr = """INCLUDE_FILE = "Scene.geometry.mdl"
 
 MODIFY_SURFACE_REGIONS
 {
