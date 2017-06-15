@@ -102,8 +102,6 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
 
 
   global fceri_mdlr
-  global fceri_geometry
-  global fceri_viz_out
 
   f = open ( os.path.join(output_data_dir,"Scene.mdlr"), 'w' )
   f.write ( fceri_mdlr )
@@ -114,7 +112,8 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   f.close()
 
   f = open ( os.path.join(output_data_dir,"Scene.viz_output.mdl"), 'w' )
-  f.write ( fceri_viz_out )
+  f.write ( 'sprintf(seed,"%05g",SEED)\n\n' )
+  data_model_to_mdl_3r.write_viz_out(data_model['viz_output'], data_model['define_molecules'], f)
   f.close()
 
   f = open ( os.path.join(output_data_dir,"mcellr.yaml"), 'w' )
@@ -179,18 +178,6 @@ if __name__ == "__main__":
 
 
 ### The following strings are short cuts (should come from data model)
-
-fceri_viz_out = """VIZ_OUTPUT
-{
-  MODE = CELLBLENDER
-  FILENAME = "./viz_data/seed_00001/Scene"
-  MOLECULES
-  {
-    NAME_LIST {ALL_MOLECULES}
-    ITERATION_NUMBERS {ALL_DATA @ ALL_ITERATIONS}
-  }
-}
-"""
 
 
 fceri_mdlr = """ITERATIONS = 50
