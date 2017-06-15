@@ -104,21 +104,29 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   global fceri_mdlr
 
   f = open ( os.path.join(output_data_dir,"Scene.mdlr"), 'w' )
-  # Can't write all initialization MDL because booleans like "TRUE" are referenced but not defined in BNGL
-  # data_model_to_mdl_3r.write_initialization(data_model['initialization'], f)
-  # Write specific parts instead:
-  data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'iterations',                'ITERATIONS' )
-  data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'time_step',                 'TIME_STEP' )
-  data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
+  if 'initialization' in data_model:
+    # Can't write all initialization MDL because booleans like "TRUE" are referenced but not defined in BNGL
+    # data_model_to_mdl_3r.write_initialization(data_model['initialization'], f)
+    # Write specific parts instead:
+    data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'iterations',                'ITERATIONS' )
+    data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'time_step',                 'TIME_STEP' )
+    data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
 
   f.write ( 'INCLUDE_FILE = "Scene.geometry.mdl"\n' )
 
-  # The "surf stuff" seems to be needed, but it's not clear why.
-  # Just write it for now ...
-  f.write ( surf_stuff )
+  if 'parameter_system' in data_model:
+    # Write the parameter system
+    data_model_to_mdl_3r.write_parameter_system ( data_model['parameter_system'], f )
 
-  # Write the parameter system
-  data_model_to_mdl_3r.write_parameter_system ( data_model['parameter_system'], f )
+  # Note that reflective surface classes may be needed by MCell-R
+  # If so, it might be good to automate this rather than explicitly requiring it in CellBlender's model.
+
+  if 'define_surface_classes' in data_model:
+    data_model_to_mdl_3r.write_surface_classes(data_model['define_surface_classes'], f)
+
+  if 'modify_surface_regions' in data_model:
+    data_model_to_mdl_3r.write_modify_surf_regions ( data_model['modify_surface_regions'], f )
+
 
   # Write the rest of the stuff
   f.write ( fceri_mdlr )
@@ -195,38 +203,6 @@ if __name__ == "__main__":
 
 
 ### The following strings are short cuts (should come from data model)
-
-surf_stuff = """MODIFY_SURFACE_REGIONS
-{
-   EC[wall] {
-      SURFACE_CLASS = reflect
-   }
-   EC[ALL] {
-      SURFACE_CLASS = reflect
-   }
-   CP[PM] {
-      SURFACE_CLASS = reflect
-   }
-   CP[ALL] {
-      SURFACE_CLASS = reflect
-   }
-}
-
-DEFINE_SURFACE_CLASSES
-{
-   reflect {
-   REFLECTIVE = ALL_MOLECULES
-   }
-   reflecto {
-   REFLECTIVE = ALL_MOLECULES
-   }
-   reflectop {
-   REFLECTIVE = ALL_MOLECULES
-   }
-}
-
-"""
-
 
 fceri_mdlr = """
 
