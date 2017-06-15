@@ -111,6 +111,16 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'time_step',                 'TIME_STEP' )
   data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
 
+  f.write ( 'INCLUDE_FILE = "Scene.geometry.mdl"\n' )
+
+  # The "surf stuff" seems to be needed, but it's not clear why.
+  # Just write it for now ...
+  f.write ( surf_stuff )
+
+  # Write the parameter system
+  data_model_to_mdl_3r.write_parameter_system ( data_model['parameter_system'], f )
+
+  # Write the rest of the stuff
   f.write ( fceri_mdlr )
   f.close()
 
@@ -186,14 +196,7 @@ if __name__ == "__main__":
 
 ### The following strings are short cuts (should come from data model)
 
-
-fceri_mdlr_old = """ITERATIONS = 50
-TIME_STEP = 5e-06
-VACANCY_SEARCH_DISTANCE = 100"""
-
-fceri_mdlr = """INCLUDE_FILE = "Scene.geometry.mdl"
-
-MODIFY_SURFACE_REGIONS
+surf_stuff = """MODIFY_SURFACE_REGIONS
 {
    EC[wall] {
       SURFACE_CLASS = reflect
@@ -222,61 +225,10 @@ DEFINE_SURFACE_CLASSES
    }
 }
 
-/* Model Parameters */
-   Nav = 6.022e8               /* Avogadro number based on a volume size of 1 cubic um */
-   rxn_layer_t = 0.01
-   vol_wall = 0.88/rxn_layer_t  /*Surface area*/
-   vol_EC = 39
-   vol_PM = 0.01/rxn_layer_t  /*Surface area*/
-   vol_CP = 1
-
-/* Original Values
-   Lig_tot = 6.0e3
-   Rec_tot = 4.0e2
-   Lyn_tot = 2.8e2
-   Syk_tot = 4e2
-*/
-
-/* Testing Values */
-   Lig_tot = 6.0e2
-   Rec_tot = 4.0e1
-   Lyn_tot = 2.8e1
-   Syk_tot = 4e1
-
-   kp1 = 0.000166057788110262*Nav
-   km1 = 0.00
-   kp2 = 1.66057788110262e-06/rxn_layer_t
-   km2 = 0.00
-   kpL = 0.0166057788110262/rxn_layer_t
-   kmL = 20
-   kpLs = 0.0166057788110262/rxn_layer_t
-   kmLs = 0.12
-   kpS = 0.0166057788110262*Nav
-   kmS = 0.13
-   pLb = 30
-   pLbs = 100
-   pLg = 1
-   pLgs = 3
-   pLS = 30
-   pLSs = 100
-   pSS = 100
-   pSSs = 200
-   dm = 0.1
-   dc = 0.1
-
-/* Diffusion bloc */
-   T = 298.15      /* Temperature, K */
-   h = rxn_layer_t      /* Thickness of 2D compartment, um */
-   Rs = 0.002564      /* Radius of a (spherical) molecule in 3D compartment, um */
-   Rc = 0.0015      /* Radius of a (cylindrical) molecule in 2D compartment, um */
-   gamma = 0.5722      /* Euler's constant */
-   KB = 1.3806488e-19     /* Boltzmann constant, cm^2.kg/K.s^2 */
-   mu_wall = 1e-9      /* Viscosity in compartment wall, kg/um.s */
-   mu_EC = 1e-9      /* Viscosity in compartment EC, kg/um.s */
-   mu_PM = 1e-9      /* Viscosity in compartment PM, kg/um.s */
-   mu_CP = 1e-9      /* Viscosity in compartment CP, kg/um.s */
+"""
 
 
+fceri_mdlr = """
 
 #DEFINE_MOLECULES
 {
