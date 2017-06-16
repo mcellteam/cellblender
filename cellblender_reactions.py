@@ -126,10 +126,13 @@ def check_reaction(self, context):
 
     status = ""
 
+
+    """ # Comment out most reaction checking for now """
+
     # Clean up rxn.reactants only if necessary to avoid infinite recursion.
     reactants = rxn.reactants.replace(" ", "")
     reactants = reactants.replace("+", " + ")
-    reactants = reactants.replace("@", " @ ")
+    #TMP reactants = reactants.replace("@", " @ ")
     if reactants != rxn.reactants:
         rxn.reactants = reactants
 
@@ -145,6 +148,7 @@ def check_reaction(self, context):
     if rxn_keys.count(rxn.name) > 1:
         status = "Duplicate reaction: %s" % (rxn.name)
 
+    """
     # Does the reaction need reaction directionality (i.e. there is at least
     # one surface molecule or a surface class)
     need_rxn_direction = False
@@ -246,6 +250,7 @@ def check_reaction(self, context):
     rxn_name_status = check_reaction_name()
     if rxn_name_status:
         status = rxn_name_status
+    """
 
     rxn.status = status
     cellblender_release.update_release_pattern_rxn_name_list()

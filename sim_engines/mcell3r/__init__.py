@@ -167,6 +167,35 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
         f.write ( "}\n" )
       f.write ( "\n" );
 
+  if 'define_reactions' in data_model:
+    reacts = data_model['define_reactions']
+    if 'reaction_list' in reacts:
+      rlist = reacts['reaction_list']
+      if len(rlist) > 0:
+        f.write ( "#DEFINE_REACTIONS\n" )
+        f.write ( "{\n" )
+        for r in rlist:
+          f.write("  %s " % (r['name']))
+          if r['rxn_type'] == "irreversible":
+            if r['variable_rate_switch'] and r['variable_rate_valid']:
+              variable_rate_name = r['variable_rate']
+              f.write('["%s"]' % (variable_rate_name))
+              ## Create the actual variable rate file and write to it
+              vrf = open(variable_rate_name, "w")
+              vrf.write ( r['variable_rate_text'] )
+              #with open(variable_rate_name, "w", encoding="utf8",
+              #          newline="\n") as variable_out_file:
+              #    variable_out_file.write(r['variable_rate_text'])
+            else:
+              f.write ( "[%s]" % ( r['fwd_rate'] ) )
+          else:
+            f.write ( "[%s, %s]" % ( r['fwd_rate'], r['bkwd_rate'] ) )
+          if 'rxn_name' in r:
+            if len(r['rxn_name']) > 0:
+              f.write ( " : %s" % (r['rxn_name']) )
+          f.write("\n")
+        f.write ( "}\n" )
+        f.write("\n")
 
 
   # Write the rest of the stuff
@@ -247,65 +276,6 @@ if __name__ == "__main__":
 
 
 fceri_mdlr = """
-
-
-
-#DEFINE_REACTIONS
-{
-    /* Ligand-receptor binding      */
-     Rec(a) + Lig(l,l) <-> Rec(a!1).Lig(l!1,l)  [kp1, km1]
-
-    /* Receptor-aggregation*/
-     Rec(a) + Lig(l,l!+) <-> Rec(a!2).Lig(l!2,l!+)  [kp2, km2]
-
-    /* Constitutive Lyn-receptor binding  */
-     Rec(b~Y) + Lyn(U,SH2) <-> Rec(b~Y!1).Lyn(U!1,SH2)  [kpL, kmL]
-
-    /* Transphosphorylation of beta by constitutive Lyn  */
-     Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,b~Y) -> Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,b~pY)  [pLb]
-
-    /* Transphosphorylation of gamma by constitutive Lyn  */
-     Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,g~Y) -> Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,g~pY)  [pLg]
-
-    /* Lyn-receptor binding through SH2 domain  */
-     Rec(b~pY) + Lyn(U,SH2) <-> Rec(b~pY!1).Lyn(U,SH2!1)  [kpLs, kmLs]
-
-    /* Transphosphorylation of beta by SH2-bound Lyn  */
-     Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,b~Y) -> Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,b~pY)  [pLbs]
-
-    /* Transphosphorylation of gamma by SH2-bound Lyn  */
-     Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,g~Y) -> Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,g~pY)  [pLgs]
-
-    /* Syk-receptor binding through tSH2 domain  */
-     Rec(g~pY) + Syk(tSH2) <-> Rec(g~pY!1).Syk(tSH2!1)  [kpS, kmS]
-
-    /* Transphosphorylation of Syk by constitutive Lyn  */
-     Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,g~pY!4).Syk(tSH2!4,l~Y) -> Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,g~pY!4).Syk(tSH2!4,l~pY)  [pLS]
-
-    /* Transphosphorylation of Syk by SH2-bound Lyn  */
-     Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,l~Y) -> Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,l~pY)  [pLSs]
-
-    /* Transphosphorylation of Syk by Syk not phosphorylated on aloop  */
-     Lig(l!1,l!2).Syk(tSH2!3,a~Y).Rec(a!2,g~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,a~Y) -> Lig(l!1,l!2).Syk(tSH2!3,a~Y).Rec(a!2,g~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,a~pY)  [pSS]
-
-    /* Transphosphorylation of Syk by Syk phosphorylated on aloop  */
-     Lig(l!1,l!2).Syk(tSH2!3,a~pY).Rec(a!2,g~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,a~Y) -> Lig(l!1,l!2).Syk(tSH2!3,a~pY).Rec(a!2,g~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,a~pY)  [pSSs]
-
-    /* Dephosphorylation of Rec beta  */
-     Rec(b~pY) -> Rec(b~Y)  [dm]
-
-    /* Dephosphorylation of Rec gamma  */
-     Rec(g~pY) -> Rec(g~Y)  [dm]
-
-    /* Dephosphorylation of Syk at membrane  */
-     Syk(tSH2!+,l~pY) -> Syk(tSH2!+,l~Y)  [dm]
-     Syk(tSH2!+,a~pY) -> Syk(tSH2!+,a~Y)  [dm]
-
-    /* Dephosphorylation of Syk in cytosol  */
-     Syk(tSH2,l~pY) -> Syk(tSH2,l~Y)  [dc]
-     Syk(tSH2,a~pY) -> Syk(tSH2,a~Y)  [dc]
-}
-
 
 #INSTANTIATE Scene OBJECT
 {
