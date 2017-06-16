@@ -418,6 +418,8 @@ def model_objects_update(context):
             things_to_save['dynamic'] = mobjs.object_list[i].dynamic
             things_to_save['script_name'] = mobjs.object_list[i].script_name
             things_to_save['dynamic_display_source'] = mobjs.object_list[i].dynamic_display_source
+            things_to_save['parent_object'] = mobjs.object_list[i].parent_object
+            things_to_save['membrane_name'] = mobjs.object_list[i].membrane_name
             dyn_dict[mobjs.object_list[i].name] = things_to_save
             mobjs.object_list.remove(i)
         print ( "Done saving dynamic and script name for objects" )
@@ -435,6 +437,8 @@ def model_objects_update(context):
                 new_obj.dynamic = dyn_dict[obj_name]['dynamic']
                 new_obj.script_name = dyn_dict[obj_name]['script_name']
                 new_obj.dynamic_display_source = dyn_dict[obj_name]['dynamic_display_source']
+                new_obj.parent_object = dyn_dict[obj_name]['parent_object']
+                new_obj.membrane_name = dyn_dict[obj_name]['membrane_name']
             scene_object = sobjs[obj_name]
             # Set an error status if object is not triangulated
             for face in scene_object.data.polygons:
@@ -493,8 +497,7 @@ def check_model_object_name(self, context):
 # Model Objects Panel Classes
 
 class MCELL_UL_model_objects(bpy.types.UIList):
-    def draw_item(self, context, layout, data, item, icon, active_data,
-                  active_propname, index):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
 
         #print ( "item = " + str(item) )
         #print ( "data = " + str(data) )
@@ -512,6 +515,10 @@ class MCELL_UL_model_objects(bpy.types.UIList):
             model_obj = context.scene.objects[item.name]
             col = layout.column()
             col.label(item.name, icon='FILE_TICK')
+            col = layout.column()
+            col.prop ( item, 'membrane_name', text="" )
+            col = layout.column()
+            col.prop ( item, 'parent_object', text="" )
 
             has_material = True
             if len(model_obj.material_slots) <= 0:
@@ -520,7 +527,7 @@ class MCELL_UL_model_objects(bpy.types.UIList):
               if model_obj.material_slots[0].material == None:
                 has_material = False
 
-            split = layout.split(percentage=0.8)  # This is used to make the color patch smaller
+            split = layout.split(percentage=0.7)  # This is used to make the color patch smaller
             col1 = split.column()
             col = split.column()
             if not has_material:
@@ -602,6 +609,9 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Object Name", update=check_model_object_name)
     dynamic = BoolProperty ( default=False, description='Flag this object as dynamic', update=changed_dynamic_callback )
     script_name = StringProperty(name="Script Name", default="")
+
+    parent_object = StringProperty(name="Parent_Object", description='Name of Parent Compartment Object')
+    membrane_name = StringProperty(name="Membrane_Name", description='Membrane Name for this Object')
 
     dynamic_display_source = bpy.props.EnumProperty (
         items= [ # key        label
@@ -827,7 +837,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         mcell_obj_list = context.scene.mcell.model_objects.object_list
 
         mo_dm = {}
-        mo_dm['data_model_version'] = "DM_2017_03_16_1750"
+        mo_dm['data_model_version'] = "DM_2017_06_15_1755"
         mo_list = []
         for scene_object in context.scene.objects:
             if scene_object.type == 'MESH':
@@ -835,6 +845,8 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     name = scene_object.name
                     print ( "MCell object: " + name )
                     obj_dm = { "name": name }
+                    obj_dm['parent_object'] = mcell_obj_list[name].parent_object
+                    obj_dm['membrane_name'] = mcell_obj_list[name].membrane_name
                     obj_dm['dynamic'] = mcell_obj_list[name].dynamic
                     obj_dm['script_name'] = mcell_obj_list[name].script_name
                     obj_dm['dynamic_display_source'] = mcell_obj_list[name].dynamic_display_source
@@ -859,8 +871,15 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                 obj['dynamic_display_source'] = 'other'
             dm['data_model_version'] = "DM_2017_03_16_1750"
 
+        if dm['data_model_version'] == "DM_2017_03_16_1750":
+            # Add the default parent object and membrane name to each object
+            for obj in dm['model_object_list']:
+                obj['parent_object'] = ""
+                obj['membrane_name'] = ""
+            dm['data_model_version'] = "DM_2017_06_15_1755"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2017_03_16_1750":
+        if dm['data_model_version'] != "DM_2017_06_15_1755":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
             return None
 
@@ -873,7 +892,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         #   context.scene.objects[].mcell.include - boolean is true for model objects
         # This code updates both locations based on the data model
 
-        if dm['data_model_version'] != "DM_2017_03_16_1750":
+        if dm['data_model_version'] != "DM_2017_06_15_1755":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
         
         # Remove all model objects in the list
@@ -887,6 +906,8 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
               print ( "Data model contains " + m["name"] )
               mo = self.object_list.add()
               mo.name = m['name']
+              mo.parent_object = m['parent_object']
+              mo.membrane_name = m['membrane_name']
               mo.dynamic = m['dynamic']
               mo.script_name = m['script_name']
               mo.dynamic_display_source = m['dynamic_display_source']
