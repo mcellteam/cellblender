@@ -511,7 +511,13 @@ def write_instances ( geom, rels, mols, f ):
             elif r['shape'] == "OBJECT":
               # Output MDL for releasing in or on and object
               #TODO Note that the use of "Scene." here for object names is a temporary measure!!!!
-              f.write("   SHAPE = Scene.%s\n" % (r['object_expr']))
+              obj_expr = r['object_expr']
+              obj_expr = '-'.join(["Scene."+t.strip() for t in obj_expr.split('-')])
+              # Can't repeat this because the "Scene's" will accumulate at the front
+              # It's also not clear if these other geometric operators are supported
+              #obj_expr = '+'.join(["Scene."+t.strip() for t in obj_expr.split('+')])
+              #obj_expr = '*'.join(["Scene."+t.strip() for t in obj_expr.split('*')])
+              f.write("   SHAPE = %s\n" % (obj_expr))
 
             # Next handle the molecule to be released (maybe the Molecule List should have been a dictionary keyed on mol_name?)
             mlist = mols['molecule_list']
