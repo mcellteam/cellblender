@@ -516,9 +516,9 @@ class MCELL_UL_model_objects(bpy.types.UIList):
             col = layout.column()
             col.label(item.name, icon='FILE_TICK')
             col = layout.column()
-            col.prop ( item, 'membrane_name', text="" )
-            col = layout.column()
             col.prop ( item, 'parent_object', text="" )
+            col = layout.column()
+            col.prop ( item, 'membrane_name', text="" )
 
             has_material = True
             if len(model_obj.material_slots) <= 0:
@@ -611,7 +611,7 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     script_name = StringProperty(name="Script Name", default="")
 
     parent_object = StringProperty(name="Parent_Object", description='Name of Parent Compartment Object')
-    membrane_name = StringProperty(name="Membrane_Name", description='Membrane Name for this Object')
+    membrane_name = StringProperty(name="Membrane_Definition", description='Membrane Definition for this Object (ex: PM OBJECT CP[ALL])')
 
     dynamic_display_source = bpy.props.EnumProperty (
         items= [ # key        label

@@ -100,7 +100,8 @@ def check_release_site_wrapped(context):
     rel = rel_list[mcell.release_sites.active_release_index]
 
     name_status = check_release_site_name(context)
-    molecule_status = check_release_molecule(context)
+    molecule_status = ""
+    # BNGL: Checking removed: molecule_status = check_release_molecule(context)
     object_status = check_release_object_expr(context)
 
     if name_status:
@@ -342,7 +343,7 @@ class MCell_Point_List_OT_point_remove_all(bpy.types.Operator):
     bl_description = "Remove all points from the list"
     bl_options = {'REGISTER', 'UNDO'}
 
-    def execute(self, context):
+    def execute(self, context):# BNGL: Checking removed:
         rs = context.scene.mcell.release_sites
         rs.mol_release_list[rs.active_release_index].remove_all_points(context)
         return {'FINISHED'}
@@ -366,12 +367,12 @@ class MCell_PointList_UL(bpy.types.UIList):
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Site Name", default="Release_Site",
-        description="The name of the release site",
-        update=check_release_site)
+        description="The name of the release site")
+        # BNGL: Checking removed: update=check_release_site)
     molecule = StringProperty(
         name="Molecule",
-        description="The molecule to release",
-        update=check_release_site)
+        description="The molecule to release")
+        # BNGL: Checking removed: update=check_release_site)
     shape_enum = [
         ('CUBIC', 'Cubic', ''),
         ('SPHERICAL', 'Spherical', ''),
@@ -381,8 +382,8 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     shape = EnumProperty(
         items=shape_enum, name="Release Shape",
         description="Release in the specified shape. Surface molecules can "
-                    "only use Object/Region.",
-                    update=check_release_site)
+                    "only use Object/Region." )
+                    # BNGL: Checking removed: update=check_release_site)
     orient_enum = [
         ('\'', "Top Front", ""),
         (',', "Top Back", ""),
@@ -393,8 +394,8 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
                     "orientation.")
     object_expr = StringProperty(
         name="Object/Region",
-        description="Release in/on the specified object/region.",
-        update=check_release_site)
+        description="Release in/on the specified object/region." )
+        # BNGL: Checking removed: update=check_release_site)
         
     location_x = PointerProperty ( name="Relese Loc X", type=parameter_system.Parameter_Reference )
     location_y = PointerProperty ( name="Relese Loc Y", type=parameter_system.Parameter_Reference )
@@ -605,7 +606,7 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
         relsite.init_properties(mcell.parameter_system)
 
-        check_release_molecule(context)
+        # BNGL: Checking removed: check_release_molecule(context)
 
 
     def remove_active_rel_site ( self, context ):
@@ -621,8 +622,8 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                 self.active_release_index = 0
             if len(self.mol_release_list) <= 0:
                 self.next_id = 1
-            if self.mol_release_list:
-                check_release_site(self, context)
+            # BNGL: Checking removed: if self.mol_release_list:
+            # BNGL: Checking removed:     check_release_site(self, context)
 
 
     def build_data_model_from_properties ( self, context ):
@@ -749,8 +750,9 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
                     helptext = "Molecule to Release\n" + \
                                "Selects the molecule to be released at this site."
+                    ps.draw_prop_with_help ( layout, "Molecule:", rel, "molecule", "mol_show_help", rel.mol_show_help, helptext )
+                    #ps.draw_prop_search_with_help ( layout, "Molecule:", rel, "molecule", mcell.molecules, "molecule_list", "mol_show_help", rel.mol_show_help, helptext )
                     #layout.prop_search ( rel, "molecule", mcell.molecules, "molecule_list", text="Molecule", icon='FORCE_LENNARDJONES')
-                    ps.draw_prop_search_with_help ( layout, "Molecule:", rel, "molecule", mcell.molecules, "molecule_list", "mol_show_help", rel.mol_show_help, helptext )
 
                     if rel.molecule in mcell.molecules.molecule_list:
                         label = mcell.molecules.molecule_list[rel.molecule].bnglLabel

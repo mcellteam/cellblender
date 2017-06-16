@@ -91,7 +91,7 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
 
   if output_detail > 0: print ( "The current MCell-R engine doesn't really support the prepare/run model.\nIt just runs directly." )
 
-  if output_detail > 0: print ( "Converting the data model to an MDLR file (faking it for now with fceri_mdlr)." )
+  if output_detail > 0: print ( "Converting the data model to an MDLR file (faking some of it for now with remaining_fceri_mdlr)." )
 
   print ( "Running with python " + sys.version )   # This will be Blender's Python which will be 3.5+
   print ( "Project Dir: " + project_dir )          # This will be .../blend_file_name_files/mcell
@@ -101,7 +101,7 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   makedirs_exist_ok ( output_data_dir, exist_ok=True )
 
 
-  global fceri_mdlr
+  global remaining_fceri_mdlr
 
   f = open ( os.path.join(output_data_dir,"Scene.mdlr"), 'w' )
   if 'initialization' in data_model:
@@ -197,9 +197,108 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
         f.write ( "}\n" )
         f.write("\n")
 
+  if ('model_objects' in data_model) or ('release_sites' in data_model):
+    geom = None
+    rels = None
+    if 'model_objects' in data_model:
+      geom = data_model['model_objects']
+    if 'release_sites' in data_model:
+      rels = data_model['release_sites']
+    mols = data_model['define_molecules']
+    #TODO Note that the use of "Scene" here is a temporary measure!!!!
+    f.write ( "#INSTANTIATE Scene OBJECT\n" )
+    f.write ( "{\n" )
+    if geom != None:
+      if 'model_object_list' in geom:
+        glist = geom['model_object_list']
+        if len(glist) > 0:
+          # Sort the objects by parent
+          unsorted_objs = [ g for g in glist ]
+          sorted_objs = []
+          sorted_obj_names = []
+          while len(unsorted_objs) > 0:
+            for index in range(len(unsorted_objs)):
+              print ( "  Sorting by parent: checking " + unsorted_objs[index]['name'] + " for parent " + unsorted_objs[index]['parent_object'] )
+              if len(unsorted_objs[index]['parent_object']) == 0:
+                # Move this object to the sorted list because it has no parent
+                sorted_obj_names.append ( unsorted_objs[index]['name'])
+                sorted_objs.append ( unsorted_objs.pop(index) )
+                break
+              elif unsorted_objs[index]['parent_object'] in sorted_obj_names:
+                # Move this object to the sorted list because its parent is already in the list
+                sorted_obj_names.append ( unsorted_objs[index]['name'])
+                sorted_objs.append ( unsorted_objs.pop(index) )
+                break
+
+          for g in sorted_objs:
+            f.write ( "  %s OBJECT %s {\n" % (g['name'], g['name']) )
+            if len(g['parent_object']) > 0:
+              f.write ( "    PARENT = %s\n" % (g['parent_object']) )
+            if len(g['membrane_name']) > 0:
+              f.write ( "    MEMBRANE = %s\n" % (g['membrane_name']) )
+            f.write ( "  }\n" )
+    if rels != None:
+      if 'release_site_list' in rels:
+        rlist = rels['release_site_list']
+        if len(rlist) > 0:
+          for r in rlist:
+            f.write ( "  %s RELEASE_SITE\n" % (r['name']) )
+            f.write ( "  {\n" )
+
+            # First handle the release shape
+            if ((r['shape'] == 'CUBIC') |
+                (r['shape'] == 'SPHERICAL') |
+                (r['shape'] == 'SPHERICAL_SHELL')):
+              # Output MDL for releasing in a non-object shape pattern
+              f.write("   SHAPE = %s\n" % (r['shape']))
+              f.write("   LOCATION = [%s, %s, %s]\n" % (r['location_x'],r['location_y'],r['location_z']))
+              f.write("   SITE_DIAMETER = %s\n" % (r['site_diameter']))
+            elif r['shape'] == "OBJECT":
+              # Output MDL for releasing in or on and object
+              #TODO Note that the use of "Scene." here for object names is a temporary measure!!!!
+              obj_expr = r['object_expr']
+              obj_expr = '-'.join(["Scene."+t.strip() for t in obj_expr.split('-')])
+              # Can't repeat this because the "Scene's" accumulate
+              #obj_expr = '+'.join(["Scene."+t.strip() for t in obj_expr.split('+')])
+              #obj_expr = '*'.join(["Scene."+t.strip() for t in obj_expr.split('*')])
+              f.write("   SHAPE = %s\n" % (obj_expr))
+
+            # Next handle the molecule to be released (maybe the Molecule List should have been a dictionary keyed on mol_name?)
+            mlist = mols['molecule_list']
+            mol = None
+            for m in mlist:
+              if m['mol_name'] == r['molecule']:
+                mol = m
+                break
+            f.write("   MOLECULE = %s\n" % (r['molecule']))
+
+            # Now write out the quantity, probability, and pattern
+
+            if r['quantity_type'] == 'NUMBER_TO_RELEASE':
+              f.write("   NUMBER_TO_RELEASE = %s\n" % (r['quantity']))
+            elif r['quantity_type'] == 'GAUSSIAN_RELEASE_NUMBER':
+              f.write("   GAUSSIAN_RELEASE_NUMBER\n")
+              f.write("   {\n")
+              f.write("        MEAN_NUMBER = %s\n" % (r['quantity']))
+              f.write("        STANDARD_DEVIATION = %s\n" % (r['stddev']))
+              f.write("      }\n")
+            elif r['quantity_type'] == 'DENSITY':
+              if mol:
+                if mol['mol_type'] == '2D':
+                  f.write("   DENSITY = %s\n" % (r['quantity']))
+                else:
+                  f.write("   CONCENTRATION = %s\n" % (r['quantity']))
+            f.write("   RELEASE_PROBABILITY = %s\n" % (r['release_probability']))
+            if len(r['pattern']) > 0:
+              f.write("   RELEASE_PATTERN = %s\n" % (r['pattern']))
+
+            f.write ( "  }\n" )
+    f.write ( "}\n" )
+    f.write("\n")
+
 
   # Write the rest of the stuff
-  f.write ( fceri_mdlr )
+  f.write ( remaining_fceri_mdlr )
   f.close()
 
   f = open ( os.path.join(output_data_dir,"Scene.geometry.mdl"), 'w' )
@@ -275,46 +374,7 @@ if __name__ == "__main__":
 ### The following strings are short cuts (should come from data model)
 
 
-fceri_mdlr = """
-
-#INSTANTIATE Scene OBJECT
-{
-  EC OBJECT EC {}
-  CP OBJECT CP {
-    PARENT = EC
-    MEMBRANE = PM OBJECT CP[ALL]
-  }
-
-   ligand_rel RELEASE_SITE
-   {
-    SHAPE = Scene.EC[ALL] - Scene.CP[ALL]
-    MOLECULE = @EC::Lig(l,l)
-    NUMBER_TO_RELEASE = Lig_tot
-    RELEASE_PROBABILITY = 1
-   }
-   lyn_rel RELEASE_SITE
-   {
-    SHAPE = Scene.CP[PM]
-    MOLECULE = @PM::Lyn(U,SH2)
-    NUMBER_TO_RELEASE = Lyn_tot
-    RELEASE_PROBABILITY = 1
-   }
-   syk_rel RELEASE_SITE
-   {
-    SHAPE = Scene.CP
-    MOLECULE = @CP::Syk(tSH2,l~Y,a~Y)
-    NUMBER_TO_RELEASE = Syk_tot
-    RELEASE_PROBABILITY = 1
-   }
-   receptor_rel RELEASE_SITE
-   {
-    SHAPE = Scene.CP[PM]
-    MOLECULE = @PM::Rec(a,b~Y,g~Y)
-    NUMBER_TO_RELEASE = Rec_tot
-    RELEASE_PROBABILITY = 1
-   }
-
-}
+remaining_fceri_mdlr = """
 
 /* Observables bloc */
 #REACTION_DATA_OUTPUT
