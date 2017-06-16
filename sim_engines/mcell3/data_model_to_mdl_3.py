@@ -30,6 +30,7 @@ data model and provide the most current to this function.
 import pickle
 import sys
 import json
+import re
 
 #### Helper Functions ####
 
@@ -482,6 +483,59 @@ def write_geometry ( geom, f ):
           f.write ( "\n" );
 
 
+def instance_object_expr(base_name, expression):
+    """ Converts an object expression into an instantiated MDL object
+
+    This function converts an object specification coming from
+    the GUI into a fully qualified (instantiated) MDL expression.
+    E.g., if the instantiated object is named *Scene*
+
+      - an object *Cube* will be converted to *Scene.Cube* and
+      - an expression *Cube + Sphere* will be converted to
+        "Scene.Cube + Scene.Sphere"
+
+    NOTE (Markus): I am not sure if this function isn't a bit
+    too complex for the task (i.e. regular expressions and all)
+    but perhaps it's fine. Time will tell.
+
+    This version was modified from code in export_mcell_mdl.py
+    """
+
+    token_spec = [
+        ("ID", r"[A-Za-z]+[0-9A-Za-z_.]*(\[[A-Za-z]+[0-9A-Za-z_.]*\])?"),
+                              # Identifiers
+        ("PAR", r"[\(\)]"),   # Parentheses
+        ("OP", r"[\+\*\-]"),  # Boolean operators
+        ("SKIP", r"[ \t]"),   # Skip over spaces and tabs
+    ]
+    token_regex = "|".join("(?P<%s>%s)" % pair for pair in token_spec)
+    get_token = re.compile(token_regex).match
+
+    instantiated_expression = ""
+    pos = 0
+    line_start = 0
+    m = get_token(expression)
+    while m:
+        token_type = m.lastgroup
+        if token_type != "SKIP":
+            val = m.group(token_type)
+
+            if token_type == "ID":
+                val = base_name + "." + val
+            elif token_type == "OP":
+                val = " " + val + " "
+
+            instantiated_expression = instantiated_expression + val
+
+        pos = m.end()
+        m = get_token(expression, pos)
+
+    if pos != len(expression):
+        pass
+
+    return instantiated_expression
+
+
 def write_instances ( geom, rels, mols, f ):
     #TODO Note that the use of "Scene" here is a temporary measure!!!!
     f.write ( "INSTANTIATE Scene OBJECT\n" )
@@ -511,12 +565,7 @@ def write_instances ( geom, rels, mols, f ):
             elif r['shape'] == "OBJECT":
               # Output MDL for releasing in or on and object
               #TODO Note that the use of "Scene." here for object names is a temporary measure!!!!
-              obj_expr = r['object_expr']
-              obj_expr = '-'.join(["Scene."+t.strip() for t in obj_expr.split('-')])
-              # Can't repeat this because the "Scene's" will accumulate at the front
-              # It's also not clear if these other geometric operators are supported
-              #obj_expr = '+'.join(["Scene."+t.strip() for t in obj_expr.split('+')])
-              #obj_expr = '*'.join(["Scene."+t.strip() for t in obj_expr.split('*')])
+              obj_expr = instance_object_expr("Scene", r['object_expr'])
               f.write("   SHAPE = %s\n" % (obj_expr))
 
             # Next handle the molecule to be released (maybe the Molecule List should have been a dictionary keyed on mol_name?)
