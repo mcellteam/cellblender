@@ -127,6 +127,47 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   if 'modify_surface_regions' in data_model:
     data_model_to_mdl_3r.write_modify_surf_regions ( data_model['modify_surface_regions'], f )
 
+  if 'define_molecules' in data_model:
+    mols = data_model['define_molecules']
+    if 'molecule_list' in mols:
+      mlist = mols['molecule_list']
+      if len(mlist) > 0:
+        f.write ( "#DEFINE_MOLECULES\n" )
+        f.write ( "{\n" )
+        for m in mlist:
+          f.write ( "  %s" % m['mol_name'] )
+          if "bngl_component_list" in m:
+            f.write( "(" )
+            num_components = len(m['bngl_component_list'])
+            if num_components > 0:
+              for ci in range(num_components):
+                c = m['bngl_component_list'][ci]
+                f.write( c['cname'] )
+                for state in c['cstates']:
+                  f.write ( "~" + state )
+                if ci < num_components-1:
+                  f.write ( "," )
+            f.write( ")" )
+          f.write ( "\n" )
+          f.write ( "  {\n" )
+          if m['mol_type'] == '2D':
+            f.write ( "    DIFFUSION_CONSTANT_2D = %s\n" % m['diffusion_constant'] )
+          else:
+            f.write ( "    DIFFUSION_CONSTANT_3D = %s\n" % m['diffusion_constant'] )
+          if 'custom_time_step' in m:
+            if len(m['custom_time_step']) > 0:
+              f.write ( "    CUSTOM_TIME_STEP = %s\n" % m['custom_time_step'] )
+          if 'custom_space_step' in m:
+            if len(m['custom_space_step']) > 0:
+              f.write ( "    CUSTOM_SPACE_STEP = %s\n" % m['custom_space_step'] )
+          if 'target_only' in m:
+            if m['target_only']:
+              f.write("    TARGET_ONLY\n")
+          f.write("  }\n")
+        f.write ( "}\n" )
+      f.write ( "\n" );
+
+
 
   # Write the rest of the stuff
   f.write ( fceri_mdlr )
@@ -204,27 +245,8 @@ if __name__ == "__main__":
 
 ### The following strings are short cuts (should come from data model)
 
-fceri_mdlr = """
 
-#DEFINE_MOLECULES
-{
-  Lig(l,l)
-  {
-      DIFFUSION_CONSTANT_3D = 8.51e-7
-  }
-  Lyn(U,SH2)
-  {
-      DIFFUSION_CONSTANT_2D =  1.7e-7
-  }
-  Syk(tSH2,l~Y~pY,a~Y~pY)
-  {
-      DIFFUSION_CONSTANT_3D = 8.51e-7
-  }
-  Rec(a,b~Y~pY,g~Y~pY)
-  {
-      DIFFUSION_CONSTANT_2D =  1.7e-7
-  }
-}
+fceri_mdlr = """
 
 
 
