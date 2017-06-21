@@ -71,6 +71,7 @@ from . import data_model
 from . import parameter_system
 from . import cellblender_mol_viz
 from . import cellblender_utils
+from . import cellblender_preferences
 
 from . import cellblender_glyphs
 
@@ -893,7 +894,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
         self.diffusion_constant.draw(layout,parameter_system)
         #self.lr_bar_trigger = False
-        
+
         lr_bar_display = 0
         if len(self.custom_space_step.get_expr().strip()) > 0:
             # Set lr_bar_display directly
@@ -911,41 +912,43 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         #layout.prop ( self, "lr_bar_trigger", icon='NONE', text="lr_bar: " + str(lr_bar_display) )
 
 
-        box = layout.box()
-        row = box.row(align=True)
-        row.alignment = 'LEFT'
+        if bpy.context.scene.mcell.cellblender_preferences.bionetgen_mode:
 
-        comp_label = "BNGL: " + self.name
-        if len(self.component_list) > 0:
-          comp_list = []
-          for comp in self.component_list:
-            cname = comp.component_name
-            # state_list = comp.states_string.replace(',',' ').split() # Allows commas as separators
-            state_list = comp.states_string.split()
-            if len(state_list) > 0:
-              cname += "~"+"~".join(state_list)
-            comp_list.append(cname)
-          comp_label += " ( " + ", ".join(comp_list) + " )"
+            box = layout.box()
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
 
-        if not molecules.show_components:
-            row.prop(molecules, "show_components", icon='TRIA_RIGHT', text=comp_label, emboss=False)
-        else:
-            row.prop(molecules, "show_components", icon='TRIA_DOWN',  text=comp_label, emboss=False)
+            comp_label = "BNGL: " + self.name
+            if len(self.component_list) > 0:
+              comp_list = []
+              for comp in self.component_list:
+                cname = comp.component_name
+                # state_list = comp.states_string.replace(',',' ').split() # Allows commas as separators
+                state_list = comp.states_string.split()
+                if len(state_list) > 0:
+                  cname += "~"+"~".join(state_list)
+                comp_list.append(cname)
+              comp_label += " ( " + ", ".join(comp_list) + " )"
 
-            row = box.row()
-            col = row.column()
-            col.template_list("MCell_UL_check_component", "define_molecules",
-                              self, "component_list",
-                              self, "active_component_index",
-                              rows=4)
-            col = row.column(align=False)
-            # Use subcolumns to group logically related buttons together
-            subcol = col.column(align=True)
-            subcol.operator("mcell.mol_comp_add", icon='ZOOMIN', text="")
-            subcol.operator("mcell.mol_comp_remove", icon='ZOOMOUT', text="")
+            if not molecules.show_components:
+                row.prop(molecules, "show_components", icon='TRIA_RIGHT', text=comp_label, emboss=False)
+            else:
+                row.prop(molecules, "show_components", icon='TRIA_DOWN',  text=comp_label, emboss=False)
 
-            if self.component_list:
-                comp = self.component_list[self.active_component_index]
+                row = box.row()
+                col = row.column()
+                col.template_list("MCell_UL_check_component", "define_molecules",
+                                  self, "component_list",
+                                  self, "active_component_index",
+                                  rows=4)
+                col = row.column(align=False)
+                # Use subcolumns to group logically related buttons together
+                subcol = col.column(align=True)
+                subcol.operator("mcell.mol_comp_add", icon='ZOOMIN', text="")
+                subcol.operator("mcell.mol_comp_remove", icon='ZOOMOUT', text="")
+
+                if self.component_list:
+                    comp = self.component_list[self.active_component_index]
 
 
         box = layout.box()
@@ -1211,7 +1214,8 @@ class MCell_UL_check_molecule(bpy.types.UIList):
             col3.label ( "33333333333333333" )
             """
 
-            ms = context.scene.mcell.molecules
+            mcell = context.scene.mcell
+            ms = mcell.molecules
             show_name = "mol_" + item.name
             show_shape_name = show_name + "_shape"
             mat_name = show_name + "_mat"
