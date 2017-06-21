@@ -611,7 +611,7 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     script_name = StringProperty(name="Script Name", default="")
 
     parent_object = StringProperty(name="Parent_Object", description='Name of Parent Compartment Object')
-    membrane_name = StringProperty(name="Membrane_Definition", description='Membrane Definition for this Object (ex: PM OBJECT CP[ALL])')
+    membrane_name = StringProperty(name="Membrane_Name", description='Membrane Name for the surface of this object')
 
     dynamic_display_source = bpy.props.EnumProperty (
         items= [ # key        label

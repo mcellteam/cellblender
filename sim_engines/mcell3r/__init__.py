@@ -302,7 +302,8 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
             if len(g['parent_object']) > 0:
               f.write ( "    PARENT = %s\n" % (g['parent_object']) )
             if len(g['membrane_name']) > 0:
-              f.write ( "    MEMBRANE = %s\n" % (g['membrane_name']) )
+              # f.write ( "    MEMBRANE = %s\n" % (g['membrane_name']) )
+              f.write ( "    MEMBRANE = %s OBJECT %s[ALL]\n" % (g['membrane_name'], g['name']) )
             f.write ( "  }\n" )
     if rels != None:
       if 'release_site_list' in rels:
