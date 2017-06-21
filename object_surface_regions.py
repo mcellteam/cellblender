@@ -783,6 +783,18 @@ class MCellObjectPropertyGroup(bpy.types.PropertyGroup):
             reg_dict[reg.name] = reg_faces
         return reg_dict
 
+    def get_face_regions_dictionary (self, obj):
+        """ Return a dictionary with face id keys, and list of region names as a value"""
+        face_reg_dict = {}
+        obj_regs = self.regions.region_list
+        for reg in obj_regs:
+            mesh = obj.data
+            reg_faces = list(reg.get_region_faces(mesh))
+            for face in reg_faces:
+                if not face_reg_dict.get(face):
+                    face_reg_dict[face] = []
+                face_reg_dict[face].append(reg.name)
+        return(face_reg_dict)
 
 
 # Update format of object regions
