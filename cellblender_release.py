@@ -41,6 +41,7 @@ import re
 import cellblender
 from . import parameter_system
 from . import cellblender_utils
+from . import cellblender_preferences
 
 import cellblender.data_model as data_model
 
@@ -750,9 +751,11 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
                     helptext = "Molecule to Release\n" + \
                                "Selects the molecule to be released at this site."
-                    ps.draw_prop_with_help ( layout, "Molecule:", rel, "molecule", "mol_show_help", rel.mol_show_help, helptext )
-                    #ps.draw_prop_search_with_help ( layout, "Molecule:", rel, "molecule", mcell.molecules, "molecule_list", "mol_show_help", rel.mol_show_help, helptext )
-                    #layout.prop_search ( rel, "molecule", mcell.molecules, "molecule_list", text="Molecule", icon='FORCE_LENNARDJONES')
+                    if mcell.cellblender_preferences.bionetgen_mode:
+                        ps.draw_prop_with_help ( layout, "Molecule:", rel, "molecule", "mol_show_help", rel.mol_show_help, helptext )
+                    else:
+                        ps.draw_prop_search_with_help ( layout, "Molecule:", rel, "molecule", mcell.molecules, "molecule_list", "mol_show_help", rel.mol_show_help, helptext )
+                        #layout.prop_search ( rel, "molecule", mcell.molecules, "molecule_list", text="Molecule", icon='FORCE_LENNARDJONES')
 
                     if rel.molecule in mcell.molecules.molecule_list:
                         label = mcell.molecules.molecule_list[rel.molecule].bnglLabel
