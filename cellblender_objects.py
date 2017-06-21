@@ -515,10 +515,13 @@ class MCELL_UL_model_objects(bpy.types.UIList):
             model_obj = context.scene.objects[item.name]
             col = layout.column()
             col.label(item.name, icon='FILE_TICK')
-            col = layout.column()
-            col.prop ( item, 'parent_object', text="" )
-            col = layout.column()
-            col.prop ( item, 'membrane_name', text="" )
+
+            if bpy.context.scene.mcell.cellblender_preferences.bionetgen_mode:
+              # Draw the BioNetGen components
+              col = layout.column()
+              col.prop ( item, 'parent_object', text="" )
+              col = layout.column()
+              col.prop ( item, 'membrane_name', text="" )
 
             has_material = True
             if len(model_obj.material_slots) <= 0:
@@ -527,7 +530,12 @@ class MCELL_UL_model_objects(bpy.types.UIList):
               if model_obj.material_slots[0].material == None:
                 has_material = False
 
-            split = layout.split(percentage=0.7)  # This is used to make the color patch smaller
+            split = None
+            if bpy.context.scene.mcell.cellblender_preferences.bionetgen_mode:
+              split = layout.split(percentage=0.8)  # This is used to make the color patch smaller
+            else:
+              split = layout.split(percentage=0.7)  # This is used to make the color patch smaller
+
             col1 = split.column()
             col = split.column()
             if not has_material:
