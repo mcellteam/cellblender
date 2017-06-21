@@ -42,10 +42,71 @@ mcell_lib_path = "mcell/lib/"
 bionetgen_path = "bionetgen/bng2/BNG2.pl"
 nfsim_path = ""
 
+
+project_files_dir = ""
+start_seed = 1
+end_seed = 1
+
 #try:
 #  mcell_path = bpy.context.scene.mcell.cellblender_preferences.mcell_binary
 #except:
 #  mcell_path = ""
+
+
+def postprocess():
+  global parameter_dictionary
+  print ( "Postprocess called" )
+
+  mcellr_react_dir = os.path.join(project_files_dir, "output_data")
+
+  react_dir = os.path.join(project_files_dir, "output_data", "react_data")
+
+  if os.path.exists(react_dir):
+      shutil.rmtree(react_dir,ignore_errors=True)
+  if not os.path.exists(react_dir):
+      os.makedirs(react_dir)
+
+  react_dir = os.path.join(project_files_dir, "output_data", "react_data")
+
+  if os.path.exists(react_dir):
+      shutil.rmtree(react_dir,ignore_errors=True)
+  if not os.path.exists(react_dir):
+      os.makedirs(react_dir)
+
+
+  for run_seed in range(start_seed, end_seed+1):
+    print ( "  Postprocessing for seed " + str(run_seed) )
+
+    seed_dir = "seed_%05d" % run_seed
+
+    react_seed_dir = os.path.join(react_dir, seed_dir)
+
+    if os.path.exists(react_seed_dir):
+        shutil.rmtree(react_seed_dir,ignore_errors=True)
+    if not os.path.exists(react_seed_dir):
+        os.makedirs(react_seed_dir)
+
+
+    # Read the MCellR data file and split into a list of rows where each row is a list of columns
+    mcellr_react_file = open ( os.path.join ( mcellr_react_dir, 'Scene.mdlr_total.xml.gdat' ) )
+    all_react_data = mcellr_react_file.read()
+    react_data_all = [ [t.strip() for t in s.split(',') if len(t.strip()) > 0] for s in all_react_data.split('\n') if len(s) > 0 ]
+    react_data_header = react_data_all[0]
+    react_data_rows = react_data_all[1:]
+
+    for col in range(1,len(react_data_header)):
+      out_file_name = os.path.join ( react_seed_dir, react_data_header[col] + ".dat" )
+      print ( "Writing data to " + out_file_name )
+      f = open(out_file_name,"w")
+      for row in react_data_rows:
+        print ( "  " + row[0] + " " + row[col] )
+        f.write ( row[0] + " " + row[col] + '\n' )
+      f.close()
+
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
+  print ( "Done postrocessing MCellR Reaction Output" )
 
 
 # List of parameters as dictionaries - each with keys for 'name', 'desc', 'def', and optional 'as':
@@ -57,6 +118,7 @@ parameter_dictionary = {
   #'NFSim Path':     {'val': nfsim_path,     'as':'filename', 'desc':"NFSim Path",          'icon':'DRIVER'},
   'Output Detail (0-100)': {'val': 20, 'desc':"Amount of Information to Print (0-100)",    'icon':'INFO'},
   'Print Information': {'val': print_info, 'desc':"Print information about Limited Python Simulation"},
+  'Postprocess': {'val': postprocess, 'desc':"Postprocess the data for CellBlender"},
   'Reset': {'val': reset, 'desc':"Reset everything"}
 }
 
@@ -67,7 +129,7 @@ parameter_layout = [
   ['BioNetGen Path'],
   #['NFSim Path'],
   ['Output Detail (0-100)'],
-  ['Print Information', 'Reset']
+  ['Print Information', 'Postprocess', 'Reset']
 ]
 
 
@@ -87,11 +149,15 @@ def makedirs_exist_ok ( path_to_build, exist_ok=False ):
 
 def prepare_runs ( data_model, project_dir, data_layout=None ):
 
+  global project_files_dir
+
+  project_files_dir = "" + project_dir
+
   output_detail = parameter_dictionary['Output Detail (0-100)']['val']
 
-  if output_detail > 0: print ( "The current MCell-R engine doesn't really support the prepare/run model.\nIt just runs directly." )
+  if output_detail > 0: print ( "Inside prepare_runs in MCellR Engine, project_dir=" + project_dir )
 
-  if output_detail > 0: print ( "Converting the data model to an MDLR file (faking some of it for now with remaining_fceri_mdlr)." )
+  if output_detail > 0: print ( "  Note: The current MCell-R engine doesn't support the prepare/run model.\n  It just runs directly." )
 
   print ( "Running with python " + sys.version )   # This will be Blender's Python which will be 3.5+
   print ( "Project Dir: " + project_dir )          # This will be .../blend_file_name_files/mcell
@@ -100,8 +166,7 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   output_data_dir = os.path.join ( project_dir, "output_data" )
   makedirs_exist_ok ( output_data_dir, exist_ok=True )
 
-
-  global remaining_fceri_mdlr
+  time_step = '1e-6'  # This is needed as a default for plotting
 
   f = open ( os.path.join(output_data_dir,"Scene.mdlr"), 'w' )
   if 'initialization' in data_model:
@@ -111,6 +176,8 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
     data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'iterations',                'ITERATIONS' )
     data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'time_step',                 'TIME_STEP' )
     data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
+
+    time_step = data_model['initialization']['time_step']
 
   f.write ( 'INCLUDE_FILE = "Scene.geometry.mdl"\n' )
 
@@ -297,8 +364,31 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
     f.write("\n")
 
 
-  # Write the rest of the stuff
-  f.write ( remaining_fceri_mdlr )
+  if 'reaction_data_output' in data_model:
+    plot_out = data_model['reaction_data_output']
+    rxn_step = time_step  # Default if not otherwise specified in the reaction data output block
+    if 'rxn_step' in plot_out:
+      if len(plot_out['rxn_step']) > 0:
+        rxn_step = plot_out['rxn_step']
+    if 'reaction_output_list' in plot_out:
+      plist = plot_out['reaction_output_list']
+      if len(plist) > 0:
+        f.write ( "#REACTION_DATA_OUTPUT\n" )
+        f.write ( "{\n" )
+        f.write ( "  STEP = %s\n" % rxn_step )
+        for p in plist:
+          if 'rxn_or_mol' in p:
+            if p['rxn_or_mol'] == 'MDLString':
+              # Trouble with first two approaches:
+              # f.write ( "  { %s } => \"./react_data/seed_\" & seed & \"/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
+              # f.write ( "  { %s } => \"./react_data/seed_00001/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
+              f.write ( "  { %s } => \"./react_data/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
+        f.write ( "}\n" )
+        f.write("\n")
+
+  f.write("\n")
+  f.write ( "INCLUDE_FILE = \"Scene.viz_output.mdl\"\n\n" )
+
   f.close()
 
   f = open ( os.path.join(output_data_dir,"Scene.geometry.mdl"), 'w' )
@@ -320,6 +410,11 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
 
   fs = data_model['simulation_control']['start_seed']
   ls = data_model['simulation_control']['end_seed']
+
+  global start_seed
+  global end_seed
+  start_seed = int(fs)
+  end_seed = int(ls)
 
   engine_path = os.path.dirname(__file__)
 
@@ -356,8 +451,6 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   # For now return no commands at all since the run has already taken place
   command_list = []
 
-  if output_detail > 0: print ( "Inside MCellR Engine, project_dir=" + project_dir )
-
   return ( command_list )
 
 
@@ -370,40 +463,3 @@ if __name__ == "__main__":
     print ( "Called with __name__ == __main__" )
     pass
 
-
-### The following strings are short cuts (should come from data model)
-
-
-remaining_fceri_mdlr = """
-
-/* Observables bloc */
-#REACTION_DATA_OUTPUT
-{
-   STEP = 1e-6
-
-    /*LynFree*/
-    {COUNT[Lyn(U,SH2), WORLD] } => "./react_data/LycFree.dat"
-
-    //{COUNT[Rec.Rec, WORLD] } => "./react_data/RecDim.dat"
-    //COUNT[Lyn(U!1).Rec(b~Y!1,a), WORLD]} => "./react_data/LynRec.dat"
-    //COUNT[Lyn(U!1).Rec(b~Y!1,a!2).Lig(l!2), WORLD]} => "./react_data/LynRecLig.dat"
-
-    {COUNT[Rec(b~pY!?), WORLD] } => "./react_data/RecPbeta.dat"
-    {COUNT[Rec(a!1).Lig(l!1,l), WORLD]} => "./react_data/RecMon.dat"
-    {COUNT[Rec(a!1).Lig(l!1,l!2).Rec(a!2), WORLD]} => "./react_data/RecDim.dat"
-    {COUNT[Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b!3).Rec(a!1,b), WORLD]} => "./react_data/RecRecLigLyn.dat"
-
-    {COUNT[Rec(g~pY),WORLD] + COUNT[Rec(g~pY!+), WORLD] } => "./react_data/RecPgamma.dat"
-    {COUNT[Rec(g~pY!1).Syk(tSH2!1), WORLD] } => "./react_data/RecSyk.dat"
-    {COUNT[Rec(g~pY!1).Syk(tSH2!1,a~pY), WORLD] } => "./react_data/RecSykPS.dat"
-
-    //{COUNT[Syk, WORLD] } => "./react_data/SykTest.dat"
-    //{COUNT[Lyn, WORLD] } => "./react_data/LynTest.dat"
-    //{COUNT[Rec, WORLD] } => "./react_data/RecTest.dat"
-
-}
-
-
-INCLUDE_FILE = "Scene.viz_output.mdl"
-
-"""
