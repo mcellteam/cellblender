@@ -237,7 +237,7 @@ def write_parameter_system ( ps, f ):
             f.write ( "    /* " + p['par_description'] + " " + p['par_units'] + " */\n" )
           else:
             f.write ( "\n" )
-            
+
         f.write ( "\n" );
 
 

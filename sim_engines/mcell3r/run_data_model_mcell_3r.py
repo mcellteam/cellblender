@@ -263,9 +263,9 @@ def run_mcell_sweep ( sys_argv, data_model=None ):
     error_file_option = parsed_args.error_file_opt
     log_file_option = parsed_args.log_file_opt
     mcell_processors = parsed_args.num_processors
-    
+
     dm = data_model
-    
+
     if dm is None:
         data_model_file_name = parsed_args.data_model_file_name
 

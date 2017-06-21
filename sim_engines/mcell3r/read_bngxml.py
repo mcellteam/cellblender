@@ -16,7 +16,7 @@ except ImportError:
 
 def findBond(bondDefinitions, component):
     '''
-    Returns an appropiate bond number when veryfying how 
+    Returns an appropiate bond number when veryfying how
     to molecules connect in a species
     '''
     for idx, bond in enumerate(bondDefinitions.getchildren()):

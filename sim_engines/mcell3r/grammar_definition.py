@@ -72,14 +72,14 @@ section_enclosure2_ = nestedExpr( '{', '}')
 
 
 section_enclosure_ = Forward()
-nestedBrackets = nestedExpr('[', ']', content=section_enclosure_) 
-nestedCurlies = nestedExpr('{', '}', content=section_enclosure_) 
+nestedBrackets = nestedExpr('[', ']', content=section_enclosure_)
+nestedCurlies = nestedExpr('{', '}', content=section_enclosure_)
 section_enclosure_ << (statement | Group(identifier + ZeroOrMore(identifier) + nestedCurlies) |  Group(identifier + '@' + restOfLine) | Word(alphas, alphanums + "_[]") | identifier | Suppress(',') | '@' | real)
 
-function_entry_ = Suppress(dbquotes) + Group(identifier.setResultsName('functionName') + Suppress(lparen) + 
+function_entry_ = Suppress(dbquotes) + Group(identifier.setResultsName('functionName') + Suppress(lparen) +
                  delimitedList(Group(identifier.setResultsName('key') + Suppress(equal) + (identifier | numarg).setResultsName('value')), delim=',').setResultsName('parameters') + Suppress(rparen)) + Suppress(dbquotes)
 
-name = Word(alphanums + '_') 
+name = Word(alphanums + '_')
 species = Suppress('()') + Optional(Suppress('@' + Word(alphanums + '_-'))) + ZeroOrMore(Suppress('+') + Word(alphanums + "_" + ":#-")
                                     + Suppress("()") + Optional(Suppress('@' + Word(alphanums + '_-'))))
 
@@ -98,7 +98,7 @@ molecule_instance = Group(identifier.setResultsName('moleculeName') +
 species_definition = Group(Optional(Group('@' + Word(alphanums + '_')).setResultsName('speciesCompartment') + Suppress('::')) +
                            delimitedList(molecule_instance, delim='.').setResultsName('speciesPattern'))
 reaction_definition = Group(Group(delimitedList(species_definition, delim='+')).setResultsName('reactants') + (uni_arrow | bi_arrow) +
-                            Group(delimitedList(species_definition, delim='+')).setResultsName('products') + 
+                            Group(delimitedList(species_definition, delim='+')).setResultsName('products') +
                             Group(lbracket + (numarg | (identifier + Suppress(Optional('()')))) + Optional(comma + (numarg| (identifier + Suppress(Optional('()'))))) + rbracket).setResultsName('rate'))
 
 # generic hash section grammar

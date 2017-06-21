@@ -98,7 +98,7 @@ def process_init_compartments(initializations):
             for option in initialization['compartmentOptions'][0]:
                 if len(option) > 0:
                     if option[0] == 'MEMBRANE':
-                        
+
                         tmp = option[1].strip()
                         optionDict['membrane'] = tmp.split(' ')[0]
                     elif option[0] == 'PARENT':
@@ -179,7 +179,7 @@ def process_diffussion_elements(parameters, extendedData):
     '''
     extract the list of properties associated to molecule types and compartment
     objects. right now this information will be encoded into the bng-exml spec.
-    It also extracts some predetermined model properties. 
+    It also extracts some predetermined model properties.
     '''
     modelProperties = {}
     moleculeProperties = defaultdict(list)
@@ -191,7 +191,7 @@ def process_diffussion_elements(parameters, extendedData):
 
     for parameter in extendedData['system']:
         modelProperties[parameter[0].strip()] = parameter[1].strip()
-    
+
     for molecule in extendedData['molecules']:
         if 'moleculeParameters' in molecule[1]:
             for propertyValue in molecule[1]['moleculeParameters']:
@@ -200,7 +200,7 @@ def process_diffussion_elements(parameters, extendedData):
         if 'diffusionFunction' in molecule[1]:
             if 'function' in molecule[1]['diffusionFunction'].keys():
                 parameters = molecule[1]['diffusionFunction'][1]['parameters']
-                data = {'name': '"{0}"'.format(molecule[1]['diffusionFunction'][1]['functionName']), 
+                data = {'name': '"{0}"'.format(molecule[1]['diffusionFunction'][1]['functionName']),
                 'parameters':[(x['key'], x['value']) for x in parameters]}
             else:
                 data = {'name':molecule[1]['diffusionFunction'][1].strip(), 'parameters': []}
@@ -231,7 +231,7 @@ def process_diffussion_elements(parameters, extendedData):
             if membrane != '' and len(membrane_properties) > 0:
                 compartmentProperties[membrane] = membrane_properties
 
-    return {'modelProperties':modelProperties, 'moleculeProperties': moleculeProperties, 
+    return {'modelProperties':modelProperties, 'moleculeProperties': moleculeProperties,
             'compartmentProperties': compartmentProperties}
 
 
@@ -282,7 +282,7 @@ def construct_bng_from_mdlr(mdlrPath,nfsimFlag=False, separate_spatial=True):
         functions = process_functions(sections['math_functions'])
     else:
         functions = ''
-    
+
     if not nfsimFlag:
         observables = process_observables(sections['observables'])
     else:
@@ -341,7 +341,7 @@ def output_bngl(bngl_str, bnglPath):
 
 
 if __name__ == "__main__":
-    
+
     bngl_str = construct_bng_from_mdlr('example.mdlr')
     bnglPath = 'output.bngl'
     output_bngl(bngl_str, bnglPath)

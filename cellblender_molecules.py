@@ -914,7 +914,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         box = layout.box()
         row = box.row(align=True)
         row.alignment = 'LEFT'
-        
+
         comp_label = "BNGL: " + self.name
         if len(self.component_list) > 0:
           comp_list = []

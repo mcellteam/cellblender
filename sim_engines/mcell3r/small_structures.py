@@ -186,19 +186,19 @@ class Species:
                 #for element in precursors:
                 #    if element.getMolecule(tag) != None:
                 #        tmp = element.getMolecule(tag)
-            
+
             for component in components:
                 if tmp.contains(component[0][0]):
                     tmpCompo = tmp.getComponent(component[0][0])
                     #continue
                 else:
                     tmpCompo = Component(component[0][0])
-                
+
                 for index in range(1, len(component[0])):
                     tmpCompo.addState(component[0][index])
                 if len(component) > 1:
                     tmpCompo.addBond(component[1])
-                if not tmp.contains(component[0][0]):   
+                if not tmp.contains(component[0][0]):
                     tmp.addComponent(tmpCompo)
             if not self.contains(tag):
                 self.molecules.append(tmp)
@@ -238,7 +238,7 @@ class Species:
             for component in element.components:
                 for index in range(0, len(component.bonds)):
                     if int(component.bonds[index]) in intersection:
-                        
+
                         if component.bonds[index] in correspondence:
                             component.bonds[index] = correspondence[component.bonds[index]]
                         else:
@@ -320,7 +320,7 @@ class Species:
                                                                                                bondDict[key][1]))
         xmlStr.write('{0}</ListOfBonds>\n'.format(tab))
 
-        
+
         return xmlStr.getvalue()
 
     def reset(self):
@@ -361,7 +361,7 @@ class Species:
                         reactionCenter.append((speciesStructure))
                     else:
                         context.append((speciesStructure))
-                    atomicPatterns[str(speciesStructure)] = speciesStructure   
+                    atomicPatterns[str(speciesStructure)] = speciesStructure
                 speciesStructure = Species()
                 #one atomic pattern for the bonds
                 speciesStructure.bonds = self.bonds
@@ -403,7 +403,7 @@ class Species:
     def graphVizGraph(self, graph, identifier, layout='LR', options={}):
         speciesDictionary = {}
         graphName = "%s_%s" % (identifier, str(self))
-        
+
         for idx, molecule in enumerate(self.molecules):
             ident = "%s_m%i" %(graphName, idx)
             speciesDictionary[molecule.idx] = ident
@@ -413,7 +413,7 @@ class Species:
                 #s1 = graph.subgraph(name = graphName, label=' ')
                 compDictionary = molecule.graphVizGraph(graph, ident, flag=False, options=options)
             speciesDictionary.update(compDictionary)
-            
+
         for bond in self.bonds:
             if bond[0] in speciesDictionary and bond[1] in speciesDictionary:
                 if layout == 'RL':
@@ -469,7 +469,7 @@ class Molecule:
         molecule = Molecule(self.name, self.idx)
         for element in self.components:
             molecule.components.append(element.copy())
-        return molecule 
+        return molecule
 
     def addChunk(self, chunk):
         component = Component(chunk[0][0][0][0])
@@ -533,7 +533,7 @@ class Molecule:
         self.components = sorted(self.components, key = lambda st:st.name)
         finalStr =  self.name
         if len(self.components) > 0:
-            finalStr += '(' + ','.join([str(x) for x in self.components]) + ')' 
+            finalStr += '(' + ','.join([str(x) for x in self.components]) + ')'
         if self.compartment != '':
             finalStr += '@' + self.compartment
         return finalStr
@@ -567,7 +567,7 @@ class Molecule:
                     comp[0].addBond(bond)
                 for state in element.states:
                     comp[0].addState(state)
-                    
+
     def reset(self):
         for element in self.components:
             element.reset()

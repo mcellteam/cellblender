@@ -12,7 +12,7 @@ class NFSim:
 
     def init_nfsim(self, fileName, verbose):
         """
-        inits an nfsim object with a given xml file and a verbosity setting 
+        inits an nfsim object with a given xml file and a verbosity setting
         """
         self.lib.setupNFSim_c(fileName, verbose)
 
@@ -32,7 +32,7 @@ class NFSim:
 
         CArray = c_char_p * len(initDict)
         speciesCArray = CArray(*species)
-        seedCArray = CArray(*seeds) 
+        seedCArray = CArray(*seeds)
         return self.lib.initSystemNauty_c(speciesCArray, seedCArray, len(initDict))
 
 
@@ -48,7 +48,7 @@ class NFSim:
         returns all species that participate in active reactions with numReactants reactants
         """
         #self.lib.querySystemStatus_c.restype = QueryResultsStruct
-        
+
         mem = self.lib.mapvector_create()
         #queryResults = self.lib.querySystemStatus_c(option, mem)
         self.lib.querySystemStatus_c.argtypes = [c_char_p, c_void_p]
@@ -78,8 +78,8 @@ if __name__ == "__main__":
     #print '---', nfsim.querySystemStatus("observables")
     nfsim.init_system_nauty({"c:l~NO_STATE!3!1,c:r~NO_STATE!2!0,m:L@EC!1,m:R@PM!0,":1})
     print('----', nfsim.querySystemStatus("complex"))
-    
-    
+
+
     """
     nfsim.initSystemXML('''<Model><ListOfSpecies><Species id="S1"  concentration="1" name="@PM::Lig(l!1,l).Rec(a!1)" compartment="PM">
         <ListOfMolecules>
