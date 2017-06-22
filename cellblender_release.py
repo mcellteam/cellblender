@@ -631,6 +631,7 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
     def remove_active_rel_site ( self, context ):
         """ Remove the active release site from the list of release sites """
         print ( "Call to: \"remove_active_rel_site\"" )
+        mcell = context.scene.mcell
         if len(self.mol_release_list) > 0:
             rel = self.mol_release_list[self.active_release_index]
             if rel:
