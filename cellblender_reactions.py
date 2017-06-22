@@ -127,8 +127,6 @@ def check_reaction(self, context):
     status = ""
 
 
-    """ # Comment out most reaction checking for now """
-
     # Clean up rxn.reactants only if necessary to avoid infinite recursion.
     reactants = rxn.reactants.replace(" ", "")
     reactants = reactants.replace("+", " + ")
