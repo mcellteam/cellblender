@@ -89,7 +89,6 @@ class MCELL_OT_release_site_remove(bpy.types.Operator):
 
 def check_release_site(self, context):
     """ Thin wrapper for check_release_site. """
-
     check_release_site_wrapped(context)
 
 
@@ -99,20 +98,35 @@ def check_release_site_wrapped(context):
     mcell = context.scene.mcell
     rel_list = mcell.release_sites.mol_release_list
     rel = rel_list[mcell.release_sites.active_release_index]
+    rel.status = ""
 
-    name_status = check_release_site_name(context)
-    molecule_status = ""
-    # BNGL: Checking removed: molecule_status = check_release_molecule(context)
-    object_status = check_release_object_expr(context)
+    if mcell.cellblender_preferences.bionetgen_mode:
+        # Perform BioNetGen Checking
+        pass
 
-    if name_status:
-        rel.status = name_status
-    elif molecule_status:
-        rel.status = molecule_status
-    elif object_status and rel.shape == 'OBJECT':
-        rel.status = object_status
     else:
-        rel.status = ""
+        # Perform MCell Checking
+
+        name_status = check_release_site_name(context)
+        molecule_status = ""
+
+        if mcell.cellblender_preferences.bionetgen_mode:
+            # Perform BioNetGen Molecule Checking
+            pass
+        else:
+            # Perform MCell Molecule Checking
+            molecule_status = check_release_molecule(context)
+
+        object_status = check_release_object_expr(context)
+
+        if name_status:
+            rel.status = name_status
+        elif molecule_status:
+            rel.status = molecule_status
+        elif object_status and rel.shape == 'OBJECT':
+            rel.status = object_status
+        else:
+            rel.status = ""
 
     return
 
@@ -344,7 +358,7 @@ class MCell_Point_List_OT_point_remove_all(bpy.types.Operator):
     bl_description = "Remove all points from the list"
     bl_options = {'REGISTER', 'UNDO'}
 
-    def execute(self, context):# BNGL: Checking removed:
+    def execute(self, context):
         rs = context.scene.mcell.release_sites
         rs.mol_release_list[rs.active_release_index].remove_all_points(context)
         return {'FINISHED'}
@@ -368,12 +382,12 @@ class MCell_PointList_UL(bpy.types.UIList):
 class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Site Name", default="Release_Site",
-        description="The name of the release site")
-        # BNGL: Checking removed: update=check_release_site)
+        description="The name of the release site",
+        update=check_release_site)
     molecule = StringProperty(
         name="Molecule",
-        description="The molecule to release")
-        # BNGL: Checking removed: update=check_release_site)
+        description="The molecule to release",
+        update=check_release_site)
     shape_enum = [
         ('CUBIC', 'Cubic', ''),
         ('SPHERICAL', 'Spherical', ''),
@@ -382,9 +396,8 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         ('OBJECT', 'Object/Region', '')]
     shape = EnumProperty(
         items=shape_enum, name="Release Shape",
-        description="Release in the specified shape. Surface molecules can "
-                    "only use Object/Region." )
-                    # BNGL: Checking removed: update=check_release_site)
+        description="Release in the specified shape. Surface molecules can only use Object/Region.",
+        update=check_release_site)
     orient_enum = [
         ('\'', "Top Front", ""),
         (',', "Top Back", ""),
@@ -395,8 +408,8 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
                     "orientation.")
     object_expr = StringProperty(
         name="Object/Region",
-        description="Release in/on the specified object/region." )
-        # BNGL: Checking removed: update=check_release_site)
+        description="Release in/on the specified object/region.",
+        update=check_release_site)
         
     location_x = PointerProperty ( name="Relese Loc X", type=parameter_system.Parameter_Reference )
     location_y = PointerProperty ( name="Relese Loc Y", type=parameter_system.Parameter_Reference )
@@ -607,7 +620,12 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
         relsite.init_properties(mcell.parameter_system)
 
-        # BNGL: Checking removed: check_release_molecule(context)
+        if mcell.cellblender_preferences.bionetgen_mode:
+            # Perform BioNetGen Checking
+            pass
+        else:
+            # Perform MCell Checking
+            check_release_molecule(context)
 
 
     def remove_active_rel_site ( self, context ):
@@ -623,8 +641,13 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                 self.active_release_index = 0
             if len(self.mol_release_list) <= 0:
                 self.next_id = 1
-            # BNGL: Checking removed: if self.mol_release_list:
-            # BNGL: Checking removed:     check_release_site(self, context)
+            if mcell.cellblender_preferences.bionetgen_mode:
+                # Perform BioNetGen Checking
+                pass
+            else:
+                # Perform MCell Checking
+                if self.mol_release_list:
+                    check_release_site(self, context)
 
 
     def build_data_model_from_properties ( self, context ):
