@@ -36,7 +36,7 @@ def reset():
 import bpy
 
 # Force some defaults which would otherwise be empty (""):
-shared_path = ""
+shared_path = os.path.dirname(__file__)
 mcell_path = "mcell/build/mcell"
 mcell_lib_path = "mcell/lib/"
 bionetgen_path = "bionetgen/bng2/BNG2.pl"
