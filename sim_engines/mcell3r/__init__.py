@@ -452,6 +452,11 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   # For now return no commands at all since the run has already taken place
   command_list = []
 
+
+  # Postprocessing should be done through the command_list, but force it here for now...
+
+  postprocess()
+
   return ( command_list )
 
 
