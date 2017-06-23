@@ -419,7 +419,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
         description="Amount of debug information to print: 0 to 100")
     
     bionetgen_mode = BoolProperty(
-        name="BioNetGen Mode", default=False,
+        name="BioNetGen Language Mode", default=False,
         description="Show BioNetGen Options and disable some checking")
 
     use_long_menus = BoolProperty(
