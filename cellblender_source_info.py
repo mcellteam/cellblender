@@ -221,6 +221,9 @@ cellblender_info = {
         "examples"+os.sep+"scripted_dyn_geo.py",
         "examples"+os.sep+"shape_key_dyn_geo.py",
         "examples"+os.sep+"dyn_geo_conc_clamp.py",
+        "examples"+os.sep+"direct_transport.py",
+        "examples"+os.sep+"delayed_transport.py",
+        "examples"+os.sep+"direct_transport_BNGL.py",
         #        "bng"+os.sep+"libsbml3"+os.sep+"__init__.py",
         ],
 
