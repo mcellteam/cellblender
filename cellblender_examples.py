@@ -65,7 +65,7 @@ def view_selected():
 
 class MCELL_OT_load_lotka_volterra_rxn_limited(bpy.types.Operator):
     bl_idname = "mcell.load_lotka_volterra_rxn_limited"
-    bl_label = "Reaction-Limited"
+    bl_label = "Lotka-Volterra: Reaction-Limited"
     bl_description = "Loads the Reaction-Limited Lotka-Volterra model"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -80,7 +80,7 @@ class MCELL_OT_load_lotka_volterra_rxn_limited(bpy.types.Operator):
 
 class MCELL_OT_load_lotka_volterra_diff_limited(bpy.types.Operator):
     bl_idname = "mcell.load_lotka_volterra_diff_limited"
-    bl_label = "Diffusion-Limited"
+    bl_label = "Lotka-Volterra: Diffusion-Limited"
     bl_description = "Loads the Diffusion-Limited Lotka-Volterra model"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -93,17 +93,32 @@ class MCELL_OT_load_lotka_volterra_diff_limited(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MCELL_OT_load_ficks_law(bpy.types.Operator):
-    bl_idname = "mcell.load_ficks_laws"
-    bl_label = "Fick's Laws"
+class MCELL_OT_load_ficks_1D(bpy.types.Operator):
+    bl_idname = "mcell.load_ficks_1d"
+    bl_label = "Fick's Law 1D"
     bl_description = "Loads a model illustrating Fick's Laws"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
 
         dm = {}
-        dm['mcell'] = examples.ficks_laws.ficks_laws_dm
-        cellblender.replace_data_model(dm, geometry=True)
+        dm['mcell'] = examples.ficks_laws.ficks_law_1D_dm
+        cellblender.replace_data_model(dm, geometry=True, scripts=True)
+        view_all()
+        return {'FINISHED'}
+
+
+class MCELL_OT_load_ficks_3D(bpy.types.Operator):
+    bl_idname = "mcell.load_ficks_3d"
+    bl_label = "Fick's Law 3D"
+    bl_description = "Loads a model illustrating Fick's Laws"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.ficks_laws.ficks_law_3D_dm
+        cellblender.replace_data_model(dm, geometry=True, scripts=True)
         view_all()
         return {'FINISHED'}
 
@@ -447,7 +462,7 @@ class MCELL_OT_load_dynamic_geometry(bpy.types.Operator):
 
         dm = {}
         dm['mcell'] = examples.dynamic_geometry.dynamic_geometry_dm
-        cellblender.replace_data_model(dm, geometry=True)
+        cellblender.replace_data_model(dm, geometry=True, scripts=True)
 
         # load object with shape keys from blend file
         blendfile = os.path.join(os.path.dirname(__file__), "./examples/dynamic_geometry.blend")
@@ -489,12 +504,14 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( layout )
         else:
             ps = mcell.parameter_system
-            row = layout.row(align=True)
-            row.label(text="Lotka-Volterra:")
+            row = layout.row()
             row.operator("mcell.load_lotka_volterra_rxn_limited")
+            row = layout.row()
             row.operator("mcell.load_lotka_volterra_diff_limited")
             row = layout.row()
-            row.operator("mcell.load_ficks_laws")
+            row.operator("mcell.load_ficks_1d")
+            row = layout.row()
+            row.operator("mcell.load_ficks_3d")
             row = layout.row()
             row.operator("mcell.load_rat_nmj")
             row = layout.row()
