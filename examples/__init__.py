@@ -1,5 +1,6 @@
 from . import lv
 from . import ficks_laws
+from . import mind_mine_system
 from . import rat_nmj
 from . import pbc
 from . import lipid_raft

@@ -123,6 +123,21 @@ class MCELL_OT_load_ficks_3D(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_load_mind_mine(bpy.types.Operator):
+    bl_idname = "mcell.load_mind_mine"
+    bl_label = "MinD / MinE System"
+    bl_description = "Loads a sample MinD/MinE System"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.mind_mine_system.mind_mine_dm
+        cellblender.replace_data_model(dm, geometry=True)
+        view_all()
+        return {'FINISHED'}
+
+
 class MCELL_OT_load_rat_nmj(bpy.types.Operator):
     bl_idname = "mcell.load_rat_nmj"
     bl_label = "Rat NMJ"
@@ -512,6 +527,8 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mcell.load_ficks_1d")
             row = layout.row()
             row.operator("mcell.load_ficks_3d")
+            row = layout.row()
+            row.operator("mcell.load_mind_mine")
             row = layout.row()
             row.operator("mcell.load_rat_nmj")
             row = layout.row()
