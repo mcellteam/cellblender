@@ -147,6 +147,21 @@ class MCELL_OT_load_lotka_volterra_diff_limited(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_load_fceri_mcell3r(bpy.types.Operator):
+    bl_idname = "mcell.load_fceri_mcell3r"
+    bl_label = "FCERI MCell Rules"
+    bl_description = "Loads a model of FCERI utilizing MCell Rules"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.fceri_mcell3r.fceri_mcell3r_dm
+        cellblender.replace_data_model(dm, geometry=True, scripts=True)
+        view_all()
+        return {'FINISHED'}
+
+
 class MCELL_OT_load_ficks_1D(bpy.types.Operator):
     bl_idname = "mcell.load_ficks_1d"
     bl_label = "Fick's Law 1D"
@@ -654,6 +669,8 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mcell.load_del_transp")
             row = layout.row()
             row.operator("mcell.load_dir_tr_bngl")
+            row = layout.row()
+            row.operator("mcell.load_fceri_mcell3r")
             row = layout.row()
             row.operator("mcell.load_mind_mine")
 

@@ -210,6 +210,7 @@ cellblender_info = {
         "bng"+os.sep+"treelib3"+os.sep+"tree.py",
         "examples"+os.sep+"__init__.py",
         "examples"+os.sep+"lv.py",
+        "examples"+os.sep+"fceri_mcell3r.py",
         "examples"+os.sep+"ficks_laws.py",
         "examples"+os.sep+"mind_mine_system.py",
         "examples"+os.sep+"rat_nmj.py",

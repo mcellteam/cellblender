@@ -12,3 +12,4 @@ from . import dyn_geo_conc_clamp
 from . import direct_transport
 from . import delayed_transport
 from . import direct_transport_BNGL
+from . import fceri_mcell3r
