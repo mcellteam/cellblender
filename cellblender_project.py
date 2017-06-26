@@ -169,7 +169,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
         return True
 
 
-    def write_as_mdl ( self, obj_name, points, faces, origin=None, file_name=None, partitions=False, instantiate=False ):
+    def write_as_mdl ( self, obj_name, points, faces, regions_dict, origin=None, file_name=None, partitions=False, instantiate=False ):
       if file_name != None:
         out_file = open ( file_name, "w" )
         if partitions:
@@ -190,6 +190,25 @@ class MCELL_OT_export_project(bpy.types.Operator):
             s = "    [ " + str(f[0]) + ", " + str(f[1]) + ", " + str(f[2]) + " ]\n"
             out_file.write ( s );
         out_file.write ( "  }\n" )
+
+        if regions_dict:
+            # Begin SURFACE_REGIONS block
+            out_file.write("  DEFINE_SURFACE_REGIONS\n")
+            out_file.write("  {\n")
+
+            region_names = [k for k in regions_dict.keys()]
+            region_names.sort()
+            for region_name in region_names:
+                out_file.write("    %s\n" % (region_name))
+                out_file.write("    {\n")
+                out_file.write("      ELEMENT_LIST = " +
+                               str(regions_dict[region_name])+'\n')
+                out_file.write("    }\n")
+
+            # close SURFACE_REGIONS block
+            out_file.write("  }\n")
+
+
         if origin != None:
             out_file.write ( "  TRANSLATE = [ %.15g, %.15g, %.15g ]\n" % (origin[0], origin[1], origin[2] ) )
         out_file.write ( "}\n" )
@@ -286,6 +305,10 @@ class MCELL_OT_export_project(bpy.types.Operator):
                             compiled_text = compile ( bpy.data.texts[obj.script_name].as_string(), '<string>', 'exec' )
                             script_dict[obj.script_name] = compiled_text
 
+                # Save state of mol_viz_enable and disable mol viz during frame change for dynamic geometry
+                mol_viz_state = context.scene.mcell.mol_viz.mol_viz_enable
+                context.scene.mcell.mol_viz.mol_viz_enable = False
+
                 for frame_number in range(iterations+1):
                     ####################################################################
                     #
@@ -317,11 +340,9 @@ class MCELL_OT_export_project(bpy.types.Operator):
                     for obj in context.scene.mcell.model_objects.object_list:
                         if obj.dynamic:
                             # print ( "  Iteration " + str(frame_number) + ", Saving geometry for object " + obj.name + " using script \"" + obj.script_name + "\"" )
-                            file_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
-                            full_file_name = os.path.join(path_to_dg_files,file_name)
-
                             points = []
                             faces = []
+                            regions_dict = None
                             origin = [0,0,0]
                             if len(obj.script_name) > 0:
                                 # Let the script create the geometry
@@ -332,18 +353,22 @@ class MCELL_OT_export_project(bpy.types.Operator):
                                 #print ( 80*"=" )
                                 # exec ( script_dict[obj.script_name], locals() )
                                 exec ( script_dict[obj.script_name] )
-                                self.write_as_mdl ( obj.name, points, faces, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
                             else:
                                 # Get the geometry from the object (presumably animated by Blender)
 
                                 print ( "Build MDL mesh from Blender object for frame " + str(frame_number) )
 
                                 geom_obj = context.scene.objects[obj.name]
+                                mesh = geom_obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
+                                mesh.transform(mathutils.Matrix() * geom_obj.matrix_world)
+                                points = [v.co for v in mesh.vertices]
+                                faces = [f.vertices for f in mesh.polygons]
+                                regions_dict = geom_obj.mcell.get_regions_dictionary(geom_obj)
+                                del mesh
 
-                                geom_file = open(full_file_name,'w')
-                                export_mcell_mdl.save_geometry(context,geom_file,[geom_obj])
-                                geom_file.close()
-
+                            file_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
+                            full_file_name = os.path.join(path_to_dg_files,file_name)
+                            self.write_as_mdl ( obj.name, points, faces, regions_dict, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
                             #geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",file_name)))
 
                     # Write out the "master" MDL file for this frame
@@ -369,6 +394,9 @@ class MCELL_OT_export_project(bpy.types.Operator):
                     geom_list_file.write('%.9g %s\n' % (frame_number*time_step, frame_file_name))
 
                 geom_list_file.close()
+
+                # Restore setting for mol viz
+                context.scene.mcell.mol_viz.mol_viz_enable = mol_viz_state
 
                 # Restore the current frame
                 context.scene.frame_set(fc)

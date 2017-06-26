@@ -890,6 +890,7 @@ def save_geometry(context, out_file, object_list):
             context.scene.objects.active = data_object
             bpy.ops.object.mode_set(mode='OBJECT')
 
+            # Begin POLYGON_LIST block
             out_file.write("%s POLYGON_LIST\n" % (data_object.name))
             out_file.write("{\n")
 
@@ -936,9 +937,10 @@ def save_geometry(context, out_file, object_list):
                                    str(regions[region_name])+'\n')
                     out_file.write("    }\n")
 
+                # close SURFACE_REGIONS block
                 out_file.write("  }\n")
 
-            # close SURFACE_REGIONS block
+            # close POLYGON_LIST block
             out_file.write("}\n\n")
 
             # restore proper object visibility state
