@@ -317,6 +317,9 @@ class MCELL_OT_export_project(bpy.types.Operator):
                     for obj in context.scene.mcell.model_objects.object_list:
                         if obj.dynamic:
                             # print ( "  Iteration " + str(frame_number) + ", Saving geometry for object " + obj.name + " using script \"" + obj.script_name + "\"" )
+                            file_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
+                            full_file_name = os.path.join(path_to_dg_files,file_name)
+
                             points = []
                             faces = []
                             origin = [0,0,0]
@@ -329,20 +332,18 @@ class MCELL_OT_export_project(bpy.types.Operator):
                                 #print ( 80*"=" )
                                 # exec ( script_dict[obj.script_name], locals() )
                                 exec ( script_dict[obj.script_name] )
+                                self.write_as_mdl ( obj.name, points, faces, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
                             else:
                                 # Get the geometry from the object (presumably animated by Blender)
 
                                 print ( "Build MDL mesh from Blender object for frame " + str(frame_number) )
 
                                 geom_obj = context.scene.objects[obj.name]
-                                mesh = geom_obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
-                                mesh.transform(mathutils.Matrix() * geom_obj.matrix_world)
-                                points = [v.co for v in mesh.vertices]
-                                faces = [f.vertices for f in mesh.polygons]
 
-                            file_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
-                            full_file_name = os.path.join(path_to_dg_files,file_name)
-                            self.write_as_mdl ( obj.name, points, faces, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
+                                geom_file = open(full_file_name,'w')
+                                export_mcell_mdl.save_geometry(context,geom_file,[geom_obj])
+                                geom_file.close()
+
                             #geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",file_name)))
 
                     # Write out the "master" MDL file for this frame
