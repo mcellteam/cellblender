@@ -3,6 +3,7 @@
 import sys
 import numpy
 import matplotlib as mpl
+mpl.use("TkAgg")
 import matplotlib.pyplot as plt
 
 if (__name__ == '__main__'):
