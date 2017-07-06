@@ -357,6 +357,13 @@ def run_mcell_sweep ( sys_argv, data_model=None ):
     for run_cmd in run_cmd_list:
         print ( "  " + str(run_cmd) )
 
+    if str(parsed_args.runner_type) == "extern":
+
+        # Using an external runner, so just return the run command list
+        print ( "Returning run command list for use by an external runner" )
+        return run_cmd_list
+
+
     if str(parsed_args.runner_type) == "mpp":
 
         # Create a pool of mcell processes and run the command list on them

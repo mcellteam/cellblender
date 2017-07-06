@@ -10,21 +10,61 @@ from . import run_data_model_mcell_3
 
 print ( "Executing MCell Simulation" )
 
+
+"""
+MCell 3.3 (commit: 7030a99  date: Thu, 19 May 2016 11:14:16 -0400)
+
+Usage: mcell [options] mdl_file_name
+
+  options:
+     [-help]                  print this help message
+     [-version]               print the program version and exit
+     [-fullversion]           print the detailed program version report and exit
+     [-seed n]                choose random sequence number (default: 1)
+     [-iterations n]          override iterations in mdl_file_name
+     [-logfile log_file_name] send output log to file (default: stdout)
+     [-logfreq n]             output log frequency
+     [-errfile err_file_name] send errors log to file (default: stderr)
+     [-checkpoint_infile checkpoint_file_name]   read checkpoint file
+     [-checkpoint_outfile checkpoint_file_name]  write checkpoint file
+     [-quiet]                 suppress all unrequested output except for errors
+     [-with_checks ('yes'/'no', default 'yes')]   performs check of the geometry for coincident walls
+"""
+
 # Name of this engine to display in the list of choices (Both should be unique within a CellBlender installation)
 plug_code = "MCELL3"
 plug_name = "MCell 3"
 
 def print_info():
   global parameter_dictionary
-  print ( 50*'==' )
+  print ( 30*'==' + " Engine Parameters " + 30*'==' )
   for k in sorted(parameter_dictionary.keys()):
     print ( "" + k + " = " + str(parameter_dictionary[k]) )
-  print ( 50*'==' )
+  print ( 30*'==' + "===================" + 30*'==' )
+  print ( '\n' )
+
+def print_version():
+  global parameter_dictionary
+  print_info()
+  subprocess.Popen ( [parameter_dictionary['MCell Path']['val'], "-version"] )
+
+def print_full_version():
+  global parameter_dictionary
+  print_info()
+  subprocess.Popen ( [parameter_dictionary['MCell Path']['val'], "-fullversion"] )
+
+def print_help():
+  global parameter_dictionary
+  print_info()
+  subprocess.Popen ( [parameter_dictionary['MCell Path']['val'], "-help"] )
+
+
 
 def reset():
   global parameter_dictionary
-  print ( "Reset was called" )
-  parameter_dictionary['Output Detail (0-100)']['val'] = 20
+  print ( "Resetting all Engine Parameters" )
+  parameter_dictionary['Log File']['val'] = ""
+  parameter_dictionary['Error File']['val'] = ""
 
 # Get data from Blender / CellBlender
 import bpy
@@ -37,17 +77,20 @@ except:
 
 # List of parameters as dictionaries - each with keys for 'name', 'desc', 'def', and optional 'as':
 parameter_dictionary = {
-  'Output Detail (0-100)': {'val': 20, 'desc':"Amount of Information to Print (0-100)", 'icon':'INFO'},
   'MCell Path': {'val': mcell_path, 'as':'filename', 'desc':"MCell Path", 'icon':'SCRIPTWIN'},
-  'Reaction Factor': {'val': 1.0, 'desc':"Decay Rate Multiplier", 'icon':'ARROW_LEFTRIGHT'},
-  'Print Information': {'val': print_info, 'desc':"Print information about Limited Python Simulation"},
-  'Reset': {'val': reset, 'desc':"Reset everything"}
+  'Log File': {'val':"", 'as':'filename', 'desc':"Log File name", 'icon':'EXPORT'},
+  'Error File': {'val':"", 'as':'filename', 'desc':"Error File name", 'icon':'EXPORT'},
+  'Version': {'val': print_version, 'desc':"Print Version"},
+  'Full Version': {'val': print_full_version, 'desc':"Print Full Version"},
+  'Help': {'val': print_help, 'desc':"Print Help"},
+  'Reset': {'val': reset, 'desc':"Reset everything"},
+  'Output Detail (0-100)': {'val': 20, 'desc':"Output Detail"}  # This is used below but may not be shown as a user option
 }
 
 parameter_layout = [
-  ['Output Detail (0-100)'],
   ['MCell Path'],
-  ['Print Information', 'Reset']
+  ['Log File', 'Error File' ],
+  ['Version', 'Full Version', 'Help', 'Reset']
 ]
 
 
@@ -75,6 +118,16 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
 
   fs = data_model['simulation_control']['start_seed']
   ls = data_model['simulation_control']['end_seed']
+
+  run_cmd_list = run_data_model_mcell_3.run_mcell_sweep(['-rt','extern','-pd',project_dir,'-b',parameter_dictionary['MCell Path']['val'],'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
+
+  print ( "Run Cmds prepared by the mcell3 engine:" )
+  print ( "  = " + str(run_cmd_list) )
+  if len(run_cmd_list) > 0:
+    for run_cmd in run_cmd_list:
+      print ( "  " + str(run_cmd) )
+
+  print ( "Currently running from the engine ..." )
 
   run_data_model_mcell_3.run_mcell_sweep(['-pd',project_dir,'-b',parameter_dictionary['MCell Path']['val'],'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
 

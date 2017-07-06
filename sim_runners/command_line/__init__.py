@@ -26,6 +26,16 @@ plug_code = "CMDLINE"
 plug_name = "Command Line"
 
 
+parameter_dictionary = {
+  'Show Normal Output': {'val':True, 'desc':"Show stdout from process"},
+  'Show Error Output':  {'val':True, 'desc':"Show stderr from process"},
+}
+
+parameter_layout = [
+  ['Show Normal Output', 'Show Error Output']
+]
+
+
 def run_commands ( commands ):
     sp_list = []
     window_num = 0
