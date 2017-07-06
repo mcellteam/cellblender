@@ -23,8 +23,7 @@ def run_sim(arglist):
     print ( "Sim Thread running from " + str(os.getcwd()) )
     print ( "Sim Thread using " + str(arglist) )
 
-    mcell_binary, project_dir, base_name, error_file_option, log_file_option, seed = arglist
-    mdl_filename = '%s.main.mdl' % (base_name)
+    mcell_binary, project_dir, mdl_filename, error_file_option, log_file_option, seed = arglist
     mdl_filepath = os.path.join(project_dir, mdl_filename)
     # Log filename will be log.year-month-day_hour:minute_seed.txt
     # (e.g. log.2013-03-12_11:45_1.txt)
@@ -342,7 +341,7 @@ def run_mcell_sweep ( sys_argv, data_model=None ):
             makedirs_exist_ok ( os.path.join(sweep_item_path,'react_data'), exist_ok=True )
             makedirs_exist_ok ( os.path.join(sweep_item_path,'viz_data'), exist_ok=True )
             data_model_to_mdl_3.write_mdl ( dm, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ) )
-            run_cmd_list.append ( [mcell_binary, sweep_item_path, base_name, error_file_option, log_file_option, seed] )
+            run_cmd_list.append ( [mcell_binary, sweep_item_path, base_name+".main.mdl", error_file_option, log_file_option, seed] )
         # Increment the current_index counters from rightmost side (deepest directory)
         i = len(sweep_list) - 1
         while i >= 0:
