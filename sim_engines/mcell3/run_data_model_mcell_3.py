@@ -11,6 +11,7 @@ import argparse
 #import data_model_to_mdl
 from . import data_model_to_mdl_3
 
+import cellblender.sim_engines as sim_engines
 
 
 
@@ -73,97 +74,6 @@ def run_sim(arglist):
             cwd=subprocess_cwd, stdout=log_file, stderr=error_file)
 
 
-######################################################################################
-#### This function has been duplicated in cellblender/mdl/run_data_model_mcell.py ####
-####          Many attempts were made to import it, but they all failed.          ####
-######################################################################################
-def build_sweep_list ( par_dict ):
-    """ Count the number of runs that will be swept with this data model. """
-    sweep_list = []
-    print ( "Building sweep list... " )
-    if 'model_parameters' in par_dict:
-        for par in par_dict['model_parameters']:
-            print ( "Checking par " + str(par) )
-            if ('sweep_expression' in par) and ('sweep_enabled' in par):
-                if par['sweep_enabled']:
-                    sweep_item = {}
-                    if 'par_name' in par:
-                        sweep_item['par_name'] = par['par_name']
-                    else:
-                        sweep_item['par_name'] = "Unknown"
-                    # Sweep expression example: "0, 2, 9, 10:20, 25:35:5, 50"
-                    num_runs_for_this_parameter = 0
-                    # Get the sweep expression sublists which are separated by commas
-                    sw_items = []
-                    if 'sweep_expression' in par:
-                        sw_items = [ p.strip() for p in par['sweep_expression'].split(',') ]
-                    #print ( "Sweep item list = " + str(sw_items) )
-                    # Count the number of runs represented by each sweep item (either:  #  or  #:#  or  #:#:#  )
-                    sweep_values = []
-                    for sw_item in sw_items:
-                        parts = [ p.strip() for p in sw_item.split(':') ]
-                        if len(parts) <= 0:
-                          # This would be two commas together?
-                          pass
-                        elif len(parts) == 1:
-                          # This is a scalar
-                          sweep_values.append ( float(parts[0]) )
-                          #print ( "Added " + parts[0] )
-                        elif len(parts) >= 2:
-                          # This is a range with a start and stop
-                          start = float(parts[0])
-                          stop = float(parts[1])
-                          step = 1
-                          if len(parts) > 2:
-                            step = float(parts[2])
-                          if start > stop:
-                            start = float(parts[1])
-                            stop = float(parts[0])
-                          if step < 0:
-                            step = -step
-                          if step == 0:
-                            # Do something to keep it from an infinite loop
-                            step = 1;
-                          # Start with a pessimistic guess
-                          num = int((stop-start) / step)
-                          # Increase until equal or over
-                          #print ( "Before increasing, num = " + str(num) )
-                          while (start+((num-1)*step)) < (stop+(step/1000)):
-                            num += 1
-                            #print ( "Increased to num = " + str(num) )
-                          # Reduce while actually over
-                          while start+((num-1)*step) > (stop+(step/1000)):
-                            num += -1
-                            #print ( "Decreased to num = " + str(num) )
-                          # Finally append the values
-                          for n in range(num):
-                            sweep_values.append ( start + (n*step) )
-                    sweep_item['values'] = sweep_values
-                    sweep_list.append ( sweep_item )
-    return sweep_list
-
-
-def count_sweep_runs ( sweep_list ):
-    total_sweep_runs = 1
-    for sweep_item in sweep_list:
-      if 'values' in sweep_item:
-        total_sweep_runs *= len(sweep_item['values'])
-    return total_sweep_runs
-
-
-def makedirs_exist_ok ( path_to_build, exist_ok=False ):
-    # Needed for old python which doesn't have the exist_ok option!!!
-    print ( " Make dirs for " + path_to_build )
-    parts = path_to_build.split(os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
-    # print ( "  Parts = " + str(parts) )
-    full = ""
-    if len(parts[0]) == 0:
-      full = os.sep
-    for p in parts:
-      full = os.path.join(full,p)
-      # print ( "   " + full )
-      if not os.path.exists(full):
-        os.makedirs ( full, exist_ok=True )
 
 def get_sge_nodes(grid_engine_host):
     args = ['ssh', grid_engine_host, 'qhost']
@@ -274,7 +184,7 @@ def run_mcell_sweep ( sys_argv, data_model=None ):
 
     # Build a sweep list and add a "current_index" of 0 to support the sweeping
     print ( "Building sweep list" )
-    sweep_list = build_sweep_list( dm['mcell']['parameter_system'] )
+    sweep_list = sim_engines.build_sweep_list( dm['mcell']['parameter_system'] )
     print ( "Sweep list = " + str(sweep_list) )
     for sw_item in sweep_list:
       sw_item['current_index'] = 0
@@ -302,7 +212,7 @@ def run_mcell_sweep ( sys_argv, data_model=None ):
 
 
     # Count the number of sweep runs (could be done in build_sweep_list, but it's nice as a separate function) 
-    num_sweep_runs = count_sweep_runs ( sweep_list )
+    num_sweep_runs = sim_engines.count_sweep_runs ( sweep_list )
     num_requested_runs = num_sweep_runs * (1 + parsed_args.last_seed - parsed_args.first_seed)
     print ( "Number of non-seed sweep runs = " + str(num_sweep_runs) )
     print ( "Total runs (sweep and seed) is " + str(num_requested_runs) )
@@ -337,9 +247,9 @@ def run_mcell_sweep ( sys_argv, data_model=None ):
         for seed in range(start_seed,end_seed+1):
             # Create the directories and write the MDL
             sweep_item_path = os.path.join(project_dir,sweep_path)
-            makedirs_exist_ok ( sweep_item_path, exist_ok=True )
-            makedirs_exist_ok ( os.path.join(sweep_item_path,'react_data'), exist_ok=True )
-            makedirs_exist_ok ( os.path.join(sweep_item_path,'viz_data'), exist_ok=True )
+            sim_engines.makedirs_exist_ok ( sweep_item_path, exist_ok=True )
+            sim_engines.makedirs_exist_ok ( os.path.join(sweep_item_path,'react_data'), exist_ok=True )
+            sim_engines.makedirs_exist_ok ( os.path.join(sweep_item_path,'viz_data'), exist_ok=True )
             data_model_to_mdl_3.write_mdl ( dm, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ) )
             run_cmd_list.append ( [mcell_binary, sweep_item_path, base_name+".main.mdl", error_file_option, log_file_option, seed] )
         # Increment the current_index counters from rightmost side (deepest directory)

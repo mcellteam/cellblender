@@ -22,6 +22,8 @@ import os
 import subprocess
 import sys
 
+import cellblender.sim_engines as sim_engines
+
 plug_code = "QUEUE_LOCAL"
 plug_name = "Local Queue"
 
