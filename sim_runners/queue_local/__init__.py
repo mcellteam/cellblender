@@ -49,3 +49,8 @@ def run_commands ( commands ):
         window_num += 1
     return sp_list
 
+def draw_layout ( self, context, layout ):
+    mcell = context.scene.mcell
+    row = layout.row()
+    row.label ( text="This label was drawn by the Dynamic Queue Runner!!", icon='FORCE_LENNARDJONES' )
+

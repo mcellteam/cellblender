@@ -2577,6 +2577,10 @@ class Pluggable(bpy.types.PropertyGroup):
                     elif s.val_type == 'fn':
                         col.prop ( s, "filename_val", text=s.key_name, icon=s.icon_code )
                   
+            if 'draw_layout' in dir(active_module):
+              # Call the custom (typically raw Blender) drawing function for this layout:
+              active_module.draw_layout ( None, context, layout )
+
 
         #### Above here: layout is in the box
 
