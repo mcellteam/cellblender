@@ -194,6 +194,29 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
                 q_item = cellblender.simulation_queue.task_dict[pid]
                 if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
                     return False
+
+        elif str(mcell.run_simulation.simulation_run_control) == 'DYNAMIC':
+            global active_engine_module
+            global active_runner_module
+            # Force an update of the pluggable items as needed (typically after starting Blender).
+            if active_engine_module == None:
+                mcell.sim_engines.plugs_changed_callback ( context )
+            if active_runner_module == None:
+                mcell.sim_runners.plugs_changed_callback ( context )
+
+            if active_engine_module == None:
+                print ( "Cannot run without selecting a simulation engine" )
+                status = "Error: No simulation engine selected"
+            elif active_runner_module == None:
+                print ( "Cannot run without selecting a simulation runner" )
+                status = "Error: No simulation runner selected"
+            elif 'get_pid' in dir(active_runner_module):
+                processes_list = mcell.run_simulation.processes_list
+                for pl_item in processes_list:
+                    pid = get_pid(pl_item)
+                    q_item = cellblender.simulation_queue.task_dict[pid]
+                    if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
+                        return False
         return True
 
 
@@ -1834,8 +1857,7 @@ had no limit."""
             elif not os.path.dirname(bpy.data.filepath):
                 row.label(
                     text="Open or save a .blend file to set the project directory", icon='ERROR')
-            elif (not os.path.isfile(main_mdl) and
-                    mcell.cellblender_preferences.decouple_export_run):
+            elif (not os.path.isfile(main_mdl) and mcell.cellblender_preferences.decouple_export_run):
                 row.label(text="Export the project", icon='ERROR')
                 row = layout.row()
                 row.operator("mcell.export_project",
@@ -1857,11 +1879,24 @@ had no limit."""
                     else:
                         row.operator("mcell.run_simulation", text="Export & Run", icon='COLOR_RED')
 
+                display_queue_panel = False
                 
                 if self.simulation_run_control == "QUEUE":
+                    display_queue_panel = True
+                elif self.simulation_run_control == 'DYNAMIC':
+                    global active_engine_module
+                    global active_runner_module
+                    if active_engine_module == None:
+                        pass
+                    elif active_runner_module == None:
+                        pass
+                    elif 'get_pid' in dir(active_runner_module):
+                        display_queue_panel = True
 
-                    if (self.processes_list and
-                            cellblender.simulation_queue.task_dict):
+                if display_queue_panel:
+                    print ( "Drawing the Queue Panel" )
+
+                    if (self.processes_list and cellblender.simulation_queue.task_dict):
                         row = layout.row()
                         row.label(text="MCell Processes:", icon='FORCE_LENNARDJONES')
                         row = layout.row()
@@ -1973,12 +2008,12 @@ had no limit."""
                     
                     # This will eventually show the panel for the selected runner
 
-                    if self.simulation_run_control == "QUEUE":
+                    if display_queue_panel:
                         row = box.row()
                         row.prop ( self, "save_text_logs" )
                         row.operator("mcell.remove_text_logs")
 
-                    elif self.simulation_run_control == "DYNAMIC":
+                    if self.simulation_run_control == "DYNAMIC":
 
                         sep = box.box()
 

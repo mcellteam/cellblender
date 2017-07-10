@@ -183,6 +183,26 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
     bl_description = "Run MCell Simulation Using Command Queue"
     bl_options = {'REGISTER'}
 
+
+    @classmethod
+    def poll(self,context):
+
+        mcell = context.scene.mcell
+        if mcell.cellblender_preferences.lockout_export and (not mcell.cellblender_preferences.decouple_export_run):
+            # print ( "Exporting is currently locked out. See the Preferences/ExtraOptions panel." )
+            # The "self" here doesn't contain or permit the report function.
+            # self.report({'INFO'}, "Exporting is Locked Out")
+            return False
+
+        else:
+            processes_list = mcell.run_simulation.processes_list
+            for pl_item in processes_list:
+                pid = get_pid(pl_item)
+                q_item = cellblender.simulation_queue.task_dict[pid]
+                if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
+                    return False
+        return True
+
     def execute(self, context):
 
         print ( "run_simulation.execute called inside dynamic queue runner" )
@@ -296,7 +316,7 @@ class MCELL_OT_kill_simulation(bpy.types.Operator):
 
     @classmethod
     def poll(self,context):
-        print ( "kill_simulation.kill_simulation called inside dynamic queue runner" )
+        print ( "kill_simulation.poll called inside dynamic queue runner" )
         mcell = context.scene.mcell
         processes_list = mcell.run_simulation.processes_list
         active_index = mcell.run_simulation.active_process_index
