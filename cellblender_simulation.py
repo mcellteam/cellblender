@@ -1953,6 +1953,11 @@ had no limit."""
                         row.operator("mcell.clear_run_list")
 
 
+                if self.simulation_run_control == 'DYNAMIC':
+                    mcell.sim_engines.draw_panel ( context, layout )
+                    mcell.sim_runners.draw_panel ( context, layout )
+
+
                 box = layout.box()
 
                 if self.show_output_options:
@@ -2013,39 +2018,7 @@ had no limit."""
                         row.prop ( self, "save_text_logs" )
                         row.operator("mcell.remove_text_logs")
 
-                    if self.simulation_run_control == "DYNAMIC":
-
-                        sep = box.box()
-
-                        row = box.row(align=True)
-                        split = row.split(0.03)
-                        col = split.column()
-                        col = split.column()
-                        col.label("Dynamic Engine/Runner Options (experimental)")
-                        col = row.column()
-                        col.prop ( self, "show_engine_runner_help", icon='INFO', text="" )
-                        if self.show_engine_runner_help:
-                            helpbox = box.box()
-                            row = helpbox.row()
-                            row.label ( ">>> Select different simulation engines and run mechanisms <<<" )
-                            row = helpbox.row()
-                            row.label ( "This experimental panel will eventually permit the independent selection of" )
-                            row = helpbox.row()
-                            row.label ( "simulation engines and run mechanisms. This will become increasingly important" )
-                            row = helpbox.row()
-                            row.label ( "as CellBlender supports custom instances of libMCell and distributed computing." )
-                            row = helpbox.row()
-                            row.label ( "To enable the selections in this panel, choose \"Dynamic\" in the normal run control." )
-
-                        sep = box.box()
-
-                        mcell.sim_engines.draw_panel ( context, box )
-
-                        mcell.sim_runners.draw_panel ( context, box )
-
-
-
-                    elif self.simulation_run_control == "SWEEP_SGE":
+                    if self.simulation_run_control == "SWEEP_SGE":
                         row = box.row()
                         subbox = row.box()
                         row = subbox.row()
