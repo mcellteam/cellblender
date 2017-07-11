@@ -288,13 +288,10 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
         mcell = context.scene.mcell
         mcell.run_simulation.last_simulation_run_time = str(time.time())
 
-        binary_path = mcell.cellblender_preferences.mcell_binary
-        mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
-
         start = int(mcell.run_simulation.start_seed.get_value())
         end = int(mcell.run_simulation.end_seed.get_value())
         mcell_processes_str = str(mcell.run_simulation.mcell_processes)
-        mcell_binary = mcell.cellblender_preferences.mcell_binary
+        mcell_binary = cellblender_utils.get_mcell_path(mcell)
         # Force the project directory to be where the .blend file lives
         project_dir = mcell_files_path()
         status = ""
