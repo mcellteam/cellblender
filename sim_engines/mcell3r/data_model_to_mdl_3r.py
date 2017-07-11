@@ -126,28 +126,6 @@ def write_dm_on_off ( dm, f, dm_name, mdl_name, blank_default="", indent="" ):
 
 #### Start of MDL Code ####
 
-"""
-List of CellBlender files containing Data Model code:
-  ( found with: grep build_data_model_from_properties *.py )
-
-    File                               Classes Exported to Data Model
-    ----                               ------------------------------
-    cellblender_initialization.py      MCellInitializationPropertyGroup
-    cellblender_legacy.py              None (only comments found)
-    cellblender_main.py                MCellPropertyGroup
-    cellblender_molecules.py           MCellMoleculeProperty MCellMoleculesListProperty
-    cellblender_mol_viz.py             MCellMolVizPropertyGroup MCellVizOutputPropertyGroup
-    cellblender_objects.py             MCellModelObjectsProperty  MCellModelObjectsPropertyGroup
-    cellblender_partitions.py          MCellPartitionsPropertyGroup
-    cellblender_reaction_output.py     MCellReactionOutputProperty MCellReactionOutputPropertyGroup
-    cellblender_reactions.py           MCellReactionProperty MCellReactionsListProperty
-    cellblender_release.py             MCellMoleculeReleaseProperty MCellMoleculeReleasePropertyGroup MCellReleasePatternProperty MCellReleasePatternPropertyGroup
-    cellblender_simulation.py          MCellRunSimulationProcessesProperty MCellRunSimulationPropertyGroup
-    cellblender_surface_classes.py     MCellSurfaceClassPropertiesProperty MCellSurfaceClassesProperty MCellSurfaceClassesPropertyGroup
-    cellblender_surface_regions.py     MCellModSurfRegionsProperty MCellModSurfRegionsPropertyGroup
-    data_model.py                      None (only calls to other methods)
-    parameter_system.py                Parameter_Data ParameterSystemPropertyGroup
-"""
 
 def write_mdl ( dm, file_name ):
     """ Write a data model to a named file (generally follows "export_mcell_mdl" ordering) """
@@ -259,7 +237,7 @@ def write_parameter_system ( ps, f ):
             f.write ( "    /* " + p['par_description'] + " " + p['par_units'] + " */\n" )
           else:
             f.write ( "\n" )
-            
+
         f.write ( "\n" );
 
 
@@ -369,6 +347,13 @@ def write_molecules ( mols, f ):
         for m in mlist:
           f.write ( "  %s\n" % m['mol_name'] )
           f.write ( "  {\n" )
+          if "bngl_component_list" in m:
+            if len(m['bngl_component_list']) > 0:
+              print ( 50*"%%" )
+              print ( "  Molecule %s is a BNGL molecule with %d components:" % (m['mol_name'], len(m['bngl_component_list'])) )
+              for c in m['bngl_component_list']:
+                print ( "    " + c['cname'] + " with states: " + str(c['cstates']) )
+              print ( 50*"%%" )
           if m['mol_type'] == '2D':
             f.write ( "    DIFFUSION_CONSTANT_2D = %s\n" % m['diffusion_constant'] )
           else:

@@ -783,7 +783,7 @@ def save_molecules(context, out_file, mol_list):
                             ps.panel_parameter_list, ps.export_as_expressions)))
 
         if mol_item.custom_time_step.get_value(ps.panel_parameter_list) > 0:
-            out_file.write("    CUSTOM_TIME_STEP = %s\n" % 
+            out_file.write("    CUSTOM_TIME_STEP = %s\n" %
                            (mol_item.custom_time_step.get_as_string_or_value(
                             ps.panel_parameter_list, ps.export_as_expressions)))
         elif mol_item.custom_space_step.get_value(ps.panel_parameter_list) > 0:
@@ -793,6 +793,11 @@ def save_molecules(context, out_file, mol_list):
 
         if mol_item.target_only:
             out_file.write("    TARGET_ONLY\n")
+
+        if mol_item.maximum_step_length.get_expr(ps.panel_parameter_list) != '':
+            out_file.write("    MAXIMUM_STEP_LENGTH = %s\n" %
+                           (mol_item.maximum_step_length.get_as_string_or_value(
+                            ps.panel_parameter_list, ps.export_as_expressions)))
 
         out_file.write("  }\n")
     out_file.write("}\n\n")
@@ -909,6 +914,7 @@ def save_geometry(context, out_file, object_list):
             context.scene.objects.active = data_object
             bpy.ops.object.mode_set(mode='OBJECT')
 
+            # Begin POLYGON_LIST block
             out_file.write("%s POLYGON_LIST\n" % (data_object.name))
             out_file.write("{\n")
 
@@ -955,9 +961,10 @@ def save_geometry(context, out_file, object_list):
                                    str(regions[region_name])+'\n')
                     out_file.write("    }\n")
 
+                # close SURFACE_REGIONS block
                 out_file.write("  }\n")
 
-            # close SURFACE_REGIONS block
+            # close POLYGON_LIST block
             out_file.write("}\n\n")
 
             # restore proper object visibility state

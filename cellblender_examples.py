@@ -18,6 +18,7 @@
 import cellblender
 import bpy, bmesh
 import os
+import mathutils
 from bpy.props import BoolProperty
 from cellblender import examples
 
@@ -62,10 +63,59 @@ def view_selected():
                     bpy.ops.view3d.view_selected(override)
 
 
+def get_3d_view_spaces():
+    spaces_3d = []
+    for area in bpy.context.screen.areas:
+        for space in area.spaces:
+            if space.type == 'VIEW_3D':
+                spaces_3d = spaces_3d + [space]
+                # area.spaces.active.show_manipulator = False
+    return spaces_3d
+
+
+
+def scale_view_distance ( scale ):
+    """ Change the view distance for all 3D_VIEW windows """
+    spaces = get_3d_view_spaces()
+    for space in spaces:
+        space.region_3d.view_distance *= scale
+    #bpy.ops.view3d.zoom(delta=3)
+    #set_view_3d()
+
+
+def set_axis_angle ( axis, angle ):
+    """ Change the view axis and angle for all 3D_VIEW windows """
+    spaces = get_3d_view_spaces()
+    for space in spaces:
+        space.region_3d.view_rotation.axis = mathutils.Vector(axis)
+        space.region_3d.view_rotation.angle = angle
+    #set_view_3d()
+
+
+def hide_manipulator ( hide=True ):
+    # C.screen.areas[4].spaces[0].show_manipulator = False
+    spaces = get_3d_view_spaces()
+    for space in spaces:
+        space.show_manipulator = not hide
+
+
+def switch_to_perspective():
+    """ Change to perspective for all 3D_VIEW windows """
+    spaces = get_3d_view_spaces()
+    for space in spaces:
+        space.region_3d.view_perspective = 'PERSP'
+
+def switch_to_orthographic():
+    """ Change to orthographic for all 3D_VIEW windows """
+    spaces = get_3d_view_spaces()
+    for space in spaces:
+        space.region_3d.view_perspective = 'ORTHO'
+
+
 
 class MCELL_OT_load_lotka_volterra_rxn_limited(bpy.types.Operator):
     bl_idname = "mcell.load_lotka_volterra_rxn_limited"
-    bl_label = "Reaction-Limited"
+    bl_label = "Lotka-Volterra: Reaction-Limited"
     bl_description = "Loads the Reaction-Limited Lotka-Volterra model"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -75,12 +125,14 @@ class MCELL_OT_load_lotka_volterra_rxn_limited(bpy.types.Operator):
         dm['mcell'] = examples.lv.lv_rxn_lim_dm
         cellblender.replace_data_model(dm, geometry=True)
         view_all()
+        bpy.ops.view3d.viewnumpad(type='TOP')
+        hide_manipulator ( hide=True )
         return {'FINISHED'}
 
 
 class MCELL_OT_load_lotka_volterra_diff_limited(bpy.types.Operator):
     bl_idname = "mcell.load_lotka_volterra_diff_limited"
-    bl_label = "Diffusion-Limited"
+    bl_label = "Lotka-Volterra: Diffusion-Limited"
     bl_description = "Loads the Diffusion-Limited Lotka-Volterra model"
     bl_options = {'REGISTER', 'UNDO'}
 
@@ -90,19 +142,66 @@ class MCELL_OT_load_lotka_volterra_diff_limited(bpy.types.Operator):
         dm['mcell'] = examples.lv.lv_diff_lim_dm
         cellblender.replace_data_model(dm, geometry=True)
         view_all()
+        bpy.ops.view3d.viewnumpad(type='TOP')
+        hide_manipulator ( hide=True )
         return {'FINISHED'}
 
 
-class MCELL_OT_load_ficks_law(bpy.types.Operator):
-    bl_idname = "mcell.load_ficks_laws"
-    bl_label = "Fick's Laws"
+class MCELL_OT_load_fceri_mcell3r(bpy.types.Operator):
+    bl_idname = "mcell.load_fceri_mcell3r"
+    bl_label = "FCERI MCell Rules"
+    bl_description = "Loads a model of FCERI utilizing MCell Rules"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.fceri_mcell3r.fceri_mcell3r_dm
+        cellblender.replace_data_model(dm, geometry=True, scripts=True)
+        view_all()
+        return {'FINISHED'}
+
+
+class MCELL_OT_load_ficks_1D(bpy.types.Operator):
+    bl_idname = "mcell.load_ficks_1d"
+    bl_label = "Fick's Law 1D"
     bl_description = "Loads a model illustrating Fick's Laws"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
 
         dm = {}
-        dm['mcell'] = examples.ficks_laws.ficks_laws_dm
+        dm['mcell'] = examples.ficks_laws.ficks_law_1D_dm
+        cellblender.replace_data_model(dm, geometry=True, scripts=True)
+        view_all()
+        return {'FINISHED'}
+
+
+class MCELL_OT_load_ficks_3D(bpy.types.Operator):
+    bl_idname = "mcell.load_ficks_3d"
+    bl_label = "Fick's Law 3D"
+    bl_description = "Loads a model illustrating Fick's Laws"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.ficks_laws.ficks_law_3D_dm
+        cellblender.replace_data_model(dm, geometry=True, scripts=True)
+        view_all()
+        return {'FINISHED'}
+
+
+class MCELL_OT_load_mind_mine(bpy.types.Operator):
+    bl_idname = "mcell.load_mind_mine"
+    bl_label = "MinD / MinE System"
+    bl_description = "Loads a sample MinD/MinE System"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.mind_mine_system.mind_mine_dm
         cellblender.replace_data_model(dm, geometry=True)
         view_all()
         return {'FINISHED'}
@@ -160,6 +259,53 @@ class MCELL_OT_load_pbc(bpy.types.Operator):
         return {'FINISHED'}
 
 
+
+class MCELL_OT_load_direct_transport(bpy.types.Operator):
+    bl_idname = "mcell.load_dir_transp"
+    bl_label = "Direct Transport"
+    bl_description = "Simple Direct Transport from inside of Cube to outside of Cube"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.direct_transport.direct_transport_dm
+        cellblender.replace_data_model(dm, geometry=True)
+        view_all()
+        return {'FINISHED'}
+
+
+class MCELL_OT_load_delayed_transport(bpy.types.Operator):
+    bl_idname = "mcell.load_del_transp"
+    bl_label = "Delayed Transport"
+    bl_description = "Simple Delayed Transport from inside of Cube to outside of Cube"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.delayed_transport.delayed_transport_dm
+        cellblender.replace_data_model(dm, geometry=True)
+        view_all()
+        return {'FINISHED'}
+
+
+class MCELL_OT_load_direct_transport_bngl(bpy.types.Operator):
+    bl_idname = "mcell.load_dir_tr_bngl"
+    bl_label = "Direct Transport BNGL"
+    bl_description = "Simple Direct Transport from inside of Cube to outside of Cube"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.direct_transport_BNGL.direct_transport_bngl_dm
+        cellblender.replace_data_model(dm, geometry=True)
+        view_all()
+        return {'FINISHED'}
+
+
+
 class MCELL_OT_load_lipid_raft(bpy.types.Operator):
     bl_idname = "mcell.load_lipid_raft"
     bl_label = "Lipid Raft"
@@ -175,6 +321,7 @@ class MCELL_OT_load_lipid_raft(bpy.types.Operator):
         return {'FINISHED'}
 
 
+
 class MCELL_OT_load_variable_rate_constant(bpy.types.Operator):
     bl_idname = "mcell.load_variable_rate_constant"
     bl_label = "Variable Rate Constant"
@@ -188,6 +335,7 @@ class MCELL_OT_load_variable_rate_constant(bpy.types.Operator):
         cellblender.replace_data_model(dm, geometry=True)
         view_all()
         return {'FINISHED'}
+
 
 
 class MCELL_OT_load_shape_key_dyn_geo(bpy.types.Operator):
@@ -447,7 +595,7 @@ class MCELL_OT_load_dynamic_geometry(bpy.types.Operator):
 
         dm = {}
         dm['mcell'] = examples.dynamic_geometry.dynamic_geometry_dm
-        cellblender.replace_data_model(dm, geometry=True)
+        cellblender.replace_data_model(dm, geometry=True, scripts=True)
 
         # load object with shape keys from blend file
         blendfile = os.path.join(os.path.dirname(__file__), "./examples/dynamic_geometry.blend")
@@ -480,6 +628,8 @@ class MCELL_PT_examples(bpy.types.Panel):
     def draw(self, context):
         context.scene.mcell.cellblender_examples.draw_panel ( context, self )
 
+
+
 class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
 
     def draw_layout(self, context, layout):
@@ -489,12 +639,10 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( layout )
         else:
             ps = mcell.parameter_system
-            row = layout.row(align=True)
-            row.label(text="Lotka-Volterra:")
-            row.operator("mcell.load_lotka_volterra_rxn_limited")
-            row.operator("mcell.load_lotka_volterra_diff_limited")
             row = layout.row()
-            row.operator("mcell.load_ficks_laws")
+            row.operator("mcell.load_ficks_1d")
+            row = layout.row()
+            row.operator("mcell.load_ficks_3d")
             row = layout.row()
             row.operator("mcell.load_rat_nmj")
             row = layout.row()
@@ -511,4 +659,18 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             row.operator("mcell.load_scripted_dyn_geo")
             row = layout.row()
             row.operator("mcell.load_dyn_geo_cc")
+            row = layout.row()
+            row.operator("mcell.load_lotka_volterra_rxn_limited")
+            row = layout.row()
+            row.operator("mcell.load_lotka_volterra_diff_limited")
+            row = layout.row()
+            row.operator("mcell.load_dir_transp")
+            row = layout.row()
+            row.operator("mcell.load_del_transp")
+            row = layout.row()
+            row.operator("mcell.load_dir_tr_bngl")
+            row = layout.row()
+            row.operator("mcell.load_fceri_mcell3r")
+            row = layout.row()
+            row.operator("mcell.load_mind_mine")
 

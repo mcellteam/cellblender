@@ -128,6 +128,9 @@ cellblender_info = {
         "sim_runners"+os.sep+"command_line"+os.sep+"__init__.py",
         "sim_runners"+os.sep+"command_line"+os.sep+"makefile",
 
+        "sim_runners"+os.sep+"queue_local"+os.sep+"__init__.py",
+        "sim_runners"+os.sep+"queue_local"+os.sep+"makefile",
+
         "sim_runners"+os.sep+"java"+os.sep+"__init__.py",
         "sim_runners"+os.sep+"java"+os.sep+"SimControl.java",
         "sim_runners"+os.sep+"java"+os.sep+"makefile",
@@ -155,6 +158,21 @@ cellblender_info = {
         "sim_engines"+os.sep+"mcell3"+os.sep+"__init__.py",
         "sim_engines"+os.sep+"mcell3"+os.sep+"data_model_to_mdl_3.py",
         "sim_engines"+os.sep+"mcell3"+os.sep+"run_data_model_mcell_3.py",
+
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"makefile",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"__init__.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"data_model_to_mdl_3r.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"run_data_model_mcell_3r.py",
+
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"grammar_definition.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"mdlr2mdl.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"nfsim_python.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"read_bngxml.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"read_mdl.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"small_structures.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"split_bngxml.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"write_bngxmle.py",
+        "sim_engines"+os.sep+"mcell3r"+os.sep+"write_mdl.py",
 
         "sim_engines"+os.sep+"smoldyn248"+os.sep+"makefile",
         "sim_engines"+os.sep+"smoldyn248"+os.sep+"__init__.py",
@@ -195,7 +213,9 @@ cellblender_info = {
         "bng"+os.sep+"treelib3"+os.sep+"tree.py",
         "examples"+os.sep+"__init__.py",
         "examples"+os.sep+"lv.py",
+        "examples"+os.sep+"fceri_mcell3r.py",
         "examples"+os.sep+"ficks_laws.py",
+        "examples"+os.sep+"mind_mine_system.py",
         "examples"+os.sep+"rat_nmj.py",
         "examples"+os.sep+"pbc.py",
         "examples"+os.sep+"lipid_raft.py",
@@ -205,6 +225,9 @@ cellblender_info = {
         "examples"+os.sep+"scripted_dyn_geo.py",
         "examples"+os.sep+"shape_key_dyn_geo.py",
         "examples"+os.sep+"dyn_geo_conc_clamp.py",
+        "examples"+os.sep+"direct_transport.py",
+        "examples"+os.sep+"delayed_transport.py",
+        "examples"+os.sep+"direct_transport_BNGL.py",
         #        "bng"+os.sep+"libsbml3"+os.sep+"__init__.py",
         ],
 

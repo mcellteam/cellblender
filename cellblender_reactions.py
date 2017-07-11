@@ -126,10 +126,18 @@ def check_reaction(self, context):
 
     status = ""
 
+
     # Clean up rxn.reactants only if necessary to avoid infinite recursion.
     reactants = rxn.reactants.replace(" ", "")
     reactants = reactants.replace("+", " + ")
-    reactants = reactants.replace("@", " @ ")
+
+    if mcell.cellblender_preferences.bionetgen_mode:
+        # Perform BioNetGen Reaction Reformatting
+        pass
+    else:
+        # Perform MCell Reaction Reformatting
+        reactants = reactants.replace("@", " @ ")
+
     if reactants != rxn.reactants:
         rxn.reactants = reactants
 
@@ -145,68 +153,50 @@ def check_reaction(self, context):
     if rxn_keys.count(rxn.name) > 1:
         status = "Duplicate reaction: %s" % (rxn.name)
 
-    # Does the reaction need reaction directionality (i.e. there is at least
-    # one surface molecule or a surface class)
-    need_rxn_direction = False
-    # Are there ever any reactants, products, or surface classes that don't
-    # specify reaction directionality?
-    ever_no_direction = False
-    # Conversely, are there ever any reactants/products/SCs which do?
-    ever_direction = False
-
-    # Check syntax of reactant specification
-    mol_list = mcell.molecules.molecule_list
-    surf_class_list = mcell.surface_classes.surf_class_list
-    mol_surf_class_filter = \
-        r"(^[A-Za-z]+[0-9A-Za-z_.]*)((',)|(,')|(;)|(,*)|('*))$"
-    # Check the syntax of the surface class if one exists
-    if rxn.reactants.count(" @ ") == 1:
-        need_rxn_direction = True
-        reactants_no_surf_class, surf_class = rxn.reactants.split(" @ ")
-        match = re.match(mol_surf_class_filter, surf_class)
-        if match is None:
-            status = "Illegal surface class name: %s" % (surf_class)
-        else:
-            surf_class_name = match.group(1)
-            surf_class_direction = match.group(2)
-            if not surf_class_name in surf_class_list:
-                status = "Undefined surface class: %s" % (surf_class_name)
-            if not surf_class_direction:
-                status = ("No directionality specified for surface class: "
-                          "%s" % (surf_class_name))
+    # Perform other checking
+    if mcell.cellblender_preferences.bionetgen_mode:
+        # Perform BioNetGen Reaction Checking
+        pass
     else:
-        reactants_no_surf_class = rxn.reactants
-        surf_class = None
+        # Perform MCell Reaction Checking
+        # Does the reaction need reaction directionality (i.e. there is at least
+        # one surface molecule or a surface class)
+        need_rxn_direction = False
+        # Are there ever any reactants, products, or surface classes that don't
+        # specify reaction directionality?
+        ever_no_direction = False
+        # Conversely, are there ever any reactants/products/SCs which do?
+        ever_direction = False
 
-    reactants = reactants_no_surf_class.split(" + ")
-    for reactant in reactants:
-        match = re.match(mol_surf_class_filter, reactant)
-        if match is None:
-            status = "Illegal reactant name: %s" % (reactant)
-            break
-        else:
-            mol_name = match.group(1)
-            mol_direction = match.group(2)
-            if not mol_name in mol_list:
-                status = "Undefined molecule: %s" % (mol_name)
-            else:
-                if mol_list[mol_name].type == '2D':
-                    need_rxn_direction = True
-                if not mol_direction:
-                    ever_no_direction = True
-                else:
-                    ever_direction = True
-
-    # Check syntax of product specification
-    if rxn.products == "NULL":
-        if rxn.type == 'reversible':
-            rxn.type = 'irreversible'
-    else:
-        products = rxn.products.split(" + ")
-        for product in products:
-            match = re.match(mol_surf_class_filter, product)
+        # Check syntax of reactant specification
+        mol_list = mcell.molecules.molecule_list
+        surf_class_list = mcell.surface_classes.surf_class_list
+        mol_surf_class_filter = \
+            r"(^[A-Za-z]+[0-9A-Za-z_.]*)((',)|(,')|(;)|(,*)|('*))$"
+        # Check the syntax of the surface class if one exists
+        if rxn.reactants.count(" @ ") == 1:
+            need_rxn_direction = True
+            reactants_no_surf_class, surf_class = rxn.reactants.split(" @ ")
+            match = re.match(mol_surf_class_filter, surf_class)
             if match is None:
-                status = "Illegal product name: %s" % (product)
+                status = "Illegal surface class name: %s" % (surf_class)
+            else:
+                surf_class_name = match.group(1)
+                surf_class_direction = match.group(2)
+                if not surf_class_name in surf_class_list:
+                    status = "Undefined surface class: %s" % (surf_class_name)
+                if not surf_class_direction:
+                    status = ("No directionality specified for surface class: "
+                              "%s" % (surf_class_name))
+        else:
+            reactants_no_surf_class = rxn.reactants
+            surf_class = None
+
+        reactants = reactants_no_surf_class.split(" + ")
+        for reactant in reactants:
+            match = re.match(mol_surf_class_filter, reactant)
+            if match is None:
+                status = "Illegal reactant name: %s" % (reactant)
                 break
             else:
                 mol_name = match.group(1)
@@ -221,31 +211,55 @@ def check_reaction(self, context):
                     else:
                         ever_direction = True
 
-    # Is directionality required (i.e. any surface molecules or surface class)?
-    # If so, is it missing anywhere in the rxn?
-    if need_rxn_direction and ever_no_direction:
-        status = "Reaction directionality required (e.g. semicolon after name)"
-    # Is reaction directionality specified despite there only being vol. mols?
-    if not surf_class and not need_rxn_direction and ever_direction:
-        status = "Unneeded reaction directionality"
+        # Check syntax of product specification
+        if rxn.products == "NULL":
+            if rxn.type == 'reversible':
+                rxn.type = 'irreversible'
+        else:
+            products = rxn.products.split(" + ")
+            for product in products:
+                match = re.match(mol_surf_class_filter, product)
+                if match is None:
+                    status = "Illegal product name: %s" % (product)
+                    break
+                else:
+                    mol_name = match.group(1)
+                    mol_direction = match.group(2)
+                    if not mol_name in mol_list:
+                        status = "Undefined molecule: %s" % (mol_name)
+                    else:
+                        if mol_list[mol_name].type == '2D':
+                            need_rxn_direction = True
+                        if not mol_direction:
+                            ever_no_direction = True
+                        else:
+                            ever_direction = True
 
-    # Check for a variable rate constant
-    if rxn.variable_rate_switch:
-        # Make sure that the file has not been deleted
-        if rxn.variable_rate not in bpy.data.texts:
-            rxn.variable_rate_valid = False
+        # Is directionality required (i.e. any surface molecules or surface class)?
+        # If so, is it missing anywhere in the rxn?
+        if need_rxn_direction and ever_no_direction:
+            status = "Reaction directionality required (e.g. semicolon after name)"
+        # Is reaction directionality specified despite there only being vol. mols?
+        if not surf_class and not need_rxn_direction and ever_direction:
+            status = "Unneeded reaction directionality"
 
-        # Check if file doesn't exist, isn't UTF8, is a directory, etc
-        if not rxn.variable_rate_valid:
-            status = ("Variable rate constant is not valid: "
-                      "%s" % rxn.variable_rate)
-        # Variable rate constants only support irreversible reactions
-        elif rxn.variable_rate_valid and rxn.type == 'reversible':
-            rxn.type = 'irreversible'
+        # Check for a variable rate constant
+        if rxn.variable_rate_switch:
+            # Make sure that the file has not been deleted
+            if rxn.variable_rate not in bpy.data.texts:
+                rxn.variable_rate_valid = False
 
-    rxn_name_status = check_reaction_name()
-    if rxn_name_status:
-        status = rxn_name_status
+            # Check if file doesn't exist, isn't UTF8, is a directory, etc
+            if not rxn.variable_rate_valid:
+                status = ("Variable rate constant is not valid: "
+                          "%s" % rxn.variable_rate)
+            # Variable rate constants only support irreversible reactions
+            elif rxn.variable_rate_valid and rxn.type == 'reversible':
+                rxn.type = 'irreversible'
+
+        rxn_name_status = check_reaction_name()
+        if rxn_name_status:
+            status = rxn_name_status
 
     rxn.status = status
     cellblender_release.update_release_pattern_rxn_name_list()

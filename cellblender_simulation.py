@@ -59,6 +59,9 @@ from cellblender.cellblender_utils import mcell_files_path
 
 from multiprocessing import cpu_count
 
+import cellblender.sim_engines as engine_manager
+import cellblender.sim_runners as runner_manager
+
 
 # We use per module class registration/unregistration
 def register():
@@ -72,124 +75,6 @@ def unregister():
 def get_pid(item):
     return int(item.name.split(',')[0].split(':')[1])
 
-
-###################################################################################
-#### This function was duplicated from cellblender/mdl/run_data_model_mcell.py ####
-####        Many attempts were made to import it, but they all failed.         ####
-###################################################################################
-def build_sweep_list ( par_dict ):
-    """ Count the number of runs that will be swept with this data model. """
-    sweep_list = []
-    print ( "Building sweep list... " )
-    if 'model_parameters' in par_dict:
-        for par in par_dict['model_parameters']:
-            print ( "Checking par " + str(par) )
-            if ('sweep_expression' in par) and ('sweep_enabled' in par):
-                if par['sweep_enabled']:
-                    sweep_item = {}
-                    if 'par_name' in par:
-                        sweep_item['par_name'] = par['par_name']
-                    else:
-                        sweep_item['par_name'] = "Unknown"
-                    # Sweep expression example: "0, 2, 9, 10:20, 25:35:5, 50"
-                    num_runs_for_this_parameter = 0
-                    # Get the sweep expression sublists which are separated by commas
-                    sw_items = []
-                    if 'sweep_expression' in par:
-                        sw_items = [ p.strip() for p in par['sweep_expression'].split(',') ]
-                    #print ( "Sweep item list = " + str(sw_items) )
-                    # Count the number of runs represented by each sweep item (either:  #  or  #:#  or  #:#:#  )
-                    sweep_values = []
-                    for sw_item in sw_items:
-                        parts = [ p.strip() for p in sw_item.split(':') ]
-                        if len(parts) <= 0:
-                          # This would be two commas together?
-                          pass
-                        elif len(parts) == 1:
-                          # This is a scalar
-                          sweep_values.append ( float(parts[0]) )
-                          #print ( "Added " + parts[0] )
-                        elif len(parts) >= 2:
-                          # This is a range with a start and stop
-                          start = float(parts[0])
-                          stop = float(parts[1])
-                          step = 1
-                          if len(parts) > 2:
-                            step = float(parts[2])
-                          if start > stop:
-                            start = float(parts[1])
-                            stop = float(parts[0])
-                          if step < 0:
-                            step = -step
-                          if step == 0:
-                            # Do something to keep it from an infinite loop
-                            step = 1;
-                          # Start with a pessimistic guess
-                          num = int((stop-start) / step)
-                          # Increase until equal or over
-                          #print ( "Before increasing, num = " + str(num) )
-                          while (start+((num-1)*step)) < (stop+(step/1000)):
-                            num += 1
-                            #print ( "Increased to num = " + str(num) )
-                          # Reduce while actually over
-                          while start+((num-1)*step) > (stop+(step/1000)):
-                            num += -1
-                            #print ( "Decreased to num = " + str(num) )
-                          # Finally append the values
-                          for n in range(num):
-                            sweep_values.append ( start + (n*step) )
-                    sweep_item['values'] = sweep_values
-                    # Include a "current_index" item used for looping over values
-                    sweep_item['current_index'] = 0
-                    sweep_list.append ( sweep_item )
-    return sweep_list
-
-
-def build_sweep_layout ( sweep_list, start_seed, end_seed ):
-    sweep_layout = {}
-    sweep_layout['version'] = 2;
-    sweep_layout['data_layout'] = []
-    sweep_layout['data_layout'].append ( [ '/DIR', [ 'output_data' ] ] )
-    for sw_item in sweep_list:
-      sweep_layout['data_layout'].append ( [ sw_item['par_name'], sw_item['values'] ] )
-    sweep_layout['data_layout'].append ( [ '/FILE_TYPE', [ 'react_data', 'viz_data' ] ] )
-    sweep_layout['data_layout'].append ( [ '/SEED', [s for s in range(start_seed,end_seed+1)] ] )
-    return sweep_layout
-
-
-def write_sweep_list_to_layout_file ( sweep_list, start_seed, end_seed, sweep_list_file_name ):
-    # Save the sweep list to a file for plotting, visualization, and other processing
-    # sweep_list_file_name = os.path.join ( project_dir, "data_layout.json" )
-    sweep_list_file = open ( sweep_list_file_name, "w" )
-    sweep_list_length = len(sweep_list)
-    sweep_list_file.write ( "{\n" )
-    sweep_list_file.write ( " \"version\": 2,\n" )
-    sweep_list_file.write ( " \"data_layout\": [\n" )
-    sweep_list_file.write ( "  [\"/DIR\", [\"output_data\"]],\n" )
-    for i in range ( sweep_list_length ):
-      sw_item = sweep_list[i]
-      sweep_list_file.write ( "  [\"" + sw_item['par_name'] + "\", " + str(sw_item['values']) + "],\n" )
-    # Include the file type
-    sweep_list_file.write ( "  [\"/FILE_TYPE\", [\"react_data\", \"viz_data\"]],\n" )
-    # Include the seeds in the sweep list file for plotting, etc.
-    sweep_list_file.write ( "  [\"/SEED\", " + str([s for s in range(start_seed,end_seed+1)]) + "]\n" )
-    sweep_list_file.write ( " ]\n" )
-    sweep_list_file.write ( "}\n" )
-    sweep_list_file.close()
-
-
-def write_default_data_layout(project_dir, start, end):
-    sweep_list_file_name = os.path.join ( project_dir, "data_layout.json" )
-    sweep_list_file = open ( sweep_list_file_name, "w" )
-    sweep_list_file.write ( "{\n" )
-    sweep_list_file.write ( " \"version\": 2,\n" )
-    sweep_list_file.write ( " \"data_layout\": [\n" )
-    sweep_list_file.write ( "  [\"/DIR\", [\"output_data\"]],\n" )
-    sweep_list_file.write ( "  [\"/FILE_TYPE\", [\"react_data\", \"viz_data\"]],\n" )
-    sweep_list_file.write ( "  [\"/SEED\", " + str([s for s in range(start,end+1)]) + "]\n" )
-    sweep_list_file.write ( " ]\n" )
-    sweep_list_file.write ( "}\n" )
-    sweep_list_file.close()
 
 
 def run_generic_runner (context, sim_module):
@@ -245,7 +130,7 @@ def run_generic_runner (context, sim_module):
         error_file_option = mcell.run_simulation.error_file
         log_file_option = mcell.run_simulation.log_file
         script_dir_path = os.path.dirname(os.path.realpath(__file__))
-        write_default_data_layout(mcell_files, start, end)
+        engine_manager.write_default_data_layout(mcell_files, start, end)
 
 
         processes_list = mcell.run_simulation.processes_list
@@ -309,6 +194,29 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
                 q_item = cellblender.simulation_queue.task_dict[pid]
                 if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
                     return False
+
+        elif str(mcell.run_simulation.simulation_run_control) == 'DYNAMIC':
+            global active_engine_module
+            global active_runner_module
+            # Force an update of the pluggable items as needed (typically after starting Blender).
+            if active_engine_module == None:
+                mcell.sim_engines.plugs_changed_callback ( context )
+            if active_runner_module == None:
+                mcell.sim_runners.plugs_changed_callback ( context )
+
+            if active_engine_module == None:
+                print ( "Cannot run without selecting a simulation engine" )
+                status = "Error: No simulation engine selected"
+            elif active_runner_module == None:
+                print ( "Cannot run without selecting a simulation runner" )
+                status = "Error: No simulation runner selected"
+            elif 'get_pid' in dir(active_runner_module):
+                processes_list = mcell.run_simulation.processes_list
+                for pl_item in processes_list:
+                    pid = get_pid(pl_item)
+                    q_item = cellblender.simulation_queue.task_dict[pid]
+                    if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
+                        return False
         return True
 
 
@@ -676,7 +584,7 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
                     script_dir_path, "run_simulations.py")
 
                 # The following line will create the "data_layout.json" file describing the directory structure
-                write_default_data_layout(project_dir, start, end)
+                engine_manager.write_default_data_layout(project_dir, start, end)
 
                 processes_list = mcell.run_simulation.processes_list
                 processes_list.add()
@@ -831,7 +739,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                 cellblender.simulation_queue.notify = True
 
                 # The following line will create the "data_layout.json" file describing the directory structure
-                write_default_data_layout(project_dir, start_seed, end_seed)
+                engine_manager.write_default_data_layout(project_dir, start_seed, end_seed)
 
                 processes_list = mcell.run_simulation.processes_list
                 for seed in range(start_seed,end_seed + 1):
@@ -966,6 +874,13 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
 
         status = ""
 
+        # Force an update of the pluggable items as needed (typically after starting Blender).
+        if active_engine_module == None:
+            mcell.sim_engines.plugs_changed_callback ( context )
+        if active_runner_module == None:
+            mcell.sim_runners.plugs_changed_callback ( context )
+
+
         if active_engine_module == None:
             print ( "Cannot run without selecting a simulation engine" )
             status = "Error: No simulation engine selected"
@@ -1001,14 +916,18 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
 
             # The following line will create the "data_layout.json" file describing the directory structure
             # It would probably be better for the actual engine to do this, but put it here for now...
-            write_default_data_layout(project_dir, start, end)
+            engine_manager.write_default_data_layout(project_dir, start, end)
 
             script_dir_path = os.path.dirname(os.path.realpath(__file__))
             script_file_path = os.path.join(script_dir_path, "sim_engines")
 
             dm = mcell.build_data_model_from_properties ( context, geometry=True )
 
-            if "prepare_runs" in dir(active_engine_module):
+            if "run_engine" in dir(active_runner_module):
+                print ( "Selected Runner supports running the engine directly ... so pass the engine." )
+                active_runner_module.run_engine ( active_engine_module, dm, project_dir )
+
+            elif "prepare_runs" in dir(active_engine_module):
                 print ( "Calling prepare_runs in active_engine_module" )
                 command_list = active_engine_module.prepare_runs ( dm, project_dir )
                 
@@ -1938,8 +1857,7 @@ had no limit."""
             elif not os.path.dirname(bpy.data.filepath):
                 row.label(
                     text="Open or save a .blend file to set the project directory", icon='ERROR')
-            elif (not os.path.isfile(main_mdl) and
-                    mcell.cellblender_preferences.decouple_export_run):
+            elif (not os.path.isfile(main_mdl) and mcell.cellblender_preferences.decouple_export_run):
                 row.label(text="Export the project", icon='ERROR')
                 row = layout.row()
                 row.operator("mcell.export_project",
@@ -1961,11 +1879,24 @@ had no limit."""
                     else:
                         row.operator("mcell.run_simulation", text="Export & Run", icon='COLOR_RED')
 
+                display_queue_panel = False
                 
                 if self.simulation_run_control == "QUEUE":
+                    display_queue_panel = True
+                elif self.simulation_run_control == 'DYNAMIC':
+                    global active_engine_module
+                    global active_runner_module
+                    if active_engine_module == None:
+                        pass
+                    elif active_runner_module == None:
+                        pass
+                    elif 'get_pid' in dir(active_runner_module):
+                        display_queue_panel = True
 
-                    if (self.processes_list and
-                            cellblender.simulation_queue.task_dict):
+                if display_queue_panel:
+                    print ( "Drawing the Queue Panel" )
+
+                    if (self.processes_list and cellblender.simulation_queue.task_dict):
                         row = layout.row()
                         row.label(text="MCell Processes:", icon='FORCE_LENNARDJONES')
                         row = layout.row()
@@ -2020,6 +1951,11 @@ had no limit."""
                                           rows=2)
                         row = layout.row()
                         row.operator("mcell.clear_run_list")
+
+
+                if self.simulation_run_control == 'DYNAMIC':
+                    mcell.sim_engines.draw_panel ( context, layout )
+                    mcell.sim_runners.draw_panel ( context, layout )
 
 
                 box = layout.box()
@@ -2077,50 +2013,12 @@ had no limit."""
                     
                     # This will eventually show the panel for the selected runner
 
-                    if self.simulation_run_control == "QUEUE":
+                    if display_queue_panel:
                         row = box.row()
                         row.prop ( self, "save_text_logs" )
                         row.operator("mcell.remove_text_logs")
 
-                    elif self.simulation_run_control == "DYNAMIC":
-
-                        sep = box.box()
-
-                        row = box.row(align=True)
-                        split = row.split(0.03)
-                        col = split.column()
-                        col = split.column()
-                        col.label("Dynamic Engine/Runner Options (experimental)")
-                        col = row.column()
-                        col.prop ( self, "show_engine_runner_help", icon='INFO', text="" )
-                        if self.show_engine_runner_help:
-                            helpbox = box.box()
-                            row = helpbox.row()
-                            row.label ( ">>> Select different simulation engines and run mechanisms <<<" )
-                            row = helpbox.row()
-                            row.label ( "This experimental panel will eventually permit the independent selection of" )
-                            row = helpbox.row()
-                            row.label ( "simulation engines and run mechanisms. This will become increasingly important" )
-                            row = helpbox.row()
-                            row.label ( "as CellBlender supports custom instances of libMCell and distributed computing." )
-                            row = helpbox.row()
-                            row.label ( "To enable the selections in this panel, choose \"Dynamic\" in the normal run control." )
-
-                        sep = box.box()
-                        row = box.row()
-                        row.label ( "Simulation Engine:" )
-
-                        mcell.sim_engines.draw_panel ( context, box )
-
-                        sep = box.box()
-                        row = box.row()
-                        row.label ( "Simulation Runner:" )
-
-                        mcell.sim_runners.draw_panel ( context, box )
-
-
-
-                    elif self.simulation_run_control == "SWEEP_SGE":
+                    if self.simulation_run_control == "SWEEP_SGE":
                         row = box.row()
                         subbox = row.box()
                         row = subbox.row()
@@ -2200,7 +2098,6 @@ had no limit."""
 
 
 
-
 ###########################################################################
 ###########################################################################
 ###########################################################################
@@ -2212,9 +2109,9 @@ had no limit."""
 ###########################################################################
 
 
-import os
-import cellblender.sim_engines as engine_manager
-import cellblender.sim_runners as runner_manager
+#import os
+#import cellblender.sim_engines as engine_manager
+#import cellblender.sim_runners as runner_manager
 
 # module_type_dict = { "sim_engines": engine_manager, "sim_runners": runner_manager }
 
@@ -2222,7 +2119,7 @@ active_engine_module = None
 active_runner_module = None
 
 
-def load_plug_modules():
+def load_plug_modules(context):
     # print ( "Call to load_plug_modules" )
     if engine_manager.plug_modules == None:
         engine_manager.plug_modules = engine_manager.get_modules()
@@ -2230,7 +2127,7 @@ def load_plug_modules():
         runner_manager.plug_modules = runner_manager.get_modules()
 
 def get_engines_as_items(scene, context):
-    load_plug_modules()
+    load_plug_modules(context)
     # Start with any static modules that should always be in the list
     plugs_list = [("NONE", "Choose Engine", "")]
     # Add the dynamic modules
@@ -2239,7 +2136,7 @@ def get_engines_as_items(scene, context):
     return plugs_list
 
 def get_runners_as_items(scene, context):
-    load_plug_modules()
+    load_plug_modules(context)
     # Start with any static modules that should always be in the list
     plugs_list = [("NONE", "Choose Runner", "")]
     # Add the dynamic modules
@@ -2257,6 +2154,8 @@ class PLUGGABLE_OT_Reload(bpy.types.Operator):
     print ( "pluggable.reload.execute()" )
     engine_manager.plug_modules = None
     runner_manager.plug_modules = None
+    context.scene.mcell.sim_engines.plugs_changed_callback ( context )
+    context.scene.mcell.sim_runners.plugs_changed_callback ( context )
     return{'FINISHED'}
 
 
@@ -2505,12 +2404,17 @@ class Pluggable(bpy.types.PropertyGroup):
     file_name = StringProperty ( subtype='FILE_PATH', default="")
     engines_enum = EnumProperty ( items=get_engines_as_items, name="", description="Engines", update=plugs_changed_callback )
     runners_enum = EnumProperty ( items=get_runners_as_items, name="", description="Runners", update=plugs_changed_callback )
+    engines_show = BoolProperty ( default=False, description="Show Engine Options" )
+    runners_show = BoolProperty ( default=False, description="Show Runner Options" )
+
     plug_val_list = CollectionProperty(type=PluggableValue, name="String List")
     active_plug_val_index = IntProperty(name="Active String Index", default=0)
 
     def plugs_changed_callback ( self, context ):
         global active_engine_module
         global active_runner_module
+
+        # print ( "plugs_changed_callback called" )
 
         selected_module_code = None
         active_sub_module = None
@@ -2602,14 +2506,23 @@ class Pluggable(bpy.types.PropertyGroup):
         this_module_name = ""
         global active_engine_module
         global active_runner_module
+        engine_runner_label = ""
+        engine_runner_key_name = ""
+        engine_runner_options_showing = False
         if self == context.scene.mcell.sim_engines:
           #print ( "Drawing Engines" )
           active_module = active_engine_module
           this_module_name = "engines\t"
+          engine_runner_label = "Simulate with:"
+          engine_runner_key_name = "engines_show"
+          engine_runner_options_showing = self.engines_show
         if self == context.scene.mcell.sim_runners:
           #print ( "Drawing Runners" )
           active_module = active_runner_module
           this_module_name = "runners\t"
+          engine_runner_label = "Run with:"
+          engine_runner_key_name = "runners_show"
+          engine_runner_options_showing = self.runners_show
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
         layout = panel
@@ -2622,6 +2535,14 @@ class Pluggable(bpy.types.PropertyGroup):
         #### Below here: layout is in the box
 
         row = layout.row()
+
+        col = row.column()
+        col.alignment = 'LEFT'
+        if engine_runner_options_showing:
+          col.prop ( self, engine_runner_key_name, text=engine_runner_label, icon='TRIA_DOWN', emboss=False )
+        else:
+          col.prop ( self, engine_runner_key_name, text=engine_runner_label, icon='TRIA_RIGHT', emboss=False )
+
         col = row.column()
         something_selected = False
         if self == context.scene.mcell.sim_engines:
@@ -2634,10 +2555,12 @@ class Pluggable(bpy.types.PropertyGroup):
             something_selected = True
         col = row.column()
         col.operator ( 'pluggable.reload', icon='FILE_REFRESH' )
+
+
         if (active_module == None) or (something_selected == False):
             row = layout.row()
             row.label ( "No module selected" )
-        else:
+        elif engine_runner_options_showing:
             #row = layout.row()
             #row.label ( "Current module info: " + active_module.plug_code + " " + active_module.plug_name )
 
@@ -2678,6 +2601,10 @@ class Pluggable(bpy.types.PropertyGroup):
                     elif s.val_type == 'fn':
                         col.prop ( s, "filename_val", text=s.key_name, icon=s.icon_code )
                   
+            if 'draw_layout' in dir(active_module):
+              # Call the custom (typically raw Blender) drawing function for this layout:
+              active_module.draw_layout ( None, context, layout )
+
 
         #### Above here: layout is in the box
 

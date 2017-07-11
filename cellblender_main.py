@@ -111,7 +111,7 @@ def init_properties(context):
         context = bpy.context
     mcell = context.scene.mcell
     if not mcell.initialized:
-        mcell.init_properties()
+        mcell.init_properties(context)
         mcell.initialized = True
 
 
@@ -174,7 +174,7 @@ class PP_OT_init_mcell(bpy.types.Operator):
     def execute(self, context):
         print ( "Initializing CellBlender" )
         mcell = context.scene.mcell
-        mcell.init_properties()
+        mcell.init_properties(context)
         mcell.rxn_output.init_properties(mcell.parameter_system)
         print ( "CellBlender has been initialized" )
         return {'FINISHED'}
@@ -930,7 +930,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     #scratch_settings = PointerProperty(
     #    type=MCellScratchPropertyGroup, name="CellBlender Scratch Settings")
 
-    def init_properties ( self ):
+    def init_properties ( self, context=None ):
+        print ("MCellPropertyGroup.init_properties called")
         self.cellblender_version = "0.1.54"
         self.cellblender_addon_id = "0"
         self.cellblender_data_model_version = "0"
@@ -941,6 +942,11 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         self.viz_output.init_properties ( self.parameter_system )
         self.sim_engines.name = "sim_engines"
         self.sim_runners.name = "sim_runners"
+        #if context != None:
+        #    # Force an update of the pluggable items.
+        #    print ("MCellPropertyGroup.init_properties is updating engines and runners")
+        #    self.sim_engines.plugs_changed_callback ( context )
+        #    self.sim_runners.plugs_changed_callback ( context )
         # Don't forget to update the "saved_by_source_id" to match the current version of the addon
         self['saved_by_source_id'] = cellblender.cellblender_info['cellblender_source_sha1']
         self.initialized = True
@@ -976,7 +982,11 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context, geometry=False, scripts=False ):
         print ( "build_data_model_from_properties: Constructing a data_model dictionary from current properties" )
         dm = {}
-        dm['data_model_version'] = "DM_2014_10_24_1638"
+        dm['data_model_version'] = "DM_2017_06_23_1300"
+        if self.cellblender_preferences.bionetgen_mode:
+          dm['model_language'] = 'mcell3r'
+        else:
+          dm['model_language'] = 'mcell3'
         dm['blender_version'] = [v for v in bpy.app.version]
         dm['cellblender_version'] = self.cellblender_version
         #dm['cellblender_source_hash'] = self.cellblender_source_hash
@@ -1020,7 +1030,12 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] == "DM_2014_10_24_1638":
+            # Add the model_language field which should be "mcell3" for any existing models
+            dm['model_language'] = 'mcell3'
+            dm['data_model_version'] = "DM_2017_06_23_1300"
+
+        if dm['data_model_version'] != "DM_2017_06_23_1300":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellPropertyGroup data model to current version." )
             return None
 
@@ -1124,7 +1139,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         print ( "build_properties_from_data_model: Data Model Keys = " + str(dm.keys()) )
 
         # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] != "DM_2017_06_23_1300":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellPropertyGroup data model to current version." )
 
         # Remove the existing MCell Property Tree
@@ -1134,7 +1149,14 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         print ( "Overwriting properites based on data in the data model dictionary" )
 
         # Start by calling "init_properties" which creates a full new CellBlender property tree
-        self.init_properties()
+        self.init_properties( context )
+
+        # Set the bionetgen_mode based on model_language
+        if 'model_language' in dm:
+            if dm['model_language'] == 'mcell3r':
+              self.cellblender_preferences.bionetgen_mode = True
+            else:
+              self.cellblender_preferences.bionetgen_mode = False
 
         # Then add each section
 

@@ -41,6 +41,7 @@ import re
 import cellblender
 from . import parameter_system
 from . import cellblender_utils
+from . import cellblender_preferences
 
 import cellblender.data_model as data_model
 
@@ -88,7 +89,6 @@ class MCELL_OT_release_site_remove(bpy.types.Operator):
 
 def check_release_site(self, context):
     """ Thin wrapper for check_release_site. """
-
     check_release_site_wrapped(context)
 
 
@@ -98,19 +98,35 @@ def check_release_site_wrapped(context):
     mcell = context.scene.mcell
     rel_list = mcell.release_sites.mol_release_list
     rel = rel_list[mcell.release_sites.active_release_index]
+    rel.status = ""
 
-    name_status = check_release_site_name(context)
-    molecule_status = check_release_molecule(context)
-    object_status = check_release_object_expr(context)
+    if mcell.cellblender_preferences.bionetgen_mode:
+        # Perform BioNetGen Checking
+        pass
 
-    if name_status:
-        rel.status = name_status
-    elif molecule_status:
-        rel.status = molecule_status
-    elif object_status and rel.shape == 'OBJECT':
-        rel.status = object_status
     else:
-        rel.status = ""
+        # Perform MCell Checking
+
+        name_status = check_release_site_name(context)
+        molecule_status = ""
+
+        if mcell.cellblender_preferences.bionetgen_mode:
+            # Perform BioNetGen Molecule Checking
+            pass
+        else:
+            # Perform MCell Molecule Checking
+            molecule_status = check_release_molecule(context)
+
+        object_status = check_release_object_expr(context)
+
+        if name_status:
+            rel.status = name_status
+        elif molecule_status:
+            rel.status = molecule_status
+        elif object_status and rel.shape == 'OBJECT':
+            rel.status = object_status
+        else:
+            rel.status = ""
 
     return
 
@@ -380,9 +396,8 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         ('OBJECT', 'Object/Region', '')]
     shape = EnumProperty(
         items=shape_enum, name="Release Shape",
-        description="Release in the specified shape. Surface molecules can "
-                    "only use Object/Region.",
-                    update=check_release_site)
+        description="Release in the specified shape. Surface molecules can only use Object/Region.",
+        update=check_release_site)
     orient_enum = [
         ('\'', "Top Front", ""),
         (',', "Top Back", ""),
@@ -605,12 +620,18 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
         relsite.init_properties(mcell.parameter_system)
 
-        check_release_molecule(context)
+        if mcell.cellblender_preferences.bionetgen_mode:
+            # Perform BioNetGen Checking
+            pass
+        else:
+            # Perform MCell Checking
+            check_release_molecule(context)
 
 
     def remove_active_rel_site ( self, context ):
         """ Remove the active release site from the list of release sites """
         print ( "Call to: \"remove_active_rel_site\"" )
+        mcell = context.scene.mcell
         if len(self.mol_release_list) > 0:
             rel = self.mol_release_list[self.active_release_index]
             if rel:
@@ -621,8 +642,13 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                 self.active_release_index = 0
             if len(self.mol_release_list) <= 0:
                 self.next_id = 1
-            if self.mol_release_list:
-                check_release_site(self, context)
+            if mcell.cellblender_preferences.bionetgen_mode:
+                # Perform BioNetGen Checking
+                pass
+            else:
+                # Perform MCell Checking
+                if self.mol_release_list:
+                    check_release_site(self, context)
 
 
     def build_data_model_from_properties ( self, context ):
@@ -749,8 +775,11 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
 
                     helptext = "Molecule to Release\n" + \
                                "Selects the molecule to be released at this site."
-                    #layout.prop_search ( rel, "molecule", mcell.molecules, "molecule_list", text="Molecule", icon='FORCE_LENNARDJONES')
-                    ps.draw_prop_search_with_help ( layout, "Molecule:", rel, "molecule", mcell.molecules, "molecule_list", "mol_show_help", rel.mol_show_help, helptext )
+                    if mcell.cellblender_preferences.bionetgen_mode:
+                        ps.draw_prop_with_help ( layout, "Molecule:", rel, "molecule", "mol_show_help", rel.mol_show_help, helptext )
+                    else:
+                        ps.draw_prop_search_with_help ( layout, "Molecule:", rel, "molecule", mcell.molecules, "molecule_list", "mol_show_help", rel.mol_show_help, helptext )
+                        #layout.prop_search ( rel, "molecule", mcell.molecules, "molecule_list", text="Molecule", icon='FORCE_LENNARDJONES')
 
                     if rel.molecule in mcell.molecules.molecule_list:
                         label = mcell.molecules.molecule_list[rel.molecule].bnglLabel

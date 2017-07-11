@@ -371,7 +371,8 @@ class file_xy extends data_file {
       // Read labels if there are any for BioNetGen output files (must start with #)
       s = in.readLine();
       if (s != null) {
-        s = s.trim().replaceAll ("\\s+", " ");  // Replace all white space with spaces
+        s = s.trim().replace (",", " ").trim();        // Replace all commas with spaces
+        s = s.trim().replaceAll ("\\s+", " ").trim();  // Replace all white space with spaces
         System.out.println ( "Header line after processing: " + s );
         if (s.charAt(0) == '#') {
           // This is a comment line so remove the # and split into column names (which should always start with "time")
@@ -391,9 +392,11 @@ class file_xy extends data_file {
         // Trim whitespace
         s = s.trim();
         if (s.charAt(0) != '#') {  // This is not a comment
+          // Replace all commas with spaces
+          s = s.trim().replace (",", " ").trim();
           // Convert all contiguous white space to a single space
           //System.out.println ( "Read line: \"" + s + "\"" );
-          s = s.replaceAll ("\\s+", " ");
+          s = s.replaceAll ("\\s+", " ").trim();
           //System.out.println ( "Proc line: \"" + s + "\"" );
           ss = s.split(" ");
           if ( (ss.length <= xcol) || (ss.length <= ycol) ) {
