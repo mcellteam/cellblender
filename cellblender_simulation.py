@@ -2038,14 +2038,8 @@ had no limit."""
                             row.label ( "To enable the selections in this panel, choose \"Dynamic\" in the normal run control." )
 
                         sep = box.box()
-                        row = box.row()
-                        row.label ( "Simulation Engine:" )
 
                         mcell.sim_engines.draw_panel ( context, box )
-
-                        sep = box.box()
-                        row = box.row()
-                        row.label ( "Simulation Runner:" )
 
                         mcell.sim_runners.draw_panel ( context, box )
 
@@ -2437,6 +2431,9 @@ class Pluggable(bpy.types.PropertyGroup):
     file_name = StringProperty ( subtype='FILE_PATH', default="")
     engines_enum = EnumProperty ( items=get_engines_as_items, name="", description="Engines", update=plugs_changed_callback )
     runners_enum = EnumProperty ( items=get_runners_as_items, name="", description="Runners", update=plugs_changed_callback )
+    engines_show = BoolProperty ( default=False, description="Show Engine Options" )
+    runners_show = BoolProperty ( default=False, description="Show Runner Options" )
+
     plug_val_list = CollectionProperty(type=PluggableValue, name="String List")
     active_plug_val_index = IntProperty(name="Active String Index", default=0)
 
@@ -2536,14 +2533,23 @@ class Pluggable(bpy.types.PropertyGroup):
         this_module_name = ""
         global active_engine_module
         global active_runner_module
+        engine_runner_label = ""
+        engine_runner_key_name = ""
+        engine_runner_options_showing = False
         if self == context.scene.mcell.sim_engines:
           #print ( "Drawing Engines" )
           active_module = active_engine_module
           this_module_name = "engines\t"
+          engine_runner_label = "Simulate with:"
+          engine_runner_key_name = "engines_show"
+          engine_runner_options_showing = self.engines_show
         if self == context.scene.mcell.sim_runners:
           #print ( "Drawing Runners" )
           active_module = active_runner_module
           this_module_name = "runners\t"
+          engine_runner_label = "Run with:"
+          engine_runner_key_name = "runners_show"
+          engine_runner_options_showing = self.runners_show
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
         layout = panel
@@ -2556,6 +2562,14 @@ class Pluggable(bpy.types.PropertyGroup):
         #### Below here: layout is in the box
 
         row = layout.row()
+
+        col = row.column()
+        col.alignment = 'LEFT'
+        if engine_runner_options_showing:
+          col.prop ( self, engine_runner_key_name, text=engine_runner_label, icon='TRIA_DOWN', emboss=False )
+        else:
+          col.prop ( self, engine_runner_key_name, text=engine_runner_label, icon='TRIA_RIGHT', emboss=False )
+
         col = row.column()
         something_selected = False
         if self == context.scene.mcell.sim_engines:
@@ -2568,10 +2582,12 @@ class Pluggable(bpy.types.PropertyGroup):
             something_selected = True
         col = row.column()
         col.operator ( 'pluggable.reload', icon='FILE_REFRESH' )
+
+
         if (active_module == None) or (something_selected == False):
             row = layout.row()
             row.label ( "No module selected" )
-        else:
+        elif engine_runner_options_showing:
             #row = layout.row()
             #row.label ( "Current module info: " + active_module.plug_code + " " + active_module.plug_name )
 
