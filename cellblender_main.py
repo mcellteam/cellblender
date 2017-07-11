@@ -59,6 +59,7 @@ from . import cellblender_release
 from . import cellblender_surface_classes
 from . import cellblender_surface_regions
 from . import cellblender_partitions
+from . import cellblender_pbc 
 from . import cellblender_simulation
 from . import cellblender_mol_viz
 from . import cellblender_reaction_output
@@ -365,6 +366,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
     surf_regions_select = BoolProperty ( name="surfr_sel", description="Assign Surface Classes", default=False, subtype='NONE', update=select_callback)
     rel_patterns_select = BoolProperty ( name="relpat_sel", description="Release Patterns", default=False, subtype='NONE', update=select_callback)
     partitions_select = BoolProperty ( name="part_sel", description="Partitions", default=False, subtype='NONE', update=select_callback)
+    pbc_select = BoolProperty ( name="pbc_sel", description="Periodic Boundary Conditions", default=False, subtype='NONE', update=select_callback)
     init_select = BoolProperty ( name="init_sel", description="Run Simulation", default=False, subtype='NONE', update=select_callback)
     # run_select = BoolProperty ( name="run_sel", description="Old Run Simulation", default=False, subtype='NONE', update=select_callback)
     graph_select = BoolProperty ( name="graph_sel", description="Plot Output Settings", default=False, subtype='NONE', update=select_callback)
@@ -397,7 +399,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             Hide all panels ... always
             
         """
-        prop_keys = [ 'examples_select', 'preferences_select', 'scripting_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'init_select', 'graph_select', 'viz_select', 'select_multiple' ]
+        prop_keys = [ 'examples_select', 'preferences_select', 'scripting_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'pbc_select', 'init_select', 'graph_select', 'viz_select', 'select_multiple' ]
         
         pin_state = False
         
@@ -575,6 +577,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     if mcell.cellblender_preferences.show_button_num[13]: row.prop ( self, "viz_select", icon='SEQUENCE', text="" )
                     if mcell.cellblender_preferences.show_button_num[14]: row.prop ( self, "init_select", icon='COLOR_RED', text="" )
 
+                    if mcell.cellblender_preferences.show_button_num[15]: row.prop ( self, "pbc_select", text="" )
+
                     col = split.column()
                     row = col.row()
 
@@ -691,9 +695,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     brow = layout.row()  ##############################################################
                     bcol = brow.column()
                     bcol.prop ( self, "viz_select", icon='SEQUENCE', text="Visualization Settings" )
-                    bcol = brow.column()
-                    bcol.prop ( self, "init_select", icon='COLOR_RED', text="Run Simulation" )
-
+                    bcol = brow.column()                    
+                    bcol.prop ( self, "pbc_select", icon='GRID', text="Periodic Boundary Conditions" )
 
                     brow = layout.row()  ##############################################################
 
@@ -704,6 +707,12 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                         bcol.prop ( self, "select_multiple", icon='UNPINNED', text="Show All / Multiple" )
                     bcol = brow.column()
                     bcol.operator ( "cbm.refresh_operator",icon='FILE_REFRESH', text="Reload Visualization Data")
+
+                    brow = layout.row()  ##############################################################
+
+                    bcol = brow.column()
+                    bcol.prop ( self, "init_select", icon='COLOR_RED', text="Run Simulation" )
+
 
 
                 # Check for modifications to the model since the last run
@@ -782,6 +791,11 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     layout.box() # Use as a separator
                     layout.label ( "Partitions", icon='GRID' )
                     context.scene.mcell.partitions.draw_layout ( context, layout )
+
+                if self.pbc_select:
+                    layout.box() # Use as a separator
+                    layout.label ( "Periodic Boundary Conditions", icon='GRID' )
+                    context.scene.mcell.pbc.draw_layout ( context, layout )
 
                 if self.graph_select:
                     layout.box() # Use as a separator
@@ -877,6 +891,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=cellblender_initialization.MCellInitializationPropertyGroup, name="Model Initialization")
     partitions = bpy.props.PointerProperty(
         type=cellblender_partitions.MCellPartitionsPropertyGroup, name="Partitions")
+    pbc = bpy.props.PointerProperty(
+          type=cellblender_pbc.MCellPBCPropertyGroup, name="Periodic Boundary Conditions")
     ############# DB: added for parameter import from BNG, SBML models####
     #parameters = PointerProperty(
     #    type=MCellParametersPropertyGroup, name="Defined Parameters")

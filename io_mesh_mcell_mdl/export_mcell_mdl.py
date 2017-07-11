@@ -159,6 +159,25 @@ def save_partitions(context, out_file):
             mcell.partitions.z_step))
 
 
+def save_pbc(context, out_file):
+    #Export the periodic boundary conditions
+
+    mcell = context.scene.mcell
+    ptrad = format(mcell.pbc.peri_trad)
+    px = format(mcell.pbc.peri_x)
+    py = format(mcell.pbc.peri_y)
+    pz = format(mcell.pbc.peri_z)
+
+    if mcell.pbc.include:
+        out_file.write("PERIODIC_BOX\n")
+        out_file.write("{\n")
+        out_file.write("CORNERS = [%.15g,%.15g,%.15g]\n,[%.15g,%.15g,%.15g]\n" % (mcell.pbc.x_start,mcell.pbc.y_start,mcell.pbc.z_start,mcell.pbc.x_end,mcell.pbc.y_end,mcell.pbc.z_end))
+        out_file.write("PERIODIC_TRADITIONAL = " + ptrad.upper() + "\n")
+        out_file.write("PERIODIC_X = " + px.upper() + "\n")
+        out_file.write("PERIODIC_Y = " + py.upper() + "\n")
+        out_file.write("PERIODIC_Z = " + pz.upper() + "\n")
+        out_file.write("}\n\n")
+
 def save_wrapper(context, out_file, filedir):
     """ This function saves the current model to MDL.
 
@@ -221,6 +240,11 @@ def save_wrapper(context, out_file, filedir):
     save_partitions(context, out_file)
 
     scripting.write_scripting_output ( 'after', 'partitions', context, out_file, filedir, dm )
+    scripting.write_scripting_output ( 'before', 'pbc', context, out_file, filedir, dm )
+
+    save_pbc(context, out_file)
+
+    scripting.write_scripting_output ( 'after', 'pbc', context, out_file, filedir, dm )
     scripting.write_scripting_output ( 'before', 'molecules', context, out_file, filedir, dm )
 
     # Export molecules:
