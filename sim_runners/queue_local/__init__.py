@@ -130,11 +130,14 @@ def run_commands ( commands ):
       """
       CMD: {
         'args': ['print_detail=20',
-                 'proj_path=/home/bobkuczewski/proj/MCell/tutorials/intro/2017/2017_07/2017_07_11/queue_runner_tests_files/mcell',
+                 'proj_path=/.../intro/2017/2017_07/2017_07_11/queue_runner_tests_files/mcell',
                  'seed=1',
                  'data_model=dm.json'],
-        'cmd': '/netapp/cnl/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/sim_engines/limited_cpp/mcell_main',
-        'wd': '/home/bobkuczewski/proj/MCell/tutorials/intro/2017/2017_07/2017_07_11/queue_runner_tests_files/mcell'}
+        'cmd': '/.../blender/2.78/scripts/addons/cellblender/sim_engines/limited_cpp/mcell_main',
+        'wd':  '/.../intro/2017/2017_07/2017_07_11/queue_runner_tests_files/mcell',
+        'stdout': '',
+        'stderr': ''
+      }
       """
 
     mcell = context.scene.mcell

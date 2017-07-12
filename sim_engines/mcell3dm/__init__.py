@@ -121,7 +121,7 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
 
   run_cmd_list = run_data_model_mcell_3.run_mcell_sweep(['-rt','extern','-pd',project_dir,'-b',parameter_dictionary['MCell Path']['val'],'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
 
-  print ( "Run Cmds prepared by the mcell3 engine:" )
+  print ( "Run Cmds prepared by the mcell3dm engine:" )
   print ( "  = " + str(run_cmd_list) )
   if len(run_cmd_list) > 0:
     for run_cmd in run_cmd_list:

@@ -45,5 +45,24 @@ def run_commands ( commands ):
             command_list.append ( arg )
         sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=None, stderr=None ) )
         window_num += 1
+
+
+    for cmd in commands:
+        command_list = []
+        if type(cmd) == type('str'):
+            # This command is a string, so just append it
+            command_list.append ( cmd )
+            sp_list.append ( subprocess.Popen ( command_list, stdout=None, stderr=None ) )
+        elif type(cmd) == type({'a':1}):
+            # This command is a dictionary, so use its keys:
+            command_list.append ( cmd['cmd'] )  # The dictionary must contain a 'cmd' key
+            if 'args' in cmd:
+                for arg in cmd['args']:
+                    command_list.append ( arg )
+            if 'wd' in cmd:
+                sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=None, stderr=None ) )
+            else:
+                sp_list.append ( subprocess.Popen ( command_list, stdout=None, stderr=None ) )
+        window_num += 1
     return sp_list
 
