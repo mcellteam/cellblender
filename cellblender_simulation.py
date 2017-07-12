@@ -75,6 +75,13 @@ def unregister():
 def get_pid(item):
     return int(item.name.split(',')[0].split(':')[1])
 
+    # Provide a less error-prone version for testing
+    #l = item.name.split(',')[0].split(':')
+    #rtn_val = 0
+    #if len(l) > 1:
+    #  rtn_val = int(l[1])
+    #return rtn_val
+
 
 
 def run_generic_runner (context, sim_module):
@@ -214,9 +221,10 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
                 processes_list = mcell.run_simulation.processes_list
                 for pl_item in processes_list:
                     pid = get_pid(pl_item)
-                    q_item = cellblender.simulation_queue.task_dict[pid]
-                    if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
-                        return False
+                    if pid in cellblender.simulation_queue.task_dict:
+                        q_item = cellblender.simulation_queue.task_dict[pid]
+                        if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
+                            return False
         return True
 
 
@@ -1894,7 +1902,7 @@ had no limit."""
                         display_queue_panel = True
 
                 if display_queue_panel:
-                    print ( "Drawing the Queue Panel" )
+                    # print ( "Drawing the Queue Panel" )
 
                     if (self.processes_list and cellblender.simulation_queue.task_dict):
                         row = layout.row()
