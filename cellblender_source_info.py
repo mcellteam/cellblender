@@ -155,10 +155,10 @@ cellblender_info = {
         "sim_engines"+os.sep+"limited_python"+os.sep+"__init__.py",
         "sim_engines"+os.sep+"limited_python"+os.sep+"limited_python_sim.py",
 
-        "sim_engines"+os.sep+"mcell3"+os.sep+"makefile",
-        "sim_engines"+os.sep+"mcell3"+os.sep+"__init__.py",
-        "sim_engines"+os.sep+"mcell3"+os.sep+"data_model_to_mdl_3.py",
-        "sim_engines"+os.sep+"mcell3"+os.sep+"run_data_model_mcell_3.py",
+        "sim_engines"+os.sep+"mcell3dm"+os.sep+"makefile",
+        "sim_engines"+os.sep+"mcell3dm"+os.sep+"__init__.py",
+        "sim_engines"+os.sep+"mcell3dm"+os.sep+"data_model_to_mdl_3.py",
+        "sim_engines"+os.sep+"mcell3dm"+os.sep+"run_data_model_mcell_3.py",
 
         "sim_engines"+os.sep+"mcell3r"+os.sep+"makefile",
         "sim_engines"+os.sep+"mcell3r"+os.sep+"__init__.py",
