@@ -97,6 +97,8 @@ def draw_layout ( self, context, layout ):
     mcell = context.scene.mcell
     row = layout.row()
     row.label ( text="This label was drawn by the Dynamic Queue Runner!!", icon='FORCE_LENNARDJONES' )
+    row = layout.row()
+    row.operator("ql.clear_run_list")
 
 
 
@@ -309,7 +311,7 @@ def run_commands_proto ( commands ):
 
 
 
-class MCELL_OT_percentage_done_timer(bpy.types.Operator):
+class MCELL_QL_percentage_done_timer(bpy.types.Operator):
     """Update the MCell job list periodically to show percentage done"""
     bl_idname = "mcell.percentage_done_timer"
     bl_label = "Modal Timer Operator"
@@ -369,7 +371,7 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
         wm.event_timer_remove(self._timer)
 
 
-class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
+class MCELL_QL_run_simulation_control_queue(bpy.types.Operator):
     bl_idname = "mcell.run_simulation_control_queue"
     bl_label = "Run MCell Simulation Using Command Queue"
     bl_description = "Run MCell Simulation Using Command Queue"
@@ -498,7 +500,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MCELL_OT_kill_simulation(bpy.types.Operator):
+class MCELL_QL_kill_simulation(bpy.types.Operator):
     bl_idname = "mcell.kill_simulation"
     bl_label = "Kill Selected Simulation"
     bl_description = ("Kill/Cancel Selected Running/Queued MCell Simulation. "
@@ -538,7 +540,7 @@ class MCELL_OT_kill_simulation(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class MCELL_OT_kill_all_simulations(bpy.types.Operator):
+class MCELL_QL_kill_all_simulations(bpy.types.Operator):
     bl_idname = "mcell.kill_all_simulations"
     bl_label = "Kill All Simulations"
     bl_description = ("Kill/Cancel All Running/Queued MCell Simulations. "
@@ -559,31 +561,70 @@ class MCELL_OT_kill_all_simulations(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class MCELL_QL_clear_run_list(bpy.types.Operator):
+    bl_idname = "ql.clear_run_list"
+    bl_label = "Clear Completed Runs"
+    bl_description = ("Clear the list of completed and failed runs. "
+                      "Does not remove rxn/viz data.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        # The collection property of subprocesses
+        processes_list = mcell.run_simulation.processes_list
+        # A list holding actual subprocess objects
+        simulation_popen_list = cellblender.simulation_popen_list
+        sim_list_length = len(simulation_popen_list)
+        idx = 0
+        ctr = 0
+
+        while ctr < sim_list_length:
+            ctr += 1
+            sp = simulation_popen_list[idx]
+            # Simulation set is still running. Leave it in the collection
+            # property and list of subprocess objects.
+            if sp.poll() is None:
+                idx += 1
+            # Simulation set has failed or finished. Remove it from
+            # collection property and the list of subprocess objects.
+            else:
+                processes_list.remove(idx)
+                simulation_popen_list.pop(idx)
+                mcell.run_simulation.active_process_index -= 1
+                if (mcell.run_simulation.active_process_index < 0):
+                    mcell.run_simulation.active_process_index = 0
+
+        return {'FINISHED'}
 
 def register_blender_classes():
-    print ( "Registering" )
-    bpy.utils.register_class(MCELL_OT_percentage_done_timer)
-    bpy.utils.register_class(MCELL_OT_run_simulation_control_queue)
-    bpy.utils.register_class(MCELL_OT_kill_simulation)
-    bpy.utils.register_class(MCELL_OT_kill_all_simulations)
+    print ( "Registering Queue_Local classes" )
+    bpy.utils.register_class(MCELL_QL_percentage_done_timer)
+    bpy.utils.register_class(MCELL_QL_run_simulation_control_queue)
+    bpy.utils.register_class(MCELL_QL_kill_simulation)
+    bpy.utils.register_class(MCELL_QL_kill_all_simulations)
+    bpy.utils.register_class(MCELL_QL_clear_run_list)
     print ( "Done" )
 
 def unregister_blender_classes():
-    print ( "UnRegistering" )
+    print ( "UnRegistering Queue_Local classes" )
     try:
-      bpy.utils.unregister_class(MCELL_OT_kill_all_simulations)
+      bpy.utils.unregister_class(MCELL_QL_clear_run_list)
     except Exception as ex:
       pass
     try:
-      bpy.utils.unregister_class(MCELL_OT_kill_simulation)
+      bpy.utils.unregister_class(MCELL_QL_kill_all_simulations)
     except Exception as ex:
       pass
     try:
-      bpy.utils.unregister_class(MCELL_OT_run_simulation_control_queue)
+      bpy.utils.unregister_class(MCELL_QL_kill_simulation)
     except Exception as ex:
       pass
     try:
-      bpy.utils.unregister_class(MCELL_OT_percentage_done_timer)
+      bpy.utils.unregister_class(MCELL_QL_run_simulation_control_queue)
+    except Exception as ex:
+      pass
+    try:
+      bpy.utils.unregister_class(MCELL_QL_percentage_done_timer)
     except Exception as ex:
       pass
     print ( "Done" )
