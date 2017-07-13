@@ -110,39 +110,3 @@ class MCellPBCPropertyGroup(bpy.types.PropertyGroup):
             # Create a layout from the panel and draw into it 
             layout = panel.layout
             self.draw_layout ( context, layout )
-
-"""
-Make the button
-Have the button be able to be selected
-Have an enabled or not checkbox
-Have an input for the starting X,Y,Z
-Have an input for the ending X,Y,Z
-Have a checkbox for Periodic Traditional
-Have a checkbox for Periodic-X
-Have a checkbox for Periodic-Y
-Have a checkbox for Periodic-Z
-create a script from input and export it
-
-VVVV
-PERIODIC_BOX
-{
-  CORNERS = [x_start, y_start, z_start],[x_end, y_end, z_end]
-  PERIODIC_TRADITIONAL = peri_trad--defaulted to True
-  PERIODIC_X = peri_x--defaulted to True
-  PERIODIC_Y = peri_y--defaulted to True
-  PERIODIC_Z = peri_z--defaulted to True
-}
-^^^^^^
-"""
-
-"""
-clicks the button
-brings up below checkbox, must draw the checkbox, 
-"""
-"""
-scripting
-
-button that turns the input into a python script called pbc.mdl
-enable python script through black magic then add it the enabled list 
-
-"""

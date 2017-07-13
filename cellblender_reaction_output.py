@@ -48,6 +48,7 @@ from . import data_model
 from . import parameter_system
 from . import cellblender_release
 from . import cellblender_utils
+from . import cellblender_pbc
 from cellblender.cellblender_utils import mcell_files_path, get_python_path
 
 
