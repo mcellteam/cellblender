@@ -174,7 +174,8 @@ for i in range(iterations+1):
   viz_file_name = file_name_template % i
   viz_file_name = os.path.join(viz_seed_dir,viz_file_name)
   if (i % print_every) == 0:
-    if output_detail > 0: print_and_flush ( "File = " + viz_file_name )
+    #if output_detail > 0: print_and_flush ( "File = " + viz_file_name )
+    if output_detail > 0: print_and_flush ( "Iteration %d of %d" % (i, iterations) )
   f = open(viz_file_name,"wb")
   int_array = array.array("I")   # Marker indicating a binary file
   int_array.fromlist([1])

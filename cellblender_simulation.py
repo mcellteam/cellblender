@@ -2445,64 +2445,98 @@ class Pluggable(bpy.types.PropertyGroup):
 
 
         # Clear the lists
-        self.plug_val_list.clear()
-        self.active_plug_val_index = -1
-        if active_sub_module != None:
-          # Add items to the lists
-          if 'parameter_dictionary' in dir(active_sub_module):
-            # print ( "Ready to go with " + str(active_sub_module.parameter_dictionary.keys()) )
-            for k in sorted(active_sub_module.parameter_dictionary.keys()):
-              self.plug_val_list.add()
-              self.active_plug_val_index = len(self.plug_val_list) - 1
-              new_plug_val = self.plug_val_list[self.active_plug_val_index]
-              # Change all values to force the ID properties to be instantiated
-              new_plug_val.set_name = set_name
-              new_plug_val.key_name = ""
-              new_plug_val.val_type = ""
-              new_plug_val.icon_code = "NONE"
-              new_plug_val.int_val = 0
-              new_plug_val.float_val = 0.0
-              new_plug_val.bool_val = False
-              new_plug_val.string_val = ""
-              new_plug_val.filename_val = ""
+        try:
+          self.plug_val_list.clear()
+          self.active_plug_val_index = -1
+          if active_sub_module != None:
+            # Add items to the lists
+            if 'parameter_dictionary' in dir(active_sub_module):
+              # print ( "Ready to go with " + str(active_sub_module.parameter_dictionary.keys()) )
+              for k in sorted(active_sub_module.parameter_dictionary.keys()):
+                self.plug_val_list.add()
+                self.active_plug_val_index = len(self.plug_val_list) - 1
+                new_plug_val = self.plug_val_list[self.active_plug_val_index]
+                # Change all values to force the ID properties to be instantiated
+                new_plug_val.set_name = set_name
+                new_plug_val.key_name = ""
+                new_plug_val.val_type = ""
+                new_plug_val.icon_code = "NONE"
+                new_plug_val.int_val = 0
+                new_plug_val.float_val = 0.0
+                new_plug_val.bool_val = False
+                new_plug_val.string_val = ""
+                new_plug_val.filename_val = ""
 
-              # Save the index of the PluggableValue property in the dictionary for this parameter
-              active_sub_module.parameter_dictionary[k]['_i'] = int(self.active_plug_val_index)
-              # Save the key and other values in this property
-              new_plug_val.key_name = k
-              if 'icon' in active_sub_module.parameter_dictionary[k]:
-                new_plug_val.icon_code = active_sub_module.parameter_dictionary[k]['icon']
-              val = active_sub_module.parameter_dictionary[k]['val']
-              if type(val) == type(plugs_changed_callback):  # type() needs to return a function
-                # print ( "Got a function callback in 'val'" )
-                # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-                new_plug_val.val_type = 'F'
-                new_plug_val.func_val = str(val)
-              elif type(val) == type(1):     # type() needs to return an integer
-                new_plug_val.val_type = 'i'
-                new_plug_val.int_val = val
-              elif type(val) == type(1.2):   # type() needs to return a float
-                new_plug_val.val_type = 'f'
-                new_plug_val.float_val = val
-              elif type(val) == type(True):  # type() needs to return a boolean
-                new_plug_val.val_type = 'b'
-                new_plug_val.bool_val = val
-              elif type(val) == type("ab"):  # type() needs to return a string
-                subtype = 's'
-                if 'as' in active_sub_module.parameter_dictionary[k].keys():
-                  if active_sub_module.parameter_dictionary[k]['as'] == 'filename':
-                    subtype = 'fn'
-                if subtype == 's':
-                  new_plug_val.val_type = 's'
-                  new_plug_val.string_val = val
+                # Save the index of the PluggableValue property in the dictionary for this parameter
+                active_sub_module.parameter_dictionary[k]['_i'] = int(self.active_plug_val_index)
+                # Save the key and other values in this property
+                new_plug_val.key_name = k
+                if 'icon' in active_sub_module.parameter_dictionary[k]:
+                  new_plug_val.icon_code = active_sub_module.parameter_dictionary[k]['icon']
+                val = active_sub_module.parameter_dictionary[k]['val']
+                if type(val) == type(plugs_changed_callback):  # type() needs to return a function
+                  # print ( "Got a function callback in 'val'" )
+                  # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+                  new_plug_val.val_type = 'F'
+                  new_plug_val.func_val = str(val)
+                elif type(val) == type(1):     # type() needs to return an integer
+                  new_plug_val.val_type = 'i'
+                  new_plug_val.int_val = val
+                elif type(val) == type(1.2):   # type() needs to return a float
+                  new_plug_val.val_type = 'f'
+                  new_plug_val.float_val = val
+                elif type(val) == type(True):  # type() needs to return a boolean
+                  new_plug_val.val_type = 'b'
+                  new_plug_val.bool_val = val
+                elif type(val) == type("ab"):  # type() needs to return a string
+                  subtype = 's'
+                  if 'as' in active_sub_module.parameter_dictionary[k].keys():
+                    if active_sub_module.parameter_dictionary[k]['as'] == 'filename':
+                      subtype = 'fn'
+                  if subtype == 's':
+                    new_plug_val.val_type = 's'
+                    new_plug_val.string_val = val
+                  else:
+                    new_plug_val.val_type = 'fn'
+                    new_plug_val.filename_val = val
                 else:
-                  new_plug_val.val_type = 'fn'
-                  new_plug_val.filename_val = val
-              else:
-                # Force everything else to be a string for now (add new types as needed)
-                # print ( "Forcing type " + str(type(val)) + " to be a string" )
-                new_plug_val.val_type = 's'
-                new_plug_val.string_val = str(val)
+                  # Force everything else to be a string for now (add new types as needed)
+                  # print ( "Forcing type " + str(type(val)) + " to be a string" )
+                  new_plug_val.val_type = 's'
+                  new_plug_val.string_val = str(val)
+        except:
+          # This except hides these errors which should be caught first:
+          """
+          Traceback (most recent call last):
+            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 210, in poll
+              mcell.sim_engines.plugs_changed_callback ( context )
+            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 2448, in plugs_changed_callback
+              self.plug_val_list.clear()
+          AttributeError: Writing to ID classes in this context is not allowed: Scene, Scene datablock, error setting Pluggable.<UNKNOWN>
+
+          location: <unknown location>:-1
+
+          location: <unknown location>:-1
+          Traceback (most recent call last):
+            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 210, in poll
+              mcell.sim_engines.plugs_changed_callback ( context )
+            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 2448, in plugs_changed_callback
+              self.plug_val_list.clear()
+          AttributeError: Writing to ID classes in this context is not allowed: Scene, Scene datablock, error setting Pluggable.<UNKNOWN>
+
+          location: <unknown location>:-1
+
+          location: <unknown location>:-1
+          Traceback (most recent call last):
+            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 210, in poll
+              mcell.sim_engines.plugs_changed_callback ( context )
+            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 2448, in plugs_changed_callback
+              self.plug_val_list.clear()
+          AttributeError: Writing to ID classes in this context is not allowed: Scene, Scene datablock, error setting Pluggable.<UNKNOWN>
+
+          location: <unknown location>:-1
+          """
+          pass
 
 
 
@@ -2575,20 +2609,22 @@ class Pluggable(bpy.types.PropertyGroup):
                     row = layout.row()
                     for k in r:
                         col = row.column()
-                        p = active_module.parameter_dictionary[k]
-                        s = self.plug_val_list[p['_i']]
-                        if s.val_type == 'F':
-                            col.operator ( 'pluggable.user_function', text=s.key_name, icon=s.icon_code ).user_function_name = this_module_name + s.key_name
-                        elif s.val_type == 'i':
-                            col.prop ( s, "int_val", text=s.key_name, icon=s.icon_code )
-                        elif s.val_type == 'f':
-                            col.prop ( s, "float_val", text=s.key_name, icon=s.icon_code )
-                        elif s.val_type == 'b':
-                            col.prop ( s, "bool_val", text=s.key_name, icon=s.icon_code )
-                        elif s.val_type == 's':
-                            col.prop ( s, "string_val", text=s.key_name, icon=s.icon_code )
-                        elif s.val_type == 'fn':
-                            col.prop ( s, "filename_val", text=s.key_name, icon=s.icon_code )
+                        if k in active_module.parameter_dictionary:
+                            p = active_module.parameter_dictionary[k]
+                            if p and '_i' in p:
+                                s = self.plug_val_list[p['_i']]
+                                if s.val_type == 'F':
+                                    col.operator ( 'pluggable.user_function', text=s.key_name, icon=s.icon_code ).user_function_name = this_module_name + s.key_name
+                                elif s.val_type == 'i':
+                                    col.prop ( s, "int_val", text=s.key_name, icon=s.icon_code )
+                                elif s.val_type == 'f':
+                                    col.prop ( s, "float_val", text=s.key_name, icon=s.icon_code )
+                                elif s.val_type == 'b':
+                                    col.prop ( s, "bool_val", text=s.key_name, icon=s.icon_code )
+                                elif s.val_type == 's':
+                                    col.prop ( s, "string_val", text=s.key_name, icon=s.icon_code )
+                                elif s.val_type == 'fn':
+                                    col.prop ( s, "filename_val", text=s.key_name, icon=s.icon_code )
             else:
                 # Draw the panel in alphabetical order
                 for s in self.plug_val_list:
