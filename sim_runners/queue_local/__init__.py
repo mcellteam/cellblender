@@ -68,26 +68,14 @@ from multiprocessing import cpu_count
 plug_code = "QUEUE_LOCAL"
 plug_name = "Local Queue"
 
-def register():
-  global parameter_dictionary
-  print ( "Register was called with dictionary = " + str(parameter_dictionary) )
-  register_blender_classes()
-
-def unregister():
-  global parameter_dictionary
-  print ( "UnRegister was called with dictionary = " + str(parameter_dictionary) )
-  unregister_blender_classes()
 
 parameter_dictionary = {
   'Show Normal Output': {'val':True, 'desc':"Show stdout from process"},
   'Show Error Output':  {'val':True, 'desc':"Show stderr from process"},
-  'Register': {'val': register, 'desc':"Register Blender Classes"},
-  'UnRegister': {'val': unregister, 'desc':"UnRegister Blender Classes"}
 }
 
 parameter_layout = [
   ['Show Normal Output', 'Show Error Output'],
-  ['Register', 'UnRegister']
 ]
 
 
