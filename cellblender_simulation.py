@@ -2123,6 +2123,10 @@ had no limit."""
 active_engine_module = None
 active_runner_module = None
 
+# This dictionary maps process ids (pids) into the active_engine_module used to start that process.
+# This dictionary can be used to call functions from the module based on the PID.
+engine_module_dict = {}
+
 
 def load_plug_modules(context):
     # print ( "Call to load_plug_modules" )
@@ -2426,21 +2430,33 @@ class Pluggable(bpy.types.PropertyGroup):
         set_name = None
         if self == context.scene.mcell.sim_engines:
           # print ( "Engines have changed!!" )
+          if active_engine_module != None:
+              if 'unregister_blender_classes' in dir(active_engine_module):
+                  active_engine_module.unregister_blender_classes()
           set_name = "engine"
           selected_module_code = self.engines_enum
           for plug_module in engine_manager.plug_modules:
               if plug_module.plug_code == selected_module_code:
                   active_sub_module = plug_module
                   active_engine_module = plug_module
+                  if active_engine_module != None:
+                      if 'register_blender_classes' in dir(active_engine_module):
+                          active_engine_module.register_blender_classes()
                   break
         if self == context.scene.mcell.sim_runners:
           # print ( "Runners have changed!!" )
+          if active_runner_module != None:
+              if 'unregister_blender_classes' in dir(active_runner_module):
+                  active_runner_module.unregister_blender_classes()
           set_name = "runner"
           selected_module_code = self.runners_enum
           for plug_module in runner_manager.plug_modules:
               if plug_module.plug_code == selected_module_code:
                   active_sub_module = plug_module
                   active_runner_module = plug_module
+                  if active_runner_module != None:
+                      if 'register_blender_classes' in dir(active_runner_module):
+                          active_runner_module.register_blender_classes()
                   break
 
 
@@ -2505,36 +2521,9 @@ class Pluggable(bpy.types.PropertyGroup):
                   new_plug_val.val_type = 's'
                   new_plug_val.string_val = str(val)
         except:
-          # This except hides these errors which should be caught first:
+          # This except hides these kinds of errors which should be caught first:
           """
-          Traceback (most recent call last):
-            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 210, in poll
-              mcell.sim_engines.plugs_changed_callback ( context )
-            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 2448, in plugs_changed_callback
-              self.plug_val_list.clear()
           AttributeError: Writing to ID classes in this context is not allowed: Scene, Scene datablock, error setting Pluggable.<UNKNOWN>
-
-          location: <unknown location>:-1
-
-          location: <unknown location>:-1
-          Traceback (most recent call last):
-            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 210, in poll
-              mcell.sim_engines.plugs_changed_callback ( context )
-            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 2448, in plugs_changed_callback
-              self.plug_val_list.clear()
-          AttributeError: Writing to ID classes in this context is not allowed: Scene, Scene datablock, error setting Pluggable.<UNKNOWN>
-
-          location: <unknown location>:-1
-
-          location: <unknown location>:-1
-          Traceback (most recent call last):
-            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 210, in poll
-              mcell.sim_engines.plugs_changed_callback ( context )
-            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 2448, in plugs_changed_callback
-              self.plug_val_list.clear()
-          AttributeError: Writing to ID classes in this context is not allowed: Scene, Scene datablock, error setting Pluggable.<UNKNOWN>
-
-          location: <unknown location>:-1
           """
           pass
 
@@ -2592,8 +2581,8 @@ class Pluggable(bpy.types.PropertyGroup):
           col.prop ( self, 'runners_enum' )
           if self.runners_enum != 'NONE':
             something_selected = True
-        col = row.column()
-        col.operator ( 'pluggable.reload', icon='FILE_REFRESH' )
+        #col = row.column()
+        #col.operator ( 'pluggable.reload', icon='FILE_REFRESH' )
 
 
         if (active_module == None) or (something_selected == False):

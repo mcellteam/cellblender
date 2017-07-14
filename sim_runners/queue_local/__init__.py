@@ -22,11 +22,11 @@ import os
 import subprocess
 import sys
 
-import cellblender.sim_engines as sim_engines
-
-
-
 import cellblender
+
+import cellblender.sim_engines as engine_manager
+import cellblender.sim_runners as runner_manager
+
 
 # blender imports
 import bpy
@@ -50,9 +50,9 @@ import math
 
 
 # CellBlender imports
-import cellblender
 import cellblender.parameter_system as parameter_system
 import cellblender.cellblender_utils as cellblender_utils
+import cellblender.cellblender_simulation as cellblender_simulation
 import cellblender.data_model as data_model
 
 #from cellblender.mdl import data_model_to_mdl
@@ -62,8 +62,6 @@ from cellblender.cellblender_utils import mcell_files_path
 
 from multiprocessing import cpu_count
 
-import cellblender.sim_engines as engine_manager
-import cellblender.sim_runners as runner_manager
 
 
 
@@ -104,7 +102,7 @@ def draw_layout ( self, context, layout ):
 
 
 def get_pid(item):
-    # print ( "queue_local.get_pid called" )
+    # print ( "queue_local.get_pid called with item.name = " + str(item.name) )
     l = item.name.split(',')[0].split(':')
     rtn_val = 0
     if len(l) > 1:
@@ -226,9 +224,11 @@ def run_commands ( commands ):
               make_texts = mcell.run_simulation.save_text_logs
 
               if type(cmd) == type('str'):
-                proc = cellblender.simulation_queue.add_task(cmd, "", os.path.join(project_dir, "output_data"), make_texts)
+                  proc = cellblender.simulation_queue.add_task(cmd, "", os.path.join(project_dir, "output_data"), make_texts)
               elif type(cmd) == type({'a':1}):
-                proc = cellblender.simulation_queue.add_task(cmd['cmd'], ' '.join(cmd['args']), cmd['wd'], make_texts)
+                  proc = cellblender.simulation_queue.add_task(cmd['cmd'], ' '.join(cmd['args']), cmd['wd'], make_texts)
+              # Save the module in the engine_module_dict by PID
+              cellblender_simulation.engine_module_dict[proc.pid] = cellblender_simulation.active_engine_module
 
               # self.report({'INFO'}, "Simulation Running")
 
@@ -264,55 +264,84 @@ class MCELL_QL_percentage_done_timer(bpy.types.Operator):
                 if not mcell.run_simulation.save_text_logs:
                     return {'CANCELLED'}
                 pid = get_pid(simulation_process)
-                seed = int(simulation_process.name.split(',')[1].split(':')[1])
                 q_item = cellblender.simulation_queue.task_dict[pid]
-                stdout_txt = q_item['bl_text'].as_string()
-                percent = 0
-                last_iter = total_iter = 0
+                progress_message = None
+                task_complete = False
+                if pid in cellblender_simulation.engine_module_dict:
+                    em = cellblender_simulation.engine_module_dict[pid]
+                    # print ( "Engine Module for " + str(pid) + " is : " + em.plug_name )
+                    # print ( "   Engine Module Contains : " + str(dir(em)) )
+                    if 'get_progress_message_and_status' in dir(em):
+                        stdout_txt = q_item['bl_text'].as_string()
+                        (progress_message, task_complete) = em.get_progress_message_and_status ( stdout_txt )
 
-                # TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
-                # TODO: The following functionality should be provided by each engine. But do it here for now.
-                # TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
+                elif cellblender_simulation.active_engine_module != None:
+                    # print ( "Active Engine Module is : " + cellblender_simulation.active_engine_module.plug_name )
+                    # print ( "Active Engine Module Contains : " + str(dir(cellblender_simulation.active_engine_module)) )
+                    if 'get_progress_message_and_status' in dir(cellblender_simulation.active_engine_module):
+                        stdout_txt = q_item['bl_text'].as_string()
+                        if pid in cellblender_simulation.engine_module_dict:
+                            engine_module = cellblender_simulation.engine_module_dict[pid]
+                            (progress_message, task_complete) = engine_module.get_progress_message_and_status ( stdout_txt )
 
-                if "MCell 3.3" in stdout_txt:
-                    # MCell 3.3 iteration lines look like this:
-                    # Iterations: 40 of 100  (50.8182 iter/sec)
-                    for i in reversed(stdout_txt.split("\n")):
-                        if i.startswith("Iterations"):
-                            last_iter = int(i.split()[1])
-                            total_iter = int(i.split()[3])
-                            percent = (last_iter/total_iter)*100
-                            break
+                if progress_message == None:
+                    # Try looking for some known patterns in stdout
+                    seed = 0
+                    try:
+                        seed = int(simulation_process.name.split(',')[1].split(':')[1])
+                    except:
+                        pass
 
-                if "MCell C++ Prototype" in stdout_txt:
-                    # MCell C++ Prototype iteration lines look like this:
-                    # Iteration 20, t=2e-05   (from libMCell's run_simulation)
-                    for i in reversed(stdout_txt.split("\n")):
-                        if i.startswith("Iteration"):
-                            last_iter = int(i.split()[1][0:-1])
-                            total_iter = int(mcell.initialization.iterations.get_as_string_or_value())
-                            percent = int((last_iter/total_iter)*100)
-                            break
+                    last_iter = None
+                    total_iter = int(mcell.initialization.iterations.get_as_string_or_value())
 
-                if "Limited Pure Python Prototype" in stdout_txt:
-                    # MCell Pure Prototype iteration lines look like this:
-                    # Iteration 10 of 1000
-                    for i in reversed(stdout_txt.split("\n")):
-                        if i.startswith("Iteration "):
-                            last_iter = int(i.split()[1])
-                            total_iter = int(i.split()[3])
-                            percent = int((last_iter/total_iter)*100)
-                            break
+                    stdout_txt = q_item['bl_text'].as_string()
 
-                if (last_iter == total_iter) and (total_iter != 0):
+                    if "MCell 3.3" in stdout_txt:
+                        # MCell 3.3 iteration lines look like this:
+                        # Iterations: 40 of 100  (50.8182 iter/sec)
+                        for i in reversed(stdout_txt.split("\n")):
+                            if i.startswith("Iterations"):
+                                last_iter = int(i.split()[1])
+                                total_iter = int(i.split()[3])
+                                break
+
+                    if "MCell C++ Prototype" in stdout_txt:
+                        # MCell C++ Prototype iteration lines look like this:
+                        # Iteration 20, t=2e-05   (from libMCell's run_simulation)
+                        for i in reversed(stdout_txt.split("\n")):
+                            if i.startswith("Iteration"):
+                                last_iter = int(i.split()[1][0:-1])
+                                total_iter = int(mcell.initialization.iterations.get_as_string_or_value())
+                                break
+
+                    if "Limited Pure Python Prototype" in stdout_txt:
+                        # MCell Pure Prototype iteration lines look like this:
+                        # Iteration 10 of 1000
+                        for i in reversed(stdout_txt.split("\n")):
+                            if i.startswith("Iteration "):
+                                last_iter = int(i.split()[1])
+                                total_iter = int(i.split()[3])
+                                break
+
+                    if last_iter != None:
+                        percent = int((last_iter/total_iter)*100)
+                        if (last_iter == total_iter) and (total_iter != 0):
+                            task_complete = True
+                        progress_message = "Index: %d, %d%%" % (seed, percent)
+
+                simulation_process.name = "PID: %d" % (pid)
+                if progress_message != None:
+                    simulation_process.name = simulation_process.name + ", " + progress_message
+
+                if task_complete:
                     task_ctr += 1
-                simulation_process.name = "PID: %d, Index: %d, %d%%" % (pid, seed, percent)
 
             # just a silly way of forcing a screen update. ¯\_(ツ)_/¯
             color = context.user_preferences.themes[0].view_3d.space.gradients.high_gradient
             color.h += 0.01
             color.h -= 0.01
-            # if every MCell job is done, quit updating the screen
+            # if every job is done, quit updating the screen
             if task_len == task_ctr:
                 self.cancel(context)
                 return {'CANCELLED'}
