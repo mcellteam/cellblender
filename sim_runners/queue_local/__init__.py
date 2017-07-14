@@ -260,67 +260,20 @@ class MCELL_QL_percentage_done_timer(bpy.types.Operator):
                     # print ( "Engine Module for " + str(pid) + " is : " + em.plug_name )
                     # print ( "   Engine Module Contains : " + str(dir(em)) )
                     if 'get_progress_message_and_status' in dir(em):
+                        # Engine supports progress, so pass current stdout to the progress/status function and show as progress
                         stdout_txt = q_item['bl_text'].as_string()
                         (progress_message, task_complete) = em.get_progress_message_and_status ( stdout_txt )
-
-                elif cellblender_simulation.active_engine_module != None:
-                    # print ( "Active Engine Module is : " + cellblender_simulation.active_engine_module.plug_name )
-                    # print ( "Active Engine Module Contains : " + str(dir(cellblender_simulation.active_engine_module)) )
-                    if 'get_progress_message_and_status' in dir(cellblender_simulation.active_engine_module):
-                        stdout_txt = q_item['bl_text'].as_string()
-                        if pid in cellblender_simulation.engine_module_dict:
-                            engine_module = cellblender_simulation.engine_module_dict[pid]
-                            (progress_message, task_complete) = engine_module.get_progress_message_and_status ( stdout_txt )
+                    else:
+                        # Engine doesn't support progress, so just show its own name as progress
+                        progress_message = em.plug_name
 
                 if progress_message == None:
-                    # Try looking for some known patterns in stdout
-                    seed = 0
-                    try:
-                        seed = int(simulation_process.name.split(',')[1].split(':')[1])
-                    except:
-                        pass
-
-                    last_iter = None
-                    total_iter = int(mcell.initialization.iterations.get_as_string_or_value())
-
-                    stdout_txt = q_item['bl_text'].as_string()
-
-                    if "MCell 3.3" in stdout_txt:
-                        # MCell 3.3 iteration lines look like this:
-                        # Iterations: 40 of 100  (50.8182 iter/sec)
-                        for i in reversed(stdout_txt.split("\n")):
-                            if i.startswith("Iterations"):
-                                last_iter = int(i.split()[1])
-                                total_iter = int(i.split()[3])
-                                break
-
-                    if "MCell C++ Prototype" in stdout_txt:
-                        # MCell C++ Prototype iteration lines look like this:
-                        # Iteration 20, t=2e-05   (from libMCell's run_simulation)
-                        for i in reversed(stdout_txt.split("\n")):
-                            if i.startswith("Iteration"):
-                                last_iter = int(i.split()[1][0:-1])
-                                total_iter = int(mcell.initialization.iterations.get_as_string_or_value())
-                                break
-
-                    if "Limited Pure Python Prototype" in stdout_txt:
-                        # MCell Pure Prototype iteration lines look like this:
-                        # Iteration 10 of 1000
-                        for i in reversed(stdout_txt.split("\n")):
-                            if i.startswith("Iteration "):
-                                last_iter = int(i.split()[1])
-                                total_iter = int(i.split()[3])
-                                break
-
-                    if last_iter != None:
-                        percent = int((last_iter/total_iter)*100)
-                        if (last_iter == total_iter) and (total_iter != 0):
-                            task_complete = True
-                        progress_message = "Index: %d, %d%%" % (seed, percent)
+                    progress_message = ""
 
                 simulation_process.name = "PID: %d" % (pid)
                 if progress_message != None:
-                    simulation_process.name = simulation_process.name + ", " + progress_message
+                    if len(progress_message) > 0:
+                        simulation_process.name = simulation_process.name + ", " + progress_message
 
                 if task_complete:
                     task_ctr += 1

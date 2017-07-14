@@ -148,6 +148,7 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
 
   return ( command_list )
 
+
 def get_progress_message_and_status ( stdout_txt ):
   progress_message = "?"
   task_complete = False

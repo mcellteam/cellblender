@@ -187,6 +187,23 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   return ( command_list )
 
 
+def get_progress_message_and_status ( stdout_txt ):
+  progress_message = "?"
+  task_complete = False
+  # MCell 3.3 iteration lines look like this:
+  # Iterations: 40 of 100  (50.8182 iter/sec)
+  for i in reversed(stdout_txt.split("\n")):
+      if i.startswith("Iterations"):
+          last_iter = int(i.split()[1])
+          total_iter = int(i.split()[3])
+          percent = int((last_iter/total_iter)*100)
+          if (last_iter == total_iter) and (total_iter != 0):
+              task_complete = True
+          progress_message = "MCell3DM: %d%%" % (percent)
+          break
+  return ( progress_message, task_complete )
+
+
 def postprocess_runs ( data_model, command_strings ):
   # Move and/or transform data to match expected CellBlender file structure as required
   pass
