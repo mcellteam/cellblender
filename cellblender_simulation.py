@@ -294,11 +294,13 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
         print("Executing Sweep Runner")
 
         mcell = context.scene.mcell
-        mcell.run_simulation.last_simulation_run_time = str(time.time())
+        run_sim = mcell.run_simulation
 
-        start = int(mcell.run_simulation.start_seed.get_value())
-        end = int(mcell.run_simulation.end_seed.get_value())
-        mcell_processes_str = str(mcell.run_simulation.mcell_processes)
+        run_sim.last_simulation_run_time = str(time.time())
+
+        start = int(run_sim.start_seed.get_value())
+        end = int(run_sim.end_seed.get_value())
+        mcell_processes_str = str(run_sim.mcell_processes)
         mcell_binary = cellblender_utils.get_mcell_path(mcell)
         # Force the project directory to be where the .blend file lives
         project_dir = mcell_files_path()
@@ -310,11 +312,11 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
             if not mcell.cellblender_preferences.decouple_export_run:
                 bpy.ops.mcell.export_project()
 
-            if (mcell.run_simulation.error_list and mcell.cellblender_preferences.invalid_policy == 'dont_run'):
+            if (run_sim.error_list and mcell.cellblender_preferences.invalid_policy == 'dont_run'):
                 pass
             else:
                 sweep_dir = os.path.join(project_dir, "output_data")
-                if (os.path.exists(sweep_dir) and mcell.run_simulation.remove_append == 'remove'):
+                if (os.path.exists(sweep_dir) and run_sim.remove_append == 'remove'):
                     shutil.rmtree(sweep_dir)
                 if not os.path.exists(sweep_dir):
                     os.makedirs(sweep_dir)
@@ -324,19 +326,19 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
 
                 base_name = mcell.project_settings.base_name
 
-                error_file_option = mcell.run_simulation.error_file
-                log_file_option = mcell.run_simulation.log_file
+                error_file_option = run_sim.error_file
+                log_file_option = run_sim.log_file
                 script_dir_path = os.path.dirname(os.path.realpath(__file__))
 
                 # The following Python program will create the "data_layout.json" file describing the directory structure
                 script_file_path = os.path.join(script_dir_path, os.path.join("mdl", "run_data_model_mcell.py") )
 
-                processes_list = mcell.run_simulation.processes_list
+                processes_list = run_sim.processes_list
                 processes_list.add()
-                mcell.run_simulation.active_process_index = len(
-                    mcell.run_simulation.processes_list) - 1
+                run_sim.active_process_index = len(
+                    run_sim.processes_list) - 1
                 simulation_process = processes_list[
-                    mcell.run_simulation.active_process_index]
+                    run_sim.active_process_index]
 
                 print("Starting MCell ... create start_time.txt file:")
                 with open(os.path.join(os.path.dirname(bpy.data.filepath),
@@ -387,7 +389,7 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
         else:
             status = "Python not found. Set it in Project Settings."
 
-        mcell.run_simulation.status = status
+        run_sim.status = status
 
         return {'FINISHED'}
 
@@ -404,9 +406,9 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
         print("Executing Grid Engine Sweep Runner")
 
         mcell = context.scene.mcell
-        run_sim = context.scene.mcell.run_simulation
+        run_sim = mcell.run_simulation
 
-        mcell.run_simulation.last_simulation_run_time = str(time.time())
+        run_sim.last_simulation_run_time = str(time.time())
 
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
@@ -528,7 +530,7 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
         else:
             status = "Python not found. Set it in Project Settings."
 
-        mcell.run_simulation.status = status
+        run_sim.status = status
 
         return {'FINISHED'}
 
@@ -543,14 +545,16 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
-        mcell.run_simulation.last_simulation_run_time = str(time.time())
+        run_sim = mcell.run_simulation
+
+        run_sim.last_simulation_run_time = str(time.time())
 
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
-        start = int(mcell.run_simulation.start_seed.get_value())
-        end = int(mcell.run_simulation.end_seed.get_value())
-        mcell_processes_str = str(mcell.run_simulation.mcell_processes)
+        start = int(run_sim.start_seed.get_value())
+        end = int(run_sim.end_seed.get_value())
+        mcell_processes_str = str(run_sim.mcell_processes)
         mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
         project_dir = mcell_files_path()
@@ -562,28 +566,28 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
             if not mcell.cellblender_preferences.decouple_export_run:
                 bpy.ops.mcell.export_project()
 
-            if (mcell.run_simulation.error_list and
+            if (run_sim.error_list and
                     mcell.cellblender_preferences.invalid_policy == 'dont_run'):
                 pass
             else:
                 react_dir = os.path.join(project_dir, "output_data", "react_data")
                 if (os.path.exists(react_dir) and
-                        mcell.run_simulation.remove_append == 'remove'):
+                        run_sim.remove_append == 'remove'):
                     shutil.rmtree(react_dir)
                 if not os.path.exists(react_dir):
                     os.makedirs(react_dir)
 
                 viz_dir = os.path.join(project_dir, "output_data", "viz_data")
                 if (os.path.exists(viz_dir) and
-                        mcell.run_simulation.remove_append == 'remove'):
+                        run_sim.remove_append == 'remove'):
                     shutil.rmtree(viz_dir)
                 if not os.path.exists(viz_dir):
                     os.makedirs(viz_dir)
 
                 base_name = mcell.project_settings.base_name
 
-                error_file_option = mcell.run_simulation.error_file
-                log_file_option = mcell.run_simulation.log_file
+                error_file_option = run_sim.error_file
+                log_file_option = run_sim.log_file
                 script_dir_path = os.path.dirname(os.path.realpath(__file__))
                 script_file_path = os.path.join(
                     script_dir_path, "run_simulations.py")
@@ -591,12 +595,12 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
                 # The following line will create the "data_layout.json" file describing the directory structure
                 engine_manager.write_default_data_layout(project_dir, start, end)
 
-                processes_list = mcell.run_simulation.processes_list
+                processes_list = run_sim.processes_list
                 processes_list.add()
-                mcell.run_simulation.active_process_index = len(
-                    mcell.run_simulation.processes_list) - 1
+                run_sim.active_process_index = len(
+                    run_sim.processes_list) - 1
                 simulation_process = processes_list[
-                    mcell.run_simulation.active_process_index]
+                    run_sim.active_process_index]
 
                 print("Starting MCell ... create start_time.txt file:")
                 with open(os.path.join(os.path.dirname(bpy.data.filepath),
@@ -628,7 +632,7 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
         else:
             status = "Python not found. Set it in Project Settings."
 
-        mcell.run_simulation.status = status
+        run_sim.status = status
 
         return {'FINISHED'}
 
@@ -699,14 +703,16 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
-        mcell.run_simulation.last_simulation_run_time = str(time.time())
+        run_sim = mcell.run_simulation
+
+        run_sim.last_simulation_run_time = str(time.time())
 
         mcell_binary = cellblender_utils.get_mcell_path(mcell)
 
-        start_seed = int(mcell.run_simulation.start_seed.get_value())
-        end_seed = int(mcell.run_simulation.end_seed.get_value())
-        mcell_processes = mcell.run_simulation.mcell_processes
-        mcell_processes_str = str(mcell.run_simulation.mcell_processes)
+        start_seed = int(run_sim.start_seed.get_value())
+        end_seed = int(run_sim.end_seed.get_value())
+        mcell_processes = run_sim.mcell_processes
+        mcell_processes_str = str(run_sim.mcell_processes)
         # Force the project directory to be where the .blend file lives
         project_dir = mcell_files_path()
         status = ""
@@ -717,28 +723,28 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
             if not mcell.cellblender_preferences.decouple_export_run:
                 bpy.ops.mcell.export_project()
 
-            if (mcell.run_simulation.error_list and
+            if (run_sim.error_list and
                     mcell.cellblender_preferences.invalid_policy == 'dont_run'):
                 pass
             else:
                 react_dir = os.path.join(project_dir, "output_data", "react_data")
                 if (os.path.exists(react_dir) and
-                        mcell.run_simulation.remove_append == 'remove'):
+                        run_sim.remove_append == 'remove'):
                     shutil.rmtree(react_dir)
                 if not os.path.exists(react_dir):
                     os.makedirs(react_dir)
 
                 viz_dir = os.path.join(project_dir, "output_data", "viz_data")
                 if (os.path.exists(viz_dir) and
-                        mcell.run_simulation.remove_append == 'remove'):
+                        run_sim.remove_append == 'remove'):
                     shutil.rmtree(viz_dir)
                 if not os.path.exists(viz_dir):
                     os.makedirs(viz_dir)
 
                 base_name = mcell.project_settings.base_name
 
-                error_file_option = mcell.run_simulation.error_file
-                log_file_option = mcell.run_simulation.log_file
+                error_file_option = run_sim.error_file
+                log_file_option = run_sim.log_file
                 cellblender.simulation_queue.python_exec = python_path
                 cellblender.simulation_queue.start(mcell_processes)
                 cellblender.simulation_queue.notify = True
@@ -746,13 +752,13 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                 # The following line will create the "data_layout.json" file describing the directory structure
                 engine_manager.write_default_data_layout(project_dir, start_seed, end_seed)
 
-                processes_list = mcell.run_simulation.processes_list
+                processes_list = run_sim.processes_list
                 for seed in range(start_seed,end_seed + 1):
                   processes_list.add()
-                  mcell.run_simulation.active_process_index = len(
-                      mcell.run_simulation.processes_list) - 1
+                  run_sim.active_process_index = len(
+                      run_sim.processes_list) - 1
                   simulation_process = processes_list[
-                      mcell.run_simulation.active_process_index]
+                      run_sim.active_process_index]
 
                   print("Starting MCell ... create start_time.txt file:")
                   with open(os.path.join(os.path.dirname(bpy.data.filepath),
@@ -780,7 +786,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
 
                   mdl_filename = '%s.main.mdl' % (base_name)
                   mcell_args = '-seed %d %s' % (seed, mdl_filename)
-                  make_texts = mcell.run_simulation.save_text_logs
+                  make_texts = run_sim.save_text_logs
                   proc = cellblender.simulation_queue.add_task(mcell_binary, mcell_args, os.path.join(project_dir, "output_data"), make_texts)
 
                   self.report({'INFO'}, "Simulation Running")
@@ -792,7 +798,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
         else:
             status = "Python not found. Set it in Project Settings."
 
-        mcell.run_simulation.status = status
+        run_sim.status = status
 
         return {'FINISHED'}
 
@@ -1643,7 +1649,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         default=cpu_count(),
         min=1,
         max=cpu_count(),
-        description="Number of simultaneous MCell processes")
+        description="Number of simultaneous simulation processes")
     log_file_enum = [
         ('none', "Do not Generate", ""),
         ('file', "Send to File", ""),
@@ -1903,7 +1909,7 @@ had no limit."""
 
                     if (self.processes_list and cellblender.simulation_queue.task_dict):
                         row = layout.row()
-                        row.label(text="MCell Processes:", icon='FORCE_LENNARDJONES')
+                        row.label(text="Simulation Processes:", icon='FORCE_LENNARDJONES')
                         row = layout.row()
                         row.template_list("MCELL_UL_run_simulation_queue", "run_simulation_queue",
                                           self, "processes_list",
