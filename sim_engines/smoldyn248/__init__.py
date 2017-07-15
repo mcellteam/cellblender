@@ -176,6 +176,7 @@ parameter_dictionary = {
   'y_bound_max': {'val':  1.0, 'desc':"y boundary (maximum)"},
   'z_bound_min': {'val': -1.0, 'desc':"z boundary (minimum)"},
   'z_bound_max': {'val':  1.0, 'desc':"z boundary (maximum)"},
+  'Graphics': {'val':  False, 'desc':"Show Smoldyn Graphics"},
   'Command Line': {'val': "", 'desc':"Additional Command Line Parameters"},
   'Output Detail (0-100)': {'val': 20, 'desc':"Amount of Information to Print (0-100)", 'icon':'INFO'},
   'Postprocess': {'val': postprocess, 'desc':"Postprocess the data for CellBlender"},
@@ -187,7 +188,7 @@ parameter_layout = [
   ['Auto Boundaries', 'Set Cube Boundaries:', 'bounding_cube_size'],
   ['x_bound_min', 'y_bound_min', 'z_bound_min'],
   ['x_bound_max', 'y_bound_max', 'z_bound_max'],
-  ['Command Line'],
+  ['Graphics', 'Command Line'],
   ['Output Detail (0-100)'],
   ['Postprocess', 'Reset']
 ]
@@ -244,6 +245,8 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
     print ( "Obj: " + str(o['name']) )
 
   output_detail = parameter_dictionary['Output Detail (0-100)']['val']
+
+  graphics_flag = parameter_dictionary['Graphics']['val']
 
   command_line_options = parameter_dictionary['Command Line']['val']
 
@@ -363,7 +366,11 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
 
           f.write ( "\n" )
 
-          f.write ( "graphics opengl\n" )
+          if graphics_flag:
+              f.write ( "graphics opengl\n" )
+          else:
+              f.write ( "graphics none\n" )
+
           f.write ( "dim 3\n" )
           f.write ( "random_seed " + str(sim_seed) + "\n" )
 
