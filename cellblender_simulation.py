@@ -410,9 +410,6 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
 
         run_sim.last_simulation_run_time = str(time.time())
 
-        binary_path = mcell.cellblender_preferences.mcell_binary
-        mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
-
         start = int(run_sim.start_seed.get_value())
         end = int(run_sim.end_seed.get_value())
         mcell_processes_str = str(run_sim.mcell_processes)
