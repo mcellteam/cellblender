@@ -98,16 +98,6 @@ def get_pid(item):
     return rtn_val
 
 
-def run_commands_popen ( commands ):
-    sp_list = []
-    window_num = 0
-    for cmd in commands:
-        command_list = [ cmd['cmd'] ]
-        for arg in cmd['args']:
-            command_list.append ( arg )
-        sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=None, stderr=None ) )
-        window_num += 1
-    return sp_list
 
 def run_commands ( commands ):
     context = bpy.context
@@ -173,7 +163,7 @@ def run_commands ( commands ):
             cellblender.simulation_queue.notify = True
 
             # The following line will create the "data_layout.json" file describing the directory structure
-            engine_manager.write_default_data_layout(project_dir, start_seed, end_seed)
+            # engine_manager.write_default_data_layout(project_dir, start_seed, end_seed)
 
             processes_list = mcell.run_simulation.processes_list
 
@@ -407,30 +397,20 @@ def register_blender_classes():
     bpy.utils.register_class(MCELL_QL_kill_simulation)
     bpy.utils.register_class(MCELL_QL_kill_all_simulations)
     bpy.utils.register_class(MCELL_QL_clear_run_list)
-    print ( "Done" )
+    print ( "Done Registering" )
+
+def unregister_this_class(this_class):
+    try:
+      bpy.utils.unregister_class(this_class)
+    except Exception as ex:
+      pass
 
 def unregister_blender_classes():
     print ( "UnRegistering Queue_Local classes" )
-    try:
-      bpy.utils.unregister_class(MCELL_QL_clear_run_list)
-    except Exception as ex:
-      pass
-    try:
-      bpy.utils.unregister_class(MCELL_QL_kill_all_simulations)
-    except Exception as ex:
-      pass
-    try:
-      bpy.utils.unregister_class(MCELL_QL_kill_simulation)
-    except Exception as ex:
-      pass
-    try:
-      #bpy.utils.unregister_class(MCELL_QL_run_simulation_control_queue)
-      pass
-    except Exception as ex:
-      pass
-    try:
-      bpy.utils.unregister_class(MCELL_QL_percentage_done_timer)
-    except Exception as ex:
-      pass
-    print ( "Done" )
+    unregister_this_class (MCELL_QL_clear_run_list)
+    unregister_this_class (MCELL_QL_kill_all_simulations)
+    unregister_this_class (MCELL_QL_kill_simulation)
+    #unregister_this_class (MCELL_QL_run_simulation_control_queue)
+    unregister_this_class (MCELL_QL_percentage_done_timer)
+    print ( "Done Unregistering" )
 
