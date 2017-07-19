@@ -2544,14 +2544,14 @@ class Pluggable(bpy.types.PropertyGroup):
           #print ( "Drawing Engines" )
           active_module = active_engine_module
           this_module_name = "engines\t"
-          engine_runner_label = "Simulate with:"
+          engine_runner_label = "Simulate using:"
           engine_runner_key_name = "engines_show"
           engine_runner_options_showing = self.engines_show
         if self == context.scene.mcell.sim_runners:
           #print ( "Drawing Runners" )
           active_module = active_runner_module
           this_module_name = "runners\t"
-          engine_runner_label = "Run with:"
+          engine_runner_label = "Run using:"
           engine_runner_key_name = "runners_show"
           engine_runner_options_showing = self.runners_show
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
