@@ -1,7 +1,7 @@
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
-#	INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
-	INSTALL_DIR = ~/src/blender/Blender-2.78c-CellBlender-linux/2.78/scripts/addons/
+	INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
+#	INSTALL_DIR = ~/src/blender/Blender-2.78c-CellBlender-linux/2.78/scripts/addons/
 else
 	INSTALL_DIR = /Applications/Blender-2.78c-CellBlender/blender.app/Contents/Resources/2.78/scripts/addons/
 endif

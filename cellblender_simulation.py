@@ -1871,185 +1871,99 @@ had no limit."""
                 row.operator("mcell.export_project",
                     text="Export CellBlender Project", icon='EXPORT')
             else:
-                if mcell.cellblender_preferences.developer_mode:
 
-                    # Draw the dynamic engines and runners panels
-
-                    mcell.sim_engines.draw_panel ( context, layout )
-                    mcell.sim_runners.draw_panel ( context, layout )
-
-
-                    row = layout.row(align=True)
-                    if mcell.cellblender_preferences.decouple_export_run:
-                        if mcell.cellblender_preferences.lockout_export:
-                            row.operator( "mcell.export_project",
-                                text="Export CellBlender Project", icon='CANCEL')
-                        else:
-                            row.operator( "mcell.export_project",
-                                text="Export CellBlender Project", icon='EXPORT')
-                        row.operator("mcell.run_simulation", text="Run", icon='COLOR_RED')
+                row = layout.row(align=True)
+                if mcell.cellblender_preferences.decouple_export_run:
+                    if mcell.cellblender_preferences.lockout_export:
+                        row.operator( "mcell.export_project",
+                            text="Export CellBlender Project", icon='CANCEL')
                     else:
-                        if mcell.cellblender_preferences.lockout_export:
-                            row.operator("mcell.run_simulation", text="Export & Run", icon='CANCEL')
-                        else:
-                            row.operator("mcell.run_simulation", text="Export & Run", icon='COLOR_RED')
+                        row.operator( "mcell.export_project",
+                            text="Export CellBlender Project", icon='EXPORT')
+                    row.operator("mcell.run_simulation", text="Run", icon='COLOR_RED')
+                else:
+                    if mcell.cellblender_preferences.lockout_export:
+                        row.operator("mcell.run_simulation", text="Export & Run", icon='CANCEL')
+                    else:
+                        row.operator("mcell.run_simulation", text="Export & Run", icon='COLOR_RED')
 
-                    display_queue_panel = False
+                display_queue_panel = False
 
-                    if 'get_pid' in dir(active_runner_module):
+                if self.simulation_run_control == "QUEUE":
+                    display_queue_panel = True
+                elif self.simulation_run_control == 'DYNAMIC':
+                    global active_engine_module
+                    global active_runner_module
+                    if active_engine_module == None:
+                        pass
+                    elif active_runner_module == None:
+                        pass
+                    elif 'get_pid' in dir(active_runner_module):
                         display_queue_panel = True
 
-                    if display_queue_panel:
-                        # print ( "Drawing the Queue Panel" )
+                if display_queue_panel:
+                    # print ( "Drawing the Queue Panel" )
 
-                        if (self.processes_list and cellblender.simulation_queue.task_dict):
-                            row = layout.row()
-                            row.label(text="Simulation Processes:", icon='FORCE_LENNARDJONES')
-                            row = layout.row()
-                            row.template_list("MCELL_UL_run_simulation_queue", "run_simulation_queue",
-                                              self, "processes_list",
-                                              self, "active_process_index",
-                                              rows=2)
+                    if (self.processes_list and cellblender.simulation_queue.task_dict):
+                        row = layout.row()
+                        row.label(text="Simulation Processes:", icon='FORCE_LENNARDJONES')
+                        row = layout.row()
+                        row.template_list("MCELL_UL_run_simulation_queue", "run_simulation_queue",
+                                          self, "processes_list",
+                                          self, "active_process_index",
+                                          rows=2)
 
 
-                            # Check to see if there are any errors for the selected item and display if non-empty
-                            processes_list = mcell.run_simulation.processes_list
-                            proc_list_length = len(processes_list)
-                            if proc_list_length > 0:
-                                active_process_index = mcell.run_simulation.active_process_index
-                                simulation_queue = cellblender.simulation_queue
-                                pid = get_pid(processes_list[active_process_index])
-                                q_item = cellblender.simulation_queue.task_dict[pid]
+                        # Check to see if there are any errors for the selected item and display if non-empty
+                        processes_list = mcell.run_simulation.processes_list
+                        proc_list_length = len(processes_list)
+                        if proc_list_length > 0:
+                            active_process_index = mcell.run_simulation.active_process_index
+                            simulation_queue = cellblender.simulation_queue
+                            pid = get_pid(processes_list[active_process_index])
+                            q_item = cellblender.simulation_queue.task_dict[pid]
 
-                                if q_item['stderr'] != b'':
-                                    serr = str(q_item['stderr'])
-                                    if len(serr) > 0:
-                                        row = layout.row()
-                                        row.label ( "Error from task " + str(pid), icon="ERROR" )
-
-                                        tool_shelf = cellblender_utils.get_tool_shelf()
-                                        lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), serr)
-
-                                        for var in lines:
-                                          row = layout.row(align = True)
-                                          row.alignment = 'EXPAND'
-                                          row.label(var)
-
-                                sout = str(q_item['stdout'])
-                                if False and (len(sout) > 0):
+                            if q_item['stderr'] != b'':
+                                serr = str(q_item['stderr'])
+                                if len(serr) > 0:
                                     row = layout.row()
-                                    row.label ( "Out: " + sout )
+                                    row.label ( "Error from task " + str(pid), icon="ERROR" )
+
+                                    tool_shelf = cellblender_utils.get_tool_shelf()
+                                    lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), serr)
+
+                                    for var in lines:
+                                      row = layout.row(align = True)
+                                      row.alignment = 'EXPAND'
+                                      row.label(var)
+
+                            sout = str(q_item['stdout'])
+                            if False and (len(sout) > 0):
+                                row = layout.row()
+                                row.label ( "Out: " + sout )
 
 
-                            row = layout.row()
-                            row.operator("mcell.clear_simulation_queue")
-                            row = layout.row()
-                            row.operator("mcell.kill_simulation")
-                            row.operator("mcell.kill_all_simulations")
-
-                    else:
-
-                        if self.processes_list and (len(self.processes_list) > 0):
-                            row = layout.row()
-                            row.template_list("MCELL_UL_run_simulation", "run_simulation",
-                                              self, "processes_list",
-                                              self, "active_process_index",
-                                              rows=2)
-                            row = layout.row()
-                            row.operator("mcell.clear_run_list")
-
+                        row = layout.row()
+                        row.operator("mcell.clear_simulation_queue")
+                        row = layout.row()
+                        row.operator("mcell.kill_simulation")
+                        row.operator("mcell.kill_all_simulations")
 
                 else:
 
-                    # Draw the older static simulations panel
-
-                    row = layout.row(align=True)
-                    if mcell.cellblender_preferences.decouple_export_run:
-                        if mcell.cellblender_preferences.lockout_export:
-                            row.operator( "mcell.export_project",
-                                text="Export CellBlender Project", icon='CANCEL')
-                        else:
-                            row.operator( "mcell.export_project",
-                                text="Export CellBlender Project", icon='EXPORT')
-                        row.operator("mcell.run_simulation", text="Run", icon='COLOR_RED')
-                    else:
-                        if mcell.cellblender_preferences.lockout_export:
-                            row.operator("mcell.run_simulation", text="Export & Run", icon='CANCEL')
-                        else:
-                            row.operator("mcell.run_simulation", text="Export & Run", icon='COLOR_RED')
-
-                    display_queue_panel = False
-
-                    if self.simulation_run_control == "QUEUE":
-                        display_queue_panel = True
-                    elif self.simulation_run_control == 'DYNAMIC':
-                        global active_engine_module
-                        global active_runner_module
-                        if active_engine_module == None:
-                            pass
-                        elif active_runner_module == None:
-                            pass
-                        elif 'get_pid' in dir(active_runner_module):
-                            display_queue_panel = True
-
-                    if display_queue_panel:
-                        # print ( "Drawing the Queue Panel" )
-
-                        if (self.processes_list and cellblender.simulation_queue.task_dict):
-                            row = layout.row()
-                            row.label(text="Simulation Processes:", icon='FORCE_LENNARDJONES')
-                            row = layout.row()
-                            row.template_list("MCELL_UL_run_simulation_queue", "run_simulation_queue",
-                                              self, "processes_list",
-                                              self, "active_process_index",
-                                              rows=2)
+                    if self.processes_list and (len(self.processes_list) > 0):
+                        row = layout.row()
+                        row.template_list("MCELL_UL_run_simulation", "run_simulation",
+                                          self, "processes_list",
+                                          self, "active_process_index",
+                                          rows=2)
+                        row = layout.row()
+                        row.operator("mcell.clear_run_list")
 
 
-                            # Check to see if there are any errors for the selected item and display if non-empty
-                            processes_list = mcell.run_simulation.processes_list
-                            proc_list_length = len(processes_list)
-                            if proc_list_length > 0:
-                                active_process_index = mcell.run_simulation.active_process_index
-                                simulation_queue = cellblender.simulation_queue
-                                pid = get_pid(processes_list[active_process_index])
-                                q_item = cellblender.simulation_queue.task_dict[pid]
-
-                                if q_item['stderr'] != b'':
-                                    serr = str(q_item['stderr'])
-                                    if len(serr) > 0:
-                                        row = layout.row()
-                                        row.label ( "Error from task " + str(pid), icon="ERROR" )
-
-                                        tool_shelf = cellblender_utils.get_tool_shelf()
-                                        lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), serr)
-
-                                        for var in lines:
-                                          row = layout.row(align = True)
-                                          row.alignment = 'EXPAND'
-                                          row.label(var)
-
-                                sout = str(q_item['stdout'])
-                                if False and (len(sout) > 0):
-                                    row = layout.row()
-                                    row.label ( "Out: " + sout )
-
-
-                            row = layout.row()
-                            row.operator("mcell.clear_simulation_queue")
-                            row = layout.row()
-                            row.operator("mcell.kill_simulation")
-                            row.operator("mcell.kill_all_simulations")
-
-                    else:
-
-                        if self.processes_list and (len(self.processes_list) > 0):
-                            row = layout.row()
-                            row.template_list("MCELL_UL_run_simulation", "run_simulation",
-                                              self, "processes_list",
-                                              self, "active_process_index",
-                                              rows=2)
-                            row = layout.row()
-                            row.operator("mcell.clear_run_list")
+                if self.simulation_run_control == 'DYNAMIC':
+                    mcell.sim_engines.draw_panel ( context, layout )
+                    mcell.sim_runners.draw_panel ( context, layout )
 
 
                 box = layout.box()
