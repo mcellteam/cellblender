@@ -294,11 +294,13 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
         print("Executing Sweep Runner")
 
         mcell = context.scene.mcell
-        mcell.run_simulation.last_simulation_run_time = str(time.time())
+        run_sim = mcell.run_simulation
 
-        start = int(mcell.run_simulation.start_seed.get_value())
-        end = int(mcell.run_simulation.end_seed.get_value())
-        mcell_processes_str = str(mcell.run_simulation.mcell_processes)
+        run_sim.last_simulation_run_time = str(time.time())
+
+        start = int(run_sim.start_seed.get_value())
+        end = int(run_sim.end_seed.get_value())
+        mcell_processes_str = str(run_sim.mcell_processes)
         mcell_binary = cellblender_utils.get_mcell_path(mcell)
         # Force the project directory to be where the .blend file lives
         project_dir = mcell_files_path()
@@ -310,11 +312,11 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
             if not mcell.cellblender_preferences.decouple_export_run:
                 bpy.ops.mcell.export_project()
 
-            if (mcell.run_simulation.error_list and mcell.cellblender_preferences.invalid_policy == 'dont_run'):
+            if (run_sim.error_list and mcell.cellblender_preferences.invalid_policy == 'dont_run'):
                 pass
             else:
                 sweep_dir = os.path.join(project_dir, "output_data")
-                if (os.path.exists(sweep_dir) and mcell.run_simulation.remove_append == 'remove'):
+                if (os.path.exists(sweep_dir) and run_sim.remove_append == 'remove'):
                     shutil.rmtree(sweep_dir)
                 if not os.path.exists(sweep_dir):
                     os.makedirs(sweep_dir)
@@ -324,19 +326,19 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
 
                 base_name = mcell.project_settings.base_name
 
-                error_file_option = mcell.run_simulation.error_file
-                log_file_option = mcell.run_simulation.log_file
+                error_file_option = run_sim.error_file
+                log_file_option = run_sim.log_file
                 script_dir_path = os.path.dirname(os.path.realpath(__file__))
 
                 # The following Python program will create the "data_layout.json" file describing the directory structure
                 script_file_path = os.path.join(script_dir_path, os.path.join("mdl", "run_data_model_mcell.py") )
 
-                processes_list = mcell.run_simulation.processes_list
+                processes_list = run_sim.processes_list
                 processes_list.add()
-                mcell.run_simulation.active_process_index = len(
-                    mcell.run_simulation.processes_list) - 1
+                run_sim.active_process_index = len(
+                    run_sim.processes_list) - 1
                 simulation_process = processes_list[
-                    mcell.run_simulation.active_process_index]
+                    run_sim.active_process_index]
 
                 print("Starting MCell ... create start_time.txt file:")
                 with open(os.path.join(os.path.dirname(bpy.data.filepath),
@@ -387,7 +389,7 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
         else:
             status = "Python not found. Set it in Project Settings."
 
-        mcell.run_simulation.status = status
+        run_sim.status = status
 
         return {'FINISHED'}
 
@@ -404,12 +406,9 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
         print("Executing Grid Engine Sweep Runner")
 
         mcell = context.scene.mcell
-        run_sim = context.scene.mcell.run_simulation
+        run_sim = mcell.run_simulation
 
-        mcell.run_simulation.last_simulation_run_time = str(time.time())
-
-        binary_path = mcell.cellblender_preferences.mcell_binary
-        mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
+        run_sim.last_simulation_run_time = str(time.time())
 
         start = int(run_sim.start_seed.get_value())
         end = int(run_sim.end_seed.get_value())
@@ -528,7 +527,7 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
         else:
             status = "Python not found. Set it in Project Settings."
 
-        mcell.run_simulation.status = status
+        run_sim.status = status
 
         return {'FINISHED'}
 
@@ -543,14 +542,16 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
-        mcell.run_simulation.last_simulation_run_time = str(time.time())
+        run_sim = mcell.run_simulation
+
+        run_sim.last_simulation_run_time = str(time.time())
 
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
-        start = int(mcell.run_simulation.start_seed.get_value())
-        end = int(mcell.run_simulation.end_seed.get_value())
-        mcell_processes_str = str(mcell.run_simulation.mcell_processes)
+        start = int(run_sim.start_seed.get_value())
+        end = int(run_sim.end_seed.get_value())
+        mcell_processes_str = str(run_sim.mcell_processes)
         mcell_binary = mcell.cellblender_preferences.mcell_binary
         # Force the project directory to be where the .blend file lives
         project_dir = mcell_files_path()
@@ -562,28 +563,28 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
             if not mcell.cellblender_preferences.decouple_export_run:
                 bpy.ops.mcell.export_project()
 
-            if (mcell.run_simulation.error_list and
+            if (run_sim.error_list and
                     mcell.cellblender_preferences.invalid_policy == 'dont_run'):
                 pass
             else:
                 react_dir = os.path.join(project_dir, "output_data", "react_data")
                 if (os.path.exists(react_dir) and
-                        mcell.run_simulation.remove_append == 'remove'):
+                        run_sim.remove_append == 'remove'):
                     shutil.rmtree(react_dir)
                 if not os.path.exists(react_dir):
                     os.makedirs(react_dir)
 
                 viz_dir = os.path.join(project_dir, "output_data", "viz_data")
                 if (os.path.exists(viz_dir) and
-                        mcell.run_simulation.remove_append == 'remove'):
+                        run_sim.remove_append == 'remove'):
                     shutil.rmtree(viz_dir)
                 if not os.path.exists(viz_dir):
                     os.makedirs(viz_dir)
 
                 base_name = mcell.project_settings.base_name
 
-                error_file_option = mcell.run_simulation.error_file
-                log_file_option = mcell.run_simulation.log_file
+                error_file_option = run_sim.error_file
+                log_file_option = run_sim.log_file
                 script_dir_path = os.path.dirname(os.path.realpath(__file__))
                 script_file_path = os.path.join(
                     script_dir_path, "run_simulations.py")
@@ -591,12 +592,12 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
                 # The following line will create the "data_layout.json" file describing the directory structure
                 engine_manager.write_default_data_layout(project_dir, start, end)
 
-                processes_list = mcell.run_simulation.processes_list
+                processes_list = run_sim.processes_list
                 processes_list.add()
-                mcell.run_simulation.active_process_index = len(
-                    mcell.run_simulation.processes_list) - 1
+                run_sim.active_process_index = len(
+                    run_sim.processes_list) - 1
                 simulation_process = processes_list[
-                    mcell.run_simulation.active_process_index]
+                    run_sim.active_process_index]
 
                 print("Starting MCell ... create start_time.txt file:")
                 with open(os.path.join(os.path.dirname(bpy.data.filepath),
@@ -628,7 +629,7 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
         else:
             status = "Python not found. Set it in Project Settings."
 
-        mcell.run_simulation.status = status
+        run_sim.status = status
 
         return {'FINISHED'}
 
@@ -699,14 +700,16 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
     def execute(self, context):
 
         mcell = context.scene.mcell
-        mcell.run_simulation.last_simulation_run_time = str(time.time())
+        run_sim = mcell.run_simulation
+
+        run_sim.last_simulation_run_time = str(time.time())
 
         mcell_binary = cellblender_utils.get_mcell_path(mcell)
 
-        start_seed = int(mcell.run_simulation.start_seed.get_value())
-        end_seed = int(mcell.run_simulation.end_seed.get_value())
-        mcell_processes = mcell.run_simulation.mcell_processes
-        mcell_processes_str = str(mcell.run_simulation.mcell_processes)
+        start_seed = int(run_sim.start_seed.get_value())
+        end_seed = int(run_sim.end_seed.get_value())
+        mcell_processes = run_sim.mcell_processes
+        mcell_processes_str = str(run_sim.mcell_processes)
         # Force the project directory to be where the .blend file lives
         project_dir = mcell_files_path()
         status = ""
@@ -717,28 +720,28 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
             if not mcell.cellblender_preferences.decouple_export_run:
                 bpy.ops.mcell.export_project()
 
-            if (mcell.run_simulation.error_list and
+            if (run_sim.error_list and
                     mcell.cellblender_preferences.invalid_policy == 'dont_run'):
                 pass
             else:
                 react_dir = os.path.join(project_dir, "output_data", "react_data")
                 if (os.path.exists(react_dir) and
-                        mcell.run_simulation.remove_append == 'remove'):
+                        run_sim.remove_append == 'remove'):
                     shutil.rmtree(react_dir)
                 if not os.path.exists(react_dir):
                     os.makedirs(react_dir)
 
                 viz_dir = os.path.join(project_dir, "output_data", "viz_data")
                 if (os.path.exists(viz_dir) and
-                        mcell.run_simulation.remove_append == 'remove'):
+                        run_sim.remove_append == 'remove'):
                     shutil.rmtree(viz_dir)
                 if not os.path.exists(viz_dir):
                     os.makedirs(viz_dir)
 
                 base_name = mcell.project_settings.base_name
 
-                error_file_option = mcell.run_simulation.error_file
-                log_file_option = mcell.run_simulation.log_file
+                error_file_option = run_sim.error_file
+                log_file_option = run_sim.log_file
                 cellblender.simulation_queue.python_exec = python_path
                 cellblender.simulation_queue.start(mcell_processes)
                 cellblender.simulation_queue.notify = True
@@ -746,13 +749,13 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                 # The following line will create the "data_layout.json" file describing the directory structure
                 engine_manager.write_default_data_layout(project_dir, start_seed, end_seed)
 
-                processes_list = mcell.run_simulation.processes_list
+                processes_list = run_sim.processes_list
                 for seed in range(start_seed,end_seed + 1):
                   processes_list.add()
-                  mcell.run_simulation.active_process_index = len(
-                      mcell.run_simulation.processes_list) - 1
+                  run_sim.active_process_index = len(
+                      run_sim.processes_list) - 1
                   simulation_process = processes_list[
-                      mcell.run_simulation.active_process_index]
+                      run_sim.active_process_index]
 
                   print("Starting MCell ... create start_time.txt file:")
                   with open(os.path.join(os.path.dirname(bpy.data.filepath),
@@ -780,7 +783,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
 
                   mdl_filename = '%s.main.mdl' % (base_name)
                   mcell_args = '-seed %d %s' % (seed, mdl_filename)
-                  make_texts = mcell.run_simulation.save_text_logs
+                  make_texts = run_sim.save_text_logs
                   proc = cellblender.simulation_queue.add_task(mcell_binary, mcell_args, os.path.join(project_dir, "output_data"), make_texts)
 
                   self.report({'INFO'}, "Simulation Running")
@@ -792,7 +795,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
         else:
             status = "Python not found. Set it in Project Settings."
 
-        mcell.run_simulation.status = status
+        run_sim.status = status
 
         return {'FINISHED'}
 
@@ -1282,7 +1285,7 @@ class MCELL_OT_remove_text_logs(bpy.types.Operator):
         for k in bpy.data.texts.keys():
             if (k[0:5] == "task_") and (k[-7:] == "_output"):
                 print ( "Removing text: " + str(k) )
-                bpy.data.texts.remove ( bpy.data.texts[k] )
+                bpy.data.texts.remove ( bpy.data.texts[k], do_unlink=True )
         return {'FINISHED'}
 
 
@@ -1643,7 +1646,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         default=cpu_count(),
         min=1,
         max=cpu_count(),
-        description="Number of simultaneous MCell processes")
+        description="Number of simultaneous simulation processes")
     log_file_enum = [
         ('none', "Do not Generate", ""),
         ('file', "Send to File", ""),
@@ -1868,99 +1871,185 @@ had no limit."""
                 row.operator("mcell.export_project",
                     text="Export CellBlender Project", icon='EXPORT')
             else:
+                if mcell.cellblender_preferences.developer_mode:
 
-                row = layout.row(align=True)
-                if mcell.cellblender_preferences.decouple_export_run:
-                    if mcell.cellblender_preferences.lockout_export:
-                        row.operator( "mcell.export_project", 
-                            text="Export CellBlender Project", icon='CANCEL')
-                    else:
-                        row.operator( "mcell.export_project",
-                            text="Export CellBlender Project", icon='EXPORT')
-                    row.operator("mcell.run_simulation", text="Run", icon='COLOR_RED')
-                else:
-                    if mcell.cellblender_preferences.lockout_export:
-                        row.operator("mcell.run_simulation", text="Export & Run", icon='CANCEL')
-                    else:
-                        row.operator("mcell.run_simulation", text="Export & Run", icon='COLOR_RED')
+                    # Draw the dynamic engines and runners panels
 
-                display_queue_panel = False
-                
-                if self.simulation_run_control == "QUEUE":
-                    display_queue_panel = True
-                elif self.simulation_run_control == 'DYNAMIC':
-                    global active_engine_module
-                    global active_runner_module
-                    if active_engine_module == None:
-                        pass
-                    elif active_runner_module == None:
-                        pass
-                    elif 'get_pid' in dir(active_runner_module):
-                        display_queue_panel = True
-
-                if display_queue_panel:
-                    # print ( "Drawing the Queue Panel" )
-
-                    if (self.processes_list and cellblender.simulation_queue.task_dict):
-                        row = layout.row()
-                        row.label(text="MCell Processes:", icon='FORCE_LENNARDJONES')
-                        row = layout.row()
-                        row.template_list("MCELL_UL_run_simulation_queue", "run_simulation_queue",
-                                          self, "processes_list",
-                                          self, "active_process_index",
-                                          rows=2)
-
-
-                        # Check to see if there are any errors for the selected item and display if non-empty
-                        processes_list = mcell.run_simulation.processes_list
-                        proc_list_length = len(processes_list)
-                        if proc_list_length > 0:
-                            active_process_index = mcell.run_simulation.active_process_index
-                            simulation_queue = cellblender.simulation_queue
-                            pid = get_pid(processes_list[active_process_index])
-                            q_item = cellblender.simulation_queue.task_dict[pid]
-
-                            if q_item['stderr'] != b'':
-                                serr = str(q_item['stderr'])
-                                if len(serr) > 0:
-                                    row = layout.row()
-                                    row.label ( "Error from task " + str(pid), icon="ERROR" )
-
-                                    tool_shelf = cellblender_utils.get_tool_shelf()
-                                    lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), serr)
-
-                                    for var in lines:
-                                      row = layout.row(align = True)
-                                      row.alignment = 'EXPAND'
-                                      row.label(var)
-
-                            sout = str(q_item['stdout'])
-                            if False and (len(sout) > 0):
-                                row = layout.row()
-                                row.label ( "Out: " + sout )
-
-
-                        row = layout.row()
-                        row.operator("mcell.clear_simulation_queue")
-                        row = layout.row()
-                        row.operator("mcell.kill_simulation")
-                        row.operator("mcell.kill_all_simulations")
-
-                else:
-
-                    if self.processes_list and (len(self.processes_list) > 0):
-                        row = layout.row()
-                        row.template_list("MCELL_UL_run_simulation", "run_simulation",
-                                          self, "processes_list",
-                                          self, "active_process_index",
-                                          rows=2)
-                        row = layout.row()
-                        row.operator("mcell.clear_run_list")
-
-
-                if self.simulation_run_control == 'DYNAMIC':
                     mcell.sim_engines.draw_panel ( context, layout )
                     mcell.sim_runners.draw_panel ( context, layout )
+
+
+                    row = layout.row(align=True)
+                    if mcell.cellblender_preferences.decouple_export_run:
+                        if mcell.cellblender_preferences.lockout_export:
+                            row.operator( "mcell.export_project",
+                                text="Export CellBlender Project", icon='CANCEL')
+                        else:
+                            row.operator( "mcell.export_project",
+                                text="Export CellBlender Project", icon='EXPORT')
+                        row.operator("mcell.run_simulation", text="Run", icon='COLOR_RED')
+                    else:
+                        if mcell.cellblender_preferences.lockout_export:
+                            row.operator("mcell.run_simulation", text="Export & Run", icon='CANCEL')
+                        else:
+                            row.operator("mcell.run_simulation", text="Export & Run", icon='COLOR_RED')
+
+                    display_queue_panel = False
+
+                    if 'get_pid' in dir(active_runner_module):
+                        display_queue_panel = True
+
+                    if display_queue_panel:
+                        # print ( "Drawing the Queue Panel" )
+
+                        if (self.processes_list and cellblender.simulation_queue.task_dict):
+                            row = layout.row()
+                            row.label(text="Simulation Processes:", icon='FORCE_LENNARDJONES')
+                            row = layout.row()
+                            row.template_list("MCELL_UL_run_simulation_queue", "run_simulation_queue",
+                                              self, "processes_list",
+                                              self, "active_process_index",
+                                              rows=2)
+
+
+                            # Check to see if there are any errors for the selected item and display if non-empty
+                            processes_list = mcell.run_simulation.processes_list
+                            proc_list_length = len(processes_list)
+                            if proc_list_length > 0:
+                                active_process_index = mcell.run_simulation.active_process_index
+                                simulation_queue = cellblender.simulation_queue
+                                pid = get_pid(processes_list[active_process_index])
+                                q_item = cellblender.simulation_queue.task_dict[pid]
+
+                                if q_item['stderr'] != b'':
+                                    serr = str(q_item['stderr'])
+                                    if len(serr) > 0:
+                                        row = layout.row()
+                                        row.label ( "Error from task " + str(pid), icon="ERROR" )
+
+                                        tool_shelf = cellblender_utils.get_tool_shelf()
+                                        lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), serr)
+
+                                        for var in lines:
+                                          row = layout.row(align = True)
+                                          row.alignment = 'EXPAND'
+                                          row.label(var)
+
+                                sout = str(q_item['stdout'])
+                                if False and (len(sout) > 0):
+                                    row = layout.row()
+                                    row.label ( "Out: " + sout )
+
+
+                            row = layout.row()
+                            row.operator("mcell.clear_simulation_queue")
+                            row = layout.row()
+                            row.operator("mcell.kill_simulation")
+                            row.operator("mcell.kill_all_simulations")
+
+                    else:
+
+                        if self.processes_list and (len(self.processes_list) > 0):
+                            row = layout.row()
+                            row.template_list("MCELL_UL_run_simulation", "run_simulation",
+                                              self, "processes_list",
+                                              self, "active_process_index",
+                                              rows=2)
+                            row = layout.row()
+                            row.operator("mcell.clear_run_list")
+
+
+                else:
+
+                    # Draw the older static simulations panel
+
+                    row = layout.row(align=True)
+                    if mcell.cellblender_preferences.decouple_export_run:
+                        if mcell.cellblender_preferences.lockout_export:
+                            row.operator( "mcell.export_project",
+                                text="Export CellBlender Project", icon='CANCEL')
+                        else:
+                            row.operator( "mcell.export_project",
+                                text="Export CellBlender Project", icon='EXPORT')
+                        row.operator("mcell.run_simulation", text="Run", icon='COLOR_RED')
+                    else:
+                        if mcell.cellblender_preferences.lockout_export:
+                            row.operator("mcell.run_simulation", text="Export & Run", icon='CANCEL')
+                        else:
+                            row.operator("mcell.run_simulation", text="Export & Run", icon='COLOR_RED')
+
+                    display_queue_panel = False
+
+                    if self.simulation_run_control == "QUEUE":
+                        display_queue_panel = True
+                    elif self.simulation_run_control == 'DYNAMIC':
+                        global active_engine_module
+                        global active_runner_module
+                        if active_engine_module == None:
+                            pass
+                        elif active_runner_module == None:
+                            pass
+                        elif 'get_pid' in dir(active_runner_module):
+                            display_queue_panel = True
+
+                    if display_queue_panel:
+                        # print ( "Drawing the Queue Panel" )
+
+                        if (self.processes_list and cellblender.simulation_queue.task_dict):
+                            row = layout.row()
+                            row.label(text="Simulation Processes:", icon='FORCE_LENNARDJONES')
+                            row = layout.row()
+                            row.template_list("MCELL_UL_run_simulation_queue", "run_simulation_queue",
+                                              self, "processes_list",
+                                              self, "active_process_index",
+                                              rows=2)
+
+
+                            # Check to see if there are any errors for the selected item and display if non-empty
+                            processes_list = mcell.run_simulation.processes_list
+                            proc_list_length = len(processes_list)
+                            if proc_list_length > 0:
+                                active_process_index = mcell.run_simulation.active_process_index
+                                simulation_queue = cellblender.simulation_queue
+                                pid = get_pid(processes_list[active_process_index])
+                                q_item = cellblender.simulation_queue.task_dict[pid]
+
+                                if q_item['stderr'] != b'':
+                                    serr = str(q_item['stderr'])
+                                    if len(serr) > 0:
+                                        row = layout.row()
+                                        row.label ( "Error from task " + str(pid), icon="ERROR" )
+
+                                        tool_shelf = cellblender_utils.get_tool_shelf()
+                                        lines = cellblender_utils.wrap_long_text(math.ceil(tool_shelf.width / 9), serr)
+
+                                        for var in lines:
+                                          row = layout.row(align = True)
+                                          row.alignment = 'EXPAND'
+                                          row.label(var)
+
+                                sout = str(q_item['stdout'])
+                                if False and (len(sout) > 0):
+                                    row = layout.row()
+                                    row.label ( "Out: " + sout )
+
+
+                            row = layout.row()
+                            row.operator("mcell.clear_simulation_queue")
+                            row = layout.row()
+                            row.operator("mcell.kill_simulation")
+                            row.operator("mcell.kill_all_simulations")
+
+                    else:
+
+                        if self.processes_list and (len(self.processes_list) > 0):
+                            row = layout.row()
+                            row.template_list("MCELL_UL_run_simulation", "run_simulation",
+                                              self, "processes_list",
+                                              self, "active_process_index",
+                                              rows=2)
+                            row = layout.row()
+                            row.operator("mcell.clear_run_list")
 
 
                 box = layout.box()
@@ -2122,6 +2211,10 @@ had no limit."""
 
 active_engine_module = None
 active_runner_module = None
+
+# This dictionary maps process ids (pids) into the active_engine_module used to start that process.
+# This dictionary can be used to call functions from the module based on the PID.
+engine_module_dict = {}
 
 
 def load_plug_modules(context):
@@ -2426,21 +2519,33 @@ class Pluggable(bpy.types.PropertyGroup):
         set_name = None
         if self == context.scene.mcell.sim_engines:
           # print ( "Engines have changed!!" )
+          if active_engine_module != None:
+              if 'unregister_blender_classes' in dir(active_engine_module):
+                  active_engine_module.unregister_blender_classes()
           set_name = "engine"
           selected_module_code = self.engines_enum
           for plug_module in engine_manager.plug_modules:
               if plug_module.plug_code == selected_module_code:
                   active_sub_module = plug_module
                   active_engine_module = plug_module
+                  if active_engine_module != None:
+                      if 'register_blender_classes' in dir(active_engine_module):
+                          active_engine_module.register_blender_classes()
                   break
         if self == context.scene.mcell.sim_runners:
           # print ( "Runners have changed!!" )
+          if active_runner_module != None:
+              if 'unregister_blender_classes' in dir(active_runner_module):
+                  active_runner_module.unregister_blender_classes()
           set_name = "runner"
           selected_module_code = self.runners_enum
           for plug_module in runner_manager.plug_modules:
               if plug_module.plug_code == selected_module_code:
                   active_sub_module = plug_module
                   active_runner_module = plug_module
+                  if active_runner_module != None:
+                      if 'register_blender_classes' in dir(active_runner_module):
+                          active_runner_module.register_blender_classes()
                   break
 
 
@@ -2505,36 +2610,9 @@ class Pluggable(bpy.types.PropertyGroup):
                   new_plug_val.val_type = 's'
                   new_plug_val.string_val = str(val)
         except:
-          # This except hides these errors which should be caught first:
+          # This except hides these kinds of errors which should be caught first:
           """
-          Traceback (most recent call last):
-            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 210, in poll
-              mcell.sim_engines.plugs_changed_callback ( context )
-            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 2448, in plugs_changed_callback
-              self.plug_val_list.clear()
           AttributeError: Writing to ID classes in this context is not allowed: Scene, Scene datablock, error setting Pluggable.<UNKNOWN>
-
-          location: <unknown location>:-1
-
-          location: <unknown location>:-1
-          Traceback (most recent call last):
-            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 210, in poll
-              mcell.sim_engines.plugs_changed_callback ( context )
-            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 2448, in plugs_changed_callback
-              self.plug_val_list.clear()
-          AttributeError: Writing to ID classes in this context is not allowed: Scene, Scene datablock, error setting Pluggable.<UNKNOWN>
-
-          location: <unknown location>:-1
-
-          location: <unknown location>:-1
-          Traceback (most recent call last):
-            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 210, in poll
-              mcell.sim_engines.plugs_changed_callback ( context )
-            File "/home/bobkuczewski/.config/blender/2.78/scripts/addons/cellblender/cellblender_simulation.py", line 2448, in plugs_changed_callback
-              self.plug_val_list.clear()
-          AttributeError: Writing to ID classes in this context is not allowed: Scene, Scene datablock, error setting Pluggable.<UNKNOWN>
-
-          location: <unknown location>:-1
           """
           pass
 
@@ -2552,14 +2630,14 @@ class Pluggable(bpy.types.PropertyGroup):
           #print ( "Drawing Engines" )
           active_module = active_engine_module
           this_module_name = "engines\t"
-          engine_runner_label = "Simulate with:"
+          engine_runner_label = "Simulate using:"
           engine_runner_key_name = "engines_show"
           engine_runner_options_showing = self.engines_show
         if self == context.scene.mcell.sim_runners:
           #print ( "Drawing Runners" )
           active_module = active_runner_module
           this_module_name = "runners\t"
-          engine_runner_label = "Run with:"
+          engine_runner_label = "Run using:"
           engine_runner_key_name = "runners_show"
           engine_runner_options_showing = self.runners_show
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -2592,8 +2670,8 @@ class Pluggable(bpy.types.PropertyGroup):
           col.prop ( self, 'runners_enum' )
           if self.runners_enum != 'NONE':
             something_selected = True
-        col = row.column()
-        col.operator ( 'pluggable.reload', icon='FILE_REFRESH' )
+        #col = row.column()
+        #col.operator ( 'pluggable.reload', icon='FILE_REFRESH' )
 
 
         if (active_module == None) or (something_selected == False):

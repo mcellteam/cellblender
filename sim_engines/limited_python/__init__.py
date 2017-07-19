@@ -149,6 +149,23 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   return ( command_list )
 
 
+def get_progress_message_and_status ( stdout_txt ):
+  progress_message = "?"
+  task_complete = False
+  # MCell Pure Prototype iteration lines look like this:
+  # Iteration 10 of 1000
+  for i in reversed(stdout_txt.split("\n")):
+      if i.startswith("Iteration "):
+          last_iter = int(i.split()[1])
+          total_iter = int(i.split()[3])
+          percent = int((last_iter/total_iter)*100)
+          if (last_iter == total_iter) and (total_iter != 0):
+              task_complete = True
+          progress_message = "PySim: %d%%" % (percent)
+          break
+  return ( progress_message, task_complete )
+
+
 def postprocess_runs ( data_model, command_strings ):
   # Move and/or transform data to match expected CellBlender file structure as required
   pass

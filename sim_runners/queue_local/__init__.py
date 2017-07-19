@@ -22,11 +22,11 @@ import os
 import subprocess
 import sys
 
-import cellblender.sim_engines as sim_engines
-
-
-
 import cellblender
+
+import cellblender.sim_engines as engine_manager
+import cellblender.sim_runners as runner_manager
+
 
 # blender imports
 import bpy
@@ -50,9 +50,9 @@ import math
 
 
 # CellBlender imports
-import cellblender
 import cellblender.parameter_system as parameter_system
 import cellblender.cellblender_utils as cellblender_utils
+import cellblender.cellblender_simulation as cellblender_simulation
 import cellblender.data_model as data_model
 
 #from cellblender.mdl import data_model_to_mdl
@@ -62,36 +62,25 @@ from cellblender.cellblender_utils import mcell_files_path
 
 from multiprocessing import cpu_count
 
-import cellblender.sim_engines as engine_manager
-import cellblender.sim_runners as runner_manager
 
 
 
 plug_code = "QUEUE_LOCAL"
 plug_name = "Local Queue"
 
-def register():
-  global parameter_dictionary
-  print ( "Register was called with dictionary = " + str(parameter_dictionary) )
-  register_blender_classes()
+def remove_task_texts():
+    print ( "Remove task texts" )
+    bpy.ops.mcell.remove_text_logs()
 
-def unregister():
-  global parameter_dictionary
-  print ( "UnRegister was called with dictionary = " + str(parameter_dictionary) )
-  unregister_blender_classes()
 
 parameter_dictionary = {
-  'Show Normal Output': {'val':True, 'desc':"Show stdout from process"},
-  'Show Error Output':  {'val':True, 'desc':"Show stderr from process"},
-  'Register': {'val': register, 'desc':"Register Blender Classes"},
-  'UnRegister': {'val': unregister, 'desc':"UnRegister Blender Classes"}
+  'Save Text Logs': {'val':True, 'desc':"Create a text log for each run"},
+  'Remove Task Output Texts':  {'val':remove_task_texts, 'desc':'Remove all text files of name "task_*_output"'}
 }
 
 parameter_layout = [
-  ['Show Normal Output', 'Show Error Output'],
-  ['Register', 'UnRegister']
+  ['Save Text Logs', 'Remove Task Output Texts'],
 ]
-
 
 def draw_layout ( self, context, layout ):
     mcell = context.scene.mcell
@@ -104,7 +93,7 @@ def draw_layout ( self, context, layout ):
 
 
 def get_pid(item):
-    # print ( "queue_local.get_pid called" )
+    # print ( "queue_local.get_pid called with item.name = " + str(item.name) )
     l = item.name.split(',')[0].split(':')
     rtn_val = 0
     if len(l) > 1:
@@ -112,19 +101,8 @@ def get_pid(item):
     return rtn_val
 
 
-def run_commands_popen ( commands ):
-    sp_list = []
-    window_num = 0
-    for cmd in commands:
-        command_list = [ cmd['cmd'] ]
-        for arg in cmd['args']:
-            command_list.append ( arg )
-        sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=None, stderr=None ) )
-        window_num += 1
-    return sp_list
 
 def run_commands ( commands ):
-    context = bpy.context
     print ( "run_commands" )
     for cmd in commands:
       print ( "  CMD: " + str(cmd['cmd']) + " " + str(cmd['args']) )
@@ -141,7 +119,14 @@ def run_commands ( commands ):
       }
       """
 
+    context = bpy.context
     mcell = context.scene.mcell
+
+    # Set the Blender property from the local for now using the older code
+    # Eventually, the parameter_dictionary version should be used directly by the runner
+    mcell.run_simulation.save_text_logs = parameter_dictionary['Save Text Logs']['val']
+
+
     mcell.run_simulation.last_simulation_run_time = str(time.time())
 
     mcell_binary = cellblender_utils.get_mcell_path(mcell)
@@ -187,7 +172,7 @@ def run_commands ( commands ):
             cellblender.simulation_queue.notify = True
 
             # The following line will create the "data_layout.json" file describing the directory structure
-            engine_manager.write_default_data_layout(project_dir, start_seed, end_seed)
+            # engine_manager.write_default_data_layout(project_dir, start_seed, end_seed)
 
             processes_list = mcell.run_simulation.processes_list
 
@@ -226,9 +211,11 @@ def run_commands ( commands ):
               make_texts = mcell.run_simulation.save_text_logs
 
               if type(cmd) == type('str'):
-                proc = cellblender.simulation_queue.add_task(cmd, "", os.path.join(project_dir, "output_data"), make_texts)
+                  proc = cellblender.simulation_queue.add_task(cmd, "", os.path.join(project_dir, "output_data"), make_texts)
               elif type(cmd) == type({'a':1}):
-                proc = cellblender.simulation_queue.add_task(cmd['cmd'], ' '.join(cmd['args']), cmd['wd'], make_texts)
+                  proc = cellblender.simulation_queue.add_task(cmd['cmd'], ' '.join(cmd['args']), cmd['wd'], make_texts)
+              # Save the module in the engine_module_dict by PID
+              cellblender_simulation.engine_module_dict[proc.pid] = cellblender_simulation.active_engine_module
 
               # self.report({'INFO'}, "Simulation Running")
 
@@ -264,55 +251,41 @@ class MCELL_QL_percentage_done_timer(bpy.types.Operator):
                 if not mcell.run_simulation.save_text_logs:
                     return {'CANCELLED'}
                 pid = get_pid(simulation_process)
-                seed = int(simulation_process.name.split(',')[1].split(':')[1])
                 q_item = cellblender.simulation_queue.task_dict[pid]
-                stdout_txt = q_item['bl_text'].as_string()
-                percent = 0
-                last_iter = total_iter = 0
+                progress_message = None
+                task_complete = False
+                if pid in cellblender_simulation.engine_module_dict:
+                    em = cellblender_simulation.engine_module_dict[pid]
+                    # print ( "Engine Module for " + str(pid) + " is : " + em.plug_name )
+                    # print ( "   Engine Module Contains : " + str(dir(em)) )
+                    if 'get_progress_message_and_status' in dir(em):
+                        # Engine supports progress, so pass current stdout to the progress/status function and show as progress
+                        if q_item['bl_text'] is None:
+                            # This sometimes happens at the start of a run
+                            progress_message = em.plug_name
+                        else:
+                            stdout_txt = q_item['bl_text'].as_string()
+                            (progress_message, task_complete) = em.get_progress_message_and_status ( stdout_txt )
+                    else:
+                        # Engine doesn't support progress, so just show its own name as progress
+                        progress_message = em.plug_name
 
-                # TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
-                # TODO: The following functionality should be provided by each engine. But do it here for now.
-                # TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
+                if progress_message == None:
+                    progress_message = ""
 
-                if "MCell 3.3" in stdout_txt:
-                    # MCell 3.3 iteration lines look like this:
-                    # Iterations: 40 of 100  (50.8182 iter/sec)
-                    for i in reversed(stdout_txt.split("\n")):
-                        if i.startswith("Iterations"):
-                            last_iter = int(i.split()[1])
-                            total_iter = int(i.split()[3])
-                            percent = (last_iter/total_iter)*100
-                            break
+                simulation_process.name = "PID: %d" % (pid)
+                if progress_message != None:
+                    if len(progress_message) > 0:
+                        simulation_process.name = simulation_process.name + ", " + progress_message
 
-                if "MCell C++ Prototype" in stdout_txt:
-                    # MCell C++ Prototype iteration lines look like this:
-                    # Iteration 20, t=2e-05   (from libMCell's run_simulation)
-                    for i in reversed(stdout_txt.split("\n")):
-                        if i.startswith("Iteration"):
-                            last_iter = int(i.split()[1][0:-1])
-                            total_iter = int(mcell.initialization.iterations.get_as_string_or_value())
-                            percent = int((last_iter/total_iter)*100)
-                            break
-
-                if "Limited Pure Python Prototype" in stdout_txt:
-                    # MCell Pure Prototype iteration lines look like this:
-                    # Iteration 10 of 1000
-                    for i in reversed(stdout_txt.split("\n")):
-                        if i.startswith("Iteration "):
-                            last_iter = int(i.split()[1])
-                            total_iter = int(i.split()[3])
-                            percent = int((last_iter/total_iter)*100)
-                            break
-
-                if (last_iter == total_iter) and (total_iter != 0):
+                if task_complete:
                     task_ctr += 1
-                simulation_process.name = "PID: %d, Index: %d, %d%%" % (pid, seed, percent)
 
             # just a silly way of forcing a screen update. ¯\_(ツ)_/¯
             color = context.user_preferences.themes[0].view_3d.space.gradients.high_gradient
             color.h += 0.01
             color.h -= 0.01
-            # if every MCell job is done, quit updating the screen
+            # if every job is done, quit updating the screen
             if task_len == task_ctr:
                 self.cancel(context)
                 return {'CANCELLED'}
@@ -437,30 +410,20 @@ def register_blender_classes():
     bpy.utils.register_class(MCELL_QL_kill_simulation)
     bpy.utils.register_class(MCELL_QL_kill_all_simulations)
     bpy.utils.register_class(MCELL_QL_clear_run_list)
-    print ( "Done" )
+    print ( "Done Registering" )
+
+def unregister_this_class(this_class):
+    try:
+      bpy.utils.unregister_class(this_class)
+    except Exception as ex:
+      pass
 
 def unregister_blender_classes():
     print ( "UnRegistering Queue_Local classes" )
-    try:
-      bpy.utils.unregister_class(MCELL_QL_clear_run_list)
-    except Exception as ex:
-      pass
-    try:
-      bpy.utils.unregister_class(MCELL_QL_kill_all_simulations)
-    except Exception as ex:
-      pass
-    try:
-      bpy.utils.unregister_class(MCELL_QL_kill_simulation)
-    except Exception as ex:
-      pass
-    try:
-      #bpy.utils.unregister_class(MCELL_QL_run_simulation_control_queue)
-      pass
-    except Exception as ex:
-      pass
-    try:
-      bpy.utils.unregister_class(MCELL_QL_percentage_done_timer)
-    except Exception as ex:
-      pass
-    print ( "Done" )
+    unregister_this_class (MCELL_QL_clear_run_list)
+    unregister_this_class (MCELL_QL_kill_all_simulations)
+    unregister_this_class (MCELL_QL_kill_simulation)
+    #unregister_this_class (MCELL_QL_run_simulation_control_queue)
+    unregister_this_class (MCELL_QL_percentage_done_timer)
+    print ( "Done Unregistering" )
 
