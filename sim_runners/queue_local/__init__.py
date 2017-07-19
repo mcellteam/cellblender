@@ -68,16 +68,19 @@ from multiprocessing import cpu_count
 plug_code = "QUEUE_LOCAL"
 plug_name = "Local Queue"
 
+def remove_task_texts():
+    print ( "Remove task texts" )
+    bpy.ops.mcell.remove_text_logs()
+
 
 parameter_dictionary = {
-  'Show Normal Output': {'val':True, 'desc':"Show stdout from process"},
-  'Show Error Output':  {'val':True, 'desc':"Show stderr from process"},
+  'Save Text Logs': {'val':True, 'desc':"Create a text log for each run"},
+  'Remove Task Output Texts':  {'val':remove_task_texts, 'desc':'Remove all text files of name "task_*_output"'}
 }
 
 parameter_layout = [
-  ['Show Normal Output', 'Show Error Output'],
+  ['Save Text Logs', 'Remove Task Output Texts'],
 ]
-
 
 def draw_layout ( self, context, layout ):
     mcell = context.scene.mcell
@@ -100,7 +103,6 @@ def get_pid(item):
 
 
 def run_commands ( commands ):
-    context = bpy.context
     print ( "run_commands" )
     for cmd in commands:
       print ( "  CMD: " + str(cmd['cmd']) + " " + str(cmd['args']) )
@@ -117,7 +119,14 @@ def run_commands ( commands ):
       }
       """
 
+    context = bpy.context
     mcell = context.scene.mcell
+
+    # Set the Blender property from the local for now using the older code
+    # Eventually, the parameter_dictionary version should be used directly by the runner
+    mcell.run_simulation.save_text_logs = parameter_dictionary['Save Text Logs']['val']
+
+
     mcell.run_simulation.last_simulation_run_time = str(time.time())
 
     mcell_binary = cellblender_utils.get_mcell_path(mcell)
@@ -251,8 +260,12 @@ class MCELL_QL_percentage_done_timer(bpy.types.Operator):
                     # print ( "   Engine Module Contains : " + str(dir(em)) )
                     if 'get_progress_message_and_status' in dir(em):
                         # Engine supports progress, so pass current stdout to the progress/status function and show as progress
-                        stdout_txt = q_item['bl_text'].as_string()
-                        (progress_message, task_complete) = em.get_progress_message_and_status ( stdout_txt )
+                        if q_item['bl_text'] is None:
+                            # This sometimes happens at the start of a run
+                            progress_message = em.plug_name
+                        else:
+                            stdout_txt = q_item['bl_text'].as_string()
+                            (progress_message, task_complete) = em.get_progress_message_and_status ( stdout_txt )
                     else:
                         # Engine doesn't support progress, so just show its own name as progress
                         progress_message = em.plug_name
