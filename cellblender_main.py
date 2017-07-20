@@ -539,10 +539,23 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     #row = layout.row(align=True)
                     row = col.row(align=True)
 
+
+
+                    ############################################################################################################################
+                    #                                                                                                                          #
+                    #   !! N O T E !! - The size of "show_button_num" BoolVectorProperty in cellblender_preferences.py MUST be large enough!!  #
+                    #                                                                                                                          #
+                    ############################################################################################################################
+
+
                     if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "examples_select", icon='MOD_BUILD', text="" )
+                    if mcell.cellblender_preferences.show_button_num[15]: row.prop ( self, "pbc_select", icon='GRID', text="" )
+
                     if mcell.cellblender_preferences.show_button_num[1]: row.prop ( self, "preferences_select", icon='PREFERENCES', text="" )
                     if mcell.cellblender_preferences.show_button_num[2]: row.prop ( self, "scripting_select", icon='SCRIPT', text="" )
+
                     if mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="" )
+                    if mcell.cellblender_preferences.show_button_num[8]: row.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="" )  # Or 'MESH_CUBE'
 
                     if mcell.cellblender_preferences.use_stock_icons:
                         # Use "stock" icons to check on drawing speed problem
@@ -569,7 +582,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                     if mcell.cellblender_preferences.show_button_num[6]: row.prop ( self, "placement_select", icon='GROUP_VERTEX', text="" )
                     if mcell.cellblender_preferences.show_button_num[7]: row.prop ( self, "rel_patterns_select", icon='TIME', text="" )
-                    if mcell.cellblender_preferences.show_button_num[8]: row.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="" )  # Or 'MESH_CUBE'
                     if mcell.cellblender_preferences.show_button_num[9]: row.prop ( self, "surf_classes_select", icon='FACESEL_HLT', text="" )
                     if mcell.cellblender_preferences.show_button_num[10]: row.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="" )
                     if mcell.cellblender_preferences.show_button_num[11]: row.prop ( self, "partitions_select", icon='GRID', text="" )
@@ -577,7 +589,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     if mcell.cellblender_preferences.show_button_num[13]: row.prop ( self, "viz_select", icon='SEQUENCE', text="" )
                     if mcell.cellblender_preferences.show_button_num[14]: row.prop ( self, "init_select", icon='COLOR_RED', text="" )
 
-                    if mcell.cellblender_preferences.show_button_num[15]: row.prop ( self, "pbc_select", text="" )
 
                     col = split.column()
                     row = col.row()
@@ -599,12 +610,14 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                     bcol = brow.column()
                     bcol.prop ( self, "examples_select", icon='MOD_BUILD', text="Examples" )
+                    bcol = brow.column()
+                    bcol.prop ( self, "pbc_select", icon='GRID', text="Periodic Boundary Conditions" )
+
 
                     brow = layout.row()  ##############################################################
 
                     bcol = brow.column()
                     bcol.prop ( self, "preferences_select", icon='PREFERENCES', text="Settings & Preferences" )
-
                     bcol = brow.column()
                     bcol.prop ( self, "scripting_select", icon='SCRIPT', text="Scripting" )
 
@@ -613,10 +626,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                     bcol = brow.column()
                     bcol.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="Parameters" )
-
                     bcol = brow.column()
                     bcol.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="Model Objects" )
-
 
 
                     brow = layout.row()  ##############################################################
@@ -670,8 +681,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                     bcol = brow.column()
                     bcol.prop ( self, "placement_select", icon='GROUP_VERTEX', text=" Molecule Placement" )
-
-
                     bcol = brow.column()
                     bcol.prop ( self, "rel_patterns_select", icon='TIME', text="Release Patterns" )
 
@@ -693,10 +702,12 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
 
                     brow = layout.row()  ##############################################################
+
                     bcol = brow.column()
                     bcol.prop ( self, "viz_select", icon='SEQUENCE', text="Visualization Settings" )
-                    bcol = brow.column()                    
-                    bcol.prop ( self, "pbc_select", icon='GRID', text="Periodic Boundary Conditions" )
+                    bcol = brow.column()
+                    bcol.prop ( self, "init_select", icon='COLOR_RED', text="Run Simulation" )
+
 
                     brow = layout.row()  ##############################################################
 
@@ -707,11 +718,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                         bcol.prop ( self, "select_multiple", icon='UNPINNED', text="Show All / Multiple" )
                     bcol = brow.column()
                     bcol.operator ( "cbm.refresh_operator",icon='FILE_REFRESH', text="Reload Visualization Data")
-
-                    brow = layout.row()  ##############################################################
-
-                    bcol = brow.column()
-                    bcol.prop ( self, "init_select", icon='COLOR_RED', text="Run Simulation" )
 
 
 
