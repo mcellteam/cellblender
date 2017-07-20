@@ -27,26 +27,17 @@ plug_name = "Command Line"
 
 
 parameter_dictionary = {
-  'Show Normal Output': {'val':True, 'desc':"Show stdout from process"},
-  'Show Error Output':  {'val':True, 'desc':"Show stderr from process"},
+  'Print Commands': {'val':False, 'desc':"Print the commands to be executed"},
 }
 
-parameter_layout = [
-  ['Show Normal Output', 'Show Error Output']
-]
-
-
 def run_commands ( commands ):
+
+    if parameter_dictionary['Print Commands']['val']:
+        print ( "Commands for " + plug_name + " runner:" )
+        for cmd in commands:
+            print ( "  " + str(cmd) )
+
     sp_list = []
-    window_num = 0
-    for cmd in commands:
-        command_list = [ cmd['cmd'] ]
-        for arg in cmd['args']:
-            command_list.append ( arg )
-        sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=None, stderr=None ) )
-        window_num += 1
-
-
     for cmd in commands:
         command_list = []
         if type(cmd) == type('str'):
@@ -63,6 +54,6 @@ def run_commands ( commands ):
                 sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=None, stderr=None ) )
             else:
                 sp_list.append ( subprocess.Popen ( command_list, stdout=None, stderr=None ) )
-        window_num += 1
-    return sp_list
+    # Should this return anything?
+    # return sp_list
 
