@@ -239,8 +239,20 @@ class MCELL_OT_model_objects_remove_sel(bpy.types.Operator):
 
         # From the list of selected objects, only remove MESH objects.
         objs = [obj for obj in context.selected_objects if obj.type == 'MESH']
+        orig_obj_name = None
+        if len(mobjs.object_list) > 0:
+          orig_obj_name = mobjs.object_list[mobjs.active_obj_index].name
         for obj in objs:
-            obj.mcell.include = False
+            idx = mobjs.object_list.find(obj.name)
+            if idx != -1:
+                obj.mcell.include = False
+                mobjs.object_list.remove(idx)
+
+        idx = mobjs.object_list.find(orig_obj_name)
+        if idx != -1:
+            mobjs.active_obj_index = idx
+        else:
+            mobjs.active_obj_index = 0
 
         model_objects_update(context)
 

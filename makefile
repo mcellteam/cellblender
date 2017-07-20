@@ -1,9 +1,18 @@
 UNAME_S := $(shell uname -s)
-ifeq ($(UNAME_S),Linux)
-	INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
-else
-	INSTALL_DIR = /Applications/Blender-2.78c-CellBlender/blender.app/Contents/Resources/2.78/scripts/addons/
-endif
+#ifeq ($(UNAME_S),Linux)
+#	INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
+##	INSTALL_DIR = ~/src/blender/Blender-2.78c-CellBlender-linux/2.78/scripts/addons/
+#else
+#	INSTALL_DIR = /Applications/Blender-2.78c-CellBlender/blender.app/Contents/Resources/2.78/scripts/addons/
+#endif
+
+# CellBlender will be installed here. This should typically be a link to the desired location on your platform.
+# For example, on a Linux machine it might be done with: ln -s ~/.config/blender/2.78/scripts/addons/ ~/my_cellblender_link
+# For example, on a MacOSX machine it might be done with: ln -s ~/Library/Application\ Support/Blender/2.78/scripts/addons/ ~/my_cellblender_link
+# For example, for a link pointing into a Linux bundle: ln -s ~/src/blender/Blender-2.78c-CellBlender-linux/2.78/scripts/addons/ ~/my_cellblender_link
+# For example, for a link pointing into a MacOSX bundle: ln -s /Applications/Blender-2.78c-CellBlender/blender.app/Contents/Resources/2.78/scripts/addons/ ~/my_cellblender_link
+
+INSTALL_DIR = ~/my_cellblender_link/
 
 # Linux:
 #INSTALL_DIR = ~/.config/blender/2.78/scripts/addons/
