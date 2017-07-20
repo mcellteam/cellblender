@@ -437,7 +437,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
         name="Show Extra Options", default=False,
         description="Show Additional Options (mostly for debugging)" )
 
-    show_button_num = BoolVectorProperty ( size=15, default=[True for i in range(15)] )
+    show_button_num = BoolVectorProperty ( size=16, default=[True for i in range(16)] )
 
 
     show_old_scene_panels = BoolProperty(
