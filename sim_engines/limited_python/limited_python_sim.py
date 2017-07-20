@@ -36,10 +36,15 @@ for arg in sys.argv:
     if output_detail > 0: print_and_flush ( "Unknown argument = " + str(arg) )
 if output_detail > 10: print_and_flush ( "\n\n" )
 
-if output_detail > 0: print_and_flush ( "**********************************************" )
-if output_detail > 0: print_and_flush ( "*  Limited Pure Python Prototype Simulation  *" )
-if output_detail > 0: print_and_flush ( "*        Updated: February 5th, 2017         *" )
-if output_detail > 0: print_and_flush ( "**********************************************" )
+if output_detail > 0:
+  print_and_flush ( "**********************************************" )
+  print_and_flush ( "*  Limited Pure Python Prototype Simulation  *" )
+  print_and_flush ( "*          Updated: July 19th, 2017          *" )
+  print_and_flush ( "**********************************************" )
+  print_and_flush ( "" )
+  print_and_flush ( "Running with Python:" )
+  print_and_flush ( sys.version )
+  print_and_flush ( "" )
 
 if output_detail > 10: print_and_flush ( "Arguments: " + str(sys.argv) )
 
