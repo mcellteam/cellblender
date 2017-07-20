@@ -171,12 +171,13 @@ def save_pbc(context, out_file):
     if mcell.pbc.include:
         out_file.write("PERIODIC_BOX\n")
         out_file.write("{\n")
-        out_file.write("CORNERS = [%.15g,%.15g,%.15g]\n,[%.15g,%.15g,%.15g]\n" % (mcell.pbc.x_start,mcell.pbc.y_start,mcell.pbc.z_start,mcell.pbc.x_end,mcell.pbc.y_end,mcell.pbc.z_end))
+        out_file.write("CORNERS = [%g,%g,%g]\n,[%g,%g,%g]\n" % (mcell.pbc.x_start,mcell.pbc.y_start,mcell.pbc.z_start,mcell.pbc.x_end,mcell.pbc.y_end,mcell.pbc.z_end))
         out_file.write("PERIODIC_TRADITIONAL = " + ptrad.upper() + "\n")
         out_file.write("PERIODIC_X = " + px.upper() + "\n")
         out_file.write("PERIODIC_Y = " + py.upper() + "\n")
         out_file.write("PERIODIC_Z = " + pz.upper() + "\n")
         out_file.write("}\n\n")
+
 
 def save_wrapper(context, out_file, filedir):
     """ This function saves the current model to MDL.
@@ -1072,20 +1073,26 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
                 out_file.write(
                     "  {COUNT[%s,WORLD]}=> \"./react_data/seed_\" & seed & "
                     "\"/%s.World.dat\"\n" % (count_name, count_name,))
-            elif rxn_output.count_location == 'Object':
+            elif rxn_output.count_location == 'Object' and mcell.pbc.peri_trad == True:
                 out_file.write(
                     "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
-                    "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,
-                                          object_name, count_name, object_name))
-            elif rxn_output.count_location == 'Region':
+                    "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, count_name, object_name))
+            elif rxn_output.count_location == 'Region' and mcell.pbc.peri_trad == True:
                 out_file.write(
                     "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
-                    "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,
-                    object_name, region_name, count_name, object_name, region_name))
-
+                    "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name, count_name, object_name, region_name))
+                
+            elif rxn_output.count_location == 'Region' and mcell.pbc.peri_trad == False:
+                    out_file.write("  {COUNT["+count_name+","+context.scene.name+"."+object_name+"["+region_name+"]"+",[%.15g,%.15g,%.15g]]" %(mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z)
+                     + "}=> \"./react_data/seed_\" & seed &  \"/%s.%s.%s.dat\"\n" %(count_name,object_name,region_name))
+                    #(count_name, context.scene.name,object_name, count_name, object_name))
+            elif rxn_output.count_location == 'Object' and mcell.pbc.peri_trad == False:
+                    out_file.write("  {COUNT["+count_name+ ","+ context.scene.name+ "." + object_name + ",[%.15g,%.15g,%.15g]]" %(mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z)
+                     + "}=> \"./react_data/seed_\" & seed &  \"/%s.%s.%s_%s_%s.dat\"\n" %(count_name, object_name,mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z))
+                
     out_file.write("}\n\n")
 
-"""
+""" 
 #deprecated
 def save_rxn_output_temp_mdl(context, out_file, rxn_output_list):
     #JJT:temporary code that outsputs imported rxn output expressions

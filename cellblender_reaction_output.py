@@ -778,6 +778,12 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         type=parameter_system.Parameter_Reference )
     active_rxn_output_index = IntProperty(
         name="Active Reaction Output Index", default=0)
+    virt_x = bpy.props.IntProperty(name="X Position", default=0,
+        description="The X coordinate of the Virtual Box")
+    virt_y = bpy.props.IntProperty(name="Y Position", default=0,
+        description="The Y coordinate of the Virtual Box")
+    virt_z = bpy.props.IntProperty(name="Z Position", default=0,
+        description="The Z coordinate of the Virtual Box")
     rxn_output_list = CollectionProperty(
         type=MCellReactionOutputProperty, name="Reaction Output List")
     plot_layout_enum = [
@@ -932,6 +938,8 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         """ Draw the reaction output "panel" within the layout """
         mcell = context.scene.mcell
         ps = mcell.parameter_system
+        PBC = mcell.pbc
+
 
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
@@ -1016,18 +1024,27 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                         if rxn_output.count_location != "World":
                             layout.prop_search(
                                 rxn_output, "object_name", mcell.model_objects,
-                                "object_list", icon='MESH_ICOSPHERE')
+                                "object_list", icon='MESH_ICOSPHERE')                        
                             if (rxn_output.object_name and
                                     (rxn_output.count_location == "Region")):
+
                                 try:
                                     regions = bpy.data.objects[
                                         rxn_output.object_name].mcell.regions
                                     layout.prop_search(rxn_output, "region_name",
                                                        regions, "region_list",
-                                                       icon='FACESEL_HLT')
+                                                       icon='FACESEL_HLT') 
                                 except KeyError:
-                                    pass
-
+                                    pass    
+                            #Checking which region they want to count in from the PBC file
+                            if rxn_output.count_location != "World":
+                                #layout.label(text= "I'm a label",icon='GRID')
+                                if PBC.peri_trad == False:
+                                    layout.label(text= "Virtual box selection",icon='GRID')
+                                    row = layout.row(align=True)
+                                    row.prop(self, "virt_x")
+                                    row.prop(self, "virt_y")
+                                    row.prop(self, "virt_z")
             else:
 
                 row.label(text="Define at least one molecule", icon='ERROR')
