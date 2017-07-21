@@ -784,6 +784,8 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         description="The Y coordinate of the Virtual Box")
     virt_z = bpy.props.IntProperty(name="Z Position", default=0,
         description="The Z coordinate of the Virtual Box")
+    all_enc = BoolProperty(name="Include All enclosed", default = False, 
+        description = 'Count all molecules or reactions that occur in the area enclosed by region ')
     rxn_output_list = CollectionProperty(
         type=MCellReactionOutputProperty, name="Reaction Output List")
     plot_layout_enum = [
@@ -1033,9 +1035,12 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                                         rxn_output.object_name].mcell.regions
                                     layout.prop_search(rxn_output, "region_name",
                                                        regions, "region_list",
-                                                       icon='FACESEL_HLT') 
+                                                       icon='FACESEL_HLT')                                      
                                 except KeyError:
-                                    pass    
+                                    pass                                           
+                            if rxn_output.count_location == "Region" and PBC.peri_trad == True:
+                                    row = layout.row(align=True)
+                                    row.prop(self, "all_enc")
                             #Checking which region they want to count in from the PBC file
                             if rxn_output.count_location != "World":
                                 #layout.label(text= "I'm a label",icon='GRID')
@@ -1045,6 +1050,8 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                                     row.prop(self, "virt_x")
                                     row.prop(self, "virt_y")
                                     row.prop(self, "virt_z")
+                            #Checking to see if they want to use all_enclosed to count the molecules
+                            #if (rxn_output.object_name and (rxn_output.count_location == "Region")): 
             else:
 
                 row.label(text="Define at least one molecule", icon='ERROR')

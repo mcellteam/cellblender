@@ -1073,23 +1073,34 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
                 out_file.write(
                     "  {COUNT[%s,WORLD]}=> \"./react_data/seed_\" & seed & "
                     "\"/%s.World.dat\"\n" % (count_name, count_name,))
-            elif rxn_output.count_location == 'Object' and mcell.pbc.peri_trad == True:
-                out_file.write(
-                    "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
-                    "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, count_name, object_name))
-            elif rxn_output.count_location == 'Region' and mcell.pbc.peri_trad == True:
-                out_file.write(
-                    "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
-                    "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name, count_name, object_name, region_name))
-                
-            elif rxn_output.count_location == 'Region' and mcell.pbc.peri_trad == False:
-                    out_file.write("  {COUNT["+count_name+","+context.scene.name+"."+object_name+"["+region_name+"]"+",[%.15g,%.15g,%.15g]]" %(mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z)
-                     + "}=> \"./react_data/seed_\" & seed &  \"/%s.%s.%s.dat\"\n" %(count_name,object_name,region_name))
-                    #(count_name, context.scene.name,object_name, count_name, object_name))
-            elif rxn_output.count_location == 'Object' and mcell.pbc.peri_trad == False:
-                    out_file.write("  {COUNT["+count_name+ ","+ context.scene.name+ "." + object_name + ",[%.15g,%.15g,%.15g]]" %(mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z)
+            elif rxn_output.count_location == 'Object':
+                if mcell.pbc.peri_trad == False:
+                     out_file.write("  {COUNT["+count_name+","+context.scene.name+"."+object_name+",[%.15g,%.15g,%.15g]]" %(mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z)
                      + "}=> \"./react_data/seed_\" & seed &  \"/%s.%s.%s_%s_%s.dat\"\n" %(count_name, object_name,mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z))
-                
+                elif mcell.pbc.peri_trad == True:
+                    out_file.write(
+                        "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
+                        "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, count_name, object_name))
+            elif rxn_output.count_location == 'Region':
+                if mcell.pbc.peri_trad == False:
+                     out_file.write("  {COUNT["+count_name+","+context.scene.name+"."+object_name+"["+region_name+"]"+",[%.15g,%.15g,%.15g]]" %(mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z)
+                     + "}=> \"./react_data/seed_\" & seed &  \"/%s.%s.%s.dat\"\n" %(count_name,object_name,region_name))
+                elif mcell.pbc.peri_trad == True:
+                    if mcell.rxn_output.all_enc == True:
+                         out_file.write(
+                        "  {COUNT[%s,%s.%s[%s],ALL_ENCLOSED]}=> \"./react_data/seed_\" & seed & "
+                        "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name, count_name, object_name, region_name))
+                    elif mcell.rxn_output.all_enc == False:
+                        out_file.write(
+                        "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
+                        "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name, count_name, object_name, region_name))
+         #   elif rxn_output.count_location == 'Region' and mcell.pbc.peri_trad == False:
+          #          out_file.write("  {COUNT["+count_name+","+context.scene.name+"."+object_name+"["+region_name+"]"+",[%.15g,%.15g,%.15g]]" %(mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z)
+           #          + "}=> \"./react_data/seed_\" & seed &  \"/%s.%s.%s.dat\"\n" %(count_name,object_name,region_name))
+                    #(count_name, context.scene.name,object_name, count_name, object_name))
+          #  elif rxn_output.count_location == 'Object' and mcell.pbc.peri_trad == False:
+           #         out_file.write("  {COUNT["+count_name+ ","+ context.scene.name+ "." + object_name + ",[%.15g,%.15g,%.15g]]" %(mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z)
+            #         + "}=> \"./react_data/seed_\" & seed &  \"/%s.%s.%s_%s_%s.dat\"\n" %(count_name, object_name,mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z))                
     out_file.write("}\n\n")
 
 """ 
