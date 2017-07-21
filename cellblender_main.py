@@ -598,8 +598,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                     if mcell.cellblender_preferences.use_stock_icons:
                         # Use "stock" icons for molecules and reactions
-                        if mcell.cellblender_preferences.show_button_num[5]: row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES', text="" )
-                        if mcell.cellblender_preferences.show_button_num[6]: row.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="" )
+                        if mcell.cellblender_preferences.show_button_num[7]: row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES', text="" )
+                        if mcell.cellblender_preferences.show_button_num[8]: row.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="" )
                     else:
                         # Use custom icons for molecules and reactions
                         if mcell.cellblender_preferences.show_button_num[7]:
