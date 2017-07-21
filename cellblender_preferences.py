@@ -464,7 +464,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
 
     show_extra_options = BoolProperty (
-        name="Show Extra Options", default=False,
+        name="Specialized CellBlender Options", default=False,
         description="Show Additional Options (mostly for debugging)" )
 
     # This provides a quick way to show or hide individual buttons in the SHORT button list
@@ -570,19 +570,58 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "use_stock_icons")
 
-            row = layout.row()
-            row.prop(mcell.cellblender_preferences, "developer_mode")
+
+            layout.separator()
+
+            box = layout.box()
+
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
+            if self.show_extra_options:
+                row.prop(self, "show_extra_options", icon='TRIA_DOWN', emboss=False)
+
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "developer_mode")
+
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "show_sim_runner_options")
+
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "lockout_export")
+
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "debug_level")
+
+
+                row = box.row()
+                row.label ( "Enable/Disable individual short menu buttons:" )
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "show_button_num", text="")
+
+                #row = box.row()
+                #row.prop(mcell.cellblender_preferences, "show_tool_panel")
+                #row = box.row()
+                #row.prop(mcell.cellblender_preferences, "show_scene_panel")
+                #row = box.row()
+                #row.prop(mcell.cellblender_preferences, "show_old_scene_panels")
+
+                #row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')
+                #row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='ZOOMOUT')
+
+
+            else:
+                row.prop(self, "show_extra_options", icon='TRIA_RIGHT', emboss=False)
 
             layout.separator()
             layout.box()
-            layout.separator()
 
             row = layout.row()
-            row.operator ( "mcell.reset_3d_theme" )
+            row.label ( "Handy Blender Settings", icon="BLENDER" )
+
+            row = layout.row()
             row.operator ( "mcell.black_3d_theme" )
             row.operator ( "mcell.white_3d_theme" )
-            # C.user_preferences.themes[0].view_3d.space.gradients.high_gradient
-            # Color((0.22745099663734436, 0.22745099663734436, 0.22745099663734436))
+            row.operator ( "mcell.reset_3d_theme" )
 
             row = layout.row()
             col = row.column()
@@ -603,7 +642,8 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
             col.prop ( context.space_data, "show_axis_y", text="Show Y Axis" )
             col = row.column()
             col.prop ( context.space_data, "show_axis_z", text="Show Z Axis" )
-
+            row = layout.row()
+            row.prop(mcell.cellblender_preferences, "tab_autocomplete")
 
             if "use_vertex_buffer_objects" in dir(context.user_preferences.system):
                 row = layout.row()
@@ -617,47 +657,6 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
             row.prop ( context.user_preferences.inputs, "view_rotate_method" )
-
-            layout.separator()
-
-            box = layout.box()
-
-            row = box.row(align=True)
-            row.alignment = 'LEFT'
-            if self.show_extra_options:
-                row.prop(self, "show_extra_options", icon='TRIA_DOWN', emboss=False)
-
-                row = box.row()
-                row.prop(mcell.cellblender_preferences, "tab_autocomplete")
-
-                #row = box.row()
-                #row.prop(mcell.cellblender_preferences, "show_tool_panel")
-                #row = box.row()
-                #row.prop(mcell.cellblender_preferences, "show_scene_panel")
-                #row = box.row()
-                #row.prop(mcell.cellblender_preferences, "show_old_scene_panels")
-
-                row = box.row()
-                row.prop(mcell.cellblender_preferences, "show_sim_runner_options")
-
-                row = box.row()
-                row.prop(mcell.cellblender_preferences, "lockout_export")
-
-                row = box.row()
-                row.prop(mcell.cellblender_preferences, "debug_level")
-
-
-                row = box.row()
-                row.label ( "Enable/Disable individual short menu buttons:" )
-                row = box.row()
-                row.prop(mcell.cellblender_preferences, "show_button_num", text="")
-
-
-            else:
-                row.prop(self, "show_extra_options", icon='TRIA_RIGHT', emboss=False)
-
-            #row.operator ( "mcell.reregister_panels", text="Show CB Panels",icon='ZOOMIN')
-            #row.operator ( "mcell.unregister_panels", text="Hide CB Panels",icon='ZOOMOUT')
             
 
     def draw_panel ( self, context, panel ):
