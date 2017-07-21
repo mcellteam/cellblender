@@ -437,7 +437,10 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
         name="Show Extra Options", default=False,
         description="Show Additional Options (mostly for debugging)" )
 
-    show_button_num = BoolVectorProperty ( size=16, default=[True for i in range(16)] )
+    # This provides a quick way to show or hide individual buttons in the SHORT button list
+    # Position 0 is generally reserved for the refresh and pin buttons
+    # All other buttons should start at 1 and progress forward from left to right
+    show_button_num = BoolVectorProperty ( size=17, default=[True for i in range(17)] )
 
 
     show_old_scene_panels = BoolProperty(
@@ -585,10 +588,10 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
                 row.prop(mcell.cellblender_preferences, "debug_level")
 
 
-                #row = box.row()
-                #row.label ( "Enable/Disable individual short menu buttons:" )
-                #row = box.row()
-                #row.prop(mcell.cellblender_preferences, "show_button_num", text="")
+                row = box.row()
+                row.label ( "Enable/Disable individual short menu buttons:" )
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "show_button_num", text="")
 
 
             else:
