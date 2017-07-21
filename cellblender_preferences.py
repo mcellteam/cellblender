@@ -413,17 +413,6 @@ class MCELL_OT_white_theme(bpy.types.Operator):
         context.user_preferences.themes[0].view_3d.space.gradients.high_gradient = (1,1,1)
         return {'FINISHED'}
 
-class MCELL_OT_save_blprefs(bpy.types.Operator):
-    bl_idname = "mcell.save_blprefs"
-    bl_label = "Save Blender Preferences"
-    bl_description = ("Save all Blender Preferences")
-    bl_options = {'REGISTER'}
-
-    def execute(self, context):
-        bpy.ops.wm.save_userpref()
-        return {'FINISHED'}
-
-
 
 class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
@@ -678,7 +667,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
               row.prop ( context.user_preferences.inputs, "view_rotate_method" )
 
               row = box.row()
-              row.operator ( "mcell.save_blprefs" )
+              row.operator ( "wm.save_userpref", text="Save Blender Preferences" )
 
             else:
                 row.prop(self, "show_blender_preferences", icon='BLENDER', emboss=False)
