@@ -147,7 +147,7 @@ def makedirs_exist_ok ( path_to_build, exist_ok=False ):
       if not os.path.exists(full):
         os.makedirs ( full, exist_ok=True )
 
-def prepare_runs ( data_model, project_dir, data_layout=None ):
+def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   global project_files_dir
 

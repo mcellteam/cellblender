@@ -42,7 +42,7 @@ parameter_layout = [
 ]
 
 
-def prepare_runs ( data_model, project_dir, data_layout=None ):
+def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   # Return a list of run command dictionaries.
   # Each run command dictionary must contain a "cmd" key, an "args" key, and a "wd" key.
   # The cmd key will refer to a command string suitable for popen.

@@ -94,7 +94,7 @@ parameter_layout = [
 ]
 
 
-def prepare_runs ( data_model, project_dir, data_layout=None ):
+def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   """ Arguments to:  run_mcell_sweep ( sys_argv, data_model=None )
     arg_parser = argparse.ArgumentParser(description='Run MCell with appropriate arguments')

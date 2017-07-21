@@ -895,9 +895,11 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
         elif active_runner_module == None:
             print ( "Cannot run without selecting a simulation runner" )
             status = "Error: No simulation runner selected"
-        elif not ( ( 'prepare_runs' in dir(active_engine_module) ) or ( 'prepare_run' in dir(active_engine_module) ) ):
-            print ( "Selected engine module does not contain a \"prepare_runs\" or \"prepare_run\" function" )
-            status = "Error: function \"prepare_run(s)\" not found in selected engine"
+        elif not ( ( 'prepare_runs_no_data_model' in dir(active_engine_module) )
+                or ( 'prepare_runs_data_model_no_geom' in dir(active_engine_module) )
+                or ( 'prepare_runs_data_model_full' in dir(active_engine_module) ) ):
+            print ( "Selected engine module does not contain a \"prepare_runs...\" function" )
+            status = "Error: function \"prepare_runs...\" not found in selected engine"
 
         if len(status) == 0:
             with open(os.path.join(os.path.dirname(bpy.data.filepath), "start_time.txt"), "w") as start_time_file:
@@ -929,15 +931,22 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
             script_dir_path = os.path.dirname(os.path.realpath(__file__))
             script_file_path = os.path.join(script_dir_path, "sim_engines")
 
-            dm = mcell.build_data_model_from_properties ( context, geometry=True )
-
             if "run_engine" in dir(active_runner_module):
                 print ( "Selected Runner supports running the engine directly ... so pass the engine." )
                 active_runner_module.run_engine ( active_engine_module, dm, project_dir )
 
-            elif "prepare_runs" in dir(active_engine_module):
-                print ( "Calling prepare_runs in active_engine_module" )
-                command_list = active_engine_module.prepare_runs ( dm, project_dir )
+            else:
+                command_list = None
+                dm = None
+                print ( "Calling prepare_runs... in active_engine_module" )
+                if 'prepare_runs_no_data_model' in dir(active_engine_module):
+                    command_list = active_engine_module.prepare_runs_no_data_model ( project_dir )
+                elif 'prepare_runs_data_model_no_geom' in dir(active_engine_module):
+                    dm = mcell.build_data_model_from_properties ( context, geometry=False )
+                    command_list = active_engine_module.prepare_runs_data_model_no_geom ( dm, project_dir )
+                elif 'prepare_runs_data_model_full' in dir(active_engine_module):
+                    dm = mcell.build_data_model_from_properties ( context, geometry=True )
+                    command_list = active_engine_module.prepare_runs_data_model_full ( dm, project_dir )
                 
                 if "run_commands" in dir(active_runner_module):
                     active_runner_module.run_commands ( command_list )
