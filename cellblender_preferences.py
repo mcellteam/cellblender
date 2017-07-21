@@ -413,6 +413,16 @@ class MCELL_OT_white_theme(bpy.types.Operator):
         context.user_preferences.themes[0].view_3d.space.gradients.high_gradient = (1,1,1)
         return {'FINISHED'}
 
+class MCELL_OT_save_blprefs(bpy.types.Operator):
+    bl_idname = "mcell.save_blprefs"
+    bl_label = "Save Blender Preferences"
+    bl_description = ("Save all Blender Preferences")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        bpy.ops.wm.save_userpref()
+        return {'FINISHED'}
+
 
 
 class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
@@ -466,6 +476,10 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
     show_extra_options = BoolProperty (
         name="Specialized CellBlender Options", default=False,
         description="Show Additional Options (mostly for debugging)" )
+
+    show_blender_preferences = BoolProperty (
+        name="Handy Blender Preferences", default=False,
+        description="Show handy Blender Settings and Preferences" )
 
     # This provides a quick way to show or hide individual buttons in the SHORT button list
     # Position 0 is generally reserved for the refresh and pin buttons
@@ -612,52 +626,64 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
             else:
                 row.prop(self, "show_extra_options", icon='TRIA_RIGHT', emboss=False)
 
-            layout.separator()
-            layout.box()
 
-            row = layout.row()
-            row.label ( "Handy Blender Settings", icon="BLENDER" )
+            box = layout.box()
 
-            row = layout.row()
-            row.operator ( "mcell.black_3d_theme" )
-            row.operator ( "mcell.white_3d_theme" )
-            row.operator ( "mcell.reset_3d_theme" )
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
+            if self.show_blender_preferences:
+              row.prop(self, "show_blender_preferences", icon='TRIA_DOWN', emboss=False)
 
-            row = layout.row()
-            col = row.column()
-            col.prop ( context.user_preferences.themes[0].view_3d.space.gradients, "high_gradient", text="Background" )
-            col = row.column()
-            col.prop ( context.user_preferences.themes[0].view_3d, "wire", text="Wire" )
+              row = box.row()
+              row.label ( "Blender Settings and Preferences", icon="BLENDER" )
 
-            row = layout.row()
-            col = row.column()
-            col.prop ( context.space_data, "show_only_render", text="Rendering Only" )
-            col = row.column()
-            col.prop ( context.space_data, "show_floor", text="Grid Floor" )
+              row = box.row()
+              row.operator ( "mcell.black_3d_theme" )
+              row.operator ( "mcell.white_3d_theme" )
+              row.operator ( "mcell.reset_3d_theme" )
 
-            row = layout.row()
-            col = row.column()
-            col.prop ( context.space_data, "show_axis_x", text="Show X Axis" )
-            col = row.column()
-            col.prop ( context.space_data, "show_axis_y", text="Show Y Axis" )
-            col = row.column()
-            col.prop ( context.space_data, "show_axis_z", text="Show Z Axis" )
-            row = layout.row()
-            row.prop(mcell.cellblender_preferences, "tab_autocomplete")
+              row = box.row()
+              col = row.column()
+              col.prop ( context.user_preferences.themes[0].view_3d.space.gradients, "high_gradient", text="Background" )
+              col = row.column()
+              col.prop ( context.user_preferences.themes[0].view_3d, "wire", text="Wire" )
 
-            if "use_vertex_buffer_objects" in dir(context.user_preferences.system):
-                row = layout.row()
-                row.prop ( context.user_preferences.system, "use_vertex_buffer_objects", text="Enable Vertex Buffer Objects" )
+              row = box.row()
+              col = row.column()
+              col.prop ( context.space_data, "show_only_render", text="Rendering Only" )
+              col = row.column()
+              col.prop ( context.space_data, "show_floor", text="Grid Floor" )
 
-            row = layout.row()
-            row.prop ( mcell.cellblender_preferences, "backface_culling", text="Enable Backface Culling" )
+              row = box.row()
+              col = row.column()
+              col.prop ( context.space_data, "show_axis_x", text="Show X Axis" )
+              col = row.column()
+              col.prop ( context.space_data, "show_axis_y", text="Show Y Axis" )
+              col = row.column()
+              col.prop ( context.space_data, "show_axis_z", text="Show Z Axis" )
+              row = box.row()
+              row.prop(mcell.cellblender_preferences, "tab_autocomplete")
 
-            row = layout.row()
-            row.prop ( mcell.cellblender_preferences, "double_sided" )
+              if "use_vertex_buffer_objects" in dir(context.user_preferences.system):
+                  row = box.row()
+                  row.prop ( context.user_preferences.system, "use_vertex_buffer_objects", text="Enable Vertex Buffer Objects" )
 
-            row = layout.row()
-            row.prop ( context.user_preferences.inputs, "view_rotate_method" )
-            
+              row = box.row()
+              row.prop ( mcell.cellblender_preferences, "backface_culling", text="Enable Backface Culling" )
+
+              row = box.row()
+              row.prop ( mcell.cellblender_preferences, "double_sided" )
+
+              row = box.row()
+              row.prop ( context.user_preferences.inputs, "view_rotate_method" )
+
+              row = box.row()
+              row.operator ( "mcell.save_blprefs" )
+
+            else:
+                row.prop(self, "show_blender_preferences", icon='BLENDER', emboss=False)
+
+
 
     def draw_panel ( self, context, panel ):
         """ Create a layout from the panel and draw into it """
