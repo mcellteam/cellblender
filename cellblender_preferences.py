@@ -383,6 +383,36 @@ class MCELL_OT_set_check_bionetgen_location(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
 
+class MCELL_OT_reset_theme(bpy.types.Operator):
+    bl_idname = "mcell.reset_3d_theme"
+    bl_label = "Reset 3D Theme"
+    bl_description = ("Reset the 3D window Theme to defaults")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        bpy.ops.ui.reset_default_theme()
+        return {'FINISHED'}
+
+class MCELL_OT_black_theme(bpy.types.Operator):
+    bl_idname = "mcell.black_3d_theme"
+    bl_label = "Black Background"
+    bl_description = ("Set the 3D window Theme background to black")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        context.user_preferences.themes[0].view_3d.space.gradients.high_gradient = (0,0,0)
+        return {'FINISHED'}
+
+class MCELL_OT_white_theme(bpy.types.Operator):
+    bl_idname = "mcell.white_3d_theme"
+    bl_label = "White Background"
+    bl_description = ("Set the 3D window Theme background to white")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        context.user_preferences.themes[0].view_3d.space.gradients.high_gradient = (1,1,1)
+        return {'FINISHED'}
+
 
 
 class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
@@ -437,7 +467,10 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
         name="Show Extra Options", default=False,
         description="Show Additional Options (mostly for debugging)" )
 
-    show_button_num = BoolVectorProperty ( size=16, default=[True for i in range(16)] )
+    # This provides a quick way to show or hide individual buttons in the SHORT button list
+    # Position 0 is generally reserved for the refresh and pin buttons
+    # All other buttons should start at 1 and progress forward from left to right
+    show_button_num = BoolVectorProperty ( size=17, default=[True for i in range(17)] )
 
 
     show_old_scene_panels = BoolProperty(
@@ -525,16 +558,8 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
                     text="Python Binary: " + self.python_binary,
                     icon='FILE_TICK')
 
-            # This preference is now shown in the run panel where it is more appropriate
-            #row = layout.row()
-            #row.prop(mcell.cellblender_preferences, "decouple_export_run")
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "invalid_policy")
-
-            layout.separator()
-
-            row = layout.row()
-            row.prop ( context.user_preferences.inputs, "view_rotate_method" )
 
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "bionetgen_mode")
@@ -548,6 +573,38 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "developer_mode")
 
+            layout.separator()
+            layout.box()
+            layout.separator()
+
+            row = layout.row()
+            row.operator ( "mcell.reset_3d_theme" )
+            row.operator ( "mcell.black_3d_theme" )
+            row.operator ( "mcell.white_3d_theme" )
+            # C.user_preferences.themes[0].view_3d.space.gradients.high_gradient
+            # Color((0.22745099663734436, 0.22745099663734436, 0.22745099663734436))
+
+            row = layout.row()
+            col = row.column()
+            col.prop ( context.user_preferences.themes[0].view_3d.space.gradients, "high_gradient", text="Background" )
+            col = row.column()
+            col.prop ( context.user_preferences.themes[0].view_3d, "wire", text="Wire" )
+
+            row = layout.row()
+            col = row.column()
+            col.prop ( context.space_data, "show_only_render", text="Rendering Only" )
+            col = row.column()
+            col.prop ( context.space_data, "show_floor", text="Grid Floor" )
+
+            row = layout.row()
+            col = row.column()
+            col.prop ( context.space_data, "show_axis_x", text="Show X Axis" )
+            col = row.column()
+            col.prop ( context.space_data, "show_axis_y", text="Show Y Axis" )
+            col = row.column()
+            col.prop ( context.space_data, "show_axis_z", text="Show Z Axis" )
+
+
             if "use_vertex_buffer_objects" in dir(context.user_preferences.system):
                 row = layout.row()
                 row.prop ( context.user_preferences.system, "use_vertex_buffer_objects", text="Enable Vertex Buffer Objects" )
@@ -557,6 +614,11 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
             row.prop ( mcell.cellblender_preferences, "double_sided" )
+
+            row = layout.row()
+            row.prop ( context.user_preferences.inputs, "view_rotate_method" )
+
+            layout.separator()
 
             box = layout.box()
 
@@ -585,10 +647,10 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
                 row.prop(mcell.cellblender_preferences, "debug_level")
 
 
-                #row = box.row()
-                #row.label ( "Enable/Disable individual short menu buttons:" )
-                #row = box.row()
-                #row.prop(mcell.cellblender_preferences, "show_button_num", text="")
+                row = box.row()
+                row.label ( "Enable/Disable individual short menu buttons:" )
+                row = box.row()
+                row.prop(mcell.cellblender_preferences, "show_button_num", text="")
 
 
             else:
