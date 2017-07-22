@@ -37,7 +37,7 @@ parameter_layout = [
   ['Print Information', 'Reset']
 ]
 
-def prepare_runs ( data_model, project_dir, data_layout=None ):
+def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   # Return a list of run command dictionaries.
   # Each run command dictionary must contain a "cmd" key and a "wd" key.
   # The cmd key will refer to a command list suitable for popen.

@@ -22,14 +22,14 @@ import os
 import subprocess
 import sys
 
-plug_code = "SGE"
-plug_name = "Sun Grid Engine"
+plug_code = "PBS"
+plug_name = "Portable Batch System"
 
 def term_all():
     print ( "Terminating all jobs ..." )
 
 def info():
-    print ( "Print SGE Information" )
+    print ( "Print PBS Information" )
 
 parameter_dictionary = {
   'Submit Host': {'val': "", 'desc':"Host for SGE Job Submission"},

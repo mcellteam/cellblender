@@ -35,7 +35,7 @@ Usage: mcell [options] mdl_file_name
 
 # Name of this engine to display in the list of choices (Both should be unique within a CellBlender installation)
 plug_code = "MCELL3DM"
-plug_name = "MCell 3 (Data Model)"
+plug_name = "MCell 3"
 
 def print_info():
   global parameter_dictionary
@@ -96,7 +96,7 @@ parameter_layout = [
 ]
 
 
-def prepare_runs ( data_model, project_dir, data_layout=None ):
+def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   """ Arguments to:  run_mcell_sweep ( sys_argv, data_model=None )
     arg_parser = argparse.ArgumentParser(description='Run MCell with appropriate arguments')
