@@ -168,7 +168,7 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
 
           #  mol_file_dir comes from directory associated with saved .blend file
           mol_viz_top_level_dir = None
-          files_path = mcell_files_path()
+          files_path = mcell_files_path()  # This will be the full path from "/"
 
           # Check to see if the data is in an output_data directory or not
 
@@ -1117,7 +1117,13 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         mv_dm['seed_list'] = mv_seed_list
 
         mv_dm['active_seed_index'] = self.active_mol_viz_seed_index
-        mv_dm['file_dir'] = self.mol_file_dir
+
+        # Don't save the actual mol_file_dir, but save the path relative to this blend file.
+        # mv_dm['file_dir'] = self.mol_file_dir
+
+        real_mol_file_dir = os.path.realpath(self.mol_file_dir)
+        real_blend_file_dir = os.path.split(os.path.realpath(bpy.data.filepath))[0]
+        mv_dm['file_dir'] = os.path.relpath(real_mol_file_dir,real_blend_file_dir)
 
         # mv_file_list = []
         # for s in self.mol_file_list:
@@ -1193,7 +1199,11 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
             
         self.active_mol_viz_seed_index = dm['active_seed_index']
 
-        self.mol_file_dir = dm['file_dir']
+        # Don't restore the actual mol_file_dir, but append the blend file path to the relative file_dir.
+        # self.mol_file_dir = dm['file_dir']
+
+        real_blend_file_dir = os.path.split(os.path.realpath(bpy.data.filepath))[0]
+        self.mol_file_dir = os.path.join(real_blend_file_dir,dm['file_dir'])
 
         #for s in dm["file_list"]:
         #    new_item = self.mol_file_list.add()
