@@ -1,10 +1,18 @@
 import os
 import subprocess
+import time
 import sys
 import pickle
 import shutil
 
 import cellblender
+import cellblender_utils
+from cellblender.cellblender_utils import mcell_files_path
+
+import cellblender.sim_engines as engine_manager
+import cellblender.sim_runners as runner_manager
+
+
 from . import data_model_to_mdl_3
 from . import run_data_model_mcell_3
 
@@ -36,133 +44,149 @@ plug_code = "MCELL3"
 plug_name = "MCell 3 with Dynamic Geometry"
 
 def print_info():
-  global parameter_dictionary
-  print ( 30*'==' + " Engine Parameters " + 30*'==' )
-  for k in sorted(parameter_dictionary.keys()):
-    print ( "" + k + " = " + str(parameter_dictionary[k]) )
-  print ( 30*'==' + "===================" + 30*'==' )
-  print ( '\n' )
+    global parameter_dictionary
+    print ( 30*'==' + " Engine Parameters " + 30*'==' )
+    for k in sorted(parameter_dictionary.keys()):
+        print ( "" + k + " = " + str(parameter_dictionary[k]) )
+    print ( 30*'==' + "===================" + 30*'==' )
+    print ( '\n' )
 
 def print_version():
-  global parameter_dictionary
-  print_info()
-  subprocess.Popen ( [parameter_dictionary['MCell Path']['val'], "-version"] )
+    global parameter_dictionary
+    print_info()
+    subprocess.Popen ( [parameter_dictionary['MCell Path']['val'], "-version"] )
 
 def print_full_version():
-  global parameter_dictionary
-  print_info()
-  subprocess.Popen ( [parameter_dictionary['MCell Path']['val'], "-fullversion"] )
+    global parameter_dictionary
+    print_info()
+    subprocess.Popen ( [parameter_dictionary['MCell Path']['val'], "-fullversion"] )
 
 def print_help():
-  global parameter_dictionary
-  print_info()
-  subprocess.Popen ( [parameter_dictionary['MCell Path']['val'], "-help"] )
+    global parameter_dictionary
+    print_info()
+    subprocess.Popen ( [parameter_dictionary['MCell Path']['val'], "-help"] )
 
 
 
 def reset():
-  global parameter_dictionary
-  print ( "Resetting all Engine Parameters" )
-  parameter_dictionary['Log File']['val'] = ""
-  parameter_dictionary['Error File']['val'] = ""
+    global parameter_dictionary
+    print ( "Resetting all Engine Parameters" )
+    parameter_dictionary['Log File']['val'] = ""
+    parameter_dictionary['Error File']['val'] = ""
 
 # Get data from Blender / CellBlender
 import bpy
 mcell_path = ""
 try:
-  mcell_path = bpy.context.scene.mcell.cellblender_preferences.mcell_binary
+    mcell_path = bpy.context.scene.mcell.cellblender_preferences.mcell_binary
 except:
-  mcell_path = ""
+    mcell_path = ""
 
 
 # List of parameters as dictionaries - each with keys for 'name', 'desc', 'def', and optional 'as':
 parameter_dictionary = {
-  'MCell Path': {'val': mcell_path, 'as':'filename', 'desc':"MCell Path", 'icon':'SCRIPTWIN'},
-  'Log File': {'val':"", 'as':'filename', 'desc':"Log File name", 'icon':'EXPORT'},
-  'Error File': {'val':"", 'as':'filename', 'desc':"Error File name", 'icon':'EXPORT'},
-  'Version': {'val': print_version, 'desc':"Print Version"},
-  'Full Version': {'val': print_full_version, 'desc':"Print Full Version"},
-  'Help': {'val': print_help, 'desc':"Print Help"},
-  'Reset': {'val': reset, 'desc':"Reset everything"},
-  'Output Detail (0-100)': {'val': 20, 'desc':"Output Detail"}  # This is used below but may not be shown as a user option
+    'MCell Path': {'val': mcell_path, 'as':'filename', 'desc':"MCell Path", 'icon':'SCRIPTWIN'},
+    'Log File': {'val':"", 'as':'filename', 'desc':"Log File name", 'icon':'EXPORT'},
+    'Error File': {'val':"", 'as':'filename', 'desc':"Error File name", 'icon':'EXPORT'},
+    'Version': {'val': print_version, 'desc':"Print Version"},
+    'Full Version': {'val': print_full_version, 'desc':"Print Full Version"},
+    'Help': {'val': print_help, 'desc':"Print Help"},
+    'Reset': {'val': reset, 'desc':"Reset everything"},
+    'Output Detail (0-100)': {'val': 20, 'desc':"Output Detail"}  # This is used below but may not be shown as a user option
 }
 
 parameter_layout = [
-  ['MCell Path'],
-  ['Log File', 'Error File' ],
-  ['Version', 'Full Version', 'Help', 'Reset']
+    ['MCell Path'],
+    ['Log File', 'Error File' ],
+    ['Version', 'Full Version', 'Help', 'Reset']
 ]
 
 
-def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
+def prepare_runs_no_data_model ( project_dir ):
 
-  """ Arguments to:  run_mcell_sweep ( sys_argv, data_model=None )
-    arg_parser = argparse.ArgumentParser(description='Run MCell with appropriate arguments')
-    arg_parser.add_argument ( '-dm', '--data_model_file_name',     type=str, default='',        help='the file name of the data model to run' )
-    arg_parser.add_argument ( '-pd', '--proj_dir',        type=str, default='',        help='the directory where the program will run' )
-    arg_parser.add_argument ( '-b',  '--binary',          type=str, default='mcell',   help='full path of binary file to run' )
-    arg_parser.add_argument ( '-fs', '--first_seed',      type=int, default=1,         help='the first seed in a series of seeds to run' )
-    arg_parser.add_argument ( '-ls', '--last_seed',       type=int, default=1,         help='the last seed in a series of seeds to run' )
-    arg_parser.add_argument ( '-lf', '--log_file_opt',    type=str, default='console', help='the log file option for mcell' )
-    arg_parser.add_argument ( '-ef', '--error_file_opt',  type=str, default='console', help='the error file option for mcell' )
-    arg_parser.add_argument ( '-np', '--num_processors',  type=int, default=8,         help='the number of processors' )
-    arg_parser.add_argument ( '-rl', '--run_limit',       type=int, default=-1,        help='limit the total number of runs' )
-    arg_parser.add_argument ( '-rt', '--runner_type',     type=str, default='mpp',     help='run mechanism: mpp or sge (mpp=MultiProcessingPool, sge=SunGridEngine)' )
-    arg_parser.add_argument ( '-nl', '--node_list',       type=str, default='',        help='list of comma-separated nodes to run on with SGE' )
-    arg_parser.add_argument ( '-mm', '--min_memory',      type=int, default=0,         help='minimum memory in Gigabytes' )
-    arg_parser.add_argument ( '-em', '--email_addr',      type=str, default='',        help='email address for notifications of job results' )
-    arg_parser.add_argument ( '-gh', '--grid_host',       type=str, default='',        help='grid engine host name' )
-  """
+    print ( "MCell 3 Engine is preparing runs with no data model!!" )
 
-  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    command_list = []
 
-  fs = data_model['simulation_control']['start_seed']
-  ls = data_model['simulation_control']['end_seed']
+    context = bpy.context
 
-  run_cmd_list = run_data_model_mcell_3.run_mcell_sweep(['-rt','extern','-pd',project_dir,'-b',parameter_dictionary['MCell Path']['val'],'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
+    mcell = context.scene.mcell
+    mcell.run_simulation.last_simulation_run_time = str(time.time())
 
-  print ( "Run Cmds prepared by the mcell3 engine:" )
-  print ( "  = " + str(run_cmd_list) )
-  if len(run_cmd_list) > 0:
-    for run_cmd in run_cmd_list:
-      print ( "  " + str(run_cmd) )
+    binary_path = mcell.cellblender_preferences.mcell_binary
+    mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
-  print ( "Currently running from the engine ..." )
+    start = int(mcell.run_simulation.start_seed.get_value())
+    end = int(mcell.run_simulation.end_seed.get_value())
+    mcell_processes_str = str(mcell.run_simulation.mcell_processes)
+    mcell_binary = mcell.cellblender_preferences.mcell_binary
+    # Force the project directory to be where the .blend file lives
+    mcell_files = mcell_files_path()
+    project_dir = os.path.join( mcell_files, "output_data" )
+    status = ""
 
-  run_data_model_mcell_3.run_mcell_sweep(['-pd',project_dir,'-b',parameter_dictionary['MCell Path']['val'],'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
+    if not mcell.cellblender_preferences.decouple_export_run:
+        print ( "MCell 3 Engine is exporting the project" )
+        bpy.ops.mcell.export_project()
+        print ( "MCell 3 Engine is done exporting the project" )
+
+    if (mcell.run_simulation.error_list and
+            mcell.cellblender_preferences.invalid_policy == 'dont_run'):
+        pass
+    else:
+        react_dir = os.path.join(project_dir, "react_data")
+        if (os.path.exists(react_dir) and
+                mcell.run_simulation.remove_append == 'remove'):
+            shutil.rmtree(react_dir)
+        if not os.path.exists(react_dir):
+            os.makedirs(react_dir)
+
+        viz_dir = os.path.join(project_dir, "viz_data")
+        if (os.path.exists(viz_dir) and
+                mcell.run_simulation.remove_append == 'remove'):
+            shutil.rmtree(viz_dir)
+        if not os.path.exists(viz_dir):
+            os.makedirs(viz_dir)
+
+        base_name = mcell.project_settings.base_name
+
+        error_file_option = mcell.run_simulation.error_file
+        log_file_option = mcell.run_simulation.log_file
+        script_dir_path = os.path.dirname(os.path.realpath(__file__))
+
+        engine_manager.write_default_data_layout(mcell_files, start, end)
+
+        for sim_seed in range(start,end+1):
+            new_command = [ mcell_binary, ("-seed %s" % str(sim_seed)), os.path.join(project_dir, ("%s.main.mdl" % base_name)) ]
+
+            cmd_entry = {}
+            cmd_entry['cmd'] = mcell_binary
+            cmd_entry['wd'] = project_dir
+            cmd_entry['args'] = [ "-seed %s" % str(sim_seed),os.path.join(project_dir, ("%s.main.mdl" % base_name)) ]
+            cmd_entry['stdout'] = ""
+            cmd_entry['stderr'] = ""
+            command_list.append ( cmd_entry )
+
+        """
+        sp_list = sim_module.run_commands ( commands, cwd=project_dir )
+
+        for sp in sp_list:
+            cellblender.simulation_popen_list.append(sp)
 
 
+        if ((end - start) == 0):
+            simulation_process.name = ("PID: %d, Seed: %d" %
+                                        (sp_list[0].pid, start))
+        else:
+            simulation_process.name = ("PID: %d-%d, Seeds: %d-%d" %
+                                        (sp_list[0].pid, sp_list[-1].pid, start, end))
 
-  # Return a list of run command dictionaries.
-  # Each run command dictionary must contain a "cmd" key, an "args" key, and a "wd" key.
-  # The cmd key will refer to a command string suitable for popen.
-  # The args key will refer to an argument list suitable for popen.
-  # The wd key will refer to a working directory string.
-  # Each run command dictionary may contain any other keys helpful for post-processing.
-  # The run command dictionary list will be passed on to the postprocess_runs function.
+        """
+    # mcell.run_simulation.status = status
 
-  # The data_layout should be a dictionary something like this:
+    print ( "MCell 3 Engine is returning a command list." )
 
-  #  {
-  #   "version": 2,
-  #   "data_layout": [
-  #    ["/DIR", ["output_data"]],
-  #    ["dc_a", [1e-06, 1e-05]],
-  #    ["nrel", [100.0, 200.0, 300.0]],
-  #    ["/FILE_TYPE", ["react_data", "viz_data"]],
-  #    ["/SEED", [100, 101]]
-  #   ]
-  #  }
-
-  # That dictionary describes the directory structure that CellBlender expects to find on the disk
-
-  command_list = []
-
-  output_detail = parameter_dictionary['Output Detail (0-100)']['val']
-
-  if output_detail > 0: print ( "Inside MCell3 Engine, project_dir=" + project_dir )
-
-  return ( command_list )
+    return ( command_list )
 
 
 def get_progress_message_and_status ( stdout_txt ):
@@ -177,7 +201,7 @@ def get_progress_message_and_status ( stdout_txt ):
           percent = int((last_iter/total_iter)*100)
           if (last_iter == total_iter) and (total_iter != 0):
               task_complete = True
-          progress_message = "MCell3: %d%%" % (percent)
+          progress_message = "MCell3 Dynamic Geometry: %d%%" % (percent)
           break
   return ( progress_message, task_complete )
 

@@ -107,19 +107,22 @@ def run_commands ( commands ):
     context = bpy.context
     print ( "run_commands" )
     for cmd in commands:
-      print ( "  CMD: " + str(cmd['cmd']) + " " + str(cmd['args']) )
-      """
-      CMD: {
-        'args': ['print_detail=20',
-                 'proj_path=/.../intro/2017/2017_07/2017_07_11/queue_runner_tests_files/mcell',
-                 'seed=1',
-                 'data_model=dm.json'],
-        'cmd': '/.../blender/2.78/scripts/addons/cellblender/sim_engines/limited_cpp/mcell_main',
-        'wd':  '/.../intro/2017/2017_07/2017_07_11/queue_runner_tests_files/mcell',
-        'stdout': '',
-        'stderr': ''
-      }
-      """
+        if type(cmd) == type('str'):
+            print ( "  CMD: " + str(cmd) )
+        elif type(cmd) == type({'a':1}):
+            print ( "  CMD: " + str(cmd['cmd']) + " " + str(cmd['args']) )
+            """
+            CMD: {
+              'args': ['print_detail=20',
+                       'proj_path=/.../intro/2017/2017_07/2017_07_11/queue_runner_tests_files/mcell',
+                       'seed=1',
+                       'data_model=dm.json'],
+              'cmd': '/.../blender/2.78/scripts/addons/cellblender/sim_engines/limited_cpp/mcell_main',
+              'wd':  '/.../intro/2017/2017_07/2017_07_11/queue_runner_tests_files/mcell',
+              'stdout': '',
+              'stderr': ''
+            }
+            """
 
     mcell = context.scene.mcell
     # Set the Blender property from the local for now using the older code
@@ -142,7 +145,8 @@ def run_commands ( commands ):
 
     if python_path:
         if not mcell.cellblender_preferences.decouple_export_run:
-            bpy.ops.mcell.export_project()
+            # bpy.ops.mcell.export_project()
+            pass # This is already being done by the engine!!!
 
         if (mcell.run_simulation.error_list and
                 mcell.cellblender_preferences.invalid_policy == 'dont_run'):
@@ -209,6 +213,7 @@ def run_commands ( commands ):
               #mcell_args = '-seed %d %s' % (seed, mdl_filename)
               make_texts = mcell.run_simulation.save_text_logs
 
+              proc = None
               if type(cmd) == type('str'):
                   proc = cellblender.simulation_queue.add_task(cmd, "", os.path.join(project_dir, "output_data"), make_texts)
               elif type(cmd) == type({'a':1}):

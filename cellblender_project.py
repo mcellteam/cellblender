@@ -149,7 +149,6 @@ class MCellExportProjectPropertyGroup(bpy.types.PropertyGroup):
         print ( "Removing all Export Project Properties... no collections to remove." )
 
 
-
 class MCELL_OT_export_project(bpy.types.Operator):
     bl_idname = "mcell.export_project"
     bl_label = "Export CellBlender Project"

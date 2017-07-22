@@ -51,10 +51,11 @@ def find_in_path(program_name):
             return full_name
     return None
 
-def run_engine ( engine_module, data_model, project_dir ):
-    print ( "Calling prepare_runs in active_engine_module" )
-    command_list = engine_module.prepare_runs ( data_model, project_dir )
-    return run_commands ( command_list )
+# Temporarily disable this because the engines have changed.
+#def run_engine ( engine_module, data_model, project_dir ):
+#    print ( "Calling prepare_runs in active_engine_module" )
+#    command_list = engine_module.prepare_runs ( data_model, project_dir )
+#    return run_commands ( command_list )
 
 def run_commands ( commands ):
     sp_list = []
