@@ -933,6 +933,7 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
 
             if "run_engine" in dir(active_runner_module):
                 print ( "Selected Runner supports running the engine directly ... so pass the engine." )
+                dm = mcell.build_data_model_from_properties ( context, geometry=True )
                 active_runner_module.run_engine ( active_engine_module, dm, project_dir )
 
             else:
