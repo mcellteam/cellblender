@@ -33,7 +33,7 @@ Usage: mcell [options] mdl_file_name
 
 # Name of this engine to display in the list of choices (Both should be unique within a CellBlender installation)
 plug_code = "MCELL3"
-plug_name = "MCell 3"
+plug_name = "MCell 3 with Dynamic Geometry"
 
 def print_info():
   global parameter_dictionary
