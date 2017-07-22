@@ -467,7 +467,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
         description="Show Additional Options (mostly for debugging)" )
 
     show_blender_preferences = BoolProperty (
-        name="Handy Blender Preferences", default=False,
+        name="Selected Blender Preferences", default=False,
         description="Show handy Blender Settings and Preferences" )
 
     # This provides a quick way to show or hide individual buttons in the SHORT button list
@@ -623,8 +623,40 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
             if self.show_blender_preferences:
               row.prop(self, "show_blender_preferences", icon='TRIA_DOWN', emboss=False)
 
+
               row = box.row()
-              row.label ( "Blender Settings and Preferences", icon="BLENDER" )
+              row.label ( "Blender File Preferences", icon="BLENDER" )
+
+              row = box.row()
+              row.prop ( context.scene.world, "horizon_color", text="World Horizon" )
+
+              row = box.row()
+              col = row.column()
+              col.prop ( context.space_data, "show_world", text="Use World Background" )
+              col = row.column()
+              col.prop ( context.space_data, "show_only_render", text="Only Show Rendered" )
+
+              row = box.row()
+              col = row.column()
+              col.prop ( mcell.cellblender_preferences, "backface_culling", text="Enable Backface Culling" )
+              col = row.column()
+              col.prop ( mcell.cellblender_preferences, "double_sided" )
+
+              row = box.row()
+              split = row.split(percentage=0.55)
+              split.prop(context.space_data, "show_floor", text="Grid Floor")
+
+              row = split.row(align=True)
+              row.prop(context.space_data, "show_axis_x", text="X", toggle=True)
+              row.prop(context.space_data, "show_axis_y", text="Y", toggle=True)
+              row.prop(context.space_data, "show_axis_z", text="Z", toggle=True)
+
+
+              box.separator()
+
+
+              row = box.row()
+              row.label ( "Blender Global Preferences", icon="BLENDER" )
 
               row = box.row()
               row.operator ( "mcell.black_3d_theme" )
@@ -633,23 +665,10 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
               row = box.row()
               col = row.column()
-              col.prop ( context.user_preferences.themes[0].view_3d.space.gradients, "high_gradient", text="Background" )
+              col.prop ( context.user_preferences.themes[0].view_3d.space.gradients, "high_gradient", text="Background Color" )
               col = row.column()
-              col.prop ( context.user_preferences.themes[0].view_3d, "wire", text="Wire" )
+              col.prop ( context.user_preferences.themes[0].view_3d, "wire", text="Wire Color (unselected)" )
 
-              row = box.row()
-              col = row.column()
-              col.prop ( context.space_data, "show_only_render", text="Rendering Only" )
-              col = row.column()
-              col.prop ( context.space_data, "show_floor", text="Grid Floor" )
-
-              row = box.row()
-              col = row.column()
-              col.prop ( context.space_data, "show_axis_x", text="Show X Axis" )
-              col = row.column()
-              col.prop ( context.space_data, "show_axis_y", text="Show Y Axis" )
-              col = row.column()
-              col.prop ( context.space_data, "show_axis_z", text="Show Z Axis" )
               row = box.row()
               row.prop(mcell.cellblender_preferences, "tab_autocomplete")
 
@@ -658,16 +677,11 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
                   row.prop ( context.user_preferences.system, "use_vertex_buffer_objects", text="Enable Vertex Buffer Objects" )
 
               row = box.row()
-              row.prop ( mcell.cellblender_preferences, "backface_culling", text="Enable Backface Culling" )
-
-              row = box.row()
-              row.prop ( mcell.cellblender_preferences, "double_sided" )
-
-              row = box.row()
               row.prop ( context.user_preferences.inputs, "view_rotate_method" )
 
               row = box.row()
-              row.operator ( "wm.save_userpref", text="Save Blender Preferences" )
+              row.operator ( "wm.save_userpref", text="Save Blender Global Preferences" )
+
 
             else:
                 row.prop(self, "show_blender_preferences", icon='BLENDER', emboss=False)
