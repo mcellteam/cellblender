@@ -12,9 +12,10 @@ from cellblender.cellblender_utils import mcell_files_path
 import cellblender.sim_engines as engine_manager
 import cellblender.sim_runners as runner_manager
 
+from . import export_project_mcell_3
 
-from . import data_model_to_mdl_3
-from . import run_data_model_mcell_3
+# from . import data_model_to_mdl_3
+# from . import run_data_model_mcell_3
 
 print ( "Executing MCell Simulation" )
 
@@ -127,7 +128,8 @@ def prepare_runs_no_data_model ( project_dir ):
 
     if not mcell.cellblender_preferences.decouple_export_run:
         print ( "MCell 3 Engine is exporting the project" )
-        bpy.ops.mcell.export_project()
+        export_project_mcell_3.export_project ( context )
+        # bpy.ops.mcell.export_project()
         print ( "MCell 3 Engine is done exporting the project" )
 
     if (mcell.run_simulation.error_list and
