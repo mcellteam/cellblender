@@ -144,13 +144,25 @@ cellblender_info = {
         "sim_engines"+os.sep+"makefile",
         "sim_engines"+os.sep+"__init__.py",
 
-        "sim_engines"+os.sep+"limited_python"+os.sep+"makefile",
-        "sim_engines"+os.sep+"limited_python"+os.sep+"__init__.py",
-        "sim_engines"+os.sep+"limited_python"+os.sep+"limited_python_sim.py",
+
 
         "sim_engines"+os.sep+"mcell3"+os.sep+"makefile",
         "sim_engines"+os.sep+"mcell3"+os.sep+"__init__.py",
         "sim_engines"+os.sep+"mcell3"+os.sep+"export_project_mcell_3.py",
+
+        "sim_engines"+os.sep+"mcell3"+os.sep+"export_mcell_mdl.py",
+        "sim_engines"+os.sep+"mcell3"+os.sep+"import_mcell_mdl.py",
+        "sim_engines"+os.sep+"mcell3"+os.sep+"import_mcell_mdl_pyparsing.py",
+        "sim_engines"+os.sep+"mcell3"+os.sep+"import_shared.py",
+        "sim_engines"+os.sep+"mcell3"+os.sep+"pyparsing.py",
+        #        "sim_engines"+os.sep+"mcell3"+os.sep+"mdlmesh_parser.py",
+        "sim_engines"+os.sep+"mcell3"+os.sep+"mdlobj.py",
+
+
+
+        "sim_engines"+os.sep+"limited_python"+os.sep+"makefile",
+        "sim_engines"+os.sep+"limited_python"+os.sep+"__init__.py",
+        "sim_engines"+os.sep+"limited_python"+os.sep+"limited_python_sim.py",
 
         "sim_engines"+os.sep+"mcell3dm"+os.sep+"makefile",
         "sim_engines"+os.sep+"mcell3dm"+os.sep+"__init__.py",
