@@ -9,6 +9,9 @@ import cellblender
 import cellblender_utils
 from cellblender.cellblender_utils import mcell_files_path
 
+from bpy.props import CollectionProperty, StringProperty, BoolProperty, EnumProperty
+from bpy_extras.io_utils import ImportHelper, ExportHelper
+
 import cellblender.sim_engines as engine_manager
 
 from . import export_project_mcell_3
@@ -174,6 +177,113 @@ def get_progress_message_and_status ( stdout_txt ):
 #def postprocess_runs ( data_model, command_strings ):
 #  # Move and/or transform data to match expected CellBlender file structure as required
 #  pass
+
+
+
+class ImportMCellMDL(bpy.types.Operator, ImportHelper):
+    '''Load an MCell MDL geometry file with regions'''
+    bl_idname = "import_mdl_mesh.mdl"
+    bl_label = "Import MCell MDL"
+    bl_options = {'UNDO'}
+
+    files = CollectionProperty(name="File Path",
+                          description="File path used for importing "
+                                      "the MCell MDL file",
+                          type=bpy.types.OperatorFileListElement)
+
+    directory = StringProperty()
+
+    filename_ext = ".mdl"
+    filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
+
+    add_to_model_objects = BoolProperty(
+        name="Add to Model Objects",
+        description="Automatically add all meshes to the Model Objects list",
+        default=True,)
+
+    def execute(self, context):
+        paths = [os.path.join(self.directory, name.name) for name in self.files]
+        if not paths:
+            paths.append(self.filepath)
+
+        # Attempt to use fast swig importer (assuming make was successful)
+        try:
+            from . import import_mcell_mdl
+            from . import mdlmesh_parser
+
+            for path in paths:
+                import_mcell_mdl.load(
+                    self, context, path, self.add_to_model_objects)
+
+        # Fall back on slow pure python parser (pyparsing)
+        except ImportError:
+            from . import import_mcell_mdl_pyparsing
+
+            for path in paths:
+                import_mcell_mdl_pyparsing.load(
+                    self, context, path, self.add_to_model_objects)
+
+
+        return {'FINISHED'}
+
+
+class ExportMCellMDL(bpy.types.Operator, ExportHelper):
+    '''Export selected mesh objects as MCell MDL geometry with regions'''
+    bl_idname = "export_mdl_mesh.mdl"
+    bl_label = "Export MCell MDL"
+
+    print ( ":::::::::io_mesh_mcell_mdl/__init__.py/ExportMCellMDL initialization" )
+
+    filename_ext = ".mdl"
+    filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
+
+    @classmethod
+    def poll(cls, context):
+        #print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL.poll()" )
+        return len([obj for obj in context.selected_objects if obj.type == 'MESH']) != 0
+
+    def execute(self, context):
+        #print ( "io_mesh_mcell_mdl/__init__.py/ExportMCellMDL.execute()" )
+        filepath = self.filepath
+        filepath = bpy.path.ensure_ext(filepath, self.filename_ext)
+        from . import export_mcell_mdl
+        object_list = [obj for obj in context.selected_objects if obj.type == 'MESH']
+        with open(filepath, "w", encoding="utf8", newline="\n") as out_file:
+            export_mcell_mdl.save_geometry(context, out_file, object_list)
+
+        return {'FINISHED'}
+
+
+def menu_func_import(self, context):
+    self.layout.operator(ImportMCellMDL.bl_idname, text="MCell MDL Geometry (.mdl)")
+
+
+def menu_func_export(self, context):
+    self.layout.operator(ExportMCellMDL.bl_idname, text="MCell MDL Geometry (.mdl)")
+
+
+
+def register_blender_classes():
+    print ( "Registering MCell 3 Engine classes" )
+    bpy.utils.register_class(ImportMCellMDL)
+    bpy.utils.register_class(ExportMCellMDL)
+    bpy.types.INFO_MT_file_import.append(menu_func_import)
+    bpy.types.INFO_MT_file_export.append(menu_func_export)
+    print ( "Done Registering" )
+
+def unregister_this_class(this_class):
+    try:
+      bpy.utils.unregister_class(this_class)
+    except Exception as ex:
+      pass
+
+def unregister_blender_classes():
+    print ( "UnRegistering MCell 3 Engine classes" )
+    bpy.types.INFO_MT_file_export.remove(menu_func_export)
+    bpy.types.INFO_MT_file_import.remove(menu_func_import)
+    unregister_this_class (ExportMCellMDL)
+    unregister_this_class (ImportMCellMDL)
+    print ( "Done Unregistering" )
 
 
 if __name__ == "__main__":
