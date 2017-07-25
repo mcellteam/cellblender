@@ -47,7 +47,7 @@ def save(context, filepath=""):
         as MDL.
 
     """
-    print("export_mcell_mdl.py/save(context,filepath=\"" + filepath + "\")")
+    print("::::: Engines/MCell 3 ::::: io_mesh_mcell_mdl ::::: Engines/MCell 3 ::::: export_mcell_mdl.py/save(context,filepath=\"" + filepath + "\")")
     with open(filepath, "w", encoding="utf8", newline="\n") as out_file:
         filedir = os.path.dirname(filepath)
         save_wrapper(context, out_file, filedir)
@@ -102,7 +102,7 @@ def save_modular_or_allinone(filedir, main_mdl_file, mdl_filename,
 
     # Save modular (e.g. Scene.molecules.mdl, Scene.reactions.mdl)
     if mcell.export_project.export_format == 'mcell_mdl_modular':
-        print ( "Saving as modular MDL files" )
+        print ( "::::: Engines/MCell 3 ::::: Saving as modular MDL files" )
         main_mdl_file.write("INCLUDE_FILE = \"%s.%s.mdl\"\n\n" %
                        (settings.base_name, mdl_filename))
         filepath = ("%s/%s.%s.mdl" %
@@ -113,7 +113,7 @@ def save_modular_or_allinone(filedir, main_mdl_file, mdl_filename,
             save_function(*args)
     # Or save everything in main mdl (e.g. Scene.main.mdl)
     else:
-        print ( "Saving as one unified MDL file" )
+        print ( "::::: Engines/MCell 3 ::::: Saving as one unified MDL file" )
         args.insert(1, main_mdl_file)
         save_function(*args)
 
@@ -123,6 +123,7 @@ def save_general(mdl_filename, save_function, save_state, unfiltered_item_list):
    
     This function helps reduce boilerplate code.
     """
+    print ( "::::: Engines/MCell 3 ::::: save_general" )
 
     context = bpy.context    
     filedir = save_state['filedir']
@@ -145,6 +146,8 @@ def save_general(mdl_filename, save_function, save_state, unfiltered_item_list):
 def save_partitions(context, out_file):
     """Export partitions"""
 
+    print ( "::::: Engines/MCell 3 ::::: save_partitions" )
+
     mcell = context.scene.mcell
 
     if mcell.partitions.include:
@@ -161,6 +164,8 @@ def save_partitions(context, out_file):
 
 def save_pbc(context, out_file):
     #Export the periodic boundary conditions
+
+    print ( "::::: Engines/MCell 3 ::::: save_pbc" )
 
     mcell = context.scene.mcell
     ptrad = format(mcell.pbc.peri_trad)
@@ -185,6 +190,8 @@ def save_wrapper(context, out_file, filedir):
     It provides a wrapper assembling the final mdl piece by piece.
 
     """
+
+    print ( "::::: Engines/MCell 3 ::::: save_wrapper" )
 
     mcell = context.scene.mcell
     settings = mcell.project_settings
@@ -393,6 +400,8 @@ def save_initialization_commands(context, out_file):
 
     """
 
+    print ( "::::: Engines/MCell 3 ::::: save_initialization_commands" )
+
     mcell = context.scene.mcell
     init = mcell.initialization
     ps = mcell.parameter_system
@@ -532,12 +541,16 @@ def save_initialization_commands(context, out_file):
 def save_object_list(context, out_file, object_list):
     """ Save the list objects to mdl output file """
 
+    print ( "::::: Engines/MCell 3 ::::: save_object_list" )
+
     for item in object_list:
         out_file.write("  %s OBJECT %s {}\n" % (item.name, item.name))
 
 
 def save_release_site_list(context, out_file, release_site_list, mcell):
     """ Save the list of release site to mdl output file. """
+
+    print ( "::::: Engines/MCell 3 ::::: save_release_site_list" )
 
     mol_list = mcell.molecules.molecule_list
     ps = mcell.parameter_system
@@ -622,6 +635,8 @@ def save_release_site_list(context, out_file, release_site_list, mcell):
 def write_parameter_as_mdl_old ( p, out_file, as_expr ):
     """ Writes a single parameter as MDL as either a value or an expression """
 
+    print ( "::::: Engines/MCell 3 ::::: save_parameter_as_mdl_old" )
+
     # Export Parameter:
     if as_expr:
         # Note that some expressions are allowed to be blank which indicates use of the default VALUE
@@ -686,6 +701,9 @@ def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
 # This temporary version uses a flag to force output with Blender's precision
 def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
     # Writes a single parameter as MDL as either a value or an expression
+
+    print ( "::::: Engines/MCell 3 ::::: save_parameter_as_mdl" )
+
     force_blender_precision = False
 
     # Export Parameter:
@@ -726,6 +744,8 @@ def write_parameter_as_mdl ( par_name, p, out_file, as_expr ):
 def save_general_parameters(ps, out_file):
     """ Saves parameter info to mdl output file. """
 
+    print ( "::::: Engines/MCell 3 ::::: save_general_parameters" )
+
     # Export Parameters:
     if ps and ps.general_parameter_list:
                 
@@ -763,6 +783,8 @@ def save_general_parameters(ps, out_file):
 
 def save_molecules(context, out_file, mol_list):
     """ Saves molecule info to mdl output file. """
+
+    print ( "::::: Engines/MCell 3 ::::: save_molecules" )
 
     # Export Molecules:
     out_file.write("DEFINE_MOLECULES\n")
@@ -807,6 +829,8 @@ def save_molecules(context, out_file, mol_list):
 def save_surface_classes(context, out_file, surf_class_list):
     """ Saves surface class info to mdl output file. """
 
+    print ( "::::: Engines/MCell 3 ::::: save_surface_classes" )
+
     mcell = context.scene.mcell
 
     ps = mcell.parameter_system
@@ -843,6 +867,8 @@ def save_surface_classes(context, out_file, surf_class_list):
 
 def save_rel_patterns(context, out_file, release_pattern_list):
     """ Saves release pattern info to mdl output file. """
+
+    print ( "::::: Engines/MCell 3 ::::: save_rel_patterns" )
 
     mcell = context.scene.mcell
 
@@ -885,6 +911,8 @@ def save_rel_patterns(context, out_file, release_pattern_list):
 def save_reactions(context, out_file, rxn_list, filedir):
     """ Saves reaction info to mdl output file. """
 
+    print ( "::::: Engines/MCell 3 ::::: save_reactions" )
+
     out_file.write("DEFINE_REACTIONS\n")
     out_file.write("{\n")
 
@@ -898,6 +926,8 @@ def save_reactions(context, out_file, rxn_list, filedir):
 
 def save_geometry(context, out_file, object_list):
     """ Saves geometry info to mdl output file. """
+
+    print ( "::::: Engines/MCell 3 ::::: save_geometry" )
 
     # Export Model Geometry:
     for object_item in object_list:
@@ -975,6 +1005,8 @@ def save_geometry(context, out_file, object_list):
 def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all, export_all_ascii):
     """ Saves visualizaton output info to mdl output file. """
 
+    print ( "::::: Engines/MCell 3 ::::: save_viz_output_mdl" )
+
     mcell = context.scene.mcell
     settings = mcell.project_settings
     ps = mcell.parameter_system
@@ -1023,6 +1055,8 @@ def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all, export
 
 def save_rxn_output_mdl(context, out_file, rxn_output_list):
     """ Saves reaction output info to mdl output file. """
+
+    print ( "::::: Engines/MCell 3 ::::: save_rxn_output_mdl" )
 
     mcell = context.scene.mcell
     ps = mcell.parameter_system
@@ -1131,6 +1165,8 @@ def save_rxn_output_temp_mdl(context, out_file, rxn_output_list):
 def save_mod_surf_regions(context, out_file, mod_surf_regions_list):
     """ Saves modify surface region info to mdl output file. """
 
+    print ( "::::: Engines/MCell 3 ::::: save_mod_surf_regions" )
+
     out_file.write("MODIFY_SURFACE_REGIONS\n")
     out_file.write("{\n")
     for active_mod_surf_regions in mod_surf_regions_list:
@@ -1161,6 +1197,8 @@ def instance_object_expr(context, expression):
     but perhaps it's fine. Time will tell.
 
     """
+
+    print ( "::::: Engines/MCell 3 ::::: save_object_expr" )
 
     token_spec = [
         ("ID", r"[A-Za-z]+[0-9A-Za-z_.]*(\[[A-Za-z]+[0-9A-Za-z_.]*\])?"),
