@@ -35,8 +35,9 @@ from cellblender import cellblender_utils
 from cellblender import cellblender_objects
 
 from cellblender.cellblender_utils import mcell_files_path
-from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
+# from cellblender.io_mesh_mcell_mdl import export_mcell_mdl
 
+from . import export_mcell_mdl
 
 #from . import parameter_system
 #from . import cellblender_utils
@@ -97,7 +98,7 @@ def write_as_mdl ( obj_name, points, faces, regions_dict, origin=None, file_name
 
 
 def export_project ( context, operator_self=None ):
-    print("MCELL_OT_export_project.execute()")
+    print("export_project_mcell_3.export_project called.")
 
     if context.scene.mcell.cellblender_preferences.lockout_export:
         print ( "Exporting is currently locked out. See the Preferences/ExtraOptions panel." )

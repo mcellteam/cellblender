@@ -229,6 +229,7 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
 
 
     def execute(self, context):
+        print ( "Call to \"execute\" for MCELL_OT_run_simulation operator" )
         mcell = context.scene.mcell
         ps = mcell.parameter_system
         run_sim = mcell.run_simulation
