@@ -10,37 +10,14 @@ import cellblender_utils
 from cellblender.cellblender_utils import mcell_files_path
 
 import cellblender.sim_engines as engine_manager
-import cellblender.sim_runners as runner_manager
 
 from . import export_project_mcell_3
 
-# from . import data_model_to_mdl_3
-# from . import run_data_model_mcell_3
 
 print ( "Executing MCell Simulation" )
 
-
-"""
-MCell 3.3 (commit: 7030a99  date: Thu, 19 May 2016 11:14:16 -0400)
-
-Usage: mcell [options] mdl_file_name
-
-  options:
-     [-help]                  print this help message
-     [-version]               print the program version and exit
-     [-fullversion]           print the detailed program version report and exit
-     [-seed n]                choose random sequence number (default: 1)
-     [-iterations n]          override iterations in mdl_file_name
-     [-logfile log_file_name] send output log to file (default: stdout)
-     [-logfreq n]             output log frequency
-     [-errfile err_file_name] send errors log to file (default: stderr)
-     [-checkpoint_infile checkpoint_file_name]   read checkpoint file
-     [-checkpoint_outfile checkpoint_file_name]  write checkpoint file
-     [-quiet]                 suppress all unrequested output except for errors
-     [-with_checks ('yes'/'no', default 'yes')]   performs check of the geometry for coincident walls
-"""
-
-# Name of this engine to display in the list of choices (Both should be unique within a CellBlender installation)
+# Name of this engine and to display in the list of choices
+# Both should be unique within a CellBlender installation
 plug_code = "MCELL3"
 plug_name = "MCell 3 with Dynamic Geometry"
 
@@ -75,6 +52,7 @@ def reset():
     parameter_dictionary['Log File']['val'] = ""
     parameter_dictionary['Error File']['val'] = ""
 
+
 # Get data from Blender / CellBlender
 import bpy
 mcell_path = ""
@@ -105,7 +83,7 @@ parameter_layout = [
 
 def prepare_runs_no_data_model ( project_dir ):
 
-    print ( "MCell 3 Engine is preparing runs with no data model!!" )
+    print ( "MCell 3 Engine is preparing runs from Blender properties without a data model." )
 
     command_list = []
 
@@ -169,21 +147,6 @@ def prepare_runs_no_data_model ( project_dir ):
             cmd_entry['stderr'] = ""
             command_list.append ( cmd_entry )
 
-        """
-        sp_list = sim_module.run_commands ( commands, cwd=project_dir )
-
-        for sp in sp_list:
-            cellblender.simulation_popen_list.append(sp)
-
-
-        if ((end - start) == 0):
-            simulation_process.name = ("PID: %d, Seed: %d" %
-                                        (sp_list[0].pid, start))
-        else:
-            simulation_process.name = ("PID: %d-%d, Seeds: %d-%d" %
-                                        (sp_list[0].pid, sp_list[-1].pid, start, end))
-
-        """
     # mcell.run_simulation.status = status
 
     print ( "MCell 3 Engine is returning a command list." )
@@ -208,9 +171,9 @@ def get_progress_message_and_status ( stdout_txt ):
   return ( progress_message, task_complete )
 
 
-def postprocess_runs ( data_model, command_strings ):
-  # Move and/or transform data to match expected CellBlender file structure as required
-  pass
+#def postprocess_runs ( data_model, command_strings ):
+#  # Move and/or transform data to match expected CellBlender file structure as required
+#  pass
 
 
 if __name__ == "__main__":
