@@ -7,7 +7,11 @@ import shutil
 
 import cellblender
 import cellblender_utils
+
+import cellblender.cellblender_simulation as cellblender_sim
+
 from cellblender.cellblender_utils import mcell_files_path
+
 
 from bpy.props import CollectionProperty, StringProperty, BoolProperty, EnumProperty
 from bpy_extras.io_utils import ImportHelper, ExportHelper
@@ -79,9 +83,58 @@ parameter_dictionary = {
 
 parameter_layout = [
     ['MCell Path'],
-    ['Log File', 'Error File' ],
-    ['Version', 'Full Version', 'Help', 'Reset']
+    ['Version', 'Full Version', 'Help', 'Reset'],
+    ['Log File', 'Error File' ]
 ]
+
+
+def draw_layout ( self, context, layout ):
+    mcell = context.scene.mcell
+    run_sim = mcell.run_simulation
+    ps = mcell.parameter_system
+
+    row = layout.row()
+    run_sim.start_seed.draw(layout,ps)
+    run_sim.end_seed.draw(layout,ps)
+    run_sim.run_limit.draw(layout,ps)
+
+    row = layout.row()
+    row.prop(run_sim, "mcell_processes")
+    #row = layout.row()
+    #row.prop(run_sim, "log_file")
+    #row = layout.row()
+    #row.prop(run_sim, "error_file")
+    row = layout.row()
+    row.prop(mcell.export_project, "export_format")
+
+
+    row = layout.row()
+    row.prop(run_sim, "remove_append", expand=True)
+
+    if cellblender_sim.global_scripting_enabled_once:
+        helptext = "Allow Running of Python Code in Scripting Panel - \n" + \
+                   " \n" + \
+                   "The Scripting Interface can run Python code contained\n" + \
+                   "in text files (text blocks) within Blender.\n" + \
+                   "\n" + \
+                   "Running scripts from unknown sources is a security risk.\n" + \
+                   "Only enable this option if you are confident that all of\n" + \
+                   "the scripts contained in this .blend file are safe to run."
+        ps.draw_prop_with_help ( layout, "Enable Python Scripting", run_sim,
+                   "enable_python_scripting", "python_scripting_show_help",
+                   run_sim.python_scripting_show_help, helptext )
+    else:
+        helptext = "Initialize Python Code Scripting for this Session\n" + \
+                   "This must be done each time CellBlender is restarted."
+        ps.draw_operator_with_help ( layout, "Enable Python Scripting", run_sim,
+                   "mcell.initialize_scripting", "python_initialize_show_help",
+                   run_sim.python_initialize_show_help, helptext )
+
+    row = layout.row()
+    col = row.column()
+    col.prop(mcell.cellblender_preferences, "decouple_export_run")
+
+
 
 
 def prepare_runs_no_data_model ( project_dir ):
@@ -96,6 +149,8 @@ def prepare_runs_no_data_model ( project_dir ):
     mcell.run_simulation.last_simulation_run_time = str(time.time())
 
     binary_path = mcell.cellblender_preferences.mcell_binary
+    binary_path = parameter_dictionary['MCell Path']['val']   # Over-ride the preferences with the value in the engine itself.
+
     mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
     start = int(mcell.run_simulation.start_seed.get_value())

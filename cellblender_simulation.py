@@ -1839,21 +1839,23 @@ had no limit."""
             main_mdl = os.path.join(main_mdl, "output_data")
             main_mdl = os.path.join(main_mdl, scene_name + ".main.mdl")
 
-            global global_scripting_enabled_once
-
-            if global_scripting_enabled_once:
-
-                helptext = "Allow Running of Python Code in Scripting Panel\n" + \
-                           " \n" + \
-                           "The Scripting Interface can run Python code contained\n" + \
-                           "in text files (text blocks) within Blender.\n" + \
-                           "\n" + \
-                           "Running scripts from unknown sources is a security risk.\n" + \
-                           "Only enable this option if you are confident that all of\n" + \
-                           "the scripts contained in this .blend file are safe to run."
-                ps.draw_prop_with_help ( layout, "Enable Python Scripting", self,
-                           "enable_python_scripting", "python_scripting_show_help",
-                           self.python_scripting_show_help, helptext )
+            # This is now handled in the Engine panel
+            #
+            #global global_scripting_enabled_once
+            #
+            #if global_scripting_enabled_once:
+            #
+            #    helptext = "Allow Running of Python Code in Scripting Panel\n" + \
+            #               " \n" + \
+            #               "The Scripting Interface can run Python code contained\n" + \
+            #               "in text files (text blocks) within Blender.\n" + \
+            #               "\n" + \
+            #               "Running scripts from unknown sources is a security risk.\n" + \
+            #               "Only enable this option if you are confident that all of\n" + \
+            #               "the scripts contained in this .blend file are safe to run."
+            #    ps.draw_prop_with_help ( layout, "Enable Python Scripting", self,
+            #               "enable_python_scripting", "python_scripting_show_help",
+            #               self.python_scripting_show_help, helptext )
 
             #else:
 
@@ -2305,7 +2307,7 @@ def plug_filename_update_callback ( self, context ):
 
 
 class PluggableValue(bpy.types.PropertyGroup):
-    set_name = StringProperty ( default="", description="Name of the set type (such as shape or figure)" )
+    set_name = StringProperty ( default="", description="Name of the set type (such as engine or runner)" )
     key_name = StringProperty ( default="x", description="Key name into the parameters dictionary" )
     val_type = StringProperty ( default="x" )
     icon_code = StringProperty ( default="NONE" )

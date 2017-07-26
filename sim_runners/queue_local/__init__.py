@@ -85,10 +85,11 @@ parameter_layout = [
 
 def draw_layout ( self, context, layout ):
     mcell = context.scene.mcell
-    #row = layout.row()
-    #row.label ( text="This label was drawn by the Dynamic Queue Runner!!", icon='FORCE_LENNARDJONES' )
-    #row = layout.row()
-    #row.operator("ql.clear_run_list")
+    row = layout.row()
+    row.operator("ql.clear_run_list")
+    row = layout.row()
+    row.operator("ql.kill_simulation")
+    row.operator("ql.kill_all_simulations")
 
 
 
@@ -314,7 +315,7 @@ class MCELL_QL_percentage_done_timer(bpy.types.Operator):
 
 
 class MCELL_QL_kill_simulation(bpy.types.Operator):
-    bl_idname = "mcell.kill_simulation"
+    bl_idname = "ql.kill_simulation"
     bl_label = "Kill Selected Simulation"
     bl_description = ("Kill/Cancel Selected Running/Queued MCell Simulation. "
                       "Does not remove rxn/viz data.")
@@ -326,13 +327,15 @@ class MCELL_QL_kill_simulation(bpy.types.Operator):
         #print ( "kill_simulation.poll called inside dynamic queue runner" )
         mcell = context.scene.mcell
         processes_list = mcell.run_simulation.processes_list
-        active_index = mcell.run_simulation.active_process_index
-        ap = processes_list[active_index]
-        pid = int(ap.name.split(',')[0].split(':')[1])
-        q_item = cellblender.simulation_queue.task_dict.get(pid)
-        if q_item:
-            if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
-                return True
+        if len(processes_list) > 0:
+            active_index = mcell.run_simulation.active_process_index
+            ap = processes_list[active_index]
+            pid = int(ap.name.split(',')[0].split(':')[1])
+            q_item = cellblender.simulation_queue.task_dict.get(pid)
+            if q_item:
+                if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
+                    return True
+        return False
 
     def execute(self, context):
         #print ( "kill_simulation.execute called inside dynamic queue runner" )
@@ -354,7 +357,7 @@ class MCELL_QL_kill_simulation(bpy.types.Operator):
 
 
 class MCELL_QL_kill_all_simulations(bpy.types.Operator):
-    bl_idname = "mcell.kill_all_simulations"
+    bl_idname = "ql.kill_all_simulations"
     bl_label = "Kill All Simulations"
     bl_description = ("Kill/Cancel All Running/Queued MCell Simulations. "
                       "Does not remove rxn/viz data.")
@@ -385,29 +388,43 @@ class MCELL_QL_clear_run_list(bpy.types.Operator):
         mcell = context.scene.mcell
         # The collection property of subprocesses
         processes_list = mcell.run_simulation.processes_list
-        # A list holding actual subprocess objects
-        simulation_popen_list = cellblender.simulation_popen_list
-        sim_list_length = len(simulation_popen_list)
+        # Class holding actual subprocess objects
+        simulation_queue = cellblender.simulation_queue
+        proc_list_length = len(processes_list)
         idx = 0
         ctr = 0
 
-        while ctr < sim_list_length:
+        while ctr < proc_list_length:
             ctr += 1
-            sp = simulation_popen_list[idx]
-            # Simulation set is still running. Leave it in the collection
-            # property and list of subprocess objects.
-            if sp.poll() is None:
-                idx += 1
-            # Simulation set has failed or finished. Remove it from
-            # collection property and the list of subprocess objects.
+            pid = get_pid(processes_list[idx])
+            q_item = simulation_queue.task_dict.get(pid)
+            if q_item:
+                proc = q_item['process']
+                if (q_item['status'] == 'queued') or (q_item['status'] == 'running'):
+                    # Simulation is still running. Leave it in the collection
+                    # property and simulation queue
+                    idx += 1
+                    pass
+                else:
+                    # Simulation has failed or finished. Remove it from
+                    # collection property and the simulation queue
+                    simulation_queue.clear_task(pid)
+                    processes_list.remove(idx)
+                    if idx <= mcell.run_simulation.active_process_index:
+                        mcell.run_simulation.active_process_index -= 1
+                        if (mcell.run_simulation.active_process_index < 0):
+                            mcell.run_simulation.active_process_index = 0
             else:
+                # Process is missing from simulation queue
+                # so remove it from collection property
                 processes_list.remove(idx)
-                simulation_popen_list.pop(idx)
-                mcell.run_simulation.active_process_index -= 1
-                if (mcell.run_simulation.active_process_index < 0):
-                    mcell.run_simulation.active_process_index = 0
+                if idx <= mcell.run_simulation.active_process_index:
+                    mcell.run_simulation.active_process_index -= 1
+                    if (mcell.run_simulation.active_process_index < 0):
+                        mcell.run_simulation.active_process_index = 0
 
         return {'FINISHED'}
+
 
 def register_blender_classes():
     print ( "Registering Queue_Local classes" )
