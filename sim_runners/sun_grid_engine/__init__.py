@@ -34,6 +34,8 @@ def info():
 parameter_dictionary = {
   'Submit Host': {'val': "", 'desc':"Host for SGE Job Submission"},
   'Email': {'val': "", 'desc':"Email address for notification"},
+  'Remote User': {'val':"", 'desc':"User name on remote system"},
+  'Remote Path': {'val':"", 'desc':"Path to files on remote system (blank for shared files)"},
   'Required Memory (G)': {'val': 2, 'desc':"Required Memory for Host Selection"},
   'Best Nodes': {'val': "", 'desc':"List of best nodes to use"},
   'Terminate All': {'val': term_all, 'desc':"Terminate All Jobs"},
@@ -42,6 +44,7 @@ parameter_dictionary = {
 
 parameter_layout = [
   ['Submit Host', 'Email'],
+  ['Remote User', 'Remote Path'],
   ['Required Memory (G)', 'Best Nodes'],
   ['Terminate All', 'Information']
 ]
@@ -63,6 +66,11 @@ def run_engine ( engine_module, data_model, project_dir ):
         command_list = engine_module.prepare_runs_data_model_no_geom ( data_model, project_dir )
     elif 'prepare_runs_data_model_full' in dir(engine_module):
         command_list = engine_module.prepare_runs_data_model_full ( data_model, project_dir )
+
+    if parameter_dictionary['Remote Path']['val'] != "":
+        remote_path = parameter_dictionary['Remote Path']['val']
+        print ( "Moving files to remote path " + remote_path )
+
     return run_commands ( command_list )
 
 def run_commands ( commands ):

@@ -1704,11 +1704,11 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
 
     simulation_engine_and_run_enum = [
+         ('DYNAMIC', "Dynamic", ""),
          ('QUEUE', "MCell via Queue Runner", ""),
          ('COMMAND', "MCell via Command Line", ""),
          ('SWEEP', "MCell via Sweep Runner", ""),
-         ('SWEEP_SGE', "MCell via Sweep Runner and SGE", ""),
-         ('DYNAMIC', "Dynamic", "")]
+         ('SWEEP_SGE', "MCell via Sweep Runner and SGE", "")]
 
     simulation_run_control = EnumProperty(
         items=simulation_engine_and_run_enum, name="",
