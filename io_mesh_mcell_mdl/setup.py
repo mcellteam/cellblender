@@ -8,7 +8,7 @@ from distutils.core import setup, Extension
 
 
 mdlmesh_parser_module = Extension(name='_mdlmesh_parser',
-                           sources=['mdlmesh_parser_wrap.c', 'mdlmesh_parser.c', 'mdlparse.bison.c', 'vector.c'],
+                           sources=['mdlmesh_parser_wrap.c', 'mdlmesh_parser.c', 'mdllex.flex.c', 'mdlparse.bison.c', 'vector.c'],
                            extra_compile_args=['-O3'],
                            extra_link_args=['-o_mdlmesh_parser.so'],
                            )
