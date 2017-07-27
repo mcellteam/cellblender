@@ -32,6 +32,7 @@ def info():
     print ( "Print SGE Information" )
 
 parameter_dictionary = {
+  'Notice': {'val':"Notice: File transfer functionality is under development.", 'icon':"ERROR"},
   'Submit Host': {'val': "", 'desc':"Host for SGE Job Submission"},
   'Email': {'val': "", 'desc':"Email address for notification"},
   'Remote User': {'val':"", 'desc':"User name on remote system"},
@@ -43,6 +44,7 @@ parameter_dictionary = {
 }
 
 parameter_layout = [
+  ['Notice'],
   ['Submit Host', 'Email'],
   ['Remote User', 'Remote Path'],
   ['Required Memory (G)', 'Best Nodes'],

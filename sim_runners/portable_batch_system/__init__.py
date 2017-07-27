@@ -33,6 +33,7 @@ def info():
 
 parameter_dictionary = {
   'Submit Host': {'val': "", 'desc':"Host for SGE Job Submission"},
+  'Notice': {'val':"Notice: This runner is not functional at this time.", 'icon':"ERROR"},
   'Email': {'val': "", 'desc':"Email address for notification"},
   'Required Memory (G)': {'val': 2, 'desc':"Required Memory for Host Selection"},
   'Best Nodes': {'val': "", 'desc':"List of best nodes to use"},
@@ -41,6 +42,7 @@ parameter_dictionary = {
 }
 
 parameter_layout = [
+  ['Notice'],
   ['Submit Host', 'Email'],
   ['Required Memory (G)', 'Best Nodes'],
   ['Terminate All', 'Information']
