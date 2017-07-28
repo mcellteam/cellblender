@@ -212,10 +212,10 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
                 mcell.sim_runners.plugs_changed_callback ( context )
 
             if active_engine_module == None:
-                print ( "Cannot run without selecting a simulation engine" )
+                # print ( "Cannot run without selecting a simulation engine" )
                 status = "Error: No simulation engine selected"
             elif active_runner_module == None:
-                print ( "Cannot run without selecting a simulation runner" )
+                # print ( "Cannot run without selecting a simulation runner" )
                 status = "Error: No simulation runner selected"
             elif 'get_pid' in dir(active_runner_module):
                 processes_list = mcell.run_simulation.processes_list
@@ -891,10 +891,10 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
 
 
         if active_engine_module == None:
-            print ( "Cannot run without selecting a simulation engine" )
+            # print ( "Cannot run without selecting a simulation engine" )
             status = "Error: No simulation engine selected"
         elif active_runner_module == None:
-            print ( "Cannot run without selecting a simulation runner" )
+            # print ( "Cannot run without selecting a simulation runner" )
             status = "Error: No simulation runner selected"
         elif not ( ( 'prepare_runs_no_data_model' in dir(active_engine_module) )
                 or ( 'prepare_runs_data_model_no_geom' in dir(active_engine_module) )

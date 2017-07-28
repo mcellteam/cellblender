@@ -32,22 +32,46 @@ def term_all():
 def info():
     print ( "Print SGE Information" )
 
+def fetch():
+    # Move files as required by parameters
+    submit_host = parameter_dictionary['Submit Host']['val']
+    project_dir = parameter_dictionary['project_dir']['val']
+    remote_path = parameter_dictionary['Remote Path']['val']
+    remote_user = parameter_dictionary['Remote User']['val']
+    remote_path = os.path.join(remote_path, os.path.split(project_dir)[-1])
+    if len(remote_path) > 0:
+        print ( "Local Blend_files Directory = " + project_dir )
+        print ( "Moving files from remote path: \"" + remote_path + "\"" )
+        rsync_command = []
+        if len(remote_user) > 0:
+            rsync_command = [ "rsync", "-avz", "%s@%s:%s" % (remote_user, submit_host, remote_path), os.path.split(project_dir)[0] ]
+        else:
+            rsync_command = [ "rsync", "-avz", "%s:%s" % (submit_host, remote_path), os.path.split(project_dir)[0] ]
+        print ( "rsync command = " + str(rsync_command) )
+        subprocess.Popen ( rsync_command, stdout=None, stderr=None )
+
+
 parameter_dictionary = {
+  'Notice': {'val':"Notice: File transfer functionality is under development.", 'icon':"ERROR"},
   'Submit Host': {'val': "", 'desc':"Host for SGE Job Submission"},
   'Email': {'val': "", 'desc':"Email address for notification"},
   'Remote User': {'val':"", 'desc':"User name on remote system"},
   'Remote Path': {'val':"", 'desc':"Path to files on remote system (blank for shared files)"},
   'Required Memory (G)': {'val': 2, 'desc':"Required Memory for Host Selection"},
   'Best Nodes': {'val': "", 'desc':"List of best nodes to use"},
+  'Fetch': {'val': fetch, 'desc':"Get data back from remote host"},
   'Terminate All': {'val': term_all, 'desc':"Terminate All Jobs"},
-  'Information': {'val': info, 'desc':"Print Information"}
+  'Information': {'val': info, 'desc':"Print Information"},
+
+  'project_dir': {'val': "", 'desc':"INTERNAL: project directory storage"}
 }
 
 parameter_layout = [
+  ['Notice'],
   ['Submit Host', 'Email'],
   ['Remote User', 'Remote Path'],
   ['Required Memory (G)', 'Best Nodes'],
-  ['Terminate All', 'Information']
+  ['Fetch', 'Terminate All', 'Information']
 ]
 
 def find_in_path(program_name):
@@ -56,6 +80,7 @@ def find_in_path(program_name):
         if os.path.exists(full_name) and not os.path.isdir(full_name):
             return full_name
     return None
+
 
 def run_engine ( engine_module, data_model, project_dir ):
     command_list = None
@@ -68,11 +93,8 @@ def run_engine ( engine_module, data_model, project_dir ):
     elif 'prepare_runs_data_model_full' in dir(engine_module):
         command_list = engine_module.prepare_runs_data_model_full ( data_model, project_dir )
 
-    if parameter_dictionary['Remote Path']['val'] != "":
-        remote_path = parameter_dictionary['Remote Path']['val']
-        print ( "Moving files to remote path " + remote_path )
-
     return run_commands ( command_list )
+
 
 def run_commands ( commands ):
     sp_list = []
@@ -93,11 +115,19 @@ def run_commands ( commands ):
       }
       """
 
+    # Convert parameter_dictionary entries to convenient local variables
+    submit_host = parameter_dictionary['Submit Host']['val']
+    email = parameter_dictionary['Email']['val']
+    remote_user = parameter_dictionary['Remote User']['val']
+    remote_path = parameter_dictionary['Remote Path']['val']
+
     best_nodes = None
     if len ( parameter_dictionary['Best Nodes']['val'] ) > 0:
         best_nodes = parameter_dictionary['Best Nodes']['val']
 
     min_memory = parameter_dictionary['Required Memory (G)']['val']
+
+
 
     # Figure out a "project_dir" from the common path of the working directories
     project_dir = ""
@@ -115,7 +145,26 @@ def run_commands ( commands ):
     if os.path.split(project_dir)[-1] == 'output_data':
         # Remove the last "output_data" which should be at the end of the path
         project_dir = os.path.sep.join ( os.path.split(project_dir)[0:-1] )
+    if os.path.split(project_dir)[-1] == 'mcell':
+        # Remove the last "mcell" which should be at the end of the path
+        project_dir = os.path.sep.join ( os.path.split(project_dir)[0:-1] )
     print ( "Project Directory = " + project_dir )
+
+    parameter_dictionary['project_dir']['val'] = project_dir
+
+
+    # Move files as required by parameters
+    if len(remote_path) > 0:
+        print ( "Local Blend_files Directory = " + project_dir )
+        print ( "Moving files to remote path: \"" + remote_path + "\"" )
+        rsync_command = []
+        if len(remote_user) > 0:
+            rsync_command = [ "rsync", "-avz", project_dir, "%s@%s:%s" % (remote_user, submit_host, remote_path) ]
+        else:
+            rsync_command = [ "rsync", "-avz", project_dir, "%s:%s" % (submit_host, remote_path) ]
+        print ( "rsync command = " + str(rsync_command) )
+        subprocess.Popen ( rsync_command, stdout=None, stderr=None )
+
 
 
     # Build 1 master qsub file and a job file for each MCell run
@@ -123,7 +172,7 @@ def run_commands ( commands ):
     master_job_list_name = os.path.join ( project_dir, "master_job_list.sh" )
     master_job_list = open ( master_job_list_name, "w" )
     master_job_list.write ( 'echo "Start of master job list"\n' )
-    master_job_list.write ( "cd %s\n" % os.path.join(project_dir,"output_data") )
+    master_job_list.write ( "cd %s\n" % os.path.join(project_dir,"mcell","output_data") )
     job_index = 0
     for run_cmd in commands:
 
@@ -137,7 +186,14 @@ def run_commands ( commands ):
         error_filepath = os.path.join(project_dir, error_filename)
 
         job_file = open(job_filepath,"w")
-        job_file.write ( "cd %s\n" % run_cmd['wd'] )
+        if len(remote_path) > 0:
+          wd_list = run_cmd['wd'].split(os.sep)
+          pd_list = project_dir.split(os.sep)
+          remote_wd = os.sep.join(wd_list[len(pd_list)-1:])
+          remote_wd = os.path.join(remote_path,remote_wd)
+          job_file.write ( "cd %s\n" % remote_wd )
+        else:
+          job_file.write ( "cd %s\n" % run_cmd['wd'] )
         full_cmd = run_cmd['cmd']
         if len(run_cmd['args']) > 0:
           full_cmd = full_cmd + " " + " ".join(run_cmd['args'])
@@ -155,9 +211,9 @@ def run_commands ( commands ):
             resource_list.append ( "mt=" + str(min_memory) + "G" )
         if len(resource_list) > 0:
             qsub_command += " -l " + ",".join(resource_list)
-        if len(parameter_dictionary['Email']['val']) > 0:
+        if len(email) > 0:
             qsub_command += " -m e"
-            qsub_command += " -M " + parameter_dictionary['Email']['val']
+            qsub_command += " -M " + email
         qsub_command += " " + job_filepath
 
         master_job_list.write ( qsub_command + "\n" )
@@ -169,7 +225,7 @@ def run_commands ( commands ):
     master_job_list.close()
     os.chmod ( master_job_list_name, 0o740 )  # Must make executable
 
-    args = ['ssh', parameter_dictionary['Submit Host']['val'], master_job_list_name ]
+    args = ['ssh', submit_host, master_job_list_name ]
     print ( "Args for Popen: " + str(args) )
     p = subprocess.Popen ( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
 

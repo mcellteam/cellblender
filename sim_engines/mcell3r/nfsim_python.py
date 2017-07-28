@@ -14,7 +14,9 @@ class NFSim:
         """
         inits an nfsim object with a given xml file and a verbosity setting
         """
-        self.lib.setupNFSim_c(fileName, verbose)
+        
+        print("nfsim_python: initializing nfsim using %s" % (fileName))
+        self.lib.setupNFSim_c(bytes(fileName,'ASCII'), verbose)
 
     def reset_system(self):
         """
