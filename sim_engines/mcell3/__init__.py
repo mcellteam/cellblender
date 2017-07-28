@@ -6,7 +6,7 @@ import pickle
 import shutil
 
 import cellblender
-import cellblender_utils
+from cellblender import cellblender_utils
 
 import cellblender.cellblender_simulation as cellblender_sim
 
