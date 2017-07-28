@@ -193,7 +193,8 @@ for page in plot_cmds:
                 ax.xaxis.set_ticks_position('bottom')
                 ax.yaxis.set_ticks_position('left')
             else:
-                print ( "Unknown command: " + cmd )
+                # print ( "Unknown command: " + cmd )
+                pass
 
         if legend >= 0:
             ax.legend(loc=legend)

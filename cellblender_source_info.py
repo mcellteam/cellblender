@@ -171,6 +171,8 @@ cellblender_info = {
         "sim_engines"+os.sep+"mcell3r"+os.sep+"write_bngxmle.py",
         "sim_engines"+os.sep+"mcell3r"+os.sep+"write_mdl.py",
 
+        "sim_engines"+os.sep+"cBNGL"+os.sep+"__init__.py",
+
         "sim_engines"+os.sep+"smoldyn248"+os.sep+"makefile",
         "sim_engines"+os.sep+"smoldyn248"+os.sep+"__init__.py",
 
