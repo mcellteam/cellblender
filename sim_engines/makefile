@@ -1,4 +1,4 @@
-SUBDIRS = limited_python limited_cpp mcell3 smoldyn248
+SUBDIRS =  mcell3 mcell3dm mcell3r limited_python limited_cpp smoldyn248
 
 .PHONY: all
 all: subdirs

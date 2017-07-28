@@ -39,6 +39,7 @@ cellblender_info = {
         "cellblender_meshalyzer.py",
         "cellblender_objects.py",
         "cellblender_scripting.py",
+        "cellblender_pbc.py",
         "object_surface_regions.py",
         "run_simulations.py",
         "sim_runner_queue.py",
@@ -73,12 +74,6 @@ cellblender_info = {
         "engine_runner_combos"+os.sep+"pure_python_sim.py",
         "engine_runner_combos"+os.sep+"StorageClasses.cpp",
         "engine_runner_combos"+os.sep+"StorageClasses.h",
-
-        "SimControl.java",
-        "META-INF"+os.sep+"MANIFEST.MF",
-        #        "SimControl.jar",
-        #        "SimControl.c",
-        #        "SimControl",
         "cellblender_utils.py",
         "glyph_library.blend",
         "io_mesh_mcell_mdl"+os.sep+"__init__.py",
@@ -128,21 +123,23 @@ cellblender_info = {
         "sim_runners"+os.sep+"command_line"+os.sep+"__init__.py",
         "sim_runners"+os.sep+"command_line"+os.sep+"makefile",
 
+        "sim_runners"+os.sep+"queue_local"+os.sep+"__init__.py",
+        "sim_runners"+os.sep+"queue_local"+os.sep+"makefile",
+
+        "sim_runners"+os.sep+"sun_grid_engine"+os.sep+"__init__.py",
+        "sim_runners"+os.sep+"sun_grid_engine"+os.sep+"makefile",
+
+        "sim_runners"+os.sep+"portable_batch_system"+os.sep+"__init__.py",
+        "sim_runners"+os.sep+"portable_batch_system"+os.sep+"makefile",
+
         "sim_runners"+os.sep+"java"+os.sep+"__init__.py",
         "sim_runners"+os.sep+"java"+os.sep+"SimControl.java",
         "sim_runners"+os.sep+"java"+os.sep+"makefile",
+        "sim_runners"+os.sep+"java"+os.sep+"META-INF"+os.sep+"MANIFEST.MF",
 
         "sim_runners"+os.sep+"open_gl"+os.sep+"__init__.py",
         "sim_runners"+os.sep+"open_gl"+os.sep+"SimControl.c",
         "sim_runners"+os.sep+"open_gl"+os.sep+"makefile",
-
-        # These should really be in sim_engines
-        "sim_runners"+os.sep+"libMCell"+os.sep+"__init__.py",
-        "sim_runners"+os.sep+"libMCell_python"+os.sep+"__init__.py",
-
-        "sim_runners"+os.sep+"pure_python"+os.sep+"__init__.py",
-        "sim_runners"+os.sep+"pure_python"+os.sep+"pure_python_run.py",
-
 
         "sim_engines"+os.sep+"makefile",
         "sim_engines"+os.sep+"__init__.py",
@@ -155,6 +152,11 @@ cellblender_info = {
         "sim_engines"+os.sep+"mcell3"+os.sep+"__init__.py",
         "sim_engines"+os.sep+"mcell3"+os.sep+"data_model_to_mdl_3.py",
         "sim_engines"+os.sep+"mcell3"+os.sep+"run_data_model_mcell_3.py",
+
+        "sim_engines"+os.sep+"mcell3dm"+os.sep+"makefile",
+        "sim_engines"+os.sep+"mcell3dm"+os.sep+"__init__.py",
+        "sim_engines"+os.sep+"mcell3dm"+os.sep+"data_model_to_mdl_3.py",
+        "sim_engines"+os.sep+"mcell3dm"+os.sep+"run_data_model_mcell_3.py",
 
         "sim_engines"+os.sep+"mcell3r"+os.sep+"makefile",
         "sim_engines"+os.sep+"mcell3r"+os.sep+"__init__.py",

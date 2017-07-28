@@ -59,6 +59,7 @@ from . import cellblender_release
 from . import cellblender_surface_classes
 from . import cellblender_surface_regions
 from . import cellblender_partitions
+from . import cellblender_pbc 
 from . import cellblender_simulation
 from . import cellblender_mol_viz
 from . import cellblender_reaction_output
@@ -365,6 +366,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
     surf_regions_select = BoolProperty ( name="surfr_sel", description="Assign Surface Classes", default=False, subtype='NONE', update=select_callback)
     rel_patterns_select = BoolProperty ( name="relpat_sel", description="Release Patterns", default=False, subtype='NONE', update=select_callback)
     partitions_select = BoolProperty ( name="part_sel", description="Partitions", default=False, subtype='NONE', update=select_callback)
+    pbc_select = BoolProperty ( name="pbc_sel", description="Periodic Boundary Conditions", default=False, subtype='NONE', update=select_callback)
     init_select = BoolProperty ( name="init_sel", description="Run Simulation", default=False, subtype='NONE', update=select_callback)
     # run_select = BoolProperty ( name="run_sel", description="Old Run Simulation", default=False, subtype='NONE', update=select_callback)
     graph_select = BoolProperty ( name="graph_sel", description="Plot Output Settings", default=False, subtype='NONE', update=select_callback)
@@ -397,7 +399,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             Hide all panels ... always
             
         """
-        prop_keys = [ 'examples_select', 'preferences_select', 'scripting_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'init_select', 'graph_select', 'viz_select', 'select_multiple' ]
+        prop_keys = [ 'examples_select', 'preferences_select', 'scripting_select', 'parameters_select', 'reaction_select', 'molecule_select', 'placement_select', 'objects_select', 'surf_classes_select', 'surf_regions_select', 'rel_patterns_select', 'partitions_select', 'pbc_select', 'init_select', 'graph_select', 'viz_select', 'select_multiple' ]
         
         pin_state = False
         
@@ -526,9 +528,50 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
             else:
                 # The versions matched, so draw the normal panels
 
+                ################################################################################
+                #
+                #  Button Panel Notes:
+                #
+                #    The menu buttons can be shown in either short format or long format.
+                #    Short format shows all the buttons in a row similar to the header in
+                #    Blender's native "Properties" panel. This was the original design.
+                #    Long format was added to show text (at the expense of screen space).
+                #    The Preferences panel has a check box for "Show Long Menu Buttons"
+                #    that has been defaulted to "True" for quite some time. The short form
+                #    is still handy when showing multiple panels or with smaller screens
+                #    or both.
+                #
+                #    The original short format also had the ability to show or hide each
+                #    button via a series of check boxes in the "Show Extra Options" section
+                #    of the Preferences panel. These were enabled with the "show_button_num"
+                #    boolean array in the "cellblender_preferences" property group. To keep
+                #    it simple, they were just numbered with "0" being the push pin and the
+                #    refresh button. All others started from index "1" and counted upward.
+                #    The size of this boolean array needs to match (or be larger than) the
+                #    number of buttons being shown or hidden. This show/hide functionality
+                #    was not implemented for the long format buttons when they were added.
+                #
+                #    It's not clear whether the show/hide functionality remains useful. It
+                #    could be used for experimental or special panels that the normal user
+                #    shouldn't see. It could also be useful in teaching environments to limit
+                #    the number of things that can go wrong. At this time, those questionable
+                #    uses would not justify adding the feature. Conversely, it's not clear at
+                #    this time that removal is justified either. But since the feature exists,
+                #    it should work correctly which means ensuring that the number of buttons
+                #    is less than the size of the "show_button_num" array.
+                #
+                #    Note that there was a bit of a logic error in allowing the "Settings"
+                #    button to be hidden. If that button were hidden, then it wouldn't be
+                #    possible to get to the Settings panel to show it again (although it
+                #    could be shown again via command line operations). This might be a
+                #    "feature" to lock away certain buttons, but it's more likely to cause
+                #    problems than be useful. For that reason, it is always drawn for now.
+                #
+                ################################################################################
+
                 if not mcell.cellblender_preferences.use_long_menus:
 
-                    # Draw all the selection buttons in a single row
+                    # Draw all the selection buttons in a single row (Short format)
 
                     real_row = layout.row()
                     split = real_row.split(0.9)
@@ -537,43 +580,57 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     #row = layout.row(align=True)
                     row = col.row(align=True)
 
-                    if mcell.cellblender_preferences.show_button_num[0]: row.prop ( self, "examples_select", icon='MOD_BUILD', text="" )
-                    if mcell.cellblender_preferences.show_button_num[1]: row.prop ( self, "preferences_select", icon='PREFERENCES', text="" )
-                    if mcell.cellblender_preferences.show_button_num[2]: row.prop ( self, "scripting_select", icon='SCRIPT', text="" )
-                    if mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="" )
+                    ############################################################################################################################
+                    #                                                                                                                          #
+                    #   !! N O T E !! - The size of "show_button_num" BoolVectorProperty in cellblender_preferences.py MUST be large enough!!  #
+                    #                                                                                                                          #
+                    ############################################################################################################################
+
+
+                    if mcell.cellblender_preferences.show_button_num[1]: row.prop ( self, "examples_select", icon='MOD_BUILD', text="" )
+                    if mcell.cellblender_preferences.show_button_num[2]: row.prop ( self, "pbc_select", icon='GRID', text="" )
+
+                    if True or mcell.cellblender_preferences.show_button_num[3]: row.prop ( self, "preferences_select", icon='PREFERENCES', text="" )
+                    if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "scripting_select", icon='SCRIPT', text="" )
+
+                    if mcell.cellblender_preferences.show_button_num[5]: row.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="" )
+                    if mcell.cellblender_preferences.show_button_num[6]: row.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="" )  # Or 'MESH_CUBE'
 
                     if mcell.cellblender_preferences.use_stock_icons:
-                        # Use "stock" icons to check on drawing speed problem
-                        if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES', text="" )
-                        if mcell.cellblender_preferences.show_button_num[5]: row.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="" )
+                        # Use "stock" icons for molecules and reactions
+                        if mcell.cellblender_preferences.show_button_num[7]: row.prop ( self, "molecule_select", icon='FORCE_LENNARDJONES', text="" )
+                        if mcell.cellblender_preferences.show_button_num[8]: row.prop ( self, "reaction_select", icon='ARROW_LEFTRIGHT', text="" )
                     else:
-                        if self.molecule_select:
-                            if mcell.cellblender_preferences.show_button_num[4]: molecule_img_sel = bpy.data.images.get('mol_s')
-                            if mcell.cellblender_preferences.show_button_num[4]: mol_s = layout.icon(molecule_img_sel)
-                            if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "molecule_select", icon_value=mol_s, text="" )
-                        else:
-                            if mcell.cellblender_preferences.show_button_num[4]: molecule_img_unsel = bpy.data.images.get('mol_u')
-                            if mcell.cellblender_preferences.show_button_num[4]: mol_u = layout.icon(molecule_img_unsel)
-                            if mcell.cellblender_preferences.show_button_num[4]: row.prop ( self, "molecule_select", icon_value=mol_u, text="" )
+                        # Use custom icons for molecules and reactions
+                        if mcell.cellblender_preferences.show_button_num[7]:
+                            if self.molecule_select:
+                                molecule_img_sel = bpy.data.images.get('mol_s')
+                                mol_s = layout.icon(molecule_img_sel)
+                                row.prop ( self, "molecule_select", icon_value=mol_s, text="" )
+                            else:
+                                molecule_img_unsel = bpy.data.images.get('mol_u')
+                                mol_u = layout.icon(molecule_img_unsel)
+                                row.prop ( self, "molecule_select", icon_value=mol_u, text="" )
 
-                        if self.reaction_select:
-                            if mcell.cellblender_preferences.show_button_num[5]: react_img_sel = bpy.data.images.get('reaction_s')
-                            if mcell.cellblender_preferences.show_button_num[5]: reaction_s = layout.icon(react_img_sel)
-                            if mcell.cellblender_preferences.show_button_num[5]: row.prop ( self, "reaction_select", icon_value=reaction_s, text="" )
-                        else:
-                            if mcell.cellblender_preferences.show_button_num[5]: react_img_unsel = bpy.data.images.get('reaction_u')
-                            if mcell.cellblender_preferences.show_button_num[5]: reaction_u = layout.icon(react_img_unsel)
-                            if mcell.cellblender_preferences.show_button_num[5]: row.prop ( self, "reaction_select", icon_value=reaction_u, text="" )
+                        if mcell.cellblender_preferences.show_button_num[8]:
+                            if self.reaction_select:
+                                react_img_sel = bpy.data.images.get('reaction_s')
+                                reaction_s = layout.icon(react_img_sel)
+                                row.prop ( self, "reaction_select", icon_value=reaction_s, text="" )
+                            else:
+                                react_img_unsel = bpy.data.images.get('reaction_u')
+                                reaction_u = layout.icon(react_img_unsel)
+                                row.prop ( self, "reaction_select", icon_value=reaction_u, text="" )
 
-                    if mcell.cellblender_preferences.show_button_num[6]: row.prop ( self, "placement_select", icon='GROUP_VERTEX', text="" )
-                    if mcell.cellblender_preferences.show_button_num[7]: row.prop ( self, "rel_patterns_select", icon='TIME', text="" )
-                    if mcell.cellblender_preferences.show_button_num[8]: row.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="" )  # Or 'MESH_CUBE'
-                    if mcell.cellblender_preferences.show_button_num[9]: row.prop ( self, "surf_classes_select", icon='FACESEL_HLT', text="" )
-                    if mcell.cellblender_preferences.show_button_num[10]: row.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="" )
-                    if mcell.cellblender_preferences.show_button_num[11]: row.prop ( self, "partitions_select", icon='GRID', text="" )
-                    if mcell.cellblender_preferences.show_button_num[12]: row.prop ( self, "graph_select", icon='IPO', text="" )
-                    if mcell.cellblender_preferences.show_button_num[13]: row.prop ( self, "viz_select", icon='SEQUENCE', text="" )
-                    if mcell.cellblender_preferences.show_button_num[14]: row.prop ( self, "init_select", icon='COLOR_RED', text="" )
+                    if mcell.cellblender_preferences.show_button_num[9]: row.prop ( self, "placement_select", icon='GROUP_VERTEX', text="" )
+                    if mcell.cellblender_preferences.show_button_num[10]: row.prop ( self, "rel_patterns_select", icon='TIME', text="" )
+                    if mcell.cellblender_preferences.show_button_num[11]: row.prop ( self, "surf_classes_select", icon='FACESEL_HLT', text="" )
+                    if mcell.cellblender_preferences.show_button_num[12]: row.prop ( self, "surf_regions_select", icon='SNAP_FACE', text="" )
+                    if mcell.cellblender_preferences.show_button_num[13]: row.prop ( self, "partitions_select", icon='GRID', text="" )
+                    if mcell.cellblender_preferences.show_button_num[14]: row.prop ( self, "graph_select", icon='IPO', text="" )
+                    if mcell.cellblender_preferences.show_button_num[15]: row.prop ( self, "viz_select", icon='SEQUENCE', text="" )
+                    if mcell.cellblender_preferences.show_button_num[16]: row.prop ( self, "init_select", icon='COLOR_RED', text="" )
+
 
                     col = split.column()
                     row = col.row()
@@ -589,18 +646,20 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                         
                 else:
 
-                    # Draw all the selection buttons with labels in 2 columns:
+                    # Draw all the selection buttons with labels in 2 columns (Long format):
 
                     brow = layout.row()  ##############################################################
 
                     bcol = brow.column()
                     bcol.prop ( self, "examples_select", icon='MOD_BUILD', text="Examples" )
+                    bcol = brow.column()
+                    bcol.prop ( self, "pbc_select", icon='GRID', text="Periodic Boundary Conditions" )
+
 
                     brow = layout.row()  ##############################################################
 
                     bcol = brow.column()
                     bcol.prop ( self, "preferences_select", icon='PREFERENCES', text="Settings & Preferences" )
-
                     bcol = brow.column()
                     bcol.prop ( self, "scripting_select", icon='SCRIPT', text="Scripting" )
 
@@ -609,10 +668,8 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                     bcol = brow.column()
                     bcol.prop ( self, "parameters_select", icon='SEQ_SEQUENCER', text="Parameters" )
-
                     bcol = brow.column()
                     bcol.prop ( self, "objects_select", icon='MESH_ICOSPHERE', text="Model Objects" )
-
 
 
                     brow = layout.row()  ##############################################################
@@ -666,8 +723,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                     bcol = brow.column()
                     bcol.prop ( self, "placement_select", icon='GROUP_VERTEX', text=" Molecule Placement" )
-
-
                     bcol = brow.column()
                     bcol.prop ( self, "rel_patterns_select", icon='TIME', text="Release Patterns" )
 
@@ -689,6 +744,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
 
                     brow = layout.row()  ##############################################################
+
                     bcol = brow.column()
                     bcol.prop ( self, "viz_select", icon='SEQUENCE', text="Visualization Settings" )
                     bcol = brow.column()
@@ -704,6 +760,7 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                         bcol.prop ( self, "select_multiple", icon='UNPINNED', text="Show All / Multiple" )
                     bcol = brow.column()
                     bcol.operator ( "cbm.refresh_operator",icon='FILE_REFRESH', text="Reload Visualization Data")
+
 
 
                 # Check for modifications to the model since the last run
@@ -782,6 +839,11 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
                     layout.box() # Use as a separator
                     layout.label ( "Partitions", icon='GRID' )
                     context.scene.mcell.partitions.draw_layout ( context, layout )
+
+                if self.pbc_select:
+                    layout.box() # Use as a separator
+                    layout.label ( "Periodic Boundary Conditions", icon='GRID' )
+                    context.scene.mcell.pbc.draw_layout ( context, layout )
 
                 if self.graph_select:
                     layout.box() # Use as a separator
@@ -877,6 +939,8 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         type=cellblender_initialization.MCellInitializationPropertyGroup, name="Model Initialization")
     partitions = bpy.props.PointerProperty(
         type=cellblender_partitions.MCellPartitionsPropertyGroup, name="Partitions")
+    pbc = bpy.props.PointerProperty(
+          type=cellblender_pbc.MCellPBCPropertyGroup, name="Periodic Boundary Conditions")
     ############# DB: added for parameter import from BNG, SBML models####
     #parameters = PointerProperty(
     #    type=MCellParametersPropertyGroup, name="Defined Parameters")

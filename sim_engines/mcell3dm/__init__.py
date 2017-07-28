@@ -5,6 +5,8 @@ import pickle
 import shutil
 
 import cellblender
+import cellblender.sim_engines as engine_manager
+
 from . import data_model_to_mdl_3
 from . import run_data_model_mcell_3
 
@@ -32,8 +34,8 @@ Usage: mcell [options] mdl_file_name
 """
 
 # Name of this engine to display in the list of choices (Both should be unique within a CellBlender installation)
-plug_code = "MCELL3"
-plug_name = "MCell 3"
+plug_code = "MCELL3DM"
+plug_name = "MCell 3 (Data Model)"
 
 def print_info():
   global parameter_dictionary
@@ -119,17 +121,39 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   fs = data_model['simulation_control']['start_seed']
   ls = data_model['simulation_control']['end_seed']
 
-  run_cmd_list = run_data_model_mcell_3.run_mcell_sweep(['-rt','extern','-pd',project_dir,'-b',parameter_dictionary['MCell Path']['val'],'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
+  # The run_mcell_sweep function will build the directory structure, data_layout.json, and return the run_cmd_list used by some of the legacy runners.
+  # The returned format will be a list of lists containing: program, directory, MDL, stdout, stderr, seed.
+  prog_dir_mdl_out_err_seed_list = run_data_model_mcell_3.run_mcell_sweep(['-rt','extern','-pd',project_dir,'-b',parameter_dictionary['MCell Path']['val'],'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
 
-  print ( "Run Cmds prepared by the mcell3 engine:" )
-  print ( "  = " + str(run_cmd_list) )
-  if len(run_cmd_list) > 0:
-    for run_cmd in run_cmd_list:
-      print ( "  " + str(run_cmd) )
+  print ( "Program,Directory,MDL,StdOut,StdErr,Seed commands prepared by the mcell3dm engine:" )
+  if len(prog_dir_mdl_out_err_seed_list) > 0:
+    for pdmoes_cmd in prog_dir_mdl_out_err_seed_list:
+      print ( "  " + str(pdmoes_cmd) )
+  else:
+    print ( "  None" )
 
-  print ( "Currently running from the engine ..." )
 
-  run_data_model_mcell_3.run_mcell_sweep(['-pd',project_dir,'-b',parameter_dictionary['MCell Path']['val'],'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
+  # Convert to command list format
+
+  command_list = []
+  if len(prog_dir_mdl_out_err_seed_list) > 0:
+    for pdmoes_cmd in prog_dir_mdl_out_err_seed_list:
+      cmd_entry = {}
+      cmd_entry['cmd'] = pdmoes_cmd[0]
+      cmd_entry['wd'] = pdmoes_cmd[1]
+      cmd_entry['args'] = [ '-seed', str(pdmoes_cmd[5]), pdmoes_cmd[2] ]
+      cmd_entry['stdout'] = None
+      cmd_entry['stderr'] = None
+      if pdmoes_cmd[3] == 'console':
+        cmd_entry['stdout'] = ""
+      if pdmoes_cmd[4] == 'console':
+        cmd_entry['stderr'] = ""
+      command_list.append ( cmd_entry )
+
+
+  #print ( "Currently running from the engine ..." )
+  #command_list = []
+  #run_data_model_mcell_3.run_mcell_sweep(['-pd',project_dir,'-b',parameter_dictionary['MCell Path']['val'],'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
 
 
 
@@ -156,8 +180,6 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   # That dictionary describes the directory structure that CellBlender expects to find on the disk
 
-  command_list = []
-
   output_detail = parameter_dictionary['Output Detail (0-100)']['val']
 
   if output_detail > 0: print ( "Inside MCell3 Engine, project_dir=" + project_dir )
@@ -177,7 +199,7 @@ def get_progress_message_and_status ( stdout_txt ):
           percent = int((last_iter/total_iter)*100)
           if (last_iter == total_iter) and (total_iter != 0):
               task_complete = True
-          progress_message = "MCell3: %d%%" % (percent)
+          progress_message = "MCell3DM: %d%%" % (percent)
           break
   return ( progress_message, task_complete )
 

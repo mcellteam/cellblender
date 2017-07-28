@@ -21,6 +21,7 @@ This is the current plan for a simple plotting syntax:
 from numpy import math, fromfile
 import sys
 import matplotlib as mpl
+mpl.use("TkAgg")
 import matplotlib.pyplot as plt
 
 

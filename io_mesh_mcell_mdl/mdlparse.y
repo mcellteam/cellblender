@@ -5,13 +5,18 @@
 #include <string.h> 
 #include <math.h>
 #include "vector.h"
-#include "mdlmesh_parser.h"
 #include "mdlparse.h"
+#include "mdlmesh_parser.h"
 #include "mdlparse.bison.h"
+#include "mdllex.flex.h"
 
-#include "mdllex.flex.c"
+// #include "mdllex.flex.c"
 
-extern FILE *mdlin;
+extern int mdlerror(yyscan_t, const char *);
+
+extern YY_DECL;
+
+//extern FILE *mdlin;
 extern int line_num;
 extern char *curr_file;
 extern struct object *root_objp;
@@ -33,13 +38,17 @@ int vertex_count;
 int polygon_count;
 double x,y,z;
 int vert_1,vert_2,vert_3,vert_4;
-int i,j;
+unsigned int i,j;
 
 
 %}
 
-%name-prefix="mdl"
-%output="mdlparse.bison.c"
+%define api.pure full
+%lex-param {yyscan_t scanner}
+%parse-param {void *scanner}
+
+%name-prefix "mdl"
+%output "mdlparse.bison.c"
 
 %union {
 int tok;
@@ -94,7 +103,7 @@ struct vector3 *vec;
 mdl_format:
 {
   if ((objp=(struct object *)malloc(sizeof(struct object)))==NULL) {
-    mdlerror("Cannot store mesh object");
+    mdlerror(scanner, "Cannot store mesh object");
     return(1);
   }
   objp->name = "ROOT";
@@ -184,7 +193,7 @@ transformation:
 meta_object_def: VAR OBJECT '{'
 {
   if ((objp=(struct object *)malloc(sizeof(struct object)))==NULL) {
-    mdlerror("Cannot store mesh object");
+    mdlerror(scanner, "Cannot store mesh object");
     return(1);
   }
   if (cval_2!=NULL)
@@ -229,7 +238,7 @@ meta_object_def: VAR OBJECT '{'
 polygon_list_def: VAR POLYGON_LIST '{'
 {
   if ((objp=(struct object *)malloc(sizeof(struct object)))==NULL) {
-    mdlerror("Cannot store mesh object");
+    mdlerror(scanner, "Cannot store mesh object");
     return(1);
   }
   if (cval_2!=NULL)
@@ -274,7 +283,7 @@ polygon_list_def: VAR POLYGON_LIST '{'
 { 
   if ((vertex_array=(struct vertex_list **)malloc
        (vertex_count*sizeof(struct vertex_list *)))==NULL) {
-    mdlerror("Cannot store vertex array");
+    mdlerror(scanner, "Cannot store vertex array");
     return(1);
   }
   vlp=vertex_head;
@@ -287,7 +296,7 @@ polygon_list_def: VAR POLYGON_LIST '{'
 { 
   if ((polygon_array=(struct polygon_list **)malloc
        (polygon_count*sizeof(struct polygon_list *)))==NULL) {
-    mdlerror("Cannot store vertex array");
+    mdlerror(scanner, "Cannot store vertex array");
     return(1);
   }
   plp=polygon_head;
@@ -323,14 +332,14 @@ list_points: point
 point: '[' num_arg ',' num_arg ',' num_arg ']'
 {
   if ((vecp=(struct vector3 *)malloc(sizeof(struct vector3)))==NULL) {
-    mdlerror("Cannot store normal vector");
+    mdlerror(scanner, "Cannot store normal vector");
     return(1);
   }
   vecp->x=$<dbl>2;
   vecp->y=$<dbl>4;
   vecp->z=$<dbl>6;
   if ((vlp=(struct vertex_list *)malloc(sizeof(struct vertex_list)))==NULL) {
-    mdlerror("Cannot store vertex list");
+    mdlerror(scanner, "Cannot store vertex list");
     return(1);
   }
   vlp->vertex_id=vertex_count;
@@ -366,11 +375,11 @@ face: '[' int_arg ',' int_arg ',' int_arg ']'
   vert_2=$<dbl>4;
   vert_3=$<dbl>6;
   if ((pop=(struct polygon *)malloc(sizeof(struct polygon)))==NULL) {
-    mdlerror("Cannot store polygon");
+    mdlerror(scanner, "Cannot store polygon");
     return(1);
   }
   if ((plp=(struct polygon_list *)malloc(sizeof(struct polygon_list)))==NULL) {
-    mdlerror("Cannot store polygon list");
+    mdlerror(scanner, "Cannot store polygon list");
     return(1);
   }
   plp->polygon_id=polygon_count;
@@ -416,7 +425,7 @@ list_in_obj_surface_region_defs: in_obj_surface_region_def
 in_obj_surface_region_def: VAR '{'
 {
   if ((rlp=(struct region_list *)malloc(sizeof(struct region_list)))==NULL) {
-    mdlerror("Cannot store mesh object");
+    mdlerror(scanner, "Cannot store mesh object");
     return(1);
   }
   if (cval_2!=NULL)
@@ -450,7 +459,7 @@ in_obj_surface_region_def: VAR '{'
   if (rlp->n_elements>0) {
     if ((rlp->elements=(int *)malloc
                (rlp->n_elements*sizeof(int)))==NULL) {
-      mdlerror("Out of memory while creating region element list");
+      mdlerror(scanner, "Out of memory while creating region element list");
       return(1);
     }
     i=0;
@@ -487,7 +496,7 @@ element_spec: num_arg
 {
   if ((elmlp=(struct element_list *)malloc
              (sizeof(struct element_list)))==NULL) {
-    mdlerror("Out of memory while creating element list item");
+    mdlerror(scanner, "Out of memory while creating element list item");
     return(1);
   }
   elmlp->begin=(unsigned int) ($<dbl>1);
@@ -500,7 +509,7 @@ element_spec: num_arg
 {
   if ((elmlp=(struct element_list *)malloc
              (sizeof(struct element_list)))==NULL) {
-    mdlerror("Out of memory while creating element list item");
+    mdlerror(scanner, "Out of memory while creating element list item");
     return(1);
   }
   elmlp->begin=(unsigned int) ($<dbl>1);
@@ -513,7 +522,7 @@ element_spec: num_arg
 {
   if ((elmlp=(struct element_list *)malloc
              (sizeof(struct element_list)))==NULL) {
-    mdlerror("Out of memory while creating element list item");
+    mdlerror(scanner, "Out of memory while creating element list item");
     return(1);
   }
   elmlp->next=element_list_head;
@@ -699,7 +708,7 @@ str_value: STR_VALUE
 
 %%
 
-int mdlerror(char *s)
+int mdlerror(yyscan_t scanner, const char *s)
 {
 	fprintf(stderr,"mdlmesh_parser: error on line: %d of file: %s  %s\n",
 	        line_num,curr_file,s);

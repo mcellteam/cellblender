@@ -37,7 +37,7 @@ parameter_layout = [
   ['Print Information', 'Reset']
 ]
 
-def prepare_runs ( data_model, project_dir, data_layout=None ):
+def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   # Return a list of run command dictionaries.
   # Each run command dictionary must contain a "cmd" key and a "wd" key.
   # The cmd key will refer to a command list suitable for popen.
@@ -145,6 +145,20 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
           if output_detail > 0: print ( str(command_dict) )
 
   return ( command_list )
+
+
+def get_progress_message_and_status ( stdout_txt ):
+  progress_message = "?"
+  task_complete = False
+  # MCell C++ Prototype iteration lines look like this:
+  # Iteration 20, t=2e-05   (from libMCell's run_simulation)
+  for i in reversed(stdout_txt.split("\n")):
+      if i.startswith("Iteration"):
+          last_iter = int(i.split()[1][0:-1])
+          # Not available:  total_iter = int(mcell.initialization.iterations.get_as_string_or_value())
+          progress_message = "C++ Sim: %d iterations" % (last_iter)
+          break
+  return ( progress_message, task_complete )
 
 
 def postprocess_runs ( data_model, command_strings ):

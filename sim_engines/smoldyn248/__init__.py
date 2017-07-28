@@ -176,6 +176,7 @@ parameter_dictionary = {
   'y_bound_max': {'val':  1.0, 'desc':"y boundary (maximum)"},
   'z_bound_min': {'val': -1.0, 'desc':"z boundary (minimum)"},
   'z_bound_max': {'val':  1.0, 'desc':"z boundary (maximum)"},
+  'Graphics': {'val':  False, 'desc':"Show Smoldyn Graphics"},
   'Command Line': {'val': "", 'desc':"Additional Command Line Parameters"},
   'Output Detail (0-100)': {'val': 20, 'desc':"Amount of Information to Print (0-100)", 'icon':'INFO'},
   'Postprocess': {'val': postprocess, 'desc':"Postprocess the data for CellBlender"},
@@ -187,12 +188,19 @@ parameter_layout = [
   ['Auto Boundaries', 'Set Cube Boundaries:', 'bounding_cube_size'],
   ['x_bound_min', 'y_bound_min', 'z_bound_min'],
   ['x_bound_max', 'y_bound_max', 'z_bound_max'],
-  ['Command Line'],
+  ['Graphics', 'Command Line'],
   ['Output Detail (0-100)'],
   ['Postprocess', 'Reset']
 ]
 
-def prepare_runs ( data_model, project_dir, data_layout=None ):
+par_val_dict = {}
+
+def convert_to_value ( expression ):
+  global par_val_dict
+  return eval(expression,globals(),par_val_dict)
+
+
+def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   # Return a list of run command dictionaries.
   # Each run command dictionary must contain a "cmd" key and a "wd" key.
   # The cmd key will refer to a command list suitable for popen.
@@ -221,8 +229,17 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
   global project_files_dir
   global start_seed
   global end_seed
+  global par_val_dict
 
   project_files_dir = "" + project_dir
+
+
+
+  ## Build a parameter/value dictionary
+
+  for p in data_model['parameter_system']['model_parameters']:
+    par_val_dict[p['par_name']] = p['_extras']['par_value']
+
 
   init = data_model['initialization']
 
@@ -244,6 +261,8 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
     print ( "Obj: " + str(o['name']) )
 
   output_detail = parameter_dictionary['Output Detail (0-100)']['val']
+
+  graphics_flag = parameter_dictionary['Graphics']['val']
 
   command_line_options = parameter_dictionary['Command Line']['val']
 
@@ -336,8 +355,8 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
       start = 1
       end = 1
       try:
-        start = int(data_model['simulation_control']['start_seed'])
-        end = int(data_model['simulation_control']['end_seed'])
+        start = int(convert_to_value(data_model['simulation_control']['start_seed']))
+        end = int(convert_to_value(data_model['simulation_control']['end_seed']))
       except Exception as e:
         print ( "Unable to find the start and/or end seeds in the data model" )
         pass
@@ -363,7 +382,11 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
 
           f.write ( "\n" )
 
-          f.write ( "graphics opengl\n" )
+          if graphics_flag:
+              f.write ( "graphics opengl\n" )
+          else:
+              f.write ( "graphics none\n" )
+
           f.write ( "dim 3\n" )
           f.write ( "random_seed " + str(sim_seed) + "\n" )
 
@@ -384,7 +407,7 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
           f.write ( "\n" )
 
           for m in dm_mol_list:
-            mcell_diffusion_constant = float(str(m['diffusion_constant']))
+            mcell_diffusion_constant = convert_to_value(m['diffusion_constant'])
             smoldyn_diffusion_constant = mcell_diffusion_constant * 10000  # Convert due to units difference
             f.write ( "difc " + str(m['mol_name']) + " " + str(smoldyn_diffusion_constant) + "\n" )
 
@@ -395,20 +418,19 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
             f.write ( "color " + str(m['mol_name']) + " " + str(color[0]) + " " + str(color[1]) + " " + str(color[2]) + "\n" )
 
           f.write ( "\n" )
-
           rnum = 1
           for r in dm_rxn_list:
               # TODO Rates may need scaling
               if r['products'] == 'NULL':
-                  f.write ( "reaction R" + str(rnum) + " " + str(r['reactants']) + " -> " +         "0"        + " " + str(r['fwd_rate']) + "\n" )
+                  f.write ( "reaction R" + str(rnum) + " " + str(r['reactants']) + " -> " +         "0"        + " " + str(convert_to_value(r['fwd_rate'])) + "\n" )
               else:
-                  f.write ( "reaction R" + str(rnum) + " " + str(r['reactants']) + " -> " + str(r['products']) + " " + str(r['fwd_rate']) + "\n" )
+                  f.write ( "reaction R" + str(rnum) + " " + str(r['reactants']) + " -> " + str(r['products']) + " " + str(convert_to_value(r['fwd_rate'])) + "\n" )
               rnum += 1
 
           f.write ( "\n" )
 
           smoldyn_time_step = 0.01  # TODO Needs to use CellBlender time step
-          iterations = int(init['iterations'])
+          iterations = int(convert_to_value(init['iterations']))
           f.write ( "time_start 0\n" )
           f.write ( "time_step " + str(smoldyn_time_step) + "\n" )
           f.write ( "time_stop " + str(iterations * smoldyn_time_step) + "\n" )
@@ -447,9 +469,9 @@ def prepare_runs ( data_model, project_dir, data_layout=None ):
 
           for r in dm_rel_list:
               if r['shape'] == 'OBJECT':
-                  f.write ( "compartment_mol " + r['quantity'] + " " + str(r['molecule']) + " " + r['object_expr'] + "_comp" + "\n" )
+                  f.write ( "compartment_mol " + str(convert_to_value(r['quantity'])) + " " + str(r['molecule']) + " " + r['object_expr'] + "_comp" + "\n" )
               else:
-                  f.write ( "mol " + r['quantity'] + " " + str(r['molecule']) + " " + r['location_x'] + " " + r['location_y'] + " " + r['location_z'] + "\n" )
+                  f.write ( "mol " + str(convert_to_value(r['quantity'])) + " " + str(r['molecule']) + " " + str(convert_to_value(r['location_x'])) + " " + str(convert_to_value(r['location_y'])) + " " + str(convert_to_value(r['location_z'])) + "\n" )
 
           f.write ( "\n" )
 

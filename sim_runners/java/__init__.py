@@ -49,6 +49,10 @@ def find_in_path(program_name):
             return full_name
     return None
 
+def run_engine ( engine_module, data_model, project_dir ):
+    print ( "Calling prepare_runs in active_engine_module" )
+    command_list = engine_module.prepare_runs ( data_model, project_dir )
+    return run_commands ( command_list )
 
 def run_commands ( commands ):
     sp_list = []
@@ -58,10 +62,20 @@ def run_commands ( commands ):
         command_list.append ( "x=%d" % ((50*(1+window_num))%500) ),
         command_list.append ( "y=%d" % ((40*(1+window_num))%400) ),
         command_list.append ( ":" ),
-        command_list.append ( cmd['cmd'] )
-        for arg in cmd['args']:
-            command_list.append ( arg )
-        sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=None, stderr=None ) )
+        if type(cmd) == type('str'):
+            # This command is a string, so just append it
+            command_list.append ( cmd )
+            sp_list.append ( subprocess.Popen ( command_list, stdout=None, stderr=None ) )
+        elif type(cmd) == type({'a':1}):
+            # This command is a dictionary, so use its keys:
+            command_list.append ( cmd['cmd'] )  # The dictionary must contain a 'cmd' key
+            if 'args' in cmd:
+                for arg in cmd['args']:
+                    command_list.append ( arg )
+            if 'wd' in cmd:
+                sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=None, stderr=None ) )
+            else:
+                sp_list.append ( subprocess.Popen ( command_list, stdout=None, stderr=None ) )
         window_num += 1
     return sp_list
 

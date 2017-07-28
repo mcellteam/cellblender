@@ -33,6 +33,7 @@
   // MODULE_NAME should be the name of your python file (minus the .py)
   // pModule will be a pointer to the module containing your class
   
+  // mdlobjModule = PyImport_ImportModule("mdlobj");
   mdlobjModule = PyImport_ImportModule("cellblender.io_mesh_mcell_mdl.mdlobj");
   mdlobjDict = PyModule_GetDict(mdlobjModule);
 

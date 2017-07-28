@@ -6,6 +6,12 @@ import random
 import array
 import shutil
 
+def print_and_flush ( some_string ):
+  # sys.stdout.write ( some_string + "\n" )
+  print ( some_string )
+  sys.stdout.flush()
+
+
 ##### Start by reading the command line parameters which includes the data model file name
 
 proj_path = ""
@@ -15,7 +21,7 @@ run_seed = 1
 decay_rate_factor = 1.0
 output_detail = 0
 for arg in sys.argv:
-  if output_detail > 10: print ( "   " + str(arg) )
+  if output_detail > 10: print_and_flush ( "   " + str(arg) )
   if arg[0:10] == "proj_path=":
     proj_path = arg[10:]
   elif arg[0:11] == "data_model=":
@@ -27,15 +33,20 @@ for arg in sys.argv:
   elif arg[0:14] == "output_detail=":
     output_detail = int(arg[14:])
   else:
-    if output_detail > 0: print ( "Unknown argument = " + str(arg) )
-if output_detail > 10: print ( "\n\n" )
+    if output_detail > 0: print_and_flush ( "Unknown argument = " + str(arg) )
+if output_detail > 10: print_and_flush ( "\n\n" )
 
-if output_detail > 0: print ( "**********************************************" )
-if output_detail > 0: print ( "*  Limited Pure Python Prototype Simulation  *" )
-if output_detail > 0: print ( "*        Updated: February 5th, 2017         *" )
-if output_detail > 0: print ( "**********************************************" )
+if output_detail > 0:
+  print_and_flush ( "**********************************************" )
+  print_and_flush ( "*  Limited Pure Python Prototype Simulation  *" )
+  print_and_flush ( "*          Updated: July 19th, 2017          *" )
+  print_and_flush ( "**********************************************" )
+  print_and_flush ( "" )
+  print_and_flush ( "Running with Python:" )
+  print_and_flush ( sys.version )
+  print_and_flush ( "" )
 
-if output_detail > 10: print ( "Arguments: " + str(sys.argv) )
+if output_detail > 10: print_and_flush ( "Arguments: " + str(sys.argv) )
 
 random.seed ( run_seed )
 seed_dir = "seed_%05d" % run_seed
@@ -43,25 +54,25 @@ seed_dir = "seed_%05d" % run_seed
 if len(data_model_file_name) > 0:
   data_model_full_path = os.path.join ( proj_path, data_model_file_name )
 
-print ( "Project path = \"%s\", data_model_file_name = \"%s\"" % (proj_path, data_model_full_path) )
+print_and_flush ( "Project path = \"%s\", data_model_file_name = \"%s\"" % (proj_path, data_model_full_path) )
 
 ##### Read in the data model itself
 
 dm = None
 if len(data_model_full_path) > 0:
-  if output_detail > 0: print ( "Loading data model from file: " + data_model_full_path + " ..." )
+  if output_detail > 0: print_and_flush ( "Loading data model from file: " + data_model_full_path + " ..." )
   f = open ( data_model_full_path, 'r' )
   pickle_string = f.read()
   f.close()
   dm = pickle.loads ( pickle_string.encode('latin1') )
 
-if output_detail > 0: print ( "Done loading CellBlender model." )
+if output_detail > 0: print_and_flush ( "Done loading CellBlender model." )
 
 if dm is None:
-  print ( "ERROR: Unable to use data model" )
+  print_and_flush ( "ERROR: Unable to use data model" )
   sys.exit(1)
 
-#print ( str(dm) )
+#print_and_flush ( str(dm) )
 
 ##### Clear out the old data
 
@@ -94,9 +105,9 @@ for p in dm['mcell']['parameter_system']['model_parameters']:
   par_val_dict[p['par_name']] = p['_extras']['par_value']
 
 if output_detail > 0:
-  print ( "Parameter Dictionary: " + str(par_val_dict) )
+  print_and_flush ( "Parameter Dictionary: " + str(par_val_dict) )
   for k in par_val_dict.keys():
-    print ( "   " + str(k) + ": " + str(par_val_dict[k]) )
+    print_and_flush ( "   " + str(k) + ": " + str(par_val_dict[k]) )
 
 def convert_to_value ( expression ):
   global par_val_dict
@@ -114,10 +125,10 @@ if 'define_reactions' in dm['mcell']:
       rxns = dm['mcell']['define_reactions']['reaction_list']
 
 for m in mols:
-  if output_detail > 0: print ( "Molecule " + m['mol_name'] + " is a " + m['mol_type'] + " molecule diffusing with " + str(m['diffusion_constant']) )
+  if output_detail > 0: print_and_flush ( "Molecule " + m['mol_name'] + " is a " + m['mol_type'] + " molecule diffusing with " + str(m['diffusion_constant']) )
 
 for r in rels:
-  if output_detail > 0: print ( "Release " + str(r['quantity']) + " of " + r['molecule'] + " at (" + str(r['location_x']) + "," + str(r['location_y']) + "," + str(r['location_z']) + ")"  )
+  if output_detail > 0: print_and_flush ( "Release " + str(r['quantity']) + " of " + r['molecule'] + " at (" + str(r['location_x']) + "," + str(r['location_y']) + "," + str(r['location_z']) + ")"  )
 
 for r in rxns:
   arrow = '->'
@@ -125,7 +136,7 @@ for r in rxns:
   if len(r['bkwd_rate']) > 0:
     arrow = '<->'
     bkwd = ", " + str(r['bkwd_rate'])
-  if output_detail > 0: print ( "Reaction: " + r['reactants'] + " " + arrow + " " + r['products'] + "  [" + str(r['fwd_rate']) + bkwd + "]"  )
+  if output_detail > 0: print_and_flush ( "Reaction: " + r['reactants'] + " " + arrow + " " + r['products'] + "  [" + str(r['fwd_rate']) + bkwd + "]"  )
 
 # Create instances for each molecule that is released (note that release patterns are not handled)
 
@@ -168,7 +179,8 @@ for i in range(iterations+1):
   viz_file_name = file_name_template % i
   viz_file_name = os.path.join(viz_seed_dir,viz_file_name)
   if (i % print_every) == 0:
-    if output_detail > 0: print ( "File = " + viz_file_name )
+    #if output_detail > 0: print_and_flush ( "File = " + viz_file_name )
+    if output_detail > 0: print_and_flush ( "Iteration %d of %d" % (i, iterations) )
   f = open(viz_file_name,"wb")
   int_array = array.array("I")   # Marker indicating a binary file
   int_array.fromlist([1])
@@ -217,7 +229,7 @@ for i in range(iterations+1):
           num_to_remove = int(amount_to_remove)
           if random.random() < (amount_to_remove - num_to_remove):
             num_to_remove += 1
-          if output_detail > 50: print ( "React " + m['mol_name'] + " with rate = " + str(rate) + ", remove " + str(num_to_remove) + " (should be about " + str(100*fraction_to_remove) + "%)" )
+          if output_detail > 50: print_and_flush ( "React " + m['mol_name'] + " with rate = " + str(rate) + ", remove " + str(num_to_remove) + " (should be about " + str(100*fraction_to_remove) + "%)" )
           for i in range(num_to_remove):
             if len(m['instances']) > 0:
               m['instances'].pop()
@@ -226,5 +238,5 @@ for i in range(iterations+1):
 for fname in count_files.keys():
   count_files[fname].close()
 
-if output_detail > 0: print ( "Done simulation.\n" );
+if output_detail > 0: print_and_flush ( "Done simulation.\n" );
 
