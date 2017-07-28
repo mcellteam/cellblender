@@ -38,9 +38,9 @@ class MDLR2MDL(object):
             self.config = yaml.load(f.read())
         try:
             self.nfsim = NFSim(
-                os.path.join(self.config['libpath'], 'libnfsim_c.so'))
+                os.path.join(self.config['libpath'], 'libnfsim_c.dylib'))
         except OSError:
-            print("Cannot open libnfsim_c.so. Please check libpath in "
+            print("Cannot open libnfsim_c.dylib. Please check libpath in "
                   "mcellr.yaml")
             sys.exit(0)
 
