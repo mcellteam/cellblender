@@ -788,8 +788,14 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         description = 'Count all molecules or reactions that occur in the area enclosed by region ')
     est_conc = BoolProperty(name="Enable Estimate Concentration", default = False, 
         description = 'Estimate the concentration of the volume molecule at that region, averaged since the beginning of the simulation.')
-    trig = BoolProperty(name = "Enable Triggers", default = False, description= "Tags molecules with their locations")
+    trig  = BoolProperty(name = "Enable Triggers", default = False, description= "Tags molecules with their locations")
     fr_bk = BoolProperty(name = "Enable Front/Back_Hits/Crossings",default = False)
+    hit_back    = BoolProperty(name = "BACK_HITS",default = False)
+    hit_front   = BoolProperty(name = "FRONT_HITS",default = False)
+    hit_all     = BoolProperty(name = "ALL_HITS",default = False)
+    cross_front = BoolProperty(name = "FRONT_CROSSINGS",default = False)
+    cross_back  = BoolProperty(name = "BACK_CROSSINGS",default = False)
+    cross_all   = BoolProperty(name = "ALL_CROSSINGS",default = False)
     rxn_output_list = CollectionProperty(
         type=MCellReactionOutputProperty, name="Reaction Output List")
     plot_layout_enum = [
@@ -1042,20 +1048,50 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                                                        icon='FACESEL_HLT')                                      
                                 except KeyError:
                                     pass                                           
-                            if rxn_output.count_location == "Region":
+                            if rxn_output.count_location != "World":
                                 
-                                if PBC.peri_trad == True and self.est_conc == False and self.trig == False and self.fr_bk == False:  
-                                    row = layout.row(align=True)                                                            
-                                    row.prop(self, "all_enc")
-                                if self.all_enc == False and self.trig == False and self.fr_bk == False and mcell.molecules.molecule_list[0].type == "3D":
+                                if rxn_output.count_location == "Region":
+
+                                    if PBC.peri_trad==True and self.est_conc==False and self.fr_bk==False:  
+                                        row = layout.row(align=True)                                                            
+                                        row.prop(self, "all_enc")
+                                    if self.all_enc==False and self.trig==False and self.fr_bk==False and mcell.molecules.molecule_list[0].type=="3D":
+                                        row = layout.row(align=True)
+                                        row.prop(self, "est_conc")
+                                    if  self.est_conc==False and self.fr_bk==False:
+                                        row = layout.row(align=True)
+                                        row.prop(self, "trig")
+                                    if self.all_enc==False and self.trig==False and self.est_conc==False:
+                                        row = layout.row(align=True)
+                                        row.prop(self, "fr_bk")
+                                        if self.fr_bk == True:
+                                            row = layout.row(align=True)
+                                            if self.hit_front==False and self.hit_back==False and self.cross_all==False and self.cross_front==False and self.cross_back==False:                                            
+                                                row.prop(self, "hit_all")
+                                            if self.hit_all==False and self.hit_front==False and self.hit_back==False and self.cross_front==False and self.cross_back==False:
+                                                row.prop(self, "cross_all")
+                                            row = layout.row(align=True)
+                                            if self.hit_all==False and self.hit_back==False and self.cross_all==False and self.cross_front==False and self.cross_back==False:
+                                                row.prop(self, "hit_front")
+                                            if self.hit_all==False and self.hit_front==False and self.hit_back==False and self.cross_all==False and self.cross_back==False:
+                                                row.prop(self, "cross_front")
+                                            row = layout.row(align=True)
+                                            if self.hit_all==False and self.hit_front==False and self.cross_all==False and self.cross_front==False and self.cross_back==False:
+                                                row.prop(self, "hit_back")
+                                            if self.hit_all==False and self.hit_front==False and self.hit_back==False and self.cross_all==False and self.cross_front==False:
+                                                row.prop(self, "cross_back")
+                                        if self.fr_bk==False:
+                                            self.hit_all     = False
+                                            self.hit_front   = False
+                                            self.hit_back    = False
+                                            self.cross_all   = False
+                                            self.cross_front = False
+                                            self.cross_back  = False                                            
+                                            
+                                if rxn_output.count_location == "Object":
+
                                     row = layout.row(align=True)
-                                    row.prop(self, "est_conc")
-                                if self.all_enc == False and self.est_conc == False and self.fr_bk == False:
-                                    row = layout.row(align=True)
-                                    row.prop(self, "trig")
-                                if self.all_enc == False and self.trig == False and self.est_conc == False:
-                                    row = layout.row(align=True)
-                                    row.prop(self, "fr_bk")
+                                    row.prop(self, "trig")                                  
                             #Checking which region they want to count in from the PBC file
                             if rxn_output.count_location != "World":
                                 #layout.label(text= "I'm a label",icon='GRID')
