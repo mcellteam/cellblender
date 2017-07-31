@@ -778,14 +778,18 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
         type=parameter_system.Parameter_Reference )
     active_rxn_output_index = IntProperty(
         name="Active Reaction Output Index", default=0)
-    virt_x = bpy.props.IntProperty(name="X Position", default=0,
+    virt_x   = bpy.props.IntProperty(name="X Position", default=0,
         description="The X coordinate of the Virtual Box")
-    virt_y = bpy.props.IntProperty(name="Y Position", default=0,
+    virt_y   = bpy.props.IntProperty(name="Y Position", default=0,
         description="The Y coordinate of the Virtual Box")
-    virt_z = bpy.props.IntProperty(name="Z Position", default=0,
+    virt_z   = bpy.props.IntProperty(name="Z Position", default=0,
         description="The Z coordinate of the Virtual Box")
-    all_enc = BoolProperty(name="Include All enclosed", default = False, 
+    all_enc  = BoolProperty(name="Enable All enclosed", default = False, 
         description = 'Count all molecules or reactions that occur in the area enclosed by region ')
+    est_conc = BoolProperty(name="Enable Estimate Concentration", default = False, 
+        description = 'Estimate the concentration of the volume molecule at that region, averaged since the beginning of the simulation.')
+    trig = BoolProperty(name = "Enable Triggers", default = False, description= "Tags molecules with their locations")
+    fr_bk = BoolProperty(name = "Enable Front/Back_Hits/Crossings",default = False)
     rxn_output_list = CollectionProperty(
         type=MCellReactionOutputProperty, name="Reaction Output List")
     plot_layout_enum = [
@@ -1038,9 +1042,20 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                                                        icon='FACESEL_HLT')                                      
                                 except KeyError:
                                     pass                                           
-                            if rxn_output.count_location == "Region" and PBC.peri_trad == True:
-                                    row = layout.row(align=True)
+                            if rxn_output.count_location == "Region":
+                                
+                                if PBC.peri_trad == True and self.est_conc == False and self.trig == False and self.fr_bk == False:  
+                                    row = layout.row(align=True)                                                            
                                     row.prop(self, "all_enc")
+                                if self.all_enc == False and self.trig == False and self.fr_bk == False and mcell.molecules.molecule_list[0].type == "3D":
+                                    row = layout.row(align=True)
+                                    row.prop(self, "est_conc")
+                                if self.all_enc == False and self.est_conc == False and self.fr_bk == False:
+                                    row = layout.row(align=True)
+                                    row.prop(self, "trig")
+                                if self.all_enc == False and self.trig == False and self.est_conc == False:
+                                    row = layout.row(align=True)
+                                    row.prop(self, "fr_bk")
                             #Checking which region they want to count in from the PBC file
                             if rxn_output.count_location != "World":
                                 #layout.label(text= "I'm a label",icon='GRID')
