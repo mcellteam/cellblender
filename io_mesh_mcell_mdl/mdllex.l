@@ -13,18 +13,24 @@ extern double rval;
 extern char err_msg[128];
 char *my_strdup(char *s);
 
+YY_DECL;
+
 %}
+
+/* Reentrant lexer allows proper reset of parser upon each invokation */
+%option reentrant bison-bridge
 
 /* Set up function name prefixes and output file name */
 %option prefix="mdl"
 %option outfile="mdllex.flex.c"
+%option header-file="mdllex.flex.h"
 
 /* Disable yywrap feature */
 %option noyywrap
 
 /* Eliminate unused symbols to eliminate compiler warnings */
 %option nounput
-%option noyy_top_state
+%option noinput
 
 %p 10000
 %a 10000 
@@ -77,28 +83,28 @@ IDENT [A-Za-z][A-Za-z0-9\_\.]*
 "RAND_GAUSSIAN"         {return(RAND_GAUSSIAN);}
 "SEED"                  {return(SEED);}
 "STRING_TO_NUM"         {return(STRING_TO_NUM);}
-{R}                     {sscanf((const char *)mdltext,"%lf",&rval); return(REAL);}
-{I}                     {sscanf((const char *)mdltext,"%d",&ival); return(INTEGER);}
+{R}                     {sscanf((const char *)yytext,"%lf",&rval); return(REAL);}
+{I}                     {sscanf((const char *)yytext,"%d",&ival); return(INTEGER);}
 {IDENT}                 {
                            if (cval==NULL) {
                              cval_2=NULL;
-                             cval=strdup(mdltext);
+                             cval=strdup(yytext);
                            }
                            else {
                              cval_2=cval;
-                             cval=strdup(mdltext);
+                             cval=strdup(yytext);
                            }
                            if(cval == NULL){
-                                fprintf(stderr,"File '%s', Line %ld: Out of memory while parsing variable name: %s\n", __FILE__, (long)__LINE__, mdltext);
+                                fprintf(stderr,"File '%s', Line %ld: Out of memory while parsing variable name: %s\n", __FILE__, (long)__LINE__, yytext);
                                 exit(1);
                            }
 
                            return(VAR);
                         }
 \"(([^\"]*)|((\\\")*))*\"  {
-                             strval = strdup(mdltext);
+                             strval = strdup(yytext);
                              return (STR_VALUE);
                            }
-[\'\,\(\)\/\-\+\=\^\[\]\{\}\|\<\>\*\#\~\@\:\&\;] {return(mdltext[0]);}
+[\'\,\(\)\/\-\+\=\^\[\]\{\}\|\<\>\*\#\~\@\:\&\;] {return(yytext[0]);}
 .			;
 \n			{line_num++;}

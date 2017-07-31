@@ -129,6 +129,9 @@ cellblender_info = {
         "sim_runners"+os.sep+"sun_grid_engine"+os.sep+"__init__.py",
         "sim_runners"+os.sep+"sun_grid_engine"+os.sep+"makefile",
 
+        "sim_runners"+os.sep+"portable_batch_system"+os.sep+"__init__.py",
+        "sim_runners"+os.sep+"portable_batch_system"+os.sep+"makefile",
+
         "sim_runners"+os.sep+"java"+os.sep+"__init__.py",
         "sim_runners"+os.sep+"java"+os.sep+"SimControl.java",
         "sim_runners"+os.sep+"java"+os.sep+"makefile",
@@ -169,6 +172,8 @@ cellblender_info = {
         "sim_engines"+os.sep+"mcell3r"+os.sep+"split_bngxml.py",
         "sim_engines"+os.sep+"mcell3r"+os.sep+"write_bngxmle.py",
         "sim_engines"+os.sep+"mcell3r"+os.sep+"write_mdl.py",
+
+        "sim_engines"+os.sep+"cBNGL"+os.sep+"__init__.py",
 
         "sim_engines"+os.sep+"smoldyn248"+os.sep+"makefile",
         "sim_engines"+os.sep+"smoldyn248"+os.sep+"__init__.py",

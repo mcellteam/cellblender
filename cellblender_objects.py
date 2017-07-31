@@ -721,7 +721,6 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
     show_cursor_controls = bpy.props.BoolProperty(default=False, description="Show/Hide 3D Cursor Location")
 
     has_some_dynamic  = bpy.props.BoolProperty(default=False)
-    show_dynamic_from_files = bpy.props.BoolProperty(default=True)
 
     def remove_properties ( self, context ):
         print ( "Removing all Model Object List Properties..." )
@@ -836,11 +835,6 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                                           context.scene.mcell.scripting, "internal_python_scripts_list",
                                           text="Script", icon='TEXT' )
                         row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
-
-            if self.has_some_dynamic:
-                # Only show this if there's dynamic geometry. This is a debugging aid for non-scripted shape keys from Blender
-                row = layout.row()
-                row.prop (self, "show_dynamic_from_files", text="Show Dynamic from Files")
 
 
 
@@ -1267,6 +1261,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
 
 
     def update_scene ( self, scene, frame_num=None ):
+        # print ( "update_scene" )
         cur_frame = frame_num
         if cur_frame == None:
           cur_frame = scene.frame_current
@@ -1274,48 +1269,56 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
           cur_frame = scene.frame_end
 
         mcell = scene.mcell
-        if mcell.model_objects.has_some_dynamic and mcell.model_objects.show_dynamic_from_files:
+        if mcell.model_objects.has_some_dynamic:
             filepath = mcell_files_path()
             path_to_dg_files = os.path.join ( filepath, "output_data", "dynamic_geometry" )
             for obj in mcell.model_objects.object_list:
                 if obj.dynamic and (obj.dynamic_display_source != 'other'):
-                    if len(obj.script_name) > 0:
+
+                    # These names are currently defined as part of the dynamic geometry interface
+                    points = []            # The name "points" is expected by the user's script
+                    faces = []             # The name "faces" is expected by the user's script
+                    origin = [0,0,0]       # The name "origin" is expected by the user's script
+                    regions_dict = None    # The name "regions_dict" is expected by the user's script
+
+                    if (obj.dynamic_display_source == 'script') and (len(obj.script_name) > 0):
+                        frame_number = cur_frame     # The name "frame_number" is expected by the user's script
+                        exec ( bpy.data.texts[obj.script_name].as_string() )
+
+                    elif len(obj.script_name) > 0:
                         file_name = "%s_frame_%d.mdl"%(obj.name,cur_frame)
-                        #print ( "Reading from " + file_name )
+                        # print ( "Reading from " + file_name )
                         full_file_name = os.path.join(path_to_dg_files,file_name)
-                        vertex_list = []
-                        face_list = []
-                        origin = [0,0,0]
-                        self.read_from_regularized_mdl ( file_name=full_file_name, points=vertex_list, faces=face_list, origin=origin, partitions=False, instantiate=False )
+                        self.read_from_regularized_mdl ( file_name=full_file_name, points=points, faces=faces, origin=origin, partitions=False, instantiate=False )
 
-                        vertices = []
-                        for point in vertex_list:
-                            #print ( "  " + str(point[0]) + "  " + str(point[1]) + "  " + str(point[2]) )
-                            vertices.append ( mathutils.Vector((point[0],point[1],point[2])) )
-                        faces = []
-                        for face in face_list:
-                            faces.append ( face )
+                    vertices = []
+                    for point in points:
+                        #print ( "  " + str(point[0]) + "  " + str(point[1]) + "  " + str(point[2]) )
+                        vertices.append ( mathutils.Vector((point[0],point[1],point[2])) )
+                    face_list = []
+                    for face in faces:
+                        face_list.append ( face )
 
-                        new_mesh = bpy.data.meshes.new ( obj.name + "_mesh" )
-                        new_mesh.from_pydata ( vertices, [], faces )
-                        new_mesh.update()
+                    new_mesh = bpy.data.meshes.new ( obj.name + "_mesh" )
+                    new_mesh.from_pydata ( vertices, [], face_list )
+                    new_mesh.update()
 
-                        new_object = None
-                        if obj.name in scene.objects:
-                            new_object = scene.objects[obj.name]
-                            old_mesh = new_object.data
-                            new_object.data = new_mesh
-                            bpy.data.meshes.remove ( old_mesh )
-                        else:
-                            new_object = bpy.data.objects.new ( obj.name, new_mesh )
-                            scene.objects.link ( new_object )
-                        new_object.location = mathutils.Vector((origin[0],origin[1],origin[2]))
+                    new_object = None
+                    if obj.name in scene.objects:
+                        new_object = scene.objects[obj.name]
+                        old_mesh = new_object.data
+                        new_object.data = new_mesh
+                        bpy.data.meshes.remove ( old_mesh )
+                    else:
+                        new_object = bpy.data.objects.new ( obj.name, new_mesh )
+                        scene.objects.link ( new_object )
+                    new_object.location = mathutils.Vector((origin[0],origin[1],origin[2]))
 
-                        mat_name = obj.name + "_mat"
-                        if mat_name in bpy.data.materials:
-                            new_object.data.materials.append ( bpy.data.materials[mat_name] )
+                    mat_name = obj.name + "_mat"
+                    if mat_name in bpy.data.materials:
+                        new_object.data.materials.append ( bpy.data.materials[mat_name] )
 
-                        # TODO: Deal with materials on faces
+                    # TODO: Deal with materials on faces
 
 
 
