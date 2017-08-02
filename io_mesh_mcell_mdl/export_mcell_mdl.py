@@ -1095,19 +1095,62 @@ def save_rxn_output_mdl(context, out_file, rxn_output_list):
                      out_file.write("  {COUNT["+count_name+","+context.scene.name+"."+object_name+",[%.15g,%.15g,%.15g]]" %(mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z)
                      + "}=> \"./react_data/seed_\" & seed &  \"/%s.%s.%s_%s_%s.dat\"\n" %(count_name, object_name,mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z))
                 elif mcell.pbc.peri_trad == True:
-                    out_file.write(
-                        "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
-                        "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, count_name, object_name))
+                    if mcell.rxn_output.trig == True:
+                        out_file.write(
+                            "  {TRIGGER[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
+                            "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, count_name, object_name))
+                    else:
+                        out_file.write(
+                            "  {COUNT[%s,%s.%s]}=> \"./react_data/seed_\" & seed & "
+                            "\"/%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, count_name, object_name))
             elif rxn_output.count_location == 'Region':
                 if mcell.pbc.peri_trad == False:
                      out_file.write("  {COUNT["+count_name+","+context.scene.name+"."+object_name+"["+region_name+"]"+",[%.15g,%.15g,%.15g]]" %(mcell.rxn_output.virt_x,mcell.rxn_output.virt_y,mcell.rxn_output.virt_z)
                      + "}=> \"./react_data/seed_\" & seed &  \"/%s.%s.%s.dat\"\n" %(count_name,object_name,region_name))
                 elif mcell.pbc.peri_trad == True:
-                    if mcell.rxn_output.all_enc == True:
+                    if mcell.rxn_output.all_enc == True and mcell.rxn_output.trig == False:
                          out_file.write(
                         "  {COUNT[%s,%s.%s[%s],ALL_ENCLOSED]}=> \"./react_data/seed_\" & seed & "
                         "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name, count_name, object_name, region_name))
-                    elif mcell.rxn_output.all_enc == False:
+                    elif mcell.rxn_output.all_enc == True and mcell.rxn_output.trig == True:
+                         out_file.write(
+                        "  {TRIGGER[%s,%s.%s[%s],ALL_ENCLOSED]}=> \"./react_data/seed_\" & seed & "
+                        "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name, count_name, object_name, region_name))
+                    elif mcell.rxn_output.trig == True:
+                         out_file.write(
+                        "  {TRIGGER[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
+                        "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name, count_name, object_name, region_name))
+                    elif mcell.rxn_output.est_conc == True:
+                         out_file.write(
+                        "  {COUNT[%s,%s.%s[%s],ESTIMATE_CONC]}=> \"./react_data/seed_\" & seed & "
+                        "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name, count_name, object_name, region_name))
+                    elif mcell.rxn_output.fr_bk == True:
+                        # FRONT_HITS, BACK_HITS, ALL_HITS, FRONT_CROSSINGS, BACK_CROSSINGS, and ALL_CROSSINGS.
+                        if mcell.rxn_output.hit_all==True:
+                            out_file.write(
+                             "  {COUNT[%s,%s.%s[%s],ALL_HITS]}=> \"./react_data/seed_\" & seed & "
+                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))    
+                        elif mcell.rxn_output.hit_front==True:
+                            out_file.write(
+                             "  {COUNT[%s,%s.%s[%s],FRONT_HITS]}=> \"./react_data/seed_\" & seed & "
+                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))
+                        elif mcell.rxn_output.hit_back==True:
+                            out_file.write(
+                             "  {COUNT[%s,%s.%s[%s],BACK_HITS]}=> \"./react_data/seed_\" & seed & "
+                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))
+                        elif mcell.rxn_output.cross_all==True:
+                            out_file.write(
+                             "  {COUNT[%s,%s.%s[%s],ALL_CROSSINGS]}=> \"./react_data/seed_\" & seed & "
+                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))
+                        elif mcell.rxn_output.cross_front==True:
+                            out_file.write(
+                             "  {COUNT[%s,%s.%s[%s],FRONT_CROSSINGS]}=> \"./react_data/seed_\" & seed & "
+                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))
+                        elif mcell.rxn_output.cross_back==True:
+                            out_file.write(
+                             "  {COUNT[%s,%s.%s[%s],BACK_CROSSINGS]}=> \"./react_data/seed_\" & seed & "
+                             "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name,count_name, object_name, region_name))                             
+                    else:
                         out_file.write(
                         "  {COUNT[%s,%s.%s[%s]]}=> \"./react_data/seed_\" & seed & "
                         "\"/%s.%s.%s.dat\"\n" % (count_name, context.scene.name,object_name, region_name, count_name, object_name, region_name))
