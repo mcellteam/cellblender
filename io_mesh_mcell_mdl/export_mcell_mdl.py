@@ -985,7 +985,11 @@ def save_viz_output_mdl(context, out_file, molecule_viz_list, export_all, export
 
     if molecule_viz_list or export_all:
         out_file.write("VIZ_OUTPUT\n{\n")
-        out_file.write("  MODE = CELLBLENDER\n")
+        #button for if they want to set this or ascii
+        if mcell.mol_viz.ascii_enable:
+            out_file.write("  MODE = ASCII\n")
+        else:
+            out_file.write("  MODE = CELLBLENDER\n") 
         out_file.write("  FILENAME = \"./viz_data/seed_\" & seed & \"/%s\"\n" % settings.base_name)
         out_file.write("  MOLECULES\n")
         out_file.write("  {\n")

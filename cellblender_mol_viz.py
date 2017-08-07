@@ -1094,6 +1094,7 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         name="Enable Molecule Vizualization",
         description="Disable for faster animation preview",
         default=True, update=mol_viz_update)
+    ascii_enable = BoolProperty(name="Change Viz Data to Ascii",default= False)
     color_list = CollectionProperty(
         type=MCellFloatVectorProperty, name="Molecule Color List")
     color_index = IntProperty(name="Color Index", default=0)
@@ -1368,6 +1369,8 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
             row.prop(mcell.mol_viz, "manual_select_viz_dir")
+            row = layout.row()
+            row.prop(self,"ascii_enable")
             row = layout.row()
             if self.manual_select_viz_dir:
                 row.operator("mcell.select_viz_data", icon='IMPORT')
