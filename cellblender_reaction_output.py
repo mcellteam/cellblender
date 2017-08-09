@@ -789,7 +789,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
     est_conc = BoolProperty(name="Enable Estimate Concentration", default = False, 
         description = 'Estimate the concentration of the volume molecule at that region, averaged since the beginning of the simulation.')
     trig  = BoolProperty(name = "Enable Triggers", default = False, description= "Tags molecules with their locations")
-    fr_bk = BoolProperty(name = "Enable Front/Back_Hits/Crossings",default = False)
+    fr_bk = BoolProperty(name = "Show Hits/Crossings options",default = False)
     hit_back    = BoolProperty(name = "BACK_HITS",default = False)
     hit_front   = BoolProperty(name = "FRONT_HITS",default = False)
     hit_all     = BoolProperty(name = "ALL_HITS",default = False)
