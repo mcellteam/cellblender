@@ -23,8 +23,8 @@ import subprocess
 import sys
 import time
 
-plug_code = "SGE_SIMPLE"
-plug_name = "Sun Grid Engine Simple"
+plug_code = "SGE"
+plug_name = "Sun Grid Engine"
 
 def term_all():
     print ( "Terminating all jobs ..." )

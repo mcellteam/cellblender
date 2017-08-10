@@ -2157,7 +2157,11 @@ def get_engines_as_items(scene, context):
     plugs_list = [("NONE", "Choose Engine", "")]
     # Add the dynamic modules
     for plug in engine_manager.plug_modules:
-        plugs_list.append ( (plug.plug_code, plug.plug_name, "") )
+        plug_active = True
+        if "plug_active" in dir(plug):
+            plug_active = plug.plug_active
+        if plug_active:
+            plugs_list.append ( (plug.plug_code, plug.plug_name, "") )
     return plugs_list
 
 def get_runners_as_items(scene, context):
@@ -2166,7 +2170,11 @@ def get_runners_as_items(scene, context):
     plugs_list = [("NONE", "Choose Runner", "")]
     # Add the dynamic modules
     for plug in runner_manager.plug_modules:
-        plugs_list.append ( (plug.plug_code, plug.plug_name, "") )
+        plug_active = True
+        if "plug_active" in dir(plug):
+            plug_active = plug.plug_active
+        if plug_active:
+            plugs_list.append ( (plug.plug_code, plug.plug_name, "") )
     return plugs_list
 
 

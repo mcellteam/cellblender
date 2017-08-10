@@ -27,8 +27,9 @@ import bpy
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
     FloatProperty, FloatVectorProperty, IntProperty, IntVectorProperty, PointerProperty, StringProperty, BoolVectorProperty
 
-plug_code = "SGE"
-plug_name = "Sun Grid Engine"
+plug_code = "SGE_HOST_SEL"
+plug_name = "SGE Host Select"
+plug_active = False
 
 def term_all():
     print ( "Terminating all jobs ..." )
