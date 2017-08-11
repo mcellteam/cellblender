@@ -1759,7 +1759,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "MCellRunSimulationPropertyGroup building Data Model" )
         dm = {}
-        dm['data_model_version'] = "DM_2016_10_27_1642"
+        dm['data_model_version'] = "DM_2017_08_10_1657"
         dm['name'] = self.name
         dm['start_seed'] = self.start_seed.get_expr()
         dm['end_seed'] = self.end_seed.get_expr()
@@ -1768,6 +1768,46 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         for p in self.processes_list:
             p_list.append ( p.build_data_model_from_properties(context) )
         dm['processes_list'] = p_list
+
+        print ( "Save Engines and Runners in Data Model" )
+
+        sim_engine_list = []
+        if engine_manager.plug_modules != None:
+            print ( "Engine Plugs to save" )
+            for plug in engine_manager.plug_modules:
+                print ( "Saving Engine Plug " + str(plug.plug_code) )
+                plug_dm = {}
+                plug_dm['plug_code'] = plug.plug_code
+                plug_dm['plug_name'] = plug.plug_name
+
+                plug_dm['plug_active'] = True
+                if "plug_active" in dir(plug):
+                    plug_dm['plug_active'] = plug.plug_active
+
+                plug_dm['parameter_dictionary'] = {}
+                if "parameter_dictionary" in dir(plug):
+                    plug_par_dict = plug.parameter_dictionary
+                    # Copy only non-functions
+                    for k in plug_par_dict.keys():
+                        copy_par = True
+                        if 'val' in plug_par_dict[k].keys():
+                            if type(plug_par_dict[k]['val']) == type(plugs_changed_callback):
+                                copy_par = False
+                        if copy_par:
+                            plug_dm['parameter_dictionary'][k] = plug_par_dict[k]
+
+                plug_dm['parameter_layout'] = []
+                if "parameter_layout" in dir(plug):
+                    plug_dm['parameter_layout'] = plug.parameter_layout
+
+                sim_engine_list.append ( plug_dm )
+
+        dm['sim_engines'] = sim_engine_list
+
+        if runner_manager.plug_modules != None:
+            print ( "Runner Plugs to save" )
+            #runner_manager.plug_modules = runner_manager.get_modules()
+
         return dm
 
 
@@ -1790,7 +1830,15 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
             dm['run_limit'] = "-1"
             dm['data_model_version'] = "DM_2016_10_27_1642"
 
-        if dm['data_model_version'] != "DM_2016_10_27_1642":
+        if dm['data_model_version'] == "DM_2016_10_27_1642":
+            # Add Engines and Runners lists if they don't exist
+            if not 'sim_engines' in dm.keys():
+                dm['sim_engines'] = []
+            if not 'sim_runners' in dm.keys():
+                dm['sim_runners'] = []
+            dm['data_model_version'] = "DM_2017_08_10_1657"
+
+        if dm['data_model_version'] != "DM_2017_08_10_1657":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationPropertyGroup data model to current version." )
             return None
         return dm
@@ -1798,7 +1846,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
 
-        if dm['data_model_version'] != "DM_2016_10_27_1642":
+        if dm['data_model_version'] != "DM_2017_08_10_1657":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationPropertyGroup data model to current version." )
 
         self.enable_python_scripting = False  # Explicitly disable this when building from a data model
@@ -1817,6 +1865,49 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         #        self.processes_list.add()
         #        self.active_process_index = len(self.processes_list) - 1
         #        self.processes_list[self.active_process_index].build_properties_from_data_model(context, p)
+
+
+        # Force a reading of currently installed modules as needed
+
+        if engine_manager.plug_modules == None:
+            engine_manager.plug_modules = engine_manager.get_modules()
+        if runner_manager.plug_modules == None:
+            runner_manager.plug_modules = runner_manager.get_modules()
+
+        # Only restore the engines and runners that are currently installed
+
+        if engine_manager.plug_modules != None:
+            print ( "Restoring Engine Plugs" )
+            for plug in engine_manager.plug_modules:
+                print ( "Looking for saved data for plug " + str(plug.plug_code) )
+                for plug_dm in dm['sim_engines']:
+                    if plug_dm['plug_code'] == plug.plug_code:
+                        print ( "Found data for Engine Plug " + str(plug.plug_code) )
+
+                        plug.plug_active = True
+                        if "plug_active" in plug_dm:
+                            plug.plug_active = plug_dm['plug_active']
+
+                        if "parameter_dictionary" in plug_dm:
+                            # Copy all entries except those that are functions.
+                            # Note that it might be good to do this recursively,
+                            #   but all functions are currently at the top level.
+                            pars_dict = plug_dm['parameter_dictionary']
+                            for k in pars_dict.keys():
+                                par = pars_dict[k]
+                                copy_par = True
+                                if 'val' in par.keys():
+                                    if type(par['val']) == type(plugs_changed_callback):
+                                        copy_par = False
+                                if copy_par:
+                                    plug.parameter_dictionary[k] = pars_dict[k]
+
+                        if "parameter_layout" in plug_dm:
+                            plug.parameter_layout = plug_dm['parameter_layout']
+
+        if runner_manager.plug_modules != None:
+            print ( "Runner Plugs to save" )
+            #runner_manager.plug_modules = runner_manager.get_modules()
 
 
 

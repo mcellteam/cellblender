@@ -511,7 +511,6 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
         else:
             CB_ID = mcell['saved_by_source_id']
             source_id = cellblender.cellblender_info['cellblender_source_sha1']
-
             if CB_ID != source_id:
                 # This is a CellBlender file >= 1.0, so draw the normal upgrade button
                 row = layout.row()
