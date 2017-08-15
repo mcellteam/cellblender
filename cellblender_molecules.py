@@ -1350,6 +1350,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
     show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_preview = bpy.props.BoolProperty(default=False, name="Material Preview")
     show_extra_columns = bpy.props.BoolProperty(default=False, description="Show additional visibility control columns")
+    dup_check = bpy.props.BoolProperty(default=False)
 
     next_color = IntProperty (default=0)  # Keeps track of the next molecule color to use
 
@@ -1379,12 +1380,30 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         
     
     def add_molecule ( self, context ):
+        mcell = context.scene.mcell        
         """ Add a new molecule to the list of molecules and set as the active molecule """
-        new_mol = self.molecule_list.add()
-        new_mol.id = self.allocate_available_id()
-        new_mol.init_properties(context.scene.mcell.parameter_system)
-        # new_mol.initialize(context)
-        self.active_mol_index = len(self.molecule_list)-1
+        if mcell.mol_viz.molecule_read_in == False:
+            new_mol = self.molecule_list.add()
+            new_mol.id = self.allocate_available_id()
+            new_mol.init_properties(context.scene.mcell.parameter_system)
+              # new_mol.initialize(context)
+            self.active_mol_index = len(self.molecule_list)-1
+        elif mcell.mol_viz.molecule_read_in == True:
+            mcell.mol_viz.molecule_read_in = False
+            for x in range(len(bpy.data.objects['molecules'].children)): 
+                # new_mol.initialize(context)                
+                for i in range(len(self.molecule_list)):
+                        if self.molecule_list[i].name == bpy.data.objects['molecules'].children[x].name[4:]:
+                            self.dup_check = True                                                         
+                if self.dup_check == False:
+                    new_mol = self.molecule_list.add()       
+                    new_mol.init_properties(context.scene.mcell.parameter_system)
+                    new_mol.remove_mol_data(context.scene.mcell)
+                    self.active_mol_index = len(self.molecule_list)-1
+                    self.molecule_list[self.active_mol_index].name = bpy.data.objects['molecules'].children[x].name[4:]
+                elif self.dup_check == True:
+                    self.dup_check = False
+      
 
     def remove_active_molecule ( self, context ):
         """ Remove the active molecule from the list of molecules """
@@ -1467,8 +1486,6 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
                 remove_mol_data_by_name ( mol_name[4:], context )
                 # print ( "New length of molecule_list = " + str(len(bpy.data.objects['molecules'].children)) )
 
-
-
         # Add molecules from the data model
         if "molecule_list" in dm:
             for m in dm["molecule_list"]:
@@ -1492,7 +1509,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         # Check for duplicate molecule name
         mol_keys = self.molecule_list.keys()
         if mol_keys.count(mol.name) > 1:
-            status = "Duplicate molecule: %s" % (mol.name)
+            status = "Duplicate molecule: %s" % (mol.name)         
 
         # Check for illegal names (Starts with a letter. No special characters.)
         mol_filter = r"(^[A-Za-z]+[0-9A-Za-z_.]*$)"
