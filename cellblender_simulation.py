@@ -2531,8 +2531,13 @@ class Pluggable(bpy.types.PropertyGroup):
     engines_show = BoolProperty ( default=False, description="Show Engine Options" )
     runners_show = BoolProperty ( default=False, description="Show Runner Options" )
 
+    # This property holds the list of values for the currently selected plug.
+    # The list is emptied and loaded whenever the chosen plug changes
     plug_val_list = CollectionProperty(type=PluggableValue, name="String List")
     active_plug_val_index = IntProperty(name="Active String Index", default=0)
+
+    debug_mode = BoolProperty ( default=False, description="Debugging" )
+
 
     def plugs_changed_callback ( self, context ):
         global active_engine_module
@@ -2666,7 +2671,8 @@ class Pluggable(bpy.types.PropertyGroup):
           engine_runner_label = "Run using:"
           engine_runner_key_name = "runners_show"
           engine_runner_options_showing = self.runners_show
-        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        if self.debug_mode:
+          __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
         layout = panel
         #row = layout.row()
@@ -2704,10 +2710,15 @@ class Pluggable(bpy.types.PropertyGroup):
             row = layout.row()
             row.label ( "No module selected" )
         elif engine_runner_options_showing:
-            #row = layout.row()
-            #row.label ( "Current module info: " + active_module.plug_code + " " + active_module.plug_name )
-
             if ('parameter_dictionary' in dir(active_module)) and ('parameter_layout' in dir(active_module)):
+
+                # Assign the indexes (needs to be done because the indexes are not stored as Blender Properties
+                # There might be a better way to do this.
+                idx = 0
+                for k in sorted(active_module.parameter_dictionary.keys()):
+                  active_module.parameter_dictionary[k]['_i'] = idx
+                  idx += 1
+
                 # Draw the panel according to the layout
                 for r in active_module.parameter_layout:
                     row = layout.row()
