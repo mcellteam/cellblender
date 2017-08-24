@@ -34,12 +34,13 @@ def info():
 parameter_dictionary = {
   'Java Path': {'val': "", 'as':'filename', 'desc':"Optional Path", 'icon':'SCRIPTWIN'},
   'Print Information': {'val': info, 'desc':"Print information"},
-  'Reset': {'val': reset, 'desc':"Reset everything"}
+  'Reset': {'val': reset, 'desc':"Reset everything"},
+  'Print Commands': {'val':False, 'desc':"Print the commands to be executed"}
 }
 
 parameter_layout = [
   ['Java Path'],
-  ['Print Information', 'Reset']
+  ['Print Information', 'Reset', 'Print Commands']
 ]
 
 def find_in_path(program_name):
@@ -56,6 +57,12 @@ def find_in_path(program_name):
 #    return run_commands ( command_list )
 
 def run_commands ( commands ):
+
+    if parameter_dictionary['Print Commands']['val']:
+        print ( "Commands for " + plug_name + " runner:" )
+        for cmd in commands:
+            print ( "  " + str(cmd) )
+
     sp_list = []
     window_num = 0
     for cmd in commands:
@@ -73,6 +80,8 @@ def run_commands ( commands ):
             if 'args' in cmd:
                 for arg in cmd['args']:
                     command_list.append ( arg )
+            if parameter_dictionary['Print Commands']['val']:
+                print ( "Popen with: " + str(command_list) )
             if 'wd' in cmd:
                 sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=None, stderr=None ) )
             else:

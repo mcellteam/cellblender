@@ -49,11 +49,20 @@ def run_commands ( commands ):
             command_list.append ( cmd['cmd'] )  # The dictionary must contain a 'cmd' key
             if 'args' in cmd:
                 for arg in cmd['args']:
-                    command_list.append ( arg )
+                    # For some reason, the ' ' in the args may be creating a problem for "-seed 1"
+                    # This isn't a problem in the Java or OpenGL runners, but it is here.
+                    # So ... check for spaces and split into additional arguments
+                    if ' ' in arg:
+                      for s in arg.split(' '):
+                        command_list.append ( s )
+                    else:
+                      command_list.append ( arg )
+            if parameter_dictionary['Print Commands']['val']:
+                print ( "Popen with: " + str(command_list) )
             if 'wd' in cmd:
                 sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=None, stderr=None ) )
             else:
                 sp_list.append ( subprocess.Popen ( command_list, stdout=None, stderr=None ) )
-    # Should this return anything?
-    # return sp_list
+
+    return sp_list
 
