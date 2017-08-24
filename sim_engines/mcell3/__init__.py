@@ -195,12 +195,12 @@ def prepare_runs_no_data_model ( project_dir ):
         engine_manager.write_default_data_layout(mcell_files, start, end)
 
         for sim_seed in range(start,end+1):
-            new_command = [ mcell_binary, ("-seed %s" % str(sim_seed)), os.path.join(project_dir, ("%s.main.mdl" % base_name)) ]
+            new_command = [ mcell_binary, "-seed",  str(sim_seed), os.path.join(project_dir, "%s.main.mdl" % base_name) ]
 
             cmd_entry = {}
             cmd_entry['cmd'] = mcell_binary
             cmd_entry['wd'] = project_dir
-            cmd_entry['args'] = [ "-seed %s" % str(sim_seed),os.path.join(project_dir, ("%s.main.mdl" % base_name)) ]
+            cmd_entry['args'] = [ "-seed", str(sim_seed), os.path.join(project_dir, "%s.main.mdl" % base_name) ]
             cmd_entry['stdout'] = ""
             cmd_entry['stderr'] = ""
             command_list.append ( cmd_entry )
