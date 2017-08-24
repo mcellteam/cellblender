@@ -199,7 +199,7 @@ def get_progress_message_and_status ( stdout_txt ):
           percent = int((last_iter/total_iter)*100)
           if (last_iter == total_iter) and (total_iter != 0):
               task_complete = True
-          progress_message = "MCell3DM: %d%%" % (percent)
+          progress_message = "MCell3 Data Model: %d%%" % (percent)
           break
   return ( progress_message, task_complete )
 
