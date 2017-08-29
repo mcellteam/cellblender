@@ -123,7 +123,7 @@ class SimQueue:
         worker.start()
     elif n_threads < self.n_threads:
       for i in range(self.n_threads - n_threads):
-        self.work_q.put(None)
+        self.work_q.put(None) # This is a signal for the thread to exit
     self.n_threads = n_threads
 
   def run_q_item(self):

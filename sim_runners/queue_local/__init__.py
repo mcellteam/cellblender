@@ -136,8 +136,8 @@ def run_commands ( commands ):
 
     start_seed = int(mcell.run_simulation.start_seed.get_value())
     end_seed = int(mcell.run_simulation.end_seed.get_value())
-    mcell_processes = mcell.run_simulation.mcell_processes
-    mcell_processes_str = str(mcell.run_simulation.mcell_processes)
+    num_mcell_processes = mcell.run_simulation.mcell_processes
+    # Not used? num_mcell_processes_str = str(mcell.run_simulation.mcell_processes)
     # Force the project directory to be where the .blend file lives
     project_dir = mcell_files_path()
     status = ""
@@ -172,7 +172,7 @@ def run_commands ( commands ):
             error_file_option = mcell.run_simulation.error_file
             log_file_option = mcell.run_simulation.log_file
             cellblender.simulation_queue.python_exec = python_path
-            cellblender.simulation_queue.start(mcell_processes)
+            cellblender.simulation_queue.start(num_mcell_processes)
             cellblender.simulation_queue.notify = True
 
             # The following line will create the "data_layout.json" file describing the directory structure
