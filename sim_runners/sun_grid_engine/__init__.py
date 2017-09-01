@@ -16,6 +16,26 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+
+# Description of files created in blend_file_name_files/mcell directory for a run with 2 seeds and 3 parameter settings:
+
+# master_job_list.sh contains the list of qsub commands:
+#
+# echo "Start of master job list"
+# cd /home/.../blend_file_files/mcell/output_data
+# qsub -o /home/.../blend_file_files/mcell/log_0.txt -e /home/.../blend_file_files/mcell/error_0.txt -l mt=2G -m e -M user@addr.com /home/.../blend_file_files/mcell/job_0.sh
+# qsub -o /home/.../blend_file_files/mcell/log_1.txt -e /home/.../blend_file_files/mcell/error_1.txt -l mt=2G -m e -M user@addr.com /home/.../blend_file_files/mcell/job_1.sh
+# qsub -o /home/.../blend_file_files/mcell/log_2.txt -e /home/.../blend_file_files/mcell/error_2.txt -l mt=2G -m e -M user@addr.com /home/.../blend_file_files/mcell/job_2.sh
+# qsub -o /home/.../blend_file_files/mcell/log_3.txt -e /home/.../blend_file_files/mcell/error_3.txt -l mt=2G -m e -M user@addr.com /home/.../blend_file_files/mcell/job_3.sh
+# qsub -o /home/.../blend_file_files/mcell/log_4.txt -e /home/.../blend_file_files/mcell/error_4.txt -l mt=2G -m e -M user@addr.com /home/.../blend_file_files/mcell/job_4.sh
+# qsub -o /home/.../blend_file_files/mcell/log_5.txt -e /home/.../blend_file_files/mcell/error_5.txt -l mt=2G -m e -M user@addr.com /home/.../blend_file_files/mcell/job_5.sh
+# echo "End of master job list"
+
+# Each job file (job_#.sh) will contain a "cd" command and an mcell command:
+#
+# cd /home/.../blend_file_files/mcell/output_data/dc_index_0
+# /home/.../build/mcell -seed 1 Scene.main.mdl
+
 # <pep8 compliant>
 
 import os
