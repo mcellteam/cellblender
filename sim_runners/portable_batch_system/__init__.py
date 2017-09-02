@@ -21,6 +21,7 @@
 import os
 import subprocess
 import sys
+import time
 
 plug_code = "PBS"
 plug_name = "Portable Batch System"
@@ -34,9 +35,9 @@ def info():
 def fetch():
     # Move files as required by parameters
     submit_host = parameter_dictionary['Submit Host']['val']
-    project_dir = parameter_dictionary['project_dir']['val']
-    remote_path = parameter_dictionary['Remote Path']['val']
     remote_user = parameter_dictionary['Remote User']['val']
+    remote_path = parameter_dictionary['Remote Path']['val']
+    project_dir = parameter_dictionary['project_dir']['val']
     remote_path = os.path.join(remote_path, os.path.split(project_dir)[-1])
     if len(remote_path) > 0:
         print ( "Local Blend_files Directory = " + project_dir )
@@ -51,11 +52,11 @@ def fetch():
 
 
 parameter_dictionary = {
-  'Notice': {'val':"Notice: This runner is actually SGE at this time.", 'icon':"ERROR"},
   'Submit Host': {'val': "", 'desc':"Host for PBS Job Submission"},
   'Email': {'val': "", 'desc':"Email address for notification"},
   'Remote User': {'val':"", 'desc':"User name on remote system"},
   'Remote Path': {'val':"", 'desc':"Path to files on remote system (blank for shared files)"},
+  'Remote MCell': {'val':"", 'desc':"Path to mcell on remote system"},
   'Required Memory (G)': {'val': 2, 'desc':"Required Memory for Host Selection"},
   'Best Nodes': {'val': "", 'desc':"List of best nodes to use"},
   'Fetch': {'val': fetch, 'desc':"Get data back from remote host"},
@@ -66,9 +67,11 @@ parameter_dictionary = {
 }
 
 parameter_layout = [
-  ['Notice'],
-  ['Submit Host', 'Email'],
-  ['Remote User', 'Remote Path'],
+  ['Submit Host'],
+  ['Email'],
+  ['Remote User'],
+  ['Remote Path'],
+  ['Remote MCell'],
   ['Required Memory (G)', 'Best Nodes'],
   ['Fetch', 'Terminate All', 'Information']
 ]
@@ -119,6 +122,7 @@ def run_commands ( commands ):
     email = parameter_dictionary['Email']['val']
     remote_user = parameter_dictionary['Remote User']['val']
     remote_path = parameter_dictionary['Remote Path']['val']
+    remote_mcell = parameter_dictionary['Remote MCell']['val']
 
     best_nodes = None
     if len ( parameter_dictionary['Best Nodes']['val'] ) > 0:
@@ -148,43 +152,33 @@ def run_commands ( commands ):
         # Remove the last "mcell" which should be at the end of the path
         project_dir = os.path.sep.join ( os.path.split(project_dir)[0:-1] )
     print ( "Project Directory = " + project_dir )
+    project_dir_name = os.path.split(project_dir)[-1]
+    print ( "Project Directory Name = " + project_dir_name )
 
+    # Put the project directory into the shared dictionary for use by the fetch function
     parameter_dictionary['project_dir']['val'] = project_dir
-
-
-    # Move files as required by parameters
-    if len(remote_path) > 0:
-        print ( "Local Blend_files Directory = " + project_dir )
-        print ( "Moving files to remote path: \"" + remote_path + "\"" )
-        rsync_command = []
-        if len(remote_user) > 0:
-            rsync_command = [ "rsync", "-avz", project_dir, "%s@%s:%s" % (remote_user, submit_host, remote_path) ]
-        else:
-            rsync_command = [ "rsync", "-avz", project_dir, "%s:%s" % (submit_host, remote_path) ]
-        print ( "rsync command = " + str(rsync_command) )
-        subprocess.Popen ( rsync_command, stdout=None, stderr=None )
-
-
 
     # Build 1 master qsub file and a job file for each MCell run
 
-    master_job_list_name = os.path.join ( project_dir, "master_job_list.sh" )
-    master_job_list = open ( master_job_list_name, "w" )
+    local_master_job_list_name = os.path.join ( project_dir, "master_job_list.sh" )
+    remote_master_job_list_name = os.path.join ( remote_path, project_dir_name, "master_job_list.sh" )
+    master_job_list = open ( local_master_job_list_name, "w" )
     master_job_list.write ( 'echo "Start of master job list"\n' )
-    master_job_list.write ( "cd %s\n" % os.path.join(project_dir,"mcell","output_data") )
+    master_job_list.write ( "cd %s\n" % os.path.join(remote_path,project_dir_name,"mcell","output_data") )
     job_index = 0
     for run_cmd in commands:
 
         job_filename = "job_%d.sh" % (job_index)
-        job_filepath = os.path.join(project_dir, job_filename)
+        local_job_filepath = os.path.join(project_dir, job_filename)
+        remote_job_filepath = os.path.join(remote_path, project_dir_name, job_filename)
 
         log_filename = "log_%d.txt" % (job_index)
-        log_filepath = os.path.join(project_dir, log_filename)
+        log_filepath = os.path.join(remote_path, project_dir_name, log_filename)
 
         error_filename = "error_%d.txt" % (job_index)
-        error_filepath = os.path.join(project_dir, error_filename)
+        error_filepath = os.path.join(remote_path, project_dir_name, error_filename)
 
-        job_file = open(job_filepath,"w")
+        job_file = open(local_job_filepath,"w")
         if len(remote_path) > 0:
           wd_list = run_cmd['wd'].split(os.sep)
           pd_list = project_dir.split(os.sep)
@@ -193,7 +187,8 @@ def run_commands ( commands ):
           job_file.write ( "cd %s\n" % remote_wd )
         else:
           job_file.write ( "cd %s\n" % run_cmd['wd'] )
-        full_cmd = run_cmd['cmd']
+        #full_cmd = run_cmd['cmd']   ##### This is a problem!!
+        full_cmd = remote_mcell        ##### This is a problem!!
         if len(run_cmd['args']) > 0:
           full_cmd = full_cmd + " " + " ".join(run_cmd['args'])
         job_file.write ( full_cmd + "\n" )
@@ -203,17 +198,17 @@ def run_commands ( commands ):
         # qsub_command += " -wd " + subprocess_cwd
         qsub_command += " -o " + log_filepath
         qsub_command += " -e " + error_filepath
-        resource_list = []
-        if best_nodes != None:
-            resource_list.append ( "h=" + best_nodes[job_index%len(best_nodes)][0] )
-        if min_memory > 0:
-            resource_list.append ( "mt=" + str(min_memory) + "G" )
-        if len(resource_list) > 0:
-            qsub_command += " -l " + ",".join(resource_list)
-        if len(email) > 0:
-            qsub_command += " -m e"
-            qsub_command += " -M " + email
-        qsub_command += " " + job_filepath
+        #resource_list = []
+        #if best_nodes != None:
+        #    resource_list.append ( "h=" + best_nodes[job_index%len(best_nodes)][0] )
+        #if min_memory > 0:
+        #    resource_list.append ( "mt=" + str(min_memory) + "G" )
+        #if len(resource_list) > 0:
+        #    qsub_command += " -l " + ",".join(resource_list)
+        #if len(email) > 0:
+        #    qsub_command += " -m e"
+        #    qsub_command += " -M " + email
+        qsub_command += " " + remote_job_filepath
 
         master_job_list.write ( qsub_command + "\n" )
 
@@ -222,9 +217,23 @@ def run_commands ( commands ):
 
     master_job_list.write ( 'echo "End of master job list"\n' )
     master_job_list.close()
-    os.chmod ( master_job_list_name, 0o740 )  # Must make executable
+    os.chmod ( local_master_job_list_name, 0o740 )  # Must make executable
 
-    args = ['ssh', submit_host, master_job_list_name ]
+
+    # Move files as required by parameters
+    if len(remote_path) > 0:
+        print ( "Local Blend_files Directory = " + project_dir )
+        print ( "Moving files to remote path: \"" + remote_path + "\"" )
+        rsync_command = []
+        if len(remote_user) > 0:
+            rsync_command = [ "rsync", "-avz", "--exclude=seed_*", project_dir, "%s@%s:%s" % (remote_user, submit_host, remote_path) ]
+        else:
+            rsync_command = [ "rsync", "-avz", "--exclude=seed_*", project_dir, "%s:%s" % (submit_host, remote_path) ]
+        print ( "rsync command = " + str(rsync_command) )
+        subprocess.Popen ( rsync_command, stdout=None, stderr=None )
+
+
+    args = ['ssh', submit_host, remote_master_job_list_name ]
     print ( "Args for Popen: " + str(args) )
     p = subprocess.Popen ( args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
 
@@ -258,7 +267,6 @@ def run_commands ( commands ):
     #p.kill()
 
     return sp_list.append ( p )
-
 
 if __name__ == "__main__":
     print ( "Called with __name__ == __main__" )
