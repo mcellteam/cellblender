@@ -715,7 +715,7 @@ import sys, traceback
 
 def mol_viz_file_read(mcell_prop, filepath):
     """ Read and Draw the molecule viz data for the current frame. """
-
+    dup_check = False
     mcell = mcell_prop
     try:
 
@@ -757,9 +757,15 @@ def mol_viz_file_read(mcell_prop, filepath):
 #                    tot += ni[0]/3  
                     if mt[0] == 1:                                        # If mt==1, it's a surface molecule
                         mol_orient.fromfile(mol_file, ni[0])              # Read the surface molecule orientations
-                    mol_dict[mol_name] = [mt[0], mol_pos, mol_orient]     # Create a dictionary entry for this molecule containing a list of relevant data
-                    new_item = mcell.mol_viz.mol_viz_list.add()           # Create a new collection item to hold the name for this molecule
-                    new_item.name = mol_name                              # Assign the name to the new item
+                    mol_dict[mol_name] = [mt[0], mol_pos, mol_orient]     # Create a dictionary entry for this molecule containing a list of relevant data                    
+                    if len(mcell.mol_viz.mol_viz_list) > 0:
+                      for i in range(len(mcell.mol_viz.mol_viz_list)):
+                        if mcell.mol_viz.mol_viz_list[i].name[4:] == mol_name:
+                          dup_check = True      
+                    if dup_check == False:
+                      new_item = mcell.mol_viz.mol_viz_list.add()           # Create a new collection item to hold the name for this molecule
+                      new_item.name = mol_name                              # Assign the name to the new item                              
+
                 except EOFError:
 #                    print("Molecules read: %d" % (int(tot)))
                     mol_file.close()
@@ -1094,6 +1100,8 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
         name="Enable Molecule Vizualization",
         description="Disable for faster animation preview",
         default=True, update=mol_viz_update)
+    ascii_enable = BoolProperty(name="Change Viz Data to Ascii",default= False)
+    molecule_read_in = BoolProperty(name = "Define molecules from Viz Data.",default= False)
     color_list = CollectionProperty(
         type=MCellFloatVectorProperty, name="Molecule Color List")
     color_index = IntProperty(name="Color Index", default=0)
@@ -1358,16 +1366,22 @@ class MCellMolVizPropertyGroup(bpy.types.PropertyGroup):
                         choice['name'] = data_layout[i][0]
                         choice['values'] = data_layout[i][1]
 
-
     def draw_layout(self, context, layout):
         mcell = context.scene.mcell
-
         if not mcell.initialized:
             mcell.draw_uninitialized ( layout )
         else:
 
             row = layout.row()
             row.prop(mcell.mol_viz, "manual_select_viz_dir")
+            row = layout.row()
+            row.prop(self,"ascii_enable")
+            row = layout.row()
+
+            if self.manual_select_viz_dir == True:
+              if len(mcell.mol_viz.mol_viz_list) > 0:
+                row.prop(self,"molecule_read_in", icon = 'IMPORT')                
+
             row = layout.row()
             if self.manual_select_viz_dir:
                 row.operator("mcell.select_viz_data", icon='IMPORT')
