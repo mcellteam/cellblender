@@ -34,13 +34,17 @@ class MDLR2MDL(object):
     with an nfsim bng-xml definition
     '''
     def __init__(self, configpath):
+
+        libnfsim_file = 'libnfsim_c.so'
+        if sys.platform == 'darwin':
+          libnfsim_file = 'libnfsim_c.dylib'
         with open(configpath, 'r') as f:
             self.config = yaml.load(f.read())
         try:
             self.nfsim = NFSim(
-                os.path.join(self.config['libpath'], 'libnfsim_c.dylib'))
+                os.path.join(self.config['libpath'], libnfsim_file))
         except OSError:
-            print("Cannot open libnfsim_c.dylib. Please check libpath in "
+            print("Cannot open " + libnfsim_file + " Please check libpath in "
                   "mcellr.yaml")
             sys.exit(0)
 
