@@ -422,7 +422,9 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   # python mdlr2mdl.py -ni ./fceri_files/fceri.mdlr -o ./fceri_files/fceri.mdl
   subprocess.call ( [ cellblender.python_path, os.path.join(engine_path, "mdlr2mdl.py"), "-ni", "Scene.mdlr", "-o", "Scene.mdl" ], cwd=output_data_dir )
 
-  # run_data_model_mcell_3r.run_mcell_sweep(['-pd',project_dir,'-b',parameter_dictionary['MCellR Path']['val'],'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
+  mcellr_path = os.path.join(parameter_dictionary['Shared Path']['val'],parameter_dictionary['MCellR Path']['val'])
+
+  run_data_model_mcell_3r.run_mcell_sweep(['-pd',project_dir,'-b',mcellr_path,'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
 
 
 

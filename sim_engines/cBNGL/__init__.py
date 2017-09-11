@@ -75,7 +75,7 @@ def postprocess():
     # Read the cBNGL data file and split into a list of rows where each row is a list of columns
     cbngl_react_file = open ( os.path.join ( cbngl_react_dir, 'Scene.gdat' ) )
     all_react_data = cbngl_react_file.read()
-    react_data_all = [ [t.strip() for t in s.split(',') if len(t.strip()) > 0] for s in all_react_data.split('\n') if len(s) > 0 ]
+    react_data_all = [ [t.strip() for t in s.split() if len(t.strip()) > 0] for s in all_react_data.split('\n') if len(s) > 0 ]
     react_data_header = react_data_all[0]
     react_data_rows = react_data_all[1:]
 
@@ -84,8 +84,8 @@ def postprocess():
       print ( "Writing data to " + out_file_name )
       f = open(out_file_name,"w")
       for row in react_data_rows:
-        print ( "  " + row[0] + " " + row[col] )
-        f.write ( row[0] + " " + row[col] + '\n' )
+        print ( "  " + row[0] + " " + row[col-1] )
+        f.write ( row[0] + " " + row[col-1] + '\n' )
       f.close()
 
   print ( "Done postrocessing cBNGL Reaction Output" )
