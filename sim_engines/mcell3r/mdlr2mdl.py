@@ -38,14 +38,15 @@ class MDLR2MDL(object):
         libnfsim_file = 'libnfsim_c.so'
         if sys.platform == 'darwin':
           libnfsim_file = 'libnfsim_c.dylib'
+        print("Using libnfsim_file of " + libnfsim_file + "  ")
         with open(configpath, 'r') as f:
             self.config = yaml.load(f.read())
         try:
-            self.nfsim = NFSim(
-                os.path.join(self.config['libpath'], libnfsim_file))
+            nfsim_lib_path = os.path.join(self.config['libpath'], libnfsim_file)
+            print ( "Trying to construct NFSim from ( " + nfsim_lib_path + "  )" )
+            self.nfsim = NFSim(nfsim_lib_path)
         except OSError:
-            print("Cannot open " + libnfsim_file + " Please check libpath in "
-                  "mcellr.yaml")
+            print("Cannot open " + libnfsim_file + " Please check libpath in mcellr.yaml")
             sys.exit(0)
 
     def process_mdlr(self, mdlrPath):

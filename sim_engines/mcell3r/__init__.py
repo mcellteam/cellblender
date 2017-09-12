@@ -457,7 +457,7 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   # Postprocessing should be done through the command_list, but force it here for now...
 
-  postprocess()
+  # postprocess()
 
   return ( command_list )
 
