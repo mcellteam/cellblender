@@ -424,7 +424,7 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   mcellr_path = os.path.join(parameter_dictionary['Shared Path']['val'],parameter_dictionary['MCellR Path']['val'])
 
-  run_data_model_mcell_3r.run_mcell_sweep(['-pd',project_dir,'-b',mcellr_path,'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
+#  run_data_model_mcell_3r.run_mcell_sweep(['-pd',project_dir,'-b',mcellr_path,'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
 
 
 

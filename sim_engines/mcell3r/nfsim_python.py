@@ -1,22 +1,29 @@
 from ctypes import *
 
 
-class QueryResultsStruct(Structure):
-    _fields_ = [("numOfResults", c_int),
-                ("results", POINTER(c_char_p))]
-
-
 class NFSim:
     def __init__(self, libPath):
         self.lib = cdll.LoadLibrary(libPath)
+        self.lib.setupNFSim_c.argtypes = [c_char_p, c_int]
+        self.lib.initSystemXML_c.argtypes = [c_char_p]
+        self.lib.querySystemStatus_c.argtypes = [c_char_p, c_void_p]
+        self.lib.mapvector_create.restype = c_void_p
+        self.lib.map_get.restype = c_char_p
+        self.lib.mapvector_size.argtypes = [c_void_p]
+        self.lib.mapvector_get.argtypes = [c_void_p, c_int]
+        self.lib.mapvector_get.restype = c_void_p
+        self.lib.map_get.argtypes = [c_void_p, c_char_p]
+        self.lib.map_get.restype = c_char_p
+        self.lib.mapvector_delete.argtypes = [c_void_p]
+
 
     def init_nfsim(self, fileName, verbose):
         """
         inits an nfsim object with a given xml file and a verbosity setting
         """
-        
-        print("nfsim_python: initializing nfsim using %s" % (fileName))
-        self.lib.setupNFSim_c(bytes(fileName,'ASCII'), verbose)
+        c_fileName = c_char_p(bytes(fileName,'ASCII'))
+        self.lib.setupNFSim_c(c_fileName, verbose)
+
 
     def reset_system(self):
         """
@@ -42,31 +49,28 @@ class NFSim:
         """
         Initializes an nfsim simulation with a given seed species XML string
         """
-        return self.lib.initSystemXML_c(initXML)
+        c_initXML = c_char_p(bytes(initXML,'ASCII'))
+        return self.lib.initSystemXML_c(c_initXML)
 
 
     def querySystemStatus(self, option):
         """
         returns all species that participate in active reactions with numReactants reactants
         """
-        #self.lib.querySystemStatus_c.restype = QueryResultsStruct
 
         mem = self.lib.mapvector_create()
-        #queryResults = self.lib.querySystemStatus_c(option, mem)
-        self.lib.querySystemStatus_c.argtypes = [c_char_p, c_void_p]
-        self.lib.map_get.restype = c_char_p
 
-        key = c_char_p(option)
+        key = c_char_p(bytes(option,'ASCII'))
         self.lib.querySystemStatus_c(key,mem)
-        #results = [queryResults.results[i] for i in range(0, queryResults.numOfResults)]
         results = []
-        for idx in range(0, self.lib.mapvector_size(mem)):
-            #XXX:ideally i would like to returns all key values but that will require a lil more work on teh wrapper side
+        n = self.lib.mapvector_size(mem)
+        for idx in range(0, n):
+            #XXX:ideally i would like to returns all key values but that will require a lil more work on the wrapper side
             partialResults = self.lib.mapvector_get(mem, idx)
-            results.append(self.lib.map_get(partialResults,"label"))
+            retval = self.lib.map_get(partialResults,b"label")
+            results.append(retval.decode('ASCII'))
         self.lib.mapvector_delete(mem)
         return sorted(results, key=len)
-
 
 
 
@@ -79,7 +83,7 @@ if __name__ == "__main__":
     #nfsim.init_system_nauty({"c:a~NO_STATE!4!2,c:l~NO_STATE!3,c:l~NO_STATE!3!0,m:Lig!1!2,m:Rec!0,":1})
     #print '---', nfsim.querySystemStatus("observables")
     nfsim.init_system_nauty({"c:l~NO_STATE!3!1,c:r~NO_STATE!2!0,m:L@EC!1,m:R@PM!0,":1})
-    print('----', nfsim.querySystemStatus("complex"))
+    print('----', nfsim.querySystemStatus(b"complex"))
 
 
     """

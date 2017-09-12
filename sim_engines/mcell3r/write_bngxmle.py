@@ -54,4 +54,4 @@ def merge_bxbxe(base_bngxml, extended_bngxml):
     basedoc = etree.parse(base_bngxml).getroot()
     edoc = etree.parse(extended_bngxml).getroot()
     basedoc.append(edoc)
-    return etree.tostring(basedoc, pretty_print=True)
+    return etree.tostring(basedoc, encoding='unicode', pretty_print=True)
