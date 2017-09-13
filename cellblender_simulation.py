@@ -1704,11 +1704,11 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
 
     simulation_engine_and_run_enum = [
-         ('DYNAMIC', "Dynamic", ""),
          ('QUEUE', "MCell via Queue Runner", ""),
          ('COMMAND', "MCell via Command Line", ""),
          ('SWEEP', "MCell via Sweep Runner", ""),
-         ('SWEEP_SGE', "MCell via Sweep Runner and SGE", "")]
+         ('SWEEP_SGE', "MCell via Sweep Runner and SGE", ""),
+         ('DYNAMIC', "Engine/Runner", "") ]
 
     simulation_run_control = EnumProperty(
         items=simulation_engine_and_run_enum, name="",
@@ -2073,10 +2073,14 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                 box = layout.box()
 
                 if self.show_output_options:
-                    row = box.row(align=True)
+                    row = box.row()
                     row.alignment = 'LEFT'
-                    row.prop(self, "show_output_options", icon='TRIA_DOWN',
+                    col = row.column()
+                    col.prop(self, "show_output_options", icon='TRIA_DOWN',
                              text="Output / Control Options", emboss=False)
+                    col = row.column()
+                    col.prop ( self, "simulation_run_control" )
+
 
                     self.start_seed.draw(box,ps)
                     self.end_seed.draw(box,ps)
@@ -2120,8 +2124,9 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     #  run_simulation operator while simulations are currenlty running or queued
                     # Only show this option it when specifically requested
                     #if mcell.cellblender_preferences.show_sim_runner_options:
-                    col = row.column()
-                    col.prop(self, "simulation_run_control")
+                    # Comment out with this selector moved to the top:
+                    #col = row.column()
+                    #col.prop(self, "simulation_run_control")
                     
                     # This will eventually show the panel for the selected runner
 
@@ -2184,10 +2189,13 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                                 col = row.column()
                                 col.operator ( "mcell.kill_all_users_jobs" )
                 else:
-                    row = box.row(align=True)
+                    row = box.row()
                     row.alignment = 'LEFT'
-                    row.prop(self, "show_output_options", icon='TRIA_RIGHT',
+                    col = row.column()
+                    col.prop(self, "show_output_options", icon='TRIA_RIGHT',
                              text="Output / Control Options", emboss=False)
+                    col = row.column()
+                    col.prop ( self, "simulation_run_control" )
                 
             if self.status:
                 row = layout.row()
