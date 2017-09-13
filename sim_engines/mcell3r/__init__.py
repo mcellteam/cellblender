@@ -420,7 +420,7 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   engine_path = os.path.dirname(__file__)
 
   # python mdlr2mdl.py -ni ./fceri_files/fceri.mdlr -o ./fceri_files/fceri.mdl
-  subprocess.call ( [ cellblender.python_path, os.path.join(engine_path, "mdlr2mdl.py"), "-ni", "Scene.mdlr", "-o", "Scene.mdl" ], cwd=output_data_dir )
+  # subprocess.call ( [ cellblender.python_path, os.path.join(engine_path, "mdlr2mdl.py"), "-ni", "Scene.mdlr", "-o", "Scene" ], cwd=output_data_dir )
 
   mcellr_path = os.path.join(parameter_dictionary['Shared Path']['val'],parameter_dictionary['MCellR Path']['val'])
 
@@ -453,6 +453,21 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   # For now return no commands at all since the run has already taken place
   command_list = []
+
+  command_dict = { 'cmd': cellblender.python_path,
+                   'args': [ os.path.join(engine_path, "mdlr2mdl.py"), '-ni', 'Scene.mdlr', '-o', 'Scene' ],
+                   'wd': output_data_dir
+                 }
+
+  command_line_options = ''
+
+  if len(command_line_options) > 0:
+    command_dict['args'].append(command_line_options)
+
+  command_list.append ( command_dict )
+  if output_detail > 0:
+    print ( str(command_dict) )
+
 
 
   # Postprocessing should be done through the command_list, but force it here for now...
