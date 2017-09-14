@@ -176,9 +176,9 @@ class SimQueue:
     self.task_dict[pid]['stdout'] = b''
     self.task_dict[pid]['stderr'] = b''
     if make_texts:
-      bpy.ops.text.new()
-      bl_t = bpy.data.texts[-1]
-      bl_t.name = 'task_%d_output' % pid
+      task_name = 'task_%d_output' % pid
+      bl_t = bpy.data.texts.new ( task_name )
+      bl_t.name = task_name   # This may be redundant now, but it was done in the previous version
       self.task_dict[pid]['bl_text'] = bl_t
     else:
       self.task_dict[pid]['bl_text'] = None
