@@ -36,7 +36,10 @@ def reset():
 import bpy
 
 # Force some defaults which would otherwise be empty (""):
-shared_path = os.path.dirname(__file__)
+shared_path = os.path.dirname(__file__)          # Gets the path to cellblender/sim_engines/mcell3r
+shared_path = os.path.split(shared_path)[0]      # Gets the path to cellblender/sim_engines
+shared_path = os.path.split(shared_path)[0]      # Gets the path to cellblender
+shared_path = os.path.join ( shared_path, "extensions" )   # Should be the absolute path to cellblender/extensions
 mcell_path = "mcell/build/mcell"
 mcell_lib_path = "mcell/lib/"
 bionetgen_path = "bionetgen/bng2/BNG2.pl"
@@ -153,15 +156,47 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   project_files_dir = "" + project_dir
 
+  # Build the final shared path that will be prepended to all other paths
+  final_shared_path = parameter_dictionary['Shared Path']['val'].strip()
+  if not final_shared_path.startswith(os.path.sep):
+    # Not absolute, so prepend the cellblender/extensions path
+    cb_path = os.path.dirname(__file__)      # Gets the path to cellblender/sim_engines/mcell3r
+    cb_path = os.path.split(cb_path)[0]      # Gets the path to cellblender/sim_engines
+    cb_path = os.path.split(cb_path)[0]      # Gets the path to cellblender
+    cb_path = os.path.join ( cb_path, "extensions" )   # Should be path to cellblender/extensions
+    final_shared_path = os.path.join(cb_path,final_shared_path)
+  final_shared_path = os.path.abspath(final_shared_path)
+
+  final_bionetgen_path = parameter_dictionary['BioNetGen Path']['val'].strip()
+  if not final_bionetgen_path.startswith(os.path.sep):
+    # Not absolute, so prepend the shared path
+    final_bionetgen_path = os.path.join(final_shared_path,final_bionetgen_path)
+  final_bionetgen_path = os.path.abspath(final_bionetgen_path)
+
+  final_lib_path = parameter_dictionary['MCellRlib Path']['val'].strip()
+  if not final_lib_path.startswith(os.path.sep):
+    # Not absolute, so prepend the shared path
+    final_lib_path = os.path.join(final_shared_path,final_lib_path)
+  final_lib_path = os.path.abspath(final_lib_path)
+
+  final_mcell_path = parameter_dictionary['MCellR Path']['val'].strip()
+  if not final_mcell_path.startswith(os.path.sep):
+    # Not absolute, so prepend the shared path
+    final_mcell_path = os.path.join(final_shared_path,final_mcell_path)
+  final_mcell_path = os.path.abspath(final_mcell_path)
+
   output_detail = parameter_dictionary['Output Detail (0-100)']['val']
 
   if output_detail > 0: print ( "Inside prepare_runs in MCellR Engine, project_dir=" + project_dir )
 
-  if output_detail > 0: print ( "  Note: The current MCell-R engine doesn't support the prepare/run model.\n  It just runs directly." )
+  if output_detail > 0: print ( "Final shared path: " + final_shared_path )
+  if output_detail > 0: print ( "Final MCellR path: " + final_mcell_path )
+  if output_detail > 0: print ( "Final MCellR Library path: " + final_lib_path )
+  if output_detail > 0: print ( "Final BioNetGen path: " + final_bionetgen_path )
 
-  print ( "Running with python " + sys.version )   # This will be Blender's Python which will be 3.5+
-  print ( "Project Dir: " + project_dir )          # This will be .../blend_file_name_files/mcell
-  print ( "Data Layout: " + str(data_layout) )     # This will typically be None
+  if output_detail > 0: print ( "Running with python " + sys.version )   # This will be Blender's Python which will be 3.5+
+  if output_detail > 0: print ( "Project Dir: " + project_dir )          # This will be .../blend_file_name_files/mcell
+  if output_detail > 0: print ( "Data Layout: " + str(data_layout) )     # This will typically be None
 
   output_data_dir = os.path.join ( project_dir, "output_data" )
   makedirs_exist_ok ( output_data_dir, exist_ok=True )
@@ -285,7 +320,7 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
           sorted_obj_names = []
           while len(unsorted_objs) > 0:
             for index in range(len(unsorted_objs)):
-              print ( "  Sorting by parent: checking " + unsorted_objs[index]['name'] + " for parent " + unsorted_objs[index]['parent_object'] )
+              if output_detail > 10: print ( "  Sorting by parent: checking " + unsorted_objs[index]['name'] + " for parent " + unsorted_objs[index]['parent_object'] )
               if len(unsorted_objs[index]['parent_object']) == 0:
                 # Move this object to the sorted list because it has no parent
                 sorted_obj_names.append ( unsorted_objs[index]['name'])
@@ -402,9 +437,9 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   f.close()
 
   f = open ( os.path.join(output_data_dir,"mcellr.yaml"), 'w' )
-  f.write ( "bionetgen: '" + os.path.join(parameter_dictionary['Shared Path']['val'],parameter_dictionary['BioNetGen Path']['val']) + "'\n" )
-  f.write ( "libpath: '" + os.path.join(parameter_dictionary['Shared Path']['val'],parameter_dictionary['MCellRlib Path']['val']) + "'\n" )
-  f.write ( "mcell: '" + os.path.join(parameter_dictionary['Shared Path']['val'],parameter_dictionary['MCellR Path']['val']) + "'\n" )
+  f.write ( "bionetgen: '" + final_bionetgen_path + "'\n" )
+  f.write ( "libpath: '" + final_lib_path + "'\n" )
+  f.write ( "mcell: '" + final_mcell_path + "'\n" )
   f.close()
 
   # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -421,11 +456,6 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   # python mdlr2mdl.py -ni ./fceri_files/fceri.mdlr -o ./fceri_files/fceri.mdl
   # subprocess.call ( [ cellblender.python_path, os.path.join(engine_path, "mdlr2mdl.py"), "-ni", "Scene.mdlr", "-o", "Scene" ], cwd=output_data_dir )
-
-  mcellr_path = os.path.join(parameter_dictionary['Shared Path']['val'],parameter_dictionary['MCellR Path']['val'])
-
-#  run_data_model_mcell_3r.run_mcell_sweep(['-pd',project_dir,'-b',mcellr_path,'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
-
 
 
   # This should return a list of run command dictionaries.
