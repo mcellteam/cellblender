@@ -144,6 +144,9 @@ cellblender_info = {
         "sim_runners"+os.sep+"open_gl"+os.sep+"SimControl.c",
         "sim_runners"+os.sep+"open_gl"+os.sep+"makefile",
 
+        "sim_runners"+os.sep+"blender_opengl"+os.sep+"__init__.py",
+        "sim_runners"+os.sep+"blender_opengl"+os.sep+"makefile",
+
         "sim_engines"+os.sep+"makefile",
         "sim_engines"+os.sep+"__init__.py",
 
