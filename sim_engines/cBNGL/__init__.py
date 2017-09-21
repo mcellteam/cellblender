@@ -114,12 +114,17 @@ parameter_dictionary = {
   'Output Detail (0-100)': {'val': 20, 'desc':"Amount of Information to Print (0-100)",    'icon':'INFO'},
   'Print Information': {'val': print_info, 'desc':"Print information about Limited Python Simulation"},
   'Postprocess': {'val': postprocess, 'desc':"Postprocess the data for CellBlender"},
-  'Reset': {'val': reset, 'desc':"Reset everything"}
+  'Reset': {'val': reset, 'desc':"Reset everything"},
+  'ODE': {'val': False, 'desc':"Simulate using Ordinary Differential Equation Solver"},
+  'NFSIM': {'val': True, 'desc':"Simulate using Network-free Simulation Method"},
+  'SSA': {'val': False, 'desc':"Simulate using Gillespie Stochastic Simulation Algorithm"},
+  'PLA': {'val': False, 'desc':"Simulate using Partitioned tau-Leaping Algorithm"},
 }
 
 parameter_layout = [
   ['Shared Path'],
   ['BioNetGen Path'],
+  ['ODE', 'NFSIM', 'SSA', 'PLA'],
   ['Output Detail (0-100)'],
   ['Print Information', 'Postprocess', 'Reset']
 ]
@@ -356,11 +361,27 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   f.write("end model\n")
   f.write("\n")
 
+  ode_method = parameter_dictionary['ODE']['val']
+  nfsim_method = parameter_dictionary['NFSIM']['val']
+  ssa_method = parameter_dictionary['SSA']['val']
+  pla_method = parameter_dictionary['PLA']['val']
+
+  time_step = float(data_model['initialization']['time_step'])
+  n_steps = int(data_model['initialization']['iterations'])
+  t_start = 0.0
+  t_end = time_step*n_steps
 
   f.write("begin actions\n")
   f.write('  generate_network({overwrite=>1})\n')
 #  f.write('  writeSBML()\n')
-  f.write('  simulate({method=>"ode",t_start=>0,t_end=>30,n_steps=>10000,atol=>1e-8,rtol=>1e-8})\n')
+  if ode_method:
+    f.write('  simulate({method=>"ode",t_start=>%g,t_end=>%g,n_steps=>%d,atol=>1e-8,rtol=>1e-8})\n' % (t_start, t_end, n_steps))
+  if nfsim_method:
+    f.write('  simulate({method=>"nf",t_start=>%g,t_end=>%g,n_steps=>%d,atol=>1e-8,rtol=>1e-8})\n' % (t_start, t_end, n_steps))
+  if ssa_method:
+    f.write('  simulate({method=>"ssa",t_start=>%g,t_end=>%g,n_steps=>%d,atol=>1e-8,rtol=>1e-8})\n' % (t_start, t_end, n_steps))
+  if pla_method:
+    f.write('  simulate({method=>"pla",t_start=>%g,t_end=>%g,n_steps=>%d,atol=>1e-8,rtol=>1e-8})\n' % (t_start, t_end, n_steps))
   f.write("end actions\n")
 
 
