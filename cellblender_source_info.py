@@ -192,6 +192,10 @@ cellblender_info = {
         "sim_engines"+os.sep+"smoldyn248"+os.sep+"makefile",
         "sim_engines"+os.sep+"smoldyn248"+os.sep+"__init__.py",
 
+        "sim_engines"+os.sep+"limited_blender"+os.sep+"makefile",
+        "sim_engines"+os.sep+"limited_blender"+os.sep+"__init__.py",
+        "sim_engines"+os.sep+"limited_blender"+os.sep+"limited_blender_sim.py",
+
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"makefile",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"__init__.py",
         "sim_engines"+os.sep+"limited_cpp"+os.sep+"rng.h",
