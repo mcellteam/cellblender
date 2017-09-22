@@ -173,12 +173,13 @@ parameter_dictionary = {
   'Scroll Dn': {'val': scroll_dn, 'desc':"Scroll the overlay down"},
   'by': {'val': 1, 'desc':"Scroll amount"},
   'Save Text Logs': {'val':True, 'desc':"Create a text log for each run"},
-  'Remove Task Output Texts':  {'val':remove_task_texts, 'desc':'Remove all text files of name "task_*_output"'}
+  'Remove Task Output Texts':  {'val':remove_task_texts, 'desc':'Remove all text files of name "task_*_output"'},
+  'Timer': {'val': 0.5, 'desc':"Timer dt"}
 }
 
 parameter_layout = [
   ['Show Text', 'Hide Text', "Scroll Up", "Scroll Dn", "by"],
-  ['Save Text Logs', 'Remove Task Output Texts']
+  ['Save Text Logs', 'Remove Task Output Texts', 'Timer']
 ]
 
 
@@ -416,7 +417,9 @@ class MCELL_QL_percentage_done_timer(bpy.types.Operator):
         #print ( "execute called inside dynamic queue runner" )
         wm = context.window_manager
         # this is how often we should update this in seconds
-        secs = 0.5
+        global parameter_dictionary
+        #secs = 0.1
+        secs = parameter_dictionary['Timer']['val']
         self._timer = wm.event_timer_add(secs, context.window)
         wm.modal_handler_add(self)
         return {'RUNNING_MODAL'}
