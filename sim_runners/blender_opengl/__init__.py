@@ -22,13 +22,93 @@ import os
 import subprocess
 import sys
 
+import bpy
+import bgl
+import blf
+
+
 plug_code = "BLEND_OGL"
 plug_name = "Blender OpenGL"
 
 
+handler_list = []
+
+def draw_callback_px(context):
+    global stroke_list
+    global x
+    global y
+    global zoom
+
+    bgl.glPushAttrib(bgl.GL_ENABLE_BIT)
+
+    font_id = 0  # XXX, need to find out how best to get this.
+
+    # draw some text
+    blf.position(font_id, 15, 30, 0)
+    blf.size(font_id, 20, 72)
+    bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
+    text = "Blender OpenGL Runner"
+    blf.draw(font_id, text)
+
+    # 100% alpha, 2 pixel width line
+    bgl.glEnable(bgl.GL_BLEND)
+
+    bgl.glPopAttrib()
+
+    # restore opengl defaults
+    bgl.glLineWidth(1)
+    bgl.glDisable(bgl.GL_BLEND)
+    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
+
+
+def get_3d_areas():
+  areas = []
+  if len(bpy.data.window_managers) > 0:
+    if len(bpy.data.window_managers[0].windows) > 0:
+      if len(bpy.data.window_managers[0].windows[0].screen.areas) > 0:
+        if len(handler_list) <= 0:
+          for area in bpy.data.window_managers[0].windows[0].screen.areas:
+            print ( "Found an area of type " + str(area.type) )
+            if area.type == 'VIEW_3D':
+              areas.append ( area )
+  return ( areas )
+
+def enable():
+  global parameter_dictionary
+  global handler_list
+  # self.report({'WARNING'}, "View3D not found, cannot run operator")
+  areas = get_3d_areas()
+  for area in areas:
+    # context.area = area
+    temp_context = bpy.context.copy()
+    temp_context['area'] = area
+    args = (temp_context,)
+    handler_list.append ( bpy.types.SpaceView3D.draw_handler_add(draw_callback_px, args, 'WINDOW', 'POST_PIXEL') )
+    bpy.context.area.tag_redraw()
+  print ( "Enable completed" )
+
+def disable():
+  global parameter_dictionary
+  global handler_list
+  while len(handler_list) > 0:
+    print ( "Removing draw_handler " + str(handler_list[-1]) )
+    bpy.types.SpaceView3D.draw_handler_remove(handler_list[-1], 'WINDOW')
+    handler_list.pop()
+  bpy.context.area.tag_redraw()
+  print ( "Disable completed" )
+
+
+
 parameter_dictionary = {
+  'Enable': {'val': enable, 'desc':"Enable the display overlay"},
+  'Disable': {'val': disable, 'desc':"Disable the display overlay"},
   'Print Commands': {'val':False, 'desc':"Print the commands to be executed"},
 }
+
+parameter_layout = [
+  ['Enable', 'Disable'],
+  ['Print Commands']
+]
 
 def run_commands ( commands ):
 
@@ -65,4 +145,13 @@ def run_commands ( commands ):
                 sp_list.append ( subprocess.Popen ( command_list, stdout=None, stderr=None ) )
 
     return sp_list
+
+def draw_layout ( self, context, layout ):
+    #mcell = context.scene.mcell
+    row = layout.row()
+    row.label ( "draw_layout" )
+    #row.operator("ql.clear_run_list")
+    #row = layout.row()
+    #row.operator("ql.kill_simulation")
+    #row.operator("ql.kill_all_simulations")
 
