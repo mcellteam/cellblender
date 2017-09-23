@@ -154,25 +154,25 @@ def disable():
   print ( "Disable completed" )
 
 
-def scroll_up():
+def page_up():
   global parameter_dictionary
   global scroll_offset
-  if parameter_dictionary['by']['val'] == 0:
+  if parameter_dictionary['Page']['val'] == 0:
     # This provides a way to get back to 0 without searching
     scroll_offset = 0
   else:
-    scroll_offset += parameter_dictionary['by']['val']
+    scroll_offset += -parameter_dictionary['Page']['val']
   # Force a redraw of the OpenGL code
   bpy.context.area.tag_redraw()
 
-def scroll_dn():
+def page_dn():
   global parameter_dictionary
   global scroll_offset
-  if parameter_dictionary['by']['val'] == 0:
+  if parameter_dictionary['Page']['val'] == 0:
     # This provides a way to get back to 0 without searching
     scroll_offset = 0
   else:
-    scroll_offset += -parameter_dictionary['by']['val']
+    scroll_offset += parameter_dictionary['Page']['val']
   # Force a redraw of the OpenGL code
   bpy.context.area.tag_redraw()
 
@@ -187,16 +187,16 @@ def remove_task_texts():
 parameter_dictionary = {
   'Show Text': {'val': enable, 'desc':"Enable the display overlay"},
   'Hide Text': {'val': disable, 'desc':"Disable the display overlay"},
-  'Scroll Up': {'val': scroll_up, 'desc':"Scroll the overlay up"},
-  'Scroll Dn': {'val': scroll_dn, 'desc':"Scroll the overlay down"},
-  'by': {'val': 1, 'desc':"Scroll amount"},
+  'Page Up': {'val': page_up, 'desc':"Page the overlay up"},
+  'Page Dn': {'val': page_dn, 'desc':"Page the overlay down"},
+  'Page': {'val': 25, 'desc':"Page size"},
   'Save Text Logs': {'val':True, 'desc':"Create a text log for each run"},
   'Remove Task Output Texts':  {'val':remove_task_texts, 'desc':'Remove all text files of name "task_*_output"'},
   'Timer': {'val': 0.1, 'desc':"Amount of time (in seconds) between screen updates"}
 }
 
 parameter_layout = [
-  ['Show Text', 'Hide Text', "Scroll Up", "Scroll Dn", "by"],
+  ['Show Text', 'Hide Text', "Page Up", "Page Dn", "Page"],
   ['Save Text Logs', 'Remove Task Output Texts', 'Timer']
 ]
 
