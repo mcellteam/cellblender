@@ -70,50 +70,6 @@ screen_display_lines = {}
 scroll_offset = 0
 accumulate_text = False
 
-def draw_callback_px(context):
-    # Note that the "context" passed in here is a regular dictionary and not the Blender context
-    global screen_display_lines
-    pid = None
-    if 'mcell' in bpy.context.scene:
-      mcell = bpy.context.scene.mcell
-      if 'run_simulation' in mcell:
-        rs = mcell.run_simulation
-        if len(rs.processes_list) > 0:
-          pid_str = rs.processes_list[rs.active_process_index].name
-          pid = pid_str.split(',')[0].split()[1]
-
-    bgl.glPushAttrib(bgl.GL_ENABLE_BIT)
-
-    font_id = 0  # XXX, need to find out how best to get this.
-
-    y_pos = 15 * (scroll_offset + 1)
-    if pid and (pid in screen_display_lines):
-      for l in screen_display_lines[pid]:
-          blf.position(font_id, 15, y_pos, 0)
-          y_pos += 15
-          blf.size(font_id, 14, 72) # fontid, size, DPI
-          bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
-          blf.draw(font_id, l)
-    else:
-      keys = screen_display_lines.keys()
-      for k in keys:
-          for l in screen_display_lines[k]:
-              blf.position(font_id, 15, y_pos, 0)
-              y_pos += 15
-              blf.size(font_id, 14, 72) # fontid, size, DPI
-              bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
-              blf.draw(font_id, l)
-
-    # 100% alpha, 2 pixel width line
-    bgl.glEnable(bgl.GL_BLEND)
-
-    bgl.glPopAttrib()
-
-    # restore opengl defaults
-    bgl.glLineWidth(1)
-    bgl.glDisable(bgl.GL_BLEND)
-    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
-
 
 def get_3d_areas():
   areas = []
@@ -190,13 +146,14 @@ parameter_dictionary = {
   'Page Up': {'val': page_up, 'desc':"Page the overlay up"},
   'Page Dn': {'val': page_dn, 'desc':"Page the overlay down"},
   'Page': {'val': 25, 'desc':"Page size"},
+  'Clear': {'val':False, 'desc':"Clear the background before drawing text"},
   'Save Text Logs': {'val':True, 'desc':"Create a text log for each run"},
   'Remove Task Output Texts':  {'val':remove_task_texts, 'desc':'Remove all text files of name "task_*_output"'},
   'Timer': {'val': 0.1, 'desc':"Amount of time (in seconds) between screen updates"}
 }
 
 parameter_layout = [
-  ['Show Text', 'Hide Text', "Page Up", "Page Dn", "Page"],
+  ['Show Text', 'Hide Text', 'Clear', 'Page Up', 'Page Dn', 'Page'],
   ['Save Text Logs', 'Remove Task Output Texts', 'Timer']
 ]
 
@@ -208,6 +165,55 @@ def draw_layout ( self, context, layout ):
     row = layout.row()
     row.operator("ql.kill_simulation")
     row.operator("ql.kill_all_simulations")
+
+
+def draw_callback_px(context):
+    # Note that the "context" passed in here is a regular dictionary and not the Blender context
+    global screen_display_lines
+    pid = None
+    if 'mcell' in bpy.context.scene:
+      mcell = bpy.context.scene.mcell
+      if 'run_simulation' in mcell:
+        rs = mcell.run_simulation
+        if len(rs.processes_list) > 0:
+          pid_str = rs.processes_list[rs.active_process_index].name
+          pid = pid_str.split(',')[0].split()[1]
+
+    bgl.glPushAttrib(bgl.GL_ENABLE_BIT)
+
+    if parameter_dictionary['Clear']['val']:
+      bgl.glClearColor ( 0.0, 0.0, 0.0, 1.0 )
+      bgl.glClear ( bgl.GL_COLOR_BUFFER_BIT )
+
+    font_id = 0  # XXX, need to find out how best to get this.
+
+    y_pos = 15 * (scroll_offset + 1)
+    if pid and (pid in screen_display_lines):
+      for l in screen_display_lines[pid]:
+          blf.position(font_id, 15, y_pos, 0)
+          y_pos += 15
+          blf.size(font_id, 14, 72) # fontid, size, DPI
+          bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
+          blf.draw(font_id, l)
+    else:
+      keys = screen_display_lines.keys()
+      for k in keys:
+          for l in screen_display_lines[k]:
+              blf.position(font_id, 15, y_pos, 0)
+              y_pos += 15
+              blf.size(font_id, 14, 72) # fontid, size, DPI
+              bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
+              blf.draw(font_id, l)
+
+    # 100% alpha, 2 pixel width line
+    bgl.glEnable(bgl.GL_BLEND)
+
+    bgl.glPopAttrib()
+
+    # restore opengl defaults
+    bgl.glLineWidth(1)
+    bgl.glDisable(bgl.GL_BLEND)
+    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
 
 
 
