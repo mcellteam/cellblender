@@ -1,3 +1,0 @@
-all: makefile
-
-clean: makefile
