@@ -66,25 +66,43 @@ from multiprocessing import cpu_count
 
 
 handler_list = []
-screen_display_lines = ["No Output"]
+screen_display_lines = {}
 scroll_offset = 0
 accumulate_text = False
 
 def draw_callback_px(context):
+    # Note that the "context" passed in here is a regular dictionary and not the Blender context
     global screen_display_lines
+    pid = None
+    if 'mcell' in bpy.context.scene:
+      mcell = bpy.context.scene.mcell
+      if 'run_simulation' in mcell:
+        rs = mcell.run_simulation
+        if len(rs.processes_list) > 0:
+          pid_str = rs.processes_list[rs.active_process_index].name
+          pid = pid_str.split(',')[0].split()[1]
 
     bgl.glPushAttrib(bgl.GL_ENABLE_BIT)
 
     font_id = 0  # XXX, need to find out how best to get this.
 
     y_pos = 15 * (scroll_offset + 1)
-    for l in screen_display_lines: # reverse
-        # draw some text
-        blf.position(font_id, 15, y_pos, 0)
-        y_pos += 15
-        blf.size(font_id, 14, 72) # fontid, size, DPI
-        bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
-        blf.draw(font_id, l)
+    if pid and (pid in screen_display_lines):
+      for l in screen_display_lines[pid]:
+          blf.position(font_id, 15, y_pos, 0)
+          y_pos += 15
+          blf.size(font_id, 14, 72) # fontid, size, DPI
+          bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
+          blf.draw(font_id, l)
+    else:
+      keys = screen_display_lines.keys()
+      for k in keys:
+          for l in screen_display_lines[k]:
+              blf.position(font_id, 15, y_pos, 0)
+              y_pos += 15
+              blf.size(font_id, 14, 72) # fontid, size, DPI
+              bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
+              blf.draw(font_id, l)
 
     # 100% alpha, 2 pixel width line
     bgl.glEnable(bgl.GL_BLEND)
@@ -174,7 +192,7 @@ parameter_dictionary = {
   'by': {'val': 1, 'desc':"Scroll amount"},
   'Save Text Logs': {'val':True, 'desc':"Create a text log for each run"},
   'Remove Task Output Texts':  {'val':remove_task_texts, 'desc':'Remove all text files of name "task_*_output"'},
-  'Timer': {'val': 0.5, 'desc':"Timer dt"}
+  'Timer': {'val': 0.1, 'desc':"Amount of time (in seconds) between screen updates"}
 }
 
 parameter_layout = [
@@ -225,7 +243,7 @@ def run_commands ( commands ):
             }
             """
     global screen_display_lines
-    screen_display_lines = []
+    screen_display_lines = {}
 
     mcell = context.scene.mcell
     # Set the Blender property from the local for now using the older code
@@ -385,8 +403,8 @@ class MCELL_QL_percentage_done_timer(bpy.types.Operator):
                     global accumulate_text
                     if accumulate_text:
                         global screen_display_lines
-                        screen_display_lines = stdout_txt.split("\n")  # Just copy each run for now ... only the last will be stable
-                        screen_display_lines.reverse() # Reverse since they'll be drawn from the bottom up
+                        screen_display_lines[str(pid)] = stdout_txt.split("\n")  # Just copy each run for now ... only the last will be stable
+                        screen_display_lines[str(pid)].reverse() # Reverse since they'll be drawn from the bottom up
 
                 if progress_message == None:
                     progress_message = ""
@@ -418,7 +436,6 @@ class MCELL_QL_percentage_done_timer(bpy.types.Operator):
         wm = context.window_manager
         # this is how often we should update this in seconds
         global parameter_dictionary
-        #secs = 0.1
         secs = parameter_dictionary['Timer']['val']
         self._timer = wm.event_timer_add(secs, context.window)
         wm.modal_handler_add(self)
