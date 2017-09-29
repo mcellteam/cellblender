@@ -544,6 +544,7 @@ class MCELL_QL_clear_run_list(bpy.types.Operator):
                     # property and simulation queue
                     idx += 1
                     pass
+
                 else:
                     # Simulation has failed or finished. Remove it from
                     # collection property and the simulation queue
@@ -561,6 +562,9 @@ class MCELL_QL_clear_run_list(bpy.types.Operator):
                     mcell.run_simulation.active_process_index -= 1
                     if (mcell.run_simulation.active_process_index < 0):
                         mcell.run_simulation.active_process_index = 0
+
+        global screen_display_lines
+        screen_display_lines = {}
 
         return {'FINISHED'}
 
