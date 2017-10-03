@@ -43,7 +43,22 @@ parameter_layout = [
 
 # This engine class will cause this module to be recognized as supporting engine objects
 class engine:
-    pass
+    def __init__ ( self, engine_module ):  # Note: couldn't use __module__ to get this information for some reason
+        self.name = engine_module.plug_name
+        self.par_dict = {}
+        if 'parameter_dictionary' in dir(engine_module):
+            # Make a deep copy of the engine module's parameter dictionary since it may be changed while running
+            for k in engine_module.parameter_dictionary.keys():
+              self.par_dict[k] = engine_module.parameter_dictionary[k].copy()
+    def get_status_string ( self ):
+        stat = self.name
+        if len(self.par_dict.keys()) > 0:
+            if 'Reaction Factor' in self.par_dict.keys():
+                stat = stat + " with rf=" + str(self.par_dict['Reaction Factor']['val'])
+        return stat
+    def make_at(self,location):
+        p = self.par_dict
+
 
 def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   # Return a list of run command dictionaries.

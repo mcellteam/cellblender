@@ -902,8 +902,6 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
         elif active_runner_module == None:
             # print ( "Cannot run without selecting a simulation runner" )
             status = "Error: No simulation runner selected"
-        elif ('engine' in dir(active_engine_module)) and ('runner' in dir(active_runner_module)):
-            status = "Object-oriented engine/runner classes branch taken"
 
         elif not ( ( 'prepare_runs_no_data_model' in dir(active_engine_module) )
                 or ( 'prepare_runs_data_model_no_geom' in dir(active_engine_module) )
@@ -946,7 +944,26 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
             script_dir_path = os.path.dirname(os.path.realpath(__file__))
             script_file_path = os.path.join(script_dir_path, "sim_engines")
 
-            if "run_engine" in dir(active_runner_module):
+            if ('engine' in dir(active_engine_module)) and ('runner' in dir(active_runner_module)):
+                # This is the new engine/runner object case
+                print ( "Object-Oriented Engine/Runner combination found" )
+                # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+                e = active_engine_module.engine(active_engine_module)
+                r = active_runner_module.runner(active_runner_module, e)
+                status = "Engine and Runner have been constructed"
+
+                global global_task_dict
+                global global_task_id
+
+                global_task_dict[global_task_id] = r
+
+                new_job = mcell.sim_runners.job_index_list.add()
+                new_job.job_index = global_task_id
+                mcell.sim_runners.active_job_index = len(mcell.sim_runners.job_index_list) - 1
+
+                global_task_id += 1
+
+            elif "run_engine" in dir(active_runner_module):
                 print ( "Selected Runner supports running the engine directly ... so pass the engine." )
                 dm = mcell.build_data_model_from_properties ( context, geometry=True )
                 active_runner_module.run_engine ( active_engine_module, dm, project_dir )
@@ -1671,15 +1688,7 @@ class PLUGGABLE_UL_runner(bpy.types.UIList):
         if item.job_index in global_task_dict:
             job = global_task_dict[item.job_index]
             # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-            # Use the type of the job to determine how to handle it
-            if type(job) == RunningJob:
-                s = s + " " + job.runner_name
-                if len(job.param_dict.keys()) > 0:
-                    s = s + "(" + ",".join([str(k)+":"+str(job.param_dict[k]['val']) for k in sorted(job.param_dict.keys())]) + ")"
-                s = s + " " + job.engine_name
-                if len(job.engine_dict.keys()) > 0:
-                    s = s + "(" + ",".join([str(k)+":"+str(job.engine_dict[k]['val']) for k in sorted(job.engine_dict.keys())]) + ")"
-            elif 'get_status_string' in dir(job):
+            if 'get_status_string' in dir(job):
                 s = s + " " + job.get_status_string()
             else:
                 s = s + " No get_status_string function found"

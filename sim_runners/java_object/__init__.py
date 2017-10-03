@@ -43,6 +43,27 @@ parameter_layout = [
   ['Print Information', 'Reset', 'Print Commands']
 ]
 
+
+# This runner class will cause this module to be recognized as supporting runner objects
+class runner:
+    def __init__ ( self, runner_module, engine ):  # Note: couldn't use __module__ to get this information for some reason
+        print ( "Module contains " + str(dir(runner_module)) )
+        self.name = runner_module.plug_name
+        self.engine = engine
+        self.par_dict = {}
+        if 'parameter_dictionary' in dir(runner_module):
+            # Make a deep copy of the engine module's parameter dictionary since it may be changed while running
+            for k in runner_module.parameter_dictionary.keys():
+              self.par_dict[k] = runner_module.parameter_dictionary[k].copy()
+    def get_status_string ( self ):
+        stat = self.name
+        if 'engine' in dir(self):
+            stat = stat + "  running " + self.engine.get_status_string()
+        return stat
+    def run(self):
+        p = self.par_dict
+
+
 def find_in_path(program_name):
     for path in os.environ.get('PATH','').split(os.pathsep):
         full_name = os.path.join(path,program_name)
