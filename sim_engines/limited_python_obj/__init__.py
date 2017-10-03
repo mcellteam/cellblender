@@ -41,6 +41,9 @@ parameter_layout = [
   ['Print Information', 'Reset']
 ]
 
+# This engine class will cause this module to be recognized as supporting engine objects
+class engine:
+    pass
 
 def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   # Return a list of run command dictionaries.

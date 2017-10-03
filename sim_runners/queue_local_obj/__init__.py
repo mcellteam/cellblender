@@ -133,7 +133,7 @@ def page_dn():
   bpy.context.area.tag_redraw()
 
 plug_code = "QUEUE_LOCAL_OBJ"
-plug_name = "Local Queue Obj"
+plug_name = "Local Queue (Object)"
 
 def remove_task_texts():
     print ( "Remove task texts" )
@@ -157,6 +157,9 @@ parameter_layout = [
   ['Save Text Logs', 'Remove Task Output Texts', 'Timer']
 ]
 
+# This runner class will cause this module to be recognized as supporting runner objects
+class runner:
+    pass
 
 def draw_layout ( self, context, layout ):
     mcell = context.scene.mcell
