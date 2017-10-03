@@ -37,7 +37,7 @@ IOMESHFILES = cellblender/io_mesh_mcell_mdl/_mdlmesh_parser.so cellblender/io_me
 MCELLENGINE = cellblender/sim_engines/mcell3/_mdlmesh_parser.so cellblender/sim_engines/mcell3/mdlmesh_parser.py
 
 ifeq ($(UNAME_S),Linux)
-  SIMCTLFILES = cellblender/sim_runners/java/SimControl.jar cellblender/sim_runners/open_gl/SimControl
+  SIMCTLFILES = cellblender/sim_runners/java/SimControl.jar cellblender/sim_runners/java_object/SimControl.jar cellblender/sim_runners/open_gl/SimControl
 else
   SIMCTLFILES = cellblender/sim_runners/java/SimControl.jar
 endif
