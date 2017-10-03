@@ -902,6 +902,9 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
         elif active_runner_module == None:
             # print ( "Cannot run without selecting a simulation runner" )
             status = "Error: No simulation runner selected"
+        elif ('engine' in dir(active_engine_module)) and ('runner' in dir(active_runner_module)):
+            status = "Dynamic engine/runner classes branch taken"
+
         elif not ( ( 'prepare_runs_no_data_model' in dir(active_engine_module) )
                 or ( 'prepare_runs_data_model_no_geom' in dir(active_engine_module) )
                 or ( 'prepare_runs_data_model_full' in dir(active_engine_module) ) ):
@@ -1651,6 +1654,39 @@ class MCell_UL_computer_item ( bpy.types.UIList ):
           col.prop ( item, "selected", text="" )
 
 
+global_task_dict = {}
+global_task_id = 1
+
+
+class PLUGGABLE_UL_runner(bpy.types.UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        # data is a Pluggable
+        # item is a JobIndexProperty
+        # active_data is a Pluggable
+        # active_propname is the string key ("active_job_index")
+        # index is an integer index into the selected item in the list
+        global global_task_dict
+        global global_task_id
+        s = "Job Index: " + str(item.job_index)
+        if item.job_index in global_task_dict:
+            job = global_task_dict[item.job_index]
+            # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+            # Use the type of the job to determine how to handle it
+            if type(job) == RunningJob:
+                s = s + " " + job.runner_name
+                if len(job.param_dict.keys()) > 0:
+                    s = s + "(" + ",".join([str(k)+":"+str(job.param_dict[k]['val']) for k in sorted(job.param_dict.keys())]) + ")"
+                s = s + " " + job.engine_name
+                if len(job.engine_dict.keys()) > 0:
+                    s = s + "(" + ",".join([str(k)+":"+str(job.engine_dict[k]['val']) for k in sorted(job.engine_dict.keys())]) + ")"
+            elif 'get_status_string' in dir(job):
+                s = s + " " + job.get_status_string()
+            else:
+                s = s + " No get_status_string function found"
+        layout.label(s, icon='FILE_TICK')
+        # def get_status_string ( self ):
+
+
 class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     enable_python_scripting = BoolProperty ( name='Enable Python Scripting', default=False )  # Intentionally not in the data model
     sge_host_name = StringProperty ( default="", description="Name of Grid Engine Scheduler" )
@@ -2077,6 +2113,24 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
 
                 if self.simulation_run_control == 'DYNAMIC':
+                    row = layout.row()
+                    row.label ( "============ Draw the job list here ============" )
+                    row = layout.row()
+                    col = row.column()
+                    col.template_list("PLUGGABLE_UL_runner", "runner",
+                                      mcell.sim_runners, "job_index_list",
+                                      mcell.sim_runners, "active_job_index",
+                                      rows=4)
+                    col = row.column(align=False)
+                    subcol = col.column(align=True)
+                    #subcol.operator("pluggable.clear_this_job", icon='ZOOMOUT', text="")
+                    #subcol.operator("pluggable.clear_all_jobs", icon='X_VEC', text="")
+                    subcol.label(icon='ZOOMOUT', text="")
+                    subcol.label(icon='X_VEC', text="")
+
+
+                    row = layout.row()
+                    row.label ( "============ Draw the job list here ============" )
                     mcell.sim_engines.draw_panel ( context, layout )
                     mcell.sim_runners.draw_panel ( context, layout )
 
@@ -2543,6 +2597,10 @@ class PluggableValue(bpy.types.PropertyGroup):
 def plugs_changed_callback ( self, context ):
     self.plugs_changed_callback(context)
 
+class JobIndexProperty(bpy.types.PropertyGroup):
+    # This class provides an integer index into the pure python job list
+    job_index = IntProperty ( default=-1, description="Job Index" )
+
 class Pluggable(bpy.types.PropertyGroup):
     file_name = StringProperty ( subtype='FILE_PATH', default="")
     engines_enum = EnumProperty ( items=get_engines_as_items, name="", description="Engines", update=plugs_changed_callback )
@@ -2554,6 +2612,9 @@ class Pluggable(bpy.types.PropertyGroup):
     # The list is emptied and loaded whenever the chosen plug changes
     plug_val_list = CollectionProperty(type=PluggableValue, name="String List")
     active_plug_val_index = IntProperty(name="Active String Index", default=0)
+
+    job_index_list = CollectionProperty(type=JobIndexProperty, name="Job Index List")
+    active_job_index = IntProperty(name="Active Job Index", default=0)
 
     debug_mode = BoolProperty ( default=False, description="Debugging" )
 
