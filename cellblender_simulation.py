@@ -876,6 +876,8 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
 
     def execute(self, context):
 
+        print ( "Top of execute" )
+
         global active_engine_module
         global active_runner_module
 
@@ -883,12 +885,16 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
 
         status = ""
 
+        print ( "Update Pluggables" )
+
         # Force an update of the pluggable items as needed (typically after starting Blender).
         if active_engine_module == None:
             mcell.sim_engines.plugs_changed_callback ( context )
         if active_runner_module == None:
             mcell.sim_runners.plugs_changed_callback ( context )
 
+
+        print ( "Check for engine/runner capabilities" )
 
         if active_engine_module == None:
             # print ( "Cannot run without selecting a simulation engine" )
@@ -903,6 +909,8 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
             status = "Error: function \"prepare_runs...\" not found in selected engine"
 
         if len(status) == 0:
+            print ( "Update start time" )
+
             with open(os.path.join(os.path.dirname(bpy.data.filepath), "start_time.txt"), "w") as start_time_file:
                 start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
@@ -913,12 +921,14 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
 
             project_dir = mcell_files_path()
 
+            print ( "Remove old reaction data and make new directories" )
             react_dir = os.path.join(project_dir, "output_data", "react_data")
             if os.path.exists(react_dir) and (mcell.run_simulation.remove_append == 'remove'):
                 shutil.rmtree(react_dir)
             if not os.path.exists(react_dir):
                 os.makedirs(react_dir)
 
+            print ( "Remove old viz data and make new directories" )
             viz_dir = os.path.join(project_dir, "output_data", "viz_data")
             if os.path.exists(viz_dir) and (mcell.run_simulation.remove_append == 'remove'):
                 shutil.rmtree(viz_dir)
@@ -927,6 +937,7 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
 
             # The following line will create the "data_layout.json" file describing the directory structure
             # It would probably be better for the actual engine to do this, but put it here for now...
+            print ( "Write the default data layout" )
             engine_manager.write_default_data_layout(project_dir, start, end)
 
             script_dir_path = os.path.dirname(os.path.realpath(__file__))

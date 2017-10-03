@@ -30,6 +30,8 @@ import cellblender.sim_runners as runner_manager
 
 # blender imports
 import bpy
+import bgl
+import blf
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
                       FloatProperty, FloatVectorProperty, IntProperty, \
                       IntVectorProperty, PointerProperty, StringProperty
@@ -63,7 +65,72 @@ from cellblender.cellblender_utils import mcell_files_path
 from multiprocessing import cpu_count
 
 
+handler_list = []
+screen_display_lines = {}
+scroll_offset = 0
+accumulate_text = False
 
+
+def get_3d_areas():
+  areas = []
+  if len(bpy.data.window_managers) > 0:
+    if len(bpy.data.window_managers[0].windows) > 0:
+      if len(bpy.data.window_managers[0].windows[0].screen.areas) > 0:
+        if len(handler_list) <= 0:
+          for area in bpy.data.window_managers[0].windows[0].screen.areas:
+            print ( "Found an area of type " + str(area.type) )
+            if area.type == 'VIEW_3D':
+              areas.append ( area )
+  return ( areas )
+
+def enable():
+  global parameter_dictionary
+  global handler_list
+  global accumulate_text
+  accumulate_text = True
+  areas = get_3d_areas()
+  for area in areas:
+    temp_context = bpy.context.copy()
+    temp_context['area'] = area
+    args = (temp_context,)
+    handler_list.append ( bpy.types.SpaceView3D.draw_handler_add(draw_callback_px, args, 'WINDOW', 'POST_PIXEL') )
+    bpy.context.area.tag_redraw()
+  print ( "Enable completed" )
+
+def disable():
+  global parameter_dictionary
+  global handler_list
+  global accumulate_text
+  accumulate_text = False
+  while len(handler_list) > 0:
+    print ( "Removing draw_handler " + str(handler_list[-1]) )
+    bpy.types.SpaceView3D.draw_handler_remove(handler_list[-1], 'WINDOW')
+    handler_list.pop()
+  bpy.context.area.tag_redraw()
+  print ( "Disable completed" )
+
+
+def page_up():
+  global parameter_dictionary
+  global scroll_offset
+  if parameter_dictionary['Page']['val'] == 0:
+    # This provides a way to get back to 0 without searching
+    scroll_offset = 0
+  else:
+    scroll_offset += -parameter_dictionary['Page']['val']
+  # Force a redraw of the OpenGL code
+  bpy.context.area.tag_redraw()
+
+def page_dn():
+  global parameter_dictionary
+  global scroll_offset
+  if parameter_dictionary['Page']['val'] == 0:
+    # This provides a way to get back to 0 without searching
+    scroll_offset = 0
+  else:
+    scroll_offset += parameter_dictionary['Page']['val']
+  # Force a redraw of the OpenGL code
+  bpy.context.area.tag_redraw()
 
 plug_code = "QUEUE_LOCAL"
 plug_name = "Local Queue"
@@ -74,12 +141,20 @@ def remove_task_texts():
 
 
 parameter_dictionary = {
+  'Show Text': {'val': enable, 'desc':"Enable the display overlay"},
+  'Hide Text': {'val': disable, 'desc':"Disable the display overlay"},
+  'Page Up': {'val': page_up, 'desc':"Page the overlay up"},
+  'Page Dn': {'val': page_dn, 'desc':"Page the overlay down"},
+  'Page': {'val': 25, 'desc':"Page size"},
+  'Clear': {'val':False, 'desc':"Clear the background before drawing text"},
   'Save Text Logs': {'val':True, 'desc':"Create a text log for each run"},
-  'Remove Task Output Texts':  {'val':remove_task_texts, 'desc':'Remove all text files of name "task_*_output"'}
+  'Remove Task Output Texts':  {'val':remove_task_texts, 'desc':'Remove all text files of name "task_*_output"'},
+  'Timer': {'val': 0.1, 'desc':"Amount of time (in seconds) between screen updates"}
 }
 
 parameter_layout = [
-  ['Save Text Logs', 'Remove Task Output Texts']
+  ['Show Text', 'Hide Text', 'Clear', 'Page Up', 'Page Dn', 'Page'],
+  ['Save Text Logs', 'Remove Task Output Texts', 'Timer']
 ]
 
 
@@ -90,6 +165,55 @@ def draw_layout ( self, context, layout ):
     row = layout.row()
     row.operator("ql.kill_simulation")
     row.operator("ql.kill_all_simulations")
+
+
+def draw_callback_px(context):
+    # Note that the "context" passed in here is a regular dictionary and not the Blender context
+    global screen_display_lines
+    pid = None
+    if 'mcell' in bpy.context.scene:
+      mcell = bpy.context.scene.mcell
+      if 'run_simulation' in mcell:
+        rs = mcell.run_simulation
+        if len(rs.processes_list) > 0:
+          pid_str = rs.processes_list[rs.active_process_index].name
+          pid = pid_str.split(',')[0].split()[1]
+
+    bgl.glPushAttrib(bgl.GL_ENABLE_BIT)
+
+    if parameter_dictionary['Clear']['val']:
+      bgl.glClearColor ( 0.0, 0.0, 0.0, 1.0 )
+      bgl.glClear ( bgl.GL_COLOR_BUFFER_BIT )
+
+    font_id = 0  # XXX, need to find out how best to get this.
+
+    y_pos = 15 * (scroll_offset + 1)
+    if pid and (pid in screen_display_lines):
+      for l in screen_display_lines[pid]:
+          blf.position(font_id, 15, y_pos, 0)
+          y_pos += 15
+          blf.size(font_id, 14, 72) # fontid, size, DPI
+          bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
+          blf.draw(font_id, l)
+    else:
+      keys = screen_display_lines.keys()
+      for k in keys:
+          for l in screen_display_lines[k]:
+              blf.position(font_id, 15, y_pos, 0)
+              y_pos += 15
+              blf.size(font_id, 14, 72) # fontid, size, DPI
+              bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
+              blf.draw(font_id, l)
+
+    # 100% alpha, 2 pixel width line
+    bgl.glEnable(bgl.GL_BLEND)
+
+    bgl.glPopAttrib()
+
+    # restore opengl defaults
+    bgl.glLineWidth(1)
+    bgl.glDisable(bgl.GL_BLEND)
+    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
 
 
 
@@ -124,6 +248,8 @@ def run_commands ( commands ):
               'stderr': ''
             }
             """
+    global screen_display_lines
+    screen_display_lines = {}
 
     mcell = context.scene.mcell
     # Set the Blender property from the local for now using the older code
@@ -263,6 +389,7 @@ class MCELL_QL_percentage_done_timer(bpy.types.Operator):
                     em = cellblender_simulation.engine_module_dict[pid]
                     # print ( "Engine Module for " + str(pid) + " is : " + em.plug_name )
                     # print ( "   Engine Module Contains : " + str(dir(em)) )
+                    stdout_txt = None  # This might get filled by the get_progress_message_and_status function (if it exists)
                     if 'get_progress_message_and_status' in dir(em):
                         # Engine supports progress, so pass current stdout to the progress/status function and show as progress
                         #if q_item['bl_text'] is None:
@@ -276,6 +403,14 @@ class MCELL_QL_percentage_done_timer(bpy.types.Operator):
                     else:
                         # Engine doesn't support progress, so just show its own name as progress
                         progress_message = em.plug_name
+                    if stdout_txt == None:
+                        # It didn't get filled above, so fill it now
+                        stdout_txt = q_item['bl_text'].as_string()
+                    global accumulate_text
+                    if accumulate_text:
+                        global screen_display_lines
+                        screen_display_lines[str(pid)] = stdout_txt.split("\n")  # Just copy each run for now ... only the last will be stable
+                        screen_display_lines[str(pid)].reverse() # Reverse since they'll be drawn from the bottom up
 
                 if progress_message == None:
                     progress_message = ""
@@ -287,6 +422,9 @@ class MCELL_QL_percentage_done_timer(bpy.types.Operator):
 
                 if task_complete:
                     task_ctr += 1
+
+            # Force a redraw of the OpenGL code
+            bpy.context.area.tag_redraw()
 
             # just a silly way of forcing a screen update. ¯\_(ツ)_/¯
             color = context.user_preferences.themes[0].view_3d.space.gradients.high_gradient
@@ -303,7 +441,8 @@ class MCELL_QL_percentage_done_timer(bpy.types.Operator):
         #print ( "execute called inside dynamic queue runner" )
         wm = context.window_manager
         # this is how often we should update this in seconds
-        secs = 0.5
+        global parameter_dictionary
+        secs = parameter_dictionary['Timer']['val']
         self._timer = wm.event_timer_add(secs, context.window)
         wm.modal_handler_add(self)
         return {'RUNNING_MODAL'}
@@ -405,6 +544,7 @@ class MCELL_QL_clear_run_list(bpy.types.Operator):
                     # property and simulation queue
                     idx += 1
                     pass
+
                 else:
                     # Simulation has failed or finished. Remove it from
                     # collection property and the simulation queue
@@ -423,17 +563,20 @@ class MCELL_QL_clear_run_list(bpy.types.Operator):
                     if (mcell.run_simulation.active_process_index < 0):
                         mcell.run_simulation.active_process_index = 0
 
+        global screen_display_lines
+        screen_display_lines = {}
+
         return {'FINISHED'}
 
 
 def register_blender_classes():
-    print ( "Registering Queue_Local classes" )
+    #print ( "Registering Queue_Local classes" )
     bpy.utils.register_class(MCELL_QL_percentage_done_timer)
     #bpy.utils.register_class(MCELL_QL_run_simulation_control_queue)
     bpy.utils.register_class(MCELL_QL_kill_simulation)
     bpy.utils.register_class(MCELL_QL_kill_all_simulations)
     bpy.utils.register_class(MCELL_QL_clear_run_list)
-    print ( "Done Registering" )
+    #print ( "Done Registering" )
 
 def unregister_this_class(this_class):
     try:
@@ -442,11 +585,11 @@ def unregister_this_class(this_class):
       pass
 
 def unregister_blender_classes():
-    print ( "UnRegistering Queue_Local classes" )
+    #print ( "UnRegistering Queue_Local classes" )
     unregister_this_class (MCELL_QL_clear_run_list)
     unregister_this_class (MCELL_QL_kill_all_simulations)
     unregister_this_class (MCELL_QL_kill_simulation)
     #unregister_this_class (MCELL_QL_run_simulation_control_queue)
     unregister_this_class (MCELL_QL_percentage_done_timer)
-    print ( "Done Unregistering" )
+    #print ( "Done Unregistering" )
 
