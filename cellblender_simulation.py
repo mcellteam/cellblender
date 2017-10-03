@@ -903,7 +903,7 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
             # print ( "Cannot run without selecting a simulation runner" )
             status = "Error: No simulation runner selected"
         elif ('engine' in dir(active_engine_module)) and ('runner' in dir(active_runner_module)):
-            status = "Dynamic engine/runner classes branch taken"
+            status = "Object-oriented engine/runner classes branch taken"
 
         elif not ( ( 'prepare_runs_no_data_model' in dir(active_engine_module) )
                 or ( 'prepare_runs_data_model_no_geom' in dir(active_engine_module) )

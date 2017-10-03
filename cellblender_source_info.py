@@ -126,6 +126,9 @@ cellblender_info = {
         "sim_runners"+os.sep+"queue_local"+os.sep+"__init__.py",
         "sim_runners"+os.sep+"queue_local"+os.sep+"makefile",
 
+        "sim_runners"+os.sep+"queue_local_obj"+os.sep+"__init__.py",
+        "sim_runners"+os.sep+"queue_local_obj"+os.sep+"makefile",
+
         "sim_runners"+os.sep+"sun_grid_engine"+os.sep+"__init__.py",
         "sim_runners"+os.sep+"sun_grid_engine"+os.sep+"makefile",
 
@@ -166,6 +169,10 @@ cellblender_info = {
         "sim_engines"+os.sep+"limited_python"+os.sep+"makefile",
         "sim_engines"+os.sep+"limited_python"+os.sep+"__init__.py",
         "sim_engines"+os.sep+"limited_python"+os.sep+"limited_python_sim.py",
+
+        "sim_engines"+os.sep+"limited_python_obj"+os.sep+"makefile",
+        "sim_engines"+os.sep+"limited_python_obj"+os.sep+"__init__.py",
+        "sim_engines"+os.sep+"limited_python_obj"+os.sep+"limited_python_sim.py",
 
         "sim_engines"+os.sep+"mcell3dm"+os.sep+"makefile",
         "sim_engines"+os.sep+"mcell3dm"+os.sep+"__init__.py",
