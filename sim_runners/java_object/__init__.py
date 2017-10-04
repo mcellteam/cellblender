@@ -46,6 +46,7 @@ parameter_layout = [
 
 # This runner class will cause this module to be recognized as supporting runner objects
 class runner:
+
     def __init__ ( self, runner_module, engine ):  # Note: couldn't use __module__ to get this information for some reason
         print ( "Module contains " + str(dir(runner_module)) )
         self.name = runner_module.plug_name
@@ -55,13 +56,51 @@ class runner:
             # Make a deep copy of the engine module's parameter dictionary since it may be changed while running
             for k in runner_module.parameter_dictionary.keys():
               self.par_dict[k] = runner_module.parameter_dictionary[k].copy()
+
     def get_status_string ( self ):
         stat = self.name
         if 'engine' in dir(self):
             stat = stat + "  running " + self.engine.get_status_string()
         return stat
+
     def run(self):
         p = self.par_dict
+
+
+    def run_commands ( self, commands ):
+
+        if parameter_dictionary['Print Commands']['val']:
+            print ( "Commands for " + plug_name + " runner:" )
+            for cmd in commands:
+                print ( "  " + str(cmd) )
+
+        sp_list = []
+        window_num = 0
+        for cmd in commands:
+            command_list = [ 'java', '-jar', os.path.join(os.path.dirname(os.path.realpath(__file__)),"SimControl.jar") ]
+            command_list.append ( "x=%d" % ((50*(1+window_num))%500) ),
+            command_list.append ( "y=%d" % ((40*(1+window_num))%400) ),
+            command_list.append ( ":" ),
+            if type(cmd) == type('str'):
+                # This command is a string, so just append it
+                command_list.append ( cmd )
+                sp_list.append ( subprocess.Popen ( command_list, stdout=None, stderr=None ) )
+            elif type(cmd) == type({'a':1}):
+                # This command is a dictionary, so use its keys:
+                command_list.append ( cmd['cmd'] )  # The dictionary must contain a 'cmd' key
+                if 'args' in cmd:
+                    for arg in cmd['args']:
+                        command_list.append ( arg )
+                if parameter_dictionary['Print Commands']['val']:
+                    print ( "Popen with: " + str(command_list) )
+                if 'wd' in cmd:
+                    sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=None, stderr=None ) )
+                else:
+                    sp_list.append ( subprocess.Popen ( command_list, stdout=None, stderr=None ) )
+            window_num += 1
+        return sp_list
+
+
 
 
 def find_in_path(program_name):

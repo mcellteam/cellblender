@@ -947,15 +947,38 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
             if ('engine' in dir(active_engine_module)) and ('runner' in dir(active_runner_module)):
                 # This is the new engine/runner object case
                 print ( "Object-Oriented Engine/Runner combination found" )
-                # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-                e = active_engine_module.engine(active_engine_module)
-                r = active_runner_module.runner(active_runner_module, e)
+
+                engine_object = active_engine_module.engine(active_engine_module)
+                runner_object = active_runner_module.runner(active_runner_module, engine_object)
                 status = "Engine and Runner have been constructed"
+
+                # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+                command_list = None
+                dm = None
+                print ( "Calling prepare_runs... in engine class" )
+                if 'prepare_runs_no_data_model' in dir(engine_object):
+                    command_list = engine_object.prepare_runs_no_data_model ( project_dir )
+                elif 'prepare_runs_data_model_no_geom' in dir(engine_object):
+                    dm = mcell.build_data_model_from_properties ( context, geometry=False )
+                    command_list = engine_object.prepare_runs_data_model_no_geom ( dm, project_dir )
+                elif 'prepare_runs_data_model_full' in dir(engine_object):
+                    dm = mcell.build_data_model_from_properties ( context, geometry=True )
+                    command_list = engine_object.prepare_runs_data_model_full ( dm, project_dir )
+                
+                if "run_commands" in dir(runner_object):
+                    runner_object.run_commands ( command_list )
+                elif "run_simulations" in dir(engine_object):
+                    print ( "Calling run_simulations in engine_object" )
+                    engine_object.run_simulations ( command_list )
+                elif "run_simulation" in dir(engine_object):
+                    print ( "Calling run_simulation in engine object" )
+                    engine_object.run_simulation ( dm, project_dir )
 
                 global global_task_dict
                 global global_task_id
 
-                global_task_dict[global_task_id] = r
+                global_task_dict[global_task_id] = runner_object
 
                 new_job = mcell.sim_runners.job_index_list.add()
                 new_job.job_index = global_task_id
@@ -1675,7 +1698,7 @@ global_task_dict = {}
 global_task_id = 1
 
 
-class PLUGGABLE_UL_runner(bpy.types.UIList):
+class DYNAMIC_UL_runner(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # data is a Pluggable
         # item is a JobIndexProperty
@@ -2049,11 +2072,11 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
                 display_queue_panel = False
 
+                global active_engine_module
+                global active_runner_module
                 if self.simulation_run_control == "QUEUE":
                     display_queue_panel = True
                 elif self.simulation_run_control == 'DYNAMIC':
-                    global active_engine_module
-                    global active_runner_module
                     if active_engine_module == None:
                         pass
                     elif active_runner_module == None:
@@ -2123,23 +2146,26 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
                 if self.simulation_run_control == 'DYNAMIC':
                     row = layout.row()
-                    row.label ( "============ Draw the job list here ============" )
-                    row = layout.row()
-                    col = row.column()
-                    col.template_list("PLUGGABLE_UL_runner", "runner",
-                                      mcell.sim_runners, "job_index_list",
-                                      mcell.sim_runners, "active_job_index",
-                                      rows=4)
-                    col = row.column(align=False)
-                    subcol = col.column(align=True)
-                    #subcol.operator("pluggable.clear_this_job", icon='ZOOMOUT', text="")
-                    #subcol.operator("pluggable.clear_all_jobs", icon='X_VEC', text="")
-                    subcol.label(icon='ZOOMOUT', text="")
-                    subcol.label(icon='X_VEC', text="")
+                    if ('engine' in dir(active_engine_module)) and ('runner' in dir(active_runner_module)):
+
+                        row.label ( "============ Dynamic job list ============" )
+                        row = layout.row()
+                        col = row.column()
+                        col.template_list("DYNAMIC_UL_runner", "runner",
+                                          mcell.sim_runners, "job_index_list",
+                                          mcell.sim_runners, "active_job_index",
+                                          rows=4)
+                        col = row.column(align=False)
+                        subcol = col.column(align=True)
+                        #subcol.operator("pluggable.clear_this_job", icon='ZOOMOUT', text="")
+                        #subcol.operator("pluggable.clear_all_jobs", icon='X_VEC', text="")
+                        subcol.label(icon='ZOOMOUT', text="")
+                        subcol.label(icon='X_VEC', text="")
 
 
-                    row = layout.row()
-                    row.label ( "============ Draw the job list here ============" )
+                        row = layout.row()
+                        row.label ( "============ Dynamic job list ============" )
+
                     mcell.sim_engines.draw_panel ( context, layout )
                     mcell.sim_runners.draw_panel ( context, layout )
 
