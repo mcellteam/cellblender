@@ -228,6 +228,7 @@ cellblender_info = {
         "mdl"+os.sep+"__init__.py",
         "mdl"+os.sep+"data_model_to_mdl.py",
         "mdl"+os.sep+"run_data_model_mcell.py",
+
         "bng"+os.sep+"__init__.py",
         "bng"+os.sep+"sbml2blender.py",
         "bng"+os.sep+"sbml2json.py",
@@ -238,6 +239,8 @@ cellblender_info = {
         "bng"+os.sep+"treelib3"+os.sep+"__init__.py",
         "bng"+os.sep+"treelib3"+os.sep+"node.py",
         "bng"+os.sep+"treelib3"+os.sep+"tree.py",
+        #        "bng"+os.sep+"libsbml3"+os.sep+"__init__.py",
+
         "examples"+os.sep+"__init__.py",
         "examples"+os.sep+"lv.py",
         "examples"+os.sep+"fceri_mcell3r.py",
@@ -255,7 +258,8 @@ cellblender_info = {
         "examples"+os.sep+"direct_transport.py",
         "examples"+os.sep+"delayed_transport.py",
         "examples"+os.sep+"direct_transport_BNGL.py",
-        #        "bng"+os.sep+"libsbml3"+os.sep+"__init__.py",
+
+        "extensions"+os.sep+"makefile",
         ],
 
     "cellblender_source_sha1": "",
