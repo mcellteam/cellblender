@@ -22,6 +22,8 @@ project_files_dir = ""
 start_seed = 1
 end_seed = 1
 
+last_engine_object = None
+
 def print_info():
   global parameter_dictionary
   print ( 50*'==' )
@@ -36,11 +38,20 @@ def reset():
 
 
 def postprocess():
-  global parameter_dictionary
   global smoldyn_files_dir
   global project_files_dir
   global start_seed
   global end_seed
+
+  global last_engine_object
+
+  if last_engine_object != None:
+      # The last run had object values that should be copied into the globals
+      smoldyn_files_dir = last_engine_object.smoldyn_files_dir
+      project_files_dir = last_engine_object.project_files_dir
+      start_seed = last_engine_object.start_seed
+      end_seed = last_engine_object.end_seed
+
   print ( "Postprocess was called with Smoldyn files at " + str(smoldyn_files_dir) )
   print ( "Postprocess was called for CellBlender files " + str(project_files_dir) )
 
@@ -193,11 +204,345 @@ parameter_layout = [
   ['Postprocess', 'Reset']
 ]
 
-par_val_dict = {}
 
-def convert_to_value ( expression ):
-  global par_val_dict
-  return eval(expression,globals(),par_val_dict)
+
+# This engine class will cause this module to be recognized as supporting engine objects
+class engine:
+
+    def __init__ ( self, engine_module ):  # Note: couldn't use __module__ to get this information for some reason
+        global last_engine_object
+        last_engine_object = self
+        self.name = engine_module.plug_name
+        self.par_dict = {}
+        self.par_val_dict = {} # Used to convert strings to numbers
+        self.smoldyn_files_dir = ""
+        self.project_files_dir = ""
+        self.start_seed = 1
+        self.end_seed = 1
+
+        if 'parameter_dictionary' in dir(engine_module):
+            # Make a deep copy of the engine module's parameter dictionary since it may be changed while running
+            for k in engine_module.parameter_dictionary.keys():
+              self.par_dict[k] = engine_module.parameter_dictionary[k].copy()
+
+    def get_status_string ( self ):
+        stat = self.name
+        if len(self.par_dict.keys()) > 0:
+            if 'Reaction Factor' in self.par_dict.keys():
+                stat = stat + " with rf=" + str(self.par_dict['Reaction Factor']['val'])
+        return stat
+
+
+
+    def convert_to_value ( self, expression ):
+        return eval ( expression,globals(), self.par_val_dict )
+
+
+    def prepare_runs_data_model_full ( self, data_model, project_dir, data_layout=None ):
+        # Return a list of run command dictionaries.
+        # Each run command dictionary must contain a "cmd" key and a "wd" key.
+        # The cmd key will refer to a command list suitable for popen.
+        # The wd key will refer to a working directory string.
+        # Each run command dictionary may contain any other keys helpful for post-processing.
+        # The run command dictionary list will be passed on to the postprocess_runs function.
+
+        # The data_layout should be a dictionary something like this:
+
+        #  {
+        #   "version": 2,
+        #   "data_layout": [
+        #    ["/DIR", ["output_data"]],
+        #    ["dc_a", [1e-06, 1e-05]],
+        #    ["nrel", [100.0, 200.0, 300.0]],
+        #    ["/FILE_TYPE", ["react_data", "viz_data"]],
+        #    ["/SEED", [100, 101]]
+        #   ]
+        #  }
+
+        # That dictionary describes the directory structure that CellBlender expects to find on the disk
+
+        global last_engine_object
+        last_engine_object = self # Let postprocessing know that this was run as an object
+
+        command_list = []
+
+        self.project_files_dir = "" + project_dir
+
+
+
+        ## Build a parameter/value dictionary
+
+        for p in data_model['parameter_system']['model_parameters']:
+          self.par_val_dict[p['par_name']] = p['_extras']['par_value']
+
+
+        init = data_model['initialization']
+
+        dm_mol_list = data_model['define_molecules']['molecule_list']
+        for m in dm_mol_list:
+          print ( "Mol: " + str(m) )
+
+        dm_rxn_list = data_model['define_reactions']['reaction_list']
+        for r in dm_rxn_list:
+          print ( "Rxn: " + str(r) )
+
+        dm_rel_list = data_model['release_sites']['release_site_list']
+        for r in dm_rel_list:
+          print ( "Rel: " + str(r) )
+
+        print ( "Geometrical Objects:" )
+        geo_obj_list = data_model['geometrical_objects']['object_list']
+        for o in geo_obj_list:
+          print ( "Obj: " + str(o['name']) )
+
+        output_detail = parameter_dictionary['Output Detail (0-100)']['val']
+
+        graphics_flag = parameter_dictionary['Graphics']['val']
+
+        command_line_options = parameter_dictionary['Command Line']['val']
+
+        if output_detail > 0: print ( "Inside smoldyn248 run_simulation, project_dir=" + project_dir )
+        self.smoldyn_files_dir = os.path.join ( os.path.dirname(project_dir), "smoldyn" )
+        if output_detail > 0: print ( "Inside smoldyn248 run_simulation, smoldyn_files_dir=" + self.smoldyn_files_dir )
+
+        script_dir_path = os.path.dirname(os.path.realpath(__file__))
+
+        smoldyn_path = str(parameter_dictionary['Smoldyn Path']['val'])
+        if smoldyn_path.startswith('//'):
+          # This path is relative to the .blend file, so make it absolute:
+          blend_file_path = os.path.dirname(os.path.dirname(self.project_files_dir))
+          smoldyn_path = os.path.abspath(os.path.join(blend_file_path, smoldyn_path[2:]))
+
+        auto_bounds = parameter_dictionary['Auto Boundaries']['val']
+
+        min_bounds = []
+        max_bounds = []
+
+        min_bounds.append ( float(parameter_dictionary['x_bound_min']['val']) )
+        max_bounds.append ( float(parameter_dictionary['x_bound_max']['val']) )
+        min_bounds.append ( float(parameter_dictionary['y_bound_min']['val']) )
+        max_bounds.append ( float(parameter_dictionary['y_bound_max']['val']) )
+        min_bounds.append ( float(parameter_dictionary['z_bound_min']['val']) )
+        max_bounds.append ( float(parameter_dictionary['z_bound_max']['val']) )
+
+        # Calculate the bounds and attach to each object (needed to get an inside "point" for Smoldyn)
+
+        print ( "Calculating the bounds of the objects (might want to include releases as well?)" )
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        for o in geo_obj_list:
+            # Calculate the bounds for this object
+            vlist = o['vertex_list']
+            loc = o['location']
+            smoldyn_bounds = [ [0,0], [0,0], [0,0] ]  # Min and Max for each of three axes (assumes 3D!!)
+            first_value = True
+            for face in o['element_connections']:
+                for vindex in face:
+                    p = vlist[vindex]
+                    i = 0
+                    for coord in p:
+                        if first_value:
+                            smoldyn_bounds[i][0] = coord + loc[i]
+                            smoldyn_bounds[i][1] = smoldyn_bounds[i][0]
+                            first_value = False
+                        else:
+                            if smoldyn_bounds[i][0] > coord + loc[i]:
+                              smoldyn_bounds[i][0] = coord + loc[i]
+                            if smoldyn_bounds[i][1] < coord + loc[i]:
+                              smoldyn_bounds[i][1] = coord + loc[i]
+                        i = ( i + 1 ) % len(loc)
+
+            print ( "Object " + o['name'] + " has bounds " + str(smoldyn_bounds) )
+
+            # Attach the bounds to the object
+
+            o['smoldyn_bounds'] = smoldyn_bounds
+
+        if auto_bounds:
+            # Calculate the global bounds from the bounds stored in each object
+            print ( "Calculating simulation bounds from objects" )
+            first_object = True
+            for o in geo_obj_list:
+                smoldyn_bounds = o['smoldyn_bounds']
+                print ( "  Current Simulation Bounds: %s<x<%s, %s<y<%s, %s<z<%s" % (min_bounds[0], max_bounds[0], min_bounds[1], max_bounds[1], min_bounds[2], max_bounds[2], ) )
+                print ( "    Object " + o['name'] + " has bounds " + str(smoldyn_bounds) )
+
+                i = 0
+                for bound in smoldyn_bounds:
+                    if first_object:
+                        min_bounds[i] = bound[0]
+                        max_bounds[i] = bound[1]
+                    else:
+                        if min_bounds[i] > bound[0]:
+                          min_bounds[i] = bound[0]
+                        if max_bounds[i] < bound[1]:
+                          max_bounds[i] = bound[1]
+                    i = ( i + 1 ) % len(loc)
+                first_object = False
+
+        print ( "Simulation Bounds: %s<x<%s, %s<y<%s, %s<z<%s" % (min_bounds[0], max_bounds[0], min_bounds[1], max_bounds[1], min_bounds[2], max_bounds[2], ) )
+
+
+        if not os.path.exists(smoldyn_path):
+            print ( "\n\nUnable to run, file does not exist: " + str(parameter_dictionary['Smoldyn Path']['val']) + " (" + smoldyn_path + ")\n\n" )
+        else:
+
+            # Create a subprocess for each simulation
+            start = 1
+            end = 1
+            try:
+              start = int(self.convert_to_value(data_model['simulation_control']['start_seed']))
+              end = int(self.convert_to_value(data_model['simulation_control']['end_seed']))
+            except Exception as e:
+              print ( "Unable to find the start and/or end seeds in the data model" )
+              pass
+            self.start_seed = start
+            self.end_seed = end
+
+            for sim_seed in range(start,end+1):
+                if output_detail > 0: print ("Running with seed " + str(sim_seed) )
+
+                run_path = os.path.join(self.smoldyn_files_dir,"run"+str(sim_seed))
+
+                if os.path.exists(run_path):
+                    shutil.rmtree(run_path,ignore_errors=True)
+                if not os.path.exists(run_path):
+                    os.makedirs(run_path)
+
+                run_file = os.path.join(run_path,"commands.txt")
+
+                if output_detail > 0: print ( "Saving model to Smoldyn file: " + run_file )
+
+                f = open ( run_file, 'w' )
+                f.write ( "# Smoldyn Simulation Exported from CellBlender\n" )
+
+                f.write ( "\n" )
+
+                if graphics_flag:
+                    f.write ( "graphics opengl\n" )
+                else:
+                    f.write ( "graphics none\n" )
+
+                f.write ( "dim 3\n" )
+                f.write ( "random_seed " + str(sim_seed) + "\n" )
+
+                f.write ( "\n" )
+
+                # Smoldyn gives an error: "simulation dimensions or boundaries are undefined" followed by "Simulation skipped" without boundaries:
+                f.write ( "boundaries x " + str(min_bounds[0]) + " " + str(max_bounds[0]) + " r\n" )
+                f.write ( "boundaries y " + str(min_bounds[1]) + " " + str(max_bounds[1]) + " r\n" )
+                f.write ( "boundaries z " + str(min_bounds[2]) + " " + str(max_bounds[2]) + " r\n" )
+
+                f.write ( "\n" )
+
+                f.write ( "species" )
+                for m in dm_mol_list:
+                  f.write ( " " + str(m['mol_name']) )
+                f.write ( "\n" )
+
+                f.write ( "\n" )
+
+                for m in dm_mol_list:
+                  mcell_diffusion_constant = self.convert_to_value(m['diffusion_constant'])
+                  smoldyn_diffusion_constant = mcell_diffusion_constant * 10000  # Convert due to units difference
+                  f.write ( "difc " + str(m['mol_name']) + " " + str(smoldyn_diffusion_constant) + "\n" )
+
+                f.write ( "\n" )
+
+                for m in dm_mol_list:
+                  color = m['display']['color']
+                  f.write ( "color " + str(m['mol_name']) + " " + str(color[0]) + " " + str(color[1]) + " " + str(color[2]) + "\n" )
+
+                f.write ( "\n" )
+                rnum = 1
+                for r in dm_rxn_list:
+                    # TODO Rates may need scaling
+                    if r['products'] == 'NULL':
+                        f.write ( "reaction R" + str(rnum) + " " + str(r['reactants']) + " -> " +         "0"        + " " + str(self.convert_to_value(r['fwd_rate'])) + "\n" )
+                    else:
+                        f.write ( "reaction R" + str(rnum) + " " + str(r['reactants']) + " -> " + str(r['products']) + " " + str(self.convert_to_value(r['fwd_rate'])) + "\n" )
+                    rnum += 1
+
+                f.write ( "\n" )
+
+                smoldyn_time_step = 0.01  # TODO Needs to use CellBlender time step
+                iterations = int(self.convert_to_value(init['iterations']))
+                f.write ( "time_start 0\n" )
+                f.write ( "time_step " + str(smoldyn_time_step) + "\n" )
+                f.write ( "time_stop " + str(iterations * smoldyn_time_step) + "\n" )
+
+                f.write ( "\n" )
+
+                for o in geo_obj_list:
+                    f.write ( "start_surface " + str(o['name']) + "\n" )
+                    f.write ( "action both all reflect\n" )
+                    f.write ( "color both 0.5 0.5 0.5\n" )
+                    f.write ( "polygon both edge\n" )
+                    vlist = o['vertex_list']
+                    loc = o['location']
+                    for face in o['element_connections']:
+                        f.write ( "panel tri" )
+                        for vindex in face:
+                            p = vlist[vindex]
+                            i = 0
+                            for coord in p:
+                                f.write ( " " + str(coord + loc[i]) )
+                                i = ( i + 1 ) % len(loc)
+                        f.write ( "\n" )
+                    f.write ( "end_surface\n" )
+                    f.write ( "\n" )
+                    f.write ( "start_compartment " + str(o['name']) + "_comp\n" )
+                    f.write ( "surface " + str(o['name']) + "\n" )
+                    print ( "Calculate Center Point for " + o['name'] + " from " + str(o['smoldyn_bounds']) )
+                    center_point = [ (o['smoldyn_bounds'][0][0] + o['smoldyn_bounds'][0][1] ) / 2,
+                                     (o['smoldyn_bounds'][1][0] + o['smoldyn_bounds'][1][1] ) / 2,
+                                     (o['smoldyn_bounds'][2][0] + o['smoldyn_bounds'][2][1] ) / 2 ]
+                    f.write ( "point " + str(center_point[0]) + " " + str(center_point[1]) + " " + str(center_point[2]) + "\n" )
+                    f.write ( "end_compartment\n" )
+                    f.write ( "\n" )
+
+                f.write ( "\n" )
+
+                for r in dm_rel_list:
+                    if r['shape'] == 'OBJECT':
+                        f.write ( "compartment_mol " + str(self.convert_to_value(r['quantity'])) + " " + str(r['molecule']) + " " + r['object_expr'] + "_comp" + "\n" )
+                    else:
+                        f.write ( "mol " + str(self.convert_to_value(r['quantity'])) + " " + str(r['molecule']) + " " + str(self.convert_to_value(r['location_x'])) + " " + str(self.convert_to_value(r['location_y'])) + " " + str(self.convert_to_value(r['location_z'])) + "\n" )
+
+                f.write ( "\n" )
+
+                f.write ( "output_files viz_data.txt viz_data2.txt\n" )
+                f.write ( "output_precision 6\n" )
+
+                f.write ( "\n" )
+
+                f.write ( "cmd E listmols  viz_data.txt\n" )
+                f.write ( "cmd E listmols2 viz_data2.txt\n" )
+
+                f.write ( "\n" )
+
+                f.write ( "end_file\n" )
+                f.close()
+
+                if output_detail > 0: print ( "Done saving Smoldyn file." )
+
+                command_dict = { 'cmd': smoldyn_path,
+                                 'args': [ run_file ],
+                                 'wd': project_dir
+                               }
+                if len(command_line_options) > 0:
+                  command_dict['args'].append(command_line_options)
+
+                command_list.append ( command_dict )
+                if output_detail > 0: print ( str(command_dict) )
+
+        return ( command_list )
+
+
+
+
+
+
+
 
 
 def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
@@ -223,13 +568,15 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   # That dictionary describes the directory structure that CellBlender expects to find on the disk
 
+  global last_engine_object
+  last_engine_object = None # Let postprocessing know that this was NOT run as an object
+
   command_list = []
 
   global smoldyn_files_dir
   global project_files_dir
   global start_seed
   global end_seed
-  global par_val_dict
 
   project_files_dir = "" + project_dir
 
