@@ -907,7 +907,7 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
                 or ( 'prepare_runs_data_model_no_geom' in dir(active_engine_module) )
                 or ( 'prepare_runs_data_model_full' in dir(active_engine_module) ) ):
             print ( "Selected engine module does not contain a \"prepare_runs...\" function" )
-            status = "Error: function \"prepare_runs...\" not found in selected engine"
+            # status = "Error: function \"prepare_runs...\" not found in selected engine"
 
         if len(status) == 0:
             print ( "Update start time" )
@@ -946,7 +946,9 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
 
             if ('engine' in dir(active_engine_module)) and ('runner' in dir(active_runner_module)):
                 # This is the new engine/runner object case
-                print ( "Object-Oriented Engine/Runner combination found" )
+                print ( "OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO" )
+                print ( "OO  Object-Oriented Engine/Runner combination found  OO" )
+                print ( "OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO" )
 
                 engine_object = active_engine_module.engine(active_engine_module)
                 runner_object = active_runner_module.runner(active_runner_module, engine_object)
@@ -992,6 +994,10 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
                 active_runner_module.run_engine ( active_engine_module, dm, project_dir )
 
             else:
+                print ( "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" )
+                print ( "XX  Object-Oriented Engine/Runner combination NOT found  XX" )
+                print ( "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" )
+
                 command_list = None
                 dm = None
                 print ( "Calling prepare_runs... in active_engine_module" )
