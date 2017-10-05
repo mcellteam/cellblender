@@ -25,6 +25,7 @@ import time
 
 plug_code = "PBS"
 plug_name = "Portable Batch System"
+plug_complete = 0.1
 
 def term_all():
     print ( "Terminating all jobs ..." )

@@ -25,6 +25,7 @@ import time
 
 plug_code = "SGE"
 plug_name = "Sun Grid Engine"
+plug_complete = 0.9
 
 def term_all():
     print ( "Terminating all jobs ..." )

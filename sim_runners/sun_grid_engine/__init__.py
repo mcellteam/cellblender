@@ -49,7 +49,8 @@ from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
 
 plug_code = "SGE_HOST_SEL"
 plug_name = "SGE Host Select"
-plug_active = False
+plug_complete = 0.9
+# plug_active = False
 
 def term_all():
     print ( "Terminating all jobs ..." )

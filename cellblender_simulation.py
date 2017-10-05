@@ -2367,6 +2367,11 @@ def get_engines_as_items(scene, context):
         plug_active = True
         if "plug_active" in dir(plug):
             plug_active = plug.plug_active
+        if 'plug_complete' in dir(plug):
+            if plug.plug_complete >= 0.5:
+                plug_active = True
+            else:
+                plug_active = context.scene.mcell.cellblender_preferences.developer_mode
         if plug_active:
             plugs_list.append ( (plug.plug_code, plug.plug_name, "") )
     return plugs_list
@@ -2380,10 +2385,14 @@ def get_runners_as_items(scene, context):
         plug_active = True
         if "plug_active" in dir(plug):
             plug_active = plug.plug_active
+        if 'plug_complete' in dir(plug):
+            if plug.plug_complete >= 0.5:
+                plug_active = True
+            else:
+                plug_active = context.scene.mcell.cellblender_preferences.developer_mode
         if plug_active:
             plugs_list.append ( (plug.plug_code, plug.plug_name, "") )
     return plugs_list
-
 
 
 class PLUGGABLE_OT_Reload(bpy.types.Operator):

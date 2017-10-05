@@ -27,6 +27,7 @@ print ( "Executing MCell Simulation" )
 # Both should be unique within a CellBlender installation
 plug_code = "MCELL3"
 plug_name = "MCell 3 with Dynamic Geometry"
+plug_complete = 1.0
 
 def print_info():
     global parameter_dictionary

@@ -134,6 +134,7 @@ def page_dn():
 
 plug_code = "QUEUE_LOCAL"
 plug_name = "Local Queue"
+plug_complete = 1.0
 
 def remove_task_texts():
     print ( "Remove task texts" )

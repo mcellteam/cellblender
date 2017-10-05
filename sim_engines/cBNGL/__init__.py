@@ -11,6 +11,7 @@ print ( "Executing cBNGL Simulation" )
 # Name of this engine to display in the list of choices (Both should be unique within a CellBlender installation)
 plug_code = "cBNGL"
 plug_name = "cBNGL"
+plug_complete = 0.1
 
 def print_info():
   global parameter_dictionary

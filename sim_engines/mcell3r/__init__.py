@@ -15,6 +15,7 @@ print ( "Executing MCellR Simulation" )
 # Name of this engine to display in the list of choices (Both should be unique within a CellBlender installation)
 plug_code = "MCELLR"
 plug_name = "MCell Rules"
+plug_complete = 0.7
 
 def print_info():
   global parameter_dictionary

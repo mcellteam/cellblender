@@ -24,6 +24,7 @@ import sys
 
 plug_code = "CMDLINE"
 plug_name = "Command Line"
+plug_complete = 0.9
 
 
 parameter_dictionary = {
