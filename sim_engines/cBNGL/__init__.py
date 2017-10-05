@@ -151,6 +151,9 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   project_files_dir = "" + project_dir
 
+  # Create a new local shared_path variable based on what is in the parameter_dictionary (masks the global one)
+  shared_path = parameter_dictionary['Shared Path']['val'].strip()
+
   output_detail = parameter_dictionary['Output Detail (0-100)']['val']
 
   if output_detail > 0: print ( "Inside prepare_runs in cBNGL Engine, project_dir=" + project_dir )
