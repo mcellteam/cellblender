@@ -24,7 +24,7 @@ import sys
 
 plug_code = "JAVA"
 plug_name = "Java Control"
-plug_complete = 0.8
+plug_complete = 0.4
 
 def reset():
     print ( "Resetting" )
