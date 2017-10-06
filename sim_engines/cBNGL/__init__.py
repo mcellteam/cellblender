@@ -33,8 +33,8 @@ def reset():
 import bpy
 
 # Force some defaults which would otherwise be empty (""):
-shared_path = os.path.dirname(__file__)
-bionetgen_path = "bionetgen/BNG2.pl"
+shared_path = "" # os.path.dirname(__file__)  # Leaving blank will cause it to be filled in with cellblender/extensions
+bionetgen_path = "bionetgen/bng2/BNG2.pl"
 
 project_files_dir = ""
 start_seed = 1
@@ -153,12 +153,31 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   project_files_dir = "" + project_dir
 
   # Create a new local shared_path variable based on what is in the parameter_dictionary (masks the global one)
-  shared_path = parameter_dictionary['Shared Path']['val'].strip()
+  #shared_path = parameter_dictionary['Shared Path']['val'].strip()
+
+  # Build the final shared path that will be prepended to all other paths
+  final_shared_path = parameter_dictionary['Shared Path']['val'].strip()
+  if not final_shared_path.startswith(os.path.sep):
+    # Not absolute, so prepend the cellblender/extensions path
+    cb_path = os.path.dirname(__file__)      # Gets the path to cellblender/sim_engines/cBNGL
+    cb_path = os.path.split(cb_path)[0]      # Gets the path to cellblender/sim_engines
+    cb_path = os.path.split(cb_path)[0]      # Gets the path to cellblender
+    cb_path = os.path.join ( cb_path, "extensions" )   # Should be path to cellblender/extensions
+    final_shared_path = os.path.join(cb_path,final_shared_path)
+  final_shared_path = os.path.abspath(final_shared_path)
+
+  final_bionetgen_path = parameter_dictionary['BioNetGen Path']['val'].strip()
+  if not final_bionetgen_path.startswith(os.path.sep):
+    # Not absolute, so prepend the shared path
+    final_bionetgen_path = os.path.join(final_shared_path,final_bionetgen_path)
+  final_bionetgen_path = os.path.abspath(final_bionetgen_path)
+
 
   output_detail = parameter_dictionary['Output Detail (0-100)']['val']
 
   if output_detail > 0: print ( "Inside prepare_runs in cBNGL Engine, project_dir=" + project_dir )
-
+  if output_detail > 0: print ( "  final_shared_path = " + final_shared_path )
+  if output_detail > 0: print ( "  final_bionetgen_path = " + final_bionetgen_path )
   if output_detail > 0: print ( "  Note: The current cBNGL engine doesn't support the prepare/run model.\n  It just runs directly." )
 
   print ( "Running with python " + sys.version )   # This will be Blender's Python which will be 3.5+
@@ -437,7 +456,7 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   # Build command list
   command_list = []
 
-  command_dict = { 'cmd': os.path.join(shared_path,bionetgen_path),
+  command_dict = { 'cmd': final_bionetgen_path,
                            'args': [ bngl_file ],
                            'wd': output_data_dir
                          }
