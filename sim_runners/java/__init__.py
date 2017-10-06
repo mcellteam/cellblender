@@ -63,7 +63,7 @@ class runner:
         stat = self.name
         if 'engine' in dir(self):
             if 'get_status_string' in dir(self.engine):
-                stat = stat + "  running " + self.engine.get_status_string()
+                stat = stat + " running " + self.engine.get_status_string()
             else:
                 stat = stat + " running " + self.engine.name
         return stat
@@ -73,6 +73,8 @@ class runner:
 
 
     def run_commands ( self, commands ):
+
+        print ( "Running commands inside runner class" )
 
         if parameter_dictionary['Print Commands']['val']:
             print ( "Commands for " + plug_name + " runner:" )
@@ -107,6 +109,8 @@ class runner:
 
 
 def run_commands ( commands ):
+
+    print ( "Running commands inside runner module" )
 
     if parameter_dictionary['Print Commands']['val']:
         print ( "Commands for " + plug_name + " runner:" )
