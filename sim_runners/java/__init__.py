@@ -62,7 +62,10 @@ class runner:
     def get_status_string ( self ):
         stat = self.name
         if 'engine' in dir(self):
-            stat = stat + "  running " + self.engine.get_status_string()
+            if 'get_status_string' in dir(self.engine):
+                stat = stat + "  running " + self.engine.get_status_string()
+            else:
+                stat = stat + " running " + self.engine.name
         return stat
 
     def run(self):

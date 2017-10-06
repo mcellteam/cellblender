@@ -262,6 +262,8 @@ class engine:
 
         # That dictionary describes the directory structure that CellBlender expects to find on the disk
 
+        print ( "Preparing runs inside engine class" )
+
         global last_engine_object
         last_engine_object = self # Let postprocessing know that this was run as an object
 
@@ -296,11 +298,11 @@ class engine:
         for o in geo_obj_list:
           print ( "Obj: " + str(o['name']) )
 
-        output_detail = parameter_dictionary['Output Detail (0-100)']['val']
+        output_detail = self.par_dict['Output Detail (0-100)']['val']
 
-        graphics_flag = parameter_dictionary['Graphics']['val']
+        graphics_flag = self.par_dict['Graphics']['val']
 
-        command_line_options = parameter_dictionary['Command Line']['val']
+        command_line_options = self.par_dict['Command Line']['val']
 
         if output_detail > 0: print ( "Inside smoldyn248 run_simulation, project_dir=" + project_dir )
         self.smoldyn_files_dir = os.path.join ( os.path.dirname(project_dir), "smoldyn" )
@@ -308,23 +310,23 @@ class engine:
 
         script_dir_path = os.path.dirname(os.path.realpath(__file__))
 
-        smoldyn_path = str(parameter_dictionary['Smoldyn Path']['val'])
+        smoldyn_path = str(self.par_dict['Smoldyn Path']['val'])
         if smoldyn_path.startswith('//'):
           # This path is relative to the .blend file, so make it absolute:
           blend_file_path = os.path.dirname(os.path.dirname(self.project_files_dir))
           smoldyn_path = os.path.abspath(os.path.join(blend_file_path, smoldyn_path[2:]))
 
-        auto_bounds = parameter_dictionary['Auto Boundaries']['val']
+        auto_bounds = self.par_dict['Auto Boundaries']['val']
 
         min_bounds = []
         max_bounds = []
 
-        min_bounds.append ( float(parameter_dictionary['x_bound_min']['val']) )
-        max_bounds.append ( float(parameter_dictionary['x_bound_max']['val']) )
-        min_bounds.append ( float(parameter_dictionary['y_bound_min']['val']) )
-        max_bounds.append ( float(parameter_dictionary['y_bound_max']['val']) )
-        min_bounds.append ( float(parameter_dictionary['z_bound_min']['val']) )
-        max_bounds.append ( float(parameter_dictionary['z_bound_max']['val']) )
+        min_bounds.append ( float(self.par_dict['x_bound_min']['val']) )
+        max_bounds.append ( float(self.par_dict['x_bound_max']['val']) )
+        min_bounds.append ( float(self.par_dict['y_bound_min']['val']) )
+        max_bounds.append ( float(self.par_dict['y_bound_max']['val']) )
+        min_bounds.append ( float(self.par_dict['z_bound_min']['val']) )
+        max_bounds.append ( float(self.par_dict['z_bound_max']['val']) )
 
         # Calculate the bounds and attach to each object (needed to get an inside "point" for Smoldyn)
 
@@ -384,7 +386,7 @@ class engine:
 
 
         if not os.path.exists(smoldyn_path):
-            print ( "\n\nUnable to run, file does not exist: " + str(parameter_dictionary['Smoldyn Path']['val']) + " (" + smoldyn_path + ")\n\n" )
+            print ( "\n\nUnable to run, file does not exist: " + str(self.par_dict['Smoldyn Path']['val']) + " (" + smoldyn_path + ")\n\n" )
         else:
 
             # Create a subprocess for each simulation

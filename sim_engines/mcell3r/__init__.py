@@ -56,6 +56,8 @@ end_seed = 1
 #except:
 #  mcell_path = ""
 
+last_engine_object = None
+
 
 def postprocess():
   global parameter_dictionary
@@ -151,7 +153,392 @@ def makedirs_exist_ok ( path_to_build, exist_ok=False ):
       if not os.path.exists(full):
         os.makedirs ( full, exist_ok=True )
 
+
+
+# This engine class will cause this module to be recognized as supporting engine objects
+class engine:
+
+    def __init__ ( self, engine_module ):  # Note: couldn't use __module__ to get this information for some reason
+        global last_engine_object
+        last_engine_object = self
+        self.name = engine_module.plug_name
+        self.par_dict = {}
+        self.start_seed = 1
+        self.end_seed = 1
+
+        if 'parameter_dictionary' in dir(engine_module):
+            # Make a deep copy of the engine module's parameter dictionary since it may be changed while running
+            for k in engine_module.parameter_dictionary.keys():
+              self.par_dict[k] = engine_module.parameter_dictionary[k].copy()
+
+
+    def prepare_runs_data_model_full ( self, data_model, project_dir, data_layout=None ):
+
+        print ( "Preparing runs inside engine class" )
+
+        global last_engine_object
+        last_engine_object = self # Let postprocessing know that this was run as an object
+
+
+        # Build the final shared path that will be prepended to all other paths
+        final_shared_path = self.par_dict['Shared Path']['val'].strip()
+        if not final_shared_path.startswith(os.path.sep):
+          # Not absolute, so prepend the cellblender/extensions path
+          cb_path = os.path.dirname(__file__)      # Gets the path to cellblender/sim_engines/mcell3r
+          cb_path = os.path.split(cb_path)[0]      # Gets the path to cellblender/sim_engines
+          cb_path = os.path.split(cb_path)[0]      # Gets the path to cellblender
+          cb_path = os.path.join ( cb_path, "extensions" )   # Should be path to cellblender/extensions
+          final_shared_path = os.path.join(cb_path,final_shared_path)
+        final_shared_path = os.path.abspath(final_shared_path)
+
+        final_bionetgen_path = self.par_dict['BioNetGen Path']['val'].strip()
+        if not final_bionetgen_path.startswith(os.path.sep):
+          # Not absolute, so prepend the shared path
+          final_bionetgen_path = os.path.join(final_shared_path,final_bionetgen_path)
+        final_bionetgen_path = os.path.abspath(final_bionetgen_path)
+
+        final_lib_path = self.par_dict['MCellRlib Path']['val'].strip()
+        if not final_lib_path.startswith(os.path.sep):
+          # Not absolute, so prepend the shared path
+          final_lib_path = os.path.join(final_shared_path,final_lib_path)
+        final_lib_path = os.path.abspath(final_lib_path)
+
+        final_mcell_path = self.par_dict['MCellR Path']['val'].strip()
+        if not final_mcell_path.startswith(os.path.sep):
+          # Not absolute, so prepend the shared path
+          final_mcell_path = os.path.join(final_shared_path,final_mcell_path)
+        final_mcell_path = os.path.abspath(final_mcell_path)
+
+        output_detail = self.par_dict['Output Detail (0-100)']['val']
+
+        if output_detail > 0: print ( "Inside prepare_runs in MCellR Engine, project_dir=" + project_dir )
+
+        if output_detail > 0: print ( "Final shared path: " + final_shared_path )
+        if output_detail > 0: print ( "Final MCellR path: " + final_mcell_path )
+        if output_detail > 0: print ( "Final MCellR Library path: " + final_lib_path )
+        if output_detail > 0: print ( "Final BioNetGen path: " + final_bionetgen_path )
+
+        if output_detail > 0: print ( "Running with python " + sys.version )   # This will be Blender's Python which will be 3.5+
+        if output_detail > 0: print ( "Project Dir: " + project_dir )          # This will be .../blend_file_name_files/mcell
+        if output_detail > 0: print ( "Data Layout: " + str(data_layout) )     # This will typically be None
+
+        output_data_dir = os.path.join ( project_dir, "output_data" )
+        makedirs_exist_ok ( output_data_dir, exist_ok=True )
+
+        time_step = '1e-6'  # This is needed as a default for plotting
+
+        f = open ( os.path.join(output_data_dir,"Scene.mdlr"), 'w' )
+        if 'initialization' in data_model:
+          # Can't write all initialization MDL because booleans like "TRUE" are referenced but not defined in BNGL
+          # data_model_to_mdl_3r.write_initialization(data_model['initialization'], f)
+          # Write specific parts instead:
+          data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'iterations',                'ITERATIONS' )
+          data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'time_step',                 'TIME_STEP' )
+          data_model_to_mdl_3r.write_dm_str_val ( data_model['initialization'], f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
+
+          time_step = data_model['initialization']['time_step']
+
+        f.write ( 'INCLUDE_FILE = "Scene.geometry.mdl"\n' )
+
+        if 'parameter_system' in data_model:
+          # Write the parameter system
+          data_model_to_mdl_3r.write_parameter_system ( data_model['parameter_system'], f )
+
+        # Note that reflective surface classes may be needed by MCell-R
+        # If so, it might be good to automate this rather than explicitly requiring it in CellBlender's model.
+
+        if 'define_surface_classes' in data_model:
+          data_model_to_mdl_3r.write_surface_classes(data_model['define_surface_classes'], f)
+
+        if 'modify_surface_regions' in data_model:
+          data_model_to_mdl_3r.write_modify_surf_regions ( data_model['modify_surface_regions'], f )
+
+        if 'define_molecules' in data_model:
+          mols = data_model['define_molecules']
+          if 'molecule_list' in mols:
+            mlist = mols['molecule_list']
+            if len(mlist) > 0:
+              f.write ( "#DEFINE_MOLECULES\n" )
+              f.write ( "{\n" )
+              for m in mlist:
+                f.write ( "  %s" % m['mol_name'] )
+                if "bngl_component_list" in m:
+                  f.write( "(" )
+                  num_components = len(m['bngl_component_list'])
+                  if num_components > 0:
+                    for ci in range(num_components):
+                      c = m['bngl_component_list'][ci]
+                      f.write( c['cname'] )
+                      for state in c['cstates']:
+                        f.write ( "~" + state )
+                      if ci < num_components-1:
+                        f.write ( "," )
+                  f.write( ")" )
+                f.write ( "\n" )
+                f.write ( "  {\n" )
+                if m['mol_type'] == '2D':
+                  f.write ( "    DIFFUSION_CONSTANT_2D = %s\n" % m['diffusion_constant'] )
+                else:
+                  f.write ( "    DIFFUSION_CONSTANT_3D = %s\n" % m['diffusion_constant'] )
+                if 'custom_time_step' in m:
+                  if len(m['custom_time_step']) > 0:
+                    f.write ( "    CUSTOM_TIME_STEP = %s\n" % m['custom_time_step'] )
+                if 'custom_space_step' in m:
+                  if len(m['custom_space_step']) > 0:
+                    f.write ( "    CUSTOM_SPACE_STEP = %s\n" % m['custom_space_step'] )
+                if 'target_only' in m:
+                  if m['target_only']:
+                    f.write("    TARGET_ONLY\n")
+                f.write("  }\n")
+              f.write ( "}\n" )
+            f.write ( "\n" );
+
+        if 'define_reactions' in data_model:
+          reacts = data_model['define_reactions']
+          if 'reaction_list' in reacts:
+            rlist = reacts['reaction_list']
+            if len(rlist) > 0:
+              f.write ( "#DEFINE_REACTIONS\n" )
+              f.write ( "{\n" )
+              for r in rlist:
+                f.write("  %s " % (r['name']))
+                if r['rxn_type'] == "irreversible":
+                  if r['variable_rate_switch'] and r['variable_rate_valid']:
+                    variable_rate_name = r['variable_rate']
+                    f.write('["%s"]' % (variable_rate_name))
+                    ## Create the actual variable rate file and write to it
+                    vrf = open(variable_rate_name, "w")
+                    vrf.write ( r['variable_rate_text'] )
+                    #with open(variable_rate_name, "w", encoding="utf8",
+                    #          newline="\n") as variable_out_file:
+                    #    variable_out_file.write(r['variable_rate_text'])
+                  else:
+                    f.write ( "[%s]" % ( r['fwd_rate'] ) )
+                else:
+                  f.write ( "[%s, %s]" % ( r['fwd_rate'], r['bkwd_rate'] ) )
+                if 'rxn_name' in r:
+                  if len(r['rxn_name']) > 0:
+                    f.write ( " : %s" % (r['rxn_name']) )
+                f.write("\n")
+              f.write ( "}\n" )
+              f.write("\n")
+
+        if ('model_objects' in data_model) or ('release_sites' in data_model):
+          geom = None
+          rels = None
+          if 'model_objects' in data_model:
+            geom = data_model['model_objects']
+          if 'release_sites' in data_model:
+            rels = data_model['release_sites']
+          mols = data_model['define_molecules']
+          #TODO Note that the use of "Scene" here is a temporary measure!!!!
+          f.write ( "#INSTANTIATE Scene OBJECT\n" )
+          f.write ( "{\n" )
+          if geom != None:
+            if 'model_object_list' in geom:
+              glist = geom['model_object_list']
+              if len(glist) > 0:
+                # Sort the objects by parent
+                unsorted_objs = [ g for g in glist ]
+                sorted_objs = []
+                sorted_obj_names = []
+                while len(unsorted_objs) > 0:
+                  for index in range(len(unsorted_objs)):
+                    if output_detail > 10: print ( "  Sorting by parent: checking " + unsorted_objs[index]['name'] + " for parent " + unsorted_objs[index]['parent_object'] )
+                    if len(unsorted_objs[index]['parent_object']) == 0:
+                      # Move this object to the sorted list because it has no parent
+                      sorted_obj_names.append ( unsorted_objs[index]['name'])
+                      sorted_objs.append ( unsorted_objs.pop(index) )
+                      break
+                    elif unsorted_objs[index]['parent_object'] in sorted_obj_names:
+                      # Move this object to the sorted list because its parent is already in the list
+                      sorted_obj_names.append ( unsorted_objs[index]['name'])
+                      sorted_objs.append ( unsorted_objs.pop(index) )
+                      break
+
+                for g in sorted_objs:
+                  f.write ( "  %s OBJECT %s {\n" % (g['name'], g['name']) )
+                  if len(g['parent_object']) > 0:
+                    f.write ( "    PARENT = %s\n" % (g['parent_object']) )
+                  if len(g['membrane_name']) > 0:
+                    # f.write ( "    MEMBRANE = %s\n" % (g['membrane_name']) )
+                    f.write ( "    MEMBRANE = %s OBJECT %s[ALL]\n" % (g['membrane_name'], g['name']) )
+                  f.write ( "  }\n" )
+          if rels != None:
+            if 'release_site_list' in rels:
+              rlist = rels['release_site_list']
+              if len(rlist) > 0:
+                for r in rlist:
+                  f.write ( "  %s RELEASE_SITE\n" % (r['name']) )
+                  f.write ( "  {\n" )
+
+                  # First handle the release shape
+                  if ((r['shape'] == 'CUBIC') |
+                      (r['shape'] == 'SPHERICAL') |
+                      (r['shape'] == 'SPHERICAL_SHELL')):
+                    # Output MDL for releasing in a non-object shape pattern
+                    f.write("   SHAPE = %s\n" % (r['shape']))
+                    f.write("   LOCATION = [%s, %s, %s]\n" % (r['location_x'],r['location_y'],r['location_z']))
+                    f.write("   SITE_DIAMETER = %s\n" % (r['site_diameter']))
+                  elif r['shape'] == "OBJECT":
+                    # Output MDL for releasing in or on and object
+                    #TODO Note that the use of "Scene." here for object names is a temporary measure!!!!
+                    obj_expr = r['object_expr']
+                    obj_expr = '-'.join(["Scene."+t.strip() for t in obj_expr.split('-')])
+                    # Can't repeat this because the "Scene's" accumulate
+                    #obj_expr = '+'.join(["Scene."+t.strip() for t in obj_expr.split('+')])
+                    #obj_expr = '*'.join(["Scene."+t.strip() for t in obj_expr.split('*')])
+                    f.write("   SHAPE = %s\n" % (obj_expr))
+
+                  # Next handle the molecule to be released (maybe the Molecule List should have been a dictionary keyed on mol_name?)
+                  mlist = mols['molecule_list']
+                  mol = None
+                  for m in mlist:
+                    if m['mol_name'] == r['molecule']:
+                      mol = m
+                      break
+                  f.write("   MOLECULE = %s\n" % (r['molecule']))
+
+                  # Now write out the quantity, probability, and pattern
+
+                  if r['quantity_type'] == 'NUMBER_TO_RELEASE':
+                    f.write("   NUMBER_TO_RELEASE = %s\n" % (r['quantity']))
+                  elif r['quantity_type'] == 'GAUSSIAN_RELEASE_NUMBER':
+                    f.write("   GAUSSIAN_RELEASE_NUMBER\n")
+                    f.write("   {\n")
+                    f.write("        MEAN_NUMBER = %s\n" % (r['quantity']))
+                    f.write("        STANDARD_DEVIATION = %s\n" % (r['stddev']))
+                    f.write("      }\n")
+                  elif r['quantity_type'] == 'DENSITY':
+                    if mol:
+                      if mol['mol_type'] == '2D':
+                        f.write("   DENSITY = %s\n" % (r['quantity']))
+                      else:
+                        f.write("   CONCENTRATION = %s\n" % (r['quantity']))
+                  f.write("   RELEASE_PROBABILITY = %s\n" % (r['release_probability']))
+                  if len(r['pattern']) > 0:
+                    f.write("   RELEASE_PATTERN = %s\n" % (r['pattern']))
+
+                  f.write ( "  }\n" )
+          f.write ( "}\n" )
+          f.write("\n")
+
+
+        if 'reaction_data_output' in data_model:
+          plot_out = data_model['reaction_data_output']
+          rxn_step = time_step  # Default if not otherwise specified in the reaction data output block
+          if 'rxn_step' in plot_out:
+            if len(plot_out['rxn_step']) > 0:
+              rxn_step = plot_out['rxn_step']
+          if 'reaction_output_list' in plot_out:
+            plist = plot_out['reaction_output_list']
+            if len(plist) > 0:
+              f.write ( "#REACTION_DATA_OUTPUT\n" )
+              f.write ( "{\n" )
+              f.write ( "  STEP = %s\n" % rxn_step )
+              for p in plist:
+                if 'rxn_or_mol' in p:
+                  if p['rxn_or_mol'] == 'MDLString':
+                    # Trouble with first two approaches:
+                    # f.write ( "  { %s } => \"./react_data/seed_\" & seed & \"/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
+                    # f.write ( "  { %s } => \"./react_data/seed_00001/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
+                    f.write ( "  { %s } => \"./react_data/%s_MDLString.dat\"\n" % (p['mdl_string'], p['mdl_file_prefix']) )
+              f.write ( "}\n" )
+              f.write("\n")
+
+        f.write("\n")
+        f.write ( "INCLUDE_FILE = \"Scene.viz_output.mdl\"\n\n" )
+
+        f.close()
+
+        f = open ( os.path.join(output_data_dir,"Scene.geometry.mdl"), 'w' )
+        data_model_to_mdl_3r.write_geometry(data_model['geometrical_objects'], f)
+        f.close()
+
+        f = open ( os.path.join(output_data_dir,"Scene.viz_output.mdl"), 'w' )
+        f.write ( 'sprintf(seed,"%05g",SEED)\n\n' )
+        data_model_to_mdl_3r.write_viz_out(data_model['viz_output'], data_model['define_molecules'], f)
+        f.close()
+
+        f = open ( os.path.join(output_data_dir,"mcellr.yaml"), 'w' )
+        f.write ( "bionetgen: '" + final_bionetgen_path + "'\n" )
+        f.write ( "libpath: '" + final_lib_path + "'\n" )
+        f.write ( "mcell: '" + final_mcell_path + "'\n" )
+        f.close()
+
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+        fs = data_model['simulation_control']['start_seed']
+        ls = data_model['simulation_control']['end_seed']
+
+        global start_seed
+        global end_seed
+        start_seed = int(fs)
+        end_seed = int(ls)
+
+        engine_path = os.path.dirname(__file__)
+
+        # python mdlr2mdl.py -ni ./fceri_files/fceri.mdlr -o ./fceri_files/fceri.mdl
+        # subprocess.call ( [ cellblender.python_path, os.path.join(engine_path, "mdlr2mdl.py"), "-ni", "Scene.mdlr", "-o", "Scene" ], cwd=output_data_dir )
+
+
+        # This should return a list of run command dictionaries.
+        # Each run command dictionary must contain a "cmd" key, an "args" key, and a "wd" key.
+        # The cmd key will refer to a command string suitable for popen.
+        # The args key will refer to an argument list suitable for popen.
+        # The wd key will refer to a working directory string.
+        # Each run command dictionary may contain any other keys helpful for post-processing.
+        # The run command dictionary list will be passed on to the postprocess_runs function.
+
+        # The data_layout should be a dictionary something like this:
+
+        #  {
+        #   "version": 2,
+        #   "data_layout": [
+        #    ["/DIR", ["output_data"]],
+        #    ["dc_a", [1e-06, 1e-05]],
+        #    ["nrel", [100.0, 200.0, 300.0]],
+        #    ["/FILE_TYPE", ["react_data", "viz_data"]],
+        #    ["/SEED", [100, 101]]
+        #   ]
+        #  }
+
+        # That last dictionary describes the directory structure that CellBlender expects to find on the disk
+
+        # For now return no commands at all since the run has already taken place
+        command_list = []
+
+        command_dict = { 'cmd': cellblender.python_path,
+                         'args': [ os.path.join(engine_path, "mdlr2mdl.py"), '-ni', 'Scene.mdlr', '-o', 'Scene' ],
+                         'wd': output_data_dir
+                       }
+
+        command_line_options = ''
+
+        if len(command_line_options) > 0:
+          command_dict['args'].append(command_line_options)
+
+        command_list.append ( command_dict )
+        if output_detail > 0:
+          print ( str(command_dict) )
+
+
+
+        # Postprocessing should be done through the command_list, but force it here for now...
+
+        # postprocess()
+
+        return ( command_list )
+
+
+
+
+
+
+
 def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
+
+  print ( "Preparing runs inside engine module" )
 
   global project_files_dir
 
@@ -506,7 +893,6 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   # postprocess()
 
   return ( command_list )
-
 
 def postprocess_runs ( data_model, command_strings ):
   # Move and/or transform data to match expected CellBlender file structure as required
