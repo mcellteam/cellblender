@@ -179,6 +179,8 @@ class engine:
         global last_engine_object
         last_engine_object = self # Let postprocessing know that this was run as an object
 
+        global project_files_dir
+        project_files_dir = "" + project_dir
 
         # Build the final shared path that will be prepended to all other paths
         final_shared_path = self.par_dict['Shared Path']['val'].strip()
