@@ -84,27 +84,41 @@ dm = None
 dmi = None
 
 class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
-    internal_file_name = StringProperty ( name = "Internal Text Name" )
+    show_list   = CollectionProperty(type=DataBrowserBoolProperty,   name="Show List")
 
     string_list = CollectionProperty(type=DataBrowserStringProperty, name="String List")
     int_list    = CollectionProperty(type=DataBrowserIntProperty,    name="Int List")
     float_list  = CollectionProperty(type=DataBrowserFloatProperty,  name="Float List")
     bool_list   = CollectionProperty(type=DataBrowserBoolProperty,   name="Bool List")
 
-    show_list   = CollectionProperty(type=DataBrowserBoolProperty,   name="Show List")
-    
+    internal_file_name = StringProperty ( name = "Internal Text Name" )
+
+
     def draw_layout ( self, context, layout ):
+        mcell = context.scene.mcell
+        scripting = mcell.scripting
 
         row = layout.row()
-        row.prop ( self, "internal_file_name" )
+        row.operator ( "cb.regenerate_data_model", icon='FILE_REFRESH' )
+
+        row = layout.row()
+        col = row.column()
+        col.prop ( scripting, "include_geometry_in_dm" )
+        col = row.column()
+        col.prop ( scripting, "include_scripts_in_dm" )
 
         row = layout.row()
         col = row.column()
         col.operator ( "browse.from_dm" )
         col = row.column()
-        col.operator ( "browse.from_file" )
-        col = row.column()
-        col.operator ( "browse.to_file" )
+        col.operator ( "browse.clear" )
+
+        # row = layout.row()
+        # row.prop ( self, "internal_file_name" )
+        #col = row.column()
+        #col.operator ( "browse.from_file" )
+        #col = row.column()
+        #col.operator ( "browse.to_file" )
 
         global dm
         global dmi
@@ -157,28 +171,26 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
         # Draw the structure
         if type(dmi) == type ( (0,1) ):
             # A tuple represents either a dictionary ({},show_index) or a list ([],show_index)
+            row = layout.row()
+            box = row.box()
+            row = box.row(align=True)
+            row.alignment = 'LEFT'
             if type(dmi[0]) == type({'a':1}):
                 # Draw a dictionary
-                row = layout.row()
-                box = row.box()
-                row = box.row()
                 if self.show_list[dmi[1]].v == False:
-                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_RIGHT' )
+                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_RIGHT', emboss=False )
                 else:
-                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_DOWN' )
+                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_DOWN', emboss=False )
                     #for k in sorted(dm.keys()):
                     #for k in dm.keys():
                     for k in sorted([str(k) for k in dm.keys()]):
                         self.draw_recurse ( box, k, dm[k], dmi[0][k] )
             elif type(dmi[0]) == type(['a',1]):
                 # Draw a list
-                row = layout.row()
-                box = row.box()
-                row = box.row()
                 if self.show_list[dmi[1]].v == False:
-                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_RIGHT' )
+                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_RIGHT', emboss=False )
                 else:
-                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_DOWN' )
+                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_DOWN', emboss=False )
                     for k in range(len(dm)):
                         self.draw_recurse ( box, str(name)+'['+str(k)+']', dm[k], dmi[0][k] )
         elif (type(dm) == type('a')) or (type(dm) == type(u'a')):  #dm is a string
@@ -196,6 +208,12 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
         else: # dm is unknown
             pass
 
+    def clear_lists ( self ):
+        self.show_list.clear()
+        self.string_list.clear()
+        self.int_list.clear()
+        self.float_list.clear()
+        self.bool_list.clear()
 
     def convert_text_to_properties ( self, context, layout ):
 
@@ -211,14 +229,9 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
             print ( 80*"=" )
             dm = eval ( script_text, locals() )
             print ( str(dm) )
-            # dmi = type(dm)()  # Create an empty of whatever a dm is to keep the blender property indicies of primitives
 
             # Clear out the properties that will be used for display
-            self.string_list.clear()
-            self.int_list.clear()
-            self.float_list.clear()
-            self.bool_list.clear()
-            self.show_list.clear()
+            self.clear_lists()
 
             dmi = self.convert_recurse ( dm )
 
@@ -230,39 +243,12 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
         global dm
         global dmi
 
-        #print ( "  convert_dm_to_properties: got a dm of type " + str(type(dm)) )
-        #print ( "  convert_dm_to_properties: got a dmi of type " + str(type(dmi)) )
-
         # Clear out the properties that will be used for display
-        self.string_list.clear()
-        self.int_list.clear()
-        self.float_list.clear()
-        self.bool_list.clear()
-        self.show_list.clear()
+        self.clear_lists()
 
         dmi = self.convert_recurse ( dm )
 
-        #print ( "convert_dm_to_properties returning dmi = \n" + str(dmi) )
-        
         return dmi
-
-
-class ToFileOperator(bpy.types.Operator):
-    bl_idname = "browse.to_file"
-    bl_label = "To File"
-
-    def invoke(self, context, event):
-        return{'FINISHED'}
-
-
-class FromFileOperator(bpy.types.Operator):
-    bl_idname = "browse.from_file"
-    bl_label = "From File"
-
-    def invoke(self, context, event):
-        db = context.scene.mcell.scripting.data_browser
-        db.convert_text_to_properties ( context, self.layout)
-        return{'FINISHED'}
 
 
 class FromDMOperator(bpy.types.Operator):
@@ -279,6 +265,39 @@ class FromDMOperator(bpy.types.Operator):
         dmi = db.convert_dm_to_properties ( self.layout)
         return{'FINISHED'}
 
+
+class ClearBrowserOperator(bpy.types.Operator):
+    bl_idname = "browse.clear"
+    bl_label = "Clear"
+
+    def invoke(self, context, event):
+        global dm
+        global dmi
+        mcell = context.scene.mcell
+        scripting = mcell.scripting
+        db = scripting.data_browser
+        db.clear_lists()
+        dm = None
+        dmi = None
+        return{'FINISHED'}
+
+
+class FromFileOperator(bpy.types.Operator):
+    bl_idname = "browse.from_file"
+    bl_label = "From File"
+
+    def invoke(self, context, event):
+        db = context.scene.mcell.scripting.data_browser
+        db.convert_text_to_properties ( context, self.layout)
+        return{'FINISHED'}
+
+
+class ToFileOperator(bpy.types.Operator):
+    bl_idname = "browse.to_file"
+    bl_label = "To File"
+
+    def invoke(self, context, event):
+        return{'FINISHED'}
 
 """
 class Data_Browser_Panel(bpy.types.Panel):
