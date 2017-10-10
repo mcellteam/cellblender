@@ -109,16 +109,23 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
 
         row = layout.row()
         col = row.column()
-        col.operator ( "browse.from_dm" )
+        col.operator ( "browser.from_dm" )
         col = row.column()
-        col.operator ( "browse.clear" )
+        col.operator ( "browser.clear" )
+
+        if len(self.show_list) > 0:
+            row = layout.row()
+            col = row.column()
+            col.operator ( "browser.open_all" )
+            col = row.column()
+            col.operator ( "browser.close_all" )
 
         # row = layout.row()
         # row.prop ( self, "internal_file_name" )
         #col = row.column()
-        #col.operator ( "browse.from_file" )
+        #col.operator ( "browser.from_file" )
         #col = row.column()
-        #col.operator ( "browse.to_file" )
+        #col.operator ( "browser.to_file" )
 
         global dm
         global dmi
@@ -178,6 +185,12 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
             if type(dmi[0]) == type({'a':1}):
                 # Draw a dictionary
                 dname = str(name) + "   {" + str(len(dm)) + "}"
+                if 'name' in dm.keys():
+                    dname = dname + "   (\"" + str(dm['name']) + "\")"
+                else:
+                    possible_names = [ n for n in dm.keys() if 'name' in n ]
+                    if len(possible_names) > 0:
+                        dname = dname + "   (\"" + str(dm[possible_names[0]]) + "\")"
                 if self.show_list[dmi[1]].v == False:
                     row.prop ( self.show_list[dmi[1]], "v", text=dname, icon='TRIA_RIGHT', emboss=False )
                 else:
@@ -254,7 +267,7 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
 
 
 class FromDMOperator(bpy.types.Operator):
-    bl_idname = "browse.from_dm"
+    bl_idname = "browser.from_dm"
     bl_label = "Build Tree"
 
     def invoke(self, context, event):
@@ -269,7 +282,7 @@ class FromDMOperator(bpy.types.Operator):
 
 
 class ClearBrowserOperator(bpy.types.Operator):
-    bl_idname = "browse.clear"
+    bl_idname = "browser.clear"
     bl_label = "Clear Tree"
 
     def invoke(self, context, event):
@@ -284,8 +297,34 @@ class ClearBrowserOperator(bpy.types.Operator):
         return{'FINISHED'}
 
 
+class BrowserOpenAllOperator(bpy.types.Operator):
+    bl_idname = "browser.open_all"
+    bl_label = "Open All"
+
+    def invoke(self, context, event):
+        mcell = context.scene.mcell
+        scripting = mcell.scripting
+        db = scripting.data_browser
+        for s in db.show_list:
+          s.v = True
+        return{'FINISHED'}
+
+
+class BrowserCloseAllOperator(bpy.types.Operator):
+    bl_idname = "browser.close_all"
+    bl_label = "Close All"
+
+    def invoke(self, context, event):
+        mcell = context.scene.mcell
+        scripting = mcell.scripting
+        db = scripting.data_browser
+        for s in db.show_list:
+          s.v = False
+        return{'FINISHED'}
+
+
 class FromFileOperator(bpy.types.Operator):
-    bl_idname = "browse.from_file"
+    bl_idname = "browser.from_file"
     bl_label = "From File"
 
     def invoke(self, context, event):
@@ -295,7 +334,7 @@ class FromFileOperator(bpy.types.Operator):
 
 
 class ToFileOperator(bpy.types.Operator):
-    bl_idname = "browse.to_file"
+    bl_idname = "browser.to_file"
     bl_label = "To File"
 
     def invoke(self, context, event):
