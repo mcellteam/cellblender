@@ -91,6 +91,8 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
     float_list  = CollectionProperty(type=DataBrowserFloatProperty,  name="Float List")
     bool_list   = CollectionProperty(type=DataBrowserBoolProperty,   name="Bool List")
 
+    show_list   = CollectionProperty(type=DataBrowserBoolProperty,   name="Show List")
+    
     def draw_layout ( self, context, layout ):
 
         row = layout.row()
@@ -109,58 +111,26 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
         self.draw_recurse ( layout, "Model", dm, dmi )
 
 
-    def draw_recurse ( self, layout, name, dm, dmi ):
-        # Draw the structure
-        if type(dm) == type({'a':1}):
-            # Draw a dictionary
-            row = layout.row()
-            box = row.box()
-            row = box.row()
-            row.label ( str(name), icon='TRIA_DOWN' )
-            #for k in sorted(dm.keys()):
-            #for k in dm.keys():
-            for k in sorted([str(k) for k in dm.keys()]):
-                self.draw_recurse ( box, k, dm[k], dmi[k] )
-        elif type(dm) == type(['a',1]):
-            # Draw a list
-            row = layout.row()
-            box = row.box()
-            row = box.row()
-            row.label ( str(name), icon='TRIA_DOWN' )
-            for k in range(len(dm)):
-                self.draw_recurse ( box, str(name)+'['+str(k)+']', dm[k], dmi[k] )
-        elif (type(dm) == type('a')) or (type(dm) == type(u'a')):  #dm is a string
-            row = layout.row()
-            row.prop ( self.string_list[dmi], "v", text=str(name) )
-        elif type(dm) == type(1):  # dm is an integer
-            row = layout.row()
-            row.prop ( self.int_list[dmi], "v", text=str(name) )
-        elif type(dm) == type(1.0):  # dm is a float
-            row = layout.row()
-            row.prop ( self.float_list[dmi], "v", text=str(name) )
-        elif type(dm) == type(True):  # dm is a boolean
-            row = layout.row()
-            row.prop ( self.bool_list[dmi], "v", text=str(name) )
-        else: # dm is unknown
-            pass
-
-
     def convert_recurse ( self, dm ):
         # Convert any structure into an index structure
         # print ( "  Convert: got a dm of type " + str(type(dm)) )
         dmi = None
         if type(dm) == type({'a':1}):
             # Process a dictionary
-            dmi = {}
+            new_val = self.show_list.add()
+            new_val.v = False
+            dmi = ( {}, len(self.show_list)-1 )
             #for k in sorted(dm.keys()):
             #for k in dm.keys():
             for k in sorted([str(k) for k in dm.keys()]):
-                dmi[k] = self.convert_recurse ( dm[k] )
+                dmi[0][k] = self.convert_recurse ( dm[k] )
         elif type(dm) == type(['a',1]):
             # Process a list
-            dmi = []
+            new_val = self.show_list.add()
+            new_val.v = False
+            dmi = ( [], len(self.show_list)-1 )
             for v in dm:
-                dmi.append ( self.convert_recurse ( v ) )
+                dmi[0].append ( self.convert_recurse ( v ) )
         elif (type(dm) == type('a')) or (type(dm) == type(u'a')):  #dm is a string
             new_val = self.string_list.add()
             new_val.v = dm
@@ -181,6 +151,50 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
             dmi = None
         # print ( "convert_recurse returning a dmi of type " + str(type(dmi)) )
         return ( dmi )
+
+
+    def draw_recurse ( self, layout, name, dm, dmi ):
+        # Draw the structure
+        if type(dmi) == type ( (0,1) ):
+            # A tuple represents either a dictionary ({},show_index) or a list ([],show_index)
+            if type(dmi[0]) == type({'a':1}):
+                # Draw a dictionary
+                row = layout.row()
+                box = row.box()
+                row = box.row()
+                if self.show_list[dmi[1]].v == False:
+                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_RIGHT' )
+                else:
+                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_DOWN' )
+                    #for k in sorted(dm.keys()):
+                    #for k in dm.keys():
+                    for k in sorted([str(k) for k in dm.keys()]):
+                        self.draw_recurse ( box, k, dm[k], dmi[0][k] )
+            elif type(dmi[0]) == type(['a',1]):
+                # Draw a list
+                row = layout.row()
+                box = row.box()
+                row = box.row()
+                if self.show_list[dmi[1]].v == False:
+                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_RIGHT' )
+                else:
+                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_DOWN' )
+                    for k in range(len(dm)):
+                        self.draw_recurse ( box, str(name)+'['+str(k)+']', dm[k], dmi[0][k] )
+        elif (type(dm) == type('a')) or (type(dm) == type(u'a')):  #dm is a string
+            row = layout.row()
+            row.prop ( self.string_list[dmi], "v", text=str(name) )
+        elif type(dm) == type(1):  # dm is an integer
+            row = layout.row()
+            row.prop ( self.int_list[dmi], "v", text=str(name) )
+        elif type(dm) == type(1.0):  # dm is a float
+            row = layout.row()
+            row.prop ( self.float_list[dmi], "v", text=str(name) )
+        elif type(dm) == type(True):  # dm is a boolean
+            row = layout.row()
+            row.prop ( self.bool_list[dmi], "v", text=str(name) )
+        else: # dm is unknown
+            pass
 
 
     def convert_text_to_properties ( self, context, layout ):
@@ -204,6 +218,7 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
             self.int_list.clear()
             self.float_list.clear()
             self.bool_list.clear()
+            self.show_list.clear()
 
             dmi = self.convert_recurse ( dm )
 
@@ -223,6 +238,7 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
         self.int_list.clear()
         self.float_list.clear()
         self.bool_list.clear()
+        self.show_list.clear()
 
         dmi = self.convert_recurse ( dm )
 
