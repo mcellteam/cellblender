@@ -177,20 +177,22 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
             row.alignment = 'LEFT'
             if type(dmi[0]) == type({'a':1}):
                 # Draw a dictionary
+                dname = str(name) + "   {" + str(len(dm)) + "}"
                 if self.show_list[dmi[1]].v == False:
-                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_RIGHT', emboss=False )
+                    row.prop ( self.show_list[dmi[1]], "v", text=dname, icon='TRIA_RIGHT', emboss=False )
                 else:
-                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_DOWN', emboss=False )
+                    row.prop ( self.show_list[dmi[1]], "v", text=dname, icon='TRIA_DOWN', emboss=False )
                     #for k in sorted(dm.keys()):
                     #for k in dm.keys():
                     for k in sorted([str(k) for k in dm.keys()]):
                         self.draw_recurse ( box, k, dm[k], dmi[0][k] )
             elif type(dmi[0]) == type(['a',1]):
                 # Draw a list
+                dname = str(name) + "   [" + str(len(dm)) + "]"
                 if self.show_list[dmi[1]].v == False:
-                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_RIGHT', emboss=False )
+                    row.prop ( self.show_list[dmi[1]], "v", text=dname, icon='TRIA_RIGHT', emboss=False )
                 else:
-                    row.prop ( self.show_list[dmi[1]], "v", text=str(name), icon='TRIA_DOWN', emboss=False )
+                    row.prop ( self.show_list[dmi[1]], "v", text=dname, icon='TRIA_DOWN', emboss=False )
                     for k in range(len(dm)):
                         self.draw_recurse ( box, str(name)+'['+str(k)+']', dm[k], dmi[0][k] )
         elif (type(dm) == type('a')) or (type(dm) == type(u'a')):  #dm is a string
@@ -253,7 +255,7 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
 
 class FromDMOperator(bpy.types.Operator):
     bl_idname = "browse.from_dm"
-    bl_label = "From Data Model"
+    bl_label = "Build Tree"
 
     def invoke(self, context, event):
         global dm
@@ -268,7 +270,7 @@ class FromDMOperator(bpy.types.Operator):
 
 class ClearBrowserOperator(bpy.types.Operator):
     bl_idname = "browse.clear"
-    bl_label = "Clear"
+    bl_label = "Clear Tree"
 
     def invoke(self, context, event):
         global dm
