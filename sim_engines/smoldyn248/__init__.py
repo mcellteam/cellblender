@@ -541,10 +541,11 @@ class engine:
         return ( command_list )
 
 
+par_val_dict = {}
 
-
-
-
+def convert_to_value ( expression ):
+  global par_val_dict
+  return eval(expression,globals(),par_val_dict)
 
 
 

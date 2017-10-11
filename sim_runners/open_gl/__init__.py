@@ -24,7 +24,7 @@ import sys
 
 plug_code = "OPENGL"
 plug_name = "OpenGL Control"
-plug_complete = 0.4
+plug_complete = 0.6
 
 
 def reset():

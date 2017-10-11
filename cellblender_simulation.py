@@ -956,6 +956,9 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
 
                 # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
+                ##########################################
+                #  The Engine will Prepare the Commands  #
+                ##########################################
                 command_list = None
                 dm = None
                 print ( "Calling prepare_runs... in engine class" )
@@ -968,6 +971,9 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
                     dm = mcell.build_data_model_from_properties ( context, geometry=True )
                     command_list = engine_object.prepare_runs_data_model_full ( dm, project_dir )
                 
+                ######################################
+                #  The Runner will Run the Commands  #
+                ######################################
                 if "run_commands" in dir(runner_object):
                     runner_object.run_commands ( command_list )
                 elif "run_simulations" in dir(engine_object):
@@ -996,10 +1002,14 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
                 active_runner_module.run_engine ( active_engine_module, dm, project_dir )
 
             else:
-                print ( "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" )
-                print ( "XX  Object-Oriented Engine/Runner combination NOT found  XX" )
-                print ( "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" )
+                # This is the old engine/runner module case
+                print ( "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM" )
+                print ( "MM  Module-Oriented Engine/Runner combination being used  MM" )
+                print ( "MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM" )
 
+                ##########################################
+                #  The Engine will Prepare the Commands  #
+                ##########################################
                 command_list = None
                 dm = None
                 print ( "Calling prepare_runs... in active_engine_module" )
@@ -1012,6 +1022,9 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
                     dm = mcell.build_data_model_from_properties ( context, geometry=True )
                     command_list = active_engine_module.prepare_runs_data_model_full ( dm, project_dir )
                 
+                ######################################
+                #  The Runner will Run the Commands  #
+                ######################################
                 if "run_commands" in dir(active_runner_module):
                     active_runner_module.run_commands ( command_list )
 
