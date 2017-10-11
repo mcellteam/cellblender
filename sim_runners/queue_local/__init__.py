@@ -218,6 +218,169 @@ def draw_callback_px(context):
 
 
 
+# This runner class will cause this module to be recognized as supporting runner objects
+class runner:
+
+    def __init__ ( self, runner_module, engine ):  # Note: couldn't use __module__ to get this information for some reason
+        print ( "Module contains " + str(dir(runner_module)) )
+        self.name = runner_module.plug_name
+        self.engine = engine
+        self.par_dict = {}
+        if 'parameter_dictionary' in dir(runner_module):
+            # Make a deep copy of the engine module's parameter dictionary since it may be changed while running
+            for k in runner_module.parameter_dictionary.keys():
+              self.par_dict[k] = runner_module.parameter_dictionary[k].copy()
+
+    def get_status_string ( self ):
+        stat = self.name
+        if 'engine' in dir(self):
+            if 'get_status_string' in dir(self.engine):
+                stat = stat + " running " + self.engine.get_status_string()
+            else:
+                stat = stat + " running " + self.engine.name
+        return stat
+
+    def run_commands ( self, commands ):
+        print ( "Running commands inside runner class" )
+        # sp_list = []
+        # return sp_list
+
+        ######### From module-level code ########
+        context = bpy.context
+        print ( "run_commands" )
+        for cmd in commands:
+            if type(cmd) == type('str'):
+                print ( "  CMD: " + str(cmd) )
+            elif type(cmd) == type({'a':1}):
+                print ( "  CMD: " + str(cmd['cmd']) + " " + str(cmd['args']) )
+                """
+                CMD: {
+                  'args': ['print_detail=20',
+                           'proj_path=/.../intro/2017/2017_07/2017_07_11/queue_runner_tests_files/mcell',
+                           'seed=1',
+                           'data_model=dm.json'],
+                  'cmd': '/.../blender/2.78/scripts/addons/cellblender/sim_engines/limited_cpp/mcell_main',
+                  'wd':  '/.../intro/2017/2017_07/2017_07_11/queue_runner_tests_files/mcell',
+                  'stdout': '',
+                  'stderr': ''
+                }
+                """
+        global screen_display_lines
+        screen_display_lines = {}
+
+        mcell = context.scene.mcell
+        # Set the Blender property from the local for now using the older code
+        # Eventually, the parameter_dictionary version should be used directly by the runner
+        mcell.run_simulation.save_text_logs = parameter_dictionary['Save Text Logs']['val']
+
+        mcell.run_simulation.last_simulation_run_time = str(time.time())
+
+        mcell_binary = cellblender_utils.get_mcell_path(mcell)
+
+        start_seed = int(mcell.run_simulation.start_seed.get_value())
+        end_seed = int(mcell.run_simulation.end_seed.get_value())
+        num_mcell_processes = mcell.run_simulation.mcell_processes
+        # Not used? num_mcell_processes_str = str(mcell.run_simulation.mcell_processes)
+        # Force the project directory to be where the .blend file lives
+        project_dir = mcell_files_path()
+        status = ""
+
+        python_path = cellblender.cellblender_utils.get_python_path(mcell=mcell)
+
+        if python_path:
+            if not mcell.cellblender_preferences.decouple_export_run:
+                # bpy.ops.mcell.export_project()
+                pass # This is already being done by the engine!!!
+
+            if (mcell.run_simulation.error_list and
+                    mcell.cellblender_preferences.invalid_policy == 'dont_run'):
+                pass
+            else:
+                react_dir = os.path.join(project_dir, "output_data", "react_data")
+                if (os.path.exists(react_dir) and
+                        mcell.run_simulation.remove_append == 'remove'):
+                    shutil.rmtree(react_dir)
+                if not os.path.exists(react_dir):
+                    os.makedirs(react_dir)
+
+                viz_dir = os.path.join(project_dir, "output_data", "viz_data")
+                if (os.path.exists(viz_dir) and
+                        mcell.run_simulation.remove_append == 'remove'):
+                    shutil.rmtree(viz_dir)
+                if not os.path.exists(viz_dir):
+                    os.makedirs(viz_dir)
+
+                base_name = mcell.project_settings.base_name
+
+                error_file_option = mcell.run_simulation.error_file
+                log_file_option = mcell.run_simulation.log_file
+                cellblender.simulation_queue.python_exec = python_path
+                cellblender.simulation_queue.start(num_mcell_processes)
+                cellblender.simulation_queue.notify = True
+
+                # The following line will create the "data_layout.json" file describing the directory structure
+                # engine_manager.write_default_data_layout(project_dir, start_seed, end_seed)
+
+                processes_list = mcell.run_simulation.processes_list
+
+                run_index = 0
+                # for seed in range(start_seed,end_seed + 1):
+                for cmd in commands:
+                  processes_list.add()
+
+                  mcell.run_simulation.active_process_index = len(mcell.run_simulation.processes_list) - 1
+                  simulation_process = processes_list[mcell.run_simulation.active_process_index]
+
+                  print("Starting MCell for cmd %s ... create start_time.txt file:" % str(cmd))
+                  with open(os.path.join(os.path.dirname(bpy.data.filepath), "start_time.txt"), "w") as start_time_file:
+                      start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
+
+                  # Log filename will be log.year-month-day_hour:minute_run_index.txt
+                  # (e.g. log.2013-03-12_11:45_1.txt)
+                  time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
+
+                  if error_file_option == 'file':
+                      error_filename = "error.%s_%d.txt" % (time_now, run_index)
+                  elif error_file_option == 'none':
+                      error_file = subprocess.DEVNULL
+                  elif error_file_option == 'console':
+                      error_file = None
+
+                  if log_file_option == 'file':
+                      log_filename = "log.%s_%d.txt" % (time_now, run_index)
+                  elif log_file_option == 'none':
+                      log_file = subprocess.DEVNULL
+                  elif log_file_option == 'console':
+                      log_file = None
+
+                  #mdl_filename = '%s.main.mdl' % (base_name)
+                  #mcell_args = '-seed %d %s' % (seed, mdl_filename)
+                  make_texts = mcell.run_simulation.save_text_logs
+
+                  proc = None
+                  if type(cmd) == type('str'):
+                      proc = cellblender.simulation_queue.add_task(cmd, "", os.path.join(project_dir, "output_data"), make_texts)
+                  elif type(cmd) == type({'a':1}):
+                      proc = cellblender.simulation_queue.add_task(cmd['cmd'], ' '.join(cmd['args']), cmd['wd'], make_texts)
+                  # Save the module in the engine_module_dict by PID
+                  cellblender_simulation.engine_module_dict[proc.pid] = cellblender_simulation.active_engine_module
+
+                  # self.report({'INFO'}, "Simulation Running")
+
+                  if not simulation_process.name:
+                      simulation_process.name = ("PID: %d, Index: %d" % (proc.pid, run_index))
+                  bpy.ops.mcell.q_percent_done_timer()
+                  bpy.ops.mcell.job_percent_done_timer()
+
+        else:
+            status = "Python not found. Set it in Project Settings."
+
+        mcell.run_simulation.status = status
+
+        # return {'FINISHED'}
+
+
+
 
 def get_pid(item):
     # print ( "queue_local.get_pid called with item.name = " + str(item.name) )
@@ -353,7 +516,8 @@ def run_commands ( commands ):
 
               if not simulation_process.name:
                   simulation_process.name = ("PID: %d, Index: %d" % (proc.pid, run_index))
-              bpy.ops.mcell.percentage_done_timer()
+              bpy.ops.mcell.q_percent_done_timer()
+              bpy.ops.mcell.job_percent_done_timer()
 
     else:
         status = "Python not found. Set it in Project Settings."
@@ -366,7 +530,7 @@ def run_commands ( commands ):
 
 class MCELL_QL_percentage_done_timer(bpy.types.Operator):
     """Update the MCell job list periodically to show percentage done"""
-    bl_idname = "mcell.percentage_done_timer"
+    bl_idname = "mcell.q_percent_done_timer"
     bl_label = "Modal Timer Operator"
     bl_options = {'REGISTER'}
 

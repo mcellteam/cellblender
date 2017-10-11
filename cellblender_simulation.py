@@ -682,7 +682,7 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
     def execute(self, context):
         wm = context.window_manager
         # this is how often we should update this in seconds
-        secs = 0.5
+        secs = 0.05
         self._timer = wm.event_timer_add(secs, context.window)
         wm.modal_handler_add(self)
         return {'RUNNING_MODAL'}
@@ -690,6 +690,98 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
     def cancel(self, context):
         wm = context.window_manager
         wm.event_timer_remove(self._timer)
+
+
+class MCELL_OT_job_percent_done_timer(bpy.types.Operator):
+    """Update the MCell job list periodically to show percentage done"""
+    bl_idname = "mcell.job_percent_done_timer"
+    bl_label = "Modal Job Timer Operator"
+    bl_options = {'REGISTER'}
+
+    _timer = None
+
+    def modal(self, context, event):
+        if event.type == 'TIMER':
+            print ( "Job Timer" )
+            task_len = len(cellblender.simulation_queue.task_dict)
+            task_ctr = 0
+            mcell = context.scene.mcell
+            global global_task_dict
+            global global_task_id
+            for job_item in mcell.sim_runners.job_index_list:
+                s = "Job Index: " + str(job_item.job_index)
+                #mcell.sim_runners, "job_index_list",
+                #mcell.sim_runners, "active_job_index",
+                if job_item.job_index in global_task_dict:
+                    job = global_task_dict[job_item.job_index]
+                    if 'get_status_string' in dir(job):
+                        s = s + " " + job.get_status_string()
+                    else:
+                        s = s + " No get_status_string function found"
+                print ( "  " + s )
+
+                """
+                # JobIndexProperty
+                    # item is a JobIndexProperty
+
+                s = "Job Index: " + str(item.job_index)
+                if item.job_index in global_task_dict:
+                    job = global_task_dict[item.job_index]
+                    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+                    if 'get_status_string' in dir(job):
+                        s = s + " " + job.get_status_string()
+                    else:
+                        s = s + " No get_status_string function found"
+                layout.label(s, icon='FILE_TICK')
+                # def get_status_string ( self ):
+                """
+
+            processes_list = mcell.run_simulation.processes_list
+            for simulation_process in processes_list:
+                print ( "  Proc Item" )
+                if not mcell.run_simulation.save_text_logs:
+                    return {'CANCELLED'}
+                pid = get_pid(simulation_process)
+                seed = 9999 # int(simulation_process.name.split(',')[1].split(':')[1])
+                q_item = cellblender.simulation_queue.task_dict[pid]
+                stdout_txt = q_item['bl_text'].as_string()
+                percent = 0 
+                last_iter = total_iter = 0
+                for i in reversed(stdout_txt.split("\n")):
+                    if i.startswith("Iterations"):
+                        last_iter = int(i.split()[1])
+                        total_iter = int(i.split()[3])
+                        percent = (last_iter/total_iter)*100
+                        break
+                if (last_iter == total_iter) and (total_iter != 0):
+                    task_ctr += 1
+                ### Shadowing ... do everything but this:   simulation_process.name = "PID: %d, Seed: %d, %d%%" % (pid, seed, percent)
+
+            # just a silly way of forcing a screen update. ¯\_(ツ)_/¯
+            color = context.user_preferences.themes[0].view_3d.space.gradients.high_gradient
+            color.h += 0.01
+            color.h -= 0.01
+            # if every MCell job is done, quit updating the screen
+            if task_len == task_ctr:
+                self.cancel(context)
+                return {'CANCELLED'}
+
+        return {'PASS_THROUGH'}
+
+    def execute(self, context):
+        print ( "\n\n\n\n\n\nJob Timer Started\n\n\n\n\n" )
+        wm = context.window_manager
+        # this is how often we should update this in seconds
+        secs = 0.1
+        self._timer = wm.event_timer_add(secs, context.window)
+        wm.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
+
+    def cancel(self, context):
+        print ( "\n\n\n\n\n\nJob Timer Stopped\n\n\n\n\n" )
+        wm = context.window_manager
+        wm.event_timer_remove(self._timer)
+
 
 
 class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
@@ -1460,6 +1552,23 @@ class MCELL_OT_clear_simulation_queue(bpy.types.Operator):
         return {'FINISHED'}
 
 
+
+class MCELL_OT_clear_all_jobs(bpy.types.Operator):
+    bl_idname = "mcell.clear_all_jobs"
+    bl_label = "Clear Completed Jobs"
+    bl_description = ("Clear the list of completed and failed jobs. "
+                      "Does not remove rxn/viz data.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        mcell = context.scene.mcell
+        print ( "Clearing all jobs" )
+        __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+        return {'FINISHED'}
+
+
+
 global_scripting_enabled_once = False
 
 class MCELL_OT_initialize_scripting (bpy.types.Operator):
@@ -2179,9 +2288,8 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         col = row.column(align=False)
                         subcol = col.column(align=True)
                         #subcol.operator("pluggable.clear_this_job", icon='ZOOMOUT', text="")
-                        #subcol.operator("pluggable.clear_all_jobs", icon='X_VEC', text="")
                         subcol.label(icon='ZOOMOUT', text="")
-                        subcol.label(icon='X_VEC', text="")
+                        subcol.operator("mcell.clear_all_jobs", icon='X_VEC', text="")
 
 
                         row = layout.row()

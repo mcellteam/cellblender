@@ -40,6 +40,7 @@ class runner:
         self.name = runner_module.plug_name
         self.engine = engine
         self.par_dict = {}
+        self.sp_list = []
         if 'parameter_dictionary' in dir(runner_module):
             # Make a deep copy of the engine module's parameter dictionary since it may be changed while running
             for k in runner_module.parameter_dictionary.keys():
@@ -61,13 +62,13 @@ class runner:
             for cmd in commands:
                 print ( "  " + str(cmd) )
 
-        sp_list = []
+        self.sp_list = []
         for cmd in commands:
             command_list = []
             if type(cmd) == type('str'):
                 # This command is a string, so just append it
                 command_list.append ( cmd )
-                sp_list.append ( subprocess.Popen ( command_list, stdout=None, stderr=None ) )
+                self.sp_list.append ( subprocess.Popen ( command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE ) )
             elif type(cmd) == type({'a':1}):
                 # This command is a dictionary, so use its keys:
                 command_list.append ( cmd['cmd'] )  # The dictionary must contain a 'cmd' key
@@ -84,11 +85,11 @@ class runner:
                 if self.par_dict['Print Commands']['val']:
                     print ( "Popen with: " + str(command_list) )
                 if 'wd' in cmd:
-                    sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=None, stderr=None ) )
+                    self.sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=subprocess.PIPE, stderr=subprocess.PIPE ) )
                 else:
-                    sp_list.append ( subprocess.Popen ( command_list, stdout=None, stderr=None ) )
+                    self.sp_list.append ( subprocess.Popen ( command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE ) )
 
-        return sp_list
+        return self.sp_list
 
 
 def run_commands ( commands ):
@@ -104,7 +105,7 @@ def run_commands ( commands ):
         if type(cmd) == type('str'):
             # This command is a string, so just append it
             command_list.append ( cmd )
-            sp_list.append ( subprocess.Popen ( command_list, stdout=None, stderr=None ) )
+            sp_list.append ( subprocess.Popen ( command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE ) )
         elif type(cmd) == type({'a':1}):
             # This command is a dictionary, so use its keys:
             command_list.append ( cmd['cmd'] )  # The dictionary must contain a 'cmd' key
@@ -121,9 +122,9 @@ def run_commands ( commands ):
             if parameter_dictionary['Print Commands']['val']:
                 print ( "Popen with: " + str(command_list) )
             if 'wd' in cmd:
-                sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=None, stderr=None ) )
+                sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=subprocess.PIPE, stderr=subprocess.PIPE ) )
             else:
-                sp_list.append ( subprocess.Popen ( command_list, stdout=None, stderr=None ) )
+                sp_list.append ( subprocess.Popen ( command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE ) )
 
     return sp_list
 
