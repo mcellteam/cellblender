@@ -1563,8 +1563,8 @@ class MCELL_OT_clear_all_jobs(bpy.types.Operator):
     def execute(self, context):
         mcell = context.scene.mcell
         print ( "Clearing all jobs" )
-        __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
+        mcell.sim_runners.job_index_list.clear()
+        global_task_dict.clear()
         return {'FINISHED'}
 
 
