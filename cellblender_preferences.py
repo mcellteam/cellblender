@@ -318,7 +318,7 @@ class MCELL_OT_reset_preferences(bpy.types.Operator):
         mcell.cellblender_preferences.invalid_policy = 'dont_run'
         mcell.cellblender_preferences.decouple_export_run = False
         mcell.cellblender_preferences.show_sim_runner_options = False
-        mcell.cellblender_preferences.developer_mode = False
+        mcell.cellblender_preferences.developer_mode = True   # Should be false for most branches
         mcell.cellblender_preferences.debug_level = 0
 
         return {'FINISHED'}
@@ -490,7 +490,7 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
     show_sim_runner_options = BoolProperty(name="Show Alternate Simulation Runners", default=False)
 
-    developer_mode = BoolProperty(name="Show Developer Options in Panels", default=False)
+    developer_mode = BoolProperty(name="Show Developer Options in Panels", default=True)   # Should be false for most branches
 
     tab_autocomplete = BoolProperty(name="Use tab for console autocomplete", default=False, update=set_tab_autocomplete_callback)
     double_sided = BoolProperty(name="Show Double Sided Mesh Objects", default=False, update=set_double_sided_callback)
