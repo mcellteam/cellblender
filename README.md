@@ -169,11 +169,11 @@ and **b** taking values **{100, 200}** and 3 seeds **{1, 2, 3}**:
 {
   "version": 0,
   "data_layout": [
-    ["dir", ["output_data"]],
+    ["/DIR", ["output_data"]],
     ["a", [3.5, 3.7, 3.8]],
     ["b", [100, 200]],
-    ["file_type", ["react_data", "viz_data"]],
-    ["SEED", [1, 2, 3]]
+    ["/FILE_TYPE", ["react_data", "viz_data"]],
+    ["/SEED", [1, 2, 3]]
   ]
 }
 ```
@@ -187,7 +187,7 @@ for a variety of purposes. At the present time, they are used by CellBlender for
 plotting and visualization. They are also being used to integrate MCell into Galaxy.
 
 Note that the **data_layout.json** specification is still under development. It may
-be redefined so that the special keys of "dir" and "file_type" are changed to names
-or symbols that are not legal MCell parameter names. Note also that the "dir" level
+be redefined so that the special keys of "/DIR" and "/FILE_TYPE" are changed to names
+or symbols that are not legal MCell parameter names. Note also that the "/DIR" level
 provides flexibility to change the name "output_data" to some other name or eliminate
 that directory layer altogether.
