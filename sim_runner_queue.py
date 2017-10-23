@@ -10,20 +10,43 @@ import threading
 import subprocess as sp
 import time
 
+'''
+#################################
+
+First useful attempt at a Set of classes for managing processes via a Queue and ThreadWorkers
+The goal is to manage some number of  tasks to be run concurrently by N threadworkers
+and capture the stdout and stderr of each task.
+
+Two main classes are defined:
+
+1) The OutputQueue class allows the management of the stdout and stderr streams of individual tasks wrapped by run_wrapper.py
+   a) NB: run_wrapper.py is a python script that waits for the command string and argument string to be sent on stdin.
+
+2) The SimQueue class manages all the tasks and threadworkers that process the tasks.
+   a) each task is a dictionary containing:
+      i) a Popen object for a run_wrapper.py process which waits in idle for the command and args to be sent to its stdin
+     ii) all the other task attributes
+
+#################################
+'''
 
 
+
+# class for managing stdout and stderr streams of a running task wrapped by run_wrapper.py
 class OutputQueue:
   def __init__(self):
     self.out_q = Queue(maxsize=0)
     self.err_q = Queue(maxsize=0)
 
+  # Process stdout or stderr pipes of running process (e.g. typically capture the output and copy onto a queue or append to list)
   def read_output(self, pipe, funcs):
     for line in iter(pipe.readline, b''):
       line = line.decode('utf-8')
       for func in funcs:
-        func(line)
+        func(line)  # execute the func: possible values: 1) the Queue.put function; 2) the list.append function
     pipe.close()
 
+  # Get strings found in the out_q or err_q and write to sys.stdout or sys.stderr, also copy to a bl_text if not None)
   def write_output(self, get, pipe, bl_text=None, e_bl_text_quit=None):
     if bl_text != None:
       import bpy
@@ -42,6 +65,8 @@ class OutputQueue:
             pass
 
 
+  # In passthrough mode, set up threadworkers and queues to manage stdout and stderr of task and send command string and args to run_wrapper.py process
+  # Otherwise just do proc.communicate() and capture stdout and stderr upon command completion (possibly broken functionality?)
   def run_proc(self, proc, arg_in=None, passthrough=True, bl_text=None, e_bl_text_quit=None):
 
     if bl_text != None:
