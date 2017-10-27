@@ -143,6 +143,11 @@ cellblender_info = {
         "sim_runners"+os.sep+"java"+os.sep+"makefile",
         "sim_runners"+os.sep+"java"+os.sep+"META-INF"+os.sep+"MANIFEST.MF",
 
+        "sim_runners"+os.sep+"async_io"+os.sep+"__init__.py",
+        "sim_runners"+os.sep+"async_io"+os.sep+"SimControl.java",
+        "sim_runners"+os.sep+"async_io"+os.sep+"makefile",
+        "sim_runners"+os.sep+"async_io"+os.sep+"META-INF"+os.sep+"MANIFEST.MF",
+
         "sim_runners"+os.sep+"java_object"+os.sep+"__init__.py",
         "sim_runners"+os.sep+"java_object"+os.sep+"SimControl.java",
         "sim_runners"+os.sep+"java_object"+os.sep+"makefile",

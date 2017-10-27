@@ -40,9 +40,9 @@ IOMESHFILES = cellblender/io_mesh_mcell_mdl/mdlmesh_parser.py
 MCELLENGINE = cellblender/sim_engines/mcell3/mdlmesh_parser.py
 
 ifeq ($(UNAME_S),Linux)
-  SIMCTLFILES = cellblender/sim_runners/java/SimControl.jar cellblender/sim_runners/java_object/SimControl.jar cellblender/sim_runners/open_gl/SimControl
+  SIMCTLFILES = cellblender/sim_runners/java/SimControl.jar cellblender/sim_runners/async_io/SimControl.jar cellblender/sim_runners/java_object/SimControl.jar cellblender/sim_runners/open_gl/SimControl
 else
-  SIMCTLFILES = cellblender/sim_runners/java/SimControl.jar
+  SIMCTLFILES = cellblender/sim_runners/java/SimControl.jar cellblender/sim_runners/async_io/SimControl.jar
 endif
 SIMLIBMCFILES = cellblender/sim_engines/limited_cpp/_libMCell.so cellblender/sim_engines/limited_cpp/mcell_main cellblender/sim_engines/sim_engines/limited_cpp/_libMCell.so cellblender/sim_engines/sim_engines/limited_cpp/mcell_main
 PLOTTERFILES = cellblender/data_plotters/java_plot/PlotData.jar

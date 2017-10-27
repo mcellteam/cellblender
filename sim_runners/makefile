@@ -1,8 +1,8 @@
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
-	SUBDIRS = command_line open_gl java java_object
+	SUBDIRS = command_line open_gl java java_object async_io
 else
-	SUBDIRS = command_line java java_object
+	SUBDIRS = command_line java java_object async_io
 endif
 
 .PHONY: all
