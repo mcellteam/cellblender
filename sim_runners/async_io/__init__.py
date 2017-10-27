@@ -21,6 +21,8 @@
 import os
 import subprocess
 import sys
+import asyncio
+import asyncio.subprocess
 
 plug_code = "ASYNCIO"
 plug_name = "Python Async IO"
@@ -58,6 +60,7 @@ class runner:
             # Make a deep copy of the engine module's parameter dictionary since it may be changed while running
             for k in runner_module.parameter_dictionary.keys():
               self.par_dict[k] = runner_module.parameter_dictionary[k].copy()
+        self.event_loop = None
 
     def get_status_string ( self ):
         stat = self.name
@@ -75,6 +78,15 @@ class runner:
     def run_commands ( self, commands ):
 
         print ( "Running commands inside runner class" )
+
+
+        print ( "Setting up the event loop" )
+        if self.event_loop == None:
+            self.event_loop = asyncio.get_event_loop()
+        if self.event_loop.is_closed():
+            self.event_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop ( self.event_loop )
+
 
         if parameter_dictionary['Print Commands']['val']:
             print ( "Commands for " + plug_name + " runner:" )
@@ -108,40 +120,6 @@ class runner:
         return sp_list
 
 
-def run_commands ( commands ):
-
-    print ( "Running commands inside runner module" )
-
-    if parameter_dictionary['Print Commands']['val']:
-        print ( "Commands for " + plug_name + " runner:" )
-        for cmd in commands:
-            print ( "  " + str(cmd) )
-
-    sp_list = []
-    window_num = 0
-    for cmd in commands:
-        command_list = [ 'java', '-jar', os.path.join(os.path.dirname(os.path.realpath(__file__)),"SimControl.jar") ]
-        command_list.append ( "x=%d" % ((50*(1+window_num))%500) ),
-        command_list.append ( "y=%d" % ((40*(1+window_num))%400) ),
-        command_list.append ( ":" ),
-        if type(cmd) == type('str'):
-            # This command is a string, so just append it
-            command_list.append ( cmd )
-            sp_list.append ( subprocess.Popen ( command_list, stdout=None, stderr=None ) )
-        elif type(cmd) == type({'a':1}):
-            # This command is a dictionary, so use its keys:
-            command_list.append ( cmd['cmd'] )  # The dictionary must contain a 'cmd' key
-            if 'args' in cmd:
-                for arg in cmd['args']:
-                    command_list.append ( arg )
-            if parameter_dictionary['Print Commands']['val']:
-                print ( "Popen with: " + str(command_list) )
-            if 'wd' in cmd:
-                sp_list.append ( subprocess.Popen ( command_list, cwd=cmd['wd'], stdout=None, stderr=None ) )
-            else:
-                sp_list.append ( subprocess.Popen ( command_list, stdout=None, stderr=None ) )
-        window_num += 1
-    return sp_list
 
 
 if __name__ == "__main__":
