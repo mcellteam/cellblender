@@ -842,7 +842,7 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                         col.operator("mcellptlist.point_add_obj_sel", icon='EDITMODE_HLT', text="")
 
                         col.separator()
-                        col.operator("mcellptlist.point_remove_all", icon='X_VEC', text="")
+                        col.operator("mcellptlist.point_remove_all", icon='PANEL_CLOSE', text="")  # Had been X_VEC before it was removed from Blender 2.79
 
 
                     if (rel.shape == 'LIST'):
