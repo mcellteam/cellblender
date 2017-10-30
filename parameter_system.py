@@ -2396,7 +2396,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
         col.operator("mcell.remove_parameter", icon='ZOOMOUT', text="")
 
         col.separator()
-        col.operator("mcell.delete_all_pars", icon='X_VEC', text="")
+        col.operator("mcell.delete_all_pars", icon='PANEL_CLOSE', text="")  # Had been X_VEC before it was removed from Blender 2.79
 
         if len(self.general_parameter_list) > 0:
             col.separator()
