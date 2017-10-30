@@ -2289,7 +2289,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         subcol = col.column(align=True)
                         #subcol.operator("pluggable.clear_this_job", icon='ZOOMOUT', text="")
                         subcol.label(icon='ZOOMOUT', text="")
-                        subcol.operator("mcell.clear_all_jobs", icon='X_VEC', text="")
+                        subcol.operator("mcell.clear_all_jobs", icon='PANEL_CLOSE', text="")  # Had been X_VEC before it was removed from Blender 2.79
 
 
                         row = layout.row()
