@@ -178,7 +178,7 @@ class engine:
         mcell.run_simulation.last_simulation_run_time = str(time.time())
 
         binary_path = mcell.cellblender_preferences.mcell_binary
-        binary_path = parameter_dictionary['MCell Path']['val']   # Over-ride the preferences with the value in the engine itself.
+        binary_path = blend_to_path ( parameter_dictionary['MCell Path']['val'] )  # Over-ride the preferences with the value in the engine itself.
 
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 
