@@ -497,7 +497,7 @@ class engine:
 
 
 
-
+"""
 
 
 def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
@@ -836,6 +836,8 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 def postprocess_runs ( data_model, command_strings ):
   # Move and/or transform data to match expected CellBlender file structure as required
   pass
+
+"""
 
 
 if __name__ == "__main__":
