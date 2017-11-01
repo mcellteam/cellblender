@@ -773,7 +773,7 @@ class MCELL_OT_job_percent_done_timer(bpy.types.Operator):
         return {'PASS_THROUGH'}
 
     def execute(self, context):
-        print ( "\n\n\n\n\n\nJob Timer Started\n\n\n\n\n" )
+        print ( "\n\n\nJob Timer Started\n\n\n" )
         wm = context.window_manager
         # this is how often we should update this in seconds
         secs = 0.1
@@ -782,7 +782,7 @@ class MCELL_OT_job_percent_done_timer(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
     def cancel(self, context):
-        print ( "\n\n\n\n\n\nJob Timer Stopped\n\n\n\n\n" )
+        print ( "\n\n\nJob Timer Stopped\n\n\n" )
         wm = context.window_manager
         wm.event_timer_remove(self._timer)
 
@@ -1473,8 +1473,8 @@ class MCELL_OT_remove_text_logs(bpy.types.Operator):
 
 class MCELL_OT_clear_run_list(bpy.types.Operator):
     bl_idname = "mcell.clear_run_list"
-    bl_label = "Clear Completed MCell Runs"
-    bl_description = ("Clear the list of completed and failed MCell runs. "
+    bl_label = "Clear Completed Run List"
+    bl_description = ("Clear the list of completed and failed runs. "
                       "Does not remove rxn/viz data.")
     bl_options = {'REGISTER'}
 
