@@ -91,6 +91,8 @@ def run_generic_runner (context, sim_module):
 
     binary_path = mcell.cellblender_preferences.mcell_binary
     mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
+    if not mcell.cellblender_preferences.mcell_binary_valid:
+        print ( "cellblender_simulation.run_generic_runner: invalid binary: " + str(binary_path) )
 
     start = int(mcell.run_simulation.start_seed.get_value())
     end = int(mcell.run_simulation.end_seed.get_value())
@@ -549,6 +551,8 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
 
         binary_path = mcell.cellblender_preferences.mcell_binary
         mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
+        if not mcell.cellblender_preferences.mcell_binary_valid:
+            print ( "cellblender_simulation.MCELL_OT_run_simulation_control_normal: invalid binary: " + str(binary_path) )
 
         start = int(run_sim.start_seed.get_value())
         end = int(run_sim.end_seed.get_value())

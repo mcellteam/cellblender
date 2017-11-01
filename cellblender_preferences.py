@@ -59,6 +59,8 @@ def check_mcell_binary(self, context):
     mcell = context.scene.mcell
     binary_path = mcell.cellblender_preferences.mcell_binary
     mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable(binary_path)
+    if not mcell.cellblender_preferences.mcell_binary_valid:
+        print ( "cellblender_preferences.check_mcell_binary: invalid binary: " + str(binary_path) )
     bpy.ops.mcell.preferences_save(name='Cb')
     return None
 
@@ -416,18 +418,12 @@ class MCELL_OT_white_theme(bpy.types.Operator):
 
 class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
-    mcell_binary = StringProperty(name="MCell Binary",
-        update=check_mcell_binary)
-    mcell_binary_valid = BoolProperty(name="MCell Binary Valid",
-        default=False)
-    python_binary = StringProperty(name="Python Binary",
-        update=check_python_binary)
-    python_binary_valid = BoolProperty(name="Python Binary Valid",
-        default=False)
-    bionetgen_location = StringProperty(name="BioNetGen Location",
-        update=check_bionetgen_location)
-    bionetgen_location_valid = BoolProperty(name="BioNetGen Location Valid",
-        default=False)
+    mcell_binary = StringProperty(name="MCell Binary", update=check_mcell_binary)
+    mcell_binary_valid = BoolProperty(name="MCell Binary Valid", default=False)
+    python_binary = StringProperty(name="Python Binary", update=check_python_binary)
+    python_binary_valid = BoolProperty(name="Python Binary Valid", default=False)
+    bionetgen_location = StringProperty(name="BioNetGen Location", update=check_bionetgen_location)
+    bionetgen_location_valid = BoolProperty(name="BioNetGen Location Valid", default=False)
 
     invalid_policy_enum = [
         ('dont_run', "Do not run with errors", ""),
