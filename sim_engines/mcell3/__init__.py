@@ -88,6 +88,18 @@ parameter_layout = [
 ]
 
 
+def blend_to_path ( path ):
+  if path.startswith ('//'):
+    # This is a special Blender-relative path like this: //../../../dir/mcell
+    blend_file_path = os.path.dirname(bpy.data.filepath)
+    path = os.path.abspath ( os.path.join ( blend_file_path, path[2:] ) )
+    return path
+  else:
+    # This isn't a special Blender-relative path:
+    return path
+
+
+
 def draw_layout ( self, context, layout ):
     mcell = context.scene.mcell
     run_sim = mcell.run_simulation
@@ -149,7 +161,7 @@ def prepare_runs_no_data_model ( project_dir ):
     mcell.run_simulation.last_simulation_run_time = str(time.time())
 
     binary_path = mcell.cellblender_preferences.mcell_binary
-    binary_path = parameter_dictionary['MCell Path']['val']   # Over-ride the preferences with the value in the engine itself.
+    binary_path = blend_to_path ( parameter_dictionary['MCell Path']['val'] )  # Over-ride the preferences with the value in the engine itself.
 
     mcell.cellblender_preferences.mcell_binary_valid = cellblender_utils.is_executable ( binary_path )
 

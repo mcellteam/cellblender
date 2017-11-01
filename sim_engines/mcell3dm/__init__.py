@@ -96,6 +96,18 @@ parameter_layout = [
 ]
 
 
+def blend_to_path ( path ):
+  if path.startswith ('//'):
+    # This is a special Blender-relative path like this: //../../../dir/mcell
+    blend_file_path = os.path.dirname(bpy.data.filepath)
+    path = os.path.abspath ( os.path.join ( blend_file_path, path[2:] ) )
+    return path
+  else:
+    # This isn't a special Blender-relative path:
+    return path
+
+
+
 def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   """ Arguments to:  run_mcell_sweep ( sys_argv, data_model=None )
@@ -120,10 +132,13 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   fs = data_model['simulation_control']['start_seed']
   ls = data_model['simulation_control']['end_seed']
+  mc = blend_to_path ( parameter_dictionary['MCell Path']['val'] )
+
+  print ( "Running mcell at: " + str(mc) )
 
   # The run_mcell_sweep function will build the directory structure, data_layout.json, and return the run_cmd_list used by some of the legacy runners.
   # The returned format will be a list of lists containing: program, directory, MDL, stdout, stderr, seed.
-  prog_dir_mdl_out_err_seed_list = run_data_model_mcell_3.run_mcell_sweep(['-rt','extern','-pd',project_dir,'-b',parameter_dictionary['MCell Path']['val'],'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
+  prog_dir_mdl_out_err_seed_list = run_data_model_mcell_3.run_mcell_sweep(['-rt','extern','-pd',project_dir,'-b',mc,'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
 
   print ( "Program,Directory,MDL,StdOut,StdErr,Seed commands prepared by the mcell3dm engine:" )
   if len(prog_dir_mdl_out_err_seed_list) > 0:
@@ -153,7 +168,7 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   #print ( "Currently running from the engine ..." )
   #command_list = []
-  #run_data_model_mcell_3.run_mcell_sweep(['-pd',project_dir,'-b',parameter_dictionary['MCell Path']['val'],'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
+  #run_data_model_mcell_3.run_mcell_sweep(['-pd',project_dir,'-b',mc,'-fs',fs,'-ls',ls],data_model={'mcell':data_model})
 
 
 
