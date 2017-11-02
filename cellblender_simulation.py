@@ -52,7 +52,7 @@ from . import parameter_system
 from . import cellblender_utils
 from . import data_model
 
-#from cellblender.mdl import data_model_to_mdl
+from cellblender.mdl import data_model_to_mdl
 #from cellblender.mdl import run_data_model_mcell
 
 from cellblender.cellblender_utils import mcell_files_path
@@ -268,7 +268,9 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
             mcell.project_settings.base_name = scene_name
 
             print ( "Need to run " + str(mcell.run_simulation.simulation_run_control) )
-            if str(mcell.run_simulation.simulation_run_control) == 'QUEUE':
+            if str(mcell.run_simulation.simulation_run_control) == 'SWEEP_QUEUE':
+                bpy.ops.mcell.run_simulation_sweep_queue()
+            elif str(mcell.run_simulation.simulation_run_control) == 'QUEUE':
                 bpy.ops.mcell.run_simulation_control_queue()
             elif str(mcell.run_simulation.simulation_run_control) == 'COMMAND':
                 bpy.ops.mcell.run_simulation_normal()
@@ -279,7 +281,7 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
             elif str(run_sim.simulation_run_control) == 'DYNAMIC':
                 bpy.ops.mcell.run_simulation_dynamic()
             else:
-                print ( "Unexpected case in MCELL_OT_run_simulation" )
+                print ( "Unexpected case (" + str(mcell.run_simulation.simulation_run_control) + ") in MCELL_OT_run_simulation" )
                 pass
 
         return {'FINISHED'}
@@ -324,7 +326,7 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
                 if not os.path.exists(sweep_dir):
                     os.makedirs(sweep_dir)
 
-                mcell_dm = mcell.build_data_model_from_properties ( context, geometry=True )
+                mcell_dm = mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
                 data_model.save_data_model_to_json_file ( mcell_dm, os.path.join(project_dir,"data_model.json") )
 
                 base_name = mcell.project_settings.base_name
@@ -397,6 +399,226 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
+    bl_idname = "mcell.run_simulation_sweep_queue"
+    bl_label = "Run MCell Simulation Using Sweep Queue"
+    bl_description = "Run MCell Simulation Using Sweep Queue"
+    bl_options = {'REGISTER'}
+
+
+    def execute(self, context):
+
+        mcell = context.scene.mcell
+        run_sim = mcell.run_simulation
+
+        run_sim.last_simulation_run_time = str(time.time())
+
+        start_seed = int(run_sim.start_seed.get_value())
+        end_seed = int(run_sim.end_seed.get_value())
+        mcell_processes = run_sim.mcell_processes
+        mcell_processes_str = str(run_sim.mcell_processes)
+        mcell_binary = cellblender_utils.get_mcell_path(mcell)
+        # Force the project directory to be where the .blend file lives
+        project_dir = mcell_files_path()
+        status = ""
+
+        python_path = cellblender.cellblender_utils.get_python_path(mcell=mcell)
+
+        if python_path:
+            if not mcell.cellblender_preferences.decouple_export_run:
+                bpy.ops.mcell.export_project()
+
+            if (run_sim.error_list and
+                    mcell.cellblender_preferences.invalid_policy == 'dont_run'):
+                pass
+            else:
+                react_dir = os.path.join(project_dir, "output_data", "react_data")
+                if (os.path.exists(react_dir) and
+                        run_sim.remove_append == 'remove'):
+                    shutil.rmtree(react_dir)
+                if not os.path.exists(react_dir):
+                    os.makedirs(react_dir)
+
+                viz_dir = os.path.join(project_dir, "output_data", "viz_data")
+                if (os.path.exists(viz_dir) and
+                        run_sim.remove_append == 'remove'):
+                    shutil.rmtree(viz_dir)
+                if not os.path.exists(viz_dir):
+                    os.makedirs(viz_dir)
+
+                base_name = mcell.project_settings.base_name
+
+                error_file_option = run_sim.error_file
+                log_file_option = run_sim.log_file
+                cellblender.simulation_queue.python_exec = python_path
+                cellblender.simulation_queue.start(mcell_processes)
+                cellblender.simulation_queue.notify = True
+
+                dm = mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
+                sweep_list = engine_manager.build_sweep_list( dm['parameter_system'] )
+                print ( "Sweep list = " + str(sweep_list) )
+                # Add a "current_index" of 0 to support the sweeping
+                for sw_item in sweep_list:
+                  sw_item['current_index'] = 0
+                  print ( "  Sweep list item = " + str(sw_item) )
+
+                # The following line will create the "data_layout.json" file describing the directory structure
+                engine_manager.write_sweep_list_to_layout_file ( sweep_list, start_seed, end_seed, os.path.join ( project_dir, "data_layout.json" ) )
+
+                # Count the number of sweep runs
+                num_sweep_runs = engine_manager.count_sweep_runs ( sweep_list )
+                num_requested_runs = num_sweep_runs * (1 + end_seed - start_seed)
+                print ( "Number of non-seed sweep runs = " + str(num_sweep_runs) )
+                print ( "Total runs (sweep and seed) is " + str(num_requested_runs) )
+
+
+                # Build a list of "run commands" (one for each run) to be put in the queue
+                # Note that the format of these came from the original "run_simulations.py" program and may not be what we want in the long run
+                run_cmd_list = []
+                # Build a sweep list with a "output_data" prefix directory
+                for run in range (num_sweep_runs):
+                    sweep_path = "output_data"
+                    for sw_item in sweep_list:
+                        sweep_path += "/" + sw_item['par_name'] + "_index_" + str(sw_item['current_index'])
+                    print ( "Sweep path = " + sweep_path )
+                    # Set the data model parameters to the current parameter settings
+                    for par in dm['parameter_system']['model_parameters']:
+                        if ('par_name' in par):
+                            for sweep_item in sweep_list:
+                                if par['par_name'] == sweep_item['par_name']:
+                                    par['par_expression'] = str(sweep_item['values'][sweep_item['current_index']])
+                    # Sweep through the seeds for this set of parameters creating a run specification for each seed
+                    for seed in range(start_seed,end_seed+1):
+                        # Create the directories and write the MDL
+                        sweep_item_path = os.path.join(project_dir,sweep_path)
+                        engine_manager.makedirs_exist_ok ( sweep_item_path, exist_ok=True )
+                        engine_manager.makedirs_exist_ok ( os.path.join(sweep_item_path,'react_data'), exist_ok=True )
+                        engine_manager.makedirs_exist_ok ( os.path.join(sweep_item_path,'viz_data'), exist_ok=True )
+                        print ( "Writing data model as MDL at " + str(os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) )) )
+                        data_model_to_mdl.write_mdl ( {'mcell':dm}, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ) )
+                        run_cmd_list.append ( [mcell_binary, sweep_item_path, base_name, error_file_option, log_file_option, seed] )
+                    # Increment the current_index counters from rightmost side (deepest directory)
+                    i = len(sweep_list) - 1
+                    while i >= 0:
+                        sweep_list[i]['current_index'] += 1
+                        if sweep_list[i]['current_index'] >= len(sweep_list[i]['values']):
+                          sweep_list[i]['current_index'] = 0
+                        else:
+                          break
+                        i += -1
+
+                # Print the run commands as a record of what's being done
+                print ( "Run Cmds for Sweep Queue (0:mcell, 1:wd, 2:base_name, 3:error, 4:log, 5:seed):" )
+                for run_cmd in run_cmd_list:
+                    print ( "  " + str(run_cmd) )
+
+
+                processes_list = run_sim.processes_list
+                #for seed in range(start_seed,end_seed + 1):
+                for run_cmd in run_cmd_list:
+                  processes_list.add()
+                  run_sim.active_process_index = len(run_sim.processes_list) - 1
+                  simulation_process = processes_list[run_sim.active_process_index]
+
+                  print("Starting MCell ... create start_time.txt file:")
+                  with open(os.path.join(os.path.dirname(bpy.data.filepath),"start_time.txt"), "w") as start_time_file:
+                      start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
+
+                  # Log filename will be log.year-month-day_hour:minute_seed.txt
+                  # (e.g. log.2013-03-12_11:45_1.txt)
+                  time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
+
+                  if error_file_option == 'file':
+                      error_filename = "error.%s_%d.txt" % (time_now, seed)  # Note: this is insufficiently unique for sweeps
+                  elif error_file_option == 'none':
+                      error_file = subprocess.DEVNULL
+                  elif error_file_option == 'console':
+                      error_file = None
+
+                  if log_file_option == 'file':
+                      log_filename = "log.%s_%d.txt" % (time_now, seed)  # Note: this is insufficiently unique for sweeps
+                  elif log_file_option == 'none':
+                      log_file = subprocess.DEVNULL
+                  elif log_file_option == 'console':
+                      log_file = None
+
+                  mdl_filename = '%s.main.mdl' % (run_cmd[2])
+                  mcell_args = '-seed %d %s' % (run_cmd[5], mdl_filename)
+                  make_texts = run_sim.save_text_logs
+                  proc = cellblender.simulation_queue.add_task(run_cmd[0], mcell_args, run_cmd[1], make_texts)
+
+                  self.report({'INFO'}, "Simulation Running")
+
+                  if not simulation_process.name:
+                      simulation_process.name = ("PID: %d, Seed: %d" % (proc.pid, seed))
+                  bpy.ops.mcell.percentage_done_timer()
+
+
+
+
+
+
+                if False:
+                        # Old code from original queue runner
+                        print ( "DELETE ME!!!" )
+                        # Output the default until actual sweep code is completed
+                        engine_manager.write_default_data_layout(project_dir, start_seed, end_seed)
+
+
+
+                        processes_list = run_sim.processes_list
+                        for seed in range(start_seed,end_seed + 1):
+                          processes_list.add()
+                          run_sim.active_process_index = len(
+                              run_sim.processes_list) - 1
+                          simulation_process = processes_list[
+                              run_sim.active_process_index]
+
+                          print("Starting MCell ... create start_time.txt file:")
+                          with open(os.path.join(os.path.dirname(bpy.data.filepath),
+                                    "start_time.txt"), "w") as start_time_file:
+                              start_time_file.write(
+                                  "Started simulation at: " + (str(time.ctime())) + "\n")
+
+                          # Log filename will be log.year-month-day_hour:minute_seed.txt
+                          # (e.g. log.2013-03-12_11:45_1.txt)
+                          time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
+
+                          if error_file_option == 'file':
+                              error_filename = "error.%s_%d.txt" % (time_now, seed)
+                          elif error_file_option == 'none':
+                              error_file = subprocess.DEVNULL
+                          elif error_file_option == 'console':
+                              error_file = None
+
+                          if log_file_option == 'file':
+                              log_filename = "log.%s_%d.txt" % (time_now, seed)
+                          elif log_file_option == 'none':
+                              log_file = subprocess.DEVNULL
+                          elif log_file_option == 'console':
+                              log_file = None
+
+                          mdl_filename = '%s.main.mdl' % (base_name)
+                          mcell_args = '-seed %d %s' % (seed, mdl_filename)
+                          make_texts = run_sim.save_text_logs
+                          proc = cellblender.simulation_queue.add_task(mcell_binary, mcell_args, os.path.join(project_dir, "output_data"), make_texts)
+
+                          self.report({'INFO'}, "Simulation Running")
+
+                          if not simulation_process.name:
+                              simulation_process.name = ("PID: %d, Seed: %d" % (proc.pid, seed))
+                          bpy.ops.mcell.percentage_done_timer()
+
+        else:
+            status = "Python not found. Set it in Project Settings."
+
+        run_sim.status = status
+
+        return {'FINISHED'}
+
+
+
+
 
 class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
     bl_idname = "mcell.run_simulation_sweep_sge"
@@ -467,16 +689,12 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
 
                 processes_list = run_sim.processes_list
                 processes_list.add()
-                run_sim.active_process_index = len(
-                    run_sim.processes_list) - 1
-                simulation_process = processes_list[
-                    run_sim.active_process_index]
+                run_sim.active_process_index = len(run_sim.processes_list) - 1
+                simulation_process = processes_list[run_sim.active_process_index]
 
                 print("Starting MCell ... create start_time.txt file:")
-                with open(os.path.join(os.path.dirname(bpy.data.filepath),
-                          "start_time.txt"), "w") as start_time_file:
-                    start_time_file.write(
-                        "Started simulation at: " + (str(time.ctime())) + "\n")
+                with open(os.path.join(os.path.dirname(bpy.data.filepath),"start_time.txt"), "w") as start_time_file:
+                    start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
 
                 # We have to create a new subprocess that assigns jobs to nodes in the SGE
@@ -523,10 +741,18 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
                 # subprocess objects for the panels.
                 cellblender.simulation_popen_list.append(sp)
 
-                if ((end - start) == 0):
+
+
+                sweep_list = engine_manager.build_sweep_list( mcell_dm['parameter_system'] )
+                print ( "Sweep list = " + str(sweep_list) )
+                # Count the number of sweep runs
+                num_sweep_runs = engine_manager.count_sweep_runs ( sweep_list )
+                num_requested_runs = num_sweep_runs * (1 + end - start)
+
+                if num_requested_runs <= 1:
                     simulation_process.name = ("PID: %d, Seed: %d" % (sp.pid, start))
                 else:
-                    simulation_process.name = ("PID: %d, Seeds: %d-%d" % (sp.pid, start, end))
+                    simulation_process.name = ("PID: %d, %d Runs with Seeds: %d-%d" % (sp.pid, num_requested_runs, start, end))
         else:
             status = "Python not found. Set it in Project Settings."
 
@@ -1719,11 +1945,12 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
 
     simulation_engine_and_run_enum = [
-         ('QUEUE', "MCell via Queue Runner", ""),
-         ('COMMAND', "MCell via Command Line", ""),
-         ('SWEEP', "MCell via Sweep Runner", ""),
-         ('SWEEP_SGE', "MCell via Sweep Runner and SGE", ""),
-         ('DYNAMIC', "Engine/Runner", "") ]
+         ('SWEEP_QUEUE', "MCell Local", ""),
+         ('SWEEP_SGE', "MCell SGE", ""),
+         #('QUEUE', "MCell via Queue Runner", ""),
+         #('COMMAND', "MCell via Command Line", ""),
+         #('SWEEP', "MCell via Sweep Runner", ""),
+         ('DYNAMIC', "Engine/Runner (Experimental)", "") ]
 
     simulation_run_control = EnumProperty(
         items=simulation_engine_and_run_enum, name="",
@@ -2008,7 +2235,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
                 display_queue_panel = False
 
-                if self.simulation_run_control == "QUEUE":
+                if self.simulation_run_control in [ "QUEUE", "SWEEP_QUEUE" ]:
                     display_queue_panel = True
                 elif self.simulation_run_control == 'DYNAMIC':
                     global active_engine_module
