@@ -220,7 +220,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
 
     def execute(self, context):
-        print("MCELL_OT_export_project.execute()")
+        print("Start of MCELL_OT_export_project.execute()")
 
         if context.scene.mcell.cellblender_preferences.lockout_export:
             print ( "Exporting is currently locked out. See the Preferences/ExtraOptions panel." )
@@ -276,7 +276,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
             if dynamic:
 
-                print ( "Exporting dynamic objects" )
+                print ( "Exporting dynamic objects from MCELL_OT_export_project.execute()" )
 
                 # Save the current frame to restore later
                 fc = context.scene.frame_current
@@ -494,6 +494,8 @@ class MCELL_OT_export_project(bpy.types.Operator):
             #################################
 
             self.report({'INFO'}, "Project Exported")
+
+        print("End of MCELL_OT_export_project.execute()")
 
         return {'FINISHED'}
 

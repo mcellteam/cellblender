@@ -554,61 +554,6 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                   bpy.ops.mcell.percentage_done_timer()
 
 
-
-
-
-
-                if False:
-                        # Old code from original queue runner
-                        print ( "DELETE ME!!!" )
-                        # Output the default until actual sweep code is completed
-                        engine_manager.write_default_data_layout(project_dir, start_seed, end_seed)
-
-
-
-                        processes_list = run_sim.processes_list
-                        for seed in range(start_seed,end_seed + 1):
-                          processes_list.add()
-                          run_sim.active_process_index = len(
-                              run_sim.processes_list) - 1
-                          simulation_process = processes_list[
-                              run_sim.active_process_index]
-
-                          print("Starting MCell ... create start_time.txt file:")
-                          with open(os.path.join(os.path.dirname(bpy.data.filepath),
-                                    "start_time.txt"), "w") as start_time_file:
-                              start_time_file.write(
-                                  "Started simulation at: " + (str(time.ctime())) + "\n")
-
-                          # Log filename will be log.year-month-day_hour:minute_seed.txt
-                          # (e.g. log.2013-03-12_11:45_1.txt)
-                          time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
-
-                          if error_file_option == 'file':
-                              error_filename = "error.%s_%d.txt" % (time_now, seed)
-                          elif error_file_option == 'none':
-                              error_file = subprocess.DEVNULL
-                          elif error_file_option == 'console':
-                              error_file = None
-
-                          if log_file_option == 'file':
-                              log_filename = "log.%s_%d.txt" % (time_now, seed)
-                          elif log_file_option == 'none':
-                              log_file = subprocess.DEVNULL
-                          elif log_file_option == 'console':
-                              log_file = None
-
-                          mdl_filename = '%s.main.mdl' % (base_name)
-                          mcell_args = '-seed %d %s' % (seed, mdl_filename)
-                          make_texts = run_sim.save_text_logs
-                          proc = cellblender.simulation_queue.add_task(mcell_binary, mcell_args, os.path.join(project_dir, "output_data"), make_texts)
-
-                          self.report({'INFO'}, "Simulation Running")
-
-                          if not simulation_process.name:
-                              simulation_process.name = ("PID: %d, Seed: %d" % (proc.pid, seed))
-                          bpy.ops.mcell.percentage_done_timer()
-
         else:
             status = "Python not found. Set it in Project Settings."
 
@@ -1945,9 +1890,9 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
 
     simulation_engine_and_run_enum = [
+         ('QUEUE', "MCell via Queue Runner", ""),       # This should be commented out once the SWEEP_QUEUE is working with Dynamic Geometry
          ('SWEEP_QUEUE', "MCell Local", ""),
          ('SWEEP_SGE', "MCell SGE", ""),
-         #('QUEUE', "MCell via Queue Runner", ""),
          #('COMMAND', "MCell via Command Line", ""),
          #('SWEEP', "MCell via Sweep Runner", ""),
          ('DYNAMIC', "Engine/Runner (Experimental)", "") ]
