@@ -223,7 +223,10 @@ def write_mdl ( dm, file_name ):
         write_parameter_system ( ps, f )
       if 'initialization' in mcell:
         init = mcell['initialization']
-        write_initialization ( init, f )
+        if num_dynamic > 0:
+          write_initialization ( init, f, dyn_fn='dyn_geom_list.txt' )
+        else:
+          write_initialization ( init, f )
         if 'partitions' in init:
           parts = mcell['initialization']['partitions']
           write_partitions ( parts, f )
@@ -236,28 +239,29 @@ def write_mdl ( dm, file_name ):
       if 'define_reactions' in mcell:
         reacts = mcell['define_reactions']
         write_reactions ( reacts, f )
-      if ('geometrical_objects' in mcell) and (num_dynamic <= 0):
+      if ('model_objects' in mcell) and ('geometrical_objects' in mcell):
+        objs = mcell['model_objects']
         geom = mcell['geometrical_objects']
-        write_geometry ( geom, f )
+        write_static_geometry ( objs, geom, f )
       if 'modify_surface_regions' in mcell:
         modsurfrs = mcell['modify_surface_regions']
         write_modify_surf_regions ( modsurfrs, f )
       if 'define_release_patterns' in mcell:
         pats = mcell['define_release_patterns']
         write_release_patterns ( pats, f )
-      if ('geometrical_objects' in mcell) or ('release_sites' in mcell):
+      if 'geometrical_objects' in mcell:
         # CellBlender also has a "Model Objects" which carries model-related data
         # It's not clear which should be used to trigger this case
         objs = None
         geom = None
-        rels = None
         if 'model_objects' in mcell:
           objs = mcell['model_objects']
         if 'geometrical_objects' in mcell:
           geom = mcell['geometrical_objects']
-        if 'release_sites' in mcell:
-          rels = mcell['release_sites']
-        write_instances ( objs, geom, rels, mcell['define_molecules'], f )
+        write_static_instances ( objs, geom, f )
+      if 'release_sites' in mcell:
+        rels = mcell['release_sites']
+        write_release_sites ( rels, mcell['define_molecules'], f )
 
       f.write("sprintf(seed,\"%05g\",SEED)\n\n")
 
@@ -397,6 +401,7 @@ def write_mdl ( dm, file_name ):
                       # Get the geometry from the object (presumably animated by Blender)
 
                       print ( "Build MDL mesh from Blender object for frame " + str(frame_number) )
+                      import mathutils
 
                       geom_obj = context.scene.objects[obj.name]
                       mesh = geom_obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
@@ -576,10 +581,12 @@ def write_parameter_system ( ps, f ):
         f.write ( "\n" );
 
 
-def write_initialization ( init, f ):
+def write_initialization ( init, f, dyn_fn=None ):
     write_dm_str_val ( init, f, 'iterations',                'ITERATIONS' )
     write_dm_str_val ( init, f, 'time_step',                 'TIME_STEP' )
     write_dm_str_val ( init, f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
+    if dyn_fn != None:
+      f.write ( "DYNAMIC_GEOMETRY = \"%s\"\n" % (dyn_fn) )
     f.write ( "\n" )
     write_dm_str_val ( init, f, 'time_step_max',             'TIME_STEP_MAX' )
     write_dm_str_val ( init, f, 'space_step',                'SPACE_STEP' )
@@ -755,57 +762,75 @@ def write_reactions ( reacts, f ):
         f.write("\n")
 
 
-def write_geometry ( geom, f ):
+def write_static_geometry ( objs, geom, f ):
     if 'object_list' in geom:
       glist = geom['object_list']
       if len(glist) > 0:
         for g in glist:
-          loc_x = 0.0
-          loc_y = 0.0
-          loc_z = 0.0
-          if 'location' in g:
-            loc_x = g['location'][0]
-            loc_y = g['location'][1]
-            loc_z = g['location'][2]
-          f.write ( "%s POLYGON_LIST\n" % g['name'] )
-          f.write ( "{\n" )
-          if 'vertex_list' in g:
-            f.write ( "  VERTEX_LIST\n" )
-            f.write ( "  {\n" )
-            for v in g['vertex_list']:
-              f.write ( "    [ %.15g, %.15g, %.15g ]\n" % ( loc_x+v[0], loc_y+v[1], loc_z+v[2] ) )
-            f.write ( "  }\n" )
-          if 'element_connections' in g:
-            f.write ( "  ELEMENT_CONNECTIONS\n" )
-            f.write ( "  {\n" )
-            for c in g['element_connections']:
-              f.write ( "    [ %d, %d, %d ]\n" % ( c[0], c[1], c[2] ) )
-            f.write ( "  }\n" )
-          if 'define_surface_regions' in g:
-            f.write ( "  DEFINE_SURFACE_REGIONS\n" )
-            f.write ( "  {\n" )
-            for r in g['define_surface_regions']:
-              f.write ( "    %s\n" % r['name'] )
-              f.write ( "    {\n" )
-              if 'include_elements' in r:
-                int_regs = [ int(r) for r in r['include_elements'] ]
-                f.write ( "      ELEMENT_LIST = " + str(int_regs) + "\n" )
-              f.write ( "    }\n" )
-            f.write ( "  }\n" )
-          f.write ( "}\n")
-          f.write ( "\n" );
+          obj = [ o for o in objs['model_object_list'] if o['name'] == g['name'] ][0]
+          if obj['dynamic']:
+            # Don't write dynamic objects here
+            pass
+          else:
+            # Write static objects here
+            loc_x = 0.0
+            loc_y = 0.0
+            loc_z = 0.0
+            if 'location' in g:
+              loc_x = g['location'][0]
+              loc_y = g['location'][1]
+              loc_z = g['location'][2]
+            f.write ( "%s POLYGON_LIST\n" % g['name'] )
+            f.write ( "{\n" )
+            if 'vertex_list' in g:
+              f.write ( "  VERTEX_LIST\n" )
+              f.write ( "  {\n" )
+              for v in g['vertex_list']:
+                f.write ( "    [ %.15g, %.15g, %.15g ]\n" % ( loc_x+v[0], loc_y+v[1], loc_z+v[2] ) )
+              f.write ( "  }\n" )
+            if 'element_connections' in g:
+              f.write ( "  ELEMENT_CONNECTIONS\n" )
+              f.write ( "  {\n" )
+              for c in g['element_connections']:
+                f.write ( "    [ %d, %d, %d ]\n" % ( c[0], c[1], c[2] ) )
+              f.write ( "  }\n" )
+            if 'define_surface_regions' in g:
+              f.write ( "  DEFINE_SURFACE_REGIONS\n" )
+              f.write ( "  {\n" )
+              for r in g['define_surface_regions']:
+                f.write ( "    %s\n" % r['name'] )
+                f.write ( "    {\n" )
+                if 'include_elements' in r:
+                  int_regs = [ int(r) for r in r['include_elements'] ]
+                  f.write ( "      ELEMENT_LIST = " + str(int_regs) + "\n" )
+                f.write ( "    }\n" )
+              f.write ( "  }\n" )
+            f.write ( "}\n")
+            f.write ( "\n" );
 
 
-def write_instances ( objs, geom, rels, mols, f ):
+def write_static_instances ( objs, geom, f ):
     #TODO Note that the use of "Scene" here is a temporary measure!!!!
-    f.write ( "INSTANTIATE Scene OBJECT\n" )
+    if (objs != None) and (geom != None):
+      if 'model_object_list' in objs:
+        num_static = 0
+        for o in objs['model_object_list']:
+          if not o['dynamic']:
+            num_static += 1
+        if num_static > 0:
+          f.write ( "INSTANTIATE Scene OBJECT\n" )
+          f.write ( "/* Static objects in the scene */\n" )
+          f.write ( "{\n" )
+          for o in objs['model_object_list']:
+            if not o['dynamic']:
+              f.write ( "  %s OBJECT %s {}\n" % (o['name'], o['name']) )
+          f.write ( "}\n" )
+          f.write("\n")
+
+def write_release_sites ( rels, mols, f ):
+    #TODO Note that the use of "Scene" here is a temporary measure!!!!
+    f.write ( "INSTANTIATE Releases OBJECT\n" )
     f.write ( "{\n" )
-    if geom != None:
-      if 'object_list' in geom:
-        glist = geom['object_list']
-        if len(glist) > 0:
-          for g in glist:
-            f.write ( "  %s OBJECT %s {}\n" % (g['name'], g['name']) )
     if rels != None:
       if 'release_site_list' in rels:
         rlist = rels['release_site_list']
