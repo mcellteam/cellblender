@@ -207,6 +207,10 @@ def write_as_mdl ( obj_name, points, faces, regions_dict, origin=None, file_name
 def write_mdl ( dm, file_name ):
     """ Write a data model to a named file (generally follows "export_mcell_mdl" ordering) """
 
+    print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+    print ( "Top of data_model_to_mdl.write_mdl() to " + str(file_name) )
+    print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
     # First check for any dynamic objects in the data model
     num_dynamic = len ( [ True for o in dm['mcell']['model_objects']['model_object_list'] if o['dynamic'] ] )
 
@@ -242,13 +246,18 @@ def write_mdl ( dm, file_name ):
         pats = mcell['define_release_patterns']
         write_release_patterns ( pats, f )
       if ('geometrical_objects' in mcell) or ('release_sites' in mcell):
+        # CellBlender also has a "Model Objects" which carries model-related data
+        # It's not clear which should be used to trigger this case
+        objs = None
         geom = None
         rels = None
+        if 'model_objects' in mcell:
+          objs = mcell['model_objects']
         if 'geometrical_objects' in mcell:
           geom = mcell['geometrical_objects']
         if 'release_sites' in mcell:
           rels = mcell['release_sites']
-        write_instances ( geom, rels, mcell['define_molecules'], f )
+        write_instances ( objs, geom, rels, mcell['define_molecules'], f )
 
       f.write("sprintf(seed,\"%05g\",SEED)\n\n")
 
@@ -787,7 +796,7 @@ def write_geometry ( geom, f ):
           f.write ( "\n" );
 
 
-def write_instances ( geom, rels, mols, f ):
+def write_instances ( objs, geom, rels, mols, f ):
     #TODO Note that the use of "Scene" here is a temporary measure!!!!
     f.write ( "INSTANTIATE Scene OBJECT\n" )
     f.write ( "{\n" )
