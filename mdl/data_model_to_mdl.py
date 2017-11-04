@@ -30,6 +30,7 @@ data model and provide the most current to this function.
 import pickle
 import sys
 import json
+import os
 
 #### Helper Functions ####
 
@@ -148,8 +149,73 @@ List of CellBlender files containing Data Model code:
     parameter_system.py                Parameter_Data ParameterSystemPropertyGroup
 """
 
+
+# These were added to support dynamic geometry export from Blender
+# These should not be needed for non-Blender export.
+import bpy
+
+def write_as_mdl ( obj_name, points, faces, regions_dict, origin=None, file_name=None, partitions=False, instantiate=False ):
+  if file_name != None:
+    out_file = open ( file_name, "w" )
+    if partitions:
+        out_file.write ( "PARTITION_X = [[-2.0 TO 2.0 STEP 0.5]]\n" )
+        out_file.write ( "PARTITION_Y = [[-2.0 TO 2.0 STEP 0.5]]\n" )
+        out_file.write ( "PARTITION_Z = [[-2.0 TO 2.0 STEP 0.5]]\n" )
+        out_file.write ( "\n" )
+    out_file.write ( "%s POLYGON_LIST\n" % (obj_name) )
+    out_file.write ( "{\n" )
+    out_file.write ( "  VERTEX_LIST\n" )
+    out_file.write ( "  {\n" )
+    for p in points:
+        out_file.write ( "    [ " + str(p[0]) + ", " + str(p[1]) + ", " + str(p[2]) + " ]\n" );
+    out_file.write ( "  }\n" )
+    out_file.write ( "  ELEMENT_CONNECTIONS\n" )
+    out_file.write ( "  {\n" )
+    for f in faces:
+        s = "    [ " + str(f[0]) + ", " + str(f[1]) + ", " + str(f[2]) + " ]\n"
+        out_file.write ( s );
+    out_file.write ( "  }\n" )
+
+    if regions_dict:
+        # Begin SURFACE_REGIONS block
+        out_file.write("  DEFINE_SURFACE_REGIONS\n")
+        out_file.write("  {\n")
+
+        region_names = [k for k in regions_dict.keys()]
+        region_names.sort()
+        for region_name in region_names:
+            out_file.write("    %s\n" % (region_name))
+            out_file.write("    {\n")
+            out_file.write("      ELEMENT_LIST = " +
+                           str(regions_dict[region_name])+'\n')
+            out_file.write("    }\n")
+
+        # close SURFACE_REGIONS block
+        out_file.write("  }\n")
+
+
+    if origin != None:
+        out_file.write ( "  TRANSLATE = [ %.15g, %.15g, %.15g ]\n" % (origin[0], origin[1], origin[2] ) )
+    out_file.write ( "}\n" )
+    if instantiate:
+        out_file.write ( "\n" )
+        out_file.write ( "INSTANTIATE Scene OBJECT {  /* write_as_mdl */\n" )
+        out_file.write ( "  %s OBJECT %s {}\n" % (obj_name, obj_name) )
+        out_file.write ( "}\n" )
+    out_file.close()
+
+
+
 def write_mdl ( dm, file_name ):
     """ Write a data model to a named file (generally follows "export_mcell_mdl" ordering) """
+
+    print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+    print ( "Top of data_model_to_mdl.write_mdl() to " + str(file_name) )
+    print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+
+    # First check for any dynamic objects in the data model
+    num_dynamic = len ( [ True for o in dm['mcell']['model_objects']['model_object_list'] if o['dynamic'] ] )
+
     f = open ( file_name, 'w' )
     # f.write ( "/* MDL Generated from Data Model */\n" )
     if ('mcell' in dm):
@@ -159,7 +225,10 @@ def write_mdl ( dm, file_name ):
         write_parameter_system ( ps, f )
       if 'initialization' in mcell:
         init = mcell['initialization']
-        write_initialization ( init, f )
+        if num_dynamic > 0:
+          write_initialization ( init, f, dyn_fn='dyn_geom_list.txt' )
+        else:
+          write_initialization ( init, f )
         if 'partitions' in init:
           parts = mcell['initialization']['partitions']
           write_partitions ( parts, f )
@@ -172,23 +241,33 @@ def write_mdl ( dm, file_name ):
       if 'define_reactions' in mcell:
         reacts = mcell['define_reactions']
         write_reactions ( reacts, f )
-      if 'geometrical_objects' in mcell:
-        geom = mcell['geometrical_objects']
-        write_geometry ( geom, f )
+      if num_dynamic == 0:
+        # MCell currently requires all objects to be either static or dynamic
+        # So only write static objects if there are NO dynamic objects
+        if ('model_objects' in mcell) and ('geometrical_objects' in mcell):
+          objs = mcell['model_objects']
+          geom = mcell['geometrical_objects']
+          write_static_geometry ( objs, geom, f )
       if 'modify_surface_regions' in mcell:
         modsurfrs = mcell['modify_surface_regions']
         write_modify_surf_regions ( modsurfrs, f )
       if 'define_release_patterns' in mcell:
         pats = mcell['define_release_patterns']
         write_release_patterns ( pats, f )
-      if ('geometrical_objects' in mcell) or ('release_sites' in mcell):
+      if 'geometrical_objects' in mcell:
+        # CellBlender also has a "Model Objects" which carries model-related data
+        # It's not clear which should be used to trigger this case
+        objs = None
         geom = None
-        rels = None
+        if 'model_objects' in mcell:
+          objs = mcell['model_objects']
         if 'geometrical_objects' in mcell:
           geom = mcell['geometrical_objects']
-        if 'release_sites' in mcell:
-          rels = mcell['release_sites']
-        write_instances ( geom, rels, mcell['define_molecules'], f )
+        if num_dynamic == 0:
+          write_static_instances ( objs, geom, f )
+      if 'release_sites' in mcell:
+        rels = mcell['release_sites']
+        write_release_sites ( rels, mcell['define_molecules'], f )
 
       f.write("sprintf(seed,\"%05g\",SEED)\n\n")
 
@@ -212,6 +291,171 @@ def write_mdl ( dm, file_name ):
         write_react_out ( reactout, mols, time_step, f )
 
     f.close()
+
+    # Check for any dynamic objects, and update MDL as needed
+
+    num_dynamic = len ( [ True for o in dm['mcell']['model_objects']['model_object_list'] if o['dynamic'] ] )
+    if num_dynamic > 0:
+    
+      # This code must add the following to each directory where MDL is written:
+      #   dyn_geom_list.txt
+      #   dynamic_geometry directory containing <object_name>_frame_#.mdl files
+      # This code must also update the existing MDL files
+      # For a non-swept project, this should look like:
+      #   blend_files/
+      #   blend_files/mcell
+      #              /mcell/output_data
+      #              /mcell/output_data
+      #              /mcell/output_data/.../
+      #                    /output_data/.../react_data/...
+      #                    /output_data/.../viz_data/...
+      #                    /output_data/.../Scene.main.mdl       // MDL file (along with others)
+      #                    /output_data/.../dyn_geom_list.txt    // List of frame files relative to output_data
+      #                    /output_data/.../dynamic_geometry     // Location of actual frame files
+      #                                /.../dynamic_geometry/Obj_frame_0.mdl
+      #                                /.../dynamic_geometry/Obj_frame_1.mdl
+      #                                   :
+      #                                /.../dynamic_geometry/Obj_frame_n.mdl
+      #
+      # For swept projects, there will be additional directories (...) appended directly after "output_data".
+
+
+      filepath = os.path.dirname(file_name)
+      context = bpy.context
+
+      print ( "Exporting dynamic objects from data_model_to_mdl.write_mdl() to " + str(filepath) )
+      print ( "  file_name = " + str(file_name) )
+
+      # Filter or replace problem characters (like space, ...)
+      scene_name = context.scene.name.replace(" ", "_")
+
+      # Save the current frame to restore later
+      fc = context.scene.frame_current
+
+      # Generate the dynamic geometry
+
+      geom_list_name = 'dyn_geom_list.txt'
+      geom_list_file = open(os.path.join(filepath,geom_list_name), "w", encoding="utf8", newline="\n")
+      path_to_dg_files = os.path.join ( filepath, "dynamic_geometry" )
+      if not os.path.exists(path_to_dg_files):
+          os.makedirs(path_to_dg_files)
+
+
+      iterations = context.scene.mcell.initialization.iterations.get_value()
+      time_step = context.scene.mcell.initialization.time_step.get_value()
+      print ( "iterations = " + str(iterations) + ", time_step = " + str(time_step) )
+
+      # Build the script list first as a dictionary by object names so they aren't read at every iteration
+      # It might also be efficient if these could be precompiled at this time (rather than in the loop).
+      script_dict = {}
+      for obj in context.scene.mcell.model_objects.object_list:
+          if obj.dynamic:
+              if len(obj.script_name) > 0:
+                  # script_text = bpy.data.texts[obj.script_name].as_string()
+                  compiled_text = compile ( bpy.data.texts[obj.script_name].as_string(), '<string>', 'exec' )
+                  script_dict[obj.script_name] = compiled_text
+
+      # Save state of mol_viz_enable and disable mol viz during frame change for dynamic geometry
+      mol_viz_state = context.scene.mcell.mol_viz.mol_viz_enable
+      context.scene.mcell.mol_viz.mol_viz_enable = False
+
+      for frame_number in range(iterations+1):
+          ####################################################################
+          #
+          #  This section essentially defines the interface to the user's
+          #  dynamic geometry code. Right now it's being done through 5 global
+          #  variables which will be in the user's environment when they run:
+          #
+          #     frame_number
+          #     time_step
+          #     points[]
+          #     faces[]
+          #     origin[]
+          #
+          #  The user code gets the frame number as input and fills in both the
+          #  points and faces arrays (lists). The format is fairly standard with
+          #  each point being a list of 3 double values [x, y, z], and with each
+          #  face being a list of 3 point indexes defining a triangle with outward
+          #  facing normals using the right hand rule. The index values are the
+          #  integer offsets into the points array starting with index 0.
+          #  This is a very primitive interface, and it may be subject to change.
+          #
+          ####################################################################
+
+
+          # Set the frame number for Blender
+          context.scene.frame_set(frame_number)
+
+          # Write out the individual MDL files for each dynamic object at this frame
+          for obj in context.scene.mcell.model_objects.object_list:
+              # MCell currently requires all objects to be either static or dynamic
+              # So if we're here, that means ALL objects should be written as dynamic
+              if   True   or obj.dynamic:
+                  # print ( "  Iteration " + str(frame_number) + ", Saving geometry for object " + obj.name + " using script \"" + obj.script_name + "\"" )
+                  points = []
+                  faces = []
+                  regions_dict = None
+                  origin = [0,0,0]
+                  if len(obj.script_name) > 0:
+                      # Let the script create the geometry
+                      print ( "Build object mesh from user script for frame " + str(frame_number) )
+                      #script_text = script_dict[obj.script_name]
+                      #print ( 80*"=" )
+                      #print ( script_text )
+                      #print ( 80*"=" )
+                      # exec ( script_dict[obj.script_name], locals() )
+                      exec ( script_dict[obj.script_name] )
+                  else:
+                      # Get the geometry from the object (presumably animated by Blender)
+
+                      print ( "Build MDL mesh from Blender object for frame " + str(frame_number) )
+                      import mathutils
+
+                      geom_obj = context.scene.objects[obj.name]
+                      mesh = geom_obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
+                      mesh.transform(mathutils.Matrix() * geom_obj.matrix_world)
+                      points = [v.co for v in mesh.vertices]
+                      faces = [f.vertices for f in mesh.polygons]
+                      regions_dict = geom_obj.mcell.get_regions_dictionary(geom_obj)
+                      del mesh
+
+                  f_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
+                  full_file_name = os.path.join(path_to_dg_files,f_name)
+                  write_as_mdl ( obj.name, points, faces, regions_dict, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
+                  #geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",f_name)))
+
+          # Write out the "master" MDL file for this frame
+
+          frame_file_name = os.path.join(".","dynamic_geometry","frame_%d.mdl"%(frame_number))
+          full_frame_file_name = os.path.join(path_to_dg_files,"frame_%d.mdl"%(frame_number))
+          frame_file = open(full_frame_file_name, "w", encoding="utf8", newline="\n")
+
+          # Write the INCLUDE statements
+          for obj in context.scene.mcell.model_objects.object_list:
+              if   True   or obj.dynamic:
+                  f_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
+                  frame_file.write ( "INCLUDE_FILE = \"%s\"\n" % (f_name) )
+
+          # Write the INSTANTIATE statement for this frame
+          frame_file.write ( "INSTANTIATE Scene OBJECT {  /* write_mdl for each frame */\n" )
+          for obj in context.scene.mcell.model_objects.object_list:
+              if   True   or obj.dynamic:
+                  frame_file.write ( "  %s OBJECT %s {}\n" % (obj.name, obj.name) )
+          frame_file.write ( "}\n" )
+          frame_file.close()
+
+          geom_list_file.write('%.9g %s\n' % (frame_number*time_step, frame_file_name))
+
+      geom_list_file.close()
+
+      # Restore setting for mol viz
+      context.scene.mcell.mol_viz.mol_viz_enable = mol_viz_state
+
+      # Restore the current frame
+      context.scene.frame_set(fc)
+
+
+
 
 
 def write_parameter_system ( ps, f ):
@@ -246,6 +490,7 @@ def write_parameter_system ( ps, f ):
         f.write ( "/* DEFINE PARAMETERS */\n" );
 
         for p in mplist:
+          print ( "   Parameter " + str(p['par_name']) + " = " + "%.15g"%(p['_extras']['par_value']) )
 
           # Write the name = val portion of the definition
           if True:
@@ -262,11 +507,13 @@ def write_parameter_system ( ps, f ):
         f.write ( "\n" );
 
 
-def write_initialization ( init, f ):
+def write_initialization ( init, f, dyn_fn=None ):
     write_dm_str_val ( init, f, 'iterations',                'ITERATIONS' )
     write_dm_str_val ( init, f, 'time_step',                 'TIME_STEP' )
-    write_dm_str_val ( init, f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
+    if dyn_fn != None:
+      f.write ( "DYNAMIC_GEOMETRY = \"%s\"\n" % (dyn_fn) )
     f.write ( "\n" )
+    write_dm_str_val ( init, f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
     write_dm_str_val ( init, f, 'time_step_max',             'TIME_STEP_MAX' )
     write_dm_str_val ( init, f, 'space_step',                'SPACE_STEP' )
     write_dm_str_val ( init, f, 'interaction_radius',        'INTERACTION_RADIUS' )
@@ -441,57 +688,79 @@ def write_reactions ( reacts, f ):
         f.write("\n")
 
 
-def write_geometry ( geom, f ):
+def write_static_geometry ( objs, geom, f ):
     if 'object_list' in geom:
       glist = geom['object_list']
       if len(glist) > 0:
         for g in glist:
-          loc_x = 0.0
-          loc_y = 0.0
-          loc_z = 0.0
-          if 'location' in g:
-            loc_x = g['location'][0]
-            loc_y = g['location'][1]
-            loc_z = g['location'][2]
-          f.write ( "%s POLYGON_LIST\n" % g['name'] )
-          f.write ( "{\n" )
-          if 'vertex_list' in g:
-            f.write ( "  VERTEX_LIST\n" )
-            f.write ( "  {\n" )
-            for v in g['vertex_list']:
-              f.write ( "    [ %.15g, %.15g, %.15g ]\n" % ( loc_x+v[0], loc_y+v[1], loc_z+v[2] ) )
-            f.write ( "  }\n" )
-          if 'element_connections' in g:
-            f.write ( "  ELEMENT_CONNECTIONS\n" )
-            f.write ( "  {\n" )
-            for c in g['element_connections']:
-              f.write ( "    [ %d, %d, %d ]\n" % ( c[0], c[1], c[2] ) )
-            f.write ( "  }\n" )
-          if 'define_surface_regions' in g:
-            f.write ( "  DEFINE_SURFACE_REGIONS\n" )
-            f.write ( "  {\n" )
-            for r in g['define_surface_regions']:
-              f.write ( "    %s\n" % r['name'] )
-              f.write ( "    {\n" )
-              if 'include_elements' in r:
-                int_regs = [ int(r) for r in r['include_elements'] ]
-                f.write ( "      ELEMENT_LIST = " + str(int_regs) + "\n" )
-              f.write ( "    }\n" )
-            f.write ( "  }\n" )
-          f.write ( "}\n")
-          f.write ( "\n" );
+          obj = [ o for o in objs['model_object_list'] if o['name'] == g['name'] ][0]
+          # MCell currently requires all objects to be either static or dynamic
+          # Since this is "write_static_geometry", then assume all objects are
+          #   to be written as static regardless of their obj['dynamic'] flag
+          if False and obj['dynamic']:
+            # Don't write dynamic objects here
+            # This branch is here for future writing of only static objects
+            pass
+          else:
+            # Write static objects here
+            loc_x = 0.0
+            loc_y = 0.0
+            loc_z = 0.0
+            if 'location' in g:
+              loc_x = g['location'][0]
+              loc_y = g['location'][1]
+              loc_z = g['location'][2]
+            f.write ( "%s POLYGON_LIST\n" % g['name'] )
+            f.write ( "{\n" )
+            if 'vertex_list' in g:
+              f.write ( "  VERTEX_LIST\n" )
+              f.write ( "  {\n" )
+              for v in g['vertex_list']:
+                f.write ( "    [ %.15g, %.15g, %.15g ]\n" % ( loc_x+v[0], loc_y+v[1], loc_z+v[2] ) )
+              f.write ( "  }\n" )
+            if 'element_connections' in g:
+              f.write ( "  ELEMENT_CONNECTIONS\n" )
+              f.write ( "  {\n" )
+              for c in g['element_connections']:
+                f.write ( "    [ %d, %d, %d ]\n" % ( c[0], c[1], c[2] ) )
+              f.write ( "  }\n" )
+            if 'define_surface_regions' in g:
+              f.write ( "  DEFINE_SURFACE_REGIONS\n" )
+              f.write ( "  {\n" )
+              for r in g['define_surface_regions']:
+                f.write ( "    %s\n" % r['name'] )
+                f.write ( "    {\n" )
+                if 'include_elements' in r:
+                  int_regs = [ int(r) for r in r['include_elements'] ]
+                  f.write ( "      ELEMENT_LIST = " + str(int_regs) + "\n" )
+                f.write ( "    }\n" )
+              f.write ( "  }\n" )
+            f.write ( "}\n")
+            f.write ( "\n" );
 
 
-def write_instances ( geom, rels, mols, f ):
+def write_static_instances ( objs, geom, f ):
     #TODO Note that the use of "Scene" here is a temporary measure!!!!
-    f.write ( "INSTANTIATE Scene OBJECT\n" )
+    if (objs != None) and (geom != None):
+      if 'model_object_list' in objs:
+        num_static = 0
+        for o in objs['model_object_list']:
+          if not o['dynamic']:
+            num_static += 1
+        if num_static > 0:
+          f.write ( "INSTANTIATE Scene OBJECT  /* write_static_instances */\n" )
+          f.write ( "/* Static objects in the scene */\n" )
+          f.write ( "{\n" )
+          for o in objs['model_object_list']:
+            if not o['dynamic']:
+              f.write ( "  %s OBJECT %s {}\n" % (o['name'], o['name']) )
+          f.write ( "}\n" )
+          f.write("\n")
+
+def write_release_sites ( rels, mols, f ):
+    #TODO Note that the use of "Scene" here is a temporary measure!!!!
+    f.write ( "INSTANTIATE Releases OBJECT\n" )
     f.write ( "{\n" )
-    if geom != None:
-      if 'object_list' in geom:
-        glist = geom['object_list']
-        if len(glist) > 0:
-          for g in glist:
-            f.write ( "  %s OBJECT %s {}\n" % (g['name'], g['name']) )
     if rels != None:
       if 'release_site_list' in rels:
         rlist = rels['release_site_list']

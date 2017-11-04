@@ -407,6 +407,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
 
 
     def execute(self, context):
+        print ( "+++++++++++++ Begin: mcell.run_simulation_sweep_queue +++++++++++++" )
 
         mcell = context.scene.mcell
         run_sim = mcell.run_simulation
@@ -425,23 +426,20 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
         python_path = cellblender.cellblender_utils.get_python_path(mcell=mcell)
 
         if python_path:
-            if not mcell.cellblender_preferences.decouple_export_run:
-                bpy.ops.mcell.export_project()
+            #if not mcell.cellblender_preferences.decouple_export_run:
+            #    bpy.ops.mcell.export_project()
 
-            if (run_sim.error_list and
-                    mcell.cellblender_preferences.invalid_policy == 'dont_run'):
+            if (run_sim.error_list and mcell.cellblender_preferences.invalid_policy == 'dont_run'):
                 pass
             else:
                 react_dir = os.path.join(project_dir, "output_data", "react_data")
-                if (os.path.exists(react_dir) and
-                        run_sim.remove_append == 'remove'):
+                if (os.path.exists(react_dir) and run_sim.remove_append == 'remove'):
                     shutil.rmtree(react_dir)
                 if not os.path.exists(react_dir):
                     os.makedirs(react_dir)
 
                 viz_dir = os.path.join(project_dir, "output_data", "viz_data")
-                if (os.path.exists(viz_dir) and
-                        run_sim.remove_append == 'remove'):
+                if (os.path.exists(viz_dir) and run_sim.remove_append == 'remove'):
                     shutil.rmtree(viz_dir)
                 if not os.path.exists(viz_dir):
                     os.makedirs(viz_dir)
@@ -475,7 +473,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                 # Build a list of "run commands" (one for each run) to be put in the queue
                 # Note that the format of these came from the original "run_simulations.py" program and may not be what we want in the long run
                 run_cmd_list = []
-                # Build a sweep list with a "output_data" prefix directory
+                # Build a sweep list with an "output_data" prefix directory
                 for run in range (num_sweep_runs):
                     sweep_path = "output_data"
                     for sw_item in sweep_list:
@@ -554,65 +552,12 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                   bpy.ops.mcell.percentage_done_timer()
 
 
-
-
-
-
-                if False:
-                        # Old code from original queue runner
-                        print ( "DELETE ME!!!" )
-                        # Output the default until actual sweep code is completed
-                        engine_manager.write_default_data_layout(project_dir, start_seed, end_seed)
-
-
-
-                        processes_list = run_sim.processes_list
-                        for seed in range(start_seed,end_seed + 1):
-                          processes_list.add()
-                          run_sim.active_process_index = len(
-                              run_sim.processes_list) - 1
-                          simulation_process = processes_list[
-                              run_sim.active_process_index]
-
-                          print("Starting MCell ... create start_time.txt file:")
-                          with open(os.path.join(os.path.dirname(bpy.data.filepath),
-                                    "start_time.txt"), "w") as start_time_file:
-                              start_time_file.write(
-                                  "Started simulation at: " + (str(time.ctime())) + "\n")
-
-                          # Log filename will be log.year-month-day_hour:minute_seed.txt
-                          # (e.g. log.2013-03-12_11:45_1.txt)
-                          time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
-
-                          if error_file_option == 'file':
-                              error_filename = "error.%s_%d.txt" % (time_now, seed)
-                          elif error_file_option == 'none':
-                              error_file = subprocess.DEVNULL
-                          elif error_file_option == 'console':
-                              error_file = None
-
-                          if log_file_option == 'file':
-                              log_filename = "log.%s_%d.txt" % (time_now, seed)
-                          elif log_file_option == 'none':
-                              log_file = subprocess.DEVNULL
-                          elif log_file_option == 'console':
-                              log_file = None
-
-                          mdl_filename = '%s.main.mdl' % (base_name)
-                          mcell_args = '-seed %d %s' % (seed, mdl_filename)
-                          make_texts = run_sim.save_text_logs
-                          proc = cellblender.simulation_queue.add_task(mcell_binary, mcell_args, os.path.join(project_dir, "output_data"), make_texts)
-
-                          self.report({'INFO'}, "Simulation Running")
-
-                          if not simulation_process.name:
-                              simulation_process.name = ("PID: %d, Seed: %d" % (proc.pid, seed))
-                          bpy.ops.mcell.percentage_done_timer()
-
         else:
             status = "Python not found. Set it in Project Settings."
 
         run_sim.status = status
+
+        print ( "+++++++++++++ Exit: mcell.run_simulation_sweep_queue +++++++++++++" )
 
         return {'FINISHED'}
 
@@ -1947,9 +1892,9 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     simulation_engine_and_run_enum = [
          ('SWEEP_QUEUE', "MCell Local", ""),
          ('SWEEP_SGE', "MCell SGE", ""),
-         #('QUEUE', "MCell via Queue Runner", ""),
          #('COMMAND', "MCell via Command Line", ""),
          #('SWEEP', "MCell via Sweep Runner", ""),
+         ('QUEUE', "MCell via Queue Runner", ""),       # This should be commented out once the SWEEP_QUEUE is working with Dynamic Geometry
          ('DYNAMIC', "Engine/Runner (Experimental)", "") ]
 
     simulation_run_control = EnumProperty(
