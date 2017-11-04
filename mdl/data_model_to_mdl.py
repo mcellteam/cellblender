@@ -152,7 +152,13 @@ List of CellBlender files containing Data Model code:
 
 # These were added to support dynamic geometry export from Blender
 # These should not be needed for non-Blender export.
-import bpy
+has_blender = False
+try:
+  import bpy
+  has_blender = True
+except:
+  pass
+
 
 def write_as_mdl ( obj_name, points, faces, regions_dict, origin=None, file_name=None, partitions=False, instantiate=False ):
   if file_name != None:
@@ -321,16 +327,22 @@ def write_mdl ( dm, file_name ):
 
 
       filepath = os.path.dirname(file_name)
-      context = bpy.context
+
+      context = None
+      if has_blender:
+          context = bpy.context
 
       print ( "Exporting dynamic objects from data_model_to_mdl.write_mdl() to " + str(filepath) )
       print ( "  file_name = " + str(file_name) )
 
-      # Filter or replace problem characters (like space, ...)
-      scene_name = context.scene.name.replace(" ", "_")
+      scene_name = "Scene"
+      fc = None
+      if has_blender:
+          # Filter or replace problem characters (like space, ...)
+          scene_name = context.scene.name.replace(" ", "_")
 
-      # Save the current frame to restore later
-      fc = context.scene.frame_current
+          # Save the current frame to restore later
+          fc = context.scene.frame_current
 
       # Generate the dynamic geometry
 
@@ -340,24 +352,44 @@ def write_mdl ( dm, file_name ):
       if not os.path.exists(path_to_dg_files):
           os.makedirs(path_to_dg_files)
 
+      iterations = None
+      time_step = None
+      if has_blender:
+          iterations = context.scene.mcell.initialization.iterations.get_value()
+          time_step = context.scene.mcell.initialization.time_step.get_value()
+      else:
+          # Note that these conversions might not work if these are expressions.
+          # In that case, parameter evaluation will have to be done to get a value.
+          # For now, assume that they're plain numeric values.
+          iterations = int(dm['mcell']['initialization']['iterations'])
+          time_step  = float(dm['mcell']['initialization']['time_step'])
 
-      iterations = context.scene.mcell.initialization.iterations.get_value()
-      time_step = context.scene.mcell.initialization.time_step.get_value()
       print ( "iterations = " + str(iterations) + ", time_step = " + str(time_step) )
 
       # Build the script list first as a dictionary by object names so they aren't read at every iteration
       # It might also be efficient if these could be precompiled at this time (rather than in the loop).
       script_dict = {}
-      for obj in context.scene.mcell.model_objects.object_list:
-          if obj.dynamic:
-              if len(obj.script_name) > 0:
-                  # script_text = bpy.data.texts[obj.script_name].as_string()
-                  compiled_text = compile ( bpy.data.texts[obj.script_name].as_string(), '<string>', 'exec' )
-                  script_dict[obj.script_name] = compiled_text
+      print ( "\n\nBuilding Script List:" )
+      if ('mcell' in dm) and ('scripting' in dm['mcell']) and ('script_texts' in dm['mcell']['scripting']):
+          mcell = dm['mcell']
+          scr_txts = mcell['scripting']['script_texts']
+          print ( "Script text names: " + str(scr_txts.keys()) )
+
+          if ('model_objects' in mcell) and ('model_object_list' in mcell['model_objects']):
+              mo_list = mcell['model_objects']['model_object_list']
+              for obj in mo_list:
+                  if obj['dynamic']:
+                      if len(obj['script_name']) > 0:
+                          script_name = obj['script_name']
+                          script_text = scr_txts[script_name]
+                          compiled_text = compile ( script_text, '<string>', 'exec' )
+                          script_dict[script_name] = compiled_text
 
       # Save state of mol_viz_enable and disable mol viz during frame change for dynamic geometry
-      mol_viz_state = context.scene.mcell.mol_viz.mol_viz_enable
-      context.scene.mcell.mol_viz.mol_viz_enable = False
+      mol_viz_state = None
+      if has_blender:
+          mol_viz_state = context.scene.mcell.mol_viz.mol_viz_enable
+          context.scene.mcell.mol_viz.mol_viz_enable = False
 
       for frame_number in range(iterations+1):
           ####################################################################
@@ -383,20 +415,22 @@ def write_mdl ( dm, file_name ):
           ####################################################################
 
 
-          # Set the frame number for Blender
-          context.scene.frame_set(frame_number)
+          if has_blender:
+              # Set the frame number for Blender
+              context.scene.frame_set(frame_number)
 
           # Write out the individual MDL files for each dynamic object at this frame
-          for obj in context.scene.mcell.model_objects.object_list:
+          if ('mcell' in dm) and ('model_objects' in mcell) and ('model_object_list' in mcell['model_objects']):
+            for obj in dm['mcell']['model_objects']['model_object_list']:
               # MCell currently requires all objects to be either static or dynamic
               # So if we're here, that means ALL objects should be written as dynamic
-              if   True   or obj.dynamic:
+              if   True   or obj['dynamic']:
                   # print ( "  Iteration " + str(frame_number) + ", Saving geometry for object " + obj.name + " using script \"" + obj.script_name + "\"" )
                   points = []
                   faces = []
                   regions_dict = None
                   origin = [0,0,0]
-                  if len(obj.script_name) > 0:
+                  if len(obj['script_name']) > 0:
                       # Let the script create the geometry
                       print ( "Build object mesh from user script for frame " + str(frame_number) )
                       #script_text = script_dict[obj.script_name]
@@ -404,24 +438,32 @@ def write_mdl ( dm, file_name ):
                       #print ( script_text )
                       #print ( 80*"=" )
                       # exec ( script_dict[obj.script_name], locals() )
-                      exec ( script_dict[obj.script_name] )
-                  else:
+                      exec ( script_dict[obj['script_name']] )
+                  elif has_blender:
                       # Get the geometry from the object (presumably animated by Blender)
 
                       print ( "Build MDL mesh from Blender object for frame " + str(frame_number) )
                       import mathutils
 
-                      geom_obj = context.scene.objects[obj.name]
+                      geom_obj = context.scene.objects[obj['name']]
                       mesh = geom_obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
                       mesh.transform(mathutils.Matrix() * geom_obj.matrix_world)
                       points = [v.co for v in mesh.vertices]
                       faces = [f.vertices for f in mesh.polygons]
                       regions_dict = geom_obj.mcell.get_regions_dictionary(geom_obj)
                       del mesh
-
-                  f_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
+                  else:
+                      # Use the object's original static geometry from the data model
+                      if ('mcell' in dm) and ('geometrical_objects' in dm['mcell']) and ('object_list' in dm['mcell']['geometrical_objects']):
+                          mcell = dm['mcell']
+                          for o in mcell['geometrical_objects']['object_list']:
+                              if o['name'] == obj['name']:
+                                  points = o['vertex_list']
+                                  faces = o['element_connections']
+                                  origin = o['location']
+                  f_name = "%s_frame_%d.mdl"%(obj['name'],frame_number)
                   full_file_name = os.path.join(path_to_dg_files,f_name)
-                  write_as_mdl ( obj.name, points, faces, regions_dict, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
+                  write_as_mdl ( obj['name'], points, faces, regions_dict, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
                   #geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",f_name)))
 
           # Write out the "master" MDL file for this frame
@@ -431,16 +473,20 @@ def write_mdl ( dm, file_name ):
           frame_file = open(full_frame_file_name, "w", encoding="utf8", newline="\n")
 
           # Write the INCLUDE statements
-          for obj in context.scene.mcell.model_objects.object_list:
-              if   True   or obj.dynamic:
-                  f_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
+          if ('mcell' in dm) and ('model_objects' in mcell) and ('model_object_list' in mcell['model_objects']):
+            for obj in dm['mcell']['model_objects']['model_object_list']:
+              if   True   or obj['dynamic']:
+                  f_name = "%s_frame_%d.mdl"%(obj['name'],frame_number)
                   frame_file.write ( "INCLUDE_FILE = \"%s\"\n" % (f_name) )
 
           # Write the INSTANTIATE statement for this frame
           frame_file.write ( "INSTANTIATE Scene OBJECT {  /* write_mdl for each frame */\n" )
-          for obj in context.scene.mcell.model_objects.object_list:
-              if   True   or obj.dynamic:
-                  frame_file.write ( "  %s OBJECT %s {}\n" % (obj.name, obj.name) )
+
+          if ('mcell' in dm) and ('model_objects' in mcell) and ('model_object_list' in mcell['model_objects']):
+            for obj in dm['mcell']['model_objects']['model_object_list']:
+              if   True   or obj['dynamic']:
+                  frame_file.write ( "  %s OBJECT %s {}\n" % (obj['name'], obj['name']) )
+
           frame_file.write ( "}\n" )
           frame_file.close()
 
@@ -448,11 +494,12 @@ def write_mdl ( dm, file_name ):
 
       geom_list_file.close()
 
-      # Restore setting for mol viz
-      context.scene.mcell.mol_viz.mol_viz_enable = mol_viz_state
+      if has_blender:
+          # Restore setting for mol viz
+          context.scene.mcell.mol_viz.mol_viz_enable = mol_viz_state
 
-      # Restore the current frame
-      context.scene.frame_set(fc)
+          # Restore the current frame
+          context.scene.frame_set(fc)
 
 
 

@@ -128,7 +128,7 @@ def run_generic_runner (context, sim_module):
         if "runner_input" in dir(sim_module):
           runner_input = sim_module.runner_input
 
-        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=True )
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
         if runner_input.endswith("json"):
           data_model.save_data_model_to_json_file ( mcell_dm, os.path.join(project_dir,runner_input) )
         else:
@@ -620,7 +620,7 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
                 if not os.path.exists(sweep_dir):
                     os.makedirs(sweep_dir)
 
-                mcell_dm = mcell.build_data_model_from_properties ( context, geometry=True )
+                mcell_dm = mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
                 data_model.save_data_model_to_json_file ( mcell_dm, os.path.join(project_dir,"data_model.json") )
 
                 base_name = mcell.project_settings.base_name
@@ -1120,7 +1120,7 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
 
             if "run_engine" in dir(active_runner_module):
                 print ( "Selected Runner supports running the engine directly ... so pass the engine." )
-                dm = mcell.build_data_model_from_properties ( context, geometry=True )
+                dm = mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
                 active_runner_module.run_engine ( active_engine_module, dm, project_dir )
 
             else:
@@ -1130,10 +1130,10 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
                 if 'prepare_runs_no_data_model' in dir(active_engine_module):
                     command_list = active_engine_module.prepare_runs_no_data_model ( project_dir )
                 elif 'prepare_runs_data_model_no_geom' in dir(active_engine_module):
-                    dm = mcell.build_data_model_from_properties ( context, geometry=False )
+                    dm = mcell.build_data_model_from_properties ( context, geometry=False, scripts=True )
                     command_list = active_engine_module.prepare_runs_data_model_no_geom ( dm, project_dir )
                 elif 'prepare_runs_data_model_full' in dir(active_engine_module):
-                    dm = mcell.build_data_model_from_properties ( context, geometry=True )
+                    dm = mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
                     command_list = active_engine_module.prepare_runs_data_model_full ( dm, project_dir )
                 
                 if "run_commands" in dir(active_runner_module):
@@ -1890,11 +1890,11 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
 
     simulation_engine_and_run_enum = [
+         ('QUEUE', "MCell via Queue Runner", ""),       # This should be commented out once the SWEEP_QUEUE is working with Dynamic Geometry
          ('SWEEP_QUEUE', "MCell Local", ""),
          ('SWEEP_SGE', "MCell SGE", ""),
          #('COMMAND', "MCell via Command Line", ""),
          #('SWEEP', "MCell via Sweep Runner", ""),
-         ('QUEUE', "MCell via Queue Runner", ""),       # This should be commented out once the SWEEP_QUEUE is working with Dynamic Geometry
          ('DYNAMIC', "Engine/Runner (Experimental)", "") ]
 
     simulation_run_control = EnumProperty(
