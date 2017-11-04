@@ -565,6 +565,7 @@ def write_parameter_system ( ps, f ):
         f.write ( "/* DEFINE PARAMETERS */\n" );
 
         for p in mplist:
+          print ( "   Parameter " + str(p['par_name']) + " = " + "%.15g"%(p['_extras']['par_value']) )
 
           # Write the name = val portion of the definition
           if True:

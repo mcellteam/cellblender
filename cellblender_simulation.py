@@ -407,6 +407,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
 
 
     def execute(self, context):
+        print ( "+++++++++++++ Begin: mcell.run_simulation_sweep_queue +++++++++++++" )
 
         mcell = context.scene.mcell
         run_sim = mcell.run_simulation
@@ -425,11 +426,10 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
         python_path = cellblender.cellblender_utils.get_python_path(mcell=mcell)
 
         if python_path:
-            if not mcell.cellblender_preferences.decouple_export_run:
-                bpy.ops.mcell.export_project()
+            #if not mcell.cellblender_preferences.decouple_export_run:
+            #    bpy.ops.mcell.export_project()
 
-            if (run_sim.error_list and
-                    mcell.cellblender_preferences.invalid_policy == 'dont_run'):
+            if (run_sim.error_list and mcell.cellblender_preferences.invalid_policy == 'dont_run'):
                 pass
             else:
                 react_dir = os.path.join(project_dir, "output_data", "react_data")
@@ -558,6 +558,8 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
             status = "Python not found. Set it in Project Settings."
 
         run_sim.status = status
+
+        print ( "+++++++++++++ Exit: mcell.run_simulation_sweep_queue +++++++++++++" )
 
         return {'FINISHED'}
 
