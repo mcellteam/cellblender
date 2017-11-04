@@ -199,10 +199,12 @@ def write_as_mdl ( obj_name, points, faces, regions_dict, origin=None, file_name
     out_file.write ( "}\n" )
     if instantiate:
         out_file.write ( "\n" )
-        out_file.write ( "INSTANTIATE Scene OBJECT {\n" )
+        out_file.write ( "INSTANTIATE Scene OBJECT {  /* write_as_mdl */\n" )
         out_file.write ( "  %s OBJECT %s {}\n" % (obj_name, obj_name) )
         out_file.write ( "}\n" )
     out_file.close()
+
+
 
 def write_mdl ( dm, file_name ):
     """ Write a data model to a named file (generally follows "export_mcell_mdl" ordering) """
@@ -239,10 +241,13 @@ def write_mdl ( dm, file_name ):
       if 'define_reactions' in mcell:
         reacts = mcell['define_reactions']
         write_reactions ( reacts, f )
-      if ('model_objects' in mcell) and ('geometrical_objects' in mcell):
-        objs = mcell['model_objects']
-        geom = mcell['geometrical_objects']
-        write_static_geometry ( objs, geom, f )
+      if num_dynamic == 0:
+        # MCell currently requires all objects to be either static or dynamic
+        # So only write static objects if there are NO dynamic objects
+        if ('model_objects' in mcell) and ('geometrical_objects' in mcell):
+          objs = mcell['model_objects']
+          geom = mcell['geometrical_objects']
+          write_static_geometry ( objs, geom, f )
       if 'modify_surface_regions' in mcell:
         modsurfrs = mcell['modify_surface_regions']
         write_modify_surf_regions ( modsurfrs, f )
@@ -258,7 +263,8 @@ def write_mdl ( dm, file_name ):
           objs = mcell['model_objects']
         if 'geometrical_objects' in mcell:
           geom = mcell['geometrical_objects']
-        write_static_instances ( objs, geom, f )
+        if num_dynamic == 0:
+          write_static_instances ( objs, geom, f )
       if 'release_sites' in mcell:
         rels = mcell['release_sites']
         write_release_sites ( rels, mcell['define_molecules'], f )
@@ -382,7 +388,9 @@ def write_mdl ( dm, file_name ):
 
           # Write out the individual MDL files for each dynamic object at this frame
           for obj in context.scene.mcell.model_objects.object_list:
-              if obj.dynamic:
+              # MCell currently requires all objects to be either static or dynamic
+              # So if we're here, that means ALL objects should be written as dynamic
+              if   True   or obj.dynamic:
                   # print ( "  Iteration " + str(frame_number) + ", Saving geometry for object " + obj.name + " using script \"" + obj.script_name + "\"" )
                   points = []
                   faces = []
@@ -424,14 +432,14 @@ def write_mdl ( dm, file_name ):
 
           # Write the INCLUDE statements
           for obj in context.scene.mcell.model_objects.object_list:
-              if obj.dynamic:
+              if   True   or obj.dynamic:
                   f_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
                   frame_file.write ( "INCLUDE_FILE = \"%s\"\n" % (f_name) )
 
-          # Write the INSTANTIATE statement
-          frame_file.write ( "INSTANTIATE Scene OBJECT {\n" )
+          # Write the INSTANTIATE statement for this frame
+          frame_file.write ( "INSTANTIATE Scene OBJECT {  /* write_mdl for each frame */\n" )
           for obj in context.scene.mcell.model_objects.object_list:
-              if obj.dynamic:
+              if   True   or obj.dynamic:
                   frame_file.write ( "  %s OBJECT %s {}\n" % (obj.name, obj.name) )
           frame_file.write ( "}\n" )
           frame_file.close()
@@ -445,89 +453,6 @@ def write_mdl ( dm, file_name ):
 
       # Restore the current frame
       context.scene.frame_set(fc)
-
-      # Update the MDL files to insert the DYNAMIC_GEOMETRY sections
-      try:
-        if False:
-
-          full_fname = file_name   # This should be the Scene.main.mdl in the proper subdirectory (swept or not)
-          print ( "Updating Main MDL file: " + full_fname + " for dynamic geometry in data_model_to_mdl.py" )
-          
-          mdl_file = open ( full_fname )
-          mdl_lines = mdl_file.readlines()
-          mdl_file.close()
-
-          # Remove any old dynamic geometry lines
-          new_lines = []
-          for line in mdl_lines:
-              if line.strip()[0:16] != "DYNAMIC_GEOMETRY":
-                  new_lines.append(line)
-          lines = new_lines
-
-          # Remove the Scene.geometry.mdl file line
-          new_lines = []
-          for line in lines:
-              if not "\"Scene.geometry.mdl\"" in line:
-                  new_lines.append(line)
-          lines = new_lines
-
-          # Change the "INSTANTIATE Scene OBJECT" line  to  "INSTANTIATE Releases OBJECT"
-          new_lines = []
-          for line in lines:
-              if "INSTANTIATE Scene OBJECT" in line:
-                  new_lines.append("INSTANTIATE Releases OBJECT\n")
-              else:
-                  new_lines.append(line)
-          lines = new_lines
-
-          # Remove the "  obj OBJECT obj {}" lines:
-          for obj in context.scene.mcell.model_objects.object_list:
-              new_lines = []
-              for line in lines:
-                  if not "%s OBJECT %s {}" % (obj.name, obj.name) in line:
-                      new_lines.append(line)
-              lines = new_lines
-
-
-          # Remove any old LARGE_MOLECULAR_DISPLACEMENT lines
-          new_lines = []
-          for line in mdl_lines:
-              if line.strip()[0:28] != "LARGE_MOLECULAR_DISPLACEMENT":
-                  new_lines.append(line)
-          lines = new_lines
-
-          # Find the WARNINGS section
-          warning_line = -10
-          line_num = 0
-          for line in lines:
-              line_num += 1
-              if line.strip() == "WARNINGS":
-                  warning_line = line_num
-
-          # Rewrite the MDL with the changes
-          mdl_file = open ( full_fname, "w" )
-          line_num = 0
-          for line in lines:
-              line_num += 1
-              mdl_file.write ( line )
-              if line.strip()[0:23] == "VACANCY_SEARCH_DISTANCE":
-                  # Insert the dynamic geometry line
-                  mdl_file.write ( "DYNAMIC_GEOMETRY = \"%s\"\n" % (geom_list_name) )
-              if line_num == warning_line + 1:
-                  # Insert the dynamic geometry line
-                  mdl_file.write ( "   LARGE_MOLECULAR_DISPLACEMENT = IGNORED\n" )
-          mdl_file.close()
-
-
-      except Exception as e:
-          print ( "Warning: unable to update the existing Scene.main.mdl file, try running the model to generate it first." )
-          print ( "   Exception = " + str(e) )
-      except:
-          print ( "Warning: unable to update the existing Scene.main.mdl file, try running the model to generate it first." )
-
-  #################################
-  ### End Dynamic Geometry Export
-  #################################
 
 
 
@@ -769,8 +694,12 @@ def write_static_geometry ( objs, geom, f ):
       if len(glist) > 0:
         for g in glist:
           obj = [ o for o in objs['model_object_list'] if o['name'] == g['name'] ][0]
-          if obj['dynamic']:
+          # MCell currently requires all objects to be either static or dynamic
+          # Since this is "write_static_geometry", then assume all objects are
+          #   to be written as static regardless of their obj['dynamic'] flag
+          if False and obj['dynamic']:
             # Don't write dynamic objects here
+            # This branch is here for future writing of only static objects
             pass
           else:
             # Write static objects here
@@ -819,7 +748,7 @@ def write_static_instances ( objs, geom, f ):
           if not o['dynamic']:
             num_static += 1
         if num_static > 0:
-          f.write ( "INSTANTIATE Scene OBJECT\n" )
+          f.write ( "INSTANTIATE Scene OBJECT  /* write_static_instances */\n" )
           f.write ( "/* Static objects in the scene */\n" )
           f.write ( "{\n" )
           for o in objs['model_object_list']:

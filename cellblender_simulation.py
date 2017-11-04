@@ -433,15 +433,13 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                 pass
             else:
                 react_dir = os.path.join(project_dir, "output_data", "react_data")
-                if (os.path.exists(react_dir) and
-                        run_sim.remove_append == 'remove'):
+                if (os.path.exists(react_dir) and run_sim.remove_append == 'remove'):
                     shutil.rmtree(react_dir)
                 if not os.path.exists(react_dir):
                     os.makedirs(react_dir)
 
                 viz_dir = os.path.join(project_dir, "output_data", "viz_data")
-                if (os.path.exists(viz_dir) and
-                        run_sim.remove_append == 'remove'):
+                if (os.path.exists(viz_dir) and run_sim.remove_append == 'remove'):
                     shutil.rmtree(viz_dir)
                 if not os.path.exists(viz_dir):
                     os.makedirs(viz_dir)
@@ -475,7 +473,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                 # Build a list of "run commands" (one for each run) to be put in the queue
                 # Note that the format of these came from the original "run_simulations.py" program and may not be what we want in the long run
                 run_cmd_list = []
-                # Build a sweep list with a "output_data" prefix directory
+                # Build a sweep list with an "output_data" prefix directory
                 for run in range (num_sweep_runs):
                     sweep_path = "output_data"
                     for sw_item in sweep_list:
@@ -1892,11 +1890,11 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
 
     simulation_engine_and_run_enum = [
-         ('QUEUE', "MCell via Queue Runner", ""),       # This should be commented out once the SWEEP_QUEUE is working with Dynamic Geometry
          ('SWEEP_QUEUE', "MCell Local", ""),
          ('SWEEP_SGE', "MCell SGE", ""),
          #('COMMAND', "MCell via Command Line", ""),
          #('SWEEP', "MCell via Sweep Runner", ""),
+         ('QUEUE', "MCell via Queue Runner", ""),       # This should be commented out once the SWEEP_QUEUE is working with Dynamic Geometry
          ('DYNAMIC', "Engine/Runner (Experimental)", "") ]
 
     simulation_run_control = EnumProperty(
