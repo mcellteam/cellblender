@@ -559,8 +559,8 @@ def write_initialization ( init, f, dyn_fn=None ):
     write_dm_str_val ( init, f, 'time_step',                 'TIME_STEP' )
     if dyn_fn != None:
       f.write ( "DYNAMIC_GEOMETRY = \"%s\"\n" % (dyn_fn) )
-    f.write ( "\n" )
     write_dm_str_val ( init, f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
+    f.write ( "\n" )
     write_dm_str_val ( init, f, 'time_step_max',             'TIME_STEP_MAX' )
     write_dm_str_val ( init, f, 'space_step',                'SPACE_STEP' )
     write_dm_str_val ( init, f, 'interaction_radius',        'INTERACTION_RADIUS' )

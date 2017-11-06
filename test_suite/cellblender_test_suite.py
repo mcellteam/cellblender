@@ -444,7 +444,7 @@ class CellBlender_Model:
         mcell.cellblender_preferences.mcell_binary_valid = True
         mcell.cellblender_preferences.show_sim_runner_options = True
         if app.run_with_queue:
-            mcell.run_simulation.simulation_run_control = 'QUEUE'
+            mcell.run_simulation.simulation_run_control = 'SWEEP_QUEUE'
         else:
             mcell.run_simulation.simulation_run_control = 'COMMAND'
         
