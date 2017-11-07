@@ -99,7 +99,7 @@ def dump_data_model ( name, dm ):
         print ( str(dump_depth*"  ") + name + " = " + str(dm) )
 
 
-def write_dm_str_val ( dm, f, dm_name, mdl_name, blank_default="", indent="" ):
+def write_dm_str_val_good ( dm, f, dm_name, mdl_name, blank_default="", indent="" ):
     if dm_name in dm:
       val = str(dm[dm_name])
       if len(val) > 0:
@@ -107,6 +107,56 @@ def write_dm_str_val ( dm, f, dm_name, mdl_name, blank_default="", indent="" ):
           val = val.upper()
         elif type(dm[dm_name]) == type(1.234):
           val = "%.15g" % dm[dm_name]
+        f.write ( indent + mdl_name + " = " + val + "\n" )
+      elif len(blank_default) > 0:
+        f.write ( indent + mdl_name + " = " + str(blank_default) + "\n" )
+
+def write_dm_str_val ( dm, f, dm_name, mdl_name, blank_default="", indent="" ):
+    if dm_name in dm:
+      val = str(dm[dm_name])
+      if mdl_name in ['MISSED_REACTION_THRESHOLD']:
+        # Force to be a float value to match values exported from Blender float properties
+        import array
+        val = array.array('f',[float(dm[dm_name])])
+        val = "%.15g" % val[0]
+        f.write ( indent + mdl_name + " = " + val + "\n" )
+      elif len(val) > 0:
+        if type(dm[dm_name]) == type(True):
+          val = val.upper()
+        elif type(dm[dm_name]) == type(1.234):
+          val = "%.15g" % dm[dm_name]
+        f.write ( indent + mdl_name + " = " + val + "\n" )
+      elif len(blank_default) > 0:
+        f.write ( indent + mdl_name + " = " + str(blank_default) + "\n" )
+
+def write_dm_str_val_junk ( dm, f, dm_name, mdl_name, blank_default="", indent="" ):
+    if mdl_name == 'TIME_STEP':
+      __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    if mdl_name == 'MISSED_REACTION_THRESHOLD':
+      __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    if dm_name in dm:
+      val = str(dm[dm_name])
+      if len(val) > 0:
+        if type(dm[dm_name]) == type(True):
+          val = val.upper()
+        elif type(dm[dm_name]) == type(1):
+          val = str(dm[dm_name])
+        elif type(dm[dm_name]) == type(1.234):
+          # Force to be a float value to match values exported from Blender float properties
+          import array
+          val = array.array('f',[float(dm[dm_name])])
+          val = "%.15g" % val[0]
+        elif type(dm[dm_name]) == type("1.234"):
+          # This may be a float hiding in a string
+          import re
+          float_regexp = re.compile(r"^[-+]?(?:\b[0-9]+(?:\.[0-9]*)?|\.[0-9]+\b)(?:[eE][-+]?[0-9]+\b)?$")
+          match = re.match(float_regexp,dm[dm_name])
+          if match != None:
+            import array
+            val = array.array('f',[float(match.string)])
+            val = "%.15g" % val[0]
+          else:
+            val = str(dm[dm_name])
         f.write ( indent + mdl_name + " = " + val + "\n" )
       elif len(blank_default) > 0:
         f.write ( indent + mdl_name + " = " + str(blank_default) + "\n" )

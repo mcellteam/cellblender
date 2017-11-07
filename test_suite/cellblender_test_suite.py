@@ -466,6 +466,14 @@ class CellBlender_Model:
         bpy.ops.view3d.snap_cursor_to_center()
         print ( "Done Snapping Cursor to Center" )
         
+        print ( "#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#" )
+        print ( "#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#" )
+        print ( "#-#-#-#-#-#-# For compatibility with old defaults:  #-#-#-#-#-#" )
+        print ( "#-#-#-#-#-#-#   export parameters as numeric values #-#-#-#-#-#" )
+        print ( "#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#" )
+        print ( "#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#-#" )
+        mcell.parameter_system.export_as_expressions = False
+
         self.scn = scn
         self.mcell = mcell
 
