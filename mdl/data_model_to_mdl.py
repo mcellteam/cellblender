@@ -99,7 +99,28 @@ def dump_data_model ( name, dm ):
         print ( str(dump_depth*"  ") + name + " = " + str(dm) )
 
 
+def as_float_str ( dm, dm_name, mdl_name, blank_default="" ):
+    if dm_name in dm:
+      val = str(dm[dm_name])
+      if mdl_name in ['MISSED_REACTION_THRESHOLD', 'PARTITION_VAL']:
+        # Force to be a float value to match values exported from Blender float properties
+        import array
+        val = array.array('f',[float(dm[dm_name])])
+        val = "%.15g" % val[0]
+      elif len(val) > 0:
+        if type(dm[dm_name]) == type(True):
+          val = val.upper()
+        elif type(dm[dm_name]) == type(1.234):
+          val = "%.15g" % dm[dm_name]
+      elif len(blank_default) > 0:
+        val = str(blank_default)
+      return val
+    else:
+      return None
+
+
 def write_dm_str_val_good ( dm, f, dm_name, mdl_name, blank_default="", indent="" ):
+    # This writes out values with their full double precision
     if dm_name in dm:
       val = str(dm[dm_name])
       if len(val) > 0:
@@ -111,7 +132,9 @@ def write_dm_str_val_good ( dm, f, dm_name, mdl_name, blank_default="", indent="
       elif len(blank_default) > 0:
         f.write ( indent + mdl_name + " = " + str(blank_default) + "\n" )
 
+
 def write_dm_str_val ( dm, f, dm_name, mdl_name, blank_default="", indent="" ):
+    # This writes out values with forced single precision
     if dm_name in dm:
       val = str(dm[dm_name])
       if mdl_name in ['MISSED_REACTION_THRESHOLD']:
@@ -276,6 +299,19 @@ def write_mdl ( dm, file_name ):
     # f.write ( "/* MDL Generated from Data Model */\n" )
     if ('mcell' in dm):
       mcell = dm['mcell']
+
+      if 'model_objects' in mcell:
+        # For some reason, the model object list appears to be sorted in the IO Mesh exporter
+        # Sort them here to get the same result
+        if True:
+          mlist = mcell['model_objects']['model_object_list']
+          obj_names = sorted ( [ o['name'] for o in mlist ] )
+          sorted_mlist = []
+          for n in obj_names:
+            mo = [ o for o in mlist if o['name'] == n ][0]
+            sorted_mlist.append ( mo )
+          mcell['model_objects']['model_object_list'] = sorted_mlist
+
       if 'parameter_system' in mcell:
         ps = mcell['parameter_system']
         write_parameter_system ( ps, f )
@@ -310,20 +346,56 @@ def write_mdl ( dm, file_name ):
       if 'define_release_patterns' in mcell:
         pats = mcell['define_release_patterns']
         write_release_patterns ( pats, f )
-      if 'geometrical_objects' in mcell:
-        # CellBlender also has a "Model Objects" which carries model-related data
-        # It's not clear which should be used to trigger this case
-        objs = None
-        geom = None
-        if 'model_objects' in mcell:
-          objs = mcell['model_objects']
-        if 'geometrical_objects' in mcell:
-          geom = mcell['geometrical_objects']
-        if num_dynamic == 0:
-          write_static_instances ( objs, geom, f )
+
+      # Figure out what we have to output based on:
+      #   Static Geometry
+      #   Dynamic Geometry
+      #   Release Sites
+      has_static_geometry = False
+      has_dynamic_geometry = False
+      has_release_sites = False
+      if 'model_objects' in mcell:
+        if 'model_object_list' in mcell['model_objects']:
+          if len(mcell['model_objects']['model_object_list']) > 0:
+            num_static = len(dm['mcell']['model_objects']['model_object_list']) - num_dynamic
+            if num_static > 0:
+              has_static_geometry = True
+            if num_dynamic > 0:
+              has_dynamic_geometry = True
       if 'release_sites' in mcell:
         rels = mcell['release_sites']
-        write_release_sites ( rels, mcell['define_molecules'], f )
+        if 'release_site_list' in rels:
+          rlist = rels['release_site_list']
+          if len(rlist) > 0:
+            has_release_sites = True
+
+      if has_dynamic_geometry:
+        # Force static geometry off since both can't be defined in current MCell
+        has_static_geometry = False
+
+      if has_static_geometry or has_release_sites:
+        # Put both together into the same INSTANTIATE block
+        block_name = 'Scene'
+        if has_dynamic_geometry:
+          # The dynamic geometry uses the name "Scene" so choose something else here
+          block_name = "Releases"
+
+        f.write ( "INSTANTIATE " + block_name + " OBJECT\n" )
+        f.write ( "{\n" )
+        if has_static_geometry:
+          objs = None
+          geom = None
+          if 'model_objects' in mcell:
+            objs = mcell['model_objects']
+          if 'geometrical_objects' in mcell:
+            geom = mcell['geometrical_objects']
+          write_static_instances ( objs, geom, f )
+
+        if has_release_sites:
+          rels = mcell['release_sites']
+          write_release_sites ( rels, mcell['define_molecules'], f )
+
+        f.write ( "}\n\n" )
 
       f.write("sprintf(seed,\"%05g\",SEED)\n\n")
 
@@ -597,7 +669,12 @@ def write_parameter_system ( ps, f ):
 
           # Write the optional description and units in a comment (if non empty)
           if (len(p['par_description']) > 0) or (len(p['par_units']) > 0):
-            f.write ( "    /* " + p['par_description'] + " " + p['par_units'] + " */\n" )
+            f.write ( "    /* " )
+            if len(p['par_description']) > 0:
+              f.write ( p['par_description'] + " " )
+            if len(p['par_units']) > 0:
+              f.write ( "   units=" + p['par_units'] )
+            f.write ( " */\n" )
           else:
             f.write ( "\n" )
             
@@ -697,10 +774,17 @@ def write_partitions ( parts, f ):
     if 'include' in parts:
       if parts['include']:
         # Note that partition values are floats in CellBlender, but exported as strings for future compatibility with expressions
-        f.write ( "PARTITION_X = [[%s TO %s STEP %s]]\n" % ( parts['x_start'], parts['x_end'], parts['x_step'] ) )
-        f.write ( "PARTITION_Y = [[%s TO %s STEP %s]]\n" % ( parts['y_start'], parts['y_end'], parts['y_step'] ) )
-        f.write ( "PARTITION_Z = [[%s TO %s STEP %s]]\n" % ( parts['z_start'], parts['z_end'], parts['z_step'] ) )
+        #f.write ( "PARTITION_X = [[%s TO %s STEP %s]]\n" % ( parts['x_start'], parts['x_end'], parts['x_step'] ) )
+        #f.write ( "PARTITION_Y = [[%s TO %s STEP %s]]\n" % ( parts['y_start'], parts['y_end'], parts['y_step'] ) )
+        #f.write ( "PARTITION_Z = [[%s TO %s STEP %s]]\n" % ( parts['z_start'], parts['z_end'], parts['z_step'] ) )
+
+        # Use forced floats
+        f.write ( "PARTITION_X = [[%s TO %s STEP %s]]\n" % ( as_float_str(parts,'x_start','PARTITION_VAL'), as_float_str(parts,'x_end','PARTITION_VAL'), as_float_str(parts,'x_step','PARTITION_VAL') ) )
+        f.write ( "PARTITION_Y = [[%s TO %s STEP %s]]\n" % ( as_float_str(parts,'y_start','PARTITION_VAL'), as_float_str(parts,'y_end','PARTITION_VAL'), as_float_str(parts,'y_step','PARTITION_VAL') ) )
+        f.write ( "PARTITION_Z = [[%s TO %s STEP %s]]\n" % ( as_float_str(parts,'z_start','PARTITION_VAL'), as_float_str(parts,'z_end','PARTITION_VAL'), as_float_str(parts,'z_step','PARTITION_VAL') ) )
         f.write ( "\n" )
+
+
 
 
 def write_molecules ( mols, f ):
@@ -789,6 +873,20 @@ def write_static_geometry ( objs, geom, f ):
     if 'object_list' in geom:
       glist = geom['object_list']
       if len(glist) > 0:
+        olist = objs['model_object_list']
+        print ( "objs: " + str( [ o['name'] for o in olist ] ) )
+        print ( "geos: " + str( [ o['name'] for o in glist ] ) )
+
+        # For some reason, these appear to be sorted in the IO Mesh exporter
+        # Sort them here to get the same result
+        gnames = sorted ( [ o['name'] for o in olist ] )
+        sorted_glist = []
+        for gn in gnames:
+          go = [ o for o in glist if o['name'] == gn ][0]
+          sorted_glist.append ( go )
+        glist = sorted_glist
+        print ( "geos: " + str( [ o['name'] for o in glist ] ) )
+
         for g in glist:
           obj = [ o for o in objs['model_object_list'] if o['name'] == g['name'] ][0]
           # MCell currently requires all objects to be either static or dynamic
@@ -836,7 +934,7 @@ def write_static_geometry ( objs, geom, f ):
             f.write ( "\n" );
 
 
-def write_static_instances ( objs, geom, f ):
+def write_static_instances ( objs, geom, f, write_block=False ):
     #TODO Note that the use of "Scene" here is a temporary measure!!!!
     if (objs != None) and (geom != None):
       if 'model_object_list' in objs:
@@ -845,19 +943,21 @@ def write_static_instances ( objs, geom, f ):
           if not o['dynamic']:
             num_static += 1
         if num_static > 0:
-          f.write ( "INSTANTIATE Scene OBJECT  /* write_static_instances */\n" )
-          f.write ( "/* Static objects in the scene */\n" )
-          f.write ( "{\n" )
+          if write_block:
+            f.write ( "INSTANTIATE Scene OBJECT\n" )
+            f.write ( "{\n" )
           for o in objs['model_object_list']:
             if not o['dynamic']:
               f.write ( "  %s OBJECT %s {}\n" % (o['name'], o['name']) )
-          f.write ( "}\n" )
-          f.write("\n")
+          if write_block:
+            f.write ( "}\n" )
+            f.write("\n")
 
-def write_release_sites ( rels, mols, f ):
+def write_release_sites ( rels, mols, f, instantiate_name=None ):
     #TODO Note that the use of "Scene" here is a temporary measure!!!!
-    f.write ( "INSTANTIATE Releases OBJECT\n" )
-    f.write ( "{\n" )
+    if instantiate_name != None:
+      f.write ( "INSTANTIATE " + instantiate_name + " OBJECT\n" )
+      f.write ( "{\n" )
     if rels != None:
       if 'release_site_list' in rels:
         rlist = rels['release_site_list']
@@ -914,8 +1014,9 @@ def write_release_sites ( rels, mols, f ):
               f.write("   RELEASE_PATTERN = %s\n" % (r['pattern']))
 
             f.write ( "  }\n" )
-    f.write ( "}\n" )
-    f.write("\n")
+    if instantiate_name != None:
+      f.write ( "}\n" )
+      f.write("\n")
 
 
 def write_modify_surf_regions ( modsurfrs, f ):
