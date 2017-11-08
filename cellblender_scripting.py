@@ -106,6 +106,8 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
         col.prop ( scripting, "include_geometry_in_dm" )
         col = row.column()
         col.prop ( scripting, "include_scripts_in_dm" )
+        col = row.column()
+        col.prop ( scripting, "include_dyn_geom_in_dm" )
 
         row = layout.row()
         col = row.column()
@@ -276,7 +278,9 @@ class FromDMOperator(bpy.types.Operator):
         mcell = context.scene.mcell
         scripting = mcell.scripting
         db = scripting.data_browser
-        dm = mcell.build_data_model_from_properties ( context, geometry=scripting.include_geometry_in_dm, scripts=scripting.include_scripts_in_dm )
+        dm = mcell.build_data_model_from_properties ( context, geometry=scripting.include_geometry_in_dm,
+                                                               scripts=scripting.include_scripts_in_dm,
+                                                               dyn_geo=scripting.include_dyn_geom_in_dm )
         dmi = db.convert_dm_to_properties ( self.layout)
         return{'FINISHED'}
 
@@ -457,7 +461,9 @@ class CopyDataModelFromSelectedProps(bpy.types.Operator):
         scripting = mcell.scripting
         section = str(mcell.scripting.dm_section)
         print ( "Copying section " + section )
-        full_dm = mcell.build_data_model_from_properties ( context, geometry=scripting.include_geometry_in_dm, scripts=scripting.include_scripts_in_dm )
+        full_dm = mcell.build_data_model_from_properties ( context, geometry=scripting.include_geometry_in_dm,
+                                                                    scripts=scripting.include_scripts_in_dm,
+                                                                    dyn_geo=scripting.include_dyn_geom_in_dm )
         selected_dm = full_dm
         selected_key = "dm['mcell']"
         if section != 'ALL':
@@ -480,56 +486,6 @@ class CopyDataModelFromSelectedProps(bpy.types.Operator):
         bpy.context.window_manager.clipboard = s
         return {'FINISHED'}
 
-
-
-"""
-class CopyDataModelFromProps(bpy.types.Operator):
-    '''Copy the data model to the Clipboard'''
-    bl_idname = "cb.copy_data_model_to_cbd"
-    bl_label = "Copy Entire Data Model"
-    bl_description = "Copy the data model to the Clipboard"
-
-    def execute(self, context):
-        print ( "Copying CellBlender Data Model:" )
-        mcell = context.scene.mcell
-        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm, scripts=mcell.scripting.include_scripts_in_dm )
-        #s = "dm['mcell'] = " + pprint.pformat ( mcell_dm, indent=4, width=40 ) + "\n"
-        s = "dm['mcell'] = " + data_model.data_model_as_text ( mcell_dm ) + "\n"
-        #s = "dm['mcell'] = " + str(mcell_dm) + "\n"
-        bpy.context.window_manager.clipboard = s
-        return {'FINISHED'}
-
-
-class CopyDataModelFromMols(bpy.types.Operator):
-    '''Copy the molecules data model to the Clipboard'''
-    bl_idname = "cb.copy_mols_to_cbd"
-    bl_label = "Copy Molecules Data Model"
-    bl_description = "Copy the molecules data model to the Clipboard"
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=False )
-        # s = "dm['mcell']['define_molecules'] = " + pprint.pformat ( mcell_dm['define_molecules'], indent=4, width=40 ) + "\n"
-        s = "dm['mcell']['define_molecules'] = " + data_model.data_model_as_text ( mcell_dm['define_molecules'] ) + "\n"
-        bpy.context.window_manager.clipboard = s
-        return {'FINISHED'}
-
-
-class CopyDataModelFromRels(bpy.types.Operator):
-    '''Copy the release site data model to the Clipboard'''
-    bl_idname = "cb.copy_rels_to_cbd"
-    bl_label = "Copy Release Site Data Model"
-    bl_description = "Copy the release site data model to the Clipboard"
-
-    def execute(self, context):
-        mcell = context.scene.mcell
-        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=False )
-        # s = "dm['mcell']['release_sites'] = " + pprint.pformat ( mcell_dm['release_sites'], indent=4, width=40 ) + "\n"
-        s = "dm['mcell']['release_sites'] = " + data_model.data_model_as_text ( mcell_dm['release_sites'] ) + "\n"
-        bpy.context.window_manager.clipboard = s
-        
-        return {'FINISHED'}
-"""
 
 
 
@@ -556,17 +512,6 @@ class MCELL_UL_scripting_item(bpy.types.UIList):
         else:
             layout.label ( icon='FILE_TICK', text=desc )
 
-"""
-class MCELL_PT_scripting_settings(bpy.types.Panel):
-    bl_label = "CellBlender - Scripting Settings"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "scene"
-    bl_options = {'DEFAULT_CLOSED'}
-
-    def draw(self, context):
-        context.scene.mcell.scripting.draw_panel ( context, self )
-"""
 
 # Scripting Property Groups
 
@@ -787,6 +732,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
     # The following properties are associated with Data Model Scripting
     include_geometry_in_dm = bpy.props.BoolProperty ( name = "Include Geometry", description = "Include Geometry in the Data Model", default = False )
     include_scripts_in_dm = bpy.props.BoolProperty ( name = "Include Scripts", description = "Include Scripts in the Data Model", default = False )
+    include_dyn_geom_in_dm = bpy.props.BoolProperty ( name = "Dynamic Geometry", description = "Include Dynamic Geometry in the Data Model", default = False )
 
     dm_section_enum = [
         ('ALL',                     "All", ""),
@@ -1043,6 +989,8 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                         col.prop ( self, "include_geometry_in_dm" )
                         col = row.column()
                         col.prop ( self, "include_scripts_in_dm" )
+                        col = row.column()
+                        col.prop ( self, "include_dyn_geom_in_dm" )
 
                         row = box.row()
                         col = row.column()

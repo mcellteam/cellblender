@@ -1026,7 +1026,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
 
 
-    def build_data_model_from_properties ( self, context, geometry=False, scripts=False ):
+    def build_data_model_from_properties ( self, context, geometry=False, scripts=False, dyn_geo=False ):
         print ( "build_data_model_from_properties: Constructing a data_model dictionary from current properties" )
         dm = {}
         dm['data_model_version'] = "DM_2017_06_23_1300"
@@ -1059,7 +1059,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         dm['scripting'] = self.scripting.build_data_model_from_properties(context,scripts)
         if geometry:
             print ( "Adding Geometry to Data Model" )
-            dm['geometrical_objects'] = self.model_objects.build_data_model_geometry_from_mesh(context)
+            dm['geometrical_objects'] = self.model_objects.build_data_model_geometry_from_mesh(context,dyn_geo=dyn_geo)
             dm['materials'] = self.model_objects.build_data_model_materials_from_materials(context)
         return dm
 

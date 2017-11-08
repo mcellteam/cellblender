@@ -620,7 +620,7 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
                 if not os.path.exists(sweep_dir):
                     os.makedirs(sweep_dir)
 
-                mcell_dm = mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
+                mcell_dm = mcell.build_data_model_from_properties ( context, geometry=True, scripts=True, dyn_geo=True )
                 data_model.save_data_model_to_json_file ( mcell_dm, os.path.join(project_dir,"data_model.json") )
 
                 base_name = mcell.project_settings.base_name

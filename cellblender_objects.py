@@ -996,8 +996,73 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                 new_mat.use_transparency = True
 
 
-    def build_data_model_geometry_from_mesh ( self, context ):
-        print ( "Model Objects List building Geometry for Data Model" )
+    def build_data_model_object_from_mesh ( self, context, data_object ):
+
+        g_obj = {}
+
+        saved_hide_status = data_object.hide
+        data_object.hide = False
+
+        context.scene.objects.active = data_object
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        g_obj['name'] = data_object.name
+
+        loc_x = data_object.location.x
+        loc_y = data_object.location.y
+        loc_z = data_object.location.z
+
+        g_obj['location'] = [loc_x, loc_y, loc_z]
+
+        if len(data_object.data.materials) > 0:
+            g_obj['material_names'] = []
+            for mat in data_object.data.materials:
+                g_obj['material_names'].append ( mat.name )
+                # g_obj['material_name'] = data_object.data.materials[0].name
+
+        v_list = []
+        mesh = data_object.data
+        matrix = data_object.matrix_world
+        vertices = mesh.vertices
+        for v in vertices:
+            t_vec = matrix * v.co
+            v_list.append ( [t_vec.x-loc_x, t_vec.y-loc_y, t_vec.z-loc_z] )
+        g_obj['vertex_list'] = v_list
+
+        f_list = []
+        faces = mesh.polygons
+        for f in faces:
+            f_list.append ( [f.vertices[0], f.vertices[1], f.vertices[2]] )
+        g_obj['element_connections'] = f_list
+
+        if len(data_object.data.materials) > 1:
+            # This object has multiple materials, so store the material index for each face
+            mi_list = []
+            for f in faces:
+                mi_list.append ( f.material_index )
+            g_obj['element_material_indices'] = mi_list
+
+        regions = data_object.mcell.get_regions_dictionary(data_object)
+        if regions:
+            r_list = []
+
+            region_names = [k for k in regions.keys()]
+            region_names.sort()
+            for region_name in region_names:
+                rgn = {}
+                rgn['name'] = region_name
+                rgn['include_elements'] = regions[region_name]
+                r_list.append ( rgn )
+            g_obj['define_surface_regions'] = r_list
+
+        # restore proper object visibility state
+        data_object.hide = saved_hide_status
+        return g_obj
+
+
+    def build_data_model_geometry_from_mesh ( self, context, dyn_geo=False ):
+        # Start by building the static geometry for all objects
+
         g_dm = {}
         g_list = []
 
@@ -1005,71 +1070,31 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             if data_object.type == 'MESH':
                 if data_object.mcell.include:
                     print ( "MCell object: " + data_object.name )
-
-                    g_obj = {}
-                    
-                    saved_hide_status = data_object.hide
-                    data_object.hide = False
-
-                    context.scene.objects.active = data_object
-                    bpy.ops.object.mode_set(mode='OBJECT')
-
-                    g_obj['name'] = data_object.name
-                    
-                    loc_x = data_object.location.x
-                    loc_y = data_object.location.y
-                    loc_z = data_object.location.z
-
-                    g_obj['location'] = [loc_x, loc_y, loc_z]
-                    
-                    if len(data_object.data.materials) > 0:
-                        g_obj['material_names'] = []
-                        for mat in data_object.data.materials:
-                            g_obj['material_names'].append ( mat.name )
-                            # g_obj['material_name'] = data_object.data.materials[0].name
-                    
-                    v_list = []
-                    mesh = data_object.data
-                    matrix = data_object.matrix_world
-                    vertices = mesh.vertices
-                    for v in vertices:
-                        t_vec = matrix * v.co
-                        v_list.append ( [t_vec.x-loc_x, t_vec.y-loc_y, t_vec.z-loc_z] )
-                    g_obj['vertex_list'] = v_list
-
-                    f_list = []
-                    faces = mesh.polygons
-                    for f in faces:
-                        f_list.append ( [f.vertices[0], f.vertices[1], f.vertices[2]] )
-                    g_obj['element_connections'] = f_list
-                    
-                    if len(data_object.data.materials) > 1:
-                        # This object has multiple materials, so store the material index for each face
-                        mi_list = []
-                        for f in faces:
-                            mi_list.append ( f.material_index )
-                        g_obj['element_material_indices'] = mi_list
-
-                    regions = data_object.mcell.get_regions_dictionary(data_object)
-                    if regions:
-                        r_list = []
-
-                        region_names = [k for k in regions.keys()]
-                        region_names.sort()
-                        for region_name in region_names:
-                            rgn = {}
-                            rgn['name'] = region_name
-                            rgn['include_elements'] = regions[region_name]
-                            r_list.append ( rgn )
-                        g_obj['define_surface_regions'] = r_list
-
-                    # restore proper object visibility state
-                    data_object.hide = saved_hide_status
-
-                    g_list.append ( g_obj )
-
+                    g_list.append ( self.build_data_model_object_from_mesh( context, data_object) )
         g_dm['object_list'] = g_list
+
+        if dyn_geo:
+            frame_obj_names = []
+            obj_list = context.scene.mcell.model_objects.object_list
+            print ( "Adding a frame list to each dynamic object that's not scripted" )
+            for g_obj in g_dm['object_list']:
+                if obj_list[g_obj['name']].dynamic:
+                    if len(obj_list[g_obj['name']].script_name) == 0:
+                        # There's no script for this dynamic object, so mark it for needing frames
+                        frame_obj_names.append ( g_obj['name'] )
+                        print ( "Adding a frame list to object " + g_obj['name'] )
+                        g_obj['frame_list'] = []
+
+            # Cycle through all frames to build the dynamic geometry
+            for frame_number in range(context.scene.mcell.initialization.iterations.get_value()+1):
+                context.scene.frame_set(frame_number)
+                for g_obj in g_dm['object_list']:
+                    if 'frame_list' in g_obj:
+                        print ( "Adding a frame to object " + g_obj['name'] )
+                        g_obj['frame_list'].append ( self.build_data_model_object_from_mesh( context, context.scene.objects[g_obj['name']]) )
+
         return g_dm
+
 
 
     def delete_all_mesh_objects ( self, context ):

@@ -575,14 +575,28 @@ def write_mdl ( dm, file_name ):
                       regions_dict = geom_obj.mcell.get_regions_dictionary(geom_obj)
                       del mesh
                   else:
-                      # Use the object's original static geometry from the data model
+                      # Get the geometry from the data model (either from the frame list or from static geometry)
                       if ('mcell' in dm) and ('geometrical_objects' in dm['mcell']) and ('object_list' in dm['mcell']['geometrical_objects']):
                           mcell = dm['mcell']
                           for o in mcell['geometrical_objects']['object_list']:
                               if o['name'] == obj['name']:
-                                  points = o['vertex_list']
-                                  faces = o['element_connections']
-                                  origin = o['location']
+                                  if ('frame_list' in o) and (len(o['frame_list']) > 0):
+                                      # This object has non-empty frame list data to use
+                                      frame = None
+                                      if frame_number >= len(o):
+                                          # Hold the last frame forever
+                                          frame = o['frame_list'][-1]
+                                      else:
+                                          # Get the frame for this iteration
+                                          frame = o['frame_list'][frame_number]
+                                      points = frame['vertex_list']
+                                      faces = frame['element_connections']
+                                      origin = frame['location']
+                                  else:
+                                      # Use the object's original static geometry from the data model
+                                      points = o['vertex_list']
+                                      faces = o['element_connections']
+                                      origin = o['location']
                   f_name = "%s_frame_%d.mdl"%(obj['name'],frame_number)
                   full_file_name = os.path.join(path_to_dg_files,f_name)
                   write_as_mdl ( obj['name'], points, faces, regions_dict, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
