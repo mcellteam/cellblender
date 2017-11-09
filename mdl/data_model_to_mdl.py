@@ -605,6 +605,12 @@ def write_mdl ( dm, file_name ):
                                       faces = o['element_connections']
                                       origin = o['location']
                                   print ( "    Found object " + str(o['name']) + " with zmax of " + str(max([v[2] for v in o['vertex_list']])) )
+                                  if 'define_surface_regions' in o:
+                                      # This object has surface regions
+                                      regions_dict = {}
+                                      for reg in o['define_surface_regions']:
+                                          regions_dict[reg['name']] = reg['include_elements']
+
                   f_name = "%s_frame_%d.mdl"%(obj['name'],frame_number)
                   full_file_name = os.path.join(path_to_dg_files,f_name)
                   write_as_mdl ( obj['name'], points, faces, regions_dict, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
