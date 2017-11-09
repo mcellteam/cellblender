@@ -212,7 +212,7 @@ def unpickle_data_model ( dmp ):
     return ( pickle.loads ( dmp.encode('latin1') ) )
 
 def json_from_data_model ( dm ):
-    return ( json.dumps ( dm ) )
+    return ( json.dumps ( dm, indent=' ' ) )  # For indenting, use: json.dumps ( dm, indent=' ' )
 
 def data_model_from_json ( dmp ):
     return ( json.loads ( dmp ) )

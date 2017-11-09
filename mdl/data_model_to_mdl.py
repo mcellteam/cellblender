@@ -284,12 +284,15 @@ def write_as_mdl ( obj_name, points, faces, regions_dict, origin=None, file_name
     out_file.close()
 
 
+import traceback
 
 def write_mdl ( dm, file_name ):
     """ Write a data model to a named file (generally follows "export_mcell_mdl" ordering) """
 
     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
     print ( "Top of data_model_to_mdl.write_mdl() to " + str(file_name) )
+    print ( "Call Stack:" )
+    traceback.print_stack()
     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
     # First check for any dynamic objects in the data model
@@ -547,14 +550,14 @@ def write_mdl ( dm, file_name ):
               # MCell currently requires all objects to be either static or dynamic
               # So if we're here, that means ALL objects should be written as dynamic
               if   True   or obj['dynamic']:
-                  # print ( "  Iteration " + str(frame_number) + ", Saving geometry for object " + obj.name + " using script \"" + obj.script_name + "\"" )
+                  print ( "  Frame " + str(frame_number) + ", Saving dynamic geometry for object " + obj['name'] + " with script \"" + obj['script_name'] + "\"" )
                   points = []
                   faces = []
                   regions_dict = None
                   origin = [0,0,0]
                   if len(obj['script_name']) > 0:
                       # Let the script create the geometry
-                      print ( "Build object mesh from user script for frame " + str(frame_number) )
+                      print ( "   Build object mesh from user script for frame " + str(frame_number) )
                       #script_text = script_dict[obj.script_name]
                       #print ( 80*"=" )
                       #print ( script_text )
@@ -564,7 +567,7 @@ def write_mdl ( dm, file_name ):
                   elif has_blender:
                       # Get the geometry from the object (presumably animated by Blender)
 
-                      print ( "Build MDL mesh from Blender object for frame " + str(frame_number) )
+                      print ( "   Build object mesh from Blender object for frame " + str(frame_number) )
                       import mathutils
 
                       geom_obj = context.scene.objects[obj['name']]
@@ -576,14 +579,17 @@ def write_mdl ( dm, file_name ):
                       del mesh
                   else:
                       # Get the geometry from the data model (either from the frame list or from static geometry)
+                      print ( "   Build object mesh without Blender for frame " + str(frame_number) )
                       if ('mcell' in dm) and ('geometrical_objects' in dm['mcell']) and ('object_list' in dm['mcell']['geometrical_objects']):
                           mcell = dm['mcell']
                           for o in mcell['geometrical_objects']['object_list']:
                               if o['name'] == obj['name']:
+                                  print ( "    Found object " )
                                   if ('frame_list' in o) and (len(o['frame_list']) > 0):
                                       # This object has non-empty frame list data to use
+                                      print ( "      Object " + str(o['name']) + ": frame_list length = " + str(len(o['frame_list'])) )
                                       frame = None
-                                      if frame_number >= len(o):
+                                      if frame_number >= len(o['frame_list']):
                                           # Hold the last frame forever
                                           frame = o['frame_list'][-1]
                                       else:
@@ -594,9 +600,11 @@ def write_mdl ( dm, file_name ):
                                       origin = frame['location']
                                   else:
                                       # Use the object's original static geometry from the data model
+                                      print ( "      Object " + str(o['name']) + " has no frame_list" )
                                       points = o['vertex_list']
                                       faces = o['element_connections']
                                       origin = o['location']
+                                  print ( "    Found object " + str(o['name']) + " with zmax of " + str(max([v[2] for v in o['vertex_list']])) )
                   f_name = "%s_frame_%d.mdl"%(obj['name'],frame_number)
                   full_file_name = os.path.join(path_to_dg_files,f_name)
                   write_as_mdl ( obj['name'], points, faces, regions_dict, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )

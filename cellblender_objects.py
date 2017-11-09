@@ -1013,6 +1013,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         loc_z = data_object.location.z
 
         g_obj['location'] = [loc_x, loc_y, loc_z]
+        g_obj['location'] = [0,0,0] # The location appears to be folded into the transforms below, so zero for now
 
         if len(data_object.data.materials) > 0:
             g_obj['material_names'] = []
@@ -1020,25 +1021,20 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                 g_obj['material_names'].append ( mat.name )
                 # g_obj['material_name'] = data_object.data.materials[0].name
 
-        v_list = []
-        mesh = data_object.data
-        matrix = data_object.matrix_world
-        vertices = mesh.vertices
-        for v in vertices:
-            t_vec = matrix * v.co
-            v_list.append ( [t_vec.x-loc_x, t_vec.y-loc_y, t_vec.z-loc_z] )
-        g_obj['vertex_list'] = v_list
+        # This is needed for shape key dynamic geometry rather than: mesh = data_object.data
+        mesh = data_object.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
 
-        f_list = []
-        faces = mesh.polygons
-        for f in faces:
-            f_list.append ( [f.vertices[0], f.vertices[1], f.vertices[2]] )
-        g_obj['element_connections'] = f_list
+        mesh.transform(mathutils.Matrix() * data_object.matrix_world)
+        vert_vecs = [v.co for v in mesh.vertices]
+        face_polys = [f.vertices for f in mesh.polygons]
+
+        g_obj['vertex_list']         = [ [c for c in v] for v in vert_vecs  ]  # Convert from list of vectors to list of lists
+        g_obj['element_connections'] = [ [c for c in f] for f in face_polys ]  # Convert from list of polygons to list of lists
 
         if len(data_object.data.materials) > 1:
             # This object has multiple materials, so store the material index for each face
             mi_list = []
-            for f in faces:
+            for f in mesh.polygons:
                 mi_list.append ( f.material_index )
             g_obj['element_material_indices'] = mi_list
 
@@ -1082,16 +1078,30 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     if len(obj_list[g_obj['name']].script_name) == 0:
                         # There's no script for this dynamic object, so mark it for needing frames
                         frame_obj_names.append ( g_obj['name'] )
-                        print ( "Adding a frame list to object " + g_obj['name'] )
+                        print ( "  Adding a frame list to object " + g_obj['name'] )
                         g_obj['frame_list'] = []
+
+            # Save state of mol_viz_enable and disable mol viz during frame change for dynamic geometry
+            mol_viz_state = context.scene.mcell.mol_viz.mol_viz_enable
+            context.scene.mcell.mol_viz.mol_viz_enable = False
+
+            # Save the current frame to restore after sweeping through the frames
+            fc = context.scene.frame_current
 
             # Cycle through all frames to build the dynamic geometry
             for frame_number in range(context.scene.mcell.initialization.iterations.get_value()+1):
                 context.scene.frame_set(frame_number)
                 for g_obj in g_dm['object_list']:
                     if 'frame_list' in g_obj:
-                        print ( "Adding a frame to object " + g_obj['name'] )
-                        g_obj['frame_list'].append ( self.build_data_model_object_from_mesh( context, context.scene.objects[g_obj['name']]) )
+                        print ( "    Adding a single frame to object " + g_obj['name'] )
+                        dm_obj = self.build_data_model_object_from_mesh( context, context.scene.objects[g_obj['name']])
+                        g_obj['frame_list'].append ( dm_obj )
+
+            # Restore setting for mol viz
+            context.scene.mcell.mol_viz.mol_viz_enable = mol_viz_state
+
+            # Restore the current frame
+            context.scene.frame_set(fc)
 
         return g_dm
 
