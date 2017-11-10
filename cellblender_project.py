@@ -359,7 +359,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
                             else:
                                 # Get the geometry from the object (presumably animated by Blender)
 
-                                print ( "Build MDL mesh from Blender object for frame " + str(frame_number) )
+                                print ( " cellblender_project.py: Build MDL mesh from Blender object for frame " + str(frame_number) )
 
                                 geom_obj = context.scene.objects[obj.name]
                                 mesh = geom_obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)

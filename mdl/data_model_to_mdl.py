@@ -233,8 +233,9 @@ except:
   pass
 
 
-def write_obj_as_mdl ( obj_name, points, faces, regions_dict, origin=None, file_name=None, partitions=False, instantiate=False ):
+def write_obj_as_mdl ( obj_name, points, faces, regions_dict, region_props, origin=None, file_name=None, partitions=False, instantiate=False ):
   print ( "data_model_to_mdl.write_obj_as_mdl()" )
+  print ( "     region_props = " + str(region_props) )
   if file_name != None:
     out_file = open ( file_name, "w" )
     if partitions:
@@ -256,8 +257,14 @@ def write_obj_as_mdl ( obj_name, points, faces, regions_dict, origin=None, file_
         out_file.write ( s );
     out_file.write ( "  }\n" )
 
-    if regions_dict:
-        # Begin SURFACE_REGIONS block
+    if len(regions_dict) > 0:
+        # Begin DEFINE_SURFACE_REGIONS block
+        # See definitions on pages 17 (Region Command), 18 (Regional Surface Command), and 21 (MODIFY_SURFACE_REGIONS)
+        # Define the faces that make up a region named 'top':
+        #   regions_dict = { 'top': [1, 7] }
+        # Define the surface classes applied to region 'top':
+        #   region_props = { 'top': ['trans_a','absorb_bcd'] }
+
         out_file.write("  DEFINE_SURFACE_REGIONS\n")
         out_file.write("  {\n")
 
@@ -266,11 +273,14 @@ def write_obj_as_mdl ( obj_name, points, faces, regions_dict, origin=None, file_
         for region_name in region_names:
             out_file.write("    %s\n" % (region_name))
             out_file.write("    {\n")
-            out_file.write("      ELEMENT_LIST = " +
-                           str(regions_dict[region_name])+'\n')
+            out_file.write("      ELEMENT_LIST = " + str(regions_dict[region_name])+'\n')
+            if region_name in region_props:
+                props = region_props[region_name]
+                for prop in props:
+                    out_file.write("      SURFACE_CLASS = " + str(prop)+'\n')
             out_file.write("    }\n")
 
-        # close SURFACE_REGIONS block
+        # close DEFINE_SURFACE_REGIONS block
         out_file.write("  }\n")
 
 
@@ -521,13 +531,15 @@ def write_mdl ( dm, file_name ):
           ####################################################################
           #
           #  This section essentially defines the interface to the user's
-          #  dynamic geometry code. Right now it's being done through 5 global
+          #  dynamic geometry code. Right now it's being done through 7 global
           #  variables which will be in the user's environment when they run:
           #
           #     frame_number
           #     time_step
           #     points[]
           #     faces[]
+          #     regions_dict[]
+          #     region_props[]
           #     origin[]
           #
           #  The user code gets the frame number as input and fills in both the
@@ -554,7 +566,8 @@ def write_mdl ( dm, file_name ):
                   print ( "  Frame " + str(frame_number) + ", Saving dynamic geometry for object " + obj['name'] + " with script \"" + obj['script_name'] + "\"" )
                   points = []
                   faces = []
-                  regions_dict = None
+                  regions_dict = {}
+                  region_props = {}
                   origin = [0,0,0]
                   if len(obj['script_name']) > 0:
                       # Let the script create the geometry
@@ -564,7 +577,9 @@ def write_mdl ( dm, file_name ):
                       #print ( script_text )
                       #print ( 80*"=" )
                       # exec ( script_dict[obj.script_name], locals() )
+                      print ( "Before script: region_props = " + str(region_props) )
                       exec ( script_dict[obj['script_name']] )
+                      print ( "After  script: region_props = " + str(region_props) )
                   elif has_blender:
                       # Get the geometry from the object (presumably animated by Blender)
 
@@ -614,7 +629,7 @@ def write_mdl ( dm, file_name ):
 
                   f_name = "%s_frame_%d.mdl"%(obj['name'],frame_number)
                   full_file_name = os.path.join(path_to_dg_files,f_name)
-                  write_obj_as_mdl ( obj['name'], points, faces, regions_dict, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
+                  write_obj_as_mdl ( obj['name'], points, faces, regions_dict, region_props, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
                   #geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",f_name)))
 
           # Write out the "master" MDL file for this frame
