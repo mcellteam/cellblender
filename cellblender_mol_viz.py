@@ -173,6 +173,7 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
           # Check to see if the data is in an output_data directory or not
 
           if os.path.exists(files_path) and 'output_data' in os.listdir(files_path):
+            # New "output_data" layout
             # Read the viz data from the first data path in the potential sweep
             f = open ( os.path.join(files_path,"data_layout.json"), 'r' )
             layout_spec = json.loads ( f.read() )
@@ -200,7 +201,7 @@ class MCELL_OT_read_viz_data(bpy.types.Operator):
             mol_viz_top_level_dir = os.path.join(files_path, sub_path)
 
           else:
-
+            # Old "non-output_data" layout
             # Force the top level mol_viz directory to be where the .blend file
             # lives plus "viz_data". The seed directories will live underneath it.
             mol_viz_top_level_dir = os.path.join(files_path, "viz_data", "")

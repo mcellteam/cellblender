@@ -233,7 +233,8 @@ except:
   pass
 
 
-def write_as_mdl ( obj_name, points, faces, regions_dict, origin=None, file_name=None, partitions=False, instantiate=False ):
+def write_obj_as_mdl ( obj_name, points, faces, regions_dict, origin=None, file_name=None, partitions=False, instantiate=False ):
+  print ( "data_model_to_mdl.write_obj_as_mdl()" )
   if file_name != None:
     out_file = open ( file_name, "w" )
     if partitions:
@@ -278,7 +279,7 @@ def write_as_mdl ( obj_name, points, faces, regions_dict, origin=None, file_name
     out_file.write ( "}\n" )
     if instantiate:
         out_file.write ( "\n" )
-        out_file.write ( "INSTANTIATE Scene OBJECT {  /* write_as_mdl */\n" )
+        out_file.write ( "INSTANTIATE Scene OBJECT {\n" )
         out_file.write ( "  %s OBJECT %s {}\n" % (obj_name, obj_name) )
         out_file.write ( "}\n" )
     out_file.close()
@@ -613,7 +614,7 @@ def write_mdl ( dm, file_name ):
 
                   f_name = "%s_frame_%d.mdl"%(obj['name'],frame_number)
                   full_file_name = os.path.join(path_to_dg_files,f_name)
-                  write_as_mdl ( obj['name'], points, faces, regions_dict, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
+                  write_obj_as_mdl ( obj['name'], points, faces, regions_dict, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
                   #geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",f_name)))
 
           # Write out the "master" MDL file for this frame

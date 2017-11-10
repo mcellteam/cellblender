@@ -38,6 +38,7 @@ from bpy.app.handlers import persistent
 # python imports
 import re
 import os
+import json
 
 # CellBlender imports
 import cellblender
@@ -1304,23 +1305,59 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
           cur_frame = scene.frame_end
 
         mcell = scene.mcell
+        mol_viz = mcell.mol_viz
+        choices_list = mol_viz.choices_list  # This holds the currently selected sweep point
+
         if mcell.model_objects.has_some_dynamic:
-            filepath = mcell_files_path()
-            path_to_dg_files = os.path.join ( filepath, "output_data", "dynamic_geometry" )
+            files_path = mcell_files_path()
+            # Assume the new "data_layout" system since dynamic geometry is relatively new
+            # Read the data layout for this run (will include sweep subdirectories)
+            f = open ( os.path.join(files_path,"data_layout.json"), 'r' )
+            layout_spec = json.loads ( f.read() )
+            f.close()
+            data_layout = layout_spec['data_layout']
+            # Build a "sub path" based on any directories in the data layout
+            sub_path = ""
+            for level in data_layout:
+              if level[0] == '/DIR':
+                # This is typically the top level directory
+                sub_path = os.path.join ( sub_path, level[1][0] )
+              elif level[0] == '/FILE_TYPE':
+                # This is typically either "viz_data" or "react_data" ... force "viz_data
+                # This is not needed to find the dynamic geometry
+                pass
+              elif (level[0] ==  '/SEED'):
+                # This is not needed to find the dynamic geometry
+                pass
+              else:
+                # This is a parameter sweep subdirectory, use the parameter name and currently selected index
+                selected_index = 0
+                try:
+                  selected_index = choices_list[level[0]]['enum_choice']
+                except:
+                  pass
+                # Add the next lower directory level to the path
+                sub_path = os.path.join ( sub_path, level[0] + ("_index_%d" % selected_index) )
+
+            # Create the full path to the dynamic geometry for this selected point in the sweep space
+            path_to_dg_files = os.path.join(files_path, sub_path, "dynamic_geometry")
+
             for obj in mcell.model_objects.object_list:
                 if obj.dynamic and (obj.dynamic_display_source != 'other'):
 
                     # These names are currently defined as part of the dynamic geometry interface
-                    points = []            # The name "points" is expected by the user's script
-                    faces = []             # The name "faces" is expected by the user's script
-                    origin = [0,0,0]       # The name "origin" is expected by the user's script
-                    regions_dict = None    # The name "regions_dict" is expected by the user's script
+                    points = []            # The list "points" is expected by the user's script
+                    faces = []             # The list "faces" is expected by the user's script
+                    regions_dict = None    # The dict "regions_dict" is expected by the user's script
+                    region_props = None    # The list "region_props" is expected by the user's script
+                    origin = [0,0,0]       # The list "origin" is expected by the user's script
 
                     if (obj.dynamic_display_source == 'script') and (len(obj.script_name) > 0):
                         frame_number = cur_frame     # The name "frame_number" is expected by the user's script
                         exec ( bpy.data.texts[obj.script_name].as_string() )
 
                     elif len(obj.script_name) > 0:
+                        # print ( "Reading dynamic geometry files from: " + str(path_to_dg_files) )
                         file_name = "%s_frame_%d.mdl"%(obj.name,cur_frame)
                         # print ( "Reading from " + file_name )
                         full_file_name = os.path.join(path_to_dg_files,file_name)

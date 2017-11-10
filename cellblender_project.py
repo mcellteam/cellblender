@@ -168,7 +168,8 @@ class MCELL_OT_export_project(bpy.types.Operator):
         return True
 
 
-    def write_as_mdl ( self, obj_name, points, faces, regions_dict, origin=None, file_name=None, partitions=False, instantiate=False ):
+    def write_obj_as_mdl ( self, obj_name, points, faces, regions_dict, region_props, origin=None, file_name=None, partitions=False, instantiate=False ):
+      print ( "MCELL_OT_export_project.write_obj_as_mdl()" )
       if file_name != None:
         out_file = open ( file_name, "w" )
         if partitions:
@@ -312,13 +313,15 @@ class MCELL_OT_export_project(bpy.types.Operator):
                     ####################################################################
                     #
                     #  This section essentially defines the interface to the user's
-                    #  dynamic geometry code. Right now it's being done through 5 global
+                    #  dynamic geometry code. Right now it's being done through 7 global
                     #  variables which will be in the user's environment when they run:
                     #
                     #     frame_number
                     #     time_step
                     #     points[]
                     #     faces[]
+                    #     regions_dict[]
+                    #     region_props[]
                     #     origin[]
                     #
                     #  The user code gets the frame number as input and fills in both the
@@ -342,6 +345,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
                             points = []
                             faces = []
                             regions_dict = None
+                            region_props = None
                             origin = [0,0,0]
                             if len(obj.script_name) > 0:
                                 # Let the script create the geometry
@@ -367,7 +371,7 @@ class MCELL_OT_export_project(bpy.types.Operator):
 
                             file_name = "%s_frame_%d.mdl"%(obj.name,frame_number)
                             full_file_name = os.path.join(path_to_dg_files,file_name)
-                            self.write_as_mdl ( obj.name, points, faces, regions_dict, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
+                            self.write_obj_as_mdl ( obj.name, points, faces, regions_dict, region_props, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
                             #geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",file_name)))
 
                     # Write out the "master" MDL file for this frame
