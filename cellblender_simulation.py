@@ -429,20 +429,32 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
             #if not mcell.cellblender_preferences.decouple_export_run:
             #    bpy.ops.mcell.export_project()
 
+            # The separation between exporting and running is complicated when sweeping
+            # because the same steps may need to be carried out twice. The sweep needs
+            # to be traversed when exporting, and it needs to be traversed again to generate
+            # the run commands. Otherwise it needs to be saved between exporting and running.
+            #
+            # For now, this is handled with these two flags:
+            #    export_requested = BoolProperty(name="Export Requested", default=True)
+            #    run_requested = BoolProperty(name="Run Requested", default=True)
+            # This allows the same code to do what's appropriate for the current requests.
+
             if (run_sim.error_list and mcell.cellblender_preferences.invalid_policy == 'dont_run'):
                 pass
             else:
                 react_dir = os.path.join(project_dir, "output_data", "react_data")
-                if (os.path.exists(react_dir) and run_sim.remove_append == 'remove'):
-                    shutil.rmtree(react_dir)
-                if not os.path.exists(react_dir):
-                    os.makedirs(react_dir)
+                if run_sim.export_requested:
+                    if (os.path.exists(react_dir) and run_sim.remove_append == 'remove'):
+                        shutil.rmtree(react_dir)
+                    if not os.path.exists(react_dir):
+                        os.makedirs(react_dir)
 
                 viz_dir = os.path.join(project_dir, "output_data", "viz_data")
-                if (os.path.exists(viz_dir) and run_sim.remove_append == 'remove'):
-                    shutil.rmtree(viz_dir)
-                if not os.path.exists(viz_dir):
-                    os.makedirs(viz_dir)
+                if run_sim.export_requested:
+                    if (os.path.exists(viz_dir) and run_sim.remove_append == 'remove'):
+                        shutil.rmtree(viz_dir)
+                    if not os.path.exists(viz_dir):
+                        os.makedirs(viz_dir)
 
                 base_name = mcell.project_settings.base_name
 
@@ -460,8 +472,9 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                   sw_item['current_index'] = 0
                   print ( "  Sweep list item = " + str(sw_item) )
 
-                # The following line will create the "data_layout.json" file describing the directory structure
-                engine_manager.write_sweep_list_to_layout_file ( sweep_list, start_seed, end_seed, os.path.join ( project_dir, "data_layout.json" ) )
+                if run_sim.export_requested:
+                    # The following line will create the "data_layout.json" file describing the directory structure
+                    engine_manager.write_sweep_list_to_layout_file ( sweep_list, start_seed, end_seed, os.path.join ( project_dir, "data_layout.json" ) )
 
                 # Count the number of sweep runs
                 num_sweep_runs = engine_manager.count_sweep_runs ( sweep_list )
@@ -489,11 +502,12 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                     for seed in range(start_seed,end_seed+1):
                         # Create the directories and write the MDL
                         sweep_item_path = os.path.join(project_dir,sweep_path)
-                        engine_manager.makedirs_exist_ok ( sweep_item_path, exist_ok=True )
-                        engine_manager.makedirs_exist_ok ( os.path.join(sweep_item_path,'react_data'), exist_ok=True )
-                        engine_manager.makedirs_exist_ok ( os.path.join(sweep_item_path,'viz_data'), exist_ok=True )
-                        print ( "Writing data model as MDL at " + str(os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) )) )
-                        data_model_to_mdl.write_mdl ( {'mcell':dm}, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ) )
+                        if run_sim.export_requested:
+                            engine_manager.makedirs_exist_ok ( sweep_item_path, exist_ok=True )
+                            engine_manager.makedirs_exist_ok ( os.path.join(sweep_item_path,'react_data'), exist_ok=True )
+                            engine_manager.makedirs_exist_ok ( os.path.join(sweep_item_path,'viz_data'), exist_ok=True )
+                            print ( "Writing data model as MDL at " + str(os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) )) )
+                            data_model_to_mdl.write_mdl ( {'mcell':dm}, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ) )
                         run_cmd_list.append ( [mcell_binary, sweep_item_path, base_name, error_file_option, log_file_option, seed] )
                     # Increment the current_index counters from rightmost side (deepest directory)
                     i = len(sweep_list) - 1
@@ -511,45 +525,46 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                     print ( "  " + str(run_cmd) )
 
 
-                processes_list = run_sim.processes_list
-                #for seed in range(start_seed,end_seed + 1):
-                for run_cmd in run_cmd_list:
-                  processes_list.add()
-                  run_sim.active_process_index = len(run_sim.processes_list) - 1
-                  simulation_process = processes_list[run_sim.active_process_index]
+                if run_sim.run_requested:
+                    processes_list = run_sim.processes_list
+                    #for seed in range(start_seed,end_seed + 1):
+                    for run_cmd in run_cmd_list:
+                      processes_list.add()
+                      run_sim.active_process_index = len(run_sim.processes_list) - 1
+                      simulation_process = processes_list[run_sim.active_process_index]
 
-                  print("Starting MCell ... create start_time.txt file:")
-                  with open(os.path.join(os.path.dirname(bpy.data.filepath),"start_time.txt"), "w") as start_time_file:
-                      start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
+                      print("Starting MCell ... create start_time.txt file:")
+                      with open(os.path.join(os.path.dirname(bpy.data.filepath),"start_time.txt"), "w") as start_time_file:
+                          start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
-                  # Log filename will be log.year-month-day_hour:minute_seed.txt
-                  # (e.g. log.2013-03-12_11:45_1.txt)
-                  time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
+                      # Log filename will be log.year-month-day_hour:minute_seed.txt
+                      # (e.g. log.2013-03-12_11:45_1.txt)
+                      time_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M")
 
-                  if error_file_option == 'file':
-                      error_filename = "error.%s_%d.txt" % (time_now, seed)  # Note: this is insufficiently unique for sweeps
-                  elif error_file_option == 'none':
-                      error_file = subprocess.DEVNULL
-                  elif error_file_option == 'console':
-                      error_file = None
+                      if error_file_option == 'file':
+                          error_filename = "error.%s_%d.txt" % (time_now, seed)  # Note: this is insufficiently unique for sweeps
+                      elif error_file_option == 'none':
+                          error_file = subprocess.DEVNULL
+                      elif error_file_option == 'console':
+                          error_file = None
 
-                  if log_file_option == 'file':
-                      log_filename = "log.%s_%d.txt" % (time_now, seed)  # Note: this is insufficiently unique for sweeps
-                  elif log_file_option == 'none':
-                      log_file = subprocess.DEVNULL
-                  elif log_file_option == 'console':
-                      log_file = None
+                      if log_file_option == 'file':
+                          log_filename = "log.%s_%d.txt" % (time_now, seed)  # Note: this is insufficiently unique for sweeps
+                      elif log_file_option == 'none':
+                          log_file = subprocess.DEVNULL
+                      elif log_file_option == 'console':
+                          log_file = None
 
-                  mdl_filename = '%s.main.mdl' % (run_cmd[2])
-                  mcell_args = '-seed %d %s' % (run_cmd[5], mdl_filename)
-                  make_texts = run_sim.save_text_logs
-                  proc = cellblender.simulation_queue.add_task(run_cmd[0], mcell_args, run_cmd[1], make_texts)
+                      mdl_filename = '%s.main.mdl' % (run_cmd[2])
+                      mcell_args = '-seed %d %s' % (run_cmd[5], mdl_filename)
+                      make_texts = run_sim.save_text_logs
+                      proc = cellblender.simulation_queue.add_task(run_cmd[0], mcell_args, run_cmd[1], make_texts)
 
-                  self.report({'INFO'}, "Simulation Running")
+                      self.report({'INFO'}, "Simulation Running")
 
-                  if not simulation_process.name:
-                      simulation_process.name = ("PID: %d, Seed: %d" % (proc.pid, seed))
-                  bpy.ops.mcell.percentage_done_timer()
+                      if not simulation_process.name:
+                          simulation_process.name = ("PID: %d, Seed: %d" % (proc.pid, seed))
+                      bpy.ops.mcell.percentage_done_timer()
 
 
         else:
@@ -1834,6 +1849,9 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     required_memory_gig = FloatProperty(default=2.0, description="Minimum memory per job - used for selecting hosts")
     required_free_slots = IntProperty(default=1, description="Minimum free slots for selecting hosts")
     active_comp_index = IntProperty(name="Active Computer Index", default=0)
+
+    export_requested = BoolProperty(name="Export Requested", default=True)
+    run_requested = BoolProperty(name="Run Requested", default=True)
 
     start_seed = PointerProperty ( name="Start Seed", type=parameter_system.Parameter_Reference )
     end_seed   = PointerProperty ( name="End Seed", type=parameter_system.Parameter_Reference )

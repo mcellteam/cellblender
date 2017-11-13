@@ -564,11 +564,12 @@ def write_mdl ( dm, file_name ):
               # So if we're here, that means ALL objects should be written as dynamic
               if   True   or obj['dynamic']:
                   print ( "  Frame " + str(frame_number) + ", Saving dynamic geometry for object " + obj['name'] + " with script \"" + obj['script_name'] + "\"" )
-                  points = []
-                  faces = []
-                  regions_dict = {}
-                  region_props = {}
-                  origin = [0,0,0]
+                  points = []            # The list "points" is expected by the user's script
+                  faces = []             # The list "faces" is expected by the user's script
+                  regions_dict = {}      # The dict "regions_dict" is expected by the user's script
+                  region_props = {}      # The dict "region_props" is expected by the user's script
+                  origin = [0,0,0]       # The list "origin" is expected by the user's script
+
                   if len(obj['script_name']) > 0:
                       # Let the script create the geometry
                       print ( "   Build object mesh from user script for frame " + str(frame_number) )

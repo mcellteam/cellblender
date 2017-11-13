@@ -1348,12 +1348,17 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     # These names are currently defined as part of the dynamic geometry interface
                     points = []            # The list "points" is expected by the user's script
                     faces = []             # The list "faces" is expected by the user's script
-                    regions_dict = None    # The dict "regions_dict" is expected by the user's script
-                    region_props = None    # The list "region_props" is expected by the user's script
+                    regions_dict = {}      # The dict "regions_dict" is expected by the user's script
+                    region_props = {}      # The dict "region_props" is expected by the user's script
                     origin = [0,0,0]       # The list "origin" is expected by the user's script
 
                     if (obj.dynamic_display_source == 'script') and (len(obj.script_name) > 0):
                         frame_number = cur_frame     # The name "frame_number" is expected by the user's script
+                        # The following checking was added during debug, but might not be needed for production
+                        #if obj.script_name == None:
+                        #    print ( "Error: script name is none" )
+                        #elif not (obj.script_name in bpy.data.texts):
+                        #    print ( "Error: " + obj.script_name + " is not in bpy.data.texts" )
                         exec ( bpy.data.texts[obj.script_name].as_string() )
 
                     elif len(obj.script_name) > 0:
