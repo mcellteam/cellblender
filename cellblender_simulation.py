@@ -909,18 +909,22 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
                 pid = get_pid(simulation_process)
                 seed = int(simulation_process.name.split(',')[1].split(':')[1])
                 q_item = cellblender.simulation_queue.task_dict[pid]
-                stdout_txt = q_item['bl_text'].as_string()
-                percent = 0 
-                last_iter = total_iter = 0
-                for i in reversed(stdout_txt.split("\n")):
-                    if i.startswith("Iterations"):
-                        last_iter = int(i.split()[1])
-                        total_iter = int(i.split()[3])
-                        percent = (last_iter/total_iter)*100
-                        break
-                if (last_iter == total_iter) and (total_iter != 0):
-                    task_ctr += 1
-                simulation_process.name = "PID: %d, Seed: %d, %d%%" % (pid, seed, percent)
+                percent = None
+                if q_item['bl_text'] != None:
+                    stdout_txt = q_item['bl_text'].as_string()
+                    last_iter = total_iter = 0
+                    for i in reversed(stdout_txt.split("\n")):
+                        if i.startswith("Iterations"):
+                            last_iter = int(i.split()[1])
+                            total_iter = int(i.split()[3])
+                            percent = (last_iter/total_iter)*100
+                            break
+                    if (last_iter == total_iter) and (total_iter != 0):
+                        task_ctr += 1
+                if percent is None:
+                    simulation_process.name = "PID: %d, Seed: %d" % (pid, seed)
+                else:
+                    simulation_process.name = "PID: %d, Seed: %d, %d%%" % (pid, seed, percent)
 
             # just a silly way of forcing a screen update. ¯\_(ツ)_/¯
             color = context.user_preferences.themes[0].view_3d.space.gradients.high_gradient
