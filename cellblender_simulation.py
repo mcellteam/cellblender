@@ -180,6 +180,39 @@ def run_generic_runner (context, sim_module):
 
 # Simulation Operators:
 
+
+class MCELL_OT_dm_export_mdl(bpy.types.Operator):
+    bl_idname = "mcell.dm_export_mdl"
+    bl_label = "Export CellBlender Project"
+    bl_description = ("Export CellBlender Project (via data model)")
+    bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(self,context):
+
+        mcell = context.scene.mcell
+        if mcell.cellblender_preferences.lockout_export and mcell.cellblender_preferences.decouple_export_run:
+            # print ( "Exporting is currently locked out. See the Preferences/ExtraOptions panel." )
+            # The "self" here doesn't contain or permit the report function.
+            # self.report({'INFO'}, "Exporting is Locked Out")
+            return False
+        else:
+            # Note: We could copy more complex logic from mcell.run_simulation's poll method.
+            return True
+        return True
+
+    def execute(self, context):
+        print ( "Export via data model" )
+        mcell = context.scene.mcell
+        run_sim = mcell.run_simulation
+        run_sim.export_requested = True
+        run_sim.run_requested = False
+        bpy.ops.mcell.run_simulation_sweep_queue()
+        return {'FINISHED'}
+
+
+
+
 class MCELL_OT_run_simulation(bpy.types.Operator):
     bl_idname = "mcell.run_simulation"
     bl_label = "Run MCell Simulation"
@@ -248,7 +281,14 @@ class MCELL_OT_run_simulation(bpy.types.Operator):
         num_runs_requested = (1 + end_seed - start_seed) * total_sweep_runs
         print ( "Requested runs (including seeds) = " + str(num_runs_requested) )
 
+        if mcell.cellblender_preferences.decouple_export_run:
+            run_sim.export_requested = False
+        else:
+            run_sim.export_requested = True
+        run_sim.run_requested = True
+
         if mcell.cellblender_preferences.lockout_export and (not mcell.cellblender_preferences.decouple_export_run):
+            # Exporting is locked out and this operator is in "Export and Run Mode"
             print ( "Exporting is currently locked out. See the Preferences/ExtraOptions panel." )
             self.report({'INFO'}, "Exporting is Locked Out")
         elif (run_limit >=0) and (num_runs_requested > run_limit):
@@ -329,7 +369,8 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
                 mcell_dm = mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
                 data_model.save_data_model_to_json_file ( mcell_dm, os.path.join(project_dir,"data_model.json") )
 
-                base_name = mcell.project_settings.base_name
+                # base_name = mcell.project_settings.base_name
+                base_name = context.scene.name.replace(" ", "_")
 
                 error_file_option = run_sim.error_file
                 log_file_option = run_sim.log_file
@@ -456,7 +497,22 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                     if not os.path.exists(viz_dir):
                         os.makedirs(viz_dir)
 
-                base_name = mcell.project_settings.base_name
+                # This assumes "mcell.export_project" operator had been run:   base_name = mcell.project_settings.base_name
+                # Do this here since "mcell.export_project" is not being used with this code.
+                base_name = scene_name = context.scene.name.replace(" ", "_")
+
+                if run_sim.export_requested:
+                    # The export checking logic is broken for sweep runs that don't have a main MDL file at the top.
+                    # Rather than muck with that right now, just create a dummy file to signal that it's been exported.
+                    ##################################################################
+                    main_mdl = mcell_files_path()
+                    main_mdl = os.path.join(main_mdl, "output_data")
+                    main_mdl = os.path.join(main_mdl, base_name + ".main.mdl")
+                    main_mdl_file = open(main_mdl, "w", encoding="utf8", newline="\n")
+                    main_mdl_file.write ( "/* This file is written to signal to CellBlender that the project has been exported. */" )
+                    main_mdl_file.close()
+                    ##################################################################
+
 
                 error_file_option = run_sim.error_file
                 log_file_option = run_sim.log_file
@@ -464,7 +520,14 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                 cellblender.simulation_queue.start(mcell_processes)
                 cellblender.simulation_queue.notify = True
 
-                dm = mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
+                dm = None
+                if run_sim.export_requested:
+                    # When exporting, the geometry data will be needed to write the MDL
+                    dm = mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
+                else:
+                    # When just running, the geometry data isn't needed so build a data model without it
+                    dm = mcell.build_data_model_from_properties ( context, geometry=False, scripts=False )
+
                 sweep_list = engine_manager.build_sweep_list( dm['parameter_system'] )
                 print ( "Sweep list = " + str(sweep_list) )
                 # Add a "current_index" of 0 to support the sweeping
@@ -518,6 +581,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                         else:
                           break
                         i += -1
+
 
                 # Print the run commands as a record of what's being done
                 print ( "Run Cmds for Sweep Queue (0:mcell, 1:wd, 2:base_name, 3:error, 4:log, 5:seed):" )
@@ -2177,24 +2241,53 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
             elif (not os.path.isfile(main_mdl) and mcell.cellblender_preferences.decouple_export_run):
                 row.label(text="Export the project", icon='ERROR')
                 row = layout.row()
-                row.operator("mcell.export_project",
-                    text="Export CellBlender Project", icon='EXPORT')
+                if self.simulation_run_control in [ "QUEUE" ]:
+                    # Use the old Export operator
+                    row.operator("mcell.export_project", text="Export CellBlender Project", icon='EXPORT')
+                else:
+                    # Use the new Export operator
+                    row.operator("mcell.dm_export_mdl", text="Export CellBlender Project", icon='EXPORT')
             else:
 
                 row = layout.row(align=True)
                 if mcell.cellblender_preferences.decouple_export_run:
                     if mcell.cellblender_preferences.lockout_export:
-                        row.operator( "mcell.export_project",
-                            text="Export CellBlender Project", icon='CANCEL')
+                        # The lockout indicates that the MDL should not be over-written (likely hand edited)
+                        # The poll function should be returning False to "gray out" this option
+                        if self.simulation_run_control in [ "QUEUE" ]:
+                            # Use the old Export operator
+                            row.operator("mcell.export_project", text="Export CellBlender Project", icon='CANCEL')
+                        else:
+                            # Use the new Export operator
+                            row.operator("mcell.dm_export_mdl", text="Export CellBlender Project", icon='CANCEL')
                     else:
-                        row.operator( "mcell.export_project",
-                            text="Export CellBlender Project", icon='EXPORT')
+                        # Show the export as enabled
+                        # The poll function should be returning true to show this option as available
+                        if self.simulation_run_control in [ "QUEUE" ]:
+                            # Use the old Export operator
+                            row.operator("mcell.export_project", text="Export CellBlender Project", icon='EXPORT')
+                        else:
+                            # Use the new Export operator
+                            row.operator( "mcell.dm_export_mdl", text="Export CellBlender Project", icon='EXPORT')
+                    # Show the run operator as available (always available when exporting is locked out)
                     row.operator("mcell.run_simulation", text="Run", icon='COLOR_RED')
                 else:
                     if mcell.cellblender_preferences.lockout_export:
+                        # The lockout indicates that the MDL should not be over-written (likely hand edited)
+                        # The poll function should be returning False to "gray out" this combined export/run option
                         row.operator("mcell.run_simulation", text="Export & Run", icon='CANCEL')
                     else:
+                        # Show the export as enabled
+                        # The poll function should be returning true to show this export/run option as available
                         row.operator("mcell.run_simulation", text="Export & Run", icon='COLOR_RED')
+
+                # This is just for testing and verification that the flags are being set properly ... TODO: delete eventually.
+                #if not ( self.simulation_run_control in [ "QUEUE" ] ):
+                #    row = layout.row(align=True)
+                #    col = row.column()
+                #    col.prop ( self, "export_requested" )
+                #    col = row.column()
+                #    col.prop ( self, "run_requested" )
 
                 display_queue_panel = False
 

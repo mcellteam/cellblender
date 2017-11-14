@@ -1028,6 +1028,7 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
 
     def build_data_model_from_properties ( self, context, geometry=False, scripts=False, dyn_geo=False ):
         print ( "build_data_model_from_properties: Constructing a data_model dictionary from current properties" )
+        print ( "   geometry=" + str(geometry) + ", scripts=" + str(scripts) + ", dyn_geo=" + str(dyn_geo) )
         dm = {}
         dm['data_model_version'] = "DM_2017_06_23_1300"
         if self.cellblender_preferences.bionetgen_mode:
