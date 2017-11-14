@@ -554,14 +554,14 @@ class MCELL_UL_draw_parameter(bpy.types.UIList):
         col = layout.column()
         icon = 'BLANK1'
         if ('sweep_expr' in id_par):
-          icon = 'SPACE3'
+          icon = 'DOT'
           if 'sweep_enabled' in id_par:
             if id_par['sweep_enabled']:
               icon = 'FCURVE'
         col.label("", icon=icon)
 
         # BLANK1 = no sweep specification
-        # SPACE3 = sweepable but off
+        # DOT = sweepable but off
         # FCURVE = sweepable and on
         # Optional?: SPACE2 = sweepable and on
 
