@@ -207,10 +207,16 @@ class MCELL_OT_dm_export_mdl(bpy.types.Operator):
         run_sim = mcell.run_simulation
         run_sim.export_requested = True
         run_sim.run_requested = False
-        bpy.ops.mcell.run_simulation_sweep_queue()
+
+        if str(run_sim.simulation_run_control) == 'SWEEP_QUEUE':
+            bpy.ops.mcell.run_simulation_sweep_queue()
+        #elif str(run_sim.simulation_run_control) == 'SWEEP_SGE':
+        #    bpy.ops.mcell.run_simulation_sweep_sge()
+        else:
+            print ( "Run option \"" + str(run_sim.simulation_run_control) + "\" cannot be exported without being run in this version of CellBlender." )
+            print ( "  Disable the \"Decouple Export and Run\" option to use this runner." )
+
         return {'FINISHED'}
-
-
 
 
 class MCELL_OT_run_simulation(bpy.types.Operator):
@@ -484,18 +490,20 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                 pass
             else:
                 react_dir = os.path.join(project_dir, "output_data", "react_data")
-                if run_sim.export_requested:
-                    if (os.path.exists(react_dir) and run_sim.remove_append == 'remove'):
-                        shutil.rmtree(react_dir)
-                    if not os.path.exists(react_dir):
-                        os.makedirs(react_dir)
-
                 viz_dir = os.path.join(project_dir, "output_data", "viz_data")
-                if run_sim.export_requested:
-                    if (os.path.exists(viz_dir) and run_sim.remove_append == 'remove'):
-                        shutil.rmtree(viz_dir)
-                    if not os.path.exists(viz_dir):
-                        os.makedirs(viz_dir)
+
+                if run_sim.export_requested and (run_sim.remove_append == 'remove'):
+                    # Remove the entire output directory
+                    out_dir = os.path.join(project_dir, "output_data")
+                    if os.path.exists(out_dir):
+                        shutil.rmtree(out_dir)
+
+                if run_sim.export_requested and not os.path.exists(react_dir):
+                    os.makedirs(react_dir)
+
+                if run_sim.export_requested and not os.path.exists(viz_dir):
+                    os.makedirs(viz_dir)
+
 
                 # This assumes "mcell.export_project" operator had been run:   base_name = mcell.project_settings.base_name
                 # Do this here since "mcell.export_project" is not being used with this code.
@@ -646,8 +654,8 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
 
 class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
     bl_idname = "mcell.run_simulation_sweep_sge"
-    bl_label = "Run MCell Simulation Command"
-    bl_description = "Run MCell Simulation Command Line"
+    bl_label = "Run MCell Simulation Using Sweep SGE"
+    bl_description = "Run MCell Simulation Sweep SGE"
     bl_options = {'REGISTER'}
 
     def execute(self, context):
@@ -703,6 +711,20 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
                 data_model.save_data_model_to_json_file ( mcell_dm, os.path.join(project_dir,"data_model.json") )
 
                 base_name = mcell.project_settings.base_name
+
+
+                if run_sim.export_requested:
+                    # The export checking logic is broken for sweep runs that don't have a main MDL file at the top.
+                    # Rather than muck with that right now, just create a dummy file to signal that it's been exported.
+                    ##################################################################
+                    main_mdl = mcell_files_path()
+                    main_mdl = os.path.join(main_mdl, "output_data")
+                    main_mdl = os.path.join(main_mdl, base_name + ".main.mdl")
+                    main_mdl_file = open(main_mdl, "w", encoding="utf8", newline="\n")
+                    main_mdl_file.write ( "/* This file is written to signal to CellBlender that the project has been exported. */" )
+                    main_mdl_file.close()
+                    ##################################################################
+
 
                 error_file_option = run_sim.error_file
                 log_file_option = run_sim.log_file
@@ -2240,10 +2262,9 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                 #  but this code is a little messy as it is ... so this requirement remains.
                 row.label(text="Set an MCell binary in CellBlender - Preferences Panel", icon='ERROR')
             elif not os.path.dirname(bpy.data.filepath):
-                row.label(
-                    text="Open or save a .blend file to set the project directory", icon='ERROR')
+                row.label(text="Open or save a .blend file to set the project directory", icon='ERROR')
             elif (not os.path.isfile(main_mdl) and mcell.cellblender_preferences.decouple_export_run):
-                row.label(text="Export the project", icon='ERROR')
+                row.label(text="Export the project or uncheck \"Decouple Export and Run\" below.", icon='ERROR')
                 row = layout.row()
                 if self.simulation_run_control in [ "QUEUE" ]:
                     # Use the old Export operator
@@ -2251,6 +2272,13 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                 else:
                     # Use the new Export operator
                     row.operator("mcell.dm_export_mdl", text="Export CellBlender Project", icon='EXPORT')
+                # Give the user a chance to turn this off!!!
+                #   The check for "not os.path.isfile(main_mdl)" will fail when exporting a swept model.
+                #   It will fail because there is no "main_mdl" file ... there are lots of them.
+                #   We should probably not be hiding an entire panel just because there's no main MDL file.
+                #   This switch is a quick (but not very graceful) way out of this problem.
+                row = layout.row()
+                row.prop(mcell.cellblender_preferences, "decouple_export_run")
             else:
 
                 row = layout.row(align=True)
