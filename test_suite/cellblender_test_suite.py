@@ -77,6 +77,18 @@ def register_test ( test_groups, group_name, test_name, operator_name, next_test
     return next_test_group_num
     
 
+def run_method_changed(self, context):
+    print ( "Run method changed" )
+    """
+    app = context.scene.cellblender_test_suite
+    mcell = context.scene.mcell
+    scripting_list = mcell.scripting.scripting_list
+    if len(scripting_list) > 0:
+        scripting = scripting_list[mcell.scripting.active_scripting_index]
+    """
+    return
+
+
 
 class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
 
@@ -88,7 +100,22 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
     path_to_mdl = bpy.props.StringProperty(name="Path to MDL", default="")
     exit_on_error = bpy.props.BoolProperty(name="Exit on Error", default=True)
     run_mcell = bpy.props.BoolProperty(name="Run MCell", default=True)
+
     run_with_queue = bpy.props.BoolProperty(name="Run with Queue", default=True)
+    submit_host = bpy.props.StringProperty(name="Submit Host", default="")
+
+    run_method_enum = [
+        ('NONE',         "None",    ""),
+        ('SWEEP_QUEUE',  "MCell Local", ""),
+        ('SWEEP_SGE',    "MCell SGE", ""),
+        ('QUEUE',        "Queue",    ""),
+        ('COMMAND',      "Command",  "")]
+    run_method = bpy.props.EnumProperty(
+        items=run_method_enum, name="Run Method",
+        default='NONE',
+        description="Choose a run method",
+        update=run_method_changed)
+
     update_soure_file = bpy.props.BoolProperty(name="Update Source", default=False)
     source_file_to_update = bpy.props.StringProperty(name="Source File to Update", default="")
     stress_test_level = bpy.props.IntProperty(name="Stress Test Level", default=100)
@@ -190,6 +217,8 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
             row.operator("cellblender_test.set_mcell_path", text="Set Path to MCell Binary", icon='FILESEL')
             row = box.row()
             row.prop ( app, "path_to_mcell" )
+            row = box.row()
+            row.prop ( app, "submit_host" )
 
             # Problems getting this to work ... use current directory for now
             #row = box.row()
@@ -211,7 +240,8 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
           row.label( icon='ERROR',     text="Fail" )
         row.prop(app, "exit_on_error")
         row.prop(app, "run_mcell")
-        row.prop(app, "run_with_queue")
+        row.prop(app, "run_method",    text="")
+        # row.prop(app, "run_with_queue")
         row.prop(app, "update_soure_file")
         if app.update_soure_file:
             row = self.layout.row()
@@ -441,12 +471,11 @@ class CellBlender_Model:
         else:
             mcell.cellblender_preferences.mcell_binary = os.getcwd() + relative_path_to_mcell
 
+        mcell.run_simulation.sge_host_name = app.submit_host
+
         mcell.cellblender_preferences.mcell_binary_valid = True
         mcell.cellblender_preferences.show_sim_runner_options = True
-        if app.run_with_queue:
-            mcell.run_simulation.simulation_run_control = 'SWEEP_QUEUE'
-        else:
-            mcell.run_simulation.simulation_run_control = 'COMMAND'
+        mcell.run_simulation.simulation_run_control = app.run_method
         
         return mcell
 

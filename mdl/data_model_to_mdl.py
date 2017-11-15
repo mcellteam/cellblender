@@ -727,6 +727,8 @@ def write_parameter_system ( ps, f ):
 
 
 def write_initialization ( init, f, dyn_fn=None ):
+    # f.write ( "/* This should break the checksums */" )
+
     write_dm_str_val ( init, f, 'iterations',                'ITERATIONS' )
     write_dm_str_val ( init, f, 'time_step',                 'TIME_STEP' )
     if dyn_fn != None:
