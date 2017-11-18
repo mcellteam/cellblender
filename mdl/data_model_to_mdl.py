@@ -135,23 +135,30 @@ def write_dm_str_val_good ( dm, f, dm_name, mdl_name, blank_default="", indent="
 
 
 def write_dm_str_val ( dm, f, dm_name, mdl_name, blank_default="", indent="" ):
+    print ( "  Par " + str(dm_name) + " is MDL: " + str(mdl_name) )
     # This writes out values with forced single precision
     if dm_name in dm:
       val = str(dm[dm_name])
+      print ( "      " + str(dm_name) + " = \"" + str(val) + "\"" )
       if mdl_name in ['MISSED_REACTION_THRESHOLD']:
         # Force to be a float value to match values exported from Blender float properties
         import array
         val = array.array('f',[float(dm[dm_name])])
         val = "%.15g" % val[0]
         f.write ( indent + mdl_name + " = " + val + "\n" )
+        print ( "      MDL: " + mdl_name + " = " + val )
       elif len(val) > 0:
         if type(dm[dm_name]) == type(True):
           val = val.upper()
         elif type(dm[dm_name]) == type(1.234):
           val = "%.15g" % dm[dm_name]
         f.write ( indent + mdl_name + " = " + val + "\n" )
+        print ( "      MDL: " + mdl_name + " = " + val )
       elif len(blank_default) > 0:
         f.write ( indent + mdl_name + " = " + str(blank_default) + "\n" )
+        print ( "      MDL: " + mdl_name + " = " + str(blank_default) )
+      else:
+        print ( "      MDL: not written" )
 
 def write_dm_str_val_junk ( dm, f, dm_name, mdl_name, blank_default="", indent="" ):
     if mdl_name == 'TIME_STEP':
@@ -301,11 +308,11 @@ import traceback
 def write_mdl ( dm, file_name ):
     """ Write a data model to a named file (generally follows "export_mcell_mdl" ordering) """
 
-    #print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
-    #print ( "Top of data_model_to_mdl.write_mdl() to " + str(file_name) )
+    print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+    print ( "Top of data_model_to_mdl.write_mdl() to " + str(file_name) )
     #print ( "Call Stack:" )
     #traceback.print_stack()
-    #print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
+    print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
 
     # First check for any dynamic objects in the data model
     num_dynamic = len ( [ True for o in dm['mcell']['model_objects']['model_object_list'] if o['dynamic'] ] )

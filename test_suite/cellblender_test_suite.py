@@ -112,7 +112,7 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
         ('COMMAND',      "Command",  "")]
     run_method = bpy.props.EnumProperty(
         items=run_method_enum, name="Run Method",
-        default='NONE',
+        default='SWEEP_QUEUE',
         description="Choose a run method",
         update=run_method_changed)
 
@@ -1356,7 +1356,10 @@ class CellBlender_Model:
         self.mcell.export_project.export_format = export_format
 
         app = bpy.context.scene.cellblender_test_suite
-        bpy.ops.mcell.export_project()
+        # Old export operator
+        # bpy.ops.mcell.export_project()
+        # New export operator
+        bpy.ops.mcell.dm_export_mdl()
 
 
     def run_only ( self, wait_time=10.0, seed=1 ):
@@ -1393,7 +1396,10 @@ class CellBlender_Model:
                 print ( "Test Suite is Waiting for MCell to complete ..." )
             print ( "Test Suite is done waiting!!" )
         else:
-            bpy.ops.mcell.export_project()
+            # Old export operator
+            # bpy.ops.mcell.export_project()
+            # New export operator
+            bpy.ops.mcell.dm_export_mdl()
 
 
     def refresh_molecules ( self ):
