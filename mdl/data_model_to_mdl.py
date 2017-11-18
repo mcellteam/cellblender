@@ -302,7 +302,10 @@ def write_obj_as_mdl ( obj_name, points, faces, regions_dict, region_props, orig
         out_file.write ( "}\n" )
     out_file.close()
 
+# Import math to be available for user scripts
+import math
 
+# For debugging
 import traceback
 
 def write_mdl ( dm, file_name ):
@@ -807,6 +810,7 @@ def write_warnings ( warnings, f ):
         write_dm_str_val ( warnings, f, 'all_warnings', 'ALL_WARNINGS', indent="   " )
 
     if individual:
+      write_dm_str_val ( warnings, f, 'large_molecular_displacement', 'LARGE_MOLECULAR_DISPLACEMENT', indent="   " )
       write_dm_str_val ( warnings, f, 'degenerate_polygons', 'DEGENERATE_POLYGONS', indent="   " )
       write_dm_str_val ( warnings, f, 'negative_diffusion_constant', 'NEGATIVE_DIFFUSION_CONSTANT', indent="   " )
       write_dm_str_val ( warnings, f, 'missing_surface_orientation', 'MISSING_SURFACE_ORIENTATION', indent="   " )

@@ -4715,6 +4715,437 @@ def DynamicGeometryCubeTest ( context, mol_types="vs", size=[1.0,1.0,1.0], subs=
 
 
 
+
+
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Tapered Cube Test"
+operator_name = "cellblender_test.dynamic_tapered_cube"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+
+dyn_tapered_cube_script = """# This script gets both its inputs and outputs from the environment:
+#
+#  frame_number is the frame number indexed from the start of the simulation
+#  time_step is the amount of time between each frame (same as CellBlender's time_step)
+#  points [] is a list of points where each point is a list of 3 doubles: x, y, z
+#  faces [] is a list of faces where each face is a list of 3 integer indexes of points (0 based)
+#  regions_dict {} is a dictionary of regions
+#  region_props {} is a dictionary of region properties
+#  origin [0,0,0] is a list of 3 coordinates for the origin of this object
+#
+# This script must fill out the points and faces lists for the time given by frame_number and time_step.
+# It may also change the regions and origin for each frame
+# CellBlender will call this function repeatedly to create the dynamic MDL and possibly during display.
+
+import math
+
+points.clear()
+faces.clear()
+
+min_length = 0.5
+max_length = 1.0
+period_frames = 100
+
+sx = min_length + ( (max_length-min_length) * ( (1 - math.cos ( 2 * math.pi * frame_number / period_frames )) / 2 ) )
+sy = min_length + ( (max_length-min_length) * ( (1 - math.cos ( 2 * math.pi * frame_number / period_frames )) / 2 ) )
+sz = min_length + ( (max_length-min_length) * ( (1 - math.sin ( 2 * math.pi * frame_number / period_frames )) / 2 ) )
+sz = 2 * sz
+
+# These define the coordinates of the rectangular box
+points.append ( [  sx,  sy, -sz ] )
+points.append ( [  sx, -sy, -sz ] )
+points.append ( [ -sx, -sy, -sz ] )
+points.append ( [ -sx,  sy, -sz ] )
+points.append ( [  sx,  sy,  sz ] )
+points.append ( [  sx, -sy,  sz ] )
+points.append ( [ -sx, -sy,  sz ] )
+points.append ( [ -sx,  sy,  sz ] )
+
+# These define the faces of the rectangular box
+faces.append ( [ 1, 2, 3 ] )
+faces.append ( [ 7, 6, 5 ] )
+faces.append ( [ 4, 5, 1 ] )
+faces.append ( [ 5, 6, 2 ] )
+faces.append ( [ 2, 6, 7 ] )
+faces.append ( [ 0, 3, 7 ] )
+faces.append ( [ 0, 1, 3 ] )
+faces.append ( [ 4, 7, 5 ] )
+faces.append ( [ 0, 4, 1 ] )
+faces.append ( [ 1, 5, 2 ] )
+faces.append ( [ 3, 2, 7 ] )
+faces.append ( [ 4, 0, 7 ] )
+
+# Taper the box to get a different shape
+for i in range(len(points)):
+    if points[i][2] > 0:
+        # z coordinate is greater than 0 so shrink x and y coordinates
+        points[i][0] = points[i][0] * 0.2
+        points[i][1] = points[i][1] * 0.2
+    else:
+        # z coordinate is less than or equal to 0 so expand x and y coordinates
+        points[i][0] = points[i][0] * 2
+        points[i][1] = points[i][1] * 2
+"""
+
+class DynTaperedCubeTest(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+    self_test_name = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
+
+        cb_model = CellBlender_Model ( context, self.self_test_name )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        obj_name = "Cell"
+
+        cb_model.add_cube_to_model ( name=obj_name, draw_type="WIRE" )
+
+        # Copy the script text into a Blender text object named CubeDynGeo.py
+
+        script_name = 'CubeDynGeo.py'
+        print ( "  Script: " + script_name )
+        if script_name in bpy.data.texts:
+          bpy.data.texts[script_name].clear()
+        else:
+          bpy.data.texts.new(script_name)
+        bpy.data.texts[script_name].write ( dyn_tapered_cube_script )
+
+        # Modify the object to be dynamic
+
+        mcell.model_objects.object_list['Cell'].dynamic = True
+        mcell.model_objects.object_list['Cell'].script_name = script_name
+        mcell.model_objects.object_list['Cell'].dynamic_display_source = 'script'
+
+
+        mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-3" )
+
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mol  = cb_model.get_molecule_species_by_name('a')
+
+        cb_model.change_molecule_display ( mol, glyph='Cube', scale=4.0, red=1.0, green=0.0, blue=0.0 )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
+
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
+
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "2d3cc932c87d640353d2ac67f304b579b5c01003", test_name=self.self_test_name )
+
+        cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.5 )
+
+        cb_model.hide_manipulator ( hide=True )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+############# This cube script is shared across a number of other tests ###############
+
+dyn_cube_script = """# This script gets both its inputs and outputs from the environment:
+
+import math
+
+min_len=0.25
+max_len=3.5
+period_frames=100
+cur_frame = frame_number
+
+size_x = min_len + ( (max_len-min_len) * ( (1 - math.cos ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
+size_y = min_len + ( (max_len-min_len) * ( (1 - math.cos ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
+size_z = min_len + ( (max_len-min_len) * ( (1 - math.sin ( 2 * math.pi * cur_frame / period_frames )) / 2 ) )
+
+x_subs=1
+y_subs=1
+z_subs=1
+
+# Create a unit box first then resize it later
+
+# For some reason, these list comprehensions wouldn't work in this environment
+#xcoords = [ (2*(x-(x_subs/2.0))/x_subs) for x in range(0,x_subs+1) ]
+#ycoords = [ (2*(y-(y_subs/2.0))/y_subs) for y in range(0,y_subs+1) ]
+#zcoords = [ (2*(z-(z_subs/2.0))/z_subs) for z in range(0,z_subs+1) ]
+
+# Hard code the ranges to -1 to 1 since the list comprehensions give errors
+xcoords = [ -1.0, 1.0 ]
+ycoords = [ -1.0, 1.0 ]
+zcoords = [ -1.0, 1.0 ]
+
+
+# Create the top and bottom faces using integer coordinates
+
+faces_index_list = []
+
+# Make the bottom and top (along z)
+for x in range(x_subs):
+  for y in range(y_subs):
+    vertex_0_00 = [x+0,y+0,0]
+    vertex_0_01 = [x+1,y+0,0]
+    vertex_0_10 = [x+0,y+1,0]
+    vertex_0_11 = [x+1,y+1,0]
+    faces_index_list.append ( [vertex_0_00, vertex_0_11, vertex_0_01] )
+    faces_index_list.append ( [vertex_0_00, vertex_0_10, vertex_0_11] )
+    vertex_1_00 = [x+0,y+0,z_subs]
+    vertex_1_01 = [x+1,y+0,z_subs]
+    vertex_1_10 = [x+0,y+1,z_subs]
+    vertex_1_11 = [x+1,y+1,z_subs]
+    faces_index_list.append ( [vertex_1_00, vertex_1_01, vertex_1_11] )
+    faces_index_list.append ( [vertex_1_00, vertex_1_11, vertex_1_10] )
+
+# Make the right and left (along y)
+for x in range(x_subs):
+  for z in range(z_subs):
+    vertex_0_00 = [x+0,0,z+0]
+    vertex_0_01 = [x+1,0,z+0]
+    vertex_0_10 = [x+0,0,z+1]
+    vertex_0_11 = [x+1,0,z+1]
+    faces_index_list.append ( [vertex_0_00, vertex_0_01, vertex_0_11] )
+    faces_index_list.append ( [vertex_0_00, vertex_0_11, vertex_0_10] )
+    vertex_1_00 = [x+0,y_subs,z+0]
+    vertex_1_01 = [x+1,y_subs,z+0]
+    vertex_1_10 = [x+0,y_subs,z+1]
+    vertex_1_11 = [x+1,y_subs,z+1]
+    faces_index_list.append ( [vertex_1_00, vertex_1_11, vertex_1_01] )
+    faces_index_list.append ( [vertex_1_00, vertex_1_10, vertex_1_11] )
+
+# Make the back and front (along x)
+for y in range(y_subs):
+  for z in range(z_subs):
+    vertex_0_00 = [0,y+0,z+0]
+    vertex_0_01 = [0,y+1,z+0]
+    vertex_0_10 = [0,y+0,z+1]
+    vertex_0_11 = [0,y+1,z+1]
+    faces_index_list.append ( [vertex_0_00, vertex_0_11, vertex_0_01] )
+    faces_index_list.append ( [vertex_0_00, vertex_0_10, vertex_0_11] )
+    vertex_1_00 = [x_subs,y+0,z+0]
+    vertex_1_01 = [x_subs,y+1,z+0]
+    vertex_1_10 = [x_subs,y+0,z+1]
+    vertex_1_11 = [x_subs,y+1,z+1]
+    faces_index_list.append ( [vertex_1_00, vertex_1_01, vertex_1_11] )
+    faces_index_list.append ( [vertex_1_00, vertex_1_11, vertex_1_10] )
+
+
+# First build the faces and the list of points with integer coordinates
+faces.clear()
+point_inds = []
+for fi in faces_index_list:
+  f = []
+  for pi in fi:
+    if not (pi in point_inds):
+      point_inds.append(pi)
+    f.append ( point_inds.index(pi) )
+  faces.append ( f )
+
+# Next build the points list from the points index list (one-for-one to match the cube_faces indicies)
+points.clear()
+for pi in point_inds:
+  points.append ( [ size_x*xcoords[pi[0]], size_y*ycoords[pi[1]], size_z*zcoords[pi[2]] ] )
+"""
+
+
+
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Cube Test"
+operator_name = "cellblender_test.dynamic_cube"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+
+class DynCubeTest(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+    self_test_name = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
+
+        cb_model = CellBlender_Model ( context, self.self_test_name )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        obj_name = "Cell"
+
+        cb_model.add_cube_to_model ( name=obj_name, draw_type="BOUNDS" )
+
+        # Copy the script text into a Blender text object named CubeDynGeo.py
+
+        script_name = 'CubeDynGeo.py'
+        print ( "  Script: " + script_name )
+        if script_name in bpy.data.texts:
+          bpy.data.texts[script_name].clear()
+        else:
+          bpy.data.texts.new(script_name)
+        bpy.data.texts[script_name].write ( dyn_cube_script )
+
+        # Modify the object to be dynamic
+
+        mcell.model_objects.object_list['Cell'].dynamic = True
+        mcell.model_objects.object_list['Cell'].script_name = script_name
+        mcell.model_objects.object_list['Cell'].dynamic_display_source = 'script'
+
+
+        mol = cb_model.add_molecule_species_to_model ( name="a", diff_const_expr="1e-3" )
+
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        mol  = cb_model.get_molecule_species_by_name('a')
+
+        cb_model.change_molecule_display ( mol, glyph='Cube', scale=4.0, red=1.0, green=0.0, blue=0.0 )
+
+        cb_model.add_molecule_release_site_to_model ( mol="a", shape="OBJECT", obj_expr="Cell", q_expr="1000" )
+
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "", test_name=self.self_test_name )
+
+        cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.5 )
+
+        cb_model.hide_manipulator ( hide=True )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+
+
+###########################################################################################################
+group_name = "Dynamic Geometry Tests"
+test_name = "Dynamic Cube Vol/Surf Test"
+operator_name = "cellblender_test.dynamic_cvs"
+next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
+
+
+class DynCubeTest(bpy.types.Operator):
+    bl_idname = operator_name
+    bl_label = test_name
+    self_test_name = test_name
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+
+        global active_frame_change_handler
+        active_frame_change_handler = None
+
+
+        cb_model = CellBlender_Model ( context, self.self_test_name )
+
+        scn = cb_model.get_scene()
+        mcell = cb_model.get_mcell()
+
+        obj_name = "box"
+
+        cb_model.add_cube_to_model ( name=obj_name, draw_type="BOUNDS" )
+
+        # Copy the script text into a Blender text object named CubeDynGeo.py
+
+        script_name = 'CubeDynGeo.py'
+        print ( "  Script: " + script_name )
+        if script_name in bpy.data.texts:
+          bpy.data.texts[script_name].clear()
+        else:
+          bpy.data.texts.new(script_name)
+        bpy.data.texts[script_name].write ( dyn_cube_script )
+
+        # Modify the object to be dynamic
+
+        mcell.model_objects.object_list[obj_name].dynamic = True
+        mcell.model_objects.object_list[obj_name].script_name = script_name
+        mcell.model_objects.object_list[obj_name].dynamic_display_source = 'script'
+
+        cb_model.add_active_object_to_model ( name=obj_name, draw_type="BOUNDS" )
+
+        molv = cb_model.add_molecule_species_to_model ( name="v", mol_type="3D", diff_const_expr="1e-5" )
+        mols = cb_model.add_molecule_species_to_model ( name="s", mol_type="2D", diff_const_expr="1e-4" )
+
+        cb_model.add_molecule_release_site_to_model ( mol="v", shape="OBJECT", obj_expr="box", q_expr="1000" )
+        cb_model.add_molecule_release_site_to_model ( mol="s", shape="OBJECT", obj_expr="box", q_expr="1000" )
+
+
+        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        molv = cb_model.get_molecule_species_by_name ( "v" )
+        mols = cb_model.get_molecule_species_by_name ( "s" )
+
+        cb_model.change_molecule_display ( cb_model.get_molecule_species_by_name('v'), glyph='Cube', scale=3.0, red=1.0, green=1.0, blue=1.0 )
+        cb_model.change_molecule_display ( cb_model.get_molecule_species_by_name('s'), glyph='Cone', scale=5.0, red=0.0, green=1.0, blue=0.1 )
+
+        mcell.initialization.large_molecular_displacement = 'IGNORED'
+
+        cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
+
+        cb_model.compare_mdl_with_sha1 ( "", test_name=self.self_test_name )
+
+        cb_model.refresh_molecules()
+
+        cb_model.select_none()
+
+        mcell.model_objects.object_list[obj_name].dynamic_display_source = 'files'
+
+        cb_model.set_view_back()
+
+        cb_model.scale_view_distance ( 0.5 )
+
+        cb_model.hide_manipulator ( hide=True )
+
+        cb_model.play_animation()
+
+        return { 'FINISHED' }
+
+
+
+
+
+
+
 ###########################################################################################################
 group_name = "Dynamic Geometry Tests"
 test_name = "Dynamic Cube Test Minimal Geometry"
@@ -4735,7 +5166,7 @@ class DynCubeTestMinimalGeomOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name="Dynamic Cube Test Minimal Geometry", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name=self.self_test_name, wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -4764,7 +5195,7 @@ class DynCubeTestVolOnlyOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, mol_types="v", dc_2D="1e-7", dc_3D="1e-7", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="69aaace54f2eebbd7963a9a5892cc9c2d19f0ef1", test_name="Dynamic Cube Test Volume Only", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, mol_types="v", dc_2D="1e-7", dc_3D="1e-7", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="69aaace54f2eebbd7963a9a5892cc9c2d19f0ef1", test_name=self.self_test_name, wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -4794,7 +5225,7 @@ class DynCubeTestVolOnlyZ100Op(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,100], mol_types="v", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="cff0f9e9eea6e9ef101db0007fc53c009c6d28f3", test_name="Dynamic Cube Vol Only 100 Z-Slices", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,100], mol_types="v", dc_2D="0*1e-9", dc_3D="0*1e-9", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="cff0f9e9eea6e9ef101db0007fc53c009c6d28f3", test_name=self.self_test_name, wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -4824,7 +5255,7 @@ class DynCubeTestSurfOnlyOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, mol_types="s", dc_2D="1e-7", dc_3D="1e-7", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="d7506ce0f5063b723ba4b8df8ccacd04a47f5115", test_name="Dynamic Cube Test Surface Only", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, mol_types="s", dc_2D="1e-7", dc_3D="1e-7", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="d7506ce0f5063b723ba4b8df8ccacd04a47f5115", test_name=self.self_test_name, wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -4854,7 +5285,7 @@ class DynCubeTestMinimalSlowOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.99, max_len=1.01, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name="Dynamic Geometry - Slow Moving Cube", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.99, max_len=1.01, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name=self.self_test_name, wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -4884,7 +5315,7 @@ class DynCubeTestMinimalVerySlowOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.999, max_len=1.001, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name="Dynamic Geometry - Very Slow Moving Cube", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.999, max_len=1.001, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name=self.self_test_name, wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -4915,7 +5346,7 @@ class DynCubeTestMinimalStoppedOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=1.0, max_len=1.0, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name="Dynamic Geometry - Stopped Cube", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=1.0, max_len=1.0, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name=self.self_test_name, wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -4945,7 +5376,7 @@ class DynCubeTestVolOnlyZ10Op(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,10], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name="Dynamic Geometry - Cube with 10 Z-Slices", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,10], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name=self.self_test_name, wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
@@ -4975,7 +5406,7 @@ class DynCubeTestVolOnlyZ100Op(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = dynamic_cube_frame_change_handler
 
-        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,100], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name="Dynamic Geometry - Cube with 100 Z-Slices", wait_time=15.0, seed=1 )
+        cb_model = DynamicGeometryCubeTest ( context, subs=[1,1,100], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name=self.self_test_name, wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 

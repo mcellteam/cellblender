@@ -206,7 +206,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
     def build_data_model_from_properties ( self, context ):
         dm_dict = {}
 
-        dm_dict['data_model_version'] = "DM_2014_10_24_1638"
+        dm_dict['data_model_version'] = "DM_2017_11_18_0130"
 
         dm_dict['iterations'] = self.iterations.get_expr()
         dm_dict['time_step'] = self.time_step.get_expr()
@@ -240,6 +240,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         
         warn_dict = {}
         warn_dict['all_warnings'] = str(self.all_warnings)
+        warn_dict['large_molecular_displacement'] = str(self.large_molecular_displacement)
         warn_dict['degenerate_polygons'] = str(self.degenerate_polygons)
         warn_dict['high_reaction_probability'] = str(self.high_reaction_probability)
         warn_dict['high_probability_threshold'] = "%g" % (self.high_probability_threshold)
@@ -264,7 +265,12 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] == "DM_2014_10_24_1638":
+            # Change on November 18, 2017: Add the large_molecular_displacement field with the current MCell default of warning:
+            dm['large_molecular_displacement'] = "WARNING"
+            dm['data_model_version'] = "DM_2017_11_18_0130"
+
+        if dm['data_model_version'] != "DM_2017_11_18_0130":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellInitializationPropertyGroup data model to current version." )
             return None
 
@@ -275,7 +281,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
 
         print ( "Top of MCellInitializationPropertyGroup.build_properties_from_data_model" )
 
-        if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
+        if dm_dict['data_model_version'] != "DM_2017_11_18_0130":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellInitializationPropertyGroup data model to current version." )
 
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -314,6 +320,7 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         if "warnings" in dm_dict:
             warn_dict = dm_dict['warnings']
             if "all_warnings" in warn_dict: self.all_warnings = warn_dict['all_warnings']
+            if "large_molecular_displacement" in warn_dict: self.large_molecular_displacement = warn_dict['large_molecular_displacement']
             if "degenerate_polygons" in warn_dict: self.degenerate_polygons = warn_dict['degenerate_polygons']
             if "high_reaction_probability" in warn_dict: self.high_reaction_probability = warn_dict['high_reaction_probability']
             if "high_probability_threshold" in warn_dict: self.high_probability_threshold = float(warn_dict['high_probability_threshold'])
@@ -440,6 +447,14 @@ EFFECTOR_GRID_DENSITY works also in MCell MDL."""
         description="If not \"Set Individually\", all warnings will be set "
                     "the same.",
         default='INDIVIDUAL')
+    large_molecular_displacement_enum = [
+        ('IGNORED', "Ignored", ""),
+        ('WARNING', "Warning", ""),
+        ('ERROR', "Error", "")]
+    large_molecular_displacement = EnumProperty(
+        items=large_molecular_displacement_enum, name="Large Molecular Displacement",
+        description="Generate warnings or errors for large molecular displacement.",
+        default='WARNING')
     degenerate_polygons_enum = [
         ('IGNORED', "Ignored", ""),
         ('WARNING', "Warning", ""),
@@ -644,6 +659,8 @@ read by MCell, export ASCII formatted data. The default is OFF."""
                 row = box.row()
                 row.prop(mcell.initialization, "all_warnings")
                 if self.all_warnings == 'INDIVIDUAL':
+                    row = box.row()
+                    row.prop(mcell.initialization, "large_molecular_displacement")
                     row = box.row()
                     row.prop(mcell.initialization, "degenerate_polygons")
                     row = box.row()
