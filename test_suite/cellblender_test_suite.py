@@ -4574,7 +4574,21 @@ for pi in point_inds:
     return ( script )
 
 
-def DynamicScriptedCubeTest ( context, obj_name="box", mol_types="vs", size=[1.0,1.0,1.0], subs=[1,1,1], dc_2D="1e-4", dc_3D="1e-5", time_step=1e-6, iterations=300, min_len=0.25, max_len=3.5, period_frames=100, mdl_hash="", test_name="Dynamic Geometry Cube", wait_time=30.0, seed=1 ):
+def DynamicScriptedCubeTest ( context,
+                              obj_name="box",
+                              mol_types="vs",
+                              size=[1.0,1.0,1.0],
+                              subs=[1,1,1],
+                              dc_2D='1e-4',       # String because it's a CellBlender parameter
+                              dc_3D='1e-5',       # String because it's a CellBlender parameter
+                              time_step='1e-6',   # String because it's a CellBlender parameter
+                              iterations='300',   # String because it's a CellBlender parameter
+                              min_len=0.25,
+                              max_len=3.5,
+                              period_frames=100,
+                              mdl_hash="",
+                              test_name="Dynamic Geometry Cube",
+                              wait_time=30.0, seed=1 ):
 
     global active_frame_change_handler
     active_frame_change_handler = None
@@ -4620,23 +4634,20 @@ def DynamicScriptedCubeTest ( context, obj_name="box", mol_types="vs", size=[1.0
 
     mcell.initialization.large_molecular_displacement = 'IGNORED'
 
-    cb_model.run_model ( iterations='200', time_step='1e-6', wait_time=2.0 )
+    cb_model.run_model ( iterations=iterations, time_step=time_step, wait_time=wait_time )
 
+    # Check whether the test passed or not
     cb_model.compare_mdl_with_sha1 ( "", test_name=test_name )
 
+    # Set up the view as desired for this model
+
     cb_model.refresh_molecules()
-
     cb_model.select_none()
-
     cb_model.set_view_back()
-
     cb_model.switch_to_orthographic()
-    # cb_model.set_axis_angle ( [0, 1, 0], 0 )
     cb_model.scale_view_distance ( 1.5 )
     cb_model.set_axis_angle ( [0.961, -0.177, -0.213], 1.4253 )
-
     cb_model.scale_view_distance ( 0.25 )
-
     cb_model.hide_manipulator ( hide=True )
 
     return cb_model
@@ -4666,7 +4677,7 @@ class DynCubeTestMinimalGeomOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = DynamicScriptedCubeTest ( context, time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name=self.self_test_name, wait_time=15.0, seed=1 )
+        cb_model = DynamicScriptedCubeTest ( context, time_step='1e-06', iterations='300', period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name=self.self_test_name, wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -4695,7 +4706,7 @@ class DynCubeTestVolOnlyOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = DynamicScriptedCubeTest ( context, mol_types="v", dc_2D="1e-7", dc_3D="1e-7", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="69aaace54f2eebbd7963a9a5892cc9c2d19f0ef1", test_name=self.self_test_name, wait_time=15.0, seed=1 )
+        cb_model = DynamicScriptedCubeTest ( context, mol_types="v", dc_2D='1e-7', dc_3D='1e-7', time_step='1e-6', iterations='300', period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="69aaace54f2eebbd7963a9a5892cc9c2d19f0ef1", test_name=self.self_test_name, wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -4725,7 +4736,7 @@ class DynCubeTestSurfOnlyOp(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = DynamicScriptedCubeTest ( context, mol_types="s", dc_2D="1e-7", dc_3D="1e-7", time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="d7506ce0f5063b723ba4b8df8ccacd04a47f5115", test_name=self.self_test_name, wait_time=15.0, seed=1 )
+        cb_model = DynamicScriptedCubeTest ( context, mol_types="s", dc_2D='1e-7', dc_3D='1e-7', time_step='1e-6', iterations='300', period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="d7506ce0f5063b723ba4b8df8ccacd04a47f5115", test_name=self.self_test_name, wait_time=15.0, seed=1 )
 
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
@@ -4757,7 +4768,7 @@ class DynCubeTestVolOnlyZ10Op(bpy.types.Operator):
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = DynamicScriptedCubeTest ( context, subs=[1,1,10], time_step=1e-6, iterations=300, period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name=self.self_test_name, wait_time=15.0, seed=1 )
+        cb_model = DynamicScriptedCubeTest ( context, subs=[1,1,10], time_step='1e-6', iterations='300', period_frames=100, min_len=0.25, max_len=3.5, mdl_hash="3667bfa5bfba57320581eb37f0b3b1c9c8ed2145", test_name=self.self_test_name, wait_time=15.0, seed=1 )
         cb_model.hide_manipulator ( hide=True )
         cb_model.play_animation()
 
