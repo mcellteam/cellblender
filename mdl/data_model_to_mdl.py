@@ -313,6 +313,13 @@ def write_mdl ( dm, file_name ):
 
     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
     print ( "Top of data_model_to_mdl.write_mdl() to " + str(file_name) )
+    print ( "Data Model Keys: " + str( [k for k in dm['mcell'].keys()] ) )
+    export_modular = ( dm['mcell']['simulation_control']['export_format'] == 'mcell_mdl_modular' )
+    print ( "Export Modular = " + str(export_modular) )
+    modular_path = None
+    if export_modular:
+      # Set the modular path
+      modular_path = os.path.dirname(file_name)
     #print ( "Call Stack:" )
     #traceback.print_stack()
     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
@@ -339,38 +346,95 @@ def write_mdl ( dm, file_name ):
 
       if 'parameter_system' in mcell:
         ps = mcell['parameter_system']
-        write_parameter_system ( ps, f )
+        out_file = f
+        if not (modular_path is None):
+          out_file = open ( os.path.join(modular_path,'Scene.parameters.mdl'), 'w' )
+        write_parameter_system ( ps, out_file )
+        if not (out_file == f):
+          out_file.close()
+          f.write ( 'INCLUDE_FILE = "Scene.parameters.mdl"\n\n' )
+
       if 'initialization' in mcell:
         init = mcell['initialization']
+        out_file = f
+        if not (modular_path is None):
+          out_file = open ( os.path.join(modular_path,'Scene.initialization.mdl'), 'w' )
         if num_dynamic > 0:
-          write_initialization ( init, f, dyn_fn='dyn_geom_list.txt' )
+          write_initialization ( init, out_file, dyn_fn='dyn_geom_list.txt' )
         else:
-          write_initialization ( init, f )
+          write_initialization ( init, out_file )
         if 'partitions' in init:
           parts = mcell['initialization']['partitions']
-          write_partitions ( parts, f )
+          write_partitions ( parts, out_file )
+        if not (out_file == f):
+          out_file.close()
+          f.write ( 'INCLUDE_FILE = "Scene.initialization.mdl"\n\n' )
+
       if 'define_molecules' in mcell:
         mols = mcell['define_molecules']
-        write_molecules ( mols, f )
+        out_file = f
+        if not (modular_path is None):
+          out_file = open ( os.path.join(modular_path,'Scene.molecules.mdl'), 'w' )
+        write_molecules ( mols, out_file )
+        if not (out_file == f):
+          out_file.close()
+          f.write ( 'INCLUDE_FILE = "Scene.molecules.mdl"\n\n' )
+
       if 'define_surface_classes' in mcell:
         sclasses = mcell['define_surface_classes']
-        write_surface_classes ( sclasses, f )
+        out_file = f
+        if not (modular_path is None):
+          out_file = open ( os.path.join(modular_path,'Scene.surface_classes.mdl'), 'w' )
+        write_surface_classes ( sclasses, out_file )
+        if not (out_file == f):
+          out_file.close()
+          f.write ( 'INCLUDE_FILE = "Scene.surface_classes.mdl"\n\n' )
+
       if 'define_reactions' in mcell:
         reacts = mcell['define_reactions']
-        write_reactions ( reacts, f )
+        out_file = f
+        if not (modular_path is None):
+          out_file = open ( os.path.join(modular_path,'Scene.reactions.mdl'), 'w' )
+        write_reactions ( reacts, out_file )
+        if not (out_file == f):
+          out_file.close()
+          f.write ( 'INCLUDE_FILE = "Scene.reactions.mdl"\n\n' )
+
       if num_dynamic == 0:
         # MCell currently requires all objects to be either static or dynamic
         # So only write static objects if there are NO dynamic objects
         if ('model_objects' in mcell) and ('geometrical_objects' in mcell):
           objs = mcell['model_objects']
           geom = mcell['geometrical_objects']
-          write_static_geometry ( objs, geom, f )
+          out_file = f
+          if not (modular_path is None):
+            out_file = open ( os.path.join(modular_path,'Scene.geometry.mdl'), 'w' )
+          write_static_geometry ( objs, geom, out_file )
+          if not (out_file == f):
+            out_file.close()
+            f.write ( 'INCLUDE_FILE = "Scene.geometry.mdl"\n\n' )
+
       if 'modify_surface_regions' in mcell:
         modsurfrs = mcell['modify_surface_regions']
-        write_modify_surf_regions ( modsurfrs, f )
+        out_file = f
+        if not (modular_path is None):
+          out_file = open ( os.path.join(modular_path,'Scene.mod_surf_regions.mdl'), 'w' )
+        write_modify_surf_regions ( modsurfrs, out_file )
+        if not (out_file == f):
+          out_file.close()
+          f.write ( 'INCLUDE_FILE = "Scene.mod_surf_regions.mdl"\n\n' )
+
       if 'define_release_patterns' in mcell:
         pats = mcell['define_release_patterns']
-        write_release_patterns ( pats, f )
+        out_file = f
+        if not (modular_path is None):
+          out_file = open ( os.path.join(modular_path,'Scene.release_patterns.mdl'), 'w' )
+        write_release_patterns ( pats, out_file )
+        if not (out_file == f):
+          out_file.close()
+          f.write ( 'INCLUDE_FILE = "Scene.release_patterns.mdl"\n\n' )
+
+
 
       # Figure out what we have to output based on:
       #   Static Geometry
@@ -387,6 +451,7 @@ def write_mdl ( dm, file_name ):
               has_static_geometry = True
             if num_dynamic > 0:
               has_dynamic_geometry = True
+
       if 'release_sites' in mcell:
         rels = mcell['release_sites']
         if 'release_site_list' in rels:
@@ -429,7 +494,13 @@ def write_mdl ( dm, file_name ):
         mols = None
         if ('define_molecules' in mcell):
           mols = mcell['define_molecules']
-        write_viz_out ( vizout, mols, f )
+        out_file = f
+        if not (modular_path is None):
+          out_file = open ( os.path.join(modular_path,'Scene.viz_output.mdl'), 'w' )
+        write_viz_out ( vizout, mols, out_file )
+        if not (out_file == f):
+          out_file.close()
+          f.write ( 'INCLUDE_FILE = "Scene.viz_output.mdl"\n\n' )
 
       if 'reaction_data_output' in mcell:
         reactout = mcell['reaction_data_output']
@@ -441,7 +512,13 @@ def write_mdl ( dm, file_name ):
           init = mcell['initialization']
           if "time_step" in init:
             time_step = init['time_step']
-        write_react_out ( reactout, mols, time_step, f )
+        out_file = f
+        if not (modular_path is None):
+          out_file = open ( os.path.join(modular_path,'Scene.rxn_output.mdl'), 'w' )
+        write_react_out ( reactout, mols, time_step, out_file )
+        if not (out_file == f):
+          out_file.close()
+          f.write ( 'INCLUDE_FILE = "Scene.rxn_output.mdl"\n\n' )
 
     f.close()
 
@@ -701,7 +778,7 @@ def write_parameter_system ( ps, f ):
                 ordered_mplist.append(p)
                 unordered_mplist.remove(p)
                 break
-        # Finish by adding all remaing items to the new list)
+        # Finish by adding all remaing items to the new list
         for p in unordered_mplist:
           ordered_mplist.append(p)
         # Replace the old list by the new sorted list
@@ -709,6 +786,7 @@ def write_parameter_system ( ps, f ):
       else:
         # This is where the parameters could be placed in dependency order without relying on _extras fields
         # There should be no data models that don't have those fields, so pass for now.
+        # If this should happen, MCell should either handle the dependencies or flag any forward references.
         pass
 
       if len(mplist) > 0:
@@ -717,9 +795,9 @@ def write_parameter_system ( ps, f ):
         for p in mplist:
           print ( "   Parameter " + str(p['par_name']) + " = " + "%.15g"%(p['_extras']['par_value']) )
 
-          # Write the name = val portion of the definition
+          # Write the name = val portion of the definition ("True" to export expressions, "False" to export values)
           if True:
-            f.write ( p['par_name'] + " = " +              p['par_expression'] )
+            f.write ( p['par_name'] + " = " + p['par_expression'] )
           else:
             f.write ( p['par_name'] + " = " + "%.15g"%(p['extras']['par_value']) )
 
@@ -1073,6 +1151,7 @@ def write_release_sites ( rels, mols, f, instantiate_name=None ):
     if instantiate_name != None:
       f.write ( "INSTANTIATE " + instantiate_name + " OBJECT\n" )
       f.write ( "{\n" )
+
     if rels != None:
       if 'release_site_list' in rels:
         rlist = rels['release_site_list']
@@ -1080,8 +1159,17 @@ def write_release_sites ( rels, mols, f, instantiate_name=None ):
           for r in rlist:
             f.write ( "  %s RELEASE_SITE\n" % (r['name']) )
             f.write ( "  {\n" )
+            list_type = False
 
-            # First handle the release shape
+            # First get the molecule to be released (maybe the Molecule List should have been a dictionary keyed on mol_name?)
+            mlist = mols['molecule_list']
+            mol = None
+            for m in mlist:
+              if m['mol_name'] == r['molecule']:
+                mol = m
+                break
+
+            # Next, handle the release shape
             if ((r['shape'] == 'CUBIC') |
                 (r['shape'] == 'SPHERICAL') |
                 (r['shape'] == 'SPHERICAL_SHELL')):
@@ -1093,42 +1181,60 @@ def write_release_sites ( rels, mols, f, instantiate_name=None ):
               # Output MDL for releasing in or on and object
               #TODO Note that the use of "Scene" here for object names is a temporary measure!!!!
               f.write ( "   SHAPE = %s\n" % ( instance_object_expr("Scene", r['object_expr']) ) )
+            elif r['shape'] == "LIST":
+              # Output MDL for releasing a list of molecules
+              # Note that the CellBlender List interface (and data model) only allows one molecule type for each list
+              # MDL, however, allows each point to have a different molecule type
+              list_type = True
+              mol_expr = r['molecule']
+              if mol:
+                if mol['mol_type'] == '2D':
+                  mol_expr = "%s%s" % (r['molecule'],r['orient'])
+                else:
+                  mol_expr = "%s" % (r['molecule'])
+              f.write ( "   SHAPE = LIST\n" )
+              f.write ( "   SITE_DIAMETER = %s\n" % (r['site_diameter']))
+              f.write ( "   MOLECULE_POSITIONS\n" )
+              f.write ( "   {\n" )
+              if 'points_list' in r:
+                for p in r['points_list']:
+                  f.write ( "     %s [%.15g, %.15g, %.15g]\n" % (mol_expr, p[0], p[1], p[2]) )
+              f.write ( "   }\n" )
 
-            # Next handle the molecule to be released (maybe the Molecule List should have been a dictionary keyed on mol_name?)
-            mlist = mols['molecule_list']
-            mol = None
-            for m in mlist:
-              if m['mol_name'] == r['molecule']:
-                mol = m
-                break
+            if (not list_type) and mol:
 
-            if mol:
+              # Write out the molecule expression
+
               if mol['mol_type'] == '2D':
                 f.write("   MOLECULE = %s%s\n" % (r['molecule'],r['orient']))
               else:
                 f.write("   MOLECULE = %s\n" % (r['molecule']))
 
-            # Now write out the quantity, probability, and pattern
+              # Now write out the quantity and probability (when not a list)
 
-            if r['quantity_type'] == 'NUMBER_TO_RELEASE':
-              f.write("   NUMBER_TO_RELEASE = %s\n" % (r['quantity']))
-            elif r['quantity_type'] == 'GAUSSIAN_RELEASE_NUMBER':
-              f.write("   GAUSSIAN_RELEASE_NUMBER\n")
-              f.write("   {\n")
-              f.write("        MEAN_NUMBER = %s\n" % (r['quantity']))
-              f.write("        STANDARD_DEVIATION = %s\n" % (r['stddev']))
-              f.write("      }\n")
-            elif r['quantity_type'] == 'DENSITY':
-              if mol:
-                if mol['mol_type'] == '2D':
-                  f.write("   DENSITY = %s\n" % (r['quantity']))
-                else:
-                  f.write("   CONCENTRATION = %s\n" % (r['quantity']))
+              if r['quantity_type'] == 'NUMBER_TO_RELEASE':
+                f.write("   NUMBER_TO_RELEASE = %s\n" % (r['quantity']))
+              elif r['quantity_type'] == 'GAUSSIAN_RELEASE_NUMBER':
+                f.write("   GAUSSIAN_RELEASE_NUMBER\n")
+                f.write("   {\n")
+                f.write("        MEAN_NUMBER = %s\n" % (r['quantity']))
+                f.write("        STANDARD_DEVIATION = %s\n" % (r['stddev']))
+                f.write("      }\n")
+              elif r['quantity_type'] == 'DENSITY':
+                if mol:
+                  if mol['mol_type'] == '2D':
+                    f.write("   DENSITY = %s\n" % (r['quantity']))
+                  else:
+                    f.write("   CONCENTRATION = %s\n" % (r['quantity']))
+
+            # Write the release probability for all cases (including lists)
+
             f.write("   RELEASE_PROBABILITY = %s\n" % (r['release_probability']))
             if len(r['pattern']) > 0:
               f.write("   RELEASE_PATTERN = %s\n" % (r['pattern']))
 
             f.write ( "  }\n" )
+
     if instantiate_name != None:
       f.write ( "}\n" )
       f.write("\n")

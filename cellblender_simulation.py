@@ -2054,11 +2054,12 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "MCellRunSimulationPropertyGroup building Data Model" )
         dm = {}
-        dm['data_model_version'] = "DM_2017_08_10_1657"
+        dm['data_model_version'] = "DM_2017_11_22_1617"
         dm['name'] = self.name
         dm['start_seed'] = self.start_seed.get_expr()
         dm['end_seed'] = self.end_seed.get_expr()
         dm['run_limit'] = self.run_limit.get_expr()
+        dm['export_format'] = context.scene.mcell.export_project.export_format
         p_list = []
         for p in self.processes_list:
             p_list.append ( p.build_data_model_from_properties(context) )
@@ -2133,7 +2134,13 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                 dm['sim_runners'] = []
             dm['data_model_version'] = "DM_2017_08_10_1657"
 
-        if dm['data_model_version'] != "DM_2017_08_10_1657":
+        if dm['data_model_version'] == "DM_2017_08_10_1657":
+            # Add the export format. This hadn't been part of the data model, but is needed for export.
+            # The default actually depends on the engine, but had traditionally defaulted to modular:
+            dm['export_format'] = 'mcell_mdl_modular'
+            dm['data_model_version'] = "DM_2017_11_22_1617"
+
+        if dm['data_model_version'] != "DM_2017_11_22_1617":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationPropertyGroup data model to current version." )
             return None
         return dm
@@ -2141,7 +2148,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
 
-        if dm['data_model_version'] != "DM_2017_08_10_1657":
+        if dm['data_model_version'] != "DM_2017_11_22_1617":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellRunSimulationPropertyGroup data model to current version." )
 
         self.enable_python_scripting = False  # Explicitly disable this when building from a data model
@@ -2152,6 +2159,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
         self.start_seed.set_expr ( dm["start_seed"] )
         self.end_seed.set_expr ( dm["end_seed"] )
         self.run_limit.set_expr ( dm["run_limit"] )
+        context.scene.mcell.export_project.export_format = dm['export_format']
         self.processes_list.clear()
 
         # The processes_list should not be restored from the data model
