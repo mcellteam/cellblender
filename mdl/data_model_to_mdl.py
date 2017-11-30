@@ -658,6 +658,8 @@ def write_mdl ( dm, file_name ):
           #  This is a very primitive interface, and it may be subject to change.
           #
           ####################################################################
+          if (frame_number % 100) == 0:
+              print ( "  Writing frame " + str(frame_number) )
 
 
           if has_blender:
