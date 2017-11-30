@@ -241,7 +241,7 @@ except:
   pass
 
 
-def write_obj_as_mdl ( obj_name, points, faces, regions_dict, region_props, origin=None, file_name=None, partitions=False, instantiate=False ):
+def write_obj_as_mdl ( scene_name, obj_name, points, faces, regions_dict, region_props, origin=None, file_name=None, partitions=False, instantiate=False ):
   # print ( "data_model_to_mdl.write_obj_as_mdl()" )
   # print ( "     region_props = " + str(region_props) )
   if file_name != None:
@@ -297,7 +297,7 @@ def write_obj_as_mdl ( obj_name, points, faces, regions_dict, region_props, orig
     out_file.write ( "}\n" )
     if instantiate:
         out_file.write ( "\n" )
-        out_file.write ( "INSTANTIATE Scene OBJECT {\n" )
+        out_file.write ( "INSTANTIATE " + scene_name + " OBJECT {\n" )
         out_file.write ( "  %s OBJECT %s {}\n" % (obj_name, obj_name) )
         out_file.write ( "}\n" )
     out_file.close()
@@ -308,7 +308,7 @@ import math
 # For debugging
 import traceback
 
-def write_mdl ( dm, file_name ):
+def write_mdl ( dm, file_name, scene_name='Scene' ):
     """ Write a data model to a named file (generally follows "export_mcell_mdl" ordering) """
 
     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
@@ -348,54 +348,54 @@ def write_mdl ( dm, file_name ):
         ps = mcell['parameter_system']
         out_file = f
         if not (modular_path is None):
-          out_file = open ( os.path.join(modular_path,'Scene.parameters.mdl'), 'w' )
+          out_file = open ( os.path.join(modular_path,scene_name+'.parameters.mdl'), 'w' )
         write_parameter_system ( ps, out_file )
         if not (out_file == f):
           out_file.close()
-          f.write ( 'INCLUDE_FILE = "Scene.parameters.mdl"\n\n' )
+          f.write ( 'INCLUDE_FILE = "' + scene_name + '.parameters.mdl"\n\n' )
 
       if 'initialization' in mcell:
         init = mcell['initialization']
         out_file = f
         if not (modular_path is None):
-          out_file = open ( os.path.join(modular_path,'Scene.initialization.mdl'), 'w' )
+          out_file = open ( os.path.join(modular_path,scene_name + '.initialization.mdl'), 'w' )
         write_initialization ( init, out_file )
         if 'partitions' in init:
           parts = mcell['initialization']['partitions']
           write_partitions ( parts, out_file )
         if not (out_file == f):
           out_file.close()
-          f.write ( 'INCLUDE_FILE = "Scene.initialization.mdl"\n\n' )
+          f.write ( 'INCLUDE_FILE = "' + scene_name + '.initialization.mdl"\n\n' )
 
       if 'define_molecules' in mcell:
         mols = mcell['define_molecules']
         out_file = f
         if not (modular_path is None):
-          out_file = open ( os.path.join(modular_path,'Scene.molecules.mdl'), 'w' )
+          out_file = open ( os.path.join(modular_path,scene_name + '.molecules.mdl'), 'w' )
         write_molecules ( mols, out_file )
         if not (out_file == f):
           out_file.close()
-          f.write ( 'INCLUDE_FILE = "Scene.molecules.mdl"\n\n' )
+          f.write ( 'INCLUDE_FILE = "' + scene_name + '.molecules.mdl"\n\n' )
 
       if 'define_surface_classes' in mcell:
         sclasses = mcell['define_surface_classes']
         out_file = f
         if not (modular_path is None):
-          out_file = open ( os.path.join(modular_path,'Scene.surface_classes.mdl'), 'w' )
+          out_file = open ( os.path.join(modular_path,scene_name + '.surface_classes.mdl'), 'w' )
         write_surface_classes ( sclasses, out_file )
         if not (out_file == f):
           out_file.close()
-          f.write ( 'INCLUDE_FILE = "Scene.surface_classes.mdl"\n\n' )
+          f.write ( 'INCLUDE_FILE = "' + scene_name + '.surface_classes.mdl"\n\n' )
 
       if 'define_reactions' in mcell:
         reacts = mcell['define_reactions']
         out_file = f
         if not (modular_path is None):
-          out_file = open ( os.path.join(modular_path,'Scene.reactions.mdl'), 'w' )
+          out_file = open ( os.path.join(modular_path,scene_name + '.reactions.mdl'), 'w' )
         write_reactions ( reacts, out_file )
         if not (out_file == f):
           out_file.close()
-          f.write ( 'INCLUDE_FILE = "Scene.reactions.mdl"\n\n' )
+          f.write ( 'INCLUDE_FILE = "' + scene_name + '.reactions.mdl"\n\n' )
 
       if num_dynamic == 0:
         # MCell currently requires all objects to be either static or dynamic
@@ -405,40 +405,40 @@ def write_mdl ( dm, file_name ):
           geom = mcell['geometrical_objects']
           out_file = f
           if not (modular_path is None):
-            out_file = open ( os.path.join(modular_path,'Scene.geometry.mdl'), 'w' )
+            out_file = open ( os.path.join(modular_path,scene_name + '.geometry.mdl'), 'w' )
           write_static_geometry ( objs, geom, out_file )
           if not (out_file == f):
             out_file.close()
-            f.write ( 'INCLUDE_FILE = "Scene.geometry.mdl"\n\n' )
+            f.write ( 'INCLUDE_FILE = "' + scene_name + '.geometry.mdl"\n\n' )
       else:
         # The geometry will be written to other files, just specify the list file name
         out_file = f
         if not (modular_path is None):
-          out_file = open ( os.path.join(modular_path,'Scene.geometry.mdl'), 'w' )
+          out_file = open ( os.path.join(modular_path,scene_name + '.geometry.mdl'), 'w' )
         out_file.write ( "DYNAMIC_GEOMETRY = \"dyn_geom_list.txt\"\n\n" )
         if not (out_file == f):
           out_file.close()
-          f.write ( 'INCLUDE_FILE = "Scene.geometry.mdl"\n\n' )
+          f.write ( 'INCLUDE_FILE = "' + scene_name + '.geometry.mdl"\n\n' )
 
       if 'modify_surface_regions' in mcell:
         modsurfrs = mcell['modify_surface_regions']
         out_file = f
         if not (modular_path is None):
-          out_file = open ( os.path.join(modular_path,'Scene.mod_surf_regions.mdl'), 'w' )
+          out_file = open ( os.path.join(modular_path,scene_name + '.mod_surf_regions.mdl'), 'w' )
         write_modify_surf_regions ( modsurfrs, out_file )
         if not (out_file == f):
           out_file.close()
-          f.write ( 'INCLUDE_FILE = "Scene.mod_surf_regions.mdl"\n\n' )
+          f.write ( 'INCLUDE_FILE = "' + scene_name + '.mod_surf_regions.mdl"\n\n' )
 
       if 'define_release_patterns' in mcell:
         pats = mcell['define_release_patterns']
         out_file = f
         if not (modular_path is None):
-          out_file = open ( os.path.join(modular_path,'Scene.release_patterns.mdl'), 'w' )
+          out_file = open ( os.path.join(modular_path,scene_name + '.release_patterns.mdl'), 'w' )
         write_release_patterns ( pats, out_file )
         if not (out_file == f):
           out_file.close()
-          f.write ( 'INCLUDE_FILE = "Scene.release_patterns.mdl"\n\n' )
+          f.write ( 'INCLUDE_FILE = "' + scene_name + '.release_patterns.mdl"\n\n' )
 
 
 
@@ -472,11 +472,11 @@ def write_mdl ( dm, file_name ):
       # Actually write the MDL:
       out_file = f
       if not (modular_path is None):
-        out_file = open ( os.path.join(modular_path,'Scene.instantiation.mdl'), 'w' )
+        out_file = open ( os.path.join(modular_path,scene_name + '.instantiation.mdl'), 'w' )
 
       if has_static_geometry or has_release_sites:
         # Put both together into the same INSTANTIATE block
-        block_name = 'Scene'
+        block_name = scene_name
         if has_dynamic_geometry:
           # The dynamic geometry uses the name "Scene" so choose something else here
           block_name = "Releases"
@@ -490,17 +490,17 @@ def write_mdl ( dm, file_name ):
             objs = mcell['model_objects']
           if 'geometrical_objects' in mcell:
             geom = mcell['geometrical_objects']
-          write_static_instances ( objs, geom, out_file )
+          write_static_instances ( scene_name, objs, geom, out_file )
 
         if has_release_sites:
           rels = mcell['release_sites']
-          write_release_sites ( rels, mcell['define_molecules'], out_file )
+          write_release_sites ( scene_name, rels, mcell['define_molecules'], out_file )
 
         out_file.write ( "}\n\n" )
 
         if not (out_file == f):
           out_file.close()
-          f.write ( 'INCLUDE_FILE = "Scene.instantiation.mdl"\n\n' )
+          f.write ( 'INCLUDE_FILE = "' + scene_name + '.instantiation.mdl"\n\n' )
 
 
       f.write("sprintf(seed,\"%05g\",SEED)\n\n")
@@ -514,11 +514,11 @@ def write_mdl ( dm, file_name ):
           mols = mcell['define_molecules']
         out_file = f
         if not (modular_path is None):
-          out_file = open ( os.path.join(modular_path,'Scene.viz_output.mdl'), 'w' )
-        write_viz_out ( vizout, mols, out_file )
+          out_file = open ( os.path.join(modular_path,scene_name + '.viz_output.mdl'), 'w' )
+        write_viz_out ( scene_name, vizout, mols, out_file )
         if not (out_file == f):
           out_file.close()
-          f.write ( 'INCLUDE_FILE = "Scene.viz_output.mdl"\n\n' )
+          f.write ( 'INCLUDE_FILE = "' + scene_name + '.viz_output.mdl"\n\n' )
 
       if 'reaction_data_output' in mcell:
         reactout = mcell['reaction_data_output']
@@ -532,11 +532,11 @@ def write_mdl ( dm, file_name ):
             time_step = init['time_step']
         out_file = f
         if not (modular_path is None):
-          out_file = open ( os.path.join(modular_path,'Scene.rxn_output.mdl'), 'w' )
-        write_react_out ( reactout, mols, time_step, out_file )
+          out_file = open ( os.path.join(modular_path,scene_name + '.rxn_output.mdl'), 'w' )
+        write_react_out ( scene_name, reactout, mols, time_step, out_file )
         if not (out_file == f):
           out_file.close()
-          f.write ( 'INCLUDE_FILE = "Scene.rxn_output.mdl"\n\n' )
+          f.write ( 'INCLUDE_FILE = "' + scene_name + '.rxn_output.mdl"\n\n' )
 
     f.close()
 
@@ -577,9 +577,10 @@ def write_mdl ( dm, file_name ):
       print ( "Exporting dynamic objects from data_model_to_mdl.write_mdl() to " + str(filepath) )
       print ( "  file_name = " + str(file_name) )
 
-      scene_name = "Scene"
+      # scene_name = "Scene"
       fc = None
       if has_blender:
+          # Over-ride the default or passed scene_name when in Blender
           # Filter or replace problem characters (like space, ...)
           scene_name = context.scene.name.replace(" ", "_")
 
@@ -739,7 +740,7 @@ def write_mdl ( dm, file_name ):
 
                   f_name = "%s_frame_%d.mdl"%(obj['name'],frame_number)
                   full_file_name = os.path.join(path_to_dg_files,f_name)
-                  write_obj_as_mdl ( obj['name'], points, faces, regions_dict, region_props, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
+                  write_obj_as_mdl ( scene_name, obj['name'], points, faces, regions_dict, region_props, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
                   #geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",f_name)))
 
           # Write out the "master" MDL file for this frame
@@ -756,7 +757,7 @@ def write_mdl ( dm, file_name ):
                   frame_file.write ( "INCLUDE_FILE = \"%s\"\n" % (f_name) )
 
           # Write the INSTANTIATE statement for this frame
-          frame_file.write ( "INSTANTIATE Scene OBJECT {  /* write_mdl for each frame */\n" )
+          frame_file.write ( "INSTANTIATE " + scene_name + " OBJECT {  /* write_mdl for each frame */\n" )
 
           if ('mcell' in dm) and ('model_objects' in mcell) and ('model_object_list' in mcell['model_objects']):
             for obj in dm['mcell']['model_objects']['model_object_list']:
@@ -1090,7 +1091,7 @@ def write_static_geometry ( objs, geom, f ):
             f.write ( "\n" );
 
 
-def write_static_instances ( objs, geom, f, write_block=False ):
+def write_static_instances ( scene_name, objs, geom, f, write_block=False ):
     #TODO Note that the use of "Scene" here is a temporary measure!!!!
     if (objs != None) and (geom != None):
       if 'model_object_list' in objs:
@@ -1100,7 +1101,7 @@ def write_static_instances ( objs, geom, f, write_block=False ):
             num_static += 1
         if num_static > 0:
           if write_block:
-            f.write ( "INSTANTIATE Scene OBJECT\n" )
+            f.write ( "INSTANTIATE " + scene_name + " OBJECT\n" )
             f.write ( "{\n" )
           for o in objs['model_object_list']:
             if not o['dynamic']:
@@ -1165,7 +1166,7 @@ def instance_object_expr(scene_name, expression):
     return instantiated_expression
 
 
-def write_release_sites ( rels, mols, f, instantiate_name=None ):
+def write_release_sites ( scene_name, rels, mols, f, instantiate_name=None ):
     #TODO Note that the use of "Scene" here is a temporary measure!!!!
     if instantiate_name != None:
       f.write ( "INSTANTIATE " + instantiate_name + " OBJECT\n" )
@@ -1199,7 +1200,7 @@ def write_release_sites ( rels, mols, f, instantiate_name=None ):
             elif r['shape'] == "OBJECT":
               # Output MDL for releasing in or on and object
               #TODO Note that the use of "Scene" here for object names is a temporary measure!!!!
-              f.write ( "   SHAPE = %s\n" % ( instance_object_expr("Scene", r['object_expr']) ) )
+              f.write ( "   SHAPE = %s\n" % ( instance_object_expr(scene_name, r['object_expr']) ) )
             elif r['shape'] == "LIST":
               # Output MDL for releasing a list of molecules
               # Note that the CellBlender List interface (and data model) only allows one molecule type for each list
@@ -1293,7 +1294,7 @@ def write_release_patterns ( pats, f ):
           f.write("\n")
 
 
-def write_viz_out ( vizout, mols, f ):
+def write_viz_out ( scene_name, vizout, mols, f ):
 
     mol_list_string = ""
 
@@ -1317,7 +1318,7 @@ def write_viz_out ( vizout, mols, f ):
       f.write ( "{\n" )
       f.write ( "  MODE = CELLBLENDER\n" )
       #TODO Note that the use of "Scene" here for file output is a temporary measure!!!!
-      f.write ( "  FILENAME = \"./viz_data/seed_\" & seed & \"/Scene\"\n" )
+      f.write ( "  FILENAME = \"./viz_data/seed_\" & seed & \"/" + scene_name + "\"\n" )
       f.write ( "  MOLECULES\n" )
       f.write ( "  {\n" )
       f.write ( "    NAME_LIST {%s}\n" % (mol_list_string) )
@@ -1330,10 +1331,10 @@ def write_viz_out ( vizout, mols, f ):
       f.write ( "\n" );
 
 
-def write_react_out ( rout, mols, time_step, f ):
+def write_react_out ( scene_name, rout, mols, time_step, f ):
 
     if ("reaction_output_list" in rout) and (len(rout["reaction_output_list"]) > 0):
-        context_scene_name = "Scene"
+        context_scene_name = scene_name
 
         f.write("REACTION_DATA_OUTPUT\n{\n")
 
