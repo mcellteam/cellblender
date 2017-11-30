@@ -359,10 +359,7 @@ def write_mdl ( dm, file_name ):
         out_file = f
         if not (modular_path is None):
           out_file = open ( os.path.join(modular_path,'Scene.initialization.mdl'), 'w' )
-        if num_dynamic > 0:
-          write_initialization ( init, out_file, dyn_fn='dyn_geom_list.txt' )
-        else:
-          write_initialization ( init, out_file )
+        write_initialization ( init, out_file )
         if 'partitions' in init:
           parts = mcell['initialization']['partitions']
           write_partitions ( parts, out_file )
@@ -413,6 +410,15 @@ def write_mdl ( dm, file_name ):
           if not (out_file == f):
             out_file.close()
             f.write ( 'INCLUDE_FILE = "Scene.geometry.mdl"\n\n' )
+      else:
+        # The geometry will be written to other files, just specify the list file name
+        out_file = f
+        if not (modular_path is None):
+          out_file = open ( os.path.join(modular_path,'Scene.geometry.mdl'), 'w' )
+        out_file.write ( "DYNAMIC_GEOMETRY = \"dyn_geom_list.txt\"\n\n" )
+        if not (out_file == f):
+          out_file.close()
+          f.write ( 'INCLUDE_FILE = "Scene.geometry.mdl"\n\n' )
 
       if 'modify_surface_regions' in mcell:
         modsurfrs = mcell['modify_surface_regions']
@@ -627,6 +633,7 @@ def write_mdl ( dm, file_name ):
           mol_viz_state = context.scene.mcell.mol_viz.mol_viz_enable
           context.scene.mcell.mol_viz.mol_viz_enable = False
 
+      print ( "\n\nStepping through Frames:" )
       for frame_number in range(iterations+1):
           ####################################################################
           #
@@ -827,13 +834,11 @@ def write_parameter_system ( ps, f ):
         f.write ( "\n" );
 
 
-def write_initialization ( init, f, dyn_fn=None ):
-    # f.write ( "/* This should break the checksums */" )
+def write_initialization ( init, f ):
+    # f.write ( "\n/* This should break the checksums for testing */\n" )
 
     write_dm_str_val ( init, f, 'iterations',                'ITERATIONS' )
     write_dm_str_val ( init, f, 'time_step',                 'TIME_STEP' )
-    if dyn_fn != None:
-      f.write ( "DYNAMIC_GEOMETRY = \"%s\"\n" % (dyn_fn) )
     write_dm_str_val ( init, f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
     f.write ( "\n" )
     write_dm_str_val ( init, f, 'time_step_max',             'TIME_STEP_MAX' )
