@@ -463,6 +463,11 @@ def write_mdl ( dm, file_name ):
         # Force static geometry off since both can't be defined in current MCell
         has_static_geometry = False
 
+      # Actually write the MDL:
+      out_file = f
+      if not (modular_path is None):
+        out_file = open ( os.path.join(modular_path,'Scene.instantiation.mdl'), 'w' )
+
       if has_static_geometry or has_release_sites:
         # Put both together into the same INSTANTIATE block
         block_name = 'Scene'
@@ -470,8 +475,8 @@ def write_mdl ( dm, file_name ):
           # The dynamic geometry uses the name "Scene" so choose something else here
           block_name = "Releases"
 
-        f.write ( "INSTANTIATE " + block_name + " OBJECT\n" )
-        f.write ( "{\n" )
+        out_file.write ( "INSTANTIATE " + block_name + " OBJECT\n" )
+        out_file.write ( "{\n" )
         if has_static_geometry:
           objs = None
           geom = None
@@ -479,15 +484,22 @@ def write_mdl ( dm, file_name ):
             objs = mcell['model_objects']
           if 'geometrical_objects' in mcell:
             geom = mcell['geometrical_objects']
-          write_static_instances ( objs, geom, f )
+          write_static_instances ( objs, geom, out_file )
 
         if has_release_sites:
           rels = mcell['release_sites']
-          write_release_sites ( rels, mcell['define_molecules'], f )
+          write_release_sites ( rels, mcell['define_molecules'], out_file )
 
-        f.write ( "}\n\n" )
+        out_file.write ( "}\n\n" )
+
+        if not (out_file == f):
+          out_file.close()
+          f.write ( 'INCLUDE_FILE = "Scene.instantiation.mdl"\n\n' )
+
 
       f.write("sprintf(seed,\"%05g\",SEED)\n\n")
+
+
 
       if 'viz_output' in mcell:
         vizout = mcell['viz_output']
