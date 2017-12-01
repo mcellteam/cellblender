@@ -308,6 +308,68 @@ import math
 # For debugging
 import traceback
 
+def write_export_scripting ( dm, before_after, section, mdl_file ):
+    if 'mcell' in dm:
+        mcell_dm = dm['mcell']
+        if 'scripting' in mcell_dm:
+            scripting = mcell_dm['scripting']
+            print ( "################### Write Scripting Ouptut " + before_after + " " + section )
+            # mdl_file.write("\n\n/* Begin Custom MDL Inserted %s %s */\n" % (before_after, section))
+            for script in scripting['scripting_list']:
+                if (script['include_where'] == before_after) and (script['include_section'] == section):
+
+                    if script['internal_external'] == 'internal':
+                        mdl_file.write ( "\n/*** Beginning of internal script \"%s\" included %s %s ***/\n\n" % (script['internal_file_name'], before_after, section))
+                    else:
+                        mdl_file.write ( "\n/*** Beginning of external script \"%s\" included %s %s ***/\n\n" % (script['external_file_name'], before_after, section))
+
+                    if script['mdl_python'] == 'mdl':
+                        if script['internal_external'] == 'internal':
+                            mdl_file.write ( scripting['script_texts'][script['internal_file_name']] )
+                        else:
+                            print ( "Loading external MDL script: " + script['external_file_name'] )
+                            f = None
+                            if script['external_file_name'].startswith ( "//" ):
+                                # Convert the file name from blend file relative (//) to full path:
+                                if has_blender:
+                                    f = open ( os.path.join ( os.path.dirname(bpy.data.filepath), script['external_file_name'][2:] ), mode='r' )
+                                else:
+                                    # Not sure what to do without Blender in this case ... assume it's local for now
+                                    f = open ( script['external_file_name'][2:], mode='r' )
+                            else:
+                                f = open ( script['external_file_name'], mode='r' )
+                            script_text = f.read()
+                            mdl_file.write ( script_text )
+
+                    if script['mdl_python'] == 'python':
+                        if script['internal_external'] == 'internal':
+                            mdl_file.write ( "\n  /* Before executing internal Python script \"%s\" %s %s */\n\n" % (script['internal_file_name'], before_after, section))
+                            exec ( scripting['script_texts'][script['internal_file_name']], locals() )
+                            mdl_file.write ( "\n  /* After executing internal Python script \"%s\" %s %s */\n\n" % (script['internal_file_name'], before_after, section))
+                        else:
+                            print ( "Loading external Python script: " + script['external_file_name'] )
+                            f = None
+                            if script['internal_file_name'].startswith ( "//" ):
+                                if has_blender:
+                                    # Convert the file name from blend file relative (//) to full path:
+                                    f = open ( os.path.join ( os.path.dirname(bpy.data.filepath), script['external_file_name'][2:] ), mode='r' )
+                                else:
+                                    # Not sure what to do without Blender in this case ... assume it's local for now
+                                    f = open ( script['external_file_name'][2:], mode='r' )
+                            else:
+                                f = open ( script['external_file_name'], mode='r' )
+                            script_text = f.read()
+                            mdl_file.write ( "\n  /* Before executing external Python script \"%s\" %s %s */\n\n" % (script['external_file_name'], before_after, section))
+                            exec ( script_text, locals() )
+                            mdl_file.write ( "\n  /* After executing external Python script \"%s\" %s %s */\n\n" % (script['external_file_name'], before_after, section))
+
+                    if script['internal_external'] == 'internal':
+                        mdl_file.write ( "\n/*** End of internal script \"%s\" included %s %s ***/\n\n" % (script['internal_file_name'], before_after, section))
+                    else:
+                        mdl_file.write ( "\n/*** End of external script \"%s\" included %s %s ***/\n\n" % (script['external_file_name'], before_after, section))
+            # mdl_file.write("\n\n/* End Custom MDL Inserted %s %s */\n\n" % (before_after, section))
+
+
 def write_mdl ( dm, file_name, scene_name='Scene' ):
     """ Write a data model to a named file (generally follows "export_mcell_mdl" ordering) """
 
@@ -344,6 +406,11 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
             sorted_mlist.append ( mo )
           mcell['model_objects']['model_object_list'] = sorted_mlist
 
+
+      write_export_scripting ( dm, 'before', 'everything', f )
+
+      write_export_scripting ( dm, 'before', 'parameters', f )
+
       if 'parameter_system' in mcell:
         ps = mcell['parameter_system']
         out_file = f
@@ -353,6 +420,9 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
         if not (out_file == f):
           out_file.close()
           f.write ( 'INCLUDE_FILE = "' + scene_name + '.parameters.mdl"\n\n' )
+
+      write_export_scripting ( dm, 'after', 'parameters', f )
+      write_export_scripting ( dm, 'before', 'initialization', f )
 
       if 'initialization' in mcell:
         init = mcell['initialization']
@@ -367,6 +437,9 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
           out_file.close()
           f.write ( 'INCLUDE_FILE = "' + scene_name + '.initialization.mdl"\n\n' )
 
+      write_export_scripting ( dm, 'after', 'initialization', f )
+      write_export_scripting ( dm, 'before', 'molecules', f )
+
       if 'define_molecules' in mcell:
         mols = mcell['define_molecules']
         out_file = f
@@ -376,6 +449,9 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
         if not (out_file == f):
           out_file.close()
           f.write ( 'INCLUDE_FILE = "' + scene_name + '.molecules.mdl"\n\n' )
+
+      write_export_scripting ( dm, 'after', 'molecules', f )
+      write_export_scripting ( dm, 'before', 'surface_classes', f )
 
       if 'define_surface_classes' in mcell:
         sclasses = mcell['define_surface_classes']
@@ -387,6 +463,9 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
           out_file.close()
           f.write ( 'INCLUDE_FILE = "' + scene_name + '.surface_classes.mdl"\n\n' )
 
+      write_export_scripting ( dm, 'after', 'surface_classes', f )
+      write_export_scripting ( dm, 'before', 'reactions', f )
+
       if 'define_reactions' in mcell:
         reacts = mcell['define_reactions']
         out_file = f
@@ -396,6 +475,9 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
         if not (out_file == f):
           out_file.close()
           f.write ( 'INCLUDE_FILE = "' + scene_name + '.reactions.mdl"\n\n' )
+
+      write_export_scripting ( dm, 'after', 'reactions', f )
+      write_export_scripting ( dm, 'before', 'geometry', f )
 
       if num_dynamic == 0:
         # MCell currently requires all objects to be either static or dynamic
@@ -420,6 +502,9 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
           out_file.close()
           f.write ( 'INCLUDE_FILE = "' + scene_name + '.geometry.mdl"\n\n' )
 
+      write_export_scripting ( dm, 'after', 'geometry', f )
+      write_export_scripting ( dm, 'before', 'mod_surf_regions', f )
+
       if 'modify_surface_regions' in mcell:
         modsurfrs = mcell['modify_surface_regions']
         out_file = f
@@ -429,6 +514,9 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
         if not (out_file == f):
           out_file.close()
           f.write ( 'INCLUDE_FILE = "' + scene_name + '.mod_surf_regions.mdl"\n\n' )
+
+      write_export_scripting ( dm, 'after', 'mod_surf_regions', f )
+      write_export_scripting ( dm, 'before', 'release_patterns', f )
 
       if 'define_release_patterns' in mcell:
         pats = mcell['define_release_patterns']
@@ -441,6 +529,8 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
           f.write ( 'INCLUDE_FILE = "' + scene_name + '.release_patterns.mdl"\n\n' )
 
 
+      write_export_scripting ( dm, 'after', 'release_patterns', f )
+      write_export_scripting ( dm, 'before', 'instantiate', f )
 
       # Figure out what we have to output based on:
       #   Static Geometry
@@ -492,9 +582,13 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
             geom = mcell['geometrical_objects']
           write_static_instances ( scene_name, objs, geom, out_file )
 
+        write_export_scripting ( dm, 'before', 'release_sites', f )
+
         if has_release_sites:
           rels = mcell['release_sites']
           write_release_sites ( scene_name, rels, mcell['define_molecules'], out_file )
+
+        write_export_scripting ( dm, 'after', 'release_sites', f )
 
         out_file.write ( "}\n\n" )
 
@@ -502,10 +596,13 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
           out_file.close()
           f.write ( 'INCLUDE_FILE = "' + scene_name + '.instantiation.mdl"\n\n' )
 
+      write_export_scripting ( dm, 'after', 'instantiate', f )
+      write_export_scripting ( dm, 'before', 'seed', f )
 
       f.write("sprintf(seed,\"%05g\",SEED)\n\n")
 
-
+      write_export_scripting ( dm, 'after', 'seed', f )
+      write_export_scripting ( dm, 'before', 'viz_output', f )
 
       if 'viz_output' in mcell:
         vizout = mcell['viz_output']
@@ -519,6 +616,9 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
         if not (out_file == f):
           out_file.close()
           f.write ( 'INCLUDE_FILE = "' + scene_name + '.viz_output.mdl"\n\n' )
+
+      write_export_scripting ( dm, 'after', 'viz_output', f )
+      write_export_scripting ( dm, 'before', 'rxn_output', f )
 
       if 'reaction_data_output' in mcell:
         reactout = mcell['reaction_data_output']
@@ -537,6 +637,10 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
         if not (out_file == f):
           out_file.close()
           f.write ( 'INCLUDE_FILE = "' + scene_name + '.rxn_output.mdl"\n\n' )
+
+      write_export_scripting ( dm, 'after', 'rxn_output', f )
+
+      write_export_scripting ( dm, 'after', 'everything', f )
 
     f.close()
 
