@@ -376,6 +376,9 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
     print ( "Top of data_model_to_mdl.write_mdl() to " + str(file_name) )
     print ( "Data Model Keys: " + str( [k for k in dm['mcell'].keys()] ) )
+    export_cellblender_data = not dm['mcell']['scripting']['ignore_cellblender_data']
+    if not export_cellblender_data:
+      print ( "Exporting only the scripts ... ignoring all other CellBlender data" )
     export_modular = ( dm['mcell']['simulation_control']['export_format'] == 'mcell_mdl_modular' )
     print ( "Export Modular = " + str(export_modular) )
     modular_path = None
@@ -390,7 +393,9 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
     num_dynamic = len ( [ True for o in dm['mcell']['model_objects']['model_object_list'] if o['dynamic'] ] )
 
     f = open ( file_name, 'w' )
-    # f.write ( "/* MDL Generated from Data Model */\n" )
+    if not export_cellblender_data:
+      f.write ( "/* MDL from scripts alone - all CellBlender data ignored!! */" )
+
     if ('mcell' in dm):
       mcell = dm['mcell']
 
@@ -411,7 +416,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
 
       write_export_scripting ( dm, 'before', 'parameters', f )
 
-      if 'parameter_system' in mcell:
+      if export_cellblender_data and ('parameter_system' in mcell):
         ps = mcell['parameter_system']
         out_file = f
         if not (modular_path is None):
@@ -424,7 +429,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
       write_export_scripting ( dm, 'after', 'parameters', f )
       write_export_scripting ( dm, 'before', 'initialization', f )
 
-      if 'initialization' in mcell:
+      if export_cellblender_data and ('initialization' in mcell):
         init = mcell['initialization']
         out_file = f
         if not (modular_path is None):
@@ -440,7 +445,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
       write_export_scripting ( dm, 'after', 'initialization', f )
       write_export_scripting ( dm, 'before', 'molecules', f )
 
-      if 'define_molecules' in mcell:
+      if export_cellblender_data and ('define_molecules' in mcell):
         mols = mcell['define_molecules']
         out_file = f
         if not (modular_path is None):
@@ -453,7 +458,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
       write_export_scripting ( dm, 'after', 'molecules', f )
       write_export_scripting ( dm, 'before', 'surface_classes', f )
 
-      if 'define_surface_classes' in mcell:
+      if export_cellblender_data and ('define_surface_classes' in mcell):
         sclasses = mcell['define_surface_classes']
         out_file = f
         if not (modular_path is None):
@@ -466,7 +471,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
       write_export_scripting ( dm, 'after', 'surface_classes', f )
       write_export_scripting ( dm, 'before', 'reactions', f )
 
-      if 'define_reactions' in mcell:
+      if export_cellblender_data and ('define_reactions' in mcell):
         reacts = mcell['define_reactions']
         out_file = f
         if not (modular_path is None):
@@ -479,33 +484,34 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
       write_export_scripting ( dm, 'after', 'reactions', f )
       write_export_scripting ( dm, 'before', 'geometry', f )
 
-      if num_dynamic == 0:
-        # MCell currently requires all objects to be either static or dynamic
-        # So only write static objects if there are NO dynamic objects
-        if ('model_objects' in mcell) and ('geometrical_objects' in mcell):
-          objs = mcell['model_objects']
-          geom = mcell['geometrical_objects']
+      if export_cellblender_data:
+        if num_dynamic == 0:
+          # MCell currently requires all objects to be either static or dynamic
+          # So only write static objects if there are NO dynamic objects
+          if ('model_objects' in mcell) and ('geometrical_objects' in mcell):
+            objs = mcell['model_objects']
+            geom = mcell['geometrical_objects']
+            out_file = f
+            if not (modular_path is None):
+              out_file = open ( os.path.join(modular_path,scene_name + '.geometry.mdl'), 'w' )
+            write_static_geometry ( objs, geom, out_file )
+            if not (out_file == f):
+              out_file.close()
+              f.write ( 'INCLUDE_FILE = "' + scene_name + '.geometry.mdl"\n\n' )
+        else:
+          # The geometry will be written to other files, just specify the list file name
           out_file = f
           if not (modular_path is None):
             out_file = open ( os.path.join(modular_path,scene_name + '.geometry.mdl'), 'w' )
-          write_static_geometry ( objs, geom, out_file )
+          out_file.write ( "DYNAMIC_GEOMETRY = \"dyn_geom_list.txt\"\n\n" )
           if not (out_file == f):
             out_file.close()
             f.write ( 'INCLUDE_FILE = "' + scene_name + '.geometry.mdl"\n\n' )
-      else:
-        # The geometry will be written to other files, just specify the list file name
-        out_file = f
-        if not (modular_path is None):
-          out_file = open ( os.path.join(modular_path,scene_name + '.geometry.mdl'), 'w' )
-        out_file.write ( "DYNAMIC_GEOMETRY = \"dyn_geom_list.txt\"\n\n" )
-        if not (out_file == f):
-          out_file.close()
-          f.write ( 'INCLUDE_FILE = "' + scene_name + '.geometry.mdl"\n\n' )
 
       write_export_scripting ( dm, 'after', 'geometry', f )
       write_export_scripting ( dm, 'before', 'mod_surf_regions', f )
 
-      if 'modify_surface_regions' in mcell:
+      if export_cellblender_data and ('modify_surface_regions' in mcell):
         modsurfrs = mcell['modify_surface_regions']
         out_file = f
         if not (modular_path is None):
@@ -518,7 +524,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
       write_export_scripting ( dm, 'after', 'mod_surf_regions', f )
       write_export_scripting ( dm, 'before', 'release_patterns', f )
 
-      if 'define_release_patterns' in mcell:
+      if export_cellblender_data and ('define_release_patterns' in mcell):
         pats = mcell['define_release_patterns']
         out_file = f
         if not (modular_path is None):
@@ -539,7 +545,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
       has_static_geometry = False
       has_dynamic_geometry = False
       has_release_sites = False
-      if 'model_objects' in mcell:
+      if export_cellblender_data and ('model_objects' in mcell):
         if 'model_object_list' in mcell['model_objects']:
           if len(mcell['model_objects']['model_object_list']) > 0:
             num_static = len(dm['mcell']['model_objects']['model_object_list']) - num_dynamic
@@ -548,7 +554,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
             if num_dynamic > 0:
               has_dynamic_geometry = True
 
-      if 'release_sites' in mcell:
+      if export_cellblender_data and ('release_sites' in mcell):
         rels = mcell['release_sites']
         if 'release_site_list' in rels:
           rlist = rels['release_site_list']
@@ -571,40 +577,45 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
           # The dynamic geometry uses the name "Scene" so choose something else here
           block_name = "Releases"
 
-        out_file.write ( "INSTANTIATE " + block_name + " OBJECT\n" )
-        out_file.write ( "{\n" )
-        if has_static_geometry:
-          objs = None
-          geom = None
-          if 'model_objects' in mcell:
-            objs = mcell['model_objects']
-          if 'geometrical_objects' in mcell:
-            geom = mcell['geometrical_objects']
-          write_static_instances ( scene_name, objs, geom, out_file )
+        if export_cellblender_data:
+          out_file.write ( "INSTANTIATE " + block_name + " OBJECT\n" )
+          out_file.write ( "{\n" )
+          if has_static_geometry:
+            objs = None
+            geom = None
+            if 'model_objects' in mcell:
+              objs = mcell['model_objects']
+            if 'geometrical_objects' in mcell:
+              geom = mcell['geometrical_objects']
+            write_static_instances ( scene_name, objs, geom, out_file )
 
         write_export_scripting ( dm, 'before', 'release_sites', f )
 
-        if has_release_sites:
-          rels = mcell['release_sites']
-          write_release_sites ( scene_name, rels, mcell['define_molecules'], out_file )
+        if export_cellblender_data:
+          if has_release_sites:
+            rels = mcell['release_sites']
+            write_release_sites ( scene_name, rels, mcell['define_molecules'], out_file )
 
         write_export_scripting ( dm, 'after', 'release_sites', f )
 
-        out_file.write ( "}\n\n" )
+        if export_cellblender_data:
+          out_file.write ( "}\n\n" )
 
-        if not (out_file == f):
-          out_file.close()
-          f.write ( 'INCLUDE_FILE = "' + scene_name + '.instantiation.mdl"\n\n' )
+        if export_cellblender_data:
+          if not (out_file == f):
+            out_file.close()
+            f.write ( 'INCLUDE_FILE = "' + scene_name + '.instantiation.mdl"\n\n' )
 
       write_export_scripting ( dm, 'after', 'instantiate', f )
       write_export_scripting ( dm, 'before', 'seed', f )
 
-      f.write("sprintf(seed,\"%05g\",SEED)\n\n")
+      if export_cellblender_data:
+        f.write("sprintf(seed,\"%05g\",SEED)\n\n")
 
       write_export_scripting ( dm, 'after', 'seed', f )
       write_export_scripting ( dm, 'before', 'viz_output', f )
 
-      if 'viz_output' in mcell:
+      if export_cellblender_data and ('viz_output' in mcell):
         vizout = mcell['viz_output']
         mols = None
         if ('define_molecules' in mcell):
@@ -620,7 +631,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
       write_export_scripting ( dm, 'after', 'viz_output', f )
       write_export_scripting ( dm, 'before', 'rxn_output', f )
 
-      if 'reaction_data_output' in mcell:
+      if export_cellblender_data and ('reaction_data_output' in mcell):
         reactout = mcell['reaction_data_output']
         mols = None
         if ('define_molecules' in mcell):
@@ -647,7 +658,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
     # Check for any dynamic objects, and update MDL as needed
 
     num_dynamic = len ( [ True for o in dm['mcell']['model_objects']['model_object_list'] if o['dynamic'] ] )
-    if num_dynamic > 0:
+    if export_cellblender_data and (num_dynamic > 0):
     
       # This code must add the following to each directory where MDL is written:
       #   dyn_geom_list.txt

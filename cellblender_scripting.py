@@ -712,6 +712,7 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
 
     active_scripting_index = IntProperty(name="Active Scripting Index", default=0)
     scripting_list = CollectionProperty(type=CellBlenderScriptingProperty, name="Scripting List")
+    ignore_cellblender_data = BoolProperty(name="Ignore CellBlender Data", default=False)
 
     internal_mdl_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="MDL Internal Scripts")
     external_mdl_scripts_list = CollectionProperty(type=CellBlenderScriptProperty, name="MDL External Scripts")
@@ -774,9 +775,10 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
 
     def build_data_model_from_properties ( self, context, scripts=False ):
         dm = {}
-        dm['data_model_version'] = "DM_2016_03_15_1900"
-        dm['show_simulation_scripting'] = self.show_simulation_scripting
-        dm['show_data_model_scripting'] = self.show_data_model_scripting
+        dm['data_model_version'] = "DM_2017_11_30_1830"
+        dm['ignore_cellblender_data'] = self.ignore_cellblender_data
+        #dm['show_simulation_scripting'] = self.show_simulation_scripting
+        #dm['show_data_model_scripting'] = self.show_data_model_scripting
         dm['dm_internal_file_name'] = self.dm_internal_file_name
         dm['dm_external_file_name'] = self.dm_external_file_name
         dm['force_property_update'] = self.force_property_update
@@ -807,8 +809,13 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
             # Make changes to move from unversioned to DM_2016_03_15_1900
             dm['data_model_version'] = "DM_2016_03_15_1900"
 
+        if dm['data_model_version'] == "DM_2016_03_15_1900":
+            # Add the ignore_cellblender_data flag as False (the prior behaviour before this change)
+            dm['ignore_cellblender_data'] = False
+            dm['data_model_version'] = "DM_2017_11_30_1830"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2016_03_15_1900":
+        if dm['data_model_version'] != "DM_2017_11_30_1830":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade CellBlenderScriptingPropertyGroup data model to current version." )
             return None
 
@@ -817,12 +824,13 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm, scripts=True ):
         # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2016_03_15_1900":
+        if dm['data_model_version'] != "DM_2017_11_30_1830":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade CellBlenderScriptingPropertyGroup data model to current version." )
         self.init_properties(context.scene.mcell.parameter_system)
 
-        self.show_simulation_scripting = dm["show_simulation_scripting"]
-        self.show_data_model_scripting = dm["show_data_model_scripting"]
+        self.ignore_cellblender_data = dm['ignore_cellblender_data']
+        #self.show_simulation_scripting = dm["show_simulation_scripting"]
+        #self.show_data_model_scripting = dm["show_data_model_scripting"]
         self.dm_internal_file_name = dm["dm_internal_file_name"]
         self.dm_external_file_name = dm["dm_external_file_name"]
         self.force_property_update = dm["force_property_update"]
@@ -943,6 +951,9 @@ class CellBlenderScriptingPropertyGroup(bpy.types.PropertyGroup):
                     if len(self.scripting_list) > 0:
                         selected_script = self.scripting_list[self.active_scripting_index]
                         selected_script.draw_layout ( context, box )
+                row = box.row()
+                row.prop ( self, "ignore_cellblender_data" )
+
 
             else:
                 row.prop(self, "show_simulation_scripting", icon='TRIA_RIGHT', emboss=False)
