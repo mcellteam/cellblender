@@ -578,7 +578,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                             engine_manager.makedirs_exist_ok ( os.path.join(sweep_item_path,'react_data'), exist_ok=True )
                             engine_manager.makedirs_exist_ok ( os.path.join(sweep_item_path,'viz_data'), exist_ok=True )
                             print ( "Writing data model as MDL at " + str(os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) )) )
-                            data_model_to_mdl.write_mdl ( {'mcell':dm}, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ) )
+                            data_model_to_mdl.write_mdl ( {'mcell':dm}, os.path.join(sweep_item_path, '%s.main.mdl' % (base_name) ), scene_name=context.scene.name )
                         run_cmd_list.append ( [mcell_binary, sweep_item_path, base_name, error_file_option, log_file_option, seed] )
                     # Increment the current_index counters from rightmost side (deepest directory)
                     i = len(sweep_list) - 1
