@@ -608,7 +608,8 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
         if export_cellblender_data:
           if has_release_sites:
             rels = mcell['release_sites']
-            actually_wrote = actually_wrote or write_release_sites ( scene_name, rels, mcell['define_molecules'], out_file )
+            wrote_rels = write_release_sites ( scene_name, rels, mcell['define_molecules'], out_file )
+            actually_wrote = actually_wrote or wrote_rels
 
         write_export_scripting ( dm, 'after', 'release_sites', f )
 
@@ -1318,18 +1319,23 @@ def instance_object_expr(scene_name, expression):
 
 def write_release_sites ( scene_name, rels, mols, f, instantiate_name=None ):
     wrote_mdl = False
-    #TODO Note that the use of "Scene" here is a temporary measure!!!!
     if instantiate_name != None:
+      print ( "Writing INSTANTIATE" )
       f.write ( "INSTANTIATE " + instantiate_name + " OBJECT\n" )
       f.write ( "{\n" )
       wrote_mdl = True
 
+    print ( "Checking rels" )
     if rels != None:
+      print ( "Checking release_site_list" )
       if 'release_site_list' in rels:
         rlist = rels['release_site_list']
+        print ( "Checking len(rlist)" )
         if len(rlist) > 0:
           wrote_mdl = True
+          print ( "Entering rlist loop" )
           for r in rlist:
+            print ( "Top of rlist loop" )
             f.write ( "  %s RELEASE_SITE\n" % (r['name']) )
             f.write ( "  {\n" )
             list_type = False
@@ -1352,7 +1358,6 @@ def write_release_sites ( scene_name, rels, mols, f, instantiate_name=None ):
               f.write("   SITE_DIAMETER = %s\n" % (r['site_diameter']))
             elif r['shape'] == "OBJECT":
               # Output MDL for releasing in or on and object
-              #TODO Note that the use of "Scene" here for object names is a temporary measure!!!!
               f.write ( "   SHAPE = %s\n" % ( instance_object_expr(scene_name, r['object_expr']) ) )
             elif r['shape'] == "LIST":
               # Output MDL for releasing a list of molecules
