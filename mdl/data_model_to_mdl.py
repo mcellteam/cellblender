@@ -1320,22 +1320,16 @@ def instance_object_expr(scene_name, expression):
 def write_release_sites ( scene_name, rels, mols, f, instantiate_name=None ):
     wrote_mdl = False
     if instantiate_name != None:
-      print ( "Writing INSTANTIATE" )
       f.write ( "INSTANTIATE " + instantiate_name + " OBJECT\n" )
       f.write ( "{\n" )
       wrote_mdl = True
 
-    print ( "Checking rels" )
     if rels != None:
-      print ( "Checking release_site_list" )
       if 'release_site_list' in rels:
         rlist = rels['release_site_list']
-        print ( "Checking len(rlist)" )
         if len(rlist) > 0:
           wrote_mdl = True
-          print ( "Entering rlist loop" )
           for r in rlist:
-            print ( "Top of rlist loop" )
             f.write ( "  %s RELEASE_SITE\n" % (r['name']) )
             f.write ( "  {\n" )
             list_type = False

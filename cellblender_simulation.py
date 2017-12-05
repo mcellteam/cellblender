@@ -1998,9 +1998,9 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
 
     simulation_engine_and_run_enum = [
-         ('QUEUE', "MCell via Queue Runner", ""),       # This should be commented out once the SWEEP_QUEUE is working with Dynamic Geometry
          ('SWEEP_QUEUE', "MCell Local", ""),
          ('SWEEP_SGE', "MCell SGE", ""),
+         ('QUEUE', "MCell via Queue Runner", ""),       # This should be commented out once the SWEEP_QUEUE is working with Dynamic Geometry
          #('COMMAND', "MCell via Command Line", ""),
          #('SWEEP', "MCell via Sweep Runner", ""),
          ('DYNAMIC', "Engine/Runner (Experimental)", "") ]
