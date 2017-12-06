@@ -40,9 +40,9 @@ shared_path = os.path.dirname(__file__)          # Gets the path to cellblender/
 shared_path = os.path.split(shared_path)[0]      # Gets the path to cellblender/sim_engines
 shared_path = os.path.split(shared_path)[0]      # Gets the path to cellblender
 shared_path = os.path.join ( shared_path, "extensions" )   # Should be the absolute path to cellblender/extensions
-mcell_path = "mcell/build/mcell"
-mcell_lib_path = "mcell/lib/"
-bionetgen_path = "bionetgen/bng2/BNG2.pl"
+mcell_path = "mcell"
+mcell_lib_path = "lib/"
+bionetgen_path = "bng2/BNG2.pl"
 nfsim_path = ""
 
 
