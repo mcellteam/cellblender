@@ -854,18 +854,16 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         mo_dm = {}
         mo_dm['data_model_version'] = "DM_2017_06_15_1755"
         mo_list = []
-        for scene_object in context.scene.objects:
-            if scene_object.type == 'MESH':
-                if scene_object.mcell.include:
-                    name = scene_object.name
-                    print ( "MCell object: " + name )
-                    obj_dm = { "name": name }
-                    obj_dm['parent_object'] = mcell_obj_list[name].parent_object
-                    obj_dm['membrane_name'] = mcell_obj_list[name].membrane_name
-                    obj_dm['dynamic'] = mcell_obj_list[name].dynamic
-                    obj_dm['script_name'] = mcell_obj_list[name].script_name
-                    obj_dm['dynamic_display_source'] = mcell_obj_list[name].dynamic_display_source
-                    mo_list.append ( obj_dm )
+        obj_list = [ obj for obj in context.scene.objects if obj.mcell.include ]
+        for scene_object in obj_list:
+          name = scene_object.name
+          obj_dm = { "name": name }
+          obj_dm['parent_object'] = mcell_obj_list[name].parent_object
+          obj_dm['membrane_name'] = mcell_obj_list[name].membrane_name
+          obj_dm['dynamic'] = mcell_obj_list[name].dynamic
+          obj_dm['script_name'] = mcell_obj_list[name].script_name
+          obj_dm['dynamic_display_source'] = mcell_obj_list[name].dynamic_display_source
+          mo_list.append ( obj_dm )
         mo_dm['model_object_list'] = mo_list
         return mo_dm
 
@@ -1063,11 +1061,9 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         g_dm = {}
         g_list = []
 
-        for data_object in context.scene.objects:
-            if data_object.type == 'MESH':
-                if data_object.mcell.include:
-                    print ( "MCell object: " + data_object.name )
-                    g_list.append ( self.build_data_model_object_from_mesh( context, data_object) )
+        obj_list = [ obj for obj in context.scene.objects if obj.mcell.include ]
+        for data_object in obj_list:
+          g_list.append ( self.build_data_model_object_from_mesh( context, data_object) )
         g_dm['object_list'] = g_list
 
         if dyn_geo:
