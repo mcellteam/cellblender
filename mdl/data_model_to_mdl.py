@@ -433,7 +433,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
         if not (modular_path is None):
           out_file = open ( os.path.join(modular_path,scene_name+'.parameters.mdl'), 'w' )
         actually_wrote = write_parameter_system ( ps, out_file )
-        print ( "actuall_wrote parameters = " + str(actually_wrote) )
+        print ( "actually_wrote parameters = " + str(actually_wrote) )
         if not (out_file == f):
           out_file.close()
           if actually_wrote:
@@ -448,7 +448,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
         if not (modular_path is None):
           out_file = open ( os.path.join(modular_path,scene_name + '.initialization.mdl'), 'w' )
         actually_wrote = write_initialization ( init, out_file )
-        print ( "actuall_wrote initialization = " + str(actually_wrote) )
+        print ( "actually_wrote initialization = " + str(actually_wrote) )
         if 'partitions' in init:
           parts = mcell['initialization']['partitions']
           write_partitions ( parts, out_file )
