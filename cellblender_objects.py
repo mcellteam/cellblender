@@ -1316,37 +1316,44 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
 
         if mcell.model_objects.has_some_dynamic:
             files_path = mcell_files_path()
+            path_to_dg_files = None
             # Assume the new "data_layout" system since dynamic geometry is relatively new
             # Read the data layout for this run (will include sweep subdirectories)
-            f = open ( os.path.join(files_path,"data_layout.json"), 'r' )
-            layout_spec = json.loads ( f.read() )
-            f.close()
-            data_layout = layout_spec['data_layout']
-            # Build a "sub path" based on any directories in the data layout
-            sub_path = ""
-            for level in data_layout:
-              if level[0] == '/DIR':
-                # This is typically the top level directory
-                sub_path = os.path.join ( sub_path, level[1][0] )
-              elif level[0] == '/FILE_TYPE':
-                # This is typically either "viz_data" or "react_data" ... force "viz_data
-                # This is not needed to find the dynamic geometry
-                pass
-              elif (level[0] ==  '/SEED'):
-                # This is not needed to find the dynamic geometry
-                pass
-              else:
-                # This is a parameter sweep subdirectory, use the parameter name and currently selected index
-                selected_index = 0
-                try:
-                  selected_index = choices_list[level[0]]['enum_choice']
-                except:
-                  pass
-                # Add the next lower directory level to the path
-                sub_path = os.path.join ( sub_path, level[0] + ("_index_%d" % selected_index) )
+            try:
+                f = open ( os.path.join(files_path,"data_layout.json"), 'r' )
+                layout_spec = json.loads ( f.read() )
+                f.close()
+                data_layout = layout_spec['data_layout']
+                # Build a "sub path" based on any directories in the data layout
+                sub_path = ""
+                for level in data_layout:
+                  if level[0] == '/DIR':
+                    # This is typically the top level directory
+                    sub_path = os.path.join ( sub_path, level[1][0] )
+                  elif level[0] == '/FILE_TYPE':
+                    # This is typically either "viz_data" or "react_data" ... force "viz_data
+                    # This is not needed to find the dynamic geometry
+                    pass
+                  elif (level[0] ==  '/SEED'):
+                    # This is not needed to find the dynamic geometry
+                    pass
+                  else:
+                    # This is a parameter sweep subdirectory, use the parameter name and currently selected index
+                    selected_index = 0
+                    try:
+                      selected_index = choices_list[level[0]]['enum_choice']
+                    except:
+                      pass
+                    # Add the next lower directory level to the path
+                    sub_path = os.path.join ( sub_path, level[0] + ("_index_%d" % selected_index) )
 
-            # Create the full path to the dynamic geometry for this selected point in the sweep space
-            path_to_dg_files = os.path.join(files_path, sub_path, "dynamic_geometry")
+                # Create the full path to the dynamic geometry for this selected point in the sweep space
+                path_to_dg_files = os.path.join(files_path, sub_path, "dynamic_geometry")
+
+            except:
+                # Most likely unable to open the data layout because nothing has been run
+                # Leave the path_to_dg_files as None
+                pass
 
             for obj in mcell.model_objects.object_list:
                 if obj.dynamic and (obj.dynamic_display_source != 'other'):
