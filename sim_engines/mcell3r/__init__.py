@@ -6,9 +6,6 @@ import shutil
 
 import cellblender
 from . import data_model_to_mdl_3r
-from . import run_data_model_mcell_3r
-
-# from . import mdlr2mdl
 
 print ( "Executing MCellR Simulation" )
 
@@ -45,15 +42,9 @@ mcell_lib_path = "lib/"
 bionetgen_path = "bng2/BNG2.pl"
 nfsim_path = ""
 
-
 project_files_dir = ""
 start_seed = 1
 end_seed = 1
-
-#try:
-#  mcell_path = bpy.context.scene.mcell.cellblender_preferences.mcell_binary
-#except:
-#  mcell_path = ""
 
 
 def postprocess():
@@ -436,14 +427,6 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   data_model_to_mdl_3r.write_viz_out(data_model['viz_output'], data_model['define_molecules'], f)
   f.close()
 
-  f = open ( os.path.join(output_data_dir,"mcellr.yaml"), 'w' )
-  f.write ( "bionetgen: '" + final_bionetgen_path + "'\n" )
-  f.write ( "libpath: '" + final_lib_path + "'\n" )
-  f.write ( "mcell: '" + final_mcell_path + "'\n" )
-  f.close()
-
-  # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
   fs = data_model['simulation_control']['start_seed']
   ls = data_model['simulation_control']['end_seed']
 
@@ -453,9 +436,6 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   end_seed = int(ls)
 
   engine_path = os.path.dirname(__file__)
-
-  # python mdlr2mdl.py -ni ./fceri_files/fceri.mdlr -o ./fceri_files/fceri.mdl
-  # subprocess.call ( [ cellblender.python_path, os.path.join(engine_path, "mdlr2mdl.py"), "-ni", "Scene.mdlr", "-o", "Scene" ], cwd=output_data_dir )
 
 
   # This should return a list of run command dictionaries.
@@ -485,7 +465,7 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   command_list = []
 
   command_dict = { 'cmd': cellblender.python_path,
-                   'args': [ os.path.join(engine_path, "mdlr2mdl.py"), '-ni', 'Scene.mdlr', '-o', 'Scene' ],
+                   'args': [ os.path.join(shared_path, "mdlr2mdl.py"), '-ni', 'Scene.mdlr', '-o', 'Scene' ],
                    'wd': output_data_dir
                  }
 
