@@ -49,7 +49,7 @@ end_seed = 1
 
 def postprocess():
   global parameter_dictionary
-  print ( "Postprocess called" )
+  print ( "Postprocessing MCellR Reaction Output..." )
 
   mcellr_react_dir = os.path.join(project_files_dir, "output_data")
 
@@ -90,15 +90,12 @@ def postprocess():
 
     for col in range(1,len(react_data_header)):
       out_file_name = os.path.join ( react_seed_dir, react_data_header[col] + ".dat" )
-      print ( "Writing data to " + out_file_name )
+      print ( "    Writing data to " + out_file_name )
       f = open(out_file_name,"w")
       for row in react_data_rows:
-        print ( "  " + row[0] + " " + row[col] )
+#        print ( "  " + row[0] + " " + row[col] )
         f.write ( row[0] + " " + row[col] + '\n' )
       f.close()
-
-    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
 
   print ( "Done postrocessing MCellR Reaction Output" )
 
@@ -477,8 +474,6 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   command_list.append ( command_dict )
   if output_detail > 0:
     print ( str(command_dict) )
-
-
 
   # Postprocessing should be done through the command_list, but force it here for now...
 
