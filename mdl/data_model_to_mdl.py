@@ -346,8 +346,9 @@ def write_export_scripting ( dm, before_after, section, mdl_file ):
 
                     if script['mdl_python'] == 'python':
                         if script['internal_external'] == 'internal':
+                            data_model = dm
                             mdl_file.write ( "\n  /* Before executing internal Python script \"%s\" %s %s */\n\n" % (script['internal_file_name'], before_after, section))
-                            exec ( scripting['script_texts'][script['internal_file_name']], locals() )
+                            exec ( scripting['script_texts'][script['internal_file_name']], globals(), locals() )
                             mdl_file.write ( "\n  /* After executing internal Python script \"%s\" %s %s */\n\n" % (script['internal_file_name'], before_after, section))
                         else:
                             print ( "Loading external Python script: " + script['external_file_name'] )
@@ -363,7 +364,7 @@ def write_export_scripting ( dm, before_after, section, mdl_file ):
                                 f = open ( script['external_file_name'], mode='r' )
                             script_text = f.read()
                             mdl_file.write ( "\n  /* Before executing external Python script \"%s\" %s %s */\n\n" % (script['external_file_name'], before_after, section))
-                            exec ( script_text, locals() )
+                            exec ( script_text, globals(), locals() )
                             mdl_file.write ( "\n  /* After executing external Python script \"%s\" %s %s */\n\n" % (script['external_file_name'], before_after, section))
 
                     if script['internal_external'] == 'internal':
@@ -379,6 +380,12 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
     print ( "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%" )
     print ( "Top of data_model_to_mdl.write_mdl() to " + str(file_name) )
     print ( "Data Model Keys: " + str( [k for k in dm['mcell'].keys()] ) )
+    if 'parameter_system' in dm['mcell'].keys():
+        pars = dm['mcell']['parameter_system']['model_parameters']
+        for p in pars:
+            if p['par_name'] == 'n0':
+                n0 = p['_extras']['par_value']
+            print ( "Parameter " + p['par_name'] + " = " + str(p['par_expression']) )
     export_cellblender_data = not dm['mcell']['scripting']['ignore_cellblender_data']
     if not export_cellblender_data:
       print ( "Exporting only the scripts ... ignoring all other CellBlender data" )
@@ -426,7 +433,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
         if not (modular_path is None):
           out_file = open ( os.path.join(modular_path,scene_name+'.parameters.mdl'), 'w' )
         actually_wrote = write_parameter_system ( ps, out_file )
-        print ( "actuall_wrote parameters = " + str(actually_wrote) )
+        print ( "actually_wrote parameters = " + str(actually_wrote) )
         if not (out_file == f):
           out_file.close()
           if actually_wrote:
@@ -441,7 +448,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
         if not (modular_path is None):
           out_file = open ( os.path.join(modular_path,scene_name + '.initialization.mdl'), 'w' )
         actually_wrote = write_initialization ( init, out_file )
-        print ( "actuall_wrote initialization = " + str(actually_wrote) )
+        print ( "actually_wrote initialization = " + str(actually_wrote) )
         if 'partitions' in init:
           parts = mcell['initialization']['partitions']
           write_partitions ( parts, out_file )
@@ -813,16 +820,22 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
                   region_props = {}      # The dict "region_props" is expected by the user's script
                   origin = [0,0,0]       # The list "origin" is expected by the user's script
 
+                  # print ( "data_model['mcell'].keys() = " + str(data_model['mcell'].keys()) )
+
                   if len(obj['script_name']) > 0:
                       # Let the script create the geometry
                       #print ( "   Build object mesh from user script for frame " + str(frame_number) )
-                      #script_text = script_dict[obj.script_name]
+                      #script_text = script_dict[obj['script_name']]
+                      script_text = mcell['scripting']['script_texts'][obj['script_name']]
                       #print ( 80*"=" )
                       #print ( script_text )
                       #print ( 80*"=" )
                       # exec ( script_dict[obj.script_name], locals() )
                       #print ( "Before script: region_props = " + str(region_props) )
-                      exec ( script_dict[obj['script_name']] )
+                      data_model = dm        # Use a more "official" name for the data model to be used by dynamic geometry scripts
+                      #exec ( script_dict[obj['script_name']], globals(), locals() )
+                      #exec ( script_dict[obj['script_name']] )
+                      exec ( script_text, globals(), locals() )
                       #print ( "After  script: region_props = " + str(region_props) )
                   elif has_blender:
                       # Get the geometry from the object (presumably animated by Blender)

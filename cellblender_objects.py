@@ -626,6 +626,16 @@ def changed_dynamic_callback(self, context):
         mcell.model_objects.has_some_dynamic = len([ True for o in mcell.model_objects.object_list if o.dynamic ]) > 0
 
 
+def changed_display_source_callback(self, context):
+    # Build the path starting from output_data
+    mcell = context.scene.mcell
+    #mol_viz = mcell.mol_viz
+    #data_layout = mcell.mol_viz['data_layout']
+    #bpy.ops.mcell.update_data_layout()
+    mcell.model_objects.update_scene(context.scene)
+    #bpy.ops.mcell.read_viz_data()
+
+
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Object Name", update=check_model_object_name)
     dynamic = BoolProperty ( default=False, description='Flag this object as dynamic', update=changed_dynamic_callback )
@@ -641,8 +651,8 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
                  ("other",   "Other",  "")  ],
         name="Display From:",
         default='other',
-        description="Select source of data used to drive the Blender display." )
-        ## update=changed_ddisplay_source )
+        description="Select source of data used to drive the Blender display.",
+        update=changed_display_source_callback )
 
     # Note that the "object_show_only" property should always be False except during the short time that it's callback is being called.
     # This is for selecting just one object and hiding all others
@@ -1306,37 +1316,44 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
 
         if mcell.model_objects.has_some_dynamic:
             files_path = mcell_files_path()
+            path_to_dg_files = None
             # Assume the new "data_layout" system since dynamic geometry is relatively new
             # Read the data layout for this run (will include sweep subdirectories)
-            f = open ( os.path.join(files_path,"data_layout.json"), 'r' )
-            layout_spec = json.loads ( f.read() )
-            f.close()
-            data_layout = layout_spec['data_layout']
-            # Build a "sub path" based on any directories in the data layout
-            sub_path = ""
-            for level in data_layout:
-              if level[0] == '/DIR':
-                # This is typically the top level directory
-                sub_path = os.path.join ( sub_path, level[1][0] )
-              elif level[0] == '/FILE_TYPE':
-                # This is typically either "viz_data" or "react_data" ... force "viz_data
-                # This is not needed to find the dynamic geometry
-                pass
-              elif (level[0] ==  '/SEED'):
-                # This is not needed to find the dynamic geometry
-                pass
-              else:
-                # This is a parameter sweep subdirectory, use the parameter name and currently selected index
-                selected_index = 0
-                try:
-                  selected_index = choices_list[level[0]]['enum_choice']
-                except:
-                  pass
-                # Add the next lower directory level to the path
-                sub_path = os.path.join ( sub_path, level[0] + ("_index_%d" % selected_index) )
+            try:
+                f = open ( os.path.join(files_path,"data_layout.json"), 'r' )
+                layout_spec = json.loads ( f.read() )
+                f.close()
+                data_layout = layout_spec['data_layout']
+                # Build a "sub path" based on any directories in the data layout
+                sub_path = ""
+                for level in data_layout:
+                  if level[0] == '/DIR':
+                    # This is typically the top level directory
+                    sub_path = os.path.join ( sub_path, level[1][0] )
+                  elif level[0] == '/FILE_TYPE':
+                    # This is typically either "viz_data" or "react_data" ... force "viz_data
+                    # This is not needed to find the dynamic geometry
+                    pass
+                  elif (level[0] ==  '/SEED'):
+                    # This is not needed to find the dynamic geometry
+                    pass
+                  else:
+                    # This is a parameter sweep subdirectory, use the parameter name and currently selected index
+                    selected_index = 0
+                    try:
+                      selected_index = choices_list[level[0]]['enum_choice']
+                    except:
+                      pass
+                    # Add the next lower directory level to the path
+                    sub_path = os.path.join ( sub_path, level[0] + ("_index_%d" % selected_index) )
 
-            # Create the full path to the dynamic geometry for this selected point in the sweep space
-            path_to_dg_files = os.path.join(files_path, sub_path, "dynamic_geometry")
+                # Create the full path to the dynamic geometry for this selected point in the sweep space
+                path_to_dg_files = os.path.join(files_path, sub_path, "dynamic_geometry")
+
+            except:
+                # Most likely unable to open the data layout because nothing has been run
+                # Leave the path_to_dg_files as None
+                pass
 
             for obj in mcell.model_objects.object_list:
                 if obj.dynamic and (obj.dynamic_display_source != 'other'):
@@ -1355,7 +1372,51 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                         #    print ( "Error: script name is none" )
                         #elif not (obj.script_name in bpy.data.texts):
                         #    print ( "Error: " + obj.script_name + " is not in bpy.data.texts" )
-                        exec ( bpy.data.texts[obj.script_name].as_string() )
+
+                        # Create a list of (parameter,value) pairs to over-write the data model for this point
+                        # Note that the 'enum_choice' field of each choice may not exist (phantom RNA props!!)
+                        # cl[0].keys() gives ['name', 'values']
+                        # dir(cl[0]) gives [ ... 'name', 'enum_choice' ]
+                        # cl[0].values() gives: ['n0', <bpy id property array [4]>]
+                        selected_par_point = []
+                        cl = mcell.mol_viz.choices_list
+                        for c in cl:
+                            selected_par_point.append ( [ c.name, c.values()[1][int(c.enum_choice)] ] )
+
+                        # Create a new data model with values for this point in the sweep space
+                        data_model = None   # This may be used by the script to get parameters
+
+                        # Make a shallow copy of the current data model with new parameter values:
+                        if cellblender.current_data_model != None:
+                            data_model = {}
+                            data_model['mcell'] = {}
+                            # Copy the top-level keys (except parameter_system) as they are (references to original data model)
+                            for k in cellblender.current_data_model['mcell'].keys():
+                                if k != 'parameter_system':
+                                    data_model['mcell'][k] = cellblender.current_data_model['mcell'][k]
+                            data_model['mcell']['parameter_system'] = {}
+                            # Copy the second-level keys (except model_parameters) as they are (references to original data model)
+                            for k in cellblender.current_data_model['mcell']['parameter_system'].keys():
+                                if k != 'model_parameters':
+                                    data_model['mcell']['parameter_system'][k] = cellblender.current_data_model['mcell']['parameter_system'][k]
+                            # Empty the model parameters of the new data model
+                            old_pars = cellblender.current_data_model['mcell']['parameter_system']['model_parameters']
+                            data_model['mcell']['parameter_system']['model_parameters'] = []
+                            for i in range(len(old_pars)):
+                                p = old_pars[i]
+                                new_p = {}
+                                # Make a shallow copy of the parameter
+                                for pk in p.keys():
+                                    new_p[pk] = p[pk]
+                                # Replace expressions for parameters that match any in the sweep
+                                for sel_p in selected_par_point:
+                                    if new_p['par_name'] == sel_p[0]:
+                                        # Replace the previous expression with a string of the selected point
+                                        new_p['par_expression'] = str(sel_p[1])
+                                # Append the new (possibly modified) parameter into the new list
+                                data_model['mcell']['parameter_system']['model_parameters'].append ( new_p )
+                        script_text = bpy.data.texts[obj.script_name].as_string()
+                        exec ( script_text, globals(), locals() )
 
                     elif len(obj.script_name) > 0:
                         # print ( "Reading dynamic geometry files from: " + str(path_to_dg_files) )

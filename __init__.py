@@ -43,6 +43,7 @@ cellblender_info = cellblender_source_info.cellblender_info
 
 simulation_popen_list = []
 
+current_data_model = None
 
 # To support reload properly, try to access a package var.
 # If it's there, reload everything

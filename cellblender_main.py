@@ -342,6 +342,7 @@ class CBM_OT_refresh_operator(bpy.types.Operator):
     def execute(self, context):
         print ( "Refreshing/Reloading the Molecules..." )
         bpy.ops.mcell.update_data_layout()
+        context.scene.mcell.model_objects.update_scene ( context.scene )
         bpy.ops.mcell.read_viz_data()
         return {'FINISHED'}
 
