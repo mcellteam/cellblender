@@ -97,7 +97,7 @@ def postprocess():
         f.write ( row[0] + " " + row[col] + '\n' )
       f.close()
 
-  print ( "Done postrocessing MCellR Reaction Output" )
+  print ( "Done Postprocessing MCellR Reaction Output" )
 
 
 # List of parameters as dictionaries - each with keys for 'name', 'desc', 'def', and optional 'as':
