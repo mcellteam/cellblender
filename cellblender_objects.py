@@ -639,6 +639,15 @@ def changed_display_source_callback(self, context):
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Object Name", update=check_model_object_name)
     dynamic = BoolProperty ( default=False, description='Flag this object as dynamic', update=changed_dynamic_callback )
+    object_source = bpy.props.EnumProperty (
+        items= [ # key        label
+                 ('blender',  "Blender",  ""),
+                 ('script',   "Script",   "") ],
+        name="Object Source:",
+        default='blender',
+        description="Select source of data for this object.",
+        update=changed_display_source_callback )
+
     script_name = StringProperty(name="Script Name", default="")
 
     parent_object = StringProperty(name="Parent_Object", description='Name of Parent Compartment Object')
@@ -646,12 +655,11 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
 
     dynamic_display_source = bpy.props.EnumProperty (
         items= [ # key        label
-                 ('files',   "Files",   ""),
-                 ('script',  "Script", ""),
-                 ("other",   "Other",  "")  ],
+                 ('script',  "Script",          ""),
+                 ('files',   "Exported Files",  "")  ],
         name="Display From:",
-        default='other',
-        description="Select source of data used to drive the Blender display.",
+        default='script',
+        description="Select source of data to display in Blender.",
         update=changed_display_source_callback )
 
     # Note that the "object_show_only" property should always be False except during the short time that it's callback is being called.
@@ -838,14 +846,20 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                         row.prop ( mat, "alpha", text="Alpha" )
 
                     row = box.row()
-                    row.prop ( self.object_list[self.active_obj_index], "dynamic", text="Dynamic" )
-                    if self.object_list[self.active_obj_index].dynamic:
-                        row.prop ( self.object_list[self.active_obj_index], "dynamic_display_source" )
+                    row.prop ( self.object_list[self.active_obj_index], "object_source", text="Object Source" )
+                    if self.object_list[self.active_obj_index].object_source == 'blender':
+                        row = box.row()
+                        row.prop ( self.object_list[self.active_obj_index], "dynamic", text="Dynamic" )
+                    elif self.object_list[self.active_obj_index].object_source == 'script':
                         row = box.row()
                         row.prop_search ( self.object_list[self.active_obj_index], "script_name",
                                           context.scene.mcell.scripting, "internal_python_scripts_list",
                                           text="Script", icon='TEXT' )
                         row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+                        row = box.row()
+                        row.prop ( self.object_list[self.active_obj_index], "dynamic", text="Dynamic" )
+                        row = box.row()
+                        row.prop ( self.object_list[self.active_obj_index], "dynamic_display_source" )
 
 
 
@@ -862,7 +876,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         mcell_obj_list = context.scene.mcell.model_objects.object_list
 
         mo_dm = {}
-        mo_dm['data_model_version'] = "DM_2017_06_15_1755"
+        mo_dm['data_model_version'] = "DM_2017_12_13_1510"
         mo_list = []
         obj_list = [ obj for obj in context.scene.objects if obj.mcell.include ]
         for scene_object in obj_list:
@@ -870,6 +884,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
           obj_dm = { "name": name }
           obj_dm['parent_object'] = mcell_obj_list[name].parent_object
           obj_dm['membrane_name'] = mcell_obj_list[name].membrane_name
+          obj_dm['object_source'] = mcell_obj_list[name].object_source
           obj_dm['dynamic'] = mcell_obj_list[name].dynamic
           obj_dm['script_name'] = mcell_obj_list[name].script_name
           obj_dm['dynamic_display_source'] = mcell_obj_list[name].dynamic_display_source
@@ -901,8 +916,29 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                 obj['membrane_name'] = ""
             dm['data_model_version'] = "DM_2017_06_15_1755"
 
+        if dm['data_model_version'] == "DM_2017_03_16_1750":
+            # Add the default parent object and membrane name to each object
+            for obj in dm['model_object_list']:
+                obj['parent_object'] = ""
+                obj['membrane_name'] = ""
+            dm['data_model_version'] = "DM_2017_06_15_1755"
+
+        if dm['data_model_version'] == "DM_2017_06_15_1755":
+            # Add the object_source field based on existing settings
+            for obj in dm['model_object_list']:
+                if len(obj['script_name']) == 0:
+                    # Without a script, the data must come from Blender
+                    obj['object_source'] = 'blender'
+                else:
+                    # With a script, the data should come from the script
+                    obj['object_source'] = 'script'
+                if obj['dynamic_display_source'] == 'other':
+                    # There is no more "other" option. Default to script
+                    obj['dynamic_display_source'] = 'script'
+            dm['data_model_version'] = "DM_2017_12_13_1510"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2017_06_15_1755":
+        if dm['data_model_version'] != "DM_2017_12_13_1510":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
             return None
 
@@ -915,7 +951,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         #   context.scene.objects[].mcell.include - boolean is true for model objects
         # This code updates both locations based on the data model
 
-        if dm['data_model_version'] != "DM_2017_06_15_1755":
+        if dm['data_model_version'] != "DM_2017_12_13_1510":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
         
         # Remove all model objects in the list
@@ -931,6 +967,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
               mo.name = m['name']
               mo.parent_object = m['parent_object']
               mo.membrane_name = m['membrane_name']
+              mo.object_source = m['object_source']
               mo.dynamic = m['dynamic']
               mo.script_name = m['script_name']
               mo.dynamic_display_source = m['dynamic_display_source']
