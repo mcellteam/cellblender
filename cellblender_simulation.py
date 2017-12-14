@@ -55,7 +55,7 @@ from . import data_model
 from cellblender.mdl import data_model_to_mdl
 #from cellblender.mdl import run_data_model_mcell
 
-from cellblender.cellblender_utils import mcell_files_path
+from cellblender.cellblender_utils import project_files_path, mcell_files_path
 
 from multiprocessing import cpu_count
 
@@ -147,8 +147,8 @@ def run_generic_runner (context, sim_module):
         mcell.run_simulation.active_process_index = len(mcell.run_simulation.processes_list) - 1
         simulation_process = processes_list[mcell.run_simulation.active_process_index]
 
-        print("Starting MCell ... create start_time.txt file:")
-        with open(os.path.join(os.path.dirname(bpy.data.filepath),"start_time.txt"), "w") as start_time_file:
+        print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+        with open(os.path.join(project_files_path(),"start_time.txt"), "w") as start_time_file:
             start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
         commands = []
@@ -392,11 +392,9 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
                 simulation_process = processes_list[
                     run_sim.active_process_index]
 
-                print("Starting MCell ... create start_time.txt file:")
-                with open(os.path.join(os.path.dirname(bpy.data.filepath),
-                          "start_time.txt"), "w") as start_time_file:
-                    start_time_file.write(
-                        "Started simulation at: " + (str(time.ctime())) + "\n")
+                print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+                with open(os.path.join(project_files_path(),"start_time.txt"), "w") as start_time_file:
+                    start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
                 # We have to create a new subprocess that in turn creates a
                 # multiprocessing pool, instead of directly creating it here,
@@ -606,8 +604,8 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                       run_sim.active_process_index = len(run_sim.processes_list) - 1
                       simulation_process = processes_list[run_sim.active_process_index]
 
-                      print("Starting MCell ... create start_time.txt file:")
-                      with open(os.path.join(os.path.dirname(bpy.data.filepath),"start_time.txt"), "w") as start_time_file:
+                      print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+                      with open(os.path.join(project_files_path(),"start_time.txt"), "w") as start_time_file:
                           start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
                       # Log filename will be log.year-month-day_hour:minute_seed.txt
@@ -739,10 +737,9 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
                 run_sim.active_process_index = len(run_sim.processes_list) - 1
                 simulation_process = processes_list[run_sim.active_process_index]
 
-                print("Starting MCell ... create start_time.txt file:")
-                with open(os.path.join(os.path.dirname(bpy.data.filepath),"start_time.txt"), "w") as start_time_file:
+                print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+                with open(os.path.join(project_files_path(),"start_time.txt"), "w") as start_time_file:
                     start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
-
 
                 # We have to create a new subprocess that assigns jobs to nodes in the SGE
                 print ( "Running subprocess with:" +
@@ -877,11 +874,9 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
                 simulation_process = processes_list[
                     run_sim.active_process_index]
 
-                print("Starting MCell ... create start_time.txt file:")
-                with open(os.path.join(os.path.dirname(bpy.data.filepath),
-                          "start_time.txt"), "w") as start_time_file:
-                    start_time_file.write(
-                        "Started simulation at: " + (str(time.ctime())) + "\n")
+                print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+                with open(os.path.join(project_files_path(), "start_time.txt"), "w") as start_time_file:
+                    start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
                 # We have to create a new subprocess that in turn creates a
                 # multiprocessing pool, instead of directly creating it here,
@@ -1039,11 +1034,9 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                   simulation_process = processes_list[
                       run_sim.active_process_index]
 
-                  print("Starting MCell ... create start_time.txt file:")
-                  with open(os.path.join(os.path.dirname(bpy.data.filepath),
-                            "start_time.txt"), "w") as start_time_file:
-                      start_time_file.write(
-                          "Started simulation at: " + (str(time.ctime())) + "\n")
+                  print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+                  with open(os.path.join(project_files_path(), "start_time.txt"), "w") as start_time_file:
+                      start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
                   # Log filename will be log.year-month-day_hour:minute_seed.txt
                   # (e.g. log.2013-03-12_11:45_1.txt)
@@ -1192,7 +1185,8 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
         if len(status) == 0:
             print ( "Update start time" )
 
-            with open(os.path.join(os.path.dirname(bpy.data.filepath), "start_time.txt"), "w") as start_time_file:
+            print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+            with open(os.path.join(project_files_path(), "start_time.txt"), "w") as start_time_file:
                 start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
             mcell.run_simulation.last_simulation_run_time = str(time.time())
