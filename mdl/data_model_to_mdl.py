@@ -509,10 +509,13 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
           if ('model_objects' in mcell) and ('geometrical_objects' in mcell):
             objs = mcell['model_objects']
             geom = mcell['geometrical_objects']
+            scripting = None
+            if 'scripting' in mcell:
+                scripting = mcell['scripting']
             out_file = f
             if not (modular_path is None):
               out_file = open ( os.path.join(modular_path,scene_name + '.geometry.mdl'), 'w' )
-            actually_wrote = write_static_geometry ( objs, geom, out_file )
+            actually_wrote = write_static_geometry ( objs, geom, dm, out_file )
             if not (out_file == f):
               out_file.close()
               if actually_wrote:
@@ -1184,7 +1187,7 @@ def write_reactions ( reacts, f ):
     return wrote_mdl
 
 
-def write_static_geometry ( objs, geom, f ):
+def write_static_geometry ( objs, geom, dm, f ):
     wrote_mdl = False
     if 'object_list' in geom:
       glist = geom['object_list']
@@ -1204,6 +1207,7 @@ def write_static_geometry ( objs, geom, f ):
         print ( "geos: " + str( [ o['name'] for o in glist ] ) )
 
         for g in glist:
+
           obj = [ o for o in objs['model_object_list'] if o['name'] == g['name'] ][0]
           # MCell currently requires all objects to be either static or dynamic
           # Since this is "write_static_geometry", then assume all objects are
@@ -1215,40 +1219,151 @@ def write_static_geometry ( objs, geom, f ):
           else:
             # Write static objects here
             wrote_mdl = True
-            loc_x = 0.0
-            loc_y = 0.0
-            loc_z = 0.0
-            if 'location' in g:
-              loc_x = g['location'][0]
-              loc_y = g['location'][1]
-              loc_z = g['location'][2]
-            f.write ( "%s POLYGON_LIST\n" % g['name'] )
-            f.write ( "{\n" )
-            if 'vertex_list' in g:
-              f.write ( "  VERTEX_LIST\n" )
-              f.write ( "  {\n" )
-              for v in g['vertex_list']:
-                f.write ( "    [ %.15g, %.15g, %.15g ]\n" % ( loc_x+v[0], loc_y+v[1], loc_z+v[2] ) )
-              f.write ( "  }\n" )
-            if 'element_connections' in g:
-              f.write ( "  ELEMENT_CONNECTIONS\n" )
-              f.write ( "  {\n" )
-              for c in g['element_connections']:
-                f.write ( "    [ %d, %d, %d ]\n" % ( c[0], c[1], c[2] ) )
-              f.write ( "  }\n" )
-            if 'define_surface_regions' in g:
-              f.write ( "  DEFINE_SURFACE_REGIONS\n" )
-              f.write ( "  {\n" )
-              for r in g['define_surface_regions']:
-                f.write ( "    %s\n" % r['name'] )
-                f.write ( "    {\n" )
-                if 'include_elements' in r:
-                  int_regs = [ int(r) for r in r['include_elements'] ]
-                  f.write ( "      ELEMENT_LIST = " + str(int_regs) + "\n" )
-                f.write ( "    }\n" )
-              f.write ( "  }\n" )
-            f.write ( "}\n")
-            f.write ( "\n" );
+            if obj['object_source'] == 'script':
+              # Generate this object's MDL from a script
+
+              # print ( "  Saving static geometry for object " + obj['name'] + " with script \"" + obj['script_name'] + "\"" )
+              points = []            # The list "points" is expected by the user's script
+              faces = []             # The list "faces" is expected by the user's script
+              regions_dict = {}      # The dict "regions_dict" is expected by the user's script
+              region_props = {}      # The dict "region_props" is expected by the user's script
+              origin = [0,0,0]       # The list "origin" is expected by the user's script
+
+              # print ( "data_model['mcell'].keys() = " + str(data_model['mcell'].keys()) )
+
+              if len(obj['script_name']) > 0:
+                  # Let the script create the geometry
+                  #print ( "   Build object mesh from user script for frame " + str(frame_number) )
+                  #script_text = script_dict[obj['script_name']]
+                  script_text = dm['mcell']['scripting']['script_texts'][obj['script_name']]
+                  #print ( 80*"=" )
+                  #print ( script_text )
+                  #print ( 80*"=" )
+                  # exec ( script_dict[obj.script_name], locals() )
+                  #print ( "Before script: region_props = " + str(region_props) )
+                  data_model = dm        # Use a more "official" name for the data model to be used by dynamic geometry scripts
+                  #exec ( script_dict[obj['script_name']], globals(), locals() )
+                  #exec ( script_dict[obj['script_name']] )
+                  exec ( script_text, globals(), locals() )
+                  #print ( "After  script: region_props = " + str(region_props) )
+              elif has_blender:
+                  # Get the geometry from the object (presumably animated by Blender)
+
+                  #print ( "   Build object mesh from Blender object for frame " + str(frame_number) )
+                  import mathutils
+
+                  geom_obj = context.scene.objects[obj['name']]
+                  mesh = geom_obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
+                  mesh.transform(mathutils.Matrix() * geom_obj.matrix_world)
+                  points = [v.co for v in mesh.vertices]
+                  faces = [f.vertices for f in mesh.polygons]
+                  regions_dict = geom_obj.mcell.get_regions_dictionary(geom_obj)
+                  del mesh
+              else:
+                  # Get the geometry from the data model (either from the frame list or from static geometry)
+                  #print ( "   Build object mesh without Blender for frame " + str(frame_number) )
+                  if ('mcell' in dm) and ('geometrical_objects' in dm['mcell']) and ('object_list' in dm['mcell']['geometrical_objects']):
+                      mcell = dm['mcell']
+                      for o in mcell['geometrical_objects']['object_list']:
+                          if o['name'] == obj['name']:
+                              #print ( "    Found object " )
+                              if ('frame_list' in o) and (len(o['frame_list']) > 0):
+                                  # This object has non-empty frame list data to use
+                                  #print ( "      Object " + str(o['name']) + ": frame_list length = " + str(len(o['frame_list'])) )
+                                  frame = None
+                                  if frame_number >= len(o['frame_list']):
+                                      # Hold the last frame forever
+                                      frame = o['frame_list'][-1]
+                                  else:
+                                      # Get the frame for this iteration
+                                      frame = o['frame_list'][frame_number]
+                                  points = frame['vertex_list']
+                                  faces = frame['element_connections']
+                                  origin = frame['location']
+                              else:
+                                  # Use the object's original static geometry from the data model
+                                  #print ( "      Object " + str(o['name']) + " has no frame_list" )
+                                  points = o['vertex_list']
+                                  faces = o['element_connections']
+                                  origin = o['location']
+                              #print ( "    Found object " + str(o['name']) + " with zmax of " + str(max([v[2] for v in o['vertex_list']])) )
+                              if 'define_surface_regions' in o:
+                                  # This object has surface regions
+                                  regions_dict = {}
+                                  for reg in o['define_surface_regions']:
+                                      regions_dict[reg['name']] = reg['include_elements']
+
+              # Generate this object's MDL from the collected data
+              loc_x = 0.0
+              loc_y = 0.0
+              loc_z = 0.0
+              f.write ( "%s POLYGON_LIST\n" % obj['name'] )
+              f.write ( "{\n" )
+              if len(points) > 0:
+                f.write ( "  VERTEX_LIST\n" )
+                f.write ( "  {\n" )
+                for v in points:
+                  f.write ( "    [ %.15g, %.15g, %.15g ]\n" % ( loc_x+v[0], loc_y+v[1], loc_z+v[2] ) )
+                f.write ( "  }\n" )
+              if len(faces) > 0:
+                f.write ( "  ELEMENT_CONNECTIONS\n" )
+                f.write ( "  {\n" )
+                for c in faces:
+                  f.write ( "    [ %d, %d, %d ]\n" % ( c[0], c[1], c[2] ) )
+                f.write ( "  }\n" )
+              if len(regions_dict) > 0:
+                rkeys = sorted ( regions_dict.keys() )
+                f.write ( "  DEFINE_SURFACE_REGIONS\n" )
+                f.write ( "  {\n" )
+                for rk in rkeys:
+                  r = regions_dict[rk]
+                  f.write ( "    %s\n" % r['name'] )
+                  f.write ( "    {\n" )
+                  if 'include_elements' in r:
+                    int_regs = [ int(r) for r in r['include_elements'] ]
+                    f.write ( "      ELEMENT_LIST = " + str(int_regs) + "\n" )
+                  f.write ( "    }\n" )
+                f.write ( "  }\n" )
+              f.write ( "}\n")
+              f.write ( "\n" );
+
+            else:
+
+              # Generate this object's MDL from the geometry data
+              loc_x = 0.0
+              loc_y = 0.0
+              loc_z = 0.0
+              if 'location' in g:
+                loc_x = g['location'][0]
+                loc_y = g['location'][1]
+                loc_z = g['location'][2]
+              f.write ( "%s POLYGON_LIST\n" % g['name'] )
+              f.write ( "{\n" )
+              if 'vertex_list' in g:
+                f.write ( "  VERTEX_LIST\n" )
+                f.write ( "  {\n" )
+                for v in g['vertex_list']:
+                  f.write ( "    [ %.15g, %.15g, %.15g ]\n" % ( loc_x+v[0], loc_y+v[1], loc_z+v[2] ) )
+                f.write ( "  }\n" )
+              if 'element_connections' in g:
+                f.write ( "  ELEMENT_CONNECTIONS\n" )
+                f.write ( "  {\n" )
+                for c in g['element_connections']:
+                  f.write ( "    [ %d, %d, %d ]\n" % ( c[0], c[1], c[2] ) )
+                f.write ( "  }\n" )
+              if 'define_surface_regions' in g:
+                f.write ( "  DEFINE_SURFACE_REGIONS\n" )
+                f.write ( "  {\n" )
+                for r in g['define_surface_regions']:
+                  f.write ( "    %s\n" % r['name'] )
+                  f.write ( "    {\n" )
+                  if 'include_elements' in r:
+                    int_regs = [ int(r) for r in r['include_elements'] ]
+                    f.write ( "      ELEMENT_LIST = " + str(int_regs) + "\n" )
+                  f.write ( "    }\n" )
+                f.write ( "  }\n" )
+              f.write ( "}\n")
+              f.write ( "\n" );
     return wrote_mdl
 
 

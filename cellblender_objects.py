@@ -430,6 +430,7 @@ def model_objects_update(context):
             things_to_save = {}
             things_to_save['dynamic'] = mobjs.object_list[i].dynamic
             things_to_save['script_name'] = mobjs.object_list[i].script_name
+            things_to_save['object_source'] = mobjs.object_list[i].object_source
             things_to_save['dynamic_display_source'] = mobjs.object_list[i].dynamic_display_source
             things_to_save['parent_object'] = mobjs.object_list[i].parent_object
             things_to_save['membrane_name'] = mobjs.object_list[i].membrane_name
@@ -449,6 +450,7 @@ def model_objects_update(context):
                 #mobjs.object_list[mobjs.active_obj_index].script_name = dyn_dict[obj_name]['script_name']
                 new_obj.dynamic = dyn_dict[obj_name]['dynamic']
                 new_obj.script_name = dyn_dict[obj_name]['script_name']
+                new_obj.object_source = dyn_dict[obj_name]['object_source']
                 new_obj.dynamic_display_source = dyn_dict[obj_name]['dynamic_display_source']
                 new_obj.parent_object = dyn_dict[obj_name]['parent_object']
                 new_obj.membrane_name = dyn_dict[obj_name]['membrane_name']
@@ -632,7 +634,7 @@ def changed_display_source_callback(self, context):
     #mol_viz = mcell.mol_viz
     #data_layout = mcell.mol_viz['data_layout']
     #bpy.ops.mcell.update_data_layout()
-    mcell.model_objects.update_scene(context.scene)
+    mcell.model_objects.update_scene(context.scene, force=True)
     #bpy.ops.mcell.read_viz_data()
 
 
@@ -957,7 +959,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         # Remove all model objects in the list
         while len(self.object_list) > 0:
             self.object_list.remove(0)
-            
+
         # Create the property list for model objects from the Data Model
         mo_list = []
         if "model_object_list" in dm:
@@ -1339,7 +1341,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             print ( "Unknown Exception" )
 
 
-    def update_scene ( self, scene, frame_num=None ):
+    def update_scene ( self, scene, frame_num=None, force=False ):
         # print ( "update_scene" )
         cur_frame = frame_num
         if cur_frame == None:
@@ -1351,7 +1353,10 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         mol_viz = mcell.mol_viz
         choices_list = mol_viz.choices_list  # This holds the currently selected sweep point
 
-        if mcell.model_objects.has_some_dynamic:
+        # print ( "Updating the scene with has_some_dynamic = " + str(mcell.model_objects.has_some_dynamic) + ", and force = " + str(force) )
+
+        if mcell.model_objects.has_some_dynamic or force:
+
             files_path = mcell_files_path()
             path_to_dg_files = None
             # Assume the new "data_layout" system since dynamic geometry is relatively new
@@ -1393,7 +1398,9 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                 pass
 
             for obj in mcell.model_objects.object_list:
-                if obj.dynamic and (obj.dynamic_display_source != 'other'):
+
+                #if obj.dynamic and (obj.dynamic_display_source != 'other'):
+                if  obj.object_source == 'script':
 
                     # These names are currently defined as part of the dynamic geometry interface
                     points = []            # The list "points" is expected by the user's script
@@ -1402,6 +1409,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     region_props = {}      # The dict "region_props" is expected by the user's script
                     origin = [0,0,0]       # The list "origin" is expected by the user's script
 
+                    #if (obj.dynamic_display_source == 'script') and (len(obj.script_name) > 0):
                     if (obj.dynamic_display_source == 'script') and (len(obj.script_name) > 0):
                         frame_number = cur_frame     # The name "frame_number" is expected by the user's script
                         # The following checking was added during debug, but might not be needed for production
@@ -1453,6 +1461,9 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                                 # Append the new (possibly modified) parameter into the new list
                                 data_model['mcell']['parameter_system']['model_parameters'].append ( new_p )
                         script_text = bpy.data.texts[obj.script_name].as_string()
+                        #print ( "script_text = " + str(script_text) )
+                        #print ( "globals = " + str(globals()) )
+                        #print ( "locals = " + str(locals()) )
                         exec ( script_text, globals(), locals() )
 
                     elif len(obj.script_name) > 0:

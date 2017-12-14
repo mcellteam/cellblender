@@ -1060,7 +1060,7 @@ def select_test_case_callback(self, context):
     mol_viz = mcell.mol_viz
     data_layout = mcell.mol_viz['data_layout']
     bpy.ops.mcell.update_data_layout()
-    mcell.model_objects.update_scene(context.scene)
+    mcell.model_objects.update_scene(context.scene, force=True)
     bpy.ops.mcell.read_viz_data()
 
 class DynamicChoicePropGroup(bpy.types.PropertyGroup):
