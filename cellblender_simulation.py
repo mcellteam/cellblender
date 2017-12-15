@@ -87,28 +87,19 @@ def get_pid(item):
 
 ############## Overlay Support (some from sim_runners/queue_local/__init__.py) ##################
 
-parameter_dictionary = {
-  'Show Text': {'val': "enable", 'desc':"Enable the display overlay"},
-  'Hide Text': {'val': "disable", 'desc':"Disable the display overlay"},
-  'Page Up': {'val': "page_up", 'desc':"Page the overlay up"},
-  'Page Dn': {'val': "page_dn", 'desc':"Page the overlay down"},
-  'Page': {'val': 25, 'desc':"Page size"},
-  'Clear': {'val':False, 'desc':"Clear the background before drawing text"},
-  'Save Text Logs': {'val':True, 'desc':"Create a text log for each run"},
-  'Remove Task Output Texts':  {'val':"remove_task_texts", 'desc':'Remove all text files of name "task_*_output"'},
-  'Timer': {'val': 0.1, 'desc':"Amount of time (in seconds) between screen updates"}
-}
-
-
-handler_list = []
-screen_display_lines = {}
-scroll_offset = 0
-accumulate_text = False
+handler_list = []           # Holds returns from bpy.types.SpaceView3D.draw_handler_add() for removal
+screen_display_lines = {}   # Dictionary of lines keyed by integer Process ID (PID)
+scroll_offset = 0           # Current Scroll offset
+scroll_page_size = 10       # Lines per scroll
+accumulate_text = False     # Whether to capture text or not
+clear_flag = False          # Drawing when this is set will clear the background
 
 
 def draw_callback_px(context):
     # Note that the "context" passed in here is a regular dictionary and not the Blender context
     global screen_display_lines
+    global scroll_offset
+    global clear_flag
     pid = None
     if 'mcell' in bpy.context.scene:
       mcell = bpy.context.scene.mcell
@@ -120,7 +111,7 @@ def draw_callback_px(context):
 
     bgl.glPushAttrib(bgl.GL_ENABLE_BIT)
 
-    if parameter_dictionary['Clear']['val']:
+    if clear_flag:
       bgl.glClearColor ( 0.0, 0.0, 0.0, 1.0 )
       bgl.glClear ( bgl.GL_COLOR_BUFFER_BIT )
 
@@ -156,6 +147,7 @@ def draw_callback_px(context):
 
 
 def get_3d_areas():
+  global handler_list
   areas = []
   if len(bpy.data.window_managers) > 0:
     if len(bpy.data.window_managers[0].windows) > 0:
@@ -194,24 +186,24 @@ def disable_text_overlay():
 
 
 def page_up():
-  global parameter_dictionary
   global scroll_offset
-  if parameter_dictionary['Page']['val'] == 0:
+  global scroll_page_size
+  if scroll_page_size == 0:
     # This provides a way to get back to 0 without searching
     scroll_offset = 0
   else:
-    scroll_offset += -parameter_dictionary['Page']['val']
+    scroll_offset += -scroll_page_size
   # Force a redraw of the OpenGL code
   bpy.context.area.tag_redraw()
 
 def page_dn():
-  global parameter_dictionary
   global scroll_offset
-  if parameter_dictionary['Page']['val'] == 0:
+  global scroll_page_size
+  if scroll_page_size == 0:
     # This provides a way to get back to 0 without searching
     scroll_offset = 0
   else:
-    scroll_offset += parameter_dictionary['Page']['val']
+    scroll_offset += scroll_page_size
   # Force a redraw of the OpenGL code
   bpy.context.area.tag_redraw()
 
@@ -717,10 +709,12 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
         return {'PASS_THROUGH'}
 
     def execute(self, context):
+        print ( "Inside MCELL_OT_percentage_done_timer.execute with context = " + str(context) )
+        print ( "Inside MCELL_OT_percentage_done_timer.execute with mcell = " + str(context.scene.mcell) )
+        run_sim = context.scene.mcell.run_simulation
+        delay = run_sim.text_update_timer_delay   # this is how often we should update this in seconds
         wm = context.window_manager
-        # this is how often we should update this in seconds
-        secs = 0.5
-        self._timer = wm.event_timer_add(secs, context.window)
+        self._timer = wm.event_timer_add(delay, context.window)
         wm.modal_handler_add(self)
         return {'RUNNING_MODAL'}
 
@@ -2217,6 +2211,8 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
 
+    text_update_timer_delay = FloatProperty ( name='dt', default=0.2, description="Text update timer delay" )
+
     simulation_engine_and_run_enum = [
          ('SWEEP_QUEUE', "MCell Local", ""),
          ('SWEEP_SGE', "MCell SGE", ""),
@@ -2620,6 +2616,9 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     col.operator("mcell.page_overlay_up", icon='TRIA_UP')
                     col = row.column()
                     col.operator("mcell.page_overlay_dn", icon='TRIA_DOWN')
+                    col = row.column()
+                    col.prop ( self, "text_update_timer_delay" )
+
 
                 else:
 
