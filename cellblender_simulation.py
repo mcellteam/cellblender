@@ -234,7 +234,7 @@ class MCELL_OT_hide_text_overlay (bpy.types.Operator):
 
 class MCELL_OT_page_overlay_up (bpy.types.Operator):
     bl_idname = "mcell.page_overlay_up"
-    bl_label = "Page Up"
+    bl_label = "View Up"
     bl_description = ("Page the Text Overlay Up.")
     bl_options = {'REGISTER'}
 
@@ -245,13 +245,26 @@ class MCELL_OT_page_overlay_up (bpy.types.Operator):
 
 class MCELL_OT_page_overlay_dn (bpy.types.Operator):
     bl_idname = "mcell.page_overlay_dn"
-    bl_label = "Page Dn"
+    bl_label = "View Dn"
     bl_description = ("Page the Text Overlay Down.")
     bl_options = {'REGISTER'}
 
     def execute(self, context):
         #print ( "Hide text" )
         page_dn()
+        return {'FINISHED'}
+
+class MCELL_OT_page_overlay_hm (bpy.types.Operator):
+    bl_idname = "mcell.page_overlay_hm"
+    bl_label = "Home"
+    bl_description = ("Page the Text Overlay to Home.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        global scroll_offset
+        scroll_offset = 0
+        # Force a redraw of the OpenGL code
+        bpy.context.area.tag_redraw()
         return {'FINISHED'}
 
 
@@ -2612,6 +2625,8 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                     col.operator("mcell.show_text_overlay", icon='RESTRICT_VIEW_OFF')
                     col = row.column()
                     col.operator("mcell.hide_text_overlay", icon='RESTRICT_VIEW_ON')
+                    col = row.column()
+                    col.operator("mcell.page_overlay_hm")
                     col = row.column()
                     col.operator("mcell.page_overlay_up", icon='TRIA_UP')
                     col = row.column()
