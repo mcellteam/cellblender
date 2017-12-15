@@ -26,6 +26,8 @@ import cellblender
 
 # blender imports
 import bpy
+import bgl
+import blf
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
                       FloatProperty, FloatVectorProperty, IntProperty, \
                       IntVectorProperty, PointerProperty, StringProperty
@@ -81,6 +83,189 @@ def get_pid(item):
     #if len(l) > 1:
     #  rtn_val = int(l[1])
     #return rtn_val
+
+
+############## Overlay Support (some from sim_runners/queue_local/__init__.py) ##################
+
+parameter_dictionary = {
+  'Show Text': {'val': "enable", 'desc':"Enable the display overlay"},
+  'Hide Text': {'val': "disable", 'desc':"Disable the display overlay"},
+  'Page Up': {'val': "page_up", 'desc':"Page the overlay up"},
+  'Page Dn': {'val': "page_dn", 'desc':"Page the overlay down"},
+  'Page': {'val': 25, 'desc':"Page size"},
+  'Clear': {'val':False, 'desc':"Clear the background before drawing text"},
+  'Save Text Logs': {'val':True, 'desc':"Create a text log for each run"},
+  'Remove Task Output Texts':  {'val':"remove_task_texts", 'desc':'Remove all text files of name "task_*_output"'},
+  'Timer': {'val': 0.1, 'desc':"Amount of time (in seconds) between screen updates"}
+}
+
+
+handler_list = []
+screen_display_lines = {}
+scroll_offset = 0
+accumulate_text = False
+
+
+def draw_callback_px(context):
+    # Note that the "context" passed in here is a regular dictionary and not the Blender context
+    global screen_display_lines
+    pid = None
+    if 'mcell' in bpy.context.scene:
+      mcell = bpy.context.scene.mcell
+      if 'run_simulation' in mcell:
+        rs = mcell.run_simulation
+        if len(rs.processes_list) > 0:
+          pid_str = rs.processes_list[rs.active_process_index].name
+          pid = pid_str.split(',')[0].split()[1]
+
+    bgl.glPushAttrib(bgl.GL_ENABLE_BIT)
+
+    if parameter_dictionary['Clear']['val']:
+      bgl.glClearColor ( 0.0, 0.0, 0.0, 1.0 )
+      bgl.glClear ( bgl.GL_COLOR_BUFFER_BIT )
+
+    font_id = 0  # XXX, need to find out how best to get this.
+
+    y_pos = 15 * (scroll_offset + 1)
+    if pid and (pid in screen_display_lines):
+      for l in screen_display_lines[pid]:
+          blf.position(font_id, 15, y_pos, 0)
+          y_pos += 15
+          blf.size(font_id, 14, 72) # fontid, size, DPI
+          bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
+          blf.draw(font_id, l)
+    else:
+      keys = screen_display_lines.keys()
+      for k in keys:
+          for l in screen_display_lines[k]:
+              blf.position(font_id, 15, y_pos, 0)
+              y_pos += 15
+              blf.size(font_id, 14, 72) # fontid, size, DPI
+              bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
+              blf.draw(font_id, l)
+
+    # 100% alpha, 2 pixel width line
+    bgl.glEnable(bgl.GL_BLEND)
+
+    bgl.glPopAttrib()
+
+    # restore opengl defaults
+    bgl.glLineWidth(1)
+    bgl.glDisable(bgl.GL_BLEND)
+    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
+
+
+def get_3d_areas():
+  areas = []
+  if len(bpy.data.window_managers) > 0:
+    if len(bpy.data.window_managers[0].windows) > 0:
+      if len(bpy.data.window_managers[0].windows[0].screen.areas) > 0:
+        if len(handler_list) <= 0:
+          for area in bpy.data.window_managers[0].windows[0].screen.areas:
+            print ( "Found an area of type " + str(area.type) )
+            if area.type == 'VIEW_3D':
+              areas.append ( area )
+  return ( areas )
+
+
+def enable_text_overlay():
+  global handler_list
+  global accumulate_text
+  accumulate_text = True
+  areas = get_3d_areas()
+  for area in areas:
+    temp_context = bpy.context.copy()
+    temp_context['area'] = area
+    args = (temp_context,)
+    handler_list.append ( bpy.types.SpaceView3D.draw_handler_add(draw_callback_px, args, 'WINDOW', 'POST_PIXEL') )
+    bpy.context.area.tag_redraw()
+  print ( "Enable completed" )
+
+def disable_text_overlay():
+  global handler_list
+  global accumulate_text
+  accumulate_text = False
+  while len(handler_list) > 0:
+    print ( "Removing draw_handler " + str(handler_list[-1]) )
+    bpy.types.SpaceView3D.draw_handler_remove(handler_list[-1], 'WINDOW')
+    handler_list.pop()
+  bpy.context.area.tag_redraw()
+  print ( "Disable completed" )
+
+
+def page_up():
+  global parameter_dictionary
+  global scroll_offset
+  if parameter_dictionary['Page']['val'] == 0:
+    # This provides a way to get back to 0 without searching
+    scroll_offset = 0
+  else:
+    scroll_offset += -parameter_dictionary['Page']['val']
+  # Force a redraw of the OpenGL code
+  bpy.context.area.tag_redraw()
+
+def page_dn():
+  global parameter_dictionary
+  global scroll_offset
+  if parameter_dictionary['Page']['val'] == 0:
+    # This provides a way to get back to 0 without searching
+    scroll_offset = 0
+  else:
+    scroll_offset += parameter_dictionary['Page']['val']
+  # Force a redraw of the OpenGL code
+  bpy.context.area.tag_redraw()
+
+
+
+class MCELL_OT_show_text_overlay (bpy.types.Operator):
+    bl_idname = "mcell.show_text_overlay"
+    bl_label = "Show Text"
+    bl_description = ("Show the Text Overlay.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        #print ( "Show text" )
+        enable_text_overlay()
+        return {'FINISHED'}
+
+class MCELL_OT_hide_text_overlay (bpy.types.Operator):
+    bl_idname = "mcell.hide_text_overlay"
+    bl_label = "Hide Text"
+    bl_description = ("Hide the Text Overlay.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        #print ( "Hide text" )
+        disable_text_overlay()
+        return {'FINISHED'}
+
+
+class MCELL_OT_page_overlay_up (bpy.types.Operator):
+    bl_idname = "mcell.page_overlay_up"
+    bl_label = "Page Up"
+    bl_description = ("Page the Text Overlay Up.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        #print ( "Show text" )
+        page_up()
+        return {'FINISHED'}
+
+class MCELL_OT_page_overlay_dn (bpy.types.Operator):
+    bl_idname = "mcell.page_overlay_dn"
+    bl_label = "Page Dn"
+    bl_description = ("Page the Text Overlay Down.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        #print ( "Hide text" )
+        page_dn()
+        return {'FINISHED'}
+
+
+######################################################################
+
+
 
 
 
@@ -481,6 +666,13 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
                             break
                     if (last_iter == total_iter) and (total_iter != 0):
                         task_ctr += 1
+
+                    global accumulate_text
+                    if accumulate_text:
+                        global screen_display_lines
+                        screen_display_lines[str(pid)] = [ l.strip() for l in output_lines ]
+                        screen_display_lines[str(pid)].reverse() # Reverse since they'll be drawn from the bottom up
+
                 """
                 print ( "q_item.keys() " + str(q_item.keys()) )
                 stdout_txt = ""
@@ -1958,6 +2150,7 @@ class MCell_UL_computer_item ( bpy.types.UIList ):
           col.prop ( item, "selected", text="" )
 
 
+
 class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     enable_python_scripting = BoolProperty ( name='Enable Python Scripting', default=False )  # Intentionally not in the data model
     sge_host_name = StringProperty ( default="", description="Name of Grid Engine Scheduler" )
@@ -2417,6 +2610,16 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         row = layout.row()
                         row.operator("mcell.kill_simulation")
                         row.operator("mcell.kill_all_simulations")
+
+                    row = layout.row()
+                    col = row.column()
+                    col.operator("mcell.show_text_overlay", icon='RESTRICT_VIEW_OFF')
+                    col = row.column()
+                    col.operator("mcell.hide_text_overlay", icon='RESTRICT_VIEW_ON')
+                    col = row.column()
+                    col.operator("mcell.page_overlay_up", icon='TRIA_UP')
+                    col = row.column()
+                    col.operator("mcell.page_overlay_dn", icon='TRIA_DOWN')
 
                 else:
 
