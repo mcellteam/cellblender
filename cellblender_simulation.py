@@ -444,6 +444,99 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
         return {'FINISHED'}
 
 
+
+
+class MCELL_OT_percentage_done_timer(bpy.types.Operator):
+    """Update the MCell job list periodically to show percentage done"""
+    bl_idname = "mcell.percentage_done_timer"
+    bl_label = "Modal Timer Operator"
+    bl_options = {'REGISTER'}
+
+    _timer = None
+
+    def modal(self, context, event):
+        # print ( "-=-=-=-=" + (50 * "-=" ) + "-" )
+        if event.type == 'TIMER':
+            task_len = len(cellblender.simulation_queue.task_dict)  # This may not be right since it may include completed tasks!!!
+            task_ctr = 0
+            mcell = context.scene.mcell
+            processes_list = mcell.run_simulation.processes_list
+            for simulation_process in processes_list:
+                #if not mcell.run_simulation.save_text_logs:
+                #    return {'CANCELLED'}
+                pid = get_pid(simulation_process)
+                seed = int(simulation_process.name.split(',')[1].split(':')[1])
+                q_item = cellblender.simulation_queue.task_dict[pid] # q_item is a dictionary with stdout,stderr,status,args,cmd,process,bl_text
+                percent = None
+                if 'output' in q_item:
+                    output_lines = q_item['output']
+                    n = len(output_lines)
+                    last_iter = total_iter = 0
+                    for i in reversed(range(n)):
+                        l = output_lines[i]
+                        if l.startswith("Iterations"):
+                            last_iter = int(l.split()[1])
+                            total_iter = int(l.split()[3])
+                            percent = (last_iter/total_iter)*100
+                            break
+                    if (last_iter == total_iter) and (total_iter != 0):
+                        task_ctr += 1
+                """
+                print ( "q_item.keys() " + str(q_item.keys()) )
+                stdout_txt = ""
+                if False and ('stdout' in q_item) and (q_item['stdout'] != None):
+                    # print ( "Type of stdout = " + str(type(q_item['stdout'])) )
+                    if type(q_item['stdout']) == type(b'ab'):
+                        stdout_txt = "" + q_item['stdout'].decode('utf-8')
+                        print ( "Copied a bytes object to stdout, len(stdout) = " + str(len(stdout_txt)) )
+                    elif type(q_item['stdout']) == type('ab'):
+                        stdout_txt = "" + q_item['stdout']
+                        print ( "Copied a string object to stdout, len(stdout) = " + str(len(stdout_txt)) )
+                    else:
+                        stdout_txt = str(q_item['stdout'])
+                        print ( "Copied an object to stdout, len(stdout) = " + str(len(stdout_txt)) )
+                elif q_item['bl_text'] != None:
+                    stdout_txt = q_item['bl_text'].as_string()
+                if (stdout_txt != None):
+                    last_iter = total_iter = 0
+                    for i in reversed(stdout_txt.split("\n")):
+                        if i.startswith("Iterations"):
+                            last_iter = int(i.split()[1])
+                            total_iter = int(i.split()[3])
+                            percent = (last_iter/total_iter)*100
+                            break
+                    if (last_iter == total_iter) and (total_iter != 0):
+                        task_ctr += 1
+                """
+                if percent is None:
+                    simulation_process.name = "PID: %d, Seed: %d" % (pid, seed)
+                else:
+                    simulation_process.name = "PID: %d, Seed: %d, %d%%" % (pid, seed, percent)
+
+            # just a silly way of forcing a screen update. ¯\_(ツ)_/¯
+            color = context.user_preferences.themes[0].view_3d.space.gradients.high_gradient
+            color.h += 0.01
+            color.h -= 0.01
+            # if every MCell job is done, quit updating the screen
+            if task_len == task_ctr:
+                self.cancel(context)
+                return {'CANCELLED'}
+
+        return {'PASS_THROUGH'}
+
+    def execute(self, context):
+        wm = context.window_manager
+        # this is how often we should update this in seconds
+        secs = 0.5
+        self._timer = wm.event_timer_add(secs, context.window)
+        wm.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
+
+    def cancel(self, context):
+        wm = context.window_manager
+        wm.event_timer_remove(self._timer)
+
+
 class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
     bl_idname = "mcell.run_simulation_sweep_queue"
     bl_label = "Run MCell Simulation Using Sweep Queue"
@@ -905,67 +998,6 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
         run_sim.status = status
 
         return {'FINISHED'}
-
-
-class MCELL_OT_percentage_done_timer(bpy.types.Operator):
-    """Update the MCell job list periodically to show percentage done"""
-    bl_idname = "mcell.percentage_done_timer"
-    bl_label = "Modal Timer Operator"
-    bl_options = {'REGISTER'}
-
-    _timer = None
-
-    def modal(self, context, event):
-        if event.type == 'TIMER':
-            task_len = len(cellblender.simulation_queue.task_dict)
-            task_ctr = 0
-            mcell = context.scene.mcell
-            processes_list = mcell.run_simulation.processes_list
-            for simulation_process in processes_list:
-                if not mcell.run_simulation.save_text_logs:
-                    return {'CANCELLED'}
-                pid = get_pid(simulation_process)
-                seed = int(simulation_process.name.split(',')[1].split(':')[1])
-                q_item = cellblender.simulation_queue.task_dict[pid]
-                percent = None
-                if q_item['bl_text'] != None:
-                    stdout_txt = q_item['bl_text'].as_string()
-                    last_iter = total_iter = 0
-                    for i in reversed(stdout_txt.split("\n")):
-                        if i.startswith("Iterations"):
-                            last_iter = int(i.split()[1])
-                            total_iter = int(i.split()[3])
-                            percent = (last_iter/total_iter)*100
-                            break
-                    if (last_iter == total_iter) and (total_iter != 0):
-                        task_ctr += 1
-                if percent is None:
-                    simulation_process.name = "PID: %d, Seed: %d" % (pid, seed)
-                else:
-                    simulation_process.name = "PID: %d, Seed: %d, %d%%" % (pid, seed, percent)
-
-            # just a silly way of forcing a screen update. ¯\_(ツ)_/¯
-            color = context.user_preferences.themes[0].view_3d.space.gradients.high_gradient
-            color.h += 0.01
-            color.h -= 0.01
-            # if every MCell job is done, quit updating the screen
-            if task_len == task_ctr:
-                self.cancel(context)
-                return {'CANCELLED'}
-
-        return {'PASS_THROUGH'}
-
-    def execute(self, context):
-        wm = context.window_manager
-        # this is how often we should update this in seconds
-        secs = 0.5
-        self._timer = wm.event_timer_add(secs, context.window)
-        wm.modal_handler_add(self)
-        return {'RUNNING_MODAL'}
-
-    def cancel(self, context):
-        wm = context.window_manager
-        wm.event_timer_remove(self._timer)
 
 
 class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
@@ -1987,7 +2019,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     python_scripting_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     python_initialize_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
-    save_text_logs = BoolProperty ( name='Save Text Logs', default=True, description="Create a text log for each run" )
+    save_text_logs = BoolProperty ( name='Save Text Logs', default=False, description="Create a text log for each run" )
 
     # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
