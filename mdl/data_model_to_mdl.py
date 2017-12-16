@@ -509,10 +509,13 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
           if ('model_objects' in mcell) and ('geometrical_objects' in mcell):
             objs = mcell['model_objects']
             geom = mcell['geometrical_objects']
+            scripting = None
+            if 'scripting' in mcell:
+                scripting = mcell['scripting']
             out_file = f
             if not (modular_path is None):
               out_file = open ( os.path.join(modular_path,scene_name + '.geometry.mdl'), 'w' )
-            actually_wrote = write_static_geometry ( objs, geom, out_file )
+            actually_wrote = write_static_geometry ( objs, geom, dm, out_file )
             if not (out_file == f):
               out_file.close()
               if actually_wrote:
@@ -684,245 +687,248 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
 
     num_dynamic = len ( [ True for o in dm['mcell']['model_objects']['model_object_list'] if o['dynamic'] ] )
     if export_cellblender_data and (num_dynamic > 0):
-    
-      # This code must add the following to each directory where MDL is written:
-      #   dyn_geom_list.txt
-      #   dynamic_geometry directory containing <object_name>_frame_#.mdl files
-      # This code must also update the existing MDL files
-      # For a non-swept project, this should look like:
-      #   blend_files/
-      #   blend_files/mcell
-      #              /mcell/output_data
-      #              /mcell/output_data
-      #              /mcell/output_data/.../
-      #                    /output_data/.../react_data/...
-      #                    /output_data/.../viz_data/...
-      #                    /output_data/.../Scene.main.mdl       // MDL file (along with others)
-      #                    /output_data/.../dyn_geom_list.txt    // List of frame files relative to output_data
-      #                    /output_data/.../dynamic_geometry     // Location of actual frame files
-      #                                /.../dynamic_geometry/Obj_frame_0.mdl
-      #                                /.../dynamic_geometry/Obj_frame_1.mdl
-      #                                   :
-      #                                /.../dynamic_geometry/Obj_frame_n.mdl
-      #
-      # For swept projects, there will be additional directories (...) appended directly after "output_data".
+
+        # This code must add the following to each directory where MDL is written:
+        #   dyn_geom_list.txt
+        #   dynamic_geometry directory containing <object_name>_frame_#.mdl files
+        # This code must also update the existing MDL files
+        # For a non-swept project, this should look like:
+        #   blend_files/
+        #   blend_files/mcell
+        #              /mcell/output_data
+        #              /mcell/output_data
+        #              /mcell/output_data/.../
+        #                    /output_data/.../react_data/...
+        #                    /output_data/.../viz_data/...
+        #                    /output_data/.../Scene.main.mdl       // MDL file (along with others)
+        #                    /output_data/.../dyn_geom_list.txt    // List of frame files relative to output_data
+        #                    /output_data/.../dynamic_geometry     // Location of actual frame files
+        #                                /.../dynamic_geometry/Obj_frame_0.mdl
+        #                                /.../dynamic_geometry/Obj_frame_1.mdl
+        #                                   :
+        #                                /.../dynamic_geometry/Obj_frame_n.mdl
+        #
+        # For swept projects, there will be additional directories (...) appended directly after "output_data".
 
 
-      filepath = os.path.dirname(file_name)
+        filepath = os.path.dirname(file_name)
 
-      context = None
-      if has_blender:
-          context = bpy.context
+        context = None
+        if has_blender:
+            context = bpy.context
 
-      print ( "Exporting dynamic objects from data_model_to_mdl.write_mdl() to " + str(filepath) )
-      print ( "  file_name = " + str(file_name) )
+        print ( "Exporting dynamic objects from data_model_to_mdl.write_mdl() to " + str(filepath) )
+        print ( "  file_name = " + str(file_name) )
 
-      # scene_name = "Scene"
-      fc = None
-      if has_blender:
-          # Over-ride the default or passed scene_name when in Blender
-          # Filter or replace problem characters (like space, ...)
-          scene_name = context.scene.name.replace(" ", "_")
+        # scene_name = "Scene"
+        fc = None
+        if has_blender:
+            # Over-ride the default or passed scene_name when in Blender
+            # Filter or replace problem characters (like space, ...)
+            scene_name = context.scene.name.replace(" ", "_")
 
-          # Save the current frame to restore later
-          fc = context.scene.frame_current
+            # Save the current frame to restore later
+            fc = context.scene.frame_current
 
-      # Generate the dynamic geometry
+        # Generate the dynamic geometry
 
-      geom_list_name = 'dyn_geom_list.txt'
-      geom_list_file = open(os.path.join(filepath,geom_list_name), "w", encoding="utf8", newline="\n")
-      path_to_dg_files = os.path.join ( filepath, "dynamic_geometry" )
-      if not os.path.exists(path_to_dg_files):
-          os.makedirs(path_to_dg_files)
+        geom_list_name = 'dyn_geom_list.txt'
+        geom_list_file = open(os.path.join(filepath,geom_list_name), "w", encoding="utf8", newline="\n")
+        path_to_dg_files = os.path.join ( filepath, "dynamic_geometry" )
+        if not os.path.exists(path_to_dg_files):
+            os.makedirs(path_to_dg_files)
 
-      iterations = None
-      time_step = None
-      if has_blender:
-          iterations = context.scene.mcell.initialization.iterations.get_value()
-          time_step = context.scene.mcell.initialization.time_step.get_value()
-      else:
-          # Note that these conversions might not work if these are expressions.
-          # In that case, parameter evaluation will have to be done to get a value.
-          # For now, assume that they're plain numeric values.
-          iterations = int(dm['mcell']['initialization']['iterations'])
-          time_step  = float(dm['mcell']['initialization']['time_step'])
+        iterations = None
+        time_step = None
+        if has_blender:
+            iterations = context.scene.mcell.initialization.iterations.get_value()
+            time_step = context.scene.mcell.initialization.time_step.get_value()
+        else:
+            # Note that these conversions might not work if these are expressions.
+            # In that case, parameter evaluation will have to be done to get a value.
+            # For now, assume that they're plain numeric values.
+            iterations = int(dm['mcell']['initialization']['iterations'])
+            time_step  = float(dm['mcell']['initialization']['time_step'])
 
-      print ( "iterations = " + str(iterations) + ", time_step = " + str(time_step) )
+        print ( "iterations = " + str(iterations) + ", time_step = " + str(time_step) )
 
-      # Build the script list first as a dictionary by object names so they aren't read at every iteration
-      # It might also be efficient if these could be precompiled at this time (rather than in the loop).
-      script_dict = {}
-      print ( "\n\nBuilding Script List:" )
-      if ('mcell' in dm) and ('scripting' in dm['mcell']) and ('script_texts' in dm['mcell']['scripting']):
-          mcell = dm['mcell']
-          scr_txts = mcell['scripting']['script_texts']
-          # print ( "Script text names: " + str(scr_txts.keys()) )
+        # Build the script list first as a dictionary by object names so they aren't read at every iteration
+        # It might also be efficient if these could be precompiled at this time (rather than in the loop).
+        script_dict = {}
+        print ( "\n\nBuilding Script List:" )
+        if ('mcell' in dm) and ('scripting' in dm['mcell']) and ('script_texts' in dm['mcell']['scripting']):
+            mcell = dm['mcell']
+            scr_txts = mcell['scripting']['script_texts']
+            # print ( "Script text names: " + str(scr_txts.keys()) )
 
-          if ('model_objects' in mcell) and ('model_object_list' in mcell['model_objects']):
-              mo_list = mcell['model_objects']['model_object_list']
-              for obj in mo_list:
-                  if obj['dynamic']:
-                      if len(obj['script_name']) > 0:
-                          script_name = obj['script_name']
-                          script_text = scr_txts[script_name]
-                          compiled_text = compile ( script_text, '<string>', 'exec' )
-                          script_dict[script_name] = compiled_text
+            if ('model_objects' in mcell) and ('model_object_list' in mcell['model_objects']):
+                mo_list = mcell['model_objects']['model_object_list']
+                for obj in mo_list:
+                    if obj['dynamic']:
+                        if len(obj['script_name']) > 0:
+                            script_name = obj['script_name']
+                            script_text = scr_txts[script_name]
+                            compiled_text = compile ( script_text, '<string>', 'exec' )
+                            script_dict[script_name] = compiled_text
 
-      # Save state of mol_viz_enable and disable mol viz during frame change for dynamic geometry
-      mol_viz_state = None
-      if has_blender:
-          mol_viz_state = context.scene.mcell.mol_viz.mol_viz_enable
-          context.scene.mcell.mol_viz.mol_viz_enable = False
+        # Save state of mol_viz_enable and disable mol viz during frame change for dynamic geometry
+        mol_viz_state = None
+        if has_blender:
+            mol_viz_state = context.scene.mcell.mol_viz.mol_viz_enable
+            context.scene.mcell.mol_viz.mol_viz_enable = False
 
-      print ( "\n\nStepping through Frames:" )
-      for frame_number in range(iterations+1):
-          ####################################################################
-          #
-          #  This section essentially defines the interface to the user's
-          #  dynamic geometry code. Right now it's being done through 7 global
-          #  variables which will be in the user's environment when they run:
-          #
-          #     frame_number
-          #     time_step
-          #     points[]
-          #     faces[]
-          #     regions_dict[]
-          #     region_props[]
-          #     origin[]
-          #
-          #  The user code gets the frame number as input and fills in both the
-          #  points and faces arrays (lists). The format is fairly standard with
-          #  each point being a list of 3 double values [x, y, z], and with each
-          #  face being a list of 3 point indexes defining a triangle with outward
-          #  facing normals using the right hand rule. The index values are the
-          #  integer offsets into the points array starting with index 0.
-          #  This is a very primitive interface, and it may be subject to change.
-          #
-          ####################################################################
-          if (frame_number % 100) == 0:
-              print ( "  Writing frame " + str(frame_number) )
+        print ( "\n\nStepping through Frames:" )
+        for frame_number in range(iterations+1):
+            ####################################################################
+            #
+            #  This section essentially defines the interface to the user's
+            #  dynamic geometry code. Right now it's being done through 7 global
+            #  variables which will be in the user's environment when they run:
+            #
+            #     frame_number
+            #     dynamic
+            #     time_step
+            #     points[]
+            #     faces[]
+            #     regions_dict[]
+            #     region_props[]
+            #     origin[]
+            #
+            #  The user code gets the frame number as input and fills in both the
+            #  points and faces arrays (lists). The format is fairly standard with
+            #  each point being a list of 3 double values [x, y, z], and with each
+            #  face being a list of 3 point indexes defining a triangle with outward
+            #  facing normals using the right hand rule. The index values are the
+            #  integer offsets into the points array starting with index 0.
+            #  This is a very primitive interface, and it may be subject to change.
+            #
+            ####################################################################
+            if (frame_number % 100) == 0:
+                print ( "  Writing frame " + str(frame_number) )
 
 
-          if has_blender:
-              # Set the frame number for Blender
-              context.scene.frame_set(frame_number)
+            if has_blender:
+                # Set the frame number for Blender
+                context.scene.frame_set(frame_number)
 
-          # Write out the individual MDL files for each dynamic object at this frame
-          if ('mcell' in dm) and ('model_objects' in mcell) and ('model_object_list' in mcell['model_objects']):
-            for obj in dm['mcell']['model_objects']['model_object_list']:
-              # MCell currently requires all objects to be either static or dynamic
-              # So if we're here, that means ALL objects should be written as dynamic
-              if   True   or obj['dynamic']:
-                  # print ( "  Frame " + str(frame_number) + ", Saving dynamic geometry for object " + obj['name'] + " with script \"" + obj['script_name'] + "\"" )
-                  points = []            # The list "points" is expected by the user's script
-                  faces = []             # The list "faces" is expected by the user's script
-                  regions_dict = {}      # The dict "regions_dict" is expected by the user's script
-                  region_props = {}      # The dict "region_props" is expected by the user's script
-                  origin = [0,0,0]       # The list "origin" is expected by the user's script
+            # Write out the individual MDL files for each dynamic object at this frame
+            if ('mcell' in dm) and ('model_objects' in mcell) and ('model_object_list' in mcell['model_objects']):
+              for obj in dm['mcell']['model_objects']['model_object_list']:
+                # MCell currently requires all objects to be either static or dynamic
+                # So if we're here, that means ALL objects should be written as dynamic
+                if   True   or obj['dynamic']:
+                    # print ( "  Frame " + str(frame_number) + ", Saving dynamic geometry for object " + obj['name'] + " with script \"" + obj['script_name'] + "\"" )
+                    #frame_number             # The name "frame_number" may be expected by the user's script if it can also generate dynamic geometry
+                    dynamic = obj['dynamic']  # The script may need to know this to ignore or use the frame number
+                    points = []               # The list "points" is expected by the user's script
+                    faces = []                # The list "faces" is expected by the user's script
+                    regions_dict = {}         # The dict "regions_dict" is expected by the user's script
+                    region_props = {}         # The dict "region_props" is expected by the user's script
+                    origin = [0,0,0]          # The list "origin" is expected by the user's script
 
-                  # print ( "data_model['mcell'].keys() = " + str(data_model['mcell'].keys()) )
+                    # print ( "data_model['mcell'].keys() = " + str(data_model['mcell'].keys()) )
 
-                  if len(obj['script_name']) > 0:
-                      # Let the script create the geometry
-                      #print ( "   Build object mesh from user script for frame " + str(frame_number) )
-                      #script_text = script_dict[obj['script_name']]
-                      script_text = mcell['scripting']['script_texts'][obj['script_name']]
-                      #print ( 80*"=" )
-                      #print ( script_text )
-                      #print ( 80*"=" )
-                      # exec ( script_dict[obj.script_name], locals() )
-                      #print ( "Before script: region_props = " + str(region_props) )
-                      data_model = dm        # Use a more "official" name for the data model to be used by dynamic geometry scripts
-                      #exec ( script_dict[obj['script_name']], globals(), locals() )
-                      #exec ( script_dict[obj['script_name']] )
-                      exec ( script_text, globals(), locals() )
-                      #print ( "After  script: region_props = " + str(region_props) )
-                  elif has_blender:
-                      # Get the geometry from the object (presumably animated by Blender)
+                    if len(obj['script_name']) > 0:
+                        # Let the script create the geometry
+                        #print ( "   Build object mesh from user script for frame " + str(frame_number) )
+                        #script_text = script_dict[obj['script_name']]
+                        script_text = mcell['scripting']['script_texts'][obj['script_name']]
+                        #print ( 80*"=" )
+                        #print ( script_text )
+                        #print ( 80*"=" )
+                        # exec ( script_dict[obj.script_name], locals() )
+                        #print ( "Before script: region_props = " + str(region_props) )
+                        data_model = dm        # Use a more "official" name for the data model to be used by dynamic geometry scripts
+                        #exec ( script_dict[obj['script_name']], globals(), locals() )
+                        #exec ( script_dict[obj['script_name']] )
+                        exec ( script_text, globals(), locals() )
+                        #print ( "After  script: region_props = " + str(region_props) )
+                    elif has_blender:
+                        # Get the geometry from the object (presumably animated by Blender)
 
-                      #print ( "   Build object mesh from Blender object for frame " + str(frame_number) )
-                      import mathutils
+                        #print ( "   Build object mesh from Blender object for frame " + str(frame_number) )
+                        import mathutils
 
-                      geom_obj = context.scene.objects[obj['name']]
-                      mesh = geom_obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
-                      mesh.transform(mathutils.Matrix() * geom_obj.matrix_world)
-                      points = [v.co for v in mesh.vertices]
-                      faces = [f.vertices for f in mesh.polygons]
-                      regions_dict = geom_obj.mcell.get_regions_dictionary(geom_obj)
-                      del mesh
-                  else:
-                      # Get the geometry from the data model (either from the frame list or from static geometry)
-                      #print ( "   Build object mesh without Blender for frame " + str(frame_number) )
-                      if ('mcell' in dm) and ('geometrical_objects' in dm['mcell']) and ('object_list' in dm['mcell']['geometrical_objects']):
-                          mcell = dm['mcell']
-                          for o in mcell['geometrical_objects']['object_list']:
-                              if o['name'] == obj['name']:
-                                  #print ( "    Found object " )
-                                  if ('frame_list' in o) and (len(o['frame_list']) > 0):
-                                      # This object has non-empty frame list data to use
-                                      #print ( "      Object " + str(o['name']) + ": frame_list length = " + str(len(o['frame_list'])) )
-                                      frame = None
-                                      if frame_number >= len(o['frame_list']):
-                                          # Hold the last frame forever
-                                          frame = o['frame_list'][-1]
-                                      else:
-                                          # Get the frame for this iteration
-                                          frame = o['frame_list'][frame_number]
-                                      points = frame['vertex_list']
-                                      faces = frame['element_connections']
-                                      origin = frame['location']
-                                  else:
-                                      # Use the object's original static geometry from the data model
-                                      #print ( "      Object " + str(o['name']) + " has no frame_list" )
-                                      points = o['vertex_list']
-                                      faces = o['element_connections']
-                                      origin = o['location']
-                                  #print ( "    Found object " + str(o['name']) + " with zmax of " + str(max([v[2] for v in o['vertex_list']])) )
-                                  if 'define_surface_regions' in o:
-                                      # This object has surface regions
-                                      regions_dict = {}
-                                      for reg in o['define_surface_regions']:
-                                          regions_dict[reg['name']] = reg['include_elements']
+                        geom_obj = context.scene.objects[obj['name']]
+                        mesh = geom_obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
+                        mesh.transform(mathutils.Matrix() * geom_obj.matrix_world)
+                        points = [v.co for v in mesh.vertices]
+                        faces = [f.vertices for f in mesh.polygons]
+                        regions_dict = geom_obj.mcell.get_regions_dictionary(geom_obj)
+                        del mesh
+                    else:
+                        # Get the geometry from the data model (either from the frame list or from static geometry)
+                        #print ( "   Build object mesh without Blender for frame " + str(frame_number) )
+                        if ('mcell' in dm) and ('geometrical_objects' in dm['mcell']) and ('object_list' in dm['mcell']['geometrical_objects']):
+                            mcell = dm['mcell']
+                            for o in mcell['geometrical_objects']['object_list']:
+                                if o['name'] == obj['name']:
+                                    #print ( "    Found object " )
+                                    if ('frame_list' in o) and (len(o['frame_list']) > 0):
+                                        # This object has non-empty frame list data to use
+                                        #print ( "      Object " + str(o['name']) + ": frame_list length = " + str(len(o['frame_list'])) )
+                                        frame = None
+                                        if frame_number >= len(o['frame_list']):
+                                            # Hold the last frame forever
+                                            frame = o['frame_list'][-1]
+                                        else:
+                                            # Get the frame for this iteration
+                                            frame = o['frame_list'][frame_number]
+                                        points = frame['vertex_list']
+                                        faces = frame['element_connections']
+                                        origin = frame['location']
+                                    else:
+                                        # Use the object's original static geometry from the data model
+                                        #print ( "      Object " + str(o['name']) + " has no frame_list" )
+                                        points = o['vertex_list']
+                                        faces = o['element_connections']
+                                        origin = o['location']
+                                    #print ( "    Found object " + str(o['name']) + " with zmax of " + str(max([v[2] for v in o['vertex_list']])) )
+                                    if 'define_surface_regions' in o:
+                                        # This object has surface regions
+                                        regions_dict = {}
+                                        for reg in o['define_surface_regions']:
+                                            regions_dict[reg['name']] = reg['include_elements']
 
-                  f_name = "%s_frame_%d.mdl"%(obj['name'],frame_number)
-                  full_file_name = os.path.join(path_to_dg_files,f_name)
-                  write_obj_as_mdl ( scene_name, obj['name'], points, faces, regions_dict, region_props, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
-                  #geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",f_name)))
+                    f_name = "%s_frame_%d.mdl"%(obj['name'],frame_number)
+                    full_file_name = os.path.join(path_to_dg_files,f_name)
+                    write_obj_as_mdl ( scene_name, obj['name'], points, faces, regions_dict, region_props, origin=origin, file_name=full_file_name, partitions=False, instantiate=False )
+                    #geom_list_file.write('%.9g %s\n' % (frame_number*time_step, os.path.join(".","dynamic_geometry",f_name)))
 
-          # Write out the "master" MDL file for this frame
+            # Write out the "master" MDL file for this frame
 
-          frame_file_name = os.path.join(".","dynamic_geometry","frame_%d.mdl"%(frame_number))
-          full_frame_file_name = os.path.join(path_to_dg_files,"frame_%d.mdl"%(frame_number))
-          frame_file = open(full_frame_file_name, "w", encoding="utf8", newline="\n")
+            frame_file_name = os.path.join(".","dynamic_geometry","frame_%d.mdl"%(frame_number))
+            full_frame_file_name = os.path.join(path_to_dg_files,"frame_%d.mdl"%(frame_number))
+            frame_file = open(full_frame_file_name, "w", encoding="utf8", newline="\n")
 
-          # Write the INCLUDE statements
-          if ('mcell' in dm) and ('model_objects' in mcell) and ('model_object_list' in mcell['model_objects']):
-            for obj in dm['mcell']['model_objects']['model_object_list']:
-              if   True   or obj['dynamic']:
-                  f_name = "%s_frame_%d.mdl"%(obj['name'],frame_number)
-                  frame_file.write ( "INCLUDE_FILE = \"%s\"\n" % (f_name) )
+            # Write the INCLUDE statements
+            if ('mcell' in dm) and ('model_objects' in mcell) and ('model_object_list' in mcell['model_objects']):
+              for obj in dm['mcell']['model_objects']['model_object_list']:
+                if   True   or obj['dynamic']:
+                    f_name = "%s_frame_%d.mdl"%(obj['name'],frame_number)
+                    frame_file.write ( "INCLUDE_FILE = \"%s\"\n" % (f_name) )
 
-          # Write the INSTANTIATE statement for this frame
-          frame_file.write ( "INSTANTIATE " + scene_name + " OBJECT {  /* write_mdl for each frame */\n" )
+            # Write the INSTANTIATE statement for this frame
+            frame_file.write ( "INSTANTIATE " + scene_name + " OBJECT {  /* write_mdl for each frame */\n" )
 
-          if ('mcell' in dm) and ('model_objects' in mcell) and ('model_object_list' in mcell['model_objects']):
-            for obj in dm['mcell']['model_objects']['model_object_list']:
-              if   True   or obj['dynamic']:
-                  frame_file.write ( "  %s OBJECT %s {}\n" % (obj['name'], obj['name']) )
+            if ('mcell' in dm) and ('model_objects' in mcell) and ('model_object_list' in mcell['model_objects']):
+              for obj in dm['mcell']['model_objects']['model_object_list']:
+                if   True   or obj['dynamic']:
+                    frame_file.write ( "  %s OBJECT %s {}\n" % (obj['name'], obj['name']) )
 
-          frame_file.write ( "}\n" )
-          frame_file.close()
+            frame_file.write ( "}\n" )
+            frame_file.close()
 
-          geom_list_file.write('%.9g %s\n' % (frame_number*time_step, frame_file_name))
+            geom_list_file.write('%.9g %s\n' % (frame_number*time_step, frame_file_name))
 
-      geom_list_file.close()
+        geom_list_file.close()
 
-      if has_blender:
-          # Restore setting for mol viz
-          context.scene.mcell.mol_viz.mol_viz_enable = mol_viz_state
+        if has_blender:
+            # Restore setting for mol viz
+            context.scene.mcell.mol_viz.mol_viz_enable = mol_viz_state
 
-          # Restore the current frame
-          context.scene.frame_set(fc)
+            # Restore the current frame
+            context.scene.frame_set(fc)
 
 
 
@@ -1184,7 +1190,7 @@ def write_reactions ( reacts, f ):
     return wrote_mdl
 
 
-def write_static_geometry ( objs, geom, f ):
+def write_static_geometry ( objs, geom, dm, f ):
     wrote_mdl = False
     if 'object_list' in geom:
       glist = geom['object_list']
@@ -1204,6 +1210,7 @@ def write_static_geometry ( objs, geom, f ):
         print ( "geos: " + str( [ o['name'] for o in glist ] ) )
 
         for g in glist:
+
           obj = [ o for o in objs['model_object_list'] if o['name'] == g['name'] ][0]
           # MCell currently requires all objects to be either static or dynamic
           # Since this is "write_static_geometry", then assume all objects are
@@ -1215,40 +1222,154 @@ def write_static_geometry ( objs, geom, f ):
           else:
             # Write static objects here
             wrote_mdl = True
-            loc_x = 0.0
-            loc_y = 0.0
-            loc_z = 0.0
-            if 'location' in g:
-              loc_x = g['location'][0]
-              loc_y = g['location'][1]
-              loc_z = g['location'][2]
-            f.write ( "%s POLYGON_LIST\n" % g['name'] )
-            f.write ( "{\n" )
-            if 'vertex_list' in g:
-              f.write ( "  VERTEX_LIST\n" )
-              f.write ( "  {\n" )
-              for v in g['vertex_list']:
-                f.write ( "    [ %.15g, %.15g, %.15g ]\n" % ( loc_x+v[0], loc_y+v[1], loc_z+v[2] ) )
-              f.write ( "  }\n" )
-            if 'element_connections' in g:
-              f.write ( "  ELEMENT_CONNECTIONS\n" )
-              f.write ( "  {\n" )
-              for c in g['element_connections']:
-                f.write ( "    [ %d, %d, %d ]\n" % ( c[0], c[1], c[2] ) )
-              f.write ( "  }\n" )
-            if 'define_surface_regions' in g:
-              f.write ( "  DEFINE_SURFACE_REGIONS\n" )
-              f.write ( "  {\n" )
-              for r in g['define_surface_regions']:
-                f.write ( "    %s\n" % r['name'] )
-                f.write ( "    {\n" )
-                if 'include_elements' in r:
-                  int_regs = [ int(r) for r in r['include_elements'] ]
-                  f.write ( "      ELEMENT_LIST = " + str(int_regs) + "\n" )
-                f.write ( "    }\n" )
-              f.write ( "  }\n" )
-            f.write ( "}\n")
-            f.write ( "\n" );
+            if obj['object_source'] == 'script':
+              # Generate this object's MDL from a script
+
+              # print ( "  Saving static geometry for object " + obj['name'] + " with script \"" + obj['script_name'] + "\"" )
+
+              frame_number = -1         # The name "frame_number" may be expected by the user's script if it can also generate dynamic geometry
+              dynamic = obj['dynamic']  # The script may need to know this to ignore or use the frame number
+              points = []               # The list "points" is expected by the user's script
+              faces = []                # The list "faces" is expected by the user's script
+              regions_dict = {}         # The dict "regions_dict" is expected by the user's script
+              region_props = {}         # The dict "region_props" is expected by the user's script
+              origin = [0,0,0]          # The list "origin" is expected by the user's script
+
+              # print ( "data_model['mcell'].keys() = " + str(data_model['mcell'].keys()) )
+
+              if len(obj['script_name']) > 0:
+                  # Let the script create the geometry
+                  #print ( "   Build object mesh from user script for frame " + str(frame_number) )
+                  #script_text = script_dict[obj['script_name']]
+                  script_text = dm['mcell']['scripting']['script_texts'][obj['script_name']]
+                  #print ( 80*"=" )
+                  #print ( script_text )
+                  #print ( 80*"=" )
+                  # exec ( script_dict[obj.script_name], locals() )
+                  #print ( "Before script: region_props = " + str(region_props) )
+                  data_model = dm        # Use a more "official" name for the data model to be used by dynamic geometry scripts
+                  #exec ( script_dict[obj['script_name']], globals(), locals() )
+                  #exec ( script_dict[obj['script_name']] )
+                  exec ( script_text, globals(), locals() )
+                  #print ( "After  script: region_props = " + str(region_props) )
+              elif has_blender:
+                  # Get the geometry from the object (presumably animated by Blender)
+
+                  #print ( "   Build object mesh from Blender object for frame " + str(frame_number) )
+                  import mathutils
+
+                  geom_obj = context.scene.objects[obj['name']]
+                  mesh = geom_obj.to_mesh(context.scene, True, 'PREVIEW', calc_tessface=False)
+                  mesh.transform(mathutils.Matrix() * geom_obj.matrix_world)
+                  points = [v.co for v in mesh.vertices]
+                  faces = [f.vertices for f in mesh.polygons]
+                  regions_dict = geom_obj.mcell.get_regions_dictionary(geom_obj)
+                  del mesh
+              else:
+                  # Get the geometry from the data model (either from the frame list or from static geometry)
+                  #print ( "   Build object mesh without Blender for frame " + str(frame_number) )
+                  if ('mcell' in dm) and ('geometrical_objects' in dm['mcell']) and ('object_list' in dm['mcell']['geometrical_objects']):
+                      mcell = dm['mcell']
+                      for o in mcell['geometrical_objects']['object_list']:
+                          if o['name'] == obj['name']:
+                              #print ( "    Found object " )
+                              if ('frame_list' in o) and (len(o['frame_list']) > 0):
+                                  # This object has non-empty frame list data to use
+                                  #print ( "      Object " + str(o['name']) + ": frame_list length = " + str(len(o['frame_list'])) )
+                                  frame = None
+                                  if frame_number >= len(o['frame_list']):
+                                      # Hold the last frame forever
+                                      frame = o['frame_list'][-1]
+                                  else:
+                                      # Get the frame for this iteration
+                                      frame = o['frame_list'][frame_number]
+                                  points = frame['vertex_list']
+                                  faces = frame['element_connections']
+                                  origin = frame['location']
+                              else:
+                                  # Use the object's original static geometry from the data model
+                                  #print ( "      Object " + str(o['name']) + " has no frame_list" )
+                                  points = o['vertex_list']
+                                  faces = o['element_connections']
+                                  origin = o['location']
+                              #print ( "    Found object " + str(o['name']) + " with zmax of " + str(max([v[2] for v in o['vertex_list']])) )
+                              if 'define_surface_regions' in o:
+                                  # This object has surface regions
+                                  regions_dict = {}
+                                  for reg in o['define_surface_regions']:
+                                      regions_dict[reg['name']] = reg['include_elements']
+
+              # Generate this object's MDL from the collected data
+              loc_x = 0.0
+              loc_y = 0.0
+              loc_z = 0.0
+              f.write ( "%s POLYGON_LIST\n" % obj['name'] )
+              f.write ( "{\n" )
+              if len(points) > 0:
+                f.write ( "  VERTEX_LIST\n" )
+                f.write ( "  {\n" )
+                for v in points:
+                  f.write ( "    [ %.15g, %.15g, %.15g ]\n" % ( loc_x+v[0], loc_y+v[1], loc_z+v[2] ) )
+                f.write ( "  }\n" )
+              if len(faces) > 0:
+                f.write ( "  ELEMENT_CONNECTIONS\n" )
+                f.write ( "  {\n" )
+                for c in faces:
+                  f.write ( "    [ %d, %d, %d ]\n" % ( c[0], c[1], c[2] ) )
+                f.write ( "  }\n" )
+              if len(regions_dict) > 0:
+                rkeys = sorted ( regions_dict.keys() )
+                f.write ( "  DEFINE_SURFACE_REGIONS\n" )
+                f.write ( "  {\n" )
+                for rk in rkeys:
+                  r = regions_dict[rk]
+                  f.write ( "    %s\n" % r['name'] )
+                  f.write ( "    {\n" )
+                  if 'include_elements' in r:
+                    int_regs = [ int(r) for r in r['include_elements'] ]
+                    f.write ( "      ELEMENT_LIST = " + str(int_regs) + "\n" )
+                  f.write ( "    }\n" )
+                f.write ( "  }\n" )
+              f.write ( "}\n")
+              f.write ( "\n" );
+
+            else:
+
+              # Generate this object's MDL from the geometry data
+              loc_x = 0.0
+              loc_y = 0.0
+              loc_z = 0.0
+              if 'location' in g:
+                loc_x = g['location'][0]
+                loc_y = g['location'][1]
+                loc_z = g['location'][2]
+              f.write ( "%s POLYGON_LIST\n" % g['name'] )
+              f.write ( "{\n" )
+              if 'vertex_list' in g:
+                f.write ( "  VERTEX_LIST\n" )
+                f.write ( "  {\n" )
+                for v in g['vertex_list']:
+                  f.write ( "    [ %.15g, %.15g, %.15g ]\n" % ( loc_x+v[0], loc_y+v[1], loc_z+v[2] ) )
+                f.write ( "  }\n" )
+              if 'element_connections' in g:
+                f.write ( "  ELEMENT_CONNECTIONS\n" )
+                f.write ( "  {\n" )
+                for c in g['element_connections']:
+                  f.write ( "    [ %d, %d, %d ]\n" % ( c[0], c[1], c[2] ) )
+                f.write ( "  }\n" )
+              if 'define_surface_regions' in g:
+                f.write ( "  DEFINE_SURFACE_REGIONS\n" )
+                f.write ( "  {\n" )
+                for r in g['define_surface_regions']:
+                  f.write ( "    %s\n" % r['name'] )
+                  f.write ( "    {\n" )
+                  if 'include_elements' in r:
+                    int_regs = [ int(r) for r in r['include_elements'] ]
+                    f.write ( "      ELEMENT_LIST = " + str(int_regs) + "\n" )
+                  f.write ( "    }\n" )
+                f.write ( "  }\n" )
+              f.write ( "}\n")
+              f.write ( "\n" );
     return wrote_mdl
 
 

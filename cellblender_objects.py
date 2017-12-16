@@ -430,6 +430,7 @@ def model_objects_update(context):
             things_to_save = {}
             things_to_save['dynamic'] = mobjs.object_list[i].dynamic
             things_to_save['script_name'] = mobjs.object_list[i].script_name
+            things_to_save['object_source'] = mobjs.object_list[i].object_source
             things_to_save['dynamic_display_source'] = mobjs.object_list[i].dynamic_display_source
             things_to_save['parent_object'] = mobjs.object_list[i].parent_object
             things_to_save['membrane_name'] = mobjs.object_list[i].membrane_name
@@ -449,6 +450,7 @@ def model_objects_update(context):
                 #mobjs.object_list[mobjs.active_obj_index].script_name = dyn_dict[obj_name]['script_name']
                 new_obj.dynamic = dyn_dict[obj_name]['dynamic']
                 new_obj.script_name = dyn_dict[obj_name]['script_name']
+                new_obj.object_source = dyn_dict[obj_name]['object_source']
                 new_obj.dynamic_display_source = dyn_dict[obj_name]['dynamic_display_source']
                 new_obj.parent_object = dyn_dict[obj_name]['parent_object']
                 new_obj.membrane_name = dyn_dict[obj_name]['membrane_name']
@@ -632,13 +634,22 @@ def changed_display_source_callback(self, context):
     #mol_viz = mcell.mol_viz
     #data_layout = mcell.mol_viz['data_layout']
     #bpy.ops.mcell.update_data_layout()
-    mcell.model_objects.update_scene(context.scene)
+    mcell.model_objects.update_scene(context.scene, force=True)
     #bpy.ops.mcell.read_viz_data()
 
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Object Name", update=check_model_object_name)
     dynamic = BoolProperty ( default=False, description='Flag this object as dynamic', update=changed_dynamic_callback )
+    object_source = bpy.props.EnumProperty (
+        items= [ # key        label
+                 ('blender',  "Blender",  ""),
+                 ('script',   "Script",   "") ],
+        name="Object Source:",
+        default='blender',
+        description="Select source of data for this object.",
+        update=changed_display_source_callback )
+
     script_name = StringProperty(name="Script Name", default="")
 
     parent_object = StringProperty(name="Parent_Object", description='Name of Parent Compartment Object')
@@ -646,12 +657,11 @@ class MCellModelObjectsProperty(bpy.types.PropertyGroup):
 
     dynamic_display_source = bpy.props.EnumProperty (
         items= [ # key        label
-                 ('files',   "Files",   ""),
-                 ('script',  "Script", ""),
-                 ("other",   "Other",  "")  ],
+                 ('script',  "Script",          ""),
+                 ('files',   "Exported Files",  "")  ],
         name="Display From:",
-        default='other',
-        description="Select source of data used to drive the Blender display.",
+        default='script',
+        description="Select source of data to display in Blender.",
         update=changed_display_source_callback )
 
     # Note that the "object_show_only" property should always be False except during the short time that it's callback is being called.
@@ -838,14 +848,22 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                         row.prop ( mat, "alpha", text="Alpha" )
 
                     row = box.row()
-                    row.prop ( self.object_list[self.active_obj_index], "dynamic", text="Dynamic" )
-                    if self.object_list[self.active_obj_index].dynamic:
-                        row.prop ( self.object_list[self.active_obj_index], "dynamic_display_source" )
+                    row.prop ( self.object_list[self.active_obj_index], "object_source", text="Object Source" )
+                    if self.object_list[self.active_obj_index].object_source == 'blender':
+                        row = box.row()
+                        row.prop ( self.object_list[self.active_obj_index], "dynamic", text="Dynamic" )
+                    elif self.object_list[self.active_obj_index].object_source == 'script':
                         row = box.row()
                         row.prop_search ( self.object_list[self.active_obj_index], "script_name",
                                           context.scene.mcell.scripting, "internal_python_scripts_list",
                                           text="Script", icon='TEXT' )
                         row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
+                        row = box.row()
+                        row.prop ( self.object_list[self.active_obj_index], "dynamic", text="Dynamic" )
+                        if self.object_list[self.active_obj_index].dynamic:
+                            # Only allow this option for dynamic objects
+                            row = box.row()
+                            row.prop ( self.object_list[self.active_obj_index], "dynamic_display_source" )
 
 
 
@@ -862,7 +880,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         mcell_obj_list = context.scene.mcell.model_objects.object_list
 
         mo_dm = {}
-        mo_dm['data_model_version'] = "DM_2017_06_15_1755"
+        mo_dm['data_model_version'] = "DM_2017_12_13_1510"
         mo_list = []
         obj_list = [ obj for obj in context.scene.objects if obj.mcell.include ]
         for scene_object in obj_list:
@@ -870,6 +888,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
           obj_dm = { "name": name }
           obj_dm['parent_object'] = mcell_obj_list[name].parent_object
           obj_dm['membrane_name'] = mcell_obj_list[name].membrane_name
+          obj_dm['object_source'] = mcell_obj_list[name].object_source
           obj_dm['dynamic'] = mcell_obj_list[name].dynamic
           obj_dm['script_name'] = mcell_obj_list[name].script_name
           obj_dm['dynamic_display_source'] = mcell_obj_list[name].dynamic_display_source
@@ -901,8 +920,29 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                 obj['membrane_name'] = ""
             dm['data_model_version'] = "DM_2017_06_15_1755"
 
+        if dm['data_model_version'] == "DM_2017_03_16_1750":
+            # Add the default parent object and membrane name to each object
+            for obj in dm['model_object_list']:
+                obj['parent_object'] = ""
+                obj['membrane_name'] = ""
+            dm['data_model_version'] = "DM_2017_06_15_1755"
+
+        if dm['data_model_version'] == "DM_2017_06_15_1755":
+            # Add the object_source field based on existing settings
+            for obj in dm['model_object_list']:
+                if len(obj['script_name']) == 0:
+                    # Without a script, the data must come from Blender
+                    obj['object_source'] = 'blender'
+                else:
+                    # With a script, the data should come from the script
+                    obj['object_source'] = 'script'
+                if obj['dynamic_display_source'] == 'other':
+                    # There is no more "other" option. Default to script
+                    obj['dynamic_display_source'] = 'script'
+            dm['data_model_version'] = "DM_2017_12_13_1510"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2017_06_15_1755":
+        if dm['data_model_version'] != "DM_2017_12_13_1510":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
             return None
 
@@ -915,13 +955,13 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         #   context.scene.objects[].mcell.include - boolean is true for model objects
         # This code updates both locations based on the data model
 
-        if dm['data_model_version'] != "DM_2017_06_15_1755":
+        if dm['data_model_version'] != "DM_2017_12_13_1510":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
         
         # Remove all model objects in the list
         while len(self.object_list) > 0:
             self.object_list.remove(0)
-            
+
         # Create the property list for model objects from the Data Model
         mo_list = []
         if "model_object_list" in dm:
@@ -931,6 +971,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
               mo.name = m['name']
               mo.parent_object = m['parent_object']
               mo.membrane_name = m['membrane_name']
+              mo.object_source = m['object_source']
               mo.dynamic = m['dynamic']
               mo.script_name = m['script_name']
               mo.dynamic_display_source = m['dynamic_display_source']
@@ -1295,6 +1336,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
           f.close()
         except FileNotFoundError as ioe:
             # User has probably dragged off the time line, just ignore it
+            print ( "Exception: File not found: " + str(file_name) )
             pass
         except Exception as e:
             print ( "Exception reading MDL: " + str(e) )
@@ -1302,7 +1344,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
             print ( "Unknown Exception" )
 
 
-    def update_scene ( self, scene, frame_num=None ):
+    def update_scene ( self, scene, frame_num=None, force=False ):
         # print ( "update_scene" )
         cur_frame = frame_num
         if cur_frame == None:
@@ -1314,7 +1356,10 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         mol_viz = mcell.mol_viz
         choices_list = mol_viz.choices_list  # This holds the currently selected sweep point
 
-        if mcell.model_objects.has_some_dynamic:
+        # print ( "Updating the scene with has_some_dynamic = " + str(mcell.model_objects.has_some_dynamic) + ", and force = " + str(force) )
+
+        if mcell.model_objects.has_some_dynamic or force:
+
             files_path = mcell_files_path()
             path_to_dg_files = None
             # Assume the new "data_layout" system since dynamic geometry is relatively new
@@ -1356,7 +1401,9 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                 pass
 
             for obj in mcell.model_objects.object_list:
-                if obj.dynamic and (obj.dynamic_display_source != 'other'):
+
+                #if obj.dynamic and (obj.dynamic_display_source != 'other'):
+                if  obj.object_source == 'script':
 
                     # These names are currently defined as part of the dynamic geometry interface
                     points = []            # The list "points" is expected by the user's script
@@ -1365,13 +1412,13 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     region_props = {}      # The dict "region_props" is expected by the user's script
                     origin = [0,0,0]       # The list "origin" is expected by the user's script
 
-                    if (obj.dynamic_display_source == 'script') and (len(obj.script_name) > 0):
+                    #if (obj.dynamic_display_source == 'script') and (len(obj.script_name) > 0):
+                    if (not obj.dynamic) or ( (obj.dynamic_display_source == 'script') and (len(obj.script_name) > 0) ):
+                        # Notes:
+                        #  A non-dynamic script object can never be read from dynamic geometry files because they aren't created!!
+
                         frame_number = cur_frame     # The name "frame_number" is expected by the user's script
-                        # The following checking was added during debug, but might not be needed for production
-                        #if obj.script_name == None:
-                        #    print ( "Error: script name is none" )
-                        #elif not (obj.script_name in bpy.data.texts):
-                        #    print ( "Error: " + obj.script_name + " is not in bpy.data.texts" )
+                        dynamic = obj.dynamic        # Let's the script know if it is dynamic or not
 
                         # Create a list of (parameter,value) pairs to over-write the data model for this point
                         # Note that the 'enum_choice' field of each choice may not exist (phantom RNA props!!)
@@ -1416,14 +1463,17 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                                 # Append the new (possibly modified) parameter into the new list
                                 data_model['mcell']['parameter_system']['model_parameters'].append ( new_p )
                         script_text = bpy.data.texts[obj.script_name].as_string()
+                        #print ( "script_text = " + str(script_text) )
+                        #print ( "globals = " + str(globals()) )
+                        #print ( "locals = " + str(locals()) )
                         exec ( script_text, globals(), locals() )
 
-                    elif len(obj.script_name) > 0:
-                        # print ( "Reading dynamic geometry files from: " + str(path_to_dg_files) )
+                    elif (obj.dynamic_display_source == 'files'):
                         file_name = "%s_frame_%d.mdl"%(obj.name,cur_frame)
                         # print ( "Reading from " + file_name )
                         full_file_name = os.path.join(path_to_dg_files,file_name)
                         self.read_from_regularized_mdl ( file_name=full_file_name, points=points, faces=faces, origin=origin, partitions=False, instantiate=False )
+                        # print ( "faces = " + str(faces) )
 
                     vertices = []
                     for point in points:

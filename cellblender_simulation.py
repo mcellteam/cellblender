@@ -26,6 +26,8 @@ import cellblender
 
 # blender imports
 import bpy
+import bgl
+import blf
 from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
                       FloatProperty, FloatVectorProperty, IntProperty, \
                       IntVectorProperty, PointerProperty, StringProperty
@@ -55,7 +57,7 @@ from . import data_model
 from cellblender.mdl import data_model_to_mdl
 #from cellblender.mdl import run_data_model_mcell
 
-from cellblender.cellblender_utils import mcell_files_path
+from cellblender.cellblender_utils import project_files_path, mcell_files_path
 
 from multiprocessing import cpu_count
 
@@ -81,6 +83,194 @@ def get_pid(item):
     #if len(l) > 1:
     #  rtn_val = int(l[1])
     #return rtn_val
+
+
+############## Overlay Support (some from sim_runners/queue_local/__init__.py) ##################
+
+handler_list = []           # Holds returns from bpy.types.SpaceView3D.draw_handler_add() for removal
+screen_display_lines = {}   # Dictionary of lines keyed by integer Process ID (PID)
+scroll_offset = 0           # Current Scroll offset
+scroll_page_size = 10       # Lines per scroll
+accumulate_text = False     # Whether to capture text or not
+clear_flag = False          # Drawing when this is set will clear the background
+
+
+def draw_callback_px(context):
+    # Note that the "context" passed in here is a regular dictionary and not the Blender context
+    global screen_display_lines
+    global scroll_offset
+    global clear_flag
+    pid = None
+    if 'mcell' in bpy.context.scene:
+      mcell = bpy.context.scene.mcell
+      if 'run_simulation' in mcell:
+        rs = mcell.run_simulation
+        if len(rs.processes_list) > 0:
+          pid_str = rs.processes_list[rs.active_process_index].name
+          pid = pid_str.split(',')[0].split()[1]
+
+    bgl.glPushAttrib(bgl.GL_ENABLE_BIT)
+
+    if clear_flag:
+      bgl.glClearColor ( 0.0, 0.0, 0.0, 1.0 )
+      bgl.glClear ( bgl.GL_COLOR_BUFFER_BIT )
+
+    font_id = 0  # XXX, need to find out how best to get this.
+
+    y_pos = 15 * (scroll_offset + 1)
+    if pid and (pid in screen_display_lines):
+      for l in screen_display_lines[pid]:
+          blf.position(font_id, 15, y_pos, 0)
+          y_pos += 15
+          blf.size(font_id, 14, 72) # fontid, size, DPI
+          bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
+          blf.draw(font_id, l)
+    else:
+      keys = screen_display_lines.keys()
+      for k in keys:
+          for l in screen_display_lines[k]:
+              blf.position(font_id, 15, y_pos, 0)
+              y_pos += 15
+              blf.size(font_id, 14, 72) # fontid, size, DPI
+              bgl.glColor4f(1.0, 1.0, 1.0, 0.5)
+              blf.draw(font_id, l)
+
+    # 100% alpha, 2 pixel width line
+    bgl.glEnable(bgl.GL_BLEND)
+
+    bgl.glPopAttrib()
+
+    # restore opengl defaults
+    bgl.glLineWidth(1)
+    bgl.glDisable(bgl.GL_BLEND)
+    bgl.glColor4f(0.0, 0.0, 0.0, 1.0)
+
+
+def get_3d_areas():
+  global handler_list
+  areas = []
+  if len(bpy.data.window_managers) > 0:
+    if len(bpy.data.window_managers[0].windows) > 0:
+      if len(bpy.data.window_managers[0].windows[0].screen.areas) > 0:
+        if len(handler_list) <= 0:
+          for area in bpy.data.window_managers[0].windows[0].screen.areas:
+            print ( "Found an area of type " + str(area.type) )
+            if area.type == 'VIEW_3D':
+              areas.append ( area )
+  return ( areas )
+
+
+def enable_text_overlay():
+  global handler_list
+  global accumulate_text
+  accumulate_text = True
+  areas = get_3d_areas()
+  for area in areas:
+    temp_context = bpy.context.copy()
+    temp_context['area'] = area
+    args = (temp_context,)
+    handler_list.append ( bpy.types.SpaceView3D.draw_handler_add(draw_callback_px, args, 'WINDOW', 'POST_PIXEL') )
+    bpy.context.area.tag_redraw()
+  print ( "Enable completed" )
+
+def disable_text_overlay():
+  global handler_list
+  global accumulate_text
+  accumulate_text = False
+  while len(handler_list) > 0:
+    print ( "Removing draw_handler " + str(handler_list[-1]) )
+    bpy.types.SpaceView3D.draw_handler_remove(handler_list[-1], 'WINDOW')
+    handler_list.pop()
+  bpy.context.area.tag_redraw()
+  print ( "Disable completed" )
+
+
+def page_up():
+  global scroll_offset
+  global scroll_page_size
+  if scroll_page_size == 0:
+    # This provides a way to get back to 0 without searching
+    scroll_offset = 0
+  else:
+    scroll_offset += -scroll_page_size
+  # Force a redraw of the OpenGL code
+  bpy.context.area.tag_redraw()
+
+def page_dn():
+  global scroll_offset
+  global scroll_page_size
+  if scroll_page_size == 0:
+    # This provides a way to get back to 0 without searching
+    scroll_offset = 0
+  else:
+    scroll_offset += scroll_page_size
+  # Force a redraw of the OpenGL code
+  bpy.context.area.tag_redraw()
+
+
+
+class MCELL_OT_show_text_overlay (bpy.types.Operator):
+    bl_idname = "mcell.show_text_overlay"
+    bl_label = "Show Text"
+    bl_description = ("Show the Text Overlay.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        #print ( "Show text" )
+        enable_text_overlay()
+        return {'FINISHED'}
+
+class MCELL_OT_hide_text_overlay (bpy.types.Operator):
+    bl_idname = "mcell.hide_text_overlay"
+    bl_label = "Hide Text"
+    bl_description = ("Hide the Text Overlay.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        #print ( "Hide text" )
+        disable_text_overlay()
+        return {'FINISHED'}
+
+
+class MCELL_OT_page_overlay_up (bpy.types.Operator):
+    bl_idname = "mcell.page_overlay_up"
+    bl_label = "View Up"
+    bl_description = ("Page the Text Overlay Up.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        #print ( "Show text" )
+        page_up()
+        return {'FINISHED'}
+
+class MCELL_OT_page_overlay_dn (bpy.types.Operator):
+    bl_idname = "mcell.page_overlay_dn"
+    bl_label = "View Dn"
+    bl_description = ("Page the Text Overlay Down.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        #print ( "Hide text" )
+        page_dn()
+        return {'FINISHED'}
+
+class MCELL_OT_page_overlay_hm (bpy.types.Operator):
+    bl_idname = "mcell.page_overlay_hm"
+    bl_label = "Home"
+    bl_description = ("Page the Text Overlay to Home.")
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        global scroll_offset
+        scroll_offset = 0
+        # Force a redraw of the OpenGL code
+        bpy.context.area.tag_redraw()
+        return {'FINISHED'}
+
+
+######################################################################
+
+
 
 
 
@@ -147,8 +337,8 @@ def run_generic_runner (context, sim_module):
         mcell.run_simulation.active_process_index = len(mcell.run_simulation.processes_list) - 1
         simulation_process = processes_list[mcell.run_simulation.active_process_index]
 
-        print("Starting MCell ... create start_time.txt file:")
-        with open(os.path.join(os.path.dirname(bpy.data.filepath),"start_time.txt"), "w") as start_time_file:
+        print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+        with open(os.path.join(project_files_path(),"start_time.txt"), "w") as start_time_file:
             start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
         commands = []
@@ -392,11 +582,9 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
                 simulation_process = processes_list[
                     run_sim.active_process_index]
 
-                print("Starting MCell ... create start_time.txt file:")
-                with open(os.path.join(os.path.dirname(bpy.data.filepath),
-                          "start_time.txt"), "w") as start_time_file:
-                    start_time_file.write(
-                        "Started simulation at: " + (str(time.ctime())) + "\n")
+                print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+                with open(os.path.join(project_files_path(),"start_time.txt"), "w") as start_time_file:
+                    start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
                 # We have to create a new subprocess that in turn creates a
                 # multiprocessing pool, instead of directly creating it here,
@@ -444,6 +632,108 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
         run_sim.status = status
 
         return {'FINISHED'}
+
+
+
+
+class MCELL_OT_percentage_done_timer(bpy.types.Operator):
+    """Update the MCell job list periodically to show percentage done"""
+    bl_idname = "mcell.percentage_done_timer"
+    bl_label = "Modal Timer Operator"
+    bl_options = {'REGISTER'}
+
+    _timer = None
+
+    def modal(self, context, event):
+        # print ( "-=-=-=-=" + (50 * "-=" ) + "-" )
+        if event.type == 'TIMER':
+            task_len = len(cellblender.simulation_queue.task_dict)  # This may not be right since it may include completed tasks!!!
+            task_ctr = 0
+            mcell = context.scene.mcell
+            processes_list = mcell.run_simulation.processes_list
+            for simulation_process in processes_list:
+                #if not mcell.run_simulation.save_text_logs:
+                #    return {'CANCELLED'}
+                pid = get_pid(simulation_process)
+                seed = int(simulation_process.name.split(',')[1].split(':')[1])
+                q_item = cellblender.simulation_queue.task_dict[pid] # q_item is a dictionary with stdout,stderr,status,args,cmd,process,bl_text
+                percent = None
+                if 'output' in q_item:
+                    output_lines = q_item['output']
+                    n = len(output_lines)
+                    last_iter = total_iter = 0
+                    for i in reversed(range(n)):
+                        l = output_lines[i]
+                        if l.startswith("Iterations"):
+                            last_iter = int(l.split()[1])
+                            total_iter = int(l.split()[3])
+                            percent = (last_iter/total_iter)*100
+                            break
+                    if (last_iter == total_iter) and (total_iter != 0):
+                        task_ctr += 1
+
+                    global accumulate_text
+                    if accumulate_text:
+                        global screen_display_lines
+                        screen_display_lines[str(pid)] = [ l.strip() for l in output_lines ]
+                        screen_display_lines[str(pid)].reverse() # Reverse since they'll be drawn from the bottom up
+
+                """
+                print ( "q_item.keys() " + str(q_item.keys()) )
+                stdout_txt = ""
+                if False and ('stdout' in q_item) and (q_item['stdout'] != None):
+                    # print ( "Type of stdout = " + str(type(q_item['stdout'])) )
+                    if type(q_item['stdout']) == type(b'ab'):
+                        stdout_txt = "" + q_item['stdout'].decode('utf-8')
+                        print ( "Copied a bytes object to stdout, len(stdout) = " + str(len(stdout_txt)) )
+                    elif type(q_item['stdout']) == type('ab'):
+                        stdout_txt = "" + q_item['stdout']
+                        print ( "Copied a string object to stdout, len(stdout) = " + str(len(stdout_txt)) )
+                    else:
+                        stdout_txt = str(q_item['stdout'])
+                        print ( "Copied an object to stdout, len(stdout) = " + str(len(stdout_txt)) )
+                elif q_item['bl_text'] != None:
+                    stdout_txt = q_item['bl_text'].as_string()
+                if (stdout_txt != None):
+                    last_iter = total_iter = 0
+                    for i in reversed(stdout_txt.split("\n")):
+                        if i.startswith("Iterations"):
+                            last_iter = int(i.split()[1])
+                            total_iter = int(i.split()[3])
+                            percent = (last_iter/total_iter)*100
+                            break
+                    if (last_iter == total_iter) and (total_iter != 0):
+                        task_ctr += 1
+                """
+                if percent is None:
+                    simulation_process.name = "PID: %d, Seed: %d" % (pid, seed)
+                else:
+                    simulation_process.name = "PID: %d, Seed: %d, %d%%" % (pid, seed, percent)
+
+            # just a silly way of forcing a screen update. ¯\_(ツ)_/¯
+            color = context.user_preferences.themes[0].view_3d.space.gradients.high_gradient
+            color.h += 0.01
+            color.h -= 0.01
+            # if every MCell job is done, quit updating the screen
+            if task_len == task_ctr:
+                self.cancel(context)
+                return {'CANCELLED'}
+
+        return {'PASS_THROUGH'}
+
+    def execute(self, context):
+        print ( "Inside MCELL_OT_percentage_done_timer.execute with context = " + str(context) )
+        print ( "Inside MCELL_OT_percentage_done_timer.execute with mcell = " + str(context.scene.mcell) )
+        run_sim = context.scene.mcell.run_simulation
+        delay = run_sim.text_update_timer_delay   # this is how often we should update this in seconds
+        wm = context.window_manager
+        self._timer = wm.event_timer_add(delay, context.window)
+        wm.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
+
+    def cancel(self, context):
+        wm = context.window_manager
+        wm.event_timer_remove(self._timer)
 
 
 class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
@@ -606,8 +896,8 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                       run_sim.active_process_index = len(run_sim.processes_list) - 1
                       simulation_process = processes_list[run_sim.active_process_index]
 
-                      print("Starting MCell ... create start_time.txt file:")
-                      with open(os.path.join(os.path.dirname(bpy.data.filepath),"start_time.txt"), "w") as start_time_file:
+                      print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+                      with open(os.path.join(project_files_path(),"start_time.txt"), "w") as start_time_file:
                           start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
                       # Log filename will be log.year-month-day_hour:minute_seed.txt
@@ -739,10 +1029,9 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
                 run_sim.active_process_index = len(run_sim.processes_list) - 1
                 simulation_process = processes_list[run_sim.active_process_index]
 
-                print("Starting MCell ... create start_time.txt file:")
-                with open(os.path.join(os.path.dirname(bpy.data.filepath),"start_time.txt"), "w") as start_time_file:
+                print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+                with open(os.path.join(project_files_path(),"start_time.txt"), "w") as start_time_file:
                     start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
-
 
                 # We have to create a new subprocess that assigns jobs to nodes in the SGE
                 print ( "Running subprocess with:" +
@@ -877,11 +1166,9 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
                 simulation_process = processes_list[
                     run_sim.active_process_index]
 
-                print("Starting MCell ... create start_time.txt file:")
-                with open(os.path.join(os.path.dirname(bpy.data.filepath),
-                          "start_time.txt"), "w") as start_time_file:
-                    start_time_file.write(
-                        "Started simulation at: " + (str(time.ctime())) + "\n")
+                print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+                with open(os.path.join(project_files_path(), "start_time.txt"), "w") as start_time_file:
+                    start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
                 # We have to create a new subprocess that in turn creates a
                 # multiprocessing pool, instead of directly creating it here,
@@ -910,67 +1197,6 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
         run_sim.status = status
 
         return {'FINISHED'}
-
-
-class MCELL_OT_percentage_done_timer(bpy.types.Operator):
-    """Update the MCell job list periodically to show percentage done"""
-    bl_idname = "mcell.percentage_done_timer"
-    bl_label = "Modal Timer Operator"
-    bl_options = {'REGISTER'}
-
-    _timer = None
-
-    def modal(self, context, event):
-        if event.type == 'TIMER':
-            task_len = len(cellblender.simulation_queue.task_dict)
-            task_ctr = 0
-            mcell = context.scene.mcell
-            processes_list = mcell.run_simulation.processes_list
-            for simulation_process in processes_list:
-                if not mcell.run_simulation.save_text_logs:
-                    return {'CANCELLED'}
-                pid = get_pid(simulation_process)
-                seed = int(simulation_process.name.split(',')[1].split(':')[1])
-                q_item = cellblender.simulation_queue.task_dict[pid]
-                percent = None
-                if q_item['bl_text'] != None:
-                    stdout_txt = q_item['bl_text'].as_string()
-                    last_iter = total_iter = 0
-                    for i in reversed(stdout_txt.split("\n")):
-                        if i.startswith("Iterations"):
-                            last_iter = int(i.split()[1])
-                            total_iter = int(i.split()[3])
-                            percent = (last_iter/total_iter)*100
-                            break
-                    if (last_iter == total_iter) and (total_iter != 0):
-                        task_ctr += 1
-                if percent is None:
-                    simulation_process.name = "PID: %d, Seed: %d" % (pid, seed)
-                else:
-                    simulation_process.name = "PID: %d, Seed: %d, %d%%" % (pid, seed, percent)
-
-            # just a silly way of forcing a screen update. ¯\_(ツ)_/¯
-            color = context.user_preferences.themes[0].view_3d.space.gradients.high_gradient
-            color.h += 0.01
-            color.h -= 0.01
-            # if every MCell job is done, quit updating the screen
-            if task_len == task_ctr:
-                self.cancel(context)
-                return {'CANCELLED'}
-
-        return {'PASS_THROUGH'}
-
-    def execute(self, context):
-        wm = context.window_manager
-        # this is how often we should update this in seconds
-        secs = 0.5
-        self._timer = wm.event_timer_add(secs, context.window)
-        wm.modal_handler_add(self)
-        return {'RUNNING_MODAL'}
-
-    def cancel(self, context):
-        wm = context.window_manager
-        wm.event_timer_remove(self._timer)
 
 
 class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
@@ -1039,11 +1265,9 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                   simulation_process = processes_list[
                       run_sim.active_process_index]
 
-                  print("Starting MCell ... create start_time.txt file:")
-                  with open(os.path.join(os.path.dirname(bpy.data.filepath),
-                            "start_time.txt"), "w") as start_time_file:
-                      start_time_file.write(
-                          "Started simulation at: " + (str(time.ctime())) + "\n")
+                  print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+                  with open(os.path.join(project_files_path(), "start_time.txt"), "w") as start_time_file:
+                      start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
                   # Log filename will be log.year-month-day_hour:minute_seed.txt
                   # (e.g. log.2013-03-12_11:45_1.txt)
@@ -1192,7 +1416,8 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
         if len(status) == 0:
             print ( "Update start time" )
 
-            with open(os.path.join(os.path.dirname(bpy.data.filepath), "start_time.txt"), "w") as start_time_file:
+            print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+            with open(os.path.join(project_files_path(), "start_time.txt"), "w") as start_time_file:
                 start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
             mcell.run_simulation.last_simulation_run_time = str(time.time())
@@ -1932,6 +2157,7 @@ class MCell_UL_computer_item ( bpy.types.UIList ):
           col.prop ( item, "selected", text="" )
 
 
+
 class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     enable_python_scripting = BoolProperty ( name='Enable Python Scripting', default=False )  # Intentionally not in the data model
     sge_host_name = StringProperty ( default="", description="Name of Grid Engine Scheduler" )
@@ -1993,10 +2219,12 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     python_scripting_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     python_initialize_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
-    save_text_logs = BoolProperty ( name='Save Text Logs', default=True, description="Create a text log for each run" )
+    save_text_logs = BoolProperty ( name='Save Text Logs', default=False, description="Create a text log for each run" )
 
     # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
+
+    text_update_timer_delay = FloatProperty ( name='dt', default=0.2, description="Text update timer delay" )
 
     simulation_engine_and_run_enum = [
          ('SWEEP_QUEUE', "MCell Local", ""),
@@ -2391,6 +2619,21 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                         row = layout.row()
                         row.operator("mcell.kill_simulation")
                         row.operator("mcell.kill_all_simulations")
+
+                    row = layout.row()
+                    col = row.column()
+                    col.operator("mcell.show_text_overlay", icon='RESTRICT_VIEW_OFF')
+                    col = row.column()
+                    col.operator("mcell.hide_text_overlay", icon='RESTRICT_VIEW_ON')
+                    col = row.column()
+                    col.operator("mcell.page_overlay_hm")
+                    col = row.column()
+                    col.operator("mcell.page_overlay_up", icon='TRIA_UP')
+                    col = row.column()
+                    col.operator("mcell.page_overlay_dn", icon='TRIA_DOWN')
+                    col = row.column()
+                    col.prop ( self, "text_update_timer_delay" )
+
 
                 else:
 

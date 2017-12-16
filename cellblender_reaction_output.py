@@ -49,7 +49,7 @@ from . import parameter_system
 from . import cellblender_release
 from . import cellblender_utils
 from . import cellblender_pbc
-from cellblender.cellblender_utils import mcell_files_path, get_python_path
+from cellblender.cellblender_utils import project_files_path, mcell_files_path, get_python_path
 
 
 # We use per module class registration/unregistration
@@ -390,8 +390,7 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                             #print("Candidate file list for %s:" % (file_name))
                             #print("  ", candidate_file_list)
                             # Use the start_time.txt file to find files modified since MCell was started
-                            start_time = os.stat(os.path.join(os.path.dirname(
-                                bpy.data.filepath), "start_time.txt")).st_mtime
+                            start_time = os.stat(os.path.join(project_files_path(), "start_time.txt")).st_mtime
                             # This file is both in the list and newer than the run time for MCell
                             candidate_file_list = [ffn for ffn in candidate_file_list if os.stat(ffn).st_mtime >= start_time]
 

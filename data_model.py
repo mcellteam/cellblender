@@ -294,7 +294,7 @@ try:
             self.start()
 
 
-        current_data_model = None
+        browser_data_model = None
 
         def load_data_model(self):
             if 'mcell' in bpy.context.scene:
@@ -304,7 +304,7 @@ try:
                         self.tree.delete ( self.tree.get_children() )
                     root_id = self.tree.insert ( '', 'end', text='Data_Model', values=[""], open=True, tags='d')
                     self.build_tree_from_data_model ( root_id, "mcell", dm )
-                    self.current_data_model = { 'mcell' : dm }
+                    self.browser_data_model = { 'mcell' : dm }
 
 
         def set_copy_as_one_line(self):
@@ -372,7 +372,7 @@ try:
 
             value = ""
             try:
-                dm = self.current_data_model   # Copy to local name "dm" since that's what's used in expr
+                dm = self.browser_data_model   # Copy to local name "dm" since that's what's used in expr
                 value = eval(expr)
                 if self.copy_with_pretty_print:
                     value = pprint.pformat ( value, indent=4, width=40 ) + "\n"

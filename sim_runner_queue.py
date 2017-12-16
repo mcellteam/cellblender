@@ -31,7 +31,6 @@ Two main classes are defined:
 '''
 
 
-
 # class for managing stdout and stderr streams of a running task wrapped by run_wrapper.py
 class OutputQueue:
   def __init__(self):
@@ -47,12 +46,14 @@ class OutputQueue:
     pipe.close()
 
   # Get strings found in the out_q or err_q and write to sys.stdout or sys.stderr, also copy to a bl_text if not None)
-  def write_output(self, get, pipe, bl_text=None, e_bl_text_quit=None):
+  def write_output(self, get, pipe, output_list=None, bl_text=None, e_bl_text_quit=None):
     if bl_text != None:
       import bpy
     for line in iter(get, None):
       pipe.write(line)
       pipe.flush()
+      if output_list != None:
+        output_list.append ( line )
       if bl_text != None:
         bl_text_quit = False
         if e_bl_text_quit != None:
@@ -67,7 +68,7 @@ class OutputQueue:
 
   # In passthrough mode, set up threadworkers and queues to manage stdout and stderr of task and send command string and args to run_wrapper.py process
   # Otherwise just do proc.communicate() and capture stdout and stderr upon command completion (possibly broken functionality?)
-  def run_proc(self, proc, arg_in=None, passthrough=True, bl_text=None, e_bl_text_quit=None):
+  def run_proc(self, proc, arg_in=None, passthrough=True, output_list=None, bl_text=None, e_bl_text_quit=None):
 
     if bl_text != None:
       import bpy
@@ -85,11 +86,11 @@ class OutputQueue:
           )
 
       stdout_writer_thread = threading.Thread(
-          target=self.write_output, args=(self.out_q.get, sys.stdout, bl_text, e_bl_text_quit)
+          target=self.write_output, args=(self.out_q.get, sys.stdout, output_list, bl_text, e_bl_text_quit)
           )
 
       stderr_writer_thread = threading.Thread(
-          target=self.write_output, args=(self.err_q.get, sys.stderr, bl_text, e_bl_text_quit)
+          target=self.write_output, args=(self.err_q.get, sys.stderr, output_list, bl_text, e_bl_text_quit)
           )
 
       for t in (stdout_reader_thread, stderr_reader_thread, stdout_writer_thread, stderr_writer_thread):
@@ -168,7 +169,8 @@ class SimQueue:
       out_q = OutputQueue()
 #      sys.stdout.write('sending:  {0}\n'.format(cmd).encode().decode())
       task['status'] = 'running'
-      rc, res = out_q.run_proc(process, arg_in=[cmd, args], passthrough=self.notify, bl_text=bl_t, e_bl_text_quit=self.evnt_bl_text_quit)
+      self.task_dict[pid]['output'] = []
+      rc, res = out_q.run_proc(process, arg_in=[cmd, args], passthrough=self.notify, output_list=self.task_dict[pid]['output'], bl_text=bl_t, e_bl_text_quit=self.evnt_bl_text_quit)
       self.task_dict[pid]['stdout'] = res[0]
       self.task_dict[pid]['stderr'] = res[1]
 #      self.task_dict[pid]['text'].write(res[0])
@@ -200,6 +202,7 @@ class SimQueue:
     self.task_dict[pid]['status'] = 'queued'
     self.task_dict[pid]['stdout'] = b''
     self.task_dict[pid]['stderr'] = b''
+    self.task_dict[pid]['output'] = []
     if make_texts:
       task_name = 'task_%d_output' % pid
       bl_t = bpy.data.texts.new ( task_name )
