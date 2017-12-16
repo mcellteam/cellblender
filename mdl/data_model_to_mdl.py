@@ -786,6 +786,7 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
             #  variables which will be in the user's environment when they run:
             #
             #     frame_number
+            #     dynamic
             #     time_step
             #     points[]
             #     faces[]
@@ -817,11 +818,13 @@ def write_mdl ( dm, file_name, scene_name='Scene' ):
                 # So if we're here, that means ALL objects should be written as dynamic
                 if   True   or obj['dynamic']:
                     # print ( "  Frame " + str(frame_number) + ", Saving dynamic geometry for object " + obj['name'] + " with script \"" + obj['script_name'] + "\"" )
-                    points = []            # The list "points" is expected by the user's script
-                    faces = []             # The list "faces" is expected by the user's script
-                    regions_dict = {}      # The dict "regions_dict" is expected by the user's script
-                    region_props = {}      # The dict "region_props" is expected by the user's script
-                    origin = [0,0,0]       # The list "origin" is expected by the user's script
+                    #frame_number             # The name "frame_number" may be expected by the user's script if it can also generate dynamic geometry
+                    dynamic = obj['dynamic']  # The script may need to know this to ignore or use the frame number
+                    points = []               # The list "points" is expected by the user's script
+                    faces = []                # The list "faces" is expected by the user's script
+                    regions_dict = {}         # The dict "regions_dict" is expected by the user's script
+                    region_props = {}         # The dict "region_props" is expected by the user's script
+                    origin = [0,0,0]          # The list "origin" is expected by the user's script
 
                     # print ( "data_model['mcell'].keys() = " + str(data_model['mcell'].keys()) )
 
@@ -1223,11 +1226,14 @@ def write_static_geometry ( objs, geom, dm, f ):
               # Generate this object's MDL from a script
 
               # print ( "  Saving static geometry for object " + obj['name'] + " with script \"" + obj['script_name'] + "\"" )
-              points = []            # The list "points" is expected by the user's script
-              faces = []             # The list "faces" is expected by the user's script
-              regions_dict = {}      # The dict "regions_dict" is expected by the user's script
-              region_props = {}      # The dict "region_props" is expected by the user's script
-              origin = [0,0,0]       # The list "origin" is expected by the user's script
+
+              frame_number = -1         # The name "frame_number" may be expected by the user's script if it can also generate dynamic geometry
+              dynamic = obj['dynamic']  # The script may need to know this to ignore or use the frame number
+              points = []               # The list "points" is expected by the user's script
+              faces = []                # The list "faces" is expected by the user's script
+              regions_dict = {}         # The dict "regions_dict" is expected by the user's script
+              region_props = {}         # The dict "region_props" is expected by the user's script
+              origin = [0,0,0]          # The list "origin" is expected by the user's script
 
               # print ( "data_model['mcell'].keys() = " + str(data_model['mcell'].keys()) )
 

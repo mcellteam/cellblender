@@ -8,9 +8,11 @@ to each platform and are not part of what's downloaded when a repository is clon
 
  - Add MCellR support to the "MCell Local" Engine/Runner.
  - Opening a parameter-driven swept geometry blend file doesn't display the right geometry.
- - In the Objects panel: selecting "Display From: Exported Files" doesn't work.
 
 === Resolved Issues ===
 
+ - In the Objects panel: selecting "Display From: Exported Files" doesn't work.
+     This option doesn't make sense for static scripted objects.
+     The logic was re-worked to produce sensible options for this case.
  - Display engine output (text) to the 3D view during run.
  - Move the "start_time.txt" file into the <project>_files directory.

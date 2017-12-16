@@ -860,8 +860,10 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                         row.operator("mcell.scripting_refresh", icon='FILE_REFRESH', text="")
                         row = box.row()
                         row.prop ( self.object_list[self.active_obj_index], "dynamic", text="Dynamic" )
-                        row = box.row()
-                        row.prop ( self.object_list[self.active_obj_index], "dynamic_display_source" )
+                        if self.object_list[self.active_obj_index].dynamic:
+                            # Only allow this option for dynamic objects
+                            row = box.row()
+                            row.prop ( self.object_list[self.active_obj_index], "dynamic_display_source" )
 
 
 
@@ -1334,6 +1336,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
           f.close()
         except FileNotFoundError as ioe:
             # User has probably dragged off the time line, just ignore it
+            print ( "Exception: File not found: " + str(file_name) )
             pass
         except Exception as e:
             print ( "Exception reading MDL: " + str(e) )
@@ -1410,13 +1413,12 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     origin = [0,0,0]       # The list "origin" is expected by the user's script
 
                     #if (obj.dynamic_display_source == 'script') and (len(obj.script_name) > 0):
-                    if (obj.dynamic_display_source == 'script') and (len(obj.script_name) > 0):
+                    if (not obj.dynamic) or ( (obj.dynamic_display_source == 'script') and (len(obj.script_name) > 0) ):
+                        # Notes:
+                        #  A non-dynamic script object can never be read from dynamic geometry files because they aren't created!!
+
                         frame_number = cur_frame     # The name "frame_number" is expected by the user's script
-                        # The following checking was added during debug, but might not be needed for production
-                        #if obj.script_name == None:
-                        #    print ( "Error: script name is none" )
-                        #elif not (obj.script_name in bpy.data.texts):
-                        #    print ( "Error: " + obj.script_name + " is not in bpy.data.texts" )
+                        dynamic = obj.dynamic        # Let's the script know if it is dynamic or not
 
                         # Create a list of (parameter,value) pairs to over-write the data model for this point
                         # Note that the 'enum_choice' field of each choice may not exist (phantom RNA props!!)
@@ -1466,12 +1468,12 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                         #print ( "locals = " + str(locals()) )
                         exec ( script_text, globals(), locals() )
 
-                    elif len(obj.script_name) > 0:
-                        # print ( "Reading dynamic geometry files from: " + str(path_to_dg_files) )
+                    elif (obj.dynamic_display_source == 'files'):
                         file_name = "%s_frame_%d.mdl"%(obj.name,cur_frame)
                         # print ( "Reading from " + file_name )
                         full_file_name = os.path.join(path_to_dg_files,file_name)
                         self.read_from_regularized_mdl ( file_name=full_file_name, points=points, faces=faces, origin=origin, partitions=False, instantiate=False )
+                        # print ( "faces = " + str(faces) )
 
                     vertices = []
                     for point in points:
