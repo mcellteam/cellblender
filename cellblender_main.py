@@ -48,6 +48,8 @@ from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
 
 from bpy.app.handlers import persistent
 
+import cellblender
+
 from . import cellblender_examples
 from . import cellblender_preferences
 from . import cellblender_project
@@ -340,9 +342,18 @@ class CBM_OT_refresh_operator(bpy.types.Operator):
     bl_options = {'REGISTER'}
 
     def execute(self, context):
-        print ( "Refreshing/Reloading the Molecules and Geometry ..." )
+        print ( "Refreshing/Reloading the Parameters, Molecules, and Geometry ..." )
+
+        mcell = context.scene.mcell
+        if cellblender.current_data_model == None:
+            # Build the entire data model
+            cellblender.current_data_model = { 'mcell': mcell.build_data_model_from_properties ( context ) }
+        else:
+            # Only refresh the parameters
+            cellblender.current_data_model['mcell']['parameter_system'] = mcell.parameter_system.build_data_model_from_properties(context)
+
         bpy.ops.mcell.update_data_layout()
-        context.scene.mcell.model_objects.update_scene ( context.scene, force=True )
+        mcell.model_objects.update_scene ( context.scene, force=True )
         bpy.ops.mcell.read_viz_data()
         return {'FINISHED'}
 
