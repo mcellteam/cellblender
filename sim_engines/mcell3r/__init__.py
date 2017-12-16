@@ -53,20 +53,12 @@ def postprocess():
 
   mcellr_react_dir = os.path.join(project_files_dir, "output_data")
 
-  react_dir = os.path.join(project_files_dir, "output_data", "react_data")
+  react_dir = os.path.join(mcellr_react_dir, "react_data")
 
   if os.path.exists(react_dir):
       shutil.rmtree(react_dir,ignore_errors=True)
   if not os.path.exists(react_dir):
       os.makedirs(react_dir)
-
-  react_dir = os.path.join(project_files_dir, "output_data", "react_data")
-
-  if os.path.exists(react_dir):
-      shutil.rmtree(react_dir,ignore_errors=True)
-  if not os.path.exists(react_dir):
-      os.makedirs(react_dir)
-
 
   for run_seed in range(start_seed, end_seed+1):
     print ( "  Postprocessing for seed " + str(run_seed) )
@@ -146,12 +138,15 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   # Build the final shared path that will be prepended to all other paths
   final_shared_path = parameter_dictionary['Shared Path']['val'].strip()
+
+  # get absolute path to cellblender/extensions
+  cb_path = os.path.dirname(__file__)      # Gets the path to cellblender/sim_engines/mcell3r
+  cb_path = os.path.split(cb_path)[0]      # Gets the path to cellblender/sim_engines
+  cb_path = os.path.split(cb_path)[0]      # Gets the path to cellblender
+  cb_path = os.path.join ( cb_path, "extensions" )   # Should be path to cellblender/extensions
+
   if not final_shared_path.startswith(os.path.sep):
     # Not absolute, so prepend the cellblender/extensions path
-    cb_path = os.path.dirname(__file__)      # Gets the path to cellblender/sim_engines/mcell3r
-    cb_path = os.path.split(cb_path)[0]      # Gets the path to cellblender/sim_engines
-    cb_path = os.path.split(cb_path)[0]      # Gets the path to cellblender
-    cb_path = os.path.join ( cb_path, "extensions" )   # Should be path to cellblender/extensions
     final_shared_path = os.path.join(cb_path,final_shared_path)
   final_shared_path = os.path.abspath(final_shared_path)
 
@@ -188,6 +183,18 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   output_data_dir = os.path.join ( project_dir, "output_data" )
   makedirs_exist_ok ( output_data_dir, exist_ok=True )
+
+  react_data_dir = os.path.join(output_data_dir, "react_data")
+  if os.path.exists(react_data_dir):
+      shutil.rmtree(react_data_dir,ignore_errors=True)
+  if not os.path.exists(react_data_dir):
+      os.makedirs(react_data_dir)
+
+  viz_data_dir = os.path.join(output_data_dir, "viz_data")
+  if os.path.exists(viz_data_dir):
+      shutil.rmtree(viz_data_dir,ignore_errors=True)
+  if not os.path.exists(viz_data_dir):
+      os.makedirs(viz_data_dir)
 
   time_step = '1e-6'  # This is needed as a default for plotting
 
@@ -424,13 +431,13 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   data_model_to_mdl_3r.write_viz_out(data_model['viz_output'], data_model['define_molecules'], f)
   f.close()
 
-  fs = data_model['simulation_control']['start_seed']
-  ls = data_model['simulation_control']['end_seed']
+  fseed = data_model['simulation_control']['start_seed']
+  lseed = data_model['simulation_control']['end_seed']
 
   global start_seed
   global end_seed
-  start_seed = int(fs)
-  end_seed = int(ls)
+  start_seed = int(fseed)
+  end_seed = int(lseed)
 
   engine_path = os.path.dirname(__file__)
 
@@ -458,11 +465,17 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
 
   # That last dictionary describes the directory structure that CellBlender expects to find on the disk
 
+  # execute mdlr2mdl.py to generate MDL from MDLR
+  mdlr_cmd = os.path.join ( cb_path, 'mdlr2mdl.py' )
+  mdlr_args = [ cellblender.python_path, mdlr_cmd, '-ni', 'Scene.mdlr', '-o', 'Scene' ]
+  wd = output_data_dir
+  p = subprocess.Popen(mdlr_args, cwd = wd)
+
   # For now return no commands at all since the run has already taken place
   command_list = []
 
   command_dict = { 'cmd': cellblender.python_path,
-                   'args': [ os.path.join(shared_path, "mdlr2mdl.py"), '-ni', 'Scene.mdlr', '-o', 'Scene' ],
+                   'args': [ os.path.join(cb_path, "mcell3r.py"), '-s', fseed, '-r', 'Scene.mdlr_rules.xml', '-m', 'Scene.main.mdl' ],
                    'wd': output_data_dir
                  }
 
