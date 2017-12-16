@@ -338,6 +338,7 @@ def run_generic_runner (context, sim_module):
         simulation_process = processes_list[mcell.run_simulation.active_process_index]
 
         print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+        engine_manager.makedirs_exist_ok ( project_files_path(), exist_ok=True )
         with open(os.path.join(project_files_path(),"start_time.txt"), "w") as start_time_file:
             start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
@@ -583,6 +584,7 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
                     run_sim.active_process_index]
 
                 print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+                engine_manager.makedirs_exist_ok ( project_files_path(), exist_ok=True )
                 with open(os.path.join(project_files_path(),"start_time.txt"), "w") as start_time_file:
                     start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
@@ -887,6 +889,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                 for run_cmd in run_cmd_list:
                     print ( "  " + str(run_cmd) )
 
+                bionetgen_mode = data_model_to_mdl.requires_mcellr ( {'mcell':dm} )
 
                 if run_sim.run_requested:
                     processes_list = run_sim.processes_list
@@ -897,6 +900,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                       simulation_process = processes_list[run_sim.active_process_index]
 
                       print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+                      engine_manager.makedirs_exist_ok ( project_files_path(), exist_ok=True )
                       with open(os.path.join(project_files_path(),"start_time.txt"), "w") as start_time_file:
                           start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
@@ -918,10 +922,36 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                       elif log_file_option == 'console':
                           log_file = None
 
-                      mdl_filename = '%s.main.mdl' % (run_cmd[2])
-                      mcell_args = '-seed %d %s' % (run_cmd[5], mdl_filename)
-                      make_texts = run_sim.save_text_logs
-                      proc = cellblender.simulation_queue.add_task(run_cmd[0], mcell_args, run_cmd[1], make_texts)
+                      if bionetgen_mode:
+                          # execute mdlr2mdl.py to generate MDL from MDLR
+                          ext_path = os.path.dirname(run_cmd[0])
+                          mdlr_cmd = os.path.join ( ext_path, 'mdlr2mdl.py' )
+                          mdlr_args = [ cellblender.python_path, mdlr_cmd, '-ni', 'Scene.mdlr', '-o', 'Scene' ]
+                          wd = run_cmd[1]
+                          print ( "\n\nRunning " + str(mdlr_args) + " from " + str(wd) )
+                          #p = subprocess.Popen(mdlr_args, cwd = wd)
+                          # The previous seemed to fail. Try this:
+                          with subprocess.Popen(mdlr_args, cwd=wd, stdout=subprocess.PIPE) as pre_proc:
+                              print ( "\n\nAfter with:\n" + str(pre_proc.stdout.read().decode('utf-8')) + "\n\n" )
+                          print ( "Done " + str(mdlr_args) + " from " + str(wd) )
+
+                          # Passing mcellr_args as a list seemed to cause problems ... try as a string instead ...
+                          # mcellr_args = [ os.path.join(ext_path, "mcell3r.py"), '-s', str(run_cmd[5]), '-r', 'Scene.mdlr_rules.xml', '-m', 'Scene.main.mdl' ]
+                          mcellr_args = os.path.join(ext_path, "mcell3r.py") + ' -s ' + str(run_cmd[5]) + ' -r ' + 'Scene.mdlr_rules.xml' + ' -m ' + 'Scene.main.mdl'
+
+                          make_texts = run_sim.save_text_logs
+                          print ( 100 * "@" )
+                          print ( "Add Task:" + cellblender.python_path + " args:" + str(mcellr_args) + " wd:" + str(run_cmd[1]) + " txt:" + str(make_texts) )
+                          proc = cellblender.simulation_queue.add_task(cellblender.python_path, mcellr_args, run_cmd[1], make_texts)
+                          print ( 100 * "@" )
+                      else:
+                          mdl_filename = '%s.main.mdl' % (run_cmd[2])
+                          mcell_args = '-seed %d %s' % (run_cmd[5], mdl_filename)
+                          make_texts = run_sim.save_text_logs
+                          print ( 100 * "@" )
+                          print ( "Add Task:" + run_cmd[0] + " args:" + str(mcell_args) + " wd:" + str(run_cmd[1]) + " txt:" + str(make_texts) )
+                          proc = cellblender.simulation_queue.add_task(run_cmd[0], mcell_args, run_cmd[1], make_texts)
+                          print ( 100 * "@" )
 
                       self.report({'INFO'}, "Simulation Running")
 
@@ -1030,6 +1060,7 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
                 simulation_process = processes_list[run_sim.active_process_index]
 
                 print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+                engine_manager.makedirs_exist_ok ( project_files_path(), exist_ok=True )
                 with open(os.path.join(project_files_path(),"start_time.txt"), "w") as start_time_file:
                     start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
@@ -1167,6 +1198,7 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
                     run_sim.active_process_index]
 
                 print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+                engine_manager.makedirs_exist_ok ( project_files_path(), exist_ok=True )
                 with open(os.path.join(project_files_path(), "start_time.txt"), "w") as start_time_file:
                     start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
@@ -1266,6 +1298,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                       run_sim.active_process_index]
 
                   print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+                  engine_manager.makedirs_exist_ok ( project_files_path(), exist_ok=True )
                   with open(os.path.join(project_files_path(), "start_time.txt"), "w") as start_time_file:
                       start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
@@ -1417,6 +1450,7 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
             print ( "Update start time" )
 
             print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
+            engine_manager.makedirs_exist_ok ( project_files_path(), exist_ok=True )
             with open(os.path.join(project_files_path(), "start_time.txt"), "w") as start_time_file:
                 start_time_file.write("Started simulation at: " + (str(time.ctime())) + "\n")
 
