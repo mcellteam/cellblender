@@ -932,6 +932,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                           #p = subprocess.Popen(mdlr_args, cwd = wd)
                           # The previous seemed to fail. Try this:
                           with subprocess.Popen(mdlr_args, cwd=wd, stdout=subprocess.PIPE) as pre_proc:
+                              pre_proc.wait()
                               print ( "\n\nAfter with:\n" + str(pre_proc.stdout.read().decode('utf-8')) + "\n\n" )
                           print ( "Done " + str(mdlr_args) + " from " + str(wd) )
 

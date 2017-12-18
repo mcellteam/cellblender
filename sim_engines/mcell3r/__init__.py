@@ -470,6 +470,7 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   mdlr_args = [ cellblender.python_path, mdlr_cmd, '-ni', 'Scene.mdlr', '-o', 'Scene' ]
   wd = output_data_dir
   p = subprocess.Popen(mdlr_args, cwd = wd)
+  p.wait()
 
   # For now return no commands at all since the run has already taken place
   command_list = []
