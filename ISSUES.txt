@@ -9,8 +9,14 @@ to each platform and are not part of what's downloaded when a repository is clon
  - Add MCellR support to the "MCell Local" Engine/Runner.
      This is partially implemented, and being tested.
      Should we default to hiding the "mol_surface_proxy" and "mol_volume_proxy" molecules?
+     Sometimes a model needs to be run twice for MCell to run (race condition in files?).
 
  - Opening a parameter-driven swept geometry blend file doesn't display the right geometry.
+
+ - Testing ... we need lots of test cases to test various combinations of features.
+   This is especially important for testing lots of features with MCellR.
+
+
 
 === Resolved Issues ===
 
