@@ -7,6 +7,9 @@ to each platform and are not part of what's downloaded when a repository is clon
 === Open Issues ===
 
  - Add MCellR support to the "MCell Local" Engine/Runner.
+     This is partially implemented, and being tested.
+     Should we default to hiding the "mol_surface_proxy" and "mol_volume_proxy" molecules?
+
  - Opening a parameter-driven swept geometry blend file doesn't display the right geometry.
 
 === Resolved Issues ===
