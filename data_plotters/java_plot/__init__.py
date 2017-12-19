@@ -82,6 +82,8 @@ def plot ( data_path, plot_spec, python_path=None ):
         for generic_param in page:
             if generic_param[0:2] == "f=":
                 java_plot_spec = java_plot_spec + " fxy=" + generic_param[2:]
+            elif generic_param[0:4] == "ppt=":
+                java_plot_spec = java_plot_spec + " name=" + generic_param[4:]
             elif generic_param[0:7] == "color=#":
                 java_plot_spec = java_plot_spec + " color=" + generic_param[7:]
 

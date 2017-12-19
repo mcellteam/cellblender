@@ -172,9 +172,9 @@ for page in plot_cmds:
             elif cmd[0:6] == "legend":
                 # print "legend command: " + cmd
                 legend = 0
-            elif cmd[0:2] == "n=":
+            elif cmd[0:4] == "ppt=":
                 # print "Name command: " + cmd
-                name = cmd[2:]
+                name = cmd[4:]
             elif cmd[0:2] == "f=":
                 # print "File command: " + cmd
                 fn = cmd[2:]

@@ -93,6 +93,9 @@ abstract class data_file {
 	public String getName() {
 		return name;
 	}
+	public String getFileName() {
+		return file_name;
+	}
 	public void setColor ( Color c ) {
 		color = c;
 	}
@@ -1156,6 +1159,7 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 	boolean fit_x = false;
 	boolean antialias = false;
 	boolean sample_numbers = false;
+	boolean show_file_names = false;
 	double scrollwheel_zoom_factor = 1.25;
 	
 	JMenu remove_menu = null;
@@ -1193,6 +1197,8 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 		  	show_menu.add ( mi = new JCheckBoxMenuItem("Antialiasing",antialias) );
 		  	mi.addActionListener(this);
 		  	show_menu.add ( mi = new JCheckBoxMenuItem("Sample Numbers",sample_numbers) );
+		  	mi.addActionListener(this);
+		  	show_menu.add ( mi = new JCheckBoxMenuItem("File Names",show_file_names) );
 		  	mi.addActionListener(this);
 		  	menu_bar.add ( show_menu );
 			JMenu set_menu = new JMenu("Set");
@@ -1351,6 +1357,15 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
       } catch (Exception ee) {
         System.out.println ( "Error parsing double from " + valstr );
       }
+		} else if (cmd.equalsIgnoreCase("File Names")) {
+			JCheckBoxMenuItem mi = (JCheckBoxMenuItem)(e.getSource());
+			if (mi.isSelected()) {
+				System.out.println ( "Show File Names On" );
+				show_file_names = true;
+			} else {
+				System.out.println ( "Show File Names Off" );
+				show_file_names = false;
+			}
 		} else if (cmd.equalsIgnoreCase("Full Range")) {
 			fit_x = true;
 		} else {
@@ -1695,11 +1710,17 @@ class DisplayPanel extends JPanel implements ActionListener,MouseListener,MouseW
 			}
 
 		  if (annotation) {
+		    String graph_name;
+		    if (show_file_names) {
+		      graph_name = f[p].getFileName();
+		    } else {
+		      graph_name = f[p].getName();
+		    }
         if (combined) {
 	        g.setColor ( f[p].color );
-  		  	g.drawString ( f[p].getName() + ": " + y_min + " < y < " + y_max, 10, 20*(p+1) );
+  		  	g.drawString ( graph_name + ": " + y_min + " < y < " + y_max, 10, 20*(p+1) );
         } else {
-  		  	g.drawString ( f[p].getName() + ": " + y_min + " < y < " + y_max, 10, 20 );
+  		  	g.drawString ( graph_name + ": " + y_min + " < y < " + y_max, 10, 20 );
   		  }
 		  }
 
@@ -1978,6 +1999,7 @@ public class PlotData extends JFrame implements WindowListener {
 
     if (args.length > 0) {
       Color next_color = null;
+      String curve_name = null;
       for (int arg=0; arg<args.length; arg++) {
         System.out.println ( "  Java Plotter argument " + arg + " = " + args[arg] );
         try {
@@ -2109,7 +2131,14 @@ public class PlotData extends JFrame implements WindowListener {
             } else {
               fxy.setColor ( next_color );
             }
+            if (curve_name != null) {
+              fxy.setName ( curve_name );
+            }
             dp.add_file ( fxy );
+            curve_name = null;
+          } else if ( (args[arg].length() > 5) && (args[arg].substring(0,5).equalsIgnoreCase("name=")) ) {
+            System.out.println ( "Curve Name: " + args[arg].substring(5) );
+            curve_name = args[arg].substring(5);
           } else if ( (args[arg].length() > 6) && (args[arg].substring(0,6).equalsIgnoreCase("color=")) ) {
             System.out.println ( "Setting Color to " + args[arg].substring(6) );
             try {

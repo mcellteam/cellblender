@@ -49,6 +49,8 @@ def plot(data_path, plot_spec, python_path=None):
         for generic_param in generic_params:
             if generic_param[0:2] == "f=":
                 plot_cmd.append(generic_param[2:])
+            elif generic_param[0:4] == "ppt=":
+                plot_cmd.append("-n=" + generic_param[4:])
 
         print ( "Plotting from: " + data_path )
         print ( "Plot Command:  " + " ".join(plot_cmd) )

@@ -233,6 +233,7 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                 counters = counters + "  " + level[0] + ":" + str(level[2])
               print ( " Counters = " + counters )
               run_path = ""
+              par_path = ""
               for level in data_layout:
                 if (level[0] == '/DIR'):
                   run_path = os.path.join ( level[1][0], run_path )
@@ -241,12 +242,19 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                 elif (level[0] ==  '/SEED'):
                   pass
                 else:
+                  # Build on to the run path (used for getting data)
                   run_path = os.path.join ( level[0] + "_index_" + str(level[2]), run_path )
+                  # Build on to the par path (used for displaying label)
+                  if len(par_path) > 0:
+                    par_path = "," + par_path
+                  par_path = level[0] + "=" + str(level[1][level[2]]) + par_path
               run_num += 1
 
               run_path = run_path.strip ( os.path.sep )
-              data_paths.append ( run_path )
+              # Each point in data_paths will contain a run_path and a parameter "path"
+              data_paths.append ( [ run_path, par_path ] )
               print ( "Run path = " + run_path )
+              print ( "Parameter Point for run is: " + par_path )
 
               # Increment the counters
               for level in data_layout:
@@ -295,7 +303,8 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
               run_num += 1
 
               run_path = run_path.strip ( os.path.sep )
-              data_paths.append ( run_path )
+              # Each point in data_paths will contain a run_path and a parameter "path"
+              data_paths.append ( [ run_path, run_path ] )
               print ( "Run path = " + run_path )
 
               # Increment the counters
@@ -315,13 +324,12 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                     # This counter did roll over, so go back to zero and continue to increment the next one
                     level[2] = 0
 
-
         else:
 
           # This is a pre-sweeping directory structure, so build a list containing a single item
 
           root_path = os.path.join(files_path, "react_data")
-          data_paths.append ( "" )
+          data_paths.append ( [ "", "" ] )
 
         # Plot the data via this module
         # print("Preparing to call %s" % (mod_name))
@@ -379,9 +387,9 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                         else:
                             # Prepend a search across all seeds for this file
                             file_name = os.path.join("seed_*", file_name)
-                            if len(data_path) > 0:
-                              print ( "glob of " + os.path.join(root_path, data_path, file_name) )
-                              candidate_file_list = glob.glob(os.path.join(root_path, data_path, file_name))
+                            if len(data_path[0]) > 0:
+                              print ( "glob of " + os.path.join(root_path, data_path[0], file_name) )
+                              candidate_file_list = glob.glob(os.path.join(root_path, data_path[0], file_name))
                             else:
                               print ( "glob of " + os.path.join(root_path, file_name) )
                               candidate_file_list = glob.glob(os.path.join(root_path, file_name))
@@ -400,6 +408,11 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
 
                             print ( "   Files path      = " + str(files_path) )
                             print ( "    Candidate file = " + str(ffn) )
+                            print ( "    Parameter Point = " + str(data_path[1]) )
+
+                            par_string = ""
+                            if len(data_path[1]) > 0:
+                              par_string = " ppt=" + data_path[1]
 
                             f = None
                             if rxn_output.rxn_or_mol == 'File':
@@ -447,13 +460,9 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                                 if first_pass:
                                     psep = plot_sep
                                     first_pass = False
-                                plot_spec_string = (
-                                    plot_spec_string + psep + color_string +
-                                    title_string + " f=" + f)
+                                plot_spec_string = (plot_spec_string + psep + color_string + title_string + par_string + " f=" + f)
                             else:
-                                plot_spec_string = (
-                                    plot_spec_string + plot_sep + color_string +
-                                    title_string + " f=" + f)
+                                plot_spec_string = (plot_spec_string + plot_sep + color_string + title_string + par_string + " f=" + f)
 
         plot_spec_string += " tf="+ReactionDataTmpFile.reactdata_tmpfile
         print("Plotting from", root_path)
