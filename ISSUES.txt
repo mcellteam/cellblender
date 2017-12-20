@@ -23,7 +23,7 @@ to each platform and are not part of what's downloaded when a repository is clon
  - Testing ... we need lots of test cases to test various combinations of features.
    This is especially important for testing lots of features with MCellR.
 
-
+ - The plot setting to always generate all files seems to be stuck on (MCellR only?).
 
 === Resolved Issues ===
 
