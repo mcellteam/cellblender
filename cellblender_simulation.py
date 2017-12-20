@@ -39,6 +39,7 @@ from bpy.app.handlers import persistent
 import array
 import glob
 import os
+import sys
 import random
 import re
 import subprocess
@@ -925,13 +926,20 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                       if bionetgen_mode:
                           # execute mdlr2mdl.py to generate MDL from MDLR
                           ext_path = os.path.dirname(run_cmd[0])
+
+                          my_env = {}
+                          if (sys.platform == 'darwin'):
+                            my_env['DYLD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
+                          else:
+                            my_env['LD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
+
                           mdlr_cmd = os.path.join ( ext_path, 'mdlr2mdl.py' )
                           mdlr_args = [ cellblender.python_path, mdlr_cmd, '-ni', 'Scene.mdlr', '-o', 'Scene' ]
                           wd = run_cmd[1]
                           print ( "\n\nRunning " + str(mdlr_args) + " from " + str(wd) )
                           #p = subprocess.Popen(mdlr_args, cwd = wd)
                           # The previous seemed to fail. Try this:
-                          with subprocess.Popen(mdlr_args, cwd=wd, stdout=subprocess.PIPE) as pre_proc:
+                          with subprocess.Popen(mdlr_args, env=my_env, cwd=wd, stdout=subprocess.PIPE) as pre_proc:
                               pre_proc.wait()
                               print ( "\n\nAfter with:\n" + str(pre_proc.stdout.read().decode('utf-8')) + "\n\n" )
                           print ( "Done " + str(mdlr_args) + " from " + str(wd) )
@@ -943,7 +951,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                           make_texts = run_sim.save_text_logs
                           print ( 100 * "@" )
                           print ( "Add Task:" + cellblender.python_path + " args:" + str(mcellr_args) + " wd:" + str(run_cmd[1]) + " txt:" + str(make_texts) )
-                          proc = cellblender.simulation_queue.add_task(cellblender.python_path, mcellr_args, run_cmd[1], make_texts)
+                          proc = cellblender.simulation_queue.add_task(cellblender.python_path, mcellr_args, run_cmd[1], make_texts, env=my_env)
                           print ( 100 * "@" )
                       else:
                           mdl_filename = '%s.main.mdl' % (run_cmd[2])

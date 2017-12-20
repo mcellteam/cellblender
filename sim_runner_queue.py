@@ -191,9 +191,9 @@ class SimQueue:
     with self.work_q.mutex:
       self.work_q.queue.clear()
 
-  def add_task(self,cmd,args,wd,make_texts=True):
+  def add_task(self,cmd,args,wd,make_texts=True,env=None):
     import bpy
-    process = sp.Popen([self.python_exec, self.run_wrapper, wd], bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+    process = sp.Popen([self.python_exec, self.run_wrapper, wd], env=env, bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
     pid = process.pid
     self.task_dict[pid] = {}
     self.task_dict[pid]['process'] = process
