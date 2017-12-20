@@ -522,13 +522,18 @@ def write_viz_out_mdlr3 ( vizout, mols, f ):
       f.write ( "\n" );
 
 def write_mdlr ( dm, file_name, scene_name='Scene' ):
+    # The file_name parameter will be something like:
+    #   <project>_files/mcell/output_data/Scene.main.mdl"
+    #   <project>_files/mcell/output_data/Par_x_index_n/Scene.main.mdl
+    #   <project>_files/mcell/output_data/Par_x_index_n/Par_y_index_n/Scene.main.mdl
+    print ( "write_mdlr called with file_name = \"" + str(file_name) + "\"" )
     output_detail = 20
     data_model = dm['mcell']
     print ( "DM: " + str(data_model.keys()) )
     # This function does essentially what the sim_engines/mcell3r/__init__.py file did
     # This function does not add any of the other functionality of write_mdl which called it
     # This function should eventually be removed if the writing of MDLR can be integrated with write_mdl
-    project_dir = os.path.dirname(os.path.dirname(file_name))
+    project_dir = os.path.dirname(file_name)
     print ( "project_dir = " + str(project_dir) )
 
     final_shared_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),"extensions")
@@ -544,7 +549,7 @@ def write_mdlr ( dm, file_name, scene_name='Scene' ):
     final_mcell_path = os.path.join(final_shared_path,"mcell")
     print ( "final_mcell_path = " + str(final_mcell_path) )
 
-    output_data_dir = os.path.join ( project_dir, "output_data" )
+    output_data_dir = project_dir
     makedirs_exist_ok ( output_data_dir, exist_ok=True )
 
     react_data_dir = os.path.join(output_data_dir, "react_data")

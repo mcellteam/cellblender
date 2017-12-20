@@ -306,14 +306,14 @@ def run_generic_runner (context, sim_module):
                 mcell.run_simulation.remove_append == 'remove'):
             shutil.rmtree(react_dir)
         if not os.path.exists(react_dir):
-            os.makedirs(react_dir)
+            os.makedirs(react_dir, exist_ok=True)
 
         viz_dir = os.path.join(project_dir, "viz_data")
         if (os.path.exists(viz_dir) and
                 mcell.run_simulation.remove_append == 'remove'):
             shutil.rmtree(viz_dir)
         if not os.path.exists(viz_dir):
-            os.makedirs(viz_dir)
+            os.makedirs(viz_dir, exist_ok=True)
 
         runner_input = "dm.txt"
         if "runner_input" in dir(sim_module):
@@ -562,7 +562,7 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
                 if (os.path.exists(sweep_dir) and run_sim.remove_append == 'remove'):
                     shutil.rmtree(sweep_dir)
                 if not os.path.exists(sweep_dir):
-                    os.makedirs(sweep_dir)
+                    os.makedirs(sweep_dir, exist_ok=True)
 
                 mcell_dm = mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
                 data_model.save_data_model_to_json_file ( mcell_dm, os.path.join(project_dir,"data_model.json") )
@@ -792,10 +792,10 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                         shutil.rmtree(out_dir)
 
                 if run_sim.export_requested and not os.path.exists(react_dir):
-                    os.makedirs(react_dir)
+                    os.makedirs(react_dir, exist_ok=True)
 
                 if run_sim.export_requested and not os.path.exists(viz_dir):
-                    os.makedirs(viz_dir)
+                    os.makedirs(viz_dir, exist_ok=True)
 
 
                 # This assumes "mcell.export_project" operator had been run:   base_name = mcell.project_settings.base_name
@@ -936,7 +936,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                           mdlr_cmd = os.path.join ( ext_path, 'mdlr2mdl.py' )
                           mdlr_args = [ cellblender.python_path, mdlr_cmd, '-ni', 'Scene.mdlr', '-o', 'Scene' ]
                           wd = run_cmd[1]
-                          print ( "\n\nRunning " + str(mdlr_args) + " from " + str(wd) )
+                          print ( "\n\nConverting MDLR to MDL by running " + str(mdlr_args) + " from " + str(wd) )
                           #p = subprocess.Popen(mdlr_args, cwd = wd)
                           # The previous seemed to fail. Try this:
                           with subprocess.Popen(mdlr_args, env=my_env, cwd=wd, stdout=subprocess.PIPE) as pre_proc:
@@ -1035,7 +1035,7 @@ class MCELL_OT_run_simulation_control_sweep_sge (bpy.types.Operator):
                 if (os.path.exists(sweep_dir) and run_sim.remove_append == 'remove'):
                     shutil.rmtree(sweep_dir)
                 if not os.path.exists(sweep_dir):
-                    os.makedirs(sweep_dir)
+                    os.makedirs(sweep_dir, exist_ok=True)
 
                 mcell_dm = mcell.build_data_model_from_properties ( context, geometry=True, scripts=True, dyn_geo=True )
                 data_model.save_data_model_to_json_file ( mcell_dm, os.path.join(project_dir,"data_model.json") )
@@ -1179,14 +1179,14 @@ class MCELL_OT_run_simulation_control_normal(bpy.types.Operator):
                         run_sim.remove_append == 'remove'):
                     shutil.rmtree(react_dir)
                 if not os.path.exists(react_dir):
-                    os.makedirs(react_dir)
+                    os.makedirs(react_dir, exist_ok=True)
 
                 viz_dir = os.path.join(project_dir, "output_data", "viz_data")
                 if (os.path.exists(viz_dir) and
                         run_sim.remove_append == 'remove'):
                     shutil.rmtree(viz_dir)
                 if not os.path.exists(viz_dir):
-                    os.makedirs(viz_dir)
+                    os.makedirs(viz_dir, exist_ok=True)
 
                 base_name = mcell.project_settings.base_name
 
@@ -1278,14 +1278,14 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                         run_sim.remove_append == 'remove'):
                     shutil.rmtree(react_dir)
                 if not os.path.exists(react_dir):
-                    os.makedirs(react_dir)
+                    os.makedirs(react_dir, exist_ok=True)
 
                 viz_dir = os.path.join(project_dir, "output_data", "viz_data")
                 if (os.path.exists(viz_dir) and
                         run_sim.remove_append == 'remove'):
                     shutil.rmtree(viz_dir)
                 if not os.path.exists(viz_dir):
-                    os.makedirs(viz_dir)
+                    os.makedirs(viz_dir, exist_ok=True)
 
                 base_name = mcell.project_settings.base_name
 
@@ -1475,14 +1475,14 @@ class MCELL_OT_run_simulation_dynamic(bpy.types.Operator):
             if os.path.exists(react_dir) and (mcell.run_simulation.remove_append == 'remove'):
                 shutil.rmtree(react_dir)
             if not os.path.exists(react_dir):
-                os.makedirs(react_dir)
+                os.makedirs(react_dir, exist_ok=True)
 
             print ( "Remove old viz data and make new directories" )
             viz_dir = os.path.join(project_dir, "output_data", "viz_data")
             if os.path.exists(viz_dir) and (mcell.run_simulation.remove_append == 'remove'):
                 shutil.rmtree(viz_dir)
             if not os.path.exists(viz_dir):
-                os.makedirs(viz_dir)
+                os.makedirs(viz_dir, exist_ok=True)
 
             # The following line will create the "data_layout.json" file describing the directory structure
             # It would probably be better for the actual engine to do this, but put it here for now...
