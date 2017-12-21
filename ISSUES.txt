@@ -11,6 +11,8 @@ to each platform and are not part of what's downloaded when a repository is clon
      Should we default to hiding the "mol_surface_proxy" and "mol_volume_proxy" molecules?
      Sometimes a model needs to be run twice for MCell to run (race condition in files?).
 
+ - Better user interface for the text output overlay
+
  - Opening a parameter-driven swept geometry blend file doesn't display the right geometry.
 
  - Check for mcell path in extensions folder and use as the default if not already set
