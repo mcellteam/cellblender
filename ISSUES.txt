@@ -14,7 +14,9 @@ to each platform and are not part of what's downloaded when a repository is clon
  - Opening a parameter-driven swept geometry blend file doesn't display the right geometry.
 
  - Check for mcell path in extensions folder and use as the default if not already set
+      (it should default to the extensions folder: extensions/mcell)
  - Check for bionetgen path in extensions folder and use as the default if not already set
+      (it should default to the extensions folder: extensions/bng2/BNGL2.pl)
 
  - Can't use a parameter value for time step with MCellR
       (it may need to be converted to a numeric value for use with export or BNGL suite?)
@@ -24,6 +26,91 @@ to each platform and are not part of what's downloaded when a repository is clon
  - The plot setting to always generate all files seems to be stuck on (MCellR only?).
 
  - Adding new release sites sometimes duplicates the default name (Release_Site_2 for example).
+
+ - It would be nice to not have to define reflective surface classes for everything (MCellR).
+
+ - Creating an MCellR project from scratch and running works, but sometimes the .blend file
+     needs to be re-opened to show the mol-viz data. This seems to happen when deleting all
+     CellBlender data and regenerating the project from a script. When a new project is
+     created (with File/New) that doesn't seem to happen. It might have something to do
+     with the proxy molecules? The errors are:
+
+        Saving dynamic and script name for objects
+        Done saving dynamic and script name for objects
+        save post handler: cellblender_mol_viz.viz_data_save_post() called
+        New file name = .../bind_unbind_from_script.blend
+        Viz not manually selected
+        Blend:  .../bind_unbind_from_script.blend
+        Viz:    .../bind_unbind_from_script_files/mcell/output_data/viz_data/seed_00001
+        Refreshing/Reloading the Parameters, Molecules, and Geometry ...
+        Error: Array length mismatch (expected 300000, got 3000)
+
+        ***** RuntimeError reading file: .../bind_unbind_from_script_files/mcell/output_data/viz_data/seed_00001/Scene.cellbin.0842.dat
+
+              str(error): 
+        internal error setting the array
+
+            Error Type: <class 'RuntimeError'>
+            Error Value: internal error setting the array
+        === Traceback Start ===
+          File ".../addons/cellblender/cellblender_mol_viz.py", line 916, in mol_viz_file_read
+            mol_pos_mesh.vertices.foreach_set("co", mol_pos)
+        === Traceback End ===
+        Error: Array length mismatch (expected 303000, got 3000)
+
+        ***** RuntimeError reading file: .../bind_unbind_from_script_files/mcell/output_data/viz_data/seed_00001/Scene.cellbin.0384.dat
+
+              str(error): 
+        internal error setting the array
+
+            Error Type: <class 'RuntimeError'>
+            Error Value: internal error setting the array
+        === Traceback Start ===
+          File ".../addons/cellblender/cellblender_mol_viz.py", line 916, in mol_viz_file_read
+            mol_pos_mesh.vertices.foreach_set("co", mol_pos)
+        === Traceback End ===
+        Error: Array length mismatch (expected 306000, got 3000)
+
+
+ - Do we need reactions and observables to run MCellR?
+
+      =============================================================================================
+      Running Scene.mdlr
+      There is an issue with the observables section in the mdlr file
+      Traceback (most recent call last):
+        File ".../addons/cellblender/extensions/mdlr2mdl.py", line 165, in <module>
+          namespace.input, namespace.nfsim)
+        File ".../addons/cellblender/extensions/read_mdl.py", line 285, in construct_bng_from_mdlr
+          reactions = process_reaction_rules(sections['reactions'])
+        File ".../2.78/python/lib/python3.5/site-packages/pyparsing.py", line 393, in __getitem__
+          return self.__tokdict[i][-1][0]
+      KeyError: 'reactions'
+      There is an issue with the observables section in the mdlr file
+      Traceback (most recent call last):
+        File ".../addons/cellblender/extensions/mdlr2mdl.py", line 165, in <module>
+          namespace.input, namespace.nfsim)
+        File ".../addons/cellblender/extensions/read_mdl.py", line 285, in construct_bng_from_mdlr
+          reactions = process_reaction_rules(sections['reactions'])
+        File ".../2.78/python/lib/python3.5/site-packages/pyparsing.py", line 393, in __getitem__
+          return self.__tokdict[i][-1][0]
+      KeyError: 'reactions'
+      =============================================================================================
+      Running Scene.mdlr
+      There is an issue with the observables section in the mdlr file
+      Traceback (most recent call last):
+        File ".../addons/cellblender/extensions/mdlr2mdl.py", line 165, in <module>
+          namespace.input, namespace.nfsim)
+        File ".../addons/cellblender/extensions/read_mdl.py", line 291, in construct_bng_from_mdlr
+          final_bngl_str.write(observables)
+      UnboundLocalError: local variable 'observables' referenced before assignment
+      There is an issue with the observables section in the mdlr file
+      Traceback (most recent call last):
+        File ".../addons/cellblender/extensions/mdlr2mdl.py", line 165, in <module>
+          namespace.input, namespace.nfsim)
+        File ".../addons/cellblender/extensions/read_mdl.py", line 291, in construct_bng_from_mdlr
+          final_bngl_str.write(observables)
+      UnboundLocalError: local variable 'observables' referenced before assignment
+      =============================================================================================
 
  - Testing ... we need lots of test cases to test various combinations of features.
    This is especially important for testing lots of features with MCellR.

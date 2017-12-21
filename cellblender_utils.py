@@ -160,7 +160,7 @@ def get_mcell_path ( mcell ):
         mcell_binary = "mcell.exe"
     else:
         mcell_binary = "mcell"
-    bundled_path = os.path.join(os.path.dirname(__file__), "bin", mcell_binary)
+    bundled_path = os.path.join(os.path.dirname(__file__), "extensions", mcell_binary)
     if mcell.cellblender_preferences.mcell_binary_valid:
         mcell_path = mcell.cellblender_preferences.mcell_binary
     elif is_executable(bundled_path):
