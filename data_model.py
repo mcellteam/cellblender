@@ -197,6 +197,27 @@ def text_data_model ( name, dm, dm_list, comma ):
     return dm_list
 
 
+data_model_keys = set([])
+def get_data_model_keys ( dm, key_prefix="" ):
+    global data_model_keys
+    if type(dm) == type({'a':1}): # dm is a dictionary
+        for k,v in sorted(dm.items()):
+            get_data_model_keys ( v, key_prefix + "['" + str(k) + "']" )
+    elif type(dm) == type(['a',1]): # dm is a list
+        i = 0
+        for v in dm:
+            #get_data_model_keys ( v, key_prefix + "[" + str(i) + "]" )
+            get_data_model_keys ( v, key_prefix + "[" + "#" + "]" )
+            i += 1
+    #elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')): # dm is a string
+    #    print ( str(data_model_depth*"  ") + "\"" + str(dm) + "\"" )
+    else: # dm is anything else
+        dm_type = str(type(dm)).split("'")[1]
+        data_model_keys.update ( [key_prefix + "   (" + dm_type + ")"] )
+    return data_model_keys
+
+
+
 def data_model_as_text ( dm ):
     dm_list = text_data_model ( "", dm, [], "" )
     s = ""
@@ -463,14 +484,36 @@ class RegenerateDataModelFromProps(bpy.types.Operator):
 
 class PrintDataModel(bpy.types.Operator):
     '''Print the CellBlender data model to the console'''
-    bl_idname = "cb.print_data_model" 
+    bl_idname = "cb.print_data_model"
     bl_label = "Print Data Model"
     bl_description = "Print the CellBlender Data Model to the console"
 
     def execute(self, context):
         print ( "Printing CellBlender Data Model:" )
-        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context )
+        mcell = context.scene.mcell
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm, scripts=mcell.scripting.include_scripts_in_dm )
         dump_data_model ( "Data Model", {"mcell": mcell_dm} )
+        return {'FINISHED'}
+
+
+class PrintDataModelKeys(bpy.types.Operator):
+    '''Print the CellBlender data model to the console'''
+    bl_idname = "cb.print_dm_keys"
+    bl_label = "Print Data Model Keys"
+    bl_description = "Print the CellBlender Data Model Keys to the console"
+
+    def execute(self, context):
+        print ( "Printing CellBlender Data Model Keys:" )
+        mcell = context.scene.mcell
+        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm, scripts=mcell.scripting.include_scripts_in_dm )
+        key_set = get_data_model_keys ( mcell_dm )
+
+        key_list = [k for k in key_set]
+        key_list.sort()
+
+        for s in key_list:
+            print ( s )
+
         return {'FINISHED'}
 
 

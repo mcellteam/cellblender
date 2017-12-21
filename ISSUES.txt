@@ -16,14 +16,14 @@ to each platform and are not part of what's downloaded when a repository is clon
  - Can't use a parameter value for time step with MCellR
       (it may need to be converted to a numeric value for use with export or BNGL suite?)
 
- - Can't seem to add plain (non-BNGL) molecules to an MCellR simulation.
- 
  - When sweeping (MCellR only?), the task list doesn't update until the last few are run.
+
+ - The plot setting to always generate all files seems to be stuck on (MCellR only?).
+
+ - Adding new release sites sometimes duplicates the default name (Release_Site_2 for example).
 
  - Testing ... we need lots of test cases to test various combinations of features.
    This is especially important for testing lots of features with MCellR.
-
- - The plot setting to always generate all files seems to be stuck on (MCellR only?).
 
 === Resolved Issues ===
 
@@ -31,6 +31,13 @@ to each platform and are not part of what's downloaded when a repository is clon
      This option doesn't make sense for static scripted objects.
      The logic was re-worked to produce sensible options for this case.
  - Display engine output (text) to the 3D view during run.
+     Completed
  - Move the "start_time.txt" file into the <project>_files directory.
+     start_time.txt is now in the <project>_files directory.
  - Doesn't seem to support sweeping ...
+     Completed
+ - Can't seem to add plain (non-BNGL) molecules to an MCellR simulation.
+     This was an "operator error". Released molecules use a syntax like: @CP::x()
+     They work fine without any components, but do need to be referenced properly.
+ 
 

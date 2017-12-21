@@ -99,7 +99,12 @@ class DataBrowserPropertyGroup(bpy.types.PropertyGroup):
         scripting = mcell.scripting
 
         row = layout.row()
-        row.operator ( "cb.regenerate_data_model", icon='FILE_REFRESH' )
+        col = row.column()
+        col.operator ( "cb.regenerate_data_model", icon='FILE_REFRESH' )
+        col = row.column()
+        col.operator ( "cb.print_dm_keys", icon='KEYINGSET' )
+        col = row.column()
+        col.operator ( "cb.print_data_model", icon='COLLAPSEMENU' )
 
         row = layout.row()
         col = row.column()
