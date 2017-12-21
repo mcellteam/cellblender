@@ -954,12 +954,20 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                           proc = cellblender.simulation_queue.add_task(cellblender.python_path, mcellr_args, run_cmd[1], make_texts, env=my_env)
                           print ( 100 * "@" )
                       else:
+                          ext_path = os.path.dirname(run_cmd[0])
+
+                          my_env = {}
+                          if (sys.platform == 'darwin'):
+                            my_env['DYLD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
+                          else:
+                            my_env['LD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
+
                           mdl_filename = '%s.main.mdl' % (run_cmd[2])
                           mcell_args = '-seed %d %s' % (run_cmd[5], mdl_filename)
                           make_texts = run_sim.save_text_logs
                           print ( 100 * "@" )
                           print ( "Add Task:" + run_cmd[0] + " args:" + str(mcell_args) + " wd:" + str(run_cmd[1]) + " txt:" + str(make_texts) )
-                          proc = cellblender.simulation_queue.add_task(run_cmd[0], mcell_args, run_cmd[1], make_texts)
+                          proc = cellblender.simulation_queue.add_task(run_cmd[0], mcell_args, run_cmd[1], make_texts, env=my_env)
                           print ( 100 * "@" )
 
                       self.report({'INFO'}, "Simulation Running")
@@ -1254,6 +1262,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
         run_sim.last_simulation_run_time = str(time.time())
 
         mcell_binary = cellblender_utils.get_mcell_path(mcell)
+        ext_path = os.path.dirname(os.path.realpath(mcell_binary))
 
         start_seed = int(run_sim.start_seed.get_value())
         end_seed = int(run_sim.end_seed.get_value())
@@ -1273,6 +1282,13 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                     mcell.cellblender_preferences.invalid_policy == 'dont_run'):
                 pass
             else:
+
+                my_env = {}
+                if (sys.platform == 'darwin'):
+                  my_env['DYLD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
+                else:
+                  my_env['LD_LIBRARY_PATH']=os.path.join(ext_path,'lib')
+
                 react_dir = os.path.join(project_dir, "output_data", "react_data")
                 if (os.path.exists(react_dir) and
                         run_sim.remove_append == 'remove'):
@@ -1332,7 +1348,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
                   mdl_filename = '%s.main.mdl' % (base_name)
                   mcell_args = '-seed %d %s' % (seed, mdl_filename)
                   make_texts = run_sim.save_text_logs
-                  proc = cellblender.simulation_queue.add_task(mcell_binary, mcell_args, os.path.join(project_dir, "output_data"), make_texts)
+                  proc = cellblender.simulation_queue.add_task(mcell_binary, mcell_args, os.path.join(project_dir, "output_data"), make_texts, env=my_env)
 
                   self.report({'INFO'}, "Simulation Running")
 
