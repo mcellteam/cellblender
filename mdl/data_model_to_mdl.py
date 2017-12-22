@@ -160,6 +160,15 @@ def write_dm_str_val ( dm, f, dm_name, mdl_name, blank_default="", indent="" ):
       else:
         print ( "      MDL: not written" )
 
+
+def write_float_val ( f, mdl_name, value, indent="" ):
+    # This writes out double precision values
+    print ( "      " + str(mdl_name) + " = \"" + str(value) + "\"" )
+    val = "%.15g" % value
+    f.write ( indent + mdl_name + " = " + val + "\n" )
+    print ( "      MDL: " + mdl_name + " = " + val )
+
+
 def write_dm_str_val_junk ( dm, f, dm_name, mdl_name, blank_default="", indent="" ):
     if mdl_name == 'TIME_STEP':
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -568,25 +577,54 @@ def write_mdlr ( dm, file_name, scene_name='Scene' ):
 
     f = open ( os.path.join(output_data_dir,"Scene.mdlr"), 'w' )
 
+    # Parameters should be written first!!!
+    #if 'parameter_system' in data_model:
+    #  # Write the parameter system
+    #  write_parameter_system ( data_model['parameter_system'], f )
+
+
+    # Instead of writing parameters first (above commented code), build a par/value dictionary
+
+    par_val_dict = {}
     if 'parameter_system' in data_model:
-      # Write the parameter system
-      write_parameter_system ( data_model['parameter_system'], f )
+      for p in data_model['parameter_system']['model_parameters']:
+        par_val_dict[p['par_name']] = p['_extras']['par_value']
+
+
+
 
     if 'initialization' in data_model:
       # Can't write all initialization MDL because booleans like "TRUE" are referenced but not defined in BNGL
       # write_initialization(data_model['initialization'], f)
       # Write specific parts instead:
-      write_dm_str_val ( data_model['initialization'], f, 'iterations',                'ITERATIONS' )
-      write_dm_str_val ( data_model['initialization'], f, 'time_step',                 'TIME_STEP' )
-      write_dm_str_val ( data_model['initialization'], f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
 
-      time_step = data_model['initialization']['time_step']
+      #### These commented lines should replace the code below in this "if" statement, but that requires parameters to come first.
+      #### MCellR seemed to have some trouble with parameter definitions first, so comment this code and build from par_val_dict.
+      #
+      #write_dm_str_val ( data_model['initialization'], f, 'iterations',                'ITERATIONS' )
+      #write_dm_str_val ( data_model['initialization'], f, 'time_step',                 'TIME_STEP' )
+      #write_dm_str_val ( data_model['initialization'], f, 'vacancy_search_distance',   'VACANCY_SEARCH_DISTANCE', blank_default='10' )
+      #
+      #time_step = data_model['initialization']['time_step']
+      #
+
+      write_float_val ( f, 'ITERATIONS', eval(data_model['initialization']['iterations'],globals(),par_val_dict), indent="" )
+      write_float_val ( f, 'TIME_STEP', eval(data_model['initialization']['time_step'],globals(),par_val_dict), indent="" )
+      if len(data_model['initialization']['vacancy_search_distance']) == 0:
+        write_float_val ( f, 'VACANCY_SEARCH_DISTANCE', 10.0, indent="" )
+      else:
+        write_float_val ( f, 'VACANCY_SEARCH_DISTANCE', eval(data_model['initialization']['vacancy_search_distance'],globals(),par_val_dict), indent="" )
+
+      time_step = eval(data_model['initialization']['time_step'],globals(),par_val_dict)
 
     f.write ( 'INCLUDE_FILE = "Scene.geometry.mdl"\n' )
 
-    #if 'parameter_system' in data_model:
-    #  # Write the parameter system
-    #  write_parameter_system ( data_model['parameter_system'], f )
+    if 'parameter_system' in data_model:
+      # Write the parameter system
+      write_parameter_system ( data_model['parameter_system'], f )
+
+
+
 
     # Note that reflective surface classes may be needed by MCell-R
     # If so, it might be good to automate this rather than explicitly requiring it in CellBlender's model.
