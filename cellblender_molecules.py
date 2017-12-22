@@ -1344,7 +1344,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     molecule_list = CollectionProperty(type=MCellMoleculeProperty, name="Molecule List")
     active_mol_index = IntProperty(name="Active Molecule Index", default=0)
-    next_id = IntProperty(name="Counter for Unique Molecule IDs", default=1)  # Start ID's at 1 to confirm initialization
+    last_id = IntProperty(name="Counter for Unique Molecule IDs", default=0)  # Start ID's at 0 (will be incremented to 1)
     show_advanced = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_components = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
     show_display = bpy.props.BoolProperty(default=False)  # If Some Properties are not shown, they may not exist!!!
@@ -1354,13 +1354,21 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
 
     next_color = IntProperty (default=0)  # Keeps track of the next molecule color to use
 
+
+    def default_name ( self, item_id ):
+        return "Molecule_"+str(item_id)
+
+
     def allocate_available_id ( self ):
         """ Return a unique molecule ID for a new molecule """
         if len(self.molecule_list) <= 0:
-            # Reset the ID to 1 when there are no more molecules
-            self.next_id = 1
-        self.next_id += 1
-        return ( self.next_id - 1 )
+            # Reset the ID to 0 (will become 1) when there are no more molecules
+            self.last_id = 0
+        self.last_id += 1
+        all_names = [ item.name for item in self.molecule_list ]
+        while self.default_name(self.last_id) in all_names:
+            self.last_id += 1
+        return ( self.last_id )
 
 
 
@@ -1375,7 +1383,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             item.remove_properties(context)
         self.molecule_list.clear()
         self.active_mol_index = 0
-        self.next_id = 1
+        self.last_id = 1
         print ( "Done removing all Molecule List Properties." )
         
     
@@ -1417,7 +1425,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             if self.active_mol_index < 0:
                 self.active_mol_index = 0
             if len(self.molecule_list) <= 0:
-                self.next_id = 1
+                self.last_id = 1
             if self.molecule_list:
                 self.check(context)
 
