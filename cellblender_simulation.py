@@ -97,10 +97,16 @@ clear_flag = False          # Drawing when this is set will clear the background
 
 
 def draw_callback_px(context):
+    # print ( "draw callback -=-=-=-=" + (50 * "-=" ) + "-" )
+
     # Note that the "context" passed in here is a regular dictionary and not the Blender context
     global screen_display_lines
     global scroll_offset
     global clear_flag
+    local_display_lines = {}
+
+    task_dict = cellblender.simulation_queue.task_dict
+
     pid = None
     if 'mcell' in bpy.context.scene:
       mcell = bpy.context.scene.mcell
@@ -109,6 +115,14 @@ def draw_callback_px(context):
         if len(rs.processes_list) > 0:
           pid_str = rs.processes_list[rs.active_process_index].name
           pid = pid_str.split(',')[0].split()[1]
+
+    if pid != None:
+        ipid = int(pid)
+        # print ( " ))))))))))) " + str(task_dict[ipid]['output'][-1]) )
+        local_display_lines[ipid] = [ l.strip() for l in task_dict[ipid]['output'] ]
+        local_display_lines[ipid].reverse()
+        screen_display_lines[str(pid)] = local_display_lines[ipid]
+        # screen_display_lines[str(pid)].reverse() # Reverse since they'll be drawn from the bottom up
 
     bgl.glPushAttrib(bgl.GL_ENABLE_BIT)
 
@@ -648,7 +662,7 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
     _timer = None
 
     def modal(self, context, event):
-        # print ( "-=-=-=-=" + (50 * "-=" ) + "-" )
+        # print ( "modal -=-=-=-=" + (50 * "-=" ) + "-" )
         if event.type == 'TIMER':
             task_len = len(cellblender.simulation_queue.task_dict)  # This may not be right since it may include completed tasks!!!
             task_ctr = 0
@@ -675,11 +689,11 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
                     if (last_iter == total_iter) and (total_iter != 0):
                         task_ctr += 1
 
-                    global accumulate_text
-                    if accumulate_text:
-                        global screen_display_lines
-                        screen_display_lines[str(pid)] = [ l.strip() for l in output_lines ]
-                        screen_display_lines[str(pid)].reverse() # Reverse since they'll be drawn from the bottom up
+                    #global accumulate_text
+                    #if accumulate_text:
+                    #    global screen_display_lines
+                    #    screen_display_lines[str(pid)] = [ l.strip() for l in output_lines ]
+                    #    screen_display_lines[str(pid)].reverse() # Reverse since they'll be drawn from the bottom up
 
                 """
                 print ( "q_item.keys() " + str(q_item.keys()) )
