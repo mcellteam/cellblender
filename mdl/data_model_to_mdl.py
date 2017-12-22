@@ -567,6 +567,11 @@ def write_mdlr ( dm, file_name, scene_name='Scene' ):
     time_step = '1e-6'  # This is needed as a default for plotting
 
     f = open ( os.path.join(output_data_dir,"Scene.mdlr"), 'w' )
+
+    if 'parameter_system' in data_model:
+      # Write the parameter system
+      write_parameter_system ( data_model['parameter_system'], f )
+
     if 'initialization' in data_model:
       # Can't write all initialization MDL because booleans like "TRUE" are referenced but not defined in BNGL
       # write_initialization(data_model['initialization'], f)
@@ -579,9 +584,9 @@ def write_mdlr ( dm, file_name, scene_name='Scene' ):
 
     f.write ( 'INCLUDE_FILE = "Scene.geometry.mdl"\n' )
 
-    if 'parameter_system' in data_model:
-      # Write the parameter system
-      write_parameter_system ( data_model['parameter_system'], f )
+    #if 'parameter_system' in data_model:
+    #  # Write the parameter system
+    #  write_parameter_system ( data_model['parameter_system'], f )
 
     # Note that reflective surface classes may be needed by MCell-R
     # If so, it might be good to automate this rather than explicitly requiring it in CellBlender's model.
