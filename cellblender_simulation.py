@@ -1391,12 +1391,13 @@ class MCELL_OT_kill_simulation(bpy.types.Operator):
         mcell = context.scene.mcell
         processes_list = mcell.run_simulation.processes_list
         active_index = mcell.run_simulation.active_process_index
-        ap = processes_list[active_index]
-        pid = int(ap.name.split(',')[0].split(':')[1])
-        q_item = cellblender.simulation_queue.task_dict.get(pid)
-        if q_item:
-            if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
-                return True
+        if active_index < len(processes_list):
+            ap = processes_list[active_index]
+            pid = int(ap.name.split(',')[0].split(':')[1])
+            q_item = cellblender.simulation_queue.task_dict.get(pid)
+            if q_item:
+                if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
+                    return True
 
     def execute(self, context):
 
@@ -1404,14 +1405,15 @@ class MCELL_OT_kill_simulation(bpy.types.Operator):
 
         processes_list = mcell.run_simulation.processes_list
         active_index = mcell.run_simulation.active_process_index
-        ap = processes_list[active_index]
-        pid = get_pid(ap)
-        # pid = int(ap.name.split(',')[0].split(':')[1])
-        q_item = cellblender.simulation_queue.task_dict.get(pid)
-        if q_item:
-            if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
-                # Simulation is running or waiting in queue, so let's kill it
-                cellblender.simulation_queue.kill_task(pid)
+        if active_index < len(processes_list):
+            ap = processes_list[active_index]
+            pid = get_pid(ap)
+            # pid = int(ap.name.split(',')[0].split(':')[1])
+            q_item = cellblender.simulation_queue.task_dict.get(pid)
+            if q_item:
+                if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
+                    # Simulation is running or waiting in queue, so let's kill it
+                    cellblender.simulation_queue.kill_task(pid)
 
         return {'FINISHED'}
 
@@ -2648,7 +2650,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
                 if display_queue_panel:
                     # print ( "Drawing the Queue Panel" )
 
-                    if (self.processes_list and cellblender.simulation_queue.task_dict):
+                    if True or (self.processes_list and cellblender.simulation_queue.task_dict):
                         row = layout.row()
                         row.label(text="Simulation Processes:", icon='FORCE_LENNARDJONES')
                         row = layout.row()
