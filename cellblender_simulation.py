@@ -92,8 +92,8 @@ handler_list = []           # Holds returns from bpy.types.SpaceView3D.draw_hand
 screen_display_lines = {}   # Dictionary of lines keyed by integer Process ID (PID)
 scroll_offset = 0           # Current Scroll offset
 scroll_page_size = 10       # Lines per scroll
-accumulate_text = False     # Whether to capture text or not
 clear_flag = False          # Drawing when this is set will clear the background
+showing_text = False        # Flag to indicate whether text is currently being shown
 
 
 def draw_callback_px(context):
@@ -169,7 +169,7 @@ def get_3d_areas():
       if len(bpy.data.window_managers[0].windows[0].screen.areas) > 0:
         if len(handler_list) <= 0:
           for area in bpy.data.window_managers[0].windows[0].screen.areas:
-            print ( "Found an area of type " + str(area.type) )
+            # print ( "Found an area of type " + str(area.type) )
             if area.type == 'VIEW_3D':
               areas.append ( area )
   return ( areas )
@@ -177,26 +177,26 @@ def get_3d_areas():
 
 def enable_text_overlay():
   global handler_list
-  global accumulate_text
-  accumulate_text = True
+  global showing_text
   areas = get_3d_areas()
   for area in areas:
     temp_context = bpy.context.copy()
     temp_context['area'] = area
     args = (temp_context,)
     handler_list.append ( bpy.types.SpaceView3D.draw_handler_add(draw_callback_px, args, 'WINDOW', 'POST_PIXEL') )
-    bpy.context.area.tag_redraw()
+  bpy.context.area.tag_redraw()
+  showing_text = True
   print ( "Enable completed" )
 
 def disable_text_overlay():
   global handler_list
-  global accumulate_text
-  accumulate_text = False
+  global showing_text
   while len(handler_list) > 0:
     print ( "Removing draw_handler " + str(handler_list[-1]) )
     bpy.types.SpaceView3D.draw_handler_remove(handler_list[-1], 'WINDOW')
     handler_list.pop()
   bpy.context.area.tag_redraw()
+  showing_text = False
   print ( "Disable completed" )
 
 
@@ -689,39 +689,6 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
                     if (last_iter == total_iter) and (total_iter != 0):
                         task_ctr += 1
 
-                    #global accumulate_text
-                    #if accumulate_text:
-                    #    global screen_display_lines
-                    #    screen_display_lines[str(pid)] = [ l.strip() for l in output_lines ]
-                    #    screen_display_lines[str(pid)].reverse() # Reverse since they'll be drawn from the bottom up
-
-                """
-                print ( "q_item.keys() " + str(q_item.keys()) )
-                stdout_txt = ""
-                if False and ('stdout' in q_item) and (q_item['stdout'] != None):
-                    # print ( "Type of stdout = " + str(type(q_item['stdout'])) )
-                    if type(q_item['stdout']) == type(b'ab'):
-                        stdout_txt = "" + q_item['stdout'].decode('utf-8')
-                        print ( "Copied a bytes object to stdout, len(stdout) = " + str(len(stdout_txt)) )
-                    elif type(q_item['stdout']) == type('ab'):
-                        stdout_txt = "" + q_item['stdout']
-                        print ( "Copied a string object to stdout, len(stdout) = " + str(len(stdout_txt)) )
-                    else:
-                        stdout_txt = str(q_item['stdout'])
-                        print ( "Copied an object to stdout, len(stdout) = " + str(len(stdout_txt)) )
-                elif q_item['bl_text'] != None:
-                    stdout_txt = q_item['bl_text'].as_string()
-                if (stdout_txt != None):
-                    last_iter = total_iter = 0
-                    for i in reversed(stdout_txt.split("\n")):
-                        if i.startswith("Iterations"):
-                            last_iter = int(i.split()[1])
-                            total_iter = int(i.split()[3])
-                            percent = (last_iter/total_iter)*100
-                            break
-                    if (last_iter == total_iter) and (total_iter != 0):
-                        task_ctr += 1
-                """
                 if percent is None:
                     simulation_process.name = "PID: %d, Seed: %d" % (pid, seed)
                 else:
@@ -1385,7 +1352,6 @@ class MCELL_OT_kill_simulation(bpy.types.Operator):
                       "Does not remove rxn/viz data.")
     bl_options = {'REGISTER'}
 
-
     @classmethod
     def poll(self,context):
         mcell = context.scene.mcell
@@ -1424,6 +1390,14 @@ class MCELL_OT_kill_all_simulations(bpy.types.Operator):
     bl_description = ("Kill/Cancel All Running/Queued MCell Simulations. "
                       "Does not remove rxn/viz data.")
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(self,context):
+        task_dict = cellblender.simulation_queue.task_dict
+        for pid in task_dict.keys():
+            q_item = task_dict[pid]
+            if (q_item['status'] == 'running') or (q_item['status'] == 'queued'):
+                return True
 
     def execute(self, context):
         mcell = context.scene.mcell
@@ -1892,12 +1866,22 @@ class MCELL_OT_remove_text_logs(bpy.types.Operator):
         return {'FINISHED'}
 
 
+# The status can be one of: 'queued', 'running', 'completed', 'mcell_error', 'died'
+
 class MCELL_OT_clear_run_list(bpy.types.Operator):
     bl_idname = "mcell.clear_run_list"
     bl_label = "Clear Completed MCell Runs"
     bl_description = ("Clear the list of completed and failed MCell runs. "
                       "Does not remove rxn/viz data.")
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(self,context):
+        task_dict = cellblender.simulation_queue.task_dict
+        for pid in task_dict.keys():
+            q_item = task_dict[pid]
+            if (q_item['status'] == 'completed') or (q_item['status'] == 'died') or (q_item['status'] == 'mcell_error'):
+                return True
 
     def execute(self, context):
         mcell = context.scene.mcell
@@ -1934,6 +1918,14 @@ class MCELL_OT_clear_simulation_queue(bpy.types.Operator):
     bl_description = ("Clear the list of completed and failed MCell runs. "
                       "Does not remove rxn/viz data.")
     bl_options = {'REGISTER'}
+
+    @classmethod
+    def poll(self,context):
+        task_dict = cellblender.simulation_queue.task_dict
+        for pid in task_dict.keys():
+            q_item = task_dict[pid]
+            if (q_item['status'] == 'completed') or (q_item['status'] == 'died') or (q_item['status'] == 'mcell_error'):
+                return True
 
     def execute(self, context):
         mcell = context.scene.mcell
@@ -2299,7 +2291,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
 
-    text_update_timer_delay = FloatProperty ( name='dt', default=0.2, description="Text update timer delay" )
+    text_update_timer_delay = FloatProperty ( name='Text Update Interval (s)', default=0.2, description="Text update timer delay" )
 
     simulation_engine_and_run_enum = [
          ('SWEEP_QUEUE', "MCell Local", ""),
@@ -2697,17 +2689,17 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
 
                     row = layout.row()
                     col = row.column()
-                    col.operator("mcell.show_text_overlay", icon='RESTRICT_VIEW_OFF')
+                    global showing_text
+                    if not showing_text:
+                      col.operator("mcell.show_text_overlay", icon='RESTRICT_VIEW_OFF')
+                    else:
+                      col.operator("mcell.hide_text_overlay", icon='RESTRICT_VIEW_ON')
                     col = row.column()
-                    col.operator("mcell.hide_text_overlay", icon='RESTRICT_VIEW_ON')
-                    col = row.column()
-                    col.operator("mcell.page_overlay_hm")
+                    col.operator("mcell.page_overlay_hm", icon='SOLO_OFF')
                     col = row.column()
                     col.operator("mcell.page_overlay_up", icon='TRIA_UP')
                     col = row.column()
                     col.operator("mcell.page_overlay_dn", icon='TRIA_DOWN')
-                    col = row.column()
-                    col.prop ( self, "text_update_timer_delay" )
 
 
                 else:

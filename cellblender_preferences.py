@@ -569,6 +569,8 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "use_stock_icons")
 
+            row = layout.row()
+            row.prop ( mcell.run_simulation, "text_update_timer_delay" )
 
             layout.separator()
 
