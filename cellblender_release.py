@@ -597,16 +597,23 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
     mol_release_list = CollectionProperty(
         type=MCellMoleculeReleaseProperty, name="Molecule Release List")
     active_release_index = IntProperty(name="Active Release Index", default=0)
-    next_id = IntProperty(name="Counter for Unique Release Site IDs", default=1)  # Start ID's at 1 to confirm initialization
+    last_id = IntProperty(name="Counter for Unique Release Site IDs", default=0)  # This will always be incremented before assignment
+
+
+    def default_site_name ( self, item_id ):
+        return "Release_Site_"+str(item_id)
 
 
     def allocate_available_id ( self ):
         """ Return a unique release ID for a new release site """
         if len(self.mol_release_list) <= 0:
-            # Reset the ID to 1 when there are no more sites
-            self.next_id = 1
-        self.next_id += 1
-        return ( self.next_id - 1 )
+            # Reset the ID to 0 (will become 1) when there are no more sites
+            self.last_id = 0
+        self.last_id += 1
+        all_names = [ item.name for item in self.mol_release_list ]
+        while self.default_site_name(self.last_id) in all_names:
+            self.last_id += 1
+        return ( self.last_id )
 
 
     def add_release_site ( self, context ):
@@ -614,7 +621,7 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
         rel_id = self.allocate_available_id()  # Get the ID before allocating to allow it to reset
         self.mol_release_list.add()
         self.active_release_index = len(self.mol_release_list)-1
-        self.mol_release_list[self.active_release_index].name = "Release_Site_"+str(rel_id)
+        self.mol_release_list[self.active_release_index].name = self.default_site_name(rel_id)
 
         relsite = self.mol_release_list[self.active_release_index]
 
@@ -641,7 +648,7 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
             if self.active_release_index < 0:
                 self.active_release_index = 0
             if len(self.mol_release_list) <= 0:
-                self.next_id = 1
+                self.last_id = 0
             if mcell.cellblender_preferences.bionetgen_mode:
                 # Perform BioNetGen Checking
                 pass
