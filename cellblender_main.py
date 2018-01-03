@@ -920,74 +920,40 @@ class MCellPropertyGroup(bpy.types.PropertyGroup):
         return ( self.blender_float_prop )
 
 
-    cellblender_main_panel = PointerProperty(
-        type=CellBlenderMainPanelPropertyGroup,
-        name="CellBlender Main Panel")
+    cellblender_main_panel = PointerProperty ( type=CellBlenderMainPanelPropertyGroup, name="CellBlender Main Panel" )
 
 
-    cellblender_examples = PointerProperty(
-        type=cellblender_examples.CellBlenderExamplesPropertyGroup,
-        name="CellBlender Examples")
-    cellblender_preferences = PointerProperty(
-        type=cellblender_preferences.CellBlenderPreferencesPropertyGroup,
-        name="CellBlender Preferences")
-    scripting = PointerProperty(
-        type=cellblender_scripting.CellBlenderScriptingPropertyGroup,
-        name="CellBlender Scripting")
-    project_settings = PointerProperty(
-        type=cellblender_project.MCellProjectPropertyGroup, name="CellBlender Project Settings")
-    export_project = PointerProperty(
-        type=cellblender_project.MCellExportProjectPropertyGroup, name="Export Simulation")
-    run_simulation = PointerProperty(
-        type=cellblender_simulation.MCellRunSimulationPropertyGroup, name="Run Simulation")
-    sim_engines = PointerProperty(
-        type=cellblender_simulation.Pluggable, name="Simulation Engines")
-    sim_runners = PointerProperty(
-        type=cellblender_simulation.Pluggable, name="Simulation Runners")
-    mol_viz = PointerProperty(
-        type=cellblender_mol_viz.MCellMolVizPropertyGroup, name="Mol Viz Settings")
-    initialization = PointerProperty(
-        type=cellblender_initialization.MCellInitializationPropertyGroup, name="Model Initialization")
-    partitions = bpy.props.PointerProperty(
-        type=cellblender_partitions.MCellPartitionsPropertyGroup, name="Partitions")
-    pbc = bpy.props.PointerProperty(
-          type=cellblender_pbc.MCellPBCPropertyGroup, name="Periodic Boundary Conditions")
+    cellblender_examples = PointerProperty ( type=cellblender_examples.CellBlenderExamplesPropertyGroup, name="CellBlender Examples" )
+    cellblender_preferences = PointerProperty ( type=cellblender_preferences.CellBlenderPreferencesPropertyGroup, name="CellBlender Preferences" )
+    scripting = PointerProperty ( type=cellblender_scripting.CellBlenderScriptingPropertyGroup, name="CellBlender Scripting" )
+    project_settings = PointerProperty ( type=cellblender_project.MCellProjectPropertyGroup, name="CellBlender Project Settings" )
+    export_project = PointerProperty ( type=cellblender_project.MCellExportProjectPropertyGroup, name="Export Simulation" )
+    run_simulation = PointerProperty ( type=cellblender_simulation.MCellRunSimulationPropertyGroup, name="Run Simulation" )
+    sim_engines = PointerProperty ( type=cellblender_simulation.Pluggable, name="Simulation Engines" )
+    sim_runners = PointerProperty ( type=cellblender_simulation.Pluggable, name="Simulation Runners" )
+    mol_viz = PointerProperty ( type=cellblender_mol_viz.MCellMolVizPropertyGroup, name="Mol Viz Settings" )
+    initialization = PointerProperty ( type=cellblender_initialization.MCellInitializationPropertyGroup, name="Model Initialization" )
+    partitions = bpy.props.PointerProperty ( type=cellblender_partitions.MCellPartitionsPropertyGroup, name="Partitions" )
+    pbc = bpy.props.PointerProperty ( type=cellblender_pbc.MCellPBCPropertyGroup, name="Periodic Boundary Conditions" )
     ############# DB: added for parameter import from BNG, SBML models####
-    #parameters = PointerProperty(
-    #    type=MCellParametersPropertyGroup, name="Defined Parameters")
-    parameter_system = PointerProperty(
-        type=parameter_system.ParameterSystemPropertyGroup, name="Parameter System")
-    molecules = PointerProperty(
-        type=cellblender_molecules.MCellMoleculesListProperty, name="Defined Molecules")
-    reactions = PointerProperty(
-        type=cellblender_reactions.MCellReactionsListProperty, name="Defined Reactions")
-    surface_classes = PointerProperty(
-        type=cellblender_surface_classes.MCellSurfaceClassesPropertyGroup, name="Defined Surface Classes")
-    mod_surf_regions = PointerProperty(
-        type=cellblender_surface_regions.MCellModSurfRegionsPropertyGroup, name="Assign Surface Classes")
-    release_patterns = PointerProperty(
-        type=cellblender_release.MCellReleasePatternPropertyGroup, name="Defined Release Patterns")
-    release_sites = PointerProperty(
-        type=cellblender_release.MCellMoleculeReleasePropertyGroup, name="Defined Release Sites")
-    model_objects = PointerProperty(
-        type=cellblender_objects.MCellModelObjectsPropertyGroup, name="Instantiated Objects")
-    viz_output = PointerProperty(
-        type=cellblender_mol_viz.MCellVizOutputPropertyGroup, name="Viz Output")
-    rxn_output = PointerProperty(
-        type=cellblender_reaction_output.MCellReactionOutputPropertyGroup, name="Reaction Output")
-    meshalyzer = PointerProperty(
-        type=cellblender_meshalyzer.MCellMeshalyzerPropertyGroup, name="CellBlender Meshalyzer")
-    object_selector = PointerProperty(
-        type=MCellObjectSelectorPropertyGroup,
-        name="CellBlender Project Settings")
-    #molecule_glyphs = PointerProperty(
-    #    type=cellblender_molecules.MCellMoleculeGlyphsPropertyGroup, name="Molecule Shapes")
+    #parameters = PointerProperty ( type=MCellParametersPropertyGroup, name="Defined Parameters" )
+    parameter_system = PointerProperty ( type=parameter_system.ParameterSystemPropertyGroup, name="Parameter System" )
+    molecules = PointerProperty ( type=cellblender_molecules.MCellMoleculesListProperty, name="Defined Molecules" )
+    reactions = PointerProperty ( type=cellblender_reactions.MCellReactionsListProperty, name="Defined Reactions" )
+    surface_classes = PointerProperty ( type=cellblender_surface_classes.MCellSurfaceClassesPropertyGroup, name="Defined Surface Classes" )
+    mod_surf_regions = PointerProperty ( type=cellblender_surface_regions.MCellModSurfRegionsPropertyGroup, name="Assign Surface Classes" )
+    release_patterns = PointerProperty ( type=cellblender_release.MCellReleasePatternPropertyGroup, name="Defined Release Patterns" )
+    release_sites = PointerProperty (  type=cellblender_release.MCellMoleculeReleasePropertyGroup, name="Defined Release Sites" )
+    model_objects = PointerProperty (  type=cellblender_objects.MCellModelObjectsPropertyGroup, name="Instantiated Objects" )
+    viz_output = PointerProperty ( type=cellblender_mol_viz.MCellVizOutputPropertyGroup, name="Viz Output" )
+    rxn_output = PointerProperty ( type=cellblender_reaction_output.MCellReactionOutputPropertyGroup, name="Reaction Output" )
+    meshalyzer = PointerProperty ( type=cellblender_meshalyzer.MCellMeshalyzerPropertyGroup, name="CellBlender Meshalyzer" )
+    object_selector = PointerProperty ( type=MCellObjectSelectorPropertyGroup, name="CellBlender Project Settings" )
+    #molecule_glyphs = PointerProperty ( type=cellblender_molecules.MCellMoleculeGlyphsPropertyGroup, name="Molecule Shapes" )
 
-    legacy = PointerProperty(
-        type=cellblender_legacy.MCellLegacyGroup, name="Lecacy Support")
+    legacy = PointerProperty ( type=cellblender_legacy.MCellLegacyGroup, name="Lecacy Support" )
 
-    #scratch_settings = PointerProperty(
-    #    type=MCellScratchPropertyGroup, name="CellBlender Scratch Settings")
+    #scratch_settings = PointerProperty ( type=MCellScratchPropertyGroup, name="CellBlender Scratch Settings" )
 
     def init_properties ( self, context=None ):
         print ("MCellPropertyGroup.init_properties called")
