@@ -593,6 +593,9 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
                 row = box.row()
                 row.prop(mcell.cellblender_preferences, "debug_level")
 
+                row = box.row()
+                row.prop(mcell.run_simulation, "text_update_timer_delay")
+
 
                 row = box.row()
                 row.label ( "Enable/Disable individual short menu buttons:" )
