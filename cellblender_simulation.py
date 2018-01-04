@@ -708,6 +708,7 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
         print ( "Inside MCELL_OT_percentage_done_timer.execute with mcell = " + str(context.scene.mcell) )
         run_sim = context.scene.mcell.run_simulation
         delay = run_sim.text_update_timer_delay   # this is how often we should update this in seconds
+        print ( "Setting timer to delay of " + str(delay) )
         wm = context.window_manager
         self._timer = wm.event_timer_add(delay, context.window)
         wm.modal_handler_add(self)
@@ -2289,7 +2290,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     # This would be better as a double, but Blender would store as a float which doesn't have enough precision to resolve time in seconds from the epoch.
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
 
-    text_update_timer_delay = FloatProperty ( name='Text Update Interval (s)', default=0.2, description="Text update timer delay" )
+    text_update_timer_delay = FloatProperty ( name='Text Update Interval (s)', default=0.5, description="Text update timer delay" )
 
     simulation_engine_and_run_enum = [
          ('SWEEP_QUEUE', "MCell Local", ""),

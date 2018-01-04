@@ -47,11 +47,15 @@ a CellBlender project which should be compatible across CellBlender versions.
 
 
 # blender imports
-import bpy
-from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
-                      FloatProperty, FloatVectorProperty, IntProperty, \
-                      IntVectorProperty, PointerProperty, StringProperty
-from bpy.app.handlers import persistent
+has_blender = False
+try:
+  import bpy
+  from bpy.props import BoolProperty, CollectionProperty, EnumProperty, \
+                        FloatProperty, FloatVectorProperty, IntProperty, \
+                        IntVectorProperty, PointerProperty, StringProperty
+  from bpy.app.handlers import persistent
+except:
+  pass
 
 # python imports
 import pickle
@@ -59,9 +63,16 @@ import pprint
 import json
 import os
 
-from bpy_extras.io_utils import ExportHelper
-import cellblender
-# import cellblender/cellblender_id
+try:
+  from bpy_extras.io_utils import ExportHelper
+except:
+  pass
+
+try:
+  import cellblender
+  # import cellblender/cellblender_id
+except:
+  pass
 
 
 def code_api_version():
@@ -452,192 +463,199 @@ except ( ImportError ):
     pass
 
 
+try:
 
-class TkBrowseDataModelFromProps(bpy.types.Operator):
-    '''Browse/Copy the data model with a Tk Application (requires tkinter installation)'''
-    bl_idname = "cb.tk_browse_data_model"
-    bl_label = "Browse Data Model with Tk"
-    bl_description = "Browse/Copy the data model with a Tk Application (requires tkinter installation)"
+    class TkBrowseDataModelFromProps(bpy.types.Operator):
+        '''Browse/Copy the data model with a Tk Application (requires tkinter installation)'''
+        bl_idname = "cb.tk_browse_data_model"
+        bl_label = "Browse Data Model with Tk"
+        bl_description = "Browse/Copy the data model with a Tk Application (requires tkinter installation)"
 
-    def execute(self, context):
-        print ( "Browsing CellBlender Data Model:" )
-        mcell = context.scene.mcell
-        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm, scripts=mcell.scripting.include_scripts_in_dm )
-        mcell['data_model'] = pickle_data_model ( mcell_dm )
-        app = CellBlenderDataModelBrowser()
-        return {'FINISHED'}
-
-
-class RegenerateDataModelFromProps(bpy.types.Operator):
-    '''Regenerate the data model from the properties'''
-    bl_idname = "cb.regenerate_data_model"
-    bl_label = "Regenerate Data Model"
-    bl_description = "Regenerate the data model from the Blender Properties"
-
-    def execute(self, context):
-        print ( "Showing CellBlender Data Model:" )
-        mcell = context.scene.mcell
-        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm, scripts=mcell.scripting.include_scripts_in_dm )
-        mcell['data_model'] = pickle_data_model ( mcell_dm )
-        return {'FINISHED'}
+        def execute(self, context):
+            print ( "Browsing CellBlender Data Model:" )
+            mcell = context.scene.mcell
+            mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm, scripts=mcell.scripting.include_scripts_in_dm )
+            mcell['data_model'] = pickle_data_model ( mcell_dm )
+            app = CellBlenderDataModelBrowser()
+            return {'FINISHED'}
 
 
-class PrintDataModel(bpy.types.Operator):
-    '''Print the CellBlender data model to the console'''
-    bl_idname = "cb.print_data_model"
-    bl_label = "Print Data Model"
-    bl_description = "Print the CellBlender Data Model to the console"
+    class RegenerateDataModelFromProps(bpy.types.Operator):
+        '''Regenerate the data model from the properties'''
+        bl_idname = "cb.regenerate_data_model"
+        bl_label = "Regenerate Data Model"
+        bl_description = "Regenerate the data model from the Blender Properties"
 
-    def execute(self, context):
-        print ( "Printing CellBlender Data Model:" )
-        mcell = context.scene.mcell
-        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm, scripts=mcell.scripting.include_scripts_in_dm )
-        dump_data_model ( "Data Model", {"mcell": mcell_dm} )
-        return {'FINISHED'}
-
-
-class PrintDataModelKeys(bpy.types.Operator):
-    '''Print the CellBlender data model to the console'''
-    bl_idname = "cb.print_dm_keys"
-    bl_label = "Print Data Model Keys"
-    bl_description = "Print the CellBlender Data Model Keys to the console"
-
-    def execute(self, context):
-        print ( "Printing CellBlender Data Model Keys:" )
-        mcell = context.scene.mcell
-        mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm, scripts=mcell.scripting.include_scripts_in_dm )
-        key_set = get_data_model_keys ( mcell_dm )
-
-        key_list = [k for k in key_set]
-        key_list.sort()
-
-        for s in key_list:
-            print ( s )
-
-        return {'FINISHED'}
+        def execute(self, context):
+            print ( "Showing CellBlender Data Model:" )
+            mcell = context.scene.mcell
+            mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm, scripts=mcell.scripting.include_scripts_in_dm )
+            mcell['data_model'] = pickle_data_model ( mcell_dm )
+            return {'FINISHED'}
 
 
-class ExportDataModel(bpy.types.Operator, ExportHelper):
-    '''Export the CellBlender model as a Python Pickle in a text file'''
-    bl_idname = "cb.export_data_model" 
-    bl_label = "Export Data Model"
-    bl_description = "Export CellBlender Data Model to a Python Pickle in a file"
+    class PrintDataModel(bpy.types.Operator):
+        '''Print the CellBlender data model to the console'''
+        bl_idname = "cb.print_data_model"
+        bl_label = "Print Data Model"
+        bl_description = "Print the CellBlender Data Model to the console"
 
-    filename_ext = ".txt"
-    filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
-
-    def execute(self, context):
-        #print ( "Saving CellBlender model to file: " + self.filepath )
-        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=False )
-        save_data_model_to_file ( mcell_dm, self.filepath )
-        """
-        dm = { 'mcell': mcell_dm }
-        f = open ( self.filepath, 'w' )
-        f.write ( pickle_data_model(dm) )
-        f.close()
-        """
-        #print ( "Done saving CellBlender model." )
-        return {'FINISHED'}
+        def execute(self, context):
+            print ( "Printing CellBlender Data Model:" )
+            mcell = context.scene.mcell
+            mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm, scripts=mcell.scripting.include_scripts_in_dm )
+            dump_data_model ( "Data Model", {"mcell": mcell_dm} )
+            return {'FINISHED'}
 
 
-class ExportDataModelAll(bpy.types.Operator, ExportHelper):
-    '''Export the CellBlender model including geometry as a Python Pickle in a text file'''
-    bl_idname = "cb.export_data_model_all" 
-    bl_label = "Export Data Model with Geometry"
-    bl_description = "Export CellBlender Data Model and Geometry to a Python Pickle in a file"
+    class PrintDataModelKeys(bpy.types.Operator):
+        '''Print the CellBlender data model to the console'''
+        bl_idname = "cb.print_dm_keys"
+        bl_label = "Print Data Model Keys"
+        bl_description = "Print the CellBlender Data Model Keys to the console"
 
-    filename_ext = ".txt"
-    filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
+        def execute(self, context):
+            print ( "Printing CellBlender Data Model Keys:" )
+            mcell = context.scene.mcell
+            mcell_dm = mcell.build_data_model_from_properties ( context, geometry=mcell.scripting.include_geometry_in_dm, scripts=mcell.scripting.include_scripts_in_dm )
+            key_set = get_data_model_keys ( mcell_dm )
 
-    def execute(self, context):
-        #print ( "Saving CellBlender model and geometry to file: " + self.filepath )
-        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
-        save_data_model_to_file ( mcell_dm, self.filepath )
-        return {'FINISHED'}
+            key_list = [k for k in key_set]
+            key_list.sort()
 
+            for s in key_list:
+                print ( s )
 
-class ExportDataModelAllJSON(bpy.types.Operator, ExportHelper):
-    '''Export the CellBlender model including geometry as a JSON text file'''
-    bl_idname = "cb.export_data_model_all_json"
-    bl_label = "Export Data Model with Geometry JSON"
-    bl_description = "Export CellBlender Data Model and Geometry to a JSON text file"
-
-    filename_ext = ".json"
-    filter_glob = StringProperty(default="*.json",options={'HIDDEN'},)
-
-    def execute(self, context):
-        mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
-        save_data_model_to_json_file ( mcell_dm, self.filepath )
-        return {'FINISHED'}
+            return {'FINISHED'}
 
 
-class ImportDataModel(bpy.types.Operator, ExportHelper):
-    '''Import a CellBlender model from a Python Pickle in a text file'''
-    bl_idname = "cb.import_data_model" 
-    bl_label = "Import Data Model"
-    bl_description = "Import CellBlender Data Model from a Python Pickle in a file"
+    class ExportDataModel(bpy.types.Operator, ExportHelper):
+        '''Export the CellBlender model as a Python Pickle in a text file'''
+        bl_idname = "cb.export_data_model" 
+        bl_label = "Export Data Model"
+        bl_description = "Export CellBlender Data Model to a Python Pickle in a file"
 
-    filename_ext = ".txt"
-    filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
+        filename_ext = ".txt"
+        filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
 
-    def execute(self, context):
-        print ( "Loading CellBlender model from file: " + self.filepath + " ..." )
-        f = open ( self.filepath, 'r' )
-        pickle_string = f.read()
-        f.close()
+        def execute(self, context):
+            #print ( "Saving CellBlender model to file: " + self.filepath )
+            mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=False )
+            save_data_model_to_file ( mcell_dm, self.filepath )
+            """
+            dm = { 'mcell': mcell_dm }
+            f = open ( self.filepath, 'w' )
+            f.write ( pickle_data_model(dm) )
+            f.close()
+            """
+            #print ( "Done saving CellBlender model." )
+            return {'FINISHED'}
 
-        dm = unpickle_data_model ( pickle_string )
-        dm['mcell'] = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
-        context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'] )
 
-        print ( "Done loading CellBlender model." )
-        return {'FINISHED'}
+    class ExportDataModelAll(bpy.types.Operator, ExportHelper):
+        '''Export the CellBlender model including geometry as a Python Pickle in a text file'''
+        bl_idname = "cb.export_data_model_all" 
+        bl_label = "Export Data Model with Geometry"
+        bl_description = "Export CellBlender Data Model and Geometry to a Python Pickle in a file"
+
+        filename_ext = ".txt"
+        filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
+
+        def execute(self, context):
+            #print ( "Saving CellBlender model and geometry to file: " + self.filepath )
+            mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
+            save_data_model_to_file ( mcell_dm, self.filepath )
+            return {'FINISHED'}
 
 
-class ImportDataModelAll(bpy.types.Operator, ExportHelper):
-    '''Import a CellBlender model from a Python Pickle in a text file'''
-    bl_idname = "cb.import_data_model_all" 
-    bl_label = "Import Data Model with Geometry"
-    bl_description = "Import CellBlender Data Model and Geometry from a Python Pickle in a file"
+    class ExportDataModelAllJSON(bpy.types.Operator, ExportHelper):
+        '''Export the CellBlender model including geometry as a JSON text file'''
+        bl_idname = "cb.export_data_model_all_json"
+        bl_label = "Export Data Model with Geometry JSON"
+        bl_description = "Export CellBlender Data Model and Geometry to a JSON text file"
 
-    filename_ext = ".txt"
-    filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
+        filename_ext = ".json"
+        filter_glob = StringProperty(default="*.json",options={'HIDDEN'},)
 
-    def execute(self, context):
-        print ( "Loading CellBlender model from file: " + self.filepath + " ..." )
-        f = open ( self.filepath, 'r' )
-        pickle_string = f.read()
-        f.close()
+        def execute(self, context):
+            mcell_dm = context.scene.mcell.build_data_model_from_properties ( context, geometry=True, scripts=True )
+            save_data_model_to_json_file ( mcell_dm, self.filepath )
+            return {'FINISHED'}
 
-        dm = unpickle_data_model ( pickle_string )
-        dm['mcell'] = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
-        context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True, scripts=True )
 
-        print ( "Done loading CellBlender model." )
-        return {'FINISHED'}
+    class ImportDataModel(bpy.types.Operator, ExportHelper):
+        '''Import a CellBlender model from a Python Pickle in a text file'''
+        bl_idname = "cb.import_data_model" 
+        bl_label = "Import Data Model"
+        bl_description = "Import CellBlender Data Model from a Python Pickle in a file"
 
-class ImportDataModelAllJSON(bpy.types.Operator, ExportHelper):
-    '''Import a CellBlender model with geometry from a JSON text file'''
-    bl_idname = "cb.import_data_model_all_json"
-    bl_label = "Import Data Model with Geometry JSON"
-    bl_description = "Import CellBlender Data Model and Geometry from a JSON text file"
+        filename_ext = ".txt"
+        filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
 
-    filename_ext = ".json"
-    filter_glob = StringProperty(default="*.json",options={'HIDDEN'},)
+        def execute(self, context):
+            print ( "Loading CellBlender model from file: " + self.filepath + " ..." )
+            f = open ( self.filepath, 'r' )
+            pickle_string = f.read()
+            f.close()
 
-    def execute(self, context):
-        print ( "Loading CellBlender model from JSON file: " + self.filepath + " ..." )
-        f = open ( self.filepath, 'r' )
-        json_string = f.read()
-        f.close()
+            dm = unpickle_data_model ( pickle_string )
+            dm['mcell'] = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
+            context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'] )
 
-        dm = {}
-        dm['mcell'] = data_model_from_json ( json_string ) ['mcell']
-        dm['mcell'] = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
-        context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True, scripts=True )
+            print ( "Done loading CellBlender model." )
+            return {'FINISHED'}
 
-        print ( "Done loading CellBlender model." )
-        return {'FINISHED'}
+
+    class ImportDataModelAll(bpy.types.Operator, ExportHelper):
+        '''Import a CellBlender model from a Python Pickle in a text file'''
+        bl_idname = "cb.import_data_model_all" 
+        bl_label = "Import Data Model with Geometry"
+        bl_description = "Import CellBlender Data Model and Geometry from a Python Pickle in a file"
+
+        filename_ext = ".txt"
+        filter_glob = StringProperty(default="*.txt",options={'HIDDEN'},)
+
+        def execute(self, context):
+            print ( "Loading CellBlender model from file: " + self.filepath + " ..." )
+            f = open ( self.filepath, 'r' )
+            pickle_string = f.read()
+            f.close()
+
+            dm = unpickle_data_model ( pickle_string )
+            dm['mcell'] = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
+            context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True, scripts=True )
+
+            print ( "Done loading CellBlender model." )
+            return {'FINISHED'}
+
+    class ImportDataModelAllJSON(bpy.types.Operator, ExportHelper):
+        '''Import a CellBlender model with geometry from a JSON text file'''
+        bl_idname = "cb.import_data_model_all_json"
+        bl_label = "Import Data Model with Geometry JSON"
+        bl_description = "Import CellBlender Data Model and Geometry from a JSON text file"
+
+        filename_ext = ".json"
+        filter_glob = StringProperty(default="*.json",options={'HIDDEN'},)
+
+        def execute(self, context):
+            print ( "Loading CellBlender model from JSON file: " + self.filepath + " ..." )
+            f = open ( self.filepath, 'r' )
+            json_string = f.read()
+            f.close()
+
+            dm = {}
+            dm['mcell'] = data_model_from_json ( json_string ) ['mcell']
+            dm['mcell'] = cellblender.cellblender_main.MCellPropertyGroup.upgrade_data_model(dm['mcell'])
+            context.scene.mcell.build_properties_from_data_model ( context, dm['mcell'], geometry=True, scripts=True )
+
+            print ( "Done loading CellBlender model." )
+            return {'FINISHED'}
+
+except:
+    # Unable to import Blender classses
+    print ( "Unable to import Blender classes ... running outside of Blender." )
+    pass
+
 
 def save_mcell_preferences ( mcell ):
     mp = {}
@@ -668,7 +686,7 @@ def upgrade_properties_from_data_model ( context ):
     dm = {}
     if 'data_model' in mcell:
         print ( "Found a data model to upgrade." )
-        dm = cellblender.data_model.unpickle_data_model ( mcell['data_model'] )
+        dm = unpickle_data_model ( mcell['data_model'] )
     else:
         print ( "Warning: At one time it was thought that this should never happen. It's not so clear any more." )
         # traceback.print_stack()
@@ -736,7 +754,7 @@ def upgrade_RC3_properties_from_data_model ( context ):
       if 'data_model' in mcell:
           # This must be an RC4 file?
           print ( "Found a data model to upgrade." )
-          dm = cellblender.data_model.unpickle_data_model ( mcell['data_model'] )
+          dm = unpickle_data_model ( mcell['data_model'] )
       else:
           print ( "No data model in RC3 file ... building a data model and then recreating properties." )
           dm = mcell.legacy.build_data_model_from_RC3_ID_properties ( context )
@@ -787,168 +805,174 @@ def upgrade_RC3_properties_from_data_model ( context ):
       print ( "Finished Upgrading Properties from RC3 Data Model" )
 
 
+try:
+    # Construct the data model property
+    @persistent
+    def save_pre(context):
+        """Set the "saved_by_source_id" value and store a data model based on the current property settings in this application"""
+        # The context appears to always be "None"
+        print ( "========================================" )
+        source_id = cellblender.cellblender_info['cellblender_source_sha1']
+        print ( "save_pre() has been called ... source_id = " + source_id )
+        if cellblender.cellblender_info['versions_match']:
+            print ( "save_pre() called with versions matching ... save Data Model and Source ID" )
+            if not context:
+                # The context appears to always be "None", so use bpy.context
+                context = bpy.context
+            if hasattr ( context.scene, 'mcell' ):
+                print ( "Updating source ID of mcell before saving" )
+                mcell = context.scene.mcell
+                mcell['saved_by_source_id'] = source_id
+                dm = mcell.build_data_model_from_properties ( context )
+                context.scene.mcell['data_model'] = pickle_data_model(dm)
+        else:
+            print ( "save_pre() called with versions not matching ... force an upgrade." )
+            if not context:
+                # The context appears to always be "None", so use bpy.context
+                context = bpy.context
+            if hasattr ( context.scene, 'mcell' ):
+                mcell = context.scene.mcell
+                # Only save the data model if mcell has been initialized
+                if hasattr ( mcell, 'initialized' ):
+                    if mcell.initialized:
+                        print ( "Upgrading blend file to current version (" + str(source_id) + " before saving" )
+                        mcell = context.scene.mcell
+                        if not mcell.get ( 'saved_by_source_id' ):
+                            # This .blend file was created with CellBlender RC3 / RC4
+                            upgrade_RC3_properties_from_data_model ( context )
+                        else:
+                            upgrade_properties_from_data_model ( context )
+                        mcell['saved_by_source_id'] = source_id
+                        dm = mcell.build_data_model_from_properties ( context )
+                        context.scene.mcell['data_model'] = pickle_data_model(dm)
+        print ( "========================================" )
 
-# Construct the data model property
-@persistent
-def save_pre(context):
-    """Set the "saved_by_source_id" value and store a data model based on the current property settings in this application"""
-    # The context appears to always be "None"
-    print ( "========================================" )
-    source_id = cellblender.cellblender_info['cellblender_source_sha1']
-    print ( "save_pre() has been called ... source_id = " + source_id )
-    if cellblender.cellblender_info['versions_match']:
-        print ( "save_pre() called with versions matching ... save Data Model and Source ID" )
+
+        """
+        print ( "data_model.save_pre called" )
+
         if not context:
-            # The context appears to always be "None", so use bpy.context
             context = bpy.context
-        if hasattr ( context.scene, 'mcell' ):
-            print ( "Updating source ID of mcell before saving" )
-            mcell = context.scene.mcell
-            mcell['saved_by_source_id'] = source_id
-            dm = mcell.build_data_model_from_properties ( context )
+
+        if 'mcell' in context.scene:
+            dm = context.scene.mcell.build_data_model_from_properties ( context )
             context.scene.mcell['data_model'] = pickle_data_model(dm)
-    else:
-        print ( "save_pre() called with versions not matching ... force an upgrade." )
+
+        return
+        """
+
+
+    # Check for a data model in the properties
+    @persistent
+    def load_post(context):
+        """Detect whether the loaded .blend file matches the current addon and set a flag to be used by other code"""
+
+        print ( "load post handler: data_model.load_post() called" )
+
+        # SELECT ONE OF THE FOLLOWING THREE:
+
+        # To compute the ID on load, uncomment this choice and comment out the other three
+        #cellblender_source_info.identify_source_version(addon_path,verbose=True)
+
+        # To import the ID as python code, uncomment this choice and comment out the other three
+        #from . import cellblender_id
+        #cellblender.cellblender_info['cellblender_source_sha1'] = cellblender_id.cellblender_id
+
+        # To read the ID from the file as text, uncomment this choice and comment out the other three
+        #cs = open ( os.path.join(os.path.dirname(__file__), 'cellblender_id.py') ).read()
+        #cellblender.cellblender_info['cellblender_source_sha1'] = cs[1+cs.find("'"):cs.rfind("'")]
+
+        # To read the ID from the file as text via a shared call uncomment this choice and comment out the other three
+        cellblender.cellblender_info['cellblender_source_sha1'] = cellblender.cellblender_source_info.identify_source_version_from_file()
+
+
+        source_id = cellblender.cellblender_info['cellblender_source_sha1']
+        print ( "cellblender source id = " + source_id )
+
         if not context:
             # The context appears to always be "None", so use bpy.context
             context = bpy.context
+
+        api_version_in_blend_file = -1  # TODO May not be used
+
+        #if 'mcell' in context.scene:
         if hasattr ( context.scene, 'mcell' ):
             mcell = context.scene.mcell
-            # Only save the data model if mcell has been initialized
-            if hasattr ( mcell, 'initialized' ):
-                if mcell.initialized:
-                    print ( "Upgrading blend file to current version (" + str(source_id) + " before saving" )
-                    mcell = context.scene.mcell
-                    if not mcell.get ( 'saved_by_source_id' ):
-                        # This .blend file was created with CellBlender RC3 / RC4
-                        upgrade_RC3_properties_from_data_model ( context )
-                    else:
-                        upgrade_properties_from_data_model ( context )
-                    mcell['saved_by_source_id'] = source_id
-                    dm = mcell.build_data_model_from_properties ( context )
-                    context.scene.mcell['data_model'] = pickle_data_model(dm)
-    print ( "========================================" )
+
+            # mcell.versions_match = False
+            cellblender.cellblender_info['versions_match'] = False
+            if 'saved_by_source_id' in mcell:
+                saved_by_id = mcell['saved_by_source_id']
+                print ( "load_post() opened a blend file with source_id = " + saved_by_id )
+                if source_id == saved_by_id:
+                    #mcell.versions_match = True
+                    cellblender.cellblender_info['versions_match'] = True
+                else:
+                    # Don't update the properties here. Just flag to display the "Upgrade" button for user to choose.
+                    #mcell.versions_match = False
+                    cellblender.cellblender_info['versions_match'] = False
+        #print ( "End of load_post(): mcell.versions_match = " + str(mcell.versions_match) )
+        print ( "End of load_post(): cellblender.cellblender_info['versions_match'] = " + str(cellblender.cellblender_info['versions_match']) )
+        print ( "========================================" )
 
 
-    """
-    print ( "data_model.save_pre called" )
+        """
+        print ( "Delete MCell RNA properties" )
+        del bpy.types.Scene.mcell
+        if context.scene.get ( 'mcell' ):
+          del context.scene['mcell']
+        print ( "Reinstate MCell RNA properties" )
+        bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender.cellblender_main.MCellPropertyGroup)
+        print ( "Reinstated MCell RNA properties" )
+        """
 
-    if not context:
-        context = bpy.context
+        #print ( "Unregister, delete all ID properties, and Reregister" )
+        # Unregister, delete all ID properties, and Reregister
+        #bpy.utils.unregister_module('cellblender')
+        #print ( "Unregistered" )
 
-    if 'mcell' in context.scene:
-        dm = context.scene.mcell.build_data_model_from_properties ( context )
-        context.scene.mcell['data_model'] = pickle_data_model(dm)
-
-    return
-    """
-
-
-# Check for a data model in the properties
-@persistent
-def load_post(context):
-    """Detect whether the loaded .blend file matches the current addon and set a flag to be used by other code"""
-
-    print ( "load post handler: data_model.load_post() called" )
-
-    # SELECT ONE OF THE FOLLOWING THREE:
-
-    # To compute the ID on load, uncomment this choice and comment out the other three
-    #cellblender_source_info.identify_source_version(addon_path,verbose=True)
-
-    # To import the ID as python code, uncomment this choice and comment out the other three
-    #from . import cellblender_id
-    #cellblender.cellblender_info['cellblender_source_sha1'] = cellblender_id.cellblender_id
-
-    # To read the ID from the file as text, uncomment this choice and comment out the other three
-    #cs = open ( os.path.join(os.path.dirname(__file__), 'cellblender_id.py') ).read()
-    #cellblender.cellblender_info['cellblender_source_sha1'] = cs[1+cs.find("'"):cs.rfind("'")]
-
-    # To read the ID from the file as text via a shared call uncomment this choice and comment out the other three
-    cellblender.cellblender_info['cellblender_source_sha1'] = cellblender.cellblender_source_info.identify_source_version_from_file()
+        #bpy.utils.register_module('cellblender')
+        #mcell = context.scene.mcell
+        #print ( "Reregistered" )
 
 
-    source_id = cellblender.cellblender_info['cellblender_source_sha1']
-    print ( "cellblender source id = " + source_id )
+    def menu_func_import(self, context):
+        self.layout.operator("cb.import_data_model", text="CellBlender Model (text/pickle)")
 
-    if not context:
-        # The context appears to always be "None", so use bpy.context
-        context = bpy.context
+    def menu_func_export(self, context):
+        self.layout.operator("cb.export_data_model", text="CellBlender Model (text/pickle)")
 
-    api_version_in_blend_file = -1  # TODO May not be used
+    def menu_func_import_all(self, context):
+        self.layout.operator("cb.import_data_model_all", text="CellBlender Model and Geometry (text/pickle)")
 
-    #if 'mcell' in context.scene:
-    if hasattr ( context.scene, 'mcell' ):
-        mcell = context.scene.mcell
+    def menu_func_export_all(self, context):
+        self.layout.operator("cb.export_data_model_all", text="CellBlender Model and Geometry (text/pickle)")
 
-        # mcell.versions_match = False
-        cellblender.cellblender_info['versions_match'] = False
-        if 'saved_by_source_id' in mcell:
-            saved_by_id = mcell['saved_by_source_id']
-            print ( "load_post() opened a blend file with source_id = " + saved_by_id )
-            if source_id == saved_by_id:
-                #mcell.versions_match = True
-                cellblender.cellblender_info['versions_match'] = True
-            else:
-                # Don't update the properties here. Just flag to display the "Upgrade" button for user to choose.
-                #mcell.versions_match = False
-                cellblender.cellblender_info['versions_match'] = False
-    #print ( "End of load_post(): mcell.versions_match = " + str(mcell.versions_match) )
-    print ( "End of load_post(): cellblender.cellblender_info['versions_match'] = " + str(cellblender.cellblender_info['versions_match']) )
-    print ( "========================================" )
+    def menu_func_import_all_json(self, context):
+        self.layout.operator("cb.import_data_model_all_json", text="CellBlender Model and Geometry (JSON)")
 
+    def menu_func_export_all_json(self, context):
+        self.layout.operator("cb.export_data_model_all_json", text="CellBlender Model and Geometry (JSON)")
 
-    """
-    print ( "Delete MCell RNA properties" )
-    del bpy.types.Scene.mcell
-    if context.scene.get ( 'mcell' ):
-      del context.scene['mcell']
-    print ( "Reinstate MCell RNA properties" )
-    bpy.types.Scene.mcell = bpy.props.PointerProperty(type=cellblender.cellblender_main.MCellPropertyGroup)
-    print ( "Reinstated MCell RNA properties" )
-    """
-
-    #print ( "Unregister, delete all ID properties, and Reregister" )
-    # Unregister, delete all ID properties, and Reregister
-    #bpy.utils.unregister_module('cellblender')
-    #print ( "Unregistered" )
-
-    #bpy.utils.register_module('cellblender')
-    #mcell = context.scene.mcell
-    #print ( "Reregistered" )
-
-
-def menu_func_import(self, context):
-    self.layout.operator("cb.import_data_model", text="CellBlender Model (text/pickle)")
-
-def menu_func_export(self, context):
-    self.layout.operator("cb.export_data_model", text="CellBlender Model (text/pickle)")
-
-def menu_func_import_all(self, context):
-    self.layout.operator("cb.import_data_model_all", text="CellBlender Model and Geometry (text/pickle)")
-
-def menu_func_export_all(self, context):
-    self.layout.operator("cb.export_data_model_all", text="CellBlender Model and Geometry (text/pickle)")
-
-def menu_func_import_all_json(self, context):
-    self.layout.operator("cb.import_data_model_all_json", text="CellBlender Model and Geometry (JSON)")
-
-def menu_func_export_all_json(self, context):
-    self.layout.operator("cb.export_data_model_all_json", text="CellBlender Model and Geometry (JSON)")
-
-def menu_func_print(self, context):
-    self.layout.operator("cb.print_data_model", text="Print CellBlender Model (text)")
+    def menu_func_print(self, context):
+        self.layout.operator("cb.print_data_model", text="Print CellBlender Model (text)")
 
 
 
-# We use per module class registration/unregistration
-def register():
-    bpy.utils.register_module(__name__)
-    #bpy.types.INFO_MT_file_export.append(menu_func_export_dm)
+    # We use per module class registration/unregistration
+    def register():
+        bpy.utils.register_module(__name__)
+        #bpy.types.INFO_MT_file_export.append(menu_func_export_dm)
 
-def unregister():
-    bpy.utils.unregister_module(__name__)
-    #bpy.types.INFO_MT_file_import.remove(menu_func_export_dm)
+    def unregister():
+        bpy.utils.unregister_module(__name__)
+        #bpy.types.INFO_MT_file_import.remove(menu_func_export_dm)
+
+except:
+    # Unable to import Blender classses
+    print ( "Unable to import Blender definitions ... running outside of Blender." )
+    pass
+
 
 
 if __name__ == "__main__": 
