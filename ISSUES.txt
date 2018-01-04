@@ -145,9 +145,6 @@ to each platform and are not part of what's downloaded when a repository is clon
 
  13 Check seed propagation from CellBlender to BioNetGen/MCellR (any repeatability issues?).
 
- 14 When running MCellR with 12 seeds, all of the runs showed:
-     PID: ####, Seed: 12, 100%
-
 
 === Resolved Issues ===
 
