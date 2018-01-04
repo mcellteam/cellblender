@@ -141,7 +141,7 @@ to each platform and are not part of what's downloaded when a repository is clon
     resting state after any number of runs. However, when running MCellR runs, Blender's
     CPU usage will show a higher number after each successive MCellR run.
 
- 12 Seed isn't being displayed properly in Simulation Process's list (show # of seeds rather than seed).
+ 12 <DONE> Seed isn't being displayed properly in Simulation Process's list (show # of seeds rather than seed).
 
  13 Check seed propagation from CellBlender to BioNetGen/MCellR (any repeatability issues?).
 
@@ -178,3 +178,5 @@ to each platform and are not part of what's downloaded when a repository is clon
      Should we default to hiding the "mol_surface_proxy" and "mol_volume_proxy" molecules?
      Sometimes a model needs to be run twice for MCell to run (race condition in files?).
 
+ - When looping over run commands (rather than looping over seeds), the seed value is
+   found in "run_cmd[5]". That's the value to use in the status line for the process name.

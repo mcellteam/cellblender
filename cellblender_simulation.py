@@ -593,10 +593,8 @@ class MCELL_OT_run_simulation_control_sweep (bpy.types.Operator):
 
                 processes_list = run_sim.processes_list
                 processes_list.add()
-                run_sim.active_process_index = len(
-                    run_sim.processes_list) - 1
-                simulation_process = processes_list[
-                    run_sim.active_process_index]
+                run_sim.active_process_index = len(run_sim.processes_list) - 1
+                simulation_process = processes_list[run_sim.active_process_index]
 
                 print("Starting MCell ... create " + project_files_path() + "/start_time.txt file:")
                 engine_manager.makedirs_exist_ok ( project_files_path(), exist_ok=True )
@@ -954,7 +952,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
                       self.report({'INFO'}, "Simulation Running")
 
                       if not simulation_process.name:
-                          simulation_process.name = ("PID: %d, Seed: %d" % (proc.pid, seed))
+                          simulation_process.name = ("PID: %d, Seed: %d" % (proc.pid, run_cmd[5]))
                       bpy.ops.mcell.percentage_done_timer()
 
 
