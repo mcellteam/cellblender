@@ -416,6 +416,15 @@ class MCELL_OT_white_theme(bpy.types.Operator):
         return {'FINISHED'}
 
 
+def show_proxy_callback(self, context):
+    # print ( "Glyph vis change callback for molecule " + self.name )
+    mcell_prefs = context.scene.mcell.cellblender_preferences
+    proxy_names = [ "mol_volume_proxy", "mol_surface_proxy" ]
+    objs = context.scene.objects
+    for name in proxy_names:
+      if name in objs:
+        objs[name].hide = not mcell_prefs.show_mcellr_proxies
+
 class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
     mcell_binary = StringProperty(name="MCell Binary", update=check_mcell_binary)
@@ -448,6 +457,11 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
     bionetgen_mode = BoolProperty(
         name="BioNetGen Language Mode", default=False,
         description="Show BioNetGen Options and disable some checking")
+
+    show_mcellr_proxies = BoolProperty(
+        name="Show MCellR Proxies", default=False,
+        description="Show MCellR Proxy molecules",
+        update=show_proxy_callback)
 
     use_long_menus = BoolProperty(
         name="Show Long Menu Buttons", default=True,
@@ -562,6 +576,9 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
 
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "bionetgen_mode")
+
+            row = layout.row()
+            row.prop(mcell.cellblender_preferences, "show_mcellr_proxies")
 
             row = layout.row()
             row.prop(mcell.cellblender_preferences, "use_long_menus")
