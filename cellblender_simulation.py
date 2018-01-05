@@ -660,11 +660,12 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
     _timer = None
 
     def modal(self, context, event):
-        # print ( "modal -=-=-=-=" + (50 * "-=" ) + "-" )
         if event.type == 'TIMER':
-            task_len = len(cellblender.simulation_queue.task_dict)  # This may not be right since it may include completed tasks!!!
+            task_len = len(cellblender.simulation_queue.task_dict)
             task_ctr = 0
             mcell = context.scene.mcell
+            if mcell.run_simulation.print_timer_ticks:
+                print ( "modal -=-=-=-=" + (50 * "-=" ) + "-" )
             processes_list = mcell.run_simulation.processes_list
             for simulation_process in processes_list:
                 #if not mcell.run_simulation.save_text_logs:
@@ -684,7 +685,7 @@ class MCELL_OT_percentage_done_timer(bpy.types.Operator):
                             total_iter = int(l.split()[3])
                             percent = (last_iter/total_iter)*100
                             break
-                    if (last_iter == total_iter) and (total_iter != 0):
+                    if ((last_iter == total_iter) and (total_iter != 0)) or (q_item['status'] in ['died','mcell_error']):
                         task_ctr += 1
 
                 if percent is None:
@@ -954,7 +955,7 @@ class MCELL_OT_run_simulation_sweep_queue(bpy.types.Operator):
 
                       if not simulation_process.name:
                           simulation_process.name = ("PID: %d, Seed: %d" % (proc.pid, run_cmd[5]))
-                      bpy.ops.mcell.percentage_done_timer()
+                    bpy.ops.mcell.percentage_done_timer()
 
 
         else:
@@ -1334,7 +1335,7 @@ class MCELL_OT_run_simulation_control_queue(bpy.types.Operator):
 
                   if not simulation_process.name:
                       simulation_process.name = ("PID: %d, Seed: %d" % (proc.pid, seed))
-                  bpy.ops.mcell.percentage_done_timer()
+                bpy.ops.mcell.percentage_done_timer()
 
         else:
             status = "Python not found. Set it in Project Settings."
@@ -2291,6 +2292,7 @@ class MCellRunSimulationPropertyGroup(bpy.types.PropertyGroup):
     last_simulation_run_time = StringProperty ( default="-1.0", description="Time that the simulation was last run" )
 
     text_update_timer_delay = FloatProperty ( name='Text Update Interval (s)', default=0.5, description="Text update timer delay" )
+    print_timer_ticks = BoolProperty ( name='Print Timer Ticks', default=False, description="Print a message for each timer tick" )
 
     simulation_engine_and_run_enum = [
          ('SWEEP_QUEUE', "MCell Local", ""),

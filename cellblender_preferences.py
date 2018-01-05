@@ -589,6 +589,9 @@ class CellBlenderPreferencesPropertyGroup(bpy.types.PropertyGroup):
             row = layout.row()
             row.prop ( mcell.run_simulation, "text_update_timer_delay" )
 
+            row = layout.row()
+            row.prop ( mcell.run_simulation, "print_timer_ticks" )
+
             layout.separator()
 
             box = layout.box()
