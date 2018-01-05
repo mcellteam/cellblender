@@ -133,7 +133,7 @@ to each platform and are not part of what's downloaded when a repository is clon
  10 Testing ... we need lots of test cases to test various combinations of features.
     This is especially important for testing lots of features with MCellR.
 
- 11 CPU usage by CellBlender goes up after several runs.
+ 11 <DONE?> CPU usage by CellBlender goes up after several runs.
     This may be connected display updating.
     Further testing shows that this only happens when running MCellR models.
     When CellBlender runs a simulation, Blender's CPU usage will go up and down during
@@ -177,3 +177,7 @@ to each platform and are not part of what's downloaded when a repository is clon
 
  - When looping over run commands (rather than looping over seeds), the seed value is
    found in "run_cmd[5]". That's the value to use in the status line for the process name.
+
+ - CPU usage was increasing when tasks terminated abnormally because the percent done timers
+   for those tasks kept running (waiting for a "100% complete" detection in their streams).
+
