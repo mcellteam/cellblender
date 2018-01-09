@@ -1383,7 +1383,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             item.remove_properties(context)
         self.molecule_list.clear()
         self.active_mol_index = 0
-        self.last_id = 1
+        self.last_id = 0
         print ( "Done removing all Molecule List Properties." )
         
     
@@ -1425,7 +1425,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
             if self.active_mol_index < 0:
                 self.active_mol_index = 0
             if len(self.molecule_list) <= 0:
-                self.last_id = 1
+                self.last_id = 0
             if self.molecule_list:
                 self.check(context)
 
