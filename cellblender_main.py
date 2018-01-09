@@ -766,9 +766,9 @@ class CellBlenderMainPanelPropertyGroup(bpy.types.PropertyGroup):
 
                     bcol = brow.column()
                     if self.select_multiple:
-                        bcol.prop ( self, "select_multiple", icon='PINNED', text="Show All / Multiple" )
+                        bcol.prop ( self, "select_multiple", icon='PINNED', text="Multiple Panels" )
                     else:
-                        bcol.prop ( self, "select_multiple", icon='UNPINNED', text="Show All / Multiple" )
+                        bcol.prop ( self, "select_multiple", icon='UNPINNED', text="Multiple Panels" )
                     bcol = brow.column()
                     bcol.operator ( "cbm.refresh_operator",icon='FILE_REFRESH', text="Reload Visualization Data")
 
