@@ -424,6 +424,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         description="The molecule species name",
         update=name_change_callback)
     old_name = StringProperty(name="Old Mol Name", default="Molecule")
+    description = StringProperty(name="Description", default="")
 
     component_list = CollectionProperty(type=MCellMolComponentProperty, name="Component List")
     active_component_index = IntProperty(name="Active Component Index", default=0)
@@ -518,6 +519,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
 
     name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    description_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     bngl_label_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     type_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     target_only_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
@@ -747,8 +749,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self ):
         m = self
         m_dict = {}
-        m_dict['data_model_version'] = "DM_2017_06_19_1960"
+        m_dict['data_model_version'] = "DM_2018_01_11_1330"
         m_dict['mol_name'] = m.name
+        m_dict['description'] = m.description
         comp_list = []
         for comp in self.component_list:
           comp_list.append ( { 'cname':comp.component_name, 'cstates':comp.states_string.replace(',',' ').split() } )
@@ -824,8 +827,13 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             dm['bngl_component_list'] = []
             dm['data_model_version'] = "DM_2017_06_19_1960"
 
+        if dm['data_model_version'] == "DM_2017_06_19_1960":
+            # Change on January 11th, 2018 to add a description field to molecules
+            dm['description'] = ""
+            dm['data_model_version'] = "DM_2018_01_11_1330"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2017_06_19_1960":
+        if dm['data_model_version'] != "DM_2018_01_11_1330":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
             return None
 
@@ -834,10 +842,11 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm_dict ):
         # Check that the data model version matches the version for this property group
-        if dm_dict['data_model_version'] != "DM_2017_06_19_1960":
+        if dm_dict['data_model_version'] != "DM_2018_01_11_1330":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
         # Now convert the updated Data Model into CellBlender Properties
         self.name = dm_dict["mol_name"]
+        self.description = dm_dict["description"]
         if "bngl_component_list" in dm_dict:
             for comp in dm_dict["bngl_component_list"]:
                 self.add_component ( comp['cname'], " ".join(comp['cstates']) )
@@ -886,6 +895,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
         helptext = "Molecule Name - \nThis is the name used in Reactions and Display"
         parameter_system.draw_prop_with_help ( layout, "Name", self, "name", "name_show_help", self.name_show_help, helptext )
+
+        helptext = "Molecule Description - \nUser-specified text describing this molecule"
+        parameter_system.draw_prop_with_help ( layout, "Description", self, "description", "description_show_help", self.description_show_help, helptext )
 
         helptext = "Molecule Type - Either Volume or Surface\n" + \
                    "Volume molecules are placed in and diffuse in 3D spaces." + \
