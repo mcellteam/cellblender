@@ -321,6 +321,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         description="The name of the reaction. "
                     "Can be used in Reaction Output.",
         update=check_reaction)
+    description = StringProperty(name="Description", default="")
     reactants = StringProperty(
         name="Reactants", 
         description="Specify 1-3 reactants separated by a + symbol. "
@@ -358,6 +359,8 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
     products_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     variable_rate_switch_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     rxn_name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    rxn_name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    description_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
     status = StringProperty(name="Status")
 
@@ -399,7 +402,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
-        r_dict['data_model_version'] = "DM_2014_10_24_1638"
+        r_dict['data_model_version'] = "DM_2018_01_11_1330"
         r_dict['name'] = r.name
         r_dict['rxn_name'] = r.rxn_name
         r_dict['reactants'] = r.reactants
@@ -427,8 +430,13 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
+        if dm['data_model_version'] == "DM_2014_10_24_1638":
+            # Change on January 11th, 2018 to add a description field to molecules
+            dm['description'] = ""
+            dm['data_model_version'] = "DM_2018_01_11_1330"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] != "DM_2018_01_11_1330":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellReactionProperty data model to current version." )
             return None
 
@@ -437,7 +445,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm_dict ):
         # Check that the data model version matches the version for this property group
-        if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
+        if dm_dict['data_model_version'] != "DM_2018_01_11_1330":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReactionProperty data model to current version." )
         self.name = dm_dict["name"]
         self.rxn_name = dm_dict["rxn_name"]
@@ -702,6 +710,9 @@ class MCellReactionsListProperty(bpy.types.PropertyGroup):
                     helptext = "Reaction Name\nReactions may be named to be referred to by\n" + \
                                "count statements or reaction driven molecule release / placement."
                     ps.draw_prop_with_help ( layout, "Reaction Name:", rxn, "rxn_name", "rxn_name_show_help", rxn.rxn_name_show_help, helptext )
+
+                    helptext = "Reaction Description - \nUser-specified text describing this reaction"
+                    ps.draw_prop_with_help ( layout, "Description", rxn, "description", "description_show_help", rxn.description_show_help, helptext )
 
                     reactants = rxn.reactants.split(" + ")
                     products = rxn.products.split(" + ")
