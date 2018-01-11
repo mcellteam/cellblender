@@ -384,6 +384,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
         name="Site Name", default="Release_Site",
         description="The name of the release site",
         update=check_release_site)
+    description = StringProperty(name="Description", default="")
     molecule = StringProperty(
         name="Molecule",
         description="The molecule to release",
@@ -438,6 +439,7 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     status = StringProperty(name="Status")
 
     name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    description_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     shape_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     object_expr_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     orient_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
@@ -519,8 +521,9 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
-        r_dict['data_model_version'] = "DM_2015_11_11_1717"
+        r_dict['data_model_version'] = "DM_2018_01_11_1330"
         r_dict['name'] = r.name
+        r_dict['description'] = r.description
         r_dict['molecule'] = r.molecule
         r_dict['shape'] = r.shape
         r_dict['orient'] = r.orient
@@ -556,8 +559,13 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
             dm['points_list'] = []
             dm['data_model_version'] = "DM_2015_11_11_1717"
 
+        if dm['data_model_version'] == "DM_2015_11_11_1717":
+            # Change on January 11th, 2018 to add a description field to molecules
+            dm['description'] = ""
+            dm['data_model_version'] = "DM_2018_01_11_1330"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_11_11_1717":
+        if dm['data_model_version'] != "DM_2018_01_11_1330":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeReleaseProperty data model to current version." )
             return None
 
@@ -567,10 +575,11 @@ class MCellMoleculeReleaseProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm_dict ):
 
-        if dm_dict['data_model_version'] != "DM_2015_11_11_1717":
+        if dm_dict['data_model_version'] != "DM_2018_01_11_1330":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeReleaseProperty data model to current version." )
 
         self.name = dm_dict["name"]
+        self.description = dm_dict["description"]
         self.molecule = dm_dict["molecule"]
         if "shape" in dm_dict: self.shape = dm_dict["shape"]
         if "orient" in dm_dict: self.orient = dm_dict["orient"]
@@ -780,6 +789,7 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                     ps.draw_prop_with_help ( layout, "Site Name:", rel, "name", "name_show_help", rel.name_show_help, helptext )
                     #layout.prop(rel, "name")
 
+
                     helptext = "Molecule to Release\n" + \
                                "Selects the molecule to be released at this site."
                     if mcell.cellblender_preferences.bionetgen_mode:
@@ -787,6 +797,9 @@ class MCellMoleculeReleasePropertyGroup(bpy.types.PropertyGroup):
                     else:
                         ps.draw_prop_search_with_help ( layout, "Molecule:", rel, "molecule", mcell.molecules, "molecule_list", "mol_show_help", rel.mol_show_help, helptext )
                         #layout.prop_search ( rel, "molecule", mcell.molecules, "molecule_list", text="Molecule", icon='FORCE_LENNARDJONES')
+
+                    helptext = "Release Site Description - \nUser-specified text describing this release site"
+                    ps.draw_prop_with_help ( layout, "Description", rel, "description", "description_show_help", rel.description_show_help, helptext )
 
                     if rel.molecule in mcell.molecules.molecule_list:
                         label = mcell.molecules.molecule_list[rel.molecule].bnglLabel

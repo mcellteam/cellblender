@@ -404,6 +404,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         r_dict = {}
         r_dict['data_model_version'] = "DM_2018_01_11_1330"
         r_dict['name'] = r.name
+        r_dict['description'] = r.description
         r_dict['rxn_name'] = r.rxn_name
         r_dict['reactants'] = r.reactants
         r_dict['products'] = r.products
@@ -448,6 +449,7 @@ class MCellReactionProperty(bpy.types.PropertyGroup):
         if dm_dict['data_model_version'] != "DM_2018_01_11_1330":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReactionProperty data model to current version." )
         self.name = dm_dict["name"]
+        self.description = dm_dict["description"]
         self.rxn_name = dm_dict["rxn_name"]
         self.reactants = dm_dict["reactants"]
         self.products = dm_dict["products"]
