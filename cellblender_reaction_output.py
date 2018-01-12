@@ -725,7 +725,7 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2016_03_15_1800"
 
         if dm['data_model_version'] == "DM_2016_03_15_1800":
-            # Change on January 11th, 2018 to add a description field to molecules
+            # Change on January 11th, 2018 to add a description field to reaction output items
             dm['description'] = ""
             dm['data_model_version'] = "DM_2018_01_11_1330"
 

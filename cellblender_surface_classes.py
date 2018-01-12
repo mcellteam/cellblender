@@ -418,7 +418,7 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
         if dm['data_model_version'] == "DM_2014_10_24_1638":
-            # Change on January 11th, 2018 to add a description field to molecules
+            # Change on January 11th, 2018 to add a description field to surface classes
             dm['description'] = ""
             dm['data_model_version'] = "DM_2018_01_11_1330"
 
