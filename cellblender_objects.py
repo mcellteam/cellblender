@@ -428,6 +428,7 @@ def model_objects_update(context):
         dyn_dict = {}
         for i in range(len(mobjs.object_list)-1, -1, -1):
             things_to_save = {}
+            things_to_save['description'] = mobjs.object_list[i].description
             things_to_save['dynamic'] = mobjs.object_list[i].dynamic
             things_to_save['script_name'] = mobjs.object_list[i].script_name
             things_to_save['object_source'] = mobjs.object_list[i].object_source
@@ -448,6 +449,7 @@ def model_objects_update(context):
             if obj_name in dyn_dict:
                 #mobjs.object_list[mobjs.active_obj_index].dynamic = dyn_dict[obj_name]['dynamic']
                 #mobjs.object_list[mobjs.active_obj_index].script_name = dyn_dict[obj_name]['script_name']
+                new_obj.description = dyn_dict[obj_name]['description']
                 new_obj.dynamic = dyn_dict[obj_name]['dynamic']
                 new_obj.script_name = dyn_dict[obj_name]['script_name']
                 new_obj.object_source = dyn_dict[obj_name]['object_source']
@@ -640,6 +642,8 @@ def changed_display_source_callback(self, context):
 
 class MCellModelObjectsProperty(bpy.types.PropertyGroup):
     name = StringProperty(name="Object Name", update=check_model_object_name)
+    description = StringProperty(name="Description", default="")
+
     dynamic = BoolProperty ( default=False, description='Flag this object as dynamic', update=changed_dynamic_callback )
     object_source = bpy.props.EnumProperty (
         items= [ # key        label
@@ -813,6 +817,8 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                              text=obj_name+" Object Options", emboss=False)
 
                     row = box.row()
+                    row.prop ( self.object_list[self.active_obj_index], "description" )
+                    row = box.row()
                     col = row.column()
                     col.prop ( context.scene.objects[obj_name], "draw_type", text="" )
                     col = row.column()
@@ -880,12 +886,13 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
         mcell_obj_list = context.scene.mcell.model_objects.object_list
 
         mo_dm = {}
-        mo_dm['data_model_version'] = "DM_2017_12_13_1510"
+        mo_dm['data_model_version'] = "DM_2018_01_11_1330"
         mo_list = []
         obj_list = [ obj for obj in context.scene.objects if obj.mcell.include ]
         for scene_object in obj_list:
           name = scene_object.name
           obj_dm = { "name": name }
+          obj_dm['description'] = mcell_obj_list[name].description
           obj_dm['parent_object'] = mcell_obj_list[name].parent_object
           obj_dm['membrane_name'] = mcell_obj_list[name].membrane_name
           obj_dm['object_source'] = mcell_obj_list[name].object_source
@@ -941,8 +948,14 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
                     obj['dynamic_display_source'] = 'script'
             dm['data_model_version'] = "DM_2017_12_13_1510"
 
+        if dm['data_model_version'] == "DM_2017_12_13_1510":
+            # Change on January 11th, 2018 to add a description field to objects
+            for obj in dm['model_object_list']:
+                obj['description'] = ""
+            dm['data_model_version'] = "DM_2018_01_11_1330"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2017_12_13_1510":
+        if dm['data_model_version'] != "DM_2018_01_11_1330":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
             return None
 
@@ -950,12 +963,12 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
 
 
     def build_properties_from_data_model ( self, context, dm ):
-        # Note that model object list is represented in two places:
+        # Note that the model object list is represented in two places:
         #   context.scene.mcell.model_objects.object_list[] - stores the name
         #   context.scene.objects[].mcell.include - boolean is true for model objects
         # This code updates both locations based on the data model
 
-        if dm['data_model_version'] != "DM_2017_12_13_1510":
+        if dm['data_model_version'] != "DM_2018_01_11_1330":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellModelObjectsPropertyGroup data model to current version." )
         
         # Remove all model objects in the list
@@ -969,6 +982,7 @@ class MCellModelObjectsPropertyGroup(bpy.types.PropertyGroup):
               print ( "Data model contains " + m["name"] )
               mo = self.object_list.add()
               mo.name = m['name']
+              mo.description = m['description']
               mo.parent_object = m['parent_object']
               mo.membrane_name = m['membrane_name']
               mo.object_source = m['object_source']
