@@ -256,6 +256,7 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
     """ Assign a surface class to a surface region. """
 
     name = StringProperty(name="Assign Surface Class")
+    description = StringProperty(name="Description", default="")
     surf_class_name = StringProperty(
         name="Surface Class Name",
         description="This surface class will be assigned to the surface "
@@ -280,6 +281,7 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
         update=check_active_mod_surf_regions)
     status = StringProperty(name="Status")
 
+    description_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
     def remove_properties ( self, context ):
         print ( "Removing all Surface Regions Properties... no collections to remove." )
@@ -288,8 +290,9 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Surface Region building Data Model" )
         sr_dm = {}
-        sr_dm['data_model_version'] = "DM_2015_11_06_1732"
+        sr_dm['data_model_version'] = "DM_2018_01_11_1330"
         sr_dm['name'] = self.name
+        sr_dm['description'] = self.description
         sr_dm['surf_class_name'] = self.surf_class_name
         sr_dm['object_name'] = self.object_name
         sr_dm['region_selection'] = self.region_selection
@@ -321,7 +324,12 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
             dm.pop('all_faces')
             dm['data_model_version'] = "DM_2015_11_06_1732"
 
-        if dm['data_model_version'] != "DM_2015_11_06_1732":
+        if dm['data_model_version'] == "DM_2015_11_06_1732":
+            # Change on January 11th, 2018 to add a description field to modified surface regions
+            dm['description'] = ""
+            dm['data_model_version'] = "DM_2018_01_11_1330"
+
+        if dm['data_model_version'] != "DM_2018_01_11_1330":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellModSurfRegionsProperty data_model to current version." )
             return None
 
@@ -331,10 +339,11 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
     def build_properties_from_data_model ( self, context, dm ):
 
         # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2015_11_06_1732":
+        if dm['data_model_version'] != "DM_2018_01_11_1330":
             data_model.handle_incompatible_data_model ( "Error: MCellModSurfRegionsProperty data model is not current." )
 
         self.name = dm["name"]
+        self.description = dm["description"]
         self.surf_class_name = dm["surf_class_name"]
         self.object_name = dm["object_name"]
         self.region_selection = dm['region_selection']
@@ -347,8 +356,7 @@ class MCellModSurfRegionsProperty(bpy.types.PropertyGroup):
 
 
 class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
-    mod_surf_regions_list = CollectionProperty(
-        type=MCellModSurfRegionsProperty, name="Assign Surface Class List")
+    mod_surf_regions_list = CollectionProperty( type=MCellModSurfRegionsProperty, name="Assign Surface Class List")
     active_mod_surf_regions_index = IntProperty(
         name="Active Assign Surface Class Index", default=0)
 
@@ -440,9 +448,15 @@ class MCellModSurfRegionsPropertyGroup(bpy.types.PropertyGroup):
                 col.operator("mcell.mod_surf_regions_remove", icon='ZOOMOUT',
                              text="")
                 if self.mod_surf_regions_list:
-                    active_mod_surf_regions = \
-                        self.mod_surf_regions_list[
-                            self.active_mod_surf_regions_index]
+                    active_mod_surf_regions =  self.mod_surf_regions_list[self.active_mod_surf_regions_index]
+
+                    # Note that these panels don't have help on each item. To remain consistent with other items, don't add help for "description".
+                    # helptext = "Modify Surface Region Description - \nUser-specified text describing this modified surface region"
+                    # mcell.parameter_system.draw_prop_with_help ( layout, "Description", active_mod_surf_regions, "description", "description_show_help", active_mod_surf_regions.description_show_help, helptext )
+                    # Remove these two lines if drawing with help:
+                    row = layout.row()
+                    row.prop ( active_mod_surf_regions, "description" )
+
                     row = layout.row()
                     row.prop_search(active_mod_surf_regions, "surf_class_name",
                                     mcell.surface_classes, "surf_class_list",
