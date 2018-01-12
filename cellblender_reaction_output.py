@@ -624,6 +624,7 @@ class MCELL_PT_reaction_output_settings(bpy.types.Panel):
 class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     name = StringProperty(
         name="Reaction Output", update=check_rxn_output)
+    description = StringProperty(name="Description", default="")
     molecule_name = StringProperty(
         name="Molecule",
         description="Count the selected molecule.",
@@ -667,6 +668,7 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
 
     plotting_enabled = BoolProperty ( default=True, description="Enable this item in plotting output" )
 
+    description_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
     mdl_string_show_help = BoolProperty ( default=False, description="Toggle more information about this item" )
     mdl_file_prefix_show_help = BoolProperty ( default=False, description="Toggle more information about this item" )
     data_file_name_show_help = BoolProperty ( default=False, description="Toggle more information about this item" )
@@ -677,8 +679,9 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         print ( "Reaction Output building Data Model" )
         ro_dm = {}
-        ro_dm['data_model_version'] = "DM_2016_03_15_1800"
+        ro_dm['data_model_version'] = "DM_2018_01_11_1330"
         ro_dm['name'] = self.name
+        ro_dm['description'] = self.description
         ro_dm['molecule_name'] = self.molecule_name
         ro_dm['reaction_name'] = self.reaction_name
         ro_dm['mdl_string'] = self.mdl_string
@@ -721,8 +724,13 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
             # Update the data model version for this item
             dm['data_model_version'] = "DM_2016_03_15_1800"
 
+        if dm['data_model_version'] == "DM_2016_03_15_1800":
+            # Change on January 11th, 2018 to add a description field to molecules
+            dm['description'] = ""
+            dm['data_model_version'] = "DM_2018_01_11_1330"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2016_03_15_1800":
+        if dm['data_model_version'] != "DM_2018_01_11_1330":
             data_model.flag_incompatible_data_model ( "Upgrade Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
             return None
 
@@ -731,9 +739,10 @@ class MCellReactionOutputProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm ):
         # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2016_03_15_1800":
+        if dm['data_model_version'] != "DM_2018_01_11_1330":
             data_model.handle_incompatible_data_model ( "Build Error: Unable to upgrade MCellReactionOutputProperty data model to current version." )
         self.name = dm["name"]
+        self.description = dm["description"]
         self.molecule_name = dm["molecule_name"]
         self.reaction_name = dm["reaction_name"]
         self.mdl_string = dm['mdl_string']
@@ -804,8 +813,7 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
     cross_front = BoolProperty(name = "FRONT_CROSSINGS",default = False)
     cross_back  = BoolProperty(name = "BACK_CROSSINGS",default = False)
     cross_all   = BoolProperty(name = "ALL_CROSSINGS",default = False)
-    rxn_output_list = CollectionProperty(
-        type=MCellReactionOutputProperty, name="Reaction Output List")
+    rxn_output_list = CollectionProperty(type=MCellReactionOutputProperty, name="Reaction Output List")
     plot_layout_enum = [
         (' page ', "Separate Page for each Plot", ""),
         (' plot ', "One Page, Multiple Plots", ""),
@@ -1111,6 +1119,9 @@ class MCellReactionOutputPropertyGroup(bpy.types.PropertyGroup):
                                     row.prop(self, "virt_z")
                             #Checking to see if they want to use all_enclosed to count the molecules
                             #if (rxn_output.object_name and (rxn_output.count_location == "Region")): 
+
+                    helptext = "Plot Item Description - \nUser-specified text describing this plot item"
+                    ps.draw_prop_with_help ( layout, "Description", rxn_output, "description", "description_show_help", rxn_output.description_show_help, helptext )
             else:
 
                 row.label(text="Define at least one molecule", icon='ERROR')

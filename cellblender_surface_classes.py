@@ -150,6 +150,7 @@ def check_surface_class(self, context):
     return
 
 
+
 #########################################################################
 # Surface Classes Operators - These should delegate all work to the
 #                             surfaces_classes object via its methods
@@ -373,6 +374,7 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
         name="Surface Class Name", default="Surface_Class",
         description="This name can be selected in Assign Surface Classes.",
         update=check_surface_class)
+    description = StringProperty(name="Description", default="")
     surf_class_props_list = CollectionProperty(
         type=MCellSurfaceClassPropertiesProperty, name="Surface Classes List")
     active_surf_class_props_index = IntProperty(
@@ -393,17 +395,18 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
         self.active_surf_class_props_index = 0
         print ( "Done removing all Surface Class Properties." )
 
+
     def build_data_model_from_properties ( self, context ):
         print ( "Surface Classes building Data Model" )
         sc_dm = {}
-        sc_dm['data_model_version'] = "DM_2014_10_24_1638"
+        sc_dm['data_model_version'] = "DM_2018_01_11_1330"
         sc_dm['name'] = self.name
+        sc_dm['description'] = self.description
         sc_list = []
         for sc in self.surf_class_props_list:
             sc_list.append ( sc.build_data_model_from_properties(context) )
         sc_dm['surface_class_prop_list'] = sc_list
         return sc_dm
-
 
 
     @staticmethod
@@ -414,7 +417,12 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] == "DM_2014_10_24_1638":
+            # Change on January 11th, 2018 to add a description field to molecules
+            dm['description'] = ""
+            dm['data_model_version'] = "DM_2018_01_11_1330"
+
+        if dm['data_model_version'] != "DM_2018_01_11_1330":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellSurfaceClassesProperty data model to current version." )
             return None
 
@@ -422,18 +430,17 @@ class MCellSurfaceClassesProperty(bpy.types.PropertyGroup):
             for item in dm["surface_class_prop_list"]:
                 if MCellSurfaceClassPropertiesProperty.upgrade_data_model ( item ) == None:
                     return None
-
         return dm
-
 
 
     def build_properties_from_data_model ( self, context, dm ):
 
         # Check that the data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] != "DM_2018_01_11_1330":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellSurfaceClassesProperty data model to current version." )
 
         self.name = dm["name"]
+        self.description = dm["description"]
         while len(self.surf_class_props_list) > 0:
             self.surf_class_props_list.remove(0)
         if "surface_class_prop_list" in dm:
@@ -672,8 +679,9 @@ class MCellSurfaceClassesPropertyGroup(bpy.types.PropertyGroup):
                 active_surf_class = self.surf_class_list[
                     self.active_surf_class_index]
                 row = layout.row()
-
                 row.prop(active_surf_class, "name")
+                row = layout.row()
+                row.prop(active_surf_class, "description")
                 row = layout.row()
                 row.label(text="%s Properties:" % active_surf_class.name, icon='FACESEL_HLT')
                 row = layout.row()
