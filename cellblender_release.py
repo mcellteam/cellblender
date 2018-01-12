@@ -1039,6 +1039,7 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
         name="Pattern Name", default="Release_Pattern",
         description="The name of the release site",
         update=check_release_pattern_name)
+    description = StringProperty(name="Description", default="")
 
     delay            = PointerProperty ( name="Release Pattern Delay", type=parameter_system.Parameter_Reference )
     release_interval = PointerProperty ( name="Relese Interval",       type=parameter_system.Parameter_Reference )
@@ -1049,6 +1050,7 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
     status = StringProperty(name="Status")
 
     name_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
+    description_show_help = BoolProperty ( default=False, description="Toggle more information about this parameter" )
 
     def init_properties ( self, parameter_system ):
         self.name = "Release_Pattern"
@@ -1072,8 +1074,9 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self, context ):
         r = self
         r_dict = {}
-        r_dict['data_model_version'] = "DM_2014_10_24_1638"
+        r_dict['data_model_version'] = "DM_2018_01_11_1330"
         r_dict['name'] = r.name
+        r_dict['description'] = r.description
         r_dict['delay'] = r.delay.get_expr()
         r_dict['release_interval'] = r.release_interval.get_expr()
         r_dict['train_duration'] = r.train_duration.get_expr()
@@ -1091,7 +1094,12 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
             # Make changes to move from unversioned to DM_2014_10_24_1638
             dm['data_model_version'] = "DM_2014_10_24_1638"
 
-        if dm['data_model_version'] != "DM_2014_10_24_1638":
+        if dm['data_model_version'] == "DM_2014_10_24_1638":
+            # Change on January 11th, 2018 to add a description field to molecules
+            dm['description'] = ""
+            dm['data_model_version'] = "DM_2018_01_11_1330"
+
+        if dm['data_model_version'] != "DM_2018_01_11_1330":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellReleasePatternProperty data model to current version." )
             return None
 
@@ -1101,10 +1109,11 @@ class MCellReleasePatternProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm_dict ):
 
-        if dm_dict['data_model_version'] != "DM_2014_10_24_1638":
+        if dm_dict['data_model_version'] != "DM_2018_01_11_1330":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellReleasePatternProperty data model to current version." )
 
         self.name = dm_dict["name"]
+        self.description = dm_dict["description"]
         self.delay.set_expr ( dm_dict["delay"] )
         self.release_interval.set_expr ( dm_dict["release_interval"] )
         self.train_duration.set_expr ( dm_dict["train_duration"] )
@@ -1209,7 +1218,7 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
             for ri in range(len(l)):
                 l[ri] = MCellReleasePatternProperty.upgrade_data_model ( l[ri] )
                 if l[ri] == None:
-                  return None
+                    return None
         return dm
 
 
@@ -1278,8 +1287,9 @@ class MCellReleasePatternPropertyGroup(bpy.types.PropertyGroup):
                          "     -  Train Interval\n" + \
                          "     -  Number of Trains"
               ps.draw_prop_with_help ( layout, "Pattern Name:", rel_pattern, "name", "name_show_help", rel_pattern.name_show_help, helptext )
-              #layout.prop(rel_pattern, "name")
 
+              helptext = "Release Pattern Description - \nUser-specified text describing this release pattern"
+              ps.draw_prop_with_help ( layout, "Description", rel_pattern, "description", "description_show_help", rel_pattern.description_show_help, helptext )
 
               rel_pattern.delay.draw(layout,ps)
               rel_pattern.release_interval.draw(layout,ps)
