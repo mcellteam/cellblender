@@ -47,6 +47,7 @@ class ParameterSpace:
         self.ID_value_dict = {}  # Maps IDs to their current value as a string
         self.ID_error_dict = {}  # When not None this contains an expression that needs further editing because it is in error
         self.ID_valid_dict = {}  # Boolean value for each parameter indicating that it's value is valid with respect to all other parameters - This is NOT an indication of the validity of the expression!!!
+        self.next_available_id = 1
         # self.next_id = 1
 
     def delete_all ( self ):
@@ -68,7 +69,7 @@ class ParameterSpace:
         # For right now, this function defaults to silence (an easy way to turn it on and off globally)
         if prnt:
             print ( " Parameter space:" )
-            #print ( "  next_id = " + str(self.next_id) )
+            print ( "  next_available_id = " + str(self.next_available_id) )
             print ( "  name->ID = " + str(self.name_ID_dict) )
             print ( "  ID->name = " + str(self.ID_name_dict) )
             print ( "  ID->expr = " + str(self.ID_expr_dict) )
@@ -105,18 +106,22 @@ class ParameterSpace:
         """ Return the ID of this parameter whether it's new or not """
         # print "Define: " + str(name) + " = " + str(expr)
 
-        next_available_id = 1;
-        while next_available_id in self.ID_name_dict:
-            # print ( "Can't use ", next_available_id )
-            next_available_id += 1
+        #next_available_id = 1;
+        #while next_available_id in self.ID_name_dict:
+        #    # print ( "Can't use ", next_available_id )
+        #    next_available_id += 1
         # self.next_id = next_available_id
 
         if name == None:
             # Try to choose a name (P#) with this next ID if possible, but search further as needed
-            next_unused_number = next_available_id
+            next_unused_number = self.next_available_id
             while self.get_id( "P%d" % (next_unused_number) ) != None:
+                # This name is in use ... possibly by explicit declaration: P999 = 5
                 next_unused_number += 1
             name = "P%d" % (next_unused_number)
+            #if next_unused_number == self.next_available_id:
+            #    # The next_available_id has been used:
+            #    self.next_available_id += 1
 
         this_id = -1
         if name in self.name_ID_dict:
@@ -127,7 +132,8 @@ class ParameterSpace:
         else:
             # This is a new name, so make a new entry
             # print ( "Parameter " + name + " is new, so make new name/ID entries as well as update the expression" )
-            this_id = next_available_id
+            this_id = self.next_available_id
+            self.next_available_id += 1
             self.name_ID_dict.update ( { name : this_id } )
             self.ID_name_dict.update ( { this_id : name } )
             # Always set the default ("original") value to 0
@@ -275,7 +281,7 @@ class ParameterSpace:
             self.ID_valid_dict.pop(parid)
             if len(self.name_ID_dict) <= 0:
                 # Reset the ID numbers when the list becomes empty
-                self.next_id = 1
+                self.next_available_id = 1
 
     def delete ( self, parid ):
         """ Delete a parameter only if it has no dependencies """
@@ -294,6 +300,7 @@ class ParameterSpace:
 
     def get_id ( self, name ):
         """ Get the ID of a parameter by name """
+        #Speed: This checking and then getting is a double access ... might be better with try/except?
         if (len(self.name_ID_dict) > 0) and (name in self.name_ID_dict):
             return self.name_ID_dict[name]
         else:
@@ -384,8 +391,8 @@ class ParameterSpace:
                         error_string = ", *** Error Pending: " + self.get_error(parid)
                     print ( str(parid) + ": " + self.get_name(parid) + 
                             " = " + str(self.get_value(parid)) + 
-                            " = " + self.get_expr ( parid, to_py=True ) + 
-                            " = " + self.get_expr ( parid, to_py=False ) + 
+                            " = \'" + self.get_expr ( parid, to_py=True ) + "\'" +
+                            " = \"" + self.get_expr ( parid, to_py=False ) + "\"" +
                             ", " + self.get_name(parid) + 
                             " depends on " + str(self.get_depend_list(parid)) + 
                             ", " + self.get_name(parid) + 
@@ -658,6 +665,7 @@ if __name__ == "__main__":
                 print ( "" )
                 print ( " Commands:" )
                 print ( "  ? : Print help" )
+                print ( "  >> : Enter Python interactive mode" )
                 print ( "  Enter : Print All Parameters ... one line each" )
                 print ( "  \ : Dump All Parameters ... in great detail" )
                 print ( "  ! : Dump Parameters object as a pickled string" )
@@ -665,10 +673,15 @@ if __name__ == "__main__":
                 print ( "  param = expression : Assign expression to parameter" )
                 print ( "  old @ new : Rename parameter old to new" )
                 print ( "  # n: Generate n parameters where each is the sum of the preceding 3" )
+                print ( "  ## n: Generate n parameters where each is the sum of all preceding" )
                 print ( "  .par : Delete Parameter par" )
                 print ( "  . : Delete All Parameters" )
+                print ( "  $ : Run a test case" )
                 print ( "  Control-C or Control-D : Exit program" )
                 print ( "" )
+            elif s.strip().startswith ( ">>" ):
+                __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
             elif '=' in s:
                 # Perform an assignment
                 sparts = s.split('=')
@@ -690,14 +703,33 @@ if __name__ == "__main__":
                 # Delete all parameters
                 print ( "Deleting all" )
                 ps.delete_all()
-            elif (len(s) > 0) and (s[0] == '#'):
+            elif (len(s) > 1) and (s.strip().startswith ( "##" )):  # This case should come before the "#" case
                 # Delete selected parameter
-                count = int(s[1:].strip())
-                print ( "Generating " + str(count) + " parameters" )
+                count = int(s.strip()[2:].strip())
+                print ( "Generating " + str(count) + " parameters each depending on all previous" )
                 for i in range(count):
                     name = ("p%s" % i)
                     if i == 0:
-                        expr = "1"
+                        expr = "1.0"
+                    else:
+                        expr = "("
+                        for j in range(i):
+                            if j > 0:
+                                expr = expr + "+"
+                            expr = expr + ("p%s" % j)
+                        expr = expr + ")"
+                    # print ( "Defining parameter \"" + str(name) + "\" with expression: " + str(expr) )
+                    ps.define ( name, expr )
+                print ( "Evaluating all..." )
+                ps.eval_all(False)
+            elif (len(s) > 0) and (s.strip().startswith ( "#" )):  # This case should come after the "##" case
+                # Generate n parameters each depending on previous 3
+                count = int(s.strip()[1:].strip())
+                print ( "Generating " + str(count) + " parameters each depending on previous 3" )
+                for i in range(count):
+                    name = ("p%s" % i)
+                    if i == 0:
+                        expr = "1.0"
                     else:
                         expr = "("
                         n = min(i,3)  # Constant value limits the number of parameters in each expression
@@ -728,6 +760,18 @@ if __name__ == "__main__":
                 ok = ps.rename ( old, new )
                 if not ok:
                     print ( "Unable to rename " + old + " to because it is not a valid parameter name" )
+            elif (len(s) > 0) and (s == "$"):
+                # Rename old to new
+                ps.define ( 'a', '3' )
+                ps.delete ( ps.get_id('a') )
+                ps.define ( 'a', '4' )
+                ps.define ( 'b', '5' )
+                ps.define ( 'cc', 'a+b' )
+                ps.rename ( 'cc', 'c' )
+                ps.define ( 'a', '3' )
+                ps.delete ( 'a' )  # This should not be allowed
+                ps.rename ( 'a', 'A' )
+                print ( "A,b,c = " + str(ps.get_value(ps.get_id('A'))) + "," + str(ps.get_value(ps.get_id('b'))) + "," + str(ps.get_value(ps.get_id('c'))) )
             elif s != '':
                 # Assume s is an expression to evaluate and print
                 (value,valid) = ps.eval_all ( expression=s )
