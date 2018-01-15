@@ -6,7 +6,120 @@ import re
 import token
 import symbol
 import sys
+import time
 # from pdb import set_trace as debug # Debug help from Lee
+
+# from math import *
+#from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
+#from random import uniform, gauss
+
+
+####################### Start of Profiling Code #######################
+
+# From: http://wiki.blender.org/index.php/User:Z0r/PyDevAndProfiling
+
+prof = {}
+
+# Defines a dictionary associating a call name with a list of 3 (now 4) entries:
+#  0: Name
+#  1: Duration
+#  2: Count
+#  3: Start Time (for non-decorated version)
+
+class profile:
+    ''' Function decorator for code profiling.'''
+
+    def __init__(self,name):
+        self.name = name
+
+    def print_call_stack(self):
+        frame = inspect.currentframe()
+        call_list_frames = inspect.getouterframes(frame)
+        filtered_frames = [ {"function":f.function, "line":f.lineno, "file":f.filename} for f in call_list_frames if not ( f.function in ("execute", "print_frame", "profile_fun", "draw", "draw_self", "draw_layout") ) ]
+
+        if len(filtered_frames) > 0:
+            filtered_frames.reverse()
+            s = ""
+            last_call = ""
+            num_repeat = 0
+            sep = " ->  "
+            for f in filtered_frames:
+                # this_call = str(f["function"]) + '[' + str(f["line"]) + ' in ' + str(f["file"].split('/')[-1].split('.')[0]) + ']'
+                this_call = str(f["function"]).strip()
+                if this_call == last_call:
+                    num_repeat += 1
+                else:
+                    repeat_str = num_repeat * "*"
+                    #if len(repeat_str) > 0:
+                    #    repeat_str = " " + repeat_str + " "
+                    s += last_call + repeat_str + sep
+                    num_repeat = 0
+                    last_call = this_call
+                # print ( "    Frame: " + str(f.function) + " at " + str(f.lineno) + " in "  + str(f.filename.split('/')[-1].split('.')[0]) )
+            if num_repeat > 0:
+                s += last_call + (num_repeat * "*") + sep
+            s = s[len(sep):-len(sep)]
+            if len(s) > 0:
+                print ( s )
+
+        del filtered_frames
+        del call_list_frames
+        del frame
+
+    def __call__(self,fun):
+        def profile_fun(*args, **kwargs):
+            #self.print_call_stack()               # This will print the call stack as each function is called
+            start = time.clock()
+            try:
+                return fun(*args, **kwargs)
+            finally:
+                duration = time.clock() - start
+                if fun in prof:
+                    prof[fun][1] += duration
+                    prof[fun][2] += 1
+                else:
+                    prof[fun] = [self.name, duration, 1, 0]
+        return profile_fun
+
+# Builds on the previous profiling code with non-decorated versions (needed by some Blender functions):
+#  0: Name
+#  1: Duration
+#  2: Count
+#  3: Start Time (for non-decorated version)
+
+def start_timer(fun):
+    start = time.clock()
+    if fun in prof:
+        prof[fun][2] += 1
+        prof[fun][3] = start
+    else:
+        prof[fun] = [fun, 0, 1, start]
+
+def stop_timer(fun):
+    stop = time.clock()
+    if fun in prof:
+        prof[fun][1] += stop - prof[fun][3]   # Stop - Start
+        # prof[fun][2] += 1
+    else:
+        print ( "Timing Error: stop called without start!!" )
+        pass
+
+def print_statistics():
+    '''Prints profiling results to the console.'''
+
+    def timekey(stat):
+        return stat[1] / float(stat[2])
+
+    stats = sorted(prof.values(), key=timekey, reverse=True)
+
+    print ( '{:<55} {:>7} {:>7} {:>8}'.format('FUNCTION', 'CALLS', 'SUM(ms)', 'AV(ms)'))
+    for stat in stats:
+        print ( '{:<55} {:>7} {:>7.0f} {:>8.2f}'.format(stat[0],stat[2],stat[1]*1000,(stat[1]/float(stat[2]))*1000))
+
+
+
+####################### End of Profiling Code #######################
+
 
 print ( "ParameterSpace.py being processed ..." )
 
@@ -22,6 +135,7 @@ class ParameterSpace:
         
     """
 
+    @profile('ParameterSpace.__init__')
     def __init__ ( self ):
         """ Initialize a new ParameterSpace """
         #print ( "ParameterSpace.__init__() called" )
@@ -30,15 +144,18 @@ class ParameterSpace:
         self.UNDEFINED_NAME = "   (0*1111111111*0)   "
         self.init_param_space()
 
+    @profile('ParameterSpace.get_version')
     def get_version ( self ):
         return ( 0.002 )  # N O T E: This constant is in the function to keep it from being saved when pickling!!!
     
+    @profile('ParameterSpace.version_match')
     def version_match ( self ):
         if self.VERSION == self.get_version():
             return True
         else:
             return False
 
+    @profile('ParameterSpace.init_param_space')
     def init_param_space ( self ):
         #print ( "Init_param_space called" )
         self.name_ID_dict = {}  # Maps string names to integer IDs
@@ -50,21 +167,26 @@ class ParameterSpace:
         self.next_available_id = 1
         # self.next_id = 1
 
+    @profile('ParameterSpace.delete_all')
     def delete_all ( self ):
         """ Delete all parameters """
         self.init_param_space()
 
 
+    @profile('ParameterSpace.num_parameters')
     def num_parameters ( self ):
         return ( len(self.ID_name_dict) )
 
+    #@profile('ParameterSpace.get_next_id')
     #def get_next_id ( self ):
     #    return self.next_id
 
+    @profile('ParameterSpace.get_id_list')
     def get_id_list ( self ):
         return self.ID_name_dict.keys()
 
 
+    @profile('ParameterSpace.dump')
     def dump ( self, prnt=False ):
         # For right now, this function defaults to silence (an easy way to turn it on and off globally)
         if prnt:
@@ -91,6 +213,7 @@ class ParameterSpace:
             self.eval_all(True)
 
 
+    @profile('ParameterSpace.print_keywords')
     def print_keywords ( self ):
         for mdl_keyword in self.EXPRESSION_KEYWORDS:
             print ( "  " + mdl_keyword + " = " + self.EXPRESSION_KEYWORDS[mdl_keyword] )
@@ -101,6 +224,7 @@ class ParameterSpace:
       for setting and getting expressions.
     """
 
+    @profile('ParameterSpace.define')
     def define ( self, name, expr ):
         """ Define a parameter ... may be new or may overwrite an existing parameter"""
         """ Return the ID of this parameter whether it's new or not """
@@ -134,10 +258,10 @@ class ParameterSpace:
             # print ( "Parameter " + name + " is new, so make new name/ID entries as well as update the expression" )
             this_id = self.next_available_id
             self.next_available_id += 1
-            self.name_ID_dict.update ( { name : this_id } )
-            self.ID_name_dict.update ( { this_id : name } )
+            self.name_ID_dict[name] = this_id
+            self.ID_name_dict[this_id] = name
             # Always set the default ("original") value to 0
-            self.ID_expr_dict.update ( { this_id : "0" } )
+            self.ID_expr_dict[this_id] = "0"
             # Now try to set the expression
             # Note that set_expr will validate the expression before replacing the current one.
             #  If the new expression is not valid, it will not replace the current expression and
@@ -155,9 +279,10 @@ class ParameterSpace:
         return this_id
 
 
+    @profile('ParameterSpace.set_expr')
     def set_expr ( self, parid, expr, reeval_all=True ):
         """ Store original text and parse and store the expression for the specified parameter ID """
-        # self.ID_error_dict.update ( { parid : expr } )  # This may be redundant, but is here for clarity
+        # self.ID_error_dict[parid] = expr  # This may be redundant, but is here for clarity
         parsed_expr = self.parse_param_expr ( expr )
 
 
@@ -166,17 +291,18 @@ class ParameterSpace:
 
         if (parsed_expr == None) or (-1 in parsed_expr):
             # There was an error in the string expression, so save the error version and don't change anything else
-            self.ID_error_dict.update ( { parid : expr } )
+            self.ID_error_dict[parid] = expr
         else:
             # The expression parsed fine, so set error version to None, update the expression, and evaluate it's value
-            self.ID_error_dict.update ( { parid : None } )
-            self.ID_expr_dict.update ( { parid : parsed_expr } )
-            self.ID_valid_dict.update ( { parid : False } )
+            self.ID_error_dict[parid] = None
+            self.ID_expr_dict[parid] = parsed_expr
+            self.ID_valid_dict[parid] = False
             if reeval_all:
                 self.eval_all()
-            self.ID_value_dict.update ( { parid : self.get_value(parid) } )
+            self.ID_value_dict[parid] = self.get_value(parid)
 
 
+    @profile('ParameterSpace.get_expr')
     def get_expr ( self, parid, to_py=False ):
         """ Construct a string representation of the expression by substituting symbols for IDs """
         exp_list = self.ID_expr_dict[parid]
@@ -205,6 +331,7 @@ class ParameterSpace:
     that reference the requested ID.
     """
 
+    @profile('ParameterSpace.get_dependents_list')
     def get_dependents_list ( self, parid ):
         """ Return a list of all parameter ids that reference this parameter id directly """
         dependents = []
@@ -218,6 +345,7 @@ class ParameterSpace:
         return dependents
 
 
+    @profile('ParameterSpace.get_dependents_names')
     def get_dependents_names ( self, parid ):
         """ Return a list of all parameter names that reference this parameter id directly """
         dlist = self.get_dependents_list(parid)
@@ -232,6 +360,7 @@ class ParameterSpace:
     are referenced by the requested id.
     """
 
+    @profile('ParameterSpace.get_depend_list')
     def get_depend_list ( self, parid ):
         """ Construct a list of ids that this id depends upon (or is a function of) """
         exp_list = self.ID_expr_dict[parid]
@@ -242,6 +371,7 @@ class ParameterSpace:
         return [ x for x in depends_on ]
 
 
+    @profile('ParameterSpace.get_depend_dict')
     def get_depend_dict ( self, parid ):
         """ Construct a dictionary of ids and names that this id depends upon (or is a function of) """
         exp_list = self.ID_expr_dict[parid]
@@ -252,6 +382,7 @@ class ParameterSpace:
         return depends_on
 
 
+    @profile('ParameterSpace.all_valid')
     def all_valid ( self ):
         # Check to see if all values are currently valid
         valid = True
@@ -269,6 +400,7 @@ class ParameterSpace:
     These functions delete parameters.
     """    
 
+    @profile('ParameterSpace.absolute_delete')
     def absolute_delete ( self, parid ):
         """ Delete a parameter """
         name = self.get_name ( parid )
@@ -283,6 +415,7 @@ class ParameterSpace:
                 # Reset the ID numbers when the list becomes empty
                 self.next_available_id = 1
 
+    @profile('ParameterSpace.delete')
     def delete ( self, parid ):
         """ Delete a parameter only if it has no dependencies """
         dependents = self.get_dependents_list(parid)
@@ -298,6 +431,7 @@ class ParameterSpace:
        much processing.
     """
 
+    @profile('ParameterSpace.get_id')
     def get_id ( self, name ):
         """ Get the ID of a parameter by name """
         #Speed: This checking and then getting is a double access ... might be better with try/except?
@@ -306,6 +440,7 @@ class ParameterSpace:
         else:
             return None
 
+    @profile('ParameterSpace.get_name')
     def get_name ( self, parid ):
         """ Get the name of the parameter with the specified ID """
         if parid in self.ID_name_dict:
@@ -313,6 +448,7 @@ class ParameterSpace:
         else:
             return None
 
+    @profile('ParameterSpace.get_error')
     def get_error ( self, parid ):
         """ Get the text expression that is currently in error for the specified parameter ID """
         if parid in self.ID_error_dict:
@@ -320,6 +456,7 @@ class ParameterSpace:
         else:
             return None
 
+    @profile('ParameterSpace.get_value')
     def get_value ( self, parid ):
         """ Get the current value for the specified parameter ID """
         if parid in self.ID_value_dict:
@@ -327,16 +464,18 @@ class ParameterSpace:
         else:
             return None
 
+    @profile('ParameterSpace.set_name')
     def set_name ( self, parid, name ):
         """ Change the name of the parameter for the specified ID returning a boolean success value"""
         old_name = self.get_name ( parid )
         if old_name != None:
-            self.ID_name_dict.update ( { parid : name } )
-            self.name_ID_dict.update ( { name : self.name_ID_dict.pop(old_name) } )
+            self.ID_name_dict[parid] = name
+            self.name_ID_dict[name] = self.name_ID_dict.pop(old_name)
             return True
         return False
 
 
+    @profile('ParameterSpace.rename')
     def rename ( self, old_name, new_name, illegal_names=None ):
         """ Rename a parameter returning a boolean success value """
         if illegal_names != None:
@@ -354,8 +493,8 @@ class ParameterSpace:
                 return False
             else:
                 # It's ok to rename, so update the two dictionaries that associate names and IDs
-                self.ID_name_dict.update ( { parid : new_name } )
-                self.name_ID_dict.update ( { new_name : self.name_ID_dict.pop(old_name) } )
+                self.ID_name_dict[parid] = new_name
+                self.name_ID_dict[new_name] = self.name_ID_dict.pop(old_name)
                 return True
 
 
@@ -367,6 +506,7 @@ class ParameterSpace:
 
 
 
+    @profile('ParameterSpace.eval_all')
     def eval_all ( self, prnt=False, requested_id=None, expression=None ):
     
         # Re-parse any parameters that remain unparsed
@@ -412,12 +552,13 @@ class ParameterSpace:
         return requested_val
 
 
+    @profile('ParameterSpace.eval_all_ordered')
     def eval_all_ordered ( self, prnt=False, requested_id=None, expression=None ):
         """ Evaluate all parameters in order, printing either a requested ID or all (-1) when prnt is True """
 
         # from math import *
-        from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
-        from random import uniform, gauss
+        #from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
+        #from random import uniform, gauss
 
         requested_val = 0
         valid = True
@@ -448,7 +589,7 @@ class ParameterSpace:
                         # If it wasn't there, then this is a change!!
                         something_changed = True
 
-                    self.ID_value_dict.update ( { parid : str(val) } )
+                    self.ID_value_dict[parid] = str(val)
                     if (requested_id == parid):
                         requested_val = val
                 except:
@@ -476,12 +617,13 @@ class ParameterSpace:
 
 
 
+    @profile('ParameterSpace.eval_all_any_order')
     def eval_all_any_order ( self, prnt=False, requested_id=None, expression=None ):
         """ Evaluate all parameters based on dependencies. """
 
         # from math import *
-        from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
-        from random import uniform, gauss
+        #from math import sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, ceil, floor  # abs, max, and min are not from math?
+        #from random import uniform, gauss
         
         requested_val = 0
         valid = True
@@ -531,7 +673,7 @@ class ParameterSpace:
                                 # If it wasn't there, then this is a change!!
                                 something_changed = True
 
-                            self.ID_value_dict.update ( { parid : str(val) } )
+                            self.ID_value_dict[parid] = str(val)
                             if (requested_id == parid):
                                 requested_val = val
                         except:
@@ -562,6 +704,7 @@ class ParameterSpace:
 
 
 
+    @profile('ParameterSpace.parse_param_expr')
     def parse_param_expr ( self, param_expr ):
         """ Converts a string expression into a list expression with variable id's as integers and all others as strings
             Returns either a list (if successful) or None if there is an error
@@ -596,6 +739,7 @@ class ParameterSpace:
 
 
 
+    @profile('ParameterSpace.recurse_tree_symbols')
     def recurse_tree_symbols ( self, pt, current_expr ):
         """ Recurse through the parse tree looking for "terminal" items which are added to the list """
 
@@ -646,6 +790,27 @@ $ python3
 
 """
 
+@profile('generate_n_depending_on_all')
+def generate_n_depending_on_all ( ps, count ):
+    # Generate n parameters each depending on all previous
+    print ( "Generating " + str(count) + " parameters each depending on all previous" )
+    for i in range(count):
+        name = ("p%s" % i)
+        if i == 0:
+            expr = "1.0"
+        else:
+            expr = "("
+            for j in range(i):
+                if j > 0:
+                    expr = expr + "+"
+                expr = expr + ("p%s" % j)
+            expr = expr + ")"
+        # print ( "Defining parameter \"" + str(name) + "\" with expression: " + str(expr) )
+        ps.define ( name, expr )
+    print ( "Evaluating all..." )
+    ps.eval_all(False)
+
+
 if __name__ == "__main__":
 
     import traceback
@@ -676,6 +841,8 @@ if __name__ == "__main__":
                 print ( "  ## n: Generate n parameters where each is the sum of all preceding" )
                 print ( "  .par : Delete Parameter par" )
                 print ( "  . : Delete All Parameters" )
+                print ( "  % : Print Profiling" )
+                print ( "  %% : Clear Profiling" )
                 print ( "  $ : Run a test case" )
                 print ( "  Control-C or Control-D : Exit program" )
                 print ( "" )
@@ -704,24 +871,9 @@ if __name__ == "__main__":
                 print ( "Deleting all" )
                 ps.delete_all()
             elif (len(s) > 1) and (s.strip().startswith ( "##" )):  # This case should come before the "#" case
-                # Delete selected parameter
+                # Generate n parameters each depending on all previous
                 count = int(s.strip()[2:].strip())
-                print ( "Generating " + str(count) + " parameters each depending on all previous" )
-                for i in range(count):
-                    name = ("p%s" % i)
-                    if i == 0:
-                        expr = "1.0"
-                    else:
-                        expr = "("
-                        for j in range(i):
-                            if j > 0:
-                                expr = expr + "+"
-                            expr = expr + ("p%s" % j)
-                        expr = expr + ")"
-                    # print ( "Defining parameter \"" + str(name) + "\" with expression: " + str(expr) )
-                    ps.define ( name, expr )
-                print ( "Evaluating all..." )
-                ps.eval_all(False)
+                generate_n_depending_on_all ( ps, count )
             elif (len(s) > 0) and (s.strip().startswith ( "#" )):  # This case should come after the "##" case
                 # Generate n parameters each depending on previous 3
                 count = int(s.strip()[1:].strip())
@@ -760,8 +912,14 @@ if __name__ == "__main__":
                 ok = ps.rename ( old, new )
                 if not ok:
                     print ( "Unable to rename " + old + " to because it is not a valid parameter name" )
+            elif (len(s) > 0) and (s == "%%"):
+                # Clear profiling
+                prof.clear()
+            elif (len(s) > 0) and (s == "%"):
+                # Print profiling
+                print_statistics()
             elif (len(s) > 0) and (s == "$"):
-                # Rename old to new
+                # Run a test case
                 ps.define ( 'a', '3' )
                 ps.delete ( ps.get_id('a') )
                 ps.define ( 'a', '4' )
