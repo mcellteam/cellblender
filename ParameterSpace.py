@@ -16,7 +16,7 @@ import time
 
 ####################### Start of Profiling Code #######################
 
-# From: http://wiki.blender.org/index.php/User:Z0r/PyDevAndProfiling
+# Adapted from: http://wiki.blender.org/index.php/User:Z0r/PyDevAndProfiling
 
 prof = {}
 
@@ -25,6 +25,14 @@ prof = {}
 #  1: Duration
 #  2: Count
 #  3: Start Time (for non-decorated version)
+#  4: Min
+#  5: Max
+PROF_NAME = 0
+PROF_DURATION = 1
+PROF_COUNT = 2
+PROF_START = 3
+PROF_MIN = 4
+PROF_MAX = 5
 
 class profile:
     ''' Function decorator for code profiling.'''
@@ -75,10 +83,14 @@ class profile:
             finally:
                 duration = time.clock() - start
                 if fun in prof:
-                    prof[fun][1] += duration
-                    prof[fun][2] += 1
+                    prof[fun][PROF_DURATION] += duration
+                    prof[fun][PROF_COUNT] += 1
+                    if duration < prof[fun][PROF_MIN]:
+                        prof[fun][PROF_MIN] = duration
+                    if duration > prof[fun][PROF_MAX]:
+                        prof[fun][PROF_MAX] = duration
                 else:
-                    prof[fun] = [self.name, duration, 1, 0]
+                    prof[fun] = [self.name, duration, 1, 0, duration, duration]
         return profile_fun
 
 # Builds on the previous profiling code with non-decorated versions (needed by some Blender functions):
@@ -90,16 +102,21 @@ class profile:
 def start_timer(fun):
     start = time.clock()
     if fun in prof:
-        prof[fun][2] += 1
-        prof[fun][3] = start
+        prof[fun][PROF_COUNT] += 1
+        prof[fun][PROF_START] = start
     else:
-        prof[fun] = [fun, 0, 1, start]
+        prof[fun] = [fun, 0, 1, start, 1e9, 0]
 
 def stop_timer(fun):
     stop = time.clock()
     if fun in prof:
-        prof[fun][1] += stop - prof[fun][3]   # Stop - Start
-        # prof[fun][2] += 1
+        duration = stop - prof[fun][PROF_START]   # Duration = Stop - Start
+        prof[fun][PROF_DURATION] += duration
+        if duration < prof[fun][PROF_MIN]:
+            prof[fun][PROF_MIN] = duration
+        if duration > prof[fun][PROF_MAX]:
+            prof[fun][PROF_MAX] = duration
+        # prof[fun][PROF_COUNT] += 1
     else:
         print ( "Timing Error: stop called without start!!" )
         pass
@@ -112,9 +129,9 @@ def print_statistics():
 
     stats = sorted(prof.values(), key=timekey, reverse=True)
 
-    print ( '{:<55} {:>7} {:>7} {:>8}'.format('FUNCTION', 'CALLS', 'SUM(ms)', 'AV(ms)'))
+    print ( '{:<55} {:>7} {:>7} {:>8} {:>8} {:>8}'.format('FUNCTION', 'CALLS', 'SUM(ms)', 'AV(ms)', 'Min(ms)', 'Max(ms)'))
     for stat in stats:
-        print ( '{:<55} {:>7} {:>7.0f} {:>8.2f}'.format(stat[0],stat[2],stat[1]*1000,(stat[1]/float(stat[2]))*1000))
+        print ( '{:<55} {:>7} {:>7.0f} {:>8.2f} {:>8.2f} {:>8.2f}'.format(stat[0],stat[2],stat[1]*1000,(stat[1]/float(stat[2]))*1000,stat[4],stat[5]))
 
 
 
@@ -743,8 +760,20 @@ class ParameterSpace:
     def recurse_tree_symbols ( self, pt, current_expr ):
         """ Recurse through the parse tree looking for "terminal" items which are added to the list """
 
+        # Strip off the outer layers that are not of interest
+        while (type(pt) == tuple) and (len(pt) == 2) and (type(pt[1]) == tuple):
+            # print ( "  changing " + str(pt) + " to " + str(pt[1]) )
+            pt = pt[1]
+
         if type(pt) == tuple:
             # This is a tuple, so find out if it's a terminal leaf in the parse tree
+            # Note: This code didn't use the token.ISTERMINAL function.
+            # It might have been written as:
+            #   terminal = False
+            #   if len(pt) > 0:
+            #     if token.ISTERMINAL(pt[0]):
+            #       terminal = True
+            # However, that doesn't check that the terminal is a 2-tuple containing a string
 
             #print ( "recurse_tree_symbols with a tuple (", current_expr, ")" )
             #print ( "  pt = ", str(pt) )
@@ -757,18 +786,21 @@ class ParameterSpace:
             if terminal:
                 # This is a 2-tuple with a type and value
                 if pt[0] == token.NAME:
+                    # This is a name (either a keyword or a user-defined name)
                     if pt[1] in self.EXPRESSION_KEYWORDS:
-                        # This is a recognized name and not a user-defined symbol
-                        return current_expr + [ pt[1] ]
+                        # This is a recognized name and not a user-defined symbol, so append the string itself
+                        # return current_expr + [ pt[1] ]
+                        return current_expr.append ( pt[1] )
                     else:
                         # This must be a user-defined symbol
-                        par_id = -1
-                        if pt[1] in self.name_ID_dict:
-                            par_id = self.name_ID_dict[pt[1]]
-                        return current_expr + [ par_id ]
+                        par_id = self.name_ID_dict.setdefault(pt[1],-1)  # This statement takes the place of following 3:
+                        #par_id = -1
+                        #if pt[1] in self.name_ID_dict:
+                        #    par_id = self.name_ID_dict[pt[1]]
+                        return current_expr.append ( par_id )
                 else:
                     # This is a non-name part of the expression
-                    return current_expr + [ pt[1] ]
+                    return current_expr.append ( pt[1] )
             else:
                 # Break it down further
                 for i in range(len(pt)):
@@ -807,8 +839,6 @@ def generate_n_depending_on_all ( ps, count ):
             expr = expr + ")"
         # print ( "Defining parameter \"" + str(name) + "\" with expression: " + str(expr) )
         ps.define ( name, expr )
-    print ( "Evaluating all..." )
-    ps.eval_all(False)
 
 
 if __name__ == "__main__":
@@ -837,8 +867,7 @@ if __name__ == "__main__":
                 print ( "  expression : Evaluate expression" )
                 print ( "  param = expression : Assign expression to parameter" )
                 print ( "  old @ new : Rename parameter old to new" )
-                print ( "  # n: Generate n parameters where each is the sum of the preceding 3" )
-                print ( "  ## n: Generate n parameters where each is the sum of all preceding" )
+                print ( "  # n [m]: Generate n parameters where each is the sum of the all previous [or m previous]" )
                 print ( "  .par : Delete Parameter par" )
                 print ( "  . : Delete All Parameters" )
                 print ( "  % : Print Profiling" )
@@ -870,28 +899,30 @@ if __name__ == "__main__":
                 # Delete all parameters
                 print ( "Deleting all" )
                 ps.delete_all()
-            elif (len(s) > 1) and (s.strip().startswith ( "##" )):  # This case should come before the "#" case
-                # Generate n parameters each depending on all previous
-                count = int(s.strip()[2:].strip())
-                generate_n_depending_on_all ( ps, count )
             elif (len(s) > 0) and (s.strip().startswith ( "#" )):  # This case should come after the "##" case
                 # Generate n parameters each depending on previous 3
-                count = int(s.strip()[1:].strip())
-                print ( "Generating " + str(count) + " parameters each depending on previous 3" )
-                for i in range(count):
-                    name = ("p%s" % i)
-                    if i == 0:
-                        expr = "1.0"
-                    else:
-                        expr = "("
-                        n = min(i,3)  # Constant value limits the number of parameters in each expression
-                        for j in range(n):
-                            if j > 0:
-                                expr = expr + "+"
-                            expr = expr + ("p%s" % (j+i-n))
-                        expr = expr + ") / 3.0"
-                    ps.define ( name, expr )
-                ps.eval_all(True)
+                pars = [ p for p in s.strip()[1:].split(' ') if len(p) > 0 ]
+                count = int(pars[0])
+                if len(pars) > 1:
+                    offset = int(pars[1])
+                    print ( "Generating " + str(count) + " parameters each depending on previous " + str(offset) )
+                    for i in range(count):
+                        name = ("p%s" % i)
+                        if i == 0:
+                            expr = "1.0"
+                        else:
+                            expr = "("
+                            n = min(i,offset)  # Constant value limits the number of parameters in each expression
+                            for j in range(n):
+                                if j > 0:
+                                    expr = expr + "+"
+                                expr = expr + ("p%s" % (j+i-n))
+                            expr = expr + ") / (" + pars[1] + ")"
+                        ps.define ( name, expr )
+                else:
+                    generate_n_depending_on_all ( ps, count )
+                print ( "Evaluating all..." )
+                ps.eval_all(False)
             elif (len(s) > 0) and (s[0] == '.'):
                 # Delete selected parameter
                 name = s[1:].strip()
