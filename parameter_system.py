@@ -1727,6 +1727,9 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
 
                 if pid in self['gp_dict']:
 
+                    # Save the current index so it can be changed to update other parameters
+                    saved_index = self.active_par_index
+
                     # Update this name
                     dbprint ("Update gp_dict from " + old_name + " to " + new_name )
                     self['gp_dict'][pid]['name'] = new_name
@@ -1748,14 +1751,30 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                         elist = pickle.loads(dep_par['elist'].encode('latin1'))
                         dep_par['expr'] = self.build_expression ( elist )
 
+                    if 'undefined' in self:
+                        if self['undefined']:
+                            # Force an update and redraw of all general parameters by selecting each one
+                            self['undefined'] = False
+                            for par_key in self['gp_dict'].keys():
+                                par_name = self['gp_dict'][par_key]['name']
+                                self.active_par_index = self.general_parameter_list.find(par_name)
+                                self.update_expr_list_by_id ( context, par_key )
+                                elist = pickle.loads(self['gp_dict'][par_key]['elist'].encode('latin1'))
+                                if None in elist:
+                                    self['undefined'] = True
+                                else:
+                                    # This expression is now fully defined
+                                    if 'undef' in self['gp_dict'][par_key]['status']:
+                                        self['gp_dict'][par_key]['status'].pop('undef')
+                                    self['gp_dict'][par_key]['expr'] = self.build_expression ( elist )
+                                    self.evaluate_active_expression(context)
+                            self.update_all_parameters ( context, interactive )
+
                     # Update all panel parameter expressions that depend on this name (this also forces a redraw)
                     for dep_key in what_depends_on_me:
                         elist = pickle.loads(ppl[dep_key]['elist'].encode('latin1'))
                         ppl[dep_key]['expr'] = self.build_expression ( elist )
 
-
-                    # Save the current index so it can be changed to update other parameters
-                    saved_index = self.active_par_index
 
                     # Force a redraw of all general parameters that depend on this one by selecting each one
                     for dep_key in who_depends_on_me:
@@ -1763,21 +1782,6 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                         dbprint ( "  Setting index to: " + dep_name )
                         self.active_par_index = self.general_parameter_list.find(dep_name)
 
-                    """ # This is being done earlier ... delete this if that works.
-                    # Force a redraw of all panel parameters that depend on this one
-                    dbprint ( "Updating name: " + old_name + " -> " + new_name + ", these depend on me: " + str(what_depends_on_me) )
-                    for p in what_depends_on_me:
-                        elist = pickle.loads(ppl[p]['elist'].encode('latin1'))
-                        ppl[p]['expr'] = self.build_expression ( elist )
-                    """
-
-                    # Force a redraw of all general parameters that might depend on this newly changed name (those with a "None" in thier list)
-                    #for p in self['gp_dict'].keys():
-                    #    elist = pickle.loads(self['gp_dict'][p]['elist'].encode('latin1'))
-                    #    if None in elist:
-                    #        dep_name = self['gp_dict'][p]['name']
-                    #        dbprint ( "  Setting index to: " + dep_name )
-                    #        self.active_par_index = self.general_parameter_list.find(dep_name)
 
                     # Restore the current index
                     self.active_par_index = saved_index
@@ -1797,6 +1801,7 @@ class ParameterSystemPropertyGroup ( bpy.types.PropertyGroup ):
                 if None in elist:
                     # self['gp_dict'][par]['status'].add ( 'undef' ) # This would be the set operation, but we're using a dictionary
                     self['gp_dict'][par]['status']['undef'] = True   # Use "True" to flag the intention of 'undef' being in the set
+                    self['undefined'] = True  # This flags that there are some undefined parameters that will require extra checking
 
             # Next add status based on loops:
             result = self.update_dependency_ordered_name_list()
