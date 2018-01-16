@@ -15,7 +15,15 @@ class CREATE_OT_tutorial(bpy.types.Operator):
     bl_description = ("Create a Tutorial")
 
     def execute(self, context):
-        bpy.ops.mesh.primitive_cone_add()
+        fname = "tutorial_maker_image.png"
+        alt_context = {
+            'region'  : None,
+            'area'    : None,
+            'window'  : bpy.context.window,
+            'scene'   : bpy.context.scene,
+            'screen'  : bpy.context.window.screen
+        }
+        bpy.ops.screen.screenshot(alt_context, filepath=fname, full=True)
         return{'FINISHED'}
 
 class CreateTutorialPanel(bpy.types.Panel):
