@@ -201,6 +201,7 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
     bl_label = "CellBlender Test Suite"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
+    bl_options = { 'DEFAULT_CLOSED' }
     bl_context = "scene"
     def draw(self, context):
         app = context.scene.cellblender_test_suite
@@ -5896,6 +5897,134 @@ class StressModelObjectsTestOp(bpy.types.Operator):
 
 #############################################################
 ################## End of Individual Tests ##################
+#############################################################
+
+
+#############################################################
+################## Start of Tutorial Code ###################
+#############################################################
+
+
+from bpy.props import *
+
+class TUTORIAL_OT_create(bpy.types.Operator):
+    #Process actions after a delay so the screen can respond to commands
+    bl_idname = "tutorial.create_frames"
+    bl_label = "Create Tutorial Slides"
+    bl_options = {'REGISTER'}
+
+    _timer = None
+    tutorial_step = 0
+    tutorial_list = "tutorial_list.txt"
+    tutorial_name = "Change Colors"
+    frame_name = "default.png"
+    frame_desc = "Start Here"
+
+    def capture_frame ( self ):
+        # Capture the current frame into a file
+        frame_name = str(self.tutorial_step-1) + "_" + str(self.frame_name)
+        print ( "Saving file: " + frame_name )
+        alt_context = {
+            'region'  : None,
+            'area'    : None,
+            'window'  : bpy.context.window,
+            'scene'   : bpy.context.scene,
+            'screen'  : bpy.context.window.screen
+        }
+        bpy.ops.screen.screenshot(alt_context, filepath=frame_name, full=True)
+        # Update the frame_list file
+        f_list = open ( self.tutorial_list, "at" )
+        f_list.write ( "    { \"fname\": " + frame_name + "\", \"desc\": \"" + self.frame_desc + "\" },\n" )
+        f_list.close()
+
+    def modal(self, context, event):
+        if event.type == 'TIMER':
+            print ( "Timer event with tutorial_step = " + str(self.tutorial_step) )
+
+            if (self.tutorial_step > 0) and (self.tutorial_step <= 4):
+                # Step 0 should always just give a file name for the original configuration.
+                # So there's no need to capture it twice.
+                # For some reason the cancel doesn't work. That's why the (self.tutorial_step <= n+1) check is needed.
+                self.capture_frame ()
+
+            if self.tutorial_step == 0:
+
+                self.frame_name = "start.png"
+
+            elif self.tutorial_step == 1:
+
+                bpy.data.materials['Material'].diffuse_color[0] = 1 # red
+                bpy.data.materials['Material'].diffuse_color[1] = 0 # green
+                bpy.data.materials['Material'].diffuse_color[2] = 0 # blue
+                self.frame_name = "red_frame.png"
+                self.frame_desc = "Change to red"
+
+            elif self.tutorial_step == 2:
+
+                bpy.data.materials['Material'].diffuse_color[0] = 0 # red
+                bpy.data.materials['Material'].diffuse_color[1] = 1 # green
+                bpy.data.materials['Material'].diffuse_color[2] = 0 # blue
+                self.frame_name = "green_frame.png"
+                self.frame_desc = "Change to green"
+
+            elif self.tutorial_step == 3:
+
+                bpy.data.materials['Material'].diffuse_color[0] = 0 # red
+                bpy.data.materials['Material'].diffuse_color[1] = 0 # green
+                bpy.data.materials['Material'].diffuse_color[2] = 1 # blue
+                self.frame_name = "blue_frame.png"
+                self.frame_desc = "Change to blue"
+
+            else:
+
+                print ( "Calling self.cancel" )
+                self.cancel(context)
+
+            # Force a screen update by changing colors
+            color = context.user_preferences.themes[0].view_3d.space.gradients.high_gradient
+            color.h += 0.01
+            color.h -= 0.01
+
+            self.tutorial_step += 1
+
+        return {'PASS_THROUGH'}
+
+    def invoke(self, context, event):
+        self.execute ( context )
+        return {'FINISHED'}
+
+    def execute(self, context):
+        print ( "Inside tutorial.execute with context = " + str(context) )
+        f_list = open ( self.tutorial_list, "w" )
+        f_list.write ( "{\n  \"title\": \"" + str(self.tutorial_name) + "\"" + ",\n" )
+        f_list.write ( "  \"frames\": [\n" )
+        f_list.close()
+        delay = 2.0
+        print ( "Setting timer to delay of " + str(delay) )
+        wm = context.window_manager
+        self.tutorial_step = 0
+        self._timer = wm.event_timer_add(delay, context.window)
+        wm.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
+
+    def cancel(self, context):
+        wm = context.window_manager
+        wm.event_timer_remove(self._timer)
+
+
+class CreateTutorialPanel(bpy.types.Panel):
+    bl_label = "CellBlender Tutorial Maker"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "scene"
+    bl_options = { 'DEFAULT_CLOSED' }
+    def draw(self, context):
+        row = self.layout.row()
+        row.operator("tutorial.create_frames")
+
+
+#############################################################
+##################  End of Tutorial Code  ###################
 #############################################################
 
 
