@@ -1,3 +1,6 @@
+# Read from a tutorial_list.txt file and generate an HTML file
+#  to browse all of the tutorial images described in that file.
+
 f = open ( "tutorial_list.txt", 'r' )
 
 txt = f.read() + "  ]\n}\n"
@@ -158,7 +161,13 @@ img {
 
 <body>
 
-<h1 style="text-align:center;color:#fff;">Demonstration Model</h1>
+<h1 style="text-align:center;color:#fff;">"""
+
+html.write ( top_html )
+
+html.write ( tut['title'] )
+
+top_end = """</h1>
 
 <div class="container">
 
@@ -167,11 +176,11 @@ img {
 
 """
 
-html.write ( top_html )
+html.write ( top_end )
 
 for frame in tut['frames']:
 
-  html.write ( '<div class="mySlides"> <div class="numbertext">&nbsp; </div> <img class="image-container" src="' + frame['fname'] + '"> </div>' )
+  html.write ( '<div class="mySlides"> <div class="numbertext">&nbsp; </div> <img class="image-container" src="' + frame['fname'] + '"> </div>\n' )
 
 mid_html = """
 
@@ -249,7 +258,7 @@ html.write ( mid_html )
 
 i = 1
 for frame in tut['frames']:
-  html.write ( '<img class="icon demo" src="' + frame['fname'] + '" width="300" onclick="currentSlide(' + str(i) + ')" alt="' + frame['desc'] + '">' )
+  html.write ( '<img class="icon demo" src="' + frame['fname'] + '" width="300" onclick="currentSlide(' + str(i) + ')" alt="' + frame['desc'] + '">\n' )
   i += 1
 
 
