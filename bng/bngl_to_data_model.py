@@ -75,6 +75,9 @@ def read_data_model ( file_name ):
 
 dump_depth = 0;
 def dump_data_model ( name, dm ):
+    global dump_depth
+    dict_type = type({'a':1})
+    list_type = type(['a',1])
     if type(dm) == type({'a':1}):  #dm is a dictionary
         print ( str(dump_depth*"  ") + name + " {}" )
         dump_depth += 1
@@ -82,18 +85,88 @@ def dump_data_model ( name, dm ):
             dump_data_model ( k, v )
         dump_depth += -1
     elif type(dm) == type(['a',1]):  #dm is a list
-        print ( str(dump_depth*"  ") + name + " []" )
-        dump_depth += 1
-        i = 0
+        num_items = len(dm)
+        one_liner = True
+        if num_items > 4:
+            one_liner = False
         for v in dm:
-            k = name + "["+str(i)+"]"
-            dump_data_model ( k, v )
-            i += 1
-        dump_depth += -1
+            if type(v) in [dict_type, list_type]:
+              one_liner = False
+              break
+        if one_liner:
+            print ( str(dump_depth*"  ") + name + " [] = " + str(dm) )
+        else:
+            print ( str(dump_depth*"  ") + name + " []" )
+            dump_depth += 1
+            i = 0
+            for v in dm:
+                k = name + "["+str(i)+"]"
+                dump_data_model ( k, v )
+                i += 1
+            dump_depth += -1
     elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
         print ( str(dump_depth*"  ") + name + " = " + "\"" + str(dm) + "\"" )
     else:
         print ( str(dump_depth*"  ") + name + " = " + str(dm) )
+
+
+dm_indent_by = 2
+dm_text_depth = 0
+def text_data_model ( name, dm, dm_list, comma ):
+    """Generate a list of the data model elements with indenting"""
+    global dm_text_depth
+    indent = dm_indent_by*" "
+    dict_type = type({'a':1})
+    list_type = type(['a',1])
+    if type(dm) == dict_type:  #dm is a dictionary
+        num_items = len(dm.keys())
+        if num_items == 0:
+            dm_list.append ( str(dm_text_depth*indent) + name + "{}" + comma )
+        else:
+            dm_list.append ( str(dm_text_depth*indent) + name + "{" )
+            dm_text_depth += 1
+            item_num = 0
+            for k,v in sorted(dm.items()):
+                if not k.startswith("_"):
+                    subcomma = ','
+                    if item_num > num_items-2:
+                      subcomma = ''
+                    text_data_model ( "\'"+k+"\'"+" : ", v, dm_list, subcomma )
+                    item_num += 1
+            dm_text_depth += -1
+            dm_list.append ( str(dm_text_depth*indent) + "}" + comma )
+    elif type(dm) == list_type:  #dm is a list
+        num_items = len(dm)
+        if num_items == 0:
+            dm_list.append ( str(dm_text_depth*indent) + name + "[]" + comma )
+        else:
+            one_liner = True
+            if num_items > 4:
+                one_liner = False
+            for v in dm:
+                if type(v) in [dict_type, list_type]:
+                  one_liner = False
+                  break
+            if one_liner:
+                dm_list.append ( str(dm_text_depth*indent) + name + str(dm) + comma )
+            else:
+                dm_list.append ( str(dm_text_depth*indent) + name + "[" )
+                dm_text_depth += 1
+                i = 0
+                for v in dm:
+                    k = name + "["+str(i)+"]"
+                    subcomma = ','
+                    if i > num_items-2:
+                      subcomma = ''
+                    text_data_model ( "", v, dm_list, subcomma )
+                    i += 1
+                dm_text_depth += -1
+                dm_list.append ( str(dm_text_depth*indent) + "]" + comma )
+    elif (type(dm) == type('a1')) or (type(dm) == type(u'a1')):  #dm is a string
+        dm_list.append ( str(dm_text_depth*indent) + name + "\"" + str(dm) + "\"" + comma )
+    else:
+        dm_list.append ( str(dm_text_depth*indent) + name + str(dm) + comma )
+    return dm_list
 
 
 def as_float_str ( dm, dm_name, mdl_name, blank_default="" ):
@@ -2210,6 +2283,7 @@ def write_react_out ( scene_name, rout, mols, time_step, f ):
     return wrote_mdl
 
 
+"""
 ##### NOTE that this function shadows the earlier version ... which is best??
 data_model_depth = 0
 def dump_data_model ( dm ):
@@ -2230,6 +2304,7 @@ def dump_data_model ( dm ):
     else: # dm is anything else
         print ( str(data_model_depth*"  ") + str(dm) )
     data_model_depth += -1
+"""
 
 
 
@@ -2252,8 +2327,298 @@ def write_data_model ( dm, file_name ):
 
 
 
+def get_max_depth ( parent ):
+  # Count the depth of the tree
+  max_child_depth = 0
+  if 'children' in parent:
+    children = parent['children']
+    for k in children.keys():
+      child = children[k]
+      child_depth = get_max_depth ( child )
+      if child_depth > max_child_depth:
+        max_child_depth = child_depth
+  return ( max_child_depth + 1 )
+
+
+def check_legal ( parent ):
+  # Ensure that parents and children alternate between volume and surface
+  if 'children' in parent:
+    children = parent['children']
+    if 'dim' in parent:
+      for child_key in children.keys():
+        if parent['dim'] == children[child_key]['dim']:
+          print ( "ERROR: Nested Children must alternate dimensions" )
+    for child in children:
+      check_legal ( child )
+
+
+def build_topology_from_list ( cdefs, parent ):
+  c_by_name = {}
+  for c in cdefs:
+    print ( "cdef = " + str(c) )
+    if len(c) == 3:
+      # This is an outer compartment
+      print ( "Outer" )
+      parent['children'][c[0]] = { 'name':c[0], 'dim':c[1], 'vol':c[2], 'children':{} }
+      c_by_name[c[0]] = parent['children'][c[0]]
+    elif len(c) == 4:
+      # This compartment has a parent ... find it and add it
+      print ( "Inside " + str(c[3]) )
+      c_by_name[c[3]]['children'][c[0]] = { 'name':c[0], 'dim':c[1], 'vol':c[2], 'children':{} }
+      c_by_name[c[0]] = c_by_name[c[3]]['children'][c[0]]
+  return parent
+
+
+def assign_dimensions ( obj, inner_cube_dim, nesting_space ):
+  # Figure out the dimensions needed for each object to contain its children
+  obj['xdim'] = inner_cube_dim
+  obj['ydim'] = inner_cube_dim
+  obj['zdim'] = inner_cube_dim
+  if 'children' in obj:
+    children = obj['children']
+    if len(children) > 0:
+      for k in children.keys():
+        child = children[k]
+        assign_dimensions ( child, inner_cube_dim, nesting_space )
+      obj['xdim'] = nesting_space
+      for k in children.keys():
+        child = children[k]
+        obj['xdim'] += child['xdim'] + nesting_space
+      max_y_dim = 0
+      max_z_dim = 0
+      for k in children.keys():
+        child = children[k]
+        max_y_dim = max ( max_y_dim, child['ydim'] )
+        max_z_dim = max ( max_z_dim, child['zdim'] )
+      obj['ydim'] = max_y_dim + (2*nesting_space)
+      obj['zdim'] = max_z_dim + (2*nesting_space)
+
+
+def assign_coordinates ( obj, x, y, z, nesting_space ):
+  # Convert the dimensions to actual coordinates
+  obj['x'] = x
+  obj['y'] = y
+  obj['z'] = z
+  if 'children' in obj:
+    children = obj['children']
+    if len(children) > 0:
+      x_offset = nesting_space - ( obj['xdim'] / 2.0 )
+      for k in children.keys():
+        child = children[k]
+        assign_coordinates ( child, x+x_offset+(child['xdim']/2.0), y, z, nesting_space )
+        x_offset += child['xdim'] + nesting_space
+
+
+def create_rectangle ( xmin, xmax, ymin, ymax, zmin, zmax ):
+    points = [
+        [ xmin, ymin, zmin ],
+        [ xmin, ymin, zmax ],
+        [ xmin, ymax, zmin ],
+        [ xmin, ymax, zmax ],
+        [ xmax, ymin, zmin ],
+        [ xmax, ymin, zmax ],
+        [ xmax, ymax, zmin ],
+        [ xmax, ymax, zmax ]
+      ]
+    faces = [
+        [ 3, 0, 1 ],
+        [ 7, 2, 3 ],
+        [ 5, 6, 7 ],
+        [ 1, 4, 5 ],
+        [ 2, 4, 0 ],
+        [ 7, 1, 5 ],
+        [ 3, 2, 0 ],
+        [ 7, 6, 2 ],
+        [ 5, 4, 6 ],
+        [ 1, 0, 4 ],
+        [ 2, 6, 4 ],
+        [ 7, 3, 1 ]
+      ]
+    return [ points, faces ]
+
+
+def append_objects ( obj, inner_parent, outer_parent, dm_geom_obj_list, dm_model_obj_list ):
+  # Append this object (if 3D) and its 3D children to the data model object list
+  print ( "append_objects called with obj = " + str(obj['name']) )
+  if 'dim' in obj.keys():
+    if obj['dim'] == '3':
+
+      xr = obj['xdim'] / 2.0
+      yr = obj['ydim'] / 2.0
+      zr = obj['zdim'] / 2.0
+      points,faces = create_rectangle (-xr, xr, -yr, yr, -zr, zr )
+
+      inner_parent_name = ""
+      if inner_parent != None:
+        if 'dim' in inner_parent.keys():
+          inner_parent_name = inner_parent['name']
+
+      go = {
+          'name' : obj['name'],
+          'location' : [obj['x'], obj['y'], obj['z']],
+          'material_names' : ['membrane_mat'],
+          'vertex_list' : points,
+          'element_connections' : faces }
+
+      if len(inner_parent_name) > 0:
+        go['define_surface_regions'] = [ { 'include_elements' : [ i for i in range(len(faces)) ], 'name' : inner_parent_name } ]
+      else:
+        go['define_surface_regions'] = [ { 'include_elements' : [ i for i in range(len(faces)) ], 'name' : obj['name']+'_outer_wall' } ]
+
+      dm_geom_obj_list.append ( go )
+
+      mo = {
+          'name' : obj['name'],
+          'parent_object' : "",
+          'membrane_name' : inner_parent_name,
+          'description' : "",
+          'object_source' : "blender",
+          'dynamic' : False,
+          'dynamic_display_source' : "script",
+          'script_name' : "" }
+
+      if outer_parent != None:
+        if 'dim' in outer_parent.keys():
+          mo['parent_object'] = outer_parent['name']
+
+      dm_model_obj_list.append ( mo )
+
+  if 'children' in obj.keys():
+    children = obj['children']
+    if len(children) > 0:
+      for k in children.keys():
+        child = children[k]
+        append_objects ( child, obj, inner_parent, dm_geom_obj_list, dm_model_obj_list )
+
+
+
+
+example_world = { 'ECF': {
+                      'PM1': { 
+                          'CP1': {
+                              'NM1':{
+                                  'Nuc1':{}
+                                    },
+                              'ERM1':{
+                                  'ER1':{}
+                                     }
+                                 }
+                              },
+                      'PM2': { 
+                          'CP2': {
+                              'NM2':{
+                                  'Nuc2':{}
+                                    },
+                              'ERM2':{
+                                  'ER2':{}
+                                     }
+                                 }
+                              }
+                           }
+                  }
+
+example_world = {'ECF': {'PM2': {'CP2': {'ERM2': {'ER2': {}}, 'NM2': {'Nuc2': {}}}}, 'PM1': {'CP1': {'NM1': {'Nuc1': {}}, 'ERM1': {'ER1': {}}}}}}
+
+
+ex_world = {
+  'children': {
+    'ECF': {
+      'name': 'ECF', 
+      'vol': 
+      'vol_ECF', 
+      'children': {
+        'PM1': {
+          'name': 'PM1', 
+          'vol': 'sa_PM*eff_width', 
+          'children': {
+            'CP1': {
+              'name': 'CP1', 
+              'vol': 'vol_CP', 
+              'children': {
+                'ERM1': {
+                  'name': 'ERM1', 
+                  'vol': 'sa_ERM*eff_width', 
+                  'children': {
+                    'ER1': {
+                      'name': 'ER1', 
+                      'vol': 'vol_ER', 
+                      'children': {}, 
+                      'dim': '3'
+                    }
+                  },
+                  'dim': '2'
+                }, 
+                'NM1': {
+                  'name': 'NM1', 
+                  'vol': 'sa_NM*eff_width', 
+                  'children': {
+                    'Nuc1': {
+                      'name': 'Nuc1', 
+                      'vol': 'vol_Nuc', 
+                      'children': {}, 
+                      'dim': '3'}
+                    }, 
+                    'dim': '2'
+                  }
+                }, 
+                'dim': '3'
+              }
+            }, 
+            'dim': '2'
+          }, 
+          'PM2': {
+            'name': 'PM2', 
+            'vol': 'sa_PM*eff_width', 
+            'children': {
+              'CP2': {
+                'name': 'CP2', 
+                'vol': 'vol_CP', 
+                'children': {
+                  'ERM2': {
+                    'name': 'ERM2', 
+                    'vol': 'sa_ERM*eff_width', 
+                    'children': {
+                      'ER2': {
+                        'name': 'ER2',
+                        'vol': 'vol_ER',
+                        'children': {}, 
+                        'dim': '3'
+                      }
+                    }, 
+                    'dim': '2'
+                  }, 
+                  'NM2': {
+                    'name': 'NM2', 
+                    'vol': 'sa_NM*eff_width', 
+                    'children': {
+                      'Nuc2': {
+                        'name': 'Nuc2', 
+                        'vol': 'vol_Nuc', 
+                        'children': {}, 
+                        'dim': '3'
+                      }
+                    }, 
+                    'dim': '2'
+                  }
+                }, 
+                'dim': '3'
+              }
+            },
+            'dim': '2'
+          }
+        }, 
+        'dim': '3'
+      }
+    }
+  }
+
 
 if __name__ == "__main__":
+
+    dmf = {}
+
+    default_vol_dc = "8.51e-7"
+    default_surf_dc = "1.7e-7"
 
     if len(sys.argv) > 2:
         print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] )
@@ -2310,7 +2675,10 @@ if __name__ == "__main__":
         
         # Now start building the data model
         dm = { 'mcell': { 'api_version': 0, 'blender_version': [2,78,0], 'data_model_version': "DM_2017_06_23_1300" } }
-        dm['model_language'] = "mcell3r"
+        dm['mcell']['cellblender_source_sha1'] = "61cc8da7bfe09b42114982616ce284301adad4cc"
+        dm['mcell']['cellblender_version'] = "0.1.54"
+        dm['mcell']['model_language'] = "mcell3r"
+
 
         # Now start building the data model
         
@@ -2346,12 +2714,23 @@ if __name__ == "__main__":
               mol = {}
               mol['data_model_version'] = "DM_2018_01_11_1330"
               mol['mol_name'] = line.split('(')[0].strip()
-              mol['mol_type'] = '3D'
+
+              print ( "***** WARNING: Using fixed 3D names of Lig and Syk" )
+              if mol['mol_name'] in ['Lig','Syk']:
+                mol['mol_type'] = '3D'
+              else:
+                mol['mol_type'] = '2D'
 
               mol['custom_space_step'] = ""
               mol['custom_time_step'] = ""
               mol['description'] = ""
-              mol['diffusion_constant'] = "0"
+
+              print ( "***** WARNING: Using fixed diffusion constants" )
+              if mol['mol_type'] == '3D':
+                mol['diffusion_constant'] = "8.51e-7"
+              else:
+                mol['diffusion_constant'] = "1.7e-7"
+
               mol['export_viz'] = False
               mol['maximum_step_length'] = ""
               mol['mol_bngl_label'] = ""
@@ -2395,36 +2774,21 @@ if __name__ == "__main__":
           ]
         }
 
-        
-        # Add the compartments
-
-        for block in blocks:
-          if ' '.join(block[0].split()[1:]) == 'compartments':
-            # Process compartments
-
-            # Hard code fceri model for now:
-
-            #  begin compartments
-	          #    EC 3 1
-	          #    PM 2 1 EC
-	          #    CP 3 1 PM
-            #  end compartments
-
-            pass
-
+        # Add materials (only one for now)
         dm['mcell']['materials'] = {
           'material_dict' : {
             'membrane_mat' : {
               'diffuse_color' : {
-                'a' : 0.10000000149011612,
-                'b' : 0.4300000071525574,
-                'g' : 0.4300000071525574,
-                'r' : 0.4300000071525574
+                'a' : 0.1,
+                'b' : 0.43,
+                'g' : 0.43,
+                'r' : 0.43
               }
             }
           }
         }
 
+        """
         dm['mcell']['geometrical_objects'] = {
           'object_list' : [
             {
@@ -2456,6 +2820,16 @@ if __name__ == "__main__":
           ]
         }
 
+        dm['mcell']['geometrical_objects']['object_list'].append (
+            {
+              'name' : "CP2",
+              'location' : [0, 0, 2],
+              'material_names' : ['membrane_mat'],
+              'vertex_list' : [ [0.5, 0.5, -0.5], [0.5, -0.5, -0.5], [-0.5, -0.5, -0.5], [-0.5, 0.5, -0.5], [0.5, 0.5, 0.5], [0.5, -0.5, 0.5], [-0.5, -0.5, 0.5], [-0.5, 0.5, 0.5] ],
+              'element_connections' : [ [0, 1, 2], [4, 7, 6], [0, 4, 5], [1, 5, 6], [2, 6, 7], [4, 0, 3], [3, 0, 2], [5, 4, 6], [1, 0, 5], [2, 1, 6], [3, 2, 7], [7, 4, 3] ],
+              'define_surface_regions' : [ { 'include_elements' : [1, 7], 'name' : "PM" } ]
+            } )
+
         dm['mcell']['model_objects'] = {
           'data_model_version' : "DM_2018_01_11_1330",
           'model_object_list' : [
@@ -2481,7 +2855,124 @@ if __name__ == "__main__":
             }
           ]
         }
+        """
 
+        dm['mcell']['geometrical_objects'] = {
+          'object_list' : []
+        }
+
+        dm['mcell']['model_objects'] = {
+          'data_model_version' : "DM_2018_01_11_1330",
+          'model_object_list' : []
+        }
+
+
+        # Add the compartments
+        # Format:   Name Dimension Volume [outside compartment]
+        # Compartment Topology Rules
+        #  (generally analogous to SBML compartment topology)
+        #    The outside of a surface must be volume (or undefined).
+        #    The outside of a volume must be a surface (or undefined).
+        #    A compartment may only have one outside.
+        #    A volume may be outside of multiple surfaces.
+        #    A surface may be outside of only one volume.
+        #  The outside compartment must be defined before it is referenced
+
+        nesting_space = 0.05 # Note that this should be half of desired because of the intervening 2D surfaces
+        inner_cube_dim = 0.5
+
+        for block in blocks:
+          if ' '.join(block[0].split()[1:]) == 'compartments':
+            # Process compartments
+
+            print ( "***** WARNING: Compartment Volumes are not used" )
+
+            print ( "Here's the block: " + str(block) )
+
+            if False:
+                block = """begin compartments
+                          ECF   3    vol_ECF
+
+                          PM1   2    sa_PM*eff_width    ECF
+                          CP1   3    vol_CP             PM1
+                          NM1   2    sa_NM*eff_width    CP1
+                          Nuc1  3    vol_Nuc            NM1
+                          ERM1  2    sa_ERM*eff_width   CP1
+                          ER1   3    vol_ER             ERM1
+
+                          PM2   2    sa_PM*eff_width    ECF
+                          CP2   3    vol_CP             PM2
+                          NM2   2    sa_NM*eff_width    CP2
+                          Nuc2  3    vol_Nuc            NM2
+                          ERM2  2    sa_ERM*eff_width   CP2
+                          ER2   3    vol_ER             ERM2
+                        end compartments""".split('\n')
+
+            cdefs = []
+            for line in block[1:-1]:
+              parts = [ p for p in line.strip().split() ]
+              cdefs.append(parts)
+
+            topology = build_topology_from_list ( cdefs, { 'children':{}, 'name':"World" } )
+            check_legal ( topology )
+            assign_dimensions ( topology, inner_cube_dim, nesting_space )
+
+            assign_coordinates ( topology, 0, 0, 0, nesting_space )
+
+            append_objects ( topology, None, None, dm['mcell']['geometrical_objects']['object_list'], dm['mcell']['model_objects']['model_object_list'] )
+
+            print ( "Max depth = " + str(get_max_depth(topology)) )
+
+            # Print the compartments:
+            print ( "Topology = " + str(topology) )
+
+
+            dump_data_model ( "Topology", topology )
+
+            # Hard code fceri model for now:
+
+            #  begin compartments
+	          #    EC 3 1         # Outside of everything ... In CellBlender this has a surface also
+	          #    PM 2 1 EC      # Because this is a 2D object, its parent must be 3D
+	          #    CP 3 1 PM      # Because this is a 3D object, its parent must be 2D or None
+            #  end compartments
+
+            pass
+
+
+        # Make a "Modify Surface Regions" "ALL" entry for every object
+        dm['mcell']['modify_surface_regions'] = {
+          'data_model_version' : "DM_2014_10_24_1638",
+          'modify_surface_regions_list' : []
+        }
+
+        # Make a "Modify Surface Regions" entry for every named surface in an object
+        for obj in dm['mcell']['geometrical_objects']['object_list']:
+          msr = {
+              'data_model_version' : "DM_2018_01_11_1330",
+              'description' : "",
+              'name' : "Surface Class: reflect   Object: " + obj['name'] + "   ALL",
+              'object_name' : obj['name'],
+              'region_name' : "",
+              'region_selection' : "ALL",
+              'surf_class_name' : "reflect"
+            }
+          dm['mcell']['modify_surface_regions']['modify_surface_regions_list'].append ( msr )
+
+          if 'define_surface_regions' in obj:
+            for surf in obj['define_surface_regions']:
+              msr = {
+                  'data_model_version' : "DM_2018_01_11_1330",
+                  'description' : "",
+                  'name' : "Surface Class: reflect   Object: " + obj['name'] + "   Region: " + surf['name'],
+                  'object_name' : obj['name'],
+                  'region_name' : surf['name'],
+                  'region_selection' : "SEL",
+                  'surf_class_name' : "reflect"
+                }
+              dm['mcell']['modify_surface_regions']['modify_surface_regions_list'].append ( msr )
+
+        """
         dm['mcell']['modify_surface_regions'] = {
           'data_model_version' : "DM_2014_10_24_1638",
           'modify_surface_regions_list' : [
@@ -2523,6 +3014,7 @@ if __name__ == "__main__":
             }
           ]
         }
+        """
 
 
 
@@ -3123,9 +3615,9 @@ if __name__ == "__main__":
           }
         }
 
-        # Force the entire data model from the actual fceri version (over-writes all of the above)
+        # This is the entire data model from the actual fceri version
 
-        dm['mcell'] = {
+        dmf['mcell'] = {
           'api_version' : 0,
           'blender_version' : [2, 78, 0],
           'cellblender_source_sha1' : "61cc8da7bfe09b42114982616ce284301adad4cc",
@@ -4675,13 +5167,22 @@ if __name__ == "__main__":
         }
 
 
-        write_data_model ( dm, "test.txt" )
+        #write_data_model ( dm, "test.txt" )
         
+        # Compare?
+
+        dm_keys = set(dm['mcell'].keys())
+        dmf_keys = set(dmf['mcell'].keys())
+        intersect_keys = dm_keys.intersection(dmf_keys)
+        added = dm_keys - dmf_keys
+        missing = dmf_keys - dm_keys
+        modified = { o : (dm['mcell'][o], dmf['mcell'][o]) for o in intersect_keys if dm['mcell'][o] != dmf['mcell'][o] }
+        same = set ( o for o in intersect_keys if dm['mcell'][o] == dmf['mcell'][o] )
         
-        __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         # dm = read_data_model ( sys.argv[1] )
         # dump_data_model ( dm )
         print ( "Writing CellBlender Data Model: " + sys.argv[2] )
+        write_data_model ( dm, sys.argv[2] )
         # write_mdl ( dm, sys.argv[2] )
         print ( "Wrote BioNetGen file found in \"" + sys.argv[1] + "\" to CellBlender data model \"" + sys.argv[2] + "\"" )
         # Drop into an interactive python session
