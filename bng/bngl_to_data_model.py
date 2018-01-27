@@ -2720,6 +2720,8 @@ if __name__ == "__main__":
               mol['data_model_version'] = "DM_2018_01_11_1330"
               mol['mol_name'] = line.split('(')[0].strip()
 
+              # TODO: Find a way to determine volume or surface molecules
+              # This is a hard-coded determination for the fceri model
               print ( "***** WARNING: Using fixed 3D names of Lig and Syk" )
               if mol['mol_name'] in ['Lig','Syk']:
                 mol['mol_type'] = '3D'
@@ -2946,7 +2948,8 @@ if __name__ == "__main__":
                 'site_diameter' : "0",
                 'stddev' : "0"
               }
-              # Need to fill in fields for obj_expr since these have not been parsed yet
+              # TODO: Need to fill in fields for obj_expr since these have not been parsed yet
+              # This is a hard-coded way to build these expressions for the fceri model
               if site_num == 1:
                 rel_item['object_expr'] = "EC[ALL] - CP[ALL]"
               elif site_num == 2:
