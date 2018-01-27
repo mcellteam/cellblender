@@ -2703,9 +2703,8 @@ if __name__ == "__main__":
                 par_list.append ( par )
         dm['mcell']['parameter_system'] = { 'model_parameters': par_list }
 
-
-
         # Add the molecules list
+
         mol_list = []
         color_index = 1
         vol_glyphs = ['Icosahedron', 'Sphere_1', 'Sphere_2', 'Octahedron', 'Cube']
@@ -2800,75 +2799,6 @@ if __name__ == "__main__":
           }
         }
 
-        """
-        dm['mcell']['geometrical_objects'] = {
-          'object_list' : [
-            {
-              'define_surface_regions' : [
-                {
-                  'include_elements' : [1, 7],
-                  'name' : "PM"
-                }
-              ],
-              'element_connections' : [ [0, 1, 2], [4, 7, 6], [0, 4, 5], [1, 5, 6], [2, 6, 7], [4, 0, 3], [3, 0, 2], [5, 4, 6], [1, 0, 5], [2, 1, 6], [3, 2, 7], [7, 4, 3] ],
-              'location' : [0, 0, 0],
-              'material_names' : ['membrane_mat'],
-              'name' : "CP",
-              'vertex_list' : [ [0.5, 0.5, -0.5], [0.5, -0.5, -0.5], [-0.5, -0.5, -0.5], [-0.5, 0.5, -0.5], [0.5, 0.5, 0.5], [0.5, -0.5, 0.5], [-0.5, -0.5, 0.5], [-0.5, 0.5, 0.5] ]
-            },
-            {
-              'define_surface_regions' : [
-                {
-                  'include_elements' : [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ],
-                  'name' : "wall"
-                }
-              ],
-              'element_connections' : [ [4, 5, 1], [5, 6, 2], [6, 7, 3], [7, 4, 0], [0, 1, 2], [7, 6, 5], [0, 4, 1], [1, 5, 2], [2, 6, 3], [3, 7, 0], [3, 0, 2], [4, 7, 5] ],
-              'location' : [0, 0, 0],
-              'material_names' : ['membrane_mat'],
-              'name' : "EC",
-              'vertex_list' : [ [-2.0, -1.25, -1.0], [-2.0, 1.25, -1.0], [2.0, 1.25, -1.0], [2.0, -1.25, -1.0], [-2.0, -1.25, 1.0], [-2.0, 1.25, 1.0], [2.0, 1.25, 1.0], [2.0, -1.25, 1.0] ]
-            }
-          ]
-        }
-
-        dm['mcell']['geometrical_objects']['object_list'].append (
-            {
-              'name' : "CP2",
-              'location' : [0, 0, 2],
-              'material_names' : ['membrane_mat'],
-              'vertex_list' : [ [0.5, 0.5, -0.5], [0.5, -0.5, -0.5], [-0.5, -0.5, -0.5], [-0.5, 0.5, -0.5], [0.5, 0.5, 0.5], [0.5, -0.5, 0.5], [-0.5, -0.5, 0.5], [-0.5, 0.5, 0.5] ],
-              'element_connections' : [ [0, 1, 2], [4, 7, 6], [0, 4, 5], [1, 5, 6], [2, 6, 7], [4, 0, 3], [3, 0, 2], [5, 4, 6], [1, 0, 5], [2, 1, 6], [3, 2, 7], [7, 4, 3] ],
-              'define_surface_regions' : [ { 'include_elements' : [1, 7], 'name' : "PM" } ]
-            } )
-
-        dm['mcell']['model_objects'] = {
-          'data_model_version' : "DM_2018_01_11_1330",
-          'model_object_list' : [
-            {
-              'description' : "",
-              'dynamic' : False,
-              'dynamic_display_source' : "script",
-              'membrane_name' : "PM",
-              'name' : "CP",
-              'object_source' : "blender",
-              'parent_object' : "EC",
-              'script_name' : ""
-            },
-            {
-              'description' : "",
-              'dynamic' : False,
-              'dynamic_display_source' : "script",
-              'membrane_name' : "",
-              'name' : "EC",
-              'object_source' : "blender",
-              'parent_object' : "",
-              'script_name' : ""
-            }
-          ]
-        }
-        """
-
         dm['mcell']['geometrical_objects'] = {
           'object_list' : []
         }
@@ -2938,19 +2868,19 @@ if __name__ == "__main__":
             # Print the compartments:
             print ( "Topology = " + str(topology) )
 
-
             dump_data_model ( "Topology", topology )
 
-            # Hard code fceri model for now:
 
-            #  begin compartments
-	          #    EC 3 1         # Outside of everything ... In CellBlender this has a surface also
-	          #    PM 2 1 EC      # Because this is a 2D object, its parent must be 3D
-	          #    CP 3 1 PM      # Because this is a 3D object, its parent must be 2D or None
-            #  end compartments
-
-            pass
-
+        # Change the materials to add a new one for each object
+        mat_name_number = 1
+        for obj in dm['mcell']['geometrical_objects']['object_list']:
+          if len(obj['material_names']) > 0:
+            if obj['material_names'][0] == 'membrane_mat':
+              # Make a new material to replace the defaulted "membrane_mat"
+              mat_name = obj['name'] + '_mat_' + str(mat_name_number)
+              dm['mcell']['materials']['material_dict'][mat_name] = { 'diffuse_color' : { 'a':0.1, 'r':mat_name_number&1, 'g':mat_name_number&2, 'b':mat_name_number&4 } }
+              obj['material_names'][0] = mat_name
+              mat_name_number += 1
 
         # Make a "Modify Surface Regions" "ALL" entry for every object
         dm['mcell']['modify_surface_regions'] = {
