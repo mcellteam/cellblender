@@ -2833,6 +2833,7 @@ if __name__ == "__main__":
             print ( "Here's the block: " + str(block) )
 
             if False:
+                # These are used to test compartments (from the BNGL Quick Reference Guide)
                 block = """begin compartments
                           ECF   3    vol_ECF
 
@@ -3019,9 +3020,6 @@ if __name__ == "__main__":
                 things_to_count.append ( mols_part[start:end] )
                 start = end
                 match = compiled_mol_regx.search(mols_part,start)
-              if len(things_to_count) == 0:
-                # This happens when a non-BNGL molecule is specified that doesn't have "()"
-                pass
 
               count_parts = [ "COUNT[" + thing + ",WORLD]" for thing in things_to_count ]
               count_expr = ' + '.join(count_parts)
@@ -3048,6 +3046,14 @@ if __name__ == "__main__":
 
 
         # reaction rules
+
+        # These regular expressions seem to find rates at the end of a line
+        last_rate_regx = "[\\w\\.+-]+$"
+        last_2_rates_regx = "([\w\.+-]+){1}\s*,\s*([\w\.+-]+){1}$"
+
+        compiled_last_rate_regx = re.compile(last_rate_regx)
+        compiled_last_2_rates_regx = re.compile(last_2_rates_regx)
+
         dm['mcell']['define_reactions'] = { 'data_model_version' : "DM_2014_10_24_1638" }
         react_list = []
         for block in blocks:
@@ -3073,14 +3079,14 @@ if __name__ == "__main__":
                 # Process as a reversible reaction
                 parts = [ s.strip() for s in line.strip().split('<->') ]
                 reactants = parts[0]
-                # Time for a regular expression ... This could use some expert review!!!
-                import re
-                last_comma_regexp = "[,][\w\d\+\-\.\s]*$"
-                cregx = re.compile ( last_comma_regexp )
-                m = cregx.search(parts[1])
-                rrate = parts[1][m.start()+1:].strip()
-                pre_comma = parts[1][0:m.start()].strip()
-                products,frate = [ p.strip() for p in pre_comma.split() ]
+
+                match = compiled_last_2_rates_regx.search(parts[1],0)
+                start = match.start()
+                end = match.end()
+                products = parts[1][0:start]
+                rates = parts[1][start:end]
+                frate,rrate = [ r.strip() for r in rates.split(',') ]
+
                 rxn['reactants'] = reactants
                 rxn['products'] = products
                 rxn['fwd_rate'] = frate
@@ -3091,7 +3097,13 @@ if __name__ == "__main__":
                 # Process as an irreversible reaction
                 parts = [ s.strip() for s in line.strip().split('->') ]
                 reactants = parts[0]
-                products,frate = [ p.strip() for p in parts[1].split() ]
+
+                match = compiled_last_rate_regx.search(parts[1],0)
+                start = match.start()
+                end = match.end()
+                products = parts[1][0:start]
+                frate = parts[1][start:end].strip()
+
                 rxn['reactants'] = reactants
                 rxn['products'] = products
                 rxn['fwd_rate'] = frate
@@ -3106,285 +3118,6 @@ if __name__ == "__main__":
 
         dm['mcell']['define_reactions']['reaction_list'] = react_list
 
-
-        # reaction rules
-        """
-        dm['mcell']['define_reactions'] = {
-          'data_model_version' : "DM_2014_10_24_1638",
-          'reaction_list' : [
-            {
-              'bkwd_rate' : "km1",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "kp1",
-              'name' : "Rec(a) + Lig(l,l) <-> Rec(a!1).Lig(l!1,l)",
-              'products' : "Rec(a!1).Lig(l!1,l)",
-              'reactants' : "Rec(a) + Lig(l,l)",
-              'rxn_name' : "",
-              'rxn_type' : "reversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "kmL",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "kpL",
-              'name' : "Rec(b~Y) + Lyn(U,SH2) <-> Rec(b~Y!1).Lyn(U!1,SH2)",
-              'products' : "Rec(b~Y!1).Lyn(U!1,SH2)",
-              'reactants' : "Rec(b~Y) + Lyn(U,SH2)",
-              'rxn_name' : "",
-              'rxn_type' : "reversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "pLb",
-              'name' : "Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,b~Y) -> Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,b~pY)",
-              'products' : "Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,b~pY)",
-              'reactants' : "Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,b~Y)",
-              'rxn_name' : "",
-              'rxn_type' : "irreversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "pLg",
-              'name' : "Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,g~Y) -> Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,g~pY)",
-              'products' : "Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,g~pY)",
-              'reactants' : "Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,g~Y)",
-              'rxn_name' : "",
-              'rxn_type' : "irreversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "kmLs",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "kpLs",
-              'name' : "Rec(b~pY) + Lyn(U,SH2) <-> Rec(b~pY!1).Lyn(U,SH2!1)",
-              'products' : "Rec(b~pY!1).Lyn(U,SH2!1)",
-              'reactants' : "Rec(b~pY) + Lyn(U,SH2)",
-              'rxn_name' : "",
-              'rxn_type' : "reversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "pLbs",
-              'name' : "Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,b~Y) -> Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,b~pY)",
-              'products' : "Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,b~pY)",
-              'reactants' : "Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,b~Y)",
-              'rxn_name' : "",
-              'rxn_type' : "irreversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "pLgs",
-              'name' : "Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,g~Y) -> Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,g~pY)",
-              'products' : "Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,g~pY)",
-              'reactants' : "Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,g~Y)",
-              'rxn_name' : "",
-              'rxn_type' : "irreversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "kmS",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "kpS",
-              'name' : "Rec(g~pY) + Syk(tSH2) <-> Rec(g~pY!1).Syk(tSH2!1)",
-              'products' : "Rec(g~pY!1).Syk(tSH2!1)",
-              'reactants' : "Rec(g~pY) + Syk(tSH2)",
-              'rxn_name' : "",
-              'rxn_type' : "reversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "pLS",
-              'name' : "Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,g~pY!4).Syk(tSH2!4,l~Y) -> Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,g~pY!4).Syk(tSH2!4,l~pY)",
-              'products' : "Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,g~pY!4).Syk(tSH2!4,l~pY)",
-              'reactants' : "Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b~Y!3).Rec(a!1,g~pY!4).Syk(tSH2!4,l~Y)",
-              'rxn_name' : "",
-              'rxn_type' : "irreversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "pLSs",
-              'name' : "Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,l~Y) -> Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,l~pY)",
-              'products' : "Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,l~pY)",
-              'reactants' : "Lig(l!1,l!2).Lyn(U,SH2!3).Rec(a!2,b~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,l~Y)",
-              'rxn_name' : "",
-              'rxn_type' : "irreversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "pSS",
-              'name' : "Lig(l!1,l!2).Syk(tSH2!3,a~Y).Rec(a!2,g~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,a~Y) -> Lig(l!1,l!2).Syk(tSH2!3,a~Y).Rec(a!2,g~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,a~pY)",
-              'products' : "Lig(l!1,l!2).Syk(tSH2!3,a~Y).Rec(a!2,g~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,a~pY)",
-              'reactants' : "Lig(l!1,l!2).Syk(tSH2!3,a~Y).Rec(a!2,g~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,a~Y)",
-              'rxn_name' : "",
-              'rxn_type' : "irreversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "pSSs",
-              'name' : "Lig(l!1,l!2).Syk(tSH2!3,a~pY).Rec(a!2,g~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,a~Y) -> Lig(l!1,l!2).Syk(tSH2!3,a~pY).Rec(a!2,g~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,a~pY)",
-              'products' : "Lig(l!1,l!2).Syk(tSH2!3,a~pY).Rec(a!2,g~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,a~pY)",
-              'reactants' : "Lig(l!1,l!2).Syk(tSH2!3,a~pY).Rec(a!2,g~pY!3).Rec(a!1,g~pY!4).Syk(tSH2!4,a~Y)",
-              'rxn_name' : "",
-              'rxn_type' : "irreversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "dm",
-              'name' : "Rec(b~pY) -> Rec(b~Y)",
-              'products' : "Rec(b~Y)",
-              'reactants' : "Rec(b~pY)",
-              'rxn_name' : "",
-              'rxn_type' : "irreversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "dm",
-              'name' : "Rec(g~pY) -> Rec(g~Y)",
-              'products' : "Rec(g~Y)",
-              'reactants' : "Rec(g~pY)",
-              'rxn_name' : "",
-              'rxn_type' : "irreversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "dm",
-              'name' : "Syk(tSH2! + ,l~pY) -> Syk(tSH2! + ,l~Y)",
-              'products' : "Syk(tSH2! + ,l~Y)",
-              'reactants' : "Syk(tSH2! + ,l~pY)",
-              'rxn_name' : "",
-              'rxn_type' : "irreversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "dm",
-              'name' : "Syk(tSH2! + ,a~pY) -> Syk(tSH2! + ,a~Y)",
-              'products' : "Syk(tSH2! + ,a~Y)",
-              'reactants' : "Syk(tSH2! + ,a~pY)",
-              'rxn_name' : "",
-              'rxn_type' : "irreversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "dc",
-              'name' : "Syk(tSH2,l~pY) -> Syk(tSH2,l~Y)",
-              'products' : "Syk(tSH2,l~Y)",
-              'reactants' : "Syk(tSH2,l~pY)",
-              'rxn_name' : "",
-              'rxn_type' : "irreversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            },
-            {
-              'bkwd_rate' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'fwd_rate' : "dc",
-              'name' : "Syk(tSH2,a~pY) -> Syk(tSH2,a~Y)",
-              'products' : "Syk(tSH2,a~Y)",
-              'reactants' : "Syk(tSH2,a~pY)",
-              'rxn_name' : "",
-              'rxn_type' : "irreversible",
-              'variable_rate' : "",
-              'variable_rate_switch' : False,
-              'variable_rate_text' : "",
-              'variable_rate_valid' : False
-            }
-          ]
-        }
-        """
 
         # initialization
         dm['mcell']['initialization'] = {
@@ -3448,7 +3181,110 @@ if __name__ == "__main__":
           }
         }
 
-        # This is the entire data model from the actual fceri version
+
+        # This is the fceri BNGL file used to test this code:
+
+        """
+          begin model
+          begin parameters
+	          km2  0.00
+	          pLbs  100
+	          km1  0.00
+	          mu_wall  1e-9    # Viscosity in compartment wall, kg/um.s    units=kg/um.s
+	          pLS  30
+	          KB  1.3806488e-19    # Boltzmann constant, cm^2.kg/K.s^2    units=cm^2.kg/K.s^2
+	          mu_PM  1e-9    # Viscosity in compartment PM, kg/um.s    units=kg/um.s
+	          Nav  6.022e8    # Avogadro number based on a volume size of 1 cubic um
+	          kmS  0.13
+	          kpS  0.0166057788110262*Nav
+	          vol_CP  1
+	          pLgs  3
+	          pSSs  200
+	          pSS  100
+	          dc  0.1
+	          dm  0.1
+	          Rc  0.0015    # Radius of a (cylindrical) molecule in 2D compartment, um    units=um
+	          gamma  0.5722    # Euler's constant
+	          mu_CP  1e-9    # Viscosity in compartment CP, kg/um.s    units=kg/um.s
+	          pLSs  100
+	          kmLs  0.12
+	          vol_EC  39
+	          T  298.15    # Temperature, K    units=K
+	          Rs  0.002564    # Radius of a (spherical) molecule in 3D compartment, um    units=um
+	          mu_EC  1e-9    # Viscosity in compartment EC, kg/um.s    units=kg/um.s
+	          rxn_layer_t  0.01
+	          vol_wall  0.88/rxn_layer_t    # Surface area
+	          pLg  1
+	          kmL  20
+	          pLb  30
+	          Scale_Totals  1    # 0.00358 gives at least one each,   0.5 gives 2 of some
+	          kp1  0.000166057788110262*Nav
+	          Lig_tot  6.0e3 * Scale_Totals    # Default: 6.0e3
+	          kpL  0.0166057788110262/rxn_layer_t
+	          kp2  1.66057788110262e-06/rxn_layer_t
+	          Syk_tot  4e2 * Scale_Totals    # Default: 4e2
+	          Rec_tot  4.0e2 * Scale_Totals    # Default: 4.0e2
+	          Lyn_tot  2.8e2 * Scale_Totals    # Default: 2.8e2
+	          kpLs  0.0166057788110262/rxn_layer_t
+	          vol_PM  0.01/rxn_layer_t    # Surface area
+	          h  rxn_layer_t    # Thickness of 2D compartment, um    units=um
+	          ITERATIONS  1000
+	          TIME_STEP  1e-6
+	          VACANCY_SEARCH_DISTANCE  10
+          end parameters
+          begin molecule types
+	          Lig(l,l)
+	          Lyn(SH2,U)
+	          Syk(a~Y~pY,l~Y~pY,tSH2)
+	          Rec(a,b~Y~pY,g~Y~pY)
+          end molecule types
+          begin compartments
+	          EC 3 1
+	          PM 2 1 EC
+	          CP 3 1 PM
+          end compartments
+          begin seed species
+	           @EC::Lig(l,l)  Lig_tot
+	           @PM::Lyn(SH2,U)  Lyn_tot
+	           @CP::Syk(a~Y,l~Y,tSH2)  Syk_tot
+	           @PM::Rec(a,b~Y,g~Y)  Rec_tot
+          end seed species
+          begin observables
+	          Molecules LycFree_MDLString Lyn(SH2,U)                                              # Should be: "COUNT[Lyn(U,SH2), WORLD]"
+	          Molecules RecPbeta_MDLString Rec(b~pY!?)                                            # Should be: "COUNT[Rec(b~pY!?), WORLD]"
+	          Molecules RecMon_MDLString Lig(l!1,l).Rec(a!1)                                      # Should be: "COUNT[Rec(a!1).Lig(l!1,l), WORLD]"
+	          Molecules RecDim_MDLString Lig(l!1,l!2).Rec(a!1).Rec(a!2)                           # Should be: "COUNT[Rec(a!1).Lig(l!1,l!2).Rec(a!2), WORLD]"
+	          Molecules RecRecLigLyn_MDLString Rec(a!1,b).Lig(l!1,l!2).Rec(a!2,b!3).Lyn(SH2,U!3)  # Should be: "COUNT[Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b!3).Rec(a!1,b), WORLD]"
+	          Molecules RecPgamma_MDLString Rec(g~pY), Rec(g~pY!+)                                # Should be: "COUNT[Rec(g~pY),WORLD] + COUNT[Rec(g~pY!+), WORLD]"
+	          Molecules RecSyk_MDLString Syk(tSH2!1).Rec(g~pY!1)                                  # Should be: "COUNT[Rec(g~pY!1).Syk(tSH2!1), WORLD]"
+	          Molecules RecSykPS_MDLString Syk(a~pY,tSH2!1).Rec(g~pY!1)                           # Should be: "COUNT[Rec(g~pY!1).Syk(tSH2!1,a~pY), WORLD]"
+	          Molecules Lig_MDLString Lig                                                         # Should be: "COUNT[Lig,WORLD]"
+	          Molecules Lyn_MDLString Lyn                                                         # Should be: "COUNT[Lyn,WORLD]"
+          end observables
+          begin reaction rules
+	          Rec(a) + Lig(l,l) <-> Lig(l!1,l).Rec(a!1) kp1,km1
+	          Rec(b~Y) + Lyn(SH2,U) <-> Lyn(SH2,U!1).Rec(b~Y!1) kpL,kmL
+	          Rec(a!1,b~Y).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) -> Rec(a!1,b~pY).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) pLb
+	          Rec(a!1,g~Y).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) -> Rec(a!1,g~pY).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3) pLg
+	          Rec(b~pY) + Lyn(SH2,U) <-> Lyn(SH2!1,U).Rec(b~pY!1) kpLs,kmLs
+	          Rec(a!1,b~Y).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) -> Rec(a!1,b~pY).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) pLbs
+	          Rec(a!1,g~Y).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) -> Rec(a!1,g~pY).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U) pLgs
+	          Rec(g~pY) + Syk(tSH2) <-> Syk(tSH2!1).Rec(g~pY!1) kpS,kmS
+	          Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3).Syk(l~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~Y!3).Lyn(SH2,U!3).Syk(l~pY,tSH2!4) pLS
+	          Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U).Syk(l~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,b~pY!3).Lyn(SH2!3,U).Syk(l~pY,tSH2!4) pLSs
+	          Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~Y,tSH2!3).Syk(a~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~Y,tSH2!3).Syk(a~pY,tSH2!4) pSS
+	          Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~pY,tSH2!3).Syk(a~Y,tSH2!4) -> Rec(a!1,g~pY!4).Lig(l!1,l!2).Rec(a!2,g~pY!3).Syk(a~pY,tSH2!3).Syk(a~pY,tSH2!4) pSSs
+	          Rec(b~pY) -> Rec(b~Y) dm
+	          Rec(g~pY) -> Rec(g~Y) dm
+	          Syk(l~pY,tSH2!+) -> Syk(l~Y,tSH2!+) dm
+	          Syk(a~pY,tSH2!+) -> Syk(a~Y,tSH2!+) dm
+	          Syk(l~pY,tSH2) -> Syk(l~Y,tSH2) dc
+	          Syk(a~pY,tSH2) -> Syk(a~Y,tSH2) dc
+          end reaction rules
+          end model
+        """
+
+        # This is the entire data model from the actual fceri version that runs in CellBlender:
 
         dmf['mcell'] = {
           'api_version' : 0,
