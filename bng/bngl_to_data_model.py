@@ -2979,160 +2979,37 @@ if __name__ == "__main__":
           'output_buf_size' : "",
           'plot_layout' : " plot ",
           'plot_legend' : "0",
-          'reaction_output_list' : [
-            {
-              'count_location' : "World",
-              'data_file_name' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'mdl_file_prefix' : "LycFree",
-              'mdl_string' : "COUNT[Lyn(U,SH2), WORLD]",
-              'molecule_name' : "",
-              'name' : "MDL: COUNT[Lyn(U,SH2), WORLD]",
-              'object_name' : "",
-              'plotting_enabled' : True,
-              'reaction_name' : "",
-              'region_name' : "",
-              'rxn_or_mol' : "MDLString"
-            },
-            {
-              'count_location' : "World",
-              'data_file_name' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'mdl_file_prefix' : "RecPbeta",
-              'mdl_string' : "COUNT[Rec(b~pY!?), WORLD]",
-              'molecule_name' : "",
-              'name' : "MDL: COUNT[Rec(b~pY!?), WORLD]",
-              'object_name' : "",
-              'plotting_enabled' : True,
-              'reaction_name' : "",
-              'region_name' : "",
-              'rxn_or_mol' : "MDLString"
-            },
-            {
-              'count_location' : "World",
-              'data_file_name' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'mdl_file_prefix' : "RecMon",
-              'mdl_string' : "COUNT[Rec(a!1).Lig(l!1,l), WORLD]",
-              'molecule_name' : "",
-              'name' : "MDL: COUNT[Rec(a!1).Lig(l!1,l), WORLD]",
-              'object_name' : "",
-              'plotting_enabled' : True,
-              'reaction_name' : "",
-              'region_name' : "",
-              'rxn_or_mol' : "MDLString"
-            },
-            {
-              'count_location' : "World",
-              'data_file_name' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'mdl_file_prefix' : "RecDim",
-              'mdl_string' : "COUNT[Rec(a!1).Lig(l!1,l!2).Rec(a!2), WORLD]",
-              'molecule_name' : "",
-              'name' : "MDL: COUNT[Rec(a!1).Lig(l!1,l!2).Rec(a!2), WORLD]",
-              'object_name' : "",
-              'plotting_enabled' : True,
-              'reaction_name' : "",
-              'region_name' : "",
-              'rxn_or_mol' : "MDLString"
-            },
-            {
-              'count_location' : "World",
-              'data_file_name' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'mdl_file_prefix' : "RecRecLigLyn",
-              'mdl_string' : "COUNT[Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b!3).Rec(a!1,b), WORLD]",
-              'molecule_name' : "",
-              'name' : "MDL: COUNT[Lig(l!1,l!2).Lyn(U!3,SH2).Rec(a!2,b!3).Rec(a!1,b), WORLD]",
-              'object_name' : "",
-              'plotting_enabled' : True,
-              'reaction_name' : "",
-              'region_name' : "",
-              'rxn_or_mol' : "MDLString"
-            },
-            {
-              'count_location' : "World",
-              'data_file_name' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'mdl_file_prefix' : "RecPgamma",
-              'mdl_string' : "COUNT[Rec(g~pY),WORLD] + COUNT[Rec(g~pY!+), WORLD]",
-              'molecule_name' : "",
-              'name' : "MDL: COUNT[Rec(g~pY),WORLD] + COUNT[Rec(g~pY!+), WORLD]",
-              'object_name' : "",
-              'plotting_enabled' : True,
-              'reaction_name' : "",
-              'region_name' : "",
-              'rxn_or_mol' : "MDLString"
-            },
-            {
-              'count_location' : "World",
-              'data_file_name' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'mdl_file_prefix' : "RecSyk",
-              'mdl_string' : "COUNT[Rec(g~pY!1).Syk(tSH2!1), WORLD]",
-              'molecule_name' : "",
-              'name' : "MDL: COUNT[Rec(g~pY!1).Syk(tSH2!1), WORLD]",
-              'object_name' : "",
-              'plotting_enabled' : True,
-              'reaction_name' : "",
-              'region_name' : "",
-              'rxn_or_mol' : "MDLString"
-            },
-            {
-              'count_location' : "World",
-              'data_file_name' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'mdl_file_prefix' : "RecSykPS",
-              'mdl_string' : "COUNT[Rec(g~pY!1).Syk(tSH2!1,a~pY), WORLD]",
-              'molecule_name' : "",
-              'name' : "MDL: COUNT[Rec(g~pY!1).Syk(tSH2!1,a~pY), WORLD]",
-              'object_name' : "",
-              'plotting_enabled' : True,
-              'reaction_name' : "",
-              'region_name' : "",
-              'rxn_or_mol' : "MDLString"
-            },
-            {
-              'count_location' : "World",
-              'data_file_name' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'mdl_file_prefix' : "Lig",
-              'mdl_string' : "COUNT[Lig,WORLD]",
-              'molecule_name' : "",
-              'name' : "MDL: COUNT[Lig,WORLD]",
-              'object_name' : "",
-              'plotting_enabled' : True,
-              'reaction_name' : "",
-              'region_name' : "",
-              'rxn_or_mol' : "MDLString"
-            },
-            {
-              'count_location' : "World",
-              'data_file_name' : "",
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'mdl_file_prefix' : "Lyn",
-              'mdl_string' : "COUNT[Lyn,WORLD]",
-              'molecule_name' : "",
-              'name' : "MDL: COUNT[Lyn,WORLD]",
-              'object_name' : "",
-              'plotting_enabled' : True,
-              'reaction_name' : "",
-              'region_name' : "",
-              'rxn_or_mol' : "MDLString"
-            }
-          ],
-          'rxn_step' : ""
+          'rxn_step' : "",
+          'reaction_output_list' : []
         }
+
+        # Fill in the reaction output list
+        for block in blocks:
+          if ' '.join(block[0].split()[1:]) == 'observables':
+            # Process observables
+            for line in block[1:-1]:
+              keyword, label, mol_expr = line.strip().split()
+              if keyword != "Molecules":
+                print ( "Warning: Conversion only supports Molecule observables" )
+              mdl_prefix = label
+              if label.endswith ( '_MDLString' ):
+                mdl_prefix = label[0:len(label)-len('_MDLString')]
+              count_item = {
+                  'count_location' : "World",
+                  'data_file_name' : "",
+                  'data_model_version' : "DM_2018_01_11_1330",
+                  'description' : "",
+                  'mdl_file_prefix' : mdl_prefix,
+                  'mdl_string' : "COUNT[" + mol_expr + ", WORLD]",
+                  'molecule_name' : "",
+                  'name' : "MDL: COUNT[" + mol_expr + ", WORLD]",
+                  'object_name' : "",
+                  'plotting_enabled' : True,
+                  'reaction_name' : "",
+                  'region_name' : "",
+                  'rxn_or_mol' : "MDLString"
+                }
+              dm['mcell']['reaction_data_output']['reaction_output_list'].append ( count_item )
 
 
         # reaction rules
