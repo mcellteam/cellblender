@@ -2984,13 +2984,21 @@ if __name__ == "__main__":
         }
 
         # Fill in the reaction output list
+        # This regular expression seems to find BNGL molecules:   \b\w+\([\w,~\!\?\+]+\)+([.]\w+\([\w,~\!\?\+]+\))*
         for block in blocks:
           if ' '.join(block[0].split()[1:]) == 'observables':
             # Process observables
             for line in block[1:-1]:
-              keyword, label, mol_expr = line.strip().split()
+              split_line = line.strip().split()
+              keyword = split_line[0]
               if keyword != "Molecules":
                 print ( "Warning: Conversion only supports Molecule observables" )
+              label = split_line[1]
+              things_to_count = [ t.strip() for t in ' '.join(split_line[2:]).split(',') ]
+              count_parts = [ "COUNT[" + thing + ", WORLD]" for thing in things_to_count ]
+              count_expr = count_parts[0]
+              if len(count_parts) > 1:
+                count_expr = ' + '.join(count_parts)
               mdl_prefix = label
               if label.endswith ( '_MDLString' ):
                 mdl_prefix = label[0:len(label)-len('_MDLString')]
@@ -3000,9 +3008,9 @@ if __name__ == "__main__":
                   'data_model_version' : "DM_2018_01_11_1330",
                   'description' : "",
                   'mdl_file_prefix' : mdl_prefix,
-                  'mdl_string' : "COUNT[" + mol_expr + ", WORLD]",
+                  'mdl_string' : count_expr,
                   'molecule_name' : "",
-                  'name' : "MDL: COUNT[" + mol_expr + ", WORLD]",
+                  'name' : "MDL: " + count_expr,
                   'object_name' : "",
                   'plotting_enabled' : True,
                   'reaction_name' : "",
@@ -3013,6 +3021,67 @@ if __name__ == "__main__":
 
 
         # reaction rules
+        dm['mcell']['define_reactions'] = { 'data_model_version' : "DM_2014_10_24_1638" }
+        react_list = []
+        for block in blocks:
+          if ' '.join(block[0].split()[1:]) == 'reaction rules':
+            # Process reaction rules
+            for line in block[1:-1]:
+              rxn = {
+                      'bkwd_rate' : "",
+                      'data_model_version' : "DM_2018_01_11_1330",
+                      'description' : "",
+                      'fwd_rate' : "",
+                      'name' : "",
+                      'products' : "",
+                      'reactants' : "",
+                      'rxn_name' : "",
+                      'rxn_type' : "",
+                      'variable_rate' : "",
+                      'variable_rate_switch' : False,
+                      'variable_rate_text' : "",
+                      'variable_rate_valid' : False
+                    }
+              if '<->' in line:
+                # Process as a reversible reaction
+                parts = [ s.strip() for s in line.strip().split('<->') ]
+                reactants = parts[0]
+                # Time for a regular expression ... This could use some expert review!!!
+                import re
+                last_comma_regexp = "[,][\w\d\+\-\.\s]*$"
+                cregx = re.compile ( last_comma_regexp )
+                m = cregx.search(parts[1])
+                rrate = parts[1][m.start()+1:].strip()
+                pre_comma = parts[1][0:m.start()].strip()
+                products,frate = [ p.strip() for p in pre_comma.split() ]
+                rxn['reactants'] = reactants
+                rxn['products'] = products
+                rxn['fwd_rate'] = frate
+                rxn['bkwd_rate'] = rrate
+                rxn['rxn_type'] = "reversible"
+                rxn['name'] = reactants + " <-> " + products
+              elif '->' in line:
+                # Process as an irreversible reaction
+                parts = [ s.strip() for s in line.strip().split('->') ]
+                reactants = parts[0]
+                products,frate = [ p.strip() for p in parts[1].split() ]
+                rxn['reactants'] = reactants
+                rxn['products'] = products
+                rxn['fwd_rate'] = frate
+                rxn['bkwd_rate'] = ""
+                rxn['rxn_type'] = "irreversible"
+                rxn['name'] = reactants + " -> " + products
+              else:
+                # Error?
+                print ( "Reaction definition \"" + line + "\" does not specify '->' or '<->'" )
+
+              react_list.append ( rxn )
+
+        dm['mcell']['define_reactions']['reaction_list'] = react_list
+
+
+        # reaction rules
+        """
         dm['mcell']['define_reactions'] = {
           'data_model_version' : "DM_2014_10_24_1638",
           'reaction_list' : [
@@ -3288,6 +3357,7 @@ if __name__ == "__main__":
             }
           ]
         }
+        """
 
         # initialization
         dm['mcell']['initialization'] = {
