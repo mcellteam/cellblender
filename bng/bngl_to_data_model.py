@@ -2707,6 +2707,11 @@ if __name__ == "__main__":
 
         # Add the molecules list
         mol_list = []
+        color_index = 1
+        vol_glyphs = ['Icosahedron', 'Sphere_1', 'Sphere_2', 'Octahedron', 'Cube']
+        surf_glyphs = ['Torus', 'Cone', 'Receptor', 'Cylinder', 'Pyramid', 'Tetrahedron']
+        vol_glyph_index = 0
+        surf_glyph_index = 0
         for block in blocks:
           if ' '.join(block[0].split()[1:]) == 'molecule types':
             # Process molecules
@@ -2736,7 +2741,14 @@ if __name__ == "__main__":
               mol['mol_bngl_label'] = ""
               mol['target_only'] = False
 
-              mol['display'] = { 'color': [1.0, 0.0, 0.0], 'emit': 0.0, 'glyph': "Cube", 'scale': 1.0 }
+              mol['display'] = { 'color': [color_index&1, color_index&2, color_index&4], 'emit': 0.0, 'glyph': "Cube", 'scale': 1.0 }
+              color_index += 1
+              if mol['mol_type'] == '2D':
+                mol['display']['glyph'] = surf_glyphs[surf_glyph_index%len(surf_glyphs)]
+                surf_glyph_index += 1
+              else:
+                mol['display']['glyph'] = vol_glyphs[vol_glyph_index%len(vol_glyphs)]
+                vol_glyph_index += 1
               
               mol['bngl_component_list'] = []
               mol_comps = line.split('(')[1].split(')')[0].split(',')
