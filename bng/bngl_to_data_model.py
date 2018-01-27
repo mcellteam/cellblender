@@ -2983,22 +2983,49 @@ if __name__ == "__main__":
           'reaction_output_list' : []
         }
 
+        # This regular expression seems to find BNGL molecules with parens: \b\w+\([\w,~\!\?\+]+\)+([.]\w+\([\w,~\!\?\+]+\))*
+        mol_regx = "\\b\\w+\\([\\w,~\\!\\?\\+]+\\)+([.]\\w+\\([\\w,~\\!\\?\\+]+\\))*"
+
+        # This regular expression seems to find BNGL molecules with or without parens: \b\w+(\([\w,~\!\?\+]+\)+)*([.]\w+\([\w,~\!\?\+]+\))*
+        mol_regx = "\\b\\w+(\\([\\w,~\\!\\?\\+]+\\)+)*([.]\\w+\\([\\w,~\\!\\?\\+]+\\))*"
+
+        compiled_mol_regx = re.compile(mol_regx)
+
         # Fill in the reaction output list
-        # This regular expression seems to find BNGL molecules:   \b\w+\([\w,~\!\?\+]+\)+([.]\w+\([\w,~\!\?\+]+\))*
         for block in blocks:
           if ' '.join(block[0].split()[1:]) == 'observables':
             # Process observables
             for line in block[1:-1]:
+
+              print ( "Observables Line: " + line )
+
               split_line = line.strip().split()
               keyword = split_line[0]
               if keyword != "Molecules":
                 print ( "Warning: Conversion only supports Molecule observables" )
               label = split_line[1]
-              things_to_count = [ t.strip() for t in ' '.join(split_line[2:]).split(',') ]
-              count_parts = [ "COUNT[" + thing + ", WORLD]" for thing in things_to_count ]
-              count_expr = count_parts[0]
-              if len(count_parts) > 1:
-                count_expr = ' + '.join(count_parts)
+
+              mols_part = ' '.join(split_line[2:])
+              print ( "  Mols part: " + mols_part )
+
+              start = 0
+              end = 0
+              match = compiled_mol_regx.search(mols_part,start)
+              things_to_count = []
+              while match:
+                start = match.start()
+                end = match.end()
+                print ( "  Found: \"" + mols_part[start:end] + "\"" )
+                things_to_count.append ( mols_part[start:end] )
+                start = end
+                match = compiled_mol_regx.search(mols_part,start)
+              if len(things_to_count) == 0:
+                # This happens when a non-BNGL molecule is specified that doesn't have "()"
+                pass
+
+              count_parts = [ "COUNT[" + thing + ",WORLD]" for thing in things_to_count ]
+              count_expr = ' + '.join(count_parts)
+
               mdl_prefix = label
               if label.endswith ( '_MDLString' ):
                 mdl_prefix = label[0:len(label)-len('_MDLString')]
