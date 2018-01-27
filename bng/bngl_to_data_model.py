@@ -2685,12 +2685,13 @@ if __name__ == "__main__":
         special_parameters = { 'ITERATIONS': 1000, 'TIME_STEP': 1e-6, 'VACANCY_SEARCH_DISTANCE': 10 }
 
         # Add the parameter system
+
         par_list = []
         for block in blocks:
           if ' '.join(block[0].split()[1:]) == 'parameters':
             # Process parameters
             for line in block[1:-1]:
-              # Finally, pull special items out of the BNGL file (they appear to be coded as regular parameters)
+              # Pull MCellR special items out of the BNGL file (they appear to be coded as regular parameters such as ITERATIONS...)
               name_val = line.split()
               if name_val[0] in special_parameters.keys():
                 special_parameters[name_val[0]] = name_val[1]
@@ -2785,7 +2786,7 @@ if __name__ == "__main__":
           ]
         }
 
-        # Add materials (only one for now)
+        # Add a default object material (may be augmented later)
         dm['mcell']['materials'] = {
           'material_dict' : {
             'membrane_mat' : {
@@ -2914,134 +2915,57 @@ if __name__ == "__main__":
                 }
               dm['mcell']['modify_surface_regions']['modify_surface_regions_list'].append ( msr )
 
-        """
-        dm['mcell']['modify_surface_regions'] = {
-          'data_model_version' : "DM_2014_10_24_1638",
-          'modify_surface_regions_list' : [
-            {
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'name' : "Surface Class: reflect   Object: EC   Region: wall",
-              'object_name' : "EC",
-              'region_name' : "wall",
-              'region_selection' : "SEL",
-              'surf_class_name' : "reflect"
-            },
-            {
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'name' : "Surface Class: reflect   Object: EC   ALL",
-              'object_name' : "EC",
-              'region_name' : "",
-              'region_selection' : "ALL",
-              'surf_class_name' : "reflect"
-            },
-            {
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'name' : "Surface Class: reflect   Object: CP   Region: PM",
-              'object_name' : "CP",
-              'region_name' : "PM",
-              'region_selection' : "SEL",
-              'surf_class_name' : "reflect"
-            },
-            {
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'name' : "Surface Class: reflect   Object: CP   ALL",
-              'object_name' : "CP",
-              'region_name' : "",
-              'region_selection' : "ALL",
-              'surf_class_name' : "reflect"
-            }
-          ]
-        }
-        """
 
+        # Add the seed species as release sites
 
+        dm['mcell']['release_sites'] = { 'data_model_version' : "DM_2014_10_24_1638" }
+        rel_list = []
+        site_num = 1
+        for block in blocks:
+          if ' '.join(block[0].split()[1:]) == 'seed species':
+            # Process seed species
+            for line in block[1:-1]:
+              rel_item = {
+                'data_model_version' : "DM_2018_01_11_1330",
+                'description' : "",
+                'location_x' : "0",
+                'location_y' : "0",
+                'location_z' : "0",
+                'molecule' : "",
+                'name' : "Rel_Site_" + str(site_num),
+                'object_expr' : "",
+                'orient' : "'",
+                'pattern' : "",
+                'points_list' : [],
+                'quantity' : "",
+                'quantity_type' : "NUMBER_TO_RELEASE",
+                'release_probability' : "1",
+                'shape' : "OBJECT",
+                'site_diameter' : "0",
+                'stddev' : "0"
+              }
+              # Need to fill in fields for: name, molecule, obj_expr, quantity
+              if site_num == 1:
+                rel_item['molecule'] = "@EC::Lig(l,l)"
+                rel_item['object_expr'] = "EC[ALL] - CP[ALL]"
+                rel_item['quantity'] = "Lig_tot"
+              elif site_num == 2:
+                rel_item['molecule'] = "@PM::Lyn(U,SH2)"
+                rel_item['object_expr'] = "CP[PM]"
+                rel_item['quantity'] = "Lyn_tot"
+              elif site_num == 3:
+                rel_item['molecule'] = "@CP::Syk(tSH2,l~Y,a~Y)"
+                rel_item['object_expr'] = "CP"
+                rel_item['quantity'] = "Syk_tot"
+              elif site_num == 4:
+                rel_item['molecule'] = "@PM::Rec(a,b~Y,g~Y)"
+                rel_item['object_expr'] = "CP[PM]"
+                rel_item['quantity'] = "Rec_tot"
 
-        # seed species
-        dm['mcell']['release_sites'] = {
-          'data_model_version' : "DM_2014_10_24_1638",
-          'release_site_list' : [
-            {
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'location_x' : "0",
-              'location_y' : "0",
-              'location_z' : "0",
-              'molecule' : "@EC::Lig(l,l)",
-              'name' : "ligand_rel",
-              'object_expr' : "EC[ALL] - CP[ALL]",
-              'orient' : "'",
-              'pattern' : "",
-              'points_list' : [],
-              'quantity' : "Lig_tot",
-              'quantity_type' : "NUMBER_TO_RELEASE",
-              'release_probability' : "1",
-              'shape' : "OBJECT",
-              'site_diameter' : "0",
-              'stddev' : "0"
-            },
-            {
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'location_x' : "0",
-              'location_y' : "0",
-              'location_z' : "0",
-              'molecule' : "@PM::Lyn(U,SH2)",
-              'name' : "lyn_rel",
-              'object_expr' : "CP[PM]",
-              'orient' : "'",
-              'pattern' : "",
-              'points_list' : [],
-              'quantity' : "Lyn_tot",
-              'quantity_type' : "NUMBER_TO_RELEASE",
-              'release_probability' : "1",
-              'shape' : "OBJECT",
-              'site_diameter' : "0",
-              'stddev' : "0"
-            },
-            {
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'location_x' : "0",
-              'location_y' : "0",
-              'location_z' : "0",
-              'molecule' : "@CP::Syk(tSH2,l~Y,a~Y)",
-              'name' : "syk_rel",
-              'object_expr' : "CP",
-              'orient' : "'",
-              'pattern' : "",
-              'points_list' : [],
-              'quantity' : "Syk_tot",
-              'quantity_type' : "NUMBER_TO_RELEASE",
-              'release_probability' : "1",
-              'shape' : "OBJECT",
-              'site_diameter' : "0",
-              'stddev' : "0"
-            },
-            {
-              'data_model_version' : "DM_2018_01_11_1330",
-              'description' : "",
-              'location_x' : "0",
-              'location_y' : "0",
-              'location_z' : "0",
-              'molecule' : "@PM::Rec(a,b~Y,g~Y)",
-              'name' : "receptor_rel",
-              'object_expr' : "CP[PM]",
-              'orient' : "'",
-              'pattern' : "",
-              'points_list' : [],
-              'quantity' : "Rec_tot",
-              'quantity_type' : "NUMBER_TO_RELEASE",
-              'release_probability' : "1",
-              'shape' : "OBJECT",
-              'site_diameter' : "0",
-              'stddev' : "0"
-            }
-          ]
-        }
+              rel_list.append(rel_item)
+              site_num += 1
+
+        dm['mcell']['release_sites']['release_site_list'] = rel_list
 
 
 
