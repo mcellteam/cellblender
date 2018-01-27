@@ -2925,42 +2925,35 @@ if __name__ == "__main__":
           if ' '.join(block[0].split()[1:]) == 'seed species':
             # Process seed species
             for line in block[1:-1]:
+              mol_expr, mol_quant = line.strip().split()
               rel_item = {
                 'data_model_version' : "DM_2018_01_11_1330",
                 'description' : "",
                 'location_x' : "0",
                 'location_y' : "0",
                 'location_z' : "0",
-                'molecule' : "",
+                'molecule' : mol_expr,
                 'name' : "Rel_Site_" + str(site_num),
                 'object_expr' : "",
                 'orient' : "'",
                 'pattern' : "",
                 'points_list' : [],
-                'quantity' : "",
+                'quantity' : mol_quant,
                 'quantity_type' : "NUMBER_TO_RELEASE",
                 'release_probability' : "1",
                 'shape' : "OBJECT",
                 'site_diameter' : "0",
                 'stddev' : "0"
               }
-              # Need to fill in fields for: name, molecule, obj_expr, quantity
+              # Need to fill in fields for obj_expr since these have not been parsed yet
               if site_num == 1:
-                rel_item['molecule'] = "@EC::Lig(l,l)"
                 rel_item['object_expr'] = "EC[ALL] - CP[ALL]"
-                rel_item['quantity'] = "Lig_tot"
               elif site_num == 2:
-                rel_item['molecule'] = "@PM::Lyn(U,SH2)"
                 rel_item['object_expr'] = "CP[PM]"
-                rel_item['quantity'] = "Lyn_tot"
               elif site_num == 3:
-                rel_item['molecule'] = "@CP::Syk(tSH2,l~Y,a~Y)"
                 rel_item['object_expr'] = "CP"
-                rel_item['quantity'] = "Syk_tot"
               elif site_num == 4:
-                rel_item['molecule'] = "@PM::Rec(a,b~Y,g~Y)"
                 rel_item['object_expr'] = "CP[PM]"
-                rel_item['quantity'] = "Rec_tot"
 
               rel_list.append(rel_item)
               site_num += 1
