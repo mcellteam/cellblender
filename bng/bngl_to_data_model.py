@@ -2830,11 +2830,8 @@ if __name__ == "__main__":
           if ' '.join(block[0].split()[1:]) == 'compartments':
             # Process compartments
 
-            print ( "***** WARNING: Compartment Volumes are not used" )
-
-            print ( "Here's the block: " + str(block) )
-
             if False:
+
                 # These are used to test compartments (from the BNGL Quick Reference Guide)
                 block = """begin compartments
                           ECF   3    vol_ECF
@@ -2853,6 +2850,31 @@ if __name__ == "__main__":
                           ERM2  2    sa_ERM*eff_width   CP2
                           ER2   3    vol_ER             ERM2
                         end compartments""".split('\n')
+
+            if False:
+
+                # These are used to test compartments (similar to BNG QRG, but compatible with fceri)
+                block = """begin compartments
+                          EC    3    1
+
+                          PM    2    1  EC
+                          CP    3    1  PM
+                          NM1   2    1  CP
+                          Nuc1  3    1  NM1
+                          ERM1  2    1  CP
+                          ER1   3    1  ERM1
+
+                          PM2   2    1  EC
+                          CP2   3    1  PM2
+                          NM2   2    1  CP2
+                          Nuc2  3    1  NM2
+                          ERM2  2    1  CP2
+                          ER2   3    1  ERM2
+                        end compartments""".split('\n')
+
+            print ( "***** WARNING: Compartment Volumes are not used" )
+
+            print ( "Here's the block: " + str(block) )
 
             cdefs = []
             for line in block[1:-1]:
