@@ -2721,7 +2721,7 @@ if __name__ == "__main__":
               mol['mol_name'] = line.split('(')[0].strip()
 
               # TODO: Find a way to determine volume or surface molecules
-              # This is a hard-coded determination for the fceri model
+              # This is a hard-coded determination for the FceRI model
               print ( "***** WARNING: Using fixed 3D names of Lig and Syk" )
               if mol['mol_name'] in ['Lig','Syk']:
                 mol['mol_type'] = '3D'
@@ -2853,7 +2853,7 @@ if __name__ == "__main__":
 
             if False:
 
-                # These are used to test compartments (similar to BNG QRG, but compatible with fceri)
+                # These are used to test compartments (similar to BNG QRG, but compatible with FceRI)
                 block = """begin compartments
                           EC    3    1
 
@@ -2971,7 +2971,7 @@ if __name__ == "__main__":
                 'stddev' : "0"
               }
               # TODO: Need to fill in fields for obj_expr since these have not been parsed yet
-              # This is a hard-coded way to build these expressions for the fceri model
+              # This is a hard-coded way to build these expressions for the FceRI model
               if site_num == 1:
                 rel_item['object_expr'] = "EC[ALL] - CP[ALL]"
               elif site_num == 2:
@@ -3207,7 +3207,7 @@ if __name__ == "__main__":
         }
 
 
-        # This is the fceri BNGL file used to test this code:
+        # This is the FceRI BNGL file used to test this code:
 
         """
           begin model
@@ -3309,7 +3309,7 @@ if __name__ == "__main__":
           end model
         """
 
-        # This is the entire data model from the actual fceri version that runs in CellBlender:
+        # This is the entire data model from the actual FceRI version that runs in CellBlender:
 
         dmf['mcell'] = {
           'api_version' : 0,
