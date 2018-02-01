@@ -2356,6 +2356,7 @@ def build_topology_from_list ( cdefs, parent ):
   c_by_name = {}
   for c in cdefs:
     print ( "cdef = " + str(c) )
+    print ( "***** WARNING: Ignoring volume of \"" + str(c[2]) + "\"" )
     if len(c) == 3:
       # This is an outer compartment
       print ( "Outer" )
