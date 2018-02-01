@@ -2680,7 +2680,7 @@ if __name__ == "__main__":
         dm['mcell']['model_language'] = "mcell3r"
 
 
-        # Now start building the data model
+        # Define special parameters that appear to be MCell Specific
         
         special_parameters = { 'ITERATIONS': 1000, 'TIME_STEP': 1e-6, 'VACANCY_SEARCH_DISTANCE': 10 }
 
@@ -2698,7 +2698,7 @@ if __name__ == "__main__":
               else:
                 par = {}
                 par['par_name'] = name_val[0]
-                par['par_expression'] = name_val[1]
+                par['par_expression'] = ' '.join ( name_val[1:] )
                 par['par_description'] = ""
                 par['par_units'] = ""
                 par_list.append ( par )
