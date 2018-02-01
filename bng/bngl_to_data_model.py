@@ -2383,25 +2383,31 @@ def build_topology_from_list ( cdefs, parent ):
   return parent
 
 def assign_nested_dimensions ( obj ):
-  # Figure out the dimensions needed for each object to contain its children
+  # Figure out the dimensions needed for each compartment to have the proper volume
+  child_volume = 0
   print ( "Assigning dimensions for object: " + str(obj['name']) )
-  if 'vol' in obj.keys():
-    print ( "Using volume of \"" + str(obj['vol']) + "\"" )
-    cube_len = math.pow ( float(obj['vol']), 1/3 )
-    obj['xdim'] = cube_len
-    obj['ydim'] = cube_len
-    obj['zdim'] = cube_len
-  else:
-    print ( "Object has no volume" )
-    obj['xdim'] = 0
-    obj['ydim'] = 0
-    obj['zdim'] = 0
   if '~children' in obj:
     children = obj['~children']
     if len(children) > 0:
       for k in children.keys():
         child = children[k]
         assign_nested_dimensions ( child )
+        if 'vol' in child.keys():
+          child_volume += float(child['vol'])
+  if 'vol' in obj.keys():
+    print ( "Using volume of \"" + str(obj['vol']) + "\"" )
+    # Compute the dimensions that will provide the compartment volume and the child volume
+    cube_len = math.pow ( float(obj['vol'])+child_volume, 1/3 )
+    obj['xdim'] = cube_len
+    obj['ydim'] = cube_len
+    obj['zdim'] = cube_len
+  else:
+    print ( "Object has no volume" )
+    # It's not clear whether these even need to be added in this case or should it be cube root of child volume?
+    # This should only happen for the outer "World" object which is just a logical container for actual inner objects.
+    obj['xdim'] = 0
+    obj['ydim'] = 0
+    obj['zdim'] = 0
 
 def assign_linear_dimensions ( obj, inner_cube_dim, nesting_space ):
   # Figure out the dimensions needed for each object to contain its children
@@ -2431,7 +2437,7 @@ def assign_linear_dimensions ( obj, inner_cube_dim, nesting_space ):
       obj['zdim'] = max_z_dim + (2*nesting_space)
 
 def assign_linear_coordinates ( obj, x, y, z, nesting_space ):
-  # Convert the dimensions to actual coordinates
+  # Convert the dimensions to actual coordinates distributed along the x axis
   obj['x'] = x
   obj['y'] = y
   obj['z'] = z
@@ -2445,7 +2451,7 @@ def assign_linear_coordinates ( obj, x, y, z, nesting_space ):
         x_offset += child['xdim'] + nesting_space
 
 def assign_nested_coordinates ( obj, x, y, z ):
-  # Convert the dimensions to actual coordinates
+  # Convert the dimensions to actual coordinates centered at the origin
   obj['x'] = x
   obj['y'] = y
   obj['z'] = z
