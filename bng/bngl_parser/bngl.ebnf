@@ -27,25 +27,25 @@
 # BNGL syntax with compartments and energy patterns
 # ( Extended Backus - Naur Form )
 
-WS = {" "|"\ t "};
+WS = {" "|"\t"};
 
-NewLine = {"\ n "};
+NewLine = {"\n"};
 
-Name = Letter , [{ Letter | Digit |" _ "}];
+Name = Letter , [{ Letter | Digit |"_"}];
 
-State = "∼" ,( Letter | Digit ) ,[{ Letter | Digit |" _ "}] | "∼?";
+State = "~" ,( Letter | Digit ) ,[{ Letter | Digit |"_"}] | "~?";
 
 Bond = "!" ,{ Digit } | "!?" | "!+";
 
-Tag = "%" ,( Letter | Digit ) ,[{ Letter | Digit |" _ "}];
+Tag = "%" ,( Letter | Digit ) ,[{ Letter | Digit |"_"}];
 
-Compartment = " @ " , Name ;
+Compartment = "@" , Name ;
 
 LineLabel = { Digit } , WS | Name ,":" ,[ WS ];
 
-ComponentType = Name , [{"∼" , State }];
+ComponentType = Name , [{"~" , State }];
 
-Component = Name , [{"∼" , State | "!" , Bond | "%" , Tag }];
+Component = Name , [{"~" , State | "!" , Bond | "%" , Tag }];
 
 MoleculeType = Name , ["(" , [ ComponentType , [{" ," , ComponentType }]] , ")"];
 
@@ -56,7 +56,7 @@ Name , [{ Tag | Compartment }] , ["(" ,[ Component ,[{" ," , Component }]] ,")"]
 SimpleMolecule = Name , [{ Tag | Compartment }] , ["()"]
 | Name , ["()"] , [{ Tag | Compartment }];
 
-PatternMods = {" $ " | "{ matchOnce }"};
+PatternMods = {"$" | "{ matchOnce }"};
 
 PatternQuantifier = (" <"|" <="|"=="|" >="|" >") , NaturalNumber ;
 
@@ -129,56 +129,55 @@ Action = Name , "(" ,[ Args ] ,")" ,[";
 (* block defintions *)
 ParameterBlock = "begin parameters" , NewLine ,
 {[ LineLabel ] , ParameterDefn , NewLine } ,
-"end molecule types " , NewLine ;
+"end molecule types" , NewLine ;
 
-MoleculeTypeBlock = "begin molecule types " , NewLine ,
+MoleculeTypeBlock = "begin molecule types" , NewLine ,
 {[ LineLabel ] , MoleculeType , NewLine } ,
-"end molecule types " , NewLine ;
+"end molecule types" , NewLine ;
 
 CompartmentBlock = "begin compartments" , NewLine ,
 { [ LineLabel ] , Compartment , WS , ("2"|"3") ,
 WS , MathExpression , [ WS , Name ] , NewLine } ,
-"end comparments types " , NewLine ;
+"end comparments types" , NewLine ;
 
-SpeciesBlock = "begin seed sp e c i e s " , NewLine ,
+SpeciesBlock = "begin seed species" , NewLine ,
 {[ LineLabel ] , Species , WS , MathExpression , NewLine } ,
-"end seed sp e c i e s " , NewLine
-| "begin sp e c i e s " , NewLine ,
+"end seed specis" , NewLine
+| "begin species" , NewLine ,
 {[ LineLabel ] , Species , WS , MathExpression , NewLine } ,
-"end seed sp e c i e s " , NewLine ;
+"end seed species" , NewLine ;
 
-ObservableBlock = "begin observab les " , { NewLine } ,
+ObservableBlock = "begin observables " , { NewLine } ,
 {[ LineLabel ] , Observable , NewLine } ,
-"end observab les " , NewLine ;
+"end observables" , NewLine ;
 
-GroupBlock = "begin groups " , NewLine ,
+GroupBlock = "begin groups" , NewLine ,
 {[ LineLabel ] , Group , NewLine } ,
 "end groups " , NewLine ;
 
-EnergyPatternBlock =
-"begin energy patterns " , NewLine ,
+EnergyPatternBlock = "begin energy patterns" , NewLine ,
 {[ LineLabel ] , Pattern , [ WS ] , MathExpression , NewLine } ,
-"end energy patterns " , NewLine ;
+"end energy patterns" , NewLine ;
 
-FunctionBlock = "begin fun ct ions " , NewLine ,
+FunctionBlock = "begin functions" , NewLine ,
 {[ LineLabel ] , FunctionDefn , NewLine } ,
-"end fun ct ions " , NewLine ;
+"end functions" , NewLine ;
 
-ReactionRuleBlock = "begin r ea ct ion ru l e s " , NewLine ,
+ReactionRuleBlock = "begin reaction rules" , NewLine ,
 {[ LineLabel ] , Rule , NewLine } ,
-"end r ea ct ion ru l e s " , NewLine ;
+"end reaction rules" , NewLine ;
 
-ReactionBlock = "begin reactions " , NewLine ,
+ReactionBlock = "begin reactions" , NewLine ,
 {[ LineLabel ] , Reaction , NewLine } ,
-"end reactions " , NewLine ;
+"end reactions" , NewLine ;
 
-PopulationMapBlock = "begin population maps " , NewLine ,
+PopulationMapBlock = "begin population maps" , NewLine ,
 {[ LineLabel ] , PopulationMap , NewLine } ,
 "end parameters" , NewLine ;
 
-ActionBlock = "begin actions " , NewLine ,
+ActionBlock = "begin actions" , NewLine ,
 {[ LineLabel ] , Action , NewLine } ,
-"end actions " , NewLine ;
+"end actions" , NewLine ;
 
 Block = ParameterBlock | MoleculesTypeBlock | CompartmentBlock
 | SpeciesBlock | ObservableBlock | GroupBlock
