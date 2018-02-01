@@ -2738,7 +2738,10 @@ if __name__ == "__main__":
         
         special_parameters = { 'ITERATIONS': 1000, 'TIME_STEP': 1e-6, 'VACANCY_SEARCH_DISTANCE': 10 }
 
-        # Add the parameter system
+        # Add the parameter system and build a parameter/value dictionary for future use
+        # This assumes that parameters are defined before being used
+
+        par_val_dict = {}
 
         par_list = []
         for block in blocks:
@@ -2750,13 +2753,21 @@ if __name__ == "__main__":
               if name_val[0] in special_parameters.keys():
                 special_parameters[name_val[0]] = name_val[1]
               else:
+                # Note that taking this section out of the "else" would also include the special parameters in par_val_dict
+                # It's not clear whether that is what should be done.
                 par = {}
                 par['par_name'] = name_val[0]
                 par['par_expression'] = ' '.join ( name_val[1:] )
                 par['par_description'] = ""
                 par['par_units'] = ""
                 par_list.append ( par )
+                # Store an evaluated copy of this parameter in the parameter/value dictionary
+                # This assumes that parameters are defined before being used
+                par_val_dict[par['par_name']] = eval(par['par_expression'],globals(),par_val_dict)
         dm['mcell']['parameter_system'] = { 'model_parameters': par_list }
+        for k in sorted(par_val_dict.keys()):
+          print ( "  " + str(k) + " = " + str(par_val_dict[k]) )
+
 
         # Add the molecules list
 
@@ -2933,6 +2944,8 @@ if __name__ == "__main__":
             cdefs = []
             for line in block[1:-1]:
               parts = [ p for p in line.strip().split() ]
+              # Evaluate the volume expression string (3rd value, parts[2]) to a float
+              parts[2] = eval(parts[2],globals(),par_val_dict)
               cdefs.append(parts)
 
             topology = build_topology_from_list ( cdefs, { '~children':{}, 'name':"World" } )
