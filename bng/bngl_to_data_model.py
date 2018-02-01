@@ -2356,7 +2356,6 @@ def build_topology_from_list ( cdefs, parent ):
   c_by_name = {}
   for c in cdefs:
     print ( "cdef = " + str(c) )
-    print ( "***** WARNING: Ignoring volume of \"" + str(c[2]) + "\"" )
     if len(c) == 3:
       # This is an outer compartment
       print ( "Outer" )
@@ -2372,6 +2371,9 @@ def build_topology_from_list ( cdefs, parent ):
 
 def assign_dimensions ( obj, inner_cube_dim, nesting_space ):
   # Figure out the dimensions needed for each object to contain its children
+  print ( "Assigning dimensions for object: " + str(obj['name']) )
+  if 'vol' in obj.keys():
+    print ( "***** WARNING: Ignoring volume of \"" + str(obj['vol']) + "\"" )
   obj['xdim'] = inner_cube_dim
   obj['ydim'] = inner_cube_dim
   obj['zdim'] = inner_cube_dim
