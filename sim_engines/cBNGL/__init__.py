@@ -279,7 +279,7 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
                 break
 
           for g in sorted_objs:
-            g_volume = 1.0
+            g_volume = 1.0  # Note: This should be calculating the actual volume
             if len(g['membrane_name']) > 0:
               f.write ( "    %s 2 %.15g" % (g['membrane_name'],g_volume) )
               if len(g['parent_object']) > 0:
