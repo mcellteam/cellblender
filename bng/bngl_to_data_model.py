@@ -2330,8 +2330,8 @@ def write_data_model ( dm, file_name ):
 def get_max_depth ( parent ):
   # Count the depth of the tree
   max_child_depth = 0
-  if 'children' in parent:
-    children = parent['children']
+  if '~children' in parent:
+    children = parent['~children']
     for k in children.keys():
       child = children[k]
       child_depth = get_max_depth ( child )
@@ -2342,8 +2342,8 @@ def get_max_depth ( parent ):
 
 def check_legal ( parent ):
   # Ensure that parents and children alternate between volume and surface
-  if 'children' in parent:
-    children = parent['children']
+  if '~children' in parent:
+    children = parent['~children']
     if 'dim' in parent:
       for child_key in children.keys():
         if parent['dim'] == children[child_key]['dim']:
@@ -2359,13 +2359,13 @@ def build_topology_from_list ( cdefs, parent ):
     if len(c) == 3:
       # This is an outer compartment
       print ( "Outer" )
-      parent['children'][c[0]] = { 'name':c[0], 'dim':c[1], 'vol':c[2], 'children':{} }
-      c_by_name[c[0]] = parent['children'][c[0]]
+      parent['~children'][c[0]] = { 'name':c[0], 'dim':c[1], 'vol':c[2], '~children':{} }
+      c_by_name[c[0]] = parent['~children'][c[0]]
     elif len(c) == 4:
       # This compartment has a parent ... find it and add it
       print ( "Inside " + str(c[3]) )
-      c_by_name[c[3]]['children'][c[0]] = { 'name':c[0], 'dim':c[1], 'vol':c[2], 'children':{} }
-      c_by_name[c[0]] = c_by_name[c[3]]['children'][c[0]]
+      c_by_name[c[3]]['~children'][c[0]] = { 'name':c[0], 'dim':c[1], 'vol':c[2], '~children':{} }
+      c_by_name[c[0]] = c_by_name[c[3]]['~children'][c[0]]
   return parent
 
 
@@ -2377,8 +2377,8 @@ def assign_dimensions ( obj, inner_cube_dim, nesting_space ):
   obj['xdim'] = inner_cube_dim
   obj['ydim'] = inner_cube_dim
   obj['zdim'] = inner_cube_dim
-  if 'children' in obj:
-    children = obj['children']
+  if '~children' in obj:
+    children = obj['~children']
     if len(children) > 0:
       for k in children.keys():
         child = children[k]
@@ -2402,8 +2402,8 @@ def assign_coordinates ( obj, x, y, z, nesting_space ):
   obj['x'] = x
   obj['y'] = y
   obj['z'] = z
-  if 'children' in obj:
-    children = obj['children']
+  if '~children' in obj:
+    children = obj['~children']
     if len(children) > 0:
       x_offset = nesting_space - ( obj['xdim'] / 2.0 )
       for k in children.keys():
@@ -2486,8 +2486,8 @@ def append_objects ( obj, inner_parent, outer_parent, dm_geom_obj_list, dm_model
 
       dm_model_obj_list.append ( mo )
 
-  if 'children' in obj.keys():
-    children = obj['children']
+  if '~children' in obj.keys():
+    children = obj['~children']
     if len(children) > 0:
       for k in children.keys():
         child = children[k]
@@ -2524,28 +2524,28 @@ example_world = {'ECF': {'PM2': {'CP2': {'ERM2': {'ER2': {}}, 'NM2': {'Nuc2': {}
 
 
 ex_world = {
-  'children': {
+  '~children': {
     'ECF': {
       'name': 'ECF', 
       'vol': 
       'vol_ECF', 
-      'children': {
+      '~children': {
         'PM1': {
           'name': 'PM1', 
           'vol': 'sa_PM*eff_width', 
-          'children': {
+          '~children': {
             'CP1': {
               'name': 'CP1', 
               'vol': 'vol_CP', 
-              'children': {
+              '~children': {
                 'ERM1': {
                   'name': 'ERM1', 
                   'vol': 'sa_ERM*eff_width', 
-                  'children': {
+                  '~children': {
                     'ER1': {
                       'name': 'ER1', 
                       'vol': 'vol_ER', 
-                      'children': {}, 
+                      '~children': {},
                       'dim': '3'
                     }
                   },
@@ -2554,11 +2554,11 @@ ex_world = {
                 'NM1': {
                   'name': 'NM1', 
                   'vol': 'sa_NM*eff_width', 
-                  'children': {
+                  '~children': {
                     'Nuc1': {
                       'name': 'Nuc1', 
                       'vol': 'vol_Nuc', 
-                      'children': {}, 
+                      '~children': {},
                       'dim': '3'}
                     }, 
                     'dim': '2'
@@ -2572,19 +2572,19 @@ ex_world = {
           'PM2': {
             'name': 'PM2', 
             'vol': 'sa_PM*eff_width', 
-            'children': {
+            '~children': {
               'CP2': {
                 'name': 'CP2', 
                 'vol': 'vol_CP', 
-                'children': {
+                '~children': {
                   'ERM2': {
                     'name': 'ERM2', 
                     'vol': 'sa_ERM*eff_width', 
-                    'children': {
+                    '~children': {
                       'ER2': {
                         'name': 'ER2',
                         'vol': 'vol_ER',
-                        'children': {}, 
+                        '~children': {},
                         'dim': '3'
                       }
                     }, 
@@ -2593,11 +2593,11 @@ ex_world = {
                   'NM2': {
                     'name': 'NM2', 
                     'vol': 'sa_NM*eff_width', 
-                    'children': {
+                    '~children': {
                       'Nuc2': {
                         'name': 'Nuc2', 
                         'vol': 'vol_Nuc', 
-                        'children': {}, 
+                        '~children': {},
                         'dim': '3'
                       }
                     }, 
@@ -2884,7 +2884,7 @@ if __name__ == "__main__":
               parts = [ p for p in line.strip().split() ]
               cdefs.append(parts)
 
-            topology = build_topology_from_list ( cdefs, { 'children':{}, 'name':"World" } )
+            topology = build_topology_from_list ( cdefs, { '~children':{}, 'name':"World" } )
             check_legal ( topology )
             assign_dimensions ( topology, inner_cube_dim, nesting_space )
 
