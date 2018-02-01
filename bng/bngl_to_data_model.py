@@ -2352,6 +2352,20 @@ def check_legal ( parent ):
       check_legal ( child )
 
 
+def contains_siblings ( parent ):
+  # Detect whether there are any sibling relationships in the tree
+  if '~children' in parent:
+    children = parent['~children']
+    if len(children) > 1:
+      return True
+    else:
+      for child_key in children.keys():
+        if contains_siblings ( children[child_key] ):
+          return True
+  else:
+    return False
+
+
 def build_topology_from_list ( cdefs, parent ):
   c_by_name = {}
   for c in cdefs:
@@ -2368,8 +2382,28 @@ def build_topology_from_list ( cdefs, parent ):
       c_by_name[c[0]] = c_by_name[c[3]]['~children'][c[0]]
   return parent
 
+def assign_nested_dimensions ( obj ):
+  # Figure out the dimensions needed for each object to contain its children
+  print ( "Assigning dimensions for object: " + str(obj['name']) )
+  if 'vol' in obj.keys():
+    print ( "Using volume of \"" + str(obj['vol']) + "\"" )
+    cube_len = math.pow ( float(obj['vol']), 1/3 )
+    obj['xdim'] = cube_len
+    obj['ydim'] = cube_len
+    obj['zdim'] = cube_len
+  else:
+    print ( "Object has no volume" )
+    obj['xdim'] = 0
+    obj['ydim'] = 0
+    obj['zdim'] = 0
+  if '~children' in obj:
+    children = obj['~children']
+    if len(children) > 0:
+      for k in children.keys():
+        child = children[k]
+        assign_nested_dimensions ( child )
 
-def assign_dimensions ( obj, inner_cube_dim, nesting_space ):
+def assign_linear_dimensions ( obj, inner_cube_dim, nesting_space ):
   # Figure out the dimensions needed for each object to contain its children
   print ( "Assigning dimensions for object: " + str(obj['name']) )
   if 'vol' in obj.keys():
@@ -2382,7 +2416,7 @@ def assign_dimensions ( obj, inner_cube_dim, nesting_space ):
     if len(children) > 0:
       for k in children.keys():
         child = children[k]
-        assign_dimensions ( child, inner_cube_dim, nesting_space )
+        assign_linear_dimensions ( child, inner_cube_dim, nesting_space )
       obj['xdim'] = nesting_space
       for k in children.keys():
         child = children[k]
@@ -2396,8 +2430,7 @@ def assign_dimensions ( obj, inner_cube_dim, nesting_space ):
       obj['ydim'] = max_y_dim + (2*nesting_space)
       obj['zdim'] = max_z_dim + (2*nesting_space)
 
-
-def assign_coordinates ( obj, x, y, z, nesting_space ):
+def assign_linear_coordinates ( obj, x, y, z, nesting_space ):
   # Convert the dimensions to actual coordinates
   obj['x'] = x
   obj['y'] = y
@@ -2408,8 +2441,20 @@ def assign_coordinates ( obj, x, y, z, nesting_space ):
       x_offset = nesting_space - ( obj['xdim'] / 2.0 )
       for k in children.keys():
         child = children[k]
-        assign_coordinates ( child, x+x_offset+(child['xdim']/2.0), y, z, nesting_space )
+        assign_linear_coordinates ( child, x+x_offset+(child['xdim']/2.0), y, z, nesting_space )
         x_offset += child['xdim'] + nesting_space
+
+def assign_nested_coordinates ( obj, x, y, z ):
+  # Convert the dimensions to actual coordinates
+  obj['x'] = x
+  obj['y'] = y
+  obj['z'] = z
+  if '~children' in obj:
+    children = obj['~children']
+    if len(children) > 0:
+      for k in children.keys():
+        child = children[k]
+        assign_nested_coordinates ( child, x, y, z )
 
 
 def create_rectangle ( xmin, xmax, ymin, ymax, zmin, zmax ):
@@ -2886,9 +2931,15 @@ if __name__ == "__main__":
 
             topology = build_topology_from_list ( cdefs, { '~children':{}, 'name':"World" } )
             check_legal ( topology )
-            assign_dimensions ( topology, inner_cube_dim, nesting_space )
+            if contains_siblings(topology):
+              print ( "Topology contains siblings" )
+              assign_linear_dimensions ( topology, inner_cube_dim, nesting_space )
+              assign_linear_coordinates ( topology, 0, 0, 0, nesting_space )
+            else:
+              print ( "Topology does not contain siblings" )
+              assign_nested_dimensions ( topology )
+              assign_nested_coordinates ( topology, 0, 0, 0 )
 
-            assign_coordinates ( topology, 0, 0, 0, nesting_space )
 
             append_objects ( topology, None, None, dm['mcell']['geometrical_objects']['object_list'], dm['mcell']['model_objects']['model_object_list'] )
 
