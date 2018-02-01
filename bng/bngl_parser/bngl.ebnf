@@ -138,11 +138,11 @@ MoleculeTypeBlock = "begin molecule types" , NewLine ,
 CompartmentBlock = "begin compartments" , NewLine ,
 { [ LineLabel ] , Compartment , WS , ("2"|"3") ,
 WS , MathExpression , [ WS , Name ] , NewLine } ,
-"end comparments types" , NewLine ;
+"end comparments" , NewLine ;
 
 SpeciesBlock = "begin seed species" , NewLine ,
 {[ LineLabel ] , Species , WS , MathExpression , NewLine } ,
-"end seed specis" , NewLine
+"end seed species" , NewLine
 | "begin species" , NewLine ,
 {[ LineLabel ] , Species , WS , MathExpression , NewLine } ,
 "end seed species" , NewLine ;
@@ -153,7 +153,7 @@ ObservableBlock = "begin observables " , { NewLine } ,
 
 GroupBlock = "begin groups" , NewLine ,
 {[ LineLabel ] , Group , NewLine } ,
-"end groups " , NewLine ;
+"end groups" , NewLine ;
 
 EnergyPatternBlock = "begin energy patterns" , NewLine ,
 {[ LineLabel ] , Pattern , [ WS ] , MathExpression , NewLine } ,
@@ -173,7 +173,7 @@ ReactionBlock = "begin reactions" , NewLine ,
 
 PopulationMapBlock = "begin population maps" , NewLine ,
 {[ LineLabel ] , PopulationMap , NewLine } ,
-"end parameters" , NewLine ;
+"end population maps" , NewLine ;
 
 ActionBlock = "begin actions" , NewLine ,
 {[ LineLabel ] , Action , NewLine } ,
