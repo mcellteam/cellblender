@@ -129,7 +129,7 @@ Action = Name , "(" ,[ Args ] ,")" ,[";
 (* block defintions *)
 ParameterBlock = "begin parameters" , NewLine ,
 {[ LineLabel ] , ParameterDefn , NewLine } ,
-"end molecule types" , NewLine ;
+"end parameters" , NewLine ;
 
 MoleculeTypeBlock = "begin molecule types" , NewLine ,
 {[ LineLabel ] , MoleculeType , NewLine } ,
