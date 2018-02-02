@@ -2352,6 +2352,20 @@ def check_legal ( parent ):
       check_legal ( child )
 
 
+def find_object_by_name ( parent, name ):
+  # Ensure that parents and children alternate between volume and surface
+  if 'name' in parent:
+    if parent['name'] == name:
+      return parent
+  if '~children' in parent:
+    children = parent['~children']
+    for child_key in children.keys():
+      found_object = find_object_by_name ( children[child_key], name )
+      if found_object != None:
+        return found_object
+  return None
+
+
 def update_compartment_defs ( parent, compartment_type_dict ):
   if ('dim' in parent) and ('name' in parent):
     compartment_type_dict[parent['name']] = parent['dim']
@@ -2374,6 +2388,22 @@ def contains_siblings ( parent ):
   else:
     return False
 
+def get_child_names ( parent ):
+  child_names = []
+  if '~children' in parent:
+    child_names = [ k for k in parent['~children'].keys() ]
+  return child_names
+
+def get_grandchild_names ( parent ):
+  grandchild_names = []
+  if '~children' in parent:
+    child_names = [ k for k in parent['~children'].keys() ]
+    for child_name in child_names:
+      child = parent['~children'][child_name]
+      if '~children' in child:
+        for k in child['~children'].keys():
+          grandchild_names.append ( k )
+  return grandchild_names
 
 def build_topology_from_list ( cdefs, parent ):
   c_by_name = {}
@@ -2840,6 +2870,7 @@ if __name__ == "__main__":
 
         compartment_type_dict = {} # This will be a dictionary of name:type for each compartment
         molecule_type_dict = {}    # This will be a dictionary of name:[types] for each molecule
+        topology = None            # This will be a recursive tree dictionary of nested objects
 
         for block in blocks:
           if ' '.join(block[0].split()[1:]) == 'compartments':
@@ -2854,6 +2885,7 @@ if __name__ == "__main__":
                           PM1   2    sa_PM*eff_width    ECF
                           CP1   3    vol_CP             PM1
                           NM1   2    sa_NM*eff_width    CP1
+
                           Nuc1  3    vol_Nuc            NM1
                           ERM1  2    sa_ERM*eff_width   CP1
                           ER1   3    vol_ER             ERM1
@@ -2977,6 +3009,7 @@ if __name__ == "__main__":
           if ' '.join(block[0].split()[1:]) == 'seed species':
             # Process seed species
             for line in block[1:-1]:
+              print ( "Release line: " + line )
               mol_expr, mol_quant = line.strip().split()
               rel_item = {
                 'data_model_version' : "DM_2018_01_11_1330",
@@ -2997,8 +3030,8 @@ if __name__ == "__main__":
                 'site_diameter' : "0",
                 'stddev' : "0"
               }
-              # TODO: Need to fill in fields for obj_expr since these have not been parsed yet
-              # This is a hard-coded way to build these expressions for the FceRI model
+
+              # Release based on compartment names and parent/child relationships in the object topology
 
               if ('@' in mol_expr) and ("::" in mol_expr):
                 # This release site is in a compartment
@@ -3011,17 +3044,39 @@ if __name__ == "__main__":
                 # This might be better implemented as a set, but using a dictionary for now
                 molecule_type_dict[mol_name].append ( compartment_type_dict[compartment_name] )
 
-              if site_num == 1:
-                rel_item['object_expr'] = "EC[ALL] - CP[ALL]"
-              elif site_num == 2:
-                rel_item['object_expr'] = "CP[PM]"
-              elif site_num == 3:
-                rel_item['object_expr'] = "CP"
-              elif site_num == 4:
-                rel_item['object_expr'] = "CP[PM]"
+                compartment = find_object_by_name ( topology, compartment_name )
+                compartment_expression = ""
+                if compartment['dim'] == '3':
+                  # The compartment of interest is a volume
+                  # The volume's children will be surfaces
+                  # The volume's grandchildren will be volumes (which is what MCell expects)
+                  # Each of these grandchildren will need to be subtracted from the volume
+                  compartment_expression = compartment['name'] + "[ALL]"
+                  grandchild_names = get_grandchild_names ( compartment )
+                  print ( "  " + str(compartment['name']) + " is " + str(compartment['dim']) + "D" )
+                  print ( "    GrandChildren: " + str(grandchild_names) )
+                  for cn in grandchild_names:
+                    compartment_expression += " - " + cn + "[ALL]"
+                elif compartment['dim'] == '2':
+                  # The OUTER compartment of interest is a surface.
+                  # In CBNGL, the enclosed volume is the INNER object.
+                  # In MCell, the surface is referenced as a part of the volume object: vol[surf]
+                  # In mixed MCell/CBNGL syntax, this becomes INNER[OUTER]
+                  child_names = get_child_names ( compartment )
+                  print ( "  " + str(compartment['name']) + " is " + str(compartment['dim']) + "D" )
+                  print ( "    Children: " + str(child_names) )
+                  if len(child_names) > 1:
+                    print ( "***** WARNING: Surface should not contain more than one volume!!" )
+                  compartment_expression = child_names[0] + "[" + compartment['name'] + "]"
+                print ( "  " + "Releasing " + rel_item['molecule'] + " in " + compartment_expression )
+                print ( "  " )
+                rel_item['object_expr'] = compartment_expression
 
               rel_list.append(rel_item)
               site_num += 1
+
+        for rel_item in rel_list:
+          print ( "  Release " + str(rel_item['molecule']) + " at " + str(rel_item['object_expr']) )
 
         dm['mcell']['release_sites']['release_site_list'] = rel_list
 
