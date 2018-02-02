@@ -2352,6 +2352,15 @@ def check_legal ( parent ):
       check_legal ( child )
 
 
+def update_compartment_defs ( parent, compartment_type_dict ):
+  if ('dim' in parent) and ('name' in parent):
+    compartment_type_dict[parent['name']] = parent['dim']
+  if '~children' in parent:
+    children = parent['~children']
+    for child_key in children.keys():
+      update_compartment_defs ( children[child_key], compartment_type_dict )
+
+
 def contains_siblings ( parent ):
   # Detect whether there are any sibling relationships in the tree
   if '~children' in parent:
@@ -2829,6 +2838,9 @@ if __name__ == "__main__":
         nesting_space = 0.05 # Note that this should be half of desired because of the intervening 2D surfaces
         inner_cube_dim = 0.5
 
+        compartment_type_dict = {} # This will be a dictionary of name:type for each compartment
+        molecule_type_dict = {}    # This will be a dictionary of name:[types] for each molecule
+
         for block in blocks:
           if ' '.join(block[0].split()[1:]) == 'compartments':
             # Process compartments
@@ -2875,9 +2887,7 @@ if __name__ == "__main__":
                           ER2   3    1  ERM2
                         end compartments""".split('\n')
 
-            print ( "***** WARNING: Compartment Volumes are not used" )
-
-            print ( "Here's the block: " + str(block) )
+            print ( "Here's a compartments block: " + str(block) )
 
             cdefs = []
             for line in block[1:-1]:
@@ -2888,8 +2898,10 @@ if __name__ == "__main__":
 
             topology = build_topology_from_list ( cdefs, { '~children':{}, 'name':"World" } )
             check_legal ( topology )
+            update_compartment_defs ( topology, compartment_type_dict )
             if contains_siblings(topology):
               print ( "Topology contains siblings" )
+              print ( "***** WARNING: Compartment Volumes are not used with siblings" )
               assign_linear_dimensions ( topology, inner_cube_dim, nesting_space )
               assign_linear_coordinates ( topology, 0, 0, 0, nesting_space )
             else:
@@ -2906,6 +2918,10 @@ if __name__ == "__main__":
             print ( "Topology = " + str(topology) )
 
             dump_data_model ( "Topology", topology )
+
+
+        for k in compartment_type_dict.keys():
+          print ( "  Compartment " + str(k) + " is type " + str(compartment_type_dict[k]) )
 
 
         # Change the materials to add a new one for each object
@@ -2983,6 +2999,18 @@ if __name__ == "__main__":
               }
               # TODO: Need to fill in fields for obj_expr since these have not been parsed yet
               # This is a hard-coded way to build these expressions for the FceRI model
+
+              if ('@' in mol_expr) and ("::" in mol_expr):
+                # This release site is in a compartment
+                compartment_name = mol_expr[mol_expr.find('@')+1:mol_expr.find('::')].strip()
+                mol_name = mol_expr[mol_expr.find('::')+2:]
+                mol_name = mol_name[0:mol_name.find('(')].strip()
+                if not (mol_name in molecule_type_dict):
+                  molecule_type_dict[mol_name] = []
+                # Note that a molecule may be of multiple types if used in different contexts!!
+                # This might be better implemented as a set, but using a dictionary for now
+                molecule_type_dict[mol_name].append ( compartment_type_dict[compartment_name] )
+
               if site_num == 1:
                 rel_item['object_expr'] = "EC[ALL] - CP[ALL]"
               elif site_num == 2:
@@ -2996,6 +3024,9 @@ if __name__ == "__main__":
               site_num += 1
 
         dm['mcell']['release_sites']['release_site_list'] = rel_list
+
+        for k in molecule_type_dict.keys():
+          print ( "  Molecule " + str(k) + " is of types: " + str(molecule_type_dict[k]) )
 
 
         # Add the molecules list here since the vol/surf type is deduced from compatments and seed species (above)
@@ -3014,13 +3045,14 @@ if __name__ == "__main__":
               mol['data_model_version'] = "DM_2018_01_11_1330"
               mol['mol_name'] = line.split('(')[0].strip()
 
-              # TODO: Find a way to determine volume or surface molecules
-              # This is a hard-coded determination for the FceRI model
-              print ( "***** WARNING: Using fixed 3D names of Lig and Syk" )
-              if mol['mol_name'] in ['Lig','Syk']:
-                mol['mol_type'] = '3D'
+              mol['mol_type'] = '3D'
+              if mol['mol_name'] in molecule_type_dict.keys():
+                print ( "Assigning molecule based on type of : " + str(molecule_type_dict[mol['mol_name']]) )
+                # Use the first item in the list for now. Eventually may need to create two mols (for vol & surf)
+                if molecule_type_dict[mol['mol_name']][0] == '2':
+                  mol['mol_type'] = '2D'
               else:
-                mol['mol_type'] = '2D'
+                print ( "***** WARNING: Molecule type not known for \"" + mol['mol_name'] + "\", using 3D" )
 
               mol['custom_space_step'] = ""
               mol['custom_time_step'] = ""
