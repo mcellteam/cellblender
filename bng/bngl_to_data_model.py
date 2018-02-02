@@ -2768,68 +2768,6 @@ if __name__ == "__main__":
         for k in sorted(par_val_dict.keys()):
           print ( "  " + str(k) + " = " + str(par_val_dict[k]) )
 
-
-        # Add the molecules list
-
-        mol_list = []
-        color_index = 1
-        vol_glyphs = ['Icosahedron', 'Sphere_1', 'Sphere_2', 'Octahedron', 'Cube']
-        surf_glyphs = ['Torus', 'Cone', 'Receptor', 'Cylinder', 'Pyramid', 'Tetrahedron']
-        vol_glyph_index = 0
-        surf_glyph_index = 0
-        for block in blocks:
-          if ' '.join(block[0].split()[1:]) == 'molecule types':
-            # Process molecules
-            for line in block[1:-1]:
-              mol = {}
-              mol['data_model_version'] = "DM_2018_01_11_1330"
-              mol['mol_name'] = line.split('(')[0].strip()
-
-              # TODO: Find a way to determine volume or surface molecules
-              # This is a hard-coded determination for the FceRI model
-              print ( "***** WARNING: Using fixed 3D names of Lig and Syk" )
-              if mol['mol_name'] in ['Lig','Syk']:
-                mol['mol_type'] = '3D'
-              else:
-                mol['mol_type'] = '2D'
-
-              mol['custom_space_step'] = ""
-              mol['custom_time_step'] = ""
-              mol['description'] = ""
-
-              print ( "***** WARNING: Using fixed diffusion constants" )
-              if mol['mol_type'] == '3D':
-                mol['diffusion_constant'] = "8.51e-7"
-              else:
-                mol['diffusion_constant'] = "1.7e-7"
-
-              mol['export_viz'] = False
-              mol['maximum_step_length'] = ""
-              mol['mol_bngl_label'] = ""
-              mol['target_only'] = False
-
-              mol['display'] = { 'color': [color_index&1, color_index&2, color_index&4], 'emit': 0.0, 'glyph': "Cube", 'scale': 1.0 }
-              color_index += 1
-              if mol['mol_type'] == '2D':
-                mol['display']['glyph'] = surf_glyphs[surf_glyph_index%len(surf_glyphs)]
-                surf_glyph_index += 1
-              else:
-                mol['display']['glyph'] = vol_glyphs[vol_glyph_index%len(vol_glyphs)]
-                vol_glyph_index += 1
-              
-              mol['bngl_component_list'] = []
-              mol_comps = line.split('(')[1].split(')')[0].split(',')
-              for c in mol_comps:
-                comp = {}
-                cparts = c.split('~')
-                comp['cname'] = cparts[0]
-                comp['cstates'] = []
-                if len(cparts) > 1:
-                  comp['cstates'] = cparts[1:]
-                mol['bngl_component_list'].append ( comp )
-              mol_list.append ( mol )
-        dm['mcell']['define_molecules'] = { 'molecule_list': mol_list, 'data_model_version': "DM_2014_10_24_1638" }
-
         # Force a reflective surface class
         dm['mcell']['define_surface_classes'] = {
           'data_model_version' : "DM_2014_10_24_1638",
@@ -3058,6 +2996,68 @@ if __name__ == "__main__":
               site_num += 1
 
         dm['mcell']['release_sites']['release_site_list'] = rel_list
+
+
+        # Add the molecules list here since the vol/surf type is deduced from compatments and seed species (above)
+
+        mol_list = []
+        color_index = 1
+        vol_glyphs = ['Icosahedron', 'Sphere_1', 'Sphere_2', 'Octahedron', 'Cube']
+        surf_glyphs = ['Torus', 'Cone', 'Receptor', 'Cylinder', 'Pyramid', 'Tetrahedron']
+        vol_glyph_index = 0
+        surf_glyph_index = 0
+        for block in blocks:
+          if ' '.join(block[0].split()[1:]) == 'molecule types':
+            # Process molecules
+            for line in block[1:-1]:
+              mol = {}
+              mol['data_model_version'] = "DM_2018_01_11_1330"
+              mol['mol_name'] = line.split('(')[0].strip()
+
+              # TODO: Find a way to determine volume or surface molecules
+              # This is a hard-coded determination for the FceRI model
+              print ( "***** WARNING: Using fixed 3D names of Lig and Syk" )
+              if mol['mol_name'] in ['Lig','Syk']:
+                mol['mol_type'] = '3D'
+              else:
+                mol['mol_type'] = '2D'
+
+              mol['custom_space_step'] = ""
+              mol['custom_time_step'] = ""
+              mol['description'] = ""
+
+              print ( "***** WARNING: Using fixed diffusion constants" )
+              if mol['mol_type'] == '3D':
+                mol['diffusion_constant'] = "8.51e-7"
+              else:
+                mol['diffusion_constant'] = "1.7e-7"
+
+              mol['export_viz'] = False
+              mol['maximum_step_length'] = ""
+              mol['mol_bngl_label'] = ""
+              mol['target_only'] = False
+
+              mol['display'] = { 'color': [color_index&1, color_index&2, color_index&4], 'emit': 0.0, 'glyph': "Cube", 'scale': 1.0 }
+              color_index += 1
+              if mol['mol_type'] == '2D':
+                mol['display']['glyph'] = surf_glyphs[surf_glyph_index%len(surf_glyphs)]
+                surf_glyph_index += 1
+              else:
+                mol['display']['glyph'] = vol_glyphs[vol_glyph_index%len(vol_glyphs)]
+                vol_glyph_index += 1
+
+              mol['bngl_component_list'] = []
+              mol_comps = line.split('(')[1].split(')')[0].split(',')
+              for c in mol_comps:
+                comp = {}
+                cparts = c.split('~')
+                comp['cname'] = cparts[0]
+                comp['cstates'] = []
+                if len(cparts) > 1:
+                  comp['cstates'] = cparts[1:]
+                mol['bngl_component_list'].append ( comp )
+              mol_list.append ( mol )
+        dm['mcell']['define_molecules'] = { 'molecule_list': mol_list, 'data_model_version': "DM_2014_10_24_1638" }
 
 
 
