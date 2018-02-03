@@ -409,6 +409,7 @@ def read_data_model_from_bngl_file ( bngl_file_name ):
   # Add the parameter system and build a parameter/value dictionary for future use
   # This assumes that parameters are defined before being used
 
+  par_expr_dict = {}
   par_val_dict = {}
 
   par_list = []
@@ -431,10 +432,11 @@ def read_data_model_from_bngl_file ( bngl_file_name ):
           par_list.append ( par )
           # Store an evaluated copy of this parameter in the parameter/value dictionary
           # This assumes that parameters are defined before being used
+          par_expr_dict[par['par_name']] = par['par_expression']
           par_val_dict[par['par_name']] = eval(par['par_expression'],globals(),par_val_dict)
   dm['mcell']['parameter_system'] = { 'model_parameters': par_list }
   for k in sorted(par_val_dict.keys()):
-    print ( "  " + str(k) + " = " + str(par_val_dict[k]) )
+    print ( "  " + str(k) + " = " + str(par_expr_dict[k]) + " = " + str(par_val_dict[k]) )
 
   # Force a reflective surface class
   dm['mcell']['define_surface_classes'] = {
@@ -670,6 +672,15 @@ def read_data_model_from_bngl_file ( bngl_file_name ):
 
   # Add the molecules list here since the vol/surf type is deduced from compatments and seed species (above)
 
+  default_vol_dc = "0.0"
+  default_surf_dc = "0.0"
+
+  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_3D' in par_expr_dict:
+    default_vol_dc = par_expr_dict['MCELL_DEFAULT_DIFFUSION_CONSTANT_3D']
+
+  if 'MCELL_DEFAULT_DIFFUSION_CONSTANT_2D' in par_expr_dict:
+    default_surf_dc = par_expr_dict['MCELL_DEFAULT_DIFFUSION_CONSTANT_2D']
+
   mol_list = []
   color_index = 1
   vol_glyphs = ['Icosahedron', 'Sphere_1', 'Sphere_2', 'Octahedron', 'Cube']
@@ -697,11 +708,16 @@ def read_data_model_from_bngl_file ( bngl_file_name ):
         mol['custom_time_step'] = ""
         mol['description'] = ""
 
-        print ( "***** WARNING: Using fixed diffusion constants" )
         if mol['mol_type'] == '3D':
-          mol['diffusion_constant'] = "8.51e-7"
+          mol['diffusion_constant'] = default_vol_dc
+          key = 'MCELL_DIFFUSION_CONSTANT_3D_' + mol['mol_name']
+          if key in par_expr_dict:
+            mol['diffusion_constant'] = par_expr_dict[key]
         else:
-          mol['diffusion_constant'] = "1.7e-7"
+          mol['diffusion_constant'] = default_surf_dc
+          key = 'MCELL_DIFFUSION_CONSTANT_2D_' + mol['mol_name']
+          if key in par_expr_dict:
+            mol['diffusion_constant'] = par_expr_dict[key]
 
         mol['export_viz'] = False
         mol['maximum_step_length'] = ""
@@ -957,9 +973,6 @@ if __name__ == "__main__":
 
     dmf = {}
 
-    default_vol_dc = "8.51e-7"
-    default_surf_dc = "1.7e-7"
-
     if len(sys.argv) > 2:
         print ( "Got parameters: " + sys.argv[1] + " " + sys.argv[2] )
         print ( "Reading BioNetGen File: " + sys.argv[1] )
@@ -1074,21 +1087,8 @@ if __name__ == "__main__":
         end model
         """
 
-        # Compare?
-
-        dm_keys = set(dm['mcell'].keys())
-        dmf_keys = set(dmf['mcell'].keys())
-        intersect_keys = dm_keys.intersection(dmf_keys)
-        added = dm_keys - dmf_keys
-        missing = dmf_keys - dm_keys
-        modified = { o : (dm['mcell'][o], dmf['mcell'][o]) for o in intersect_keys if dm['mcell'][o] != dmf['mcell'][o] }
-        same = set ( o for o in intersect_keys if dm['mcell'][o] == dmf['mcell'][o] )
-        
-        # dm = read_data_model ( sys.argv[1] )
-        # dump_data_model ( dm )
         print ( "Writing CellBlender Data Model: " + sys.argv[2] )
         write_data_model ( dm, sys.argv[2] )
-        # write_mdl ( dm, sys.argv[2] )
         print ( "Wrote BioNetGen file found in \"" + sys.argv[1] + "\" to CellBlender data model \"" + sys.argv[2] + "\"" )
         # Drop into an interactive python session
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
