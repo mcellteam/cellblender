@@ -223,6 +223,7 @@ cellblender_info = {
         "bng"+os.sep+"sbml2blender.py",
         "bng"+os.sep+"sbml2json.py",
         "bng"+os.sep+"external_operators.py",
+        "bng"+os.sep+"bngl_to_data_model.py",
         "bng"+os.sep+"sbml_operators.py",
         "bng"+os.sep+"sbml_properties.py",
         "bng"+os.sep+"bng_operators.py",

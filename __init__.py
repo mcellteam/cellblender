@@ -247,7 +247,8 @@ def register():
     bpy.types.INFO_MT_file_import.remove(io_mesh_mcell_mdl.menu_func_import)
     bpy.types.INFO_MT_file_export.remove(io_mesh_mcell_mdl.menu_func_export)
     bpy.types.INFO_MT_file_import.remove(mdl.menu_func_import)
-    bpy.types.INFO_MT_file_import.remove(bng.menu_func_import)
+    bpy.types.INFO_MT_file_import.remove(bng.menu_func_bng_import)
+    bpy.types.INFO_MT_file_import.remove(bng.menu_func_cbng_import)
     bpy.types.INFO_MT_file_import.remove(data_model.menu_func_import)
     bpy.types.INFO_MT_file_export.remove(data_model.menu_func_export)
     bpy.types.INFO_MT_file_import.remove(data_model.menu_func_import_all)
@@ -266,7 +267,8 @@ def register():
     bpy.types.INFO_MT_file_import.append(mdl.menu_func_import)
 
     # DB: Added for BioNetGen import
-    bpy.types.INFO_MT_file_import.append(bng.menu_func_import)
+    bpy.types.INFO_MT_file_import.append(bng.menu_func_bng_import)
+    bpy.types.INFO_MT_file_import.append(bng.menu_func_cbng_import)
 
     #JJT: And SBML import
     #bpy.types.INFO_MT_file_import.append(sbml.menu_func_import)
