@@ -24,7 +24,7 @@ bl_info = {
     "name": "CellBlender",
     "author": "Tom Bartol, Dipak Barua, Jacob Czech, Markus Dittrich, "
         "James Faeder, Bob Kuczewski, Devin Sullivan, Jose Juan Tapia",
-    "version": (1, 0, 1),
+    "version": (1, 2, 0),
     "blender": (2, 72, 0),
     "api": 55057,
     "location": "View3D -> ToolShelf -> CellBlender",
