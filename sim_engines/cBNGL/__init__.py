@@ -40,6 +40,8 @@ start_seed = 1
 end_seed = 1
 
 
+parameter_dictionary = {}
+
 def postprocess():
   global parameter_dictionary
   print ( "Postprocess called" )
@@ -80,7 +82,11 @@ def postprocess():
     react_data_rows = react_data_all[1:]
 
     for col in range(1,len(react_data_header)):
-      out_file_name = os.path.join ( react_seed_dir, react_data_header[col] + ".dat" )
+      mdl_string = ""
+      if parameter_dictionary['MDLString']['val']:
+        mdl_string = "_MDLString"
+
+      out_file_name = os.path.join ( react_seed_dir, react_data_header[col] + mdl_string + ".dat" )
       print ( "Writing data to " + out_file_name )
       f = open(out_file_name,"w")
       for row in react_data_rows:
@@ -115,6 +121,7 @@ parameter_dictionary = {
   'BioNetGen Path': {'val': bionetgen_path, 'as':'filename', 'desc':"BioNetGen Path",      'icon':'OUTLINER_DATA_MESH'},
   'Output Detail (0-100)': {'val': 20, 'desc':"Amount of Information to Print (0-100)",    'icon':'INFO'},
   'Print Information': {'val': print_info, 'desc':"Print information about Limited Python Simulation"},
+  'MDLString': {'val': False, 'desc':"Use '_MDLString' as part of file name"},
   'Postprocess': {'val': postprocess, 'desc':"Postprocess the data for CellBlender"},
   'Reset': {'val': reset, 'desc':"Reset everything"},
   'ODE':   {'val': True,  'desc':"Simulate using Ordinary Differential Equation Solver"},
@@ -128,7 +135,8 @@ parameter_layout = [
   ['BioNetGen Path'],
   ['ODE', 'NFSIM', 'SSA', 'PLA'],
   ['Output Detail (0-100)'],
-  ['Print Information', 'Postprocess', 'Reset']
+  ['Postprocess', 'MDLString'],
+  ['Print Information', 'Reset']
 ]
 
 
