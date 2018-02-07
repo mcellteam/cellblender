@@ -16,7 +16,7 @@ def print_info():
   global parameter_dictionary
   global parameter_layout
   print ( 50*'==' )
-  print ( "This is a preliminary cBNGL engine." )
+  print ( "This is a preliminary cBNGL engine for CellBlender." )
   print ( 50*'==' )
   for row in parameter_layout:
     for k in row:
@@ -93,7 +93,8 @@ def postprocess():
 
 def parse_mdl_count_string(mdl_count_string):
 
-  
+  # TODO: This should convert "+" to "," for accumulation of counts
+
   m_list = []
   cpat = re.compile('COUNT\[')
   wpat = re.compile('\s*,\s*WORLD\]')
@@ -115,10 +116,10 @@ parameter_dictionary = {
   'Print Information': {'val': print_info, 'desc':"Print information about Limited Python Simulation"},
   'Postprocess': {'val': postprocess, 'desc':"Postprocess the data for CellBlender"},
   'Reset': {'val': reset, 'desc':"Reset everything"},
-  'ODE': {'val': False, 'desc':"Simulate using Ordinary Differential Equation Solver"},
-  'NFSIM': {'val': True, 'desc':"Simulate using Network-free Simulation Method"},
-  'SSA': {'val': False, 'desc':"Simulate using Gillespie Stochastic Simulation Algorithm"},
-  'PLA': {'val': False, 'desc':"Simulate using Partitioned tau-Leaping Algorithm"},
+  'ODE':   {'val': True,  'desc':"Simulate using Ordinary Differential Equation Solver"},
+  'NFSIM': {'val': False, 'desc':"Simulate using Network-free Simulation Method"},
+  'SSA':   {'val': False, 'desc':"Simulate using Gillespie Stochastic Simulation Algorithm"},
+  'PLA':   {'val': False, 'desc':"Simulate using Partitioned tau-Leaping Algorithm"},
 }
 
 parameter_layout = [
