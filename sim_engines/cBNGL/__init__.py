@@ -93,12 +93,13 @@ def postprocess():
 
 def parse_mdl_count_string(mdl_count_string):
 
-  # TODO: This should convert "+" to "," for accumulation of counts
-
   m_list = []
+  # First convert each "+" to "," when used to sum counts: WORLD]+COUNT  -->  WORLD],COUNT
+  comma_sep_count = re.sub ( "WORLD\s*\]\s*\+\s*COUNT", "WORLD],COUNT", mdl_count_string.strip() )
+  # Continue with previous conversion using comma_sep_count in place of mdl_count_string
   cpat = re.compile('COUNT\[')
   wpat = re.compile('\s*,\s*WORLD\]')
-  mc = cpat.split(mdl_count_string.strip())
+  mc = cpat.split(comma_sep_count)
   if len(mc) > 0:
     for m in mc:
       m_list.extend(wpat.split(m))
