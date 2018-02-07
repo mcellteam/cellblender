@@ -90,7 +90,7 @@ def postprocess():
       print ( "Writing data to " + out_file_name )
       f = open(out_file_name,"w")
       for row in react_data_rows:
-        print ( "  " + row[0] + " " + row[col-1] )
+        # print ( "  " + row[0] + " " + row[col-1] )
         f.write ( row[0] + " " + row[col-1] + '\n' )
       f.close()
 
