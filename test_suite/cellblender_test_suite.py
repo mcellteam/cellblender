@@ -117,6 +117,7 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
         update=run_method_changed)
 
     update_soure_file = bpy.props.BoolProperty(name="Update Source", default=False)
+    make_tutorial = bpy.props.BoolProperty(name="Make Tutorial", default=False)
     source_file_to_update = bpy.props.StringProperty(name="Source File to Update", default="")
     stress_test_level = bpy.props.IntProperty(name="Stress Test Level", default=100)
 
@@ -199,10 +200,13 @@ class CellBlenderTestPropertyGroup(bpy.types.PropertyGroup):
 
 class CellBlenderTestSuitePanel(bpy.types.Panel):
     bl_label = "CellBlender Test Suite"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_options = { 'DEFAULT_CLOSED' }
-    bl_context = "scene"
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "TOOLS"
+    bl_category = "Test Suite"
+    #bl_space_type = "PROPERTIES"
+    #bl_region_type = "WINDOW"
+    #bl_options = { 'DEFAULT_CLOSED' }
+    #bl_context = "scene"
     def draw(self, context):
         app = context.scene.cellblender_test_suite
 
@@ -239,10 +243,13 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
           row.label( icon='FILE_TICK', text="Pass" )
         elif app.test_status == "F":
           row.label( icon='ERROR',     text="Fail" )
-        row.prop(app, "exit_on_error")
         row.prop(app, "run_mcell")
         row.prop(app, "run_method",    text="")
         # row.prop(app, "run_with_queue")
+
+        row = self.layout.row()
+        row.prop(app, "exit_on_error")
+        row.prop(app, "make_tutorial")
         row.prop(app, "update_soure_file")
         if app.update_soure_file:
             row = self.layout.row()
@@ -250,6 +257,7 @@ class CellBlenderTestSuitePanel(bpy.types.Panel):
             col.prop ( app, "source_file_to_update" )
             col = row.column()
             col.operator("cellblender_test.set_source_file", text="", icon='FILESEL')
+
 
         for group_num in range(next_test_group_num):
             # print ( "Drawing Group " + str(group_num) )
@@ -5904,6 +5912,26 @@ class StressModelObjectsTestOp(bpy.types.Operator):
 ################## Start of Tutorial Code ###################
 #############################################################
 
+class TutorialHelper:
+
+    def capture_frame ( self ):
+        # Capture the current frame into a file
+        frame_name = str(self.tutorial_step-1) + "_" + str(self.frame_name)
+        print ( "Saving file: " + frame_name )
+        alt_context = {
+            'region'  : None,
+            'area'    : None,
+            'window'  : bpy.context.window,
+            'scene'   : bpy.context.scene,
+            'screen'  : bpy.context.window.screen
+        }
+        bpy.ops.screen.screenshot(alt_context, filepath=frame_name, full=True)
+        # Update the frame_list file
+        f_list = open ( self.tutorial_list, "at" )
+        f_list.write ( "    { \"fname\": \"" + frame_name + "\", \"desc\": \"" + self.frame_desc + "\" },\n" )
+        f_list.close()
+
+
 
 ###########################################################################################################
 group_name = "Tutorials"
@@ -5911,139 +5939,233 @@ test_name = "Organelle Tutorial"
 operator_name = "cellblender_test.organelle_tutorial"
 next_test_group_num = register_test ( test_groups, group_name, test_name, operator_name, next_test_group_num )
 
-class OrganelleTutorialOp(bpy.types.Operator):
+class OrganelleTutorialOp(bpy.types.Operator,TutorialHelper):
     bl_idname = operator_name
     bl_label = test_name
     self_test_name = test_name
+    bl_options = {'REGISTER'}
+
+    _timer = None
+    tutorial_step = 0
+    tutorial_list = "tutorial_list.txt"
+    tutorial_name = "Change Colors"
+    frame_name = "default.png"
+    frame_desc = "Start Here"
+
 
     def invoke(self, context, event):
         self.execute ( context )
         return {'FINISHED'}
+
+    def modal(self, context, event):
+        if event.type == 'TIMER':
+            print ( "Timer event with tutorial_step = " + str(self.tutorial_step) )
+            # self.tutorial_step += 1
+            self.build_model ( context, self.tutorial_step )
+            if self.tutorial_step < 0:
+                # The build_model function has signalled that it is done
+                self.tutorial_step = 0
+                print ( "Cancel the timer" )
+                # Note that this stops the timer, but when it's restarted ... it adds another one!!
+                wm = context.window_manager
+                wm.event_timer_remove(self._timer)
+
+        return {'PASS_THROUGH'}
+
+
+    def build_model ( self, context, step=-1 ):
+
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+        if not ('cb_model' in dir(self)):
+
+            print ( "Creating a new CellBlender_Model" )
+            self.cb_model = CellBlender_Model ( context, self.self_test_name )
+
+        scn = self.cb_model.get_scene()
+        mcell = self.cb_model.get_mcell()
+
+        # Set some shared parameters
+        subdiv = 3
+
+        if (step == -1) or (step == 1):
+
+            # Set up a transparent material for the cell membranes
+            if len(bpy.data.materials) <= 0:
+                new_mat = bpy.data.materials.new("membrane")
+            bpy.data.materials[0].name = 'membrane'
+            bpy.data.materials['membrane'].use_transparency = True
+            bpy.data.materials['membrane'].alpha = 0.25
+
+            if step > 0:
+                self.cb_model.scale_view_distance ( 0.07 )
+                self.cb_model.hide_manipulator ( hide=True )
+
+        if (step == -1) or (step == 2):
+
+            # Open the Objects Panel
+            mcell.cellblender_main_panel.objects_select = True
+
+        if (step == -1) or (step == 3):
+
+            # Create Organelle 1
+
+            # Create the object and add it to the CellBlender model
+            self.cb_model.add_icosphere_to_model ( name="Organelle_1", draw_type="SOLID", size=0.3, y=-0.25, subdiv=subdiv+1 )
+            self.cb_model.add_surface_region_to_model_object_by_normal ( "Organelle_1", "top", 0, 1, 0, 0.92 )
+            bpy.ops.object.material_slot_add()
+            scn.objects['Organelle_1'].material_slots[0].material = bpy.data.materials['membrane']
+            scn.objects['Organelle_1'].show_transparent = True
+
+        if (step == -1) or (step == 4):
+
+            # Create Organelle 2
+
+            # Create the object and add it to the CellBlender model
+            self.cb_model.add_icosphere_to_model ( name="Organelle_2", draw_type="SOLID", size=0.2, y=0.31, subdiv=subdiv+1 )
+            self.cb_model.add_surface_region_to_model_object_by_normal ( "Organelle_2", "top", 0, -1, 0, 0.8 )
+            bpy.ops.object.material_slot_add()
+            scn.objects['Organelle_2'].material_slots[0].material = bpy.data.materials['membrane']
+            scn.objects['Organelle_2'].show_transparent = True
+
+        if (step == -1) or (step == 5):
+
+            # Create Cell itself
+
+            self.cb_model.add_icosphere_to_model ( name="Cell", draw_type="SOLID", size=0.625, subdiv=subdiv )
+            bpy.ops.object.material_slot_add()
+            scn.objects['Cell'].material_slots[0].material = bpy.data.materials['membrane']
+            scn.objects['Cell'].show_transparent = True
+
+        if (step == -1) or (step == 6):
+
+            # Close the objects panel and open the molecules panel
+            mcell.cellblender_main_panel.objects_select = False
+            mcell.cellblender_main_panel.molecule_select = True
+
+        if (step == -1) or (step == 7):
+
+            # Define the molecule species
+            self.mola = self.cb_model.add_molecule_species_to_model ( name="a", mol_type="3D", diff_const_expr="1e-6" )
+            self.molb = self.cb_model.add_molecule_species_to_model ( name="b", mol_type="3D", diff_const_expr="1e-6" )
+            self.molc = self.cb_model.add_molecule_species_to_model ( name="c", mol_type="3D", diff_const_expr="1e-6" )
+            self.mold = self.cb_model.add_molecule_species_to_model ( name="d", mol_type="3D", diff_const_expr="1e-6" )
+
+            self.molt1 = self.cb_model.add_molecule_species_to_model ( name="t1", mol_type="2D", diff_const_expr="1e-7" )
+            self.molt2 = self.cb_model.add_molecule_species_to_model ( name="t2", mol_type="2D", diff_const_expr="1e-8" )
+
+            ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
+            ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
+
+        if (step == -1) or (step == 8):
+
+            self.mola  = self.cb_model.get_molecule_species_by_name('a')
+            self.molb  = self.cb_model.get_molecule_species_by_name('b')
+            self.molc  = self.cb_model.get_molecule_species_by_name('c')
+            self.mold  = self.cb_model.get_molecule_species_by_name('d')
+            self.molt1 = self.cb_model.get_molecule_species_by_name('t1')
+            self.molt2 = self.cb_model.get_molecule_species_by_name('t2')
+
+        if (step == -1) or (step == 9):
+
+            self.cb_model.change_molecule_display ( self.mola, glyph='Letter', letter='A', scale=1.0, red=0.0, green=0.0, blue=0.8, emit=1.0 )
+            self.cb_model.change_molecule_display ( self.molb, glyph='Letter', letter='B', scale=1.0, red=0.0, green=0.8, blue=0.8, emit=0.8 )
+            self.cb_model.change_molecule_display ( self.molc, glyph='Letter', letter='C', scale=2.0, red=1.0, green=0.2, blue=1.0, emit=2.0 )
+            self.cb_model.change_molecule_display ( self.mold, glyph='Cube', scale=2.0, red=1.0, green=1.0, blue=1.0 )
+
+            self.cb_model.change_molecule_display ( self.molt1, glyph='Cone', scale=1.3, red=0.0, green=0.8, blue=0.0 )
+            self.cb_model.change_molecule_display ( self.molt2, glyph='Receptor', scale=1.0, red=0.8, green=0.0, blue=0.0 )
+
+        if (step == -1) or (step == 10):
+
+            self.cb_model.add_molecule_release_site_to_model ( name="rel_a",  mol="a",  shape="OBJECT", obj_expr="Cell[ALL] - (Organelle_1[ALL] + Organelle_2[ALL])", q_expr="1000" )
+            self.cb_model.add_molecule_release_site_to_model ( name="rel_b",  mol="b",  shape="OBJECT", obj_expr="Organelle_1[ALL]", q_expr="1000" )
+            self.cb_model.add_molecule_release_site_to_model ( name="rel_t1", mol="t1", shape="OBJECT", obj_expr="Organelle_1[top]", orient="'", q_expr="700" )
+            self.cb_model.add_molecule_release_site_to_model ( name="rel_t2", mol="t2", shape="OBJECT", obj_expr="Organelle_2[top]", orient="'", q_expr="700" )
+
+        if (step == -1) or (step == 11):
+
+            self.cb_model.add_reaction_to_model ( rin="a + b",    rtype="irreversible", rout="c",        fwd_rate="1e9", bkwd_rate="" )
+            self.cb_model.add_reaction_to_model ( rin="a' + t1'", rtype="irreversible", rout="a, + t1'", fwd_rate="3e8", bkwd_rate="" )
+            self.cb_model.add_reaction_to_model ( rin="c' + t2'", rtype="irreversible", rout="d, + t2'", fwd_rate="3e9", bkwd_rate="" )
+            self.cb_model.add_reaction_to_model ( rin="c, + t1'", rtype="irreversible", rout="c' + t1'", fwd_rate="3e8", bkwd_rate="" )
+
+        if (step == -1) or (step == 12):
+
+            self.cb_model.add_count_output_to_model ( mol_name="a" )
+            self.cb_model.add_count_output_to_model ( mol_name="b" )
+            self.cb_model.add_count_output_to_model ( mol_name="c" )
+            self.cb_model.add_count_output_to_model ( mol_name="d" )
+
+            #self.cb_model.add_count_output_to_model ( mol_name="t1" )
+            #self.cb_model.add_count_output_to_model ( mol_name="t2" )
+
+        if (step == -1) or (step == 13):
+
+            mcell.rxn_output.plot_layout = ' '
+            mcell.rxn_output.mol_colors = True
+
+            mcell.partitions.include = True
+            bpy.ops.mcell.auto_generate_boundaries()
+
+        if (step == -1) or (step == 14):
+
+            print ( "OrganelleTutorialOp: Done building model" )
+            self.tutorial_step = -1
+
+        if self.tutorial_step >= 0:
+            self.tutorial_step += 1
+
+        return self.cb_model
+
 
     def execute(self, context):
 
         global active_frame_change_handler
         active_frame_change_handler = None
 
-        cb_model = CellBlender_Model ( context, self.self_test_name )
+        app = context.scene.cellblender_test_suite
 
-        scn = cb_model.get_scene()
-        mcell = cb_model.get_mcell()
+        print ( "Make tutorial = " + str(app.make_tutorial) )
 
+        ret_val = { 'FINISHED' }
 
-        # Set some shared parameters
-        subdiv = 3
+        if app.make_tutorial:
 
-        # Set up a transparent material for the cell membranes
-        if len(bpy.data.materials) <= 0:
-            new_mat = bpy.data.materials.new("membrane")
-        bpy.data.materials[0].name = 'membrane'
-        bpy.data.materials['membrane'].use_transparency = True
-        bpy.data.materials['membrane'].alpha = 0.25
+          self.cb_model = CellBlender_Model ( context, self.self_test_name )
 
-        # Create Organelle 1
+          delay = 2.0
+          print ( "Setting timer to delay of " + str(delay) )
+          wm = context.window_manager
+          self.tutorial_step = 0
+          self._timer = wm.event_timer_add(delay, context.window)
+          wm.modal_handler_add(self)
+          ret_val = {'RUNNING_MODAL'}
 
-        # Create the object and add it to the CellBlender model
-        cb_model.add_icosphere_to_model ( name="Organelle_1", draw_type="SOLID", size=0.3, y=-0.25, subdiv=subdiv+1 )
-        cb_model.add_surface_region_to_model_object_by_normal ( "Organelle_1", "top", 0, 1, 0, 0.92 )
-        bpy.ops.object.material_slot_add()
-        scn.objects['Organelle_1'].material_slots[0].material = bpy.data.materials['membrane']
-        scn.objects['Organelle_1'].show_transparent = True
+        else:
 
-        # Create Organelle 2
+          cb_model = self.build_model ( context )
 
-        # Create the object and add it to the CellBlender model
-        cb_model.add_icosphere_to_model ( name="Organelle_2", draw_type="SOLID", size=0.2, y=0.31, subdiv=subdiv+1 )
-        cb_model.add_surface_region_to_model_object_by_normal ( "Organelle_2", "top", 0, -1, 0, 0.8 )
-        bpy.ops.object.material_slot_add()
-        scn.objects['Organelle_2'].material_slots[0].material = bpy.data.materials['membrane']
-        scn.objects['Organelle_2'].show_transparent = True
+          cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=25.0 )
+
+          cb_model.compare_mdl_with_sha1 ( "d835cada890d696fdac92054f21bf337e1031a3b", test_name=self.self_test_name )
+
+          cb_model.refresh_molecules()
+
+          cb_model.select_none()
 
 
-        # Create Cell itself
+          cb_model.get_scene().frame_current = 2
 
-        cb_model.add_icosphere_to_model ( name="Cell", draw_type="SOLID", size=0.625, subdiv=subdiv )
-        bpy.ops.object.material_slot_add()
-        scn.objects['Cell'].material_slots[0].material = bpy.data.materials['membrane']
-        scn.objects['Cell'].show_transparent = True
+          cb_model.set_view_back()
 
+          cb_model.scale_view_distance ( 0.07 )
 
-        # Define the molecule species
+          cb_model.hide_manipulator ( hide=True )
 
-        mola = cb_model.add_molecule_species_to_model ( name="a", mol_type="3D", diff_const_expr="1e-6" )
-        molb = cb_model.add_molecule_species_to_model ( name="b", mol_type="3D", diff_const_expr="1e-6" )
-        molc = cb_model.add_molecule_species_to_model ( name="c", mol_type="3D", diff_const_expr="1e-6" )
-        mold = cb_model.add_molecule_species_to_model ( name="d", mol_type="3D", diff_const_expr="1e-6" )
+          cb_model.play_animation()
 
-        molt1 = cb_model.add_molecule_species_to_model ( name="t1", mol_type="2D", diff_const_expr="1e-7" )
-        molt2 = cb_model.add_molecule_species_to_model ( name="t2", mol_type="2D", diff_const_expr="1e-8" )
-
-        ### N O T E:  The previous assignments may NOT be valid if items were added to the molecule list.
-        ###  For that reason, the same assignments must be made again by name or Blender may CRASH!!
-
-        mola  = cb_model.get_molecule_species_by_name('a')
-        molb  = cb_model.get_molecule_species_by_name('b')
-        molc  = cb_model.get_molecule_species_by_name('c')
-        mold  = cb_model.get_molecule_species_by_name('d')
-        molt1 = cb_model.get_molecule_species_by_name('t1')
-        molt2 = cb_model.get_molecule_species_by_name('t2')
-
-        cb_model.change_molecule_display ( mola, glyph='Letter', letter='A', scale=1.0, red=0.0, green=0.0, blue=0.8, emit=1.0 )
-        cb_model.change_molecule_display ( molb, glyph='Letter', letter='B', scale=1.0, red=0.0, green=0.8, blue=0.8, emit=0.8 )
-        cb_model.change_molecule_display ( molc, glyph='Letter', letter='C', scale=2.0, red=1.0, green=0.2, blue=1.0, emit=2.0 )
-        cb_model.change_molecule_display ( mold, glyph='Cube', scale=2.0, red=1.0, green=1.0, blue=1.0 )
-
-        cb_model.change_molecule_display ( molt1, glyph='Cone', scale=1.3, red=0.0, green=0.8, blue=0.0 )
-        cb_model.change_molecule_display ( molt2, glyph='Receptor', scale=1.0, red=0.8, green=0.0, blue=0.0 )
-
-
-        cb_model.add_molecule_release_site_to_model ( name="rel_a",  mol="a",  shape="OBJECT", obj_expr="Cell[ALL] - (Organelle_1[ALL] + Organelle_2[ALL])", q_expr="1000" )
-        cb_model.add_molecule_release_site_to_model ( name="rel_b",  mol="b",  shape="OBJECT", obj_expr="Organelle_1[ALL]", q_expr="1000" )
-        cb_model.add_molecule_release_site_to_model ( name="rel_t1", mol="t1", shape="OBJECT", obj_expr="Organelle_1[top]", orient="'", q_expr="700" )
-        cb_model.add_molecule_release_site_to_model ( name="rel_t2", mol="t2", shape="OBJECT", obj_expr="Organelle_2[top]", orient="'", q_expr="700" )
-
-
-        cb_model.add_reaction_to_model ( rin="a + b",    rtype="irreversible", rout="c",        fwd_rate="1e9", bkwd_rate="" )
-        cb_model.add_reaction_to_model ( rin="a' + t1'", rtype="irreversible", rout="a, + t1'", fwd_rate="3e8", bkwd_rate="" )
-        cb_model.add_reaction_to_model ( rin="c' + t2'", rtype="irreversible", rout="d, + t2'", fwd_rate="3e9", bkwd_rate="" )
-        cb_model.add_reaction_to_model ( rin="c, + t1'", rtype="irreversible", rout="c' + t1'", fwd_rate="3e8", bkwd_rate="" )
-
-        cb_model.add_count_output_to_model ( mol_name="a" )
-        cb_model.add_count_output_to_model ( mol_name="b" )
-        cb_model.add_count_output_to_model ( mol_name="c" )
-        cb_model.add_count_output_to_model ( mol_name="d" )
-
-        #cb_model.add_count_output_to_model ( mol_name="t1" )
-        #cb_model.add_count_output_to_model ( mol_name="t2" )
-
-        mcell.rxn_output.plot_layout = ' '
-        mcell.rxn_output.mol_colors = True
-
-
-        mcell.partitions.include = True
-        bpy.ops.mcell.auto_generate_boundaries()
-
-
-        cb_model.run_model ( iterations='1000', time_step='1e-6', wait_time=25.0 )
-
-        cb_model.compare_mdl_with_sha1 ( "d835cada890d696fdac92054f21bf337e1031a3b", test_name=self.self_test_name )
-
-        cb_model.refresh_molecules()
-
-        cb_model.select_none()
-
-
-        scn.frame_current = 2
-
-        cb_model.set_view_back()
-
-        cb_model.scale_view_distance ( 0.07 )
-
-        cb_model.hide_manipulator ( hide=True )
-
-        cb_model.play_animation()
-
-        return { 'FINISHED' }
+        return ret_val
 
 
 
