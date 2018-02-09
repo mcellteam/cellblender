@@ -121,7 +121,7 @@ parameter_dictionary = {
   'BioNetGen Path': {'val': bionetgen_path, 'as':'filename', 'desc':"BioNetGen Path",      'icon':'OUTLINER_DATA_MESH'},
   'Output Detail (0-100)': {'val': 20, 'desc':"Amount of Information to Print (0-100)",    'icon':'INFO'},
   'Print Information': {'val': print_info, 'desc':"Print information about Limited Python Simulation"},
-  'MDLString': {'val': False, 'desc':"Use '_MDLString' as part of file name"},
+  'MDLString': {'val': True, 'desc':"Use '_MDLString' as part of file name"},
   'Postprocess': {'val': postprocess, 'desc':"Postprocess the data for CellBlender"},
   'Reset': {'val': reset, 'desc':"Reset everything"},
   'ODE':   {'val': True,  'desc':"Simulate using Ordinary Differential Equation Solver"},
