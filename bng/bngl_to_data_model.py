@@ -619,10 +619,10 @@ def read_data_model_from_bngl_file ( bngl_file_name ):
 
         # Release based on compartment names and parent/child relationships in the object topology
 
-        if ('@' in mol_expr) and ("::" in mol_expr):
+        if ('@' in mol_expr) and (":" in mol_expr):
           # This release site is in a compartment
-          compartment_name = mol_expr[mol_expr.find('@')+1:mol_expr.find('::')].strip()
-          mol_name = mol_expr[mol_expr.find('::')+2:]
+          compartment_name = mol_expr[mol_expr.find('@')+1:mol_expr.find(':')].strip()
+          mol_name = mol_expr[mol_expr.find(':')+1:]
           mol_name = mol_name[0:mol_name.find('(')].strip()
           if not (mol_name in molecule_type_dict):
             molecule_type_dict[mol_name] = []
