@@ -162,6 +162,21 @@ class MCELL_OT_load_fceri_mcell3r(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_load_organelle(bpy.types.Operator):
+    bl_idname = "mcell.load_organelle"
+    bl_label = "Organelle Model"
+    bl_description = "Loads the Organelle model using MCell"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        dm = {}
+        dm['mcell'] = examples.organelle.organelle_dm
+        cellblender.replace_data_model(dm, geometry=True, scripts=True)
+        view_all()
+        return {'FINISHED'}
+
+
 class MCELL_OT_load_ficks_1D(bpy.types.Operator):
     bl_idname = "mcell.load_ficks_1d"
     bl_label = "Fick's Law 1D"
@@ -639,6 +654,8 @@ class CellBlenderExamplesPropertyGroup(bpy.types.PropertyGroup):
             mcell.draw_uninitialized ( layout )
         else:
             ps = mcell.parameter_system
+            row = layout.row()
+            row.operator("mcell.load_organelle")
             row = layout.row()
             row.operator("mcell.load_ficks_1d")
             row = layout.row()

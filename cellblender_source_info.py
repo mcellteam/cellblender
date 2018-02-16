@@ -233,6 +233,7 @@ cellblender_info = {
         #        "bng"+os.sep+"libsbml3"+os.sep+"__init__.py",
 
         "examples"+os.sep+"__init__.py",
+        "examples"+os.sep+"organelle.py",
         "examples"+os.sep+"lv.py",
         "examples"+os.sep+"fceri_mcell3r.py",
         "examples"+os.sep+"ficks_laws.py",
