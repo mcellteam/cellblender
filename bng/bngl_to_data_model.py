@@ -360,6 +360,19 @@ def read_data_model_from_bngl_file ( bngl_file_name ):
   # Remove any empty lines
   lines = [ l for l in lines if len(l) > 0 ]
 
+  # Remove any lines after the "end model" tokens.
+  # This might be done more efficiently below, but it might be more clear here
+  model_lines = []
+  past_end = False
+  for l in lines:
+    if not past_end:
+      model_lines.append ( l )
+      tokens = [ t for t in l.split() if len(t) > 0 ]
+      if len(tokens) > 1:
+        if (tokens[0] == 'end') and (tokens[1] == 'model'):
+          past_end = True
+  lines = model_lines
+
   # Separate into blocks assuming begin/end pairs with outer b/e model
   blocks = []
   current_block = []
