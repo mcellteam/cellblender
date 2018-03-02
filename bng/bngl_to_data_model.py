@@ -344,10 +344,7 @@ def append_objects ( obj, inner_parent, outer_parent, dm_geom_obj_list, dm_model
 
 
 
-def read_data_model_from_bngl_file ( bngl_file_name ):
-
-  bngl_model_file = open ( bngl_file_name, 'r' )
-  bngl_model_text = bngl_model_file.read()
+def read_data_model_from_bngl_text ( bngl_model_text ):
 
   # First split by lines to remove comments and whitespace on ends
   lines = re.split(r'\n', bngl_model_text)
@@ -980,6 +977,14 @@ def read_data_model_from_bngl_file ( bngl_file_name ):
   }
 
   return dm
+
+
+def read_data_model_from_bngl_file ( bngl_file_name ):
+
+  bngl_model_file = open ( bngl_file_name, 'r' )
+  bngl_model_text = bngl_model_file.read()
+  return read_data_model_from_bngl_text ( bngl_model_text )
+
 
 
 if __name__ == "__main__":
