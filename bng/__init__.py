@@ -175,6 +175,13 @@ class ImportBioNetGenData(bpy.types.Operator, ImportHelper):
             else:
                 print ( "Model does not contain listOfCompartments" )
 
+            # Force any empty products in reactions to be NULL:
+            mcell = context.scene.mcell
+            print ( "Adding NULL to any empty Reaction Products ..." )
+            for r in mcell.reactions.reaction_list:
+                prods = str(r.products).strip()
+                if len(prods) <= 0:
+                    r.products = "NULL"
 
         return {'FINISHED'}
 
