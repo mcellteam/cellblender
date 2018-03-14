@@ -383,7 +383,7 @@ class MCELL_OT_plot_rxn_output_with_selected(bpy.types.Operator):
                             # Assume that the file path is blend file relative (begins with "//")
                             if file_name.startswith ( "//" ):
                                 # Convert the file name from blend file relative to react_data folder relative:
-                                candidate_file_list = [ os.path.pardir + os.path.sep + os.path.pardir + os.path.sep + os.path.pardir + os.path.sep + file_name[2:] ]
+                                candidate_file_list = [ os.path.pardir + os.path.sep + os.path.pardir + os.path.sep + file_name[2:] ]
                             else:
                                 # Use the file name as absolute
                                 candidate_file_list = [ file_name ]
