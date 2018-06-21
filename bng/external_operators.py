@@ -73,6 +73,8 @@ class EXTERNAL_OT_molecule_add(bpy.types.Operator):
         #filePointer= open(filePath + '.json','r')
         #json.load(filePointer)        
 
+        """
+        # Old method
         jfile = accessFile(filePath,self)
         mol_list = jfile['mol_list']
         index = -1
@@ -93,6 +95,27 @@ class EXTERNAL_OT_molecule_add(bpy.types.Operator):
             molecule.diffusion_constant.set_expr ( key['dif'], ps.panel_parameter_list )
             
             #print ( "Adding molecule " + str(molecule.name) )
+        """
+
+        # Updated method
+        jfile = accessFile(filePath,self)
+        mol_list = jfile['mol_list']
+        mols = mcell.molecules
+        mlist = mols.molecule_list
+        for key in mol_list:
+            print ( "bng/external_operators.EXTERNAL_OT_molecule_add adding " + str(key['name']) )
+            mols.add_molecule(context)
+            mol = mlist[mols.active_mol_index]
+            mol.init_properties(ps)
+            mol.name = str(key['name'])
+            mol.bnglLabel = str(key['extendedName']) if 'extendedName' in key else key['name']
+            mol.type = str(key['type'])
+            #molecule.diffusion_constant.expression = str(key['dif'])
+            #molecule.diffusion_constant.param_data.label = "Diffusion Constant"
+            mol.diffusion_constant.set_expr ( key['dif'], ps.panel_parameter_list )
+
+            print ( "Added molecule " + str(mol.name) )
+
 
         return {'FINISHED'}
 

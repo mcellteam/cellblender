@@ -344,10 +344,7 @@ def append_objects ( obj, inner_parent, outer_parent, dm_geom_obj_list, dm_model
 
 
 
-def read_data_model_from_bngl_file ( bngl_file_name ):
-
-  bngl_model_file = open ( bngl_file_name, 'r' )
-  bngl_model_text = bngl_model_file.read()
+def read_data_model_from_bngl_text ( bngl_model_text ):
 
   # First split by lines to remove comments and whitespace on ends
   lines = re.split(r'\n', bngl_model_text)
@@ -359,6 +356,19 @@ def read_data_model_from_bngl_file ( bngl_file_name ):
 
   # Remove any empty lines
   lines = [ l for l in lines if len(l) > 0 ]
+
+  # Remove any lines after the "end model" tokens.
+  # This might be done more efficiently below, but it might be more clear here
+  model_lines = []
+  past_end = False
+  for l in lines:
+    if not past_end:
+      model_lines.append ( l )
+      tokens = [ t for t in l.split() if len(t) > 0 ]
+      if len(tokens) > 1:
+        if (tokens[0] == 'end') and (tokens[1] == 'model'):
+          past_end = True
+  lines = model_lines
 
   # Separate into blocks assuming begin/end pairs with outer b/e model
   blocks = []
@@ -967,6 +977,14 @@ def read_data_model_from_bngl_file ( bngl_file_name ):
   }
 
   return dm
+
+
+def read_data_model_from_bngl_file ( bngl_file_name ):
+
+  bngl_model_file = open ( bngl_file_name, 'r' )
+  bngl_model_text = bngl_model_file.read()
+  return read_data_model_from_bngl_text ( bngl_model_text )
+
 
 
 if __name__ == "__main__":
