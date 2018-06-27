@@ -318,10 +318,13 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
         # POSSIBLE FIXME? GET PARENT BLEND OBJECT OF THIS REGION_LIST
         obj = context.active_object
         mesh = obj.data
-        for seg_id in mesh["mcell"]["regions"][id].keys():
-            mesh["mcell"]["regions"][id][seg_id] = []
-        mesh["mcell"]["regions"][id].clear()
-        mesh["mcell"]["regions"].pop(id)
+        if mesh.get('mcell'):
+          if mesh['mcell'].get('regions'):
+            if mesh['mcell']['regions'].get(id):
+              for seg_id in mesh["mcell"]["regions"][id].keys():
+                  mesh["mcell"]["regions"][id][seg_id] = []
+              mesh["mcell"]["regions"][id].clear()
+              mesh["mcell"]["regions"].pop(id)
 
 
     def face_in_region(self, context, face_index):
@@ -345,12 +348,16 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
             mesh["mcell"]["regions"][str_id] = {}
 
 
-    def reset_region(self, context):
+    def reset_region(self, mesh):
 
         id = str(self.id)
 
-        mesh = context.active_object.data
-
+        if not mesh.get("mcell"):
+            mesh["mcell"] = {}
+        if not mesh["mcell"].get("regions"):
+            mesh["mcell"]["regions"] = {}
+        if not mesh["mcell"]["regions"].get(id):
+            mesh["mcell"]["regions"][id] = {}
         for seg_id in mesh["mcell"]["regions"][id].keys():
             mesh["mcell"]["regions"][id][seg_id] = []
         mesh["mcell"]["regions"][id].clear()
@@ -362,8 +369,12 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
         id = str(self.id)
 
         face_rle = []
-        for seg_id in mesh["mcell"]["regions"][id].keys():
-          face_rle.extend(mesh["mcell"]["regions"][id][seg_id].to_list())
+        if mesh.get('mcell'):
+          if mesh['mcell'].get('regions'):
+            if mesh['mcell']['regions'].get(id):
+              for seg_id in mesh["mcell"]["regions"][id].keys():
+                face_rle.extend(mesh["mcell"]["regions"][id][seg_id].to_list())
+
         if (len(face_rle) > 0): 
             face_set = set(self.rl_decode(face_rle))
         else:
@@ -381,7 +392,7 @@ class MCellSurfaceRegionProperty(bpy.types.PropertyGroup):
         face_rle = self.rl_encode(face_list)
 
         # Clear existing faces from this region id
-        mesh["mcell"]["regions"][id].clear()
+        self.reset_region(mesh)
 
         # segment face_rle into pieces <= max_len (i.e. <= 32767)
         #   and assign these segments to the region id
