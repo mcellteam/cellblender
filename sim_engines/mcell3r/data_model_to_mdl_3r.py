@@ -410,7 +410,7 @@ def write_reactions ( reacts, f ):
               variable_rate_name = r['variable_rate']
               f.write('["%s"]' % (variable_rate_name))
               ## Create the actual variable rate file and write to it
-              vrf = open(variable_rate_name, "w")
+              vrf = open(os.path.join(os.path.dirname(f.name),variable_rate_name), "w")
               vrf.write ( r['variable_rate_text'] )
               #with open(variable_rate_name, "w", encoding="utf8",
               #          newline="\n") as variable_out_file:
