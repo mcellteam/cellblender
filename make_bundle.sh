@@ -8,6 +8,11 @@
        a) rm -rf ~/my_blender_dir/2.79/python/*
 #  5) Configure, build, and install new Python into Blender distribution, e.g.:
 #      a) ./configure --enable-optimizations --prefix=~/my_blender_dir/2.79/python
+
+#       or on Mac:
+
+#       ./configure --prefix=/Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python --enable-shared --with-libs='/Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python/lib/libiconv.a /Applications/Blender-2.79-CellBlender/blender.app/Contents/Resources/2.79/python/lib/libintl.a'
+
 #      b) make
 #      c) make install
 #  6) Install required Python modules into the new Blender Python, e.g.:
@@ -19,6 +24,7 @@
 #      f) ~/my_blender_dir/2.79/python/bin/python3.5 ~/my_blender_dir/2.79/python/bin/pip3.5 install lxml
 #      g) ~/my_blender_dir/2.79/python/bin/python3.5 ~/my_blender_dir/2.79/python/bin/pip3.5 install pyyaml
 #      h) ~/my_blender_dir/2.79/python/bin/python3.5 ~/my_blender_dir/2.79/python/bin/pip3.5 install MeshPy
+#      i) ~/my_blender_dir/2.79/python/bin/python3.5 ~/my_blender_dir/2.79/python/bin/pip3.5 install python-libsbml
 #  7) Build and Install CellBlender
 #  8) Build and install GAMer
 #  9) Build and install MCell
