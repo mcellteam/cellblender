@@ -88,6 +88,10 @@ clean:
 id:
 	@echo ===========================================================
 	@cat cellblender_id.py
+	@echo Installation path:
+	@echo $(INSTALL_DIR)cellblender
+	@echo Real Installation path:
+	@realpath $(INSTALL_DIR)cellblender
 	@echo ===========================================================
 
 .PHONY: install
