@@ -998,6 +998,37 @@ class Parameter_Reference ( bpy.types.PropertyGroup ):
                 parameter_system.draw_rna_par_details ( rna_par, box )
 
 
+    #######################################################################
+    #  This function draws a panel parameter expression only.
+    #    This is the function that shows help, labels, double rows, etc.
+    #######################################################################
+
+    @profile('Parameter_Reference.draw_prop_only')
+    def draw_prop_only ( self, col, parameter_system ):
+
+        rna_par = parameter_system.panel_parameter_list[self.unique_static_name]
+
+        val = "??"
+        icon = 'ERROR'
+        if 'value' in rna_par:
+            if not (rna_par['value'] is None):
+                if rna_par['user_type'] == 'i':
+                    val = str(int(rna_par['value']))
+                else:
+                    val = str(rna_par['value'])
+                icon = 'NONE'
+        if 'valid' in rna_par:
+            if not rna_par['valid']:
+                val = "??"
+                icon = 'ERROR'
+
+        if len(rna_par['expr'].strip()) == 0:
+            val = ""
+            icon = 'NONE'
+
+        col.prop ( rna_par, "expr", text="", icon=icon )
+
+
 
 #######################################################################
 #  External callbacks needed to match the "update=" syntax of Blender.

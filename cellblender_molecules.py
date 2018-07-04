@@ -198,6 +198,7 @@ class MCELL_OT_mol_comp_add(bpy.types.Operator):
 
     def execute(self, context):
         context.scene.mcell.molecules.add_component(context)
+        self.report({'INFO'}, "Added Component")
         return {'FINISHED'}
 
 class MCELL_OT_mol_comp_remove(bpy.types.Operator):
@@ -410,11 +411,31 @@ def remove_mol_data_by_name ( mol_name, context ):
             except: pass
 
 
+
+
 class MCellMolComponentProperty(bpy.types.PropertyGroup):
     contains_cellblender_parameters = BoolProperty(name="Contains CellBlender Parameters", default=True)
     component_name = StringProperty(default="", description="Component name")
     states_string = StringProperty(default="", description="States String")
+    x = PointerProperty ( name="x",  type=parameter_system.Parameter_Reference )
+    y = PointerProperty ( name="y",  type=parameter_system.Parameter_Reference )
+    z = PointerProperty ( name="z",  type=parameter_system.Parameter_Reference )
+    a = PointerProperty ( name="a",  type=parameter_system.Parameter_Reference )
 
+    def init_properties ( self, parameter_system ):
+        self.x.init_ref   ( parameter_system, user_name="Component location x",   user_expr="0", user_units="microns", user_descr="x" )
+        self.y.init_ref   ( parameter_system, user_name="Component location y",   user_expr="0", user_units="microns", user_descr="y" )
+        self.z.init_ref   ( parameter_system, user_name="Component location z",   user_expr="0", user_units="microns", user_descr="z" )
+        self.a.init_ref   ( parameter_system, user_name="Component location a",   user_expr="0", user_units="radians", user_descr="a" )
+
+    def remove_properties ( self, context ):
+        print ( "Removing all Component Properties ..." )
+        ps = context.scene.mcell.parameter_system
+        self.x.clear_ref ( ps )
+        self.y.clear_ref ( ps )
+        self.z.clear_ref ( ps )
+        self.a.clear_ref ( ps )
+        print ( "Done removing all Component Properties." )
 
 
 class MCellMoleculeProperty(bpy.types.PropertyGroup):
@@ -731,15 +752,21 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         remove_mol_data_by_name ( self.name, context )
 
 
-    def add_component ( self, name, states="" ):
+    def add_component ( self, context, name, states="", x="0", y="0", z="0", a="0" ):
         new_comp = self.component_list.add()
+        new_comp.init_properties(context.scene.mcell.parameter_system)
         new_comp.component_name = name
         new_comp.states_string = states
+        new_comp.x.set_expr ( x );
+        new_comp.y.set_expr ( y );
+        new_comp.z.set_expr ( z );
+        new_comp.a.set_expr ( a );
         self.active_component_index = len(self.component_list)-1
 
 
     def remove_active_component ( self, context ):
         if len(self.component_list) > 0:
+            self.component_list[self.active_component_index].remove_properties(context)
             self.component_list.remove ( self.active_component_index )
             self.active_component_index -= 1
             if self.active_component_index < 0:
@@ -754,7 +781,12 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         m_dict['description'] = m.description
         comp_list = []
         for comp in self.component_list:
-          comp_list.append ( { 'cname':comp.component_name, 'cstates':comp.states_string.replace(',',' ').split() } )
+          comp_list.append ( { 'cname':comp.component_name,
+                               'cstates':comp.states_string.replace(',',' ').split(),
+                               'x':comp.x.get_expr(),
+                               'y':comp.x.get_expr(),
+                               'z':comp.x.get_expr(),
+                               'a':comp.x.get_expr() } )
         m_dict['bngl_component_list'] = comp_list
         m_dict['mol_bngl_label'] = m.bnglLabel
         m_dict['mol_type'] = str(m.type)
@@ -832,8 +864,18 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
             dm['description'] = ""
             dm['data_model_version'] = "DM_2018_01_11_1330"
 
+        if dm['data_model_version'] == "DM_2018_01_11_1330":
+            # Change on July 3rd, 2018 to add component locations
+            if 'bngl_component_list' in dm:
+                for comp in dm['bngl_component_list']:
+                    comp['x'] = '0'
+                    comp['y'] = '0'
+                    comp['z'] = '0'
+                    comp['a'] = '0'
+            dm['data_model_version'] = "DM_2018_07_03_1955"
+
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2018_01_11_1330":
+        if dm['data_model_version'] != "DM_2018_07_03_1955":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
             return None
 
@@ -842,14 +884,14 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm_dict ):
         # Check that the data model version matches the version for this property group
-        if dm_dict['data_model_version'] != "DM_2018_01_11_1330":
+        if dm_dict['data_model_version'] != "DM_2018_07_03_1955":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
         # Now convert the updated Data Model into CellBlender Properties
         self.name = dm_dict["mol_name"]
         self.description = dm_dict["description"]
         if "bngl_component_list" in dm_dict:
             for comp in dm_dict["bngl_component_list"]:
-                self.add_component ( comp['cname'], " ".join(comp['cstates']) )
+                self.add_component ( context, comp['cname'], " ".join(comp['cstates']), comp['x'], comp['y'], comp['z'], comp['a'] )
         if "mol_bngl_label" in dm_dict: self.bnglLabel = dm_dict['mol_bngl_label']
         if "mol_type" in dm_dict: self.type = dm_dict["mol_type"]
         if "diffusion_constant" in dm_dict: self.diffusion_constant.set_expr ( dm_dict["diffusion_constant"] )
@@ -1296,6 +1338,17 @@ class MCell_UL_check_component(bpy.types.UIList):
         col = layout.column()
         col.prop(item, "states_string", text='', icon='NONE')
 
+        ps = context.scene.mcell.parameter_system
+
+        col = layout.column()
+        item.x.draw_prop_only ( col, ps )
+        col = layout.column()
+        item.y.draw_prop_only ( col, ps )
+        col = layout.column()
+        item.z.draw_prop_only ( col, ps )
+        col = layout.column()
+        item.a.draw_prop_only ( col, ps )
+
 
 
 class MCell_OT_molecule_show_all(bpy.types.Operator):
@@ -1448,7 +1501,7 @@ class MCellMoleculesListProperty(bpy.types.PropertyGroup):
         if len(self.molecule_list) > 0:
             mol = self.molecule_list[self.active_mol_index]
             if mol:
-                mol.add_component ( "C" + str(self.allocate_available_id()) )
+                mol.add_component ( context, "C" + str(self.allocate_available_id()) )
 
     def remove_active_component ( self, context ):
         """ Remove the active component from the active molecule """
