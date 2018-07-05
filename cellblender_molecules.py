@@ -420,13 +420,13 @@ class MCellMolComponentProperty(bpy.types.PropertyGroup):
     x = PointerProperty ( name="x",  type=parameter_system.Parameter_Reference )
     y = PointerProperty ( name="y",  type=parameter_system.Parameter_Reference )
     z = PointerProperty ( name="z",  type=parameter_system.Parameter_Reference )
-    a = PointerProperty ( name="a",  type=parameter_system.Parameter_Reference )
+    ang = PointerProperty ( name="ang",  type=parameter_system.Parameter_Reference )
 
     def init_properties ( self, parameter_system ):
         self.x.init_ref   ( parameter_system, user_name="Component location x",   user_expr="0", user_units="microns", user_descr="x" )
         self.y.init_ref   ( parameter_system, user_name="Component location y",   user_expr="0", user_units="microns", user_descr="y" )
         self.z.init_ref   ( parameter_system, user_name="Component location z",   user_expr="0", user_units="microns", user_descr="z" )
-        self.a.init_ref   ( parameter_system, user_name="Component location a",   user_expr="0", user_units="radians", user_descr="a" )
+        self.ang.init_ref   ( parameter_system, user_name="Component location angle",   user_expr="0", user_units="degrees", user_descr="ang" )
 
     def remove_properties ( self, context ):
         print ( "Removing all Component Properties ..." )
@@ -434,7 +434,7 @@ class MCellMolComponentProperty(bpy.types.PropertyGroup):
         self.x.clear_ref ( ps )
         self.y.clear_ref ( ps )
         self.z.clear_ref ( ps )
-        self.a.clear_ref ( ps )
+        self.ang.clear_ref ( ps )
         print ( "Done removing all Component Properties." )
 
 
@@ -752,7 +752,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         remove_mol_data_by_name ( self.name, context )
 
 
-    def add_component ( self, context, name, states="", x="0", y="0", z="0", a="0" ):
+    def add_component ( self, context, name, states="", x="0", y="0", z="0", ang="0" ):
         new_comp = self.component_list.add()
         new_comp.init_properties(context.scene.mcell.parameter_system)
         new_comp.component_name = name
@@ -760,7 +760,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         new_comp.x.set_expr ( x );
         new_comp.y.set_expr ( y );
         new_comp.z.set_expr ( z );
-        new_comp.a.set_expr ( a );
+        new_comp.ang.set_expr ( ang );
         self.active_component_index = len(self.component_list)-1
 
 
@@ -776,7 +776,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
     def build_data_model_from_properties ( self ):
         m = self
         m_dict = {}
-        m_dict['data_model_version'] = "DM_2018_01_11_1330"
+        m_dict['data_model_version'] = "DM_2018_07_05_1450"
         m_dict['mol_name'] = m.name
         m_dict['description'] = m.description
         comp_list = []
@@ -784,9 +784,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
           comp_list.append ( { 'cname':comp.component_name,
                                'cstates':comp.states_string.replace(',',' ').split(),
                                'x':comp.x.get_expr(),
-                               'y':comp.x.get_expr(),
-                               'z':comp.x.get_expr(),
-                               'a':comp.x.get_expr() } )
+                               'y':comp.y.get_expr(),
+                               'z':comp.z.get_expr(),
+                               'ang':comp.ang.get_expr() } )
         m_dict['bngl_component_list'] = comp_list
         m_dict['mol_bngl_label'] = m.bnglLabel
         m_dict['mol_type'] = str(m.type)
@@ -873,9 +873,16 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                     comp['z'] = '0'
                     comp['a'] = '0'
             dm['data_model_version'] = "DM_2018_07_03_1955"
+        if dm['data_model_version'] == "DM_2018_07_03_1955":
+            # Change on July 5th, 2018 to use "ang" instead of "a" as the angle key in the data model
+            if 'bngl_component_list' in dm:
+                for comp in dm['bngl_component_list']:
+                    if 'a' in comp:
+                      comp['ang'] = comp.pop('a')
+            dm['data_model_version'] = "DM_2018_07_05_1450"
 
         # Check that the upgraded data model version matches the version for this property group
-        if dm['data_model_version'] != "DM_2018_07_03_1955":
+        if dm['data_model_version'] != "DM_2018_07_05_1450":
             data_model.flag_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
             return None
 
@@ -884,14 +891,14 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
 
     def build_properties_from_data_model ( self, context, dm_dict ):
         # Check that the data model version matches the version for this property group
-        if dm_dict['data_model_version'] != "DM_2018_07_03_1955":
+        if dm_dict['data_model_version'] != "DM_2018_07_05_1450":
             data_model.handle_incompatible_data_model ( "Error: Unable to upgrade MCellMoleculeProperty data model " + str(dm['data_model_version']) + " to current version." )
         # Now convert the updated Data Model into CellBlender Properties
         self.name = dm_dict["mol_name"]
         self.description = dm_dict["description"]
         if "bngl_component_list" in dm_dict:
             for comp in dm_dict["bngl_component_list"]:
-                self.add_component ( context, comp['cname'], " ".join(comp['cstates']), comp['x'], comp['y'], comp['z'], comp['a'] )
+                self.add_component ( context, comp['cname'], " ".join(comp['cstates']), comp['x'], comp['y'], comp['z'], comp['ang'] )
         if "mol_bngl_label" in dm_dict: self.bnglLabel = dm_dict['mol_bngl_label']
         if "mol_type" in dm_dict: self.type = dm_dict["mol_type"]
         if "diffusion_constant" in dm_dict: self.diffusion_constant.set_expr ( dm_dict["diffusion_constant"] )
@@ -1347,7 +1354,7 @@ class MCell_UL_check_component(bpy.types.UIList):
         col = layout.column()
         item.z.draw_prop_only ( col, ps )
         col = layout.column()
-        item.a.draw_prop_only ( col, ps )
+        item.ang.draw_prop_only ( col, ps )
 
 
 
