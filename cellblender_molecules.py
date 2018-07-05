@@ -1348,6 +1348,9 @@ class MCell_UL_check_component(bpy.types.UIList):
         ps = context.scene.mcell.parameter_system
 
         col = layout.column()
+        col.label(text='x,y,z,ang:', icon='NONE')
+
+        col = layout.column()
         item.x.draw_prop_only ( col, ps )
         col = layout.column()
         item.y.draw_prop_only ( col, ps )
