@@ -87,6 +87,30 @@ def create_color_list():
         mcell.mol_viz.color_list[7].vec = [0.0, 0.0, 0.0]
 
 
+# Matrix Form:  Assemble obj2 onto obj1 at location of obj1
+def assemble_mat(obj1, obj2):
+
+  # get tform matrices of obj1 and obj2
+  m1 = obj1.matrix_world.copy()
+  m2 = obj2.matrix_world.copy()
+
+  # compute inverse of tform matrix of obj2
+  m2i = m2.inverted_safe()
+
+  # create rotation and translation tform matrix for binding site of assembly
+  r = mathutils.Matrix.Rotation(pi/8,4,'Y')
+  t = mathutils.Matrix.Translation((0,-2, 0))
+  bsm = r*t
+
+  # create complete composite tform matrix for assembly
+  assem = m2i*m1*bsm
+
+  # Apply the assembly tform matrix to obj2
+  obj2.matrix_world = obj2.matrix_world*assem
+  
+  
+
+
 @persistent
 def read_viz_data_load_post(context):
     print ( "load post handler: cellblender_mol_viz.read_viz_data_load_post() called" )
