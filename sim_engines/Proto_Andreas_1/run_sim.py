@@ -23,6 +23,7 @@ data_model_full_path = ""
 run_seed = 1
 decay_rate_factor = 1.0
 output_detail = 0
+electric_species = []
 for arg in sys.argv:
   if output_detail > 10: print_and_flush ( "   " + str(arg) )
   if arg[0:10] == "proj_path=":
@@ -35,6 +36,9 @@ for arg in sys.argv:
     decay_rate_factor = float(arg[13:])
   elif arg[0:14] == "output_detail=":
     output_detail = int(arg[14:])
+  elif arg[0:17] == "electric_species=":
+    electric_species = [ d.strip() for d in arg[17:].split(',') ]
+    if output_detail > 0: print ( "E: " + str(electric_species) )
   else:
     if output_detail > 0: print_and_flush ( "Unknown argument = " + str(arg) )
 if output_detail > 10: print_and_flush ( "\n\n" )
@@ -169,7 +173,7 @@ for m in mols:
 
   # Create the species
   spec = None
-  if m['mol_name'].upper().startswith('E'):
+  if m['mol_name'] in electric_species:
     # Create an Electric Field Species
     ef = emcell.Electric_field(1, 1, 1)
     spec = emcell.Electric_species ( convert_to_value(m['diffusion_constant']),m['mol_name'], ef, 1 )

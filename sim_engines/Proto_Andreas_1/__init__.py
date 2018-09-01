@@ -28,6 +28,7 @@ def reset():
 
 # List of parameters as dictionaries - each with keys for 'name', 'desc', 'def', and optional 'as':
 parameter_dictionary = {
+  'Electric Species': {'val': "", 'desc':"Names of Electric Field Species (comma separated)"},
   'Output Detail (0-100)': {'val': 20, 'desc':"Amount of Information to Print (0-100)", 'icon':'INFO'},
   'Python Command': {'val': "", 'as':'filename', 'desc':"Command to run Python (default is python)", 'icon':'SCRIPTWIN'},
   'Reaction Factor': {'val': 1.0, 'desc':"Decay Rate Multiplier", 'icon':'ARROW_LEFTRIGHT'},
@@ -38,6 +39,7 @@ parameter_dictionary = {
 
 
 parameter_layout = [
+  ['Electric Species'],
   ['Python Command'],
   ['Output Detail (0-100)'],
   ['Reaction Factor'],
@@ -76,6 +78,9 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   if output_detail > 0:    print ( "Inside limited_python.prepare_runs, project_dir=" + project_dir )
   if output_detail >= 10:  print ( "  Data Layout = " + str(data_layout) )
   if output_detail >= 50:  print ( "    Data Model = " + str(data_model) )
+
+  electric_species = parameter_dictionary['Electric Species']['val']
+  print ( "Electric Species = \"" + electric_species + "\"" )
 
   python_cmd = parameter_dictionary['Python Command']['val']
   if len(python_cmd) == 0:
@@ -155,6 +160,8 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
                                "data_model=dm.txt" ],
                            'wd': project_dir
                          }
+          if len(electric_species) > 0:
+            command_dict['args'].append ( "electric_species="+electric_species )
 
           command_list.append ( command_dict )
           if output_detail > 70: print ( str(command_dict) )
