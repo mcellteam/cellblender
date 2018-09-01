@@ -12,6 +12,7 @@ plug_name = "Prototype Andreas 1"
 
 def print_info():
   global parameter_dictionary
+  print ( "Print from Proto_Andreas_1" )
   print ( 50*'==' )
   for k in sorted(parameter_dictionary.keys()):
     print ( "" + k + " = " + str(parameter_dictionary[k]) )
@@ -21,7 +22,7 @@ def reset():
   global parameter_dictionary
   print ( "Reset was called" )
   parameter_dictionary['Output Detail (0-100)']['val'] = 20
-  parameter_dictionary['Python Path']['val'] = ""
+  parameter_dictionary['Python Command']['val'] = ""
   parameter_dictionary['Reaction Factor']['val'] = 1.0
 
 
@@ -30,17 +31,19 @@ parameter_dictionary = {
   'Output Detail (0-100)': {'val': 20, 'desc':"Amount of Information to Print (0-100)", 'icon':'INFO'},
   'Python Command': {'val': "", 'as':'filename', 'desc':"Command to run Python (default is python)", 'icon':'SCRIPTWIN'},
   'Reaction Factor': {'val': 1.0, 'desc':"Decay Rate Multiplier", 'icon':'ARROW_LEFTRIGHT'},
+  'Mini MCell': {'val': True, 'desc':"Run Mini MCell"},
   'Print Information': {'val': print_info, 'desc':"Print information about Limited Python Simulation"},
   'Reset': {'val': reset, 'desc':"Reset everything"}
 }
+
 
 parameter_layout = [
   ['Python Command'],
   ['Output Detail (0-100)'],
   ['Reaction Factor'],
+  ['Mini MCell'],
   ['Print Information', 'Reset']
 ]
-
 
 def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   # Return a list of run command dictionaries.
@@ -79,7 +82,9 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
       python_cmd = 'python'
 
   script_file_path = os.path.dirname(os.path.realpath(__file__))
-  final_script_path = os.path.join(script_file_path,"limited_python_sim.py")
+  final_script_path = os.path.join(script_file_path,"minimcell.py")
+  final_script_path = os.path.join(script_file_path,"emcell.py")
+  final_script_path = os.path.join(script_file_path,"run_sim.py")
 
   if not os.path.exists(final_script_path):
       print ( "\n\nUnable to prepare runs, script does not exist: " + final_script_path + "\n\n" )

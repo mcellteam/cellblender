@@ -177,7 +177,9 @@ cellblender_info = {
 
         "sim_engines"+os.sep+"Proto_Andreas_1"+os.sep+"makefile",
         "sim_engines"+os.sep+"Proto_Andreas_1"+os.sep+"__init__.py",
-        "sim_engines"+os.sep+"Proto_Andreas_1"+os.sep+"limited_python_sim.py",
+        "sim_engines"+os.sep+"Proto_Andreas_1"+os.sep+"run_sim.py",
+        "sim_engines"+os.sep+"Proto_Andreas_1"+os.sep+"minimcell.py",
+        "sim_engines"+os.sep+"Proto_Andreas_1"+os.sep+"emcell.py",
 
 
         "sim_engines"+os.sep+"limited_python"+os.sep+"makefile",

@@ -6,6 +6,9 @@ import random
 import array
 import shutil
 
+import minimcell
+import emcell
+
 def print_and_flush ( some_string ):
   # sys.stdout.write ( some_string + "\n" )
   print ( some_string )
@@ -37,10 +40,10 @@ for arg in sys.argv:
 if output_detail > 10: print_and_flush ( "\n\n" )
 
 if output_detail > 0:
-  print_and_flush ( "**********************************************" )
-  print_and_flush ( "*  Limited Pure Python Prototype Simulation  *" )
-  print_and_flush ( "*          Updated: July 19th, 2017          *" )
-  print_and_flush ( "**********************************************" )
+  print_and_flush ( "*************************************" )
+  print_and_flush ( "*  Andreas Prototype Simulation 0.1 *" )
+  print_and_flush ( "*   Updated: August 31st, 2018      *" )
+  print_and_flush ( "*************************************" )
   print_and_flush ( "" )
   print_and_flush ( "Running with Python:" )
   print_and_flush ( sys.version )
@@ -124,6 +127,13 @@ if 'define_reactions' in dm['mcell']:
     if len(dm['mcell']['define_reactions']['reaction_list']) > 0:
       rxns = dm['mcell']['define_reactions']['reaction_list']
 
+# Figure out the number of digits needed for file names
+
+ndigits = 1 + math.log(iterations+1,10)
+file_name_template = "Scene.cellbin.%%0%dd.dat" % ndigits
+
+# Print out what's been found in the data model
+
 for m in mols:
   if output_detail > 0: print_and_flush ( "Molecule " + m['mol_name'] + " is a " + m['mol_type'] + " molecule diffusing with " + str(m['diffusion_constant']) )
 
@@ -138,7 +148,41 @@ for r in rxns:
     bkwd = ", " + str(r['bkwd_rate'])
   if output_detail > 0: print_and_flush ( "Reaction: " + r['reactants'] + " " + arrow + " " + r['products'] + "  [" + str(r['fwd_rate']) + bkwd + "]"  )
 
+
+# Create the count files for each molecule species (doesn't currently use the count specifications)
+
+count_files = {}
+
+for m in mols:
+  react_file_name = "%s/%s/%s.World.dat" % ( react_dir, seed_dir, m['mol_name'] )
+  count_files[m['mol_name']] = open(react_file_name,"w")
+
+
 # Create instances for each molecule that is released (note that release patterns are not handled)
+
+
+print ( "======== Start of Proto_Andreas_1 =========" )
+
+mcellsim = minimcell.MCellSim()
+
+for m in mols:
+
+  # Create the species
+  spec = minimcell.Species ( convert_to_value(m['diffusion_constant']),m['mol_name'] )
+  spec.add_species_to_mcellsim(mcellsim)
+
+  # Add molecules to the species based on any matching releases
+  for r in rels:
+    if m['mol_name'] == r['molecule']:
+      rel_x = convert_to_value(r['location_x'])
+      rel_y = convert_to_value(r['location_y'])
+      rel_z = convert_to_value(r['location_z'])
+      q = int(convert_to_value(r['quantity']))
+      spec.add_molecules ( rel_x, rel_y, rel_z, q )
+
+
+print ( "======== End of Proto_Andreas_1 =========" )
+
 
 for m in mols:
   m['instances'] = []
@@ -156,26 +200,21 @@ for r in rels:
         z = rel_z  # +random.gauss(0.0,0.1)
         m['instances'].append ( [x,y,z] )
 
-# Figure out the number of digits needed for file names
-
-ndigits = 1 + math.log(iterations+1,10)
-file_name_template = "Scene.cellbin.%%0%dd.dat" % ndigits
-
-# Create the count files for each molecule species (doesn't currently use the count specifications)
-
-count_files = {}
-
-for m in mols:
-  react_file_name = "%s/%s/%s.World.dat" % ( react_dir, seed_dir, m['mol_name'] )
-  count_files[m['mol_name']] = open(react_file_name,"w")
 
 
-# Begin the simulation
+# Compute the printing frequency based on the iterations
 
 print_every = math.pow(10,math.floor(math.log10((iterations/10))));
 if print_every < 1: print_every = 1;
+
+# Begin the simulation
+
 for i in range(iterations+1):
+
   # Write the viz data (every iteration for now)
+
+  # Start by writing the viz header
+
   viz_file_name = file_name_template % i
   viz_file_name = os.path.join(viz_seed_dir,viz_file_name)
   if (i % print_every) == 0:
@@ -185,8 +224,15 @@ for i in range(iterations+1):
   int_array = array.array("I")   # Marker indicating a binary file
   int_array.fromlist([1])
   int_array.tofile(f)
-  for m in mols:
-    name = m['mol_name']
+
+  # Get all of the molecule positions from the simulation
+
+  positions = mcellsim.get_all_positions()
+
+  # Write out all of the viz data for each molecule in each species
+
+  for name in positions.keys():
+    #print ( "Molecule " + name + ":" )
     f.write(bytearray([len(name)]))       # Number of bytes in the name
     for ni in range(len(name)):
       f.write(bytearray([ord(name[ni])]))  # Each byte of the name
@@ -194,29 +240,28 @@ for i in range(iterations+1):
 
     # Write out the total number of values for this molecule species
     int_array = array.array("I")
-    int_array.fromlist([3*len(m['instances'])])
+    int_array.fromlist([3*len(positions[name])])
     int_array.tofile(f)
-    
-    dc = convert_to_value(m['diffusion_constant'])
-    ds = math.sqrt(4.0 * 1.0e8 * dc * time_step)
-    for mi in m['instances']:
+
+    # Write out the actual molecule positions for this species
+    for mi in positions[name]:
+      # print ( "  " + str(mi) )
       x = mi[0]
       y = mi[1]
       z = mi[2]
       mol_pos = array.array("f")
       mol_pos.fromlist ( [ x, y, z ] )
       mol_pos.tofile(f)
-      mi[0] += random.gauss(0.0,ds) * 0.70710678118654752440
-      mi[1] += random.gauss(0.0,ds) * 0.70710678118654752440
-      mi[2] += random.gauss(0.0,ds) * 0.70710678118654752440
   f.close()
+
   # Write the count data (every iteration for now)
-  for m in mols:
-    name = m['mol_name']
-    count = len(m['instances'])
+
+  for name in positions.keys():
+    count = len(positions[name])
     count_files[name].write ( "%.15g" % (i*time_step) + " " + str(count) + "\n" )
 
   # Perform approximate decay reactions for now  (TODO: Make this realistic)
+  """
   for m in mols:
     if len(m['instances']) > 0:
       # There are some molecules left to react
@@ -233,6 +278,10 @@ for i in range(iterations+1):
           for i in range(num_to_remove):
             if len(m['instances']) > 0:
               m['instances'].pop()
+  """
+
+  # Step the simulation
+  mcellsim.perform_time_step()
 
 
 for fname in count_files.keys():
