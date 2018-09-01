@@ -40,10 +40,10 @@ for arg in sys.argv:
 if output_detail > 10: print_and_flush ( "\n\n" )
 
 if output_detail > 0:
-  print_and_flush ( "*************************************" )
-  print_and_flush ( "*  Andreas Prototype Simulation 0.1 *" )
-  print_and_flush ( "*   Updated: August 31st, 2018      *" )
-  print_and_flush ( "*************************************" )
+  print_and_flush ( "**************************************" )
+  print_and_flush ( "*  Andreas Prototype Simulation 0.1  *" )
+  print_and_flush ( "*   Updated: August 31st, 2018       *" )
+  print_and_flush ( "**************************************" )
   print_and_flush ( "" )
   print_and_flush ( "Running with Python:" )
   print_and_flush ( sys.version )
@@ -261,27 +261,31 @@ for i in range(iterations+1):
     count_files[name].write ( "%.15g" % (i*time_step) + " " + str(count) + "\n" )
 
   # Perform approximate decay reactions for now  (TODO: Make this realistic)
-  """
-  for m in mols:
-    if len(m['instances']) > 0:
+
+  for name in positions.keys():
+    if len(positions[name]) > 0:
       # There are some molecules left to react
       for r in rxns:
-        if r['reactants'] == m['mol_name']:
+        if r['reactants'] == name:
+          # print ( "The reaction applies to this molecule" )
           # The reaction applies to this molecule
           rate = convert_to_value(r['fwd_rate'])
           fraction_to_remove = decay_rate_factor * rate * time_step
-          amount_to_remove = fraction_to_remove * len(m['instances'])
+          amount_to_remove = fraction_to_remove * len(positions[name])
           num_to_remove = int(amount_to_remove)
           if random.random() < (amount_to_remove - num_to_remove):
             num_to_remove += 1
+          # print ( "Num to remove is " + str(num_to_remove) )
           if output_detail > 50: print_and_flush ( "React " + m['mol_name'] + " with rate = " + str(rate) + ", remove " + str(num_to_remove) + " (should be about " + str(100*fraction_to_remove) + "%)" )
-          for i in range(num_to_remove):
-            if len(m['instances']) > 0:
-              m['instances'].pop()
-  """
+          # Remove the actual molecules
+          for s in mcellsim.species_list:
+            if name == s.name:
+              s.delete_molecules ( N=num_to_remove )
 
   # Step the simulation
+
   mcellsim.perform_time_step()
+
 
 
 for fname in count_files.keys():

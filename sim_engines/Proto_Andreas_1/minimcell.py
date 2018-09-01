@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 class MCellSim(object):
     def __init__(self, seed=42, time=0, dt=0.1):
@@ -24,6 +25,16 @@ class MCellSim(object):
             for molecule in species.molecule_list:
                 print "Position = (", molecule.x, molecule.y, molecule.z, ")"
 
+    def get_all_positions(self):
+        # Returns a dictionary of molecule position lists keyed by molecule name
+        position_dict = {}
+        for species in self.species_list:
+            positions = []
+            for molecule in species.molecule_list:
+                positions.append ( [ molecule.x, molecule.y, molecule.z ] )
+            position_dict[species.name] = positions
+        return position_dict
+
 class Species(object):
     def __init__(self, diffusion_constant, name):
         self.D = diffusion_constant
@@ -38,8 +49,15 @@ class Species(object):
         for i in range(N):
             self.molecule_list.append(Molecule(self, x, y, z))
 
+    def delete_molecules(self, N=1):
+        # Delete molecules from this species
+        num_left = len(self.molecule_list) - N
+        if num_left < 0:
+          num_left = 0
+        self.molecule_list = self.molecule_list[0:num_left]
+
     def move_molecule(self, molecule):
-        molecule.x += self.D*self.mcellsim.dt
+        molecule.x += self.D*self.mcellsim.dt * random.gauss(0.0,1.0)
 
     def perform_time_step(self):
         for molecule in self.molecule_list:
@@ -67,4 +85,3 @@ if __name__=='__main__':
     mcellsim.print_all_positions()
     mcellsim.perform_time_step()
     mcellsim.print_all_positions()
-

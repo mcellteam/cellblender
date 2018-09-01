@@ -16,18 +16,18 @@ class Electric_field:
         self.Ey = Ey
         self.Ez = Ez
 
-electric_field = Electric_field(1, 1, 1)
-mcellsim = MCellSim()
+if __name__=='__main__':
+    electric_field = Electric_field(1, 1, 1)
+    mcellsim = MCellSim()
 
-spec = Species(0.1, 'Ca')
-spec.add_species_to_mcellsim(mcellsim)
-spec.add_molecules(0, 0, 0, 2)
+    spec = Species(0.1, 'Ca')
+    spec.add_species_to_mcellsim(mcellsim)
+    spec.add_molecules(0, 0, 0, 2)
 
-spec2 = Electric_species(0.2, 'Fast', electric_field, 1)
-spec2.add_species_to_mcellsim(mcellsim)
-spec2.add_molecules(0, 0, 0, 3)
+    spec2 = Electric_species(0.2, 'Fast', electric_field, 1)
+    spec2.add_species_to_mcellsim(mcellsim)
+    spec2.add_molecules(0, 0, 0, 3)
 
-mcellsim.print_all_positions()
-mcellsim.perform_time_step()
-mcellsim.print_all_positions()
-
+    mcellsim.print_all_positions()
+    mcellsim.perform_time_step()
+    mcellsim.print_all_positions()
