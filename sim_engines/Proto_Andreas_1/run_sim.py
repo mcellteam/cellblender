@@ -168,7 +168,14 @@ mcellsim = minimcell.MCellSim()
 for m in mols:
 
   # Create the species
-  spec = minimcell.Species ( convert_to_value(m['diffusion_constant']),m['mol_name'] )
+  spec = None
+  if m['mol_name'].upper().startswith('E'):
+    # Create an Electric Field Species
+    ef = emcell.Electric_field(1, 1, 1)
+    spec = emcell.Electric_species ( convert_to_value(m['diffusion_constant']),m['mol_name'], ef, 1 )
+  else:
+    # Create a normal species
+    spec = minimcell.Species ( convert_to_value(m['diffusion_constant']),m['mol_name'] )
   spec.add_species_to_mcellsim(mcellsim)
 
   # Add molecules to the species based on any matching releases

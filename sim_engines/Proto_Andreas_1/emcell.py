@@ -8,7 +8,7 @@ class Electric_species(Species):
 
     def move_molecule(self, molecule):
         # super(Electric_species, self).move_molecule(molecule)
-        molecule.y += self.D*self.mcellsim.dt*self.z*electric_field.Ey
+        molecule.y += self.D*self.mcellsim.dt*self.z*self.electric_field.Ey
 
 class Electric_field:
     def __init__(self, Ex, Ey, Ez):
