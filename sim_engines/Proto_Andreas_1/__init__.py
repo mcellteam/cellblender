@@ -32,7 +32,6 @@ parameter_dictionary = {
   'Output Detail (0-100)': {'val': 20, 'desc':"Amount of Information to Print (0-100)", 'icon':'INFO'},
   'Python Command': {'val': "", 'as':'filename', 'desc':"Command to run Python (default is python)", 'icon':'SCRIPTWIN'},
   'Reaction Factor': {'val': 1.0, 'desc':"Decay Rate Multiplier", 'icon':'ARROW_LEFTRIGHT'},
-  'Mini MCell': {'val': True, 'desc':"Run Mini MCell"},
   'Print Information': {'val': print_info, 'desc':"Print information about Limited Python Simulation"},
   'Reset': {'val': reset, 'desc':"Reset everything"}
 }
@@ -43,7 +42,6 @@ parameter_layout = [
   ['Python Command'],
   ['Output Detail (0-100)'],
   ['Reaction Factor'],
-  ['Mini MCell'],
   ['Print Information', 'Reset']
 ]
 
@@ -83,6 +81,7 @@ def prepare_runs_data_model_full ( data_model, project_dir, data_layout=None ):
   print ( "Electric Species = \"" + electric_species + "\"" )
 
   python_cmd = parameter_dictionary['Python Command']['val']
+
   if len(python_cmd) == 0:
       python_cmd = 'python'
 
