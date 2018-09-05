@@ -54,7 +54,7 @@ class Species(object):
         num_left = len(self.molecule_list) - N
         if num_left < 0:
           num_left = 0
-        self.molecule_list = self.molecule_list[0:num_left]
+        self.molecule_list = random.sample(self.molecule_list, num_left)
 
     def move_molecule(self, molecule):
         molecule.x += self.D*self.mcellsim.dt * random.gauss(0.0,1.0)
