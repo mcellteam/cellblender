@@ -714,6 +714,86 @@ def old_mol_viz_file_read(mcell_prop, filepath):
 import sys, traceback
 
 
+def mol_viz_file_dump(filepath):
+    """ Read and Dump a molecule viz file. """
+    tot = 0
+    try:
+
+        # Quick check for Binary or ASCII format of molecule file:
+        mol_file = open(filepath, "rb")
+        b = array.array("I")
+        b.fromfile(mol_file, 1)
+
+        mol_dict = {}
+
+        if b[0] == 1:
+            # Read MCell/CellBlender Binary Format molecule file, version 1:
+            print ("Reading binary file " + filepath )
+            while True:
+                try:
+                    # ni = Initially, byte array of molecule name length.
+                    # Later, array of number of molecule positions in xyz
+                    # (essentially, the number of molecules multiplied by 3).
+                    # ns = Array of ascii character codes for molecule name.
+                    # s = String of molecule name.
+                    # mt = Surface molecule flag.
+                    ni = array.array("B")          # Create a binary byte ("B") array
+                    ni.fromfile(mol_file, 1)       # Read one byte which is the number of characters in the molecule name
+                    ns = array.array("B")          # Create another byte array to hold the molecule name
+                    ns.fromfile(mol_file, ni[0])   # Read ni bytes from the file
+                    s = ns.tostring().decode()     # Decode bytes as ASCII into a string (s)
+                    mol_name = "mol_%s" % (s)      # Construct name of blender molecule viz object
+                    mt = array.array("B")          # Create a byte array for the molecule type
+                    mt.fromfile(mol_file, 1)       # Read one byte for the molecule type
+                    ni = array.array("I")          # Re-use ni as an integer array to hold the number of molecules of this name in this frame
+                    ni.fromfile(mol_file, 1)       # Read the 4 byte integer value which is 3 times the number of molecules
+                    mol_pos = array.array("f")     # Create a floating point array to hold the positions
+                    mol_orient = array.array("f")  # Create a floating point array to hold the orientations
+                    mol_pos.fromfile(mol_file, ni[0])  # Read the positions which should be 3 floats per molecule
+                    mol_type_name = "Volume"
+                    tot += ni[0]/3
+                    if mt[0] == 1:                                        # If mt==1, it's a surface molecule
+                        mol_orient.fromfile(mol_file, ni[0])              # Read the surface molecule orientations
+                        mol_type_name = "Surface"
+                    print ( mol_type_name + " Molecule " + s + " contains " + str(tot) + " instances" )
+
+                except EOFError:
+#                    print("Molecules read: %d" % (int(tot)))
+                    mol_file.close()
+                    break
+
+                except:
+                    print( "Unexpected Exception: " + str(sys.exc_info()) )
+#                    print("Molecules read: %d" % (int(tot)))
+                    mol_file.close()
+                    break
+        else:
+            print ( "Dump doesn't read text files." )
+    except IOError:
+        print(("\n***** IOError: File: %s\n") % (filepath))
+
+    except ValueError:
+        print(("\n***** ValueError: Invalid data in file: %s\n") % (filepath))
+
+    except RuntimeError as rte:
+        print(("\n***** RuntimeError reading file: %s\n") % (filepath))
+        print("      str(error): \n" + str(rte) + "\n")
+        fail_error = sys.exc_info()
+        print ( "    Error Type: " + str(fail_error[0]) )
+        print ( "    Error Value: " + str(fail_error[1]) )
+        tb = fail_error[2]
+        # tb.print_stack()
+        print ( "=== Traceback Start ===" )
+        traceback.print_tb(tb)
+        print ( "=== Traceback End ===" )
+
+    except Exception as uex:
+        # Catch any exception
+        print ( "\n***** Unexpected exception:" + str(uex) + "\n" )
+        raise
+
+
+
 def mol_viz_file_read(mcell_prop, filepath):
     """ Read and Draw the molecule viz data for the current frame. """
     dup_check = False
