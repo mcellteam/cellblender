@@ -238,6 +238,102 @@ class MCELL_OT_set_molecule_glyph(bpy.types.Operator):
         return {'FINISHED'}
 
 
+class MCELL_OT_mol_comp_stick(bpy.types.Operator):
+    bl_idname = "mcell.mol_comp_stick"
+    bl_label = "Show Stick Molecule"
+    bl_description = "Show a Stick Molecule"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        meshes = bpy.data.meshes
+        mats = bpy.data.materials
+        objs = bpy.data.objects
+        scn = bpy.context.scene
+        scn_objs = scn.objects
+
+        stick_name = "mol_comp_stick_mesh"
+        shape_name = stick_name + "_shape"
+
+        mols = context.scene.mcell.molecules
+        this_mol = mols.molecule_list[mols.active_mol_index]
+        num_comps = len(this_mol.component_list)
+        comp_dist = this_mol.component_distance
+
+        # Delete the old object and mesh
+        if shape_name in objs:
+            scn_objs.unlink ( objs[shape_name] )
+            objs.remove ( objs[shape_name] )
+        if shape_name in meshes:
+            meshes.remove ( meshes[shape_name] )
+
+        shape_vertices = []
+        shape_vertices.append ( mathutils.Vector((0.0, 0.0, 0.0)) )
+        for index in range(num_comps):
+          loc = get_3D_auto_point ( num_comps, comp_dist, index )
+          x = loc[0]
+          y = loc[1]
+          z = loc[2]
+          shape_vertices.append ( mathutils.Vector((x, y, z)) )
+          print ( "  making a stick for " + str(x) + ", " + str(y) + ", " + str(z) )
+
+        shape_lines = []
+        shape_faces = []
+
+        # Create and build the new mesh
+        stick_shape_mesh = bpy.data.meshes.new ( shape_name )
+        stick_shape_mesh.from_pydata ( shape_vertices, shape_lines, shape_faces )
+        stick_shape_mesh.update()
+
+        # Create the new shape object from the mesh
+        stick_shape_obj = bpy.data.objects.new ( shape_name, stick_shape_mesh )
+
+        # Be sure the new shape is at the origin
+        stick_shape_obj.location.x = 0
+        stick_shape_obj.location.y = 0
+        stick_shape_obj.location.z = 0
+
+        # Allow the shape to be selected so it can be manipulated like any other object.
+        stick_shape_obj.hide_select = False
+
+        # Add the shape to the scene
+        scn.objects.link ( stick_shape_obj )
+
+        # Select to highlight it
+        scn.objects[shape_name].select = True
+
+        self.report({'INFO'}, "Built a Stick Molecule")
+        return {'FINISHED'}
+
+
+class MCELL_OT_mol_comp_nostick(bpy.types.Operator):
+    bl_idname = "mcell.mol_comp_nostick"
+    bl_label = "Remove Stick Molecule"
+    bl_description = "Remove the Stick Molecule"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+
+        meshes = bpy.data.meshes
+        mats = bpy.data.materials
+        objs = bpy.data.objects
+        scn = bpy.context.scene
+        scn_objs = scn.objects
+
+        stick_name = "mol_comp_stick_mesh"
+        shape_name = stick_name + "_shape"
+
+        # Delete the old object and mesh
+        if shape_name in objs:
+            scn_objs.unlink ( objs[shape_name] )
+            objs.remove ( objs[shape_name] )
+        if shape_name in meshes:
+            meshes.remove ( meshes[shape_name] )
+
+        self.report({'INFO'}, "Deleted Stick Molecule")
+        return {'FINISHED'}
+
+
 
 # Callbacks for all Property updates appear to require global (non-member) functions.
 # This is circumvented by simply calling the associated member function passed as self:
@@ -1070,6 +1166,9 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
                 subcol = col.column(align=True)
                 subcol.operator("mcell.mol_comp_add", icon='ZOOMIN', text="")
                 subcol.operator("mcell.mol_comp_remove", icon='ZOOMOUT', text="")
+                subcol = col.column(align=True)
+                subcol.operator("mcell.mol_comp_stick", icon='RESTRICT_VIEW_OFF', text="")
+                subcol.operator("mcell.mol_comp_nostick", icon='RESTRICT_VIEW_ON', text="")
 
                 if self.component_list:
                     comp = self.component_list[self.active_component_index]
@@ -1177,6 +1276,7 @@ class MCellMoleculeProperty(bpy.types.PropertyGroup):
         mol_shape_name = mol_name + '_shape'
         if mol_shape_name in bpy.data.objects:
             if self.scale != self.previous_scale:
+
                 # Scale by the ratio of current scale to previous scale
                 bpy.data.objects[mol_shape_name].scale *= (self.scale / self.previous_scale)
                 self.previous_scale = self.scale
@@ -1397,6 +1497,150 @@ class MCell_UL_check_molecule(bpy.types.UIList):
                 else:
                     col.prop(objs[show_shape_name], "hide", text="", icon='FORCE_LENNARDJONES')
 
+def get_3D_auto_point ( num_components, component_radius, component_index ):
+  x = 0
+  y = 0
+  z = 0
+
+  if num_components == 1:
+    # Put the component along the x axis
+    x = component_radius
+    y = 0;
+    z = 0;
+
+  elif num_components == 2:
+    # Put both components along the x axis
+    if component_index == 0:
+      x = component_radius
+      y = 0;
+      z = 0;
+    else:
+      x = -component_radius
+      y = 0;
+      z = 0;
+
+  elif num_components == 3:
+    # Put all components on the equator
+    if component_index == 0:
+      x = component_radius
+      y = 0;
+      z = 0;
+    elif component_index == 1:
+      x = math.cos(2*math.pi/3) * component_radius
+      y = math.sin(2*math.pi/3) * component_radius
+      z = 0
+    else:
+      x = math.cos(4*math.pi/3) * component_radius
+      y = math.sin(4*math.pi/3) * component_radius
+      z = 0
+
+  elif num_components == 4:
+    # Put components on a tetrahedron (coordinates from Blender)
+    if component_index == 0:
+      x = 0
+      y = 0;
+      z = component_radius;
+    elif component_index == 1:
+      x = 0
+      y = -0.942809 * component_radius
+      z = -0.333333 * component_radius
+    elif component_index == 2:
+      x = 0.816497 * component_radius
+      y = 0.471405 * component_radius
+      z = -0.333333 * component_radius
+    else:
+      x = -0.816497 * component_radius
+      y = 0.471405 * component_radius
+      z = -0.333333 * component_radius
+
+  elif num_components == 6:
+    # Put all components at each end of the 3 axes
+    if component_index == 0:
+      x = component_radius
+      y = 0
+      z = 0
+    elif component_index == 1:
+      x = -component_radius
+      y = 0
+      z = 0
+    elif component_index == 2:
+      x = 0
+      y = component_radius
+      z = 0
+    elif component_index == 3:
+      x = 0
+      y = -component_radius
+      z = 0
+    elif component_index == 4:
+      x = 0
+      y = 0
+      z = component_radius
+    else:
+      x = 0
+      y = 0
+      z = -component_radius
+
+  elif num_components == 8:
+    # Put all components at corners of a cube
+    diag = math.sqrt(3)/3
+    if component_index == 0:
+      x =  component_radius * diag
+      y =  component_radius * diag
+      z =  component_radius * diag
+    elif component_index == 1:
+      x = -component_radius * diag
+      y =  component_radius * diag
+      z =  component_radius * diag
+    elif component_index == 2:
+      x =  component_radius * diag
+      y = -component_radius * diag
+      z =  component_radius * diag
+    elif component_index == 3:
+      x = -component_radius * diag
+      y = -component_radius * diag
+      z =  component_radius * diag
+    elif component_index == 4:
+      x =  component_radius * diag
+      y =  component_radius * diag
+      z = -component_radius * diag
+    elif component_index == 5:
+      x = -component_radius * diag
+      y =  component_radius * diag
+      z = -component_radius * diag
+    elif component_index == 6:
+      x =  component_radius * diag
+      y = -component_radius * diag
+      z = -component_radius * diag
+    else:
+      x = -component_radius * diag
+      y = -component_radius * diag
+      z = -component_radius * diag
+
+  else:
+    # Get component locations from a Fibonacci Sphere
+    rnd = 1
+    offset = 2.0 / num_components
+    increment = math.pi * (3.0 - math.sqrt(5.0))
+    i = component_index
+    y = ((i * offset) -1) + (offset / 2);
+    r = math.sqrt ( 1 - math.pow(y,2) );
+    phi = ( (i+rnd) % num_components ) * increment;
+    x = math.cos(phi) * r;
+    z = math.sin(phi) * r;
+    x = x * component_radius
+    y = y * component_radius
+    z = z * component_radius
+
+  # Move coordinate values close to zero ... to zero
+  if abs(x) < 1e-10:
+    x = 0
+  if abs(y) < 1e-10:
+    y = 0
+  if abs(z) < 1e-10:
+    z = 0
+
+  return [x, y, z]
+
 
 class MCell_UL_check_component(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
@@ -1440,142 +1684,11 @@ class MCell_UL_check_component(bpy.types.UIList):
             num_comps = len(this_mol.component_list)
             comp_dist = this_mol.component_distance
 
-            if num_comps == 1:
-              # Put the component along the x axis
-              x = comp_dist
-              y = 0;
-              z = 0;
+            loc = get_3D_auto_point ( num_comps, comp_dist, index )
 
-            elif num_comps == 2:
-              # Put both components along the x axis
-              if index == 0:
-                x = comp_dist
-                y = 0;
-                z = 0;
-              else:
-                x = -comp_dist
-                y = 0;
-                z = 0;
-
-            elif num_comps == 3:
-              # Put all components on the equator
-              if index == 0:
-                x = comp_dist
-                y = 0;
-                z = 0;
-              elif index == 1:
-                x = math.cos(2*math.pi/3) * comp_dist
-                y = math.sin(2*math.pi/3) * comp_dist
-                z = 0
-              else:
-                x = math.cos(4*math.pi/3) * comp_dist
-                y = math.sin(4*math.pi/3) * comp_dist
-                z = 0
-
-            elif num_comps == 4:
-              # Put components on a tetrahedron (coordinates from Blender)
-              if index == 0:
-                x = 0
-                y = 0;
-                z = comp_dist;
-              elif index == 1:
-                x = 0
-                y = -0.942809 * comp_dist
-                z = -0.333333 * comp_dist
-              elif index == 2:
-                x = 0.816497 * comp_dist
-                y = 0.471405 * comp_dist
-                z = -0.333333 * comp_dist
-              else:
-                x = -0.816497 * comp_dist
-                y = 0.471405 * comp_dist
-                z = -0.333333 * comp_dist
-
-            elif num_comps == 6:
-              # Put all components at each end of the 3 axes
-              if index == 0:
-                x = comp_dist
-                y = 0
-                z = 0
-              elif index == 1:
-                x = -comp_dist
-                y = 0
-                z = 0
-              elif index == 2:
-                x = 0
-                y = comp_dist
-                z = 0
-              elif index == 3:
-                x = 0
-                y = -comp_dist
-                z = 0
-              elif index == 4:
-                x = 0
-                y = 0
-                z = comp_dist
-              else:
-                x = 0
-                y = 0
-                z = -comp_dist
-
-            elif num_comps == 8:
-              # Put all components at corners of a cube
-              diag = math.sqrt(3)/3
-              if index == 0:
-                x =  comp_dist * diag
-                y =  comp_dist * diag
-                z =  comp_dist * diag
-              elif index == 1:
-                x = -comp_dist * diag
-                y =  comp_dist * diag
-                z =  comp_dist * diag
-              elif index == 2:
-                x =  comp_dist * diag
-                y = -comp_dist * diag
-                z =  comp_dist * diag
-              elif index == 3:
-                x = -comp_dist * diag
-                y = -comp_dist * diag
-                z =  comp_dist * diag
-              elif index == 4:
-                x =  comp_dist * diag
-                y =  comp_dist * diag
-                z = -comp_dist * diag
-              elif index == 5:
-                x = -comp_dist * diag
-                y =  comp_dist * diag
-                z = -comp_dist * diag
-              elif index == 6:
-                x =  comp_dist * diag
-                y = -comp_dist * diag
-                z = -comp_dist * diag
-              else:
-                x = -comp_dist * diag
-                y = -comp_dist * diag
-                z = -comp_dist * diag
-
-            else:
-              # Get component locations from a Fibonacci Sphere
-              rnd = 1
-              offset = 2.0 / num_comps
-              increment = math.pi * (3.0 - math.sqrt(5.0))
-              i = index
-              y = ((i * offset) -1) + (offset / 2);
-              r = math.sqrt ( 1 - math.pow(y,2) );
-              phi = ( (i+rnd) % num_comps ) * increment;
-              x = math.cos(phi) * r;
-              z = math.sin(phi) * r;
-              x = x * comp_dist
-              y = y * comp_dist
-              z = z * comp_dist
-
-            # Move coordinate values close to zero ... to zero
-            if abs(x) < 1e-10:
-              x = 0
-            if abs(y) < 1e-10:
-              y = 0
-            if abs(z) < 1e-10:
-              z = 0
+            x = loc[0]
+            y = loc[1]
+            z = loc[2]
 
             # Show the point
             col = layout.column()
